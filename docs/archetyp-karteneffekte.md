@@ -151,8 +151,53 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   Brennlinien-Sprites + Rauch, Phasen-Interpolation). Alte `src/ui/fx/FireBurn.jsx` **gelöscht**,
   Deck-`slotRef` an `Side` **zurückgebaut**. Mount in Battlefield auf `playerCardRef`, Hitze aus der
   Hitzeleiste, `flyAway`→0. Dev-Sicht `?fireheat=<0..1>`. Gate Preview/Dev (Prod pixel-identisch).
-- **Status:** 🟢 **Look + Phasen abgesegnet, in-game verdrahtet** (Kopf über dem Rahmen,
-  Phasen-Interpolation aus der Hitzeleiste).
+- **Status:** ⚠️ **ÜBERHOLT — wird durch „Neon-Seide" (unten) ersetzt** (User-Entscheidung 2026-08-12).
+  War: Look + Phasen abgesegnet, in-game verdrahtet. `FireHead.jsx` fliegt beim Neon-Seide-Port raus.
+
+**Effekt (NEU/AKTUELL) — „Neon-Seide" (Synthwave-Feuer, abgesegnet 2026-08-12, ERSETZT FireHead)**
+
+- **Was:** Alternative zur realistischen FireHead im **Neon-Synthwave**-Look (Referenz: User-Bild).
+  Weiche, halbtransparente **Seiden-Bänder** sitzen am **Kartenkopf** und lodern in Flammenform nach
+  oben (unten breit → oben zu mehreren gespreizten Zungen zulaufend). Sie **drehen & überlappen** sich;
+  **Weiß entsteht NUR aus additiver Überlappung** (keine harten Kanten). Vertikaler Verlauf **unten
+  blau → Mitte magenta → oben rot glühend**. Optional feine leuchtende **Kanten-Linien** an
+  Überlapp-Grenzen (`EDGE_LINES`), leicht unterschiedliche Band-Höhen (`HVAR`), Basis-Bloom.
+- **Wann / Hitze-Mapping (1:1 ins Game):** `heat` (0..1) treibt **alles** — Höhe `×heat`,
+  Deckkraft/Helligkeit `×heat`, Tempo `curSpd=(0.5+heat)·SPEED`, Flacker `×heat`. In-game
+  `clamp(heat.value/heat.max,0,1)` in **exakt dieselben Formeln** → jede Zwischenstufe trifft die
+  getunte Kurve (der User hat alle Stufen am Slider abgestimmt). **Keine Neu-Interpretation.**
+- **Wo:** Wie FireHead auf `playerCardRef`, eigener Layer. **Effekt-Position** vertikal verschiebbar
+  (Flammen-Basis, Karte bleibt fix); **Karte zentriert**. Gate Preview/Dev.
+- **⚠️ Port-Vorgaben (User):**
+  1. **Farben erhalten** — additives `lighter` darf nicht ins Weiße zusättigen. Effekt in einen
+     **eigenen Offscreen-Buffer** rendern, dann mit fester Deckkraft über die Szene legen → internes
+     Additiv bleibt „in sich", Blau→Magenta→Rot kippt nicht weg.
+  2. **Kein Bloom-Überstrahlen** — Basis-Bloom auf **Kartenbreite geclippt** und im selben Buffer, damit
+     er sich nicht mit Aurora/anderen Effekten aufsummiert. (Deckt „4 Effekte gleichzeitig ohne Störung".)
+  3. Abgesegnete `TUNE`-Alphas (`SHEET_ALPHA/BRIGHT/BLOOM`) **1:1** übernehmen (nicht hochdrehen).
+- **Abgesegnete Werte (@100% Hitze):**
+  ```js
+  const TUNE = {
+    COL_BOT: "#2f6bff", COL_MID: "#ff2ea0", COL_TOP: "#ff4a2a",
+
+    RIBBONS: 6, WIDTH: 58, TWIST_FREQ: 2.7, TWIST_SPEED: 2.9, MEANDER: 19, MEANDER_FREQ: 3, CONVERGE: 0.72, DRIFT: 0.05, HVAR: 0, FLOW: 3, SPEED: 2.25, HEIGHT: 0.62,
+
+    FLICKER: 0.08, EDGE_LINES: 0, SHEET_ALPHA: 0.4, BRIGHT: 0.8, BLOOM: 1.4, STARS: 0,
+  };
+  ```
+  (`Effekt ↕`-Position + Zoom sind Preview-State, kein TUNE-Wert.)
+- **Algorithmus:** Bänder als getaperte Strips (`ribbonPts`→`fillStrip`, 3 Glow-Layer breit-dim→
+  schmal-hell). Welle/Twist über **absolute Höhe `d`** (Hitze **kürzt**, staucht nicht). Teil-Zulauf
+  `CONVERGE` (Tips gespreizt), per-Band `lean`/`drift` (Random). Verlauf = vertikaler Gradient
+  (`COL_BOT→MID→TOP`); Kanten-Linien = hellerer Gradient auf Band-Rändern (glühen an Überlapp).
+- **Prototyp:** `docs/prototypes/neonseide-tuning.html` (Werte oben als Default).
+- **Entscheidung (2026-08-12, User):** Neon-Seide **ERSETZT die realistische FireHead** — keine
+  zweite/kaufbare Variante. Die alte FireHead ist damit überholt.
+- **Umsetzung (offen):** `src/ui/fx/NeonSilk.jsx`. FireHead-Mount in Battlefield durch NeonSilk
+  austauschen (gleiche `playerCardRef`/Hitze-Quelle `heat.value/heat.max`/`flyAway`→0-Logik,
+  Preview-Dev-Gate). `src/ui/fx/FireHead.jsx` danach entfernen; `FIRE_PHASES`/`?fireheat` entfallen.
+- **Status:** 🟡 **Look + Werte + Hitze-Mapping abgesegnet & als Design gesichert; ersetzt FireHead** —
+  Pixi-Port offen. **Nicht gepusht.**
 
 ### 5.3 Eis ❄️ (`ice`) — Glow `#5ec8f0`
 - **Status:** ⚪ Noch nicht dran
