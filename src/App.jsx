@@ -192,12 +192,9 @@ export function Autostich() {
   const dynamicSpeed = 1 + 0.02 * cycleWins;
   // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/5× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
   const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
-  // #188 v2: Hit-Stop/Slow-Mo — nach einem GROSSEN Krit-Sieg den nächsten Stich kurz verzögern (Micro-Hit-Stop ab
-  // IRRE ≥150k, längeres Slow-Mo ab GOTTGLEICH ≥500k). Nur bei nennenswertem Takt (kein Hit-Stop bei hohem Turbo,
-  // flipMs ≤ 170). Rein Timing/„Juice", score-neutral (wie Turbo). Basiert auf dem gerade gezeigten Stich (lastTrick).
-  const lt = state.lastTrick;
-  const hitStopMs = (flipMs > 170 && lt && lt.isCrit && (lt.result === "win" || lt.result === "win_tie"))
-    ? (lt.gained >= 500000 ? 220 : lt.gained >= 150000 ? 90 : 0) : 0;
+  // #188 v2: Hit-Stop/Slow-Mo nach großen Krit-Siegen auf Wunsch ENTFERNT → der nächste Stich läuft immer im
+  // normalen Takt (flipMs), keine Verzögerung mehr.
+  const hitStopMs = 0;
 
   useEffect(() => {
     const g = loadGhost();
