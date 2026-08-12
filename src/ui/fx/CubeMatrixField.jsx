@@ -17,10 +17,12 @@ import { getMusicAnalyser } from "../musicAnalyser.js";
 // ── Cube-Matrix — TUNE (finale Zielwerte aus #317) ──
 const TUNE = {
   GAIN: 1.95, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 6.2, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.20,
-  C_COLS: 18, C_ROWS: 8, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
+  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
   SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.36, SPOT_INT: 0.35, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.75, SPOT_TILT: 0.68,
   SPOT_SOFT: 0.55, SPOT_BLOOM: 0.30,
-  D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.00, FELD_TIEFE: 1.00, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
+  // #perf/#317: C_ROWS 8→6 (~25% weniger Würfel). FELD_TIEFE 1.0→0.72 = Feld nach vorn; FELD_HOEHE 0→0.10 = etwas
+  // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
+  D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.15, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
 };
 const BACKSUN = true;
 const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#ffffff";
@@ -32,11 +34,11 @@ function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length
 const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1)})`;
 
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut).
-  const propsRef = useRef({ color, color2, deckColored, reduced });
-  propsRef.current = { color, color2, deckColored, reduced };
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite });
+  propsRef.current = { color, color2, deckColored, reduced, lite };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -54,7 +56,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
 
     function resize() {
       const r = host.getBoundingClientRect();
-      DPR = Math.min(1.5, window.devicePixelRatio || 1);
+      // #perf: DPR gedeckelt (Vollflächen-Effekt) — auf Mobile (lite) auf 1.0 → ~halbe Fill-Kosten ggü. 1.5.
+      DPR = Math.min(propsRef.current.lite ? 1.0 : 1.25, window.devicePixelRatio || 1);
       W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
       canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -112,20 +115,25 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       for (let r = 0; r <= R; r++) { const z = z0 + (r - 0.5) * rowGap, a = alpha * lerp(0.6, 0.16, R > 0 ? r / R : 0), p0 = proj(xL, 0, z), p1 = proj(xR, 0, z);
         ctx.strokeStyle = rgba(gcol, a); ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
     }
-    function box3d(cx, zf, zb, y0, y1, halfw, colFbot, colFtop, colT, colS, glowA, glowC, alpha) {
+    function box3d(cx, zf, zb, y0, y1, halfw, colFbot, colFtop, colT, colS, glowA, glowC, alpha, grad) {
       const FBL = proj(cx - halfw, y0, zf), FBR = proj(cx + halfw, y0, zf), FTL = proj(cx - halfw, y1, zf), FTR = proj(cx + halfw, y1, zf),
         BTL = proj(cx - halfw, y1, zb), BTR = proj(cx + halfw, y1, zb), BBL = proj(cx - halfw, y0, zb), BBR = proj(cx + halfw, y0, zb);
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = alpha;
       if (cx < 0) quad(FBL, FTL, BTL, BBL, colS); else quad(FBR, FTR, BTR, BBR, colS);
-      const fg = ctx.createLinearGradient(0, FBL.y, 0, FTL.y); fg.addColorStop(0, colFbot); fg.addColorStop(1, colFtop);
-      ctx.beginPath(); ctx.moveTo(FBL.x, FBL.y); ctx.lineTo(FBR.x, FBR.y); ctx.lineTo(FTR.x, FTR.y); ctx.lineTo(FTL.x, FTL.y); ctx.closePath(); ctx.fillStyle = fg; ctx.fill();
+      // #perf: Der Front-Verlauf (heiße Spitze) kostet ein createLinearGradient JE Würfel/Frame. Nur bei erkennbarem
+      // Ausschlag (grad=true) zeichnen; ruhende Würfel bekommen einen soliden Fill (colFbot) → spart bei leiser Musik
+      // fast alle Gradienten (die meisten Würfel liegen dann in Ruhe).
+      ctx.beginPath(); ctx.moveTo(FBL.x, FBL.y); ctx.lineTo(FBR.x, FBR.y); ctx.lineTo(FTR.x, FTR.y); ctx.lineTo(FTL.x, FTL.y); ctx.closePath();
+      if (grad) { const fg = ctx.createLinearGradient(0, FBL.y, 0, FTL.y); fg.addColorStop(0, colFbot); fg.addColorStop(1, colFtop); ctx.fillStyle = fg; }
+      else ctx.fillStyle = colFbot;
+      ctx.fill();
       quad(FTL, FTR, BTR, BTL, colT); ctx.globalAlpha = 1;
       if (glowA > 0) { ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = rgba(glowC, glowA * alpha); const gy = Math.min(FTL.y, FTR.y); ctx.fillRect(Math.min(FTL.x, FTR.x) - 2, gy - 4, Math.abs(FTR.x - FTL.x) + 4, 8); ctx.globalCompositeOperation = "source-over"; }
     }
     // Weicher Lichtstrahl: viele dünne, aneinandergereihte Streifen; Helligkeit quer = Gauß → glatte Kante ohne Layer.
     function drawBeam(ax, ay, bx, by, apexHalf, baseHalf, col, alpha, sigma) {
       const g = ctx.createLinearGradient(0, ay, 0, by); g.addColorStop(0, rgba(col, 1)); g.addColorStop(0.55, rgba(col, 0.4)); g.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = g; const N = 64, s2 = 2 * sigma * sigma;
+      ctx.fillStyle = g; const N = propsRef.current.lite ? 28 : 40, s2 = 2 * sigma * sigma; // #perf: weniger Streifen (war 64)
       for (let k = 0; k < N; k++) { const u0 = (k / N) * 2 - 1, u1 = ((k + 1) / N) * 2 - 1, um = (u0 + u1) * 0.5;
         ctx.globalAlpha = alpha * Math.exp(-(um * um) / s2);
         ctx.beginPath(); ctx.moveTo(ax + u0 * apexHalf, ay); ctx.lineTo(ax + u1 * apexHalf, ay); ctx.lineTo(bx + u1 * baseHalf, by); ctx.lineTo(bx + u0 * baseHalf, by); ctx.closePath(); ctx.fill(); }
@@ -156,7 +164,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const hot = rgb(HOT_COL), dark = [9, 5, 18], glow = TUNE.GLOW;
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, W, H); // transparente Bühne (BF-Bild bleibt sichtbar)
-      const C = Math.round(TUNE.C_COLS), R = Math.round(TUNE.C_ROWS), TC = C * R;
+      // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
+      const C = Math.round(TUNE.C_COLS) - (p.lite ? 4 : 0), R = Math.round(TUNE.C_ROWS) - (p.lite ? 1 : 0), TC = C * R;
       if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; spotBass = 0; } // Standbild: ruhige, gedimmte Säulen
       else { computeCubes(TC); computeSpotBass(); }
       const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
@@ -170,17 +179,23 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
           const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
           const colS = rgba(mix(dark, base, emit * 0.6), 1);
           const s = hw0, h = 2 * s + val * TUNE.C_RISE;
-          box3d(cx, z - s, z + s, 0, h, s, colFbot, colFtop, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha);
+          box3d(cx, z - s, z + s, 0, h, s, colFbot, colFtop, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha, !p.reduced && val > 0.06);
         }
       }
       if (!p.reduced) drawSpotlights(spotCol); else { spotBass = 0; drawSpotlights(spotCol); }
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     }
 
-    function frame() {
+    // #perf: Ambiente-Effekt auf ~40 fps (Desktop) bzw. ~30 fps (Mobile/lite) drosseln — der rAF-Callback läuft jede
+    // Frame (billig), gerendert wird nur alle FRAME_MS. Halbiert die Renderlast ggü. 60 fps, die App bleibt flüssig.
+    let lastT = 0;
+    function frame(now) {
       if (disposed) return;
-      render();
       raf = requestAnimationFrame(frame);
+      const FRAME_MS = propsRef.current.lite ? 33 : 24;
+      if (now - lastT < FRAME_MS) return;
+      lastT = now;
+      render();
     }
     function start() { if (!raf && !disposed && document.visibilityState !== "hidden") raf = requestAnimationFrame(frame); }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }

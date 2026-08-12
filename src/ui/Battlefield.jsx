@@ -1167,7 +1167,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {cubeMatrixOn && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
           <Suspense fallback={null}>
-            <CubeMatrixField color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} />
+            <CubeMatrixField color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
           </Suspense>
         </div>
       )}
