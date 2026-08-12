@@ -21,10 +21,10 @@ export const GLITCH_TUNE = {
   // Chroma-Split/die Bars bleichten die Karte aus. Darum weniger additiv (chroma.alpha 0.71→0.45, bar 0.61→0.5), ruhigere
   // Grundlast (ruhe 0.35→0.24 → Karte bleibt im Ruhezustand farbig, Glitch flackert in Bursts) und etwas dunklere
   // Scanlines (0.14→0.18, Normal-Blend → wirkt dem Aufhellen entgegen).
-  chroma: { staerke: 5.3, alpha: 0.45 },
+  chroma: { staerke: 5.3, alpha: 0.58 },   // Split jetzt v. a. auf der Zahl (lokal) → darf wieder kräftiger sein, bleicht die Fläche nicht mehr
   tear:   { anzahl: 5, amp: 23, hoehe: 23, rate: 3 },
   scan:   { staerke: 0.18, tempo: 0.6, dichte: 6 },
-  bar:    { anzahl: 4, staerke: 0.5, tempo: 3.6 },
+  bar:    { anzahl: 4, staerke: 0.55, tempo: 3.6 },
   timing: { ruhe: 0.24, burstRate: 0.8, burstLen: 0.18, jitter: 0.46 },
   farbe:  { ghostA: "#ff2bd6", ghostB: "#20e5ff" },
 };
@@ -63,8 +63,11 @@ export function createGlitch(app) {
     const col = suitCol(motif.color, 0x5a8ade);
     const tmp = new Container();
     const base = new Graphics();
-    base.roundRect(0, 0, w, h, CARD_CORNER).fill({ color: 0x131318, alpha: 1 });     // Karten-Grund (HOLO_BASE)
-    base.roundRect(0, 0, w, h, CARD_CORNER).fill({ color: col, alpha: 0.10 });        // Suit-Kern-Schein
+    // #ausgeblichen-fix: KEIN opaker Dunkel-Grund mehr. Der volle Karten-Grund wurde von den beiden Chroma-Kopien
+    // (Magenta + Cyan, nur ~2 px versetzt) additiv über die GANZE Karte gelegt → Magenta+Cyan summieren Richtung
+    // Weiß/Blau = ausgeblichene Fläche. Nur noch ein SEHR fainter Suit-Körper (für zarte Tear-Bänder), die Zahl trägt
+    // den Chroma-Split; die flächigen Kartenbereiche bleiben so sauber (kein Vollkarten-Schleier).
+    base.roundRect(0, 0, w, h, CARD_CORNER).fill({ color: col, alpha: 0.05 });        // fainter Suit-Körper (statt Dunkel-Grund + 0.10)
     tmp.addChild(base);
     const fs = Math.round(h * 0.27);                                                  // ~2.4rem auf 144px-Karte
     const num = new Text({
