@@ -42,6 +42,7 @@ import SonnenPulsFx from "./fx/SonnenPulsFx.jsx"; // #322 Gottgleich-Prunk „So
 import LaserFaecherFx from "./fx/LaserFaecherFx.jsx"; // #323 Gottgleich-Prunk „Laser-Fächer" (Canvas-2D)
 import PrismaKaskadeFx from "./fx/PrismaKaskadeFx.jsx"; // #324 Gottgleich-Prunk „Prisma-Kaskade" (Canvas-2D)
 import HoloCubeFx from "./fx/HoloCubeFx.jsx"; // #325 Gottgleich-Prunk „Holo-Würfel-Kollaps" (Canvas-2D)
+import SupernovaFx from "./fx/SupernovaFx.jsx"; // #326 Gottgleich-Prunk „Supernova" (Canvas-2D, Tunnel z-9 + Explosion z-11)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1269,6 +1270,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <HoloCubeFx key={`gott-hc${gottTrigger}`} trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
           deckColor={deckA1 || "#35e0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
           reduced={reduced} lite={lite} /* Holo-Würfel schwebt zentral ÜBER dem Feld (z-11), Ansage darüber */ />
+      )}
+      {gottTrigger > 0 && gottEffect === "supernova" && !reduced && (
+        <SupernovaFx key={`gott-sn${gottTrigger}`} trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          deckColor={deckA1 || "#ffd24a"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
+          reduced={reduced} lite={lite} /* Tunnel z-9 HINTER der Karte, Explosion z-11 davor (eigene Ebenen); Ansage z-30 ruhig */ />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
