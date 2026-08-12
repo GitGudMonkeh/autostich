@@ -17,9 +17,12 @@ const TUNE = {
   CHARGE: 0.05, CUT: 0.20, BEAM_W: 6.0, BEAM_GLOW: 3.00, CUT_GLOW: 3.50, SPARKS: 0,
   // Raster
   COLS: 12, ROWS: 16, SEAM_W: 1.0, STAGGER: 1.20,
-  // Flug
-  FLY_SPEED: 210, SPREAD: 1.00, PUSH: 200, LIFT: 300, GRAVITY: 800, DRAG: 0.50,
-  SPIN: 2.6, TUMBLE: 10.0, FRAG_LIFE: 2.00, BOUNCE: 0.55, FLOOR: 0.94,
+  // Flug — #hologrid: die Wucht war viel zu stark (Teile flogen weit weg; vertikaler Slice schoss sie ganz raus, weil
+  //   sweepy·PUSH + LIFT sich nach oben addierten). Deutlich gedrosselt → die Stücke zerbröseln und FALLEN eher runter:
+  //   LIFT (universeller Auftrieb) und PUSH (Schub entlang der Sweep-Achse) stark reduziert, FLY_SPEED/SPREAD runter,
+  //   GRAVITY bleibt kräftig. Horizontal = sanftes Auseinanderfallen, vertikal nur noch ein kleiner Stups statt Abschuss.
+  FLY_SPEED: 115, SPREAD: 0.50, PUSH: 55, LIFT: 45, GRAVITY: 850, DRAG: 0.55,
+  SPIN: 2.6, TUMBLE: 10.0, FRAG_LIFE: 2.00, BOUNCE: 0.45, FLOOR: 0.94,
   // Pixel — #hologrid: die abplatzenden Mini-Pixel sind AUS (PIX_SPARK 0). Sonst flogen je Kachel bis zu 5 zusätzliche
   //   2..9px-Stücke weg (≈COLS×ROWS×5 extra) → deutlich MEHR Teile als das Gitter, in das die Karte geschnitten wird.
   //   Jetzt fliegen exakt die COLS×ROWS Kachel-Stücke — genau so viele, wie die Karte zerteilt wird, nicht mehr.

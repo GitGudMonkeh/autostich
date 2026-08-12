@@ -72,7 +72,7 @@ const PREVIEW_LOOK = {
   // passender Backdrop, der NUR im Deckfarbe-Modus gezeigt wird (Standard-Modus bleibt auf dem neutralen SHOWCASE_BF).
   klinge:    { bf: "bf_drache",    a1: "#ffb43d", a2: "#ff7a2a" }, // Standard = kühles Stahlweiß → Deckfarbe warm-gold auf Drachen-Feld
   scorch:    { bf: "bf_wale",      a1: "#35d0ff", a2: "#6ad0ff" }, // Standard = warmes Feuer → Deckfarbe kühl-cyan auf Moonwhale-Feld
-  hologrid:  { bf: "bf_geometrie", a1: "#39e64d", a2: "#8ee06a" }, // Standard = cyan/magenta → Deckfarbe grün/lime auf Geometrie-Feld
+  hologrid:  { bf: "bf_blitz",     a1: "#3ad8ff", a2: "#6a8cff" }, // Standard = cyan/magenta → Deckfarbe cyan/blau auf Blitz-Feld (kühl-elektrisch, harmoniert mit dem Hologrid-Look)
   // #320 Schwarzes Loch: Standard = blau→pink (im Scene-Code fest); Deckfarbe-Showcase = warmes Gold/Grün auf dunklem
   // Kosmos-Feld, damit der Standard↔Deckfarbe-Toggle (kühl-neon ↔ warm) deutlich sichtbar ist.
   blackhole: { bf: "bf_kosmos",    a1: "#ffd15a", a2: "#57e08a" },
