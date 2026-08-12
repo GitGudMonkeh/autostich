@@ -1,0 +1,662 @@
+<title>Moos + Eis · Kombi-Check · Synthwave</title>
+<style>
+  :root{
+    --bg:#070d16; --bg2:#04060f; --panel:#0c1626; --panel2:#101d32; --line:#22344a;
+    --ink:#e6f2ee; --dim:#95b3ba; --dimmer:#5f7d86;
+    --acc:#3fd0c8; --acc-dim:#2a6f6a; --hot:#d6f4ee; --z:#a13cff;
+    --moos:#9ccb57; --eis:#5ec8f0;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1200px 720px at 78% -12%, #10322f 0%, transparent 55%),
+      radial-gradient(900px 600px at -6% 112%, #12280c 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:82ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0f1a,#050409); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#080b14); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl.moos{border-color:#38521f} .lvl.eis{border-color:#254a63}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px}
+  .lvl.moos .lab label{color:var(--moos)} .lvl.eis .lab label{color:var(--eis)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .lvl.moos input[type=range]::-webkit-slider-thumb{background:var(--moos);box-shadow:0 0 0 3px #9ccb5722}
+  .lvl.eis input[type=range]::-webkit-slider-thumb{background:var(--eis);box-shadow:0 0 0 3px #5ec8f022}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .divider{display:flex;align-items:center;gap:10px;margin:6px 0 -4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700}
+  .divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .divider.moos{color:var(--moos)} .divider.eis{color:var(--eis)}
+  .panel{background:linear-gradient(180deg,var(--panel),#080b14); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel.moos{border-left:3px solid #4a6f2a} .panel.eis{border-left:3px solid #2a5a8a}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel.moos h2{color:var(--moos)} .panel.eis h2{color:var(--eis)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #3fd0c822, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #3fd0c822}
+  input.state{height:6px}
+  .config{max-width:1180px; margin:20px auto 0; display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:900px){.config{grid-template-columns:1fr}}
+  .cfgbox{background:linear-gradient(180deg,var(--panel),#080b14);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .cfgbox.moos{border-left:3px solid #4a6f2a} .cfgbox.eis{border-left:3px solid #2a5a8a}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase}
+  .cfgbox.moos h2{color:var(--moos)} .cfgbox.eis h2{color:var(--eis)}
+  textarea{width:100%; min-height:180px; background:#060d14; color:#bfe9e2; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Moos + Eis · Kombi-Check</h1>
+  <div class="sub">Beide Neon-Synthwave-Effekte auf <b>derselben Karte</b>, um die Kombination zu prüfen: <b>Moos</b> (Pflanze) wächst von <b>oben &amp; den Seiten</b>, <b>Eis</b> (Neon-Frost) von <b>unten &amp; den Seiten</b> — die Werte sind die abgesegneten TUNE-Sätze. Das <b>Eis bleibt strikt innerhalb des Rahmens</b> (kein Überwuchs), Moos darf minimal überstehen (<code>OVERHANG</code>). Mit dem <b>Layer-Toggle</b> tauschst du, welcher Effekt <b>oben</b> liegt. Zwei Zustands-Regler: Moos-<b>Wachstum 0–8</b> (<code>PLANT_GREEN_THRESHOLD</code>) &amp; Eis-<b>Masse 0–12</b> (<code>glacier.js</code>, Schwellen 4/8/12). (Prototyp Canvas-2D; In-Game → Pixi.)</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:#9ccb57"></span> Moos <b>oben+Seiten</b></span>
+    <span class="chip"><span class="dot" style="color:#5ec8f0"></span> Eis <b>unten+Seiten</b></span>
+    <span class="chip"><span class="dot" style="color:#ea34d1"></span> Moos-Neon</span>
+    <span class="chip"><span class="dot" style="color:#a13cff"></span> Eis-Neon</span>
+    <span class="chip"><span class="dot" style="color:#3fd0c8"></span> Eis <b>im Rahmen geclippt</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud"><b id="hudTop">Moos oben</b></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="transport">
+      <button id="btnLayer" class="on">Layer: Moos oben ▲ / Eis unten</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="1.8" step="0.05" value="1.3" style="width:110px"><span class="val" id="v_zoom" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+    <div class="lvl moos">
+      <div class="lab"><label for="growth">🌱 Moos-Wachstum 0–8</label><span class="val" id="v_growth">Stufe 8/8 · Reif</span></div>
+      <input type="range" class="state" id="growth" min="0" max="8" step="1" value="8">
+    </div>
+    <div class="lvl eis">
+      <div class="lab"><label for="mass">❄️ Eis-Masse 0–12</label><span class="val" id="v_mass">Masse 12/12 · Stufe 3</span></div>
+      <input type="range" class="state" id="mass" min="0" max="12" step="1" value="12">
+    </div>
+    <div class="transport">
+      <button id="btnAuto">Auto (beide): aus</button>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="cfgbox moos">
+    <div class="bar"><h2>Moos-TUNE · <code>MossGrow.jsx</code></h2>
+      <div style="display:flex;gap:8px;align-items:center"><span class="copied" id="copiedM">kopiert ✓</span><button id="btnCopyM">Kopieren</button><button id="btnDefM">Standard</button></div>
+    </div>
+    <textarea id="cfgM" readonly spellcheck="false"></textarea>
+  </div>
+  <div class="cfgbox eis">
+    <div class="bar"><h2>Eis-TUNE · <code>FrostIce.jsx</code></h2>
+      <div style="display:flex;gap:8px;align-items:center"><span class="copied" id="copiedI">kopiert ✓</span><button id="btnCopyI">Kopieren</button><button id="btnDefI">Standard</button></div>
+    </div>
+    <textarea id="cfgI" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var TAU=Math.PI*2;
+  var $=function(id){return document.getElementById(id);};
+
+  // ── geteilte Utils ──
+  function hexRGB(h){ h=String(h||"#4f78c8").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function clampRGB(c){ return {r:Math.max(0,Math.min(255,c.r)), g:Math.max(0,Math.min(255,c.g)), b:Math.max(0,Math.min(255,c.b))}; }
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  function satBoost(c,s){ var L=0.30*c.r+0.59*c.g+0.11*c.b; return clampRGB({r:L+(c.r-L)*(1+s), g:L+(c.g-L)*(1+s), b:L+(c.b-L)*(1+s)}); }
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function roundRectPath(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function vhash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+  function fbm(x,y){ return vhash(x*0.05,y*0.05)*0.6 + vhash(x*0.13,y*0.13)*0.28 + vhash(x*0.31,y*0.31)*0.12; }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";};
+
+  // ── geteiltes Setup ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var base=document.createElement("canvas"), bctx=base.getContext("2d");
+  var M=20;                                              // Rand ums Effekt-Bitmap
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  var CW=0, CH=0;                                        // Kartenmaße (beide Effekte teilen sie)
+  var neonTips=[];                                       // Sammel-Puffer je Render (Bloom)
+  var _axc=1,_axs=0,_cNA={r:0,g:0,b:0},_cNB={r:0,g:0,b:0}; // Licht-Achse (je Render gesetzt)
+  var zoom=1.3, layerMoosTop=true, autoGrow=false, autoAcc=0, last=0, fpsT=0, fpsN=0, clockT=0, boxKey="";
+  function box(){ var ch=Math.round(300*zoom), cw=Math.round(ch*104/144), ox=Math.round((CSSW-cw)/2), oy=Math.round((CSSH-ch)/2), cr=Math.round(15*zoom); return {ox:ox,oy:oy,CW:cw,CH:ch,cr:cr}; }
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); Moss.markDirty(true); Ice.markDirty(true); boxKey=""; }
+  window.addEventListener("resize", doResize);
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  MOOS-MODUL (Pflanze · Neon-Moos) — Werte = abgesegneter Reif-Satz
+  // ══════════════════════════════════════════════════════════════════════
+  var Moss=(function(){
+    var DEF={
+      STYLE:"moos",
+      MOSS_DARK:"#20331a", MOSS_MID:"#c251aa", MOSS_TIP:"#9bc255", SPORO_COLOR:"#9a6a34",
+      NEON_A:"#ea34d1", NEON_B:"#66b450", NEON_ANGLE:-74, NEON_RIM:0.72, NEON_TIP:0.12, NEON_PUNCH:0.04, NEON_BLOOM:0.76, NEON_BASE:1,
+      REIF_COV:0.48, EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:1, RAGGED:1, OVERHANG:1,
+      FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.35, TILT:12, SPREAD:0.94, TIP_LIGHT:1, SPECK:0,
+      SPOROPHYTE:0, SHADOW:0, DEW:0
+    };
+    var T=Object.assign({},DEF);
+    var GROUPS=[
+      { title:"Farben", note:"Schatten (Basis), Mitte, helle Spitzen.", rows:[
+        ["MOSS_DARK","Schatten / Basis",0,0,0,null,"color"],["MOSS_MID","Mitte",0,0,0,null,"color"],["MOSS_TIP","Spitzen",0,0,0,null,"color"]
+      ]},
+      { title:"Neon-Licht", note:"Zwei Bühnenlichter (A/B) strahlen das Moos an — Wash, Kanten-Neon, Bloom.", rows:[
+        ["NEON_A","Licht A",0,0,0,null,"color"],["NEON_B","Licht B",0,0,0,null,"color"],
+        ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,""],
+        ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,""],
+        ["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,""],
+        ["NEON_PUNCH","Punch (Sättigung)",0,1.5,0.02,xFmt,""],
+        ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,""],
+        ["NEON_BASE","Halme unten färben",0,1,1,onOff,""]
+      ]},
+      { title:"Wachstum & Verteilung", note:"Von oben & den Seiten nach innen.", rows:[
+        ["REIF_COV","Reife-Abdeckung",0.1,1,0.02,xFmt,"Wie voll die Karte bei REIF (Stufe 8) bemoost ist."],
+        ["EDGE_BAND","Reichweite vom Rand",0,1,0.02,xFmt,""],
+        ["TOP_BIAS","Oben→Unten-Tempo",0,1,0.02,xFmt,""],
+        ["DENSITY","Dichte",0,1,0.02,xFmt,""],["CLUMP","Büscheligkeit",0,1,0.02,xFmt,""],
+        ["RAGGED","Rand-Zerklüftung",0,1,0.02,xFmt,""],["OVERHANG","Überwuchs (Kante)",0,1,0.02,xFmt,"Moos darf minimal über die Kante wachsen (Eis nicht)."]
+      ]},
+      { title:"Härchen (Filamente)", note:"Kurze, dichte Härchen = samtiger Moos-Look.", rows:[
+        ["FILA_PER","Härchen / Büschel",3,20,1,String,""],["FILA_LEN","Halm-Länge",2,12,0.5,pxFmt,""],
+        ["FILA_THICK","Halm-Dicke",0.5,2.5,0.1,pxFmt,""],["TILT","Neigung / Rotation",-60,60,1,degFmt,""],
+        ["SPREAD","Streuung (Random)",0,1,0.02,xFmt,""],["TIP_LIGHT","Spitzen-Licht",0,1,0.02,xFmt,""],["SPECK","Samt-Körnung",0,1,0.02,xFmt,""]
+      ]},
+      { title:"Details", note:"Feinheiten.", rows:[
+        ["SPOROPHYTE","Sporophyten",0,1,0.02,xFmt,""],["SPORO_COLOR","Sporophyt-Farbe",0,0,0,null,"color"],
+        ["SHADOW","Tiefe / Schatten",0,1,0.02,xFmt,""],["DEW","Tau-Glitzern",0,1,0.02,xFmt,""]
+      ]}
+    ];
+    var INT={FILA_PER:1,NEON_BASE:1};
+    var LAYOUT={EDGE_BAND:1,TOP_BIAS:1,DENSITY:1,CLUMP:1,RAGGED:1};
+
+    var moss=document.createElement("canvas"), mctx=moss.getContext("2d");
+    var glow=document.createElement("canvas"), gctx=glow.getContext("2d");
+    var field=[], dewPts=[];
+    var STAGE_MAX=8, stage=STAGE_MAX;
+    var fieldDirty=true, renderDirty=true, renderedG=-1;
+    function markDirty(rebuild){ if(rebuild) fieldDirty=true; renderDirty=true; }
+
+    function buildField(b){
+      CW=b.CW; CH=b.CH;
+      moss.width=Math.round((CW+2*M)*dpr); moss.height=Math.round((CH+2*M)*dpr);
+      glow.width=moss.width; glow.height=moss.height;
+      field=[];
+      var step=5+(1-T.DENSITY)*7;
+      var maxInward=CW*(0.30+0.55*T.EDGE_BAND), maxDown=CH*(0.80+0.80*(1-T.TOP_BIAS));
+      var rng=mulberry32(1337), id=0;
+      for(var gy=step*0.5; gy<CH; gy+=step) for(var gx=step*0.5; gx<CW; gx+=step){
+        var x=gx+(rng()-0.5)*step*0.9, y=gy+(rng()-0.5)*step*0.9;
+        if(x<0||x>CW||y<0||y>CH) continue;
+        var dTop=y,dL=x,dR=CW-x, fromEdge=Math.min(dTop,dL,dR);
+        var bi=Math.max(fromEdge/maxInward, dTop/maxDown);
+        bi+=T.RAGGED*(fbm(x,y)-0.5)*0.7;
+        var birthG=clamp01(bi); if(birthG>1) continue;
+        var wL=1/(dL+6),wR=1/(dR+6), leanX=Math.max(-1,Math.min(1,(wL-wR)*6));
+        var ang=Math.atan2(-1, leanX*0.9+(rng()-0.5)*0.2);
+        var size=0.6+rng()*0.8+T.CLUMP*(rng()*rng())*1.6, hue=rng();
+        var wT=1/(dTop+4),wLo=1/(dL+4),wRo=1/(dR+4), outAng=Math.atan2(-wT, wRo-wLo);
+        var edgeOut=clamp01(1-fromEdge/(step*1.6)), tuftJit=(rng()-0.5);
+        field.push({x:x,y:y,birthG:birthG,ang:ang,size:size,hue:hue,outAng:outAng,edgeOut:edgeOut,tuftJit:tuftJit,seed:(id++*2654435761)>>>0});
+      }
+      fieldDirty=false;
+    }
+
+    var LDX=-0.55, LDY=-0.83, cDark0={r:0,g:0,b:0};
+    function drawTuftShadow(mx,t,mat,cDark){
+      var cd=cDark;
+      if(T.NEON_BASE>=0.5 && T.NEON_RIM>0){ var tA=clamp01(0.5+((t.x-CW/2)*_axc+(t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+        cd=clampRGB(mix(cDark, clampRGB(mix(_cNA,_cNB,tA)), 0.4*T.NEON_RIM)); }
+      mx.fillStyle=rgba(cd,(0.30+0.35*T.SHADOW)*mat);
+      mx.beginPath(); mx.ellipse(t.x,t.y+1,t.size*2.0*mat,t.size*1.5*mat,0,0,TAU); mx.fill();
+    }
+    function drawTuftHairs(mx,t,mat,cMid,cTip,cTipHi,cDark){
+      var rng=mulberry32(t.seed), k=(t.hue-0.5);
+      var midT=clampRGB({r:cMid.r+k*34,g:cMid.g+k*12-Math.abs(k)*10,b:cMid.b-k*22});
+      var tipT=clampRGB({r:cTip.r+k*30,g:cTip.g+k*8,b:cTip.b-k*18});
+      var tiltRad=T.TILT*Math.PI/180, spreadRad=0.2+T.SPREAD*2.1, eo=t.edgeOut*T.OVERHANG;
+      var bx=t.x+Math.cos(t.outAng)*eo*3.5*mat, by=t.y+Math.sin(t.outAng)*eo*3.5*mat;
+      var nMul=(T.STYLE==="gras")?0.5:(T.STYLE==="haenge")?0.5:(T.STYLE==="ranken")?0.42:1;
+      var thMul=(T.STYLE==="moos")?1:(T.STYLE==="ranken")?1.15:1.45;
+      var n=Math.max(2, Math.round(T.FILA_PER*nMul*(0.45+0.55*mat)*(0.6+0.7*t.size)));
+      var tAxis=clamp01(0.5+((t.x-CW/2)*_axc+(t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+      var neon=clampRGB(mix(_cNA,_cNB,tAxis)), neonP=satBoost(neon,0.45+0.9*T.NEON_PUNCH);
+      var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.35+0.25*clamp01(T.NEON_PUNCH)));
+      for(var i=0;i<n;i++){
+        var STY=T.STYLE, rr=rng(), len,x2,y2,mpx,mpy,dirx,diry;
+        if(STY==="gras"){ len=T.FILA_LEN*2.6*(0.6+rr*0.7)*(0.4+0.6*mat)*(0.7+0.5*t.size)*(1+eo*0.4);
+          var ag=-Math.PI/2+tiltRad+t.tuftJit*0.3+(rng()-0.5)*spreadRad*0.45; dirx=Math.cos(ag);diry=Math.sin(ag); x2=bx+dirx*len;y2=by+diry*len;
+          var bend=(rng()-0.5)*len*0.5; mpx=(bx+x2)/2-diry*bend; mpy=(by+y2)/2+dirx*bend;
+        } else if(STY==="haenge"){ len=T.FILA_LEN*3.4*(0.55+rr*0.8)*(0.4+0.6*mat)*(0.7+0.5*t.size)*(1+eo*0.5);
+          var sway=(rng()-0.5)*0.9+t.tuftJit*0.8; x2=bx+sway*len*0.55; y2=by+len; mpx=bx+sway*len*0.18; mpy=by+len*0.42;
+          var L=Math.hypot(x2-bx,y2-by)||1; dirx=(x2-bx)/L;diry=(y2-by)/L;
+        } else if(STY==="ranken"){ len=T.FILA_LEN*3.2*(0.6+rr*0.7)*(0.4+0.6*mat)*(0.7+0.5*t.size);
+          var ar=-Math.PI/2+tiltRad+(rng()-0.5)*1.3; dirx=Math.cos(ar);diry=Math.sin(ar); x2=bx+dirx*len;y2=by+diry*len;
+          var curl=((i&1)?1:-1)*len*(0.55+0.35*rng()); mpx=(bx+x2)/2-diry*curl; mpy=(by+y2)/2+dirx*curl;
+        } else { len=T.FILA_LEN*(0.45+rr*0.95)*(0.35+0.85*mat)*(0.7+0.5*t.size)*(1+eo*0.7);
+          var am=t.ang+tiltRad+t.tuftJit*spreadRad*0.6+(rng()-0.5)*spreadRad; dirx=Math.cos(am);diry=Math.sin(am); x2=bx+dirx*len;y2=by+diry*len;
+          mpx=(bx+x2)/2+(rng()-0.5)*len*0.35; mpy=(by+y2)/2+(rng()-0.5)*len*0.25;
+        }
+        var lightK=0.66+0.5*Math.max(0,dirx*LDX+diry*LDY), up=clamp01(Math.hypot(x2-bx,y2-by)/10);
+        var col=clampRGB(mix(midT,tipT,(0.25+0.7*rng())*(0.4+0.6*mat)));
+        col=clampRGB({r:col.r*lightK*(0.85+0.3*up),g:col.g*lightK*(0.85+0.3*up),b:col.b*lightK*(0.85+0.3*up)});
+        var washU=T.NEON_BASE>=0.5?(0.70+0.20*up):(0.26+0.36*up);
+        if(T.NEON_RIM>0){ col=clampRGB(mix(col,neonP,T.NEON_RIM*washU)); }
+        mx.strokeStyle=rgba(col,0.92); mx.lineWidth=T.FILA_THICK*thMul*(0.6+0.7*rng()); mx.lineCap="round";
+        mx.beginPath(); mx.moveTo(bx,by); mx.quadraticCurveTo(mpx,mpy,x2,y2); mx.stroke();
+        if(T.NEON_TIP>0){ var rimI=clamp01(T.NEON_TIP*(0.18+0.82*up)*(0.5+0.7*eo)*(0.55+0.45*mat));
+          if(rimI>0.03){ mx.globalCompositeOperation="lighter";
+            mx.strokeStyle=rgba(neonP,rimI*(0.5+0.4*T.NEON_PUNCH)); mx.lineWidth=T.FILA_THICK*thMul*(0.5+0.5*rng());
+            mx.beginPath(); mx.moveTo((bx+x2)*0.5,(by+y2)*0.5); mx.lineTo(x2,y2); mx.stroke();
+            var pr=T.FILA_THICK*(1.4+2.8*T.NEON_PUNCH)*(0.6+0.6*rr);
+            mx.fillStyle=rgba(neonP,rimI*0.30*(0.4+T.NEON_PUNCH)); mx.beginPath(); mx.arc(x2,y2,pr,0,TAU); mx.fill();
+            mx.fillStyle=rgba(neonP,rimI*0.55); mx.beginPath(); mx.arc(x2,y2,pr*0.5,0,TAU); mx.fill();
+            mx.fillStyle=rgba(neonHot,rimI*(0.7+0.3*T.NEON_PUNCH)); mx.beginPath(); mx.arc(x2,y2,T.FILA_THICK*0.6,0,TAU); mx.fill();
+            mx.globalCompositeOperation="source-over";
+            if(neonTips.length<420&&rng()<0.6) neonTips.push({x:x2,y:y2,c:neonP,i:rimI}); }
+        }
+        if(rng()<T.TIP_LIGHT*0.55){ mx.fillStyle=rgba(cTipHi,0.6*T.TIP_LIGHT); mx.beginPath(); mx.arc(x2,y2,T.FILA_THICK*0.55,0,TAU); mx.fill();
+          if(T.DEW>0&&rng()<0.12&&dewPts.length<160) dewPts.push({x:x2,y:y2,ph:rng()*TAU}); }
+      }
+      if(T.SPECK>0){ var sp=Math.round(T.SPECK*3); for(var s=0;s<sp;s++){ var rx=t.x+(rng()-0.5)*t.size*3, ry=t.y+(rng()-0.5)*t.size*3;
+        mx.fillStyle=rgba(clampRGB(mix(midT,cDark0,0.4)),0.5*T.SPECK*mat); mx.fillRect(rx,ry,1,1); } }
+    }
+    function drawSporophyte(mx,t,mat,cSpo){
+      var rng=mulberry32(t.seed^0x9e3779b9); if(rng()>=T.SPOROPHYTE*0.05*mat) return;
+      var h=T.FILA_LEN*(2.2+rng()*1.8)*mat, lean=(rng()-0.5)*0.5, tx=t.x+lean*h*0.5, ty=t.y-h;
+      mx.strokeStyle=rgba(clampRGB(mix(cSpo,{r:210,g:190,b:120},0.15)),0.9); mx.lineWidth=Math.max(0.8,T.FILA_THICK*0.8); mx.lineCap="round";
+      mx.beginPath(); mx.moveTo(t.x,t.y); mx.quadraticCurveTo(t.x+lean*h*0.3,t.y-h*0.5,tx,ty); mx.stroke();
+      mx.fillStyle=rgba(clampRGB(mix(cSpo,{r:120,g:70,b:30},0.2)),0.95); mx.beginPath(); mx.ellipse(tx,ty,T.FILA_THICK*1.1,T.FILA_THICK*1.7,lean,0,TAU); mx.fill();
+      mx.fillStyle=rgba({r:240,g:225,b:170},0.5); mx.beginPath(); mx.arc(tx-0.6,ty-0.8,T.FILA_THICK*0.5,0,TAU); mx.fill();
+    }
+    function render(g){
+      if(fieldDirty) buildField(box());
+      mctx.setTransform(dpr,0,0,dpr,M*dpr,M*dpr); mctx.clearRect(-M,-M,CW+2*M,CH+2*M);
+      dewPts=[]; neonTips=[];
+      var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+      _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+      var cDark=hexRGB(T.MOSS_DARK), cMid=hexRGB(T.MOSS_MID), cTip=hexRGB(T.MOSS_TIP), cSpo=hexRGB(T.SPORO_COLOR);
+      var cTipHi=clampRGB(mix(cTip,{r:255,g:255,b:230},0.55));
+      var i,t,mat;
+      for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0)continue; drawTuftShadow(mctx,t,mat,cDark); }
+      for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0)continue; drawTuftHairs(mctx,t,mat,cMid,cTip,cTipHi,cDark); }
+      if(T.SPOROPHYTE>0) for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<0.4)continue; drawSporophyte(mctx,t,mat,cSpo); }
+      gctx.setTransform(dpr,0,0,dpr,M*dpr,M*dpr); gctx.clearRect(-M,-M,CW+2*M,CH+2*M);
+      if(T.NEON_BLOOM>0&&neonTips.length){ gctx.globalCompositeOperation="lighter"; var gr=Math.max(6,T.FILA_LEN*2.4);
+        for(i=0;i<neonTips.length;i++){ var np=neonTips[i], rad=gr*(0.6+0.9*np.i);
+          var rgd=gctx.createRadialGradient(np.x,np.y,0,np.x,np.y,rad);
+          rgd.addColorStop(0,rgba(np.c,0.55*np.i)); rgd.addColorStop(0.5,rgba(np.c,0.18*np.i)); rgd.addColorStop(1,rgba(np.c,0));
+          gctx.fillStyle=rgd; gctx.beginPath(); gctx.arc(np.x,np.y,rad,0,TAU); gctx.fill(); }
+        gctx.globalCompositeOperation="source-over"; }
+      renderDirty=false; renderedG=g;
+    }
+    // Composite auf die Bühne (Moos darf per OVERHANG minimal überstehen)
+    function draw(b){
+      var grow=M*T.OVERHANG;
+      ctx.save(); roundRectPath(ctx,b.ox-grow,b.oy-grow,b.CW+2*grow,b.CH+2*grow,b.cr+grow); ctx.clip();
+      ctx.drawImage(moss,0,0,moss.width,moss.height,b.ox-M,b.oy-M,b.CW+2*M,b.CH+2*M);
+      if(T.NEON_BLOOM>0){ ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=clamp01(T.NEON_BLOOM);
+        ctx.drawImage(glow,0,0,glow.width,glow.height,b.ox-M,b.oy-M,b.CW+2*M,b.CH+2*M);
+        ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=1; }
+      if(T.DEW>0){ ctx.globalCompositeOperation="lighter";
+        for(var d=0;d<dewPts.length;d++){ var dp=dewPts[d], tw=0.4+0.6*(0.5+0.5*Math.sin(clockT*0.004+dp.ph));
+          ctx.fillStyle=rgba({r:225,g:245,b:210},0.5*T.DEW*tw); ctx.beginPath(); ctx.arc(b.ox+dp.x,b.oy+dp.y,0.9,0,TAU); ctx.fill(); }
+        ctx.globalCompositeOperation="source-over"; }
+      ctx.restore();
+    }
+    function cov(){ return (stage/STAGE_MAX)*T.REIF_COV; }
+    return {T:T,DEF:DEF,GROUPS:GROUPS,INT:INT,LAYOUT:LAYOUT,prefix:"m",
+      markDirty:markDirty, render:render, draw:draw, cov:cov, needsRender:function(g){return fieldDirty||renderDirty||Math.abs(g-renderedG)>0.004;},
+      get stage(){return stage;}, set stage(v){stage=v;}, STAGE_MAX:STAGE_MAX,
+      resetOffscreen:function(){fieldDirty=true;} };
+  })();
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  EIS-MODUL (Neon-Kristall-Frost) — Werte = zugeschickter TUNE-Satz
+  // ══════════════════════════════════════════════════════════════════════
+  var Ice=(function(){
+    var THRESHOLDS=[4,8,12], MASS_MAX=12;
+    var DEF={
+      ICE_DARK:"#141d47", ICE_MID:"#4f78c8", ICE_EDGE:"#cfeeff",
+      NEON_A:"#22e0ff", NEON_B:"#a13cff", NEON_ANGLE:90, NEON_RIM:0.16, NEON_TIP:0.58, NEON_PUNCH:0.2, NEON_BLOOM:0.36, NEON_BASE:0,
+      COVER:0.49, SIDE_BAND:0.52, BOTTOM_BIAS:0.76, RAGGED:1, DENSITY:0.44, CLUMP:0.64, BASE_FREEZE:0.06,
+      SHARD_LEN:17, SHARD_WIDTH:0.76, FACET:0.64, HEX:0, GLAZE:1,
+      DENDRITE:0, DEND_LEN:0.3, DEND_BRANCH:0,
+      RIME:0.5, SPARKLE:0.4, SHIMMER:0.5
+    };
+    var T=Object.assign({},DEF);
+    var GROUPS=[
+      { title:"Farben (Kristall)", note:"Basis/Schatten, Facetten-Fläche, helle Kristall-Kante.", rows:[
+        ["ICE_DARK","Basis / Schatten",0,0,0,null,"color"],["ICE_MID","Facetten-Fläche",0,0,0,null,"color"],["ICE_EDGE","Kristall-Kante",0,0,0,null,"color"]
+      ]},
+      { title:"Neon-Licht", note:"Zwei Bühnenlichter (A/B) strahlen den Frost an.", rows:[
+        ["NEON_A","Licht A",0,0,0,null,"color"],["NEON_B","Licht B",0,0,0,null,"color"],
+        ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,""],
+        ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,""],["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,""],
+        ["NEON_PUNCH","Punch (Sättigung)",0,1.5,0.02,xFmt,""],["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,""],
+        ["NEON_BASE","Basis mitfärben",0,1,1,onOff,""]
+      ]},
+      { title:"Wuchs & Form", note:"Von unten & den Seiten nach innen/oben. Bleibt im Rahmen.", rows:[
+        ["COVER","Max-Vereisung (Mitte frei)",0.15,0.9,0.02,xFmt,""],["SIDE_BAND","Seiten-Reichweite",0,1,0.02,xFmt,""],
+        ["BOTTOM_BIAS","Boden-Höhe",0,1,0.02,xFmt,""],["RAGGED","Kanten-Zerklüftung",0,1,0.02,xFmt,""],
+        ["DENSITY","Kristall-Dichte",0.3,1,0.02,xFmt,""],["CLUMP","Größen-Streuung",0,1,0.02,xFmt,""],
+        ["BASE_FREEZE","Sockel (Masse>0)",0,0.5,0.02,xFmt,""]
+      ]},
+      { title:"Kristall / Facetten", note:"Kantige Scherben, optionales Hex-Gitter, milchige Glasur.", rows:[
+        ["SHARD_LEN","Scherben-Länge",4,22,0.5,pxFmt,""],["SHARD_WIDTH","Scherben-Breite",0.2,1,0.02,xFmt,""],
+        ["FACET","Facetten-Kontrast",0,1,0.02,xFmt,""],["HEX","Honigwaben-Gitter",0,1,0.02,xFmt,""],["GLAZE","Milchige Glasur",0,1,0.02,xFmt,""]
+      ]},
+      { title:"Vektor-Dendriten", note:"Elektrische Tracer-Linien (Frost-Farne).", rows:[
+        ["DENDRITE","Menge",0,1,0.02,xFmt,""],["DEND_LEN","Länge / Reichweite",0.3,1.6,0.02,xFmt,""],["DEND_BRANCH","Verästelung",0,1,0.02,xFmt,""]
+      ]},
+      { title:"Details", note:"Rime-Körnung, Funkeln, Puls bei voller Stufe.", rows:[
+        ["RIME","Rime-Körnung",0,1,0.02,xFmt,""],["SPARKLE","Funkeln",0,1,0.02,xFmt,""],["SHIMMER","Puls (Stufe 3)",0,1,0.02,xFmt,""]
+      ]}
+    ];
+    var INT={NEON_BASE:1};
+    var LAYOUT={COVER:1,SIDE_BAND:1,BOTTOM_BIAS:1,RAGGED:1,DENSITY:1,CLUMP:1,SHARD_LEN:1,SHARD_WIDTH:1,DENDRITE:1,DEND_LEN:1,DEND_BRANCH:1};
+
+    var frost=document.createElement("canvas"), fx=frost.getContext("2d");
+    var glow=document.createElement("canvas"), gx=glow.getContext("2d");
+    var field=[], sparks=[], mass=MASS_MAX;
+    var fieldDirty=true, renderDirty=true, renderedF=-1;
+    function markDirty(rebuild){ if(rebuild) fieldDirty=true; renderDirty=true; }
+    function stageOf(m){ var s=0; for(var i=0;i<THRESHOLDS.length;i++) if(m>=THRESHOLDS[i]) s++; return s; }
+    function frontOf(m){ if(m<=0) return 0; var s=stageOf(m); if(s===0) return T.COVER*T.BASE_FREEZE; return T.COVER*(THRESHOLDS[s-1]/MASS_MAX); }
+
+    function buildField(b){
+      CW=b.CW; CH=b.CH;
+      frost.width=Math.round((CW+2*M)*dpr); frost.height=Math.round((CH+2*M)*dpr);
+      glow.width=frost.width; glow.height=frost.height;
+      field=[]; sparks=[];
+      var step=9+(1-T.DENSITY)*9;
+      var maxUp=CH*(0.22+0.72*T.BOTTOM_BIAS), maxIn=CW*(0.14+0.52*T.SIDE_BAND);
+      var rng=mulberry32(20250812), id=0;
+      for(var gy=step*0.5; gy<CH; gy+=step) for(var gx=step*0.5; gx<CW; gx+=step){
+        var x=gx+(rng()-0.5)*step*0.9, y=gy+(rng()-0.5)*step*0.9;
+        if(x<0||x>CW||y<0||y>CH) continue;
+        var dBot=CH-y,dL=x,dR=CW-x;
+        var bi=Math.min(dBot/maxUp, dL/maxIn, dR/maxIn);
+        bi+=T.RAGGED*(fbm(x,y)-0.5)*0.55;
+        var birthF=clamp01(bi); if(birthF>0.999) continue;
+        var wBot=1/(dBot+8),wL=1/(dL+8),wR=1/(dR+8);
+        var gdx=(wL-wR)*CW*0.5, gdy=-wBot*CH*0.9, gl=Math.hypot(gdx,gdy)||1; gdx/=gl; gdy/=gl;
+        var size=0.6+rng()*0.7+T.CLUMP*(rng()*rng())*1.7, hue=rng();
+        var edgeProx=clamp01(1-birthF/0.18);
+        field.push({x:x,y:y,birthF:birthF,gdx:gdx,gdy:gdy,size:size,hue:hue,edgeProx:edgeProx,seed:(id++*2654435761)>>>0});
+        if(T.SPARKLE>0&&rng()<0.10) sparks.push({x:x,y:y,birthF:birthF,ph:rng()*TAU});
+      }
+      fieldDirty=false;
+    }
+    function drawShard(g,t,mat,cDark,cMid,cEdge){
+      var rng=mulberry32(t.seed);
+      var tAxis=clamp01(0.5+((t.x-CW/2)*_axc+(t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+      var neon=clampRGB(mix(_cNA,_cNB,tAxis)), neonP=satBoost(neon,0.45+0.9*T.NEON_PUNCH);
+      var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.4+0.3*clamp01(T.NEON_PUNCH)));
+      var len=T.SHARD_LEN*(0.45+0.75*t.size)*(0.4+0.6*mat), wid=len*T.SHARD_WIDTH*(0.42+0.5*rng());
+      var ja=(rng()-0.5)*1.5, ca=Math.cos(ja), sa=Math.sin(ja);
+      var dx=t.gdx*ca-t.gdy*sa, dy=t.gdx*sa+t.gdy*ca, px=-dy, py=dx;
+      var tipx=t.x+dx*len, tipy=t.y+dy*len, bx0=t.x-dx*len*0.32, by0=t.y-dy*len*0.32;
+      var lx=t.x+px*wid, ly=t.y+py*wid, rx=t.x-px*wid, ry=t.y-py*wid;
+      var bodyBase=clampRGB(mix(cDark,cMid,0.35+0.4*mat)), bodyTip=clampRGB(mix(cMid,cEdge,0.4+0.5*mat));
+      var washV=T.NEON_BASE>=0.5?T.NEON_RIM*0.55:T.NEON_RIM*0.16;
+      bodyBase=clampRGB(mix(bodyBase,neonP,washV)); bodyTip=clampRGB(mix(bodyTip,neonP,washV*0.7));
+      var grd=g.createLinearGradient(bx0,by0,tipx,tipy);
+      grd.addColorStop(0,rgba(bodyBase,0.80*mat)); grd.addColorStop(1,rgba(bodyTip,0.9*mat)); g.fillStyle=grd;
+      g.beginPath(); g.moveTo(bx0,by0); g.lineTo(lx,ly); g.lineTo(tipx,tipy); g.lineTo(rx,ry); g.closePath(); g.fill();
+      if(T.FACET>0){
+        g.fillStyle=rgba(clampRGB(mix(bodyBase,{r:0,g:0,b:0},0.35*T.FACET)),0.5*mat*T.FACET);
+        g.beginPath(); g.moveTo(bx0,by0); g.lineTo(lx,ly); g.lineTo(tipx,tipy); g.closePath(); g.fill();
+        g.fillStyle=rgba(clampRGB(mix(bodyTip,{r:255,g:255,b:255},0.30*T.FACET)),0.35*mat*T.FACET);
+        g.beginPath(); g.moveTo(bx0,by0); g.lineTo(rx,ry); g.lineTo(tipx,tipy); g.closePath(); g.fill();
+      }
+      if(T.NEON_TIP>0){ var rimI=clamp01(T.NEON_TIP*(0.4+0.6*mat)*(0.6+0.5*t.size));
+        g.globalCompositeOperation="lighter"; g.lineJoin="round"; g.lineCap="round";
+        g.strokeStyle=rgba(neonP,rimI*(0.5+0.4*T.NEON_PUNCH)); g.lineWidth=1.0+1.4*T.NEON_PUNCH;
+        g.beginPath(); g.moveTo(lx,ly); g.lineTo(tipx,tipy); g.lineTo(rx,ry); g.stroke();
+        g.strokeStyle=rgba(neonHot,rimI*0.6); g.lineWidth=0.8+0.8*T.NEON_PUNCH;
+        g.beginPath(); g.moveTo(bx0,by0); g.lineTo(tipx,tipy); g.stroke();
+        var pr=1.2+2.6*T.NEON_PUNCH;
+        g.fillStyle=rgba(neonP,rimI*0.30); g.beginPath(); g.arc(tipx,tipy,pr,0,TAU); g.fill();
+        g.fillStyle=rgba(neonHot,rimI*0.85); g.beginPath(); g.arc(tipx,tipy,pr*0.45,0,TAU); g.fill();
+        g.globalCompositeOperation="source-over";
+        if(neonTips.length<420&&rng()<0.7) neonTips.push({x:tipx,y:tipy,c:neonP,i:rimI});
+      }
+    }
+    function drawDendrite(g,x,y,ang,len,depth,col,alpha){
+      if(depth<=0||len<3||alpha<0.04) return;
+      var ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len;
+      var mx=(x+ex)/2+Math.cos(ang+Math.PI/2)*(len*0.12), my=(y+ey)/2+Math.sin(ang+Math.PI/2)*(len*0.12);
+      g.globalCompositeOperation="lighter"; g.strokeStyle=rgba(col,alpha); g.lineWidth=0.6+depth*0.35; g.lineCap="round";
+      g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(mx,my,ex,ey); g.stroke(); g.globalCompositeOperation="source-over";
+      if(neonTips.length<420) neonTips.push({x:ex,y:ey,c:col,i:alpha*0.8});
+      var spread=0.5+0.6*T.DEND_BRANCH, nl=len*(0.62+0.12*T.DEND_BRANCH);
+      drawDendrite(g,ex,ey,ang-spread*(0.5+0.5*T.DEND_BRANCH),nl,depth-1,col,alpha*0.82);
+      if(T.DEND_BRANCH>0.12) drawDendrite(g,ex,ey,ang+spread*(0.5+0.5*T.DEND_BRANCH),nl,depth-1,col,alpha*0.72);
+    }
+    function drawHex(g,front){
+      if(T.HEX<=0) return;
+      var R=8.5, hw=R*Math.sqrt(3), vh=R*1.5;
+      var maxUp=CH*(0.22+0.72*T.BOTTOM_BIAS), maxIn=CW*(0.14+0.52*T.SIDE_BAND);
+      g.globalCompositeOperation="lighter"; g.lineWidth=0.7; var row=0;
+      for(var cy=vh*0.5; cy<CH+R; cy+=vh){ var xoff=(row&1)?hw*0.5:0;
+        for(var cx=xoff+hw*0.5; cx<CW+R; cx+=hw){
+          var dBot=CH-cy,dL=cx,dR=CW-cx, bi=Math.min(dBot/maxUp,dL/maxIn,dR/maxIn);
+          var covv=clamp01((front-clamp01(bi))/0.16); if(covv<=0.02) continue;
+          var tAxis=clamp01(0.5+((cx-CW/2)*_axc+(cy-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+          var neon=satBoost(clampRGB(mix(_cNA,_cNB,tAxis)),0.3+0.6*T.NEON_PUNCH);
+          g.strokeStyle=rgba(neon,T.HEX*covv*0.34); g.beginPath();
+          for(var s=0;s<6;s++){ var a=Math.PI/6+s*Math.PI/3, hx=cx+Math.cos(a)*R, hy=cy+Math.sin(a)*R; if(s===0)g.moveTo(hx,hy); else g.lineTo(hx,hy); }
+          g.closePath(); g.stroke();
+        } row++;
+      }
+      g.globalCompositeOperation="source-over";
+    }
+    function render(front){
+      if(fieldDirty) buildField(box());
+      fx.setTransform(dpr,0,0,dpr,M*dpr,M*dpr); fx.clearRect(-M,-M,CW+2*M,CH+2*M);
+      neonTips=[];
+      var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+      _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+      var cDark=hexRGB(T.ICE_DARK), cMid=hexRGB(T.ICE_MID), cEdge=hexRGB(T.ICE_EDGE);
+      var i,t,mat;
+      if(T.GLAZE>0){ for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0)continue;
+        var tAxis=clamp01(0.5+((t.x-CW/2)*_axc+(t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+        var gcol=clampRGB(mix(clampRGB(mix(cDark,cMid,0.5)),clampRGB(mix(_cNA,_cNB,tAxis)),T.NEON_BASE>=0.5?0.4*T.NEON_RIM:0.12*T.NEON_RIM));
+        var rad=t.size*7*(0.6+0.6*mat), rg=fx.createRadialGradient(t.x,t.y,0,t.x,t.y,rad);
+        rg.addColorStop(0,rgba(gcol,0.22*T.GLAZE*mat)); rg.addColorStop(1,rgba(gcol,0)); fx.fillStyle=rg; fx.beginPath(); fx.arc(t.x,t.y,rad,0,TAU); fx.fill();
+      }}
+      drawHex(fx,front);
+      for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0)continue; drawShard(fx,t,mat,cDark,cMid,cEdge); }
+      if(T.DENDRITE>0){ var dr=mulberry32(777);
+        for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14);
+          if(mat<0.6||t.edgeProx<0.25) continue; if(dr()>T.DENDRITE*0.5) continue;
+          var ang=Math.atan2(t.gdy,t.gdx)+(dr()-0.5)*0.5, dlen=T.SHARD_LEN*1.1*T.DEND_LEN*(0.7+0.6*dr());
+          var tAxis=clamp01(0.5+((t.x-CW/2)*_axc+(t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+          var dcol=clampRGB(mix(satBoost(clampRGB(mix(_cNA,_cNB,tAxis)),0.5),{r:220,g:250,b:255},0.25));
+          drawDendrite(fx,t.x,t.y,ang,dlen,3,dcol,0.5*T.DENDRITE*mat);
+        }
+      }
+      if(T.RIME>0){ var rr=mulberry32(9182);
+        for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0||t.edgeProx<0.15)continue;
+          var np=Math.round(T.RIME*3*t.edgeProx); for(var q=0;q<np;q++){ var rx=t.x+(rr()-0.5)*t.size*5, ry=t.y+(rr()-0.5)*t.size*5;
+            fx.fillStyle=rgba(cEdge,0.5*T.RIME*mat*t.edgeProx*rr()); fx.fillRect(rx,ry,1,1); } }
+      }
+      gx.setTransform(dpr,0,0,dpr,M*dpr,M*dpr); gx.clearRect(-M,-M,CW+2*M,CH+2*M);
+      if(T.NEON_BLOOM>0&&neonTips.length){ gx.globalCompositeOperation="lighter"; var gr=Math.max(7,T.SHARD_LEN*1.6);
+        for(i=0;i<neonTips.length;i++){ var np2=neonTips[i], rad2=gr*(0.6+0.9*np2.i);
+          var rgd=gx.createRadialGradient(np2.x,np2.y,0,np2.x,np2.y,rad2);
+          rgd.addColorStop(0,rgba(np2.c,0.5*np2.i)); rgd.addColorStop(0.5,rgba(np2.c,0.16*np2.i)); rgd.addColorStop(1,rgba(np2.c,0));
+          gx.fillStyle=rgd; gx.beginPath(); gx.arc(np2.x,np2.y,rad2,0,TAU); gx.fill(); }
+        gx.globalCompositeOperation="source-over"; }
+      renderDirty=false; renderedF=front;
+    }
+    // Composite — Eis STRIKT auf das exakte Karten-RoundRect geclippt (kein Überstand)
+    function draw(b){
+      ctx.save(); roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.clip();
+      ctx.drawImage(frost,0,0,frost.width,frost.height,b.ox-M,b.oy-M,b.CW+2*M,b.CH+2*M);
+      var pulse=1; if(T.SHIMMER>0&&stageOf(mass)>=3) pulse=1+T.SHIMMER*0.35*Math.sin(clockT*0.004);
+      if(T.NEON_BLOOM>0){ ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=clamp01(T.NEON_BLOOM*pulse);
+        ctx.drawImage(glow,0,0,glow.width,glow.height,b.ox-M,b.oy-M,b.CW+2*M,b.CH+2*M);
+        ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=1; }
+      if(T.SPARKLE>0){ ctx.globalCompositeOperation="lighter"; var front2=frontOf(mass);
+        for(var s=0;s<sparks.length;s++){ var sp=sparks[s]; if(front2<=sp.birthF)continue;
+          var tw=0.35+0.65*(0.5+0.5*Math.sin(clockT*0.005+sp.ph));
+          ctx.fillStyle=rgba({r:210,g:240,b:255},0.6*T.SPARKLE*tw); ctx.beginPath(); ctx.arc(b.ox+sp.x,b.oy+sp.y,0.9+0.7*tw,0,TAU); ctx.fill(); }
+        ctx.globalCompositeOperation="source-over"; }
+      ctx.restore();
+    }
+    return {T:T,DEF:DEF,GROUPS:GROUPS,INT:INT,LAYOUT:LAYOUT,prefix:"i",
+      markDirty:markDirty, render:render, draw:draw, front:function(){return frontOf(mass);},
+      needsRender:function(f){return fieldDirty||renderDirty||Math.abs(f-renderedF)>0.003;},
+      stageOf:stageOf, THRESHOLDS:THRESHOLDS, MASS_MAX:MASS_MAX,
+      get mass(){return mass;}, set mass(v){mass=v;} };
+  })();
+
+  // ── Panels für beide Module bauen ──
+  function buildPanels(){
+    var host=$("panels"), html="";
+    function section(mod,label,cls){ var h='<div class="divider '+cls+'">'+label+'</div>';
+      mod.GROUPS.forEach(function(g){ h+='<div class="panel '+cls+'"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+        g.rows.forEach(function(r){ var key=r[0],lab=r[1],mn=r[2],mx=r[3],st=r[4],hint=r[6], id=mod.prefix+"_"+key;
+          if(r[6]==="color") h+='<div class="row color"><div class="lab"><label for="'+id+'">'+lab+'</label><input type="color" id="'+id+'"></div></div>';
+          else h+='<div class="row"><div class="lab"><label for="'+id+'">'+lab+'</label><span class="val" id="v_'+id+'"></span></div><input type="range" id="'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+        });
+        h+='</fieldset></div>';
+      });
+      return h;
+    }
+    html+=section(Moss,"🌱 Moos (Pflanze)","moos");
+    html+=section(Ice,"❄️ Eis (Frost)","eis");
+    host.innerHTML=html;
+    [Moss,Ice].forEach(function(mod){ var FMT={}; mod.GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});}); mod._FMT=FMT;
+      mod.GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], id=mod.prefix+"_"+key, el=$(id);
+        if(r[6]==="color"){ el.addEventListener("input",function(){ mod.T[key]=el.value; mod.markDirty(true); writeConfig(mod); }); return; }
+        el.addEventListener("input",function(){ var v=parseFloat(el.value); if(mod.INT[key]) v=Math.round(v); mod.T[key]=v;
+          $("v_"+id).textContent=(FMT[key]||String)(mod.T[key]); mod.markDirty(!!mod.LAYOUT[key]); writeConfig(mod); });
+      });});
+    });
+  }
+  function syncInputs(mod){ var FMT=mod._FMT; mod.GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], id=mod.prefix+"_"+key, el=$(id);
+    if(r[6]==="color"){ el.value=mod.T[key]; return; } el.value=mod.T[key]; $("v_"+id).textContent=(FMT[key]||String)(mod.T[key]); });}); writeConfig(mod); }
+
+  function writeConfig(mod){
+    var o=mod.T;
+    if(mod===Moss){ $("cfgM").value="const TUNE = {\n"
+      + "  STYLE: \""+o.STYLE+"\",\n\n"
+      + "  MOSS_DARK: \""+o.MOSS_DARK+"\", MOSS_MID: \""+o.MOSS_MID+"\", MOSS_TIP: \""+o.MOSS_TIP+"\", SPORO_COLOR: \""+o.SPORO_COLOR+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  REIF_COV: "+numStr(o.REIF_COV)+", EDGE_BAND: "+numStr(o.EDGE_BAND)+", TOP_BIAS: "+numStr(o.TOP_BIAS)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", OVERHANG: "+numStr(o.OVERHANG)+",\n\n"
+      + "  FILA_PER: "+numStr(o.FILA_PER)+", FILA_LEN: "+numStr(o.FILA_LEN)+", FILA_THICK: "+numStr(o.FILA_THICK)+", TILT: "+numStr(o.TILT)+", SPREAD: "+numStr(o.SPREAD)+", TIP_LIGHT: "+numStr(o.TIP_LIGHT)+", SPECK: "+numStr(o.SPECK)+",\n\n"
+      + "  SPOROPHYTE: "+numStr(o.SPOROPHYTE)+", SHADOW: "+numStr(o.SHADOW)+", DEW: "+numStr(o.DEW)+",\n};";
+    } else { $("cfgI").value="const TUNE = {\n"
+      + "  ICE_DARK: \""+o.ICE_DARK+"\", ICE_MID: \""+o.ICE_MID+"\", ICE_EDGE: \""+o.ICE_EDGE+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  COVER: "+numStr(o.COVER)+", SIDE_BAND: "+numStr(o.SIDE_BAND)+", BOTTOM_BIAS: "+numStr(o.BOTTOM_BIAS)+", RAGGED: "+numStr(o.RAGGED)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", BASE_FREEZE: "+numStr(o.BASE_FREEZE)+",\n\n"
+      + "  SHARD_LEN: "+numStr(o.SHARD_LEN)+", SHARD_WIDTH: "+numStr(o.SHARD_WIDTH)+", FACET: "+numStr(o.FACET)+", HEX: "+numStr(o.HEX)+", GLAZE: "+numStr(o.GLAZE)+",\n\n"
+      + "  DENDRITE: "+numStr(o.DENDRITE)+", DEND_LEN: "+numStr(o.DEND_LEN)+", DEND_BRANCH: "+numStr(o.DEND_BRANCH)+",\n\n"
+      + "  RIME: "+numStr(o.RIME)+", SPARKLE: "+numStr(o.SPARKLE)+", SHIMMER: "+numStr(o.SHIMMER)+",\n};";
+    }
+  }
+
+  // ── Karten-Grund (neutral, mit Zahl) ──
+  function renderBase(b){
+    base.width=Math.round(CSSW*dpr); base.height=Math.round(CSSH*dpr);
+    bctx.setTransform(dpr,0,0,dpr,0,0); bctx.clearRect(0,0,CSSW,CSSH);
+    var g0=bctx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#0f1626"); g0.addColorStop(1,"#0a1010");
+    roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.fillStyle=g0; bctx.fill();
+    bctx.save(); roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.clip();
+    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=9) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=9){ bctx.fillStyle="rgba(170,205,190,0.04)"; bctx.fillRect(xx,yy,1.3,1.3); }
+    bctx.fillStyle="rgba(230,242,238,0.92)"; bctx.textAlign="center"; bctx.textBaseline="middle";
+    bctx.font="800 "+Math.round(b.CH*0.34)+"px system-ui,sans-serif"; bctx.fillText("7", b.ox+b.CW/2, b.oy+b.CH*0.46);
+    bctx.restore();
+    bctx.lineWidth=1.5; bctx.strokeStyle="rgba(120,180,170,0.42)"; roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.stroke();
+    boxKey=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+  }
+
+  function frame(ts){
+    if(!last) last=ts; var dt=Math.min(50,ts-last); last=ts; clockT+=dt;
+    fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>=560){ autoAcc=0;
+        var adv=false;
+        if(Moss.stage<Moss.STAGE_MAX){ Moss.stage++; $("growth").value=Moss.stage; Moss.markDirty(false); adv=true; }
+        if(Ice.mass<Ice.MASS_MAX){ Ice.mass++; $("mass").value=Ice.mass; Ice.markDirty(false); adv=true; }
+        updLvl();
+        if(!adv){ autoGrow=false; $("btnAuto").textContent="Auto (beide): aus"; $("btnAuto").classList.remove("on"); } } }
+
+    var b=box(), bk=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+    if(bk!==boxKey) renderBase(b);
+    var mg=Moss.cov(), ifr=Ice.front();
+    if(Moss.needsRender(mg)) Moss.render(mg);
+    if(Ice.needsRender(ifr)) Ice.render(ifr);
+
+    ctx.clearRect(0,0,CSSW,CSSH);
+    ctx.drawImage(base,0,0,base.width,base.height,0,0,CSSW,CSSH);
+    if(layerMoosTop){ Ice.draw(b); Moss.draw(b); } else { Moss.draw(b); Ice.draw(b); }
+
+    requestAnimationFrame(frame);
+  }
+  function updLvl(){
+    var ms=Moss.stage, is=Ice.mass, isg=Ice.stageOf(is);
+    $("v_growth").textContent="Stufe "+ms+"/"+Moss.STAGE_MAX+" · "+(ms>=Moss.STAGE_MAX?"Reif":ms<=0?"leer":"Setzling");
+    $("v_mass").textContent="Masse "+is+"/"+Ice.MASS_MAX+" · "+(isg>0?"Stufe "+isg:(is>0?"Sockel":"leer"));
+  }
+
+  // ── Controls ──
+  $("growth").addEventListener("input",function(){ Moss.stage=parseInt(this.value,10)||0; stopAuto(); Moss.markDirty(false); updLvl(); });
+  $("mass").addEventListener("input",function(){ Ice.mass=parseInt(this.value,10)||0; stopAuto(); Ice.markDirty(false); updLvl(); });
+  function stopAuto(){ autoGrow=false; $("btnAuto").textContent="Auto (beide): aus"; $("btnAuto").classList.remove("on"); }
+  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0;
+    if(autoGrow){ Moss.stage=0; Ice.mass=0; $("growth").value=0; $("mass").value=0; Moss.markDirty(false); Ice.markDirty(false); updLvl(); }
+    this.textContent="Auto (beide): "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
+  $("btnLayer").addEventListener("click",function(){ layerMoosTop=!layerMoosTop;
+    this.textContent="Layer: "+(layerMoosTop?"Moos oben ▲ / Eis unten":"Eis oben ▲ / Moos unten");
+    this.classList.toggle("on",true); $("hudTop").textContent=layerMoosTop?"Moos oben":"Eis oben"; });
+  $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; Moss.markDirty(true); Ice.markDirty(true); boxKey=""; });
+  $("btnCopyM").addEventListener("click",function(){ copyTA("cfgM","copiedM"); });
+  $("btnCopyI").addEventListener("click",function(){ copyTA("cfgI","copiedI"); });
+  function copyTA(taId,cId){ var ta=$(taId); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$(cId); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); }
+  $("btnDefM").addEventListener("click",function(){ Object.assign(Moss.T,Moss.DEF); syncInputs(Moss); Moss.markDirty(true); });
+  $("btnDefI").addEventListener("click",function(){ Object.assign(Ice.T,Ice.DEF); syncInputs(Ice); Ice.markDirty(true); });
+
+  buildPanels(); syncInputs(Moss); syncInputs(Ice);
+  $("v_zoom").textContent=zoom.toFixed(2)+"×"; updLvl(); doResize(); requestAnimationFrame(frame);
+})();
+</script>
