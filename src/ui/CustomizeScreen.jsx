@@ -56,11 +56,9 @@ const PREVIEW_LOOK = {
   holo: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
   // Glitch: dunkles Feld, Deck-Dual (der Glitch tönt selbst in ghostA/ghostB/Suit).
   glitch: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
-  // Materialize: dunkles neutrales Feld, Deck-Dual — die Nano-Partikel bauen die Karte in der Deckfarbe auf.
-  materialize: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
-const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch", materialize: "materialize" };
+const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
 
 // „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
 const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
@@ -443,27 +441,16 @@ function CardAnimPreview({ anim }) {
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const panelRef = useRef(null);
   const cardRef = useRef(null);
-  // #318 Materialize ist eine getriggerte Reveal-Transition (kein Dauer-Layer) → in der Showcase im Loop zeigen:
-  // alle ~1,9 s neu aufbauen. Die DOM-Karte fadet dabei per as-materialize-in mit (wie in-game), keyed am Zähler.
-  const isMat = anim === "materialize";
-  const [rev, setRev] = useState(0);
-  useEffect(() => {
-    if (!isMat) return undefined;
-    const id = setInterval(() => setRev((n) => n + 1), 1900);
-    return () => clearInterval(id);
-  }, [isMat]);
-  const MAT_DUR = 0.75;
-  const mat = isMat ? { phase: "in", key: rev, win: true, dur: MAT_DUR } : undefined;
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg grid place-items-center" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div key={isMat ? rev : "card"} ref={cardRef} className="relative" style={{ zIndex: 1, ...(isMat ? { animation: `as-materialize-in ${MAT_DUR * 1000}ms ease-out both` } : null) }}>
+      <div ref={cardRef} className="relative" style={{ zIndex: 1 }}>
         <Card suit="B" value={7} />
       </div>
       {CARDFX_PREVIEW_ON && (
         <Suspense fallback={null}>
-          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true, num: 7, color: suitColor("B"), mat }]}
+          <CardFxStage panelRef={panelRef} cards={[{ ref: cardRef, active: true, num: 7, color: suitColor("B") }]}
             layers={{ [ANIM_LAYER[anim]]: true }} color={look.a1} color2={look.a2} tier={3} />
         </Suspense>
       )}

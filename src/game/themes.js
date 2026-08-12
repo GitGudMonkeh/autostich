@@ -47,8 +47,6 @@ export const GLOBAL_FX = [
     ownKey: "fx:holo", option: "fxHolo", preview: "holo", price: 20, group: "anim" }, // [TUNING] Preis
   { key: "glitch", name: "Glitch", desc: "Cyberpunk-Digital-Glitch über der ganzen Karte inkl. Zahl — Chroma-Split, Tear-Slices, Scanlines und Farb-Bars, mit ruhiger Grundlast und gelegentlichen Bursts.",
     ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 20, group: "anim" }, // [TUNING] Preis
-  { key: "materialize", name: "Materialisieren", desc: "Statt eines Karten-Flips baut sich die aufgedeckte Karte aus tausenden Nano-Partikeln zusammen — die aus einer gestreuten Wolke einwirbeln und beim Andocken funkeln. Bei Niederlage löst sie sich rückwärts wieder auf.",
-    ownKey: "fx:materialize", option: "fxMaterialize", preview: "materialize", price: 20, group: "anim" }, // [TUNING] Preis
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -87,7 +85,7 @@ export function activeBgFinisher(profile, options) {
 }
 // #318 Karten-Animationen (group "anim"): stapelbare Dauer-Layer auf der Karte — NICHT exklusiv, beliebig gleichzeitig
 // aktiv. `activeCardAnims` liefert die Liste der aktiven Keys (gekauft UND per Option an) für die CardFxStage.
-export const CARD_ANIM_KEYS = ["edgeglow", "holo", "glitch", "materialize"]; // #318 vollständig
+export const CARD_ANIM_KEYS = ["edgeglow", "holo", "glitch"]; // #318 (Materialize entfernt)
 export const activeCardAnims = (profile, options) => CARD_ANIM_KEYS.filter((k) => globalFxActive(profile, options, k));
 
 /* PACK-Registry. kind:

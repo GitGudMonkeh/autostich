@@ -154,11 +154,11 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo + glitch + materialize (#318)", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo", "glitch", "materialize"].sort());
+  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo + glitch (#318)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo", "glitch"].sort());
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
-    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"], ["materialize", "fxMaterialize"]]) {
+    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
       expect(fx.group).toBe("anim");

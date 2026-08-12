@@ -28,7 +28,6 @@ const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.
 const EDGEGLOW_FORCE = cardAnimForce("edgeglow");
 const HOLO_FORCE = cardAnimForce("holo");
 const GLITCH_FORCE = cardAnimForce("glitch");
-const MATERIALIZE_FORCE = cardAnimForce("materialize");
 /* #318 Karten-Animationen sind KAUFBARE Shop-Effekte → sie müssen auch in PRODUKTION laufen (nicht nur Preview/Dev),
    sonst kauft der Spieler etwas, das im Spiel nie sichtbar wird. Die CardFxStage lädt Pixi NUR lazy und startet ihren
    Ticker nur, wenn der Spieler eine Karten-Animation besitzt UND aktiviert hat (sonst rendert der Block null → kein
@@ -809,24 +808,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // weg, wie die eigene Karte bei Niederlage — ohne Flip). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
   const oppFlipOn = !reduced && !!t && !oppSliced && !oppFlyAway && flipMs > 170;
   const flipDur = clamp(flipMs * 0.55, 220, 460);
-  // #318 Materialize-Aufbau bekommt eine EIGENE, längere Dauer als der 3D-Flip (der Partikel-Aufbau braucht Zeit, um
-  // lesbar zu sein — mit flipDur wirkte er bei normal/max viel zu kurz/abgehackt). Höherer Anteil + höhere Grenzen.
-  const matInDur = clamp(flipMs * 0.9, 320, 720);
-  // #318 Materialize ERSETZT den Flip: statt des 3D-Flips baut sich die Karte aus Nano-Partikeln auf (Reveal) bzw.
-  // löst sich bei Niederlage rückwärts auf (Dematerialize). Wir fahren das über eine Opacity-Rampe am Karten-Wrapper
-  // (as-materialize-in/-out) → die Partikel (CardFxStage) laufen synchron, und der Blitzrahmen (IonStorm, liest die
-  // DOM-Opacity) fadet ZEITGLEICH mit. Nur Preview/Dev (wie die ganze CardFxStage); reduced → normaler Reveal, kein
-  // Aufbau. Kein Tier-Gate (auf jeder Karte, sobald der Effekt an ist).
-  const matActive = CARD_FX_ENABLED &&
-    ((cardAnims || []).includes("materialize") || MATERIALIZE_FORCE);
-  const matPlayer = matActive && !reduced && !!t && flipMs > 170;
-  const pReveal   = matPlayer && !flyAway;   // Aufbau (statt 3D-Flip)
-  const pDissolve = matPlayer && flyAway;    // Auflösen (statt Wegflug)
-  const useFlip   = flipOn && !matPlayer;    // 3D-Flip nur, wenn Materialize NICHT aktiv
-  const matOpp     = matActive && !reduced && !!t && flipMs > 170 && !oppSliced; // Klinge-Slice behält seine eigene Choreo
-  const oReveal    = matOpp && !oppFlyAway;
-  const oDissolve  = matOpp && oppFlyAway;
-  const useOppFlip = oppFlipOn && !matOpp;
+  const useFlip    = flipOn;      // #180 3D-Flip-Reveal der eigenen Karte
+  const useOppFlip = oppFlipOn;   // #186 3D-Flip-Reveal der Gegnerkarte
 
   // Kartenelemente einmal bauen — als sichtbare Karte, als (unsichtbarer) Größen-Platzhalter unter dem Slice und
   // als Klon-Quelle in SliceFx wiederverwendbar (Elemente sind unveränderliche Beschreibungen → mehrfach nutzbar).
@@ -847,14 +830,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
     <div key={`p${t.trickNo}`} ref={playerCardRef} className="relative"
-      style={pDissolve ? { animation: `as-materialize-out ${flyDur}ms ease-in forwards`, willChange: "opacity, transform" }
-           : pReveal ? { animation: `as-materialize-in ${matInDur}ms ease-out both`, willChange: "opacity" }
-           : flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+      style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : useFlip ? undefined : dealStyle("as-deal-left")}>
       {/* #ui: Ergebnis-Puls (grün bei Sieg / rot bei Niederlage) auf Wunsch ENTFERNT. */}
       {useFlip ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
-      ) : playerFront}   {/* #318 Materialize: Wrapper-Opacity-Rampe + Partikel bilden den Reveal; Niederlage → Auflösen statt Wegflug */}
+      ) : playerFront}
     </div>
   ) : <div className="relative"><CardBack label="" image={deckBack} /></div>;
 
@@ -862,9 +843,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
-      style={oDissolve ? { animation: `as-materialize-out ${flyDur}ms ease-in forwards`, willChange: "opacity, transform" }
-           : oReveal ? { animation: `as-materialize-in ${matInDur}ms ease-out both`, willChange: "opacity" }
-           : oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
+      style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : (oppSliced || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
       {oppSliced ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
@@ -1214,32 +1193,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
         const holo = animSet.has("holo") || HOLO_FORCE;
         const glitch = animSet.has("glitch") || GLITCH_FORCE;
-        const materialize = animSet.has("materialize") || MATERIALIZE_FORCE;
-        if (!edgeGlow && !holo && !glitch && !materialize) return null;
-        // Materialize-Trigger je Karte (phase "in"=Aufbau/Reveal, "out"=Auflösen; key wechselt je Stich → Neustart).
-        const pMat = pReveal ? { phase: "in", key: `p${t.trickNo}`, win, dur: matInDur / 1000 }
-                   : pDissolve ? { phase: "out", key: `p${t.trickNo}`, win: false, dur: flyDur / 1000 } : null;
-        const oMat = oReveal ? { phase: "in", key: `o${t.trickNo}`, win: lost, dur: matInDur / 1000 }
-                   : oDissolve ? { phase: "out", key: `o${t.trickNo}`, win: false, dur: flyDur / 1000 } : null;
+        if (!edgeGlow && !holo && !glitch) return null;
         return (
           <Suspense fallback={null}>
             <CardFxStage
               panelRef={panelRef}
               cards={[
-                // Gespielte Karten tragen Holo/Glitch/Materialize (Face-Effekte). Edge-Glow (Puls-Rahmen) läuft NICHT
-                // hier, sondern auf den stabilen Deck-Slots (unten) → so liegt der Rahmen auch auf dem liegenden Deck /
-                // der Rückseite und rahmt die aufgedeckte Karte gleich mit (Overlay z-11 liegt über der Karte). Nur beim
-                // Wegflug/Auflösen (flyAway) bzw. Klinge-Slice (oppSliced) aus; bei Materialize bleibt die Karte „aktiv".
-                { ref: playerCardRef, active: materialize ? !!t : (!!t && !flyAway), num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null, mat: pMat,
-                  layers: { edgeGlow: false, holo, glitch, materialize } },
-                { ref: oppCardRef, active: materialize ? (!!t && !oppSliced) : (!!t && !oppFlyAway && !oppSliced), num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null, mat: oMat,
-                  layers: { edgeGlow: false, holo, glitch, materialize } },
+                // Gespielte Karten tragen Holo/Glitch (Face-Effekte). Edge-Glow (Puls-Rahmen) läuft NICHT hier, sondern
+                // auf den stabilen Deck-Slots (unten) → so liegt der Rahmen auch auf dem liegenden Deck / der Rückseite
+                // und rahmt die aufgedeckte Karte gleich mit (Overlay z-11 liegt über der Karte). Nur beim Wegflug
+                // (flyAway) bzw. Klinge-Slice (oppSliced) aus.
+                { ref: playerCardRef, active: !!t && !flyAway, num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null,
+                  layers: { edgeGlow: false, holo, glitch } },
+                { ref: oppCardRef, active: !!t && !oppFlyAway && !oppSliced, num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null,
+                  layers: { edgeGlow: false, holo, glitch } },
                 // #318 Puls-Rahmen (Edge-Glow) auf den STABILEN Deck-Slots — dauerhaft, auch auf der Rückseite/dem
                 // liegenden Deck (kein Flip/Wegflug). Nur Edge-Glow, aktiv sobald der Effekt an ist.
-                { ref: deckSlotRef,    active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false, materialize: false } },
-                { ref: oppDeckSlotRef, active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false, materialize: false } },
+                { ref: deckSlotRef,    active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false } },
+                { ref: oppDeckSlotRef, active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false } },
               ]}
-              layers={{ edgeGlow, holo, glitch, materialize }}
+              layers={{ edgeGlow, holo, glitch }}
               /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
                  hat) → mono-Deckfarbe statt Verlauf zu einem Fremdton. */
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"}

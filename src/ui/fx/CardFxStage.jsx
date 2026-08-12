@@ -3,7 +3,6 @@ import { Application, Container, Graphics } from "pixi.js";
 import { drawEdgeGlow } from "./cardFx/edgeGlow.js";
 import { drawHolo } from "./cardFx/holo.js";
 import { createGlitch } from "./cardFx/glitch.js";
-import { createMaterialize } from "./cardFx/materialize.js";
 
 /* CardFxStage (#318) — EINE geteilte Pixi-Overlay-Bühne ÜBER den Karten (z>10) für die stapelbaren
    Karten-Dauer-Layer (Edge-Glow · Holo-Sweep · später Glitch) und die Materialize-Reveal-Transition.
@@ -44,7 +43,7 @@ const colNum = (hex, fb = 0x5a8ade) => {
 export function CardFxStage({
   panelRef,
   cards = [],                 // [{ ref, active }] — je Karte ein DOM-Ref (Box) + ob sie gerade Effekte tragen soll
-  layers = {},                // { edgeGlow?, holo?, glitch?, materialize? } — welche Layer an sind
+  layers = {},                // { edgeGlow?, holo?, glitch? } — welche Layer an sind
   color = "#5a8ade", color2 = null,
   tier = 0, reduced = false, lite = false,
 }) {
@@ -62,7 +61,7 @@ export function CardFxStage({
     col2Int: color2 != null ? colNum(color2, colNum(color)) : null,
     tierMul: TIER_MUL[Math.max(0, Math.min(TIER_MUL.length - 1, tier | 0))],
     reduced, lite,
-    anyLayer: !!(layers && (layers.edgeGlow || layers.holo || layers.glitch || layers.materialize)),
+    anyLayer: !!(layers && (layers.edgeGlow || layers.holo || layers.glitch)),
     anyActive: (cards || []).some((c) => c && c.active),
   };
 
@@ -84,8 +83,7 @@ export function CardFxStage({
         grp.addChild(edge, holo, holoMask);
         holo.mask = holoMask;
         appRef.current.stage.addChild(grp);
-        // matKey/matPhase: zuletzt gesehener Trigger je Karte (Transitionen erkennen → start()).
-        node = { grp, edge, holo, holoMask, glitch: null, mat: null, matKey: null, matPhase: null };
+        node = { grp, edge, holo, holoMask, glitch: null };
         nodesRef.current[i] = node;
       }
       return node;
@@ -95,12 +93,7 @@ export function CardFxStage({
       if (!node.glitch && appRef.current) { node.glitch = createGlitch(appRef.current); node.grp.addChild(node.glitch.root); }
       return node.glitch;
     };
-    // Materialize (Layer 4) — Partikel-Pool, liegt ÜBER allem (Partikel fliegen von außen ein); erst bei Bedarf bauen.
-    const ensureMat = (node) => {
-      if (!node.mat && appRef.current) { node.mat = createMaterialize(); node.grp.addChild(node.mat.root); }
-      return node.mat;
-    };
-    const clearNode = (n) => { if (n) { n.edge.clear(); n.holo.clear(); n.holoMask.clear(); n.glitch?.clear(); n.mat?.clear(); } };
+    const clearNode = (n) => { if (n) { n.edge.clear(); n.holo.clear(); n.holoMask.clear(); n.glitch?.clear(); } };
     const clearAll = () => { for (const n of nodesRef.current) clearNode(n); };
 
     const tick = (ticker) => {
@@ -123,7 +116,7 @@ export function CardFxStage({
         const c = list[i], el = c?.ref?.current;
         if (!el || !c.active) { clearNode(node); continue; }
         // #318 Pro-Karte-Layer (optional): erlaubt z. B. eine Deck-Slot-Karte, die NUR Edge-Glow trägt (Puls-Rahmen
-        // auch auf dem liegenden Deck / der Rückseite), während die gespielte Karte Holo/Glitch/Materialize trägt.
+        // auch auf dem liegenden Deck / der Rückseite), während die gespielte Karte Holo/Glitch trägt.
         const cl = c.layers || st.layers;
         const cr = el.getBoundingClientRect();
         const w = cr.width, h = cr.height;
@@ -133,30 +126,15 @@ export function CardFxStage({
         const sc = h / 360;   // Board-Raum HREF=360 → echte Kartenhöhe (nur px-Maße; relative Maße bleiben unskaliert)
         const p = { color: st.colInt, color2: st.col2Int, tierMul: st.tierMul, reduced: st.reduced, lite: st.lite };
 
-        // ── Materialize (Layer 4, Reveal-Transition): Trigger erkennen (Reveal „in" / Auflösen „out") + updaten.
-        //    Solange der Aufbau läuft, PAUSIEREN die Dauer-Layer (issue: erst wenn solide, laufen sie weiter). ──
-        let building = false;
-        if (cl.materialize) {
-          const mat = ensureMat(node);
-          const ctrl = c.mat;
-          if (ctrl && ctrl.phase === "in") {
-            if (node.matKey !== ctrl.key || node.matPhase !== "in") { mat.start(1, ctrl.dur, !!ctrl.win, w, h, sc, p); node.matKey = ctrl.key; node.matPhase = "in"; }
-          } else if (ctrl && ctrl.phase === "out") {
-            if (node.matPhase !== "out") { mat.start(-1, ctrl.dur, !!ctrl.win, w, h, sc, p); node.matKey = ctrl.key; node.matPhase = "out"; }
-          } else if (node.matPhase != null) { mat.clear(); node.matPhase = null; node.matKey = null; }
-          mat.update(w, h, sc, p, dtMs);
-          building = mat.isBuilding();
-        } else if (node.mat && node.matPhase != null) { node.mat.clear(); node.matPhase = null; node.matKey = null; }
-
-        // Dauer-Layer (unter der Zahl bzw. über der Textur) — im Aufbau pausiert.
+        // Dauer-Layer (unter der Zahl bzw. über der Textur).
         node.edge.clear();
         node.holo.clear(); node.holoMask.clear();
-        if (!building && cl.edgeGlow) drawEdgeGlow(node.edge, w, h, sc, p, tSec);
-        if (!building && cl.holo) {
+        if (cl.edgeGlow) drawEdgeGlow(node.edge, w, h, sc, p, tSec);
+        if (cl.holo) {
           node.holoMask.roundRect(0, 0, w, h, CARD_CORNER).fill(0xffffff);
           drawHolo(node.holo, w, h, sc, p, tSec, tl);
         }
-        if (!building && cl.glitch) {
+        if (cl.glitch) {
           ensureGlitch(node).update(w, h, sc, p, tSec, { num: c.num, color: c.color });
         } else if (node.glitch) node.glitch.clear();
       }
@@ -199,7 +177,6 @@ export function CardFxStage({
       document.removeEventListener("visibilitychange", onVis);
       for (const n of nodesRef.current) {
         if (n?.glitch) { try { n.glitch.destroy(); } catch { /* ignore */ } }
-        if (n?.mat) { try { n.mat.destroy(); } catch { /* ignore */ } }
       }
       const a = appRef.current; appRef.current = null; nodesRef.current = [];
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
