@@ -37,6 +37,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
+import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -627,9 +628,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
   // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
   finisher = "standard",
+  scorchDeck = false, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
+  const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
   // `lite` (balanced ODER minimal) kappt zusätzlich nur die TEUREN Dauer-/Schwarm-Layer: Screen-Shake + die
   // Glutfunken-Partikelfontänen (bis 72 DOM-Nodes/Stich). In „ausgewogen" ist reduced=false (Feel-Good bleibt),
@@ -727,7 +730,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // „standard" (Default) → die Gegnerkarte fliegt einfach zur Seite weg (spiegelbildlich zum eigenen Wegflug bei
   // Niederlage), kein Schnitt. Beide Fälle gelten auch für Krits (nur „Kritisch!"-Anzeige + Lila bleiben zusätzlich).
   const oppSliced    = sliceOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
-  const oppFlyAway   = sliceOn && win && !klinge;             // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt)
+  const oppScorched  = sliceOn && win && scorch;              // #319 Sieg + Scorch → Gegnerkarte verglüht IN-PLACE (Laser + Burn); kein Wegflug
+  const oppFlyAway   = sliceOn && win && !klinge && !scorch;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -775,9 +779,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
       style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : (oppSliced || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
-      {oppSliced ? (
-        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
+           : (oppSliced || oppScorched || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
+      {(oppSliced || oppScorched) ? (
+        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost bzw. Scorch-Canvas zeichnet die (verglühende) Karte darüber (#186/#319) */
       ) : useOppFlip ? (
         <FlipReveal front={oppFront} backImage={oppBackImg} dur={flipDur} />   /* #186: Cover → Front */
       ) : oppFront}
@@ -1179,6 +1183,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
             panelRef={panelRef} cardRef={deckSlotRef} />
         </Suspense>
+      )}
+      {/* #319 Scorch-Finisher: Laser + organischer Burn über der geschlagenen Gegnerkarte. Canvas-2D (kein Pixi-Shader →
+          mobiltauglich UND produktionsfähig, anders als die env-gegateten GPU-Effekte). Nur bei Sieg+Scorch, nicht bei
+          „reduced" (Barrierefreiheit → dann greift der schlichte Standard-Wegflug/kein Effekt). Key/Trigger am trickNo. */}
+      {oppScorched && !reduced && (
+        <ScorchFx key={`scorch${t.trickNo}`} trigger={t.trickNo} panelRef={panelRef} cardRef={oppCardRef}
+          frontImage={oppFrontImg} value={t.oValue} suit={suitColor(t.oCard.suit)}
+          deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced} />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)

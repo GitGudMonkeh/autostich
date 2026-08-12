@@ -12,6 +12,7 @@ import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.j
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
+import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
@@ -95,6 +96,11 @@ const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", pre
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
   desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück." };
 
+/* #319 Synthetische „Scorch"-Kachel: kaufbarer Sieg-Finisher (20 DP, blaue Rarity, ownKey fx:scorch). Ein Laser
+   schießt einmalig aus zufälliger Richtung, danach verglüht die Gegnerkarte organisch (Rausch-Burn) mit Glut/Asche/Funken. */
+const SCORCH = { key: "scorch", name: "Scorch", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
+  desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
+
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
 const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
@@ -124,7 +130,7 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "finisher") return [FIN_STANDARD, KLINGE, ...list]; // „Standard" (Default) voran, dann „Klinge"
+  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
   return list;
@@ -151,6 +157,7 @@ const finisherFlags = (key) => ({ finisher: key === "none" ? "standard" : key })
 const finisherSelOf = (options, profile) => {
   const sel = options?.finisher || "standard";
   if (sel === "klinge" && profile && !globalFxOwned(profile, KLINGE)) return "standard";
+  if (sel === "scorch" && profile && !globalFxOwned(profile, SCORCH)) return "standard";
   return sel;
 };
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
@@ -309,6 +316,27 @@ function FinisherScene({ variant }) {
   );
 }
 
+/* #319 Scorch-Vorschau: ein unsichtbarer 104×144-Karten-Slot (Positionsanker) im Zentrum; ScorchFx zeichnet die
+   verglühende Karte darüber und feuert im Loop (loop=true → eigenes Re-Fire). deckTint schaltet Standard-Feuer ↔ Deckfarbe. */
+function ScorchScene({ deckTint = false }) {
+  const panelRef = useRef(null);
+  const cardRef = useRef(null);
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
+        value={8} suit={suitColor(DEMO_SUIT)} deckColor="#35e0ff" speed={1.15} />
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? "#8fd8ff" : "#ffb27a" }}>
+        <span className="opacity-70">Finisher</span> Scorch
+      </div>
+    </div>
+  );
+}
+
 /* #finisher-standard: Vorschau des Gratis-Standard-Finishers — die geschlagene Karte fliegt nach kurzem Liegen einfach
    zur Seite weg (dieselbe as-flyaway-Choreografie wie in-game), im Loop; beim „Sieg" wird der Aufdeck-Sound (cardflip)
    dezent höher gestimmt (rate > 1), passend zur In-Game-Vertonung. Vorschau = In-Game (kein Schnitt, kein Prunk). */
@@ -382,6 +410,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
+  if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -834,7 +863,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : null;
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
@@ -855,7 +884,21 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
       </button>
     );
   } else if (group.mode === "finisher") {
-    action = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
+    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
+    // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). Andere Finisher haben keinen Farbmodus.
+    const scorchDeck = !!options?.fxScorchDeck;
+    action = fx.key !== "scorch" ? chooseBtn : (
+      <div className="flex flex-col gap-2">
+        {chooseBtn}
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            const on = scorchDeck === o.v;
+            return <button key={o.l} onClick={() => onChoose({ fxScorchDeck: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+          })}
+        </div>
+      </div>
+    );
   } else if (group.mode === "bgfx" || group.mode === "bgfin") {
     const label = group.mode === "bgfx" ? "Als Hintergrund wählen" : "Als Hintergrund-Finisher wählen";
     const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
