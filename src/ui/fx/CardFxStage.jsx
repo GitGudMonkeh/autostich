@@ -122,6 +122,9 @@ export function CardFxStage({
         if (!node) continue;
         const c = list[i], el = c?.ref?.current;
         if (!el || !c.active) { clearNode(node); continue; }
+        // #318 Pro-Karte-Layer (optional): erlaubt z. B. eine Deck-Slot-Karte, die NUR Edge-Glow trägt (Puls-Rahmen
+        // auch auf dem liegenden Deck / der Rückseite), während die gespielte Karte Holo/Glitch/Materialize trägt.
+        const cl = c.layers || st.layers;
         const cr = el.getBoundingClientRect();
         const w = cr.width, h = cr.height;
         if (w < 8 || h < 8) { clearNode(node); continue; }
@@ -133,7 +136,7 @@ export function CardFxStage({
         // ── Materialize (Layer 4, Reveal-Transition): Trigger erkennen (Reveal „in" / Auflösen „out") + updaten.
         //    Solange der Aufbau läuft, PAUSIEREN die Dauer-Layer (issue: erst wenn solide, laufen sie weiter). ──
         let building = false;
-        if (st.layers.materialize) {
+        if (cl.materialize) {
           const mat = ensureMat(node);
           const ctrl = c.mat;
           if (ctrl && ctrl.phase === "in") {
@@ -148,12 +151,12 @@ export function CardFxStage({
         // Dauer-Layer (unter der Zahl bzw. über der Textur) — im Aufbau pausiert.
         node.edge.clear();
         node.holo.clear(); node.holoMask.clear();
-        if (!building && st.layers.edgeGlow) drawEdgeGlow(node.edge, w, h, sc, p, tSec);
-        if (!building && st.layers.holo) {
+        if (!building && cl.edgeGlow) drawEdgeGlow(node.edge, w, h, sc, p, tSec);
+        if (!building && cl.holo) {
           node.holoMask.roundRect(0, 0, w, h, CARD_CORNER).fill(0xffffff);
           drawHolo(node.holo, w, h, sc, p, tSec, tl);
         }
-        if (!building && st.layers.glitch) {
+        if (!building && cl.glitch) {
           ensureGlitch(node).update(w, h, sc, p, tSec, { num: c.num, color: c.color });
         } else if (node.glitch) node.glitch.clear();
       }
