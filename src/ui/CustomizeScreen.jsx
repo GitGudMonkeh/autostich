@@ -162,18 +162,8 @@ const fxGroupItems = (group) => {
   if (group === "gott") return [GOTT_STANDARD, ...list]; // #322 „Gottgleich · Standard" (kein Prunk) voran, dann die Prunk-Effekte nach Preis
   return list;
 };
-// #: Der Standard-Key je einfach-exklusiver Gruppe (der Gratis-Aus-Zustand). Toggle-Gruppen (anim) haben keinen.
-const FX_STD_KEY = { finisher: "standard", bgfx: "none", bgfin: "none", gott: "gottStandard" };
-// #: Aktive Auswahl an die ERSTE Stelle rücken, direkt danach den „Standard" (falls die Gruppe einen hat), Rest folgt
-// in bisheriger Reihenfolge. Kein/Standard aktiv oder Toggle-Gruppe (kein stdKey) → Reihenfolge unverändert.
-function orderFxItems(items, selKey, stdKey) {
-  if (!stdKey || !selKey || selKey === stdKey) return items;
-  const active = items.find((it) => it.key === selKey);
-  if (!active) return items;
-  const std = items.find((it) => it.key === stdKey);
-  const rest = items.filter((it) => it !== active && it !== std);
-  return std ? [active, std, ...rest] : [active, ...rest];
-}
+// #shopB: orderFxItems/FX_STD_KEY entfallen — Variante B zeigt je Kategorie eine STABILE vertikale Liste
+// (fxGroupItems: „Kein/Standard" voran, dann nach Preis), kein „aktiven an die erste Stelle rücken" mehr.
 
 /* Sieg-Finisher einfach-exklusiv (genau EINER aktiv): die Auswahl steckt als einzelner String in options.finisher.
    „standard" (Gratis-Default, Wegflug) und „klinge" (kaufbar, 10 DP) sind wählbar. finisherFlags schreibt die Auswahl;
@@ -901,18 +891,47 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    darunter kommen. Je Gruppe eine horizontal wischbare Reihe kompakter Chips (kleine Live-Vorschau + Kurzname +
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
+// #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
+const TAB_LABEL = { anim: "Karten", bgfx: "Feld", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
+// #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
+// skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
+const FX_SHORT = {
+  edgeglow: "Dauerhafter Neon-Rand in der Deckfarbe.",
+  holo: "Prismatisches Lichtband, tilt-reaktiv.",
+  glitch: "Cyberpunk-Glitch mit gelegentlichen Bursts.",
+  aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
+  cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
+  embers: "Glut steigt auf; je Sieg ein Funken-Aufstoß.",
+  starfield: "Sternschnuppe je Stich — größer mit dem Score.",
+  klinge: "Klingenschnitt — skaliert mit der Siegesserie.",
+  scorch: "Laser + organischer Burn; Tempo mit dem Turbo.",
+  blackhole: "Schwarzes Loch saugt die Gegnerkarte ein.",
+  sonnenPuls: "Outrun-Sonne — feuert beim gottgleichen Sieg.",
+  laserFaecher: "Laser fächern auf — gottgleicher Sieg.",
+  prismaKaskade: "Prismatische Schockwellen — gottgleicher Sieg.",
+  holoCube: "Holowürfel zerspringt — gottgleicher Sieg.",
+  supernova: "Kollaps → Detonation → Tunnel — gottgleicher Sieg.",
+};
+function shortDesc(fx, group) {
+  if (fx.key === "none") return group.mode === "anim" ? "Alle Karten-Animationen aus." : "Kein Effekt in diesem Slot.";
+  if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
+  if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
+  return FX_SHORT[fx.key] || fx.desc;
+}
+
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options, p); // #klinge-kaufbar: „klinge" nur bei Besitz aktiv, sonst „standard"
   const bgFxSel = bgFxSelOf(options);
   const bgFinSel = bgFinSelOf(options);
   const gottSel = gottSelOf(options); // #322 aktiver Gottgleich-Prunk oder „gottStandard" (kein Prunk)
-  // Auswahl-Status des Floaters: { group, key }. Default = erster Effekt der ersten Gruppe (Karten-Animationen).
+  const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : null;
+  // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
   const selItems = fxGroupItems(selGroup.key);
   const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
 
-  // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Chip-Marker + Floater-Aktion.
+  // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion.
   const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "bgfx" ? bgFxSel === fx.key
     : g.mode === "bgfin" ? bgFinSel === fx.key
@@ -920,63 +939,75 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     : fx.key === "none" ? !animAnyOn(options)   // #318 „Keine Animation" aktiv, solange keine Karten-Animation an ist
     : fx.standard ? false : !!options?.[fx.option];
 
+  // #shopB Tab-Wechsel: die Bühne springt auf den AKTIVEN Effekt der Kategorie (oder den ersten) → man sieht sofort, was läuft.
+  const pickCat = (gKey) => {
+    const g = FX_GROUPS.find((x) => x.key === gKey);
+    const its = fxGroupItems(gKey);
+    const aKey = activeKeyOf(g);
+    setSel({ group: gKey, key: (aKey && its.some((f) => f.key === aKey)) ? aKey : its[0].key });
+  };
+  // Doppeltippen in der Liste schaltet direkt um (wie zuvor der Chip).
+  const toggleFx = (g, fx) => {
+    if (fx.standard) return;
+    const on = isActive(g, fx);
+    if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return; // nicht im Besitz → erst über die Bühne kaufen
+    if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
+    else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
+    else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
+    else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
+    else if (fx.key === "none") onChoose(animNoneFlags());
+    else onChoose({ [fx.option]: !on });
+  };
+
   return (
     <>
-      {/* Mitlaufende Vorschau-Bühne (sticky unter dem Kopf). */}
-      <FxFloater fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)}
-        onChoose={onChoose} onBuyFx={onBuyFx} stickyTop={stickyTop} options={options} />
-
-      {/* Kategorien als horizontal wischbare Reihen. */}
-      <div className="mt-3">
-        {FX_GROUPS.map((g) => {
-          // #: aktiver Effekt zuerst, dann Standard (falls vorhanden) — „rutscht links an die erste Stelle".
-          const selKey = g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : null;
-          const items = orderFxItems(fxGroupItems(g.key), selKey, FX_STD_KEY[g.key]);
-          return (
-            <div key={g.key} className="mb-1.5">
-              <div className={EYEBROW} style={{ color: "#9a97ab" }}>
-                {g.title}
-                <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
-                <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{g.hint}</span>
-              </div>
-              <div className="ws-hscroll flex gap-2 overflow-x-auto pb-1.5 -mx-1 px-1"
-                style={{ scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
-                {items.map((fx) => (
-                  <FxChip key={fx.key} fx={fx}
-                    selected={sel.group === g.key && sel.key === fx.key}
-                    owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
-                    active={isActive(g, fx)}
-                    onPick={() => setSel({ group: g.key, key: fx.key })}
-                    onToggle={() => {
-                      // Doppeltippen schaltet um: aktiv → abwählen, im Besitz & inaktiv → auswählen/aktivieren.
-                      if (fx.standard) return;                                        // Standard ist immer aktiv
-                      const on = isActive(g, fx);
-                      if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return;   // nicht im Besitz → erst kaufen (Floater)
-                      if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
-                      else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
-                      else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
-                      else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key)); // #322 Prunk wählen/abwählen (gottStandard = kein Prunk)
-                      else if (fx.key === "none") onChoose(animNoneFlags()); // #318 „Keine Animation" → alle abwählen
-                      else onChoose({ [fx.option]: !on });
-                    }} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar. */}
+      <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+        <div className="flex gap-1.5 mb-2.5">
+          {FX_GROUPS.map((g) => {
+            const on = g.key === sel.group;
+            return (
+              <button key={g.key} onClick={() => pickCat(g.key)}
+                className="flex-1 py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                style={{ background: on ? "#241f38" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`, color: on ? "#e9e4ff" : "#9a97ab", boxShadow: on ? "0 0 0 1px #9b82f0" : undefined }}>
+                {TAB_LABEL[g.key]}
+              </button>
+            );
+          })}
+        </div>
+        <FxStage fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)} onChoose={onChoose} onBuyFx={onBuyFx} options={options} />
       </div>
 
-      <p className="text-[11px] mt-2 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Tippe einen Effekt → er läuft oben groß; dort <b>kaufen</b> bzw. <b>an/aus</b> (Finisher &amp; Ambiente: auswählen). <b>Doppeltippen</b> schaltet einen Effekt direkt um (auswählen bzw. abwählen).
+      {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten. */}
+      <div className="mt-3">
+        <div className={EYEBROW} style={{ color: "#9a97ab" }}>
+          {selGroup.title}
+          <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+          <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {selItems.map((fx) => (
+            <FxRow key={fx.key} fx={fx}
+              selected={sel.key === fx.key}
+              owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
+              active={isActive(selGroup, fx)}
+              onPick={() => setSel({ group: selGroup.key, key: fx.key })}
+              onToggle={() => toggleFx(selGroup, fx)} />
+          ))}
+        </div>
+      </div>
+
+      <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Kategorie oben wählen, Effekt tippen → er läuft in der Bühne; dort <b>kaufen</b> bzw. <b>wählen / an-aus</b>. <b>Doppeltippen</b> in der Liste schaltet direkt um.
       </p>
     </>
   );
 }
 
-/* #fx-floater: die große Vorschau-Bühne, die unter dem Sticky-Kopf klebt. Zeigt den gewählten Effekt als ECHTE
-   In-Game-Vorschau (GlobalFxScenePreview, key={fx.key} → sauberer Remount beim Wechsel, keine hängenden Loops) +
-   Gruppen-/Namensschild + die kontextabhängige Aktion (Logik/Optik wie zuvor das Kauffenster). */
-function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
+/* #shopB Bühne: die große Vorschau + kontextabhängige Aktion. Sitzt im STICKY-Kopf von FxView (Tabs + Bühne floaten
+   gemeinsam oben), zeigt den gewählten Effekt als ECHTE In-Game-Vorschau (GlobalFxScenePreview, key trägt Farbmodus →
+   sauberer Remount beim Wechsel) + Name/Status + Kurzbeschreibung (nur der funktionale Bezug) + Kaufen/Wählen/Toggle. */
+function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
@@ -1074,7 +1105,8 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
   }
 
   return (
-    <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+    <>
+      {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
       <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
             (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
@@ -1091,9 +1123,10 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
         {/* Name unten links */}
         <span className="absolute left-2.5 bottom-2 text-[15px] font-extrabold" style={{ textShadow: "0 1px 8px #000, 0 0 3px #000" }}>{fx.name}</span>
       </div>
-      <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 26 }}>{fx.desc}</div>
+      {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
+      <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
       {action}
-    </div>
+    </>
   );
 }
 
@@ -1106,13 +1139,14 @@ const rarityTint = (fx) => RARITY_COLOR[globalFxPrice(fx)] || RARITY_COLOR.defau
 /* #fx-floater: Text-Chip einer Kategorie-Reihe (horizontal wischbar) — KEIN Grafik-Icon. Linker Signatur-Farbbalken
    + Name + Status (aktiv = grün · kaufbar = Preis gold · sonst „im Besitz"). Die echte Optik zeigt der Floater oben;
    der Chip ist ein reiner Wähler. Tippen wählt den Effekt. */
-function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
+/* #shopB Effekt-ZEILE (vertikale Liste, full-width) — Signatur-Farbbalken (Rarity) + Name + Status (aktiv/Preis/Besitz).
+   Tippen wählt den Effekt in die Bühne (onPick), Doppeltippen schaltet direkt um (onToggle). */
+function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
   const tint = rarityTint(fx); // #farbsystem: Rarity-Farbe nach Preis-Stufe (grau/grün/blau/lila/gelb)
   const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
     : !owned ? { c: tint, label: `${globalFxPrice(fx)} DP`, dot: tint } // Preis in der Rarity-Farbe
     : { c: "#6d6a80", label: "im Besitz", dot: null };
-  // #: Doppel-TIPP/-Klick SCHALTET UM (aktiv→abwählen · im Besitz→auswählen). onDoubleClick (dblclick) feuert auf Touch
-  // NICHT → eigene Zeitmessung: zwei Klicks/Tipps innerhalb 320 ms = Doppel (Maus UND Handy). Einzelklick wählt (onPick).
+  // Doppel-TIPP/-Klick SCHALTET UM (Touch-sicher über eigene Zeitmessung: zwei Taps < 320 ms). Einzeltipp wählt.
   const lastTap = useRef(0);
   const handleTap = () => {
     onPick();
@@ -1122,16 +1156,13 @@ function FxChip({ fx, selected, owned, active, onPick, onToggle }) {
   };
   return (
     <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : owned ? "Doppeltippen: auswählen" : undefined}
-      className="shrink-0 relative overflow-hidden rounded-xl text-left transition-transform active:scale-95 flex flex-col justify-center"
-      style={{ minWidth: 106, maxWidth: 138, padding: "9px 11px 9px 13px", scrollSnapAlign: "start",
-        background: selected ? "#211f2e" : "#14131c",
+      className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
+      style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
         border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
         boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
-      {/* Signatur-Farbbalken links — nicht besessene Effekte ausgegraut (wie die Pack-Kacheln): Balken entfärbt, Name gemutet. */}
       <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, boxShadow: `0 0 8px ${tint}66`, opacity: owned ? 1 : 0.85 }} />
-      <span className="block text-[11.5px] font-extrabold leading-tight" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b",
-        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 27 }}>{fx.name}</span>
-      <span className="flex items-center gap-1.5 mt-1 text-[9.5px] font-bold" style={{ color: status.c }}>
+      <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
+      <span className="flex items-center gap-1.5 text-[10px] font-bold shrink-0" style={{ color: status.c }}>
         {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}
         {status.label}
       </span>
