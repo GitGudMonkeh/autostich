@@ -758,8 +758,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (now - lastSweepAt.current >= sweepDur - 20) { lastSweepAt.current = now; setSweepId((k) => k + 1); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trickNo]);
-  // #135: Ergebnis-Puls-Dauer an den Flip-Takt gekoppelt (wie die übrigen „Juice"-Animationen).
-  const pulseDur = clamp(flipMs * 0.7, 300, 700);
   const fx = (a) => (reduced ? undefined : a);
   // #200 A — Effekt-Budget: je schneller der Takt, desto weniger lose Partikel/Funken und desto flacher der Ghost-Pool.
   // flipMs ≥ 2× (875) = voll; 4× (~437) ≈ 0,5; MAX (~291) = Boden 0,45. Rein visuell (score-neutral wie der Turbo).
@@ -777,14 +775,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Karten „dealen" nur noch rein — der zusätzliche Pop-Bounce der Gewinnerkarte ist
   // raus (Wunsch: ruhiger). Der Score-/Schaden-Float über der Karte bleibt erhalten.
   const dealStyle = (dealName) => ({ animation: `${dealName} ${anim}ms ease-out` });
-  // #135: nach außen wegpulsende Ergebnis-Welle HINTER der Karte (Sieg grün / Niederlage rot / Crit lila &
-  // kräftiger). Separates Element → die statischen Karten-Glows (Ion/Frost/Wert) bleiben unberührt. Kein Puls
-  // bei reduzierter Bewegung. Liegt als erstes (absolutes) Kind hinter der Karte, die (position:relative) darüber malt.
-  const resultPulse = (color, crit) => (!reduced && color) ? (
-    <div className="as-result-pulse absolute inset-0" aria-hidden="true"
-      style={{ "--pulse-color": color, "--pulse-dur": `${pulseDur}ms`, ...(crit ? { "--pulse-scale": 1.55 } : null) }} />
-  ) : null;
-
   // #177 Klingenschnitt-Timings — an den Flip-Takt gekoppelt (wie das übrige Juice), gedeckelt, damit der Effekt
   // den nächsten Stich nicht verzögert/überläuft. Bei sehr hohem Turbo (winziger flipMs) oder reduzierter Bewegung
   // wird der Slice gar nicht gerendert → Fallback aufs bestehende Ergebnis-Juice (Puls/Glow/Banner).
@@ -861,8 +851,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
            : pReveal ? { animation: `as-materialize-in ${matInDur}ms ease-out both`, willChange: "opacity" }
            : flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : useFlip ? undefined : dealStyle("as-deal-left")}>
-      {/* Krits zeigen GAR keinen Ergebnis-Puls mehr — nur das Shatter/der Schnitt (+ GOTTGLEICH). Nur normale Siege pulsen (grün). */}
-      {resultPulse(win && !isCrit ? "#5ab87a" : null, false)}
+      {/* #ui: Ergebnis-Puls (grün bei Sieg / rot bei Niederlage) auf Wunsch ENTFERNT. */}
       {useFlip ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
       ) : playerFront}   {/* #318 Materialize: Wrapper-Opacity-Rampe + Partikel bilden den Reveal; Niederlage → Auflösen statt Wegflug */}
@@ -877,7 +866,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
            : oReveal ? { animation: `as-materialize-in ${matInDur}ms ease-out both`, willChange: "opacity" }
            : oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
            : (oppSliced || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
-      {resultPulse(lost ? "#e0605a" : null, false)}
       {oppSliced ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — der entkoppelte Ghost (Side-overlay) floatet + schneidet/berstet (#186) */
       ) : useOppFlip ? (
