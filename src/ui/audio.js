@@ -84,6 +84,9 @@ function refreshLoops() { if (!ctx) return; const now = ctx.currentTime; for (co
 
 export const audio = {
   init() { ensureCtx(); if (audibleSfx()) loadBuffers(); },
+  // #317: den geteilten AudioContext herausreichen (der Musik-Analyser der Cube-Matrix hängt sich hier ein statt einen
+  // zweiten Context zu bauen). Erzeugt den Context bei Bedarf (wie init/unlock).
+  context() { return ensureCtx(); },
   // Beim ersten User-Klick aufrufen: entsperrt den (browserseitig blockierten) AudioContext.
   unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); if (audibleSfx()) loadBuffers(); },
   setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); refreshLoops(); }, // #264: Unmute → Puffer jetzt (lazy) laden; #296: laufende Loops mitziehen

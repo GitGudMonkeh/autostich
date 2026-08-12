@@ -15,6 +15,8 @@ import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigen
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
+// #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
+const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
 import { suitColor } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
@@ -56,6 +58,8 @@ const PREVIEW_LOOK = {
   holo: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
   // Glitch: dunkles Feld, Deck-Dual (der Glitch tönt selbst in ghostA/ghostB/Suit).
   glitch: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
+  // #317 Cube-Matrix: neutrales dunkles Feld; Deck-Dual (Cyan→Magenta im Standard, Deckfarbe im Deck-Modus).
+  cubematrix: { bf: SHOWCASE_BF, a1: "#2ff0ff", a2: "#ff2d9b" },
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
 const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
@@ -341,11 +345,33 @@ function StandardFinisherScene() {
   );
 }
 
+// #317 Cube-Matrix-Showcase: das ECHTE In-Game-Modul (CubeMatrixField) über dem neutralen BF-Bild. Reagiert live auf
+// die laufende (Menü-)Musik. deckTint → Deckfarbe statt Standard-Cyan/Magenta. Nur Preview/Dev (wie die anderen GL-FX).
+function CubeMatrixPreview({ deckTint = false }) {
+  const look = PREVIEW_LOOK.cubematrix;
+  const bf = battlefieldAssets(look.bf);
+  const isMobile = useIsMobile();
+  const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
+  const on = import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV;
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      {on && (
+        <Suspense fallback={null}>
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false }) {
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
+  if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
@@ -803,7 +829,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : null;
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);

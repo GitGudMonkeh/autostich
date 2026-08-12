@@ -272,5 +272,8 @@ export const music = {
   setMuted(m) { muted = !!m; stopFade(); syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
   setPaused(p) { userPaused = !!p; stopFade(); syncPlayback(); },                                 // Spiel-Pause spiegeln
   unlock() { ensureEl(); syncPlayback(); }, // erste User-Geste: startet den Track nur, wenn hörbar (sonst bleibt es stumm & ungeladen)
+  // #317: das <audio>-Element herausreichen, damit der Cube-Matrix-Analyser es EINMAL anzapfen kann
+  // (createMediaElementSource → AnalyserNode). Erzeugt das Element bei Bedarf.
+  element() { return ensureEl(); },
   subscribe(fn) { listeners.push(fn); fn(current ? current.title : null); return () => { listeners = listeners.filter((x) => x !== fn); }; },
 };

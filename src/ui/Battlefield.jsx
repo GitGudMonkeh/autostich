@@ -37,6 +37,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
+const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Treffer-Identität im Score-Float)
@@ -692,7 +693,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false,
+  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false,
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -714,6 +715,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
   const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
   const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
+  // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
+  const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1158,6 +1161,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {auroraGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
           <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} />
+        </div>
+      )}
+      {/* #317 Cube-Matrix — musik-/bass-reaktives Würfelfeld + Scheinwerfer, z-2 HINTER den Karten (Ambiente). */}
+      {cubeMatrixOn && (
+        <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
+          <Suspense fallback={null}>
+            <CubeMatrixField color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} />
+          </Suspense>
         </div>
       )}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (

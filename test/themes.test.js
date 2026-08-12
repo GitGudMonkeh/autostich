@@ -154,8 +154,8 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, embers, starfield und die Karten-Animationen edgeglow + holo + glitch (#318)", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers", "starfield", "edgeglow", "holo", "glitch"].sort());
+  it("GLOBAL_FX führt aurora, cubematrix, embers, starfield und die Karten-Animationen edgeglow + holo + glitch (#318/#317)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "cubematrix", "embers", "starfield", "edgeglow", "holo", "glitch"].sort());
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
     for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {
@@ -176,7 +176,7 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     }
   });
   it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers + starfield in bgfin (Hintergrund-Finisher)", () => {
-    const GROUP = { aurora: "bgfx", embers: "bgfin", starfield: "bgfin" };
+    const GROUP = { aurora: "bgfx", cubematrix: "bgfx", embers: "bgfin", starfield: "bgfin" };
     for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
@@ -233,7 +233,7 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.embers)).toBe(false);
   });
   it("#307/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (grün 10, blau 20)", () => {
-    const want = { aurora: 20, embers: 10, starfield: 20 }; // aurora/sternenfeld = blau (20), glutfunken = grün (10)
+    const want = { aurora: 20, embers: 10, starfield: 20, cubematrix: 30 }; // grün 10 · blau 20 · lila 30 (Cube-Matrix)
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });

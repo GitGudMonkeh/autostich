@@ -35,6 +35,10 @@ export const GLOBAL_FX = [
   // bleibt (nur „Standard"), dort kommt später neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 20, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #farbsystem: blau = 20 DP
+  // #317 Cube-Matrix: musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer. Kontinuierlich (kein
+  // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
+  { key: "cubematrix", name: "Cube-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
+    ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 10, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi) · #farbsystem: grün = 10 DP
   { key: "starfield", name: "Sternenfeld", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
@@ -73,7 +77,7 @@ export const globalFxActive = (profile, options, key) => {
 // einen Key. Nach dem #cleanup gibt es je Slot nur noch einen Effekt (Aurora bzw. Glutfunken).
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
-export const BG_FX_KEYS  = ["aurora"];  // reiner Hintergrund
+export const BG_FX_KEYS  = ["aurora", "cubematrix"];  // reiner Hintergrund (einfach-exklusiv)
 export const BG_FIN_KEYS = ["embers", "starfield"];  // Hintergrund-Finisher (reagiert je Stich; einfach-exklusiv)
 export function activeBgFx(profile, options) {
   for (const k of BG_FX_KEYS) if (globalFxActive(profile, options, k)) return k;
