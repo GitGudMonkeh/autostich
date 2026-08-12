@@ -27,6 +27,8 @@ const MOSS_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   (() => { try { const v = new URLSearchParams(window.location.search).get("moss"); return v == null ? null : Math.max(0, Math.min(8, parseFloat(v) || 0)); } catch { return null; } })();
 // Archetyp-Karteneffekt „Eis" als Neon-Kristall-Frost (Gletscher-Masse an der eigenen Karte) — Canvas-2D, lazy wie oben.
 const FrostIce = lazy(() => import("./fx/FrostIce.jsx"));
+// Karten-Animation „Kantenglühen" (Edge-Glow, #318) als Kind IN der Karte — flippt mit ihr, liegt UNTER Eis/Moos.
+const CardEdgeGlow = lazy(() => import("./fx/CardEdgeGlow.jsx"));
 // Dev-Sicht: ?ice=<0..12> erzwingt eine feste Gletscher-Masse auf der eigenen Karte (zum Designen; nur Preview/Dev).
 // Die echte per-Karte-Masse ist noch offen (glacier.js ist brettfeld-basiert & Platzhalter) → bis zum Rollout Dev-Force.
 const ICE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
@@ -813,12 +815,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
   //   per-Karte-Bindung noch offen). Blitz (Panel-IonStorm) liegt über beidem — laut User ok.
   const pIceMass = ICE_FORCE != null ? ICE_FORCE : iceMass;
+  // #318/#flip: Kantenglühen (kaufbare Karten-Animation) hängt jetzt ALS KIND in der Kartenvorderseite (z-0) → flippt mit
+  //   der Karte, liegt UNTER Eis (z-1) und Moos (z-2), aber ÜBER dem Karten-Skin. Kaufbarer Shop-Effekt → läuft auch in
+  //   Produktion (NICHT preview-gegatet). Aus cardAnims-Toggle bzw. ?edgeglow=1 (Dev). Immer in der Deckfarbe.
+  const cardEdgeGlow = (cardAnims || []).includes("edgeglow") || EDGEGLOW_FORCE;
+  const edgeGlowEl = cardEdgeGlow ? (
+    <Suspense fallback={null}><CardEdgeGlow color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"} reduced={reduced} lite={lite} /></Suspense>
+  ) : null;
   const pCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
             ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
             frontImage={deckFront} />
+      {edgeGlowEl /* z-0: unter Eis/Moos, über dem Skin */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pIceMass > 0 && (
         <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} /></Suspense>
       )}
@@ -828,9 +838,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     </div>
   );
   // #186: die Gegnerkarte trägt den Skin-Front-Rahmen der kommenden Auswahl (Holo entfällt); Zahl/Effekte darüber.
+  // #318/#flip: auch die Gegnerkarte bekommt das Kantenglühen als flippendes Kind (Parität zum bisherigen Deck-Slot-Rahmen).
   const oCardEl = t && (
-    <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-          green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+    <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
+      <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
+            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+      {edgeGlowEl}
+    </div>
   );
 
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
@@ -1250,29 +1264,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           wenn wirklich eine Animation an ist (sonst return null → kein Pixi). */}
       {CARD_FX_ENABLED && (() => {
         const animSet = new Set(cardAnims || []);
-        const edgeGlow = animSet.has("edgeglow") || EDGEGLOW_FORCE;
         const holo = animSet.has("holo") || HOLO_FORCE;
         const glitch = animSet.has("glitch") || GLITCH_FORCE;
-        if (!edgeGlow && !holo && !glitch) return null;
+        // #318/#flip: Edge-Glow läuft NICHT mehr hier (Panel-Overlay), sondern als flippendes Kind IN der Karte (CardEdgeGlow,
+        // siehe pCardEl/oCardEl oben) → unter Eis/Moos. Diese Bühne trägt nur noch Holo/Glitch (Face-Effekte).
+        if (!holo && !glitch) return null;
         return (
           <Suspense fallback={null}>
             <CardFxStage
               panelRef={panelRef}
               cards={[
-                // Gespielte Karten tragen Holo/Glitch (Face-Effekte). Edge-Glow (Puls-Rahmen) läuft NICHT hier, sondern
-                // auf den stabilen Deck-Slots (unten) → so liegt der Rahmen auch auf dem liegenden Deck / der Rückseite
-                // und rahmt die aufgedeckte Karte gleich mit (Overlay z-11 liegt über der Karte). Nur beim Wegflug
-                // (flyAway) bzw. Klinge-Slice (oppSliced) aus.
                 { ref: playerCardRef, active: !!t && !flyAway, num: t ? t.pValue : "", color: t ? suitColor(t.pCard.suit) : null,
                   layers: { edgeGlow: false, holo, glitch } },
                 { ref: oppCardRef, active: !!t && !oppFlyAway && !oppSliced, num: t ? t.oValue : "", color: t ? suitColor(t.oCard.suit) : null,
                   layers: { edgeGlow: false, holo, glitch } },
-                // #318 Puls-Rahmen (Edge-Glow) auf den STABILEN Deck-Slots — dauerhaft, auch auf der Rückseite/dem
-                // liegenden Deck (kein Flip/Wegflug). Nur Edge-Glow, aktiv sobald der Effekt an ist.
-                { ref: deckSlotRef,    active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false } },
-                { ref: oppDeckSlotRef, active: edgeGlow, layers: { edgeGlow, holo: false, glitch: false } },
               ]}
-              layers={{ edgeGlow, holo, glitch }}
+              layers={{ edgeGlow: false, holo, glitch }}
               /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
                  hat) → mono-Deckfarbe statt Verlauf zu einem Fremdton. */
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"}
