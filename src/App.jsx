@@ -501,7 +501,8 @@ export function Autostich() {
     // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
     // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
     finisher: (options.finisher === "klinge" && !!profile?.ownedCosmetics?.["fx:klinge"]) ? "klinge"
-            : (options.finisher === "scorch" && !!profile?.ownedCosmetics?.["fx:scorch"]) ? "scorch" : "standard",
+            : (options.finisher === "scorch" && !!profile?.ownedCosmetics?.["fx:scorch"]) ? "scorch"
+            : (options.finisher === "hologridSlice" && !!profile?.ownedCosmetics?.["fx:hologridSlice"]) ? "hologridSlice" : "standard",
     scorchDeck: !!options.fxScorchDeck, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
     // #322–#326 Gottgleich-Prunk (PIXI): aktiver Effekt (besessen + Option an) oder „gottStandard" (kein Prunk), plus
     // dessen Farbmodus-Flag (Standard vs. Deckfarbe). gottFlags in CustomizeScreen hält die Exklusivität (genau einer an).

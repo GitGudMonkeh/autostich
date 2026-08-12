@@ -43,6 +43,7 @@ const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx")); // #32
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx")); // #324 Gottgleich-Prunk „Prisma-Kaskade"
 const HoloCubePixi = lazy(() => import("./fx/HoloCubePixi.jsx")); // #325 Gottgleich-Prunk „Holo-Würfel-Kollaps"
 const SupernovaPixi = lazy(() => import("./fx/SupernovaPixi.jsx")); // #326 Gottgleich-Prunk „Supernova" (Tunnel z-9 + Explosion z-11)
+const HologridSlicePixi = lazy(() => import("./fx/HologridSlicePixi.jsx")); // #321 Sieg-Finisher „Hologrid-Slice" (Pixi; persistent gemountet, Replay je Sieg über Trigger)
 // Dev-Sicht: ?edgeglow=1 / ?holo=1 erzwingen die jeweilige Karten-Animation auf beiden Karten (zum Designen; nur Preview/Dev).
 const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get(name) === "1"; } catch { return false; } })();
@@ -683,6 +684,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   reducedFx = "auto" }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
+  const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
   // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
   // `lite` (balanced ODER minimal) kappt zusätzlich nur die TEUREN Dauer-/Schwarm-Layer: Screen-Shake + die
   // Glutfunken-Partikelfontänen (bis 72 DOM-Nodes/Stich). In „ausgewogen" ist reduced=false (Feel-Good bleibt),
@@ -789,7 +791,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Niederlage), kein Schnitt. Beide Fälle gelten auch für Krits (nur „Kritisch!"-Anzeige + Lila bleiben zusätzlich).
   const oppSliced    = sliceOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
   const oppScorched  = sliceOn && win && scorch;              // #319 Sieg + Scorch → Gegnerkarte verglüht IN-PLACE (Laser + Burn); kein Wegflug
-  const oppFlyAway   = sliceOn && win && !klinge && !scorch;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn)
+  const oppHologrid  = sliceOn && win && hologrid;            // #321 Sieg + Hologrid-Slice → Gegnerkarte zerfällt IN-PLACE (Laser-Reveal + Kachel-Zerfall)
+  const oppFlyAway   = sliceOn && win && !klinge && !scorch && !hologrid;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn/Slice)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -865,9 +868,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
       style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : (oppSliced || oppScorched || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
-      {(oppSliced || oppScorched) ? (
-        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost bzw. Scorch-Canvas zeichnet die (verglühende) Karte darüber (#186/#319) */
+           : (oppSliced || oppScorched || oppHologrid || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
+      {(oppSliced || oppScorched || oppHologrid) ? (
+        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost / Scorch-Canvas / Hologrid-Pixi zeichnet die (zerfallende) Karte darüber (#186/#319/#321) */
       ) : useOppFlip ? (
         <FlipReveal front={oppFront} backImage={oppBackImg} dur={flipDur} />   /* #186: Cover → Front */
       ) : oppFront}
@@ -1058,6 +1061,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     gottLastAt.current = now;
     setGottTrigger((n) => n + 1);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/isCrit/gained/gottEffect wechseln synchron mit t.trickNo
+  }, [t?.trickNo]);
+
+  // #321 Hologrid-Slice — monotoner Trigger → Replay der persistent gemounteten Pixi-Komponente (kein WebGL-Remount/Sieg).
+  const [hologridTrigger, setHologridTrigger] = useState(0);
+  useEffect(() => {
+    if (t && win && hologrid && !reduced && flipMs > 170) setHologridTrigger((n) => n + 1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/hologrid wechseln synchron mit t.trickNo
   }, [t?.trickNo]);
 
   // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
@@ -1312,6 +1322,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           /* #319 Sound (Laser+Burn) genau zum Effekt-Start; rate bei 2× gedeckelt (scorchSndRate), damit er bei 4×/MAX
              nicht zu einem hohen Chirp zusammenschrumpft. Lautstärke wie Klinge (1,05). */
           onFire={() => audio.play("fx_scorch", { rate: scorchSndRate, gain: 1.05 })} />
+      )}
+      {/* #321 Hologrid-Slice (PIXI): lazy gemountet erst beim ersten Hologrid-Sieg (hologridTrigger>0), dann persistent →
+          Replay je weiterem Sieg über den Trigger (kein WebGL-Remount). Die Gegnerkarte ist dabei in-place unsichtbar
+          (oppHologrid) — der Effekt backt & zerlegt sie selbst. Nicht bei „reduced" (dann Standard-Wegflug). Farbe = Deck. */}
+      {hologridTrigger > 0 && hologrid && !reduced && (
+        <Suspense fallback={null}>
+          <HologridSlicePixi trigger={hologridTrigger} panelRef={panelRef} cardRef={oppCardRef}
+            frontImage={oppFrontImg} value={t ? t.oValue : null} suit={t ? suitColor(t.oCard.suit) : "#e0605a"}
+            deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint reduced={reduced} lite={lite}
+            speed={scorchSpeed} />
+        </Suspense>
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich

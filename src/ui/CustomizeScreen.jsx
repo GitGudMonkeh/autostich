@@ -23,6 +23,7 @@ const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx"));
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx"));
 const HoloCubePixi = lazy(() => import("./fx/HoloCubePixi.jsx"));
 const SupernovaPixi = lazy(() => import("./fx/SupernovaPixi.jsx"));
+const HologridSlicePixi = lazy(() => import("./fx/HologridSlicePixi.jsx")); // #321 Sieg-Finisher „Hologrid-Slice" (Pixi)
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
@@ -108,6 +109,12 @@ const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "kli
 const SCORCH = { key: "scorch", name: "Scorch", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
   desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
 
+/* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (20 DP, ownKey fx:hologridSlice). Eine Laserlinie
+   fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
+   dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
+const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Slice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
+  desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In der Deckfarbe (Verlauf)." };
+
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
 const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
@@ -139,7 +146,7 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch
+  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch · Hologrid-Slice
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
   if (group === "gott") return [GOTT_STANDARD, ...list]; // #322 „Gottgleich · Standard" (kein Prunk) voran, dann die Prunk-Effekte nach Preis
@@ -168,6 +175,7 @@ const finisherSelOf = (options, profile) => {
   const sel = options?.finisher || "standard";
   if (sel === "klinge" && profile && !globalFxOwned(profile, KLINGE)) return "standard";
   if (sel === "scorch" && profile && !globalFxOwned(profile, SCORCH)) return "standard";
+  if (sel === "hologridSlice" && profile && !globalFxOwned(profile, HOLOGRID_SLICE)) return "standard";
   return sel;
 };
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
@@ -301,6 +309,31 @@ function ScorchScene({ deckTint = false }) {
   );
 }
 
+/* #321 Hologrid-Slice-Vorschau (PIXI): board-weite Bühne (panelRef) mit Karten-Anker (cardRef) im Zentrum; der Finisher
+   backt darüber die Karte (Wert 8, Deck-Skin/Suit) und feuert im Loop (loop=true → eigenes Re-Fire). Farbe = Deckfarbe
+   (Verlauf A→B). Lazy (Suspense) → Pixi lädt erst, wenn die Vorschau gerendert wird. Vorschau = In-Game. */
+function HologridScene({ deckTint = false }) {
+  const panelRef = useRef(null);
+  const cardRef = useRef(null);
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  const isMobile = useIsMobile();
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
+      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <Suspense fallback={null}>
+        <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
+          value={8} suit={suitColor(DEMO_SUIT)} deckColor="#2ff0ff" deckColor2="#ff2d9b" lite={isMobile} speed={1.1} />
+      </Suspense>
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#7ee0ff" }}>
+        <span className="opacity-70">Finisher</span> Hologrid-Slice
+      </div>
+    </div>
+  );
+}
+
 /* #322–#326 Gottgleich-Prunk-Vorschau (PIXI): board-weite Bühne (panelRef) mit unsichtbarem Karten-Anker (cardRef) im
    Zentrum; die übergebene Pixi-Komponente zeichnet den Prunk darüber und feuert im Loop (loop=true → eigenes Re-Fire).
    deckTint schaltet Standard-Palette ↔ Deckfarbe. Lazy (Suspense) → Pixi lädt erst, wenn ein gott-Preview gerendert wird.
@@ -422,6 +455,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
+  if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} />; // #321 Hologrid-Slice-Finisher (Pixi)
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322 (Pixi)
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323 (Pixi)
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324 (Pixi)
