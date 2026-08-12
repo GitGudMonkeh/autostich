@@ -25,6 +25,15 @@ button { font-family: inherit; }
   padding-top: max(1rem, env(safe-area-inset-top));
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
+/* #314b: Manche Overlays (Glossar, Leitfaden) legen ihren Inhalt NICHT als Flex-Kind der overlay-root ab, sondern in
+   einen absolut positionierten Wrapper (`absolute inset-0`). Für abspos-Kinder ist die Containing-Box die PADDING-Box
+   des Vorfahren → das overlay-root-`padding-top` verschiebt sie NICHT (top:0 sitzt an der äußeren Padding-Kante). Solche
+   Wrapper bekommen die Safe-Area daher direkt: gleiche Wirkung, aber am richtigen Element. Horizontale Tailwind-Polster
+   (p-3/p-6) bleiben; nur oben/unten werden auf die Safe-Area angehoben. */
+.overlay-safe {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
 .overlay-card {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;

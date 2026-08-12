@@ -92,7 +92,7 @@ export function GlossaryOverlay({ onClose }) {
   return (
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Glossar">
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
-      <div className="absolute inset-0 flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
+      <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel relative"
           style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
           <TopHairline />
