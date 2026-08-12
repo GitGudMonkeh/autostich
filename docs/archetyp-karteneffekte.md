@@ -200,7 +200,67 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   Pixi-Port offen. **Nicht gepusht.**
 
 ### 5.3 Eis ❄️ (`ice`) — Glow `#5ec8f0`
-- **Status:** ⚪ Noch nicht dran
+
+**Effekt — „Neon-Kristall-Frost" (Synthwave-Vereisung von unten & den Seiten)**
+
+- **Was:** Neon-Synthwave-**Frost** wächst von **unten & den beiden Seiten** nach innen/oben — **kantige
+  Kristall-Facetten** mit glühenden Wireframe-Kanten, milchiger **Glasur** und feiner **Rime-Körnung**;
+  optional Vektor-**Dendriten** (Frost-Farne) und **Honigwaben-Gitter**. Zwei gegenüberliegende **Neon-
+  Bühnenlichter** (Cyan `#22e0ff` ↔ Violett `#a13cff`, Achse = `NEON_ANGLE`) strahlen den Frost an:
+  Kanten-Säume, weiche Bloom-Aura, satter Punch (übersättigt/emissiv statt nur getönt). Die **Mitte
+  bleibt frei** (Zahl lesbar). Bei voller Stufe atmet ein **Puls** (`SHIMMER`). Analog zu Feuer
+  (Neon-Seide) & Pflanze (Neon-Moos) im selben Synthwave-Baukasten (`satBoost`, Neon-Achse, Sprite-Cache).
+- **Wann / Wachstums-Quelle (GEKLÄRT):** Kopplung an die **Gletscher-Masse** aus `src/game/glacier.js`.
+  Schwellen `THRESHOLDS = [4, 8, 12]` → **Stufe = #Schwellen ≤ Masse (0…3)**, `BURST_AT = TOP = 12`
+  (Berst→Reset). Die Vereisung **rastet diskret** an 4 / 8 / 12 ein (Stufe 1/2/3); Masse > 0 (aber
+  unter Stufe 1) = schon leicht angefroren (Sockel `BASE_FREEZE`). **Mapping Front:** Stufe 0 →
+  `COVER·BASE_FREEZE`, Stufe s≥1 → `COVER·(THRESHOLDS[s-1]/12)`. Akkretion statt Neu-Würfeln: festes
+  `birthF` je Kristall (Distanz zur nächsten Quelle unten/links/rechts), `maturity = clamp((front-birthF)/0.14)`.
+- **Wo:** Auf der eigenen (Eis-)Karte, Overlay. **Eis bleibt strikt INNERHALB des Rahmens** — Clip aufs
+  **exakte** Karten-RoundRect (kein Überwuchs, anders als Moos mit `OVERHANG`; User-Vorgabe 2026-08-12).
+  In-Game analog IonStorm/FireHead auf `playerCardRef`, Gate Preview/Dev.
+- **⚠️ Layer-Reihenfolge (User-Vorgabe 2026-08-12):** Wenn Eis & Moos zusammen auf einer Karte liegen,
+  liegt **das Moos OBEN auf dem Eis** (Eis-Layer unter Moos-Layer). Gesamt-Stack (unten→oben):
+  **IonStorm-Blitzrahmen → Eis → Moos**.
+- **Algorithmus (Prototyp Canvas-2D, → Pixi portierbar):**
+  1. **Feld-Aufbau** (`buildField`, seeded `mulberry32`): jittered Grid (Abstand aus `DENSITY`), je
+     Kristall `birthF = clamp( min(dBot/maxUp, dL/maxIn, dR/maxIn) + RAGGED·(fbm-0.5)·0.55 )`, wobei
+     `maxUp=CH·(0.22+0.72·BOTTOM_BIAS)`, `maxIn=CW·(0.14+0.52·SIDE_BAND)`. Wuchsrichtung `gdx/gdy` = weg
+     von der nächsten Quelle (nach innen/oben), `size` (aus `CLUMP`), `hue`, `edgeProx` (Rand-Nähe für
+     Rime/Dendriten-Start).
+  2. **Render in Pässen** in ein Offscreen-Bitmap (`M=20`px Rand), gecacht, nur neu bei
+     Masse-/Parameter-Änderung: (0) milchige **Glasur** (radiale Puffs), (1) **Hex-Gitter**, (2)
+     **Kristall-Scherben** (Facetten-Dreiecke + additive Neon-Wireframe-Kanten, heller zur Spitze,
+     `satBoost`-Punch), (3) **Dendriten** (rekursiver Tracer), (4) **Rime**-Körnung am Rand. Separate
+     **Bloom-Aura**-Bitmap aus gesammelten `neonTips`. Blit aufs **exakte** RoundRect geclippt; **Sparkle**
+     (live additiv) + Stufe-3-**Puls** (`SHIMMER`) obendrauf.
+- **Parameter (`TUNE`, ABGESEGNET @ Masse 12 / Stufe 3):**
+  ```js
+  const TUNE = {
+    ICE_DARK: "#141d47", ICE_MID: "#4f78c8", ICE_EDGE: "#cfeeff",
+
+    NEON_A: "#22e0ff", NEON_B: "#a13cff", NEON_ANGLE: 90, NEON_RIM: 0.16, NEON_TIP: 0.58, NEON_PUNCH: 0.2, NEON_BLOOM: 0.36, NEON_BASE: 0,
+
+    COVER: 0.47, SIDE_BAND: 0.44, BOTTOM_BIAS: 0.58, RAGGED: 1, DENSITY: 0.44, CLUMP: 0.64, BASE_FREEZE: 0.06,
+
+    SHARD_LEN: 17, SHARD_WIDTH: 0.76, FACET: 0.64, HEX: 0, GLAZE: 1,
+
+    DENDRITE: 0, DEND_LEN: 0.3, DEND_BRANCH: 0,
+
+    RIME: 0.5, SPARKLE: 0.4, SHIMMER: 0.5,
+  };
+  ```
+  (Masse ist **Zustand** (Stufe 0…3 an Schwellen 4/8/12), kein TUNE-Wert; `COVER`/`BASE_FREEZE` schon.
+  Dendriten & Hex aus; kompakter Frost unten+Seiten mit Glasur + Rime + Funkeln + Stufe-3-Puls.)
+- **Reduced/Mobile:** Frost ist **statisch** (Bitmap-Cache) → günstig; nur Sparkle/Puls animiert
+  (abschaltbar via `SPARKLE=0`/`SHIMMER=0`). In-Game reduced → Sparkle aus, evtl. `DENSITY` gedeckelt.
+- **Prototyp:** `docs/prototypes/eis-neon-tuning.html` (Standalone-Tuning, Masse-0…12-Regler mit diskreter
+  Rastung) + `docs/prototypes/moos-eis-combo.html` (**Kombi-Check**: Moos + Eis auf einer Karte, Layer-
+  Toggle, Eis im Rahmen geclippt). Look + Werte + Layering (Moos über Eis) abgesegnet.
+- **Umsetzung (offen):** `src/ui/fx/FrostIce.jsx` (Pixi: Kristall-/Rime-Sprites vorgerendert + geblittet;
+  Akkretion über `birthF`-Schwelle; Front diskret an `glacier.js`-Schwellen; Farb-Erhalt via Offscreen-
+  Buffer, Bloom aufs Kartenrechteck geclippt gegen Überstrahlung). Masse aus der Karte (`glacier.js`).
+- **Status:** 🟡 **Neon-Frost Look + Werte + Layering (Moos oben) abgesegnet & gesichert** — Pixi-Port offen.
 
 ### 5.4 Pflanze 🌿 (`plant`) — Glow `#5ab87a`
 
