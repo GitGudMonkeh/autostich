@@ -1163,13 +1163,21 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} />
         </div>
       )}
-      {/* #317 Cube-Matrix — musik-/bass-reaktives Würfelfeld + Scheinwerfer, z-2 HINTER den Karten (Ambiente). */}
+      {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
+          additive Overlay-Bühne z-11 ÜBER den Karten → sie leuchten die Karten von oben an. */}
       {cubeMatrixOn && (
-        <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <Suspense fallback={null}>
-            <CubeMatrixField color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
-          </Suspense>
-        </div>
+        <>
+          <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
+            <Suspense fallback={null}>
+              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
+            </Suspense>
+          </div>
+          <div aria-hidden="true" className="absolute inset-0 z-[11] pointer-events-none">
+            <Suspense fallback={null}>
+              <CubeMatrixField mode="spots" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
+            </Suspense>
+          </div>
+        </>
       )}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>

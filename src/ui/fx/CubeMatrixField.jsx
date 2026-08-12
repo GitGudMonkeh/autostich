@@ -25,7 +25,9 @@ const TUNE = {
   C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
-  SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.36, SPOT_INT: 0.35, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.75, SPOT_TILT: 0.68,
+  // #317: Scheinwerfer heller (SPOT_INT 0.35→0.55) + mehr zur Seite (SPREAD 0.36→0.46) direkt über die Karten
+  // (TILT 0.68→0.32 → Strahl bleibt vertikal über der Karte statt zur Mitte zu ziehen) + breiter (WIDTH 0.75→0.98).
+  SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.46, SPOT_INT: 0.55, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.98, SPOT_TILT: 0.32,
   SPOT_SOFT: 0.55, SPOT_BLOOM: 0.30,
   // #perf/#317: C_ROWS 8→6 (~25% weniger Würfel). FELD_TIEFE 1.0→0.72 = Feld nach vorn; FELD_HOEHE 0→0.10 = etwas
   // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
@@ -41,11 +43,13 @@ function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length
 const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1)})`;
 
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false }) {
+/* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
+   den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all" }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut).
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite });
-  propsRef.current = { color, color2, deckColored, reduced, lite };
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -82,17 +86,24 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const target = clamp((raw - baseB[i] * TUNE.BASE_SUB) * TUNE.CONTRAST * TUNE.GAIN, 0, 1);
       cubeV[i] += (target - cubeV[i]) * (target > cubeV[i] ? up : dn);
     }
-    function computeCubes(TC) {
-      if (audio && audio.analyser) {
-        audio.analyser.getByteFrequencyData(audio.freqData);
+    // Liest den Analyser EINMAL/Frame + leitet die adaptive Geschwindigkeit (liveUp/liveDn) aus dem Spektral-Fluss ab.
+    // Beide Bühnen (field/spots) rufen das auf; freqData steht danach für computeCubes/computeSpotBass bereit.
+    function computeSpeed() {
+      liveUp = TUNE.ATTACK; liveDn = TUNE.RELEASE;
+      if (!(audio && audio.analyser)) return false;
+      audio.analyser.getByteFrequencyData(audio.freqData);
+      const bins = audio.freqData.length;
+      if (!fluxInit) { prevFreq.set(audio.freqData); fluxInit = true; }
+      let flux = 0; for (let b = 0; b < bins; b++) { const d = audio.freqData[b] - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = audio.freqData[b]; }
+      songAct += (flux / (bins * 255) - songAct) * 0.01;
+      const live = clamp((songAct - TUNE.SPEED_LO) / Math.max(1e-4, TUNE.SPEED_HI - TUNE.SPEED_LO), 0, 1);
+      liveUp = lerp(TUNE.ATTACK * TUNE.SLOW, TUNE.ATTACK, live);   // ruhig → träger, schnell → knackig
+      liveDn = lerp(TUNE.RELEASE * TUNE.SLOW, TUNE.RELEASE, live);
+      return true;
+    }
+    function computeCubes(TC, hasAudio) {
+      if (hasAudio) {
         const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length;
-        // Song-Aktivität via Spektral-Fluss (Summe positiver Bin-Änderungen) → langsam gemittelt (Song-Charakter).
-        if (!fluxInit) { prevFreq.set(audio.freqData); fluxInit = true; }
-        let flux = 0; for (let b = 0; b < bins; b++) { const d = audio.freqData[b] - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = audio.freqData[b]; }
-        songAct += (flux / (bins * 255) - songAct) * 0.01;
-        const live = clamp((songAct - TUNE.SPEED_LO) / Math.max(1e-4, TUNE.SPEED_HI - TUNE.SPEED_LO), 0, 1);
-        liveUp = lerp(TUNE.ATTACK * TUNE.SLOW, TUNE.ATTACK, live);   // ruhig → träger, schnell → knackig
-        liveDn = lerp(TUNE.RELEASE * TUNE.SLOW, TUNE.RELEASE, live);
         for (let i = 0; i < TC; i++) {
           const f0 = 30 * Math.pow(TUNE.FREQ_MAX / 30, i / TC), f1 = 30 * Math.pow(TUNE.FREQ_MAX / 30, (i + 1) / TC);
           const b0 = Math.max(1, Math.floor(f0 / nyq * bins)), b1 = Math.max(b0 + 1, Math.ceil(f1 / nyq * bins));
@@ -101,10 +112,10 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         }
       } else { for (let i = 0; i < TC; i++) cubeV[i] += (0 - cubeV[i]) * liveDn; } // Idle → in Ruhe sinken
     }
-    function computeSpotBass() {
+    function computeSpotBass(hasAudio) {
       let raw = 0;
-      if (audio && audio.analyser) {
-        const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length; // freqData in computeCubes bereits gelesen
+      if (hasAudio) {
+        const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length; // freqData in computeSpeed bereits gelesen
         const lo = Math.max(1, Math.floor(40 / nyq * bins)), hi = Math.max(lo + 1, Math.ceil(150 / nyq * bins));
         let s = 0, nn = 0; for (let b = lo; b <= hi && b < bins; b++) { s += audio.freqData[b]; nn++; }
         raw = (nn ? s / nn : 0) / 255;
@@ -181,30 +192,36 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const hi = p.deckColored ? rgb(p.color2) : rgb(STD_HI);
       const spotCol = p.deckColored ? rgb(p.color2) : rgb(STD_HI);
       const hot = rgb(HOT_COL), dark = [9, 5, 18], glow = TUNE.GLOW;
+      const drawField = p.mode !== "spots", drawSpots = p.mode !== "field";
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
-      ctx.clearRect(0, 0, W, H); // transparente Bühne (BF-Bild bleibt sichtbar)
-      // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
-      const C = Math.round(TUNE.C_COLS) - (p.lite ? 4 : 0), R = Math.round(TUNE.C_ROWS) - (p.lite ? 1 : 0), TC = C * R;
-      if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; spotBass = 0; } // Standbild: ruhige, gedimmte Säulen
-      else { computeCubes(TC); computeSpotBass(); }
-      const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
-      const taper = TUNE.C_TAPER;
-      if (BACKSUN) drawSun(lo, hi);
-      if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
-      for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap, spreadR = spread * (1 - taper * (R > 1 ? r / (R - 1) : 0)); // Verjüngung: hintere Reihen schmaler
-        // #317 Feld umgedreht: Reihe im Band-Index gespiegelt (R-1-r) → tiefe Bass-Bänder liegen HINTEN (große Türme in
-        // der Ferne), die Höhen vorne. computeCubes bleibt unverändert (Bänder 0..TC-1 log-verteilt).
-        for (let c = 0; c < C; c++) { const idx = (R - 1 - r) * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
-          const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
-          const colFbot = rgba(mix(dark, base, emit), 1);
-          const colFtop = rgba(mix(base, hot, clamp(val, 0, 1) * 0.7), 1);
-          const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
-          const colS = rgba(mix(dark, base, emit * 0.6), 1);
-          const s = hw0, h = 2 * s + val * TUNE.C_RISE;
-          box3d(cx, z - s, z + s, 0, h, s, colFbot, colFtop, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha, !p.reduced && val > 0.06);
+      ctx.clearRect(0, 0, W, H); // transparente Bühne (BF-Bild/Karten bleiben sichtbar)
+      const hasAudio = !p.reduced && computeSpeed();
+      if (drawField) {
+        // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
+        const C = Math.round(TUNE.C_COLS) - (p.lite ? 4 : 0), R = Math.round(TUNE.C_ROWS) - (p.lite ? 1 : 0), TC = C * R;
+        if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio);
+        const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
+        const taper = TUNE.C_TAPER;
+        if (BACKSUN) drawSun(lo, hi);
+        if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
+        for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap, spreadR = spread * (1 - taper * (R > 1 ? r / (R - 1) : 0)); // Verjüngung: hintere Reihen schmaler
+          // #317 Feld umgedreht: Reihe im Band-Index gespiegelt (R-1-r) → tiefe Bass-Bänder liegen HINTEN (große Türme in
+          // der Ferne), die Höhen vorne. computeCubes bleibt unverändert (Bänder 0..TC-1 log-verteilt).
+          for (let c = 0; c < C; c++) { const idx = (R - 1 - r) * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
+            const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
+            const colFbot = rgba(mix(dark, base, emit), 1);
+            const colFtop = rgba(mix(base, hot, clamp(val, 0, 1) * 0.7), 1);
+            const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
+            const colS = rgba(mix(dark, base, emit * 0.6), 1);
+            const s = hw0, h = 2 * s + val * TUNE.C_RISE;
+            box3d(cx, z - s, z + s, 0, h, s, colFbot, colFtop, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha, !p.reduced && val > 0.06);
+          }
         }
       }
-      if (!p.reduced) drawSpotlights(spotCol); else { spotBass = 0; drawSpotlights(spotCol); }
+      if (drawSpots) {
+        if (p.reduced) spotBass = 0; else computeSpotBass(hasAudio);
+        drawSpotlights(spotCol);
+      }
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     }
 
