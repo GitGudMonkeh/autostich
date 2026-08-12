@@ -15,8 +15,8 @@ const IonStorm = lazy(() => import("./fx/IonStorm.jsx").then((m) => ({ default: 
 // Dev-Sicht: ?blitzframe=1 erzwingt den Ionensturm-Rahmen auf JEDER eigenen Karte (zum Designen; nur Preview/Dev).
 const BLITZ_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get("blitzframe") === "1"; } catch { return false; } })();
-// Archetyp-Karteneffekt „Feuer" (brennender Kartenkopf) — eigener Pixi-Layer ÜBER den Karten, lazy wie oben.
-const FireHead = lazy(() => import("./fx/FireHead.jsx").then((m) => ({ default: m.FireHead })));
+// Archetyp-Karteneffekt „Feuer" als Neon-Seide (Hitze-Zustand am Kartenkopf) — eigener Canvas-2D-Layer, lazy wie oben.
+const NeonSilk = lazy(() => import("./fx/NeonSilk.jsx"));
 // Dev-Sicht: ?fireheat=<0..1> erzwingt eine feste Feuer-Hitze am eigenen Kartenkopf (zum Designen; nur Preview/Dev).
 const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
@@ -1221,14 +1221,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </Suspense>
         );
       })()}
-      {/* #feuer Archetyp-Karteneffekt — brennender KARTENKOPF: der obere Rand der eigenen Karte brennt, Flammen
-          lodern ÜBER dem Rahmen (z-12). Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX) → blendet zwischen den
-          Phasen 20/50/80/100 über; ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef)
+      {/* #feuer Archetyp-Karteneffekt — Neon-Seide am KARTENKOPF: weiche Neon-Bänder (blau→magenta→rot glühend) lodern
+          ÜBER dem oberen Rand nach oben. Hitze aus dem heat-Prop (Hitzeleiste 0–HEAT_MAX) → steuert Höhe/Helligkeit/Tempo
+          der Bänder (0 = aus); ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef)
           verankert (nicht an die gespielte Karte) → das Feuer brennt DURCHGÄNGIG weiter, auch wenn die Karte gewinnt/
           verliert/wegfliegt (kein Neustart, kein flyAway-Reset mehr). Gate wie IonStorm (Preview/Dev). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
-          <FireHead
+          <NeonSilk
             heat={FIRE_FORCE != null ? FIRE_FORCE
               : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
             panelRef={panelRef} cardRef={deckSlotRef} />
