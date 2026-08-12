@@ -60,6 +60,7 @@ import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
+import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -678,6 +679,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
   finisher = "standard",
   scorchDeck = false, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
+  blackholeDeck = false, // #320 Schwarzes-Loch-Farbmodus: false = Standard (blau/pink), true = Deckfarbe (deckA1/deckA2)
   // #322–#326 Gottgleich-Prunk (PIXI): gewählter Prunk-Effekt ("gottStandard" = kein Prunk) + dessen Farbmodus.
   gottEffect = "gottStandard", gottDeck = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -685,6 +687,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
+  const blackhole = finisher === "blackhole"; // #320 Schwarzes Loch: persistentes Serien-Loch saugt die Gegnerkarte ein.
   // #: Dreistufig. `reduced` (minimal) behält EXAKT die alte Semantik → Kartenflip/Ambient/Finisher/Glows aus.
   // `lite` (balanced ODER minimal) kappt zusätzlich nur die TEUREN Dauer-/Schwarm-Layer: Screen-Shake + die
   // Glutfunken-Partikelfontänen (bis 72 DOM-Nodes/Stich). In „ausgewogen" ist reduced=false (Feel-Good bleibt),
@@ -792,7 +795,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppSliced    = sliceOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
   const oppScorched  = sliceOn && win && scorch;              // #319 Sieg + Scorch → Gegnerkarte verglüht IN-PLACE (Laser + Burn); kein Wegflug
   const oppHologrid  = sliceOn && win && hologrid;            // #321 Sieg + Hologrid-Slice → Gegnerkarte zerfällt IN-PLACE (Laser-Reveal + Kachel-Zerfall)
-  const oppFlyAway   = sliceOn && win && !klinge && !scorch && !hologrid;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn/Slice)
+  const oppBlackholed = sliceOn && win && blackhole;          // #320 Sieg + Schwarzes Loch → Gegnerkarte wird ins Loch gesogen (Canvas-Flyer); kein Wegflug
+  const oppFlyAway   = sliceOn && win && !klinge && !scorch && !hologrid && !blackhole;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn/Slice/Sog)
+  // #320 Persistentes Serien-Loch: aktiv solange der Finisher „blackhole" gewählt ist (nicht reduced, echter Stich).
+  const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
+  const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
+  const [holePulse, setHolePulse] = useState(null);           // #320 Puls-Kanal ans persistente Loch (win → wachsen+saugen · loss → schrumpfen)
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -802,7 +810,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #186 Flip-Reveal der Gegnerkarte: analog zur Spielerkarte, aber NICHT wenn die Gegnerkarte gerade geschnitten
   // wird/explodiert (dort übernimmt der entkoppelte Ghost) und NICHT beim Standard-Wegflug (sie fliegt dann einfach
   // weg, wie die eigene Karte bei Niederlage — ohne Flip). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
-  const oppFlipOn = !reduced && !!t && !oppSliced && !oppFlyAway && flipMs > 170;
+  const oppFlipOn = !reduced && !!t && !oppSliced && !oppHologrid && !oppBlackholed && !oppFlyAway && flipMs > 170;
   const flipDur = clamp(flipMs * 0.55, 220, 460);
   const useFlip    = flipOn;      // #180 3D-Flip-Reveal der eigenen Karte
   const useOppFlip = oppFlipOn;   // #186 3D-Flip-Reveal der Gegnerkarte
@@ -868,9 +876,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppCard = t ? (
     <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
       style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : (oppSliced || oppScorched || oppHologrid || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
-      {(oppSliced || oppScorched || oppHologrid) ? (
-        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost / Scorch-Canvas / Hologrid-Pixi zeichnet die (zerfallende) Karte darüber (#186/#319/#321) */
+           : (oppSliced || oppScorched || oppHologrid || oppBlackholed || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
+      {(oppSliced || oppScorched || oppHologrid || oppBlackholed) ? (
+        <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost / Scorch-Canvas / Hologrid-Pixi / Schwarzes-Loch-Flyer zeichnet die Karte darüber (#186/#319/#321/#320) */
       ) : useOppFlip ? (
         <FlipReveal front={oppFront} backImage={oppBackImg} dur={flipDur} />   /* #186: Cover → Front */
       ) : oppFront}
@@ -944,6 +952,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const cometGain = CARDFLIP_GAIN_CONST * 0.29 * 1.7; // Pegel über Glutfunken, +70 %
       audio.play("fx_comet", { gain: cometGain });                                 // Flug für ALLE Kometen
       if (hitTier >= 1) audio.play("fx_comet_impact", { gain: cometGain });         // + Explosion nur bei großen Tiers
+    }
+    // #320 Schwarzes Loch: Sieg → „Sog-Puls" (Loch wächst + Gegnerkarte einsaugen); Niederlage bei aktivem Loch →
+    // „Schrumpf-Puls" (heat-artig verkleinern, kein Sofort-Kollaps). Persistentes Panel-Loch verarbeitet die Pulse.
+    if (blackhole) {
+      if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit) });
+      else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
@@ -1333,6 +1347,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint reduced={reduced} lite={lite}
             speed={scorchSpeed} />
         </Suspense>
+      )}
+      {/* #320 Schwarzes-Loch-Finisher: PERSISTENTES Serien-Loch (kein Ein-Stich-One-Shot). Liegt als Canvas-2D-Ebene
+          über dem Panel (pixi-frei → mobiltauglich UND produktionsfähig). Aktiv solange der Finisher gewählt ist
+          (holeActive); Sieg/Niederlage kommen als Puls (holePulse) rein → Loch wächst + saugt die Gegnerkarte ein bzw.
+          schrumpft. Nicht bei „reduced". Standardfarben blau→pink; im Deckmodus (blackholeDeck) Deckfarben. */}
+      {holeActive && (
+        <BlackholeFx active={holeActive} pulse={holePulse}
+          color={blackholeDeck ? (deckA1 || "#4aa0ff") : "#4aa0ff"}
+          color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
+          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich

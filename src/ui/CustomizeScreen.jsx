@@ -13,6 +13,7 @@ import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.j
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei) — Vorschau + In-Game
+import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
@@ -62,6 +63,9 @@ const PREVIEW_LOOK = {
   // #311: Deckfarbe-Showcase auf dem gelben „Goldener Drache"-Deck (bf_drache, a1=#ffcf5a Gold/Gelb) → hebt sich klar
   // vom weiß-blauen Standard-Sternenfeld ab, damit der Standard↔Deckfarbe-Toggle sichtbar ist.
   starfield: { bf: "bf_drache", a1: "#ffcf5a", a2: "#ff5a2a" },
+  // #320 Schwarzes Loch: Standard = blau→pink (im Scene-Code fest); Deckfarbe-Showcase auf einem warmen Gold-Grün-Deck,
+  // damit der Standard↔Deckfarbe-Toggle (kühl-neon ↔ warm) deutlich sichtbar ist.
+  blackhole: { bf: SHOWCASE_BF, a1: "#ffd15a", a2: "#57e08a" },
   // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
   // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
   edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
@@ -115,6 +119,12 @@ const SCORCH = { key: "scorch", name: "Scorch", group: "finisher", preview: "sco
 const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Slice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
   desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In der Deckfarbe (Verlauf)." };
 
+/* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (30 DP, violette Rarity, ownKey fx:blackhole). Ein
+   PERSISTENTES Serien-Loch — jeder Sieg füttert es (es wächst + saugt die Gegnerkarte ein), eine Niederlage lässt es
+   schrumpfen; kollabiert es bei genug Masse, folgt eine Supernova. Standard blau/pink oder in der Deckfarbe. */
+const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 30,
+  desc: "Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe." };
+
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
 const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
@@ -146,7 +156,7 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch · Hologrid-Slice
+  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch · Hologrid-Slice · Schwarzes Loch
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
   if (group === "gott") return [GOTT_STANDARD, ...list]; // #322 „Gottgleich · Standard" (kein Prunk) voran, dann die Prunk-Effekte nach Preis
@@ -176,6 +186,7 @@ const finisherSelOf = (options, profile) => {
   if (sel === "klinge" && profile && !globalFxOwned(profile, KLINGE)) return "standard";
   if (sel === "scorch" && profile && !globalFxOwned(profile, SCORCH)) return "standard";
   if (sel === "hologridSlice" && profile && !globalFxOwned(profile, HOLOGRID_SLICE)) return "standard";
+  if (sel === "blackhole" && profile && !globalFxOwned(profile, BLACKHOLE)) return "standard";
   return sel;
 };
 /* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
@@ -334,6 +345,48 @@ function HologridScene({ deckTint = false }) {
   );
 }
 
+/* #320 Schwarzes-Loch-Vorschau: persistentes Panel-Loch (BlackholeFx) mit unsichtbarem Karten-Anker rechts (oppRef →
+   Flug-Startpunkt). Ein Timer feuert im Loop Sieg-Pulse (Loch wächst + Karte einsaugen), dann eine Niederlage-Sequenz
+   bis zum Kollaps → Supernova, danach von vorn. deckTint schaltet Standard blau/pink ↔ Deckfarbe (deckA1/deckA2). */
+function BlackholeScene({ deckTint = false }) {
+  const panelRef = useRef(null);
+  const oppRef = useRef(null);
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  const [pulse, setPulse] = useState(null);
+  useEffect(() => {
+    // Loop-Choreografie: 6 Siege (aufbauen), dann Niederlagen bis zum Kollaps → kurze Pause → wieder von vorn.
+    const seq = [
+      { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" }, { kind: "win" },
+      { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" }, { kind: "loss" },
+    ];
+    let id = 0, i = 0, alive = true; const timers = [];
+    const nums = [10, 7, 13, 9, 11, 8];
+    const tick = () => {
+      if (!alive) return;
+      const step = seq[i % seq.length]; i++; id++;
+      setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length] } : { id, kind: "loss" });
+      timers.push(setTimeout(tick, step.kind === "win" ? 900 : 700));
+    };
+    timers.push(setTimeout(tick, 400));
+    return () => { alive = false; timers.forEach(clearTimeout); };
+  }, []);
+  const look = PREVIEW_LOOK.blackhole;
+  const c1 = deckTint ? look.a1 : "#4aa0ff";
+  const c2 = deckTint ? (look.a2 || look.a1) : "#ff3ea8";
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#05060d" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35 }} />}
+      <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
+      <div ref={oppRef} className="absolute" style={{ left: "72%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} />
+      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? "#8fd8ff" : "#9fc2ff" }}>
+        <span className="opacity-70">Finisher</span> Schwarzes Loch
+      </div>
+    </div>
+  );
+}
+
 /* #322–#326 Gottgleich-Prunk-Vorschau (PIXI): board-weite Bühne (panelRef) mit unsichtbarem Karten-Anker (cardRef) im
    Zentrum; die übergebene Pixi-Komponente zeichnet den Prunk darüber und feuert im Loop (loop=true → eigenes Re-Fire).
    deckTint schaltet Standard-Palette ↔ Deckfarbe. Lazy (Suspense) → Pixi lädt erst, wenn ein gott-Preview gerendert wird.
@@ -456,6 +509,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} />; // #321 Hologrid-Slice-Finisher (Pixi)
+  if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322 (Pixi)
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323 (Pixi)
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324 (Pixi)
@@ -925,7 +979,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck"
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
@@ -949,15 +1003,17 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
     );
   } else if (group.mode === "finisher") {
     const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
-    // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). Andere Finisher haben keinen Farbmodus.
-    const scorchDeck = !!options?.fxScorchDeck;
-    action = fx.key !== "scorch" ? chooseBtn : (
+    // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). #320 Schwarzes Loch: Standard blau/pink ↔
+    // Deckfarbe. Andere Finisher (Standard/Klinge) haben keinen Farbmodus.
+    const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : null;
+    const finDeckOn = finDeckOpt ? !!options?.[finDeckOpt] : false;
+    action = !finDeckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
           {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
-            const on = scorchDeck === o.v;
-            return <button key={o.l} onClick={() => onChoose({ fxScorchDeck: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+            const on = finDeckOn === o.v;
+            return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
