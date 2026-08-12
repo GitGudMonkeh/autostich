@@ -1320,21 +1320,45 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // Blink (Android) → auf dem iPhone „überzogen". Kleiner = günstiger + beide Geräte näher beieinander.
           // Desktop/voll behält den vollen, dramatischen Bloom.
           const gBig = lite ? 16 : 32, gMid = lite ? 8 : 12;
+          // #gott: Synthwave-Chrome-Ansage (geteilter Look für GOTTGLEICH/Lawine/Gönn dir). Chrome-Verlauf (Weiß →
+          // Akzent oben → dunkle Horizontlinie → Weiß → Akzent unten), Neon-Glow im Akzent, Sheen-Sweep über die
+          // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
+          const accTop = b.tier.color || "#8fe0ff";
+          const accBot = b.tier.color || "#ff5db1";
+          const glowC  = b.tier.color || "#ff3da1";
+          const gid = `gc-${b.id}`, mid = `gm-${b.id}`;
           return b.tier.epic ? (
-            /* GOTTGLEICH — Sonder-Ansage: als SVG skaliert das Wort exakt auf ~70 % der Panelbreite (textLength),
-               echt mittig (H+V, kein Spur-/Jitter-Versatz), in Weiß mit weißem Bloom → hebt sich klar von den
-               goldenen Stufen darunter ab. Gleiche Standzeit/Animation wie die anderen Groß-Ansagen. */
             <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
-              style={{ left: "50%", top: "50%", width: "70%", zIndex: 31,
-                       filter: b.tier.color
-                         ? `drop-shadow(0 0 ${gBig}px ${b.tier.color}) drop-shadow(0 0 ${gMid}px ${b.tier.color}) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`
-                         : `drop-shadow(0 0 ${gBig}px rgba(255,255,255,0.9)) drop-shadow(0 0 ${gMid}px rgba(255,255,255,0.7)) drop-shadow(0 3px 8px rgba(0,0,0,0.55))`,
+              style={{ left: "50%", top: "50%", width: "72%", zIndex: 31,
+                       filter: `drop-shadow(0 0 ${gBig}px ${glowC}) drop-shadow(0 0 ${gMid}px ${glowC}) drop-shadow(0 3px 8px rgba(0,0,0,0.6))`,
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
+              <defs>
+                <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#ffffff" />
+                  <stop offset="0.42" stopColor={accTop} />
+                  <stop offset="0.5" stopColor="#20103a" />
+                  <stop offset="0.58" stopColor="#ffffff" />
+                  <stop offset="1" stopColor={accBot} />
+                </linearGradient>
+                <mask id={mid}>
+                  <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
+                    style={{ fontSize: "200px", fontWeight: 900, fill: "#fff", fontStyle: "italic", letterSpacing: "2px" }}>
+                    {b.tier.text.toUpperCase()}
+                  </text>
+                </mask>
+              </defs>
               <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
-                style={{ fontSize: "200px", fontWeight: 900, fill: b.tier.color || "#ffffff", letterSpacing: "1px" }}>
+                style={{ fontSize: "200px", fontWeight: 900, fill: `url(#${gid})`, stroke: "#0a0820", strokeWidth: "3px", paintOrder: "stroke", fontStyle: "italic", letterSpacing: "2px" }}>
                 {b.tier.text.toUpperCase()}
               </text>
+              {!reduced && (
+                <g mask={`url(#${mid})`}>
+                  <rect x="-260" y="0" width="200" height="210" fill="#ffffff" opacity="0.5">
+                    <animate attributeName="x" from="-260" to="1000" dur="0.95s" begin="0.12s" fill="freeze" />
+                  </rect>
+                </g>
+              )}
             </svg>
           ) : (
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
