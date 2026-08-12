@@ -646,6 +646,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   forged = {}, brandActive = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
   growth = {}, colonized = {},
+  // #eis: Eis-Frost-Pegel für die eigene Karte (0..12). App liefert ihn: Eis aktiv → Basis-Frieren, + wächst mit der
+  // größten Gletscher-Masse. Rein visuell (Gletscher-Mechanik unangetastet); ?ice=<0..12> (ICE_FORCE) überschreibt.
+  iceMass = 0,
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
@@ -796,7 +799,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #eis/#flip: Wie das Moos hängt jetzt auch der Eis-Frost ALS KIND in der Kartenvorderseite → flippt mit der Karte.
   //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
   //   per-Karte-Bindung noch offen). Blitz (Panel-IonStorm) liegt über beidem — laut User ok.
-  const pIceMass = ICE_FORCE != null ? ICE_FORCE : 0;
+  const pIceMass = ICE_FORCE != null ? ICE_FORCE : iceMass;
   const pCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}

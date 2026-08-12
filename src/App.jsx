@@ -67,6 +67,9 @@ const importChallenge   = () => import("./ui/ChallengeModal.jsx");
 const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
 const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
 const importOptions     = () => import("./ui/OptionsModal.jsx");
+// #eis: Basis-Frieren (Frost-Masse 0..12) sobald der Eis-Archetyp aktiv ist — sofortiges Feedback beim Auswählen,
+// analog zum grünen Pflanzen-Anker. Stufe 0 (Masse 1..3) = dünner Basis-Frost; wächst mit der echten Gletscher-Masse.
+const ICE_BASE_FREEZE = 3;
 const ArchitectScreen  = lazy(() => importArchitect().then((m) => ({ default: m.ArchitectScreen })));
 const ChronikOverview  = lazy(() => importChronik().then((m) => ({ default: m.ChronikOverview })));
 const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.StatsScreen })));
@@ -765,6 +768,10 @@ export function Autostich() {
                 heat={state.heat} lightning={state.lightning} score={state.score || 0}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
+                /* #eis: Eis-Frost-Pegel der eigenen Karte (rein visuell, Gletscher-Mechanik unangetastet): Eis aktiv →
+                   sofort ein BASIS-Frieren (Stufe 0), + wächst mit der stärksten Gletscher-Masse auf dem Brett. */
+                iceMass={(state.activeArchetypes || []).includes("ice")
+                  ? Math.max(ICE_BASE_FREEZE, (state.glacierMass || []).reduce((m, v) => (v > m ? v : m), 0)) : 0}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} cardAnims={deckFx.cardAnims}
