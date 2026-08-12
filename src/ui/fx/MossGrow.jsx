@@ -29,6 +29,7 @@ const TUNE = {
 
 const TAU = Math.PI * 2;
 const STAGE_MAX = 8;          // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
+const REVEAL_FADE = 160;      // ms Einblendung des Mooses NACH dem Karten-Flip
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3: 300*1.3=390, 390*104/144≈282)
 const CARD_R = 12;            // Karten-Eckenradius (rounded-xl) — für den Composite-Clip
 const M = 20;                 // Rand ums Moos-Bitmap (Überwuchs), in Referenz-px
@@ -46,11 +47,14 @@ function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.
 function vhash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
 function fbm(x, y) { return vhash(x * 0.05, y * 0.05) * 0.6 + vhash(x * 0.13, y * 0.13) * 0.28 + vhash(x * 0.31, y * 0.31) * 0.12; }
 
-export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
+export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false, flipDur = 0, flipKey = 0 }) {
   const hostRef = useRef(null);
   const stateRef = useRef({ growth });
   stateRef.current = { growth };
   const syncRef = useRef(null);
+  // #flip: bis zu diesem Zeitpunkt bleibt das Moos AUS (der 3D-Flip der Karte soll sichtbar sein; die flache Moos-Canvas
+  // würde ihn verdecken). Wird je neuer Karte (flipKey) gesetzt. 0 = kein Flip → Moos sofort sichtbar.
+  const hideUntilRef = useRef(0);
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -65,7 +69,7 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
     let cardX = 0, cardY = 0, cardW = 0, cardH = 0;
     let field = [], dewPts = [], neonTips = [];
     let _axc = 1, _axs = 0, _cNA = { r: 34, g: 224, b: 255 }, _cNB = { r: 255, g: 62, b: 165 };
-    let renderedCov = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1;
+    let renderedCov = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1, revealAlpha = 1;
 
     // ── Moos-Feld (fixe Referenzgröße, deterministisch seeded → einmal gebaut) ──
     (function buildField() {
@@ -213,7 +217,7 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
       const mLeft = M * sx, mTop = M * sy;                          // skalierter Überwuchs-Rand
       const growX = M * TUNE.OVERHANG * sx, growY = M * TUNE.OVERHANG * sy;
       const grow = Math.min(growX, growY);
-      const op = cardOpacity;                                      // #pflanze-fix: Moos folgt der Karten-Deckkraft (Wegflug-Fade)
+      const op = cardOpacity * revealAlpha;                        // #pflanze-fix: Moos folgt der Karten-Deckkraft (Wegflug-Fade) × Flip-Einblendung
       ctx.save();
       roundRectPath(ctx, cardX - growX, cardY - growY, cardW + 2 * growX, cardH + 2 * growY, CARD_R + grow); ctx.clip();
       ctx.globalAlpha = op;
@@ -241,8 +245,13 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
       clockT += Math.min(50, now - last); last = now;
       const stage = clamp(Math.round(stateRef.current.growth || 0), 0, STAGE_MAX);
       const cov = (stage / STAGE_MAX) * TUNE.REIF_COV;              // Reifestufe × Reife-Abdeckung → tatsächliche Moos-Abdeckung
-      if (cov <= 0 || !measure()) { clear(); raf = 0; return; }     // kein Wachstum / Karte weg → rAF anhalten
-      if (Math.abs(cov - renderedCov) > 0.004) renderMoss(cov);     // Bitmap nur bei Stufen-Wechsel neu bauen
+      if (cov <= 0) { clear(); raf = 0; return; }                   // kein Wachstum → rAF anhalten
+      // #flip-fix: WÄHREND des Karten-Flips das Moos aus lassen (verdeckt sonst den 3D-Flip) UND den teuren renderMoss
+      // NICHT auf dem Flip-Frame ausführen (kein Hänger vor dem Flip). rAF läuft billig weiter, bis der Flip vorbei ist.
+      if (now < hideUntilRef.current) { clear(); raf = requestAnimationFrame(frame); return; }
+      if (!measure()) { clear(); raf = 0; return; }                 // Karte weg → rAF anhalten
+      revealAlpha = clamp01((now - hideUntilRef.current) / REVEAL_FADE); // sanftes Einblenden NACH dem Flip
+      if (Math.abs(cov - renderedCov) > 0.004) renderMoss(cov);     // Bitmap nur bei Stufen-Wechsel neu bauen (jetzt nach dem Flip → Hänger nicht mehr auf dem Flip)
       compose();
       raf = requestAnimationFrame(frame);
     }
@@ -267,6 +276,10 @@ export function MossGrow({ growth = 0, panelRef, cardRef, reduced = false }) {
 
   // Wachstums-Wechsel (0 ↔ >0, oder Stufe) startet/rendert neu, ohne die Canvas neu zu bauen.
   useEffect(() => { syncRef.current?.(); }, [growth]);
+
+  // #flip-fix: Neue Karte (flipKey wechselt je Stich) MIT Flip → das Moos für die Flip-Dauer ausblenden, damit der
+  // 3D-Flip sichtbar ist (und der teure Bitmap-Aufbau nicht auf dem Flip-Frame hängt). Danach blendet es sanft ein.
+  useEffect(() => { hideUntilRef.current = flipDur > 0 ? performance.now() + flipDur : 0; syncRef.current?.(); }, [flipKey, flipDur]);
 
   // z-11 wie IonStorm, wird aber als SPÄTERER DOM-Knoten gemountet → Moos liegt ÜBER der Karte (z-10) UND über dem
   // IonStorm-Blitzrahmen (gleiches z, späterer Knoten gewinnt). User-Vorgabe: „Blitz unter Moos, Moos oben drüber".

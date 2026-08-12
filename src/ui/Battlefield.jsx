@@ -1229,6 +1229,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             /* #pflanze-fix: „grün" = voll ausgewachsen (reif) → volle Moos-Abdeckung, auch wenn der Wachstums-Zähler
                growth[id] das nicht mitträgt (Start-Anker bekommt green ohne growth; ebenso Ranken/Blüte-Skills). */
             growth={MOSS_FORCE != null ? MOSS_FORCE : (t ? (t.pCard.green ? PLANT_GREEN_THRESHOLD : (growth[t.pCard.id] || 0)) : 0)}
+            /* #flip-fix: Moos während des 3D-Flips der eigenen Karte ausblenden (flipKey wechselt je Stich, flipDur = Flip-Länge,
+               0 wenn kein Flip: Turbo/reduced/Wegflug) → Flip bleibt sichtbar, kein renderMoss-Hänger auf dem Flip-Frame. */
+            flipKey={t ? t.trickNo : 0} flipDur={useFlip ? flipDur : 0}
             panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
         </Suspense>
       )}
