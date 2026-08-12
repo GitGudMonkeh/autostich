@@ -503,6 +503,8 @@ export function Autostich() {
             : (options.finisher === "blackhole" && !!profile?.ownedCosmetics?.["fx:blackhole"]) ? "blackhole" : "standard",
     scorchDeck: !!options.fxScorchDeck, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
     blackholeDeck: !!options.fxBlackholeDeck, // #320 Schwarzes-Loch-Farbmodus: false = Standard blau/pink, true = Deckfarbe
+    klingeDeck: !!options.fxKlingeDeck, // #klinge-deck: false = kühles Stahlweiß, true = Deckfarbe
+    hologridDeck: !!options.fxHologridDeck, // #hologrid-deck: false = Standard Cyan/Magenta, true = Deckfarbe
     // #322–#326 Gottgleich-Prunk (PIXI): aktiver Effekt (besessen + Option an) oder „gottStandard" (kein Prunk), plus
     // dessen Farbmodus-Flag (Standard vs. Deckfarbe). gottFlags in CustomizeScreen hält die Exklusivität (genau einer an).
     gottEffect: activeGottFx(profile, options) || "gottStandard",
@@ -770,7 +772,7 @@ export function Autostich() {
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
-                starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} cardAnims={deckFx.cardAnims}
+                starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />

@@ -63,9 +63,14 @@ const PREVIEW_LOOK = {
   // #311: Deckfarbe-Showcase auf dem gelben „Goldener Drache"-Deck (bf_drache, a1=#ffcf5a Gold/Gelb) → hebt sich klar
   // vom weiß-blauen Standard-Sternenfeld ab, damit der Standard↔Deckfarbe-Toggle sichtbar ist.
   starfield: { bf: "bf_drache", a1: "#ffcf5a", a2: "#ff5a2a" },
-  // #320 Schwarzes Loch: Standard = blau→pink (im Scene-Code fest); Deckfarbe-Showcase auf einem warmen Gold-Grün-Deck,
-  // damit der Standard↔Deckfarbe-Toggle (kühl-neon ↔ warm) deutlich sichtbar ist.
-  blackhole: { bf: SHOWCASE_BF, a1: "#ffd15a", a2: "#57e08a" },
+  // Sieg-Finisher — Deckfarbe-Beispiel je Effekt: Deck-Beispielfarben KOMPLEMENTÄR zur Standard-Palette + ein dazu
+  // passender Backdrop, der NUR im Deckfarbe-Modus gezeigt wird (Standard-Modus bleibt auf dem neutralen SHOWCASE_BF).
+  klinge:    { bf: "bf_drache",    a1: "#ffb43d", a2: "#ff7a2a" }, // Standard = kühles Stahlweiß → Deckfarbe warm-gold auf Drachen-Feld
+  scorch:    { bf: "bf_wale",      a1: "#35d0ff", a2: "#6ad0ff" }, // Standard = warmes Feuer → Deckfarbe kühl-cyan auf Moonwhale-Feld
+  hologrid:  { bf: "bf_geometrie", a1: "#39e64d", a2: "#8ee06a" }, // Standard = cyan/magenta → Deckfarbe grün/lime auf Geometrie-Feld
+  // #320 Schwarzes Loch: Standard = blau→pink (im Scene-Code fest); Deckfarbe-Showcase = warmes Gold/Grün auf dunklem
+  // Kosmos-Feld, damit der Standard↔Deckfarbe-Toggle (kühl-neon ↔ warm) deutlich sichtbar ist.
+  blackhole: { bf: "bf_kosmos",    a1: "#ffd15a", a2: "#57e08a" },
   // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
   // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
   edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
@@ -115,7 +120,7 @@ const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", pre
 /* Synthetische „Klinge"-Kachel: ein KAUFBARER Sieg-Finisher (10 DP, grüne Rarity) mit eigenem Besitz-Schlüssel
    fx:klinge — vorschaubar wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" (Gratis) geführt. */
 const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
-  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück." };
+  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. In kühlem Stahlweiß oder in der Deckfarbe." };
 
 /* #319 Synthetische „Scorch"-Kachel: kaufbarer Sieg-Finisher (20 DP, blaue Rarity, ownKey fx:scorch). Ein Laser
    schießt einmalig aus zufälliger Richtung, danach verglüht die Gegnerkarte organisch (Rausch-Burn) mit Glut/Asche/Funken. */
@@ -126,7 +131,7 @@ const SCORCH = { key: "scorch", name: "Scorch", group: "finisher", preview: "sco
    fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
    dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
 const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Slice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
-  desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In der Deckfarbe (Verlauf)." };
+  desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe." };
 
 /* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (30 DP, violette Rarity, ownKey fx:blackhole). Ein
    PERSISTENTES Serien-Loch — jeder Sieg füttert es (es wächst + saugt die Gegnerkarte ein), eine Niederlage lässt es
@@ -251,9 +256,12 @@ const KLINGE_SCHEDULE = [
 ];
 const KLINGE_DIR_LABEL = { left: "Links", right: "Rechts", top: "Oben", z: "Z-Schnitt" };
 const kMultLabel = (m) => "×" + String(m).replace(".", ",");           // 1.25 → „×1,25"
-function FinisherScene({ variant }) {
+function FinisherScene({ variant, deckTint = false, look = null }) {
   const [tick, setTick] = useState(0);
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  // #klinge-deck: Standard = kühles Stahlweiß (bladeTint, wie in-game bladeColor=null); Deckfarbe = Deck-Beispielfarbe
+  //   auf passendem Backdrop (nur im Deckfarbe-Modus), Standard bleibt auf dem neutralen SHOWCASE_BF.
+  const bf = battlefieldAssets(deckTint && look?.bf ? look.bf : SHOWCASE_BF);
+  const bladeCol = deckTint ? (look?.a1 || "#35e0ff") : "#bcd6ff";
   const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), FIN_TICK_MS); // Loop: Karte erscheint → wird zerteilt → Pause
@@ -276,7 +284,7 @@ function FinisherScene({ variant }) {
   // ×1,5 → ×2,0) und zeigt, wie der Richtungs-Zyklus wächst — jede Serienschwelle ihren VOLLEN Zyklus von vorne
   // (links zuerst). Spiegelt exakt die In-Game-Logik (sliceMove).
   const kstreak = Math.round((kstep.m - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
-  const fx = <SliceFx cardEl={cardEl} color={suitCol} bladeColor="#35e0ff" halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} /> /* #klinge-laser: Vorschau in einer Demo-Deckfarbe (in-game = aktive Deckfarbe) */;
+  const fx = <SliceFx cardEl={cardEl} color={suitCol} bladeColor={bladeCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} /> /* #klinge-deck: Standard = Stahlweiß · Deckfarbe = Deck-Beispielfarbe (in-game = aktive Deckfarbe) */;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -290,7 +298,7 @@ function FinisherScene({ variant }) {
       {/* #farbsystem: Badge im selben Pill-Design wie die Glutfunken-Tier-Anzeige (eckig, heller Rand, „Label"-Präfix
           in 70 % Deckkraft) — hier „Serie" statt „Tier", Inhalt bleibt Multiplikator + Schnittrichtung. */}
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: kstep.d === "z" ? "#8fd8ff" : "#cfe0ff" }}>
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#8fd8ff") : (kstep.d === "z" ? "#8fd8ff" : "#cfe0ff") }}>
         <span className="opacity-70">Serie</span> {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
       </div>
     </div>
@@ -299,20 +307,22 @@ function FinisherScene({ variant }) {
 
 /* #319 Scorch-Vorschau: ein unsichtbarer 104×144-Karten-Slot (Positionsanker) im Zentrum; ScorchFx zeichnet die
    verglühende Karte darüber und feuert im Loop (loop=true → eigenes Re-Fire). deckTint schaltet Standard-Feuer ↔ Deckfarbe. */
-function ScorchScene({ deckTint = false }) {
+function ScorchScene({ deckTint = false, look = null }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  // #scorch-deck: Standard = warmes Feuer (ScorchFx-intern, deckTint=false); Deckfarbe = Deck-Beispielfarbe auf
+  //   passendem Backdrop (nur im Deckfarbe-Modus), Standard bleibt auf dem neutralen SHOWCASE_BF.
+  const bf = battlefieldAssets(deckTint && look?.bf ? look.bf : SHOWCASE_BF);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
-        value={8} suit={suitColor(DEMO_SUIT)} deckColor="#35e0ff" speed={1.15}
+        value={8} suit={suitColor(DEMO_SUIT)} deckColor={look?.a1 || "#35e0ff"} speed={1.15}
         onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? "#8fd8ff" : "#ffb27a" }}>
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#8fd8ff") : "#ffb27a" }}>
         <span className="opacity-70">Finisher</span> Scorch
       </div>
     </div>
@@ -322,10 +332,14 @@ function ScorchScene({ deckTint = false }) {
 /* #321 Hologrid-Slice-Vorschau (PIXI): board-weite Bühne (panelRef) mit Karten-Anker (cardRef) im Zentrum; der Finisher
    backt darüber die Karte (Wert 8, Deck-Skin/Suit) und feuert im Loop (loop=true → eigenes Re-Fire). Farbe = Deckfarbe
    (Verlauf A→B). Lazy (Suspense) → Pixi lädt erst, wenn die Vorschau gerendert wird. Vorschau = In-Game. */
-function HologridScene({ deckTint = false }) {
+function HologridScene({ deckTint = false, look = null }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  // #hologrid-deck: Standard = Cyan/Magenta (STD_A/STD_B); Deckfarbe = Deck-Beispielfarbe (Verlauf) auf passendem
+  //   Backdrop (nur im Deckfarbe-Modus), Standard bleibt auf dem neutralen SHOWCASE_BF.
+  const bf = battlefieldAssets(deckTint && look?.bf ? look.bf : SHOWCASE_BF);
+  const dc1 = deckTint ? (look?.a1 || "#2ff0ff") : "#2ff0ff";
+  const dc2 = deckTint ? (look?.a2 || look?.a1 || "#ff2d9b") : "#ff2d9b";
   const isMobile = useIsMobile();
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
@@ -334,10 +348,10 @@ function HologridScene({ deckTint = false }) {
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <Suspense fallback={null}>
         <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
-          value={8} suit={suitColor(DEMO_SUIT)} deckColor="#2ff0ff" deckColor2="#ff2d9b" lite={isMobile} speed={1.1} />
+          value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1} />
       </Suspense>
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#7ee0ff" }}>
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#7ee0ff") : "#7ee0ff" }}>
         <span className="opacity-70">Finisher</span> Hologrid-Slice
       </div>
     </div>
@@ -350,7 +364,9 @@ function HologridScene({ deckTint = false }) {
 function BlackholeScene({ deckTint = false }) {
   const panelRef = useRef(null);
   const oppRef = useRef(null);
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  // #blackhole-deck: Standard = neutrales Dunkelfeld; Deckfarbe = passender (dunkel gehaltener) Kosmos-Backdrop, damit
+  //   der Toggle auch am Hintergrund sichtbar ist. Der Backdrop bleibt bewusst schwach (opacity 0.35) → Weltraum-Look.
+  const bf = battlefieldAssets(deckTint ? (PREVIEW_LOOK.blackhole.bf || SHOWCASE_BF) : SHOWCASE_BF);
   const [pulse, setPulse] = useState(null);
   useEffect(() => {
     // Loop-Choreografie: genug Siege, um bis zum (verdoppelten) MAXIMUM aufzubauen (im Showcase sichtbar), dann
@@ -511,9 +527,9 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
-  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
-  if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
-  if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} />; // #321 Hologrid-Slice-Finisher (Pixi)
+  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={PREVIEW_LOOK.klinge} />;
+  if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={PREVIEW_LOOK.scorch} />; // #319 Scorch-Finisher (Laser + organischer Burn)
+  if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={PREVIEW_LOOK.hologrid} />; // #321 Hologrid-Slice-Finisher (Pixi)
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
   // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
@@ -1027,7 +1043,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
@@ -1053,7 +1069,8 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
     // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). #320 Schwarzes Loch: Standard blau/pink ↔
     // Deckfarbe. Andere Finisher (Standard/Klinge) haben keinen Farbmodus.
-    const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : null;
+    const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
+      : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck" : null;
     const finDeckOn = finDeckOpt ? !!options?.[finDeckOpt] : false;
     action = !finDeckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">

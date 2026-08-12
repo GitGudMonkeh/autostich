@@ -681,6 +681,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   finisher = "standard",
   scorchDeck = false, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
   blackholeDeck = false, // #320 Schwarzes-Loch-Farbmodus: false = Standard (blau/pink), true = Deckfarbe (deckA1/deckA2)
+  klingeDeck = false,   // #klinge-deck: false = kühles Stahlweiß (bladeTint), true = Klinge glüht in der Deckfarbe
+  hologridDeck = false, // #hologrid-deck: false = Standard Cyan/Magenta, true = Hologrid in der Deckfarbe
   // #322–#326 Gottgleich-Prunk (PIXI): gewählter Prunk-Effekt ("gottStandard" = kein Prunk) + dessen Farbmodus.
   gottEffect = "gottStandard", gottDeck = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
@@ -1124,7 +1126,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const sliceDir = sliceMove(t.breakdown ? t.breakdown.streakMult : 1, sliceSeq.current++);
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
         fx: "slice", sliceDir,
-        color: suitColor(t.oCard.suit), bladeColor: deckA1 || deckA2 || null, seed: t.trickNo * 3 + 1, // #klinge-laser: Klinge glüht in der Deckfarbe
+        color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
@@ -1347,7 +1349,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Suspense fallback={null}>
           <HologridSlicePixi trigger={hologridTrigger} panelRef={panelRef} cardRef={oppCardRef}
             frontImage={oppFrontImg} value={t ? t.oValue : null} suit={t ? suitColor(t.oCard.suit) : "#e0605a"}
-            deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint reduced={reduced} lite={lite}
+            deckColor={hologridDeck ? (deckA1 || "#2ff0ff") : "#2ff0ff"} deckColor2={hologridDeck ? (deckA2 || deckA1 || "#ff2d9b") : "#ff2d9b"} deckTint={hologridDeck} reduced={reduced} lite={lite}
             speed={scorchSpeed} />
         </Suspense>
       )}
