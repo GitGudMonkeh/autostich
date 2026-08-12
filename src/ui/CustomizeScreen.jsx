@@ -50,7 +50,9 @@ const PREVIEW_LOOK = {
   // #311: Sternenfeld ist von Haus aus weiß-blau. Damit die Deck-Demo mit dem Weiß-Blau KONTRASTIERT (Toggle sichtbar)
   // UND nicht mit dem Hintergrund clasht, läuft es auf dem NEUTRALEN Genesis-Feld (statt Kosmos-Magenta) mit einer
   // warmen Bernstein-Deckfarbe — warm auf neutral-dunkel passt zusammen und hebt sich klar vom kühlen Standard ab.
-  starfield: { bf: SHOWCASE_BF, a1: "#ff9d3c", a2: "#ffd08a" },
+  // #311: Deckfarbe-Showcase auf dem gelben „Goldener Drache"-Deck (bf_drache, a1=#ffcf5a Gold/Gelb) → hebt sich klar
+  // vom weiß-blauen Standard-Sternenfeld ab, damit der Standard↔Deckfarbe-Toggle sichtbar ist.
+  starfield: { bf: "bf_drache", a1: "#ffcf5a", a2: "#ff5a2a" },
   // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
   // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
   edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
@@ -360,9 +362,9 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          {/* riseScale: die Showcase-Kachel ist flacher als das In-Game-Feld → Türme höher skalieren, damit sie
-              wie im Spiel prominent aufragen (nicht zu niedrig). */}
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseScale={2.7} sun={sun} wire={wire} />
+          {/* Showcase-Kachel ist flacher als das In-Game-Feld → riseBase hoch (hohe RUHE-Türme, prominent, nicht zu
+              niedrig), riseScale niedrig (ruhigerer Musik-Ausschlag; im Showcase soll es nicht so stark springen). */}
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={4.5} riseScale={1.3} sun={sun} wire={wire} />
         </Suspense>
       )}
     </div>

@@ -44,11 +44,12 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, sun = true, wire = false }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, sun = true, wire = false }) {
   const hostRef = useRef(null);
-  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale: Würfelhöhe (Showcase höher). sun: Retro-Sonne an/aus.
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, sun, wire });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, sun, wire };
+  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale = Musik-Ausschlag (Höhen-Delta je
+  // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag) → Showcase: hohe Türme, aber ruhiger Ausschlag.
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, sun, wire });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, sun, wire };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -220,7 +221,10 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
             const colF = rgba(mix(mix(dark, base, emit), hot, clamp(val, 0, 1) * 0.5), 1);
             const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
             const colS = rgba(mix(dark, base, emit * 0.6), 1);
-            const s = hw0, h = 2 * s + val * TUNE.C_RISE * p.riseScale;
+            // Turm-Höhe = RUHE-Sockel (2·s + C_RISE·(riseBase−1)·0.55, unabhängig vom Ausschlag) + Musik-Ausschlag
+            // (val·C_RISE·riseScale). So kann der Showcase hohe, ruhige Türme zeigen (riseBase hoch, riseScale niedrig),
+            // während das Spiel bei riseBase=1/riseScale=1 unverändert bleibt.
+            const s = hw0, h = 2 * s + TUNE.C_RISE * (p.riseBase - 1) * 0.55 + val * TUNE.C_RISE * p.riseScale;
             box3d(cx, z - s, z + s, 0, h, s, colF, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha);
           }
         }

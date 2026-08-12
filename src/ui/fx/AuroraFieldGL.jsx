@@ -17,7 +17,7 @@ const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.
 const FRAG = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2;",
-  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.50, DRIFT=0.035;",
+  "const float I_=1.16, WISP=4.0, WAVE=0.14, PERSP=0.22, DOME=0.10, CLUMPLO=0.36, RAYF=39.0, RAYC=1.10, SPACING=0.13, BASEY=0.38, DRIFT=0.035;",
   "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453123); }",
   "float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);",
   "  float a=hash(i), b=hash(i+vec2(1.0,0.0)), c=hash(i+vec2(0.0,1.0)), d=hash(i+vec2(1.0,1.0));",

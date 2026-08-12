@@ -511,51 +511,9 @@ export const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.
       return "pixi";
     })()
   : "dom";
-// #: „Glutfunken" = 2–3 FONTÄNEN (feste X-Punkte) statt gleichmäßig übers Feld verteilter Funken. Anzahl UND Höhe der
-// Fontänen sind an den LAUF-SCORE gekoppelt (linear bis EMBER_MAX_SCORE) → je höher der Score, desto mehr/höhere Funken.
-// Die Höhe (rise) ist SLOT-FEST je Funke: mehr Slots (höherer Score) ⇒ höhere/vollere Fontäne, ohne dass bestehende
-// Funken beim Score-Anstieg springen (nur neue, höhere Slots kommen dazu). Deterministisch (fjitter, kein Math.random).
-const EMBER_FOUNTAINS_N = 3;    // Anzahl gleichzeitiger Fontänen
-const EMBER_MAX_SCORE = 500000;
-const EMBER_MAX_STUFE = 3;      // 0..3 → Partikel/Fontäne verdoppeln sich je Stufe
-const emberNorm = (score) => clamp((score || 0) / EMBER_MAX_SCORE, 0, 1);
-// Score → Stufe (0..EMBER_MAX_STUFE): je Stufe verdoppelt sich die Partikelzahl pro Fontäne.
-const emberStufe = (score) => clamp(Math.floor(emberNorm(score) * (EMBER_MAX_STUFE + 1)), 0, EMBER_MAX_STUFE);
-// Zufällige Fontänen-Positionen (x %) am unteren Rand — deterministisch aus `seed`. Für die Ambiente-Funken ein FESTER
-// Seed (Positionen bleiben stabil), für den Per-Stich-Stoß ein sweepId-Seed (jede Eruption an anderen Stellen).
-function emberFountainXs(seed) {
-  const xs = [];
-  for (let f = 0; f < EMBER_FOUNTAINS_N; f++) xs.push(clamp(8 + Math.abs(fjitter(seed + f * 53, 84)), 6, 94));
-  return xs;
-}
-// Ambiente: dauerhaft aufsteigende Funken je Fontäne (Endlos-Loop). Positionen zufällig aber STABIL; Anzahl moderat
-// (läuft dauerhaft) mit der Stufe wachsend.
-function emberFountainDots(score) {
-  const per = 4 + emberStufe(score) * 2; // 4 … 10 je Fontäne (Ambiente bleibt ruhig)
-  const xs = emberFountainXs(7);
-  const out = [];
-  for (let f = 0; f < xs.length; f++) for (let s = 0; s < per; s++) {
-    const seed = f * 97 + s * 31;
-    out.push({ key: `f${f}s${s}`, l: clamp(xs[f] + fjitter(seed, 3.4), 3, 97),
-      size: 1.3 + Math.abs(fjitter(seed + 5, 1.5)), rise: 150 + s * 20,
-      rdx: 5 + fjitter(seed + 9, 12), t: 8 + Math.abs(fjitter(seed + 3, 4)),
-      d: (s / per) * 8 + Math.abs(fjitter(seed + 7, 1.5)) });
-  }
-  return out;
-}
-// Per-Stich-Eruption („Vulkan"): Fontänen an ZUFÄLLIGEN Positionen (je Stich neu, aus sweepId). Die Partikelzahl je
-// Fontäne VERDOPPELT sich mit jeder Stufe (3·2^Stufe = 3/6/12/24); die Partikel werden mit mehr Wucht hochgeschossen.
-function emberFountainJets(score, sweepId, turbo = 1) {
-  const per = Math.max(2, Math.round(3 * Math.pow(2, emberStufe(score)) * turbo)); // 3/6/12/24 je Fontäne, bei MAX ~×0.45
-  const xs = emberFountainXs(sweepId * 7 + 1);
-  const out = [];
-  for (let f = 0; f < xs.length; f++) for (let s = 0; s < per; s++) {
-    const seed = sweepId * 131 + f * 61 + s * 19;
-    out.push({ key: `f${f}j${s}`, white: s % 3 === 0, l: clamp(xs[f] + fjitter(seed, 5), 3, 97),
-      jy: 118 + Math.abs(fjitter(seed + 3, 64)), dx: fjitter(seed + 9, 16), d: Math.abs(fjitter(seed + 5, 150)) });
-  }
-  return out;
-}
+// #cleanup: Die DOM-Fassung der Glutfunken (Ambiente-Dots + Per-Stich-Jet-Fontänen samt emberFountain*-Helfern) wurde
+// entfernt — Glutfunken laufen jetzt ausschließlich über den Pixi-Emitter (src/ui/fx/embersPixi.js), wie Sternenfeld
+// und Cube-Matrix auch. Damit gibt es keine parallele DOM-Implementierung mehr zu pflegen.
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
@@ -578,22 +536,10 @@ const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
 });
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, score = 0, suppressField = false }) {
+const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, suppressField = false }) {
   const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
   const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
-  // #: Glutfunken-Stöße dürfen ÜBERLAPPEN — der vorige Funkenstrom läuft sanft aus, während der neue startet, statt
-  // hart abgeschnitten zu werden. Wir halten die letzten 3 Generationen als eingefrorene Snapshots (jets/Dauer/win zum
-  // Zeitpunkt des Stichs) → stabile Keys, Animationen laufen weiter; ältere fallen raus, sobald sie längst fertig sind.
-  const [emberGen, setEmberGen] = useState([]);
-  useEffect(() => {
-    if (effect !== "embers" || lite || suppressField || !(sweepId > 0)) return; // #: Jet-Fontänen (bis 72 Nodes/Stich) sind der teure Schwarm → in „ausgewogen" (lite) UND minimal aus; das ruhige Ambiente (dots) bleibt. suppressField → der GPU-Emitter (Pixi) übernimmt.
-    const turbo = clamp((sweepDur || 900) / 875, 0.45, 1);
-    const snap = { id: sweepId, win, jetDur: Math.max(560, Math.round(sweepDur * 0.9)), jets: emberFountainJets(score, sweepId, turbo) };
-    setEmberGen((g) => (g[g.length - 1]?.id === sweepId ? g : [...g, snap].slice(-3)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur auf sweepId reagieren (Snapshot friert score/sweepDur/win ein)
-  }, [sweepId, effect, lite]);
-  useEffect(() => { if (effect !== "embers") setEmberGen([]); }, [effect]);
-  // Pixi-Umbau: übernimmt der GPU-Emitter diesen Feld-Effekt, rendert die DOM-Fassung KEINE Nodes (Hooks laufen oben).
+  // Pixi-Umbau: übernimmt der GPU-Emitter diesen Feld-Effekt, rendert die DOM-Fassung KEINE Nodes.
   if (suppressField) return null;
   let inner = null;
   if (effect === "aurora") {
@@ -606,36 +552,18 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
         {/* #perf-A2: blur + mix-blend-mode: screen sind auf Mobile teuer → im lite-Modus (ausgewogen/minimal) kleinerer
             Blur-Radius (12→8 / 18→12). Diese DOM-Bögen sind ohnehin nur der Fallback (der WebGL-Aurora-Canvas übernimmt
             im Regelfall via suppressField) — hier zählt v. a. der Nicht-Pixi-Pfad. Desktop/voll unverändert. */}
-        <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "-10%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
+        {/* #: Aurora etwas tiefer angesetzt (top −10%→0% / −6%→4%) → hängt nicht mehr am oberen Rand, sondern zieht
+            sichtbar ins Feld (analog zum tieferen WebGL-BASEY). */}
+        <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "0%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
           background: `radial-gradient(130% 82% at 50% 0%, ${color}99, ${color}33 34%, transparent 66%)`, filter: `blur(${lite ? 8 : 12}px)`, opacity: 0.75 }} />
-        <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "-6%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
+        <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "4%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
           background: `radial-gradient(118% 74% at 44% 0%, ${c2}77, transparent 60%)`, filter: `blur(${lite ? 12 : 18}px)`, opacity: 0.6 }} />
         {AURORA_STARS.map((st, i) => (
-          <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y}%`, width: st.s, height: st.s,
+          <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y + 8}%`, width: st.s, height: st.s,
             borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 ${(st.s * 2).toFixed(0)}px #ffffffcc`, opacity: 0.6, animationDelay: `${st.d}s` }} />
         ))}
-        {react && <div key={sweepId} className="as-field-bloom absolute" style={{ left: "-8%", right: "-8%", top: "-10%", height: "66%", mixBlendMode: "screen",
+        {react && <div key={sweepId} className="as-field-bloom absolute" style={{ left: "-8%", right: "-8%", top: "0%", height: "66%", mixBlendMode: "screen",
           background: `radial-gradient(130% 84% at 50% 0%, ${win ? color : c2}${win ? "aa" : "66"}, transparent 64%)`, animationDuration: `${sweepDur}ms` }} />}
-      </>
-    );
-  } else if (effect === "embers") {
-    // #: Fontänen (Score-gekoppelte Anzahl/Höhe). Ambiente-Funken + überlappende Per-Stich-Stöße (emberGen-Snapshots).
-    const dots = emberFountainDots(score);
-    inner = (
-      <>
-        {dots.map((e) => (
-          <span key={e.key} className={`${A("as-field-rise")} absolute rounded-full`} style={{
-            left: `${e.l}%`, bottom: reduced ? `${12 + e.rise / 8}%` : "-4%", width: e.size, height: e.size,
-            background: color, boxShadow: `0 0 ${(e.size * 2.5).toFixed(1)}px ${color}`, opacity: 0.7,
-            "--rise": `${e.rise}%`, "--rdx": `${e.rdx}px`, animationDuration: `${e.t}s`, animationDelay: `${e.d}s` }} />
-        ))}
-        {!lite && emberGen.map((g) => g.jets.map((jt) => (
-          <span key={`${g.id}-${jt.key}`} className="as-field-spark absolute rounded-full" style={{
-            left: `${jt.l}%`, bottom: "0%", width: g.win ? 3.2 : 2.6, height: g.win ? 3.2 : 2.6,
-            background: jt.white ? "#ffffff" : color, boxShadow: `0 0 6px ${color}`,
-            "--sx": `${jt.dx}px`, "--sy": `-${Math.round(jt.jy * (g.win ? 1.15 : 1))}px`,
-            animationDuration: `${g.jetDur}ms`, animationDelay: `${jt.d}ms` }} />
-        )))}
       </>
     );
   } else return null;
@@ -1270,12 +1198,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {bgFx && deckA1 && (
         <FieldFxLayer effect={bgFx} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          score={0} suppressField={auroraGL} />
+          suppressField={auroraGL} />
       )}
-      {bgFinisher && deckA1 && (
-        <FieldFxLayer effect={bgFinisher} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          score={bgFinisher === "embers" ? Math.round((score || 0) / 20000) * 20000 : 0} suppressField={pixiFin} />
-      )}
+      {/* #cleanup: Der DOM-Hintergrund-Finisher entfällt — Glutfunken & Sternenfeld laufen nur noch über den
+          Pixi-Emitter (PixiStage). Es gibt keine DOM-Finisher-Fassung mehr. */}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
       <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
