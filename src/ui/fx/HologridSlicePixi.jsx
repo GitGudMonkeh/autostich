@@ -172,7 +172,10 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
     function frame(ticker) {
       if (!play.on || !geo) return;
       const s = p.current;
-      const dt = Math.min(0.05, (ticker.deltaMS / 1000) * s.speed);
+      // #speed: erst den ROH-dt gegen Stall-Sprünge deckeln (50 ms), DANN mit speed multiplizieren — sonst kappt der
+      // Deckel die effektive Geschwindigkeit bei ~3× (0,05 s/Frame) und der Effekt läuft auf MAX-Turbo zu langsam →
+      // wird vom nächsten Stich abgeschnitten. So skaliert er voll mit scorchSpeed (bis 8×), analog ScorchFx.
+      const dt = Math.min(0.05, ticker.deltaMS / 1000) * s.speed;
       play.t += dt;
       const t = play.t;
       const sweepP = clamp01((t - TUNE.CHARGE) / TUNE.CUT);       // 0..1 Laser-Fortschritt
