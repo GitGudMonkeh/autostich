@@ -426,16 +426,16 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     const startMs = delay + stMs;
-    const hallDur = Math.round(dur * 1.7);   // #klinge-laser: Nachhall dauert länger als der Schnitt → sichtbares Ausglühen
+    const hallDur = Math.round(dur * 2.1);   // #klinge-laser: Nachhall dauert länger als der Schnitt → sichtbares Ausglühen (verlängert)
     const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
       transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (
       // display:contents → der Wrapper erzeugt keine eigene Box; beide Linien positionieren sich relativ zur SliceFx-Bühne.
       <div key={key} style={{ display: "contents" }}>
-        {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht satt aus. */}
-        <div style={{ ...common, height: h + 1, marginTop: -(h + 1) / 2, filter: "blur(0.4px)",
-          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 22%, #ffffff 50%, ${bladeGlow} 78%, transparent 100%)`,
-          boxShadow: `0 0 8px ${bladeGlow}, 0 0 ${(20 + intensity * 12).toFixed(0)}px ${bladeGlow}, 0 0 ${(40 + intensity * 18).toFixed(0)}px ${bladeGlow}cc`,
+        {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht SATT aus (verstärkt). */}
+        <div style={{ ...common, height: h + 2, marginTop: -(h + 2) / 2, filter: "blur(0.5px)",
+          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 20%, #ffffff 50%, ${bladeGlow} 80%, transparent 100%)`,
+          boxShadow: `0 0 12px ${bladeGlow}, 0 0 ${(32 + intensity * 16).toFixed(0)}px ${bladeGlow}, 0 0 ${(62 + intensity * 26).toFixed(0)}px ${bladeGlow}, 0 0 ${(96 + intensity * 34).toFixed(0)}px ${bladeGlow}aa`,
           "--cut-rot": `${rot}deg`, animation: `as-blade-hall ${hallDur}ms ease-out ${startMs}ms both` }} />
         {/* Die Klinge selbst: weiß-heißer Kern + Deck-Glow, wächst heraus und schwingt einheitlich durch (--cut-swing). */}
         <div style={{ ...common, height: h, marginTop: -h / 2,

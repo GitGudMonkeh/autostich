@@ -217,8 +217,9 @@ button { font-family: inherit; }
    → kurzer, sichtbarer Hall wie bei einer schnell durchgezogenen Laserklinge. */
 @keyframes as-blade-hall {
   0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
-  22%  { opacity: 0.85; }
-  35%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  18%  { opacity: 0.9; }
+  30%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  50%  { opacity: 1; }   /* Spitze länger halten → kräftigeres, sichtbareres Ausglühen */
   100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; }
 }
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge
