@@ -20,9 +20,11 @@ const TUNE = {
   // Flug
   FLY_SPEED: 210, SPREAD: 1.00, PUSH: 200, LIFT: 300, GRAVITY: 800, DRAG: 0.50,
   SPIN: 2.6, TUMBLE: 10.0, FRAG_LIFE: 2.00, BOUNCE: 0.55, FLOOR: 0.94,
-  // Pixel
+  // Pixel — #hologrid: die abplatzenden Mini-Pixel sind AUS (PIX_SPARK 0). Sonst flogen je Kachel bis zu 5 zusätzliche
+  //   2..9px-Stücke weg (≈COLS×ROWS×5 extra) → deutlich MEHR Teile als das Gitter, in das die Karte geschnitten wird.
+  //   Jetzt fliegen exakt die COLS×ROWS Kachel-Stücke — genau so viele, wie die Karte zerteilt wird, nicht mehr.
   PIXELATE_AT: 0.15, PIXEL_MIN: 2.0, PIXEL_MAX: 9.0, SHRINK: 0.50,
-  FILL_GONE: 0.30, FRAME_FADE: 0.82, PIX_SPARK: 5, PIX_DRIFT: 60,
+  FILL_GONE: 0.30, FRAME_FADE: 0.82, PIX_SPARK: 0, PIX_DRIFT: 60,
   // Look
   WIRE: 0.85, HOLO_TINT: 0.28, BRIGHT: 1.00, SCAN: 0.40,
   // Karte (Referenz — die echte Kartengröße kommt aus cardRef)
