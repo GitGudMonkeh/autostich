@@ -95,11 +95,11 @@ function buildCardCanvas(w, h, opts) {
 }
 
 export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = null, value = null, suit = "#e0605a",
-  deckColor = "#35e0ff", deckTint = false, reduced = false, loop = false, speed = 1, onDone = null }) {
+  deckColor = "#35e0ff", deckTint = false, reduced = false, lite = false, loop = false, speed = 1, onDone = null }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln.
-  const p = useRef({ frontImage, value, suit, deckColor, deckTint, reduced, loop, speed, onDone });
-  p.current = { frontImage, value, suit, deckColor, deckTint, reduced, loop, speed, onDone };
+  const p = useRef({ frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone });
+  p.current = { frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone };
   const imgRef = useRef(null);
 
   // Bild (Deck-Skin) vorladen — im Spiel ist es i. d. R. schon im Cache (die Karte liegt bereits im DOM).
@@ -122,12 +122,17 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
     let embers = [], ash = [], sparks = [];
     let burning = false, bt = 0, clock = 0, done = false;
     let raf = 0, last = 0, disposed = false;
+    // #perf: Glut-Sprite-Palette (24 Stufen der Rampe) EINMAL je Burn — spart emberCol()+toHex()+Map (und potenzielle
+    // 64px-Canvas-Erzeugung) je Partikel je Frame. Burn-Feld wird nur ~30 fps neu gerechnet (lastBurnT), jedes Frame
+    // nur das gecachte Bild gezeichnet → halber Per-Pixel-Aufwand ohne sichtbaren Unterschied.
+    const EPN = 24;
+    let emberPal = [], ashSpr = null, lastBurnT = -1;
 
     function measure() {
       const pr = panelRef?.current?.getBoundingClientRect();
       const cr = cardRef?.current?.getBoundingClientRect();
       if (!pr || !cr || pr.width < 2 || cr.width < 2) return false;
-      DPR = Math.min(1.5, window.devicePixelRatio || 1);
+      DPR = Math.min(p.current.lite ? 1 : 1.25, window.devicePixelRatio || 1); // #perf: Deckel gesenkt (war 1,5) — weicher Effekt, kaum sichtbar
       W = Math.max(1, Math.round(pr.width)); H = Math.max(1, Math.round(pr.height));
       canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       cardX = cr.left - pr.left; cardY = cr.top - pr.top; cardW = cr.width; cardH = cr.height;
@@ -136,7 +141,7 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
 
     // Burn-Feld: je Pixel eine „Brennzeit" 0..1 = Distanz vom Einschlag + fbm-Rausch → zerklüftete organische Front.
     function buildBurn() {
-      bw = clamp(Math.round(cardW), 40, 130); bh = Math.max(2, Math.round(bw * cardH / Math.max(1, cardW)));
+      bw = clamp(Math.round(cardW), 40, p.current.lite ? 72 : 96); bh = Math.max(2, Math.round(bw * cardH / Math.max(1, cardW))); // #perf: Auflösung gesenkt (war 130) — wird hochskaliert/geglättet
       burnCv.width = bw; burnCv.height = bh; outImg = ctx.createImageData(bw, bh);
       const tmp = document.createElement("canvas"); tmp.width = bw; tmp.height = bh; const tc = tmp.getContext("2d");
       tc.drawImage(cardCv, 0, 0, bw, bh); cardData = tc.getImageData(0, 0, bw, bh).data;
@@ -158,7 +163,11 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       noise = makeNoise(1 + Math.floor(Math.random() * 9999)); laserAng = Math.random() * TAU;
       cardCv = buildCardCanvas(Math.round(cardW), Math.round(cardH), { img: imgRef.current, value: p.current.value, suit: p.current.suit });
       buildBurn();
-      embers = []; ash = []; sparks = []; burning = true; bt = 0; done = false;
+      // #perf: Glut-Sprite-Palette einmal für DIESEN Burn (Farbmodus/Deckfarbe) bauen → im Render nur indizieren.
+      const dm = p.current.deckTint, dr = rgb(p.current.deckColor);
+      emberPal = new Array(EPN); for (let i = 0; i < EPN; i++) emberPal[i] = esprite(emberCol(i / (EPN - 1), dm, dr));
+      ashSpr = sprite(toHex(ASH_COL));
+      embers = []; ash = []; sparks = []; burning = true; bt = 0; done = false; lastBurnT = -1;
     }
 
     const inCardIdx = (i) => cardData && cardData[i * 4 + 3] > 12;
@@ -194,7 +203,9 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       const cap = (a, n) => { if (a.length > n) a.splice(0, a.length - n); }; cap(embers, 600); cap(ash, 280); cap(sparks, 360);
     }
 
-    function renderBurn(t) {
+    // #perf: NUR der teure Per-Pixel-Loop + putImageData (throttled auf ~30 fps). Das Zeichnen (drawImage) passiert
+    // jedes Frame in render() mit dem gecachten burnCv → glatter Dissolve bei halbem Rechenaufwand.
+    function computeBurn(t) {
       const dm = p.current.deckTint, dr = rgb(p.current.deckColor);
       const CHAR = TUNE.CHAR, RIM = TUNE.RIM, glow = TUNE.EDGE_GLOW, ch = rgb(CHAR_COL), ec = emberCol(0.88, dm, dr), out = outImg.data, src = cardData;
       for (let i = 0, q = 0; i < burnmap.length; i++, q += 4) {
@@ -211,7 +222,6 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
         else out[q + 3] = 0;                                                                                            // weg
       }
       bctx.putImageData(outImg, 0, 0);
-      ctx.imageSmoothingEnabled = true; ctx.drawImage(burnCv, 0, 0, bw, bh, cardX, cardY, cardW, cardH);
     }
 
     function drawLaser() {
@@ -235,18 +245,21 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
 
     function drawSprite(spr, x, y, r, a) { ctx.globalAlpha = clamp(a, 0, 1); ctx.drawImage(spr, x - r, y - r, r * 2, r * 2); }
 
+    const EPMAX = EPN - 1;
     function render() {
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
-      const dm = p.current.deckTint, dr = rgb(p.current.deckColor);
-      if (burning && bt <= TUNE.DUR) renderBurn(clamp(bt / TUNE.DUR, 0, 1));   // die verglühende Karte (danach ganz weg; Partikel klingen aus)
-      // Asche (dunkel, normal), dann additive Glut/Funken.
+      if (burning && bt <= TUNE.DUR) {   // die verglühende Karte (Feld-Neuberechnung throttled, Bild jedes Frame)
+        if (lastBurnT < 0 || clock - lastBurnT >= 0.032) { computeBurn(clamp(bt / TUNE.DUR, 0, 1)); lastBurnT = clock; }
+        ctx.imageSmoothingEnabled = true; ctx.drawImage(burnCv, 0, 0, bw, bh, cardX, cardY, cardW, cardH);
+      }
+      // Asche (dunkel, normal), dann additive Glut/Funken. #perf: Farbe über die vorgebaute Palette (kein emberCol/Sprite je Partikel).
       ctx.globalCompositeOperation = "source-over";
-      for (const s of ash) { const lf = 1 - s.age / s.life; drawSprite(sprite(toHex(ASH_COL)), s.x, s.y, s.sz * (0.8 + 0.4 * lf), 0.5 * lf); }
+      for (const s of ash) { const lf = 1 - s.age / s.life; drawSprite(ashSpr, s.x, s.y, s.sz * (0.8 + 0.4 * lf), 0.5 * lf); }
       ctx.globalCompositeOperation = "lighter";
-      for (const s of embers) { const lf = 1 - s.age / s.life, heat = clamp(lf, 0, 1), c = emberCol(heat, dm, dr), flick = 0.8 + 0.2 * Math.sin(clock * 28 + s.seed);
-        drawSprite(esprite(c), s.x, s.y, s.sz * (0.5 + 0.6 * heat), TUNE.EMB_GLOW * (0.35 + 0.65 * lf) * flick); }
-      for (const s of sparks) { const lf = 1 - s.age / s.life, c = emberCol(0.7 + 0.3 * lf, dm, dr); drawSprite(esprite(c), s.x, s.y, s.sz * (0.6 + 0.5 * lf), lf * lf); }
+      for (const s of embers) { const lf = 1 - s.age / s.life, heat = clamp(lf, 0, 1), flick = 0.8 + 0.2 * Math.sin(clock * 28 + s.seed);
+        drawSprite(emberPal[clamp(heat * EPMAX | 0, 0, EPMAX)], s.x, s.y, s.sz * (0.5 + 0.6 * heat), TUNE.EMB_GLOW * (0.35 + 0.65 * lf) * flick); }
+      for (const s of sparks) { const lf = 1 - s.age / s.life; drawSprite(emberPal[clamp((0.7 + 0.3 * lf) * EPMAX | 0, 0, EPMAX)], s.x, s.y, s.sz * (0.6 + 0.5 * lf), lf * lf); }
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
       drawLaser();
     }
@@ -255,6 +268,9 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       if (disposed) return;
       const dt = Math.min(0.05, (now - last) / 1000); last = now; clock = now / 1000;
       update(dt); render();
+      // #perf: Im Spiel (kein Loop) den rAF stoppen, sobald alles fertig ist (Burn vorbei + keine Partikel mehr) → kein
+      // Leerlauf-Frame bis zum nächsten Stich. Der Showcase-Loop läuft weiter (loop=true).
+      if (!p.current.loop && done && !burning && embers.length === 0 && ash.length === 0 && sparks.length === 0) { raf = 0; return; }
       raf = requestAnimationFrame(frame);
     }
 

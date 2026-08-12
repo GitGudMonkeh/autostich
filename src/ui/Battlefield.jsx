@@ -1199,7 +1199,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {oppScorched && !reduced && (
         <ScorchFx key={`scorch${t.trickNo}`} trigger={t.trickNo} panelRef={panelRef} cardRef={oppCardRef}
           frontImage={oppFrontImg} value={t.oValue} suit={suitColor(t.oCard.suit)}
-          deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced}
+          deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced} lite={lite}
           speed={Math.max(1, Math.min(8, BASE_FLIP_MS / Math.max(1, flipMs)))} />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
