@@ -38,15 +38,15 @@ function makeRadial(stops) {
 
 export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#31d0ff", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null }) {
+  onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const nodesRef = useRef(null);   // { rings: Graphics, flash: Sprite }
   const playRef = useRef({ playing: false, bt: 0 });
   const startRef = useRef(null);
   const firstRef = useRef(true);
-  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone };
+  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
   const TOTAL = (TUNE.WAVES - 1) * TUNE.STAGGER + TUNE.LIFE;
 
   useEffect(() => {
@@ -93,13 +93,13 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
       flash.position.set(cx, cy); flash.width = flash.height = fr; flash.tint = intOf(prismColor(0.5, dm, ca, cb)); flash.alpha = clamp(flashMax * 0.85, 0, 1);
 
       if (pl.bt > TOTAL + TUNE.TAIL) {
-        if (s.loop) { pl.bt = 0; }
+        if (s.loop) { pl.bt = 0; s.onFire && s.onFire(); }
         else { pl.playing = false; rings.clear(); flash.alpha = 0; stopIdle(); s.onDone && s.onDone(); }
       }
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.

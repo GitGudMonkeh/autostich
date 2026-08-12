@@ -66,7 +66,7 @@ function makeSunTexture(top, bot) {
 
 export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#35e0ff", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null }) {
+  onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const nodesRef = useRef(null);          // { sun, corona, core, rays }
@@ -74,8 +74,8 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
   const sunKeyRef = useRef("");
   const startRef = useRef(null);
   const firstRef = useRef(true);
-  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone };
+  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -137,7 +137,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
       }
 
       if (pl.bt > TUNE.LIFE + TUNE.TAIL) {
-        if (s.loop) { pl.bt = 0; }
+        if (s.loop) { pl.bt = 0; s.onFire && s.onFire(); }   // #showcase: Loop-Neustart → Ansage synchron neu poppen
         else { pl.playing = false; sun.alpha = corona.alpha = core.alpha = 0; g.clear(); stopIdle(); s.onDone && s.onDone(); }
       }
     }
@@ -145,7 +145,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
     function startPlay() {
       const a = appRef.current, pl = playRef.current; if (!a || disposed) return;
-      pl.playing = true; pl.bt = 0;
+      pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire();
       if (document.visibilityState !== "hidden") a.ticker.start();
     }
     startRef.current = startPlay;

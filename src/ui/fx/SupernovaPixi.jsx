@@ -57,15 +57,15 @@ function makeStreak() {
 
 export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#ffd24a", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null }) {
+  onDone = null, onFire = null }) {
   const tHostRef = useRef(null);
   const nHostRef = useRef(null);
   const refs = useRef({ tApp: null, nApp: null, tG: null, tRoot: null, nRoot: null, novaG: null, core: null, flash: null, starsPC: null, stars: [] });
   const playRef = useRef({ playing: false, bt: 0 });
   const startRef = useRef(null);
   const firstRef = useRef(true);
-  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone };
+  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
 
   useEffect(() => {
     const tHost = tHostRef.current, nHost = nHostRef.current; if (!tHost || !nHost) return undefined;
@@ -174,13 +174,13 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       } else { r.flash.clear(); }
 
       if (pl.bt > TUNE.LIFE + TUNE.TAIL) {
-        if (s.loop) { seedStars(); pl.bt = 0; }
+        if (s.loop) { seedStars(); pl.bt = 0; s.onFire && s.onFire(); }
         else { pl.playing = false; g.clear(); tG.clear(); flash.clear(); core.alpha = 0; for (const star of r.stars) star.p.alpha = 0; stopIdle(); s.onDone && s.onDone(); }
       }
     }
 
     function stopIdle() { const r = refs.current; try { r.tApp.renderer.render(r.tApp.stage); r.nApp.renderer.render(r.nApp.stage); r.nApp.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const r = refs.current, pl = playRef.current; if (!r.nApp || disposed) return; seedStars(); pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") r.nApp.ticker.start(); }
+    function startPlay() { const r = refs.current, pl = playRef.current; if (!r.nApp || disposed) return; seedStars(); pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") r.nApp.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 auf BEIDE Canvas (Tunnel + Nova) — der teuerste Posten (zwei Full-Screen-Apps + Flash).

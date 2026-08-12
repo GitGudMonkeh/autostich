@@ -45,15 +45,15 @@ function makeRadial(stops) {
 
 export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#35e0ff", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null }) {
+  onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const nodesRef = useRef(null);   // { g: Graphics, core: Sprite }
   const playRef = useRef({ playing: false, bt: 0, blocks: [] });
   const startRef = useRef(null);
   const firstRef = useRef(true);
-  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone };
+  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -141,13 +141,13 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       core.position.set(cx, cy); core.width = core.height = fr; core.tint = intOf(mix([255, 255, 255], mix(ca, cb, 0.5), 0.5)); core.alpha = clamp(coreFlash * 0.85 * A + coreFlash * 0.15, 0, 1);
 
       if (pl.bt > TUNE.LIFE + TUNE.TAIL) {
-        if (s.loop) { buildBlocks(); pl.bt = 0; }
+        if (s.loop) { buildBlocks(); pl.bt = 0; s.onFire && s.onFire(); }
         else { pl.playing = false; g.clear(); core.alpha = 0; stopIdle(); s.onDone && s.onDone(); }
       }
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.

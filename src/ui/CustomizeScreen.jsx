@@ -206,59 +206,12 @@ function useIsMobile() {
 
 // Einmalig injizierte Keyframes für die Gottgleich-Standard-Vorschau (Event-Loop).
 const FX_CSS = `
-/* #294 Gottgleich-Event-Loop (Vorschau spielt das echte Ereignis nach): Aura-Flare + Karten-Pop + goldene
-   Groß-Ansage, ~3.4s Zyklus. Die Prunk-Partikel laufen darüber. */
-@keyframes ws-gott-aura{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:.9}42%{opacity:.5}72%{opacity:.14}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
-.ws-gott-aura{animation:ws-gott-aura 3.4s ease-out infinite}
-@keyframes ws-gott-pop{0%{transform:translate(-50%,-50%) scale(.86);filter:brightness(.8)}8%{transform:translate(-50%,-50%) scale(1.08);filter:brightness(1.6)}20%{transform:translate(-50%,-50%) scale(1);filter:brightness(1.15)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
-.ws-gott-pop{animation:ws-gott-pop 3.4s ease-out infinite}
-@keyframes ws-gott-ann{0%,3%{opacity:0;transform:translate(-50%,-50%) scale(.55)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.14)}22%{transform:translate(-50%,-50%) scale(1)}62%{opacity:1}82%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0}}
-.ws-gott-ann{animation:ws-gott-ann 3.4s ease-out infinite}
+/* #gott Showcase: die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop rein (Pop → Halten → Fade),
+   zentriert — wie in-game (großer Stich → Ansage + Prunk gemeinsam). Kein eigener Karten-Pop/Aura mehr, nur der Schriftzug. */
+@keyframes ws-gott-word{0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}10%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}20%{transform:translate(-50%,-50%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
 /* #fx-floater: horizontal wischbare Kategorie-Reihen ohne sichtbaren Scrollbalken. */
 .ws-hscroll::-webkit-scrollbar{display:none}
 `;
-
-/* Gottgleich-Vorschau (nur noch „Standard"): spielt das ECHTE Ereignis im Loop nach — Karten-Pop + Aura-Flare +
-   goldene „GOTTGLEICH ×7"-Groß-Ansage + Bass-Drop. #cleanup: die aufgesetzten Prunk-Overlays (Feuerwerk/Goldregen/
-   Prisma-Welle) sind entfernt; die „gott"-Kategorie bleibt, hier kommt später neuer Prunk rein. */
-const GOTT_CYCLE_MS = 3400;  // Länge eines Vorschau-Zyklus (= Dauer der ws-gott-*-Animationen)
-const GOTT_POP_MS = 272;     // „Pop"-Moment: 8 % von 3,4 s (Karten-Hit) → hier fällt der Bass hin
-function GottgleichPreview({ compact = false }) {
-  const bf = battlefieldAssets(SHOWCASE_BF);
-  const cardImg = deckAssets("default").back;
-  const [cycle, setCycle] = useState(0);
-  useEffect(() => {
-    if (compact) return undefined; // Kachel-Vorschau: schlichte Endlos-CSS ohne Ton (kein Sync nötig)
-    const id = setInterval(() => setCycle((c) => c + 1), GOTT_CYCLE_MS);
-    return () => clearInterval(id);
-  }, [compact]);
-  useEffect(() => {
-    if (compact) return undefined;
-    // Auf den Pop (272 ms in den Zyklus) den „Gottgleich"-Bass-Drop (Vorschau = In-Game, deckungsgleich mit dem Pop).
-    const t = setTimeout(() => { audio.play("fx_godlike", { gain: 1.5, bass: 4 }); }, GOTT_POP_MS);
-    return () => clearTimeout(t);
-  }, [cycle, compact]);
-  return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Sieg-Aura (grün→gold) — key={cycle} startet sie je Zyklus synchron neu (nur große Vorschau; compact bleibt bei 0). */}
-      <div key={`au${cycle}`} className="ws-gott-aura absolute" style={{ left: "50%", top: "56%", width: "72%", aspectRatio: "1", borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(212,166,58,.55), rgba(90,184,122,.28) 46%, transparent 70%)" }} />
-      {/* Gewinnerkarte, ploppt an */}
-      <div key={`po${cycle}`} className="ws-gott-pop absolute" style={{ left: "50%", top: "58%", width: compact ? "34%" : "20%", aspectRatio: CARD_RATIO }}>
-        <img src={cardImg} alt="" className="absolute inset-0 w-full h-full object-contain rounded" />
-      </div>
-      {/* Goldene Groß-Ansage */}
-      <div key={`an${cycle}`} className="ws-gott-ann absolute font-extrabold" style={{ left: "50%", top: "30%", whiteSpace: "nowrap",
-        fontSize: compact ? 13 : 22, letterSpacing: ".06em",
-        backgroundImage: "linear-gradient(180deg,#fff0b0,#ffd873 45%,#d4a63a)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
-        filter: "drop-shadow(0 0 10px rgba(212,166,58,.6))" }}>
-        GOTTGLEICH<span style={{ color: "#e879f9", WebkitTextFillColor: "#e879f9" }}> ×7</span>
-      </div>
-    </div>
-  );
-}
 
 /* Karten-Finisher-Vorschau: die ECHTEN In-Game-Komponenten (SliceFx/ExplosionFx) an einer Demo-Karte
    im Loop — Vorschau = In-Game (keine separate Engine, kein Drift). */
@@ -350,26 +303,40 @@ function ScorchScene({ deckTint = false }) {
 
 /* #322–#326 Gottgleich-Prunk-Vorschau (PIXI): board-weite Bühne (panelRef) mit unsichtbarem Karten-Anker (cardRef) im
    Zentrum; die übergebene Pixi-Komponente zeichnet den Prunk darüber und feuert im Loop (loop=true → eigenes Re-Fire).
-   deckTint schaltet Standard-Palette ↔ Deckfarbe. Lazy (Suspense) → Pixi lädt erst, wenn ein gott-Preview gerendert wird. */
-function GottScene({ Fx, deckTint = false, label = "Gottgleich", tint = "#ff8fc4" }) {
+   deckTint schaltet Standard-Palette ↔ Deckfarbe. Lazy (Suspense) → Pixi lädt erst, wenn ein gott-Preview gerendert wird.
+   Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
+   zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
+   (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
+function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", cycleMs = 2200 }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
   const bf = battlefieldAssets(SHOWCASE_BF);
   // #perf: Auf Mobile die Vorschau im lite-Pfad laufen lassen (weniger DPR/FPS/Partikel) — dieselbe Stufe wie in-game
   // auf pointer:coarse. Ohne das lief der Loop-Showcase auf dem Handy in voller Auflösung → Jank.
   const isMobile = useIsMobile();
+  const [annKey, setAnnKey] = useState(0);
+  const pop = () => setAnnKey((k) => k + 1);
+  // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
+  useEffect(() => {
+    if (Fx) return undefined;
+    pop();
+    const id = setInterval(pop, cycleMs);
+    return () => clearInterval(id);
+  }, [Fx, cycleMs]);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
-      <Suspense fallback={null}>
-        <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" lite={isMobile} />
-      </Suspense>
-      {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game (oberste Ebene über dem Prunk), damit die
-          Vorschau den vollen Sieg-Moment zeigt. Endlos-Sheen (loop), oben platziert → der Effekt bleibt sichtbar. */}
-      <GottChromeWord text="Gottgleich" gBig={13} gMid={7} sheen="loop" idKey="showcase"
-        style={{ left: "50%", top: "7%", width: "88%", transform: "translateX(-50%)", zIndex: 20 }} />
+      {Fx && (
+        <Suspense fallback={null}>
+          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" lite={isMobile} onFire={pop} />
+        </Suspense>
+      )}
+      {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
+          rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
+      <GottChromeWord key={annKey} text="Gottgleich" gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
+        style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: tint }}>
         <span className="opacity-70">Prunk</span> {label}
@@ -450,7 +417,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
-  if (fx.preview === "gottStandard") return <GottgleichPreview />;
+  if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
