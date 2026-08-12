@@ -23,8 +23,8 @@ const TUNE = {
 const TAU = Math.PI * 2;
 const HEAT_EPS = 0.0005;
 // ── Platzierung am Kartenkopf (nachdrehbar) ──
-const PUSH_DOWN_PX = 24;   // Effekt-Basis um N CSS-px NACH UNTEN (tiefer, sitzt besser HINTER der Karte — der untere Teil verschwindet hinter dem Kartenrand).
-const SIDE_SCALE = 0.85;   // horizontale Stauchung um die Kartenmitte (Bänder + Seiten-Schwünge schmaler → laufen nicht mehr über den Kartenrand).
+const PUSH_DOWN_PX = 14;   // Effekt-Basis um N CSS-px NACH UNTEN (tiefer, sitzt besser HINTER der Karte — der untere Teil verschwindet hinter dem Kartenrand).
+const SIDE_SCALE = 0.80;   // horizontale Stauchung um die Kartenmitte (Bänder + Seiten-Schwünge schmaler → laufen nicht mehr über den Kartenrand).
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 function hexRGB(h) { let s = String(h || "#2f6bff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
