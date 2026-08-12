@@ -41,6 +41,13 @@ const TUNE = {
   BOUNCE_FRIC: 0.5,   // seitliche Dämpfung (vx) pro Bounce
   BOUNCE_VMAX: 260,   // Deckel der Aufwärtsgeschwindigkeit nach Bounce (px/s, *sc) → hält die Hüpfhöhe niedrig
   BOUNCE_FADE: 0.18,  // Rest-Lebenszeit (s) nach dem letzten Bounce → sanftes Verlöschen statt hartem Pop
+  // #ambiente: kontinuierlich sanft aufsteigende Glut („schwebende Glutpartikel steigen langsam auf" — Effekt-Text).
+  // Läuft IMMER (auch Mobile/„ausgewogen"=lite), NUR bei „minimal"/reduced aus → so ist Glutfunken auf dem Handy
+  // überhaupt sichtbar (die per-Stich-Fontänen sind auf lite aus). Sehr billig (niedrige Rate, kein Bounce).
+  AMB_RATE: 18,       // Ambiente-Partikel pro Sekunde (gesamt über das Feld), skaliert leicht mit dem Score-Tier
+  AMB_RISE: 82,       // Aufstiegsgeschwindigkeit px/s bei HREF (langsam schwebend)
+  AMB_LIFE: 2.1,      // Basis-Lebenszeit (s) → hohe, ruhige Bögen
+  AMB_SZ: 0.85,       // Footprint-Faktor (kleiner als die Fontänen-Glut)
 };
 
 // Farb-Modus der Glut: „Standard" = warmes Feuer, unabhängig von der Deckfarbe · „Deckfarbe" = deck-getönt.
@@ -187,6 +194,18 @@ export function createEmberField(app) {
       s.age = 0; s.life = 1.15 + Math.random() * 0.8; s.sz = 1.0 + Math.random() * 1.55; s.drag = 0.5; s.hot = 0.94; s.grav = 1;
     }
   }
+  // #ambiente: eine sanft aufsteigende Glut aus einer der ruhigen Ambiente-Säulen — schwebt langsam hoch, fast ohne
+  // Schwerkraft, kein Bounce, verlischt weich. Deck-getönt (rampInt über heat wie die Fontänen-Glut).
+  const AMB_XS = emberFountainXs(7);   // feste, ruhige Säulen (wie die DOM-Ambiente-Dots)
+  function spawnAmbient(sc, W, fy, stufe) {
+    const s = grabGlow(); s.canBounce = false; s.bounces = 0; s.seed = Math.random() * 6.28;
+    const cx = AMB_XS[(Math.random() * AMB_XS.length) | 0];
+    s.x = cx * W + (Math.random() - 0.5) * W * 0.12; s.y = fy - Math.random() * 5;
+    s.vx = (Math.random() - 0.5) * 26 * sc;
+    s.vy = -(TUNE.AMB_RISE * (0.7 + Math.random() * 0.6)) * (1 + stufe * 0.16) * sc;  // langsam aufsteigend
+    s.age = 0; s.life = TUNE.AMB_LIFE * (0.75 + Math.random() * 0.7);
+    s.sz = TUNE.AMB_SZ * (0.7 + Math.random() * 0.7); s.drag = 0.4; s.hot = 0.72; s.grav = 0.18;  // fast schwebend
+  }
   function spawnFlame(v, sc, W, fy) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
     const s = grabGlow(); s.canBounce = false;   // Flammen steigen nur und verlöschen → kein Boden-Bounce
     s.x = v.x * W + (Math.random() - 0.5) * W * 0.045 * (v.spread || 1); s.y = fy - Math.random() * 2;
@@ -212,7 +231,7 @@ export function createEmberField(app) {
   }
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
-  let clock = 0;
+  let clock = 0, ambAcc = 0;
   function update(ticker) {
     const dt = Math.min(0.05, ticker.deltaMS / 1000);
     clock += dt;
@@ -222,6 +241,15 @@ export function createEmberField(app) {
     const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
     const hotInt = rampInt(0.88, deck);
     const fy = H - Math.min(22, H * 0.04);   // Emissionslinie leicht über dem Rand (näher am Boden) → steht auf dem Boden, nicht am Rahmen
+
+    // #ambiente: kontinuierlich sanft aufsteigende Glut — hält Glutfunken IMMER sichtbar (auch Mobile/lite, wo die
+    // per-Stich-Fontänen aus sind). Nur „minimal"/reduced schaltet sie ab (Barrierefreiheit). Rate skaliert leicht mit
+    // dem Score-Tier; auf lite etwas ausgedünnt (Perf).
+    if (!params.reduced) {
+      const st = emberStufe(params.score);
+      ambAcc += TUNE.AMB_RATE * (1 + st * 0.5) * (params.lite ? 0.72 : 1) * dt;
+      while (ambAcc >= 1) { ambAcc--; spawnAmbient(sc, W, fy, st); }
+    }
 
     // Vents: Ausstoß über den Burst + Flammen; danach Nachglühen bis der Pool erlischt.
     for (let vi = vents.length - 1; vi >= 0; vi--) {
