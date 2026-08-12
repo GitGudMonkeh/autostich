@@ -19,12 +19,14 @@ const TUNE = {
   //   Doppelte an (gleiche Wachstumsrate pro Sieg, nur höherer Deckel). maxLevel folgt automatisch aus MAX_R.
   BASE_R: 0.050, STEP_R: 0.022, MAX_R: 0.56, SMOOTH: 0.080,
   LOSS_MIN: 1.00, LOSS_PCT: 0.30,
-  // Karten-Einflug: längere Flugdauer + mehr Umläufe → die Karte zieht erst eine große EXTRA-RUNDE auf einer weiten
-  //   Umlaufbahn (ORBIT_R) ums Loch, bevor sie spiralig in den Kern gesogen wird.
-  FLYIN_DUR: 2.10, SPIRAL_TURNS: 4.0, ORBIT_R: 0.40, SPARKS: 2,
+  // Karten-Einflug: Karte schrumpft SEHR schnell auf Orbit-Größe (SHRINK_IN-Anteil), umkreist dann das Loch ENG
+  //   (ORBIT_R, mehrere Umläufe SPIRAL_TURNS — dabei auch HINTER dem Kern durch, Tiefen-Occlusion via ORBIT_TILT),
+  //   erst ab ORBIT_END wird sie spiralig in den Kern gesogen. ORBIT_SC = kleine Orbit-Größe der Karte.
+  FLYIN_DUR: 2.10, SPIRAL_TURNS: 2.6, ORBIT_R: 0.12, ORBIT_SC: 0.26, SHRINK_IN: 0.16, ORBIT_END: 0.80, ORBIT_TILT: 0.5, SPARKS: 2,
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
   DISK_ARMS: 3, DISK_DENSITY: 250, DISK_TURNS: 3.0, DISK_THICK: 1.0, ROT_SPEED: 0.20,
-  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.15, BRIGHT: 2.00,
+  // Bloom fast auf 0: RING_GLOW 0 (Photonenring nur minimaler Schein), BRIGHT ~1 (Akkretion nicht mehr überbelichtet).
+  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.0, BRIGHT: 1.05,
 };
 
 const PI2 = Math.PI * 2;
@@ -98,9 +100,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     const drawCard = (x, y, sc, rot, num, col, alpha) => {
       const w = cardW * sc, h = cardH * sc;
       ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha = Math.max(0, alpha);
-      ctx.fillStyle = "#12121a"; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowBlur = 10; ctx.shadowColor = col;
+      ctx.fillStyle = "#12121a"; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowBlur = 3; ctx.shadowColor = col; // #bloom-runter: Karten-Glow 10→3
       roundRect(-w / 2, -h / 2, w, h, Math.max(3, w * 0.06)); ctx.fill(); ctx.stroke();
-      ctx.shadowBlur = 8; ctx.fillStyle = col; ctx.font = `700 ${Math.round(h * 0.42)}px system-ui, sans-serif`;
+      ctx.shadowBlur = 0; ctx.fillStyle = col; ctx.font = `700 ${Math.round(h * 0.42)}px system-ui, sans-serif`;
       ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(num), 0, 1); ctx.restore();
     };
 
@@ -168,37 +170,44 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       // 2) Akkretion HINTER dem Loch (obere Umlauf-Hälfte, sin<0).
       drawDisk(false);
 
-      // 3) Karten-Flyer — VOR dem Kern gezeichnet → der Kern verschluckt sie. Bahn: erst NACH AUSSEN auf eine weite
-      //    Umlaufbahn (orbitR, außerhalb des Lochs), dann eine EXTRA-RUNDE darauf, danach spiralig in den Kern gesogen.
+      // 3) Karten-Flyer: schneller Einflug + SEHR schnelles Schrumpfen auf Orbit-Größe, dann mehrere ENGE Umläufe ums
+      //    Loch — dabei läuft die Karte auch HINTER dem Kern durch (Tiefen-Occlusion): sin(Winkel)<0 → hinten (vor dem
+      //    opaken Kern gezeichnet → verdeckt), sin>0 → vorne (über dem Kern). Erst ab ORBIT_END spiralig in den Kern.
       const flyDurMs = TUNE.FLYIN_DUR * 1000;
-      const orbitR = Math.max(TUNE.ORBIT_R * D, R * 1.35);   // weite Umlaufbahn außen ums Loch (immer außerhalb der Scheibe)
+      const orbitR = Math.max(TUNE.ORBIT_R * D, R * 1.45);   // enge Umlaufbahn dicht ums Loch
+      const easeOut = (t) => t * (2 - t);
+      const backFlyers = [], frontFlyers = [];
       for (let i = sim.flyers.length - 1; i >= 0; i--) {
         const f = sim.flyers[i]; f.t += sdt / flyDurMs;
         if (f.t >= 1) { sim.flyers.splice(i, 1); for (let s2 = 0; s2 < TUNE.SPARKS; s2++) sim.sparks.push({ a: Math.random() * PI2, sp: 0.6 + Math.random() * 1.2, t: 0, c: f.col }); continue; }
         const tt = f.t;
-        // Radius-Profil: 0..0.28 von der Startdistanz nach außen auf die Bahn · 0.28..0.60 Extra-Runde auf der Bahn ·
-        //   0.60..1 spiralig in den Kern (schrumpfend + ausblendend).
-        let rr;
-        if (tt < 0.28)      rr = lerp(f.d0, orbitR, tt / 0.28);
-        else if (tt < 0.60) rr = orbitR;
-        else                rr = orbitR * (1 - Math.pow((tt - 0.60) / 0.40, 1.7));
-        const a = f.a0 + f.spin * tt * TUNE.SPIRAL_TURNS * PI2;   // mehrere Umläufe über den ganzen Flug
-        const shrink = clamp(rr / orbitR, 0.06, 1);              // volle Größe auf der Bahn, schrumpft beim Einsaugen
-        const alpha = 0.82 * (tt < 0.62 ? 1 : Math.max(0, 1 - (tt - 0.62) / 0.38)); // leicht durchscheinend → das Loch bleibt sichtbar
-        drawCard(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * (0.6 + 0.4 * TUNE.TILT), 0.30 + 0.70 * shrink, a * 0.12 * f.spin, f.num, f.col, alpha);
+        const ang = f.a0 + f.spin * tt * TUNE.SPIRAL_TURNS * PI2;   // Umlauf-Winkel (mehrere enge Runden ums Loch)
+        let rr, sc, alpha;
+        if (tt < TUNE.SHRINK_IN) {              // schneller Einflug + schnelles Schrumpfen auf Orbit-Größe
+          const e = easeOut(tt / TUNE.SHRINK_IN);
+          rr = lerp(f.d0, orbitR, e); sc = lerp(1.0, TUNE.ORBIT_SC, e); alpha = lerp(0.6, 0.95, e);
+        } else if (tt < TUNE.ORBIT_END) {       // enge Umlaufbahn ums Loch (konstant klein)
+          rr = orbitR; sc = TUNE.ORBIT_SC; alpha = 0.95;
+        } else {                                // spiralig in den Kern gesogen (schrumpft auf 0, blendet aus)
+          const k = (tt - TUNE.ORBIT_END) / (1 - TUNE.ORBIT_END);
+          rr = orbitR * (1 - Math.pow(k, 1.6)); sc = TUNE.ORBIT_SC * (1 - k); alpha = 0.95 * (1 - k);
+        }
+        const sd = Math.sin(ang);                       // Tiefe: sd<0 → hinter dem Kern, sd>0 → davor
+        const depthCue = 0.82 + 0.18 * sd;              // vorne etwas größer, hinten etwas kleiner
+        const x = cx + Math.cos(ang) * rr, y = cy + sd * rr * TUNE.ORBIT_TILT;
+        const rot = Math.sin(ang) * 0.35 * f.spin;      // sanftes Kippen statt wildem Durchdrehen
+        (sd < 0 ? backFlyers : frontFlyers).push({ x, y, sc: sc * depthCue, rot, num: f.num, col: f.col, alpha });
       }
-      // Funken beim Verschlucken.
-      ctx.globalCompositeOperation = "lighter";
-      for (let i = sim.sparks.length - 1; i >= 0; i--) { const sp = sim.sparks[i]; sp.t += sdt / 500; if (sp.t >= 1) { sim.sparks.splice(i, 1); continue; }
-        const rr = 28 * sp.t * sp.sp, c = hexRGB(sp.c); ctx.globalAlpha = 1 - sp.t; ctx.fillStyle = rgba(c, 1); ctx.shadowBlur = 6; ctx.shadowColor = sp.c;
-        ctx.beginPath(); ctx.arc(cx + Math.cos(sp.a) * rr, cy + Math.sin(sp.a) * rr, 2, 0, PI2); ctx.fill(); }
-      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      const drawFlyerList = (list) => { for (const fr of list) drawCard(fr.x, fr.y, fr.sc, fr.rot, fr.num, fr.col, fr.alpha); };
+      // Karten HINTEN (untere/hintere Umlauf-Hälfte) — jetzt zeichnen, gleich verdeckt sie der opake Kern.
+      drawFlyerList(backFlyers);
 
       if (R > 0.5) {
-        // 4) Surround-Halo (deck2-getönt) → silhouettiert das Loch gegen den dunklen BG.
+        // 4) Surround-Halo (deck2-getönt) → silhouettiert das Loch nur noch dezent gegen den dunklen BG.
+        //    #bloom-runter: Alpha 0.22/0.10 → 0.09/0.035 (fast kein Glühen mehr, nur eine feine Silhouette).
         ctx.globalCompositeOperation = "lighter";
         const halo = ctx.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, R * 1.55);
-        halo.addColorStop(0, rgba(cDeck2, 0.22)); halo.addColorStop(0.5, rgba(cDeck2, 0.10)); halo.addColorStop(1, "transparent");
+        halo.addColorStop(0, rgba(cDeck2, 0.09)); halo.addColorStop(0.5, rgba(cDeck2, 0.035)); halo.addColorStop(1, "transparent");
         ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.55, 0, PI2); ctx.fill();
 
         // 5) Solider, OPAKER schwarzer Kern — globalAlpha VOR dem Kern auf 1 (sonst erbt er das Rest-Alpha der Schleife).
@@ -208,7 +217,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         // 6) Photonenring (additiv) + definierende Kante am Kernrand.
         ctx.globalCompositeOperation = "lighter";
         ctx.lineWidth = Math.max(1.5, coreR * 0.22); ctx.strokeStyle = rgba(mixRGB(cDeck, WHITE, 0.35), 0.9);
-        ctx.shadowBlur = 14 + TUNE.RING_GLOW * 60; ctx.shadowColor = ctrl.color || "#4aa0ff";
+        ctx.shadowBlur = 3 + TUNE.RING_GLOW * 60; ctx.shadowColor = ctrl.color || "#4aa0ff"; // #bloom-runter: Ring-Schein-Basis 14→3
         ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, PI2); ctx.stroke();
         ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.8;
         ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(WHITE, 0.85); ctx.beginPath(); ctx.arc(cx, cy, coreR * 0.98, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
@@ -216,6 +225,15 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         // 7) Akkretion VOR dem Loch (untere Umlauf-Hälfte, sin>0) → zieht über den Kern (Wrap).
         drawDisk(true);
       }
+
+      // 7b) Karten VORNE (vordere Umlauf-Hälfte, sin>0) → über dem Kern, damit die Umlaufbahn wirklich UM das Loch führt.
+      drawFlyerList(frontFlyers);
+      // Funken beim Verschlucken (über dem Kern). #bloom-runter: Funken-Schein 6→2.
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = sim.sparks.length - 1; i >= 0; i--) { const sp = sim.sparks[i]; sp.t += sdt / 500; if (sp.t >= 1) { sim.sparks.splice(i, 1); continue; }
+        const rr = 28 * sp.t * sp.sp, c = hexRGB(sp.c); ctx.globalAlpha = 1 - sp.t; ctx.fillStyle = rgba(c, 1); ctx.shadowBlur = 2; ctx.shadowColor = sp.c;
+        ctx.beginPath(); ctx.arc(cx + Math.cos(sp.a) * rr, cy + Math.sin(sp.a) * rr, 2, 0, PI2); ctx.fill(); }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
       // 8) Vordergrund-Sterne (über dem Loch sichtbar).
       if (!reduced) drawStars(fgStars, 0.46);
@@ -231,7 +249,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           fg.addColorStop(0, rgba(WHITE, 0.5 * fade)); fg.addColorStop(0.4, rgba(cDeck, 0.28 * fade)); fg.addColorStop(1, "transparent");
           ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(cx, cy, fr, 0, PI2); ctx.fill();
           const sw = TUNE.NOVA_R * D * nv.t;
-          ctx.globalAlpha = fade; ctx.lineWidth = Math.max(1.5, 5 * fade); ctx.strokeStyle = rgba(cDeck2, 1); ctx.shadowBlur = 22; ctx.shadowColor = ctrl.color2 || "#ff3ea8";
+          ctx.globalAlpha = fade; ctx.lineWidth = Math.max(1.5, 5 * fade); ctx.strokeStyle = rgba(cDeck2, 1); ctx.shadowBlur = 10; ctx.shadowColor = ctrl.color2 || "#ff3ea8"; // #bloom-runter: Nova-Schockwelle 22→10
           ctx.beginPath(); ctx.ellipse(cx, cy, sw, sw * (0.55 + 0.45 * TUNE.TILT), 0, 0, PI2); ctx.stroke();
           ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         }
