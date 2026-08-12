@@ -451,6 +451,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
       setSweep((s) => s + 1);
       if (pixiField) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length); // #311: alle Pixi-Feldeffekte (Glutfunken/Sternenfeld) durch die Tier-Leiter eskalieren
       else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
+      if (isEmbers) audio.play("fx_embers", { gain: 0.54 }); // #glutfunken: Aufstoß-Sound auch in der Vorschau hörbar (gleicher Pegel wie in-game)
     }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
     return () => clearInterval(id);
   }, [effect, pixiField, pixiEmbers]);
