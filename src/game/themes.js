@@ -51,6 +51,20 @@ export const GLOBAL_FX = [
     ownKey: "fx:holo", option: "fxHolo", preview: "holo", price: 20, group: "anim" }, // [TUNING] Preis
   { key: "glitch", name: "Glitch", desc: "Cyberpunk-Digital-Glitch über der ganzen Karte inkl. Zahl — Chroma-Split, Tear-Slices, Scanlines und Farb-Bars, mit ruhiger Grundlast und gelegentlichen Bursts.",
     ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 20, group: "anim" }, // [TUNING] Preis
+  // #322–#326 Gottgleich-Prunk (group "gott"): feuert bei gottgleichem Sieg OHNE Krit, EINFACH-EXKLUSIV (genau einer
+  // aktiv, oder „gottStandard" = kein Prunk). Canvas-2D-Overlays (pixi-frei/mobiltauglich — wie ScorchFx), je Effekt
+  // Standard/Deckfarbe über das *Deck-Flag. Sonnen-Puls ist der FREIE Default (alwaysOwned, 0 DP); die restlichen kosten
+  // nach Rarity (Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40 = grün/blau/lila/gold).
+  { key: "sonnenPuls", name: "Sonnen-Puls", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf — Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
+    ownKey: "fx:sonnenPuls", option: "fxSonnenPuls", preview: "sonnenPuls", price: 0, group: "gott", alwaysOwned: true },
+  { key: "laserFaecher", name: "Laser-Fächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf — lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
+    ownKey: "fx:laserFaecher", option: "fxLaserFaecher", preview: "laserFaecher", price: 10, group: "gott" },
+  { key: "prismaKaskade", name: "Prisma-Kaskade", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
+    ownKey: "fx:prismaKaskade", option: "fxPrismaKaskade", preview: "prismaKaskade", price: 20, group: "gott" },
+  { key: "holoCube", name: "Holo-Würfel-Kollaps", desc: "Ein Holowürfel aus Wireframe-Blöcken baut sich aus der Ferne zusammen, dreht sich frei, blitzt im Kern und zerspringt taumelnd nach außen. Holo-Cyan→Magenta oder Deckfarbe.",
+    ownKey: "fx:holoCube", option: "fxHoloCube", preview: "holoCube", price: 30, group: "gott" },
+  { key: "supernova", name: "Supernova", desc: "Kollaps → Detonation (Flash, Screen-Shake, Zoom-Punch) → Boom-Schockwelle mit chromatischen Ringen, Strahlenkranz, Sternenregen und einem Grid-Tunnel durch den Einschlag. Der legendäre Showstopper. Gold→Magenta oder Deckfarbe.",
+    ownKey: "fx:supernova", option: "fxSupernova", preview: "supernova", price: 40, group: "gott" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
 export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
@@ -91,6 +105,19 @@ export function activeBgFinisher(profile, options) {
 // aktiv. `activeCardAnims` liefert die Liste der aktiven Keys (gekauft UND per Option an) für die CardFxStage.
 export const CARD_ANIM_KEYS = ["edgeglow", "holo", "glitch"]; // #318 (Materialize entfernt)
 export const activeCardAnims = (profile, options) => CARD_ANIM_KEYS.filter((k) => globalFxActive(profile, options, k));
+
+/* #322–#326 Gottgleich-Prunk (group "gott"): EINFACH-EXKLUSIV — genau EINER aktiv, oder gar keiner (= „gottStandard",
+   kein Prunk). Sonnen-Puls ist der FREIE Default (alwaysOwned, 0 DP) → gilt ohne Kauf als besessen. gottFxOwned deckt
+   diesen Gratis-Fall ab; activeGottFx liefert den aktiven (besessen + Option an) Prunk-Key in Rarity-Reihenfolge. */
+export const GOTT_FX_KEYS = ["sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"];
+export const gottFxOwned = (profile, fx) => !!(fx && (fx.alwaysOwned || globalFxOwned(profile, fx)));
+export function activeGottFx(profile, options) {
+  for (const k of GOTT_FX_KEYS) {
+    const fx = GLOBAL_FX_BY_KEY[k];
+    if (fx && gottFxOwned(profile, fx) && !!(options && options[fx.option])) return k;
+  }
+  return null;
+}
 
 /* PACK-Registry. kind:
      "buy"  → EIN Kauf (Deck + Battlefield zusammen) für pack.price DP (#307). Besitz: ownedCosmetics["pack:<id>"].
