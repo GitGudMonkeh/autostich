@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationLabel } from "./formationLabels.js";
@@ -1193,7 +1193,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {oppScorched && !reduced && (
         <ScorchFx key={`scorch${t.trickNo}`} trigger={t.trickNo} panelRef={panelRef} cardRef={oppCardRef}
           frontImage={oppFrontImg} value={t.oValue} suit={suitColor(t.oCard.suit)}
-          deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced} />
+          deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced}
+          speed={Math.max(1, Math.min(8, BASE_FLIP_MS / Math.max(1, flipMs)))} />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
