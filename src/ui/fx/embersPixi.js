@@ -43,7 +43,9 @@ const TUNE = {
   BOUNCE_FADE: 0.18,  // Rest-Lebenszeit (s) nach dem letzten Bounce → sanftes Verlöschen statt hartem Pop
   // #319b: perspektivische Boden-Fläche für die Fontänen (wie der Sternenfeld-Komet, aber FLACHER — nicht so weit
   // nach hinten). d=0 = fern (hinten, höher, schmaler, kleiner) .. d=1 = nah (vorn, tiefer am Rand, breiter, groß).
-  P_FAR_Y: 0.66, P_NEAR_Y: 0.95, P_FAR_HALF: 0.16, P_NEAR_HALF: 0.40, P_DEPTH_MIN: 0.55,
+  // #: Tiefe ~30 % reduziert — ferne Kante 30 % Richtung nah gezogen (P_FAR_*/P_DEPTH_MIN; alle am selben d gekoppelt),
+  // vordere Kante (P_NEAR_*) unverändert. Flachere Boden-Fläche: Fontänen ziehen nicht mehr so weit nach hinten/oben.
+  P_FAR_Y: 0.75, P_NEAR_Y: 0.95, P_FAR_HALF: 0.23, P_NEAR_HALF: 0.40, P_DEPTH_MIN: 0.69,
   // #ambiente: kontinuierlich sanft aufsteigende Glut („schwebende Glutpartikel steigen langsam auf" — Effekt-Text).
   // Läuft IMMER (auch Mobile/„ausgewogen"=lite), NUR bei „minimal"/reduced aus → so ist Glutfunken auf dem Handy
   // überhaupt sichtbar (die per-Stich-Fontänen sind auf lite aus). Sehr billig (niedrige Rate, kein Bounce).
