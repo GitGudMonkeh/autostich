@@ -1058,12 +1058,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
-  // Shake-Parameter je Stufe (leicht → stark). Amplitude als CSS-Var ans Panel; Keyframe-Name wechselt je Sieg (a/b).
-  // #: Screenshake-Amplitude je Stufe (px). Der obere Bereich war zu heftig → Irre (Tier 3) nur noch GANZ LEICHT und
-  // Gottgleich (Tier 4) deutlich reduziert (war 9/13). Stark/Brutal bleiben dezent wie bisher. [TUNING]
-  const shakeAmp  = screenFx ? [0, 3, 5, 4, 7][screenFx.tier] : 0;
-  const shakeDur  = screenFx ? 160 + screenFx.tier * 50 : 0;
-  const shakeName = screenFx ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
+  // #: Screenshake NUR noch bei GOTTGLEICH (Tier 4) — überall sonst raus (Nutzer-Wunsch). Wichtig: nicht bloß die
+  // Amplitude nullen (die Keyframes drehen zusätzlich fest per rotate), sondern die ganze Animation weglassen. Die
+  // grün/gold Panel-Aura großer Siege (outerGlow, BRUTAL→GOTTGLEICH) bleibt davon unberührt — nur der Jitter entfällt.
+  const shakeOn   = !!screenFx && screenFx.tier >= 4;
+  const shakeAmp  = shakeOn ? 7 : 0;
+  const shakeDur  = shakeOn ? 160 + screenFx.tier * 50 : 0;
+  const shakeName = shakeOn ? (screenFx.n % 2 ? "as-crit-shake-a" : "as-crit-shake-b") : undefined;
 
   // Formations-Float: soll ~1,5 s LÄNGER stehen bleiben als sein Stich, dann sanft ausklingen. Deshalb vom aktuellen
   // Stich entkoppelt in eigenem State. Ein Formations-Sieg setzt ihn (Phase „aktiv" = hält bei Opacity 1); sobald ein
