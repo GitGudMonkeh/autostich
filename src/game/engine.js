@@ -1094,6 +1094,11 @@ export function resolveTrick(state, rng) {
     winStreak, // aktuelle Siegesserie NACH diesem Stich (0 bei Niederlage) — Battlefield feiert Meilensteine (Serie 200 → „Gönn dir")
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
+    // #eis PER-KARTE: Frost-Anzeige gehört NUR auf die tatsächlich gefrorene Gletscher-Karte dieses Stichs (NICHT als
+    //   globaler Basis-Frost auf jede gespielte Karte). pGlacier = die gespielte Karte sitzt auf einem gefrorenen
+    //   Gletscher-Feld; pGlacierMass = dessen aktuelle Firn-Masse (0..12). Battlefield frostet damit exakt diese Karte.
+    pGlacier: !!(glacierActive && glacierLocked[actualPos]),
+    pGlacierMass: (glacierActive && glacierLocked[actualPos]) ? (newGlacierMass[actualPos] || 0) : 0,
   };
 
   // Durchlauf-Ende: Score-Effekte am Durchlauf-Ende, dann NUR das Gegnerdeck NEU MISCHEN (Spieler-Reihenfolge

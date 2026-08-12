@@ -30,9 +30,11 @@ const FrostIce = lazy(() => import("./fx/FrostIce.jsx"));
 // Karten-Animation „Kantenglühen" (Edge-Glow, #318) als Kind IN der Karte — flippt mit ihr, liegt UNTER Eis/Moos.
 const CardEdgeGlow = lazy(() => import("./fx/CardEdgeGlow.jsx"));
 // Dev-Sicht: ?ice=<0..12> erzwingt eine feste Gletscher-Masse auf der eigenen Karte (zum Designen; nur Preview/Dev).
-// Die echte per-Karte-Masse ist noch offen (glacier.js ist brettfeld-basiert & Platzhalter) → bis zum Rollout Dev-Force.
 const ICE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("ice"); return v == null ? null : Math.max(0, Math.min(12, parseFloat(v) || 0)); } catch { return null; } })();
+// #eis Basis-Frost-Boden: ein frisch gefrorener Gletscher (Masse 0) sieht trotzdem vereist aus (dünner Basis-Frost,
+//   Stufe 0), wächst dann mit seiner Firn-Masse. Frost gehört PER KARTE nur auf gefrorene Gletscher, nicht global.
+const ICE_BASE_FREEZE = 3;
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
@@ -663,9 +665,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   forged = {}, brandActive = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
   growth = {}, colonized = {},
-  // #eis: Eis-Frost-Pegel für die eigene Karte (0..12). App liefert ihn: Eis aktiv → Basis-Frieren, + wächst mit der
-  // größten Gletscher-Masse. Rein visuell (Gletscher-Mechanik unangetastet); ?ice=<0..12> (ICE_FORCE) überschreibt.
-  iceMass = 0,
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
   deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
@@ -825,7 +824,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #eis/#flip: Wie das Moos hängt jetzt auch der Eis-Frost ALS KIND in der Kartenvorderseite → flippt mit der Karte.
   //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
   //   per-Karte-Bindung noch offen). Blitz (Panel-IonStorm) liegt über beidem — laut User ok.
-  const pIceMass = ICE_FORCE != null ? ICE_FORCE : iceMass;
+  // #eis PER-KARTE: Frost NUR auf der gefrorenen Gletscher-Karte dieses Stichs (t.pGlacier) mit ihrer eigenen Firn-Masse
+  //   (t.pGlacierMass), Basis-Frost-Boden für frisch gefrorene Gletscher. KEIN globaler Basis-Frost mehr auf jede Karte
+  //   (das ließ über die Durchläufe „viele" Karten vereisen). ?ice=<n> (Dev) übersteuert weiterhin auf JEDER Karte.
+  const pIceMass = ICE_FORCE != null ? ICE_FORCE
+    : (t && t.pGlacier ? Math.max(ICE_BASE_FREEZE, t.pGlacierMass || 0) : 0);
   // #318/#flip: Kantenglühen (kaufbare Karten-Animation) hängt jetzt ALS KIND in der Kartenvorderseite (z-0) → flippt mit
   //   der Karte, liegt UNTER Eis (z-1) und Moos (z-2), aber ÜBER dem Karten-Skin. Kaufbarer Shop-Effekt → läuft auch in
   //   Produktion (NICHT preview-gegatet). Aus cardAnims-Toggle bzw. ?edgeglow=1 (Dev). Immer in der Deckfarbe.
