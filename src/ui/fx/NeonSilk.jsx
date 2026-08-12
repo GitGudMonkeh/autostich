@@ -22,6 +22,9 @@ const TUNE = {
 
 const TAU = Math.PI * 2;
 const HEAT_EPS = 0.0005;
+// ── Platzierung am Kartenkopf (nachdrehbar) ──
+const PUSH_DOWN_PX = 24;   // Effekt-Basis um N CSS-px NACH UNTEN (tiefer, sitzt besser HINTER der Karte — der untere Teil verschwindet hinter dem Kartenrand).
+const SIDE_SCALE = 0.85;   // horizontale Stauchung um die Kartenmitte (Bänder + Seiten-Schwünge schmaler → laufen nicht mehr über den Kartenrand).
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 function hexRGB(h) { let s = String(h || "#2f6bff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
@@ -97,8 +100,9 @@ export function NeonSilk({ heat = 0, panelRef, cardRef }) {
         const tw = d * TUNE.TWIST_FREQ * 0.013 * rb.twFreq + time * 0.0006 * TUNE.TWIST_SPEED * rb.twSpd * curSpd + rb.twPhase;
         const ac = Math.abs(Math.cos(tw));
         const et = Math.min(1, s / 0.05) * Math.min(1, (1 - s) / 0.12);
-        const w = TUNE.WIDTH * rb.wScale * (0.5 + 0.5 * ac) * et * (0.28 + 0.72 * spread);
-        raw.push({ x, y, w, et: Math.max(0, et) });
+        const xc = cx + (x - cx) * SIDE_SCALE;   // horizontal um die Kartenmitte stauchen (kein Über-den-Rand)
+        const w = TUNE.WIDTH * SIDE_SCALE * rb.wScale * (0.5 + 0.5 * ac) * et * (0.28 + 0.72 * spread);
+        raw.push({ x: xc, y, w, et: Math.max(0, et) });
       }
       for (let i = 0; i < raw.length; i++) {
         const a = raw[Math.max(0, i - 1)], bb = raw[Math.min(raw.length - 1, i + 1)];
@@ -127,7 +131,7 @@ export function NeonSilk({ heat = 0, panelRef, cardRef }) {
       const tf = time * TUNE.SPEED;
       const flick = Math.max(0.4, 1 + TUNE.FLICKER * heat * (0.5 * Math.sin(tf * 0.019) + 0.3 * Math.sin(tf * 0.033 + 1.7) + 0.22 * Math.sin(tf * 0.071 + 0.4)));
       const hflick = 1 + 0.06 * TUNE.FLICKER * heat * Math.sin(tf * 0.024 + 0.6);
-      const baseY = cardY;                              // Flammen-Basis am Kartenkopf (oberer Rand)
+      const baseY = cardY + PUSH_DOWN_PX;               // Flammen-Basis: um PUSH_DOWN_PX unter den Kartenkopf → sitzt tiefer hinter der Karte
       const Hgt = TUNE.HEIGHT * cardH * heat * hflick;   // Hitze kürzt die Bänder (staucht NICHT)
       if (Hgt <= 6) return;
 
