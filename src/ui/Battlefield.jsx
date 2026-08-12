@@ -384,7 +384,7 @@ function sliceGeometry(dir, streak) {
    (≈40 % weiß / 60 % Suit-Farbe, ein paar „Konfetti"-Rechtecke). Deterministisch aus `seed` (kein Math.random
    im Render, #68). Alle Dauern kommen an den Flip-Takt gekoppelt rein → kein Überlaufen in den nächsten Stich.
    Elemente entfernen sich mit dem Karten-Remount des nächsten Stichs (key nach trickNo) → kein Stapeln. */
-export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, laser = false, dir = "right", streak = 0 }) {
+export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, delay = 0, intensity = 0, scale = 1, laser = false, dir = "right", streak = 0, bladeColor = null }) {
   // #188/#klinge: Die KLINGE ist als choreografierte Performance umgebaut: KEIN Doppelschnitt mehr auf EINE Karte —
   // stattdessen wechselt die Einfahrrichtung (`dir`) über einen per-Stich-Zähler, dessen Zyklus-Länge am Siegesserie-
   // Multiplikator hängt (Aufrufer wählt via sliceMove(mult, seq)), und die Wucht steigt mit der Serie (sliceEsc, aus
@@ -413,21 +413,34 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
   // Position (cx/cy %) + eigene Länge + zeitlichen Versatz (stagger × cutDur) → der Z-Schnitt zeichnet sich als 3 Segmente.
   // #klinge: Der Streich ist ein STAHL-Schwung, nicht die Kartenfarbe: weiß-heißer Kern (Verlauf), kühler Glow und —
   // wenn `bladeTaper` — eine zu beiden Enden spitz zulaufende Linsenform (Katana-Wisch) statt eines Balkens.
-  const glow = KLINGE_TUNE.bladeTint;
+  // #klinge-laser: Der Streich glüht jetzt in der DECKFARBE (weiß-heißer Kern bleibt) und hinterlässt einen kurz
+  // sichtbaren NACHHALL (glühende Spur, die am Einschlag stehen bleibt und ausglüht) → Look einer schnell durchgezogenen
+  // Laserklinge. bladeGlow = Deckfarbe (Fallback: kühles Stahlweiß, falls kein Deck gesetzt ist, z. B. reine Options-Sicht).
+  const bladeGlow = bladeColor || KLINGE_TUNE.bladeTint;
   const bladeLens = "polygon(0 50%, 4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%)";
   const cutLine = (rot, key, opts = {}) => {
     const len = opts.len || cutLen;
     const h = opts.thick ? KLINGE_TUNE.bladeThickZ : KLINGE_TUNE.bladeThick;   // #klinge: dünne Klinge (Z minimal dicker)
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
+    const startMs = delay + stMs;
+    const hallDur = Math.round(dur * 1.7);   // #klinge-laser: Nachhall dauert länger als der Schnitt → sichtbares Ausglühen
+    const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
+      transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (
-      <div key={key} style={{ position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, height: h, marginLeft: -len / 2, marginTop: -h / 2,
-        background: `linear-gradient(90deg, transparent 0%, ${glow}88 12%, #ffffff 50%, ${glow}88 88%, transparent 100%)`,
-        clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2,
-        transformOrigin: "center", boxShadow: `0 0 6px #ffffff, 0 0 ${(14 + intensity * 8).toFixed(0)}px ${glow}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${glow}aa`,
-        // #klinge: --cut-swing = EINHEITLICHER Nachschwung für ALLE Richtungen (rechts/links/oben/Z schwingen gleich weit
-        // durch). Der Laser-Strahl setzt die Var NICHT → dort bleibt der Überschlag 0 (unveränderter Laser-Look).
-        "--cut-rot": `${rot}deg`, "--cut-swing": `${KLINGE_TUNE.followSwing}px`, animation: `as-cut-line ${dur}ms ease-out ${delay + stMs}ms both` }} />
+      // display:contents → der Wrapper erzeugt keine eigene Box; beide Linien positionieren sich relativ zur SliceFx-Bühne.
+      <div key={key} style={{ display: "contents" }}>
+        {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht satt aus. */}
+        <div style={{ ...common, height: h + 1, marginTop: -(h + 1) / 2, filter: "blur(0.4px)",
+          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 22%, #ffffff 50%, ${bladeGlow} 78%, transparent 100%)`,
+          boxShadow: `0 0 8px ${bladeGlow}, 0 0 ${(20 + intensity * 12).toFixed(0)}px ${bladeGlow}, 0 0 ${(40 + intensity * 18).toFixed(0)}px ${bladeGlow}cc`,
+          "--cut-rot": `${rot}deg`, animation: `as-blade-hall ${hallDur}ms ease-out ${startMs}ms both` }} />
+        {/* Die Klinge selbst: weiß-heißer Kern + Deck-Glow, wächst heraus und schwingt einheitlich durch (--cut-swing). */}
+        <div style={{ ...common, height: h, marginTop: -h / 2,
+          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow}aa 12%, #ffffff 50%, ${bladeGlow}aa 88%, transparent 100%)`,
+          boxShadow: `0 0 6px #ffffff, 0 0 ${(14 + intensity * 8).toFixed(0)}px ${bladeGlow}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${bladeGlow}aa`,
+          "--cut-rot": `${rot}deg`, "--cut-swing": `${KLINGE_TUNE.followSwing}px`, animation: `as-cut-line ${dur}ms ease-out ${startMs}ms both` }} />
+      </div>
     );
   };
 
@@ -631,7 +644,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
           <div key={g.id} className="absolute inset-0 pointer-events-none" aria-hidden="true"
             style={{ animation: `as-loss-drift-rand ${g.float}ms cubic-bezier(0.2, 0.6, 0.3, 1) ${driftDelay}ms forwards`, willChange: "transform",
                      "--drx": `${drx.toFixed(1)}px`, "--dry": `${dry.toFixed(1)}px`, "--drot": `${drot}deg` }}>
-            <SliceFx cardEl={cardEl} color={g.color} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} dir={g.sliceDir} streak={g.streak} />
+            <SliceFx cardEl={cardEl} color={g.color} bladeColor={g.bladeColor} halvesDur={g.halves} cutDur={g.cut} sparkDur={g.spark} seed={g.seed} delay={g.rest} intensity={g.fxP} scale={g.scale} dir={g.sliceDir} streak={g.streak} />
           </div>
         );
       })}
@@ -1062,7 +1075,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       const sliceDir = sliceMove(t.breakdown ? t.breakdown.streakMult : 1, sliceSeq.current++);
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
         fx: "slice", sliceDir,
-        color: suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
+        color: suitColor(t.oCard.suit), bladeColor: deckA1 || deckA2 || null, seed: t.trickNo * 3 + 1, // #klinge-laser: Klinge glüht in der Deckfarbe
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
         branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });

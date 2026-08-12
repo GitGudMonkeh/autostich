@@ -258,7 +258,7 @@ function FinisherScene({ variant }) {
   // ×1,5 → ×2,0) und zeigt, wie der Richtungs-Zyklus wächst — jede Serienschwelle ihren VOLLEN Zyklus von vorne
   // (links zuerst). Spiegelt exakt die In-Game-Logik (sliceMove).
   const kstreak = Math.round((kstep.m - 1) / 0.02);                       // passende Serie zur Multiplikator-Stufe (Wucht/Funken)
-  const fx = <SliceFx cardEl={cardEl} color={suitCol} halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} />;
+  const fx = <SliceFx cardEl={cardEl} color={suitCol} bladeColor="#35e0ff" halvesDur={FIN_HALVES} cutDur={FIN_CUT} sparkDur={FIN_SPARK} seed={seed} delay={FIN_DELAY} intensity={0.5} scale={1} dir={kstep.d} streak={kstreak} /> /* #klinge-laser: Vorschau in einer Demo-Deckfarbe (in-game = aktive Deckfarbe) */;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
