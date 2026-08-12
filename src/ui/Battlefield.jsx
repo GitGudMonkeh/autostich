@@ -1059,9 +1059,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #finisher: Der Klinge-Ghost entsteht NUR, wenn die Klinge als Finisher gewählt ist. Beim Standard-Finisher
     // fliegt die Gegnerkarte stattdessen einfach weg (oppFlyAway, s. o.) — kein Ghost, kein Schnitt-Sound.
     if (win && klinge) {   // Gegnerkarte verliert → Klinge-Ghost — auch bei Krit
-      // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (bd.streakMult) + per-Stich-Zähler (sliceSeq).
+      // #klinge: Einfahrrichtung aus dem Siegesserie-MULTIPLIKATOR (t.breakdown.streakMult) + per-Stich-Zähler (sliceSeq).
       // Grundzug LINKS; mit steigendem Multiplikator wächst der Zyklus (≥1.25 +rechts, ≥1.5 +oben, ≥2.0 +Z).
-      const sliceDir = sliceMove(bd ? bd.streakMult : 1, sliceSeq.current++);
+      // (Früher aus der render-lokalen `bd`-Variable — die ist mit der Multiplikator-Leiste entfernt worden; hier
+      //  direkt aus dem Stich lesen, sonst ReferenceError → grauer Bildschirm beim ersten Klinge-Schnitt.)
+      const sliceDir = sliceMove(t.breakdown ? t.breakdown.streakMult : 1, sliceSeq.current++);
       spawned.push({ ...base, id: `og${t.trickNo}-${ghostSeq.current++}`, side: "opp",
         fx: "slice", sliceDir,
         color: suitColor(t.oCard.suit), seed: t.trickNo * 3 + 1,
