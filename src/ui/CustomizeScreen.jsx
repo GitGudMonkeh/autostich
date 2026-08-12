@@ -83,7 +83,7 @@ const PREVIEW_LOOK = {
   laserFaecher:  { bf: "bf_blitz",      a1: "#ff9a3c", a2: "#ffd15a" }, // Standard cyan-Laser → Deckfarbe warm-amber auf Blitz-Feld
   prismaKaskade: { bf: "bf_polarlicht", a1: "#ff4dcb", a2: "#7b5cff" }, // Standard prismatisch → Deckfarbe kräftig magenta/violett auf Polarlicht-Feld
   holoCube:      { bf: "bf_geometrie",  a1: "#39e64d", a2: "#8ee06a" }, // Standard holo-cyan → Deckfarbe grün/lime auf Geometrie-Feld
-  supernova:     { bf: "bf_kaiju",      a1: "#5ff6ff", a2: "#7f9bff" }, // Standard gold/gelb → Deckfarbe kühl-cyan/violett auf Kaiju-Feld
+  supernova:     { bf: "bf_spacedog",   a1: "#5ff6ff", a2: "#7f9bff" }, // Standard gold/gelb → Deckfarbe kühl-cyan/violett auf Weltraum-Feld
   gottStandard:  { bf: "bf_sonne",      a1: "#cbd3ff", a2: "#cbd3ff" }, // Standard-Prunk (nur Ansage) auf Sonnen-Feld
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
