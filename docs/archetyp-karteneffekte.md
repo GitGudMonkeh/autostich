@@ -270,8 +270,28 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` (Pixi: Filamente als vorgerenderte **Sprites** gebacken
   + geblittet — vgl. FrostIce-Perf-Ansatz; Akkretion über `birthG`-Schwelle). Wachstum aus der Karte
   ziehen: `coverage = clamp(growth / PLANT_GREEN_THRESHOLD)`. **Unter** dem IonStorm-Layer mounten.
-- **Status:** 🟢 **Design fertig** — Look + abgesegnete Werte + Wachstums-Quelle (Reifestufen 0…8) geklärt,
-  Reifestufen-Simulator gebaut. Offen nur noch die Pixi-Umsetzung.
+- **REWORK offen (ab 2026-08-12, nächste Session):** User will **andere Gras-/Moos-Varianten** testen,
+  Richtung **Neon / biolumineszentes Hänge-Moos** (Referenzbild: herabhängende Moos-Polster mit cyan/grün
+  **leuchtenden Spitzen** und **Magenta-Neon-Tropfen/Drips** auf dunklem Synthwave-Grund). Es wurden bereits
+  **Neon-Rim-Parameter** erprobt (`NEON_A/NEON_B/NEON_ANGLE/NEON_RIM/NEON_TIP/NEON_BLOOM/NEON_BASE`).
+  **Fallback-Werte festhalten** (falls nichts Besseres dabei rauskommt — vom User gegeben):
+  ```js
+  const TUNE = {
+    MOSS_DARK: "#20331a", MOSS_MID: "#d90af5", MOSS_TIP: "#9bc255", SPORO_COLOR: "#9a6a34",
+
+    NEON_A: "#f202be", NEON_B: "#25af23", NEON_ANGLE: -67, NEON_RIM: 0.7, NEON_TIP: 1, NEON_BLOOM: 0.18, NEON_BASE: 1,
+
+    REIF_COV: 0.4, EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 1, RAGGED: 1, OVERHANG: 1,
+
+    FILA_PER: 16, FILA_LEN: 3.5, FILA_THICK: 1.35, TILT: 12, SPREAD: 0.94, TIP_LIGHT: 1, SPECK: 0,
+
+    SPOROPHYTE: 0, SHADOW: 0, DEW: 0,
+  };
+  ```
+  (⚠️ Die `NEON_*`-Keys existieren im Prototyp `moos-tuning.html` **noch nicht** — beim Rework als
+  Regler ergänzen: Neon-Rim-Licht/Spitzen-Glow + evtl. herabhängende Drips.)
+- **Status:** 🟡 **v1 fertig (Reifestufen-Simulator, abgesegnet), aber REWORK gewünscht** — neue
+  Gras-Varianten Richtung Neon/biolumineszent testen; obige Werte als Fallback. Pixi-Umsetzung danach.
 
 ### 5.5 Extra — „Regen & Pool" (Wasser, Prototyp) 💧
 
