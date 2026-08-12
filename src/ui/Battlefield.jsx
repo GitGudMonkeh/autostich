@@ -1216,6 +1216,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Suspense fallback={null}>
           <FrostIce
             mass={ICE_FORCE != null ? ICE_FORCE : 0}
+            /* #flip-fix: Eis während des 3D-Flips der eigenen Karte ausblenden (flipKey je Stich, flipDur = Flip-Länge,
+               0 wenn kein Flip: Turbo/reduced/Wegflug) → Flip bleibt sichtbar, kein renderFrost-Hänger auf dem Flip-Frame. */
+            flipKey={t ? t.trickNo : 0} flipDur={useFlip ? flipDur : 0}
             panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
         </Suspense>
       )}

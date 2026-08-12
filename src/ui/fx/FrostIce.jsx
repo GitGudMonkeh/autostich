@@ -35,6 +35,7 @@ const TUNE = {
 const TAU = Math.PI * 2;
 const THRESHOLDS = [4, 8, 12];   // glacier.js — Schwellen; Stufe = #Schwellen ≤ Masse (0..3)
 const MASS_MAX = 12;             // glacier.js TOP / BURST_AT
+const REVEAL_FADE = 160;         // ms Einblendung des Eises NACH dem Karten-Flip
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3), identisch zu MossGrow
 const CARD_R = 12;               // Karten-Eckenradius (rounded-xl) — für den strikten Composite-Clip
 const M = 20;                    // Rand ums Frost-Bitmap, in Referenz-px (wird beim Clip weggeschnitten → kein Überstand)
@@ -54,11 +55,14 @@ function fbm(x, y) { return vhash(x * 0.05, y * 0.05) * 0.6 + vhash(x * 0.13, y 
 const stageOf = (m) => { let s = 0; for (let i = 0; i < THRESHOLDS.length; i++) if (m >= THRESHOLDS[i]) s++; return s; };
 const frontOf = (m) => { if (m <= 0) return 0; const s = stageOf(m); if (s === 0) return TUNE.COVER * TUNE.BASE_FREEZE; return TUNE.COVER * (THRESHOLDS[s - 1] / MASS_MAX); };
 
-export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
+export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false, flipDur = 0, flipKey = 0 }) {
   const hostRef = useRef(null);
   const stateRef = useRef({ mass });
   stateRef.current = { mass };
   const syncRef = useRef(null);
+  // #flip: bis zu diesem Zeitpunkt bleibt das Eis AUS (der 3D-Flip der Karte soll sichtbar sein; die flache Frost-Canvas
+  // würde ihn verdecken). Wird je neuer Karte (flipKey) gesetzt. 0 = kein Flip → Eis sofort sichtbar.
+  const hideUntilRef = useRef(0);
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -73,7 +77,7 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
     let cardX = 0, cardY = 0, cardW = 0, cardH = 0;
     let field = [], sparks = [], neonTips = [];
     let _axc = 1, _axs = 0, _cNA = { r: 34, g: 224, b: 255 }, _cNB = { r: 161, g: 60, b: 255 };
-    let renderedFront = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1;
+    let renderedFront = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1, revealAlpha = 1;
 
     // ── Frost-Feld (fixe Referenzgröße, deterministisch seeded → einmal gebaut) ──
     (function buildField() {
@@ -244,7 +248,7 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
       const mLeft = M * sx, mTop = M * sy;                          // skalierter Rand (wird vom Clip weggeschnitten)
       const anim = !reduced;
       const pulse = (anim && TUNE.SHIMMER > 0 && stageOf(mass) >= 3) ? 1 + TUNE.SHIMMER * 0.35 * Math.sin(clockT * 0.004) : 1;
-      const op = cardOpacity;                                      // #eis-fix: Eis folgt der Karten-Deckkraft (Wegflug-Fade)
+      const op = cardOpacity * revealAlpha;                        // #eis-fix: Karten-Deckkraft (Wegflug-Fade) × Flip-Einblendung
       ctx.save();
       roundRectPath(ctx, cardX, cardY, cardW, cardH, CARD_R); ctx.clip();   // STRIKT: exaktes Karten-RoundRect
       ctx.globalAlpha = op;
@@ -274,8 +278,13 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
       clockT += Math.min(50, now - last); last = now;
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
       const front = frontOf(mass);
-      if (front <= 0 || !measure()) { clear(); raf = 0; return; }   // keine Masse / Karte weg → rAF anhalten
-      if (Math.abs(front - renderedFront) > 0.003) renderFrost(front); // Bitmap nur bei Front-Wechsel neu bauen
+      if (front <= 0) { clear(); raf = 0; return; }                 // keine Masse → rAF anhalten
+      // #flip-fix: WÄHREND des Karten-Flips das Eis aus lassen (die flache Frost-Canvas verdeckt sonst den 3D-Flip) UND
+      // den teuren renderFrost NICHT auf dem Flip-Frame ausführen (kein Hänger vor dem Flip). rAF läuft billig weiter.
+      if (now < hideUntilRef.current) { clear(); raf = requestAnimationFrame(frame); return; }
+      if (!measure()) { clear(); raf = 0; return; }                 // Karte weg → rAF anhalten
+      revealAlpha = clamp01((now - hideUntilRef.current) / REVEAL_FADE); // sanftes Einblenden NACH dem Flip
+      if (Math.abs(front - renderedFront) > 0.003) renderFrost(front); // Bitmap nur bei Front-Wechsel neu (jetzt nach dem Flip → Hänger nicht mehr auf dem Flip)
       compose(mass);
       raf = requestAnimationFrame(frame);
     }
@@ -300,6 +309,10 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
 
   // Masse-Wechsel (0 ↔ >0, oder Stufe) startet/rendert neu, ohne die Canvas neu zu bauen.
   useEffect(() => { syncRef.current?.(); }, [mass]);
+
+  // #flip-fix: Neue Karte (flipKey wechselt je Stich) MIT Flip → das Eis für die Flip-Dauer ausblenden, damit der
+  // 3D-Flip sichtbar ist (und der teure Bitmap-Aufbau nicht auf dem Flip-Frame hängt). Danach blendet es sanft ein.
+  useEffect(() => { hideUntilRef.current = flipDur > 0 ? performance.now() + flipDur : 0; syncRef.current?.(); }, [flipKey, flipDur]);
 
   // z-10.5-Rolle: Eis liegt AUF der Karte (z-10), aber UNTER dem Moos (MossGrow z-11, später im DOM). Als FRÜHERER
   // DOM-Knoten mit z-11 → über der Karte, aber Moos (späterer z-11-Knoten) bleibt darüber (User-Vorgabe „Moos über Eis").
