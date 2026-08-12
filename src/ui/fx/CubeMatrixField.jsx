@@ -22,7 +22,7 @@ const TUNE = {
   // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
   // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
   SLOW: 0.5, SPEED_LO: 0.006, SPEED_HI: 0.020,
-  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
+  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.65, GLOW: 1.1,
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
   // #317: Scheinwerfer kreuzen von den oberen Ecken über die Karten (X-Form): Apex weit außen (SPREAD 0.78) + stark
@@ -45,11 +45,11 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all" }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1 }) {
   const hostRef = useRef(null);
-  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut).
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode };
+  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale: Würfelhöhe skalieren (Showcase höher).
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -145,18 +145,13 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       for (let r = 0; r <= R; r++) { const t = R > 0 ? r / R : 0, w = sprAt(t), z = z0 + (r - 0.5) * rowGap, a = alpha * lerp(0.6, 0.16, t), p0 = proj(-w, 0, z), p1 = proj(w, 0, z);
         ctx.strokeStyle = rgba(gcol, a); ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
     }
-    function box3d(cx, zf, zb, y0, y1, halfw, colFbot, colFtop, colT, colS, glowA, glowC, alpha, grad) {
+    function box3d(cx, zf, zb, y0, y1, halfw, colF, colT, colS, glowA, glowC, alpha) {
       const FBL = proj(cx - halfw, y0, zf), FBR = proj(cx + halfw, y0, zf), FTL = proj(cx - halfw, y1, zf), FTR = proj(cx + halfw, y1, zf),
         BTL = proj(cx - halfw, y1, zb), BTR = proj(cx + halfw, y1, zb), BBL = proj(cx - halfw, y0, zb), BBR = proj(cx + halfw, y0, zb);
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = alpha;
       if (cx < 0) quad(FBL, FTL, BTL, BBL, colS); else quad(FBR, FTR, BTR, BBR, colS);
-      // #perf: Der Front-Verlauf (heiße Spitze) kostet ein createLinearGradient JE Würfel/Frame. Nur bei erkennbarem
-      // Ausschlag (grad=true) zeichnen; ruhende Würfel bekommen einen soliden Fill (colFbot) → spart bei leiser Musik
-      // fast alle Gradienten (die meisten Würfel liegen dann in Ruhe).
-      ctx.beginPath(); ctx.moveTo(FBL.x, FBL.y); ctx.lineTo(FBR.x, FBR.y); ctx.lineTo(FTR.x, FTR.y); ctx.lineTo(FTL.x, FTL.y); ctx.closePath();
-      if (grad) { const fg = ctx.createLinearGradient(0, FBL.y, 0, FTL.y); fg.addColorStop(0, colFbot); fg.addColorStop(1, colFtop); ctx.fillStyle = fg; }
-      else ctx.fillStyle = colFbot;
-      ctx.fill();
+      // #perf: Front-Verlauf (createLinearGradient JE Würfel/Frame) komplett raus → SOLIDER Front-Fill (colF).
+      quad(FBL, FBR, FTR, FTL, colF);
       quad(FTL, FTR, BTR, BTL, colT); ctx.globalAlpha = 1;
       if (glowA > 0) { ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = rgba(glowC, glowA * alpha); const gy = Math.min(FTL.y, FTR.y); ctx.fillRect(Math.min(FTL.x, FTR.x) - 2, gy - 4, Math.abs(FTR.x - FTL.x) + 4, 8); ctx.globalCompositeOperation = "source-over"; }
     }
@@ -209,12 +204,12 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
           // der Ferne), die Höhen vorne. computeCubes bleibt unverändert (Bänder 0..TC-1 log-verteilt).
           for (let c = 0; c < C; c++) { const idx = (R - 1 - r) * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
             const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
-            const colFbot = rgba(mix(dark, base, emit), 1);
-            const colFtop = rgba(mix(base, hot, clamp(val, 0, 1) * 0.7), 1);
+            // Solider Front-Fill: dunkel-Deck bei Ruhe → heller + heiß-getönt bei Ausschlag (kein Gradient mehr).
+            const colF = rgba(mix(mix(dark, base, emit), hot, clamp(val, 0, 1) * 0.5), 1);
             const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
             const colS = rgba(mix(dark, base, emit * 0.6), 1);
-            const s = hw0, h = 2 * s + val * TUNE.C_RISE;
-            box3d(cx, z - s, z + s, 0, h, s, colFbot, colFtop, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha, !p.reduced && val > 0.06);
+            const s = hw0, h = 2 * s + val * TUNE.C_RISE * p.riseScale;
+            box3d(cx, z - s, z + s, 0, h, s, colF, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha);
           }
         }
       }

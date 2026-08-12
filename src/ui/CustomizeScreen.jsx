@@ -359,7 +359,7 @@ function CubeMatrixPreview({ deckTint = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} />
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseScale={1.8} />
         </Suspense>
       )}
     </div>

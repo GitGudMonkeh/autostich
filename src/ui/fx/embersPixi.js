@@ -27,11 +27,11 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 330,        // Basis-Ausstoßrate (Tröpfchen/s je Vent), skaliert mit Stufe
+  EMIT: 265,        // #perf: Basis-Ausstoßrate gesenkt (war 330) → weniger gleichzeitige Partikel (Update + Fill-Rate)
   FLAME: 0.55,      // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
-  GLOW: 0.75,       // Partikel-Footprint (On-Screen-Größe mappt 1:1). Klein = knackig, wenig Wash.
+  GLOW: 0.64,       // #perf/#schärfer: Footprint kleiner (war 0.75) → schärfere Partikel + weniger Fill-Rate
   GLOW_A: 1.5,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
   CRUST_P: 0.12,    // Anteil dunkler Krusten-Brocken
   MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
@@ -112,7 +112,7 @@ function bounceParticle(s, fy, sc) {
 }
 
 export function createEmberField(app) {
-  const glowTex   = makeRadial([[0, 1], [0.42, 1], [0.6, 0.16], [1, 0]]);    // Glut: größerer solider Kern + knapper Halo → knackig, wenig Wash
+  const glowTex   = makeRadial([[0, 1], [0.55, 1], [0.66, 0.08], [1, 0]]);   // #schärfer: größerer solider Kern (0.55) + kürzerer Halo → weniger Bloom/Wash, schärfere Glut
   const crustTex  = makeRadial([[0, 1], [0.55, 0.9], [0.85, 0.35], [1, 0]]); // Brocken: kompakter, dunkel getönt
   const craterTex = makeRadial([[0, 0], [0.45, 0.85], [1, 0]]);              // Krater-Rand: dunkler Ring (Mitte offen)
 
