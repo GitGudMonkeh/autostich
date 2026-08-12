@@ -167,15 +167,22 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   (oben-links) auf den Spitzen, **samtige Körnung** (feine Punkte), **fransiger Wuchsrand** (kein
   glatter Schnitt) und vereinzelte bräunliche **Sporophyten** (Stängel + Kapsel — das typische
   Moos-Detail). Optional langsam funkelndes **Tau**.
-- **Wann:** Ein **Wachstum-Wert 0..1** steuert die Abdeckung. Das Moos wächst **von oben & den beiden
-  Seiten** nach **innen/unten** zu. **Akkretion statt Neu-Würfeln:** Jedes Büschel hat ein festes
-  `birthG` (Schwelle); steigt Wachstum, kommen neue Büschel dazu, bestehende **bleiben** und reifen nur
-  nach (`maturity = clamp((g - birthG)/0.22)`). → echtes Zuwachsen, deterministisch (seeded RNG).
+- **Wann / Wachstums-Quelle (GEKLÄRT):** Kopplung an das **Pflanzen-Wachstum** der Karte. Aus dem
+  Code (`src/game/constants.js:377` + `src/game/skills.js:442` `growthRipe`): eine Karte wird ab
+  **`PLANT_GREEN_THRESHOLD = 8` Wachstum** dauerhaft **grün = reif**. Darunter (Wachstum 1–7) ist sie
+  **Setzling**, bei 0 nichts. Wachstum steigt je Sieg um `growInc = min(1, Pflanze-Skills/PLANT_GROWTH_SKILL_REF)`
+  (`engine.js:491`), also **+1/Sieg bei vollem Fokus → 8 Siege bis reif**.
+  **Mapping Effekt:** `coverage g = clamp(growth / PLANT_GREEN_THRESHOLD)` → **reif (Wachstum 8) = 100 %**
+  volle Moos-Abdeckung. Diskrete Stufen 0…8 (der Reifestufen-Simulator im Prototyp spiegelt genau das).
+  Das Moos wächst **von oben & den beiden Seiten** nach **innen/unten** zu. **Akkretion statt
+  Neu-Würfeln:** festes `birthG` je Büschel; steigt Wachstum, kommen neue dazu, bestehende **bleiben**
+  und reifen nur nach (`maturity = clamp((g - birthG)/0.22)`) — deterministisch (seeded RNG).
 - **Wo:** Auf der eigenen (Pflanze-)Karte, Overlay über der Karte. Halme dürfen oben/seitlich **ein
   bisschen über die Kartenkante** wachsen (`OVERHANG`, dezent). In-Game analog IonStorm/FireHead auf
   `playerCardRef`, Gate Preview/Dev.
-- **⚠️ Offen (vom User zu klären):** **Woran hängt „Wachstum" in-game?** Eigene Ressource/Stack auf
-  Pflanze-Karten (analog Ionisierung/Hitze) oder anderer Spiel-Zustand?
+- **⚠️ Layer-Reihenfolge (User-Vorgabe):** Der **Blitz-Rahmen (IonStorm) muss ÜBER dem Moos-Effekt
+  liegen** — Moos also unter IonStorm mounten (z. B. Moos z-10.5, IonStorm z-11 wie gehabt), damit der
+  Ionensturm-Rahmen auf einer voll-ionisierten **und** bemoosten Karte sichtbar bleibt.
 - **Algorithmus (Prototyp Canvas-2D, → Pixi portierbar):**
   1. **Feld-Aufbau** (`buildField`, seeded `mulberry32`): jittered Grid (Abstand aus `DENSITY`), je
      Büschel `birthG = clamp( max(fromEdge/maxInward, dTop/maxDown) + RAGGED·(fbm-0.5)·0.7 )`, wobei
@@ -191,29 +198,32 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   3. **Neigung/Streuung:** Halmwinkel `a = ang + TILT + tuftJit·spread·0.6 + (rng-0.5)·spread`,
      `spread = 0.2 + SPREAD·2.1`. **Überwuchs:** Basis-Origin um `edgeOut·OVERHANG·3.5` nach außen,
      Länge ×`(1+edgeOut·OVERHANG·0.7)`.
-- **Parameter (`TUNE`, Default-Board-Werte):**
+- **Parameter (`TUNE`, ABGESEGNET @ reif/Stufe 8):**
   ```js
   const TUNE = {
     MOSS_DARK: "#24361a", MOSS_MID: "#4a6b2c", MOSS_TIP: "#8aa84e", SPORO_COLOR: "#9a6a34",
 
-    EDGE_BAND: 0.55, TOP_BIAS: 0.6, DENSITY: 0.65, CLUMP: 0.5, RAGGED: 0.5, OVERHANG: 0.35,
+    EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 0, RAGGED: 1, OVERHANG: 1,
 
-    FILA_PER: 10, FILA_LEN: 6, FILA_THICK: 1.2, TILT: 0, SPREAD: 0.55, TIP_LIGHT: 0.5, SPECK: 0.5,
+    FILA_PER: 16, FILA_LEN: 3.5, FILA_THICK: 1.2, TILT: 12, SPREAD: 0.94, TIP_LIGHT: 0, SPECK: 0,
 
-    SPOROPHYTE: 0.35, SHADOW: 0.6, DEW: 0.4,
+    SPOROPHYTE: 0, SHADOW: 0, DEW: 0,
   };
   ```
-  (Wachstum selbst ist **Zustand**, kein TUNE-Wert.)
+  (Wachstum selbst ist **Zustand** (0…8 → coverage 0…1), kein TUNE-Wert. Kurzes, dichtes Moos ohne
+  Sporophyten/Tau/Körnung; leicht geneigt, stark gestreut, wächst voll über die Kante.)
 - **Reduced/Mobile:** Moos ist **statisch** (Bitmap-Cache) → günstig; nur Tau animiert (abschaltbar via
   `DEW=0`). In-Game reduced → Tau aus, evtl. `DENSITY`/`FILA_PER` gedeckelt.
-- **Prototyp:** `docs/prototypes/moos-tuning.html` (self-contained Canvas-2D-Tuning-Board mit
-  Wachstums-Slider, Auto-Wachsen, allen Reglern, kopierbarem TUNE-Block, Zoom). Look vom User als
-  „pretty genius" abgesegnet; TILT/SPREAD/OVERHANG auf Wunsch ergänzt.
-- **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` (Pixi: Filamente als Sprites/`ParticleContainer` bzw.
-  in eine `RenderTexture` gebacken + geblittet; Akkretion über `birthG`-Schwelle). Wachstums-Quelle
-  verdrahten sobald Spiel-Zustand geklärt.
-- **Status:** 🟡 **Look/Board abgesegnet & als Design gesichert** — Pixi-Umsetzung + Wachstums-Quelle
-  offen. **Nicht gepusht** (nur lokal committet).
+- **Prototyp:** `docs/prototypes/moos-tuning.html` — jetzt **Reifestufen-Simulator**: diskreter Regler
+  **Wachstum 0…8** (Setzling → Reif) statt Continuous-Slider, Auto-Wachsen stept die Stufen, HUD zeigt
+  Stufe/Zustand; Werte auf den abgesegneten TUNE gesetzt (bei Stufe 8 = reif steht der finale Look).
+  Alle Tuning-Regler bleiben zum Nachjustieren, kopierbarer TUNE-Block. Look vom User als
+  „pretty genius" abgesegnet.
+- **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` (Pixi: Filamente als vorgerenderte **Sprites** gebacken
+  + geblittet — vgl. FrostIce-Perf-Ansatz; Akkretion über `birthG`-Schwelle). Wachstum aus der Karte
+  ziehen: `coverage = clamp(growth / PLANT_GREEN_THRESHOLD)`. **Unter** dem IonStorm-Layer mounten.
+- **Status:** 🟢 **Design fertig** — Look + abgesegnete Werte + Wachstums-Quelle (Reifestufen 0…8) geklärt,
+  Reifestufen-Simulator gebaut. Offen nur noch die Pixi-Umsetzung.
 
 ### 5.5 Extra — „Regen & Pool" (Wasser, Prototyp) 💧
 

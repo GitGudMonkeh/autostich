@@ -63,23 +63,24 @@
 </style>
 
 <header>
-  <h1>Moos-Wuchs · Pflanze-Vorschau &amp; Tuning</h1>
-  <div class="sub">Realistisches <b>Moos</b> (echt, kein Comic): tausende feine <b>Härchen</b> in gedämpften Oliv-/Waldgrüns, mit Tiefen-Schatten in den Büscheln, samtiger Körnung, fransigem Wuchsrand und vereinzelten bräunlichen <b>Sporophyten</b>. Es wächst mit steigendem <b>Wachstum</b> von <b>oben &amp; den Seiten</b> nach innen/unten zu — bestehendes Moos bleibt, neues kommt dazu. Dreh am Wachstum (oder Auto-Wachsen) &amp; den Reglern, dann gib mir die <b>TUNE-Werte</b>. (Prototyp Canvas-2D; In-Game portiere ich es nach Pixi.)</div>
+  <h1>Moos-Wuchs · Pflanzen-Reifestufen</h1>
+  <div class="sub">Realistisches <b>Moos</b> (echt, kein Comic) überwächst die Karte mit dem <b>Wachstum</b> von <b>oben &amp; den Seiten</b> nach innen/unten — bestehendes Moos bleibt, neues kommt dazu. Der Regler simuliert die <b>Reifestufen aus dem Code</b>: ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>) gilt die Karte als <b>grün = reif = 100 %</b>; Stufe 1–7 = <b>Setzling</b>, 0 = kein Wachstum (+1 Wachstum je Sieg bei vollem Pflanze-Fokus). Bei <b>Stufe 8</b> stehen die abgesegneten Werte. (Prototyp Canvas-2D; In-Game → Pixi.)</div>
   <div class="legend">
     <span class="chip"><span class="dot" style="color:#8aa84e"></span> Härchen <b>samtig</b></span>
     <span class="chip"><span class="dot" style="color:var(--acc)"></span> Wuchs <b>oben+Seiten → innen</b></span>
-    <span class="chip"><span class="dot" style="color:#c58a3a"></span> <b>Sporophyten</b> &amp; Tau</span>
+    <span class="chip"><span class="dot" style="color:#8aa84e"></span> Reif <b>ab Wachstum 8</b></span>
   </div>
 </header>
 
 <div class="wrap">
   <div class="stagewrap">
     <div class="stage" id="stage"><canvas id="cv"></canvas>
-      <div class="hud">Moos-Wuchs · Wachstum <b id="hudLvl">50%</b></div><div class="fps" id="fps">–</div>
+      <div class="hud">Moos-Wuchs · <b id="hudLvl">Reif (100%)</b></div><div class="fps" id="fps">–</div>
     </div>
     <div class="lvl">
-      <div class="lab"><label for="growth">🌱 Wachstum (Zustand · kein TUNE-Wert)</label><span class="val" id="v_growth">50 %</span></div>
-      <input type="range" id="growth" min="0" max="1" step="0.01" value="0.5">
+      <div class="lab"><label for="growth">🌱 Reifestufe · Wachstum 0–8 (Zustand · kein TUNE-Wert)</label><span class="val" id="v_growth">Stufe 8/8 · Reif</span></div>
+      <input type="range" id="growth" min="0" max="8" step="1" value="8">
+      <div style="font-size:11px;color:var(--dimmer);margin-top:3px">Reif = grün ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>). 1–7 Setzling · 0 leer.</div>
     </div>
     <div class="transport">
       <button id="btnAuto">Auto-Wachsen: aus</button>
@@ -103,9 +104,9 @@
   var TAU=Math.PI*2;
   var DEFAULTS = {
     MOSS_DARK:"#24361a", MOSS_MID:"#4a6b2c", MOSS_TIP:"#8aa84e", SPORO_COLOR:"#9a6a34",
-    EDGE_BAND:0.55, TOP_BIAS:0.6, DENSITY:0.65, CLUMP:0.5, RAGGED:0.5, OVERHANG:0.35,
-    FILA_PER:10, FILA_LEN:6, FILA_THICK:1.2, TILT:0, SPREAD:0.55, TIP_LIGHT:0.5, SPECK:0.5,
-    SPOROPHYTE:0.35, SHADOW:0.6, DEW:0.4
+    EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:0, RAGGED:1, OVERHANG:1,
+    FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.2, TILT:12, SPREAD:0.94, TIP_LIGHT:0, SPECK:0,
+    SPOROPHYTE:0, SHADOW:0, DEW:0
   };
   var T = Object.assign({}, DEFAULTS);
   var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";};
@@ -186,7 +187,8 @@
   function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
   window.addEventListener("resize", doResize);
 
-  var autoGrow=false, zoom=1.3, growth=0.5, last=0, fpsT=0, fpsN=0, clockT=0;
+  var STAGE_MAX=8;                              // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
+  var autoGrow=false, autoAcc=0, zoom=1.3, stage=STAGE_MAX, growth=1, last=0, fpsT=0, fpsN=0, clockT=0;
   var fieldDirty=true, renderDirty=true, renderedG=-1, boxKey="";
   var field=[], dewPts=[], CW=0, CH=0;
 
@@ -302,7 +304,7 @@
   function frame(ts){
     if(!last) last=ts; var dt=Math.min(50, ts-last); last=ts; clockT+=dt; var dts=dt/1000;
     fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
-    if(autoGrow){ growth=Math.min(1, growth+dts*0.08); $("growth").value=growth; updLvl(); markDirty(false); if(growth>=1){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } }
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>=650){ autoAcc=0; stage=Math.min(STAGE_MAX, stage+1); growth=stage/STAGE_MAX; $("growth").value=stage; updLvl(); markDirty(false); if(stage>=STAGE_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } } }
     var b=box();
     if(fieldDirty || renderDirty || Math.abs(growth-renderedG)>0.004) renderMoss(growth);
     ctx.clearRect(0,0,CSSW,CSSH);
@@ -330,10 +332,13 @@
 
     requestAnimationFrame(frame);
   }
-  function updLvl(){ var p=Math.round(growth*100); $("v_growth").textContent=p+" %"; $("hudLvl").textContent=p+"%"; }
+  function updLvl(){ var pct=Math.round(stage/STAGE_MAX*100);
+    var nm = stage<=0 ? "kein Wachstum" : stage>=STAGE_MAX ? "Reif · grün" : "Setzling";
+    $("v_growth").textContent="Stufe "+stage+"/"+STAGE_MAX+" · "+nm;
+    $("hudLvl").textContent=(stage>=STAGE_MAX?"Reif":stage<=0?"Leer":"Setzling "+stage+"/"+STAGE_MAX)+" ("+pct+"%)"; }
 
-  $("growth").addEventListener("input",function(){ growth=parseFloat(this.value); autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
-  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; if(autoGrow&&growth>=1) growth=0; this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
+  $("growth").addEventListener("input",function(){ stage=parseInt(this.value,10)||0; growth=stage/STAGE_MAX; autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
+  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0; if(autoGrow&&stage>=STAGE_MAX){ stage=0; growth=0; $("growth").value=0; updLvl(); markDirty(false); } this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
   $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; markDirty(true); });
   $("btnCopy").addEventListener("click",function(){ var ta=$("cfg"); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); });
   $("btnDefault").addEventListener("click",function(){ T=Object.assign({},DEFAULTS); syncInputs(); markDirty(true); });
