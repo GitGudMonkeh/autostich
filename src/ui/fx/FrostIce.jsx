@@ -73,7 +73,7 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
     let cardX = 0, cardY = 0, cardW = 0, cardH = 0;
     let field = [], sparks = [], neonTips = [];
     let _axc = 1, _axs = 0, _cNA = { r: 34, g: 224, b: 255 }, _cNB = { r: 161, g: 60, b: 255 };
-    let renderedFront = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false;
+    let renderedFront = -1, clockT = 0, last = 0, raf = 0, disposed = false, cleared = false, cardOpacity = 1;
 
     // ── Frost-Feld (fixe Referenzgröße, deterministisch seeded → einmal gebaut) ──
     (function buildField() {
@@ -220,12 +220,16 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
 
     function measure() {
       const pr = panelRef?.current?.getBoundingClientRect();
-      const cr = cardRef?.current?.getBoundingClientRect();
+      const cardEl = cardRef?.current;
+      const cr = cardEl?.getBoundingClientRect();
       if (!pr || !cr || pr.width < 2 || cr.width < 8) return false;
       DPR = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.max(1, Math.round(pr.width)), h = Math.max(1, Math.round(pr.height));
       if (w !== W || h !== H) { W = w; H = h; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); }
       cardX = cr.left - pr.left; cardY = cr.top - pr.top; cardW = cr.width; cardH = cr.height;
+      // #eis-fix: Deckkraft der Karte mitlesen → das Eis blendet SYNCHRON mit ihr aus (Wegflug bei Niederlage
+      // = as-flyaway fadet opacity→0). Ohne das flöge das voll-opake Eis als „komischer Rahmen" davon (analog Moos-Fix).
+      cardOpacity = cardEl ? clamp01(parseFloat(getComputedStyle(cardEl).opacity) || 0) : 1;
       const ccx = cardX + cardW / 2, ccy = cardY + cardH / 2;   // Karte weggeflogen/außerhalb → Effekt nicht hängen lassen
       if (ccx < -cardW || ccx > W + cardW || ccy < -cardH || ccy > H + cardH) return false;
       return true;
@@ -240,11 +244,13 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
       const mLeft = M * sx, mTop = M * sy;                          // skalierter Rand (wird vom Clip weggeschnitten)
       const anim = !reduced;
       const pulse = (anim && TUNE.SHIMMER > 0 && stageOf(mass) >= 3) ? 1 + TUNE.SHIMMER * 0.35 * Math.sin(clockT * 0.004) : 1;
+      const op = cardOpacity;                                      // #eis-fix: Eis folgt der Karten-Deckkraft (Wegflug-Fade)
       ctx.save();
       roundRectPath(ctx, cardX, cardY, cardW, cardH, CARD_R); ctx.clip();   // STRIKT: exaktes Karten-RoundRect
+      ctx.globalAlpha = op;
       ctx.drawImage(frost, 0, 0, frost.width, frost.height, cardX - mLeft, cardY - mTop, cardW + 2 * mLeft, cardH + 2 * mTop);
       if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM * pulse);
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM * pulse) * op;
         ctx.drawImage(glow, 0, 0, glow.width, glow.height, cardX - mLeft, cardY - mTop, cardW + 2 * mLeft, cardH + 2 * mTop);
         ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       }
@@ -252,11 +258,12 @@ export function FrostIce({ mass = 0, panelRef, cardRef, reduced = false }) {
         ctx.globalCompositeOperation = "lighter"; const front2 = frontOf(mass);
         for (let s = 0; s < sparks.length; s++) { const sp = sparks[s]; if (front2 <= sp.birthF) continue;
           const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(clockT * 0.005 + sp.ph));
-          ctx.fillStyle = rgba({ r: 210, g: 240, b: 255 }, 0.6 * TUNE.SPARKLE * tw);
+          ctx.fillStyle = rgba({ r: 210, g: 240, b: 255 }, 0.6 * TUNE.SPARKLE * tw * op);
           ctx.beginPath(); ctx.arc(cardX + sp.x * sx, cardY + sp.y * sy, (0.9 + 0.7 * tw) * sx, 0, TAU); ctx.fill();
         }
         ctx.globalCompositeOperation = "source-over";
       }
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
