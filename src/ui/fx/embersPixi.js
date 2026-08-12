@@ -41,6 +41,9 @@ const TUNE = {
   BOUNCE_FRIC: 0.5,   // seitliche Dämpfung (vx) pro Bounce
   BOUNCE_VMAX: 260,   // Deckel der Aufwärtsgeschwindigkeit nach Bounce (px/s, *sc) → hält die Hüpfhöhe niedrig
   BOUNCE_FADE: 0.18,  // Rest-Lebenszeit (s) nach dem letzten Bounce → sanftes Verlöschen statt hartem Pop
+  // #319b: perspektivische Boden-Fläche für die Fontänen (wie der Sternenfeld-Komet, aber FLACHER — nicht so weit
+  // nach hinten). d=0 = fern (hinten, höher, schmaler, kleiner) .. d=1 = nah (vorn, tiefer am Rand, breiter, groß).
+  P_FAR_Y: 0.66, P_NEAR_Y: 0.95, P_FAR_HALF: 0.16, P_NEAR_HALF: 0.40, P_DEPTH_MIN: 0.55,
   // #ambiente: kontinuierlich sanft aufsteigende Glut („schwebende Glutpartikel steigen langsam auf" — Effekt-Text).
   // Läuft IMMER (auch Mobile/„ausgewogen"=lite), NUR bei „minimal"/reduced aus → so ist Glutfunken auf dem Handy
   // überhaupt sichtbar (die per-Stich-Fontänen sind auf lite aus). Sehr billig (niedrige Rate, kein Bounce).
@@ -110,8 +113,9 @@ function makeRadial(stops) {
 // Boden-Bounce eines fallenden Partikels an der Emissionslinie fy: kehrt vy gedeckelt um (niedriger Hüpfer),
 // bremst vx, zählt Bounces; nach dem letzten Bounce wird die Restlebenszeit gekappt → sanftes Ausfaden.
 function bounceParticle(s, fy, sc) {
-  if (s.vy > 0 && s.y >= fy && s.bounces < TUNE.BOUNCE_N) {
-    s.y = fy;
+  const g = s.groundY != null ? s.groundY : fy;   // #319b: je Partikel eigene Boden-Linie (Tiefe der Fontäne)
+  if (s.vy > 0 && s.y >= g && s.bounces < TUNE.BOUNCE_N) {
+    s.y = g;
     s.vy = -Math.min(Math.abs(s.vy) * TUNE.BOUNCE_REST, TUNE.BOUNCE_VMAX * sc);
     s.vx *= TUNE.BOUNCE_FRIC;
     if (++s.bounces >= TUNE.BOUNCE_N) s.life = Math.min(s.life, s.age + TUNE.BOUNCE_FADE);
@@ -169,36 +173,38 @@ export function createEmberField(app) {
 
   function spawnDroplet(v, env, sc, W, fy) {
     const r = Math.random();
-    const x = v.x * W, y0 = fy - Math.random() * 3, vsc = v.vscale || 1, sp = v.spread || 1;
+    // #319b: ds = Tiefen-Skala der Fontäne (hinten kleiner/kürzer). vsc trägt ds → v0 skaliert; Größe (sz) ebenfalls ×ds.
+    // groundY = Boden-Linie DIESER Fontäne (Tiefe) → Bounce/Boden passt zur Perspektive.
+    const ds = v.ds || 1, x = v.x * W, y0 = fy - Math.random() * 3, vsc = (v.vscale || 1) * ds, sp = v.spread || 1;
     if (r < TUNE.CRUST_P) {  // dunkler Krusten-Brocken
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.42 + v.side * 0.14;
       const v0 = (320 + Math.pow(Math.random(), 1.7) * 430) * (1 + v.stufe * 0.1) * (0.72 + 0.28 * env) * sc * vsc;
-      const s = grabCrust(); s.x = x + (Math.random() - 0.5) * W * 0.05 * sp; s.y = y0;
+      const s = grabCrust(); s.x = x + (Math.random() - 0.5) * W * 0.05 * sp; s.y = y0; s.groundY = fy;
       s.vx = Math.cos(ang) * v0; s.vy = Math.sin(ang) * v0; s.age = 0; s.life = 1.25 + Math.random() * 0.7;
-      s.sz = 1.7 + Math.random() * 2.0; s.drag = 0.6; s.seed = Math.random() * 6.28; s.grav = 1.12; s.bounces = 0;
+      s.sz = (1.7 + Math.random() * 2.0) * ds; s.drag = 0.6; s.seed = Math.random() * 6.28; s.grav = 1.12; s.bounces = 0;
       return;
     }
     const core = r < TUNE.CRUST_P + 0.44 ? false : true;  // ~44% body, ~38% core
-    const s = grabGlow(); s.seed = Math.random() * 6.28; s.bounces = 0; s.canBounce = true;
+    const s = grabGlow(); s.seed = Math.random() * 6.28; s.bounces = 0; s.canBounce = true; s.groundY = fy;
     if (core) {  // schmale, schnelle Kernsäule → dünner heißer Kopf oben
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.12 + v.side * 0.10;
       const v0 = (860 + Math.random() * 330) * (1 + v.stufe * 0.13) * (0.72 + 0.28 * env) * sc * vsc;
       s.x = x + (Math.random() - 0.5) * W * 0.014 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0 + (Math.random() - 0.5) * 30 * sc; s.vy = Math.sin(ang) * v0;
-      s.age = 0; s.life = 0.9 + Math.random() * 0.75; s.sz = 0.85 + Math.random() * 1.25; s.drag = 0.26; s.hot = 1.05; s.grav = 1;
+      s.age = 0; s.life = 0.9 + Math.random() * 0.75; s.sz = (0.85 + Math.random() * 1.25) * ds; s.drag = 0.26; s.hot = 1.05; s.grav = 1;
     } else {     // viele, langsam (v0 nach unten gebogen), breit → fetter Sockel
       const ang = -Math.PI / 2 + (Math.random() - 0.5) * 0.36 + v.side * 0.14;
       const v0 = (360 + Math.pow(Math.random(), 1.8) * 470) * (1 + v.stufe * 0.11) * (0.72 + 0.28 * env) * sc * vsc;
       s.x = x + (Math.random() - 0.5) * W * 0.055 * sp; s.y = y0;
       s.vx = Math.cos(ang) * v0; s.vy = Math.sin(ang) * v0;
-      s.age = 0; s.life = 1.15 + Math.random() * 0.8; s.sz = 1.0 + Math.random() * 1.55; s.drag = 0.5; s.hot = 0.94; s.grav = 1;
+      s.age = 0; s.life = 1.15 + Math.random() * 0.8; s.sz = (1.0 + Math.random() * 1.55) * ds; s.drag = 0.5; s.hot = 0.94; s.grav = 1;
     }
   }
   // #ambiente: eine sanft aufsteigende Glut aus einer der ruhigen Ambiente-Säulen — schwebt langsam hoch, fast ohne
   // Schwerkraft, kein Bounce, verlischt weich. Deck-getönt (rampInt über heat wie die Fontänen-Glut).
   const AMB_XS = emberFountainXs(7);   // feste, ruhige Säulen (wie die DOM-Ambiente-Dots)
   function spawnAmbient(sc, W, fy, stufe) {
-    const s = grabGlow(); s.canBounce = false; s.bounces = 0; s.seed = Math.random() * 6.28;
+    const s = grabGlow(); s.canBounce = false; s.bounces = 0; s.seed = Math.random() * 6.28; s.groundY = fy;
     const cx = AMB_XS[(Math.random() * AMB_XS.length) | 0];
     s.x = cx * W + (Math.random() - 0.5) * W * 0.12; s.y = fy - Math.random() * 5;
     s.vx = (Math.random() - 0.5) * 26 * sc;
@@ -207,10 +213,11 @@ export function createEmberField(app) {
     s.sz = TUNE.AMB_SZ * (0.7 + Math.random() * 0.7); s.drag = 0.4; s.hot = 0.72; s.grav = 0.18;  // fast schwebend
   }
   function spawnFlame(v, sc, W, fy) {  // Flammen-Zunge am Austritt: niedrig, weich, orange, kurzlebig
-    const s = grabGlow(); s.canBounce = false;   // Flammen steigen nur und verlöschen → kein Boden-Bounce
+    const ds = v.ds || 1;   // #319b: hintere Fontänen kleiner/kürzer
+    const s = grabGlow(); s.canBounce = false; s.groundY = fy;   // Flammen steigen nur und verlöschen → kein Boden-Bounce
     s.x = v.x * W + (Math.random() - 0.5) * W * 0.045 * (v.spread || 1); s.y = fy - Math.random() * 2;
-    s.vx = (Math.random() - 0.5) * 60 * sc; s.vy = -(120 + Math.random() * 180) * sc;
-    s.age = 0; s.life = 0.4 + Math.random() * 0.45; s.sz = 2.3 + Math.random() * 2.5; s.drag = 0.82; s.seed = Math.random() * 6.28; s.hot = 0.84; s.grav = 1;
+    s.vx = (Math.random() - 0.5) * 60 * sc; s.vy = -(120 + Math.random() * 180) * sc * ds;
+    s.age = 0; s.life = 0.4 + Math.random() * 0.45; s.sz = (2.3 + Math.random() * 2.5) * ds; s.drag = 0.82; s.seed = Math.random() * 6.28; s.hot = 0.84; s.grav = 1;
   }
 
   function erupt({ sweepId, sweepDur, win, score, tier = 0 }) {
@@ -218,14 +225,20 @@ export function createEmberField(app) {
     if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0) || !win) return;
     const stufe = emberStufe(score);
     const t = clamp(tier | 0, 0, 4);
+    // #319b: zufällige TIEFE auf der perspektivischen Boden-Fläche → Fontänen an verschiedenen Stellen (x + vorn/hinten),
+    // aber nicht so weit hinten wie der Komet. ny = Boden-Y (normiert), ds = Tiefen-Skala (hinten kleiner/kürzer),
+    // halfW = x-Spanne (hinten schmaler → Trichter/Perspektive).
+    const lp = (a, b, u) => a + (b - a) * u;
+    const d = Math.random();
+    const ny = lp(TUNE.P_FAR_Y, TUNE.P_NEAR_Y, d), ds = lp(TUNE.P_DEPTH_MIN, 1, d), halfW = lp(TUNE.P_FAR_HALF, TUNE.P_NEAR_HALF, d);
     if (t >= 1) {
-      // ab „Stark": EINE große, mittige, gebündelte Fontäne (eskalierend mit dem Hit-Tier)
-      vents.push({ x: 0.5, side: 0, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true });
+      // ab „Stark": große, gebündelte Fontäne — bleibt MITTIG (x=0,5), erscheint aber an zufälliger Tiefe (vorn..hinten).
+      vents.push({ x: 0.5, side: 0, ny, ds, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true });
     } else {
-      // Schwach (normaler Sieg): EINE Fontäne an Zufallsposition
+      // Schwach (normaler Sieg): EINE Fontäne an zufälliger Position auf der Fläche (x innerhalb der Tiefen-Spanne).
       const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);
-      const x = emberFountainXs(sweepId * 7 + 1)[0];
-      vents.push({ x, side: x - 0.5, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true });
+      const x = clamp(0.5 + (Math.random() * 2 - 1) * halfW, 0.05, 0.95);
+      vents.push({ x, side: x - 0.5, ny, ds, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true });
     }
     if (vents.length > TUNE.MAXVENT) vents.splice(0, vents.length - TUNE.MAXVENT);
   }
@@ -258,10 +271,11 @@ export function createEmberField(app) {
         v.jetT -= dt; v.glow = 1;
         const env = clamp((v.jetT / v.burst) * 1.25, 0, 1);
         const wf = v.win ? 1.12 : 1;
+        const vfy = (v.ny != null ? v.ny : 0.95) * H;   // #319b: Boden-Linie DIESER Fontäne (Tiefe)
         v.acc += TUNE.EMIT * (v.mult || 1) * (1 + v.stufe * 0.85) * env * wf * dt;   // mult = gebündelte Zentral-Fontäne (ab „Stark")
-        while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, fy); }
+        while (v.acc >= 1) { v.acc--; spawnDroplet(v, env, sc, W, vfy); }
         v.flAcc += TUNE.EMIT * TUNE.FLAME * Math.sqrt(v.mult || 1) * (1 + v.stufe * 0.5) * env * dt;
-        while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, fy); }
+        while (v.flAcc >= 1) { v.flAcc--; spawnFlame(v, sc, W, vfy); }
       } else {
         v.glow -= dt * 2.9;   // molten Pool kühlt schnell ab → kein großer Afterglow bei überlappenden Stichen
         if (v.glow <= 0) { vents.splice(vi, 1); }
@@ -274,15 +288,15 @@ export function createEmberField(app) {
     for (let i = 0; i < TUNE.MAXVENT; i++) {
       const v = vents[i], cr = craterSpr[i], po = poolOut[i], pi = poolIn[i];
       if (!v) { cr.alpha = 0; po.alpha = 0; pi.alpha = 0; continue; }
-      const bx = v.x * W, act = v.jetT > 0 ? 1 : v.glow;
+      const bx = v.x * W, vy = (v.ny != null ? v.ny : 0.95) * H, ds = v.ds || 1, act = v.jetT > 0 ? 1 : v.glow;  // #319b: Boden-Y + Tiefen-Skala der Fontäne
       const fl = 0.72 + 0.28 * Math.sin(clock * 11 + bx * 0.06);
-      const baseK = 0.55 + 0.45 * (v.spread || 1);   // größere Basis für die gebündelte Zentral-Fontäne
+      const baseK = (0.55 + 0.45 * (v.spread || 1)) * ds;   // größere Basis für die gebündelte Zentral-Fontäne · ×ds (hinten kleiner)
       const pr = (28 + v.stufe * 12) * act * fl * sc * baseK;
       po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
       // Boden kompakter/knackiger: kleinere Pools, geringere Alpha, dunklerer Krater-Rand (mehr Kontrast, weniger Wash).
-      cr.x = bx; cr.y = fy; cr.width = (44 + v.stufe * 14) * 2.6 * sc * baseK; cr.height = (44 + v.stufe * 14) * 0.9 * sc; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
-      po.x = bx; po.y = fy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
-      pi.x = bx; pi.y = fy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
+      cr.x = bx; cr.y = vy; cr.width = (44 + v.stufe * 14) * 2.6 * sc * baseK; cr.height = (44 + v.stufe * 14) * 0.9 * sc * ds; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
+      po.x = bx; po.y = vy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
+      pi.x = bx; pi.y = vy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
     }
 
     // Glut-Partikel (core/body/flame) — additiv, pro Partikel getönt

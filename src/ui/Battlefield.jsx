@@ -850,7 +850,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     });
     // #glutfunken: Aufstoß-Sound je gewonnenem Stich, WENN Glutfunken der aktive Hintergrund-Finisher ist — synchron zur
     // Fontäne (gleiche Bedingung wie der Pixi-Erupt: Sieg, nicht reduced/lite). Etwas leiser als der Flip (×0,8).
-    if (w && bgFinisher === "embers" && !reduced && !lite) audio.play("fx_embers", { gain: CARDFLIP_GAIN_CONST * 0.6 });
+    if (w && bgFinisher === "embers" && !reduced && !lite) audio.play("fx_embers", { gain: CARDFLIP_GAIN_CONST * 0.42 });
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
