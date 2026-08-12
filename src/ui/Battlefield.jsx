@@ -11,7 +11,9 @@ import { useFxLevel } from "./useReducedFx.js";
 // der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
 // Archetyp-Karteneffekt „Blitz" (Ionensturm-Rahmen) — eigener Pixi-Layer ÜBER den Karten, lazy wie oben.
-const IonStorm = lazy(() => import("./fx/IonStorm.jsx").then((m) => ({ default: m.IonStorm })));
+// #blitz/#flip: Ionensturm-Rahmen als flippendes Kartenkind (Canvas-2D, z-0 = EdgeGlow-Ebene unter Eis/Moos) — ersetzt
+// das frühere Pixi-Panel-Overlay (IonStorm.jsx), spart den WebGL-Kontext (analog EdgeGlow/Moos/Eis-Umbau).
+const CardIonStorm = lazy(() => import("./fx/CardIonStorm.jsx"));
 // Dev-Sicht: ?blitzframe=1 erzwingt den Ionensturm-Rahmen auf JEDER eigenen Karte (zum Designen; nur Preview/Dev).
 const BLITZ_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get("blitzframe") === "1"; } catch { return false; } })();
@@ -823,7 +825,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pGrowth = t ? (MOSS_FORCE != null ? MOSS_FORCE : (t.pCard.green ? PLANT_GREEN_THRESHOLD : (growth[t.pCard.id] || 0))) : 0;
   // #eis/#flip: Wie das Moos hängt jetzt auch der Eis-Frost ALS KIND in der Kartenvorderseite → flippt mit der Karte.
   //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
-  //   per-Karte-Bindung noch offen). Blitz (Panel-IonStorm) liegt über beidem — laut User ok.
+  //   per-Karte-Bindung noch offen). #flip: Der Blitz-Rahmen (CardIonStorm) liegt jetzt auf der EdgeGlow-Ebene (z-0)
+  //   UNTER Eis/Moos (früher Panel-Overlay z-11 darüber) — Stack: Skin < Blitz/EdgeGlow (z-0) < Eis (z-1) < Moos (z-2).
   // #eis PER-KARTE: Frost NUR auf der gefrorenen Gletscher-Karte dieses Stichs (t.pGlacier) mit ihrer eigenen Firn-Masse
   //   (t.pGlacierMass), Basis-Frost-Boden für frisch gefrorene Gletscher. KEIN globaler Basis-Frost mehr auf jede Karte
   //   (das ließ über die Durchläufe „viele" Karten vereisen). ?ice=<n> (Dev) übersteuert weiterhin auf JEDER Karte.
@@ -843,6 +846,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
             frontImage={deckFront} />
       {edgeGlowEl /* z-0: unter Eis/Moos, über dem Skin */}
+      {/* #blitz/#flip: Ionensturm-Rahmen als flippendes Kind auf der EdgeGlow-Ebene (z-0), UNTER Eis/Moos, ÜBER dem Skin.
+          Aktiv bei voll ionisierter Karte (ionStacks >= ION_MAX_STACKS) bzw. ?blitzframe=1 (Dev). Gate Preview/Dev. */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE) && (
+        <Suspense fallback={null}><CardIonStorm active color="#5ec8f0" reduced={reduced} /></Suspense>
+      )}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pIceMass > 0 && (
         <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} /></Suspense>
       )}
@@ -1269,17 +1277,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />
         </Suspense>
       )}
-      {/* #blitz Archetyp-Karteneffekt A — Ionensturm-Rahmen: Blitze zucken um die eigene Karte, sobald sie VOLL
-          ionisiert (ionStacks >= ION_MAX_STACKS) und aufgedeckt ist. Eigener Pixi-Layer ÜBER den Karten (z-11).
-          Gate wie PixiStage (Preview/Dev) → Produktion bleibt pixel-identisch, bis der Rollout entschieden ist. */}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
-        <Suspense fallback={null}>
-          <IonStorm
-            active={!!t && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE)}
-            panelRef={panelRef} cardRef={playerCardRef}
-            color="#5ec8f0" reduced={reduced} />
-        </Suspense>
-      )}
+      {/* #blitz/#flip: Der Ionensturm-Rahmen wird NICHT mehr hier als Pixi-Panel-Overlay (z-11) gemountet, sondern hängt
+          als flippendes Kind IN der Kartenvorderseite (siehe pCardEl oben, CardIonStorm auf z-0 = EdgeGlow-Ebene, UNTER
+          Eis/Moos) → er flippt/dealt/fliegt mit der Karte mit und liegt zwischen Karte und Eis/Moos (User-Vorgabe). */}
       {/* #eis/#flip: Der Eis-Frost wird NICHT mehr hier als Panel-Overlay gemountet, sondern hängt als Kind IN der
           Kartenvorderseite (siehe pCardEl oben, z-1 unter dem Moos) → er flippt/dealt/fliegt mit der Karte mit. */}
       {/* #pflanze/#flip: Das Neon-Moos wird NICHT mehr hier als Panel-Overlay gemountet, sondern hängt als Kind IN der

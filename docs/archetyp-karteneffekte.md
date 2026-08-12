@@ -121,7 +121,13 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   - Battlefield: `playerCardRef` am eigenen Karten-Wrapper ergänzt; `IonStorm` im Panel gemountet,
     `active = voll-ionisiert && aufgedeckt`. Gate wie `PixiStage`: nur Preview/Dev (Prod bleibt
     pixel-identisch, bis Rollout entschieden ist).
-- **Status:** 🟢 v1 gebaut (Preview/Dev) — Feinschliff Look/Farbe nach Sichtung offen.
+  - **#flip-Nachzug (2026-08-12):** Renderer 1:1 nach **Canvas-2D** portiert und als flippendes **Kartenkind**
+    `src/ui/fx/CardIonStorm.jsx` gemountet (self-sizing wie `CardEdgeGlow`), auf der **EdgeGlow-Ebene (z-0)** —
+    also ZWISCHEN Karte und Eis (z-1)/Moos (z-2), NICHT mehr als Pixi-Panel-Overlay z-11 darüber (User-Vorgabe).
+    Der Rahmen flippt/dealt/fliegt via CSS-Transform-Vererbung mit der Karte mit; der WebGL-Kontext entfällt
+    (Perf-Gewinn, mobiltauglich). Die alte `IonStorm.jsx` (Pixi) wurde entfernt. Stack: Skin < Blitz/EdgeGlow (z-0)
+    < Eis (z-1) < Moos (z-2).
+- **Status:** 🟢 v1 gebaut (Preview/Dev); #flip: jetzt Canvas-2D-Kartenkind unter Eis/Moos — Feinschliff Look/Farbe offen.
 
 ### 5.2 Feuer 🔥 (`fire`) — Flamme `#ff3d14` / Kern `#ffd9b0` / Glut `#ff6a1e`
 
