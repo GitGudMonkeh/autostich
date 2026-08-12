@@ -25,9 +25,9 @@ const TUNE = {
   C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
-  // #317: Scheinwerfer heller (SPOT_INT 0.35→0.55) + mehr zur Seite (SPREAD 0.36→0.46) direkt über die Karten
-  // (TILT 0.68→0.32 → Strahl bleibt vertikal über der Karte statt zur Mitte zu ziehen) + breiter (WIDTH 0.75→0.98).
-  SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.46, SPOT_INT: 0.55, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.98, SPOT_TILT: 0.32,
+  // #317: Scheinwerfer kreuzen von den oberen Ecken über die Karten (X-Form): Apex weit außen (SPREAD 0.78) + stark
+  // einwärts gedreht (TILT 0.72 → Strahlen kreuzen mittig). Heller (SPOT_INT 0.55), breit (WIDTH 0.98).
+  SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.78, SPOT_INT: 0.55, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.98, SPOT_TILT: 0.72,
   SPOT_SOFT: 0.55, SPOT_BLOOM: 0.30,
   // #perf/#317: C_ROWS 8→6 (~25% weniger Würfel). FELD_TIEFE 1.0→0.72 = Feld nach vorn; FELD_HOEHE 0→0.10 = etwas
   // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
