@@ -20,6 +20,11 @@ const FireHead = lazy(() => import("./fx/FireHead.jsx").then((m) => ({ default: 
 // Dev-Sicht: ?fireheat=<0..1> erzwingt eine feste Feuer-Hitze am eigenen Kartenkopf (zum Designen; nur Preview/Dev).
 const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
+// Archetyp-Karteneffekt „Pflanze" als Neon-Moos (Moos-Wuchs am Wachstums-Zustand der eigenen Karte) — Canvas-2D, lazy wie oben.
+const MossGrow = lazy(() => import("./fx/MossGrow.jsx"));
+// Dev-Sicht: ?moss=<0..8> erzwingt eine feste Reifestufe auf der eigenen Karte (zum Designen; nur Preview/Dev).
+const MOSS_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { const v = new URLSearchParams(window.location.search).get("moss"); return v == null ? null : Math.max(0, Math.min(8, parseFloat(v) || 0)); } catch { return null; } })();
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
@@ -1191,6 +1196,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             active={!!t && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE)}
             panelRef={panelRef} cardRef={playerCardRef}
             color="#5ec8f0" reduced={reduced} />
+        </Suspense>
+      )}
+      {/* #pflanze Archetyp-Karteneffekt — Neon-Moos: realistisches Moos überwächst die eigene Karte mit dem Wachstum
+          (growth 0–8 = PLANT_GREEN_THRESHOLD) von oben+Seiten nach innen. Canvas-2D-Layer AUF der Karte. NACH dem
+          IonStorm-Block gemountet (späterer DOM-Knoten, gleiches z-11) → Moos liegt ÜBER dem Blitz-Rahmen (User-KORREKTUR
+          2026-08-12: „Blitz unter Moos"). Wachstum aus growth[pCard.id]; ?moss=<0..8> erzwingt eine Reifestufe (Dev).
+          Gate wie IonStorm (Preview/Dev) → Produktion bleibt pixel-identisch, bis der Rollout entschieden ist. */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+        <Suspense fallback={null}>
+          <MossGrow
+            growth={MOSS_FORCE != null ? MOSS_FORCE : (t ? (growth[t.pCard.id] || 0) : 0)}
+            panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
         </Suspense>
       )}
       {/* #318 Karten-Animationen — geteilte Pixi-Overlay-Bühne ÜBER beiden Karten (z-11). Stapelbare Dauer-Layer

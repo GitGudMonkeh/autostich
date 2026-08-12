@@ -287,9 +287,9 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **Wo:** Auf der eigenen (Pflanze-)Karte, Overlay über der Karte. Halme dürfen oben/seitlich **ein
   bisschen über die Kartenkante** wachsen (`OVERHANG`, dezent). In-Game analog IonStorm/FireHead auf
   `playerCardRef`, Gate Preview/Dev.
-- **⚠️ Layer-Reihenfolge (User-Vorgabe):** Der **Blitz-Rahmen (IonStorm) muss ÜBER dem Moos-Effekt
-  liegen** — Moos also unter IonStorm mounten (z. B. Moos z-10.5, IonStorm z-11 wie gehabt), damit der
-  Ionensturm-Rahmen auf einer voll-ionisierten **und** bemoosten Karte sichtbar bleibt.
+- **⚠️ Layer-Reihenfolge — ÜBERHOLT (siehe REWORK-Korrektur unten):** ~~Der Blitz-Rahmen (IonStorm) muss
+  ÜBER dem Moos-Effekt liegen — Moos unter IonStorm.~~ Vom User am 2026-08-12 **umgekehrt**: **Moos liegt
+  ÜBER dem IonStorm-Blitzrahmen** (siehe REWORK-Notiz). So auch umgesetzt (`MossGrow` nach IonStorm gemountet).
 - **Algorithmus (Prototyp Canvas-2D, → Pixi portierbar):**
   1. **Feld-Aufbau** (`buildField`, seeded `mulberry32`): jittered Grid (Abstand aus `DENSITY`), je
      Büschel `birthG = clamp( max(fromEdge/maxInward, dTop/maxDown) + RAGGED·(fbm-0.5)·0.7 )`, wobei
@@ -356,11 +356,18 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **⚠️ Layer-Reihenfolge (User-KORREKTUR 2026-08-12):** Der **Blitz-Rahmen (IonStorm) liegt UNTER dem
   Moos** — Moos oben drüber (kehrt die frühere Notiz „Blitz über Moos" um). Also Moos-Layer ÜBER IonStorm
   mounten.
-- **Prototyp:** `docs/prototypes/gras-varianten.html` (Werte oben als Default; Stil-Umschalter + Punch;
-  Neon-Beleuchtung). Die ältere `docs/prototypes/moos-tuning.html` bleibt als Vorstufe liegen.
-- **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` — Neon über Offscreen-Buffer/`lighter`, Bloom auf
-  Karte geclippt (kein Überstrahlen). Wachstum `coverage = clamp(growth/PLANT_GREEN_THRESHOLD) · REIF_COV`.
-- **Status:** 🟡 **Neon-Moos Look + Werte abgesegnet & gesichert; Blitz liegt darunter** — Pixi-Port offen.
+- **Prototyp:** `docs/prototypes/moos-eis-combo.html` (STYLE „moos"; Werte oben als Default) + `moos-tuning.html`
+  (Vorstufe). Die abgesegneten Werte stammen aus dem Kombi-Board.
+- **Umsetzung (ERLEDIGT 2026-08-12):** `src/ui/fx/MossGrow.jsx` — **Canvas-2D** (bewusst kein Pixi-Shader, wie
+  NeonSilk; Neon über `lighter`/Offscreen-Buffer, Bloom auf Karte geclippt). Renderer + TUNE **1:1** aus dem Kombi-Board
+  (nur STYLE „moos"-Pfad portiert). **Größen-unabhängig:** Moos-Bitmap wird in Referenzgröße (`REF_W/REF_H` = Prototyp
+  @ zoom 1.3) gerendert und proportional auf die echte 104×144-Karte heruntergeblittet → abgesegnete Optik bleibt bei
+  jeder Kartengröße pixel-proportional. Bitmap nur bei Stufen-Wechsel neu (statisch gecacht); Composite-Blit läuft
+  per-Frame, damit das Moos der animierten Karte folgt (Deal-in/Wegflug). Wachstum `coverage = Stufe/8 · REIF_COV`
+  aus `growth[pCard.id]`. In `Battlefield.jsx` **nach** dem IonStorm-Block gemountet (z-11, späterer DOM-Knoten →
+  Moos über dem Blitzrahmen), Gate Preview/Dev, Dev-Force `?moss=<0..8>`.
+- **Status:** ✅ **Neon-Moos gebaut & in-game verankert** (Preview/Dev-gegatet; Look bei 104×144 verifiziert, Zahl
+  bleibt lesbar, Moos im Rahmen). Offen: Rollout-Entscheidung (Gate lösen) + Zusammenspiel mit Eis-Port (Moos über Eis).
 
 ### 5.5 Extra — „Regen & Pool" (Wasser, Prototyp) 💧
 
