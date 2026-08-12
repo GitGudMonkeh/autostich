@@ -1,0 +1,44 @@
+name: Deploy First Version (Archiv) to Pages (/first-version/)
+
+# Deployt die konservierte ERSTE spielbare Version (Git-Stand 7a464d0, 25.07.2026)
+# als Unterpfad /autostich/first-version/ auf DIESELBE Pages-Seite wie main.
+# Reines Erinnerungs-Archiv: Preview-Build → schreibt NICHT ins echte Leaderboard
+# und nutzt einen eigenen localStorage-Namespace. Haupt- und Testseite bleiben unberührt.
+on:
+  push:
+    branches: [first-version]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Gleiche Gruppe wie main-/Test-Deploy → serialisiert die gh-pages-Pushes (kein Race).
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          # Assets müssen unter dem Unterpfad aufgelöst werden.
+          DEPLOY_BASE: /autostich/first-version/
+          # Archiv-Build: eigener localStorage-Namespace + kein Schreiben ins echte Leaderboard.
+          VITE_PREVIEW: "1"
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          # Nur in den Unterordner first-version/ schreiben; Root (main) + test/ unangetastet lassen.
+          destination_dir: first-version
+          keep_files: true
+          commit_message: "deploy(first-version): ${{ github.sha }}"
