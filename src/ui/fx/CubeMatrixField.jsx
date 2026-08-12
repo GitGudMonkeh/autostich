@@ -44,11 +44,11 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, sun = true }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, sun = true, wire = false }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale: Würfelhöhe (Showcase höher). sun: Retro-Sonne an/aus.
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, sun });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, sun };
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, sun, wire });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, sun, wire };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -147,6 +147,19 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     function box3d(cx, zf, zb, y0, y1, halfw, colF, colT, colS, glowA, glowC, alpha) {
       const FBL = proj(cx - halfw, y0, zf), FBR = proj(cx + halfw, y0, zf), FTL = proj(cx - halfw, y1, zf), FTR = proj(cx + halfw, y1, zf),
         BTL = proj(cx - halfw, y1, zb), BTR = proj(cx + halfw, y1, zb), BBL = proj(cx - halfw, y0, zb), BBR = proj(cx + halfw, y0, zb);
+      // #317 Drahtgitter: nur die Kanten der sichtbaren Flächen additiv strichen → Würfel als LEUCHTENDE NEON-RAHMEN
+      // (keine Füllung). Intensität ramped mit dem Ausschlag (glowA): Ruhe = zart, Bass = kräftig.
+      if (propsRef.current.wire) {
+        const la = clamp(0.5 + glowA * 1.3, 0.3, 1) * (0.55 + 0.45 * alpha);
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
+        ctx.strokeStyle = rgba(glowC, la); ctx.lineWidth = Math.max(1, H * 0.0018); ctx.lineJoin = "round";
+        const face = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.stroke(); };
+        face(FBL, FBR, FTR, FTL);                                            // Front
+        face(FTL, FTR, BTR, BTL);                                            // Deckel
+        if (cx < 0) face(FBL, FTL, BTL, BBL); else face(FBR, FTR, BTR, BBR); // sichtbare Seite
+        ctx.globalCompositeOperation = "source-over";
+        return;
+      }
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = alpha;
       if (cx < 0) quad(FBL, FTL, BTL, BBL, colS); else quad(FBR, FTR, BTR, BBR, colS);
       // #perf: Front-Verlauf (createLinearGradient JE Würfel/Frame) komplett raus → SOLIDER Front-Fill (colF).
