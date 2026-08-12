@@ -1,0 +1,456 @@
+<title>Gras-Varianten · Neon-Synthwave · Pflanze</title>
+<style>
+  :root{
+    --bg:#0a1108; --bg2:#060b04; --panel:#111c0d; --panel2:#16240f; --line:#2b3d1f;
+    --ink:#eef6e6; --dim:#a6bd8f; --dimmer:#6f8a58;
+    --acc:#9ccb57; --acc-dim:#4a6f2a; --hot:#e6f4c8; --z:#c58a3a;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1200px 720px at 76% -12%, #17300f 0%, transparent 55%),
+      radial-gradient(900px 600px at -6% 112%, #12280c 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:80ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#0c0a15,#050409); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#0a1207); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--acc)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .panel{background:linear-gradient(180deg,var(--panel),#0a1207); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #9ccb5722, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #9ccb5722}
+  input#growth{height:6px}
+  .config{max-width:1180px; margin:20px auto 0}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  textarea{width:100%; min-height:200px; background:#0a1607; color:#d6ecb4; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Gras-Varianten · Neon-Synthwave</h1>
+  <div class="sub">Realistisches <b>Moos</b> (echt, kein Comic) überwächst die Karte mit dem <b>Wachstum</b> von <b>oben &amp; den Seiten</b> nach innen/unten — bestehendes Moos bleibt, neues kommt dazu. Zwei gegenüberliegende <b>Neon-Bühnenlichter</b> (Cyan/Magenta, Prisma-Deck) strahlen es an: <b>Kanten-Säume</b>, weiche <b>Bloom-Aura</b> und <b>Bühnen-Glow</b> — das Grün bleibt echt, wird nur beleuchtet. Der Regler simuliert die <b>Reifestufen aus dem Code</b>: ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>) gilt die Karte als <b>grün = reif = 100 %</b>; Stufe 1–7 = <b>Setzling</b>, 0 = kein Wachstum (+1 Wachstum je Sieg bei vollem Pflanze-Fokus). Bei <b>Stufe 8</b> stehen die abgesegneten Werte. (Prototyp Canvas-2D; In-Game → Pixi.)</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:#8aa84e"></span> Härchen <b>samtig</b></span>
+    <span class="chip"><span class="dot" style="color:var(--acc)"></span> Wuchs <b>oben+Seiten → innen</b></span>
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Neon <b>Licht A</b></span>
+    <span class="chip"><span class="dot" style="color:#ff3ea5"></span> Neon <b>Licht B</b></span>
+    <span class="chip"><span class="dot" style="color:#8aa84e"></span> Reif <b>ab Wachstum 8</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud">Moos-Wuchs · <b id="hudLvl">Reif (100%)</b></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="lvl">
+      <div class="lab"><label for="growth">🌱 Reifestufe · Wachstum 0–8 (Zustand · kein TUNE-Wert)</label><span class="val" id="v_growth">Stufe 8/8 · Reif</span></div>
+      <input type="range" id="growth" min="0" max="8" step="1" value="8">
+      <div style="font-size:11px;color:var(--dimmer);margin-top:3px">Reif = grün ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>). 1–7 Setzling · 0 leer.</div>
+    </div>
+    <div class="transport" id="styleRow">
+      <span style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)">Stil</span>
+      <button class="styB on" data-style="moos">Moos</button>
+      <button class="styB" data-style="gras">Gras</button>
+      <button class="styB" data-style="haenge">Hänge-Moos</button>
+      <button class="styB" data-style="ranken">Ranken</button>
+    </div>
+    <div class="transport">
+      <button id="btnAuto">Auto-Wachsen: aus</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="1.8" step="0.05" value="1.3" style="width:110px"><span class="val" id="v_zoom" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="bar"><h2>Moos-TUNE-Werte · für <code>src/ui/fx/MossGrow.jsx</code></h2>
+    <div style="display:flex;gap:10px;align-items:center"><span class="copied" id="copied">kopiert ✓</span><button id="btnCopy">Werte kopieren</button><button id="btnDefault">Auf Standard</button></div>
+  </div>
+  <textarea id="cfg" readonly spellcheck="false"></textarea>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var TAU=Math.PI*2;
+  var DEFAULTS = {
+    STYLE:"moos",
+    MOSS_DARK:"#20331a", MOSS_MID:"#c251aa", MOSS_TIP:"#9bc255", SPORO_COLOR:"#9a6a34",
+    NEON_A:"#ea34d1", NEON_B:"#66b450", NEON_ANGLE:-74, NEON_RIM:0.72, NEON_TIP:0.12, NEON_PUNCH:0.04, NEON_BLOOM:0.76, NEON_BASE:1,
+    REIF_COV:0.48, EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:1, RAGGED:1, OVERHANG:1,
+    FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.35, TILT:12, SPREAD:0.94, TIP_LIGHT:1, SPECK:0,
+    SPOROPHYTE:0, SHADOW:0, DEW:0
+  };
+  var T = Object.assign({}, DEFAULTS);
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";};
+  var GROUPS = [
+    { title:"Farben", note:"Gedämpfte Oliv-/Waldgrüns wirken realistisch — Schatten (Basis), Mitte, helle Spitzen.", rows:[
+      ["MOSS_DARK","Schatten / Basis",0,0,0,null,"color"],["MOSS_MID","Mitte",0,0,0,null,"color"],["MOSS_TIP","Spitzen",0,0,0,null,"color"]
+    ]},
+    { title:"Neon-Synthwave-Licht", note:"Zwei gegenüberliegende Bühnenlichter (A/B) strahlen das echte Moos an — Kanten & Spitzen fangen Neon ein, weiche Bloom-Aura außen, Neon-Grund hinter der Karte. Das Grün bleibt realistisch, wird nur beleuchtet.", rows:[
+      ["NEON_A","Licht A",0,0,0,null,"color"],
+      ["NEON_B","Licht B",0,0,0,null,"color"],
+      ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,"Richtung der A↔B-Achse (0° = A links / B rechts)."],
+      ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,"Wie stark die Neonfarben das ganze Moos einfärben."],
+      ["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,"Helle additive Neon-Säume an Halm-Spitzen & Wuchsrand."],
+      ["NEON_PUNCH","Punch (Sättigung/Emission)",0,1.5,0.02,xFmt,"Macht die Neon-Spitzen übersättigt & selbstleuchtend (punchy) statt nur getönt."],
+      ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,"Weiches Neon-Leuchten um die Moos-Silhouette (bleibt auf der Karte)."],
+      ["NEON_BASE","Halme unten einfärben",0,1,1,onOff,"Toggle: Neon zieht auch in Halm-Basis & Schatten-Matte — ganzer Halm getönt (wie im Referenzbild), nicht nur Spitzen."]
+    ]},
+    { title:"Wachstum & Verteilung", note:"Von oben & den Seiten nach innen/unten zuwachsend.", rows:[
+      ["REIF_COV","Reife-Abdeckung",0.1,1,0.02,xFmt,"Wie voll die Karte bei REIF (Stufe 8) bemoost ist — kleiner = rahmt nur oben/Seiten, Mitte frei."],
+      ["EDGE_BAND","Reichweite vom Rand",0,1,0.02,xFmt,"Wie weit das Moos bei vollem Wuchs nach innen reicht."],
+      ["TOP_BIAS","Oben→Unten-Tempo",0,1,0.02,xFmt,"Höher = wächst deutlicher von oben nach unten."],
+      ["DENSITY","Dichte",0,1,0.02,xFmt,"Mehr Büschel pro Fläche."],
+      ["CLUMP","Büscheligkeit",0,1,0.02,xFmt,"Variiert Büschel-Größen (unregelmäßiger)."],
+      ["RAGGED","Rand-Zerklüftung",0,1,0.02,xFmt,"Fransiger, natürlicher Wuchsrand statt Kante."],
+      ["OVERHANG","Überwuchs (Kante)",0,1,0.02,xFmt,"Wie weit Halme oben/an den Seiten über die Kartenkante wachsen (0 = nicht)."]
+    ]},
+    { title:"Härchen (Filamente)", note:"Kurze, dichte Härchen erzeugen den samtigen Moos-Look. Neigung & Streuung geben die Wuchsrichtung.", rows:[
+      ["FILA_PER","Härchen / Büschel",3,20,1,String,""],
+      ["FILA_LEN","Halm-Länge",2,12,0.5,pxFmt,""],
+      ["FILA_THICK","Halm-Dicke",0.5,2.5,0.1,pxFmt,""],
+      ["TILT","Neigung / Rotation",-60,60,1,degFmt,"Kippt alle Halme (0 = gerade nach oben)."],
+      ["SPREAD","Streuung (Random)",0,1,0.02,xFmt,"Zufällige Fächerung von Halmen & Büscheln."],
+      ["TIP_LIGHT","Spitzen-Licht",0,1,0.02,xFmt,"Helle Lichtpunkte an den Spitzen."],
+      ["SPECK","Samt-Körnung",0,1,0.02,xFmt,"Feine Textur-Punkte zwischen den Halmen."]
+    ]},
+    { title:"Details", note:"Feinheiten für Realismus.", rows:[
+      ["SPOROPHYTE","Sporophyten",0,1,0.02,xFmt,"Feine bräunliche Stängel mit Kapsel (echtes Moos-Detail)."],
+      ["SPORO_COLOR","Sporophyt-Farbe",0,0,0,null,"color"],
+      ["SHADOW","Tiefe / Schatten",0,1,0.02,xFmt,"Dunkle Basis-Matte unter den Halmen."],
+      ["DEW","Tau-Glitzern",0,1,0.02,xFmt,"Vereinzelte, langsam funkelnde Tautropfen."]
+    ]}
+  ];
+  var INT={FILA_PER:1, NEON_BASE:1};
+  var LAYOUT={EDGE_BAND:1,TOP_BIAS:1,DENSITY:1,CLUMP:1,RAGGED:1}; // ändert Feld-Aufbau
+  var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
+  var $=function(id){return document.getElementById(id);};
+
+  (function build(){ var host=$("panels"), html="";
+    GROUPS.forEach(function(g){ html+='<div class="panel"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+      g.rows.forEach(function(r){ var key=r[0], lab=r[1], mn=r[2], mx=r[3], st=r[4], hint=r[6];
+        if(r[6]==="color") html+='<div class="row color"><div class="lab"><label for="'+key+'">'+lab+'</label><input type="color" id="'+key+'"></div></div>';
+        else html+='<div class="row"><div class="lab"><label for="'+key+'">'+lab+'</label><span class="val" id="v_'+key+'"></span></div><input type="range" id="'+key+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+      });
+      html+='</fieldset></div>';
+    });
+    host.innerHTML=html;
+    GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+      if(r[6]==="color"){ el.addEventListener("input",function(){ T[key]=el.value; markDirty(true); writeConfig(); }); return; }
+      el.addEventListener("input",function(){ var v=parseFloat(el.value); if(INT[key]) v=Math.round(v); T[key]=v; $("v_"+key).textContent=(FMT[key]||String)(T[key]); markDirty(!!LAYOUT[key]); writeConfig(); });
+    });});
+  })();
+  function syncInputs(){ GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+    if(r[6]==="color"){ el.value=T[key]; return; } el.value=T[key]; $("v_"+key).textContent=(FMT[key]||String)(T[key]); });}); writeConfig(); }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  function writeConfig(){ var o=T;
+    $("cfg").value="const TUNE = {\n"
+      + "  STYLE: \""+o.STYLE+"\",\n\n"
+      + "  MOSS_DARK: \""+o.MOSS_DARK+"\", MOSS_MID: \""+o.MOSS_MID+"\", MOSS_TIP: \""+o.MOSS_TIP+"\", SPORO_COLOR: \""+o.SPORO_COLOR+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  REIF_COV: "+numStr(o.REIF_COV)+", EDGE_BAND: "+numStr(o.EDGE_BAND)+", TOP_BIAS: "+numStr(o.TOP_BIAS)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", OVERHANG: "+numStr(o.OVERHANG)+",\n\n"
+      + "  FILA_PER: "+numStr(o.FILA_PER)+", FILA_LEN: "+numStr(o.FILA_LEN)+", FILA_THICK: "+numStr(o.FILA_THICK)+", TILT: "+numStr(o.TILT)+", SPREAD: "+numStr(o.SPREAD)+", TIP_LIGHT: "+numStr(o.TIP_LIGHT)+", SPECK: "+numStr(o.SPECK)+",\n\n"
+      + "  SPOROPHYTE: "+numStr(o.SPOROPHYTE)+", SHADOW: "+numStr(o.SHADOW)+", DEW: "+numStr(o.DEW)+",\n};";
+  }
+
+  // ── Utils ──
+  function hexRGB(h){ h=String(h||"#4a6b2c").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function clampRGB(c){ return {r:Math.max(0,Math.min(255,c.r)), g:Math.max(0,Math.min(255,c.g)), b:Math.max(0,Math.min(255,c.b))}; }
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  // Sättigung/Emission: Kanäle von der Helligkeit wegspreizen (punchy Neon) + leicht aufhellen
+  function satBoost(c,s){ var L=0.30*c.r+0.59*c.g+0.11*c.b; return clampRGB({r:L+(c.r-L)*(1+s), g:L+(c.g-L)*(1+s), b:L+(c.b-L)*(1+s)}); }
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function roundRectPath(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function vhash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+  function fbm(x,y){ return vhash(x*0.05,y*0.05)*0.6 + vhash(x*0.13,y*0.13)*0.28 + vhash(x*0.31,y*0.31)*0.12; }
+
+  // ── Renderer / Setup ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var moss=document.createElement("canvas"), mctx=moss.getContext("2d");
+  var glow=document.createElement("canvas"), gctx=glow.getContext("2d");  // Neon-Bloom-Aura (gecacht mit Moos)
+  var base=document.createElement("canvas"), bctx=base.getContext("2d");  // Karten-Grund (Gradient+Muster+Rand), gecacht je Box
+  var neonTips=[];                                    // gesammelte Neon-Spitzen für die Bloom-Aura
+  var _axc=1,_axs=0,_cNA={r:34,g:224,b:255},_cNB={r:255,g:62,b:165};      // Licht-Achse + A/B-Farben (in renderMoss gesetzt)
+  var M=20; // Rand ums Moos-Bitmap für Überwuchs
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
+  window.addEventListener("resize", doResize);
+
+  var STAGE_MAX=8;                              // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
+  var autoGrow=false, autoAcc=0, zoom=1.3, stage=STAGE_MAX, growth=1, last=0, fpsT=0, fpsN=0, clockT=0;
+  var fieldDirty=true, renderDirty=true, renderedG=-1, boxKey="";
+  var field=[], dewPts=[], CW=0, CH=0;
+
+  function markDirty(rebuild){ if(rebuild) fieldDirty=true; renderDirty=true; }
+  function box(){ var ch=Math.round(300*zoom), cw=Math.round(ch*104/144), ox=Math.round((CSSW-cw)/2), oy=Math.round((CSSH-ch)/2), cr=Math.round(15*zoom); return {ox:ox,oy:oy,CW:cw,CH:ch,cr:cr}; }
+
+  // Moos-Feld aufbauen: Büschel auf jittered Grid, jedem birthG + Ausrichtung zuweisen
+  function buildField(b){
+    CW=b.CW; CH=b.CH;
+    moss.width=Math.round((CW+2*M)*dpr); moss.height=Math.round((CH+2*M)*dpr);
+    glow.width=moss.width; glow.height=moss.height;
+    field=[];
+    var step = 5 + (1-T.DENSITY)*7;                 // dichter → kleinerer Abstand
+    var maxInward = CW*(0.30 + 0.55*T.EDGE_BAND);
+    var maxDown   = CH*(0.80 + 0.80*(1-T.TOP_BIAS));
+    var rng = mulberry32(1337);
+    var id=0;
+    for(var gy=step*0.5; gy<CH; gy+=step){
+      for(var gx=step*0.5; gx<CW; gx+=step){
+        var x=gx + (rng()-0.5)*step*0.9, y=gy + (rng()-0.5)*step*0.9;
+        if(x<0||x>CW||y<0||y>CH) continue;
+        var dTop=y, dL=x, dR=CW-x;
+        var fromEdge=Math.min(dTop,dL,dR);
+        var bi = Math.max(fromEdge/maxInward, dTop/maxDown);
+        bi += T.RAGGED*(fbm(x,y)-0.5)*0.7;            // fransiger Rand
+        var birthG = clamp01(bi);
+        if(birthG>1) continue;
+        // Ausrichtung: überwiegend nach oben, an Seiten leicht nach innen gefächert
+        var wL=1/(dL+6), wR=1/(dR+6);
+        var leanX = Math.max(-1,Math.min(1,(wL-wR)*6));
+        var ang = Math.atan2(-1, leanX*0.9 + (rng()-0.5)*0.2);
+        var size = 0.6 + rng()*0.8 + T.CLUMP*(rng()*rng())*1.6;   // Büschel-Größe (CLUMP → mehr Ausreißer)
+        var hue = rng();                                          // Farbvariation
+        // Auswärts-Richtung (zum nächsten Rand) + Rand-Nähe für Überwuchs
+        var wT=1/(dTop+4), wLo=1/(dL+4), wRo=1/(dR+4);
+        var outAng=Math.atan2(-wT, wRo-wLo);
+        var edgeOut=clamp01(1 - fromEdge/(step*1.6));
+        var tuftJit=(rng()-0.5);
+        field.push({x:x,y:y,birthG:birthG,ang:ang,size:size,hue:hue,outAng:outAng,edgeOut:edgeOut,tuftJit:tuftJit,seed:(id++*2654435761)>>>0});
+      }
+    }
+    fieldDirty=false;
+  }
+
+  // ein Büschel zeichnen
+  var LDX=-0.55, LDY=-0.83; // Lichtrichtung (oben-links)
+  function drawTuftShadow(mx,t,mat,cDark){
+    var cd=cDark;
+    if(T.NEON_BASE>=0.5 && T.NEON_RIM>0){                                   // Base-Toggle: Schatten-Matte neon tönen
+      var tA=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+      cd=clampRGB(mix(cDark, clampRGB(mix(_cNA,_cNB,tA)), 0.4*T.NEON_RIM));
+    }
+    mx.fillStyle=rgba(cd, (0.30+0.35*T.SHADOW)*mat);
+    mx.beginPath(); mx.ellipse(t.x, t.y+1, t.size*2.0*mat, t.size*1.5*mat, 0, 0, TAU); mx.fill();
+  }
+  function drawTuftHairs(mx,t,mat,cMid,cTip,cTipHi){
+    var rng=mulberry32(t.seed);
+    var k=(t.hue-0.5);
+    var midT=clampRGB({r:cMid.r+k*34, g:cMid.g+k*12-Math.abs(k)*10, b:cMid.b-k*22});
+    var tipT=clampRGB({r:cTip.r+k*30, g:cTip.g+k*8, b:cTip.b-k*18});
+    var tiltRad=T.TILT*Math.PI/180;                  // globale Neigung/Rotation
+    var spreadRad=0.2+T.SPREAD*2.1;                  // zufällige Fächerung
+    var eo=t.edgeOut*T.OVERHANG;                     // Rand-Überwuchs
+    var bx=t.x + Math.cos(t.outAng)*eo*3.5*mat, by=t.y + Math.sin(t.outAng)*eo*3.5*mat;
+    var nMul=(T.STYLE==="gras")?0.5:(T.STYLE==="haenge")?0.5:(T.STYLE==="ranken")?0.42:1;
+    var thMul=(T.STYLE==="moos")?1:(T.STYLE==="ranken")?1.15:1.45;
+    var n=Math.max(2, Math.round(T.FILA_PER*nMul*(0.45+0.55*mat)*(0.6+0.7*t.size)));
+    var tAxis=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62)); // Position entlang Licht-Achse
+    var neon=clampRGB(mix(_cNA,_cNB,tAxis));                                              // A↔B Neonfarbe an diesem Büschel
+    var neonP=satBoost(neon, 0.45+0.9*T.NEON_PUNCH);                                       // übersättigte, punchy Neonvariante
+    var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.35+0.25*clamp01(T.NEON_PUNCH))); // heißer Kern für Spitzen
+    for(var i=0;i<n;i++){
+      var STY=T.STYLE, rr=rng(), len, x2, y2, mpx, mpy, dirx, diry;
+      if(STY==="gras"){                              // aufrechte, lange, spitze Halme
+        len=T.FILA_LEN*2.6*(0.6+rr*0.7)*(0.4+0.6*mat)*(0.7+0.5*t.size)*(1+eo*0.4);
+        var ag=-Math.PI/2 + tiltRad + t.tuftJit*0.3 + (rng()-0.5)*spreadRad*0.45;
+        dirx=Math.cos(ag); diry=Math.sin(ag); x2=bx+dirx*len; y2=by+diry*len;
+        var bend=(rng()-0.5)*len*0.5; mpx=(bx+x2)/2 - diry*bend; mpy=(by+y2)/2 + dirx*bend;
+      } else if(STY==="haenge"){                     // herabhängende Strähnen (Schwerkraft-Bogen)
+        len=T.FILA_LEN*3.4*(0.55+rr*0.8)*(0.4+0.6*mat)*(0.7+0.5*t.size)*(1+eo*0.5);
+        var sway=(rng()-0.5)*0.9 + t.tuftJit*0.8; x2=bx+sway*len*0.55; y2=by+len;
+        mpx=bx+sway*len*0.18; mpy=by+len*0.42;
+        var L=Math.hypot(x2-bx,y2-by)||1; dirx=(x2-bx)/L; diry=(y2-by)/L;
+      } else if(STY==="ranken"){                     // kringelnde Tendrillen
+        len=T.FILA_LEN*3.2*(0.6+rr*0.7)*(0.4+0.6*mat)*(0.7+0.5*t.size);
+        var ar=-Math.PI/2 + tiltRad + (rng()-0.5)*1.3; dirx=Math.cos(ar); diry=Math.sin(ar);
+        x2=bx+dirx*len; y2=by+diry*len; var curl=((i&1)?1:-1)*len*(0.55+0.35*rng());
+        mpx=(bx+x2)/2 - diry*curl; mpy=(by+y2)/2 + dirx*curl;
+      } else {                                       // moos: kurze, dichte Härchen
+        len=T.FILA_LEN*(0.45+rr*0.95)*(0.35+0.85*mat)*(0.7+0.5*t.size)*(1+eo*0.7);
+        var am=t.ang + tiltRad + t.tuftJit*spreadRad*0.6 + (rng()-0.5)*spreadRad;
+        dirx=Math.cos(am); diry=Math.sin(am); x2=bx+dirx*len; y2=by+diry*len;
+        mpx=(bx+x2)/2 + (rng()-0.5)*len*0.35; mpy=(by+y2)/2 + (rng()-0.5)*len*0.25;
+      }
+      var lightK=0.66+0.5*Math.max(0, dirx*LDX+diry*LDY);
+      var up=clamp01(Math.hypot(x2-bx,y2-by)/10);    // Tip-Betonung (nach oben & unten)
+      var col=clampRGB(mix(midT, tipT, (0.25+0.7*rng())*(0.4+0.6*mat)));
+      col=clampRGB({r:col.r*lightK*(0.85+0.3*up), g:col.g*lightK*(0.85+0.3*up), b:col.b*lightK*(0.85+0.3*up)});
+      var washU = T.NEON_BASE>=0.5 ? (0.70+0.20*up) : (0.26+0.36*up);              // Base-Toggle: Wash zieht auch nach unten
+      if(T.NEON_RIM>0){ col=clampRGB(mix(col, neonP, T.NEON_RIM*washU)); }           // punchy Neon-Wash über den Halm
+      mx.strokeStyle=rgba(col, 0.92);
+      mx.lineWidth=T.FILA_THICK*thMul*(0.6+0.7*rng());
+      mx.lineCap="round";
+      mx.beginPath(); mx.moveTo(bx,by); mx.quadraticCurveTo(mpx,mpy, x2,y2); mx.stroke();
+      if(T.NEON_TIP>0){                                                            // additiver, EMISSIVER Neon-Saum an Spitze/Rand
+        var rimI=clamp01(T.NEON_TIP*(0.18+0.82*up)*(0.5+0.7*eo)*(0.55+0.45*mat));
+        if(rimI>0.03){
+          mx.globalCompositeOperation="lighter";
+          // Neon-Saum entlang der oberen Halm-Hälfte (übersättigt)
+          mx.strokeStyle=rgba(neonP, rimI*(0.5+0.4*T.NEON_PUNCH)); mx.lineWidth=T.FILA_THICK*thMul*(0.5+0.5*rng());
+          mx.beginPath(); mx.moveTo((bx+x2)*0.5,(by+y2)*0.5); mx.lineTo(x2,y2); mx.stroke();
+          // emissiver Glüh-Punkt an der Spitze: weit-dim → schmal-heiß (punchy)
+          var pr=T.FILA_THICK*(1.4+2.8*T.NEON_PUNCH)*(0.6+0.6*rr);
+          mx.fillStyle=rgba(neonP, rimI*0.30*(0.4+T.NEON_PUNCH)); mx.beginPath(); mx.arc(x2,y2,pr,0,TAU); mx.fill();
+          mx.fillStyle=rgba(neonP, rimI*0.55); mx.beginPath(); mx.arc(x2,y2,pr*0.5,0,TAU); mx.fill();
+          mx.fillStyle=rgba(neonHot, rimI*(0.7+0.3*T.NEON_PUNCH)); mx.beginPath(); mx.arc(x2,y2, T.FILA_THICK*0.6, 0, TAU); mx.fill();
+          mx.globalCompositeOperation="source-over";
+          if(neonTips.length<320 && rng()<0.6) neonTips.push({x:x2,y:y2,c:neonP,i:rimI});
+        }
+      }
+      if(rng()<T.TIP_LIGHT*0.55){ mx.fillStyle=rgba(cTipHi, 0.6*T.TIP_LIGHT); mx.beginPath(); mx.arc(x2,y2, T.FILA_THICK*0.55, 0, TAU); mx.fill();
+        if(T.DEW>0 && rng()<0.12 && dewPts.length<160) dewPts.push({x:x2,y:y2,ph:rng()*TAU}); }
+    }
+    // Samt-Körnung: feine Punkte nahe Basis
+    if(T.SPECK>0){ var sp=Math.round(T.SPECK*3); for(var s=0;s<sp;s++){ var rx=t.x+(rng()-0.5)*t.size*3, ry=t.y+(rng()-0.5)*t.size*3;
+      mx.fillStyle=rgba(clampRGB(mix(midT,cDark0,0.4)), 0.5*T.SPECK*mat); mx.fillRect(rx,ry,1,1); } }
+  }
+  var cDark0={r:0,g:0,b:0};
+  function drawSporophyte(mx,t,mat,cSpo){
+    var rng=mulberry32(t.seed^0x9e3779b9);
+    if(rng()>=T.SPOROPHYTE*0.05*mat) return;
+    var h=T.FILA_LEN*(2.2+rng()*1.8)*mat, lean=(rng()-0.5)*0.5;
+    var tx=t.x+lean*h*0.5, ty=t.y-h;
+    // Stängel
+    mx.strokeStyle=rgba(clampRGB(mix(cSpo,{r:210,g:190,b:120},0.15)), 0.9); mx.lineWidth=Math.max(0.8,T.FILA_THICK*0.8); mx.lineCap="round";
+    mx.beginPath(); mx.moveTo(t.x,t.y); mx.quadraticCurveTo(t.x+lean*h*0.3, t.y-h*0.5, tx,ty); mx.stroke();
+    // Kapsel
+    mx.fillStyle=rgba(clampRGB(mix(cSpo,{r:120,g:70,b:30},0.2)), 0.95);
+    mx.beginPath(); mx.ellipse(tx, ty, T.FILA_THICK*1.1, T.FILA_THICK*1.7, lean, 0, TAU); mx.fill();
+    mx.fillStyle=rgba({r:240,g:225,b:170},0.5); mx.beginPath(); mx.arc(tx-0.6,ty-0.8,T.FILA_THICK*0.5,0,TAU); mx.fill();
+  }
+
+  function renderMoss(g){
+    if(fieldDirty) buildField(box());
+    mctx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr);   // Kartenkoordinaten, um M versetzt (Überwuchs-Rand)
+    mctx.clearRect(-M,-M,CW+2*M,CH+2*M);
+    dewPts=[]; neonTips=[];
+    // Neon-Synthwave: Licht-Achse (A→B) + Farben für diese Render-Runde setzen
+    var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+    _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+    var cDark=hexRGB(T.MOSS_DARK), cMid=hexRGB(T.MOSS_MID), cTip=hexRGB(T.MOSS_TIP), cSpo=hexRGB(T.SPORO_COLOR);
+    var cTipHi=clampRGB(mix(cTip,{r:255,g:255,b:230},0.55));
+    var i,t,mat;
+    // Pass 1: Schatten-Matte
+    for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0) continue; drawTuftShadow(mctx,t,mat,cDark); }
+    // Pass 2: Härchen (inkl. Neon-Wash + Kanten-Säume, sammelt neonTips)
+    for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0) continue; drawTuftHairs(mctx,t,mat,cMid,cTip,cTipHi); }
+    // Pass 3: Sporophyten
+    if(T.SPOROPHYTE>0) for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<0.4) continue; drawSporophyte(mctx,t,mat,cSpo); }
+    // Bloom-Aura: weiche Neon-Puffs an den gesammelten Spitzen (gecacht, per-Frame nur drawImage)
+    gctx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr); gctx.clearRect(-M,-M,CW+2*M,CH+2*M);
+    if(T.NEON_BLOOM>0 && neonTips.length){ gctx.globalCompositeOperation="lighter";
+      var gr=Math.max(6, T.FILA_LEN*2.4);
+      for(i=0;i<neonTips.length;i++){ var np=neonTips[i], rad=gr*(0.6+0.9*np.i);
+        var rgd=gctx.createRadialGradient(np.x,np.y,0, np.x,np.y,rad);
+        rgd.addColorStop(0, rgba(np.c, 0.55*np.i)); rgd.addColorStop(0.5, rgba(np.c, 0.18*np.i)); rgd.addColorStop(1, rgba(np.c,0));
+        gctx.fillStyle=rgd; gctx.beginPath(); gctx.arc(np.x,np.y,rad,0,TAU); gctx.fill();
+      }
+      gctx.globalCompositeOperation="source-over";
+    }
+    renderDirty=false; renderedG=g;
+  }
+
+  // Karten-Grund einmal je Box in einen Sprite rendern (Gradient + feines Muster + Rand) — spart Per-Frame-Kosten
+  function renderBase(b){
+    base.width=Math.round(CSSW*dpr); base.height=Math.round(CSSH*dpr);
+    bctx.setTransform(dpr,0,0,dpr,0,0); bctx.clearRect(0,0,CSSW,CSSH);
+    var g0=bctx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#121a0d"); g0.addColorStop(1,"#0a1108");
+    roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.fillStyle=g0; bctx.fill();
+    bctx.save(); roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.clip();
+    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=9) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=9){ bctx.fillStyle="rgba(180,220,150,0.04)"; bctx.fillRect(xx,yy,1.3,1.3); }
+    bctx.restore();
+    bctx.lineWidth=1.5; bctx.strokeStyle="rgba(150,190,110,0.45)"; roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.stroke();
+    boxKey=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+  }
+
+  function frame(ts){
+    if(!last) last=ts; var dt=Math.min(50, ts-last); last=ts; clockT+=dt; var dts=dt/1000;
+    fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>=650){ autoAcc=0; stage=Math.min(STAGE_MAX, stage+1); $("growth").value=stage; updLvl(); markDirty(false); if(stage>=STAGE_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } } }
+    growth=(stage/STAGE_MAX)*T.REIF_COV;                  // Reifestufe × Reife-Abdeckung → tatsächliche Moos-Abdeckung
+    var b=box();
+    var bk=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+    if(bk!==boxKey) renderBase(b);                        // Karten-Grund nur bei Box-Änderung neu bauen
+    if(fieldDirty || renderDirty || Math.abs(growth-renderedG)>0.004) renderMoss(growth);
+
+    ctx.clearRect(0,0,CSSW,CSSH);
+    ctx.drawImage(base, 0,0,base.width,base.height, 0,0,CSSW,CSSH);   // gecachter Karten-Grund (Gradient+Muster+Rand)
+
+    // Neon bleibt AUF der Karte: Moos + Bloom-Aura auf leicht erweitertes RoundRect geclippt (kein Szenen-Licht)
+    var grow=M*T.OVERHANG;
+    ctx.save(); roundRectPath(ctx, b.ox-grow, b.oy-grow, b.CW+2*grow, b.CH+2*grow, b.cr+grow); ctx.clip();
+    ctx.drawImage(moss, 0,0,moss.width,moss.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+    if(T.NEON_BLOOM>0){ ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=clamp01(T.NEON_BLOOM);
+      ctx.drawImage(glow, 0,0,glow.width,glow.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+      ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=1; }
+    // Tau-Glitzern (live über dem Moos)
+    if(T.DEW>0){ ctx.globalCompositeOperation="lighter";
+      for(var d=0;d<dewPts.length;d++){ var dp=dewPts[d], tw=0.4+0.6*(0.5+0.5*Math.sin(clockT*0.004+dp.ph));
+        ctx.fillStyle=rgba({r:225,g:245,b:210}, 0.5*T.DEW*tw); ctx.beginPath(); ctx.arc(b.ox+dp.x, b.oy+dp.y, 0.9, 0, TAU); ctx.fill(); }
+      ctx.globalCompositeOperation="source-over"; }
+    ctx.restore();
+
+    requestAnimationFrame(frame);
+  }
+  function updLvl(){ var pct=Math.round(stage/STAGE_MAX*100);
+    var nm = stage<=0 ? "kein Wachstum" : stage>=STAGE_MAX ? "Reif · grün" : "Setzling";
+    $("v_growth").textContent="Stufe "+stage+"/"+STAGE_MAX+" · "+nm;
+    $("hudLvl").textContent=(stage>=STAGE_MAX?"Reif":stage<=0?"Leer":"Setzling "+stage+"/"+STAGE_MAX)+" ("+pct+"%)"; }
+
+  $("growth").addEventListener("input",function(){ stage=parseInt(this.value,10)||0; autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
+  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0; if(autoGrow&&stage>=STAGE_MAX){ stage=0; $("growth").value=0; updLvl(); markDirty(false); } this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
+  $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; markDirty(true); });
+  $("btnCopy").addEventListener("click",function(){ var ta=$("cfg"); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); });
+  $("btnDefault").addEventListener("click",function(){ T=Object.assign({},DEFAULTS); syncInputs(); syncStyle(); markDirty(true); });
+
+  // Stil-Umschalter
+  function syncStyle(){ var bs=document.querySelectorAll("#styleRow .styB"); for(var i=0;i<bs.length;i++) bs[i].classList.toggle("on", bs[i].getAttribute("data-style")===T.STYLE); }
+  Array.prototype.forEach.call(document.querySelectorAll("#styleRow .styB"), function(bn){
+    bn.addEventListener("click", function(){ T.STYLE=bn.getAttribute("data-style"); syncStyle(); markDirty(false); writeConfig(); });
+  });
+
+  $("v_zoom").textContent=zoom.toFixed(2)+"×"; updLvl(); syncInputs(); syncStyle(); doResize(); requestAnimationFrame(frame);
+})();
+</script>

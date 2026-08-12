@@ -270,28 +270,37 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` (Pixi: Filamente als vorgerenderte **Sprites** gebacken
   + geblittet — vgl. FrostIce-Perf-Ansatz; Akkretion über `birthG`-Schwelle). Wachstum aus der Karte
   ziehen: `coverage = clamp(growth / PLANT_GREEN_THRESHOLD)`. **Unter** dem IonStorm-Layer mounten.
-- **REWORK offen (ab 2026-08-12, nächste Session):** User will **andere Gras-/Moos-Varianten** testen,
-  Richtung **Neon / biolumineszentes Hänge-Moos** (Referenzbild: herabhängende Moos-Polster mit cyan/grün
-  **leuchtenden Spitzen** und **Magenta-Neon-Tropfen/Drips** auf dunklem Synthwave-Grund). Es wurden bereits
-  **Neon-Rim-Parameter** erprobt (`NEON_A/NEON_B/NEON_ANGLE/NEON_RIM/NEON_TIP/NEON_BLOOM/NEON_BASE`).
-  **Fallback-Werte festhalten** (falls nichts Besseres dabei rauskommt — vom User gegeben):
+- **REWORK: Neon-Moos (abgesegnet 2026-08-12).** Statt gedämpft-realistisch jetzt **biolumineszentes
+  Neon-Moos** (Synthwave): zwei gegenüberliegende **Bühnenlichter A/B** strahlen das Moos an (A↔B-Achse
+  `NEON_ANGLE`), das Grün fängt Neon ein → **grün oben → magenta an Seiten/unten**, weiche **Bloom-Aura**
+  (bleibt auf der Karte). Regler dazu: `NEON_A/NEON_B/NEON_ANGLE`, `NEON_RIM` (Wash übers ganze Moos),
+  `NEON_TIP` (additive Spitzen-Säume), `NEON_PUNCH` (übersättigt/emissiv = „punchy"), `NEON_BLOOM`
+  (Aura), `NEON_BASE` (Toggle: ganzer Halm getönt statt nur Spitzen). Prototyp bietet zusätzlich einen
+  **Stil-Umschalter** (`STYLE`: moos/gras/haenge/ranken) — **gewählt: `moos`**.
+- **ABGESEGNETE Werte (final, @reif/Stufe 8):**
   ```js
   const TUNE = {
-    MOSS_DARK: "#20331a", MOSS_MID: "#d90af5", MOSS_TIP: "#9bc255", SPORO_COLOR: "#9a6a34",
+    STYLE: "moos",
 
-    NEON_A: "#f202be", NEON_B: "#25af23", NEON_ANGLE: -67, NEON_RIM: 0.7, NEON_TIP: 1, NEON_BLOOM: 0.18, NEON_BASE: 1,
+    MOSS_DARK: "#20331a", MOSS_MID: "#c251aa", MOSS_TIP: "#9bc255", SPORO_COLOR: "#9a6a34",
 
-    REIF_COV: 0.4, EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 1, RAGGED: 1, OVERHANG: 1,
+    NEON_A: "#ea34d1", NEON_B: "#66b450", NEON_ANGLE: -74, NEON_RIM: 0.72, NEON_TIP: 0.12, NEON_PUNCH: 0.04, NEON_BLOOM: 0.76, NEON_BASE: 1,
+
+    REIF_COV: 0.48, EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 1, RAGGED: 1, OVERHANG: 1,
 
     FILA_PER: 16, FILA_LEN: 3.5, FILA_THICK: 1.35, TILT: 12, SPREAD: 0.94, TIP_LIGHT: 1, SPECK: 0,
 
     SPOROPHYTE: 0, SHADOW: 0, DEW: 0,
   };
   ```
-  (⚠️ Die `NEON_*`-Keys existieren im Prototyp `moos-tuning.html` **noch nicht** — beim Rework als
-  Regler ergänzen: Neon-Rim-Licht/Spitzen-Glow + evtl. herabhängende Drips.)
-- **Status:** 🟡 **v1 fertig (Reifestufen-Simulator, abgesegnet), aber REWORK gewünscht** — neue
-  Gras-Varianten Richtung Neon/biolumineszent testen; obige Werte als Fallback. Pixi-Umsetzung danach.
+- **⚠️ Layer-Reihenfolge (User-KORREKTUR 2026-08-12):** Der **Blitz-Rahmen (IonStorm) liegt UNTER dem
+  Moos** — Moos oben drüber (kehrt die frühere Notiz „Blitz über Moos" um). Also Moos-Layer ÜBER IonStorm
+  mounten.
+- **Prototyp:** `docs/prototypes/gras-varianten.html` (Werte oben als Default; Stil-Umschalter + Punch;
+  Neon-Beleuchtung). Die ältere `docs/prototypes/moos-tuning.html` bleibt als Vorstufe liegen.
+- **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` — Neon über Offscreen-Buffer/`lighter`, Bloom auf
+  Karte geclippt (kein Überstrahlen). Wachstum `coverage = clamp(growth/PLANT_GREEN_THRESHOLD) · REIF_COV`.
+- **Status:** 🟡 **Neon-Moos Look + Werte abgesegnet & gesichert; Blitz liegt darunter** — Pixi-Port offen.
 
 ### 5.5 Extra — „Regen & Pool" (Wasser, Prototyp) 💧
 
