@@ -257,10 +257,16 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **Prototyp:** `docs/prototypes/eis-neon-tuning.html` (Standalone-Tuning, Masse-0…12-Regler mit diskreter
   Rastung) + `docs/prototypes/moos-eis-combo.html` (**Kombi-Check**: Moos + Eis auf einer Karte, Layer-
   Toggle, Eis im Rahmen geclippt). Look + Werte + Layering (Moos über Eis) abgesegnet.
-- **Umsetzung (offen):** `src/ui/fx/FrostIce.jsx` (Pixi: Kristall-/Rime-Sprites vorgerendert + geblittet;
-  Akkretion über `birthF`-Schwelle; Front diskret an `glacier.js`-Schwellen; Farb-Erhalt via Offscreen-
-  Buffer, Bloom aufs Kartenrechteck geclippt gegen Überstrahlung). Masse aus der Karte (`glacier.js`).
-- **Status:** 🟡 **Neon-Frost Look + Werte + Layering (Moos oben) abgesegnet & gesichert** — Pixi-Port offen.
+- **Umsetzung (ERLEDIGT 2026-08-12):** `src/ui/fx/FrostIce.jsx` — **Canvas-2D** (bewusst kein Pixi-Shader, wie NeonSilk/
+  MossGrow; Neon über `lighter`/Offscreen-Buffer). Renderer + TUNE **1:1** aus dem Kombi-Board. **Größen-unabhängig:**
+  Frost-Bitmap in Referenzgröße (`REF_W/REF_H` = Prototyp @ zoom 1.3) gerendert und proportional auf die 104×144-Karte
+  geblittet, Composite-Clip = **exaktes** Karten-RoundRect → Eis strikt im Rahmen (kein Überstand). Bitmap nur bei
+  Front-Wechsel neu (gecacht); **animiert** (Funkeln + Stufe-3-Puls) → rAF läuft durch, Composite per-Frame (folgt der
+  Karte). Front `frontOf(mass)` diskret an `glacier.js`-Schwellen 4/8/12. In `Battlefield.jsx` **zwischen** IonStorm und
+  MossGrow gemountet (Stack unten→oben: Blitz → Eis → Moos; alle z-11, DOM-Reihenfolge entscheidet), Gate Preview/Dev,
+  Dev-Force `?ice=<0..12>`. Echte per-Karte-Masse noch offen (Gletscher ist brettfeld-basiert/Platzhalter) → bis Rollout Dev-Force.
+- **Status:** ✅ **Neon-Frost gebaut & in-game verankert** (Preview/Dev-gegatet; Look bei 104×144 verifiziert, Zahl
+  lesbar, Eis strikt im Rahmen, Stufen 4/8/12 diskret, Moos liegt darüber). Offen: Rollout + echte Gletscher→Karte-Bindung.
 
 ### 5.4 Pflanze 🌿 (`plant`) — Glow `#5ab87a`
 

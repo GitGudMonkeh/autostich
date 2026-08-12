@@ -25,6 +25,12 @@ const MossGrow = lazy(() => import("./fx/MossGrow.jsx"));
 // Dev-Sicht: ?moss=<0..8> erzwingt eine feste Reifestufe auf der eigenen Karte (zum Designen; nur Preview/Dev).
 const MOSS_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { const v = new URLSearchParams(window.location.search).get("moss"); return v == null ? null : Math.max(0, Math.min(8, parseFloat(v) || 0)); } catch { return null; } })();
+// Archetyp-Karteneffekt „Eis" als Neon-Kristall-Frost (Gletscher-Masse an der eigenen Karte) — Canvas-2D, lazy wie oben.
+const FrostIce = lazy(() => import("./fx/FrostIce.jsx"));
+// Dev-Sicht: ?ice=<0..12> erzwingt eine feste Gletscher-Masse auf der eigenen Karte (zum Designen; nur Preview/Dev).
+// Die echte per-Karte-Masse ist noch offen (glacier.js ist brettfeld-basiert & Platzhalter) → bis zum Rollout Dev-Force.
+const ICE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { const v = new URLSearchParams(window.location.search).get("ice"); return v == null ? null : Math.max(0, Math.min(12, parseFloat(v) || 0)); } catch { return null; } })();
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
@@ -1200,11 +1206,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             color="#5ec8f0" reduced={reduced} />
         </Suspense>
       )}
+      {/* #eis Archetyp-Karteneffekt — Neon-Kristall-Frost: kantiger Frost vereist die eigene Karte von unten+Seiten nach
+          innen mit der Gletscher-Masse (0–12, glacier.js-Schwellen 4/8/12). Canvas-2D-Layer AUF der Karte, STRIKT im
+          Rahmen geclippt. Stack (unten→oben): IonStorm-Blitz → Eis → Moos → daher NACH IonStorm, aber VOR MossGrow
+          gemountet (alle z-11, DOM-Reihenfolge entscheidet). Masse aus ICE_FORCE (?ice=<0..12>, Dev) — die echte
+          per-Karte-Bindung ist noch offen (Gletscher ist brettfeld-basiert). Gate wie IonStorm (Preview/Dev). */}
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+        <Suspense fallback={null}>
+          <FrostIce
+            mass={ICE_FORCE != null ? ICE_FORCE : 0}
+            panelRef={panelRef} cardRef={playerCardRef} reduced={reduced} />
+        </Suspense>
+      )}
       {/* #pflanze Archetyp-Karteneffekt — Neon-Moos: realistisches Moos überwächst die eigene Karte mit dem Wachstum
           (growth 0–8 = PLANT_GREEN_THRESHOLD) von oben+Seiten nach innen. Canvas-2D-Layer AUF der Karte. NACH dem
           IonStorm-Block gemountet (späterer DOM-Knoten, gleiches z-11) → Moos liegt ÜBER dem Blitz-Rahmen (User-KORREKTUR
-          2026-08-12: „Blitz unter Moos"). Wachstum aus growth[pCard.id]; ?moss=<0..8> erzwingt eine Reifestufe (Dev).
-          Gate wie IonStorm (Preview/Dev) → Produktion bleibt pixel-identisch, bis der Rollout entschieden ist. */}
+          2026-08-12: „Blitz unter Moos") UND über dem Eis (Eis früher im DOM). Wachstum aus growth[pCard.id];
+          ?moss=<0..8> erzwingt eine Reifestufe (Dev). Gate wie IonStorm (Preview/Dev). */}
       {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
         <Suspense fallback={null}>
           <MossGrow
