@@ -393,7 +393,10 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
         <Suspense fallback={null}>
           {/* Showcase-Kachel ist flacher als das In-Game-Feld → riseBase hoch (hohe RUHE-Türme, prominent, nicht zu
               niedrig), riseScale niedrig (ruhigerer Musik-Ausschlag; im Showcase soll es nicht so stark springen). */}
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={4.5} riseScale={1.3} sun={sun} wire={wire} />
+          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — nicht überzeichnet. riseScale runter (Ausschlag ruhiger,
+              war 1,3 → viel zu krass), riseBase moderat (Türme präsent, aber nicht extrem), yBias hebt das Feld an
+              (war zu weit unten). */}
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={3.0} riseScale={0.65} yBias={0.12} sun={sun} wire={wire} />
         </Suspense>
       )}
     </div>

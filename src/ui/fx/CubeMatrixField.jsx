@@ -44,12 +44,13 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, sun = true, wire = false }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, sun = true, wire = false }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale = Musik-Ausschlag (Höhen-Delta je
-  // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag) → Showcase: hohe Türme, aber ruhiger Ausschlag.
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, sun, wire });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, sun, wire };
+  // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag). yBias = Feld nach OBEN schieben (0..1 × H),
+  // damit der Showcase das Feld höher/mittiger setzen kann als das In-Game-Panel (dort yBias=0 → unverändert).
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, sun, wire });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, sun, wire };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -76,7 +77,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
-    const baseY = () => H * TUNE.NEIGUNG + TUNE.FELD_HOEHE * H;
+    const baseY = () => H * TUNE.NEIGUNG + TUNE.FELD_HOEHE * H - (propsRef.current.yBias || 0) * H; // yBias hebt das Feld an
     const proj = (x, y, z) => { const d = z + 3.2, f = TUNE.D_PERSP, hy = baseY(); return { x: W / 2 + f * x / d, y: hy + f * (TUNE.D_TILT - y) / d }; };
     const quad = (a, b, c, d, style) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fillStyle = style; ctx.fill(); };
 
