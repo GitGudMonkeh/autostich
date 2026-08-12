@@ -16,13 +16,16 @@ import { getMusicAnalyser } from "../musicAnalyser.js";
 
 // ── Cube-Matrix — TUNE (finale Zielwerte aus #317) ──
 const TUNE = {
-  GAIN: 1.95, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 6.2, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.20,
+  // #317: Empfindlichkeit gesenkt (war 1.95×6.2) → ruhige Lieder schlagen nicht mehr über.
+  GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.20,
   C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1,
+  C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
+
   SPOT_ON: 1, SPOT_COUNT: 2, SPOT_SPREAD: 0.36, SPOT_INT: 0.35, SPOT_PULSE: 1.00, SPOT_WIDTH: 0.75, SPOT_TILT: 0.68,
   SPOT_SOFT: 0.55, SPOT_BLOOM: 0.30,
   // #perf/#317: C_ROWS 8→6 (~25% weniger Würfel). FELD_TIEFE 1.0→0.72 = Feld nach vorn; FELD_HOEHE 0→0.10 = etwas
   // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
-  D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.15, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
+  D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.06, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
 };
 const BACKSUN = true;
 const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#ffffff";
@@ -105,14 +108,17 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       sg.addColorStop(0, rgba(hi, 0.5)); sg.addColorStop(1, rgba(mix(hi, lo, 0.5), 0.18));
       ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.clip(); ctx.fillStyle = sg; ctx.fillRect(sx - sr, sy - sr, 2 * sr, 2 * sr); ctx.restore();
     }
-    function drawFloor(C, R, spread, z0, rowGap, alpha) {
+    function drawFloor(C, R, spread, z0, rowGap, alpha, taper) {
       if (alpha <= 0) return; const gcol = rgb(GRID_COL);
-      const half = C > 1 ? spread / (C - 1) : spread, xL = -spread - half, xR = spread + half;
+      const half = C > 1 ? spread / (C - 1) : spread;
       const zF = z0 - rowGap * 0.5, zB = z0 + (R - 0.5) * rowGap;
+      const sprAt = (t) => (spread + half) * (1 - taper * t); // Halb-Breite an Tiefe t (0 vorn .. 1 hinten) → Verjüngung
       ctx.globalCompositeOperation = "lighter"; ctx.lineWidth = 1;
-      for (let c = 0; c <= C; c++) { const x = lerp(xL, xR, c / C), p0 = proj(x, 0, zF), p1 = proj(x, 0, zB);
+      // Vertikale Linien (Spalten) — konvergieren nach hinten (front-breit → hinten schmal).
+      for (let c = 0; c <= C; c++) { const u = c / C, xF = lerp(-sprAt(0), sprAt(0), u), xB = lerp(-sprAt(1), sprAt(1), u), p0 = proj(xF, 0, zF), p1 = proj(xB, 0, zB);
         ctx.strokeStyle = rgba(gcol, 0.5 * alpha); ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
-      for (let r = 0; r <= R; r++) { const z = z0 + (r - 0.5) * rowGap, a = alpha * lerp(0.6, 0.16, R > 0 ? r / R : 0), p0 = proj(xL, 0, z), p1 = proj(xR, 0, z);
+      // Horizontale Linien (Reihen) — schmaler nach hinten.
+      for (let r = 0; r <= R; r++) { const t = R > 0 ? r / R : 0, w = sprAt(t), z = z0 + (r - 0.5) * rowGap, a = alpha * lerp(0.6, 0.16, t), p0 = proj(-w, 0, z), p1 = proj(w, 0, z);
         ctx.strokeStyle = rgba(gcol, a); ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
     }
     function box3d(cx, zf, zb, y0, y1, halfw, colFbot, colFtop, colT, colS, glowA, glowC, alpha, grad) {
@@ -169,10 +175,11 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; spotBass = 0; } // Standbild: ruhige, gedimmte Säulen
       else { computeCubes(TC); computeSpotBass(); }
       const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
+      const taper = TUNE.C_TAPER;
       if (BACKSUN) drawSun(lo, hi);
-      if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1));
-      for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap;
-        for (let c = 0; c < C; c++) { const idx = r * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spread, spread, c / (C - 1)) : 0;
+      if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
+      for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap, spreadR = spread * (1 - taper * (R > 1 ? r / (R - 1) : 0)); // Verjüngung: hintere Reihen schmaler
+        for (let c = 0; c < C; c++) { const idx = r * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
           const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
           const colFbot = rgba(mix(dark, base, emit), 1);
           const colFtop = rgba(mix(base, hot, clamp(val, 0, 1) * 0.7), 1);
