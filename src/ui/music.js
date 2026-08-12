@@ -72,8 +72,8 @@ const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers };
 // Stufe fällt automatisch auf die nächstniedrigere Stufe mit Tracks zurück (z. B. overdrive+ → overdrive).
 const TIER_ORDER = ["calm", "mid", "hot", "overdrive", "overdrive_plus"]; // aufsteigende Intensität (= Fallback-Kette)
 // Score-Grenzen (state.score) — UNTERgrenzen je Stufe (ab welchem Score die Stufe greift). Die höchste erreichte Stufe
-// gewinnt. Plan: calm bis 10 Mio · mid 10–30 Mio · hot 30–70 Mio · overdrive 70–90 Mio · overdrive+ 90 Mio+.
-const TIER_MIN = { mid: 10000000, hot: 30000000, overdrive: 70000000, overdrive_plus: 90000000 };
+// gewinnt. Plan: calm bis 3 Mio · mid 3–30 Mio · hot 30–70 Mio · overdrive 70–90 Mio · overdrive+ 90 Mio+.
+const TIER_MIN = { mid: 3000000, hot: 30000000, overdrive: 70000000, overdrive_plus: 90000000 };
 // #: Stufenwechsel-Politur — ein laufender Song wird NIE innerhalb seiner ersten SWITCH_MIN_PLAY Sekunden abgelöst
 // (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
