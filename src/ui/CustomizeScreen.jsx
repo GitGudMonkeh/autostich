@@ -398,11 +398,12 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          {/* Showcase-Kachel ist flacher als das In-Game-Feld → riseBase moderat (RUHE-Türme präsent, nicht zu hoch),
-              riseScale niedrig (ruhigerer Musik-Ausschlag; im Showcase soll es nicht so stark springen). */}
-          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — nicht überzeichnet. riseScale/riseBase runter (Ausschlag
-              + Türme waren viel zu hoch), depthScale < 1 macht das Feld flacher (Tiefe war zu groß), yBias hebt es an. */}
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={2.2} riseScale={0.35} yBias={0.12} depthScale={0.65} sun={false} wire={wire} />
+          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — gedämpft, nicht überzeichnet (visuell am echten Modul
+              in shop-großer Box abgestimmt). riseBase 1.2 (statt 2.2) → Türme stehen NIEDRIG in Ruhe wie in-game (kein
+              Dauer-Hochstand); riseScale 0.55 → Musik-Ausschlag proportional zur flacheren Kachel wie im Spiel; yBias 0.32
+              → das Hologrid schließt unten mit dem Rahmen ab (vorher lief die Front-Kante unter den Rahmen); depthScale 0.8
+              → Feld flach genug für die Kachel. */}
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={1.2} riseScale={0.55} yBias={0.32} depthScale={0.8} sun={false} wire={wire} />
         </Suspense>
       )}
     </div>
