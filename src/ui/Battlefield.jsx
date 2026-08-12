@@ -693,7 +693,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false,
+  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixSun = true,
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -1169,7 +1169,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <>
           <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
+              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={cubematrixSun} />
             </Suspense>
           </div>
           <div aria-hidden="true" className="absolute inset-0 z-[11] pointer-events-none">

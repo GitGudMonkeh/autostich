@@ -347,7 +347,7 @@ function StandardFinisherScene() {
 
 // #317 Cube-Matrix-Showcase: das ECHTE In-Game-Modul (CubeMatrixField) über dem neutralen BF-Bild. Reagiert live auf
 // die laufende (Menü-)Musik. deckTint → Deckfarbe statt Standard-Cyan/Magenta. Nur Preview/Dev (wie die anderen GL-FX).
-function CubeMatrixPreview({ deckTint = false }) {
+function CubeMatrixPreview({ deckTint = false, sun = true }) {
   const look = PREVIEW_LOOK.cubematrix;
   const bf = battlefieldAssets(look.bf);
   const isMobile = useIsMobile();
@@ -359,7 +359,7 @@ function CubeMatrixPreview({ deckTint = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseScale={1.8} />
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseScale={1.8} sun={sun} />
         </Suspense>
       )}
     </div>
@@ -368,10 +368,10 @@ function CubeMatrixPreview({ deckTint = false }) {
 
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
-function GlobalFxScenePreview({ fx, deckTint = false }) {
+function GlobalFxScenePreview({ fx, deckTint = false, sun = true }) {
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
-  if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} />; // #317 musik-reaktives Würfelfeld
+  if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottgleichPreview />;
@@ -856,6 +856,8 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
     const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
     const chooseBtn = <button onClick={() => onChoose(flags)} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : label}</button>;
     // #: Aurora + Glutfunken bieten Standard/Deckfarbe. Toggle setzt das Farbmodus-Flag (deckOpt).
+    // #317 Cube-Matrix: zusätzlich zur Farbe eine an/aus-Wahl für die Retro-Sonne (Default an; nicht bei jedem BG erwünscht).
+    const sunOn = options?.fxCubeMatrixSun !== false;
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
@@ -866,6 +868,15 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
+        {fx.key === "cubematrix" && (
+          <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+            {[{ v: true, l: "☀ Sonne an" }, { v: false, l: "Sonne aus" }].map((o) => {
+              const on = sunOn === o.v;
+              return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixSun: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
+                style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+            })}
+          </div>
+        )}
       </div>
     );
   } else if (group.key === "anim" && fx.key === "none") {
@@ -882,7 +893,7 @@ function FxFloater({ fx, group, p, active, onChoose, onBuyFx, stickyTop, options
             (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
             konstant false → Key stabil, kein unnötiger Remount. */}
-        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} />
+        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} sun={options?.fxCubeMatrixSun !== false} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{group.title}</span>

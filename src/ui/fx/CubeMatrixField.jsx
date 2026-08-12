@@ -33,7 +33,6 @@ const TUNE = {
   // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
   D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.06, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
 };
-const BACKSUN = true;
 const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#ffffff";
 
 const TAU = Math.PI * 2;
@@ -45,11 +44,11 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1 }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, sun = true }) {
   const hostRef = useRef(null);
-  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale: Würfelhöhe skalieren (Showcase höher).
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale };
+  // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale: Würfelhöhe (Showcase höher). sun: Retro-Sonne an/aus.
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, sun });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, sun };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -197,7 +196,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio);
         const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP, hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
         const taper = TUNE.C_TAPER;
-        if (BACKSUN) drawSun(lo, hi);
+        if (p.sun) drawSun(lo, hi);
         if (TUNE.D_FLOOR > 0) drawFloor(C, R, spread, z0, rowGap, TUNE.FLOOR_ALPHA * (p.reduced ? 0.6 : 1), taper);
         for (let r = R - 1; r >= 0; r--) { const z = z0 + r * rowGap, spreadR = spread * (1 - taper * (R > 1 ? r / (R - 1) : 0)); // Verjüngung: hintere Reihen schmaler
           // #317 Feld umgedreht: Reihe im Band-Index gespiegelt (R-1-r) → tiefe Bass-Bänder liegen HINTEN (große Türme in
