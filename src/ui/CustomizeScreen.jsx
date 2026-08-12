@@ -76,6 +76,15 @@ const PREVIEW_LOOK = {
   // #317 Cube-Matrix: Standard = Cyan→Magenta; Deckfarbe-Showcase auf dem grünen Neon-Arcade-Deck
   // (a1=#39e64d Grün, a2=#38c6e0 Cyan auf bf_arcade), damit der Standard↔Deckfarbe-Toggle klar sichtbar ist.
   cubematrix: { bf: "bf_arcade", a1: "#39e64d", a2: "#38c6e0" },
+  // #322–#326 Gottgleich-Prunk: jeder Prunk-Showcase bekommt EIGENEN Backdrop + EIGENE Deckfarbe fürs Deckfarbe-Beispiel,
+  // damit der Standard↔Deckfarbe-Toggle je Effekt klar sichtbar ist und die 5 Showcases sich optisch unterscheiden.
+  // Deckfarbe jeweils KOMPLEMENTÄR zur Standard-Palette des Effekts (kühl↔warm etc.), Backdrop je Effekt verschieden.
+  sonnenPuls:    { bf: "bf_gottgleich", a1: "#35d0ff", a2: "#6ad0ff" }, // Standard warm-pink/coral → Deckfarbe kühl-cyan auf Gottgleich-Feld
+  laserFaecher:  { bf: "bf_blitz",      a1: "#ff9a3c", a2: "#ffd15a" }, // Standard cyan-Laser → Deckfarbe warm-amber auf Blitz-Feld
+  prismaKaskade: { bf: "bf_polarlicht", a1: "#ff4dcb", a2: "#7b5cff" }, // Standard prismatisch → Deckfarbe kräftig magenta/violett auf Polarlicht-Feld
+  holoCube:      { bf: "bf_geometrie",  a1: "#39e64d", a2: "#8ee06a" }, // Standard holo-cyan → Deckfarbe grün/lime auf Geometrie-Feld
+  supernova:     { bf: "bf_kaiju",      a1: "#5ff6ff", a2: "#7f9bff" }, // Standard gold/gelb → Deckfarbe kühl-cyan/violett auf Kaiju-Feld
+  gottStandard:  { bf: "bf_sonne",      a1: "#cbd3ff", a2: "#cbd3ff" }, // Standard-Prunk (nur Ansage) auf Sonnen-Feld
 };
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
 const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
@@ -383,10 +392,14 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", cycleMs = 2200 }) {
+function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", cycleMs = 2200, look = null }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
-  const bf = battlefieldAssets(SHOWCASE_BF);
+  // #gott-showcase: jeder Prunk-Showcase hat seinen EIGENEN Backdrop (look.bf) + seine EIGENE Deckfarbe (look.a1/a2)
+  // fürs Deckfarbe-Beispiel — sonst fällt kein Backdrop-Fallback auf das gemeinsame SHOWCASE_BF zurück.
+  const bf = battlefieldAssets(look?.bf || SHOWCASE_BF);
+  const deckColor = look?.a1 || "#35e0ff";
+  const deckColor2 = look?.a2 || "#ff5db1";
   // #perf: Auf Mobile die Vorschau im lite-Pfad laufen lassen (weniger DPR/FPS/Partikel) — dieselbe Stufe wie in-game
   // auf pointer:coarse. Ohne das lief der Loop-Showcase auf dem Handy in voller Auflösung → Jank.
   const isMobile = useIsMobile();
@@ -406,7 +419,7 @@ function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       {Fx && (
         <Suspense fallback={null}>
-          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" lite={isMobile} onFire={pop} />
+          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} onFire={pop} />
         </Suspense>
       )}
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
@@ -494,17 +507,19 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
-  if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
+  if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} />; // #321 Hologrid-Slice-Finisher (Pixi)
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? "#8fd8ff" : "#ff8fc4"} />; // #322 (Pixi)
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? "#8fd8ff" : "#5ff6ff"} />; // #323 (Pixi)
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? "#8fd8ff" : "#7ee0ff"} />; // #324 (Pixi)
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? "#8fd8ff" : "#7ff0ff"} />; // #325 (Pixi)
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} label="Supernova" tint={deckTint ? "#8fd8ff" : "#ffd24a"} />; // #326 (Pixi)
+  // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
+  // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
+  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? PREVIEW_LOOK.sonnenPuls.a1 : "#ff8fc4"} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? PREVIEW_LOOK.laserFaecher.a1 : "#5ff6ff"} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? PREVIEW_LOOK.prismaKaskade.a1 : "#7ee0ff"} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? PREVIEW_LOOK.holoCube.a1 : "#7ff0ff"} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} label="Supernova" tint={deckTint ? PREVIEW_LOOK.supernova.a1 : "#ffd24a"} look={PREVIEW_LOOK.supernova} />; // #326 (Pixi)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
