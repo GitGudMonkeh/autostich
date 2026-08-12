@@ -5,6 +5,7 @@ import {
   canBuyPack, buyPack, unlockAllCosmetics,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   auroraActive, embersActive, activeBgFx, activeBgFinisher,
+  GOTT_FX_KEYS, gottFxOwned, activeGottFx,
 } from "../src/game/themes.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
@@ -154,8 +155,10 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, cubematrix, embers, starfield und die Karten-Animationen edgeglow + holo + glitch (#318/#317)", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "cubematrix", "embers", "starfield", "edgeglow", "holo", "glitch"].sort());
+  it("GLOBAL_FX führt aurora, cubematrix, embers, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326)", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
+      ["aurora", "cubematrix", "embers", "starfield", "edgeglow", "holo", "glitch",
+       "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
     for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {
@@ -235,5 +238,42 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   it("#307/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (grün 10, blau 20)", () => {
     const want = { aurora: 20, embers: 10, starfield: 20, cubematrix: 30 }; // grün 10 · blau 20 · lila 30 (Cube-Matrix)
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
+  });
+});
+
+describe("gottgleich-prunk (#322-#326) — group gott, einfach-exklusiv (PIXI)", () => {
+  // Alle 5 Prunk-Effekte liegen in group „gott", tragen die korrekte Naht (ownKey/option/preview) und Rarity-Preise.
+  it("Reihenfolge/Naht/Preis je Prunk-Effekt (Standard 0 · Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40)", () => {
+    const want = [
+      ["sonnenPuls", "fxSonnenPuls", 0],
+      ["laserFaecher", "fxLaserFaecher", 10],
+      ["prismaKaskade", "fxPrismaKaskade", 20],
+      ["holoCube", "fxHoloCube", 30],
+      ["supernova", "fxSupernova", 40],
+    ];
+    expect(GOTT_FX_KEYS).toEqual(want.map((w) => w[0]));
+    for (const [key, option, price] of want) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("gott");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.option).toBe(option);
+      expect(fx.preview).toBe(key);
+      expect(globalFxPrice(fx)).toBe(price);
+    }
+  });
+  it("Sonnen-Puls ist der FREIE Default (alwaysOwned) → ohne Kauf besessen; die anderen erst nach Kauf", () => {
+    const sp = GLOBAL_FX_BY_KEY.sonnenPuls, lf = GLOBAL_FX_BY_KEY.laserFaecher;
+    expect(sp.alwaysOwned).toBe(true);
+    expect(gottFxOwned(prof(), sp)).toBe(true);            // frei, auch ohne ownedCosmetics
+    expect(gottFxOwned(prof(), lf)).toBe(false);           // kaufbar → erst bei Besitz
+    expect(gottFxOwned(prof({ ownedCosmetics: { "fx:laserFaecher": true } }), lf)).toBe(true);
+  });
+  it("activeGottFx: der EINE aktive Prunk (besessen + Option an), sonst null; kaufbar nur bei Besitz", () => {
+    expect(activeGottFx(prof(), {})).toBe(null);                                  // nichts an
+    expect(activeGottFx(prof(), { fxSonnenPuls: true })).toBe("sonnenPuls");      // frei + an
+    expect(activeGottFx(prof(), { fxLaserFaecher: true })).toBe(null);            // an, aber nicht gekauft
+    const owned = prof({ ownedCosmetics: { "fx:laserFaecher": true } });
+    expect(activeGottFx(owned, { fxLaserFaecher: true })).toBe("laserFaecher");
   });
 });

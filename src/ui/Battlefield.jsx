@@ -22,6 +22,9 @@ const FIRE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   (() => { try { const v = new URLSearchParams(window.location.search).get("fireheat"); return v == null ? null : Math.max(0, Math.min(1, parseFloat(v) || 0)); } catch { return null; } })();
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
+// #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
+// (Render-Branch mountet nur bei gottTrigger>0) → Prod-Bundle bleibt Pixi-frei, bis der Effekt wirklich spielt.
+const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
 // Dev-Sicht: ?edgeglow=1 / ?holo=1 erzwingen die jeweilige Karten-Animation auf beiden Karten (zum Designen; nur Preview/Dev).
 const cardAnimForce = (name) => (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
   (() => { try { return new URLSearchParams(window.location.search).get(name) === "1"; } catch { return false; } })();
@@ -135,6 +138,11 @@ const BIG_LANES = [0, -64, 64];
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
 //   tier = harte Stufe 0..4 (0 Base · 1 STARK · 2 BRUTAL · 3 IRRE · 4 GOTTGLEICH) für Unlock-Flourishes
 const FX_TIER_MINS = [10000, 50000, 150000, 500000]; // STARK · BRUTAL · IRRE · GOTTGLEICH (aus BIG_SCORE_TIERS)
+// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe (>500k, dieselbe wie die epische Ansage). Feuert bei Sieg OHNE Krit.
+const GOTT_FX_MIN = 500000;
+// #322 Cooldown: der volle Prunk höchstens alle 8 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
+// (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt. Korridor bewusst 6–10 s.
+const GOTT_FX_COOLDOWN_MS = 8000;
 function fxIntensity(gained) {
   const g = gained > 0 ? gained : 0;
   let tier = 0;
@@ -635,6 +643,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Flip-Sound) oder "klinge" (choreografierter Klingen-Schnitt). Default = "standard".
   finisher = "standard",
   scorchDeck = false, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
+  // #322–#326 Gottgleich-Prunk (PIXI): gewählter Prunk-Effekt ("gottStandard" = kein Prunk) + dessen Farbmodus.
+  gottEffect = "gottStandard", gottDeck = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
@@ -971,6 +981,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
+  // #322 Gottgleich-Prunk-Trigger: feuert den gewählten Pixi-Prunk bei einem gottgleichen Sieg OHNE Krit (>500k), aber
+  // höchstens alle GOTT_FX_COOLDOWN_MS (Echtzeit, ref-basiert). Während des Cooldowns bleibt nur die (eigen throttled)
+  // GOTTGLEICH-Ansage — kein zweiter voller Effekt. Trigger = monotoner Zähler → replay der (persistent gemounteten)
+  // Pixi-Komponente. Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
+  const [gottTrigger, setGottTrigger] = useState(0);
+  const gottLastAt = useRef(0);
+  useEffect(() => {
+    if (!t) { gottLastAt.current = 0; return; }
+    const gottWin = win && !isCrit && (t.gained || 0) > GOTT_FX_MIN && gottEffect !== "gottStandard" && !reduced;
+    if (!gottWin) return;
+    const now = Date.now();
+    if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
+    gottLastAt.current = now;
+    setGottTrigger((n) => n + 1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/isCrit/gained/gottEffect wechseln synchron mit t.trickNo
+  }, [t?.trickNo]);
+
   // #177+/#186: Schnitt-/Explosions-Ghost-Pool — entkoppelt vom Stich-Takt (wie der Score-Float-Pool), damit die
   // geschnittene/berstende Karte erst wegfloatet, dann zerschneidet/explodiert und bei hohem Turbo/vielen Siegen mit
   // dem nächsten Stich überlappt. Gilt jetzt für BEIDE Seiten (Spieler bei Niederlage, Gegner bei Sieg) mit
@@ -1225,6 +1252,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           /* #319 Sound (Laser+Burn) genau zum Effekt-Start; rate bei 2× gedeckelt (scorchSndRate), damit er bei 4×/MAX
              nicht zu einem hohen Chirp zusammenschrumpft. Lautstärke wie Klinge (1,05). */
           onFire={() => audio.play("fx_scorch", { rate: scorchSndRate, gain: 1.05 })} />
+      )}
+      {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
+          persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich
+          selbst (z-9 hinter der Karte bzw. eigene Ebenen bei Supernova). */}
+      {gottTrigger > 0 && gottEffect === "sonnenPuls" && !reduced && (
+        <Suspense fallback={null}>
+          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+            deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
+            reduced={reduced} lite={lite} />
+        </Suspense>
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
