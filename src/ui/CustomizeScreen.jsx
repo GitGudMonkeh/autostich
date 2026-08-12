@@ -442,6 +442,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const [sweep, setSweep] = useState(1);
   const [emberStep, setEmberStep] = useState(0);
   const [tierStep, setTierStep] = useState(0);
+  const tierRef = useRef(0); // #komet: spiegelt tierStep (der setTierStep-Updater darf keinen Sound spielen → StrictMode ruft ihn doppelt)
   const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
   const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Glutfunken → Pixi-Bühne im Showcase
   const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas
@@ -452,8 +453,15 @@ function FieldFxPreview({ effect, deckTint = false }) {
     const isEmbers = effect === "embers";
     const id = setInterval(() => {
       setSweep((s) => s + 1);
-      if (pixiField) setTierStep((s) => (s + 1) % EMBER_TIER_LABELS.length); // #311: alle Pixi-Feldeffekte (Glutfunken/Sternenfeld) durch die Tier-Leiter eskalieren
-      else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
+      if (pixiField) {
+        // #311: alle Pixi-Feldeffekte (Glutfunken/Sternenfeld) durch die Tier-Leiter eskalieren. Nächsten Tier über den
+        // Ref bestimmen (nicht im Updater Sound spielen — StrictMode ruft ihn doppelt).
+        const nextTier = (tierRef.current + 1) % EMBER_TIER_LABELS.length;
+        tierRef.current = nextTier; setTierStep(nextTier);
+        // #komet: Sternenfeld-Sound auch im Showcase — Datei nach gezeigtem Tier (≥1 Woosh+Impact, sonst kleiner Komet).
+        // Beim Tick gestartet → der Einschlag (~0,9 s im File) sitzt auf dem visuellen Impact. Pegel wie Glutfunken-Vorschau.
+        if (effect === "starfield") audio.play(nextTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: 0.27 });
+      } else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
       if (isEmbers) audio.play("fx_embers", { gain: 0.27 }); // #glutfunken: Aufstoß-Sound auch in der Vorschau hörbar (gleicher Pegel wie in-game)
     }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
     return () => clearInterval(id);

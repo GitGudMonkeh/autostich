@@ -23,10 +23,16 @@ import godlikeUrl from "../assets/sounds/fx_godlike.mp3";
 import embersUrl from "../assets/sounds/fx_embers.mp3";
 // #319 Scorch-Sieg-Finisher: Laser + organischer Burn in EINEM Sound (rate = Turbo-Speed → bleibt auf die Animation getimed).
 import scorchUrl from "../assets/sounds/fx_scorch.mp3";
+// #komet: Sternenfeld-Finisher. fx_comet = kleiner Komet (Tier 0, nur Whoosh). fx_comet_impact = Tiers mit Einschlag
+// (Woosh→Impact, Einschlag bei ~0,90 s → deckt sich mit dem visuellen Impact bei IMP_AT×SHOOT_DUR). rate bleibt 1
+// (Komet ist turbo-unabhängig, feste 1-s-Flugzeit), NICHT turbo-koppeln — sonst wandert der Einschlag weg.
+import cometUrl from "../assets/sounds/fx_comet.mp3";
+import cometImpactUrl from "../assets/sounds/fx_comet_impact.mp3";
 
 const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl,
               fx_blade: bladeUrl, fx_laser: laserUrl, fx_lasergrid: lasergridUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl,
-              fx_lightning: lightningUrl, fx_atomize: atomizeUrl, fx_bass: bassUrl, fx_godlike: godlikeUrl, fx_embers: embersUrl, fx_scorch: scorchUrl };
+              fx_lightning: lightningUrl, fx_atomize: atomizeUrl, fx_bass: bassUrl, fx_godlike: godlikeUrl, fx_embers: embersUrl, fx_scorch: scorchUrl,
+              fx_comet: cometUrl, fx_comet_impact: cometImpactUrl };
 
 let ctx = null;
 let masterComp = null; // #196: persistenter Master-Kompressor — ALLE SFX laufen durch, fängt Clipping/Turbo-Überlappung ab.
@@ -38,7 +44,7 @@ const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwa
 //  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
 //  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
 const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
-const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_embers: 0.11, fx_scorch: 0.06 };  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen
+const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_embers: 0.11, fx_scorch: 0.06, fx_comet: 0.11, fx_comet_impact: 0.11 };  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen
 const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
 const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;

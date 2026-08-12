@@ -859,6 +859,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #glutfunken: Aufstoß-Sound je gewonnenem Stich, WENN Glutfunken der aktive Hintergrund-Finisher ist — synchron zur
     // Fontäne (gleiche Bedingung wie der Pixi-Erupt: Sieg, nicht reduced/lite). Etwas leiser als der Flip (×0,8).
     if (w && bgFinisher === "embers" && !reduced && !lite) audio.play("fx_embers", { gain: CARDFLIP_GAIN_CONST * 0.29 });
+    // #komet: Sternenfeld-Finisher — je Stich EIN Komet, exakt wie der Pixi-Erupt (Sieg UND Niederlage, nur bei reduced
+    // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Tier ≥ 1 (nur Siege mit Einschlag) → Woosh+Impact, dessen
+    // Einschlag bei ~0,90 s liegt = deckt sich mit dem visuellen Impact (IMP_AT×SHOOT_DUR ≈ 0,9 s). Tier 0 (schwache
+    // Siege + alle Niederlagen, kein Einschlag) → kleiner Komet-Whoosh. rate BEWUSST 1: der Komet fliegt turbo-unabhängig
+    // feste 1 s Echtzeit → würde man rate an den Turbo koppeln, wanderte der Einschlag vom sichtbaren Impact weg. Pegel wie Glutfunken.
+    if (bgFinisher === "starfield" && !reduced) audio.play(hitTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: CARDFLIP_GAIN_CONST * 0.29 });
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
