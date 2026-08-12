@@ -685,6 +685,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   hologridDeck = false, // #hologrid-deck: false = Standard Cyan/Magenta, true = Hologrid in der Deckfarbe
   // #322–#326 Gottgleich-Prunk (PIXI): gewählter Prunk-Effekt ("gottStandard" = kein Prunk) + dessen Farbmodus.
   gottEffect = "gottStandard", gottDeck = false,
+  // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Farbmodus false = Standard-Neon, true = Deckfarbe (deckA1/deckA2).
+  archDeckColor = false,
   // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
   reducedFx = "auto" }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
@@ -849,15 +851,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             frontImage={deckFront} />
       {edgeGlowEl /* z-0: unter Eis/Moos, über dem Skin */}
       {/* #blitz/#flip: Ionensturm-Rahmen als flippendes Kind auf der EdgeGlow-Ebene (z-0), UNTER Eis/Moos, ÜBER dem Skin.
-          Aktiv bei voll ionisierter Karte (ionStacks >= ION_MAX_STACKS) bzw. ?blitzframe=1 (Dev). Gate Preview/Dev. */}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && ((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE) && (
-        <Suspense fallback={null}><CardIonStorm active color="#5ec8f0" reduced={reduced} /></Suspense>
+          Aktiv bei voll ionisierter Karte (ionStacks >= ION_MAX_STACKS) bzw. ?blitzframe=1 (Dev). Farbe: Standard-Cyan
+          oder Deckfarbe (archDeckColor). #spezial: immer aktiv (nicht mehr Preview/Dev-gegatet). */}
+      {((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE) && (
+        <Suspense fallback={null}><CardIonStorm active color={archDeckColor ? (deckA1 || "#5ec8f0") : "#5ec8f0"} reduced={reduced} /></Suspense>
       )}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pIceMass > 0 && (
-        <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} /></Suspense>
+      {pIceMass > 0 && (
+        <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
       )}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && pGrowth > 0 && (
-        <Suspense fallback={null}><MossGrow growth={pGrowth} /></Suspense>
+      {pGrowth > 0 && (
+        <Suspense fallback={null}><MossGrow growth={pGrowth} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
       )}
     </div>
   );
@@ -1322,12 +1325,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           über; ?fireheat=<0..1> erzwingt sie (Dev). #feuer: an den STABILEN Deck-Slot (deckSlotRef) verankert (nicht an
           die gespielte Karte) → das Feuer brennt DURCHGÄNGIG weiter, auch wenn die Karte gewinnt/verliert/wegfliegt
           (kein Neustart, kein flyAway-Reset mehr). Gate wie IonStorm (Preview/Dev). */}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+      {/* #feuer/#spezial: Neon-Seiden-Feuer am Kartenkopf — immer aktiv (nicht mehr Preview/Dev-gegatet). Farbe: Standard-
+          Neon (blau→magenta→rot) oder Deckfarbe (archDeckColor → deckA1→deckA2). Pixi lädt lazy nur bei Hitze > 0. */}
+      {(
         <Suspense fallback={null}>
           <FireHead
             heat={FIRE_FORCE != null ? FIRE_FORCE
               : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
-            panelRef={panelRef} cardRef={deckSlotRef} />
+            panelRef={panelRef} cardRef={deckSlotRef}
+            deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} />
         </Suspense>
       )}
       {/* #319 Scorch-Finisher: Laser + organischer Burn über der geschlagenen Gegnerkarte. Canvas-2D (kein Pixi-Shader →

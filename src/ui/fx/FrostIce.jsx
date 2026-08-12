@@ -82,25 +82,26 @@ function getField() {
 }
 
 // ── Frost-Bitmap je Front-Stufe: MODUL-WEIT gecacht (renderFrostBitmap ≤ einmal pro Stufe/Session) ──
-const _bmpCache = new Map();  // key `${RDPR}:${frontKey}` → { frost, glow }
-function getFrostBitmap(front) {
+const _bmpCache = new Map();  // key `${RDPR}:${frontKey}:${nA}:${nB}` → { frost, glow }
+function getFrostBitmap(front, nA, nB) {
   const RDPR = Math.min(2, window.devicePixelRatio || 1);
-  const key = RDPR + ":" + Math.round(front * 1000);
+  const key = RDPR + ":" + Math.round(front * 1000) + ":" + nA + ":" + nB;   // Farbmodus (Standard/Deckfarbe) im Key
   let e = _bmpCache.get(key);
   if (e) return e;
-  e = renderFrostBitmap(front, getField().field, RDPR);
+  e = renderFrostBitmap(front, getField().field, RDPR, nA, nB);
   _bmpCache.set(key, e);
   return e;
 }
 
-function renderFrostBitmap(front, field, RDPR) {
+// nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
+function renderFrostBitmap(front, field, RDPR, nA, nB) {
   const frost = document.createElement("canvas"), fx = frost.getContext("2d");
   const glow = document.createElement("canvas"), gx = glow.getContext("2d");
   frost.width = Math.round((REF_W + 2 * M) * RDPR); frost.height = Math.round((REF_H + 2 * M) * RDPR);
   glow.width = frost.width; glow.height = frost.height;
 
   const nang = TUNE.NEON_ANGLE * Math.PI / 180, axc = Math.cos(nang), axs = Math.sin(nang);
-  const cNA = hexRGB(TUNE.NEON_A), cNB = hexRGB(TUNE.NEON_B);
+  const cNA = hexRGB(nA), cNB = hexRGB(nB);
   const cDark = hexRGB(TUNE.ICE_DARK), cMid = hexRGB(TUNE.ICE_MID), cEdge = hexRGB(TUNE.ICE_EDGE);
   const neonTips = [];
 
@@ -218,10 +219,13 @@ function renderFrostBitmap(front, field, RDPR) {
 
 /* FrostIce — KIND der Kartenvorderseite, UNTER dem Moos (z-1). Blittet das (gecachte) Frost-Bitmap strikt aufs
    Karten-RoundRect; Funkeln/Puls laufen live per rAF (statisch bei reduced). Karten-Bewegungen erledigt CSS. */
-export function FrostIce({ mass = 0, reduced = false }) {
+export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColor = null, deckColor2 = null }) {
   const hostRef = useRef(null);
-  const stateRef = useRef({ mass, reduced });
-  stateRef.current = { mass, reduced };
+  // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 als Bühnenlicht.
+  const nA = deckTint && deckColor ? deckColor : TUNE.NEON_A;
+  const nB = deckTint && deckColor ? (deckColor2 || deckColor) : TUNE.NEON_B;
+  const stateRef = useRef({ mass, reduced, nA, nB });
+  stateRef.current = { mass, reduced, nA, nB };
   const syncRef = useRef(null);
 
   useEffect(() => {
@@ -245,7 +249,7 @@ export function FrostIce({ mass = 0, reduced = false }) {
       const front = frontOf(mass);
       if (front <= 0 || !size()) { canvas.style.display = "none"; return; }
       canvas.style.display = "block";
-      const { frost, glow } = getFrostBitmap(front);
+      const { frost, glow } = getFrostBitmap(front, stateRef.current.nA, stateRef.current.nB);
       const sx = cw / REF_W, sy = ch / REF_H, mLeft = M * sx, mTop = M * sy;
       const anim = !stateRef.current.reduced;
       const pulse = (anim && TUNE.SHIMMER > 0 && stageOf(mass) >= 3) ? 1 + TUNE.SHIMMER * 0.35 * Math.sin(clockT * 0.004) : 1;
@@ -301,7 +305,7 @@ export function FrostIce({ mass = 0, reduced = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { syncRef.current?.(); }, [mass, reduced]);
+  useEffect(() => { syncRef.current?.(); }, [mass, reduced, nA, nB]);
 
   // z-1 = AUF der Karte, aber UNTER dem Moos (z-2) im selben Karten-Wrapper. Blitz (Panel-IonStorm) liegt darüber (ok).
   return <div ref={hostRef} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }} />;

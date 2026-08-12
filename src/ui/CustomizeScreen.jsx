@@ -25,6 +25,11 @@ const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx"));
 const HoloCubePixi = lazy(() => import("./fx/HoloCubePixi.jsx"));
 const SupernovaPixi = lazy(() => import("./fx/SupernovaPixi.jsx"));
 const HologridSlicePixi = lazy(() => import("./fx/HologridSlicePixi.jsx")); // #321 Sieg-Finisher „Hologrid-Slice" (Pixi)
+// #spezial Archetyp-Effekte für den Showcase (Hitze/Moos/Blitz/Eis).
+const FireHead = lazy(() => import("./fx/FireHead.jsx").then((m) => ({ default: m.FireHead })));
+const MossGrow = lazy(() => import("./fx/MossGrow.jsx"));
+const FrostIce = lazy(() => import("./fx/FrostIce.jsx"));
+const CardIonStorm = lazy(() => import("./fx/CardIonStorm.jsx"));
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
@@ -144,12 +149,22 @@ const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher",
 const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
   desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
 
+/* #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): IMMER aktiv, kein Kauf — es gibt nur die Farbwahl Standard ↔
+   Deckfarbe. Zwei synthetische Kacheln (einfach-exklusiv über options.archColor), beide zeigen denselben 4-Karten-
+   Showcase (jeweils im maximalen Status), in der jeweiligen Farbe. */
+const SPEZIAL_STANDARD = { key: "standard", name: "Standard", group: "spezial", alwaysOwned: true, preview: "spezial",
+  desc: "Die vier Archetyp-Effekte (Hitze · Moos · Blitz · Eis) in ihrer festen Neon-Standardfarbe. Immer aktiv." };
+const SPEZIAL_DECK = { key: "deck", name: "Deckfarbe", group: "spezial", alwaysOwned: true, preview: "spezial",
+  desc: "Die vier Archetyp-Effekte in der Farbe deines aktiven Decks (Verlauf) statt der festen Neon-Palette. Immer aktiv." };
+
 // Effekt-Gruppen des „Effekte"-Tabs. mode: "toggle" (frei kombinierbar) | "finisher" (Einfachauswahl, exklusiv,
 // inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
 const FX_GROUPS = [
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots (beide gleichzeitig aktivierbar) + Sieg-Finisher.
   // #318: Karten-Animationen sind wieder aktiv (Pixi-Overlay über den Karten, frei kombinierbare Dauer-Layer).
   // Gottgleich-Prunk bleibt vorerst DEAKTIVIERT (Tab entfernt); die Effekte bleiben im Code.
+  // #spezial: Archetyp-Effekte (Hitze/Moos/Blitz/Eis) — immer aktiv, nur Farbwahl Standard ↔ Deckfarbe. Ganz oben.
+  { key: "spezial",  title: "Spezial · Archetyp-Effekte", hint: "immer aktiv · Standard oder Deckfarbe", mode: "spezial" },
   { key: "anim",     title: "Karten-Animationen",   hint: "frei kombinierbar", mode: "toggle" }, // #318 Edge-Glow … (Overlay über den Karten)
   { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
   { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
@@ -170,6 +185,7 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxGroupItems = (group) => {
   const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
+  if (group === "spezial") return [SPEZIAL_STANDARD, SPEZIAL_DECK]; // #spezial: nur Farbwahl (kein Kauf, immer aktiv)
   if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch · Hologrid-Slice · Schwarzes Loch
   if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
   if (group === "anim") return [ANIM_NONE, ...list]; // #318 „Keine Animation" (Aus-Zustand) voran
@@ -185,6 +201,8 @@ const fxGroupItems = (group) => {
    #farbsystem/#klinge-kaufbar: „klinge" gilt nur, wenn Klinge auch im Besitz ist — sonst zurück auf „standard" (die
    Klinge-Auswahl ohne Kauf würde sonst im Spiel trotzdem rendern). Ohne Profil (reine Options-Sicht) ungegated. */
 const finisherFlags = (key) => ({ finisher: key === "none" ? "standard" : key });
+// #spezial: Farbwahl der Archetyp-Effekte — einfach-exklusiv über options.archColor ("standard" | "deck").
+const spezialFlags = (key) => ({ archColor: key === "deck" ? "deck" : "standard" });
 const finisherSelOf = (options, profile) => {
   const sel = options?.finisher || "standard";
   if (sel === "klinge" && profile && !globalFxOwned(profile, KLINGE)) return "standard";
@@ -517,6 +535,47 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
   );
 }
 
+/* #spezial 4-Karten-Showcase: die vier Archetyp-Effekte (Hitze/Moos/Blitz/Eis) nebeneinander, jeweils im MAXIMALEN
+   Status, in der gewählten Farbe (Standard-Neon ODER Deckfarbe-Beispiel-Verlauf). Moos/Eis/Blitz hängen als Kartenkind
+   in ihrer Karte; die Hitze (FireHead) liegt als Panel-Overlay über der ersten Karte (Flammen loder in den Freiraum). */
+const SPEZIAL_DECK_A = "#2ff0ff", SPEZIAL_DECK_B = "#ff2d9b"; // Deckfarbe-Beispiel (Verlauf) für die Vorschau
+function SpezialScene({ deckTint = false }) {
+  const panelRef = useRef(null);
+  const fireCardRef = useRef(null);
+  const bf = battlefieldAssets(SHOWCASE_BF);
+  const DC = SPEZIAL_DECK_A, DC2 = SPEZIAL_DECK_B;
+  const CARDS = [
+    { key: "hitze", label: "Hitze", ref: fireCardRef, fx: null },
+    { key: "moos", label: "Moos", ref: null, fx: <MossGrow growth={8} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
+    { key: "blitz", label: "Blitz", ref: null, fx: <CardIonStorm active color={deckTint ? DC : "#5ec8f0"} /> },
+    { key: "eis", label: "Eis", ref: null, fx: <FrostIce mass={12} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
+  ];
+  return (
+    <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: deckTint ? 0.28 : 0.6 }} />}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10cc,#0c0c1055 45%,#0c0c10dd)" }} />
+      {/* #spezial: im Deckfarbe-Modus bekommt der Showcase einen zur Deckfarbe passenden Hintergrund (Deck-Verlauf-Glow:
+          unten deckColor2, oben deckColor) → die Bühne fühlt sich zur gewählten Farbe stimmig an. */}
+      {deckTint && <div className="absolute inset-0" style={{ background: `radial-gradient(135% 100% at 50% 116%, ${DC2}55, transparent 60%), radial-gradient(120% 80% at 50% -14%, ${DC}44, transparent 55%)` }} />}
+      <div className="absolute inset-0 flex items-end justify-center gap-1.5 px-2" style={{ paddingBottom: "11%" }}>
+        {CARDS.map((c) => (
+          <div key={c.key} className="relative flex flex-col items-center gap-1" style={{ height: "60%" }}>
+            <div ref={c.ref || undefined} className="relative rounded-md overflow-visible"
+              style={{ height: "100%", aspectRatio: CARD_RATIO, background: "linear-gradient(180deg,#26304a,#141a28)", boxShadow: "0 2px 9px #000a" }}>
+              <div className="absolute inset-0 flex items-center justify-center" style={{ color: "#dde6f5", fontWeight: 800, fontSize: "clamp(13px,3vw,20px)" }}>7</div>
+              {c.fx && <Suspense fallback={null}>{c.fx}</Suspense>}
+            </div>
+            <span className="text-[9px] font-extrabold uppercase tracking-wide" style={{ color: "#cbd3ff" }}>{c.label}</span>
+          </div>
+        ))}
+      </div>
+      {/* Hitze = FireHead (Panel-Overlay über der ersten Karte); Flammen loder nach oben in den Freiraum über den Karten. */}
+      <Suspense fallback={null}><FireHead heat={1} panelRef={panelRef} cardRef={fireCardRef} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /></Suspense>
+      <span className="absolute right-2 bottom-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Standard"}</span>
+    </div>
+  );
+}
+
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }) {
@@ -530,6 +589,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={PREVIEW_LOOK.klinge} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={PREVIEW_LOOK.scorch} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={PREVIEW_LOOK.hologrid} />; // #321 Hologrid-Slice-Finisher (Pixi)
+  if (fx.preview === "spezial") return <SpezialScene deckTint={fx.key === "deck"} />; // #spezial 4-Karten-Showcase (Hitze/Moos/Blitz/Eis) — Farbmodus aus dem Tile-Key
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
   // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
@@ -925,7 +985,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 // #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
-const TAB_LABEL = { anim: "Karten", bgfx: "Feld", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
+const TAB_LABEL = { spezial: "Spezial", anim: "Karten", bgfx: "Feld", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
 const FX_SHORT = {
@@ -947,6 +1007,7 @@ const FX_SHORT = {
 };
 function shortDesc(fx, group) {
   if (fx.key === "none") return group.mode === "anim" ? "Alle Karten-Animationen aus." : "Kein Effekt in diesem Slot.";
+  if (group.mode === "spezial") return fx.key === "deck" ? "Hitze · Moos · Blitz · Eis in der Deckfarbe." : "Hitze · Moos · Blitz · Eis in der Standard-Neonfarbe."; // #spezial (vor „standard"-Kollision)
   if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
   if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
   return FX_SHORT[fx.key] || fx.desc;
@@ -957,7 +1018,8 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const bgFxSel = bgFxSelOf(options);
   const bgFinSel = bgFinSelOf(options);
   const gottSel = gottSelOf(options); // #322 aktiver Gottgleich-Prunk oder „gottStandard" (kein Prunk)
-  const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : null;
+  const spezialSel = options?.archColor === "deck" ? "deck" : "standard"; // #spezial Farbwahl der Archetyp-Effekte
+  const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : g.mode === "spezial" ? spezialSel : null;
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
@@ -969,6 +1031,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     : g.mode === "bgfx" ? bgFxSel === fx.key
     : g.mode === "bgfin" ? bgFinSel === fx.key
     : g.mode === "gott" ? gottSel === fx.key   // #322 Gottgleich-Prunk einfach-exklusiv (gottStandard = kein Prunk)
+    : g.mode === "spezial" ? spezialSel === fx.key   // #spezial Standard ↔ Deckfarbe (einfach-exklusiv, immer eins aktiv)
     : fx.key === "none" ? !animAnyOn(options)   // #318 „Keine Animation" aktiv, solange keine Karten-Animation an ist
     : fx.standard ? false : !!options?.[fx.option];
 
@@ -988,6 +1051,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
     else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
     else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
+    else if (g.mode === "spezial") onChoose(spezialFlags(fx.key)); // immer aktiv → wählt (kein Aus-Zustand)
     else if (fx.key === "none") onChoose(animNoneFlags());
     else onChoose({ [fx.option]: !on });
   };
@@ -1131,6 +1195,9 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         </div>
       </div>
     );
+  } else if (group.mode === "spezial") {
+    // #spezial: Archetyp-Effekte sind immer aktiv — nur die Farbwahl Standard ↔ Deckfarbe (einfach-exklusiv über archColor).
+    action = <button onClick={() => onChoose(spezialFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "deck" ? "Deckfarbe wählen" : "Standard wählen")}</button>;
   } else if (group.key === "anim" && fx.key === "none") {
     // #318 „Keine Animation" (Aus-Zustand der Karten-Animationen): schaltet alle Karten-Animationen ab.
     action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;

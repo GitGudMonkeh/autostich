@@ -78,25 +78,26 @@ function getField() {
 }
 
 // ── Moos-Bitmap je Reifestufe: MODUL-WEIT gecacht (renderMossBitmap ≤ einmal pro Stufe pro Session) ──
-const _bmpCache = new Map();  // key `${RDPR}:${covKey}` → { moss, glow }
-function getMossBitmap(cov) {
+const _bmpCache = new Map();  // key `${RDPR}:${covKey}:${nA}:${nB}` → { moss, glow }
+function getMossBitmap(cov, nA, nB) {
   const RDPR = Math.min(2, window.devicePixelRatio || 1);
-  const key = RDPR + ":" + Math.round(cov * 1000);
+  const key = RDPR + ":" + Math.round(cov * 1000) + ":" + nA + ":" + nB;   // Farbmodus (Standard/Deckfarbe) im Key
   let e = _bmpCache.get(key);
   if (e) return e;
-  e = renderMossBitmap(cov, getField(), RDPR);
+  e = renderMossBitmap(cov, getField(), RDPR, nA, nB);
   _bmpCache.set(key, e);
   return e;
 }
 
-function renderMossBitmap(g, field, RDPR) {
+// nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
+function renderMossBitmap(g, field, RDPR, nA, nB) {
   const moss = document.createElement("canvas"), mctx = moss.getContext("2d");
   const glow = document.createElement("canvas"), gctx = glow.getContext("2d");
   moss.width = Math.round((REF_W + 2 * M) * RDPR); moss.height = Math.round((REF_H + 2 * M) * RDPR);
   glow.width = moss.width; glow.height = moss.height;
 
   const nang = TUNE.NEON_ANGLE * Math.PI / 180, axc = Math.cos(nang), axs = Math.sin(nang);
-  const cNA = hexRGB(TUNE.NEON_A), cNB = hexRGB(TUNE.NEON_B);
+  const cNA = hexRGB(nA), cNB = hexRGB(nB);
   const cDark = hexRGB(TUNE.MOSS_DARK), cMid = hexRGB(TUNE.MOSS_MID), cTip = hexRGB(TUNE.MOSS_TIP), cSpo = hexRGB(TUNE.SPORO_COLOR);
   const cTipHi = clampRGB(mix(cTip, { r: 255, g: 255, b: 230 }, 0.55));
   const cDark0 = { r: 0, g: 0, b: 0 };
@@ -191,8 +192,11 @@ function renderMossBitmap(g, field, RDPR) {
 /* MossGrow — KIND der Kartenvorderseite. Füllt seinen Container (die Karte); zeichnet das (gecachte) Moos-Bitmap
    proportional auf die Kartenbox inkl. Überwuchs-Rand. Statisch → neu gezeichnet nur bei Wachstums-/Größen-Wechsel.
    Alle Karten-Bewegungen (Flip/Deal/Wegflug/Ankippen/Deckkraft) erledigt CSS, weil das Moos IN der Karte hängt. */
-export function MossGrow({ growth = 0 }) {
+export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckColor2 = null }) {
   const hostRef = useRef(null);
+  // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 als Bühnenlicht.
+  const nA = deckTint && deckColor ? deckColor : TUNE.NEON_A;
+  const nB = deckTint && deckColor ? (deckColor2 || deckColor) : TUNE.NEON_B;
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -215,7 +219,7 @@ export function MossGrow({ growth = 0 }) {
       canvas.style.left = (-mLeft) + "px"; canvas.style.top = (-mTop) + "px";
       canvas.style.width = cwF + "px"; canvas.style.height = chF + "px";
       canvas.width = Math.max(1, Math.round(cwF * DPR)); canvas.height = Math.max(1, Math.round(chF * DPR));
-      const { moss, glow } = getMossBitmap(cov);
+      const { moss, glow } = getMossBitmap(cov, nA, nB);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.clearRect(0, 0, cwF, chF);
       const growX = M * TUNE.OVERHANG * sx, growY = M * TUNE.OVERHANG * sy, grow = Math.min(growX, growY);
@@ -235,7 +239,7 @@ export function MossGrow({ growth = 0 }) {
     let ro = null;
     try { ro = new ResizeObserver(() => draw()); ro.observe(host); } catch { /* ignore */ }
     return () => { disposed = true; if (ro) ro.disconnect(); try { host.removeChild(canvas); } catch { /* ignore */ } };
-  }, [growth]);
+  }, [growth, nA, nB]);
 
   // Füllt die Kartenvorderseite; overflow:visible lässt den Überwuchs-Rand über die Karte hinausragen. z-2 = über dem
   // Karten-Skin, unter der großen Wert-Zahl (die die Karte im Card-Overlay trägt) — Moos „überwächst" die Kartenfläche.

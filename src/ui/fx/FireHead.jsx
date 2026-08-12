@@ -35,7 +35,8 @@ const zeroPhase = () => ({ ...PH[20], FLAME_RATE: 0, GLOW_ALPHA: 0, SMOKE: 0 });
 // ROT glühend. Die Phasen (20/50/80/100) steuern weiterhin nur Intensität (Rate/Höhe/Größe/Rauch), NICHT die Farbe.
 // Weiß entsteht (wie bei der Seide) allein aus der additiven Überlappung vieler Partikel, nicht aus einem weißen Tint.
 const NEON_BOT = hexRGB("#2f6bff"), NEON_MID = hexRGB("#ff2ea0"), NEON_TOP = hexRGB("#ff4a2a");
-const neonAt = (hf) => { const h = hf < 0 ? 0 : hf > 1 ? 1 : hf; return h < 0.5 ? lerpRGB(NEON_BOT, NEON_MID, h / 0.5) : lerpRGB(NEON_MID, NEON_TOP, (h - 0.5) / 0.5); };
+// Vertikaler Verlauf über die Flammenhöhe — Palette (bot/mid/top) kommt von außen: Standard-Neon ODER Deckfarben.
+const neonAt = (hf, bot, mid, top) => { const h = hf < 0 ? 0 : hf > 1 ? 1 : hf; return h < 0.5 ? lerpRGB(bot, mid, h / 0.5) : lerpRGB(mid, top, (h - 0.5) / 0.5); };
 
 // Interpolierte Parameter bei Hitze h (0..1).
 function paramsAt(h) {
@@ -70,12 +71,16 @@ function makeVGrad() {
   return Texture.from(c);
 }
 
-export function FireHead({ heat = 0, panelRef, cardRef }) {
+export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckColor = null, deckColor2 = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const applyRunRef = useRef(null);
-  const stateRef = useRef({ heat });
-  stateRef.current = { heat };
+  // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 (Mitte = Mix) als vertikaler Verlauf.
+  const palBot = deckTint && deckColor ? hexRGB(deckColor) : NEON_BOT;
+  const palTop = deckTint && deckColor ? hexRGB(deckColor2 || deckColor) : NEON_TOP;
+  const palMid = deckTint && deckColor ? lerpRGB(palBot, palTop, 0.5) : NEON_MID;
+  const stateRef = useRef({ heat, palBot, palMid, palTop });
+  stateRef.current = { heat, palBot, palMid, palTop };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -124,7 +129,8 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
 
       // ── Brennlinie am oberen Rand (verankert das Feuer) ──
       const baseF = Math.min(1.2, C.FLAME_RATE / 210), bucket = Math.floor(clock / 60);
-      const baseTint = rgbInt(neonAt(0.06)); // #neon: Brennlinie am Fuß = unteres Verlaufs-Ende (blau)
+      const pal = stateRef.current;
+      const baseTint = rgbInt(neonAt(0.06, pal.palBot, pal.palMid, pal.palTop)); // #neon: Brennlinie am Fuß = unteres Verlaufs-Ende
       for (let i = 0; i < BASE_N; i++) {
         const s = baseSpr[i];
         if (baseF <= 0.02) { s.alpha = 0; continue; }
@@ -159,7 +165,7 @@ export function FireHead({ heat = 0, panelRef, cardRef }) {
         // blau → Mitte magenta → oben rot glühend. Kein weißer Tint — der heiße weiße Kern entsteht (wie bei der Seide)
         // von SELBST aus der additiven Überlagerung vieler Partikel, nicht aus einem weißen Einzel-Tint.
         const hf = age / s.life; // 0 an der Basis (jung) → 1 an der Spitze (alt)
-        p.tint = rgbInt(neonAt(hf)); p.alpha = k * k * 0.5;
+        p.tint = rgbInt(neonAt(hf, pal.palBot, pal.palMid, pal.palTop)); p.alpha = k * k * 0.5;
       }
 
       // ── Rauch (über den Flammen) ──
