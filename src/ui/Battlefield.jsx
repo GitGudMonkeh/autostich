@@ -35,6 +35,7 @@ const ICE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) 
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
 // (Render-Branch mountet nur bei gottTrigger>0) → Prod-Bundle bleibt Pixi-frei, bis der Effekt wirklich spielt.
+import { GottChromeWord } from "./fx/GottChromeWord.jsx"; // #gott geteilte Chrome-Wortmarke (In-Game-Ansage + Shop-Vorschau)
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
 const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx")); // #323 Gottgleich-Prunk „Laser-Fächer"
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx")); // #324 Gottgleich-Prunk „Prisma-Kaskade"
@@ -1439,43 +1440,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // #gott: Synthwave-Chrome-Ansage (geteilter Look für GOTTGLEICH/Lawine/Gönn dir). Chrome-Verlauf (Weiß →
           // Akzent oben → dunkle Horizontlinie → Weiß → Akzent unten), Neon-Glow im Akzent, Sheen-Sweep über die
           // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
-          const accTop = b.tier.color || "#8fe0ff";
-          const accBot = b.tier.color || "#ff5db1";
-          const glowC  = b.tier.color || "#ff3da1";
-          const gid = `gc-${b.id}`, mid = `gm-${b.id}`;
           return b.tier.epic ? (
-            <svg key={b.id} aria-hidden="true" className="pointer-events-none absolute" viewBox="0 0 1000 210" preserveAspectRatio="xMidYMid meet"
+            // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
+            <GottChromeWord key={b.id} text={b.tier.text} color={b.tier.color || null} gBig={gBig} gMid={gMid} reduced={reduced}
+              sheen={reduced ? "off" : "once"} idKey={b.id}
               style={{ left: "50%", top: "50%", width: "72%", zIndex: 31,
-                       filter: `drop-shadow(0 0 ${gBig}px ${glowC}) drop-shadow(0 0 ${gMid}px ${glowC}) drop-shadow(0 3px 8px rgba(0,0,0,0.6))`,
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
-                       animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
-              <defs>
-                <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#ffffff" />
-                  <stop offset="0.42" stopColor={accTop} />
-                  <stop offset="0.5" stopColor="#20103a" />
-                  <stop offset="0.58" stopColor="#ffffff" />
-                  <stop offset="1" stopColor={accBot} />
-                </linearGradient>
-                <mask id={mid}>
-                  <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
-                    style={{ fontSize: "200px", fontWeight: 900, fill: "#fff", fontStyle: "italic", letterSpacing: "2px" }}>
-                    {b.tier.text.toUpperCase()}
-                  </text>
-                </mask>
-              </defs>
-              <text x="500" y="170" textAnchor="middle" textLength="984" lengthAdjust="spacingAndGlyphs"
-                style={{ fontSize: "200px", fontWeight: 900, fill: `url(#${gid})`, stroke: "#0a0820", strokeWidth: "3px", paintOrder: "stroke", fontStyle: "italic", letterSpacing: "2px" }}>
-                {b.tier.text.toUpperCase()}
-              </text>
-              {!reduced && (
-                <g mask={`url(#${mid})`}>
-                  <rect x="-260" y="0" width="200" height="210" fill="#ffffff" opacity="0.5">
-                    <animate attributeName="x" from="-260" to="1000" dur="0.95s" begin="0.12s" fill="freeze" />
-                  </rect>
-                </g>
-              )}
-            </svg>
+                       animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }} />
           ) : (
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
             style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,

@@ -17,6 +17,7 @@ const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default
 // #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne über der Vorschau-Karte (Edge-Glow …), lazy wie PixiStage.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — Vorschau lazy wie die anderen Pixi-Effekte (Pixi lädt erst, wenn der gott-Preview rendert).
+import { GottChromeWord } from "./fx/GottChromeWord.jsx"; // #gott geteilte Chrome-Wortmarke (gleicher Stil wie In-Game)
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
 const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx"));
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx"));
@@ -362,6 +363,10 @@ function GottScene({ Fx, deckTint = false, label = "Gottgleich", tint = "#ff8fc4
       <Suspense fallback={null}>
         <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" />
       </Suspense>
+      {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game (oberste Ebene über dem Prunk), damit die
+          Vorschau den vollen Sieg-Moment zeigt. Endlos-Sheen (loop), oben platziert → der Effekt bleibt sichtbar. */}
+      <GottChromeWord text="Gottgleich" gBig={13} gMid={7} sheen="loop" idKey="showcase"
+        style={{ left: "50%", top: "7%", width: "88%", transform: "translateX(-50%)", zIndex: 20 }} />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: tint }}>
         <span className="opacity-70">Prunk</span> {label}

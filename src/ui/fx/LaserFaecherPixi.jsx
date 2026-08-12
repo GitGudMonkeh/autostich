@@ -12,9 +12,10 @@ import { Application, Graphics, Sprite, Texture } from "pixi.js";
 
 const TUNE = {
   LIFE: 1, RISE: 0.05, FADE: 0.37, POP: 2.15,
-  SPOKES: 48, SPREAD: 1, RAY_W: 0.11, LEN: 1.6, ALT: 0.55, ORIGIN_Y: 0.59, SIZE_MIN: 0.65,
+  // #tuning: RAY_W von 0.11 → 0.05 (Strahlen waren zu breit) + BEAM 1.4 → 1.0 (weniger overtuned/Blowout im Zentrum).
+  SPOKES: 48, SPREAD: 1, RAY_W: 0.05, LEN: 1.6, ALT: 0.55, ORIGIN_Y: 0.59, SIZE_MIN: 0.65,
   SPIN: 0.1, OPEN: 1,
-  CORE: 1.7, GLOW: 1, BEAM: 1.4, FLICKER: 0.8,
+  CORE: 1.7, GLOW: 1, BEAM: 1.0, FLICKER: 0.8,
   BRIGHT: 1, SCAN: 0,
   TAIL: 0.2,
 };
