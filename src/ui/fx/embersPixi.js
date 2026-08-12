@@ -48,11 +48,14 @@ const TUNE = {
   P_FAR_Y: 0.75, P_NEAR_Y: 0.95, P_FAR_HALF: 0.23, P_NEAR_HALF: 0.40, P_DEPTH_MIN: 0.69,
   // #ambiente: kontinuierlich sanft aufsteigende Glut („schwebende Glutpartikel steigen langsam auf" — Effekt-Text).
   // Läuft IMMER (auch Mobile/„ausgewogen"=lite), NUR bei „minimal"/reduced aus → so ist Glutfunken auf dem Handy
-  // überhaupt sichtbar (die per-Stich-Fontänen sind auf lite aus). Sehr billig (niedrige Rate, kein Bounce).
+  // überhaupt sichtbar. Die per-Stich-Fontänen laufen auf lite ebenfalls (mit reduzierter Partikelzahl, LITE_EMIT). Sehr billig (niedrige Rate, kein Bounce).
   AMB_RATE: 18,       // Ambiente-Partikel pro Sekunde (gesamt über das Feld), skaliert leicht mit dem Score-Tier
   AMB_RISE: 82,       // Aufstiegsgeschwindigkeit px/s bei HREF (langsam schwebend)
   AMB_LIFE: 2.1,      // Basis-Lebenszeit (s) → hohe, ruhige Bögen
   AMB_SZ: 0.85,       // Footprint-Faktor (kleiner als die Fontänen-Glut)
+  // #: In „ausgewogen" (lite) laufen die per-Stich-Fontänen jetzt AUCH (Nutzer-Wunsch), aber mit reduzierter
+  // Partikelzahl — dieser Faktor drückt die Ausstoßrate (wie das Turbo-Budget fx), NICHT Höhe/Choreografie.
+  LITE_EMIT: 0.5,
 };
 
 // Farb-Modus der Glut: „Standard" = warmes Feuer, unabhängig von der Deckfarbe · „Deckfarbe" = deck-getönt.
@@ -223,8 +226,9 @@ export function createEmberField(app) {
   }
 
   function erupt({ sweepId, sweepDur, win, score, tier = 0 }) {
-    // NUR bei gewonnenen Stichen feuern (nicht bei jedem Stich). Auch aus in „ausgewogen"/„minimal".
-    if (params.effect !== "embers" || params.lite || params.reduced || !(sweepId > 0) || !win) return;
+    // NUR bei gewonnenen Stichen feuern (nicht bei jedem Stich). In „ausgewogen" (lite) laufen die Fontänen jetzt
+    // mit (nur mit reduzierter Partikelzahl via LITE_EMIT weiter unten); nur bei „minimal"/reduced ganz aus.
+    if (params.effect !== "embers" || params.reduced || !(sweepId > 0) || !win) return;
     const stufe = emberStufe(score);
     const t = clamp(tier | 0, 0, 4);
     // #319b: zufällige TIEFE auf der perspektivischen Boden-Fläche → Fontänen an verschiedenen Stellen (x + vorn/hinten),
@@ -236,7 +240,7 @@ export function createEmberField(app) {
     // #perf E: Emissions-Budget an den Turbo koppeln (analog Battlefield fxScale) — schneller Takt → weniger Partikel je
     // Fontäne → billigerer Ticker/Draw (weniger lebende Partikel). sweepDur ≈ flipMs: bei 1× (~1750) = 1 (unverändert),
     // bei MAX (~290) ~0,45. Wirkt nur auf die Ausstoßrate (acc/flAcc im Ticker), nicht auf Choreografie/Höhe.
-    const fx = clamp((sweepDur || 900) / 875, 0.45, 1);
+    const fx = clamp((sweepDur || 900) / 875, 0.45, 1) * (params.lite ? TUNE.LITE_EMIT : 1); // lite → weniger Partikel je Fontäne
     if (t >= 1) {
       // ab „Stark": große, gebündelte Fontäne — bleibt MITTIG (x=0,5), erscheint aber an zufälliger Tiefe (vorn..hinten).
       vents.push({ x: 0.5, side: 0, ny, ds, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true, fx });
