@@ -328,7 +328,8 @@ function ScorchScene({ deckTint = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
-        value={8} suit={suitColor(DEMO_SUIT)} deckColor="#35e0ff" speed={1.15} />
+        value={8} suit={suitColor(DEMO_SUIT)} deckColor="#35e0ff" speed={1.15}
+        onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? "#8fd8ff" : "#ffb27a" }}>
         <span className="opacity-70">Finisher</span> Scorch

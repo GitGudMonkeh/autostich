@@ -95,11 +95,11 @@ function buildCardCanvas(w, h, opts) {
 }
 
 export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = null, value = null, suit = "#e0605a",
-  deckColor = "#35e0ff", deckTint = false, reduced = false, lite = false, loop = false, speed = 1, onDone = null }) {
+  deckColor = "#35e0ff", deckTint = false, reduced = false, lite = false, loop = false, speed = 1, onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln.
-  const p = useRef({ frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone });
-  p.current = { frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone };
+  const p = useRef({ frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  p.current = { frontImage, value, suit, deckColor, deckTint, reduced, lite, loop, speed, onDone, onFire };
   const imgRef = useRef(null);
 
   // Bild (Deck-Skin) vorladen — im Spiel ist es i. d. R. schon im Cache (die Karte liegt bereits im DOM).
@@ -168,6 +168,8 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       emberPal = new Array(EPN); for (let i = 0; i < EPN; i++) emberPal[i] = esprite(emberCol(i / (EPN - 1), dm, dr));
       ashSpr = sprite(toHex(ASH_COL));
       embers = []; ash = []; sparks = []; burning = true; bt = 0; done = false; lastBurnT = -1;
+      // #319 Sound genau zum Effekt-Start (Laser-Einschlag) — der Aufrufer spielt ihn mit rate=speed → getimt zum Turbo.
+      p.current.onFire && p.current.onFire();
     }
 
     const inCardIdx = (i) => cardData && cardData[i * 4 + 3] > 12;

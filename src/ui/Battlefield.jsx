@@ -688,6 +688,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // langsamer als die Flips und der Throttle übersprang Stiche = „nicht synchron".) Weite Klammern binden praktisch nie.
   // Da die Feld-Effekte einfach-exklusiv sind, treibt EIN sweepId alle (nur einer aktiv).
   const sweepDur = clamp(flipMs, 150, 1800);
+  // #319 Scorch-Tempo = Turbo-Faktor (BASE_FLIP_MS/flipMs, 1..8) — treibt Animation UND Sound-rate, damit Laser/Burn
+  // bei 1×/2×/4×/MAX gleich getimt bleiben.
+  const scorchSpeed = Math.max(1, Math.min(8, BASE_FLIP_MS / Math.max(1, flipMs)));
   const [sweepId, setSweepId] = useState(0);
   const lastSweepAt = useRef(-1e9);
   const trickNo = lastTrick ? lastTrick.trickNo : null;
@@ -1200,7 +1203,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <ScorchFx key={`scorch${t.trickNo}`} trigger={t.trickNo} panelRef={panelRef} cardRef={oppCardRef}
           frontImage={oppFrontImg} value={t.oValue} suit={suitColor(t.oCard.suit)}
           deckColor={deckA1 || "#ff6a30"} deckTint={scorchDeck} reduced={reduced} lite={lite}
-          speed={Math.max(1, Math.min(8, BASE_FLIP_MS / Math.max(1, flipMs)))} />
+          speed={scorchSpeed}
+          /* #319 Sound (Laser+Burn) genau zum Effekt-Start; rate = Turbo-Speed → Laser/Scorch bleiben bei 2×/4×/MAX getimt. Lautstärke wie Klinge (1,05). */
+          onFire={() => audio.play("fx_scorch", { rate: scorchSpeed, gain: 1.05 })} />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
