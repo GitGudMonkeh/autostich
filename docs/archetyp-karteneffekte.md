@@ -158,15 +158,110 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
 - **Status:** ⚪ Noch nicht dran
 
 ### 5.4 Pflanze 🌿 (`plant`) — Glow `#5ab87a`
-- **Status:** ⚪ Noch nicht dran
+
+**Effekt — „Moos-Wuchs" (realistisches Moos, wächst mit dem Wachstum zu)**
+
+- **Was:** **Echtes, realistisches Moos** (bewusst KEIN Comic-Grün) überwächst die Karte. Look entsteht
+  NICHT durch eine grüne Fläche, sondern durch **tausende winzige Härchen (Filamente)** in gedämpften
+  **Oliv-/Waldgrüns**: dunkle **Schatten-Matte** unter den Büscheln (Tiefe/AO), gerichtetes Licht
+  (oben-links) auf den Spitzen, **samtige Körnung** (feine Punkte), **fransiger Wuchsrand** (kein
+  glatter Schnitt) und vereinzelte bräunliche **Sporophyten** (Stängel + Kapsel — das typische
+  Moos-Detail). Optional langsam funkelndes **Tau**.
+- **Wann:** Ein **Wachstum-Wert 0..1** steuert die Abdeckung. Das Moos wächst **von oben & den beiden
+  Seiten** nach **innen/unten** zu. **Akkretion statt Neu-Würfeln:** Jedes Büschel hat ein festes
+  `birthG` (Schwelle); steigt Wachstum, kommen neue Büschel dazu, bestehende **bleiben** und reifen nur
+  nach (`maturity = clamp((g - birthG)/0.22)`). → echtes Zuwachsen, deterministisch (seeded RNG).
+- **Wo:** Auf der eigenen (Pflanze-)Karte, Overlay über der Karte. Halme dürfen oben/seitlich **ein
+  bisschen über die Kartenkante** wachsen (`OVERHANG`, dezent). In-Game analog IonStorm/FireHead auf
+  `playerCardRef`, Gate Preview/Dev.
+- **⚠️ Offen (vom User zu klären):** **Woran hängt „Wachstum" in-game?** Eigene Ressource/Stack auf
+  Pflanze-Karten (analog Ionisierung/Hitze) oder anderer Spiel-Zustand?
+- **Algorithmus (Prototyp Canvas-2D, → Pixi portierbar):**
+  1. **Feld-Aufbau** (`buildField`, seeded `mulberry32`): jittered Grid (Abstand aus `DENSITY`), je
+     Büschel `birthG = clamp( max(fromEdge/maxInward, dTop/maxDown) + RAGGED·(fbm-0.5)·0.7 )`, wobei
+     `maxInward=CW·(0.30+0.55·EDGE_BAND)`, `maxDown=CH·(0.80+0.80·(1-TOP_BIAS))`. Ausrichtung `ang`
+     = überwiegend nach oben, an Seiten leicht nach innen gefächert; zusätzlich `outAng`
+     (Auswärts-Richtung zum nächsten Rand) + `edgeOut` (Rand-Nähe) für Überwuchs, `tuftJit`, `size`
+     (aus `CLUMP`), `hue` (Farbvariation).
+  2. **Render in 3 Pässen** in ein Offscreen-Bitmap mit `M=20`px Rand (Überwuchs), nur neu gezeichnet
+     wenn Wachstum/Parameter sich ändern (Cache): (1) Schatten-Matte, (2) **Härchen** (kurze
+     Quadratic-Curves; Farbe Mitte→Spitze, Richtungslicht, Spitze-heller), (3) Sporophyten. Blit auf
+     die Karte, **Rand vor dem Moos** gezeichnet (Halme wachsen drüber); Clip = leicht **erweitertes**
+     RoundRect (`grow = M·OVERHANG`). **Tau** live additiv über dem Bitmap.
+  3. **Neigung/Streuung:** Halmwinkel `a = ang + TILT + tuftJit·spread·0.6 + (rng-0.5)·spread`,
+     `spread = 0.2 + SPREAD·2.1`. **Überwuchs:** Basis-Origin um `edgeOut·OVERHANG·3.5` nach außen,
+     Länge ×`(1+edgeOut·OVERHANG·0.7)`.
+- **Parameter (`TUNE`, Default-Board-Werte):**
+  ```js
+  const TUNE = {
+    MOSS_DARK: "#24361a", MOSS_MID: "#4a6b2c", MOSS_TIP: "#8aa84e", SPORO_COLOR: "#9a6a34",
+
+    EDGE_BAND: 0.55, TOP_BIAS: 0.6, DENSITY: 0.65, CLUMP: 0.5, RAGGED: 0.5, OVERHANG: 0.35,
+
+    FILA_PER: 10, FILA_LEN: 6, FILA_THICK: 1.2, TILT: 0, SPREAD: 0.55, TIP_LIGHT: 0.5, SPECK: 0.5,
+
+    SPOROPHYTE: 0.35, SHADOW: 0.6, DEW: 0.4,
+  };
+  ```
+  (Wachstum selbst ist **Zustand**, kein TUNE-Wert.)
+- **Reduced/Mobile:** Moos ist **statisch** (Bitmap-Cache) → günstig; nur Tau animiert (abschaltbar via
+  `DEW=0`). In-Game reduced → Tau aus, evtl. `DENSITY`/`FILA_PER` gedeckelt.
+- **Prototyp:** `docs/prototypes/moos-tuning.html` (self-contained Canvas-2D-Tuning-Board mit
+  Wachstums-Slider, Auto-Wachsen, allen Reglern, kopierbarem TUNE-Block, Zoom). Look vom User als
+  „pretty genius" abgesegnet; TILT/SPREAD/OVERHANG auf Wunsch ergänzt.
+- **Umsetzung (offen):** `src/ui/fx/MossGrow.jsx` (Pixi: Filamente als Sprites/`ParticleContainer` bzw.
+  in eine `RenderTexture` gebacken + geblittet; Akkretion über `birthG`-Schwelle). Wachstums-Quelle
+  verdrahten sobald Spiel-Zustand geklärt.
+- **Status:** 🟡 **Look/Board abgesegnet & als Design gesichert** — Pixi-Umsetzung + Wachstums-Quelle
+  offen. **Nicht gepusht** (nur lokal committet).
+
+### 5.5 Extra — „Regen & Pool" (Wasser, Prototyp) 💧
+
+- **Was:** Realistischer **Regen**, der sich am Boden **poolt**: Regen-Streaks in **Tiefen-Ebenen**
+  (nah lang/hell, fern kurz/dunkel), **Aufschlag-Spritzer + Ripple-Ringe** auf der Oberfläche, und ein
+  steigender, leicht transparenter **Wasserkörper** mit welliger Oberfläche, Glanz, Schaumkante &
+  dezenter Spiegelung. **Perspektive/Tiefe (`DEPTH`):** die Wasserfläche kippt von der flachen
+  Seitenansicht auf zu einer **nach hinten in die Szene laufenden Ebene**; Regen schlägt dann über die
+  ganze Tiefe auf (ferne Tropfen weiter hinten/oben).
+- **Wann/Wo:** **Noch offen** — welcher Archetyp/Trigger (naheliegend **Eis**/Frost-nah oder ein
+  Feld-Effekt) und ob **in der Karte** oder im **Feld darunter**. Füllstand = Zustand, kein TUNE-Wert.
+- **Algorithmus:** Regen-Partikel (depth-layered, `spawnDrop`); Aufschlag → `spawnSplash` +
+  `spawnRipple`; Wasserkörper = Front-Wand (vertikale Säule, Gradient SURF→DEEP) + Oberflächen-Plane
+  (Band zwischen `frontY`/`backY`, `backBase = waterTop - span`, `span = DEPTH·CH·0.5`); Ripple-Ringe
+  als Ellipsen mit Foreshortening `ratio = 0.12 + 0.5·DEPTH`; Reflexions-Säulen additiv; Glanz/Schaum
+  an der vorderen Wasserlinie. Alles auf Karten-RoundRect geclippt.
+- **Parameter (`TUNE`, Default-Board-Werte):**
+  ```js
+  const TUNE = {
+    RAIN_COLOR: "#bcd8ee", DEEP: "#0b3550", SURF: "#57b8e0",
+
+    RAIN_RATE: 420, RAIN_SPEED: 900, RAIN_ANGLE: 0.14, RAIN_LEN: 20, RAIN_THICK: 1.4, RAIN_ALPHA: 0.5,
+
+    SPLASH: 6, SPLASH_SIZE: 1.6, RIPPLE_LIFE: 900, RIPPLE_MAXR: 26, RIPPLE_ALPHA: 0.5,
+
+    DEPTH: 0.35, W_OPACITY: 0.62, WAVE_AMP: 3.5, WAVE_SPEED: 1.0, SURF_GLINT: 0.6, REFLECT: 0.4, FOAM: 0.5,
+  };
+  ```
+- **Prototyp:** `docs/prototypes/wasser-tuning.html` (Canvas-2D-Tuning-Board, Füllstand + Tiefe/3D +
+  alle Regler, kopierbarer TUNE-Block). → Pixi-Ziel `src/ui/fx/RainPool.jsx`.
+- **Status:** 🟡 **Prototyp/Look gesichert** — Platzierung (Archetyp/Trigger, Karte vs. Feld) + Pixi
+  offen. **Nicht gepusht.**
 
 ---
 
 ## 6. Entscheidungs-Log
 - 2026-08-11 · Doc angelegt; Referenz-Deck = Prisma; Reihenfolge startet mit Blitz; alles in Pixi.
+- 2026-08-11 · Blitz „Ionensturm-Rahmen" & Feuer „Brennender Kartenkopf" gebaut/abgesegnet (Preview/Dev).
+- 2026-08-12 · Pflanze „Moos-Wuchs" Look + Tuning-Board abgesegnet („pretty genius"); Neigung/Streuung/
+  Überwuchs ergänzt. Als Design gesichert (Prototyp-HTML im Repo). **Wachstums-Quelle in-game offen.**
+- 2026-08-12 · Zusätzlich „Regen & Pool" (Wasser) mit Tiefe/3D als Prototyp gesichert; Platzierung offen.
 
 ## 7. Session-Log
 - **2026-08-11:** Codebase sondiert (Fraktionen/Icons, Prisma-Deck, PixiStage-Muster, Finisher-
   Positionierung, Layer-Stack). Doc-Gerüst erstellt. Nächster Schritt: Blitz-Spec vom User.
+- **2026-08-12:** Pflanze-Moos designt & getunt (realistische Filamente, Akkretion via `birthG`,
+  Sporophyten, Neigung/Streuung/Überwuchs). Wasser/Regen-Pool-Prototyp inkl. Perspektive/Tiefe.
+  Beide Prototyp-HTMLs unter `docs/prototypes/` abgelegt, Specs + Default-`TUNE` in §5.4/§5.5.
+  Design-Sicherung (kein Push ohne Freigabe).
 </content>
 </invoke>
