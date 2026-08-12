@@ -19,6 +19,10 @@ button { font-family: inherit; }
 .overlay-root {
   height: 100dvh;
   bottom: auto;
+  /* #314b: auch OBEN die Safe-Area einrechnen — sonst klebt die (sticky) Kopfzeile der Overlays (Upgrades, Deck-
+     Werkstatt, …) bei `black-translucent` unter der iPhone-Statusleiste/Dynamic Island (= „zu weit oben", iOS-Icons
+     im Weg). max(Basis, inset) hält Desktop/Nicht-Notch bei der bisherigen Polsterung und schiebt auf iPhones weg. */
+  padding-top: max(1rem, env(safe-area-inset-top));
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 .overlay-card {
