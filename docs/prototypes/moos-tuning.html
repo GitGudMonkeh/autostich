@@ -1,4 +1,4 @@
-<title>Moos-Wuchs · Pflanze-Vorschau &amp; Tuning</title>
+<title>Moos-Wuchs · Neon-Synthwave · Pflanze-Tuning</title>
 <style>
   :root{
     --bg:#0a1108; --bg2:#060b04; --panel:#111c0d; --panel2:#16240f; --line:#2b3d1f;
@@ -24,7 +24,7 @@
   .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
   @media(max-width:900px){.stagewrap{position:static}}
   .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
-    background:linear-gradient(180deg,#132110,#0a1207); box-shadow:inset 0 0 80px #000a, 0 20px 50px -20px #000c}
+    background:linear-gradient(180deg,#0c0a15,#050409); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
   #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
   .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
   .hud b{color:var(--acc)}
@@ -63,11 +63,13 @@
 </style>
 
 <header>
-  <h1>Moos-Wuchs · Pflanzen-Reifestufen</h1>
-  <div class="sub">Realistisches <b>Moos</b> (echt, kein Comic) überwächst die Karte mit dem <b>Wachstum</b> von <b>oben &amp; den Seiten</b> nach innen/unten — bestehendes Moos bleibt, neues kommt dazu. Der Regler simuliert die <b>Reifestufen aus dem Code</b>: ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>) gilt die Karte als <b>grün = reif = 100 %</b>; Stufe 1–7 = <b>Setzling</b>, 0 = kein Wachstum (+1 Wachstum je Sieg bei vollem Pflanze-Fokus). Bei <b>Stufe 8</b> stehen die abgesegneten Werte. (Prototyp Canvas-2D; In-Game → Pixi.)</div>
+  <h1>Moos-Wuchs · Neon-Synthwave</h1>
+  <div class="sub">Realistisches <b>Moos</b> (echt, kein Comic) überwächst die Karte mit dem <b>Wachstum</b> von <b>oben &amp; den Seiten</b> nach innen/unten — bestehendes Moos bleibt, neues kommt dazu. Zwei gegenüberliegende <b>Neon-Bühnenlichter</b> (Cyan/Magenta, Prisma-Deck) strahlen es an: <b>Kanten-Säume</b>, weiche <b>Bloom-Aura</b> und <b>Bühnen-Glow</b> — das Grün bleibt echt, wird nur beleuchtet. Der Regler simuliert die <b>Reifestufen aus dem Code</b>: ab <b>Wachstum 8</b> (<code>PLANT_GREEN_THRESHOLD</code>) gilt die Karte als <b>grün = reif = 100 %</b>; Stufe 1–7 = <b>Setzling</b>, 0 = kein Wachstum (+1 Wachstum je Sieg bei vollem Pflanze-Fokus). Bei <b>Stufe 8</b> stehen die abgesegneten Werte. (Prototyp Canvas-2D; In-Game → Pixi.)</div>
   <div class="legend">
     <span class="chip"><span class="dot" style="color:#8aa84e"></span> Härchen <b>samtig</b></span>
     <span class="chip"><span class="dot" style="color:var(--acc)"></span> Wuchs <b>oben+Seiten → innen</b></span>
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Neon <b>Licht A</b></span>
+    <span class="chip"><span class="dot" style="color:#ff3ea5"></span> Neon <b>Licht B</b></span>
     <span class="chip"><span class="dot" style="color:#8aa84e"></span> Reif <b>ab Wachstum 8</b></span>
   </div>
 </header>
@@ -103,16 +105,26 @@
   "use strict";
   var TAU=Math.PI*2;
   var DEFAULTS = {
-    MOSS_DARK:"#24361a", MOSS_MID:"#4a6b2c", MOSS_TIP:"#8aa84e", SPORO_COLOR:"#9a6a34",
-    EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:0, RAGGED:1, OVERHANG:1, REIF_COV:0.4,
-    FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.2, TILT:12, SPREAD:0.94, TIP_LIGHT:0, SPECK:0,
+    MOSS_DARK:"#20331a", MOSS_MID:"#4f7530", MOSS_TIP:"#9bc255", SPORO_COLOR:"#9a6a34",
+    NEON_A:"#22e0ff", NEON_B:"#ff3ea5", NEON_ANGLE:24, NEON_RIM:0.62, NEON_TIP:1, NEON_BLOOM:0.18, NEON_BASE:0,
+    EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:1, RAGGED:1, OVERHANG:1, REIF_COV:0.4,
+    FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.35, TILT:12, SPREAD:0.94, TIP_LIGHT:1, SPECK:0,
     SPOROPHYTE:0, SHADOW:0, DEW:0
   };
   var T = Object.assign({}, DEFAULTS);
-  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";};
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";};
   var GROUPS = [
     { title:"Farben", note:"Gedämpfte Oliv-/Waldgrüns wirken realistisch — Schatten (Basis), Mitte, helle Spitzen.", rows:[
       ["MOSS_DARK","Schatten / Basis",0,0,0,null,"color"],["MOSS_MID","Mitte",0,0,0,null,"color"],["MOSS_TIP","Spitzen",0,0,0,null,"color"]
+    ]},
+    { title:"Neon-Synthwave-Licht", note:"Zwei gegenüberliegende Bühnenlichter (A/B) strahlen das echte Moos an — Kanten & Spitzen fangen Neon ein, weiche Bloom-Aura außen, Neon-Grund hinter der Karte. Das Grün bleibt realistisch, wird nur beleuchtet.", rows:[
+      ["NEON_A","Licht A",0,0,0,null,"color"],
+      ["NEON_B","Licht B",0,0,0,null,"color"],
+      ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,"Richtung der A↔B-Achse (0° = A links / B rechts)."],
+      ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,"Wie stark die Neonfarben das ganze Moos einfärben."],
+      ["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,"Helle additive Neon-Säume an Halm-Spitzen & Wuchsrand."],
+      ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,"Weiches Neon-Leuchten um die Moos-Silhouette (bleibt auf der Karte)."],
+      ["NEON_BASE","Halme unten einfärben",0,1,1,onOff,"Toggle: Neon zieht auch in Halm-Basis & Schatten-Matte — ganzer Halm getönt (wie im Referenzbild), nicht nur Spitzen."]
     ]},
     { title:"Wachstum & Verteilung", note:"Von oben & den Seiten nach innen/unten zuwachsend.", rows:[
       ["REIF_COV","Reife-Abdeckung",0.1,1,0.02,xFmt,"Wie voll die Karte bei REIF (Stufe 8) bemoost ist — kleiner = rahmt nur oben/Seiten, Mitte frei."],
@@ -139,7 +151,7 @@
       ["DEW","Tau-Glitzern",0,1,0.02,xFmt,"Vereinzelte, langsam funkelnde Tautropfen."]
     ]}
   ];
-  var INT={FILA_PER:1};
+  var INT={FILA_PER:1, NEON_BASE:1};
   var LAYOUT={EDGE_BAND:1,TOP_BIAS:1,DENSITY:1,CLUMP:1,RAGGED:1}; // ändert Feld-Aufbau
   var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
   var $=function(id){return document.getElementById(id);};
@@ -164,6 +176,7 @@
   function writeConfig(){ var o=T;
     $("cfg").value="const TUNE = {\n"
       + "  MOSS_DARK: \""+o.MOSS_DARK+"\", MOSS_MID: \""+o.MOSS_MID+"\", MOSS_TIP: \""+o.MOSS_TIP+"\", SPORO_COLOR: \""+o.SPORO_COLOR+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
       + "  REIF_COV: "+numStr(o.REIF_COV)+", EDGE_BAND: "+numStr(o.EDGE_BAND)+", TOP_BIAS: "+numStr(o.TOP_BIAS)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", OVERHANG: "+numStr(o.OVERHANG)+",\n\n"
       + "  FILA_PER: "+numStr(o.FILA_PER)+", FILA_LEN: "+numStr(o.FILA_LEN)+", FILA_THICK: "+numStr(o.FILA_THICK)+", TILT: "+numStr(o.TILT)+", SPREAD: "+numStr(o.SPREAD)+", TIP_LIGHT: "+numStr(o.TIP_LIGHT)+", SPECK: "+numStr(o.SPECK)+",\n\n"
       + "  SPOROPHYTE: "+numStr(o.SPOROPHYTE)+", SHADOW: "+numStr(o.SHADOW)+", DEW: "+numStr(o.DEW)+",\n};";
@@ -183,6 +196,10 @@
   // ── Renderer / Setup ──
   var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
   var moss=document.createElement("canvas"), mctx=moss.getContext("2d");
+  var glow=document.createElement("canvas"), gctx=glow.getContext("2d");  // Neon-Bloom-Aura (gecacht mit Moos)
+  var base=document.createElement("canvas"), bctx=base.getContext("2d");  // Karten-Grund (Gradient+Muster+Rand), gecacht je Box
+  var neonTips=[];                                    // gesammelte Neon-Spitzen für die Bloom-Aura
+  var _axc=1,_axs=0,_cNA={r:34,g:224,b:255},_cNB={r:255,g:62,b:165};      // Licht-Achse + A/B-Farben (in renderMoss gesetzt)
   var M=20; // Rand ums Moos-Bitmap für Überwuchs
   var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
   function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
@@ -200,6 +217,7 @@
   function buildField(b){
     CW=b.CW; CH=b.CH;
     moss.width=Math.round((CW+2*M)*dpr); moss.height=Math.round((CH+2*M)*dpr);
+    glow.width=moss.width; glow.height=moss.height;
     field=[];
     var step = 5 + (1-T.DENSITY)*7;                 // dichter → kleinerer Abstand
     var maxInward = CW*(0.30 + 0.55*T.EDGE_BAND);
@@ -236,7 +254,12 @@
   // ein Büschel zeichnen
   var LDX=-0.55, LDY=-0.83; // Lichtrichtung (oben-links)
   function drawTuftShadow(mx,t,mat,cDark){
-    mx.fillStyle=rgba(cDark, (0.30+0.35*T.SHADOW)*mat);
+    var cd=cDark;
+    if(T.NEON_BASE>=0.5 && T.NEON_RIM>0){                                   // Base-Toggle: Schatten-Matte neon tönen
+      var tA=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+      cd=clampRGB(mix(cDark, clampRGB(mix(_cNA,_cNB,tA)), 0.4*T.NEON_RIM));
+    }
+    mx.fillStyle=rgba(cd, (0.30+0.35*T.SHADOW)*mat);
     mx.beginPath(); mx.ellipse(t.x, t.y+1, t.size*2.0*mat, t.size*1.5*mat, 0, 0, TAU); mx.fill();
   }
   function drawTuftHairs(mx,t,mat,cMid,cTip,cTipHi){
@@ -249,6 +272,8 @@
     var eo=t.edgeOut*T.OVERHANG;                     // Rand-Überwuchs
     var bx=t.x + Math.cos(t.outAng)*eo*3.5*mat, by=t.y + Math.sin(t.outAng)*eo*3.5*mat;
     var n=Math.max(2, Math.round(T.FILA_PER*(0.45+0.55*mat)*(0.6+0.7*t.size)));
+    var tAxis=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62)); // Position entlang Licht-Achse
+    var neon=clampRGB(mix(_cNA,_cNB,tAxis));                                              // A↔B Neonfarbe an diesem Büschel
     for(var i=0;i<n;i++){
       var len=T.FILA_LEN*(0.45+rng()*0.95)*(0.35+0.85*mat)*(0.7+0.5*t.size)*(1+eo*0.7);
       var a=t.ang + tiltRad + t.tuftJit*spreadRad*0.6 + (rng()-0.5)*spreadRad;
@@ -258,11 +283,25 @@
       var up=clamp01((by-y2)/8);                     // Spitze höher → heller
       var col=clampRGB(mix(midT, tipT, (0.25+0.7*rng())*(0.4+0.6*mat)));
       col=clampRGB({r:col.r*lightK*(0.85+0.3*up), g:col.g*lightK*(0.85+0.3*up), b:col.b*lightK*(0.85+0.3*up)});
+      var washU = T.NEON_BASE>=0.5 ? (0.70+0.20*up) : (0.26+0.36*up);              // Base-Toggle: Wash zieht auch nach unten
+      if(T.NEON_RIM>0){ col=clampRGB(mix(col, neon, T.NEON_RIM*washU)); }            // Neon-Wash über den Halm
       mx.strokeStyle=rgba(col, 0.92);
       mx.lineWidth=T.FILA_THICK*(0.6+0.7*rng());
       mx.lineCap="round";
       var mpx=(bx+x2)/2 + (rng()-0.5)*len*0.35, mpy=(by+y2)/2 + (rng()-0.5)*len*0.25;
       mx.beginPath(); mx.moveTo(bx,by); mx.quadraticCurveTo(mpx,mpy, x2,y2); mx.stroke();
+      if(T.NEON_TIP>0){                                                            // additiver Neon-Saum an Spitze/Rand
+        var rimI=clamp01(T.NEON_TIP*(0.18+0.82*up)*(0.5+0.7*eo)*(0.55+0.45*mat));
+        if(rimI>0.03){
+          mx.globalCompositeOperation="lighter";
+          mx.strokeStyle=rgba(neon, rimI*0.55); mx.lineWidth=T.FILA_THICK*(0.5+0.5*rng());
+          mx.beginPath(); mx.moveTo((bx+x2)*0.5,(by+y2)*0.5); mx.lineTo(x2,y2); mx.stroke();
+          mx.fillStyle=rgba(clampRGB(mix(neon,{r:255,g:255,b:255},0.35)), rimI*0.6);
+          mx.beginPath(); mx.arc(x2,y2, T.FILA_THICK*0.5, 0, TAU); mx.fill();
+          mx.globalCompositeOperation="source-over";
+          if(neonTips.length<260 && rng()<0.5) neonTips.push({x:x2,y:y2,c:neon,i:rimI});
+        }
+      }
       if(rng()<T.TIP_LIGHT*0.55){ mx.fillStyle=rgba(cTipHi, 0.6*T.TIP_LIGHT); mx.beginPath(); mx.arc(x2,y2, T.FILA_THICK*0.55, 0, TAU); mx.fill();
         if(T.DEW>0 && rng()<0.12 && dewPts.length<160) dewPts.push({x:x2,y:y2,ph:rng()*TAU}); }
     }
@@ -289,17 +328,44 @@
     if(fieldDirty) buildField(box());
     mctx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr);   // Kartenkoordinaten, um M versetzt (Überwuchs-Rand)
     mctx.clearRect(-M,-M,CW+2*M,CH+2*M);
-    dewPts=[];
+    dewPts=[]; neonTips=[];
+    // Neon-Synthwave: Licht-Achse (A→B) + Farben für diese Render-Runde setzen
+    var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+    _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
     var cDark=hexRGB(T.MOSS_DARK), cMid=hexRGB(T.MOSS_MID), cTip=hexRGB(T.MOSS_TIP), cSpo=hexRGB(T.SPORO_COLOR);
     var cTipHi=clampRGB(mix(cTip,{r:255,g:255,b:230},0.55));
     var i,t,mat;
     // Pass 1: Schatten-Matte
     for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0) continue; drawTuftShadow(mctx,t,mat,cDark); }
-    // Pass 2: Härchen
+    // Pass 2: Härchen (inkl. Neon-Wash + Kanten-Säume, sammelt neonTips)
     for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<=0) continue; drawTuftHairs(mctx,t,mat,cMid,cTip,cTipHi); }
     // Pass 3: Sporophyten
     if(T.SPOROPHYTE>0) for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((g-t.birthG)/0.22); if(mat<0.4) continue; drawSporophyte(mctx,t,mat,cSpo); }
+    // Bloom-Aura: weiche Neon-Puffs an den gesammelten Spitzen (gecacht, per-Frame nur drawImage)
+    gctx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr); gctx.clearRect(-M,-M,CW+2*M,CH+2*M);
+    if(T.NEON_BLOOM>0 && neonTips.length){ gctx.globalCompositeOperation="lighter";
+      var gr=Math.max(6, T.FILA_LEN*2.4);
+      for(i=0;i<neonTips.length;i++){ var np=neonTips[i], rad=gr*(0.6+0.9*np.i);
+        var rgd=gctx.createRadialGradient(np.x,np.y,0, np.x,np.y,rad);
+        rgd.addColorStop(0, rgba(np.c, 0.55*np.i)); rgd.addColorStop(0.5, rgba(np.c, 0.18*np.i)); rgd.addColorStop(1, rgba(np.c,0));
+        gctx.fillStyle=rgd; gctx.beginPath(); gctx.arc(np.x,np.y,rad,0,TAU); gctx.fill();
+      }
+      gctx.globalCompositeOperation="source-over";
+    }
     renderDirty=false; renderedG=g;
+  }
+
+  // Karten-Grund einmal je Box in einen Sprite rendern (Gradient + feines Muster + Rand) — spart Per-Frame-Kosten
+  function renderBase(b){
+    base.width=Math.round(CSSW*dpr); base.height=Math.round(CSSH*dpr);
+    bctx.setTransform(dpr,0,0,dpr,0,0); bctx.clearRect(0,0,CSSW,CSSH);
+    var g0=bctx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#121a0d"); g0.addColorStop(1,"#0a1108");
+    roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.fillStyle=g0; bctx.fill();
+    bctx.save(); roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.clip();
+    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=9) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=9){ bctx.fillStyle="rgba(180,220,150,0.04)"; bctx.fillRect(xx,yy,1.3,1.3); }
+    bctx.restore();
+    bctx.lineWidth=1.5; bctx.strokeStyle="rgba(150,190,110,0.45)"; roundRectPath(bctx,b.ox,b.oy,b.CW,b.CH,b.cr); bctx.stroke();
+    boxKey=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
   }
 
   function frame(ts){
@@ -308,28 +374,25 @@
     if(autoGrow){ autoAcc+=dt; if(autoAcc>=650){ autoAcc=0; stage=Math.min(STAGE_MAX, stage+1); $("growth").value=stage; updLvl(); markDirty(false); if(stage>=STAGE_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } } }
     growth=(stage/STAGE_MAX)*T.REIF_COV;                  // Reifestufe × Reife-Abdeckung → tatsächliche Moos-Abdeckung
     var b=box();
+    var bk=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+    if(bk!==boxKey) renderBase(b);                        // Karten-Grund nur bei Box-Änderung neu bauen
     if(fieldDirty || renderDirty || Math.abs(growth-renderedG)>0.004) renderMoss(growth);
+
     ctx.clearRect(0,0,CSSW,CSSH);
+    ctx.drawImage(base, 0,0,base.width,base.height, 0,0,CSSW,CSSH);   // gecachter Karten-Grund (Gradient+Muster+Rand)
 
-    // Karten-/Behälter-Hintergrund + feines Muster (auf Karte geclippt)
-    var g0=ctx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#20301a"); g0.addColorStop(1,"#151f10");
-    roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.fillStyle=g0; ctx.fill();
-    ctx.save(); roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.clip();
-    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=9) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=9){ ctx.fillStyle="rgba(180,220,150,0.04)"; ctx.fillRect(xx,yy,1.3,1.3); }
-    ctx.restore();
-
-    // Behälter-Rand (vor dem Moos, damit Halme darüber wachsen können)
-    ctx.lineWidth=1.5; ctx.strokeStyle="rgba(150,190,110,0.45)"; roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.stroke();
-
-    // Moos-Bitmap (mit dezentem Überwuchs): Clip auf leicht erweitertes RoundRect
+    // Neon bleibt AUF der Karte: Moos + Bloom-Aura auf leicht erweitertes RoundRect geclippt (kein Szenen-Licht)
     var grow=M*T.OVERHANG;
     ctx.save(); roundRectPath(ctx, b.ox-grow, b.oy-grow, b.CW+2*grow, b.CH+2*grow, b.cr+grow); ctx.clip();
     ctx.drawImage(moss, 0,0,moss.width,moss.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+    if(T.NEON_BLOOM>0){ ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=clamp01(T.NEON_BLOOM);
+      ctx.drawImage(glow, 0,0,glow.width,glow.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+      ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=1; }
     // Tau-Glitzern (live über dem Moos)
     if(T.DEW>0){ ctx.globalCompositeOperation="lighter";
       for(var d=0;d<dewPts.length;d++){ var dp=dewPts[d], tw=0.4+0.6*(0.5+0.5*Math.sin(clockT*0.004+dp.ph));
         ctx.fillStyle=rgba({r:225,g:245,b:210}, 0.5*T.DEW*tw); ctx.beginPath(); ctx.arc(b.ox+dp.x, b.oy+dp.y, 0.9, 0, TAU); ctx.fill(); }
-    }
+      ctx.globalCompositeOperation="source-over"; }
     ctx.restore();
 
     requestAnimationFrame(frame);
