@@ -95,7 +95,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
       const env = envelope(prog), A = env.alpha * TUNE.BRIGHT;
       const ca = s.deckTint ? rgb(s.deckColor) : rgb(STD_A), cb = s.deckTint ? rgb(s.deckColor2 || s.deckColor) : rgb(STD_B);
-      const nSpokes = s.lite ? Math.round(TUNE.SPOKES * 0.5) : TUNE.SPOKES;
+      const nSpokes = s.lite ? Math.round(TUNE.SPOKES * 0.42) : TUNE.SPOKES; // #perf: lite ~20 statt 48 große additive Beam-Sprites (Fill-Rate)
       const rot = pl.rotBase + performance.now() / 1000 * TUNE.SPIN * TAU;
 
       const cores = nodes.cores; cores.clear();
@@ -128,8 +128,9 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; pl.rotBase = Math.random() * TAU; if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
+    // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps (wie die anderen Effekte).
     app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -140,6 +141,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
         app.stage.addChild(cores);
         const hub = new Sprite(hubTex); hub.anchor.set(0.5); hub.blendMode = "add"; hub.alpha = 0; app.stage.addChild(hub);
         nodesRef.current = { beams, cores, hub };
+        app.ticker.maxFPS = st.current.lite ? 45 : 0;
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

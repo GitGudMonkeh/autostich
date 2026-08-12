@@ -355,13 +355,16 @@ function GottScene({ Fx, deckTint = false, label = "Gottgleich", tint = "#ff8fc4
   const panelRef = useRef(null);
   const cardRef = useRef(null);
   const bf = battlefieldAssets(SHOWCASE_BF);
+  // #perf: Auf Mobile die Vorschau im lite-Pfad laufen lassen (weniger DPR/FPS/Partikel) — dieselbe Stufe wie in-game
+  // auf pointer:coarse. Ohne das lief der Loop-Showcase auf dem Handy in voller Auflösung → Jank.
+  const isMobile = useIsMobile();
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <Suspense fallback={null}>
-        <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" />
+        <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor="#35e0ff" deckColor2="#ff5db1" lite={isMobile} />
       </Suspense>
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game (oberste Ebene über dem Prunk), damit die
           Vorschau den vollen Sieg-Moment zeigt. Endlos-Sheen (loop), oben platziert → der Effekt bleibt sichtbar. */}

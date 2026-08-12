@@ -150,8 +150,10 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     }
     startRef.current = startPlay;
 
+    // #perf: Auf lite (Mobile/„ausgewogen") DPR deckeln (1.25 statt 2 → weniger Fill-Rate der großen additiven Sprites)
+    // und den Ticker auf 45 fps kappen (ProMotion 120 Hz füllt sonst 3× so oft) — spürbar billiger, Look praktisch gleich.
     app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -162,6 +164,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
         const rays = new Graphics(); rays.blendMode = "add";
         app.stage.addChild(corona, rays, sun, core);
         nodesRef.current = { sun, corona, core, rays };
+        app.ticker.maxFPS = st.current.lite ? 45 : 0;
         app.ticker.add(tick);
         // Mount = spielen (Battlefield mountet nur beim Gott-Sieg; die Vorschau will den Loop). Trigger-Wechsel danach → Replay.
         startPlay();

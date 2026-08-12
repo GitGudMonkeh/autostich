@@ -71,7 +71,7 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
       const { cx, cy, halfDiag, H } = geo;
       const s = st.current;
       const dm = s.deckTint, ca = rgb(s.deckColor), cb = rgb(s.deckColor2 || s.deckColor);
-      const nBands = s.lite ? Math.max(6, Math.round(TUNE.BANDS * 0.55)) : TUNE.BANDS;
+      const nBands = s.lite ? 6 : TUNE.BANDS; // #perf: lite 6 statt 14 Kreis-Strokes/Ring → bis 5×6=30 statt 70 Kreise/Frame
       const thick = Math.max(1, TUNE.THICK * H);
       const rings = nodes.rings; rings.clear();
       let flashMax = 0;
@@ -102,8 +102,9 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
     function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
+    // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
     app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -112,6 +113,7 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
         const rings = new Graphics(); rings.blendMode = "add";
         app.stage.addChild(flash, rings);
         nodesRef.current = { rings, flash };
+        app.ticker.maxFPS = st.current.lite ? 45 : 0;
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

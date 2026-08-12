@@ -127,9 +127,11 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       const doFaces = TUNE.FACE > 0 && !s.lite;
       for (const b of drawn) {
         if (doFaces) { const ci = intOf(b.col); for (const f of FACES) { g.poly([b.pts[f[0]][0], b.pts[f[0]][1], b.pts[f[1]][0], b.pts[f[1]][1], b.pts[f[2]][0], b.pts[f[2]][1], b.pts[f[3]][0], b.pts[f[3]][1]]).fill({ color: ci, alpha: clamp(0.10 * TUNE.FACE * A, 0, 1) }); } }
-        // Kanten: Zwei-Pass (breiter Glow + heller Kern) → Neon-Glow ohne shadowBlur.
-        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.2 : 1.6, cGlow = intOf(b.col), cCore = intOf(mix(b.col, [255, 255, 255], 0.5));
-        for (const pass of [[glowW, cGlow, 0.22 * TUNE.EDGE * 0.5], [coreW, cCore, 0.9]]) {
+        // Kanten: Zwei-Pass (breiter Glow + heller Kern) → Neon-Glow ohne shadowBlur. #perf: auf lite nur der Kern-Pass
+        // (halbe Stroke-Zahl) — der Glow-Pass entfällt, dafür der Kern minimal breiter/kräftiger, damit der Look hält.
+        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.5 : 1.6, cGlow = intOf(b.col), cCore = intOf(mix(b.col, [255, 255, 255], 0.5));
+        const passes = s.lite ? [[coreW, cCore, 0.95]] : [[glowW, cGlow, 0.22 * TUNE.EDGE * 0.5], [coreW, cCore, 0.9]];
+        for (const pass of passes) {
           for (const e of EDGES) { g.moveTo(b.pts[e[0]][0], b.pts[e[0]][1]); g.lineTo(b.pts[e[1]][0], b.pts[e[1]][1]); }
           g.stroke({ width: pass[0], color: pass[1], alpha: clamp(pass[2] * A, 0, 1), cap: "round", join: "round" });
         }
@@ -148,8 +150,9 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
     function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
+    // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
     app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -158,6 +161,7 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
         const core = new Sprite(coreTex); core.anchor.set(0.5); core.blendMode = "add"; core.alpha = 0;
         app.stage.addChild(g, core);
         nodesRef.current = { g, core };
+        app.ticker.maxFPS = st.current.lite ? 45 : 0;
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

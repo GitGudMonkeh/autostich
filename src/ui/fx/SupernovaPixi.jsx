@@ -115,8 +115,10 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       const fadeIn = clamp(prog / 0.12, 0, 1), fadeOut = 1 - clamp((prog - 0.75) / 0.25, 0, 1), tA = TUNE.TUNNEL * fadeIn * fadeOut * BR;
       if (tA > 0.003) {
         const edge = halfDiag * 1.25, rIn = edge * TUNE.T_HOLE, spin = performance.now() / 1000 * TUNE.T_SPIN * 0.5, flow = (pl.bt * TUNE.T_SPEED * 0.12) % 1;
-        for (let i = 0; i < TUNE.T_RINGS; i++) { const f = (i + flow) / TUNE.T_RINGS, rr = rIn + (edge - rIn) * Math.pow(f, TUNE.T_GAMMA); tG.circle(cx, cy, rr).stroke({ width: Math.max(1, diag * 0.0025), color: intOf(mix(ca, cb, f)), alpha: clamp(tA * (0.25 + 0.6 * f), 0, 1) }); }
-        for (let sp = 0; sp < TUNE.T_SPOKES; sp++) { const a = spin + (sp / TUNE.T_SPOKES) * TAU, dx = Math.cos(a), dy = Math.sin(a); tG.moveTo(cx + dx * rIn, cy + dy * rIn); tG.lineTo(cx + dx * edge, cy + dy * edge); tG.stroke({ width: Math.max(1, diag * 0.0022), color: intOf(mix(ca, cb, 0.8)), alpha: clamp(tA * 0.4, 0, 1) }); }
+        // #perf: lite → weniger Tunnel-Ringe/Speichen (10/16 statt 14/24); die Perspektive/der Sog bleiben erhalten.
+        const nTR = s.lite ? 10 : TUNE.T_RINGS, nTS = s.lite ? 16 : TUNE.T_SPOKES;
+        for (let i = 0; i < nTR; i++) { const f = (i + flow) / nTR, rr = rIn + (edge - rIn) * Math.pow(f, TUNE.T_GAMMA); tG.circle(cx, cy, rr).stroke({ width: Math.max(1, diag * 0.0025), color: intOf(mix(ca, cb, f)), alpha: clamp(tA * (0.25 + 0.6 * f), 0, 1) }); }
+        for (let sp = 0; sp < nTS; sp++) { const a = spin + (sp / nTS) * TAU, dx = Math.cos(a), dy = Math.sin(a); tG.moveTo(cx + dx * rIn, cy + dy * rIn); tG.lineTo(cx + dx * edge, cy + dy * edge); tG.stroke({ width: Math.max(1, diag * 0.0022), color: intOf(mix(ca, cb, 0.8)), alpha: clamp(tA * 0.4, 0, 1) }); }
       }
       try { r.tApp.renderer.render(r.tApp.stage); } catch { /* ignore */ }
 
@@ -181,7 +183,8 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     function startPlay() { const r = refs.current, pl = playRef.current; if (!r.nApp || disposed) return; seedStars(); pl.playing = true; pl.bt = 0; if (document.visibilityState !== "hidden") r.nApp.ticker.start(); }
     startRef.current = startPlay;
 
-    const initOpts = (canvas, host) => ({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" });
+    // #perf: lite → DPR-Deckel 1.25 auf BEIDE Canvas (Tunnel + Nova) — der teuerste Posten (zwei Full-Screen-Apps + Flash).
+    const initOpts = (canvas, host) => ({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" });
     Promise.all([tApp.init(initOpts(tCanvas, tHost)), nApp.init(initOpts(nCanvas, nHost))]).then(() => {
       if (disposed) { for (const a of [tApp, nApp]) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } } return; }
       for (const [cv, hs] of [[tCanvas, tHost], [nCanvas, nHost]]) { cv.style.width = "100%"; cv.style.height = "100%"; cv.style.display = "block"; hs.appendChild(cv); }
@@ -196,6 +199,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       nRoot.addChild(starsPC, novaG, core); nApp.stage.addChild(nRoot);
       const flash = new Graphics(); flash.blendMode = "add"; nApp.stage.addChild(flash); // Flash außerhalb des Zoom-Containers
       Object.assign(refs.current, { tApp, nApp, tG, tRoot, nRoot, novaG, core, flash, starsPC, stars });
+      nApp.ticker.maxFPS = st.current.lite ? 45 : 0; // #perf: Ticker-Cap (treibt beide Apps)
       nApp.ticker.add(tick); startPlay();
     }).catch(() => { /* WebGL fehlt → leer */ });
 
