@@ -91,6 +91,9 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
     const ctx = canvas.getContext("2d");
     const MGN = Math.ceil(TUNE.JIT_AMP + TUNE.W_GLOW * 0.5 + 3);   // Rand für nach AUSSEN blutende Zacken/Glow
     let cw = 0, ch = 0, DPR = 1, clockT = 0, last = 0, raf = 0, disposed = false;
+    let sc = 1;   // #showcase-fix: Zacken-/Glow-Größen kartengrößen-relativ (In-Game-Karte ≈ 144px → Skala 1). Auf kleinen
+    //             Karten (Spezial-Showcase) sind die absoluten JIT/W-Werte sonst proportional zu groß → Bewegung wirkt zu
+    //             intensiv; jetzt proportional wie in-game.
     let perim = { w: 0, h: 0, pts: [] };
     const arcs = [];
     let nextArc = 0;
@@ -111,7 +114,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
     // Eine Polylinie in drei Pässen (breiter Glow → Mitte → weißer Kern) additiv zeichnen.
     function drawBolt(pts, col, alpha) {
       if (pts.length < 2 || alpha <= 0.003) return;
-      const passes = [[TUNE.W_GLOW, col, 0.28 * alpha], [TUNE.W_MID, col, 0.6 * alpha], [TUNE.W_CORE, "#ffffff", 0.95 * alpha]];
+      const passes = [[TUNE.W_GLOW * sc, col, 0.28 * alpha], [TUNE.W_MID * sc, col, 0.6 * alpha], [TUNE.W_CORE * sc, "#ffffff", 0.95 * alpha]];
       for (const [w, c, a] of passes) {
         ctx.globalAlpha = Math.min(1, a); ctx.lineWidth = w; ctx.strokeStyle = c;
         ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
@@ -127,6 +130,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.clearRect(0, 0, cw + 2 * MGN, ch + 2 * MGN);
       if (!st.active) return;                                       // Rahmen nur bei voller Ionisierung
+      sc = Math.min(1.15, Math.max(0.5, ch / 144));                // kartengrößen-relative Skala (In-Game 144px → 1)
       ctx.globalCompositeOperation = "lighter"; ctx.lineJoin = "round"; ctx.lineCap = "round";
 
       if (Math.abs(perim.w - cw) > 0.5 || Math.abs(perim.h - ch) > 0.5) {
@@ -138,7 +142,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
 
       // reduced: EIN statischer, gezackter Glow-Rahmen (kein Flackern)
       if (st.reduced) {
-        const outline = pts.map((p, i) => { const nj = sjit(i, 1) * TUNE.HUM_AMP; return { x: p.x + p.nx * nj, y: p.y + p.ny * nj }; });
+        const outline = pts.map((p, i) => { const nj = sjit(i, 1) * TUNE.HUM_AMP * sc; return { x: p.x + p.nx * nj, y: p.y + p.ny * nj }; });
         outline.push(outline[0]);
         drawBolt(outline, col, 0.5);
         ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; return;
@@ -151,8 +155,8 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
       const hum = [];
       for (let i = 0; i <= N; i++) {
         const p = pts[i % N];
-        const nj = sjit(i, humBucket * 2.3) * TUNE.HUM_AMP;
-        const tj = sjit(i, humBucket * 2.3 + 9) * (TUNE.TAN_JIT * 0.5);
+        const nj = sjit(i, humBucket * 2.3) * TUNE.HUM_AMP * sc;
+        const tj = sjit(i, humBucket * 2.3 + 9) * (TUNE.TAN_JIT * 0.5 * sc);
         hum.push({ x: p.x + p.nx * nj + -p.ny * tj, y: p.y + p.ny * nj + p.nx * tj });
       }
       drawBolt(hum, col, TUNE.HUM_ALPHA);
@@ -166,8 +170,8 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
         for (let s = 0; s <= spanN; s++) {
           const idx = Math.round(head + s) % N;
           const p = pts[(idx + N) % N];
-          const nj = sjit(idx, bucket + salt) * TUNE.JIT_AMP;
-          const tj = sjit(idx, bucket + salt + 7) * TUNE.TAN_JIT;
+          const nj = sjit(idx, bucket + salt) * TUNE.JIT_AMP * sc;
+          const tj = sjit(idx, bucket + salt + 7) * TUNE.TAN_JIT * sc;
           rp.push({ x: p.x + p.nx * nj + -p.ny * tj, y: p.y + p.ny * nj + p.nx * tj });
         }
         const sub = TUNE.RUN_SUB, per = Math.max(1, Math.floor(spanN / sub));
@@ -194,7 +198,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
         const seg = TUNE.ARC_SEGS, lineP = [];
         for (let s = 0; s <= seg; s++) {
           const u = s / seg, env = Math.sin(Math.PI * u);
-          const disp = sjit(arc.seed + s * 13, flick) * TUNE.ARC_AMP * env;
+          const disp = sjit(arc.seed + s * 13, flick) * TUNE.ARC_AMP * sc * env;
           lineP.push({ x: A.x + dx * u + px * disp, y: A.y + dy * u + py * disp });
         }
         drawBolt(lineP, col, alpha);
@@ -202,7 +206,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
           const fs = Math.floor(seg * (0.4 + 0.2 * hash(arc.seed, 3)));
           const base = lineP[fs];
           const fl = [base];
-          const fdx = sjit(arc.seed, 5) * TUNE.ARC_AMP * 1.4, fdy = sjit(arc.seed, 6) * TUNE.ARC_AMP * 1.4;
+          const fdx = sjit(arc.seed, 5) * TUNE.ARC_AMP * 1.4 * sc, fdy = sjit(arc.seed, 6) * TUNE.ARC_AMP * 1.4 * sc;
           for (let s = 1; s <= 4; s++) {
             const u = s / 4;
             fl.push({ x: base.x + fdx * u + px * sjit(arc.seed + s, flick) * 4, y: base.y + fdy * u + py * sjit(arc.seed + s + 2, flick) * 4 });

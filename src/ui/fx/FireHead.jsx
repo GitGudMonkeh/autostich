@@ -112,6 +112,9 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
       const cr = card.getBoundingClientRect(), pr = panel.getBoundingClientRect();
       const CW = cr.width, CH = cr.height;
       if (CW < 8 || CH < 8) { hideAll(); return; }
+      // #showcase-fix: Flammen-Größe & -Dichte kartengrößen-relativ (In-Game-Karte ≈ 104px → Skala 1, unverändert). Auf
+      // kleinen Karten (Spezial-Showcase) sonst zu dichte Überlappung → zu weiß/zu viel Bloom; jetzt proportional wie in-game.
+      const fscale = Math.min(1.1, Math.max(0.5, CW / 104));
       const ox = cr.left - pr.left, oy = cr.top - pr.top;
       // Karte abgeworfen/weggeflogen → Box außerhalb des Panels → Feuer nicht hängen lassen.
       const ccx = ox + CW / 2, ccy = oy + CH / 2;
@@ -136,19 +139,19 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
         if (baseF <= 0.02) { s.alpha = 0; continue; }
         const x = ox + margin + (i / (BASE_N - 1)) * width;
         const flick = 0.55 + 0.45 * frnd(i, bucket);
-        const r = 9 * flick * baseF * (C.FLAME_SIZE / 8.5);
+        const r = 9 * flick * baseF * (C.FLAME_SIZE * fscale / 8.5);
         s.x = x; s.y = oy - r * 0.25; s.width = s.height = r * 3.0;
         s.tint = baseTint; s.alpha = Math.min(1, 0.24 * baseF * flick);
       }
 
       // ── Flammen spawnen + updaten (nach oben lodernd, über dem Rahmen) ──
-      acc += C.FLAME_RATE * (dt / 1000);
+      acc += C.FLAME_RATE * fscale * (dt / 1000);
       while (acc >= 1) {
         acc -= 1; const s = grabFlame();
         s.x0 = ox + margin + Math.random() * width; s.y0 = oy + 3; s.born = clock;
         s.life = Math.max(120, C.FLAME_LIFE * (0.6 + 0.7 * Math.random()));
         s.spd = C.FLAME_RISE * (0.7 + 0.6 * Math.random()) * C.FLAME_H;
-        s.sz = C.FLAME_SIZE * (0.55 + 0.7 * Math.random()); s.sway = C.FLAME_SWAY; s.lean = C.FLAME_LEAN; s.seed = Math.random() * 6.283;
+        s.sz = C.FLAME_SIZE * fscale * (0.55 + 0.7 * Math.random()); s.sway = C.FLAME_SWAY; s.lean = C.FLAME_LEAN; s.seed = Math.random() * 6.283;
       }
       for (let i = 0; i < MAX; i++) {
         const s = flames[i]; if (!s.alive) continue;

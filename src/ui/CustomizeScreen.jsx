@@ -538,7 +538,7 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
 /* #spezial 4-Karten-Showcase: die vier Archetyp-Effekte (Hitze/Moos/Blitz/Eis) nebeneinander, jeweils im MAXIMALEN
    Status, in der gewählten Farbe (Standard-Neon ODER Deckfarbe-Beispiel-Verlauf). Moos/Eis/Blitz hängen als Kartenkind
    in ihrer Karte; die Hitze (FireHead) liegt als Panel-Overlay über der ersten Karte (Flammen loder in den Freiraum). */
-const SPEZIAL_DECK_A = "#2ff0ff", SPEZIAL_DECK_B = "#ff2d9b"; // Deckfarbe-Beispiel (Verlauf) für die Vorschau
+const SPEZIAL_DECK_A = "#ff7a3a", SPEZIAL_DECK_B = "#e01234"; // Deckfarbe-Beispiel (roter Verlauf) — Effekte + Hintergrund rot
 function SpezialScene({ deckTint = false }) {
   const panelRef = useRef(null);
   const fireCardRef = useRef(null);
@@ -552,11 +552,11 @@ function SpezialScene({ deckTint = false }) {
   ];
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: deckTint ? 0.28 : 0.6 }} />}
+      {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: deckTint ? 0.16 : 0.6 }} />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10cc,#0c0c1055 45%,#0c0c10dd)" }} />
       {/* #spezial: im Deckfarbe-Modus bekommt der Showcase einen zur Deckfarbe passenden Hintergrund (Deck-Verlauf-Glow:
-          unten deckColor2, oben deckColor) → die Bühne fühlt sich zur gewählten Farbe stimmig an. */}
-      {deckTint && <div className="absolute inset-0" style={{ background: `radial-gradient(135% 100% at 50% 116%, ${DC2}55, transparent 60%), radial-gradient(120% 80% at 50% -14%, ${DC}44, transparent 55%)` }} />}
+          unten deckColor2, oben deckColor) → die Bühne fühlt sich zur gewählten Farbe (hier Rot) stimmig an. */}
+      {deckTint && <div className="absolute inset-0" style={{ background: `radial-gradient(140% 105% at 50% 118%, ${DC2}88, transparent 62%), radial-gradient(130% 85% at 50% -12%, ${DC}66, transparent 55%), ${DC2}14` }} />}
       <div className="absolute inset-0 flex items-end justify-center gap-1.5 px-2" style={{ paddingBottom: "11%" }}>
         {CARDS.map((c) => (
           <div key={c.key} className="relative flex flex-col items-center gap-1" style={{ height: "60%" }}>
