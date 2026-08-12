@@ -172,8 +172,10 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   **`PLANT_GREEN_THRESHOLD = 8` Wachstum** dauerhaft **grün = reif**. Darunter (Wachstum 1–7) ist sie
   **Setzling**, bei 0 nichts. Wachstum steigt je Sieg um `growInc = min(1, Pflanze-Skills/PLANT_GROWTH_SKILL_REF)`
   (`engine.js:491`), also **+1/Sieg bei vollem Fokus → 8 Siege bis reif**.
-  **Mapping Effekt:** `coverage g = clamp(growth / PLANT_GREEN_THRESHOLD)` → **reif (Wachstum 8) = 100 %**
-  volle Moos-Abdeckung. Diskrete Stufen 0…8 (der Reifestufen-Simulator im Prototyp spiegelt genau das).
+  **Mapping Effekt:** `coverage g = (growth / PLANT_GREEN_THRESHOLD) · REIF_COV`. Bei **reif (Wachstum 8)**
+  ist die Karte NICHT vollflächig bemoost, sondern **gerahmt** — Moos oben + an den Seiten, Mitte/unten
+  frei (User-Vorgabe). `REIF_COV` (≈0.4) steuert, wie voll reif ist. Diskrete Stufen 0…8 (der
+  Reifestufen-Simulator im Prototyp spiegelt genau das).
   Das Moos wächst **von oben & den beiden Seiten** nach **innen/unten** zu. **Akkretion statt
   Neu-Würfeln:** festes `birthG` je Büschel; steigt Wachstum, kommen neue dazu, bestehende **bleiben**
   und reifen nur nach (`maturity = clamp((g - birthG)/0.22)`) — deterministisch (seeded RNG).
@@ -203,15 +205,16 @@ z21–22 Finisher / Prunk (auf der GEGNERkarte)
   const TUNE = {
     MOSS_DARK: "#24361a", MOSS_MID: "#4a6b2c", MOSS_TIP: "#8aa84e", SPORO_COLOR: "#9a6a34",
 
-    EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 0, RAGGED: 1, OVERHANG: 1,
+    REIF_COV: 0.4, EDGE_BAND: 0.26, TOP_BIAS: 0.52, DENSITY: 1, CLUMP: 0, RAGGED: 1, OVERHANG: 1,
 
     FILA_PER: 16, FILA_LEN: 3.5, FILA_THICK: 1.2, TILT: 12, SPREAD: 0.94, TIP_LIGHT: 0, SPECK: 0,
 
     SPOROPHYTE: 0, SHADOW: 0, DEW: 0,
   };
   ```
-  (Wachstum selbst ist **Zustand** (0…8 → coverage 0…1), kein TUNE-Wert. Kurzes, dichtes Moos ohne
-  Sporophyten/Tau/Körnung; leicht geneigt, stark gestreut, wächst voll über die Kante.)
+  (Wachstum selbst ist **Zustand** (Stufe 0…8 → `coverage = Stufe/8 · REIF_COV`), kein Karten-TUNE-Wert;
+  `REIF_COV` schon. Kurzes, dichtes Moos ohne Sporophyten/Tau/Körnung; leicht geneigt, stark gestreut,
+  wächst voll über die Kante; bei reif rahmt es die Karte statt sie zu füllen.)
 - **Reduced/Mobile:** Moos ist **statisch** (Bitmap-Cache) → günstig; nur Tau animiert (abschaltbar via
   `DEW=0`). In-Game reduced → Tau aus, evtl. `DENSITY`/`FILA_PER` gedeckelt.
 - **Prototyp:** `docs/prototypes/moos-tuning.html` — jetzt **Reifestufen-Simulator**: diskreter Regler

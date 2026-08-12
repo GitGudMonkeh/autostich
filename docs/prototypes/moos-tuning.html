@@ -104,7 +104,7 @@
   var TAU=Math.PI*2;
   var DEFAULTS = {
     MOSS_DARK:"#24361a", MOSS_MID:"#4a6b2c", MOSS_TIP:"#8aa84e", SPORO_COLOR:"#9a6a34",
-    EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:0, RAGGED:1, OVERHANG:1,
+    EDGE_BAND:0.26, TOP_BIAS:0.52, DENSITY:1, CLUMP:0, RAGGED:1, OVERHANG:1, REIF_COV:0.4,
     FILA_PER:16, FILA_LEN:3.5, FILA_THICK:1.2, TILT:12, SPREAD:0.94, TIP_LIGHT:0, SPECK:0,
     SPOROPHYTE:0, SHADOW:0, DEW:0
   };
@@ -115,6 +115,7 @@
       ["MOSS_DARK","Schatten / Basis",0,0,0,null,"color"],["MOSS_MID","Mitte",0,0,0,null,"color"],["MOSS_TIP","Spitzen",0,0,0,null,"color"]
     ]},
     { title:"Wachstum & Verteilung", note:"Von oben & den Seiten nach innen/unten zuwachsend.", rows:[
+      ["REIF_COV","Reife-Abdeckung",0.1,1,0.02,xFmt,"Wie voll die Karte bei REIF (Stufe 8) bemoost ist — kleiner = rahmt nur oben/Seiten, Mitte frei."],
       ["EDGE_BAND","Reichweite vom Rand",0,1,0.02,xFmt,"Wie weit das Moos bei vollem Wuchs nach innen reicht."],
       ["TOP_BIAS","Oben→Unten-Tempo",0,1,0.02,xFmt,"Höher = wächst deutlicher von oben nach unten."],
       ["DENSITY","Dichte",0,1,0.02,xFmt,"Mehr Büschel pro Fläche."],
@@ -163,7 +164,7 @@
   function writeConfig(){ var o=T;
     $("cfg").value="const TUNE = {\n"
       + "  MOSS_DARK: \""+o.MOSS_DARK+"\", MOSS_MID: \""+o.MOSS_MID+"\", MOSS_TIP: \""+o.MOSS_TIP+"\", SPORO_COLOR: \""+o.SPORO_COLOR+"\",\n\n"
-      + "  EDGE_BAND: "+numStr(o.EDGE_BAND)+", TOP_BIAS: "+numStr(o.TOP_BIAS)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", OVERHANG: "+numStr(o.OVERHANG)+",\n\n"
+      + "  REIF_COV: "+numStr(o.REIF_COV)+", EDGE_BAND: "+numStr(o.EDGE_BAND)+", TOP_BIAS: "+numStr(o.TOP_BIAS)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", OVERHANG: "+numStr(o.OVERHANG)+",\n\n"
       + "  FILA_PER: "+numStr(o.FILA_PER)+", FILA_LEN: "+numStr(o.FILA_LEN)+", FILA_THICK: "+numStr(o.FILA_THICK)+", TILT: "+numStr(o.TILT)+", SPREAD: "+numStr(o.SPREAD)+", TIP_LIGHT: "+numStr(o.TIP_LIGHT)+", SPECK: "+numStr(o.SPECK)+",\n\n"
       + "  SPOROPHYTE: "+numStr(o.SPOROPHYTE)+", SHADOW: "+numStr(o.SHADOW)+", DEW: "+numStr(o.DEW)+",\n};";
   }
@@ -304,7 +305,8 @@
   function frame(ts){
     if(!last) last=ts; var dt=Math.min(50, ts-last); last=ts; clockT+=dt; var dts=dt/1000;
     fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
-    if(autoGrow){ autoAcc+=dt; if(autoAcc>=650){ autoAcc=0; stage=Math.min(STAGE_MAX, stage+1); growth=stage/STAGE_MAX; $("growth").value=stage; updLvl(); markDirty(false); if(stage>=STAGE_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } } }
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>=650){ autoAcc=0; stage=Math.min(STAGE_MAX, stage+1); $("growth").value=stage; updLvl(); markDirty(false); if(stage>=STAGE_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); } } }
+    growth=(stage/STAGE_MAX)*T.REIF_COV;                  // Reifestufe × Reife-Abdeckung → tatsächliche Moos-Abdeckung
     var b=box();
     if(fieldDirty || renderDirty || Math.abs(growth-renderedG)>0.004) renderMoss(growth);
     ctx.clearRect(0,0,CSSW,CSSH);
@@ -337,8 +339,8 @@
     $("v_growth").textContent="Stufe "+stage+"/"+STAGE_MAX+" · "+nm;
     $("hudLvl").textContent=(stage>=STAGE_MAX?"Reif":stage<=0?"Leer":"Setzling "+stage+"/"+STAGE_MAX)+" ("+pct+"%)"; }
 
-  $("growth").addEventListener("input",function(){ stage=parseInt(this.value,10)||0; growth=stage/STAGE_MAX; autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
-  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0; if(autoGrow&&stage>=STAGE_MAX){ stage=0; growth=0; $("growth").value=0; updLvl(); markDirty(false); } this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
+  $("growth").addEventListener("input",function(){ stage=parseInt(this.value,10)||0; autoGrow=false; $("btnAuto").textContent="Auto-Wachsen: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
+  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0; if(autoGrow&&stage>=STAGE_MAX){ stage=0; $("growth").value=0; updLvl(); markDirty(false); } this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
   $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; markDirty(true); });
   $("btnCopy").addEventListener("click",function(){ var ta=$("cfg"); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); });
   $("btnDefault").addEventListener("click",function(){ T=Object.assign({},DEFAULTS); syncInputs(); markDirty(true); });
