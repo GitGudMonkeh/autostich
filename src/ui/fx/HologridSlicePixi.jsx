@@ -27,6 +27,9 @@ const TUNE = {
   WIRE: 0.85, HOLO_TINT: 0.28, BRIGHT: 1.00, SCAN: 0.40,
   // Karte (Referenz — die echte Kartengröße kommt aus cardRef)
   CARD_W: 210, CARD_H: 300,
+  // #perf Medium-Stufe (lite): gröberes Raster (Faktor auf COLS/ROWS) → ~3× weniger Kacheln/Display-Objekte; zusätzlich
+  // Mini-Pixel aus + DPR-Deckel 1.25 + 45 fps. Kern (Reveal/Zerfall/Fly/Bounce/Fill-Fade→Rahmen) bleibt identisch.
+  LITE_GRID: 0.58,
 };
 const STD_A = "#2ff0ff", STD_B = "#ff2d9b"; // COLORS.deck / deck2 (Fallback ohne Deckfarbe)
 
@@ -105,14 +108,17 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
       const dirIdx = Math.floor(rndSeed() * 4);
       const dir = [[1, 0], [-1, 0], [0, 1], [0, -1]][dirIdx];   // →/←/↓/↑
       const [sweepx, sweepy] = dir;
+      // #perf Medium-Stufe (lite): gröberes Raster → deutlich weniger Kacheln (dominanter Kostenposten).
+      const cols = s.lite ? Math.max(4, Math.round(TUNE.COLS * TUNE.LITE_GRID)) : TUNE.COLS;
+      const rows = s.lite ? Math.max(5, Math.round(TUNE.ROWS * TUNE.LITE_GRID)) : TUNE.ROWS;
 
-      // Karten-Textur backen (2× für Schärfe), in COLS×ROWS Kacheln zerlegen.
-      const RES = s.lite ? 1.5 : 2;
+      // Karten-Textur backen (2× für Schärfe, lite 1,25×), in cols×rows Kacheln zerlegen.
+      const RES = s.lite ? 1.25 : 2;
       const cardCv = buildCardCanvas(cardW * RES, cardH * RES, { img: imgRef.current, value: s.value, suit: s.suit });
       cardTex = Texture.from(cardCv);
       const src = cardTex.source; src.scaleMode = "linear";
-      const twT = cardCv.width / TUNE.COLS, thT = cardCv.height / TUNE.ROWS;   // Kachel in Textur-px
-      const tw = cardW / TUNE.COLS, th = cardH / TUNE.ROWS;                    // Kachel on-screen
+      const twT = cardCv.width / cols, thT = cardCv.height / rows;   // Kachel in Textur-px
+      const tw = cardW / cols, th = cardH / rows;                    // Kachel on-screen
 
       root = new Container(); app.stage.addChild(root);
       beamG = new Graphics(); beamG.blendMode = "add"; pixG = new Graphics(); pixG.blendMode = "add";
@@ -122,14 +128,14 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
 
       tiles = [];
       const cx = cardX + cardW / 2, cy = cardY + cardH / 2;
-      for (let r = 0; r < TUNE.ROWS; r++) for (let c = 0; c < TUNE.COLS; c++) {
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const tex = new Texture({ source: src, frame: new Rectangle(c * twT, r * thT, twT, thT) }); tileTexes.push(tex);
         const cont = new Container();
         const homeX = cardX + (c + 0.5) * tw, homeY = cardY + (r + 0.5) * th;
         cont.position.set(homeX, homeY);
         const fill = new Sprite(tex); fill.anchor.set(0.5); fill.width = tw + 0.6; fill.height = th + 0.6;   // 0.6px Overlap → keine Naht-Ritzen vor Reveal
         // Rahmen (Hologrid): Rechteck-Kontur in Deckfarbe, lokal um die Kachelmitte. Alpha animiert (Reveal → Wire → Fade).
-        const holo = holoAt((c + 0.5) / TUNE.COLS);
+        const holo = holoAt((c + 0.5) / cols);
         const frame = new Graphics(); frame.rect(-tw / 2, -th / 2, tw, th).stroke({ width: TUNE.SEAM_W, color: holo, alpha: 1 });
         frame.blendMode = "add"; frame.alpha = 0;
         cont.addChild(fill, frame); root.addChild(cont);
@@ -232,8 +238,9 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
         // Rahmen bleibt (WIRE), blendet erst ab FRAME_FADE aus.
         const frameA = TUNE.WIRE * (1 - smooth(TUNE.FRAME_FADE, 1, lf)) * bright;
 
-        // Mini-Pixel beim Ablösen (einmalig kurz nach Release).
-        if (TUNE.PIX_SPARK > 0 && !tl._sparked && lf > 0.02) { tl._sparked = true; spawnPix(tl.x, tl.y, tl.holo, TUNE.PIX_SPARK); }
+        // Mini-Pixel beim Ablösen (einmalig kurz nach Release). #perf: unter lite (Medium) komplett aus → der pixG-
+        // Per-Frame-Zeichenpfad entfällt; der Kern-Zerfall (Kacheln + Rahmen + Bounce) bleibt.
+        if (!s.lite && TUNE.PIX_SPARK > 0 && !tl._sparked && lf > 0.02) { tl._sparked = true; spawnPix(tl.x, tl.y, tl.holo, TUNE.PIX_SPARK); }
 
         tl.cont.position.set(tl.x, tl.y);
         tl.cont.rotation = tl.ang;
