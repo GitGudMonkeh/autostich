@@ -39,6 +39,7 @@ const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import SonnenPulsFx from "./fx/SonnenPulsFx.jsx"; // #322 Gottgleich-Prunk „Sonnen-Puls" (Canvas-2D)
+import LaserFaecherFx from "./fx/LaserFaecherFx.jsx"; // #323 Gottgleich-Prunk „Laser-Fächer" (Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 import { PhaseHairline } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
@@ -1251,6 +1252,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <SonnenPulsFx key={`gott-sp${gottTrigger}`} trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
           deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
           reduced={reduced} lite={lite} zClass="z-[9]" /* Sonne bloomt HINTER der Karte (über dem Board, unter den Karten z-10) */ />
+      )}
+      {gottTrigger > 0 && gottEffect === "laserFaecher" && !reduced && (
+        <LaserFaecherFx key={`gott-lf${gottTrigger}`} trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
+          reduced={reduced} lite={lite} zClass="z-[9]" /* Laser fächern HINTER der Karte auf */ />
       )}
       {/* #190: gewähltes Battlefield-Skin als Hintergrund (responsive desktop/mobile). Liegt als erstes Kind
           bei z-0 → überdeckt die opake Panelfläche, bleibt aber HINTER Feuer-Glut/Frost/Blitz (spätere z-0/1/2)
