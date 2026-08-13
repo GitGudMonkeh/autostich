@@ -618,7 +618,7 @@ const DECKGLOW_BGS = [
   { bf: "bf_drache", a1: "#ffcf5a", name: "Drache" },
   { bf: "bf_polarlicht", a1: "#7cc6ff", name: "Polarlicht" },
 ];
-function DeckGlowScene({ deckTint = false }) {
+function DeckGlowScene() { // #336: kein Farbmodus mehr — Glow ist immer Deckfarbe (Tint); die Vorschau tönt je BG in dessen Akzent
   const [idx, setIdx] = useState(0);
   const [on, setOn] = useState(false);
   const isMobile = useIsMobile();
@@ -637,11 +637,11 @@ function DeckGlowScene({ deckTint = false }) {
   const cur = DECKGLOW_BGS[idx];
   const bf = battlefieldAssets(cur.bf);
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
-  const accent = cur.a1; // Akzentfarbe des Labels = die Eigenfarbe des BGs (nicht relevant für den Effekt selbst)
+  const accent = cur.a1; // Akzentfarbe des Labels = die Demo-Glutfarbe des jeweiligen Felds
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={cur.a1} deckTint={deckTint} on={on} animate />}
+      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={cur.a1} on={on} animate />}
       <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
       {/* #330 Ausnahme-Slot unten-links (bewusst reserviert): Deck-Glow zeigt „Feldname · mit/ohne Deck-Glow" im
           einheitlichen PanelChip-Design. Der Farbmodus-Chip (BR) sowie Name/Status kommen zentral aus der Bühne. */}
@@ -660,7 +660,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
-  if (fx.preview === "deckglow") return <DeckGlowScene deckTint={deckTint} />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit
+  if (fx.preview === "deckglow") return <DeckGlowScene />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit (immer Deckfarbe)
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottScene Fx={null} look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
@@ -1184,7 +1184,8 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "deckglow" ? "fxDeckGlowDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
+  // #336: „deckglow" (Leuchten) hat KEINEN Farbmodus mehr — Glow ist immer Deckfarbe. Kein deckOpt → kein BR-Chip.
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   // #328 Skill-Effekt hat KEIN eigenes …Deck-Flag → Farbmodus kommt aus archColor (spezialSel); sonst aus deckOpt.
@@ -1231,22 +1232,9 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       </div>
     );
   } else if (fx.key === "deckglow") {
-    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set) MIT Farbmodus — An/Aus + Standard/Deckfarbe.
-    // #330: Label „Standard" (vormals „Eigenfarbe") — verstärkt die vorhandenen Farben des Backgrounds (kein Umfärben);
-    //   „Deckfarbe" = Einfärben in die Deckfarbe. NUR Label geändert, Flag/Verhalten (fxDeckGlowDeck) bleibt exakt gleich.
-    const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
-    action = (
-      <div className="flex flex-col gap-2">
-        {toggleBtn}
-        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
-            const on = deckTintOn === o.v;
-            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
-          })}
-        </div>
-      </div>
-    );
+    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set). #336: KEINE Farbauswahl mehr — Glow ist immer
+    //   Deckfarbe. Nur noch An/Aus.
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   } else if (group.mode === "bg") {
     // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
     // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;

@@ -677,7 +677,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false,
-  deckGlow = false, deckGlowDeck = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene + Farbmodus (Standard/Deckfarbe)
+  deckGlow = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene. #336: immer Deckfarbe (kein Farbmodus mehr)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -1436,7 +1436,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && (
             <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-              deckColor={deckA1 || "#7fdcff"} deckTint={deckGlowDeck} on animate={!reduced} />
+              deckColor={deckA1 || "#7fdcff"} on animate={!reduced} />
           )}
         </div>
       )}

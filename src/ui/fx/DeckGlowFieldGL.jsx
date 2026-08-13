@@ -99,20 +99,20 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", deckTint = false, on = true, animate = true }) {
+export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", on = true, animate = true }) {
   const canvasRef = useRef(null);
   // Live-Werte über Refs → die Zeichenschleife liest sie, ohne dass der GL-Context neu gebaut wird.
   const onRef = useRef(on);
   const animRef = useRef(animate);
   const colorRef = useRef(hexToRgb(deckColor, [0.5, 0.86, 1.0]));
-  const modeRef = useRef(deckTint ? 1 : 0); // 0 = Eigenfarbe (buff), 1 = Deckfarbe (tint)
+  // #336: Glow ist IMMER Deckfarbe → uMode fest auf 1 (Tint). Die Eigenfarbe-Variante (uMode 0) + der deckTint-Prop
+  //   sind entfallen (Farbauswahl im Shop raus).
   const srcsRef = useRef({ d: srcDesktop, m: srcMobile });
   const reloadRef = useRef(true); // Anforderung: Textur (neu) laden (bei Bildwechsel gesetzt)
 
   useEffect(() => { onRef.current = on; }, [on]);
   useEffect(() => { animRef.current = animate; }, [animate]);
   useEffect(() => { colorRef.current = hexToRgb(deckColor, [0.5, 0.86, 1.0]); }, [deckColor]);
-  useEffect(() => { modeRef.current = deckTint ? 1 : 0; }, [deckTint]);
   useEffect(() => { srcsRef.current = { d: srcDesktop, m: srcMobile }; reloadRef.current = true; }, [srcDesktop, srcMobile]);
 
   // GL-Setup GENAU EINMAL (mount). Keine Prop-Deps → kein Context-Neuaufbau.
@@ -207,7 +207,7 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
       gl.uniform1f(uMix, mix);
       gl.uniform1f(uImgAspect, imgAspect);
       gl.uniform3f(uDeck, c[0], c[1], c[2]);
-      gl.uniform1f(uMode, modeRef.current);
+      gl.uniform1f(uMode, 1.0); // #336: immer Deckfarbe (Tint)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 

@@ -495,8 +495,7 @@ export function Autostich() {
     bgFx: activeBgFx(profile, options),
     bgFinisher: activeBgFinisher(profile, options),
     // #deckglow: unabhängige, mit allem kombinierbare Glow-Ebene (gekauft + Option an); Farbmodus Standard ↔ Deckfarbe.
-    deckGlow: deckGlowActive(profile, options),
-    deckGlowDeck: !!options.fxDeckGlowDeck, // false = Standard-Neon, true = Deckfarbe (deckA1)
+    deckGlow: deckGlowActive(profile, options), // #336: Glow ist immer Deckfarbe (kein Farbmodus mehr)
     cardAnims: activeCardAnims(profile, options), // #318 aktive Karten-Animationen (group "anim", stapelbar)
     // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
     // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
@@ -778,7 +777,7 @@ export function Autostich() {
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
-                deckGlow={deckFx.deckGlow} deckGlowDeck={deckFx.deckGlowDeck}
+                deckGlow={deckFx.deckGlow}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
