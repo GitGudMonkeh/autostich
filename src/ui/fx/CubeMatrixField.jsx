@@ -22,7 +22,7 @@ const TUNE = {
   // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
   // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
   SLOW: 0.5, SPEED_LO: 0.006, SPEED_HI: 0.020,
-  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.65, GLOW: 1.1,
+  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1, // #343: gefüllte Würfel weniger transparent (0.65→0.80)
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
   // #317: Scheinwerfer kreuzen von den oberen Ecken über die Karten (X-Form): Apex weit außen (SPREAD 0.78) + stark
@@ -34,6 +34,9 @@ const TUNE = {
   D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.06, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
 };
 const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#ffffff";
+// #343: weniger Weiß, mehr Deckfarbe. WIRE_HOT_MIX = Weiß-Anteil der Wireframe-Striche + Top-Glow (war 0.4 → zu weiß);
+//   FILL_HOT_MIX = Weiß-Anteil der gefüllten Würfel bei Musik-Ausschlag (war 0.5). Beide gelten für Standard UND Deckfarbe.
+const WIRE_HOT_MIX = 0.15, FILL_HOT_MIX = 0.30;
 
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -229,14 +232,14 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
           for (let c = 0; c < C; c++) { const idx = (R - 1 - r) * C + c, val = cubeV[idx] || 0, cx = C > 1 ? lerp(-spreadR, spreadR, c / (C - 1)) : 0;
             const base = mix(lo, hi, C > 1 ? c / (C - 1) : 0), emit = TUNE.C_MINGLOW + (1 - TUNE.C_MINGLOW) * val;
             // Solider Front-Fill: dunkel-Deck bei Ruhe → heller + heiß-getönt bei Ausschlag (kein Gradient mehr).
-            const colF = rgba(mix(mix(dark, base, emit), hot, clamp(val, 0, 1) * 0.5), 1);
+            const colF = rgba(mix(mix(dark, base, emit), hot, clamp(val, 0, 1) * FILL_HOT_MIX), 1); // #343: weniger Weiß-Blowout bei Beats
             const colT = rgba(mix(dark, base, emit * 0.85), 1);   // dunkler Deck-Deckel (KEIN weißes Feld)
             const colS = rgba(mix(dark, base, emit * 0.6), 1);
             // Turm-Höhe = RUHE-Sockel (2·s + C_RISE·(riseBase−1)·0.55, unabhängig vom Ausschlag) + Musik-Ausschlag
             // (val·C_RISE·riseScale). So kann der Showcase hohe, ruhige Türme zeigen (riseBase hoch, riseScale niedrig),
             // während das Spiel bei riseBase=1/riseScale=1 unverändert bleibt.
             const s = hw0, h = 2 * s + TUNE.C_RISE * (p.riseBase - 1) * 0.55 + val * TUNE.C_RISE * p.riseScale;
-            box3d(cx, z - s, z + s, 0, h, s, colF, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, 0.4), alpha);
+            box3d(cx, z - s, z + s, 0, h, s, colF, colT, colS, glow > 0 && !p.reduced ? clamp(0.55 * glow * val, 0, 0.9) : 0, mix(base, hot, WIRE_HOT_MIX), alpha); // #343: Wireframe/Top-Glow mehr Deckfarbe (war 0.4)
           }
         }
       }
