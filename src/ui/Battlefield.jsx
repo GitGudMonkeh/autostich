@@ -1534,7 +1534,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
           return b.tier.epic ? (
             // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
-            <GottChromeWord key={b.id} text={b.tier.text} color={b.tier.color || null} gBig={gBig} gMid={gMid} reduced={reduced}
+            <GottChromeWord key={b.id} text={b.tier.text}
+              /* #335: „Gottgleich" (ohne feste tier.color) folgt dem Prunk-Farbmodus → im Deckfarbe-Modus in der Deckfarbe
+                 (Zweiton deckA1→deckA2). „Lawine"/„Gönn dir" behalten ihre feste tier.color; Standard = Chrome-Zweiton. */
+              color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
+              color2={!b.tier.color && gottDeck && deckA1 ? (deckA2 || deckA1) : null}
+              gBig={gBig} gMid={gMid} reduced={reduced}
               sheen={reduced ? "off" : "once"} idKey={b.id}
               style={{ left: "50%", top: "50%", width: "72%", zIndex: 31,
                        transform: reduced ? "translate(-50%, -50%)" : undefined,

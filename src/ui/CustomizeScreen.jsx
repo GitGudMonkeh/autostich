@@ -476,7 +476,10 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null })
       )}
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
           rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
-      <GottChromeWord key={annKey} text="Gottgleich" gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
+      {/* #335: Wortmarke folgt dem Prunk-Farbmodus — Deckfarbe-Modus → Deck-Zweiton (deckColor→deckColor2), sonst
+          Chrome-Zweiton. Vorschau = In-Game (Battlefield tönt „Gottgleich" analog über gottDeck/deckA1/deckA2). */}
+      <GottChromeWord key={annKey} text="Gottgleich" color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
+        gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
         style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>

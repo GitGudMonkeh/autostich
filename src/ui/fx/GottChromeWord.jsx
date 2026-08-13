@@ -4,9 +4,11 @@
    null = GOTTGLEICH-Zweiton (Cyan→Magenta); mit Farbe (z. B. „Gönn dir" Gold) erben alle Stops diese Farbe.
 
    Positionierung/Einflug-Animation kommen vom Aufrufer über `style` (In-Game: as-bigscore-Pop; Showcase: statisch).
-   `sheen`: "once" = einmaliger Sweep (In-Game-Event), "loop" = endlos (Shop-Vorschau), "off" = kein Sweep (reduced). */
-export function GottChromeWord({ text, color = null, gBig = 32, gMid = 12, reduced = false, sheen = "once", idKey = "x", className = "", style = {} }) {
-  const accTop = color || "#8fe0ff", accBot = color || "#ff5db1", glowC = color || "#ff3da1";
+   `sheen`: "once" = einmaliger Sweep (In-Game-Event), "loop" = endlos (Shop-Vorschau), "off" = kein Sweep (reduced).
+   #335: `color2` (optional) → Deck-ZWEITON: oben `color`, unten/Glow `color2` (Prunk auf Deckfarbe → Wortmarke verläuft
+   wie der Prunk deckA1→deckA2). Ohne `color2` bleibt es einfarbig (`color`) bzw. der Chrome-Zweiton (`color` null). */
+export function GottChromeWord({ text, color = null, color2 = null, gBig = 32, gMid = 12, reduced = false, sheen = "once", idKey = "x", className = "", style = {} }) {
+  const accTop = color || "#8fe0ff", accBot = color2 || color || "#ff5db1", glowC = color2 || color || "#ff3da1";
   const gid = `gc-${idKey}`, mid = `gm-${idKey}`;
   const T = String(text || "").toUpperCase();
   return (
