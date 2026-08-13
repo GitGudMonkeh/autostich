@@ -139,13 +139,27 @@ const FLOAT_ZONES = {
 // „nur die höchsten"-Dominanz (höher unterdrückt niedriger kurz danach). Bewusst SANFT gedrosselt, damit die Stufen
 // bei starken Runs NICHT verstummen, sondern regelmäßig (aber reduziert) erscheinen — auch Gottgleich (jetzt ebenfalls
 // mit `cool`, damit sein Sonder-Effekt/Bass regelmäßig, aber nicht bei JEDEM Stich kommt). Werte tunebar.
+// #344: Stark/Brutal/Irre = Neon-Synthwave-CHROME (Light-Variante) — metallischer Verlauf in die Glyphen geclippt, Glow
+//   via drop-shadow. „Light" = viel Weiß/Silber mit Farbbändern je Stufe; jede Stufe eine Spur „cooler". KEIN Sweep
+//   (Verlauf steht still), reiner Text. Gottgleich (epic) bleibt UNVERÄNDERT (solides Weiß + Bloom, SVG).
 const BIG_SCORE_TIERS = [
   { min: 500000, text: "Gottgleich", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
-  { min: 150000, text: "Irre",       size: 90,  rank: 3, cool: 1600 },
-  { min: 50000,  text: "Brutal",     size: 78,  rank: 2, cool: 2200 },
-  { min: 10000,  text: "Stark",      size: 68,  rank: 1, cool: 2800 },
+  { min: 150000, text: "Irre",   size: 90, rank: 3, cool: 3600,
+    chrome: { grad: "linear-gradient(100deg,#ffffff,#ffe4f5,#ff7ed4,#e2a9ff,#ff7ed4,#ffe4f5,#ffffff)", glow: "#ff2d95", aura: "#b14bff" } },
+  { min: 50000,  text: "Brutal", size: 78, rank: 2, cool: 4600,
+    chrome: { grad: "linear-gradient(100deg,#ffffff,#efe4ff,#b98bff,#7a5cff,#b98bff,#efe4ff,#ffffff)", glow: "#8b5cff", aura: "#12d6ff" } },
+  { min: 10000,  text: "Stark",  size: 68, rank: 1, cool: 5600,
+    chrome: { grad: "linear-gradient(100deg,#ffffff,#eafcff,#7fe6ff,#ffffff,#7fe6ff,#eafcff,#ffffff)", glow: "#12d6ff" } },
 ];
-const BIG_DOMINANCE_MS = 1400; // #315: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
+const BIG_DOMINANCE_MS = 2000; // #315/#344: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
+// #344: geschichteter Chrome-Glow — enger + weiter Halo in `glow`, optionale weite `aura` für die „coolere" Doppelkante
+//   (mobil-bewusst über gBig/gMid = lite ? 16/8 : 32/12). Bei transparentem Fill greift text-shadow nicht → drop-shadow.
+const chromeFilter = (c, gBig, gMid) => {
+  const parts = [`drop-shadow(0 0 ${gMid}px ${c.glow})`, `drop-shadow(0 0 ${gBig}px ${c.glow}88)`];
+  if (c.aura) parts.push(`drop-shadow(0 0 ${Math.round(gBig * 1.4)}px ${c.aura}77)`);
+  parts.push("drop-shadow(0 2px 3px #000a)");
+  return parts.join(" ");
+};
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
 const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
@@ -156,9 +170,7 @@ const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
 const BIG_ANNOUNCE_MS = 1900;       // feste Lebensdauer der Groß-Ansage — turbo-unabhängig, damit auch bei 4×/MAX lesbar
-// Vertikale Spuren gegen „zu sehr überlappen": aufeinanderfolgende Ansagen rotieren durch diese Y-Versätze (px, um die
-// Bildmitte), damit sie sich fächern statt exakt zu stapeln. Pool ist zusätzlich klein gedeckelt (max 3 gleichzeitig).
-const BIG_LANES = [0, -64, 64];
+// #344: BIG_LANES (vertikale Fächer-Spuren) entfernt — alle Ansagen sind jetzt EXAKT mittig (wie Gottgleich).
 // #188: Score-skalierte Effekt-Intensität aus dem Per-Stich-Score (t.gained). Nutzt DIESELBEN Schwellen wie
 // BIG_SCORE_TIERS → Slice/Explosion + Groß-Ansage eskalieren gemeinsam. Rückgabe:
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
@@ -1071,11 +1083,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
     // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
     if (bigScore.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
-    const lane = BIG_LANES[bigSeq.current % BIG_LANES.length];
     bigSeq.current += 1;
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
-    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: bigScore, seed: t.trickNo, lane };
-    setBigFloats((cur) => [...cur, entry].slice(-3)); // max 3 gleichzeitig (jede auf eigener Spur)
+    // #344: kein lane/jitter mehr (alle mittig) → Pool auf max 2 gleichzeitig gedeckelt.
+    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: bigScore };
+    setBigFloats((cur) => [...cur, entry].slice(-2));
     const tm = setTimeout(() => {
       setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
       bigTimers.current = bigTimers.current.filter((x) => x !== tm);
@@ -1547,10 +1559,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }} />
           ) : (
+          // #344: Neon-Synthwave-CHROME (statisch, kein Sweep) — metallischer Verlauf in die Glyphen geclippt
+          //   (transparente Füllung), Glow via drop-shadow. Exakt mittig (translate aus as-bigscore bzw. reduced-transform).
           <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
-            style={{ left: `calc(50% + ${fjitter(b.seed * 3 + 2, 12)}px)`, top: `calc(50% + ${b.lane}px)`, zIndex: 30,
-                     textTransform: "uppercase", // Q2/Loc: Groß-Score-Ansage-Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal geschrieben)
-                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, color: "#d4a63a", textShadow: `0 0 ${gBig}px #d4a63add, 0 0 ${gMid}px #d4a63a, 0 2px 4px #0009`,
+            style={{ left: "50%", top: "50%", zIndex: 30,
+                     textTransform: "uppercase", // Q2/Loc: Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal)
+                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px`, // höhere Stufe = luftiger
+                     backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
+                     WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
+                     filter: chromeFilter(b.tier.chrome, gBig, gMid),
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {b.tier.text}
