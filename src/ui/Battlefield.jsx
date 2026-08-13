@@ -162,8 +162,10 @@ const chromeFilter = (c, gBig, gMid) => {
   return parts.join(" ");
 };
 const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
-// Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine" in Eis-Blau.
-const LAWINE_TIER = { text: "Lawine", size: 104, epic: true, color: "#5ec8f0" };
+// Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine".
+// #: Lawine bekommt EXAKT den Gottgleich-Schrifteffekt (kein fester Farbton mehr) → Synthwave-Chrome-Zweiton bzw. im
+//   Prunk-Deckfarbe-Modus die Deckfarbe (wie Gottgleich). Zusätzlich löst Lawine denselben Gottgleich-Prunk aus (s. u.).
+const LAWINE_TIER = { text: "Lawine", size: 104, epic: true };
 // Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
 const STREAK_GOENN = 200;
 const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24a" };
@@ -1121,7 +1123,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!t) { gottLastAt.current = 0; return; }
     // Vor-Krit-Wert: bei Krit ist gained = scoreBeforeCrit × critMultiplier → wir prüfen scoreBeforeCrit; ohne Krit = gained.
     const gottBase = isCrit ? (t.scoreBeforeCrit || 0) : (t.gained || 0);
-    const gottWin = win && gottBase >= GOTT_FX_MIN && gottEffect !== "gottStandard" && !reduced;
+    // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
+    //   ist der One-Shot-Finisher-Bruch). Gleicher 30-s-Cooldown/reduced-Gate wie Gottgleich.
+    const gottWin = win && (gottBase >= GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
     if (!gottWin) return;
     const now = Date.now();
     if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
@@ -1568,8 +1572,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           return b.tier.epic ? (
             // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
             <GottChromeWord key={b.id} text={b.tier.text}
-              /* #335: „Gottgleich" (ohne feste tier.color) folgt dem Prunk-Farbmodus → im Deckfarbe-Modus in der Deckfarbe
-                 (Zweiton deckA1→deckA2). „Lawine"/„Gönn dir" behalten ihre feste tier.color; Standard = Chrome-Zweiton. */
+              /* #335: „Gottgleich" UND „Lawine" (ohne feste tier.color) folgen dem Prunk-Farbmodus → im Deckfarbe-Modus in
+                 der Deckfarbe (Zweiton deckA1→deckA2), sonst Chrome-Zweiton. Nur „Gönn dir" behält seine feste tier.color (Gold). */
               color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
               color2={!b.tier.color && gottDeck && deckA1 ? (deckA2 || deckA1) : null}
               gBig={gBig} gMid={gMid} reduced={reduced}
