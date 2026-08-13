@@ -1382,38 +1382,39 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich
-          selbst (z-9 hinter der Karte bzw. eigene Ebenen bei Supernova). */}
+          selbst (z-9 hinter der Karte bzw. eigene Ebenen bei Supernova). cardRef=null → der Prunk zentriert sich auf die
+          PANEL-Mitte (pr.width/2), nicht auf die außermittige Gegnerkarte — sonst saß der Effekt v. a. auf Mobile rechts. */}
       {gottTrigger > 0 && gottEffect === "sonnenPuls" && !reduced && (
         <Suspense fallback={null}>
-          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
             deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "laserFaecher" && !reduced && (
         <Suspense fallback={null}>
-          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
             deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "prismaKaskade" && !reduced && (
         <Suspense fallback={null}>
-          <PrismaKaskadePixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          <PrismaKaskadePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
             deckColor={deckA1 || "#31d0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "holoCube" && !reduced && (
         <Suspense fallback={null}>
-          <HoloCubePixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          <HoloCubePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
             deckColor={deckA1 || "#35e0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "supernova" && !reduced && (
         <Suspense fallback={null}>
-          <SupernovaPixi trigger={gottTrigger} panelRef={panelRef} cardRef={oppCardRef}
+          <SupernovaPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
             deckColor={deckA1 || "#ffd24a"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
