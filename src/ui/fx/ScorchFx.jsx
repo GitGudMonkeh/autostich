@@ -45,7 +45,10 @@ function emberCol(h, deckMode, deckRGB) {
   for (let i = 0; i < FIRE.length - 1; i++) {
     if (h <= FIRE[i + 1][0]) { const t = (h - FIRE[i][0]) / (FIRE[i + 1][0] - FIRE[i][0]); c = mix(FIRE[i][1], FIRE[i + 1][1], t); break; }
   }
-  if (deckMode) c = mix(deckRGB, c, 0.45 + 0.55 * h);
+  // #scorch-deck: Deck-Anteil deutlich angehoben (war 0.45+0.55·h → nur ~7 % Deck an der glühenden Brennkante bei
+  //   h≈0.88). Jetzt trägt auch der weiß-heiße Rand/die glühende Brennkante klar die Deckfarbe (~28 % bei h≈0.88),
+  //   der Kern bleibt hell (≈22 % Deck bei h=1 → nicht ausgewaschen).
+  if (deckMode) c = mix(deckRGB, c, 0.28 + 0.50 * h);
   return c;
 }
 const toHex = (c) => "#" + ((1 << 24) + ((c[0] | 0) << 16) + ((c[1] | 0) << 8) + (c[2] | 0)).toString(16).slice(1);
