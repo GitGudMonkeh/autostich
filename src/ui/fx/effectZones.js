@@ -26,7 +26,7 @@ export const pickEffectZone = (isMobile) => (isMobile ? EFFECT_ZONES.mobile : EF
    1.0 = bündig am unteren Rahmen, <1.0 = etwas höher (0.94 = ~6 % über dem Rahmen). Höhenunabhängig — der
    Effekt rechnet seinen konstanten px-Front-Offset selbst raus. DIES ist der eine, fest hinterlegte
    Platzierungswert: einmal hier einstellen → alle Boden-Effekte übernehmen ihn (kein Handanlegen pro Effekt). */
-export const FLOOR_FRONT_AT_BOTTOM = 0.94;
+export const FLOOR_FRONT_AT_BOTTOM = 0.97;
 
 /* Platzierung für JEDEN Boden-Effekt, der (wie CubeMatrixField) seinen Boden per 3D-Projektion zeichnet.
    Neuer Boden-Effekt → dieses Objekt durchreichen (nicht selbst hart kodieren), dann sitzt er automatisch
