@@ -34,7 +34,7 @@ const TUNE = {
   CARD_W: 210, CARD_H: 300,
   // #perf Medium-Stufe (lite): gröberes Raster (Faktor auf COLS/ROWS) → ~3× weniger Kacheln/Display-Objekte; zusätzlich
   // Mini-Pixel aus + DPR-Deckel 1.25 + 45 fps. Kern (Reveal/Zerfall/Fly/Bounce/Fill-Fade→Rahmen) bleibt identisch.
-  LITE_GRID: 0.58,
+  LITE_GRID: 0.45, // #perf-mobile: lite-Raster 0.58→0.45 (12×16 → ~5×7 = 35 statt 63 Kacheln/Texturen)
 };
 const STD_A = "#2ff0ff", STD_B = "#ff2d9b"; // COLORS.deck / deck2 (Fallback ohne Deckfarbe)
 
@@ -300,7 +300,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
         canvas.style.width = "100%"; canvas.style.height = "100%"; canvas.style.display = "block"; host.appendChild(canvas);
-        app.ticker.maxFPS = p.current.lite ? 45 : 0;
+        app.ticker.maxFPS = p.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
         app.ticker.add(frame);
         startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });

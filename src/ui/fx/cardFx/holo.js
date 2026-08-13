@@ -74,11 +74,12 @@ export function drawHolo(g, w, h, sc, p, t, tilt) {
   const halfP = 0.5 * Math.hypot(w, h) + 2; // Streifen decken die ganze Karte quer ab (Maske schneidet außen weg)
 
   const nBands = Math.max(1, T.band.n | 0);
-  const steps = p.lite ? 22 : 38;                // Streifen je Pass
+  const steps = p.lite ? 14 : 38;                // Streifen je Pass — #perf-mobile: lite 22→14
   const passes = [
     { sig: T.band.breite * L * (0.35 + 0.5 * T.band.weich), a: T.additiv.intens },                          // Kern
-    { sig: T.band.breite * L * (0.35 + 0.5 * T.band.weich) * T.additiv.bloomBreite, a: T.additiv.intens * T.additiv.bloom }, // Bloom
   ];
+  // #perf-mobile: Bloom-Pass verdoppelt die Streifenzahl → auf lite weglassen (nur Kern-Pass).
+  if (!p.lite) passes.push({ sig: T.band.breite * L * (0.35 + 0.5 * T.band.weich) * T.additiv.bloomBreite, a: T.additiv.intens * T.additiv.bloom });
 
   for (let bi = 0; bi < nBands; bi++) {
     const phase = bi / nBands;

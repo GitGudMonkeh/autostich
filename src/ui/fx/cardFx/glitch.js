@@ -138,7 +138,7 @@ export function createGlitch(app) {
     }
     for (let i = 0; i < tears.length; i++) {
       const spec = cl.tearSpec[i];
-      const on = !!spec && level > 0.03 && !!tears[i].texture;
+      const on = !!spec && level > 0.03 && !!tears[i].texture && !(p.lite && i >= 2); // #perf-mobile: max. 2 Tear-Slices auf lite (statt 5)
       const s = tears[i];
       s.visible = on;
       if (!on) continue;
@@ -148,7 +148,7 @@ export function createGlitch(app) {
 
     // ── Scanlines (dunkle, scrollende Zeilen; Normal-Blend dunkelt die Karte) ──
     scan.clear();
-    if (T.scan.staerke > 0.001) {
+    if (T.scan.staerke > 0.001 && !p.lite) { // #perf-mobile: Scanlines (h/step rect-Schleife = teuerster Posten) auf lite aus
       const step = Math.max(2, T.scan.dichte * sc);
       const scroll = p.reduced ? 0 : ((t * T.scan.tempo * step) % step + step) % step; // reduced → Standbild (kein Scroll)
       const a = T.scan.staerke * (0.6 + 0.4 * level);
@@ -159,7 +159,7 @@ export function createGlitch(app) {
     if (!p.reduced && t >= cl.nextBar) {
       cl.nextBar = t + 1 / Math.max(0.01, T.bar.tempo);
       const cols = [colNum(T.farbe.ghostA), colNum(T.farbe.ghostB), suitCol(motif.color, 0xffffff)];
-      cl.barSpec = Array.from({ length: T.bar.anzahl }, () => ({ y: rnd() * h, hgt: 1 + rnd() * 2, col: cols[(rnd() * cols.length) | 0] }));
+      cl.barSpec = Array.from({ length: p.lite ? 2 : T.bar.anzahl }, () => ({ y: rnd() * h, hgt: 1 + rnd() * 2, col: cols[(rnd() * cols.length) | 0] })); // #perf-mobile: 2 statt 4 Bars auf lite
     }
     bars.clear();
     if (cl.barSpec.length && level > 0.03) {
