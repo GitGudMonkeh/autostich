@@ -1,4 +1,5 @@
 import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
+import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
 
 /* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
@@ -19,6 +20,13 @@ import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js
 
 // ── deterministische Helfer ──────────────────────────────────────────────────
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// #341: alle Kometen-Größen (Kopf/Schweif/Impact) +20 % über EINEN globalen Faktor — die Tier-Relationen (TIER_SIZE)
+//   bleiben unangetastet, nur die absolute Größe wächst. Ambiente-Sterne (K_AMB) sind KEINE Kometen → unverändert.
+const COMET_SIZE_MUL = 1.2;
+// #341: die Komet-Einschlagfläche (PLANE_*) ans gemeinsame fixe Effekt-Boden-Feld (effectZones.js) koppeln → Kometen
+//   schlagen auf DERSELBEN Bodenfläche ein wie alle anderen Boden-Effekte (Desktop-Zone als geteilte Referenz).
+const _FLOOR = EFFECT_ZONES.desktop;
 
 // ── TUNE (aus der Tuning-Konsole abgestimmt) ─────────────────────────────────
 const TUNE = {
@@ -50,28 +58,29 @@ const TUNE = {
   // Impact — #: mehr Partikel-Explosion statt „Ball": kleinerer/kürzerer Blitz, mehr & schnellere scharfe Funken mit
   // Schwerkraft, die am Rahmen UND Boden abprallen.
   IMP_AT: 0.9,
-  IMP_FLASH_SZ: 60,          // kleiner (war 110) → kein großer Ball-Blitz
+  IMP_FLASH_SZ: 60 * COMET_SIZE_MUL,   // #341: +20 % (Basis 60; war 110)
   IMP_FLASH_DUR: 0.26,       // kürzer (war 0.4) → knackiger Pop
   IMP_SPARKS: 90,            // mehr Funken (war 66) → dichter Spray
   IMP_SPARK_SPD: 360,        // schneller rausgeschleudert (war 305)
   IMP_SPARK_LIFE: 1.1,       // etwas länger, damit man das Bouncen sieht (war 0.9)
-  IMP_SPARK_SZ: 1.05,        // kleiner (war 1.4) → schärfere Partikel
+  IMP_SPARK_SZ: 1.05 * COMET_SIZE_MUL, // #341: +20 % (Basis 1.05; war 1.4)
   IMP_GRAV: 1250,            // Schwerkraft (war 0) → ballistische Bögen statt Kugel
   IMP_DRAG: 0.35,            // seitliche Dämpfung (war fest 0.9) → Funken fliegen weiter
   IMP_BOUNCE: 0.52,          // Restitution am Rahmen/Boden
   IMP_BOUNCE_FRIC: 0.82,     // seitliche Reibung beim Boden-Bounce
-  // #317-artig: perspektivische Einschlag-FLÄCHE (Trapez) statt einer Linie am unteren Rand → 3D-Streuung.
-  // d = 0 (fern/hinten) .. 1 (nah/vorn). Ziel-Y fern höher, nah tiefer; Fläche fern schmal, nah breit; Tiefen-Skala
-  // (Kopf/Schweif/Impact-Größe) fern kleiner. Werte nach Gehör/Blick justierbar.
-  PLANE_FAR_Y: 0.50, PLANE_NEAR_Y: 0.96, PLANE_FAR_HALF: 0.20, PLANE_NEAR_HALF: 0.62, PLANE_DEPTH_MIN: 0.42,
+  // #341: perspektivische Einschlag-FLÄCHE (Trapez) = das gemeinsame fixe Effekt-Boden-Feld (effectZones.js).
+  //   d = 0 (fern/hinten, obere Boden-Kante) .. 1 (nah/vorn, vordere Boden-Kante). Vorn volle Breite (HALF 0.5), hinten
+  //   um den Perspektiv-Einzug (_FLOOR.persp) verjüngt → deckungsgleich mit Glutfunken/Cube-Matrix & künftigen Boden-FX.
+  PLANE_FAR_Y: _FLOOR.y / 100, PLANE_NEAR_Y: FLOOR_FRONT_AT_BOTTOM,
+  PLANE_FAR_HALF: 0.5 - _FLOOR.persp / 100, PLANE_NEAR_HALF: 0.5, PLANE_DEPTH_MIN: 0.70,
 };
 const TIER_SIZE = [0.5, 1.2, 1.5, 2, 3]; // Schnuppen-Größen-× je Hit-Tier
 const TIER_IMP  = [0, 1, 1.5, 2.1, 5];   // Impact-Stärke je Tier (0 = aus → „Schwach" impact-frei)
 
 // px-Mapping der abstrakten Board-Größen (aus der Tuning-Konsole; leicht justierbar)
 const K_AMB = 6.0;     // Ambiente-Stern-Basisdurchmesser (× AMB_SIZE × Ebenen-Faktor × sc)
-const K_HEAD = 4.2;    // Schnuppen-Kopf-Durchmesser (× HEAD_SIZE × TIER_SIZE × sc)
-const K_TAIL = 6.8;    // Schweif-Sample-Durchmesser (× TAIL_WIDTH × TIER_SIZE × sc)
+const K_HEAD = 4.2 * COMET_SIZE_MUL;    // #341: Schnuppen-Kopf-Durchmesser +20 % (Basis 4.2)
+const K_TAIL = 6.8 * COMET_SIZE_MUL;    // #341: Schweif-Sample-Durchmesser +20 % (Basis 6.8)
 const K_SPARK = 2.8;   // Funken-Durchmesser (× IMP_SPARK_SZ × sc)
 
 const HREF = 360;      // Referenz-Panelhöhe (Geschwindigkeiten/Größen skalieren mit H/HREF)
