@@ -289,8 +289,20 @@ const KLINGE_SCHEDULE = [
   { m: 1.5,  d: "left" }, { m: 1.5,  d: "right" }, { m: 1.5, d: "top" }, // ×1,5  → LINKS · RECHTS · OBEN
   { m: 2.0,  d: "left" }, { m: 2.0,  d: "right" }, { m: 2.0, d: "top" }, { m: 2.0, d: "z" }, // ×2,0 → alle vier inkl. Z-Schnitt
 ];
-const KLINGE_DIR_LABEL = { left: "Links", right: "Rechts", top: "Oben", z: "Z-Schnitt" };
-const kMultLabel = (m) => "×" + String(m).replace(".", ",");           // 1.25 → „×1,25"
+// #330: KLINGE_DIR_LABEL/kMultLabel entfernt — die Klinge-Vorschau zeigt kein eigenes Stufen-Label mehr (Chrome zentral).
+
+/* #330 Einheitlicher Panel-Chip für das verbindliche 4-Ecken-Showcase-Template — EIN Stil für ALLE Ecken. Die Bühne
+   (FxStage) setzt die vier Ecken zentral (TL Effekt-Name · TR AKTIV/Preis · BR Standard/Deckfarbe wo Farbmodus · BL
+   frei = reservierter Ausnahme-Slot, aktuell nur Deck-Glow „mit/ohne"). Die Scene-Komponenten zeichnen KEIN eigenes
+   Chrome mehr, nur noch die Visuals. `style` überschreibt Farbe/Rahmen (TR: AKTIV grün bzw. Preis in Rarity-Farbe). */
+const PANEL_CHIP_POS = { tl: "left-2 top-2", tr: "right-2 top-2", bl: "left-2 bottom-2", br: "right-2 bottom-2" };
+function PanelChip({ corner = "tl", children, style }) {
+  return (
+    <span className={`absolute ${PANEL_CHIP_POS[corner]} text-[9px] font-extrabold px-2 py-0.5 rounded-md`}
+      style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: "#cbd3ff", ...style }}>{children}</span>
+  );
+}
+
 function FinisherScene({ variant, deckTint = false, look = null }) {
   const [tick, setTick] = useState(0);
   // #klinge-deck: Standard = kühles Stahlweiß (bladeTint, wie in-game bladeColor=null); Deckfarbe = Deck-Beispielfarbe
@@ -328,14 +340,7 @@ function FinisherScene({ variant, deckTint = false, look = null }) {
       <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
         <div key={tick} className="absolute inset-0">{fx}</div>
       </div>
-      {/* #312 Stufen-Label: zeigt, WELCHE Serienschwelle (Multiplikator) + Schnittrichtung gerade demonstriert wird.
-          #: unten-rechts, damit das „(aktiv)"-Ausgerüstet-Symbol oben-rechts es nicht verdeckt. */}
-      {/* #farbsystem: Badge im selben Pill-Design wie die Glutfunken-Tier-Anzeige (eckig, heller Rand, „Label"-Präfix
-          in 70 % Deckkraft) — hier „Serie" statt „Tier", Inhalt bleibt Multiplikator + Schnittrichtung. */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#8fd8ff") : (kstep.d === "z" ? "#8fd8ff" : "#cfe0ff") }}>
-        <span className="opacity-70">Serie</span> {kMultLabel(kstep.m)} · {KLINGE_DIR_LABEL[kstep.d]}
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — Name/Status/Farbmodus zeichnet zentral die Bühne (FxStage). */}
     </div>
   );
 }
@@ -356,10 +361,7 @@ function ScorchScene({ deckTint = false, look = null }) {
       <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
         value={8} suit={suitColor(DEMO_SUIT)} deckColor={look?.a1 || "#35e0ff"} speed={1.15}
         onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#8fd8ff") : "#ffb27a" }}>
-        <span className="opacity-70">Finisher</span> Laser
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
 }
@@ -385,10 +387,7 @@ function HologridScene({ deckTint = false, look = null }) {
         <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
           value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1} />
       </Suspense>
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#7ee0ff") : "#7ee0ff" }}>
-        <span className="opacity-70">Finisher</span> Hologrid-Laser
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
 }
@@ -434,10 +433,7 @@ function BlackholeScene({ deckTint = false }) {
       <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
       <div ref={oppRef} className="absolute" style={{ left: "72%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} />
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? "#8fd8ff" : "#9fc2ff" }}>
-        <span className="opacity-70">Finisher</span> Schwarzes Loch
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
 }
@@ -448,7 +444,7 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", cycleMs = 2200, look = null }) {
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null }) { // #330 label/tint entfallen (Chrome zentral in FxStage)
   const panelRef = useRef(null);
   const cardRef = useRef(null);
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-Backdrop (look.bf)
@@ -482,10 +478,7 @@ function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "
           rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
       <GottChromeWord key={annKey} text="Gottgleich" gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
         style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: tint }}>
-        <span className="opacity-70">Score</span> {label}
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
 }
@@ -521,10 +514,7 @@ function StandardFinisherScene() {
           {cardEl}
         </div>
       </div>
-      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: "#cfe0ff" }}>
-        Wegflug
-      </div>
+      {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status zentral. */}
     </div>
   );
 }
@@ -605,13 +595,12 @@ function SpezialScene({ deckTint = false }) {
               <div className="absolute inset-0 flex items-center justify-center" style={{ color: "#dde6f5", fontWeight: 800, fontSize: "clamp(13px,3vw,20px)" }}>7</div>
               {c.fx && <Suspense fallback={null}>{c.fx}</Suspense>}
             </div>
-            <span className="text-[9px] font-extrabold uppercase tracking-wide" style={{ color: "#cbd3ff" }}>{c.label}</span>
+            {/* #330 Archetyp-Kartenlabels entfernt — kein Scene-Chrome mehr (Farbmodus zeigt zentral die Bühne). */}
           </div>
         ))}
       </div>
       {/* Hitze = FireHead (Panel-Overlay über der ersten Karte); Flammen loder nach oben in den Freiraum über den Karten. */}
       <Suspense fallback={null}><FireHead heat={1} panelRef={panelRef} cardRef={fireCardRef} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /></Suspense>
-      <span className="absolute right-2 bottom-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Standard"}</span>
     </div>
   );
 }
@@ -651,13 +640,12 @@ function DeckGlowScene({ deckTint = false }) {
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={cur.a1} deckTint={deckTint} on={on} animate />}
       <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
-      <div className="absolute left-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: on ? "#e8ecff" : "#9aa0c4" }}>
-        <span style={{ opacity: 0.7 }}>{cur.name}</span>
+      {/* #330 Ausnahme-Slot unten-links (bewusst reserviert): Deck-Glow zeigt „Feldname · mit/ohne Deck-Glow" im
+          einheitlichen PanelChip-Design. Der Farbmodus-Chip (BR) sowie Name/Status kommen zentral aus der Bühne. */}
+      <PanelChip corner="bl" style={{ color: on ? "#e8ecff" : "#9aa0c4" }}>
+        <span style={{ opacity: 0.7 }}>{cur.name}</span>{" "}
         <span style={{ color: on ? accent : "#9aa0c4" }}>{on ? "· mit Deck-Glow" : "· ohne"}</span>
-      </div>
-      <span className="absolute right-2 bottom-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Eigenfarbe"}</span>
+      </PanelChip>
     </div>
   );
 }
@@ -671,20 +659,20 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
   if (fx.preview === "deckglow") return <DeckGlowScene deckTint={deckTint} />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
-  if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
+  if (fx.preview === "gottStandard") return <GottScene Fx={null} look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={PREVIEW_LOOK.klinge} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={PREVIEW_LOOK.scorch} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={PREVIEW_LOOK.hologrid} />; // #321 Hologrid-Slice-Finisher (Pixi)
   if (fx.preview === "spezial") return <SpezialScene deckTint={deckTint} />; // #328 4-Karten-Showcase (Feuer/Blitz/Eis/Pflanze) — Farbmodus aus archColor (deckTint)
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
-  // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
-  // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonne" tint={deckTint ? PREVIEW_LOOK.sonnenPuls.a1 : "#ff8fc4"} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laserfächer" tint={deckTint ? PREVIEW_LOOK.laserFaecher.a1 : "#5ff6ff"} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma" tint={deckTint ? PREVIEW_LOOK.prismaKaskade.a1 : "#7ee0ff"} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? PREVIEW_LOOK.holoCube.a1 : "#7ff0ff"} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} label="Supernova" tint={deckTint ? PREVIEW_LOOK.supernova.a1 : "#ffd24a"} look={PREVIEW_LOOK.supernova} />; // #326 (Pixi)
+  // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel (Name/Status/Farbmodus
+  //   zeichnet zentral die Bühne, #330).
+  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} />; // #326 (Pixi)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -763,14 +751,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
         </div>
       )}
       {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={domColor} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
-      {(effect === "embers" || effect === "starfield") && (
-        <div className="absolute right-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
-          style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: effect === "starfield" ? "#cfe0ff" : "#ffd7b0" }}>
-          {pixiField
-            ? (<><span className="opacity-70">Tier</span> {EMBER_TIER_LABELS[tierStep]}</>)
-            : (<><span className="opacity-70">Score</span> {demoScore.toLocaleString("de-DE")}</>)}
-        </div>
-      )}
+      {/* #330 Tier/Score-Chip entfernt — kein Scene-Chrome mehr (nur noch das 4-Ecken-Template der Bühne). */}
     </div>
   );
 }
@@ -1206,6 +1187,9 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   // #328 Skill-Effekt hat KEIN eigenes …Deck-Flag → Farbmodus kommt aus archColor (spezialSel); sonst aus deckOpt.
   const spezialSel = options?.archColor === "deck" ? "deck" : "standard";
   const deckTintOn = fx.group === "spezial" ? spezialSel === "deck" : (deckOpt ? !!options?.[deckOpt] : false);
+  // #330 Farbmodus-Gate: BR-Chip „Standard/Deckfarbe" nur bei Effekten MIT Farbmodus (eigenes …Deck-Flag oder Skill-
+  //   Effekt/spezial). Immer-Deckfarbe-Effekte ohne Umschalter (Karten-Anims) bleiben ohne BR-Chip.
+  const hasColorMode = !!deckOpt || fx.group === "spezial";
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
   const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
@@ -1244,14 +1228,15 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       </div>
     );
   } else if (fx.key === "deckglow") {
-    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set) MIT Farbmodus — An/Aus + Eigenfarbe/Deckfarbe.
-    // „Eigenfarbe" = verstärkt die vorhandenen Farben des Backgrounds (kein Umfärben); „Deckfarbe" = Einfärben in die Deckfarbe.
+    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set) MIT Farbmodus — An/Aus + Standard/Deckfarbe.
+    // #330: Label „Standard" (vormals „Eigenfarbe") — verstärkt die vorhandenen Farben des Backgrounds (kein Umfärben);
+    //   „Deckfarbe" = Einfärben in die Deckfarbe. NUR Label geändert, Flag/Verhalten (fxDeckGlowDeck) bleibt exakt gleich.
     const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
     action = (
       <div className="flex flex-col gap-2">
         {toggleBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Eigenfarbe" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1349,15 +1334,14 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             live nach (die eigentlichen Renderer bleiben unangetastet) → für „spezial" trägt der Key den Farbmodus mit, damit
             der Standard↔Deckfarbe-Toggle die Vorschau sofort umfärbt (billiger Canvas-Remount, kein Pixi/WebGL betroffen). */}
         <GlobalFxScenePreview key={fx.group === "spezial" ? `spezial:${deckTintOn ? "deck" : "std"}` : fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
-        {/* Gruppen-Schild oben links */}
-        <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
-          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Archetyp-Effekte" : group.title}</span>
-        {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis in der Rarity-Farbe (#farbsystem) bei noch nicht gekauft. */}
+        {/* #330 Verbindliches 4-Ecken-Template — hier zentral, EINMAL. Scenes bringen KEIN eigenes Chrome mehr mit.
+            TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·
+            BL: leer — reservierter Ausnahme-Slot (aktuell nur Deck-Glow zeichnet dort „mit/ohne" im PanelChip-Design). */}
+        <PanelChip corner="tl">{fx.name}</PanelChip>
         {active
-          ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</span>
-          : !owned ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#0b0a16cc", color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</span> : null}
-        {/* Name unten links */}
-        <span className="absolute left-2.5 bottom-2 text-[15px] font-extrabold" style={{ textShadow: "0 1px 8px #000, 0 0 3px #000" }}>{fx.name}</span>
+          ? <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</PanelChip>
+          : !owned ? <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip> : null}
+        {hasColorMode && <PanelChip corner="br">{deckTintOn ? "Deckfarbe" : "Standard"}</PanelChip>}
       </div>
       {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
       <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
