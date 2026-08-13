@@ -42,7 +42,7 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
@@ -494,6 +494,9 @@ export function Autostich() {
     // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
     bgFx: activeBgFx(profile, options),
     bgFinisher: activeBgFinisher(profile, options),
+    // #deckglow: unabhängige, mit allem kombinierbare Glow-Ebene (gekauft + Option an); Farbmodus Standard ↔ Deckfarbe.
+    deckGlow: deckGlowActive(profile, options),
+    deckGlowDeck: !!options.fxDeckGlowDeck, // false = Standard-Neon, true = Deckfarbe (deckA1)
     cardAnims: activeCardAnims(profile, options), // #318 aktive Karten-Animationen (group "anim", stapelbar)
     // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
     // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.

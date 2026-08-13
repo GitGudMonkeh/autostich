@@ -4,7 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  auroraActive, embersActive, activeBgFx, activeBgFinisher,
+  auroraActive, embersActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
 } from "../src/game/themes.js";
 
@@ -157,8 +157,24 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
   it("GLOBAL_FX führt aurora, cubematrix, embers, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326)", () => {
     expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
-      ["aurora", "cubematrix", "embers", "starfield", "edgeglow", "holo", "glitch",
+      ["aurora", "cubematrix", "deckglow", "embers", "starfield", "edgeglow", "holo", "glitch",
        "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
+  });
+  it("#deckglow: Deck-Glow liegt in der eigenen bgglow-Gruppe (frei kombinierbar), 5 DP, korrekte Naht", () => {
+    const fx = GLOBAL_FX_BY_KEY.deckglow;
+    expect(fx.group).toBe("bgglow");
+    expect(fx.ownKey).toBe("fx:deckglow");
+    expect(fx.option).toBe("fxDeckGlow");
+    expect(globalFxPrice(fx)).toBe(5);
+    // Eigene Ebene → NICHT in den exklusiven Slots (kombiniert mit allem).
+    expect(BG_FX_KEYS.includes("deckglow")).toBe(false);
+    expect(BG_FIN_KEYS.includes("deckglow")).toBe(false);
+    // Aktiv = gekauft UND Option an — unabhängig davon, welcher bgfx-Effekt gewählt ist (kombinierbar).
+    const owned = { ...prof(), ownedCosmetics: { "fx:deckglow": true } };
+    expect(deckGlowActive(owned, { fxDeckGlow: true })).toBe(true);
+    expect(deckGlowActive(owned, { fxDeckGlow: true, fxAurora: true })).toBe(true); // parallel zu Aurora
+    expect(deckGlowActive(owned, { fxDeckGlow: false })).toBe(false);
+    expect(deckGlowActive(prof(), { fxDeckGlow: true })).toBe(false); // nicht gekauft → nicht aktiv
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
     for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {

@@ -63,6 +63,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
+import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
@@ -674,6 +675,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false,
+  deckGlow = false, deckGlowDeck = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene + Farbmodus (Standard/Deckfarbe)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -706,6 +708,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
   const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
   const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
+  const deckGlowOn = pixiEnabled && deckGlow && !!battlefield; // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar, Gate wie Aurora)
   // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
   const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -1420,6 +1423,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
           </picture>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
+          {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
+              Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
+          {deckGlowOn && (
+            <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
+              deckColor={deckGlowDeck ? (deckA1 || "#7fdcff") : "#7fdcff"} on animate={!reduced} />
+          )}
         </div>
       )}
       {/* #306 Battlefield-Ambiente (einfach-exklusiv): genau EIN Feld-Effekt (Hologrid/Sternenfeld/Aurora/Glutfunken/

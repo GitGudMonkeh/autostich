@@ -39,6 +39,11 @@ export const GLOBAL_FX = [
   // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
   { key: "cubematrix", name: "Cube-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
     ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
+  // #deckglow: Deck-Glow — die hellen Linien/Kanten des Battlefield-Bildes glühen (rein additiv) in der Deck-/Standard-
+  // farbe auf, dazu ein „Lauflicht", das an den Konturen entlangwandert. EIGENE Ebene (WebGL-Canvas, mobil-sicher wie
+  // Aurora), NICHT im exklusiven bgfx-Slot → frei mit allen anderen Effekten kombinierbar (group "bgglow", mode toggle).
+  { key: "deckglow", name: "Deck-Glow", desc: "Die hellen Linien des Battlefields glühen in der Deckfarbe auf, und ein Lauflicht wandert an den Konturen entlang. Eigene Ebene — frei mit allen anderen Effekten kombinierbar.",
+    ownKey: "fx:deckglow", option: "fxDeckGlow", preview: "deckglow", price: 5, group: "bgglow" }, // #deckglow: 5 DP · frei kombinierbar
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 10, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi) · #farbsystem: grün = 10 DP
   { key: "starfield", name: "Sternenfeld", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
@@ -91,6 +96,9 @@ export const globalFxActive = (profile, options, key) => {
 // einen Key. Nach dem #cleanup gibt es je Slot nur noch einen Effekt (Aurora bzw. Glutfunken).
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 export const embersActive = (profile, options) => globalFxActive(profile, options, "embers");
+// #deckglow: Deck-Glow ist eine UNABHÄNGIGE Ebene (kein exklusiver Slot) → gekauft UND per Option an = aktiv,
+// unabhängig davon, welcher bgfx/bgfin-Effekt gewählt ist. So kombiniert es mit allen anderen Effekten.
+export const deckGlowActive = (profile, options) => globalFxActive(profile, options, "deckglow");
 export const BG_FX_KEYS  = ["aurora", "cubematrix"];  // reiner Hintergrund (einfach-exklusiv)
 export const BG_FIN_KEYS = ["embers", "starfield"];  // Hintergrund-Finisher (reagiert je Stich; einfach-exklusiv)
 export function activeBgFx(profile, options) {

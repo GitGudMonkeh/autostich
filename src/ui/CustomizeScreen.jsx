@@ -12,6 +12,7 @@ import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.j
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
+import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow-Vorschau (eigene WebGL-Canvas)
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei) — Vorschau + In-Game
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
@@ -167,6 +168,7 @@ const FX_GROUPS = [
   //   Farbwahl Standard ↔ Deckfarbe; die zwei Kacheln stehen vorne in der Karten-Liste (fxGroupItems).
   { key: "anim",     title: "Karten-Animationen",   hint: "frei kombinierbar", mode: "toggle" }, // #318 Edge-Glow … (Overlay über den Karten)
   { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
+  { key: "bgglow",   title: "Hintergrund-Glow",     hint: "frei kombinierbar", mode: "toggle" }, // #deckglow: eigene Ebene, mit allen Effekten kombinierbar
   { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
   { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
   // #322–#326 Gottgleich-Prunk (feuert beim gottgleichen Sieg ohne Krit): einfach-exklusiv, „Gottgleich · Standard" = kein Prunk.
@@ -578,6 +580,52 @@ function SpezialScene({ deckTint = false }) {
   );
 }
 
+/* #deckglow 4-BG-Showcase: rotiert durch verschieden FARBIGE Battlefields und zeigt jeden erst OHNE, dann MIT dem
+   Deck-Glow (weiche Überblendung). Deckfarbe-Modus → jedes BG glüht in der Farbe seines Packs (a1); Standard → festes
+   Neon. Genau EINE WebGL-Canvas (pro BG frisch gekeyt), das darunterliegende <img> ist die „Ohne"-Referenz. */
+const DECKGLOW_BGS = [
+  { bf: "bf_eis", a1: "#46c6ff", name: "Eis" },
+  { bf: "bf_samurai", a1: "#ff3a5e", name: "Samurai" },
+  { bf: "bf_kosmos", a1: "#ff4dcb", name: "Schwarzes Loch" },
+  { bf: "bf_drache", a1: "#ffcf5a", name: "Drache" },
+  { bf: "bf_polarlicht", a1: "#7cc6ff", name: "Polarlicht" },
+];
+function DeckGlowScene({ deckTint = false }) {
+  const [idx, setIdx] = useState(0);
+  const [on, setOn] = useState(false);
+  const isMobile = useIsMobile();
+  useEffect(() => {
+    let alive = true, to = null, i = 0, phase = "off";
+    setIdx(0); setOn(false);
+    const OFF_MS = 1100, ON_MS = 2200; // erst „ohne" (Referenz), dann „mit" (länger, damit man das Lauflicht sieht)
+    const run = () => {
+      if (!alive) return;
+      if (phase === "off") { setOn(true); phase = "on"; to = setTimeout(run, ON_MS); }
+      else { setOn(false); i = (i + 1) % DECKGLOW_BGS.length; setIdx(i); phase = "off"; to = setTimeout(run, OFF_MS); }
+    };
+    to = setTimeout(run, OFF_MS);
+    return () => { alive = false; if (to) clearTimeout(to); };
+  }, []);
+  const cur = DECKGLOW_BGS[idx];
+  const bf = battlefieldAssets(cur.bf);
+  const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
+  const color = deckTint ? cur.a1 : "#7fdcff";
+  return (
+    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
+      {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      {bf && <DeckGlowFieldGL key={idx} srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={color} on={on} animate />}
+      <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
+      <div className="absolute left-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: on ? "#bfe6ff" : "#9aa0c4" }}>
+        <span style={{ opacity: 0.7 }}>{cur.name}</span>
+        <span style={{ color: on ? (deckTint ? cur.a1 : "#7fdcff") : "#9aa0c4" }}>{on ? "· mit Deck-Glow" : "· ohne"}</span>
+      </div>
+      <span className="absolute right-2 bottom-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Standard"}</span>
+    </div>
+  );
+}
+
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }) {
@@ -585,6 +633,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  if (fx.preview === "deckglow") return <DeckGlowScene deckTint={deckTint} />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottScene Fx={null} label="Standard" tint="#cbd3ff" look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
@@ -987,7 +1036,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 // #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
-const TAB_LABEL = { anim: "Karten", bgfx: "Feld", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
+const TAB_LABEL = { anim: "Karten", bgfx: "Feld", bgglow: "Glow", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
 const FX_SHORT = {
@@ -995,6 +1044,7 @@ const FX_SHORT = {
   holo: "Prismatisches Lichtband, tilt-reaktiv.",
   glitch: "Cyberpunk-Glitch mit gelegentlichen Bursts.",
   aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
+  deckglow: "Linien des Battlefields glühen; Lauflicht wandert an den Konturen entlang.",
   cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
   embers: "Glut steigt auf; je Sieg ein Funken-Aufstoß.",
   starfield: "Sternschnuppe je Stich — größer mit dem Score.",
@@ -1109,7 +1159,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "deckglow" ? "fxDeckGlowDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
@@ -1203,6 +1253,21 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (group.key === "anim" && fx.key === "none") {
     // #318 „Keine Animation" (Aus-Zustand der Karten-Animationen): schaltet alle Karten-Animationen ab.
     action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
+  } else if (deckOpt) {
+    // #deckglow: frei kombinierbarer Toggle MIT Farbmodus (Standard-Neon ↔ Deckfarbe) — An/Aus + Farbwahl.
+    const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = (
+      <div className="flex flex-col gap-2">
+        {toggleBtn}
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            const on = deckTintOn === o.v;
+            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+          })}
+        </div>
+      </div>
+    );
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
