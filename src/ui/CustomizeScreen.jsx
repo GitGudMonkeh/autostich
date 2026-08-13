@@ -613,7 +613,7 @@ function DeckGlowScene({ deckTint = false }) {
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {bf && <DeckGlowFieldGL key={idx} srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={color} on={on} animate />}
+      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={color} on={on} animate />}
       <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
       <div className="absolute left-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: on ? "#bfe6ff" : "#9aa0c4" }}>

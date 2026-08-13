@@ -7,8 +7,13 @@ import { useRef, useEffect } from "react";
 
    Rein ADDITIV (Werte am Tuning-Board eingestellt: Umfärbung = 0): die Canvas gibt NUR die farbige Glut aus
    (Schwarz = Alpha 0), Komposition per PREMULTIPLIED ALPHA über dem darunterliegenden Battlefield-<img> — dieselbe
-   mobil-sichere Technik wie AuroraFieldGL (bewusst KEIN mix-blend-mode: bricht im z-index-Stacking-Context).
-   Dadurch ist Deck-Glow eine unabhängige Ebene und mit ALLEN anderen Effekten kombinierbar.
+   mobil-sichere Technik wie AuroraFieldGL. Dadurch ist Deck-Glow eine unabhängige Ebene und mit ALLEN anderen
+   Effekten kombinierbar.
+
+   WICHTIG (Mobile-Stabilität): der GL-Context wird GENAU EINMAL aufgebaut. `on`, `deckColor` und die Bildquelle
+   fließen über Refs in die Zeichenschleife — KEIN Teardown/Neuaufbau bei Prop-Änderungen. (Ein früher Bug baute den
+   Context bei jedem An/Aus- und BG-Wechsel neu auf → iOS Safari limitiert WebGL-Contexts hart und rendert dann
+   nichts mehr. Deshalb hier stabil, Textur wird in-place nachgeladen.)
 
    Props: srcDesktop/srcMobile = Battlefield-Bild je Viewport · deckColor = Glutfarbe (Standard-Neon oder Deckfarbe)
           on = an/aus (weiche Überblendung) · animate = laufende Animation (false → statisches Standbild). */
@@ -75,7 +80,19 @@ function hexToRgb(h, fb) {
 
 export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", on = true, animate = true }) {
   const canvasRef = useRef(null);
+  // Live-Werte über Refs → die Zeichenschleife liest sie, ohne dass der GL-Context neu gebaut wird.
+  const onRef = useRef(on);
+  const animRef = useRef(animate);
+  const colorRef = useRef(hexToRgb(deckColor, [0.5, 0.86, 1.0]));
+  const srcsRef = useRef({ d: srcDesktop, m: srcMobile });
+  const reloadRef = useRef(true); // Anforderung: Textur (neu) laden (bei Bildwechsel gesetzt)
 
+  useEffect(() => { onRef.current = on; }, [on]);
+  useEffect(() => { animRef.current = animate; }, [animate]);
+  useEffect(() => { colorRef.current = hexToRgb(deckColor, [0.5, 0.86, 1.0]); }, [deckColor]);
+  useEffect(() => { srcsRef.current = { d: srcDesktop, m: srcMobile }; reloadRef.current = true; }, [srcDesktop, srcMobile]);
+
+  // GL-Setup GENAU EINMAL (mount). Keine Prop-Deps → kein Context-Neuaufbau.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -106,9 +123,7 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
     const uImgAspect = gl.getUniformLocation(prog, "uImgAspect");
     const uDeck = gl.getUniformLocation(prog, "uDeck");
     const uTex = gl.getUniformLocation(prog, "uTex");
-    const dcol = hexToRgb(deckColor, [0.5, 0.86, 1.0]);
 
-    // Textur (Battlefield-Bild). Bis zum Laden 1×1 transparent → nichts rendern.
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // WebGL y läuft von unten → Bild passend orientieren
@@ -119,18 +134,15 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.activeTexture(gl.TEXTURE0);
     gl.uniform1i(uTex, 0);
-
-    // Composition: transparente Canvas, additive Glut per premultiplied „over".
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Responsives Bild: denselben Breakpoint spiegeln wie das <picture> (max-width:640px → mobile).
-    const coarse = typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(pointer: coarse)").matches : false;
+    const coarse = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : false;
     const mqMobile = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(max-width: 640px)") : null;
-    const pickSrc = () => ((mqMobile && mqMobile.matches && srcMobile) ? srcMobile : (srcDesktop || srcMobile));
+    const pickSrc = () => ((mqMobile && mqMobile.matches && srcsRef.current.m) ? srcsRef.current.m : (srcsRef.current.d || srcsRef.current.m));
 
     let imgAspect = 1.7778, texReady = false, curSrc = null, imgEl = null, disposed = false;
+    // Textur in-place nachladen (SELBER Context, keine Neuerstellung) — nur wenn sich die Quelle geändert hat.
     const loadTex = () => {
       const src = pickSrc();
       if (!src || src === curSrc) return;
@@ -146,8 +158,7 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
       };
       img.src = src;
     };
-    loadTex();
-    const onMq = () => loadTex();
+    const onMq = () => { curSrc = null; loadTex(); }; // Viewport-Wechsel → passende Auflösung neu wählen
     if (mqMobile) { if (mqMobile.addEventListener) mqMobile.addEventListener("change", onMq); else if (mqMobile.addListener) mqMobile.addListener(onMq); }
 
     const dprCap = coarse ? 1.4 : 2;
@@ -158,44 +169,48 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
     };
 
-    let mix = on ? 1 : 0; // weiche An/Aus-Überblendung (Showcase: ohne → mit)
+    let mix = onRef.current ? 1 : 0; // weiche An/Aus-Überblendung (Showcase: ohne ↔ mit)
     const draw = (tSec) => {
       resize();
-      const target = on ? 1 : 0;
+      if (reloadRef.current) { reloadRef.current = false; curSrc = null; loadTex(); } // Bild gewechselt → in-place nachladen
+      const target = onRef.current ? 1 : 0;
       mix += (target - mix) * 0.12;
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!texReady) return; // Bild noch nicht da → transparent
+      const c = colorRef.current;
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, tSec);
       gl.uniform1f(uMix, mix);
       gl.uniform1f(uImgAspect, imgAspect);
-      gl.uniform3f(uDeck, dcol[0], dcol[1], dcol[2]);
+      gl.uniform3f(uDeck, c[0], c[1], c[2]);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
-    let raf = null, startT = null, ro = null;
+    let raf = null, startT = null, tFrozen = 6.0;
     const minMs = coarse ? 1000 / 30 : 0; // #perf: Mobile auf ~30 fps kappen (Zeit fließt echt weiter)
     let lastDraw = -1e9;
     const frame = (ms) => {
       if (disposed) return;
       if (startT === null) startT = ms;
-      if (ms - lastDraw >= minMs) { lastDraw = ms; draw((ms - startT) / 1000); }
+      if (ms - lastDraw >= minMs) {
+        lastDraw = ms;
+        // animate=false → Zeit einfrieren (statisches Standbild), aber weiter zeichnen (mix-Fade bleibt möglich)
+        draw(animRef.current ? (ms - startT) / 1000 : tFrozen);
+      }
       raf = requestAnimationFrame(frame);
     };
-    if (animate) { raf = requestAnimationFrame(frame); }
-    else { let ticks = 0; const settle = () => { draw(6.0); if (++ticks < 30 && !disposed) raf = requestAnimationFrame(settle); }; raf = requestAnimationFrame(settle);
-      if (typeof ResizeObserver !== "undefined") { ro = new ResizeObserver(() => draw(6.0)); ro.observe(canvas); } }
+    loadTex();
+    raf = requestAnimationFrame(frame);
     window.addEventListener("resize", resize);
 
     return () => {
       disposed = true;
       if (raf) cancelAnimationFrame(raf);
-      if (ro) ro.disconnect();
       if (mqMobile) { if (mqMobile.removeEventListener) mqMobile.removeEventListener("change", onMq); else if (mqMobile.removeListener) mqMobile.removeListener(onMq); }
       window.removeEventListener("resize", resize);
       const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext();
     };
-  }, [srcDesktop, srcMobile, deckColor, on, animate]);
+  }, []); // GENAU EINMAL — Prop-Änderungen laufen über die Refs oben (kein Context-Neuaufbau)
 
   return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }} />;
 }
