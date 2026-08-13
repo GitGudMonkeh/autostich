@@ -28,6 +28,10 @@ const TUNE = {
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
   // #338-1: Kollaps-Puls, wenn das Loch MAX_HOLD_S Sekunden (Echtzeit) auf Maximum stand → Implosionsbombe (big-Nova).
   MAX_HOLD_S: 120,
+  // #kollaps: die letzten SHUDDER_S Sekunden am Max fängt das Loch an zu ZUCKEN (subtil, zunehmend). Beim Kollaps zieht
+  //   es sich SCHNELL in sich zusammen (FAST_COLLAPSE_SPD) → dann Flash/Nova. COLLAPSE_ARM_MS = komprimiertes Vorbeben
+  //   für die Shop-Vorschau (gescripteter „collapse"-Puls; in-game kommt das Zucken aus dem echten 30-s-Fenster).
+  SHUDDER_S: 30, FAST_COLLAPSE_SPD: 0.34, COLLAPSE_ARM_MS: 1500,
   DISK_ARMS: 3, DISK_DENSITY: 250, DISK_TURNS: 3.0, DISK_THICK: 1.0, ROT_SPEED: 0.20,
   // Bloom fast auf 0: RING_GLOW 0 (Photonenring nur minimaler Schein), BRIGHT ~1 (Akkretion nicht mehr überbelichtet).
   // #338-3: Photonenring DÜNNER (RING_W · coreR, war 0.13).
@@ -122,7 +126,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       return out;
     })();
 
-    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0 });
+    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0, collapseArm: 0, fastCollapse: false });
     // #perf: Halo-Gradient cachen — createRadialGradient ist pro Frame teuer (+ GC). Nur neu bauen, wenn sich R spürbar
     //   (>1px), die Position (Resize) oder die Farbe (Standard↔Deckfarbe-Toggle) ändert; sonst settled → Cache-Treffer.
     let haloCache = { grad: null, r: -1, cx: -1, cy: -1, col: "" };
@@ -133,9 +137,10 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         t: 0, col: p.col || ctrlRef.current.color, spin: (p.id % 2 ? 1 : -1) });
     };
     // #338-1: big = Implosionsbombe (2-Min-am-Max-Kollaps) → intensivere Nova; sonst normale Niederlagen-Implosion.
+    //   #kollaps: big zieht sich SCHNELL zusammen (fastCollapse) bevor der Flash kommt.
     const implode = (big) => {
       if (big || sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: !!big };
-      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0;
+      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0; sim.fastCollapse = !!big;
     };
 
     const roundRect = (x, y, w, h, r) => roundRectPath(ctx, x, y, w, h, r);
@@ -172,9 +177,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         if (p.kind === "loss") {
           if (!sim.dormant) { sim.level -= Math.max(TUNE.LOSS_MIN, sim.level * TUNE.LOSS_PCT); if (sim.level <= 0) implode(false); }
         } else if (p.kind === "collapse") {
-          // #338-1: gescripteter Kollaps (nur die Shop-Vorschau nutzt das → demonstriert die Implosionsbombe; in-game
-          //   kommt der big-Kollaps ausschließlich aus dem 2-Min-am-Max-Timer).
-          if (!sim.dormant) implode(true);
+          // #kollaps: gescripteter Kollaps (Shop-Vorschau) → ARMIERT das (komprimierte) Vorbeben; nach COLLAPSE_ARM_MS
+          //   zieht es sich zusammen + Nova. In-game kommt der big-Kollaps aus dem 2-Min-am-Max-Timer (mit echtem 30-s-Zucken).
+          if (!sim.dormant && sim.collapseArm <= 0) sim.collapseArm = TUNE.COLLAPSE_ARM_MS;
         } else { // Sieg
           if (sim.dormant) { sim.dormant = false; sim.level = 0; sim.peakR = 0; }
           sim.level = Math.min(maxLevel(), sim.level + 1);
@@ -186,19 +191,38 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         }
       }
 
-      // Größe smooth ans Level annähern; dormant → langsam in sich zusammen (IMPLODE_SPD).
+      // Größe smooth ans Level annähern; dormant → in sich zusammen. #kollaps: big-Kollaps zieht SCHNELL zusammen
+      //   (FAST_COLLAPSE_SPD) → dann Flash; die normale Niederlagen-Implosion bleibt gemächlich (IMPLODE_SPD).
       const targetR = (sim.dormant || sim.level <= 0) ? 0 : clamp(TUNE.BASE_R * D + (sim.level - 1) * TUNE.STEP_R * D, 0, TUNE.MAX_R * D);
-      sim.R += (targetR - sim.R) * Math.min(1, (sim.dormant ? TUNE.IMPLODE_SPD : TUNE.SMOOTH) * speed);
+      const collapseSpd = sim.dormant ? (sim.fastCollapse ? TUNE.FAST_COLLAPSE_SPD : TUNE.IMPLODE_SPD) : TUNE.SMOOTH;
+      sim.R += (targetR - sim.R) * Math.min(1, collapseSpd * speed);
+      if (sim.fastCollapse && sim.R < 0.5) sim.fastCollapse = false;
       sim.peakR = Math.max(sim.peakR, sim.R);
-      const R = sim.R, coreR = TUNE.CORE_SIZE * R;
       const fill = clamp(sim.level / maxLevel(), 0, 1);
 
-      // #338-1: Kollaps-Puls — steht das Loch MAX_HOLD_S Sekunden (ECHTZEIT, unskaliertes dt) auf Maximum, detoniert es
-      //   als Implosionsbombe (big-Nova) und baut sich ab dem nächsten Sieg neu auf. Fällt das Level unter Max → Timer aus.
+      // #338-1: 2-Min-am-Max → Implosionsbombe (big-Nova); Timer über ECHTZEIT (unskaliertes dt).
       if (!sim.dormant && sim.level >= maxLevel() - 1e-6) {
         sim.maxSince += dt;
         if (sim.maxSince >= TUNE.MAX_HOLD_S * 1000) implode(true);
       } else sim.maxSince = 0;
+      // #kollaps: Shudder 0..1 — in-game aus den letzten SHUDDER_S s am Max; Vorschau aus dem komprimierten
+      //   collapseArm-Countdown (der am Ende implodiert). Beides ramp't das „Zucken" hoch.
+      let shudder = (!sim.dormant && sim.maxSince > 0)
+        ? clamp((sim.maxSince - (TUNE.MAX_HOLD_S - TUNE.SHUDDER_S) * 1000) / (TUNE.SHUDDER_S * 1000), 0, 1) : 0;
+      if (sim.collapseArm > 0) {
+        sim.collapseArm -= dt;
+        shudder = Math.max(shudder, clamp(1 - sim.collapseArm / TUNE.COLLAPSE_ARM_MS, 0, 1));
+        if (sim.collapseArm <= 0) { sim.collapseArm = 0; implode(true); }
+      }
+      // Vorbeben: das Loch zuckt subtil (Render-Radius), zunehmend schneller — „nicht zu krass" (max ~6 %).
+      let R = sim.R;
+      if (shudder > 0) {
+        const amp = shudder * shudder * 0.06;                         // ease-in
+        const f = 0.010 + shudder * 0.045;                            // Frequenz ramping (langsam → schnell)
+        const wob = Math.sin(sim.clock * f) * 0.6 + Math.sin(sim.clock * f * 2.7 + 1.3) * 0.4;
+        R = Math.max(0, sim.R * (1 + amp * wob));
+      }
+      const coreR = TUNE.CORE_SIZE * R;
 
       ctx.clearRect(0, 0, W, H);
       const busy = R > 0.5 || sim.flyers.length || sim.sparks.length || sim.nova;
@@ -341,19 +365,24 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         else {
           const big = !!nv.big, dim = reduced ? 0.4 : 1, fade = 1 - nv.t;
           ctx.globalCompositeOperation = "lighter";
-          // Flash: bei big kürzer & greller (Weiß-Kern hoch, aber via reduced/dim gedämpft).
-          const flashK = big ? Math.pow(fade, 2.2) : fade;
-          const fr = TUNE.NOVA_R * D * (0.2 + 0.5 * nv.t) * (big ? 1.5 : 1);
+          // #kollaps: greller, kurzer WEISS-Flash (big front-geladen: pow(fade,2)) — der Blitz zur Implosion.
+          const flashK = big ? Math.pow(fade, 2.0) : fade;
+          const fr = TUNE.NOVA_R * D * (0.2 + 0.5 * nv.t) * (big ? 1.95 : 1);
           const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr);
-          fg.addColorStop(0, rgba(WHITE, (big ? 0.85 : 0.5) * flashK * dim)); fg.addColorStop(0.4, rgba(cDeck, 0.28 * fade * dim)); fg.addColorStop(1, "transparent");
+          fg.addColorStop(0, rgba(WHITE, (big ? 0.98 : 0.5) * flashK * dim));
+          fg.addColorStop(0.32, rgba(mixRGB(cDeck, WHITE, big ? 0.55 : 0), (big ? 0.55 : 0.28) * fade * dim));
+          fg.addColorStop(1, "transparent");
           ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(cx, cy, fr, 0, PI2); ctx.fill();
-          // Schockwelle(n): big = drei gestaffelte Ringe (dicker/schneller), sonst einer. Ellipse in der Scheiben-Ebene.
-          const rings = big ? [1, 0.72, 0.48] : [1];
-          for (const rk of rings) {
-            const sw = TUNE.NOVA_R * D * nv.t * (big ? 1.6 : 1) * rk;
-            ctx.globalAlpha = fade * dim * (0.55 + 0.45 * rk);
-            ctx.lineWidth = Math.max(1.5, (big ? 9 : 5) * fade); ctx.strokeStyle = rgba(cDeck2, 1);
-            ctx.shadowBlur = (big && !reduced) ? 16 : 10; ctx.shadowColor = ctrl.color2 || "#ff3ea8";
+          // #kollaps: wuchtige Schockwelle(n) in der Scheiben-Ebene (TILT). big = mehrere gestaffelte Ringe, DICK &
+          //   SCHNELL, der FÜHRENDE Ring hell-weiß → beeindruckende Puls-Welle. reduced dämpft (Photosensitivität).
+          const rings = big ? [1, 0.66, 0.40] : [1];
+          for (let ri = 0; ri < rings.length; ri++) {
+            const rk = rings[ri];
+            const sw = TUNE.NOVA_R * D * nv.t * (big ? 2.1 : 1) * rk;
+            ctx.globalAlpha = fade * dim * (0.6 + 0.4 * rk);
+            ctx.lineWidth = Math.max(1.5, (big ? 15 : 5) * fade * (ri === 0 ? 1 : 0.65));
+            ctx.strokeStyle = (big && ri === 0) ? rgba(mixRGB(cDeck2, WHITE, 0.6), 1) : rgba(cDeck2, 1);
+            ctx.shadowBlur = (big && !reduced) ? 26 : 10; ctx.shadowColor = ctrl.color2 || "#ff3ea8";
             ctx.beginPath(); ctx.ellipse(cx, cy, sw, sw * TUNE.TILT, 0, 0, PI2); ctx.stroke();
           }
           ctx.globalAlpha = 1; ctx.shadowBlur = 0;

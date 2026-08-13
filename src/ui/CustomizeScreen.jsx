@@ -421,8 +421,9 @@ function BlackholeScene({ deckTint = false }) {
       if (!alive) return;
       const step = seq[i % seq.length]; i++; id++;
       setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length], col: cols[id % cols.length] } : { id, kind: step.kind });
-      // Nach dem Kollaps eine Pause (Nova ausklingen + kurz dormant), sonst Sieg 640 ms / Niederlage 340 ms.
-      timers.push(setTimeout(tick, step.kind === "collapse" ? 1600 : step.kind === "win" ? 640 : 340));
+      // Nach dem Kollaps eine längere Pause: Vorbeben-Zucken (~1,5 s) + schnelles Zusammenziehen + Nova ausklingen,
+      //   bevor der Loop wieder aufbaut. Sonst Sieg 640 ms / Niederlage 340 ms.
+      timers.push(setTimeout(tick, step.kind === "collapse" ? 3400 : step.kind === "win" ? 640 : 340));
     };
     timers.push(setTimeout(tick, 400));
     return () => { alive = false; timers.forEach(clearTimeout); };
