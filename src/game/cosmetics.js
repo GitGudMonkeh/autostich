@@ -63,7 +63,7 @@ export const DECK_DEFS = {
   deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
-  deck_sonne:  { id: "deck_sonne",  name: "Sonnenfinsternis", unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  deck_sonne:  { id: "deck_sonne",  name: "Kolossus",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
   deck_drache: { id: "deck_drache", name: "Laternenfest",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
@@ -102,7 +102,7 @@ export const BATTLEFIELD_DEFS = {
   bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs:
-  bf_sonne:  { id: "bf_sonne",  name: "Sonnenfinsternis · Battlefield", unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  bf_sonne:  { id: "bf_sonne",  name: "Kolossus · Battlefield",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
   bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
   bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },

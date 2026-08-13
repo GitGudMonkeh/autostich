@@ -108,8 +108,8 @@ import bfOniDesktop       from "../assets/battlefields/bf_oni/desktop.jpg";
 import bfOniMobile        from "../assets/battlefields/bf_oni/mobile.jpg";
 import bfGeoDesktop       from "../assets/battlefields/bf_geometrie/desktop.jpg";
 import bfGeoMobile        from "../assets/battlefields/bf_geometrie/mobile.jpg";
-// #311 zwei DP-Kauf-Packs (je 10 DP): Sonnenfinsternis + Goldener Drache.
-import sonneFront    from "../assets/cards/decks_player/deck_sonne/front.webp";     // Sonnenfinsternis
+// #311 zwei DP-Kauf-Packs (je 10 DP): Kolossus (ehem. Sonnenfinsternis) + Laternenfest (ehem. Goldener Drache).
+import sonneFront    from "../assets/cards/decks_player/deck_sonne/front.webp";     // Kolossus (ehem. Sonnenfinsternis)
 import sonneBack     from "../assets/cards/decks_player/deck_sonne/back.webp";
 import dracheFront   from "../assets/cards/decks_player/deck_drache/front.webp";    // Goldener Drache
 import dracheBack    from "../assets/cards/decks_player/deck_drache/back.webp";

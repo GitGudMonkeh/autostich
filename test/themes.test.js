@@ -61,7 +61,7 @@ describe("packs — Zustände & Besitz", () => {
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
     expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
   });
-  it("#311: Sonnenfinsternis + Goldener Drache sind Kauf-Packs à 10 DP", () => {
+  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 10 DP", () => {
     for (const id of ["sonne", "drache"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
