@@ -64,7 +64,7 @@ export const DECK_DEFS = {
   deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_sonne:  { id: "deck_sonne",  name: "Sonnenfinsternis", unlock: { kind: "buy", ownKey: "pack:sonne" } },
-  deck_drache: { id: "deck_drache", name: "Goldener Drache",  unlock: { kind: "buy", ownKey: "pack:drache" } },
+  deck_drache: { id: "deck_drache", name: "Laternenfest",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_arcade:     { id: "deck_arcade",     name: "Arcade",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   deck_polarlicht: { id: "deck_polarlicht", name: "Polarlicht", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
@@ -103,7 +103,7 @@ export const BATTLEFIELD_DEFS = {
   bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs:
   bf_sonne:  { id: "bf_sonne",  name: "Sonnenfinsternis · Battlefield", unlock: { kind: "buy", ownKey: "pack:sonne" } },
-  bf_drache: { id: "bf_drache", name: "Goldener Drache · Battlefield",  unlock: { kind: "buy", ownKey: "pack:drache" } },
+  bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
   bf_arcade:     { id: "bf_arcade",     name: "Arcade · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   bf_polarlicht: { id: "bf_polarlicht", name: "Polarlicht · Battlefield", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },

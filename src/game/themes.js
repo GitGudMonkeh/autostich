@@ -195,7 +195,7 @@ export const THEME_DEFS = {
   // ---- #311 DP-Kauf-Packs (je 10 DP) ----
   sonne:  { id: "sonne",  name: "Sonnenfinsternis", emblem: "🌑", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
     deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
-  drache: { id: "drache", name: "Goldener Drache",  emblem: "🐉", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
+  drache: { id: "drache", name: "Laternenfest",     emblem: "🏮", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
