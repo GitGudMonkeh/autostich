@@ -199,7 +199,7 @@ export const THEME_DEFS = {
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
-  arcade:     { id: "arcade",     name: "Arcade",     emblem: "🕹️", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
+  arcade:     { id: "arcade",     name: "Beryll",     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
   polarlicht: { id: "polarlicht", name: "Polarlicht", emblem: "🌌", kind: "buy", price: 10, a1: "#7cc6ff", a2: "#4fe6b0",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },

@@ -118,7 +118,7 @@ import bfSonneMobile    from "../assets/battlefields/bf_sonne/mobile.jpg";
 import bfDracheDesktop  from "../assets/battlefields/bf_drache/desktop.jpg";
 import bfDracheMobile   from "../assets/battlefields/bf_drache/mobile.jpg";
 // #312 drei DP-Kauf-Packs (je 10 DP): Arcade + Polarlicht + Seedrache.
-import arcadeFront     from "../assets/cards/decks_player/deck_arcade/front.webp";     // Arcade
+import arcadeFront     from "../assets/cards/decks_player/deck_arcade/front.webp";     // Beryll (ehem. Arcade)
 import arcadeBack      from "../assets/cards/decks_player/deck_arcade/back.webp";
 import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.webp"; // Polarlicht
 import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";

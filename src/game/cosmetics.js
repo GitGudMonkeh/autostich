@@ -66,7 +66,7 @@ export const DECK_DEFS = {
   deck_sonne:  { id: "deck_sonne",  name: "Sonnenfinsternis", unlock: { kind: "buy", ownKey: "pack:sonne" } },
   deck_drache: { id: "deck_drache", name: "Laternenfest",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
-  deck_arcade:     { id: "deck_arcade",     name: "Arcade",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   deck_polarlicht: { id: "deck_polarlicht", name: "Polarlicht", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
@@ -105,7 +105,7 @@ export const BATTLEFIELD_DEFS = {
   bf_sonne:  { id: "bf_sonne",  name: "Sonnenfinsternis · Battlefield", unlock: { kind: "buy", ownKey: "pack:sonne" } },
   bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
-  bf_arcade:     { id: "bf_arcade",     name: "Arcade · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   bf_polarlicht: { id: "bf_polarlicht", name: "Polarlicht · Battlefield", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
