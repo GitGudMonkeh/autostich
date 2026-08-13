@@ -1518,9 +1518,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
           </div>
         )}
-        {/* #105/#169 FB-7 / #FB: Gestufte Groß-Score-Ansage — dominiert Peak-Momente: oberste Ebene (z-30, über allen
-            Floats), zentriert mit Spur-Versatz (BIG_LANES, gegen Überlappung), Größe je Stufe (clamp deckelt mobil gegen
-            Überlauf), Legendär-Gold. Aus dem entkoppelten Pool → volle Standzeit auch bei 4×/MAX. */}
+      </div>
+
+      {/* #ansage-vorn: Die Groß-Score-Ansagen (STARK/BRUTAL/IRRE/GOTTGLEICH/Lawine/Gönn dir) liegen in einer EIGENEN
+          panelweiten Top-Ebene (z-40) ÜBER ALLEN Effekt-Layern (Karten-Anims z11, Schwarzes Loch z22, Finisher …).
+          Vorher steckten sie im z-10-Karten-Container (eigener Stacking-Context) → dessen z-30/31 kam nie über die
+          Effekt-Geschwister hinaus, die Ansagen lagen HINTER den Karten-Effekten. Panelweites Overlay → immer ganz vorne. */}
+      <div className="pointer-events-none absolute inset-0" style={{ zIndex: 40 }}>
         {bigFloats.map((b) => {
           // #perf-B: Groß-Ansage-Glow auf Mobile (lite) enger ziehen. Die 32/34px-Blur-Radien sind teuer (Blur-
           // Repaint über die 1,9-s-Animation) UND divergieren stark: WebKit (iPhone) malt sie deutlich breiter als
