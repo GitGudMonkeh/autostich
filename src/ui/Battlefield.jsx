@@ -62,6 +62,7 @@ const GLITCH_FORCE = cardAnimForce("glitch");
 const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
+import { MOBILE_MQ, cubeMatrixZoneProps } from "./fx/effectZones.js"; // feste Effekt-Zone (Boden) → 3D-Feld ins untere Band setzen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
@@ -664,6 +665,20 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
 
 // #: CritScreenFx (Vollbild-Flash/Vignette bei Krit) entfernt — Krit-Finisher-Animationen raus.
 
+// #zone: Viewport-Erkennung (mobile ≤ 640px = <picture>-Breakpoint) → wählt die passende Effekt-Zone (Mobile/Desktop).
+function useIsMobileVp() {
+  const [m, setM] = useState(() => typeof window !== "undefined" && window.matchMedia(MOBILE_MQ).matches);
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mq = window.matchMedia(MOBILE_MQ);
+    const on = () => setM(mq.matches);
+    on();
+    mq.addEventListener ? mq.addEventListener("change", on) : mq.addListener(on);
+    return () => { mq.removeEventListener ? mq.removeEventListener("change", on) : mq.removeListener(on); };
+  }, []);
+  return m;
+}
+
 export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat", score = 0,
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
@@ -712,6 +727,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const deckGlowOn = pixiEnabled && deckGlow && !!battlefield; // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar, Gate wie Aurora)
   // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
   const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
+  // #zone: feste Effekt-Zone (Boden) → Cube-Matrix-Feld responsiv ins untere Band verschieben (Mobile/Desktop).
+  const cmZone = cubeMatrixZoneProps(useIsMobileVp());
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
@@ -1270,7 +1287,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <>
           <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} />
+              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} yBias={cmZone.yBias} depthScale={cmZone.depthScale} />
             </Suspense>
           </div>
           <div aria-hidden="true" className="absolute inset-0 z-[11] pointer-events-none">
