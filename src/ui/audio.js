@@ -53,6 +53,11 @@ let volume = 0.6;
 // Hintergrund-Tab. Getrennt von `muted` (Nutzer-Stumm), damit es der App-Zustand jederzeit setzen kann. One-Shots sind
 // nicht betroffen (die triggern nur bei aktivem Spiel ohnehin).
 let loopsSuspended = false;
+// #329: Analog zu loopsSuspended, aber für die One-Shot-EFFEKTSOUNDS (fx_*). Außerhalb von aktivem Stichspiel/Werkstatt-
+// Vorschau (Victory/Gameover, Pause, Auswahl-/Perk-Fenster, alle Overlays) sollen Effektsounds STUMM sein — inkl. des
+// Schwanzes eines beim Sieg gestarteten Sounds (fx_godlike 1,8 s u. Ä.). UI-Sounds (button/cardflip/buy/denied) bleiben.
+let fxSuspended = false;
+const isFxSound = (name) => typeof name === "string" && name.startsWith("fx_"); // fx_* = Effektsound; UI-Sounds tragen kein Präfix
 // #: App im Hintergrund/geschlossen (setSuspended). Hart: play()/loop() dürfen dann KEINE neuen Stimmen starten —
 // sonst weckt ihr c.resume() den (per setSuspended eingefrorenen) Context sofort wieder auf (z. B. Showcase-Timer,
 // die im Hintergrund weiterlaufen). Getrennt von loopsSuspended (nur Loop-Gains) und muted (Nutzer-Stumm).
@@ -90,6 +95,20 @@ function loadBuffers() {
 // #296: Loop-Gain = (stumm ? 0 : volume) × Basis-Gain. Live-Anpassung bei Volume/Mute (setTargetAtTime, sanft).
 function loopGain(h) { return (muted || loopsSuspended ? 0 : volume) * h.base; }
 function refreshLoops() { if (!ctx) return; const now = ctx.currentTime; for (const h of activeLoops) { try { h.g.gain.setTargetAtTime(loopGain(h), now, 0.05); } catch (e) {} } }
+// #329: laufende Effekt-One-Shots sofort (kurzer Fade, kein Klick) ausblenden — UI-/cardflip-Stimmen bleiben unberührt.
+function stopFxVoices(fade = 0.06) {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  for (const v of voices.slice()) {
+    if (!isFxSound(v.name)) continue;
+    try {
+      v.g.gain.cancelScheduledValues(now);
+      v.g.gain.setValueAtTime(v.g.gain.value, now);
+      v.g.gain.linearRampToValueAtTime(0.0001, now + fade);
+      v.src.stop(now + fade + 0.02);
+    } catch (e) { /* schon gestoppt — egal */ }
+  }
+}
 
 export const audio = {
   init() { ensureCtx(); if (audibleSfx()) loadBuffers(); },
@@ -103,6 +122,9 @@ export const audio = {
   // #: Persistente Loop-Betten global verstummen/wieder hörbar machen (Pause/Overlay/Nicht-„play"-Phase/Hintergrund-Tab).
   // Verändert nur die Loop-Gains (sanft) — die Quellen laufen weiter, damit sie beim Fortsetzen nahtlos wieder da sind.
   setLoopsSuspended(s) { const n = !!s; if (n === loopsSuspended) return; loopsSuspended = n; refreshLoops(); },
+  // #329: Effekt-One-Shots (fx_*) global sperren/freigeben — exakt wie die Loop-Betten gegated (gleiche loopsAllowed-
+  // Bedingung in App.jsx). Beim Aktivieren laufende Effektsounds sofort ausblenden (z. B. fx_godlike-Schwanz → Victory).
+  setFxSuspended(s) { const n = !!s; if (n === fxSuspended) return; fxSuspended = n; if (n) stopFxVoices(); },
   /* #: App im Hintergrund / geschlossen (v. a. Mobile) → den GANZEN AudioContext hart suspendieren: friert ALLE
      Stimmen + Loops ein (kein Sound, kein CPU/Akku hinter dem gesperrten Bildschirm) und setzt beim Zurückkehren
      nahtlos fort. Robust/idempotent; vor dem ersten unlock() (ctx==null oder noch nie „running") ein No-Op. */
@@ -120,6 +142,7 @@ export const audio = {
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
   play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0 } = {}) {
     if (muted || volume <= 0 || bgSuspended) return; // #: Hintergrund → keine neuen One-Shots (weckt sonst den Context)
+    if (fxSuspended && isFxSound(name)) return; // #329: Effektsounds außerhalb Spiel/Werkstatt aus (UI-Sounds bleiben)
     loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
     const c = ctx;
     if (!c || !buffers[name]) return;

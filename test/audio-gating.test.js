@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 /* #264 — Musik-Lazy-Gating: stumm gestartet lädt KEINEN Track (0 Bytes); erst „hörbar" (nicht stumm,
    Volume > 0, nicht pausiert) wird der aktuelle Track lazy geladen und gespielt; Re-Mute pausiert den
@@ -120,5 +120,66 @@ describe("Musik Lazy-Gating (#264)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/* #329 — Effektsound-Gating: außerhalb von aktivem Spiel/Werkstatt (Victory/Gameover, Pause, Overlays) sind One-Shot-
+   Effektsounds (fx_*) stumm; UI-Sounds (button/cardflip/buy/denied) klingen weiter; laufende fx-Stimmen werden beim
+   Aktivieren sofort ausgeblendet. Minimaler Web-Audio-Stub (node-Env hat kein window/AudioContext). */
+describe("Effektsound-Gating (#329)", () => {
+  let started, origFetch;
+  beforeEach(() => {
+    started = [];
+    class Param { constructor(v) { this.value = v; } setValueAtTime() {} linearRampToValueAtTime() {} setTargetAtTime() {} cancelScheduledValues() {} }
+    class Node {
+      constructor() { for (const k of ["gain", "playbackRate", "frequency", "Q", "threshold", "knee", "ratio", "attack", "release"]) this[k] = new Param(1); }
+      connect(n) { return n || this; } disconnect() {}
+    }
+    class Source extends Node { constructor() { super(); this.buffer = null; this.loop = false; this.stopped = false; this.onended = null; } start() { started.push(this); } stop() { this.stopped = true; } }
+    class Ctx {
+      constructor() { this._t = 0; this.state = "running"; this.destination = {}; }
+      get currentTime() { this._t += 0.5; return this._t; } // pro Lesevorgang leicht vorrücken → Cooldowns greifen nicht fälschlich
+      createDynamicsCompressor() { return new Node(); }
+      createGain() { return new Node(); }
+      createBiquadFilter() { return new Node(); }
+      createBufferSource() { return new Source(); }
+      decodeAudioData() { return Promise.resolve({ duration: 1 }); }
+      resume() { this.state = "running"; return Promise.resolve(); }
+      suspend() { this.state = "suspended"; return Promise.resolve(); }
+    }
+    globalThis.window = { AudioContext: Ctx };
+    origFetch = globalThis.fetch;
+    globalThis.fetch = () => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+  });
+  afterEach(() => { delete globalThis.window; globalThis.fetch = origFetch; });
+
+  it("fxSuspended sperrt fx_*-One-Shots (UI-Sounds bleiben); laufende fx-Stimme wird gestoppt; Freigabe erlaubt wieder", async () => {
+    vi.resetModules();
+    const { audio } = await import("../src/ui/audio.js");
+    audio.setVolume(0.6);
+    audio.unlock();                              // Context anlegen + Puffer lazy laden
+    await new Promise((r) => setTimeout(r, 0));  // fetch→decode-Ketten durchlaufen
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Baseline (Spiel aktiv, fxSuspended=false): fx + UI starten je eine Quelle.
+    audio.play("fx_blade");
+    audio.play("button");
+    expect(started.length, "fx + UI starten je eine Quelle").toBe(2);
+
+    // Übergang in Victory/Overlay: fxSuspended aktiv → laufende fx-Stimme sofort ausblenden.
+    audio.setFxSuspended(true);
+    expect(started[0].stopped, "laufende fx_-Stimme (fx_blade) wird gestoppt").toBe(true);
+    expect(started[1].stopped, "UI-Stimme (button) bleibt").toBe(false);
+
+    const n = started.length;
+    audio.play("fx_blade");   // blockiert
+    expect(started.length, "fx_ blockiert, solange fxSuspended").toBe(n);
+    audio.play("button");     // UI weiter
+    expect(started.length, "UI-Sound spielt weiter").toBe(n + 1);
+
+    // Zurück ins Spiel/Werkstatt: Freigabe → fx wieder erlaubt.
+    audio.setFxSuspended(false);
+    audio.play("fx_blade");
+    expect(started.length, "fx_ nach Freigabe wieder erlaubt").toBe(n + 2);
   });
 });
