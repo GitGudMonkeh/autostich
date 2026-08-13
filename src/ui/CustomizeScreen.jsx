@@ -33,7 +33,7 @@ const CardIonStorm = lazy(() => import("./fx/CardIonStorm.jsx"));
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
-import { suitColor } from "../game/constants.js";
+import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 
@@ -395,11 +395,14 @@ function BlackholeScene({ deckTint = false }) {
       ...Array.from({ length: 12 }, () => ({ kind: "loss" })),
     ];
     let id = 0, i = 0, alive = true; const timers = [];
-    const nums = [10, 7, 13, 9, 11, 8, 12, 6];
+    // #320: eingesogene Karten = wechselnde „verlorene" Karten → echte Werte (1..10) UND wechselnde Suit-Farben, damit die
+    //   Vorschau die neue In-Game-Vielfalt zeigt (nicht mehr alle in einer Farbe). SUIT_ORDER-Reihenfolge R/B/G/Y.
+    const nums = [10, 7, 4, 9, 2, 8, 5, 6];
+    const cols = SUIT_ORDER.map((s) => suitColor(s));
     const tick = () => {
       if (!alive) return;
       const step = seq[i % seq.length]; i++; id++;
-      setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length] } : { id, kind: "loss" });
+      setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length], col: cols[id % cols.length] } : { id, kind: "loss" });
       timers.push(setTimeout(tick, step.kind === "win" ? 640 : 340));
     };
     timers.push(setTimeout(tick, 400));

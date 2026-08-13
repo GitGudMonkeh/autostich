@@ -152,6 +152,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         ctx.globalCompositeOperation = "lighter";
         const nDraw = Math.max(0, Math.round(TUNE.DISK_DENSITY * (0.25 + 0.75 * fill)));
         const rotBase = sim.clock * 0.001 * TUNE.ROT_SPEED;
+        // #partikel-weniger-weiss: bei kleinem Loch sammeln sich alle Partikel eng → additives Stapeln blies zu Weiß aus.
+        //   sizeMul (0..1, voll ab R≈16% von D) dämpft sowohl den Kern-Weißanteil als auch die Grund-Helligkeit klein.
+        const sizeMul = clamp(R / (0.16 * D), 0, 1);
         for (let i = 0; i < nDraw; i++) {
           const p = disk[i];
           const rad = lerp(coreR * 1.03, R, p.tt);
@@ -159,10 +162,10 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           const s = Math.sin(ang); const front = s > 0;
           if (front !== frontWanted) continue;
           const x = cx + Math.cos(ang) * rad, y = cy + s * rad * TUNE.TILT;
-          // Farbe: außen deck → innen deck2, heißer Kern leicht weiß.
+          // Farbe: außen deck → innen deck2, heißer Kern nur noch DEZENT weiß und erst bei größerem Loch (sizeMul).
           let col = mixRGB(cDeck, cDeck2, 1 - p.tt);
-          if (p.tt < 0.22) col = mixRGB(col, WHITE, (0.22 - p.tt) / 0.22 * 0.6);
-          const a = clamp(p.aj * TUNE.BRIGHT * (0.35 + 0.65 * (1 - p.tt)) * (reduced ? 0.5 : 1), 0, 1);
+          if (p.tt < 0.18) col = mixRGB(col, WHITE, (0.18 - p.tt) / 0.18 * 0.20 * sizeMul);
+          const a = clamp(p.aj * TUNE.BRIGHT * (0.30 + 0.55 * (1 - p.tt)) * (reduced ? 0.5 : 1) * (0.55 + 0.45 * sizeMul), 0, 1);
           const sz = p.sz * TUNE.DISK_THICK * (0.7 + 0.9 * (1 - p.tt));
           ctx.fillStyle = rgba(col, a); ctx.beginPath(); ctx.arc(x, y, sz, 0, PI2); ctx.fill();
         }
@@ -204,11 +207,11 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
 
       if (R > 0.5) {
         // 4) Surround-Halo (deck2-getönt) → silhouettiert das Loch nur noch dezent gegen den dunklen BG.
-        //    #bloom-runter: Alpha 0.22/0.10 → 0.09/0.035 (fast kein Glühen mehr, nur eine feine Silhouette).
+        //    #bloom-runter²: Halo enger (1.55→1.35·R) + noch dunkler (0.07/0.028) → weniger Schein-Dicke.
         ctx.globalCompositeOperation = "lighter";
-        const halo = ctx.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, R * 1.55);
-        halo.addColorStop(0, rgba(cDeck2, 0.09)); halo.addColorStop(0.5, rgba(cDeck2, 0.035)); halo.addColorStop(1, "transparent");
-        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.55, 0, PI2); ctx.fill();
+        const halo = ctx.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, R * 1.35);
+        halo.addColorStop(0, rgba(cDeck2, 0.07)); halo.addColorStop(0.5, rgba(cDeck2, 0.028)); halo.addColorStop(1, "transparent");
+        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, PI2); ctx.fill();
 
         // 5) Solider, OPAKER schwarzer Kern — globalAlpha VOR dem Kern auf 1 (sonst erbt er das Rest-Alpha der Schleife).
         ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0;
@@ -216,11 +219,12 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
 
         // 6) Photonenring (additiv) + definierende Kante am Kernrand.
         ctx.globalCompositeOperation = "lighter";
-        ctx.lineWidth = Math.max(1.5, coreR * 0.22); ctx.strokeStyle = rgba(mixRGB(cDeck, WHITE, 0.35), 0.9);
-        ctx.shadowBlur = 3 + TUNE.RING_GLOW * 60; ctx.shadowColor = ctrl.color || "#4aa0ff"; // #bloom-runter: Ring-Schein-Basis 14→3
+        // #bloom-runter²: Photonenring DÜNNER (0.22→0.13·coreR) + weniger Schein (3→2); weiße Definitions-Kante schwächer.
+        ctx.lineWidth = Math.max(1.0, coreR * 0.13); ctx.strokeStyle = rgba(mixRGB(cDeck, WHITE, 0.30), 0.85);
+        ctx.shadowBlur = 2 + TUNE.RING_GLOW * 60; ctx.shadowColor = ctrl.color || "#4aa0ff";
         ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, PI2); ctx.stroke();
-        ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.8;
-        ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(WHITE, 0.85); ctx.beginPath(); ctx.arc(cx, cy, coreR * 0.98, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 1.0; ctx.strokeStyle = rgba(WHITE, 0.7); ctx.beginPath(); ctx.arc(cx, cy, coreR * 0.98, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
 
         // 7) Akkretion VOR dem Loch (untere Umlauf-Hälfte, sin>0) → zieht über den Kern (Wrap).
         drawDisk(true);

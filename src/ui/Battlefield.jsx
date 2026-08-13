@@ -972,7 +972,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #320 Schwarzes Loch: Sieg → „Sog-Puls" (Loch wächst + Gegnerkarte einsaugen); Niederlage bei aktivem Loch →
     // „Schrumpf-Puls" (heat-artig verkleinern, kein Sofort-Kollaps). Persistentes Panel-Loch verarbeitet die Pulse.
     if (blackhole) {
-      if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: deckA1 || suitColor(t.oCard.suit) });
+      // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
+      //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
+      //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
+      if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) });
       else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
