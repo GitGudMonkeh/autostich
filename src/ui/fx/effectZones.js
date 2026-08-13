@@ -22,10 +22,11 @@ export const MOBILE_MQ = "(max-width: 640px)";
 // Container-Sicht: Boden-Band als Rechteck (%) für ein bestimmtes Viewport (Effekte, die einen Layer positionieren).
 export const pickEffectZone = (isMobile) => (isMobile ? EFFECT_ZONES.mobile : EFFECT_ZONES.desktop);
 
-/* Projektions-Sicht: Die VORDERSTE (nächste) Bodenreihe sitzt bündig am unteren Panel-Rahmen.
-   1.0 = exakt am Rahmen. Höhenunabhängig — der Effekt rechnet seinen konstanten px-Front-Offset selbst raus.
-   Feinschliff der Bündigkeit zentral hier (z. B. 0.98 = minimal höher, >1.0 = Front unter den Rahmen). */
-export const FLOOR_FRONT_AT_BOTTOM = 1.0;
+/* Projektions-Sicht: Wo die VORDERSTE (nächste) Bodenreihe sitzt, als Bruchteil der Panel-Höhe.
+   1.0 = bündig am unteren Rahmen, <1.0 = etwas höher (0.94 = ~6 % über dem Rahmen). Höhenunabhängig — der
+   Effekt rechnet seinen konstanten px-Front-Offset selbst raus. DIES ist der eine, fest hinterlegte
+   Platzierungswert: einmal hier einstellen → alle Boden-Effekte übernehmen ihn (kein Handanlegen pro Effekt). */
+export const FLOOR_FRONT_AT_BOTTOM = 0.94;
 
 /* Platzierung für JEDEN Boden-Effekt, der (wie CubeMatrixField) seinen Boden per 3D-Projektion zeichnet.
    Neuer Boden-Effekt → dieses Objekt durchreichen (nicht selbst hart kodieren), dann sitzt er automatisch
