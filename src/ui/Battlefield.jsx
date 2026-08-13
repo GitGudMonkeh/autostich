@@ -1427,7 +1427,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && (
             <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-              deckColor={deckGlowDeck ? (deckA1 || "#7fdcff") : "#7fdcff"} on animate={!reduced} />
+              deckColor={deckA1 || "#7fdcff"} deckTint={deckGlowDeck} on animate={!reduced} />
           )}
         </div>
       )}

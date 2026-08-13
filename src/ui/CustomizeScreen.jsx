@@ -609,19 +609,19 @@ function DeckGlowScene({ deckTint = false }) {
   const cur = DECKGLOW_BGS[idx];
   const bf = battlefieldAssets(cur.bf);
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
-  const color = deckTint ? cur.a1 : "#7fdcff";
+  const accent = cur.a1; // Akzentfarbe des Labels = die Eigenfarbe des BGs (nicht relevant für den Effekt selbst)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={color} on={on} animate />}
+      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={cur.a1} deckTint={deckTint} on={on} animate />}
       <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
       <div className="absolute left-2 bottom-2 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1.5"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: on ? "#bfe6ff" : "#9aa0c4" }}>
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: on ? "#e8ecff" : "#9aa0c4" }}>
         <span style={{ opacity: 0.7 }}>{cur.name}</span>
-        <span style={{ color: on ? (deckTint ? cur.a1 : "#7fdcff") : "#9aa0c4" }}>{on ? "· mit Deck-Glow" : "· ohne"}</span>
+        <span style={{ color: on ? accent : "#9aa0c4" }}>{on ? "· mit Deck-Glow" : "· ohne"}</span>
       </div>
       <span className="absolute right-2 bottom-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-        style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Standard"}</span>
+        style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: deckTint ? "#8fd8ff" : "#cbd3ff" }}>{deckTint ? "Deckfarbe" : "Eigenfarbe"}</span>
     </div>
   );
 }
@@ -1254,13 +1254,14 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     // #318 „Keine Animation" (Aus-Zustand der Karten-Animationen): schaltet alle Karten-Animationen ab.
     action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
   } else if (deckOpt) {
-    // #deckglow: frei kombinierbarer Toggle MIT Farbmodus (Standard-Neon ↔ Deckfarbe) — An/Aus + Farbwahl.
+    // #deckglow: frei kombinierbarer Toggle MIT Farbmodus — An/Aus + Farbwahl. „Eigenfarbe" = verstärkt die vorhandenen
+    // Farben des Backgrounds (kein Umfärben); „Deckfarbe" = bewusstes Einfärben in die Deckfarbe.
     const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
     action = (
       <div className="flex flex-col gap-2">
         {toggleBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: "Eigenfarbe" }, { v: true, l: "Deckfarbe" }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;

@@ -27,7 +27,7 @@ const FRAG = [
   "precision highp float;",
   "varying vec2 vUv;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMix; uniform float uImgAspect;",
-  "uniform vec3 uDeck; uniform sampler2D uTex;",
+  "uniform vec3 uDeck; uniform float uMode; uniform sampler2D uTex;",  // uMode: 0 = Eigenfarbe (buff), 1 = Deckfarbe (tint)
   "const float I_=" + TUNE.intensity.toFixed(3) + ", TH=" + TUNE.threshold.toFixed(3) + ", BL=" + TUNE.bloom.toFixed(3) + ", FL=" + TUNE.flow.toFixed(3) + ", FS=" + TUNE.flowSpeed.toFixed(3) + ";",
   "float luma(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }",
   "float sat(vec3 c){ float mx=max(c.r,max(c.g,c.b)); float mn=min(c.r,min(c.g,c.b)); return mx-mn; }",
@@ -41,16 +41,22 @@ const FRAG = [
   "  vec3 base = texture2D(uTex, cuv).rgb;",
   "  float Lc = luma(base);",
   "  vec2 texel = vec2(1.0/uRes.x, 1.0/uRes.y) * sc;",  // Nachbar-Offsets im Bildraum (cover-korrigiert)
-  "  float halo = 0.0, avg = 0.0;",
+  // Ring-Sampling: Kanten-Mittel (avg), Halo-Stärke (scalar, für Deckfarbe) UND farbiges Halo in den EIGENEN
+  // Farbtönen der Nachbarn (haloCol) — Letzteres trägt die Linienfarbe ins Umfeld, ohne umzufärben.
+  "  float halo = 0.0, avg = 0.0; vec3 haloCol = vec3(0.0);",
   "  for(int i=0;i<16;i++){",
   "    float a = 6.2831853 * float(i)/16.0;",
   "    vec2 dir = vec2(cos(a), sin(a));",
-  "    vec3 s1 = texture2D(uTex, cuv + dir*texel*2.5).rgb;",
-  "    vec3 s2 = texture2D(uTex, cuv + dir*texel*5.5).rgb;",
-  "    avg += luma(s1);",
-  "    halo += strength(s1)*0.65 + strength(s2)*0.35;",
+  "    vec3 c1 = texture2D(uTex, cuv + dir*texel*2.5).rgb;",
+  "    vec3 c2 = texture2D(uTex, cuv + dir*texel*5.5).rgb;",
+  "    float s1 = strength(c1), s2 = strength(c2);",
+  "    avg += luma(c1);",
+  "    halo += s1*0.65 + s2*0.35;",
+  "    vec3 h1 = c1 / max(max(c1.r, max(c1.g, c1.b)), 0.08);",  // Nachbar-Farbton (voll gesättigt, Helligkeit raus)
+  "    vec3 h2 = c2 / max(max(c2.r, max(c2.g, c2.b)), 0.08);",
+  "    haloCol += h1*(s1*0.65) + h2*(s2*0.35);",
   "  }",
-  "  halo /= 16.0; avg /= 16.0;",
+  "  halo /= 16.0; avg /= 16.0; haloCol /= 16.0;",
   // Linien-Maske w: helle Kante (High-Pass: heller als Umgebung) ODER kräftige gesättigte Fläche
   "  float lineEdge = smoothstep(0.035, 0.22, Lc - avg);",
   "  float w = clamp(max(strength(base)*0.85, lineEdge), 0.0, 1.0);",
@@ -61,8 +67,14 @@ const FRAG = [
   "  float wv  = 0.5 + 0.5*sin(axis*18.0  - uTime*FS);",
   "  float wv2 = 0.5 + 0.5*sin(axis2*11.0 - uTime*FS*0.6);",
   "  float band = pow(wv, 4.0)*0.75 + pow(wv2, 5.0)*0.45;",
-  "  vec3 deck = uDeck;",
-  "  vec3 glow = deck * ( w*I_*0.5 + halo*BL + w*band*FL*2.4 ) * pulse * (1.0 - 0.3*Lc);",
+  // EIGENFARBE (Standard): die Linie glüht in IHRER Farbe; Kern etwas angehoben (+ Lauflicht), farbiges Halo im
+  // eigenen Farbton spült ins Umfeld → verstärkt vorhandene Farben, ohne einzufärben.
+  "  vec3 coreHue = base / max(max(base.r, max(base.g, base.b)), 0.08);",
+  "  float coreAmt = w*I_*0.45 + w*band*FL*2.0;",
+  "  vec3 selfGlow = coreHue*coreAmt + haloCol*(BL*1.4);",
+  // DECKFARBE (Opt-in): dieselbe Menge, aber im Deck-Farbton (bewusstes Umfärben).
+  "  vec3 deckGlow = uDeck * ( w*I_*0.5 + halo*BL + w*band*FL*2.4 );",
+  "  vec3 glow = mix(selfGlow, deckGlow, uMode) * pulse * (1.0 - 0.3*Lc);",
   "  float alpha = clamp(max(glow.r, max(glow.g, glow.b)), 0.0, 1.0) * uMix;",
   "  gl_FragColor = vec4(glow * alpha, alpha);",  // PREMULTIPLIED → korrektes Kompositing auch auf iOS-Safari
   "}",
@@ -78,18 +90,20 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", on = true, animate = true }) {
+export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", deckTint = false, on = true, animate = true }) {
   const canvasRef = useRef(null);
   // Live-Werte über Refs → die Zeichenschleife liest sie, ohne dass der GL-Context neu gebaut wird.
   const onRef = useRef(on);
   const animRef = useRef(animate);
   const colorRef = useRef(hexToRgb(deckColor, [0.5, 0.86, 1.0]));
+  const modeRef = useRef(deckTint ? 1 : 0); // 0 = Eigenfarbe (buff), 1 = Deckfarbe (tint)
   const srcsRef = useRef({ d: srcDesktop, m: srcMobile });
   const reloadRef = useRef(true); // Anforderung: Textur (neu) laden (bei Bildwechsel gesetzt)
 
   useEffect(() => { onRef.current = on; }, [on]);
   useEffect(() => { animRef.current = animate; }, [animate]);
   useEffect(() => { colorRef.current = hexToRgb(deckColor, [0.5, 0.86, 1.0]); }, [deckColor]);
+  useEffect(() => { modeRef.current = deckTint ? 1 : 0; }, [deckTint]);
   useEffect(() => { srcsRef.current = { d: srcDesktop, m: srcMobile }; reloadRef.current = true; }, [srcDesktop, srcMobile]);
 
   // GL-Setup GENAU EINMAL (mount). Keine Prop-Deps → kein Context-Neuaufbau.
@@ -122,6 +136,7 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
     const uMix = gl.getUniformLocation(prog, "uMix");
     const uImgAspect = gl.getUniformLocation(prog, "uImgAspect");
     const uDeck = gl.getUniformLocation(prog, "uDeck");
+    const uMode = gl.getUniformLocation(prog, "uMode");
     const uTex = gl.getUniformLocation(prog, "uTex");
 
     const tex = gl.createTexture();
@@ -183,6 +198,7 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
       gl.uniform1f(uMix, mix);
       gl.uniform1f(uImgAspect, imgAspect);
       gl.uniform3f(uDeck, c[0], c[1], c[2]);
+      gl.uniform1f(uMode, modeRef.current);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
