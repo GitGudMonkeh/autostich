@@ -39,6 +39,10 @@ export const GLOBAL_FX = [
   // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
   { key: "cubematrix", name: "Würfel-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
     ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
+  // #345 Neon-Brandung: Plasma-See am unteren Rand (eigene WebGL-Canvas wie Aurora). Bei starken Ansagen drückt ein
+  // Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen (Gefäß/Rahmen). Reiner BG (bgfx).
+  { key: "neonsurf", name: "Neon-Brandung", desc: "Eine Plasma-See am unteren Rand — Neon-Fluss mit heller Wasserlinie; bei starken Ansagen drückt ein Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen. In der Deckfarbe.",
+    ownKey: "fx:neonsurf", option: "fxNeonsurf", preview: "neonsurf", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
   // #deckglow: Deck-Glow — die hellen Linien/Kanten des Battlefield-Bildes glühen (rein additiv) in der Deck-/Standard-
   // farbe auf, dazu ein „Lauflicht", das an den Konturen entlangwandert. EIGENE Ebene (WebGL-Canvas, mobil-sicher wie
   // Aurora), NICHT im exklusiven bgfx-Slot → frei mit allen anderen Effekten kombinierbar (group "bgglow", mode toggle).
@@ -97,7 +101,7 @@ export const auroraActive = (profile, options) => globalFxActive(profile, option
 // #deckglow: Deck-Glow ist eine UNABHÄNGIGE Ebene (kein exklusiver Slot) → gekauft UND per Option an = aktiv,
 // unabhängig davon, welcher bgfx/bgfin-Effekt gewählt ist. So kombiniert es mit allen anderen Effekten.
 export const deckGlowActive = (profile, options) => globalFxActive(profile, options, "deckglow");
-export const BG_FX_KEYS  = ["aurora", "cubematrix"];  // reiner Hintergrund (einfach-exklusiv)
+export const BG_FX_KEYS  = ["aurora", "cubematrix", "neonsurf"];  // reiner Hintergrund (einfach-exklusiv)
 export const BG_FIN_KEYS = ["starfield"];  // Hintergrund-Finisher (reagiert je Stich; einfach-exklusiv) — #glutfunken-raus: embers entfernt
 export function activeBgFx(profile, options) {
   for (const k of BG_FX_KEYS) if (globalFxActive(profile, options, k)) return k;

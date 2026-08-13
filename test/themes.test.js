@@ -155,9 +155,9 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, cubematrix, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326) — #glutfunken-raus: embers entfernt", () => {
+  it("GLOBAL_FX führt aurora, neonsurf, cubematrix, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326) — #glutfunken-raus: embers entfernt · #345 neonsurf", () => {
     expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
-      ["aurora", "cubematrix", "deckglow", "starfield", "edgeglow", "holo", "glitch",
+      ["aurora", "neonsurf", "cubematrix", "deckglow", "starfield", "edgeglow", "holo", "glitch",
        "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
   });
   it("#deckglow: Deck-Glow liegt in der eigenen bgglow-Gruppe (frei kombinierbar), 5 DP, korrekte Naht", () => {

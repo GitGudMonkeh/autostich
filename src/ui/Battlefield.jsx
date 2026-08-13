@@ -64,6 +64,7 @@ import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
+import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung — eigene WebGL-Canvas (wie Aurora)
 import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
@@ -688,7 +689,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false, // #glutfunken-raus: emberDeck entfernt
+  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, neonsurfDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false, // #glutfunken-raus: emberDeck entfernt
   deckGlow = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene. #336: immer Deckfarbe (kein Farbmodus mehr)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
@@ -725,6 +726,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const deckGlowOn = pixiEnabled && deckGlow && !!battlefield; // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar, Gate wie Aurora)
   // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
   const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
+  // #345 Neon-Brandung: eigene WebGL-Canvas (rohes WebGL1, mobil-sicher). ANDERS als Aurora bewusst AUCH in Produktion,
+  // weil es keine DOM-Fassung gibt (FieldFxLayer kennt nur „aurora") → sonst wäre der gekaufte Effekt im Spiel unsichtbar.
+  // Opt-in (nur wenn als bgFx gewählt) + intern coarse-DPR/30fps/fbm-Oktaven-gedrosselt. Lawine/Ansagen treiben den Puls.
+  const neonsurfGL = bgFx === "neonsurf" && !!deckA1;
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -825,6 +830,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
   const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
   const [holePulse, setHolePulse] = useState(null);           // #320 Puls-Kanal ans persistente Loch (win → wachsen+saugen · loss → schrumpfen)
+  const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
@@ -1084,6 +1090,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
     if (bigScore.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
     bigSeq.current += 1;
+    // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
+    //   Stark 0.7 · Brutal 1.0 · Irre 1.4 · epische Ansagen (Gottgleich/Gönn dir/Lawine) 1.4. Nur wenn der Effekt aktiv
+    //   ist (sonst ungenutzter State); der Shader klingt den Puls über SURGE_DUR selbst ab.
+    if (neonsurfGL) {
+      const surgeMag = bigScore.epic ? 1.4 : (bigScore.rank <= 1 ? 0.7 : bigScore.rank === 2 ? 1.0 : 1.4);
+      setSurfSurge({ id: `s${t.trickNo}-${bigSeq.current}`, mag: surgeMag });
+    }
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
     // #344: kein lane/jitter mehr (alle mittig) → Pool auf max 2 gleichzeitig gedeckelt.
     const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: bigScore };
@@ -1277,6 +1290,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} />
         </div>
       )}
+      {/* #345 Neon-Brandung — Plasma-See am unteren Rand, z-2 HINTER dem Finisher. Groß-Ansagen treiben den Impact-Puls. */}
+      {neonsurfGL && (
+        <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
+          <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} />
+        </div>
+      )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
           additive Overlay-Bühne z-11 ÜBER den Karten → sie leuchten die Karten von oben an. */}
       {cubeMatrixOn && (
@@ -1456,7 +1475,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
       {bgFx && deckA1 && (
         <FieldFxLayer effect={bgFx} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          suppressField={auroraGL} />
+          suppressField={auroraGL || neonsurfGL} />
       )}
       {/* #cleanup: Der DOM-Hintergrund-Finisher entfällt — Glutfunken & Sternenfeld laufen nur noch über den
           Pixi-Emitter (PixiStage). Es gibt keine DOM-Finisher-Fassung mehr. */}
