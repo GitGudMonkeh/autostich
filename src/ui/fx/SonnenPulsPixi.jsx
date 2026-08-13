@@ -164,7 +164,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
         const rays = new Graphics(); rays.blendMode = "add";
         app.stage.addChild(corona, rays, sun, core);
         nodesRef.current = { sun, corona, core, rays };
-        app.ticker.maxFPS = st.current.lite ? 45 : 0;
+        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30 (kurzer Einmaleffekt, kaum sichtbar)
         app.ticker.add(tick);
         // Mount = spielen (Battlefield mountet nur beim Gott-Sieg; die Vorschau will den Loop). Trigger-Wechsel danach → Replay.
         startPlay();

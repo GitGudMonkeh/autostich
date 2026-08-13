@@ -161,7 +161,7 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
         const core = new Sprite(coreTex); core.anchor.set(0.5); core.blendMode = "add"; core.alpha = 0;
         app.stage.addChild(g, core);
         nodesRef.current = { g, core };
-        app.ticker.maxFPS = st.current.lite ? 45 : 0;
+        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

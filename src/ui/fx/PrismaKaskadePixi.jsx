@@ -113,7 +113,7 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
         const rings = new Graphics(); rings.blendMode = "add";
         app.stage.addChild(flash, rings);
         nodesRef.current = { rings, flash };
-        app.ticker.maxFPS = st.current.lite ? 45 : 0;
+        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

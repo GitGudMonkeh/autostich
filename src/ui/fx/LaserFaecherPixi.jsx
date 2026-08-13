@@ -141,7 +141,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
         app.stage.addChild(cores);
         const hub = new Sprite(hubTex); hub.anchor.set(0.5); hub.blendMode = "add"; hub.alpha = 0; app.stage.addChild(hub);
         nodesRef.current = { beams, cores, hub };
-        app.ticker.maxFPS = st.current.lite ? 45 : 0;
+        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

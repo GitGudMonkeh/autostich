@@ -86,7 +86,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
 
     function seedStars() {
       const r = refs.current; const s = st.current;
-      const n = Math.round(TUNE.STARS * (s.lite ? 0.45 : 1) * (s.reduced ? 0.4 : 1));
+      const n = Math.round(TUNE.STARS * (s.lite ? 0.3 : 1) * (s.reduced ? 0.4 : 1)); // #perf-mobile: lite-Sterne 0.45→0.3
       for (let i = 0; i < r.stars.length; i++) {
         const active = i < n; const p = r.stars[i].p; if (!active) { p.alpha = 0; r.stars[i].active = false; continue; }
         const seed = i * 2.3 + (trigger + 1) * 5;
@@ -153,7 +153,8 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
           g.stroke({ width: Math.max(1, diag * 0.002), color: 0xffffff, alpha: clamp(0.4 * sa, 0, 1) }); }
         // Chromatische Ringe (gestaffelt).
         const nBands = s.lite ? Math.max(5, Math.round(TUNE.CHROMA * 0.5)) : TUNE.CHROMA;
-        for (let w = 0; w < TUNE.RINGS; w++) { const wt = dp - w * 0.06; if (wt < 0 || wt > 0.9) continue; const wp = wt / 0.9, R = halfDiag * TUNE.RING_R * easeOut(wp), rA = (wp < 0.1 ? wp / 0.1 : Math.pow(1 - (wp - 0.1) / 0.9, 1.2)) * BR;
+        const nRings = s.lite ? 4 : TUNE.RINGS; // #perf-mobile: lite 6→4 Ring-Wellen
+        for (let w = 0; w < nRings; w++) { const wt = dp - w * 0.06; if (wt < 0 || wt > 0.9) continue; const wp = wt / 0.9, R = halfDiag * TUNE.RING_R * easeOut(wp), rA = (wp < 0.1 ? wp / 0.1 : Math.pow(1 - (wp - 0.1) / 0.9, 1.2)) * BR;
           for (let b = 0; b < nBands; b++) { const bu = nBands > 1 ? b / (nBands - 1) : 0.5, rb = R + (bu - 0.5) * TUNE.RING_SEP * nBands * H; if (rb <= 1) continue; const col = s.deckTint ? mix(ca, cb, bu) : hsl2rgb(lerp(0.06, 0.95, bu), 1, 0.6); g.circle(cx, cy, rb).stroke({ width: Math.max(1, TUNE.RING_THICK * H * 0.04), color: intOf(col), alpha: clamp(0.4 * rA, 0, 1) }); } }
         // Dicke weiße Boom-Front.
         if (TUNE.BOOM > 0) { const br = halfDiag * TUNE.RING_R * 0.9 * easeOut(dp), ba = (1 - dp) * (1 - dp) * TUNE.BOOM; g.circle(cx, cy, br).stroke({ width: Math.max(2, diag * 0.02 * (1 - dp)), color: 0xffffff, alpha: clamp(0.5 * ba, 0, 1) }); }
@@ -168,7 +169,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       if (det && dp < 0.3) { const fBase = 1 - dp / 0.3, fa = fBase * (s.reduced ? 0.22 : 1) * Math.min(1, TUNE.FLASH * 0.4);
         flash.clear();
         if (fa > 0.01) {
-          if (!s.reduced) { const off = diag * 0.01 * fBase; flash.rect(-off, 0, W, H).fill({ color: intOf(ca), alpha: clamp(fa * 0.5, 0, 1) }); flash.rect(off, 0, W, H).fill({ color: intOf(cb), alpha: clamp(fa * 0.5, 0, 1) }); }
+          if (!s.reduced && !s.lite) { const off = diag * 0.01 * fBase; flash.rect(-off, 0, W, H).fill({ color: intOf(ca), alpha: clamp(fa * 0.5, 0, 1) }); flash.rect(off, 0, W, H).fill({ color: intOf(cb), alpha: clamp(fa * 0.5, 0, 1) }); } // #perf-mobile: chromatische A/B-Spaltung (2 extra Vollbild-Rects) auf lite aus
           flash.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: clamp(fa * 0.7, 0, 1) });
         }
       } else { r.flash.clear(); }
@@ -184,7 +185,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 auf BEIDE Canvas (Tunnel + Nova) — der teuerste Posten (zwei Full-Screen-Apps + Flash).
-    const initOpts = (canvas, host) => ({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" });
+    const initOpts = (canvas, host) => ({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: Math.min(st.current.lite ? 1.0 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" }); // #perf-mobile: lite-DPR 1.25→1.0 (zwei Full-Screen-Canvas → Fill-Rate verdoppelt)
     Promise.all([tApp.init(initOpts(tCanvas, tHost)), nApp.init(initOpts(nCanvas, nHost))]).then(() => {
       if (disposed) { for (const a of [tApp, nApp]) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } } return; }
       for (const [cv, hs] of [[tCanvas, tHost], [nCanvas, nHost]]) { cv.style.width = "100%"; cv.style.height = "100%"; cv.style.display = "block"; hs.appendChild(cv); }
@@ -199,7 +200,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       nRoot.addChild(starsPC, novaG, core); nApp.stage.addChild(nRoot);
       const flash = new Graphics(); flash.blendMode = "add"; nApp.stage.addChild(flash); // Flash außerhalb des Zoom-Containers
       Object.assign(refs.current, { tApp, nApp, tG, tRoot, nRoot, novaG, core, flash, starsPC, stars });
-      nApp.ticker.maxFPS = st.current.lite ? 45 : 0; // #perf: Ticker-Cap (treibt beide Apps)
+      nApp.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf: Ticker-Cap (treibt beide Apps) — #perf-mobile: lite 45→30
       nApp.ticker.add(tick); startPlay();
     }).catch(() => { /* WebGL fehlt → leer */ });
 
