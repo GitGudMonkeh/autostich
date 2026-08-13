@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
   THEMES,
@@ -171,13 +172,11 @@ const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher",
 const GOTT_STANDARD = { key: "gottStandard", name: "Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
   desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
 
-/* #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): IMMER aktiv, kein Kauf — es gibt nur die Farbwahl Standard ↔
-   Deckfarbe. Zwei synthetische Kacheln (einfach-exklusiv über options.archColor), beide zeigen denselben 4-Karten-
-   Showcase (jeweils im maximalen Status), in der jeweiligen Farbe. */
-const SPEZIAL_STANDARD = { key: "standard", name: "Standard", group: "spezial", alwaysOwned: true, preview: "spezial",
-  desc: "Die vier Archetyp-Effekte (Hitze · Moos · Blitz · Eis) in ihrer festen Neon-Standardfarbe. Immer aktiv." };
-const SPEZIAL_DECK = { key: "deck", name: "Deckfarbe", group: "spezial", alwaysOwned: true, preview: "spezial",
-  desc: "Die vier Archetyp-Effekte in der Farbe deines aktiven Decks (Verlauf) statt der festen Neon-Palette. Immer aktiv." };
+/* #spezial/#328 Skill-Effekt (Archetyp-Effekte Feuer/Blitz/Eis/Pflanze): IMMER aktiv, kein Kauf, kein An/Aus — es gibt
+   nur die Farbwahl Standard ↔ Deckfarbe (options.archColor). EINE synthetische Kachel; der Standard/Deckfarbe-Umschalter
+   sitzt als Segmented-Control unter dem Showcase (gleiche UI wie die anderen Effekte, schreibt weiter archColor). */
+const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", alwaysOwned: true, preview: "spezial",
+  desc: "Die vier Archetyp-Effekte (Feuer · Blitz · Eis · Pflanze) — immer aktiv. Wähle die Farbe: feste Neon-Standardfarbe oder die Farbe deines aktiven Decks." };
 
 // #331 Effekt-Reiter des „Effekte"-Tabs — auf 4 Reiter reduziert (Reihenfolge = Anzeige links→rechts):
 //   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahmen:
@@ -207,7 +206,7 @@ const fxByGroup = (g) => GLOBAL_FX.filter((f) => f.group === g && !f.hidden).sli
 const fxKey = (k) => GLOBAL_FX_BY_KEY[k]; // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
 const fxGroupItems = (group) => {
   // #331 Reihenfolge = Anzeige-Reihenfolge aus dem Issue; Default-/Aus-Kacheln voran.
-  if (group === "karten") return [SPEZIAL_STANDARD, SPEZIAL_DECK, ANIM_NONE, ...fxByGroup("anim")]; // Skill-Effekt (Standard/Deckfarbe) · Keine · Neonrahmen · Holo-Sweep · Glitch
+  if (group === "karten") return [SPEZIAL, ANIM_NONE, ...fxByGroup("anim")]; // #328 Skill-Effekt (ein Tile) · Keine · Neonrahmen · Holo-Sweep · Glitch
   if (group === "stich")  return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE]; // Standard · Klinge · Laser · Hologrid-Laser · Schwarzes Loch
   // #331 Hintergrund: „Leuchten" (frei) voran, dann der Aus-Zustand + der EINE exklusive Vierer in fester Reihenfolge.
   if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, fxKey("aurora"), fxKey("cubematrix"), fxKey("embers"), fxKey("starfield")].filter(Boolean);
@@ -572,16 +571,35 @@ function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
    Status, in der gewählten Farbe (Standard-Neon ODER Deckfarbe-Beispiel-Verlauf). Moos/Eis/Blitz hängen als Kartenkind
    in ihrer Karte; die Hitze (FireHead) liegt als Panel-Overlay über der ersten Karte (Flammen loder in den Freiraum). */
 const SPEZIAL_DECK_A = "#ff7a3a", SPEZIAL_DECK_B = "#e01234"; // Deckfarbe-Beispiel (roter Verlauf) — Effekte + Hintergrund rot
+// #328 Showcase-Loop-Stufen: Eis läuft durch die FrostIce-Schwellen (MASS_MAX=12: 0→4→8→12), Pflanze durch das
+// MossGrow-Wachstum (STAGE_MAX=8: 0→8). Beide Bitmaps sind pro Stufe modulweit gecacht → diskretes Stepping ist billig.
+const ICE_MASS_SEQ  = [0, 4, 8, 12, 12]; // Halt auf Max (12 doppelt) vor dem Reset auf 0
+const MOSS_GROW_SEQ = [0, 2, 4, 6, 8, 8]; // Halt auf „reif" (8 doppelt) vor dem Reset
+const ICE_MASS_MAX = 12, MOSS_STAGE_MAX = 8; // Reduced-Motion → statisch auf Max
 function SpezialScene({ deckTint = false }) {
   const panelRef = useRef(null);
   const fireCardRef = useRef(null);
   const bf = battlefieldAssets(SHOWCASE_BF);
   const DC = SPEZIAL_DECK_A, DC2 = SPEZIAL_DECK_B;
+  // #328 Feuer/Blitz animieren selbst; Eis/Pflanze bekamen bisher einen Fixwert (Max) → jetzt durch die Stufen loopen.
+  // Bei Reduced-Motion (usePrefersReducedMotion) keinen Loop → statisch auf Max (Endzustand sichtbar, ohne Bewegung).
+  const reducedMotion = usePrefersReducedMotion();
+  const [iceMass, setIceMass] = useState(reducedMotion ? ICE_MASS_MAX : ICE_MASS_SEQ[0]);
+  const [mossGrowth, setMossGrowth] = useState(reducedMotion ? MOSS_STAGE_MAX : MOSS_GROW_SEQ[0]);
+  useEffect(() => {
+    if (reducedMotion) { setIceMass(ICE_MASS_MAX); setMossGrowth(MOSS_STAGE_MAX); return undefined; }
+    // Getrennte, unabhängige Timer (am einfachsten): je Stufe ~0,8 s bzw. ~0,72 s, dann von vorn (Reset auf 0).
+    let iceI = 0, mossI = 0;
+    setIceMass(ICE_MASS_SEQ[0]); setMossGrowth(MOSS_GROW_SEQ[0]);
+    const iceT = setInterval(() => { iceI = (iceI + 1) % ICE_MASS_SEQ.length; setIceMass(ICE_MASS_SEQ[iceI]); }, 820);
+    const mossT = setInterval(() => { mossI = (mossI + 1) % MOSS_GROW_SEQ.length; setMossGrowth(MOSS_GROW_SEQ[mossI]); }, 720);
+    return () => { clearInterval(iceT); clearInterval(mossT); };
+  }, [reducedMotion]);
   const CARDS = [
     { key: "feuer", label: "Feuer", ref: fireCardRef, fx: null },
     { key: "blitz", label: "Blitz", ref: null, fx: <CardIonStorm active color={deckTint ? DC : "#5ec8f0"} /> },
-    { key: "eis", label: "Eis", ref: null, fx: <FrostIce mass={12} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
-    { key: "pflanze", label: "Pflanze", ref: null, fx: <MossGrow growth={8} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
+    { key: "eis", label: "Eis", ref: null, fx: <FrostIce mass={iceMass} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
+    { key: "pflanze", label: "Pflanze", ref: null, fx: <MossGrow growth={mossGrowth} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /> },
   ];
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: deckTint ? "#170509" : "#0b0a16" }}>
@@ -669,7 +687,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={PREVIEW_LOOK.klinge} />;
   if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={PREVIEW_LOOK.scorch} />; // #319 Scorch-Finisher (Laser + organischer Burn)
   if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={PREVIEW_LOOK.hologrid} />; // #321 Hologrid-Slice-Finisher (Pixi)
-  if (fx.preview === "spezial") return <SpezialScene deckTint={fx.key === "deck"} />; // #spezial 4-Karten-Showcase (Hitze/Moos/Blitz/Eis) — Farbmodus aus dem Tile-Key
+  if (fx.preview === "spezial") return <SpezialScene deckTint={deckTint} />; // #328 4-Karten-Showcase (Feuer/Blitz/Eis/Pflanze) — Farbmodus aus archColor (deckTint)
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
   // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
@@ -1091,7 +1109,7 @@ const FX_SHORT = {
 };
 function shortDesc(fx, group) {
   if (fx.key === "none") return group.mode === "cardanim" ? "Alle Karten-Animationen aus." : "Kein Hintergrund-Effekt (Leuchten bleibt möglich).";
-  if (fx.group === "spezial") return fx.key === "deck" ? "Feuer · Blitz · Eis · Pflanze in der Deckfarbe." : "Feuer · Blitz · Eis · Pflanze in der Standard-Neonfarbe."; // #spezial (vor „standard"-Kollision)
+  if (fx.group === "spezial") return "Feuer · Blitz · Eis · Pflanze — immer aktiv, nur Farbwahl (Standard/Deckfarbe)."; // #328 ein Tile
   if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
   if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
   return FX_SHORT[fx.key] || fx.desc;
@@ -1102,7 +1120,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const bgSel = bgSelOf(options, p);   // #331 EIN exklusiver Hintergrund-Effekt (aurora/cubematrix/embers/starfield) oder „none"
   const cardAnimSel = cardAnimSelOf(options, p); // #331 EINE Karten-Animation (edgeglow/holo/glitch) oder „none"
   const gottSel = gottSelOf(options); // #322 aktiver Score-Prunk oder „gottStandard" (kein Prunk)
-  const spezialSel = options?.archColor === "deck" ? "deck" : "standard"; // #spezial Farbwahl des Skill-Effekts (im Karten-Reiter)
   const deckGlowOn = !!options?.fxDeckGlow; // #331 Leuchten (freier Toggle, unabhängig vom Hintergrund-Set)
   const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bg" ? bgSel : g.mode === "gott" ? gottSel : g.mode === "cardanim" ? cardAnimSel : null;
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
@@ -1114,7 +1131,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   // Ist ein Effekt in seiner Gruppe „aktiv"? (als Finisher/Prunk/Hintergrund/Animation gewählt bzw. Toggle an).
   // Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion. Reihenfolge: Skill-Effekt & Leuchten sind Sonderfälle vor den Modi.
   const isActive = (g, fx) =>
-      fx.group === "spezial" ? spezialSel === fx.key   // #spezial Skill-Effekt Standard ↔ Deckfarbe (immer aktiv; Tiles im Karten-Reiter)
+      fx.group === "spezial" ? true                    // #328 Skill-Effekt ist IMMER aktiv (nur Farbwahl) → „AKTIV"-Badge korrekt
     : fx.key === "deckglow" ? deckGlowOn              // #331 Leuchten: freier Toggle (unabhängig vom Hintergrund-Set)
     : g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "gott" ? gottSel === fx.key          // #322 Score-Prunk einfach-exklusiv (gottStandard = kein Prunk)
@@ -1133,7 +1150,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const toggleFx = (g, fx) => {
     const on = isActive(g, fx);
     if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return; // nicht im Besitz → erst über die Bühne kaufen
-    if (fx.group === "spezial") onChoose(spezialFlags(fx.key)); // #spezial immer aktiv → wählt Farbe (kein Aus-Zustand)
+    if (fx.group === "spezial") return; // #328 Skill-Effekt: immer aktiv, Farbe NUR über den Toggle (Tile-Klick = no-op)
     else if (fx.key === "deckglow") onChoose({ [fx.option]: !on }); // #331 Leuchten: freier Toggle
     else if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
     else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
@@ -1195,7 +1212,9 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "deckglow" ? "fxDeckGlowDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
-  const deckTintOn = deckOpt ? !!options?.[deckOpt] : false;
+  // #328 Skill-Effekt hat KEIN eigenes …Deck-Flag → Farbmodus kommt aus archColor (spezialSel); sonst aus deckOpt.
+  const spezialSel = options?.archColor === "deck" ? "deck" : "standard";
+  const deckTintOn = fx.group === "spezial" ? spezialSel === "deck" : (deckOpt ? !!options?.[deckOpt] : false);
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
   const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
@@ -1300,8 +1319,18 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       </div>
     );
   } else if (fx.group === "spezial") {
-    // #spezial: Skill-Effekt (Archetyp, unter „Karten") ist immer aktiv — nur die Farbwahl Standard ↔ Deckfarbe (über archColor).
-    action = <button onClick={() => onChoose(spezialFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "deck" ? "Deckfarbe wählen" : "Standard wählen")}</button>;
+    // #328 Skill-Effekt (immer aktiv) → KEIN „auswählen"-Button, nur die Farbwahl als Segmented-Control (schreibt archColor).
+    action = (
+      <div className="flex justify-center">
+        <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
+          {[{ v: "standard", l: "Standard" }, { v: "deck", l: "Deckfarbe" }].map((o) => {
+            const on = spezialSel === o.v;
+            return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+          })}
+        </div>
+      </div>
+    );
   } else if (group.mode === "cardanim" && fx.key === "none") {
     // #318/#331 „Keine Animation" (Aus-Zustand der einfach-exklusiven Karten-Animationen): schaltet alle ab.
     action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
@@ -1324,11 +1353,14 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         {/* #perf-shop (Plan B): key trägt NUR den Effekt (nicht den Farbmodus) → Standard↔Deckfarbe-Toggle remountet die
             Pixi-Bühne NICHT mehr (kein WebGL-Neuaufbau), sondern reicht deckTint als Live-Prop durch; die Effekte lesen
             ihn zur Laufzeit (gott: st.current · Blackhole: ctrlRef · Feld: setParams · Cube: propsRef). Effekt-Wechsel
-            (anderer fx.key) remountet weiterhin, da ein anderer Effekt-Typ. */}
-        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+            (anderer fx.key) remountet weiterhin, da ein anderer Effekt-Typ.
+            #328 AUSNAHME Skill-Effekt: die Canvas-2D-Renderer im Showcase (v. a. FireHead/Feuer) lesen den Farbmodus NICHT
+            live nach (die eigentlichen Renderer bleiben unangetastet) → für „spezial" trägt der Key den Farbmodus mit, damit
+            der Standard↔Deckfarbe-Toggle die Vorschau sofort umfärbt (billiger Canvas-Remount, kein Pixi/WebGL betroffen). */}
+        <GlobalFxScenePreview key={fx.group === "spezial" ? `spezial:${deckTintOn ? "deck" : "std"}` : fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
-          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Skill-Effekt" : group.title}</span>
+          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Archetyp-Effekte" : group.title}</span>
         {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis in der Rarity-Farbe (#farbsystem) bei noch nicht gekauft. */}
         {active
           ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</span>
