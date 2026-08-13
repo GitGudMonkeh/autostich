@@ -210,6 +210,18 @@ export const THEME_DEFS = {
 };
 
 export const THEMES = Object.values(THEME_DEFS);
+
+/* #327 Showcase-Look = kohärente Pack-Einheit (wie in-game: Deck + Battlefield + Farben gehören zusammen): der
+   Effekt-Showcase leitet Hintergrund (bfId) UND Deckfarben (a1/a2) aus EINEM Pack ab. override.a1/a2/.bf (optional)
+   übersteuern die Pack-Werte für Sonderfälle (z. B. neutraler Standard-Prunk). Unbekanntes/„default"-Pack → sicherer
+   Genesis-Fallback (bf_onboarding) + neutrale Farbe, damit ein Tippfehler den Showcase nicht crasht. Pur & testbar. */
+export function showcaseLook(packId, override = {}) {
+  const t = THEME_DEFS[packId];
+  const bf = override.bf || (t ? t.bfId : "bf_onboarding");
+  const a1 = override.a1 || (t ? t.a1 : "#8a7de0");
+  const a2 = override.a2 || (t ? t.a2 : a1);
+  return { bf, a1, a2 };
+}
 export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
 // SP-Guthaben robust lesen (spiegelt progression.points).

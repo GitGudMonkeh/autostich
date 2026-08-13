@@ -4,7 +4,7 @@ import { useEscape } from "./useEscape.js";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
-  THEMES,
+  THEMES, THEME_DEFS, showcaseLook,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
@@ -60,8 +60,9 @@ import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 
-// Standard-Backdrop für alle Effekt-/Finisher-Showcases: das Genesis-Battlefield (bf_onboarding), einheitlich neutral.
-const SHOWCASE_BF = "bf_onboarding";
+// #327 Standard-Backdrop für ALLE Effekt-Showcases: das Genesis-Battlefield (Default-Standard-BG, Single Source of Truth
+// = THEME_DEFS.genesis.bfId). Im Standard-Modus zeigt jeder Showcase Genesis; nur der Deckfarbe-Modus zeigt den Pack-BG.
+const SHOWCASE_BF = THEME_DEFS.genesis.bfId; // = "bf_onboarding"
 
 /* #deckshop — DECK-WERKSTATT (schlankes Modell): zwei Kategorien.
    • PACKS   = Karte (Front + Back) + Battlefield als EIN Kauf. Tap → Detail-Ansicht mit Vorschau
@@ -77,48 +78,35 @@ const SHOWCASE_BF = "bf_onboarding";
 const CARD_RATIO = "1066 / 1476";
 // Demo-Farbe der Effekt-Vorschauen (in-game = Deck-/Suit-Farbe).
 const DEMO_C = "#35e0ff";
-// Showcase-Backdrop + Demo-Deckfarben PRO Feldeffekt — so sieht man später am Standard/Deckfarbe-Toggle den Unterschied:
-// Aurora auf Moonwhale (kühles Cyan/Blau), Glutfunken auf Feuer (rotes Deck). Andere Effekte: Standard-Backdrop/-Farbe.
-const PREVIEW_LOOK = {
-  aurora: { bf: "bf_wale",  a1: "#35d0ff", a2: "#7fdcff" }, // Moonwhale (kühl) — kontrastiert mit dem grünen Aurora-Standard
-  // #313-Folge: die Glutfunken-Showcase-Deckfarbe muss sich DEUTLICH vom warmen Standard-Feuer abheben, sonst wirkt der
-  // Standard↔Deckfarbe-Toggle wirkungslos. Ein rotes Feuer-Deck ist zu fire-nah → jetzt Kosmos (Magenta) auf dunklem
-  // Feld: Standard = oranges Feuer, Deckfarbe = Magenta — beide auf dem dunklen Kosmos-Feld klar sichtbar.
-  embers: { bf: "bf_kosmos", a1: "#ff4dcb", a2: "#7b5cff" },
-  // #311: Sternenfeld ist von Haus aus weiß-blau. Damit die Deck-Demo mit dem Weiß-Blau KONTRASTIERT (Toggle sichtbar)
-  // UND nicht mit dem Hintergrund clasht, läuft es auf dem NEUTRALEN Genesis-Feld (statt Kosmos-Magenta) mit einer
-  // warmen Bernstein-Deckfarbe — warm auf neutral-dunkel passt zusammen und hebt sich klar vom kühlen Standard ab.
-  // #311: Deckfarbe-Showcase auf dem gelben „Goldener Drache"-Deck (bf_drache, a1=#ffcf5a Gold/Gelb) → hebt sich klar
-  // vom weiß-blauen Standard-Sternenfeld ab, damit der Standard↔Deckfarbe-Toggle sichtbar ist.
-  starfield: { bf: "bf_drache", a1: "#ffcf5a", a2: "#ff5a2a" },
-  // Sieg-Finisher — Deckfarbe-Beispiel je Effekt: Deck-Beispielfarben KOMPLEMENTÄR zur Standard-Palette + ein dazu
-  // passender Backdrop, der NUR im Deckfarbe-Modus gezeigt wird (Standard-Modus bleibt auf dem neutralen SHOWCASE_BF).
-  klinge:    { bf: "bf_drache",    a1: "#ffb43d", a2: "#ff7a2a" }, // Standard = kühles Stahlweiß → Deckfarbe warm-gold auf Drachen-Feld
-  scorch:    { bf: "bf_wale",      a1: "#35d0ff", a2: "#6ad0ff" }, // Standard = warmes Feuer → Deckfarbe kühl-cyan auf Moonwhale-Feld
-  hologrid:  { bf: "bf_blitz",     a1: "#3ad8ff", a2: "#6a8cff" }, // Standard = cyan/magenta → Deckfarbe cyan/blau auf Blitz-Feld (kühl-elektrisch, harmoniert mit dem Hologrid-Look)
-  // #320 Schwarzes Loch: Standard = blau→pink (im Scene-Code fest); Deckfarbe-Showcase = warmes Gold/Grün auf dunklem
-  // Kosmos-Feld, damit der Standard↔Deckfarbe-Toggle (kühl-neon ↔ warm) deutlich sichtbar ist.
-  blackhole: { bf: "bf_kosmos",    a1: "#ffd15a", a2: "#57e08a" },
-  // #318 Karten-Animationen: neutrales Feld, Deck-Dual mit klarem Farbverlauf (Blau→Violett), damit der diagonale
-  // Deck-Verlauf des Kantenglühens sichtbar ist. Karten-Animationen laufen IMMER in der Deckfarbe (kein Standard-Toggle).
-  edgeglow: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
-  // Holo-Sweep: dunkles neutrales Feld, Deck-Dual als Basis unter dem Regenbogen (prismatik mischt beides).
-  holo: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
-  // Glitch: dunkles Feld, Deck-Dual (der Glitch tönt selbst in ghostA/ghostB/Suit).
-  glitch: { bf: SHOWCASE_BF, a1: "#5a8ade", a2: "#9b82f0" },
-  // #317 Cube-Matrix: Standard = Cyan→Magenta; Deckfarbe-Showcase auf dem grünen Neon-Arcade-Deck
-  // (a1=#39e64d Grün, a2=#38c6e0 Cyan auf bf_arcade), damit der Standard↔Deckfarbe-Toggle klar sichtbar ist.
-  cubematrix: { bf: "bf_arcade", a1: "#39e64d", a2: "#38c6e0" },
-  // #322–#326 Gottgleich-Prunk: jeder Prunk-Showcase bekommt EIGENEN Backdrop + EIGENE Deckfarbe fürs Deckfarbe-Beispiel,
-  // damit der Standard↔Deckfarbe-Toggle je Effekt klar sichtbar ist und die 5 Showcases sich optisch unterscheiden.
-  // Deckfarbe jeweils KOMPLEMENTÄR zur Standard-Palette des Effekts (kühl↔warm etc.), Backdrop je Effekt verschieden.
-  sonnenPuls:    { bf: "bf_gottgleich", a1: "#35d0ff", a2: "#6ad0ff" }, // Standard warm-pink/coral → Deckfarbe kühl-cyan auf Gottgleich-Feld
-  laserFaecher:  { bf: "bf_blitz",      a1: "#ff9a3c", a2: "#ffd15a" }, // Standard cyan-Laser → Deckfarbe warm-amber auf Blitz-Feld
-  prismaKaskade: { bf: "bf_polarlicht", a1: "#ff4dcb", a2: "#7b5cff" }, // Standard prismatisch → Deckfarbe kräftig magenta/violett auf Polarlicht-Feld
-  holoCube:      { bf: "bf_geometrie",  a1: "#39e64d", a2: "#8ee06a" }, // Standard holo-cyan → Deckfarbe grün/lime auf Geometrie-Feld
-  supernova:     { bf: "bf_spacedog",   a1: "#5ff6ff", a2: "#7f9bff" }, // Standard gold/gelb → Deckfarbe kühl-cyan/violett auf Weltraum-Feld
-  gottStandard:  { bf: "bf_sonne",      a1: "#cbd3ff", a2: "#cbd3ff" }, // Standard-Prunk (nur Ansage) auf Sonnen-Feld
+/* #327 Showcase-Deckfarbe AUTOMATISCH aus dem Pack des gezeigten Hintergrunds ableiten (kohärente Pack-Einheit wie
+   in-game). Pro Effekt nur noch EINE Pack-Angabe (`pack`); Hintergrund (Pack-`bfId`) UND Deckfarben (Pack-`a1/a2`)
+   folgen daraus über showcaseLook. Optionaler Per-Effekt-Override (a1/a2/bf) bleibt als Sicherheitsventil — nur setzen,
+   wenn die abgeleitete Farbe den Standard↔Deckfarbe-Toggle unsichtbar macht oder schlecht lesbar wird.
+   WICHTIG: Der Pack-`bf` wird nur im DECKFARBE-Modus gezeigt; im Standard-Modus kommt einheitlich Genesis (SHOWCASE_BF).
+   Karten-Animationen (edgeglow/holo/glitch) laufen IMMER in der Deckfarbe → neutraler Genesis-Backdrop (Pack „genesis"). */
+export const LOOK_REFS = { // #327 exportiert für den Drift-Guard-Test (kein Effekt darf still eine Fremdfarbe einführen)
+  aurora:        { pack: "wale" },       // Feld IST der Effekt (bgfx) — Deckfarbe = Moonwhale (kühl)
+  embers:        { pack: "kosmos" },     // bgfin — Deckfarbe = Kosmos (Magenta)
+  starfield:     { pack: "drache" },     // bgfin — Deckfarbe = Goldener Drache (warm)
+  cubematrix:    { pack: "arcade" },     // bgfx — Deckfarbe = Arcade (grün/cyan)
+  klinge:        { pack: "drache" },     // Sieg-Finisher — Deckfarbe = Drache (warm-gold)
+  scorch:        { pack: "wale" },       // Sieg-Finisher — Deckfarbe = Moonwhale (kühl-cyan)
+  hologrid:      { pack: "blitz" },      // Sieg-Finisher (Hologrid-Laser) — Deckfarbe = Blitz (violett)
+  blackhole:     { pack: "kosmos" },     // Sieg-Finisher — Deckfarbe = Kosmos (Magenta)
+  sonnenPuls:    { pack: "gottgleich" }, // Score-Prunk — Deckfarbe = Gottgleich (gold/grün)
+  laserFaecher:  { pack: "blitz" },      // Score-Prunk — Deckfarbe = Blitz (violett)
+  prismaKaskade: { pack: "polarlicht" },// Score-Prunk — Deckfarbe = Polarlicht (blau/grün)
+  holoCube:      { pack: "geometrie" },  // Score-Prunk — Deckfarbe = Metatron (violett/gold)
+  supernova:     { pack: "spacedog" },   // Score-Prunk — Deckfarbe = Star Pup (violett/magenta)
+  edgeglow:      { pack: "genesis" },    // Karten-Anim — immer Deckfarbe, neutraler Genesis-Backdrop
+  holo:          { pack: "genesis" },
+  glitch:        { pack: "genesis" },
+  // Override: Standard-Prunk zeigt nur die Chrome-Wortmarke (kein Pack-Farbmodus) → Sonnen-Backdrop, Farbe neutral.
+  gottStandard:  { pack: "sonne", a1: "#cbd3ff", a2: "#cbd3ff" },
 };
+const PREVIEW_LOOK = Object.fromEntries(
+  Object.entries(LOOK_REFS).map(([key, ref]) => [key, showcaseLook(ref.pack, ref)])
+);
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
 const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
 
@@ -463,9 +451,9 @@ function BlackholeScene({ deckTint = false }) {
 function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "#ff8fc4", cycleMs = 2200, look = null }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
-  // #gott-showcase: jeder Prunk-Showcase hat seinen EIGENEN Backdrop (look.bf) + seine EIGENE Deckfarbe (look.a1/a2)
-  // fürs Deckfarbe-Beispiel — sonst fällt kein Backdrop-Fallback auf das gemeinsame SHOWCASE_BF zurück.
-  const bf = battlefieldAssets(look?.bf || SHOWCASE_BF);
+  // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-Backdrop (look.bf)
+  //   + die Pack-Deckfarbe (look.a1/a2). Vorher zeigte der Prunk-Showcase den Pack-BG auch im Standard (Inkonsistenz).
+  const bf = battlefieldAssets(deckTint ? (look?.bf || SHOWCASE_BF) : SHOWCASE_BF);
   const deckColor = look?.a1 || "#35e0ff";
   const deckColor2 = look?.a2 || "#ff5db1";
   // #perf: Auf Mobile die Vorschau im lite-Pfad laufen lassen (weniger DPR/FPS/Partikel) — dieselbe Stufe wie in-game
@@ -545,7 +533,8 @@ function StandardFinisherScene() {
 // die laufende (Menü-)Musik. deckTint → Deckfarbe statt Standard-Cyan/Magenta. Nur Preview/Dev (wie die anderen GL-FX).
 function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
   const look = PREVIEW_LOOK.cubematrix;
-  const bf = battlefieldAssets(look.bf);
+  // #327: Standard-Modus = Genesis (SHOWCASE_BF); nur Deckfarbe-Modus zeigt den Pack-BG (look.bf = bf_arcade).
+  const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const on = import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV;
@@ -718,7 +707,9 @@ const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
 function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
-  const bf = battlefieldAssets(look.bf);
+  // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-BG (look.bf).
+  //   Die Effektfarbe (look.a1/a2) bleibt davon unberührt — Standard nutzt weiter den festen Standard-Look des Effekts.
+  const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
