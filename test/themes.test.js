@@ -4,7 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  auroraActive, embersActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
+  auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
 } from "../src/game/themes.js";
 
@@ -155,9 +155,9 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
-  it("GLOBAL_FX führt aurora, cubematrix, embers, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326)", () => {
+  it("GLOBAL_FX führt aurora, cubematrix, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326) — #glutfunken-raus: embers entfernt", () => {
     expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
-      ["aurora", "cubematrix", "deckglow", "embers", "starfield", "edgeglow", "holo", "glitch",
+      ["aurora", "cubematrix", "deckglow", "starfield", "edgeglow", "holo", "glitch",
        "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
   });
   it("#deckglow: Deck-Glow liegt in der eigenen bgglow-Gruppe (frei kombinierbar), 5 DP, korrekte Naht", () => {
@@ -194,8 +194,8 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
       expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();
     }
   });
-  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers + starfield in bgfin (Hintergrund-Finisher)", () => {
-    const GROUP = { aurora: "bgfx", cubematrix: "bgfx", embers: "bgfin", starfield: "bgfin" };
+  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), starfield in bgfin (Hintergrund-Finisher)", () => {
+    const GROUP = { aurora: "bgfx", cubematrix: "bgfx", starfield: "bgfin" };
     for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
@@ -209,19 +209,17 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     expect(activeBgFinisher(prof(), {})).toBe(null);
     // Option an, aber nicht gekauft → nicht aktiv.
     expect(activeBgFx(prof(), { fxAurora: true })).toBe(null);
-    const owned = prof({ ownedCosmetics: { "fx:aurora": true, "fx:embers": true } });
+    const owned = prof({ ownedCosmetics: { "fx:aurora": true, "fx:starfield": true } });
     expect(auroraActive(owned, { fxAurora: true })).toBe(true);
-    expect(embersActive(owned, { fxEmbers: true })).toBe(true);
     expect(activeBgFx(owned, { fxAurora: true })).toBe("aurora");
-    expect(activeBgFinisher(owned, { fxEmbers: true })).toBe("embers");
+    expect(activeBgFinisher(owned, { fxStarfield: true })).toBe("starfield");
     // Beide Slots UNABHÄNGIG → können gleichzeitig aktiv sein.
-    expect(activeBgFx(owned, { fxAurora: true, fxEmbers: true })).toBe("aurora");
-    expect(activeBgFinisher(owned, { fxAurora: true, fxEmbers: true })).toBe("embers");
+    expect(activeBgFx(owned, { fxAurora: true, fxStarfield: true })).toBe("aurora");
+    expect(activeBgFinisher(owned, { fxAurora: true, fxStarfield: true })).toBe("starfield");
   });
   it("*Active-Helfer: nur gekauft UND per Option an", () => {
     const cases = [
       ["aurora", auroraActive, "fxAurora"],
-      ["embers", embersActive, "fxEmbers"],
     ];
     for (const [key, activeFn, opt] of cases) {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
@@ -231,16 +229,16 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     }
   });
   it("#307: kaufen zieht DP ab, bucht deckSpent, setzt globalen Besitz (SP unberührt)", () => {
-    const embers = GLOBAL_FX_BY_KEY.embers; // 8 DP
-    const price = globalFxPrice(embers);
+    const starfield = GLOBAL_FX_BY_KEY.starfield;
+    const price = globalFxPrice(starfield);
     const p0 = prof({ deckPoints: price + 1, deckSpent: 1, stichPoints: 9 });
-    expect(canBuyGlobalFx(p0, embers)).toBe(true);
-    const p1 = buyGlobalFx(p0, embers);
+    expect(canBuyGlobalFx(p0, starfield)).toBe(true);
+    const p1 = buyGlobalFx(p0, starfield);
     expect(p1.deckPoints).toBe(1);
     expect(p1.deckSpent).toBe(1 + price);
     expect(p1.stichPoints).toBe(9); // SP unberührt
-    expect(globalFxOwned(p1, embers)).toBe(true);
-    expect(canBuyGlobalFx(p1, embers)).toBe(false);
+    expect(globalFxOwned(p1, starfield)).toBe(true);
+    expect(canBuyGlobalFx(p1, starfield)).toBe(false);
   });
   it("kaufen bei zu wenig DP = No-op", () => {
     const p0 = prof({ deckPoints: 0, stichPoints: 99 });
@@ -249,10 +247,10 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   it("Käufe sind voneinander getrennt", () => {
     const p1 = buyGlobalFx(prof({ deckPoints: 25 }), GLOBAL_FX_BY_KEY.aurora);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.aurora)).toBe(true);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.embers)).toBe(false);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.starfield)).toBe(false);
   });
-  it("#307/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (grün 10, blau 20)", () => {
-    const want = { aurora: 20, embers: 10, starfield: 20, cubematrix: 30 }; // grün 10 · blau 20 · lila 30 (Cube-Matrix)
+  it("#307/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (blau 20, lila 30)", () => {
+    const want = { aurora: 20, starfield: 20, cubematrix: 30 }; // #glutfunken-raus: embers (grün 10) entfernt
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });

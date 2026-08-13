@@ -6,23 +6,21 @@ import { normalizeFxOptions } from "../src/game/storage.js";
    EINEN reduziert (feste Priorität = Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) bleibt frei kombinierbar. */
 describe("#331 normalizeFxOptions — Einfachauswahl erzwingen", () => {
   it("reduziert mehrere gleichzeitige Hintergrund-Effekte auf einen (Priorität: Aurora zuerst)", () => {
-    const o = normalizeFxOptions({ fxAurora: true, fxCubeMatrix: true, fxEmbers: true, fxStarfield: true });
+    const o = normalizeFxOptions({ fxAurora: true, fxCubeMatrix: true, fxStarfield: true });
     expect(o.fxAurora).toBe(true);
     expect(o.fxCubeMatrix).toBe(false);
-    expect(o.fxEmbers).toBe(false);
     expect(o.fxStarfield).toBe(false);
   });
 
-  it("Aurora + Glutfunken gleichzeitig (alter Zwei-Slot-Zustand) → nur Aurora bleibt", () => {
-    const o = normalizeFxOptions({ fxAurora: true, fxEmbers: true });
+  it("Aurora + Komet gleichzeitig (alter Zwei-Slot-Zustand) → nur Aurora bleibt", () => {
+    const o = normalizeFxOptions({ fxAurora: true, fxStarfield: true });
     expect(o.fxAurora).toBe(true);
-    expect(o.fxEmbers).toBe(false);
+    expect(o.fxStarfield).toBe(false);
   });
 
-  it("ohne Aurora greift die nächste Priorität (Würfel-Matrix vor Glutfunken/Komet)", () => {
-    const o = normalizeFxOptions({ fxCubeMatrix: true, fxEmbers: true, fxStarfield: true });
+  it("ohne Aurora greift die nächste Priorität (Würfel-Matrix vor Komet)", () => {
+    const o = normalizeFxOptions({ fxCubeMatrix: true, fxStarfield: true });
     expect(o.fxCubeMatrix).toBe(true);
-    expect(o.fxEmbers).toBe(false);
     expect(o.fxStarfield).toBe(false);
   });
 
@@ -40,10 +38,10 @@ describe("#331 normalizeFxOptions — Einfachauswahl erzwingen", () => {
   });
 
   it("gültige Einzelauswahl bleibt unverändert; nichts an bleibt nichts an", () => {
-    expect(normalizeFxOptions({ fxEmbers: true }).fxEmbers).toBe(true);
-    const off = normalizeFxOptions({ fxAurora: false, fxEmbers: false, fxEdgeGlow: false });
+    expect(normalizeFxOptions({ fxStarfield: true }).fxStarfield).toBe(true);
+    const off = normalizeFxOptions({ fxAurora: false, fxStarfield: false, fxEdgeGlow: false });
     expect(off.fxAurora).toBe(false);
-    expect(off.fxEmbers).toBe(false);
+    expect(off.fxStarfield).toBe(false);
     expect(off.fxEdgeGlow).toBe(false);
   });
 });

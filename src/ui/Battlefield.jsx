@@ -676,7 +676,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
-  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, emberDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false,
+  deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false, // #glutfunken-raus: emberDeck entfernt
   deckGlow = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene. #336: immer Deckfarbe (kein Farbmodus mehr)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
@@ -962,9 +962,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       rate: Math.min(CARDFLIP_RATE_CAP, Math.max(1, CARDFLIP_RATE_REF / flipMs)) * flipPitch,
       gain: CARDFLIP_GAIN_CONST,
     });
-    // #glutfunken: Aufstoß-Sound je gewonnenem Stich, WENN Glutfunken der aktive Hintergrund-Finisher ist — synchron zur
-    // Fontäne (gleiche Bedingung wie der Pixi-Erupt: Sieg, nicht reduced/lite). Etwas leiser als der Flip (×0,8).
-    if (w && bgFinisher === "embers" && !reduced && !lite) audio.play("fx_embers", { gain: CARDFLIP_GAIN_CONST * 0.29 });
+    // #glutfunken-raus: Glutfunken-Aufstoß-Sound entfernt.
     // #komet: Sternenfeld-Finisher — je Stich EIN Komet, exakt wie der Pixi-Erupt (Sieg UND Niederlage, nur bei reduced
     // aus; NICHT lite-gegatet, der Komet läuft auch auf lite). Der FLUG-Whoosh (fx_comet, Vorlauf-Stille entfernt →
     // sitzt jetzt am Start) läuft bei JEDEM Kometen. Ab Tier ≥ 1 (Siege mit Einschlag) kommt ZUSÄTZLICH die Explosion
@@ -1290,7 +1288,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
-            deckTint={bgFinisher === "starfield" ? starfieldDeck : emberDeck}
+            deckTint={starfieldDeck}
             score={pixiFin ? Math.round((score || 0) / 20000) * 20000 : 0}
             reduced={reduced} lite={lite}
             sweepId={sweepId} sweepDur={sweepDur} win={win} hitTier={hitTier} />

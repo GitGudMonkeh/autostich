@@ -332,16 +332,16 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxEmbers: false, fxStarfield: false, finisher: "standard", fxSonnenPuls: true, archColor: "standard" }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt · #cleanup: nur noch die verbliebenen Effekte (Aurora/Glutfunken) · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322 Gottgleich-Prunk: Sonnen-Puls ist der FREIE Default (aktiv, kein Kauf)
+const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxStarfield: false, finisher: "standard", fxSonnenPuls: true, archColor: "standard" }; // #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles (Kombi-/Formations-Sicht) merken + #252 StatusRail-Panels (Score-Quellen/Score-Verlauf) default eingeklappt, über Runs gemerkt · #cleanup: nur noch die verbliebenen Effekte (Aurora/Glutfunken) · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322 Gottgleich-Prunk: Sonnen-Puls ist der FREIE Default (aktiv, kein Kauf)
 // #: Kosmetik-AUSWAHL-Felder in den Optionen (equipped Deck/Battlefield + alle Effekt-Toggles) — beim Dev-Reset
 // auf Default zurückgesetzt (deselektiert). Restliche Options-Prefs (Ton/UI/Name) bleiben unberührt.
 // #322 Gottgleich-Prunk-Toggles: Dev-Reset stellt Sonnen-Puls (Default true) wieder her und wählt die kaufbaren ab.
-export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxAurora", "fxEmbers", "fxStarfield", "finisher", "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova", "archColor"];
+export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxAurora", "fxStarfield", "finisher", "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova", "archColor"];
 /* #331 Einfachauswahl erzwingen (Migration/Normalisierung beim Laden): Hintergrund-Effekte (Aurora/Würfel-Matrix/
    Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
    denen mehrere gleichzeitig an waren (z. B. Aurora + Glutfunken), werden auf GENAU EINEN reduziert (feste Priorität =
    Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) ist frei kombinierbar → unberührt. Besitz (ownedCosmetics) unberührt. */
-const BG_EXCL_OPTS   = ["fxAurora", "fxCubeMatrix", "fxEmbers", "fxStarfield"]; // Priorität: Aurora zuerst
+const BG_EXCL_OPTS   = ["fxAurora", "fxCubeMatrix", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt
 const CARD_ANIM_OPTS = ["fxEdgeGlow", "fxHolo", "fxGlitch"];                    // Priorität: Neonrahmen zuerst
 function reduceExclusive(o, keys) {
   let kept = false;

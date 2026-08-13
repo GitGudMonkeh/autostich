@@ -57,7 +57,6 @@ function prefetchFxChunks() {
   else setTimeout(run, 300);
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
-import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 
 // #327 Standard-Backdrop für ALLE Effekt-Showcases: das Genesis-Battlefield (Default-Standard-BG, Single Source of Truth
@@ -86,7 +85,6 @@ const DEMO_C = "#35e0ff";
    Karten-Animationen (edgeglow/holo/glitch) laufen IMMER in der Deckfarbe → neutraler Genesis-Backdrop (Pack „genesis"). */
 export const LOOK_REFS = { // #327 exportiert für den Drift-Guard-Test (kein Effekt darf still eine Fremdfarbe einführen)
   aurora:        { pack: "wale" },       // Feld IST der Effekt (bgfx) — Deckfarbe = Moonwhale (kühl)
-  embers:        { pack: "kosmos" },     // bgfin — Deckfarbe = Kosmos (Magenta)
   starfield:     { pack: "drache" },     // bgfin — Deckfarbe = Goldener Drache (warm)
   cubematrix:    { pack: "arcade" },     // bgfx — Deckfarbe = Arcade (grün/cyan)
   klinge:        { pack: "drache" },     // Sieg-Finisher — Deckfarbe = Drache (warm-gold)
@@ -197,7 +195,7 @@ const fxGroupItems = (group) => {
   if (group === "karten") return [SPEZIAL, ANIM_NONE, ...fxByGroup("anim")]; // #328 Skill-Effekt (ein Tile) · Keine · Neonrahmen · Holo-Sweep · Glitch
   if (group === "stich")  return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE]; // Standard · Klinge · Laser · Hologrid-Laser · Schwarzes Loch
   // #331 Hintergrund: „Leuchten" (frei) voran, dann der Aus-Zustand + der EINE exklusive Vierer in fester Reihenfolge.
-  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, fxKey("aurora"), fxKey("cubematrix"), fxKey("embers"), fxKey("starfield")].filter(Boolean);
+  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, fxKey("aurora"), fxKey("cubematrix"), fxKey("starfield")].filter(Boolean); // #glutfunken-raus: embers entfernt
   if (group === "score")  return [GOTT_STANDARD, ...fxByGroup("gott")]; // „Standard" (kein Prunk) voran, dann Sonne · Laserfächer · Prisma · Holo-Würfel · Supernova (nach Preis)
   return [];
 };
@@ -225,7 +223,7 @@ const finisherSelOf = (options, profile) => {
    laufen (kein Stapeln Aurora + Glutfunken mehr). bgFlags(key) schreibt alle vier Optionen in einem Rutsch (genau eine
    true, „none" = alle false). „Leuchten" (deckglow) bleibt ein UNABHÄNGIGER freier Toggle (fxDeckGlow) außerhalb dieses
    Sets. bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
-const BG_EXCL_KEYS = ["aurora", "cubematrix", "embers", "starfield"]; // feste Priorität (Aurora zuerst)
+const BG_EXCL_KEYS = ["aurora", "cubematrix", "starfield"]; // feste Priorität (Aurora zuerst) — #glutfunken-raus: embers entfernt
 const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => GLOBAL_FX_BY_KEY[k]).filter(Boolean);
 const bgFlags = (key) => Object.fromEntries(BG_EXCL_FX.map((f) => [f.option, f.key === key]));
 const bgSelOf = (options, profile) => {
@@ -664,7 +662,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
-  if (["aurora", "embers", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />;
+  if (["aurora", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />; // #glutfunken-raus
   if (fx.preview === "deckglow") return <DeckGlowScene />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit (immer Deckfarbe)
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottScene Fx={null} look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
@@ -694,12 +692,9 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
 // #306 Battlefield-Ambiente-Vorschau: das echte BF-Bild (aktuell gespielte Version) + der ECHTE In-Game-Layer
 // (FieldFxLayer) in der Demo-Deckfarbe. Ein Intervall bumpt sweepId → periodische „Stich"-Reaktion wie im Spiel.
 // „none" zeigt nur das BF-Bild. Vorschau = In-Game (dieselbe Komponente, kein Drift).
-// #: Glutfunken sind an den Lauf-Score gekoppelt → die Vorschau rampt einen Demo-Score durch mehrere Stufen und blendet
-// eine Score-Anzeige ein, damit man sieht, wie die Fontänen bei welchem Score aussehen (mehr/höher je Score, bis 500k).
-const EMBER_DEMO_SCORES = [40000, 150000, 320000, 500000];
-// Hit-Tier-Leiter für die Glutfunken-Eskalations-Vorschau (Pixi): ab „Stark" eine große mittige Fontäne.
+// Hit-Tier-Leiter für die Feld-Finisher-Eskalations-Vorschau (Pixi, Komet/Sternenfeld): Schwach → Gottgleich.
 const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
-// Der GPU-Emitter zeigt die Glutfunken als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
+// Der GPU-Emitter zeigt den Feld-Finisher als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
 const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
 function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
@@ -709,38 +704,26 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const [sweep, setSweep] = useState(1);
-  const [emberStep, setEmberStep] = useState(0);
   const [tierStep, setTierStep] = useState(0);
   const tierRef = useRef(0); // #komet: spiegelt tierStep (der setTierStep-Updater darf keinen Sound spielen → StrictMode ruft ihn doppelt)
-  const pixiEmbers = effect === "embers" && EMBER_PIXI_PREVIEW;
-  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Glutfunken → Pixi-Bühne im Showcase
+  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Komet → Pixi-Bühne im Showcase
   const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas
   useEffect(() => {
     if (effect === "none") return undefined;
-    // #: Glutfunken — Score-/Tier-Wechsel UND Funkenstoß aus EINEM Timer, damit Puls und Label immer zusammenpassen.
-    // Pixi-Vorschau: durch die Hit-Tier-Leiter eskalieren (Schwach → Gottgleich). DOM/andere: Score-Rampe bzw. Sweep-Puls.
-    const isEmbers = effect === "embers";
+    // Sweep-Puls je Tick; Pixi-Feldeffekt (Komet) eskaliert zusätzlich durch die Hit-Tier-Leiter (Schwach → Gottgleich).
     const id = setInterval(() => {
       setSweep((s) => s + 1);
       if (pixiField) {
-        // #311: alle Pixi-Feldeffekte (Glutfunken/Sternenfeld) durch die Tier-Leiter eskalieren. Nächsten Tier über den
-        // Ref bestimmen (nicht im Updater Sound spielen — StrictMode ruft ihn doppelt).
+        // #311: den Pixi-Feldeffekt (Sternenfeld/Komet) durch die Tier-Leiter eskalieren. Nächsten Tier über den Ref
+        // bestimmen (nicht im Updater Sound spielen — StrictMode ruft ihn doppelt).
         const nextTier = (tierRef.current + 1) % EMBER_TIER_LABELS.length;
         tierRef.current = nextTier; setTierStep(nextTier);
         // #komet: Sternenfeld-Sound auch im Showcase — Datei nach gezeigtem Tier (≥1 Woosh+Impact, sonst kleiner Komet).
-        // Beim Tick gestartet → der Einschlag (~0,9 s im File) sitzt auf dem visuellen Impact. Pegel wie Glutfunken-Vorschau.
         if (effect === "starfield") audio.play(nextTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: 0.27 });
-      } else if (isEmbers) setEmberStep((s) => (s + 1) % EMBER_DEMO_SCORES.length);
-      if (isEmbers) audio.play("fx_embers", { gain: 0.27 }); // #glutfunken: Aufstoß-Sound auch in der Vorschau hörbar (gleicher Pegel wie in-game)
-    }, isEmbers ? (pixiEmbers ? 1600 : 2000) : 1500);
+      }
+    }, 1500);
     return () => clearInterval(id);
-  }, [effect, pixiField, pixiEmbers]);
-  const demoScore = effect === "embers" ? EMBER_DEMO_SCORES[emberStep] : 0;
-  // #313-Folge: Im DOM-Pfad (Produktion, FX_RENDERER=dom) kennt FieldFxLayer den deckTint NICHT und färbt die Glutfunken
-  // stur nach `color`. Darum hier die Ember-Farbe je Modus wählen — Standard = warmes Feuer (== Pixi-FIRE), Deckfarbe =
-  // Demo-Deckfarbe (look.a1). So schaltet der Standard↔Deckfarbe-Toggle die Showcase-Glutfunken sichtbar um.
-  // (Der Pixi-Vorschau-Pfad braucht das nicht — dort tönt der Emitter intern FIRE↔params.deck.)
-  const domColor = effect === "embers" && !deckTint ? "#ff6a30" : look.a1;
+  }, [effect, pixiField]);
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -749,8 +732,8 @@ function FieldFxPreview({ effect, deckTint = false }) {
       {pixiField && (
         <Suspense fallback={null}>
           <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2} deckTint={deckTint}
-            score={pixiField ? 250000 : demoScore} reduced={false} lite={false}
-            sweepId={sweep} sweepDur={1100} win hitTier={pixiField ? tierStep : 0} />
+            score={250000} reduced={false} lite={false}
+            sweepId={sweep} sweepDur={1100} win hitTier={tierStep} />
         </Suspense>
       )}
       {auroraGL && (
@@ -758,7 +741,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
           <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate />
         </div>
       )}
-      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={domColor} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={demoScore} />}
+      {effect !== "none" && !pixiField && !auroraGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={0} />}
       {/* #330 Tier/Score-Chip entfernt — kein Scene-Chrome mehr (nur noch das 4-Ecken-Template der Bühne). */}
     </div>
   );
@@ -1076,7 +1059,6 @@ const FX_SHORT = {
   aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
   deckglow: "Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.",
   cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
-  embers: "Glut steigt auf; je Sieg ein Funken-Aufstoß.",
   starfield: "Sternschnuppe je Stich — größer mit dem Score.",
   klinge: "Klingenschnitt — skaliert mit der Siegesserie.",
   scorch: "Laser + organischer Burn; Tempo mit dem Turbo.",
@@ -1190,7 +1172,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
   // #336: „deckglow" (Leuchten) hat KEINEN Farbmodus mehr — Glow ist immer Deckfarbe. Kein deckOpt → kein BR-Chip.
-  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "embers" ? "fxEmberDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
+  const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   // #328 Skill-Effekt hat KEIN eigenes …Deck-Flag → Farbmodus kommt aus archColor (spezialSel); sonst aus deckOpt.

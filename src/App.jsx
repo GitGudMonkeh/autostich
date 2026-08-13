@@ -513,7 +513,6 @@ export function Autostich() {
     gottDeck: !!(options[{ sonnenPuls: "fxSonnenPulsDeck", laserFaecher: "fxLaserFaecherDeck", prismaKaskade: "fxPrismaKaskadeDeck", holoCube: "fxHoloCubeDeck", supernova: "fxSupernovaDeck" }[activeGottFx(profile, options)] || ""]),
     archDeckColor: options.archColor === "deck", // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Standard-Neon vs. Deckfarbe
     auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
-    emberDeck: !!options.fxEmberDeck,   // Glutfunken-Farbmodus: false = warmes Feuer, true = Deckfarbe
     starfieldDeck: !!options.fxStarfieldDeck, // #311 Sternenfeld-Farbmodus: false = Weiß-Blau, true = Deckfarbe
     cubematrixDeck: !!options.fxCubeMatrixDeck, // #317 Cube-Matrix-Farbmodus: false = Cyan/Magenta, true = Deckfarbe
     cubematrixSun: options.fxCubeMatrixSun !== false, // #317 Cube-Matrix Retro-Sonne an/aus (Default an)
@@ -774,7 +773,7 @@ export function Autostich() {
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
                 growth={state.growth || {}} colonized={state.colonized || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin}
-                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} emberDeck={deckFx.emberDeck}
+                deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck}
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
                 deckGlow={deckFx.deckGlow}
