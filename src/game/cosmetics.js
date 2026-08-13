@@ -39,7 +39,7 @@ export const DECK_DEFS = {
   // #IP: deck_kaiju / deck_aura / deck_mecha entfernt.
   // v0.4 Kauf-Packs:
   deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
-  deck_cat:        { id: "deck_cat",        name: "Aurora Whiskers", unlock: { kind: "buy", ownKey: "pack:cat" } },
+  deck_cat:        { id: "deck_cat",        name: "Biolumen", unlock: { kind: "buy", ownKey: "pack:cat" } },
   deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
@@ -80,7 +80,7 @@ export const BATTLEFIELD_DEFS = {
   // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
   bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
-  bf_cat:        { id: "bf_cat",        name: "Aurora Whiskers · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
+  bf_cat:        { id: "bf_cat",        name: "Biolumen · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
   bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },

@@ -142,7 +142,7 @@ export const THEME_DEFS = {
   // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield) ----
   beach:    { id: "beach",    name: "Malibu Wave",     emblem: "🌴", kind: "buy", price: 10, a1: "#ff5aa0", a2: "#35d0e0",
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
-  cat:      { id: "cat",      name: "Aurora Whiskers", emblem: "🐱", kind: "buy", price: 5, a1: "#54e08a", a2: "#9b82f0",
+  cat:      { id: "cat",      name: "Biolumen",        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
   ramen:    { id: "ramen",    name: "Slurp City",      emblem: "🍜", kind: "buy", price: 10, a1: "#ff5a7a", a2: "#ffab3a",
     deckId: "deck_ramen",      bfId: "bf_ramen",      els: ["deck", "bf"] },

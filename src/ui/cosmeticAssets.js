@@ -14,7 +14,7 @@ import cardBackImg  from "../assets/cards/card-back.webp";  // Default-Back (Cov
 // #IP: deck_aura (Super Aura) / deck_mecha (Mecha Ronin) entfernt.
 import beachFront    from "../assets/cards/decks_player/deck_beach/front.webp";      // Malibu Wave
 import beachBack     from "../assets/cards/decks_player/deck_beach/back.webp";
-import catFront      from "../assets/cards/decks_player/deck_cat/front.webp";        // Aurora Whiskers
+import catFront      from "../assets/cards/decks_player/deck_cat/front.webp";        // Biolumen (ehem. Aurora Whiskers)
 import catBack       from "../assets/cards/decks_player/deck_cat/back.webp";
 import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.webp";      // Slurp City
 import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.webp";
