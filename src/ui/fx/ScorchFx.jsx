@@ -50,6 +50,10 @@ function emberCol(h, deckMode, deckRGB) {
 }
 const toHex = (c) => "#" + ((1 << 24) + ((c[0] | 0) << 16) + ((c[1] | 0) << 8) + (c[2] | 0)).toString(16).slice(1);
 
+// #scorch-deck: „verkohlte Deckfarbe" für die Auflöse-Fläche — Deck-Hue auf Kohle-Helligkeit heruntergezogen (dunkel
+// + leichter Grund, damit es als Verkohlung liest, aber klar in der Deckfarbe). Standard-Kohle bleibt CHAR_COL-Grau.
+function charCol(deckRGB) { return [clamp(deckRGB[0] * 0.46 + 14, 10, 200), clamp(deckRGB[1] * 0.46 + 14, 10, 200), clamp(deckRGB[2] * 0.46 + 14, 10, 200)]; }
+
 // Weiche Radial-Sprites (pro Farbe gecacht) — additive Glut/Funken, normale Asche. Kern + weicher Halo, kein Pixel-Look.
 const SPRITES = new Map();
 function sprite(hex) {
@@ -230,7 +234,11 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
     // jedes Frame in render() mit dem gecachten burnCv → glatter Dissolve bei halbem Rechenaufwand.
     function computeBurn(t) {
       const dm = p.current.deckTint, dr = rgb(p.current.deckColor);
-      const CHAR = TUNE.CHAR, RIM = TUNE.RIM, glow = TUNE.EDGE_GLOW, ch = rgb(CHAR_COL), ec = emberCol(0.88, dm, dr), out = outImg.data, src = cardData;
+      const CHAR = TUNE.CHAR, RIM = TUNE.RIM, glow = TUNE.EDGE_GLOW;
+      // #scorch-deck: das Verkohlungs-Band (die verglühende Auflöse-Fläche) nimmt im Deckfarbe-Modus die Deckfarbe an;
+      //   Standard bleibt neutrales Kohlegrau. Rand-Glut (ec) tönte schon immer mit.
+      const ch = dm ? charCol(dr) : rgb(CHAR_COL);
+      const ec = emberCol(0.88, dm, dr), out = outImg.data, src = cardData;
       for (let i = 0, q = 0; i < burnmap.length; i++, q += 4) {
         const ca = src[q + 3];
         if (ca === 0) { out[q + 3] = 0; continue; }
