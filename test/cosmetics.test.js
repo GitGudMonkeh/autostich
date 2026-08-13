@@ -172,7 +172,7 @@ describe("cosmetics — #310 Element-Challenges & Prisma-Multi", () => {
   it("BF spiegeln die Deck-Bedingung; DP-Kauf-Decks tragen ihren ownKey", () => {
     expect(BATTLEFIELD_DEFS.bf_eis.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice", n: 5 });
     expect(BATTLEFIELD_DEFS.bf_elementar.unlock).toEqual({ kind: "allMonoArchetypes", n: 5 });
-    for (const [id, key] of [["deck_samurai", "pack:samurai"], ["deck_kosmos", "pack:kosmos"], ["deck_oni", "pack:oni"], ["deck_geometrie", "pack:geometrie"],
+    for (const [id, key] of [["deck_ronin", "pack:ronin"], ["deck_kosmos", "pack:kosmos"], ["deck_oni", "pack:oni"], ["deck_geometrie", "pack:geometrie"],
       ["deck_sonne", "pack:sonne"], ["deck_drache", "pack:drache"]]) { // #311
       expect(DECK_DEFS[id].unlock).toEqual({ kind: "buy", ownKey: key });
     }

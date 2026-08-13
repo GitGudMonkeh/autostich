@@ -58,7 +58,7 @@ export const DECK_DEFS = {
   // #310 Prisma (Multi/Element-Bund): frei, sobald alle vier Element-Decks freigeschaltet sind.
   deck_elementar: { id: "deck_elementar", name: "Prisma",  unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
   // #310 DP-Kauf-Packs (Preis in themes.js):
-  deck_samurai:   { id: "deck_samurai",   name: "Samurai",        unlock: { kind: "buy", ownKey: "pack:samurai" } },
+  deck_ronin:     { id: "deck_ronin",     name: "Ronin",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
   deck_kosmos:    { id: "deck_kosmos",    name: "Schwarzes Loch", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
@@ -97,7 +97,7 @@ export const BATTLEFIELD_DEFS = {
   bf_blitz:     { id: "bf_blitz",     name: "Blitz · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
   bf_pflanze:   { id: "bf_pflanze",   name: "Pflanze · Battlefield",        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
   bf_elementar: { id: "bf_elementar", name: "Prisma · Battlefield",         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
-  bf_samurai:   { id: "bf_samurai",   name: "Samurai · Battlefield",        unlock: { kind: "buy", ownKey: "pack:samurai" } },
+  bf_ronin:     { id: "bf_ronin",     name: "Ronin · Battlefield",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
   bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
   bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },

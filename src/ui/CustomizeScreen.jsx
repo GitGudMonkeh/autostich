@@ -610,7 +610,7 @@ function SpezialScene({ deckTint = false }) {
    Neon. Genau EINE WebGL-Canvas (pro BG frisch gekeyt), das darunterliegende <img> ist die „Ohne"-Referenz. */
 const DECKGLOW_BGS = [
   { bf: "bf_eis", a1: "#46c6ff", name: "Eis" },
-  { bf: "bf_samurai", a1: "#ff3a5e", name: "Samurai" },
+  { bf: "bf_ronin", a1: "#ff2f4f", name: "Ronin" },
   { bf: "bf_kosmos", a1: "#ff4dcb", name: "Schwarzes Loch" },
   { bf: "bf_drache", a1: "#ffcf5a", name: "Drache" },
   { bf: "bf_polarlicht", a1: "#7cc6ff", name: "Polarlicht" },

@@ -56,7 +56,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {
-    expect(packPrice(THEME_DEFS.samurai)).toBe(15);
+    expect(packPrice(THEME_DEFS.ronin)).toBe(15);
     expect(packPrice(THEME_DEFS.kosmos)).toBe(10);
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
     expect(packPrice(THEME_DEFS.geometrie)).toBe(5);

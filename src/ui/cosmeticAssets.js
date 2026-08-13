@@ -82,8 +82,8 @@ import pflanzeFront   from "../assets/cards/decks_player/deck_pflanze/front.webp
 import pflanzeBack    from "../assets/cards/decks_player/deck_pflanze/back.webp";
 import elementarFront from "../assets/cards/decks_player/deck_elementar/front.webp";    // Prisma (Multi · Element-Bund)
 import elementarBack  from "../assets/cards/decks_player/deck_elementar/back.webp";
-import samuraiFront   from "../assets/cards/decks_player/deck_samurai/front.webp";      // Samurai (Kauf · 15 DP)
-import samuraiBack    from "../assets/cards/decks_player/deck_samurai/back.webp";
+import roninFront     from "../assets/cards/decks_player/deck_ronin/front.webp";         // Ronin (Kauf · 15 DP)
+import roninBack      from "../assets/cards/decks_player/deck_ronin/back.webp";
 import kosmosFront    from "../assets/cards/decks_player/deck_kosmos/front.webp";       // Schwarzes Loch (Kauf · 10 DP)
 import kosmosBack     from "../assets/cards/decks_player/deck_kosmos/back.webp";
 import oniFront       from "../assets/cards/decks_player/deck_oni/front.webp";          // Roter Oni (Kauf · 20 DP)
@@ -100,8 +100,8 @@ import bfPflanzeDesktop   from "../assets/battlefields/bf_pflanze/desktop.jpg";
 import bfPflanzeMobile    from "../assets/battlefields/bf_pflanze/mobile.jpg";
 import bfElementarDesktop from "../assets/battlefields/bf_elementar/desktop.jpg";
 import bfElementarMobile  from "../assets/battlefields/bf_elementar/mobile.jpg";
-import bfSamuraiDesktop   from "../assets/battlefields/bf_samurai/desktop.jpg";
-import bfSamuraiMobile    from "../assets/battlefields/bf_samurai/mobile.jpg";
+import bfRoninDesktop     from "../assets/battlefields/bf_ronin/desktop.jpg";
+import bfRoninMobile      from "../assets/battlefields/bf_ronin/mobile.jpg";
 import bfKosmosDesktop    from "../assets/battlefields/bf_kosmos/desktop.jpg";
 import bfKosmosMobile     from "../assets/battlefields/bf_kosmos/mobile.jpg";
 import bfOniDesktop       from "../assets/battlefields/bf_oni/desktop.jpg";
@@ -156,7 +156,7 @@ export const DECK_ASSETS = {
   deck_blitz:     { front: blitzFront,     back: blitzBack },
   deck_pflanze:   { front: pflanzeFront,   back: pflanzeBack },
   deck_elementar: { front: elementarFront, back: elementarBack },
-  deck_samurai:   { front: samuraiFront,   back: samuraiBack },
+  deck_ronin:     { front: roninFront,     back: roninBack },
   deck_kosmos:    { front: kosmosFront,    back: kosmosBack },
   deck_oni:       { front: oniFront,       back: oniBack },
   deck_geometrie: { front: geoFront,       back: geoBack },
@@ -195,7 +195,7 @@ export const BATTLEFIELD_ASSETS = {
   bf_blitz:     { desktop: bfBlitzDesktop,     mobile: bfBlitzMobile },
   bf_pflanze:   { desktop: bfPflanzeDesktop,   mobile: bfPflanzeMobile },
   bf_elementar: { desktop: bfElementarDesktop, mobile: bfElementarMobile },
-  bf_samurai:   { desktop: bfSamuraiDesktop,   mobile: bfSamuraiMobile },
+  bf_ronin:     { desktop: bfRoninDesktop,     mobile: bfRoninMobile },
   bf_kosmos:    { desktop: bfKosmosDesktop,    mobile: bfKosmosMobile },
   bf_oni:       { desktop: bfOniDesktop,       mobile: bfOniMobile },
   bf_geometrie: { desktop: bfGeoDesktop,       mobile: bfGeoMobile },

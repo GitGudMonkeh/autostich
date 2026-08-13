@@ -185,8 +185,8 @@ export const THEME_DEFS = {
     deckId: "deck_elementar", bfId: "bf_elementar", els: ["deck", "bf"] },
 
   // ---- #310 DP-Kauf-Packs (kind "buy", eigener Preis via price) ----
-  samurai:   { id: "samurai",   name: "Samurai",        emblem: "🗡️", kind: "buy", price: 15, a1: "#ff3a5e", a2: "#ff86a0",
-    deckId: "deck_samurai",   bfId: "bf_samurai",   els: ["deck", "bf"] },
+  ronin:     { id: "ronin",     name: "Ronin",          emblem: "⚔️", kind: "buy", price: 15, a1: "#ff2f4f", a2: "#4aa8ff",
+    deckId: "deck_ronin",     bfId: "bf_ronin",     els: ["deck", "bf"] },
   kosmos:    { id: "kosmos",    name: "Schwarzes Loch", emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
     deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
   oni:       { id: "oni",       name: "Roter Oni",      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
