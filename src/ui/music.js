@@ -154,6 +154,9 @@ function tierForScore(score) {
 
 let el = null;
 let volume = 0.2;
+// #333: Duck-Faktor (getrennt von der Nutzer-Lautstärke) — in den Auswahlphasen (Perk/Skill/Gebäude/Aufstell…) läuft die
+// Musik leiser. effVol() = volume × duck; audible() bleibt auf der BASIS-volume (Duck ist KEIN Mute).
+let duck = 1;
 let muted = false;
 let userPaused = false; // Pause-Knopf (#…) hält die Musik an — getrennt von „Ton stumm"
 let current = null;   // aktueller Track { title, url }
@@ -168,7 +171,7 @@ function ensureEl() {
   el = new Audio();
   el.loop = true;     // Default; im Run wird pro Track auf false gesetzt (syncPlayback) → onEnded reiht den nächsten
   el.preload = "none";
-  el.volume = volume;
+  el.volume = effVol();
   // Track zu Ende → im Run den nächsten Zufallstitel der aktuellen Stufe (Menü loopt via a.loop, feuert kein „ended").
   // #334: Der Nachfolger wird EINGEBLENDET statt hart auf Vollpegel gestartet → kein „Pop" am Songende (deckt auch den
   //   aufgeschobenen Schwellenwechsel ab: frischer Song lief aus, neuer Stufen-Track blendet ein).
@@ -180,9 +183,9 @@ function ensureEl() {
 }
 // #264: „hörbar" = nicht stumm, Lautstärke > 0, nicht (spiel-)pausiert. Nur dann darf ein Track laden/streamen.
 function audible() { return !muted && volume > 0 && !userPaused; }
-// #334: effektiver Zielpegel für Fades — zentraler Seam. Aktuell = Nutzer-Lautstärke; ein späteres Auswahlphasen-
-// Ducking multipliziert hier hinein, damit ALLE Ein-/Aus-Fades automatisch verträglich bleiben.
-function effVol() { return volume; }
+// #334/#333: effektiver Zielpegel — EINZIGE Quelle für a.volume/Fade-Ziele. Nutzer-Lautstärke × Auswahlphasen-Duck,
+// damit sich setVolume (Basis), setDuck und die Stufen-Fades nicht gegenseitig überschreiben.
+function effVol() { return volume * duck; }
 // #264 Lazy-Gating: Wiedergabe an „hörbar" koppeln. Hörbar → den aktuellen Track ERST HIER laden (.src setzen) und
 // spielen; nicht hörbar → pausieren (stoppt den Netzwerk-Stream, nicht nur Volume 0). Der Puffer bleibt für schnellen
 // Resume erhalten; der Titel bleibt gesetzt, damit Unmute denselben Track fortsetzt. Stumm gestartet = 0 Musik-Bytes.
@@ -192,7 +195,7 @@ function syncPlayback() {
   a.loop = mode === "menu"; // Menü/Victory lückenlos loopen; im Run reiht onEnded den nächsten Track der Stufe
   if (audible() && current) {
     if (loadedUrl !== current.url) { a.src = current.url; loadedUrl = current.url; } // erster Ladevorgang genau jetzt
-    a.volume = volume;
+    a.volume = effVol();
     if (a.paused) a.play().catch(() => {}); // Autoplay-Gate: rejectet vor der ersten User-Geste (unschädlich)
   } else if (!a.paused) {
     a.pause(); // stumm/pausiert → Stream anhalten
@@ -281,6 +284,14 @@ export const music = {
     fadeSwitchTo(randomPoolTrack(tier));                // schon länger gelaufen → weich hochschalten
   },
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); stopFade(); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
+  // #333: Auswahlphasen-Ducking (getrennt von der Nutzer-Lautstärke). factor 0,6 = ~40 % leiser; 1 = voll. Sanft auf den
+  // neuen effektiven Pegel ziehen (kein Sprung); läuft gerade ein Stufen-Fade, hat der ohnehin schon das effVol()-Ziel.
+  setDuck(factor) {
+    const d = Math.max(0, Math.min(1, Number(factor) || 0));
+    if (d === duck) return;
+    duck = d;
+    if (audible() && el && !fadeTimer) rampVol(el.volume, effVol(), 300); else syncPlayback();
+  },
   setMuted(m) { muted = !!m; stopFade(); syncPlayback(); },                                       // #264: stumm → pause, hörbar → (lazy) starten
   setPaused(p) { userPaused = !!p; stopFade(); syncPlayback(); },                                 // Spiel-Pause spiegeln
   unlock() { ensureEl(); syncPlayback(); }, // erste User-Geste: startet den Track nur, wenn hörbar (sonst bleibt es stumm & ungeladen)

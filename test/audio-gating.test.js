@@ -121,6 +121,32 @@ describe("Musik Lazy-Gating (#264)", () => {
       vi.useRealTimers();
     }
   });
+
+  // #333: In den Auswahlphasen läuft die Musik ~40 % leiser (effVol = volume × duck), sanft gefadet; setDuck(1) zurück
+  // auf voll. Nutzer-Lautstärke bleibt unberührt (Duck ist kein Mute).
+  it("Auswahlphasen-Ducking senkt den effektiven Pegel sanft (Faktor 0,6) und wieder zurück", async () => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    try {
+      const { music } = await import("../src/ui/music.js");
+      music.setVolume(0.5);
+      music.enterRun();
+      const el = created[0];
+      expect(el.volume, "Start auf voller Lautstärke").toBeCloseTo(0.5, 5);
+
+      // In Auswahlphase → 40 % leiser (0,5 × 0,6 = 0,3), sanft (300 ms Ramp).
+      music.setDuck(0.6);
+      vi.advanceTimersByTime(400);
+      expect(el.volume, "geduckt auf volume×0,6").toBeCloseTo(0.3, 5);
+
+      // Zurück ins Stichspiel → wieder voll.
+      music.setDuck(1);
+      vi.advanceTimersByTime(400);
+      expect(el.volume, "zurück auf voll").toBeCloseTo(0.5, 5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 /* #329 — Effektsound-Gating: außerhalb von aktivem Spiel/Werkstatt (Victory/Gameover, Pause, Overlays) sind One-Shot-

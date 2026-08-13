@@ -52,6 +52,10 @@ import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
 
+// #333: Musik-Ducking in den Auswahlphasen (Perk/Skill/Gebäude/Aufstell + übrige Nicht-„play"-Screens im Lauf) —
+// Faktor 0,6 = ~40 % leiser (tunebar); 1 = volle Lautstärke im aktiven Stichspiel.
+const MUSIC_DUCK = 0.6;
+
 /* #perf B1: Selten geöffnete, schwere Screens (Menü/Settings/Architekt) werden per code-split lazy geladen — das
    verkleinert den initialen JS-Chunk (schnellere Parse/Eval-Zeit, v. a. auf Mobile). WICHTIG für Desktop-Parität:
    (1) die häufigen Gameplay-Overlays im Stich-Takt (Perk/Skill/Formation/Target/…) bleiben EAGER — kein Fallback-
@@ -242,6 +246,10 @@ export function Autostich() {
   // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
   useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
+  // #333: In den Auswahl-/Aufbau-Screens im Lauf (alles außer „play") die Musik ~40 % leiser ziehen (sanft), im
+  // aktiven Stichspiel wieder voll. Deckt Perk/Skill/Gebäude/Aufstell und konsistent target/family-target/glacier-target/
+  // legendary ab. Duck ist KEIN Mute (Nutzer-Lautstärke/Mute bleiben unberührt).
+  useEffect(() => { music.setDuck(inRun && state.phase !== "play" ? MUSIC_DUCK : 1); }, [inRun, state.phase]);
   // Pause-Knopf hält die Musik an (nur im laufenden Stichspiel; in Menü/Gameover spielt sie normal weiter) UND der
   // Hintergrund/geschlossen-Zustand (!visible) hält sie IMMER an — sonst läuft die BGM auf dem Handy hinter dem
   // gesperrten Bildschirm/App-Wechsel weiter. Beim Zurückkehren (visible) wird der Zustand neu berechnet → Musik läuft weiter.
