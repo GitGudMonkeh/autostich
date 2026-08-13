@@ -21,7 +21,8 @@ const FIELD_FX = {
    - Pixi v8 initialisiert ASYNCHRON (`app.init`). Wird die Komponente vor Fertigstellung unmountet, darf keine
      verwaiste App/Canvas zurückbleiben → `disposed`-Guard + Destroy im Cleanup (Emitter zuerst, dann App).
    - Der Ticker läuft NUR, wenn die Bühne aktiv UND der Tab sichtbar ist (spart Akku/CPU im Hintergrund).
-   - DPR gedeckelt auf 2 (wie der Rest des Spiels) → scharf, aber nicht 3×-teuer auf Handys.
+   - DPR gedeckelt auf 2 (Desktop/full) bzw. 1.4 auf der lite-Stufe (Mobile), plus 30-fps-Cap auf lite → scharf, aber
+     nicht 3×-teuer auf Handys.
    - Gerendert wird die Bühne nur im Preview/Test- oder Dev-Build (Gate am Mount-Ort); Produktion (main) bleibt
      Pixel-identisch — Pixi wird dort nie geladen. */
 export function PixiStage({
@@ -74,12 +75,17 @@ export function PixiStage({
       backgroundAlpha: 0,                 // transparent → ändert den bestehenden Look nicht
       antialias: true,
       autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1),
+      // #perf-mobile: auf der lite-Stufe (Mobile/„balanced") die Feld-Bühne auf DPR 1.4 deckeln (Pixel ∝ DPR² →
+      //   ~40 % weniger Fill für die additiven Feld-Emitter). Desktop/full bleibt 2. (maxFPS s. .then + Params-Effekt.)
+      resolution: Math.min(paramsRef.current.lite ? 1.4 : 2, window.devicePixelRatio || 1),
       resizeTo: host,                     // Pixi hält die Canvas automatisch auf Container-Größe
       powerPreference: "high-performance",
     }).then(() => {
       if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
       appRef.current = app;
+      // #perf-mobile: Feld-Bühne auf lite auf 30 fps deckeln (Aurora macht dasselbe) → halbiert den Render-Takt der
+      //   Dauer-Emitter auf dem Handy, ohne Partikel zu entfernen. Desktop/full = 0 (ungedeckelt).
+      app.ticker.maxFPS = paramsRef.current.lite ? 30 : 0;
       canvas.style.width = "100%";
       canvas.style.height = "100%";
       canvas.style.display = "block";
@@ -113,6 +119,8 @@ export function PixiStage({
   // Laufende Parameter (Deckfarbe/Score/Modus) → Emitter spiegeln (effect kommt über den Rebuild, bleibt hier gemerged).
   useEffect(() => {
     fieldRef.current?.setParams({ color, color2, score, reduced, lite, deckTint });
+    // #perf-mobile: FPS-Deckel bei Laufzeit-Wechsel der Stufe nachziehen (DPR bleibt init-fest — Setting ändert sich selten).
+    if (appRef.current) appRef.current.ticker.maxFPS = lite ? 30 : 0;
   }, [color, color2, score, reduced, lite, deckTint]);
 
   // Stich-Wechsel (sweepId) → eine Eruption auslösen. Nur bei echtem Wechsel und sweepId>0.

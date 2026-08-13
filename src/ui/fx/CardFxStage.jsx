@@ -142,7 +142,8 @@ export function CardFxStage({
 
     app.init({
       canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance",
+      // #perf-mobile: auf lite (Mobile) DPR 1.25 statt 2 → das Karten-Overlay (bis 2 Karten vollflächig) kostet ~⅗ Fill.
+      resolution: Math.min(stateRef.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance",
     }).then(() => {
       if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
       appRef.current = app;
@@ -156,6 +157,9 @@ export function CardFxStage({
       const a = appRef.current;
       if (!a) return;
       const st = stateRef.current;
+      // #perf-mobile: Karten-Overlay auf lite auf 40 fps deckeln (fokaler Effekt → bewusst etwas höher als die 30 fps
+      //   der Feld-Bühne), Desktop/full ungedeckelt. Bei jedem applyRun (Aktiv-/Stufenwechsel) frisch gesetzt.
+      a.ticker.maxFPS = st.lite ? 40 : 0;
       const run = st.anyLayer && st.anyActive && document.visibilityState !== "hidden";
       if (run) a.ticker.start();
       else { a.ticker.stop(); clearAll(); }
