@@ -18,15 +18,11 @@ export const MOBILE_MQ = "(max-width: 640px)";
 
 export const pickEffectZone = (isMobile) => (isMobile ? EFFECT_ZONES.mobile : EFFECT_ZONES.desktop);
 
-/* Zone → CubeMatrixField-Platzierung. Der Effekt setzt seine Boden-Naht (baseY) bei 0.60·H (NEIGUNG+FELD_HOEHE);
-   `yBias` hebt sie um yBias·H an (baseY = 0.60·H − yBias·H). Damit die Naht auf die HINTERE Kante unseres Bands
-   (zone.y) rückt, gilt: yBias = 0.60 − zone.y/100 (Desktop ≈ −0.22, Mobile ≈ −0.26 → Feld wandert nach unten ins
-   Band). `depthScale` < 1 macht das Feld flacher (weniger tiefe Reihen), damit es als Band liest statt tief in die
-   Szene zu laufen. Erste, im Spiel fein justierbare Näherung — hier zentral tunen, nicht im Effekt verstreut. */
-export const cubeMatrixZoneProps = (isMobile) => {
-  const z = pickEffectZone(isMobile);
-  return {
-    yBias: +(0.60 - z.y / 100).toFixed(3),
-    depthScale: 0.85,
-  };
-};
+/* CubeMatrixField-Platzierung (empirisch getunt, im Spiel justierbar — hier zentral, nicht im Effekt verstreut).
+   Der Effekt setzt seine Boden-Naht (baseY) bei 0.60·H; `yBias` verschiebt sie um yBias·H (POSITIV = höher auf dem
+   Schirm, NEGATIV = tiefer, da baseY = 0.60·H − yBias·H). Wichtig: der Effekt zeichnet seinen Boden zusätzlich UNTER
+   baseY (Projektion) → ein direktes Koppeln an zone.y (82/86 %) saß VIEL zu tief (Feedback). Darum leichte Werte.
+   `depthScale` < 1 = flacheres Feld. `riseBase` > 1 = etwas Ruhe-Höhe der Türme (Präsenz auch ohne Musik). */
+export const cubeMatrixZoneProps = (isMobile) => (isMobile
+  ? { yBias: -0.08, depthScale: 0.9, riseBase: 1.15 }
+  : { yBias: -0.05, depthScale: 0.9, riseBase: 1.15 });
