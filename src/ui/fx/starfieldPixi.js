@@ -206,7 +206,7 @@ export function createStarfield(app) {
     const f = grabFlash();
     f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
     f.sz0 = TUNE.IMP_FLASH_SZ * sc * (0.7 + 0.3 * imp); f.tint = headInt;
-    const n = Math.round(TUNE.IMP_SPARKS * imp);
+    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Impact-Funken auf lite
     for (let i = 0; i < n; i++) {
       const s = grabSpark();
       const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);
@@ -238,7 +238,8 @@ export function createStarfield(app) {
       age: 0, life: TUNE.SHOOT_DUR, tier: t, size: TIER_SIZE[t] * ds,
       imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
     });
-    if (comets.length > MAXCOMET) comets.splice(0, comets.length - MAXCOMET);
+    const maxC = params.lite ? 2 : MAXCOMET; // #perf-mobile: max. 2 gleichzeitige Kometen auf lite (statt 4)
+    if (comets.length > maxC) comets.splice(0, comets.length - maxC);
   }
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
@@ -298,7 +299,7 @@ export function createStarfield(app) {
       const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;
       // PATH_JITTER = Bahn-Streuung: KONSTANTER seitlicher Versatz je Komet (kein Wackeln) → Streak bleibt gerade.
       const off = TUNE.PATH_JITTER * c.jit * sc, oxH = -dyu * off, oyH = dxu * off;
-      const N = Math.round(TUNE.TRAIL_SAMPLES);
+      const N = Math.round(TUNE.TRAIL_SAMPLES * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Schweif-Samples auf lite (größter Hotspot: verschachtelte Schleife + interpStops)
       // Schweif-Samples N..1: hinter dem Kopf, Breite verjüngt (TAPER), Alpha fällt (TAIL_FADE), Farbe Kopf→Ausklang.
       for (let i = N; i >= 1; i--) {
         if (ti >= TRAIL_POOL) break;

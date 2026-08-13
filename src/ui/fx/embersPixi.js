@@ -55,7 +55,7 @@ const TUNE = {
   AMB_SZ: 0.85,       // Footprint-Faktor (kleiner als die Fontänen-Glut)
   // #: In „ausgewogen" (lite) laufen die per-Stich-Fontänen jetzt AUCH (Nutzer-Wunsch), aber mit reduzierter
   // Partikelzahl — dieser Faktor drückt die Ausstoßrate (wie das Turbo-Budget fx), NICHT Höhe/Choreografie.
-  LITE_EMIT: 0.5,
+  LITE_EMIT: 0.42, // #perf-mobile: lite-Fontänen-Ausstoß weiter gesenkt (war 0.5) → weniger gleichzeitige Glut-Partikel/Fill
 };
 
 // Farb-Modus der Glut: „Standard" = warmes Feuer, unabhängig von der Deckfarbe · „Deckfarbe" = deck-getönt.
@@ -270,7 +270,7 @@ export function createEmberField(app) {
     // dem Score-Tier; auf lite etwas ausgedünnt (Perf).
     if (!params.reduced) {
       const st = emberStufe(params.score);
-      ambAcc += TUNE.AMB_RATE * (1 + st * 0.5) * (params.lite ? 0.72 : 1) * dt;
+      ambAcc += TUNE.AMB_RATE * (1 + st * 0.5) * (params.lite ? 0.6 : 1) * dt; // #perf-mobile: Ambiente-Rate auf lite weiter gedrosselt (war 0.72)
       while (ambAcc >= 1) { ambAcc--; spawnAmbient(sc, W, fy, st); }
     }
 
