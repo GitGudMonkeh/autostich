@@ -23,10 +23,15 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
     };
     for (const src of urls) {
       const im = new Image();
-      im.onload = bump;
-      im.onerror = bump; // Fehler nicht blockieren lassen
+      let settled = false;
+      const settle = () => { if (settled) return; settled = true; bump(); }; // jedes Bild zählt GENAU einmal
+      im.onerror = settle; // Fehler nicht blockieren lassen
       im.src = src;
-      if (im.complete) bump(); // bereits im Cache → sofort zählen
+      // #perf: img.decode() garantiert, dass das Bild vollständig DEKODIERT & paint-bereit ist (nicht nur geladen wie bei
+      //   onload) → wenn die erste Karte/Backdrop im Lauf paintet, entfällt der First-Paint-Decode-Hitch (u. a. die
+      //   Karten-Front-Skins). Fällt für Alt-Browser ohne decode() auf onload/complete zurück.
+      if (typeof im.decode === "function") { im.decode().then(settle, settle); }
+      else { im.onload = settle; if (im.complete) settle(); }
     }
     const showTimer = setTimeout(() => { if (!cancelled) setVisible(true); }, showDelay);
     const safety = setTimeout(() => { if (!cancelled) { cancelled = true; onReady(); } }, maxWait);
