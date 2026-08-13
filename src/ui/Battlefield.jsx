@@ -163,11 +163,12 @@ const BIG_LANES = [0, -64, 64];
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
 //   tier = harte Stufe 0..4 (0 Base · 1 STARK · 2 BRUTAL · 3 IRRE · 4 GOTTGLEICH) für Unlock-Flourishes
 const FX_TIER_MINS = [10000, 50000, 150000, 500000]; // STARK · BRUTAL · IRRE · GOTTGLEICH (aus BIG_SCORE_TIERS)
-// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe (>500k, dieselbe wie die epische Ansage). Feuert bei Sieg OHNE Krit.
+// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe (≥500k, dieselbe wie die epische Ansage). Feuert bei jedem Sieg,
+// dessen Wert VOR dem Krit-Multiplikator (scoreBeforeCrit bei Krit, sonst gained) die Schwelle erreicht — auch bei Krit.
 const GOTT_FX_MIN = 500000;
-// #322 Cooldown: der volle Prunk höchstens alle 8 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
-// (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt. Korridor bewusst 6–10 s.
-const GOTT_FX_COOLDOWN_MS = 8000;
+// #322 Cooldown: der volle Prunk höchstens alle 30 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
+// (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt.
+const GOTT_FX_COOLDOWN_MS = 30000;
 function fxIntensity(gained) {
   const g = gained > 0 ? gained : 0;
   let tier = 0;
@@ -1082,15 +1083,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
 
-  // #322 Gottgleich-Prunk-Trigger: feuert den gewählten Pixi-Prunk bei einem gottgleichen Sieg OHNE Krit (>500k), aber
-  // höchstens alle GOTT_FX_COOLDOWN_MS (Echtzeit, ref-basiert). Während des Cooldowns bleibt nur die (eigen throttled)
-  // GOTTGLEICH-Ansage — kein zweiter voller Effekt. Trigger = monotoner Zähler → replay der (persistent gemounteten)
-  // Pixi-Komponente. Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
+  // #322 Gottgleich-Prunk-Trigger: feuert den gewählten Pixi-Prunk bei einem gottgleichen Sieg, dessen Wert VOR dem
+  // Krit-Multiplikator die Schwelle erreicht — also auch bei Krit (dann zählt t.scoreBeforeCrit, sonst t.gained). So
+  // triggert ein echt-großer Stich den Prunk auch dann, wenn zusätzlich ein Krit lag; ein nur krit-aufgeblähter kleiner
+  // Stich aber NICHT. Höchstens alle GOTT_FX_COOLDOWN_MS (Echtzeit, ref-basiert). Während des Cooldowns bleibt nur die
+  // (eigen throttled) GOTTGLEICH-Ansage. Trigger = monotoner Zähler → replay der persistent gemounteten Pixi-Komponente.
+  // Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
   const [gottTrigger, setGottTrigger] = useState(0);
   const gottLastAt = useRef(0);
   useEffect(() => {
     if (!t) { gottLastAt.current = 0; return; }
-    const gottWin = win && !isCrit && (t.gained || 0) > GOTT_FX_MIN && gottEffect !== "gottStandard" && !reduced;
+    // Vor-Krit-Wert: bei Krit ist gained = scoreBeforeCrit × critMultiplier → wir prüfen scoreBeforeCrit; ohne Krit = gained.
+    const gottBase = isCrit ? (t.scoreBeforeCrit || 0) : (t.gained || 0);
+    const gottWin = win && gottBase >= GOTT_FX_MIN && gottEffect !== "gottStandard" && !reduced;
     if (!gottWin) return;
     const now = Date.now();
     if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
