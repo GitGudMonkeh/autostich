@@ -67,16 +67,25 @@ const FRAG = [
   "  float wv  = 0.5 + 0.5*sin(axis*18.0  - uTime*FS);",
   "  float wv2 = 0.5 + 0.5*sin(axis2*11.0 - uTime*FS*0.6);",
   "  float band = pow(wv, 4.0)*0.75 + pow(wv2, 5.0)*0.45;",
-  // EIGENFARBE (Standard): die Linie glüht in IHRER Farbe; Kern etwas angehoben (+ Lauflicht), farbiges Halo im
-  // eigenen Farbton spült ins Umfeld → verstärkt vorhandene Farben, ohne einzufärben.
-  "  vec3 coreHue = base / max(max(base.r, max(base.g, base.b)), 0.08);",
-  "  float coreAmt = w*I_*0.45 + w*band*FL*2.0;",
-  "  vec3 selfGlow = coreHue*coreAmt + haloCol*(BL*1.4);",
-  // DECKFARBE (Opt-in): dieselbe Menge, aber im Deck-Farbton (bewusstes Umfärben).
-  "  vec3 deckGlow = uDeck * ( w*I_*0.5 + halo*BL + w*band*FL*2.4 );",
-  "  vec3 glow = mix(selfGlow, deckGlow, uMode) * pulse * (1.0 - 0.3*Lc);",
-  "  float alpha = clamp(max(glow.r, max(glow.g, glow.b)), 0.0, 1.0) * uMix;",
-  "  gl_FragColor = vec4(glow * alpha, alpha);",  // PREMULTIPLIED → korrektes Kompositing auch auf iOS-Safari
+  // EIGENFARBE (Standard): WICHTIG — Farbe von Intensität trennen. Ausgegeben wird der GESÄTTIGTE Eigen-Farbton
+  // (Max-Kanal = 1, wird NIE über Weiß hinausgetrieben); die Intensität (Linie + Lauflicht + Halo) läuft übers
+  // ALPHA (premultiplied). So macht das Lauflicht die Farbe PRÄSENTER, nicht weißer. Weiß entsteht nur, wenn die
+  // Linie im Bild selbst (nahezu) weiß ist → dann ist der Eigen-Farbton eben weiß.
+  "  float mxc = max(base.r, max(base.g, base.b));",
+  "  vec3 coreHue = base / max(mxc, 0.08);",                                  // Eigen-Farbton, voll gesättigt
+  "  float coreI = w*(I_*0.45) + w*band*(FL*2.0);",                           // Kern-Intensität (Linie + Lauflicht)
+  "  float haloI = max(haloCol.r, max(haloCol.g, haloCol.b));",
+  "  vec3 haloHue = haloCol / max(haloI, 0.001);",                            // Halo-Farbton (Eigenfarben der Nachbarn)
+  "  haloI *= BL*1.6;",
+  "  vec3 selfCol = (coreHue*coreI + haloHue*haloI) / max(coreI + haloI, 0.001);",  // gemischter Eigen-Farbton (bleibt gesättigt)
+  "  float selfA = coreI + haloI;",                                           // Gesamt-Intensität → Alpha
+  // DECKFARBE (Opt-in): fester Deck-Farbton, Intensität ebenfalls übers Alpha (bewusstes Umfärben).
+  "  vec3 deckCol = uDeck;",
+  "  float deckA = w*(I_*0.5) + halo*BL + w*band*(FL*2.4);",
+  "  vec3 col = mix(selfCol, deckCol, uMode);",
+  "  float amt = mix(selfA, deckA, uMode) * pulse * (1.0 - 0.3*Lc);",
+  "  float alpha = clamp(amt, 0.0, 1.0) * uMix;",
+  "  gl_FragColor = vec4(col * alpha, alpha);",                              // premultiplied: gesättigte Farbe, Alpha = Intensität  // PREMULTIPLIED → korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
 
