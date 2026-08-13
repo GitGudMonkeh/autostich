@@ -18,11 +18,8 @@ export const MOBILE_MQ = "(max-width: 640px)";
 
 export const pickEffectZone = (isMobile) => (isMobile ? EFFECT_ZONES.mobile : EFFECT_ZONES.desktop);
 
-/* CubeMatrixField-Platzierung (empirisch getunt, im Spiel justierbar — hier zentral, nicht im Effekt verstreut).
-   Der Effekt setzt seine Boden-Naht (baseY) bei 0.60·H; `yBias` verschiebt sie um yBias·H (POSITIV = höher auf dem
-   Schirm, NEGATIV = tiefer, da baseY = 0.60·H − yBias·H). Wichtig: der Effekt zeichnet seinen Boden zusätzlich UNTER
-   baseY (Projektion) → ein direktes Koppeln an zone.y (82/86 %) saß VIEL zu tief (Feedback). Darum leichte Werte.
-   `depthScale` < 1 = flacheres Feld. `riseBase` > 1 = etwas Ruhe-Höhe der Türme (Präsenz auch ohne Musik). */
-export const cubeMatrixZoneProps = (isMobile) => (isMobile
-  ? { yBias: -0.08, depthScale: 0.9, riseBase: 1.15 }
-  : { yBias: -0.05, depthScale: 0.9, riseBase: 1.15 });
+/* CubeMatrixField-Platzierung (zentral hier, nicht im Effekt verstreut). NUR die Platzierung — Turm-Höhe/Tiefe bleiben
+   auf den Effekt-Defaults (die waren gut). `floorBottom` (0..1) dockt die VORDERSTE Bodenreihe fix an die Panel-Höhe
+   an: 1.0 = Front bündig mit dem unteren Rahmen, höhenunabhängig (der Effekt rechnet den konstanten px-Front-Offset
+   selbst raus). Feinschliff der Bündigkeit hier (z. B. 0.98 = minimal höher). */
+export const cubeMatrixZoneProps = () => ({ floorBottom: 1.0 });
