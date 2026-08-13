@@ -337,10 +337,28 @@ const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2,
 // auf Default zurückgesetzt (deselektiert). Restliche Options-Prefs (Ton/UI/Name) bleiben unberührt.
 // #322 Gottgleich-Prunk-Toggles: Dev-Reset stellt Sonnen-Puls (Default true) wieder her und wählt die kaufbaren ab.
 export const COSMETIC_OPTION_KEYS = ["deckId", "battlefieldId", "fxAurora", "fxEmbers", "fxStarfield", "finisher", "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova", "archColor"];
+/* #331 Einfachauswahl erzwingen (Migration/Normalisierung beim Laden): Hintergrund-Effekte (Aurora/Würfel-Matrix/
+   Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
+   denen mehrere gleichzeitig an waren (z. B. Aurora + Glutfunken), werden auf GENAU EINEN reduziert (feste Priorität =
+   Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) ist frei kombinierbar → unberührt. Besitz (ownedCosmetics) unberührt. */
+const BG_EXCL_OPTS   = ["fxAurora", "fxCubeMatrix", "fxEmbers", "fxStarfield"]; // Priorität: Aurora zuerst
+const CARD_ANIM_OPTS = ["fxEdgeGlow", "fxHolo", "fxGlitch"];                    // Priorität: Neonrahmen zuerst
+function reduceExclusive(o, keys) {
+  let kept = false;
+  for (const key of keys) {
+    if (o[key]) { if (kept) o[key] = false; else kept = true; }
+  }
+}
+export function normalizeFxOptions(o) {
+  if (!o || typeof o !== "object") return o;
+  reduceExclusive(o, BG_EXCL_OPTS);
+  reduceExclusive(o, CARD_ANIM_OPTS);
+  return o;
+}
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));
-    if (raw) { const o = JSON.parse(raw); if (o && typeof o === "object") return { ...DEFAULT_OPTIONS, ...o }; }
+    if (raw) { const o = JSON.parse(raw); if (o && typeof o === "object") return normalizeFxOptions({ ...DEFAULT_OPTIONS, ...o }); }
   } catch (e) {}
   return { ...DEFAULT_OPTIONS };
 }

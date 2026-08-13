@@ -37,20 +37,20 @@ export const GLOBAL_FX = [
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 20, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #farbsystem: blau = 20 DP
   // #317 Cube-Matrix: musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer. Kontinuierlich (kein
   // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
-  { key: "cubematrix", name: "Cube-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
+  { key: "cubematrix", name: "Würfel-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
     ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
   // #deckglow: Deck-Glow — die hellen Linien/Kanten des Battlefield-Bildes glühen (rein additiv) in der Deck-/Standard-
   // farbe auf, dazu ein „Lauflicht", das an den Konturen entlangwandert. EIGENE Ebene (WebGL-Canvas, mobil-sicher wie
   // Aurora), NICHT im exklusiven bgfx-Slot → frei mit allen anderen Effekten kombinierbar (group "bgglow", mode toggle).
-  { key: "deckglow", name: "Deck-Glow", desc: "Die hellen Linien des Battlefields glühen in der Deckfarbe auf, und ein Lauflicht wandert an den Konturen entlang. Eigene Ebene — frei mit allen anderen Effekten kombinierbar.",
+  { key: "deckglow", name: "Leuchten", desc: "Die hellen Linien des Battlefields glühen in der Deckfarbe auf, und ein Lauflicht wandert an den Konturen entlang. Eigene Ebene — der EINZIGE Effekt, der gleichzeitig mit allen anderen (Hintergrund, Stich, Score) aktiv sein kann.",
     ownKey: "fx:deckglow", option: "fxDeckGlow", preview: "deckglow", price: 5, group: "bgglow" }, // #deckglow: 5 DP · frei kombinierbar
   { key: "embers", name: "Glutfunken", desc: "Schwebende Glutpartikel steigen langsam auf; je Stich ein Funken-Aufstoß von unten — in der Deckfarbe.",
     ownKey: "fx:embers", option: "fxEmbers", preview: "embers", price: 10, group: "bgfin" }, // #kategorien: Hintergrund-Finisher (Stich-Interaktion, Pixi) · #farbsystem: grün = 10 DP
-  { key: "starfield", name: "Sternenfeld", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
+  { key: "starfield", name: "Komet", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich zieht eine Sternschnuppe durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken. Standard weiß-blau, wahlweise in der Deckfarbe.",
     ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 20, group: "bgfin" }, // #311: Hintergrund-Finisher (Stich-Interaktion, Pixi)
   // #318 Karten-Animationen (group "anim") — geteilte Pixi-Overlay-Bühne ÜBER den Karten (CardFxStage), pro Karte
   // gezeichnet, frei kombinierbar (stapelbare Dauer-Layer). Pixi-only (Preview/Dev-gated), kein DOM-Fallback.
-  { key: "edgeglow", name: "Kantenglühen", desc: "Ein weicher Neon-Rand umglüht die Karte in der Deckfarbe — dauerhaft, ruhig atmend, additiv gestapelt (kein Blur). Ohne Stich-Bezug.",
+  { key: "edgeglow", name: "Neonrahmen", desc: "Ein weicher Neon-Rand umglüht die Karte in der Deckfarbe — dauerhaft, ruhig atmend, additiv gestapelt (kein Blur). Ohne Stich-Bezug.",
     ownKey: "fx:edgeglow", option: "fxEdgeGlow", preview: "edgeglow", price: 10, group: "anim" }, // [TUNING] Preis
   { key: "holo", name: "Holo-Sweep", desc: "Ein prismatisches Lichtband wandert diagonal über die Karte — Regenbogen-Hues in der Deckfarbe, tilt-reaktiv (Pointer/Gyro). Dauerhaft, additiv.",
     ownKey: "fx:holo", option: "fxHolo", preview: "holo", price: 20, group: "anim" }, // [TUNING] Preis
@@ -60,13 +60,13 @@ export const GLOBAL_FX = [
   // einer aktiv, oder „gottStandard" = kein Prunk). Sonnen-Puls ist der FREIE Default (alwaysOwned, 0 DP); die anderen
   // kosten nach Rarity (Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40 = grün/blau/lila/gold). `hidden` blendet die
   // noch nicht gebauten Effekte im Shop aus (bleiben registriert) → wird je Effekt entfernt, sobald die Pixi-Komponente steht.
-  { key: "sonnenPuls", name: "Sonnen-Puls", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf — Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
+  { key: "sonnenPuls", name: "Sonne", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf — Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
     ownKey: "fx:sonnenPuls", option: "fxSonnenPuls", preview: "sonnenPuls", price: 0, group: "gott", alwaysOwned: true },
-  { key: "laserFaecher", name: "Laser-Fächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf — lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
+  { key: "laserFaecher", name: "Laserfächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf — lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
     ownKey: "fx:laserFaecher", option: "fxLaserFaecher", preview: "laserFaecher", price: 10, group: "gott" },
-  { key: "prismaKaskade", name: "Prisma-Kaskade", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
+  { key: "prismaKaskade", name: "Prisma", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
     ownKey: "fx:prismaKaskade", option: "fxPrismaKaskade", preview: "prismaKaskade", price: 20, group: "gott" },
-  { key: "holoCube", name: "Holo-Würfel-Kollaps", desc: "Ein Holowürfel aus Wireframe-Blöcken baut sich aus der Ferne zusammen, dreht sich frei, blitzt im Kern und zerspringt taumelnd nach außen. Holo-Cyan→Magenta oder Deckfarbe.",
+  { key: "holoCube", name: "Holo-Würfel", desc: "Ein Holowürfel aus Wireframe-Blöcken baut sich aus der Ferne zusammen, dreht sich frei, blitzt im Kern und zerspringt taumelnd nach außen. Holo-Cyan→Magenta oder Deckfarbe.",
     ownKey: "fx:holoCube", option: "fxHoloCube", preview: "holoCube", price: 30, group: "gott" },
   { key: "supernova", name: "Supernova", desc: "Kollaps → Detonation (Flash, Zoom-Punch) → Boom-Schockwelle mit chromatischen Ringen, Strahlenkranz, Sternenregen und einem Grid-Tunnel durch den Einschlag. Der legendäre Showstopper. Gold→Magenta oder Deckfarbe.",
     ownKey: "fx:supernova", option: "fxSupernova", preview: "supernova", price: 40, group: "gott" },

@@ -5,7 +5,7 @@ import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.
 import {
   THEMES,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
-  GLOBAL_FX, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
@@ -151,13 +151,13 @@ const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "kli
 
 /* #319 Synthetische „Scorch"-Kachel: kaufbarer Sieg-Finisher (20 DP, blaue Rarity, ownKey fx:scorch). Ein Laser
    schießt einmalig aus zufälliger Richtung, danach verglüht die Gegnerkarte organisch (Rausch-Burn) mit Glut/Asche/Funken. */
-const SCORCH = { key: "scorch", name: "Scorch", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
+const SCORCH = { key: "scorch", name: "Laser", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
   desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
 
 /* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (20 DP, ownKey fx:hologridSlice). Eine Laserlinie
    fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
    dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
-const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Slice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
+const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
   desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe." };
 
 /* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (30 DP, violette Rarity, ownKey fx:blackhole). Ein
@@ -168,7 +168,7 @@ const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher",
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
-const GOTT_STANDARD = { key: "gottStandard", name: "Gottgleich · Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
+const GOTT_STANDARD = { key: "gottStandard", name: "Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
   desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
 
 /* #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): IMMER aktiv, kein Kauf — es gibt nur die Farbwahl Standard ↔
@@ -179,26 +179,23 @@ const SPEZIAL_STANDARD = { key: "standard", name: "Standard", group: "spezial", 
 const SPEZIAL_DECK = { key: "deck", name: "Deckfarbe", group: "spezial", alwaysOwned: true, preview: "spezial",
   desc: "Die vier Archetyp-Effekte in der Farbe deines aktiven Decks (Verlauf) statt der festen Neon-Palette. Immer aktiv." };
 
-// Effekt-Gruppen des „Effekte"-Tabs. mode: "toggle" (frei kombinierbar) | "finisher" (Einfachauswahl, exklusiv,
-// inkl. „Klinge" als Default). Grid-Tunnel wurde entfernt → keine Ambience-Gruppe mehr.
+// #331 Effekt-Reiter des „Effekte"-Tabs — auf 4 Reiter reduziert (Reihenfolge = Anzeige links→rechts):
+//   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahmen:
+//   • Leuchten (deckglow) — frei kombinierbar (freier Toggle, unabhängig vom Hintergrund-Set).
+//   • Skill-Effekt (Archetyp, group "spezial") — immer aktiv, nur Farbwahl (zählt nicht in die Einfachauswahl).
+// mode: "cardanim" (Karten-Animationen einfach-exklusiv) | "finisher" (Stich) | "bg" (Hintergrund-Set einfach-exklusiv,
+//   Leuchten separat frei) | "gott" (Score). Die alten Gruppen (anim/bgfx/bgglow/bgfin/finisher/gott) bleiben als
+//   DATEN-Gruppe (GLOBAL_FX.group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
 const FX_GROUPS = [
-  // #kategorien: zwei UNABHÄNGIGE Feld-Slots (beide gleichzeitig aktivierbar) + Sieg-Finisher.
-  // #318: Karten-Animationen sind wieder aktiv (Pixi-Overlay über den Karten, frei kombinierbare Dauer-Layer).
-  // Gottgleich-Prunk bleibt vorerst DEAKTIVIERT (Tab entfernt); die Effekte bleiben im Code.
-  // #spezial: Archetyp-Effekte (Feuer/Blitz/Eis/Pflanze) laufen MIT unter „Karten" (kein eigener Tab) — immer aktiv, nur
-  //   Farbwahl Standard ↔ Deckfarbe; die zwei Kacheln stehen vorne in der Karten-Liste (fxGroupItems).
-  { key: "anim",     title: "Karten-Animationen",   hint: "frei kombinierbar", mode: "toggle" }, // #318 Edge-Glow … (Overlay über den Karten)
-  { key: "bgfx",     title: "Hintergrund-Effekt",   hint: "nur einer aktiv", mode: "bgfx" },   // reiner BG (Aurora …)
-  { key: "bgglow",   title: "Hintergrund-Glow",     hint: "frei kombinierbar", mode: "toggle" }, // #deckglow: eigene Ebene, mit allen Effekten kombinierbar
-  { key: "bgfin",    title: "Hintergrund-Finisher", hint: "nur einer aktiv", mode: "bgfin" },  // BG mit Stich-Interaktion (Glutfunken …)
-  { key: "finisher", title: "Sieg-Finisher",        hint: "nur einer aktiv", mode: "finisher" },
-  // #322–#326 Gottgleich-Prunk (feuert beim gottgleichen Sieg ohne Krit): einfach-exklusiv, „Gottgleich · Standard" = kein Prunk.
-  { key: "gott",     title: "Gottgleich-Prunk",     hint: "nur einer aktiv", mode: "gott" },
+  { key: "karten",      title: "Karten",      hint: "Skill immer an · eine Animation", mode: "cardanim" },
+  { key: "stich",       title: "Stich",       hint: "nur einer aktiv",                 mode: "finisher" },
+  { key: "hintergrund", title: "Hintergrund", hint: "einer aktiv · Leuchten frei",     mode: "bg" },
+  { key: "score",       title: "Score",       hint: "nur einer aktiv",                 mode: "gott" },
 ];
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
-const FIELD_NONE = { key: "none", name: "Kein Feld-Effekt", group: "field", preview: "none", alwaysOwned: true,
-  desc: "Kein Battlefield-Ambiente — nur das Battlefield-Bild (immer verfügbar)." };
+const FIELD_NONE = { key: "none", name: "Kein Effekt", group: "field", preview: "none", alwaysOwned: true,
+  desc: "Kein Hintergrund-Effekt — nur das Battlefield-Bild (immer verfügbar). Leuchten kann zusätzlich aktiv bleiben." };
 /* #318 Synthetische „Keine Animation"-Kachel (grau, immer verfügbar, kein Kauf): der Aus-Zustand der frei
    kombinierbaren Karten-Animationen. Anwählen schaltet ALLE Karten-Animationen ab (wie „Kein Feld-Effekt" beim
    Ambiente, nur dass die anim-Gruppe eine Mehrfachauswahl ist). preview „none" → schlichte Karte ohne Overlay. */
@@ -206,13 +203,16 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
   desc: "Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar)." };
 // Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
+const fxByGroup = (g) => GLOBAL_FX.filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
+const fxKey = (k) => GLOBAL_FX_BY_KEY[k]; // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
 const fxGroupItems = (group) => {
-  const list = GLOBAL_FX.filter((f) => f.group === group && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-  if (group === "finisher") return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE, ...list]; // „Standard" (Default) voran, dann Klinge · Scorch · Hologrid-Slice · Schwarzes Loch
-  if (group === "bgfx" || group === "bgfin") return [FIELD_NONE, ...list]; // „Kein Effekt" (Default) voran
-  if (group === "anim") return [SPEZIAL_STANDARD, SPEZIAL_DECK, ANIM_NONE, ...list]; // #spezial Archetyp-Farbwahl voran, dann „Keine Animation" + Karten-Anims
-  if (group === "gott") return [GOTT_STANDARD, ...list]; // #322 „Gottgleich · Standard" (kein Prunk) voran, dann die Prunk-Effekte nach Preis
-  return list;
+  // #331 Reihenfolge = Anzeige-Reihenfolge aus dem Issue; Default-/Aus-Kacheln voran.
+  if (group === "karten") return [SPEZIAL_STANDARD, SPEZIAL_DECK, ANIM_NONE, ...fxByGroup("anim")]; // Skill-Effekt (Standard/Deckfarbe) · Keine · Neonrahmen · Holo-Sweep · Glitch
+  if (group === "stich")  return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE]; // Standard · Klinge · Laser · Hologrid-Laser · Schwarzes Loch
+  // #331 Hintergrund: „Leuchten" (frei) voran, dann der Aus-Zustand + der EINE exklusive Vierer in fester Reihenfolge.
+  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, fxKey("aurora"), fxKey("cubematrix"), fxKey("embers"), fxKey("starfield")].filter(Boolean);
+  if (group === "score")  return [GOTT_STANDARD, ...fxByGroup("gott")]; // „Standard" (kein Prunk) voran, dann Sonne · Laserfächer · Prisma · Holo-Würfel · Supernova (nach Preis)
+  return [];
 };
 // #shopB: orderFxItems/FX_STD_KEY entfallen — Variante B zeigt je Kategorie eine STABILE vertikale Liste
 // (fxGroupItems: „Kein/Standard" voran, dann nach Preis), kein „aktiven an die erste Stelle rücken" mehr.
@@ -233,26 +233,34 @@ const finisherSelOf = (options, profile) => {
   if (sel === "blackhole" && profile && !globalFxOwned(profile, BLACKHOLE)) return "standard";
   return sel;
 };
-/* #306 Battlefield-Ambiente einfach-exklusiv (genau EINS aktiv, oder „none"). Datengetrieben aus der „field"-Gruppe:
-   fieldFxFlags(key) schreibt alle Feld-Optionen in einem Rutsch (genau eine true, „none" = alle false). */
-// #kategorien: zwei getrennte, UNABHÄNGIGE Feld-Slots. bgFxFlags/bgFinFlags schreiben NUR die Optionen ihrer
-// eigenen Gruppe (genau eine true, „none" = alle false) → Aurora (bgfx) und Glutfunken (bgfin) schließen sich NICHT aus.
-const BGFX_FX  = GLOBAL_FX.filter((f) => f.group === "bgfx");
-const BGFIN_FX = GLOBAL_FX.filter((f) => f.group === "bgfin");
-const bgFxFlags  = (key) => Object.fromEntries(BGFX_FX.map((f) => [f.option, f.key === key]));
-const bgFinFlags = (key) => Object.fromEntries(BGFIN_FX.map((f) => [f.option, f.key === key]));
-const bgFxSelOf  = (options) => { for (const f of BGFX_FX)  if (options?.[f.option]) return f.key; return "none"; };
-const bgFinSelOf = (options) => { for (const f of BGFIN_FX) if (options?.[f.option]) return f.key; return "none"; };
+/* #331 Hintergrund einfach-exklusiv (genau EINER aktiv, oder „none"): der frühere bgfx- (Aurora/Würfel-Matrix) UND
+   bgfin-Slot (Glutfunken/Komet) sind zu EINEM exklusiven Set verschmolzen — es kann nur noch EIN Hintergrund-Effekt
+   laufen (kein Stapeln Aurora + Glutfunken mehr). bgFlags(key) schreibt alle vier Optionen in einem Rutsch (genau eine
+   true, „none" = alle false). „Leuchten" (deckglow) bleibt ein UNABHÄNGIGER freier Toggle (fxDeckGlow) außerhalb dieses
+   Sets. bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
+const BG_EXCL_KEYS = ["aurora", "cubematrix", "embers", "starfield"]; // feste Priorität (Aurora zuerst)
+const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => GLOBAL_FX_BY_KEY[k]).filter(Boolean);
+const bgFlags = (key) => Object.fromEntries(BG_EXCL_FX.map((f) => [f.option, f.key === key]));
+const bgSelOf = (options, profile) => {
+  for (const f of BG_EXCL_FX) if (options?.[f.option]) { if (profile && !globalFxOwned(profile, f)) continue; return f.key; }
+  return "none";
+};
 /* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
    „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
 const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
 const gottFlags = (key) => Object.fromEntries(GOTT_FX.map((f) => [f.option, f.key === key]));
 const gottSelOf = (options) => { for (const f of GOTT_FX) if (options?.[f.option]) return f.key; return "gottStandard"; };
-/* #318 Karten-Animationen (frei kombinierbar, mode "toggle"). animAnyOn = ist irgendeine Animation an?
-   animNoneFlags = schaltet in einem Rutsch ALLE Animationen aus (für die „Keine Animation"-Kachel). */
+/* #331 Karten-Animationen (mode "cardanim") sind jetzt EINFACH-EXKLUSIV (früher frei kombinierbar): genau EINE
+   Animation aktiv, oder keine (= „Keine Animation"). cardAnimFlags(key) schreibt {fxEdgeGlow,fxHolo,fxGlitch} in einem
+   Rutsch (genau eine true, „none" = alle false); animNoneFlags = alle aus (für die „Keine"-Kachel). cardAnimSelOf
+   gated auf Besitz (ungekaufte Auswahl zählt nicht). Der Skill-Effekt (Archetyp) läuft getrennt (immer aktiv). */
 const ANIM_FX = GLOBAL_FX.filter((f) => f.group === "anim");
-const animAnyOn = (options) => ANIM_FX.some((f) => !!options?.[f.option]);
+const cardAnimFlags = (key) => Object.fromEntries(ANIM_FX.map((f) => [f.option, f.key === key]));
 const animNoneFlags = () => Object.fromEntries(ANIM_FX.map((f) => [f.option, false]));
+const cardAnimSelOf = (options, profile) => {
+  for (const f of ANIM_FX) if (options?.[f.option]) { if (profile && !globalFxOwned(profile, f)) continue; return f.key; }
+  return "none";
+};
 
 // Gleiche Schwelle wie das In-Run-Battlefield (<picture media="(max-width: 640px)">): so zeigt die
 // Vorschau exakt die Version (mobile/desktop), mit der gerade auch gespielt wird.
@@ -363,7 +371,7 @@ function ScorchScene({ deckTint = false, look = null }) {
         onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#8fd8ff") : "#ffb27a" }}>
-        <span className="opacity-70">Finisher</span> Scorch
+        <span className="opacity-70">Finisher</span> Laser
       </div>
     </div>
   );
@@ -392,7 +400,7 @@ function HologridScene({ deckTint = false, look = null }) {
       </Suspense>
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: deckTint ? (look?.a1 || "#7ee0ff") : "#7ee0ff" }}>
-        <span className="opacity-70">Finisher</span> Hologrid-Slice
+        <span className="opacity-70">Finisher</span> Hologrid-Laser
       </div>
     </div>
   );
@@ -489,7 +497,7 @@ function GottScene({ Fx = null, deckTint = false, label = "Gottgleich", tint = "
         style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
       <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-extrabold"
         style={{ background: "#0b0a16cc", border: "1px solid #ffffff22", color: tint }}>
-        <span className="opacity-70">Prunk</span> {label}
+        <span className="opacity-70">Score</span> {label}
       </div>
     </div>
   );
@@ -665,9 +673,9 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel; Label-Tint im
   // Deckfarbe-Modus = die jeweilige Deck-Primärfarbe (look.a1), damit die Kachel farblich zum gezeigten Prunk passt.
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonnen-Puls" tint={deckTint ? PREVIEW_LOOK.sonnenPuls.a1 : "#ff8fc4"} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laser-Fächer" tint={deckTint ? PREVIEW_LOOK.laserFaecher.a1 : "#5ff6ff"} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma-Kaskade" tint={deckTint ? PREVIEW_LOOK.prismaKaskade.a1 : "#7ee0ff"} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
+  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} label="Sonne" tint={deckTint ? PREVIEW_LOOK.sonnenPuls.a1 : "#ff8fc4"} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} label="Laserfächer" tint={deckTint ? PREVIEW_LOOK.laserFaecher.a1 : "#5ff6ff"} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} label="Prisma" tint={deckTint ? PREVIEW_LOOK.prismaKaskade.a1 : "#7ee0ff"} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
   if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} label="Holo-Würfel" tint={deckTint ? PREVIEW_LOOK.holoCube.a1 : "#7ff0ff"} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
   if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} label="Supernova" tint={deckTint ? PREVIEW_LOOK.supernova.a1 : "#ffd24a"} look={PREVIEW_LOOK.supernova} />; // #326 (Pixi)
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
@@ -1060,7 +1068,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 // #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
-const TAB_LABEL = { anim: "Karten", bgfx: "Feld", bgglow: "Glow", bgfin: "Finisher", finisher: "Sieg", gott: "Prunk" };
+const TAB_LABEL = { karten: "Karten", stich: "Stich", hintergrund: "Hintergrund", score: "Score" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
 const FX_SHORT = {
@@ -1068,7 +1076,7 @@ const FX_SHORT = {
   holo: "Prismatisches Lichtband, tilt-reaktiv.",
   glitch: "Cyberpunk-Glitch mit gelegentlichen Bursts.",
   aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
-  deckglow: "Linien des Battlefields glühen; Lauflicht wandert an den Konturen entlang.",
+  deckglow: "Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.",
   cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
   embers: "Glut steigt auf; je Sieg ein Funken-Aufstoß.",
   starfield: "Sternschnuppe je Stich — größer mit dem Score.",
@@ -1082,7 +1090,7 @@ const FX_SHORT = {
   supernova: "Kollaps → Detonation → Tunnel — gottgleicher Sieg.",
 };
 function shortDesc(fx, group) {
-  if (fx.key === "none") return group.mode === "anim" ? "Alle Karten-Animationen aus." : "Kein Effekt in diesem Slot.";
+  if (fx.key === "none") return group.mode === "cardanim" ? "Alle Karten-Animationen aus." : "Kein Hintergrund-Effekt (Leuchten bleibt möglich).";
   if (fx.group === "spezial") return fx.key === "deck" ? "Feuer · Blitz · Eis · Pflanze in der Deckfarbe." : "Feuer · Blitz · Eis · Pflanze in der Standard-Neonfarbe."; // #spezial (vor „standard"-Kollision)
   if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
   if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
@@ -1091,25 +1099,28 @@ function shortDesc(fx, group) {
 
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const finisherSel = finisherSelOf(options, p); // #klinge-kaufbar: „klinge" nur bei Besitz aktiv, sonst „standard"
-  const bgFxSel = bgFxSelOf(options);
-  const bgFinSel = bgFinSelOf(options);
-  const gottSel = gottSelOf(options); // #322 aktiver Gottgleich-Prunk oder „gottStandard" (kein Prunk)
-  const spezialSel = options?.archColor === "deck" ? "deck" : "standard"; // #spezial Farbwahl der Archetyp-Effekte (unter „Karten")
-  const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bgfx" ? bgFxSel : g.mode === "bgfin" ? bgFinSel : g.mode === "gott" ? gottSel : null;
+  const bgSel = bgSelOf(options, p);   // #331 EIN exklusiver Hintergrund-Effekt (aurora/cubematrix/embers/starfield) oder „none"
+  const cardAnimSel = cardAnimSelOf(options, p); // #331 EINE Karten-Animation (edgeglow/holo/glitch) oder „none"
+  const gottSel = gottSelOf(options); // #322 aktiver Score-Prunk oder „gottStandard" (kein Prunk)
+  const spezialSel = options?.archColor === "deck" ? "deck" : "standard"; // #spezial Farbwahl des Skill-Effekts (im Karten-Reiter)
+  const deckGlowOn = !!options?.fxDeckGlow; // #331 Leuchten (freier Toggle, unabhängig vom Hintergrund-Set)
+  const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bg" ? bgSel : g.mode === "gott" ? gottSel : g.mode === "cardanim" ? cardAnimSel : null;
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
   const selItems = fxGroupItems(selGroup.key);
   const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
 
-  // Ist ein Effekt in seiner Gruppe „aktiv"? (Toggle an / als Finisher·Ambiente gewählt). Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion.
-  const isActive = (g, fx) => g.mode === "finisher" ? finisherSel === fx.key
-    : g.mode === "bgfx" ? bgFxSel === fx.key
-    : g.mode === "bgfin" ? bgFinSel === fx.key
-    : g.mode === "gott" ? gottSel === fx.key   // #322 Gottgleich-Prunk einfach-exklusiv (gottStandard = kein Prunk)
-    : fx.group === "spezial" ? spezialSel === fx.key   // #spezial Standard ↔ Deckfarbe (einfach-exklusiv; Tiles leben in der anim-Gruppe)
-    : fx.key === "none" ? !animAnyOn(options)   // #318 „Keine Animation" aktiv, solange keine Karten-Animation an ist
-    : fx.standard ? false : !!options?.[fx.option];
+  // Ist ein Effekt in seiner Gruppe „aktiv"? (als Finisher/Prunk/Hintergrund/Animation gewählt bzw. Toggle an).
+  // Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion. Reihenfolge: Skill-Effekt & Leuchten sind Sonderfälle vor den Modi.
+  const isActive = (g, fx) =>
+      fx.group === "spezial" ? spezialSel === fx.key   // #spezial Skill-Effekt Standard ↔ Deckfarbe (immer aktiv; Tiles im Karten-Reiter)
+    : fx.key === "deckglow" ? deckGlowOn              // #331 Leuchten: freier Toggle (unabhängig vom Hintergrund-Set)
+    : g.mode === "finisher" ? finisherSel === fx.key
+    : g.mode === "gott" ? gottSel === fx.key          // #322 Score-Prunk einfach-exklusiv (gottStandard = kein Prunk)
+    : g.mode === "cardanim" ? (fx.key === "none" ? cardAnimSel === "none" : cardAnimSel === fx.key) // #331 einfach-exklusiv
+    : g.mode === "bg" ? (fx.key === "none" ? bgSel === "none" : bgSel === fx.key) // #331 EIN Hintergrund-Effekt (oder keiner)
+    : false;
 
   // #shopB Tab-Wechsel: die Bühne springt auf den AKTIVEN Effekt der Kategorie (oder den ersten) → man sieht sofort, was läuft.
   const pickCat = (gKey) => {
@@ -1120,16 +1131,14 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   };
   // Doppeltippen in der Liste schaltet direkt um (wie zuvor der Chip).
   const toggleFx = (g, fx) => {
-    if (fx.standard) return;
     const on = isActive(g, fx);
     if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return; // nicht im Besitz → erst über die Bühne kaufen
-    if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
-    else if (g.mode === "bgfx") onChoose(bgFxFlags(on ? "none" : fx.key));
-    else if (g.mode === "bgfin") onChoose(bgFinFlags(on ? "none" : fx.key));
+    if (fx.group === "spezial") onChoose(spezialFlags(fx.key)); // #spezial immer aktiv → wählt Farbe (kein Aus-Zustand)
+    else if (fx.key === "deckglow") onChoose({ [fx.option]: !on }); // #331 Leuchten: freier Toggle
+    else if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
     else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
-    else if (fx.group === "spezial") onChoose(spezialFlags(fx.key)); // #spezial immer aktiv → wählt (kein Aus-Zustand); Tiles in der anim-Gruppe
-    else if (fx.key === "none") onChoose(animNoneFlags());
-    else onChoose({ [fx.option]: !on });
+    else if (g.mode === "cardanim") onChoose(fx.key === "none" ? animNoneFlags() : cardAnimFlags(on ? "none" : fx.key)); // #331 einfach-exklusiv
+    else if (g.mode === "bg") onChoose(bgFlags(fx.key === "none" ? "none" : (on ? "none" : fx.key))); // #331 EIN Hintergrund-Effekt
   };
 
   return (
@@ -1224,37 +1233,56 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         </div>
       </div>
     );
-  } else if (group.mode === "bgfx" || group.mode === "bgfin") {
-    const label = group.mode === "bgfx" ? "Als Hintergrund wählen" : "Als Hintergrund-Finisher wählen";
-    const flags = group.mode === "bgfx" ? bgFxFlags(fx.key) : bgFinFlags(fx.key);
-    const chooseBtn = <button onClick={() => onChoose(flags)} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : label}</button>;
-    // #: Aurora + Glutfunken bieten Standard/Deckfarbe. Toggle setzt das Farbmodus-Flag (deckOpt).
-    // #317 Cube-Matrix: zusätzliche Optik-Wahl (gefüllt ↔ nur Rahmen). Die Retro-Sonne-Wahl wurde entfernt (Sonne fix aus).
-    const wireOn = !!options?.fxCubeMatrixWire;
-    action = !deckOpt ? chooseBtn : (
+  } else if (fx.key === "deckglow") {
+    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set) MIT Farbmodus — An/Aus + Eigenfarbe/Deckfarbe.
+    // „Eigenfarbe" = verstärkt die vorhandenen Farben des Backgrounds (kein Umfärben); „Deckfarbe" = Einfärben in die Deckfarbe.
+    const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = (
       <div className="flex flex-col gap-2">
-        {chooseBtn}
+        {toggleBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: "Eigenfarbe" }, { v: true, l: "Deckfarbe" }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
-        {fx.key === "cubematrix" && (
-          <div className="flex flex-wrap gap-2 justify-center">
-            {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
-            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-              {[{ v: false, l: "Gefüllt" }, { v: true, l: "◇ Nur Rahmen" }].map((o) => {
-                const on = wireOn === o.v;
-                return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
-                  style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
-              })}
-            </div>
-          </div>
-        )}
       </div>
     );
+  } else if (group.mode === "bg") {
+    // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
+    // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;
+    // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen. Leuchten (deckglow) läuft NICHT hier durch (eigener Toggle-Zweig oben).
+    if (fx.key === "none") {
+      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — kein Hintergrund" : "Kein Hintergrund"}</button>;
+    } else {
+      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund wählen"}</button>;
+      const wireOn = !!options?.fxCubeMatrixWire;
+      action = !deckOpt ? chooseBtn : (
+        <div className="flex flex-col gap-2">
+          {chooseBtn}
+          <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+            {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+              const on = deckTintOn === o.v;
+              return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+                style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+            })}
+          </div>
+          {fx.key === "cubematrix" && (
+            <div className="flex flex-wrap gap-2 justify-center">
+              {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
+              <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
+                {[{ v: false, l: "Gefüllt" }, { v: true, l: "◇ Nur Rahmen" }].map((o) => {
+                  const on = wireOn === o.v;
+                  return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
+                    style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
   } else if (group.mode === "gott") {
     // #322–#326 Gottgleich-Prunk (einfach-exklusiv): „Als Prunk wählen" schreibt gottFlags (genau einer an, gottStandard
     // = kein Prunk). Jeder Prunk-Effekt bietet zusätzlich Standard/Deckfarbe (deckOpt); „Gottgleich · Standard" nicht.
@@ -1272,27 +1300,15 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       </div>
     );
   } else if (fx.group === "spezial") {
-    // #spezial: Archetyp-Effekte (unter „Karten") sind immer aktiv — nur die Farbwahl Standard ↔ Deckfarbe (über archColor).
+    // #spezial: Skill-Effekt (Archetyp, unter „Karten") ist immer aktiv — nur die Farbwahl Standard ↔ Deckfarbe (über archColor).
     action = <button onClick={() => onChoose(spezialFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "deck" ? "Deckfarbe wählen" : "Standard wählen")}</button>;
-  } else if (group.key === "anim" && fx.key === "none") {
-    // #318 „Keine Animation" (Aus-Zustand der Karten-Animationen): schaltet alle Karten-Animationen ab.
+  } else if (group.mode === "cardanim" && fx.key === "none") {
+    // #318/#331 „Keine Animation" (Aus-Zustand der einfach-exklusiven Karten-Animationen): schaltet alle ab.
     action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
-  } else if (deckOpt) {
-    // #deckglow: frei kombinierbarer Toggle MIT Farbmodus — An/Aus + Farbwahl. „Eigenfarbe" = verstärkt die vorhandenen
-    // Farben des Backgrounds (kein Umfärben); „Deckfarbe" = bewusstes Einfärben in die Deckfarbe.
-    const toggleBtn = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
-    action = (
-      <div className="flex flex-col gap-2">
-        {toggleBtn}
-        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Eigenfarbe" }, { v: true, l: "Deckfarbe" }].map((o) => {
-            const on = deckTintOn === o.v;
-            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
-          })}
-        </div>
-      </div>
-    );
+  } else if (group.mode === "cardanim") {
+    // #331 Karten-Animation ist jetzt EINFACH-EXKLUSIV (genau eine): „Als Animation wählen". Läuft immer in der
+    //   Deckfarbe (kein Standard/Deckfarbe-Farbmodus). Abwählen über „Keine Animation" bzw. Doppeltippen in der Liste.
+    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Animation wählen"}</button>;
   } else {
     action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
   }
@@ -1312,7 +1328,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
-          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Archetyp-Effekte" : group.title}</span>
+          style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Skill-Effekt" : group.title}</span>
         {/* Status-Schild oben rechts: aktiv (grün) bzw. Preis in der Rarity-Farbe (#farbsystem) bei noch nicht gekauft. */}
         {active
           ? <span className="absolute right-2 top-2 text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-md" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</span>
