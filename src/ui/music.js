@@ -78,7 +78,7 @@ const TIER_MIN = { mid: 3000000, hot: 30000000, overdrive: 70000000, overdrive_p
 // (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
 const SWITCH_MIN_PLAY = 40; // s [TUNING]
-const TIER_FADE_MS = 320;   // ms je Fade-Halbwelle (aus/ein) beim weichen Stufenwechsel [TUNING]
+const TIER_FADE_MS = 600;   // #334: ms je Fade-Halbwelle (aus/ein) — satter (war 320) für Sofort-Wechsel UND Songende-Ein-Fade [TUNING]
 // Run-Zufallspool (harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
@@ -170,14 +170,19 @@ function ensureEl() {
   el.preload = "none";
   el.volume = volume;
   // Track zu Ende → im Run den nächsten Zufallstitel der aktuellen Stufe (Menü loopt via a.loop, feuert kein „ended").
+  // #334: Der Nachfolger wird EINGEBLENDET statt hart auf Vollpegel gestartet → kein „Pop" am Songende (deckt auch den
+  //   aufgeschobenen Schwellenwechsel ab: frischer Song lief aus, neuer Stufen-Track blendet ein).
   el.addEventListener("ended", () => {
     if (mode !== "run" || userPaused) return;
-    playTrack(randomPoolTrack(tier)); // lädt/spielt via syncPlayback nur, wenn hörbar
+    startTrack(randomPoolTrack(tier), { fade: true }); // Ein-Fade statt Hart-Start
   });
   return el;
 }
 // #264: „hörbar" = nicht stumm, Lautstärke > 0, nicht (spiel-)pausiert. Nur dann darf ein Track laden/streamen.
 function audible() { return !muted && volume > 0 && !userPaused; }
+// #334: effektiver Zielpegel für Fades — zentraler Seam. Aktuell = Nutzer-Lautstärke; ein späteres Auswahlphasen-
+// Ducking multipliziert hier hinein, damit ALLE Ein-/Aus-Fades automatisch verträglich bleiben.
+function effVol() { return volume; }
 // #264 Lazy-Gating: Wiedergabe an „hörbar" koppeln. Hörbar → den aktuellen Track ERST HIER laden (.src setzen) und
 // spielen; nicht hörbar → pausieren (stoppt den Netzwerk-Stream, nicht nur Volume 0). Der Puffer bleibt für schnellen
 // Resume erhalten; der Titel bleibt gesetzt, damit Unmute denselben Track fortsetzt. Stumm gestartet = 0 Musik-Bytes.
@@ -223,14 +228,21 @@ function rampVol(from, to, ms, done) {
     if (k >= steps) { stopFade(); if (done) done(); }
   }, 25);
 }
+// #334: Quelle setzen und starten — optional als Ein-Fade (Volume rampt von ~0 auf effVol) statt hart auf Vollpegel.
+// Genutzt vom Songende-Reihen (fade) und als Einblend-Hälfte des Sofort-Stufenwechsels. Nicht hörbar → lazy (kein Fade).
+function startTrack(track, { fade = false } = {}) {
+  stopFade(); // ein neuer Start gewinnt gegen einen laufenden Fade
+  const a = ensureEl();
+  if (!a || !track) return;
+  if (!audible()) { playTrack(track); return; } // stumm/leise/pausiert → nur Titel setzen, lazy laden (kein Fade)
+  current = track; loadedUrl = track.url; a.src = track.url; a.loop = false; notify();
+  a.play().catch(() => {});
+  if (fade) rampVol(0.0001, effVol(), TIER_FADE_MS); else a.volume = effVol();
+}
 function fadeSwitchTo(track) {
   const a = ensureEl();
-  if (!a || !track || !audible()) { playTrack(track); return; } // nicht hörbar → einfach (lazy) umschalten
-  rampVol(volume, 0.0001, TIER_FADE_MS, () => {                  // ausblenden …
-    current = track; loadedUrl = track.url; a.src = track.url; a.loop = false; notify(); // … Quelle tauschen …
-    a.play().catch(() => {});
-    rampVol(0.0001, volume, TIER_FADE_MS);                       // … neuen Track einblenden
-  });
+  if (!a || !track || !audible()) { playTrack(track); return; }         // nicht hörbar → einfach (lazy) umschalten
+  rampVol(effVol(), 0.0001, TIER_FADE_MS, () => startTrack(track, { fade: true })); // ausblenden → tauschen & einblenden
 }
 
 function tracksForTier(wantTier) {

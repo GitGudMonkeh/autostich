@@ -87,9 +87,36 @@ describe("Musik Lazy-Gating (#264)", () => {
 
       // Song lief inzwischen lange → nächster Stufenwechsel blendet weich auf einen neuen Track (genau ein Reload).
       el.currentTime = 60;
-      music.setProgress(10000000);    // 10 Mio → hot
-      vi.advanceTimersByTime(1000);   // Fade-Übergang durchlaufen (Swap am Ende der ersten Halbwelle)
+      music.setProgress(10000000);    // 10 Mio → mid (TIER_MIN.mid = 3 Mio); Stufenwechsel bei lang laufendem Song
+      vi.advanceTimersByTime(1200);   // Fade-Übergang durchlaufen (Swap am Ende der ersten Halbwelle)
       expect(el.srcSets.length, "nach dem Fade genau ein neuer Track").toBe(base + 1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // #334: Am Songende reiht der `ended`-Listener den nächsten Track der Stufe — er wird EINGEBLENDET (Volume rampt von
+  // ~0 auf den Zielpegel), NICHT hart auf Vollpegel gesetzt. Das behebt den harten Schnitt beim aufgeschobenen
+  // Schwellenwechsel und macht auch das normale Weiterreihen sauberer.
+  it("Weiterreihen am Songende blendet den neuen Track ein (kein Hart-Start auf Vollpegel)", async () => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    try {
+      const { music } = await import("../src/ui/music.js");
+      music.setVolume(0.5);
+      music.enterRun();                 // Run-Start → calm-Track, Vollpegel
+      const el = created[0];
+      const base = el.srcSets.length;   // 1
+      expect(el.volume, "erster Track auf Zielpegel").toBeCloseTo(0.5, 5);
+
+      // Songende simulieren → nächster Track wird geladen UND eingeblendet (startet leise).
+      el.handlers.ended();
+      expect(el.srcSets.length, "neuer Track geladen").toBe(base + 1);
+      expect(el.volume, "startet leise (Fade-in), nicht auf Vollpegel").toBeLessThan(0.5);
+
+      // Fade-in auslaufen lassen → Zielpegel erreicht.
+      vi.advanceTimersByTime(1200);
+      expect(el.volume, "auf Zielpegel eingeblendet").toBeCloseTo(0.5, 5);
     } finally {
       vi.useRealTimers();
     }
