@@ -143,6 +143,20 @@ function hexToRgb(h, fb) {
 export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true }) {
   const canvasRef = useRef(null);
 
+  // #313/#342-bugfix: Farbe/Modus als LIVE-Ref, den der Draw-Loop pro Frame liest — NICHT als useEffect-Dep. Sonst riss
+  // ein Standard↔Deckfarbe-Toggle (deckColored-Wechsel bei stabilem Key, siehe #perf-shop Plan B) den ganzen WebGL-
+  // Kontext ab: Der Cleanup ruft WEBGL_lose_context.loseContext(), und ein erneutes getContext() auf DERSELBEN Canvas
+  // liefert danach einen weiterhin „verlorenen" Kontext → die Aurora blieb leer, bis man den Effekt wechselte (frische
+  // Canvas) und zurück. Jetzt lebt der Kontext über die ganze Komponenten-Lebensdauer; der Toggle ändert nur Uniforms.
+  const stateRef = useRef({});
+  stateRef.current.d1 = hexToRgb(color, [0.20, 0.82, 0.53]);   // Deck-Default #33d187
+  stateRef.current.d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);  // Deck-Default #b06afa
+  stateRef.current.deckColored = deckColored;
+  stateRef.current.animate = animate;
+  const dirtyRef = useRef(true);
+  // Prop-Änderung → einen Redraw anfordern (nötig fürs Standbild bei animate=false; im Animate-Fall zeichnet der Loop ohnehin).
+  useEffect(() => { dirtyRef.current = true; }, [color, color2, deckColored, animate]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -173,8 +187,6 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const uDeck1 = gl.getUniformLocation(prog, "uDeck1");
     const uDeck2 = gl.getUniformLocation(prog, "uDeck2");
     const uLayers = gl.getUniformLocation(prog, "uLayers");
-    const d1 = hexToRgb(color, [0.20, 0.82, 0.53]);   // Deck-Default #33d187
-    const d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);  // Deck-Default #b06afa
 
     // #perf-A1 / #342: Mobile drosseln. Der neue Vorhang-Loop ruft je Band mehrfach fbm → mehr fbm/Fragment als der
     // alte 3-Bögen-Loop; laut Effekt-Audit ohnehin der größte Mobile-GPU-Posten. Auf Mobile (coarse): DPR-Deckel senken
@@ -185,24 +197,25 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const layers = coarse ? 3 : 5;
     const dprCap = coarse ? 1.4 : 2;
     const dprOf = () => Math.min(dprCap, window.devicePixelRatio || 1);
-    const resize = () => {
+    const resize = () => {   // aktualisiert die Canvas-Größe, meldet true bei Änderung (→ Standbild neu zeichnen)
       const w = Math.max(1, Math.floor(canvas.clientWidth * dprOf()));
       const h = Math.max(1, Math.floor(canvas.clientHeight * dprOf()));
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); return true; }
+      return false;
     };
     const draw = (tSec) => {
-      resize();
+      const st = stateRef.current;   // Farbe/Modus LIVE aus dem Ref → Standard↔Deckfarbe-Toggle sofort sichtbar
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); // transparenter Grund → nichts Opakes hinter der Aurora
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, tSec);
-      gl.uniform1f(uMode, deckColored ? 1 : 0);
-      gl.uniform3f(uDeck1, d1[0], d1[1], d1[2]);
-      gl.uniform3f(uDeck2, d2[0], d2[1], d2[2]);
+      gl.uniform1f(uMode, st.deckColored ? 1 : 0);
+      gl.uniform3f(uDeck1, st.d1[0], st.d1[1], st.d1[2]);
+      gl.uniform3f(uDeck2, st.d2[0], st.d2[1], st.d2[2]);
       gl.uniform1f(uLayers, layers);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
-    let raf = null, startT = null, disposed = false, ro = null;
+    let raf = null, startT = null, disposed = false;
     // #perf-A1: FPS-Cap auf Mobile — rAF läuft weiter (glatte Zeitbasis), es wird aber nur ~alle 33 ms wirklich
     // gezeichnet. Die Zeit fließt echt (ms-startT) → das Schimmern bleibt tempo-korrekt, nur eben in ~30 statt 60/120 fps.
     const minMs = coarse ? 1000 / 30 : 0;
@@ -210,21 +223,22 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const frame = (ms) => {
       if (disposed) return;
       if (startT === null) startT = ms;
-      if (ms - lastDraw >= minMs) { lastDraw = ms; draw((ms - startT) / 1000); }
+      const sized = resize();
+      if (stateRef.current.animate) {
+        if (ms - lastDraw >= minMs) { lastDraw = ms; draw((ms - startT) / 1000); }
+      } else if (dirtyRef.current || sized) {   // Standbild: nur bei Prop-/Größen-Änderung neu zeichnen
+        dirtyRef.current = false; draw(6.0);
+      }
       raf = requestAnimationFrame(frame);
     };
-    if (animate) { raf = requestAnimationFrame(frame); }
-    else { draw(6.0); if (typeof ResizeObserver !== "undefined") { ro = new ResizeObserver(() => draw(6.0)); ro.observe(canvas); } }
-    window.addEventListener("resize", resize);
+    raf = requestAnimationFrame(frame);
 
     return () => {
       disposed = true;
       if (raf) cancelAnimationFrame(raf);
-      if (ro) ro.disconnect();
-      window.removeEventListener("resize", resize);
       const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext();
     };
-  }, [color, color2, deckColored, animate]);
+  }, []); // einmaliger Aufbau — der WebGL-Kontext lebt über die ganze Lebensdauer; Farbe/Modus kommen live aus stateRef
 
   return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full"
     style={{ pointerEvents: "none" }} />;
