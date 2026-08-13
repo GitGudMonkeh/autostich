@@ -21,11 +21,15 @@ export const GLITCH_TUNE = {
   // Chroma-Split/die Bars bleichten die Karte aus. Darum weniger additiv (chroma.alpha 0.71→0.45, bar 0.61→0.5), ruhigere
   // Grundlast (ruhe 0.35→0.24 → Karte bleibt im Ruhezustand farbig, Glitch flackert in Bursts) und etwas dunklere
   // Scanlines (0.14→0.18, Normal-Blend → wirkt dem Aufhellen entgegen).
-  chroma: { staerke: 5.3, alpha: 0.58 },   // Split jetzt v. a. auf der Zahl (lokal) → darf wieder kräftiger sein, bleicht die Fläche nicht mehr
-  tear:   { anzahl: 5, amp: 23, hoehe: 23, rate: 3 },
-  scan:   { staerke: 0.18, tempo: 0.6, dichte: 6 },
-  bar:    { anzahl: 4, staerke: 0.55, tempo: 3.6 },
-  timing: { ruhe: 0.24, burstRate: 0.8, burstLen: 0.18, jitter: 0.46 },
+  // #337: Karte NICHT ausbleichen → Fläche ruhiger, Effekt stärker. Chroma-Wäsche runter (alpha 0.58→0.44), dafür der
+  //   Split lokal auf der Zahl KRÄFTIGER (staerke 5.3→6.2 = größerer Versatz). Scanlines dunkler (0.18→0.24, Normal-Blend
+  //   → wirkt dem Additiv-Aufhellen entgegen), Bars schwächer (0.55→0.44). Verstärkt: mehr Bursts (burstRate/Len hoch) +
+  //   markantere Tears (amp 23→28, rate 3→4) → spürbar „digitaler", ohne die Fläche zu waschen. Reduced/lite unberührt.
+  chroma: { staerke: 6.2, alpha: 0.44 },
+  tear:   { anzahl: 5, amp: 28, hoehe: 23, rate: 4 },
+  scan:   { staerke: 0.21, tempo: 0.6, dichte: 6 },
+  bar:    { anzahl: 4, staerke: 0.44, tempo: 3.6 },
+  timing: { ruhe: 0.24, burstRate: 1.1, burstLen: 0.24, jitter: 0.46 },
   farbe:  { ghostA: "#ff2bd6", ghostB: "#20e5ff" },
 };
 

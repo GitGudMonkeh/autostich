@@ -16,10 +16,10 @@
    [TUNING] Alle Werte 1:1 aus dem Holo-Sweep-Board (#318). */
 
 export const HOLO_TUNE = {
-  band:    { breite: 0.18, weich: 0.85, winkel: 22, tempo: 0.57, n: 1 }, // breite/weich RELATIV; winkel °; tempo Zyklen/s — [TUNING] schmaler → definierter Glanz-Streifen statt Vollkarten-Wäsche (war 0.35)
-  farbe:   { prismatik: 0.5, hueSpanne: 120, hueBasis: 200, saett: 70, hell: 50 }, // hell 58→50: additiv weniger „ausgeblichen"
+  band:    { breite: 0.15, weich: 0.85, winkel: 22, tempo: 0.57, n: 1 }, // #337: Band NOCH definierter/schmaler (0.18→0.15) → klarer Prisma-Streifen statt Vollkarten-Wäsche
+  farbe:   { prismatik: 0.5, hueSpanne: 120, hueBasis: 200, saett: 70, hell: 50 }, // hell 50: additiv nicht „ausgeblichen" (bewusst nicht weiter runter → Effekt bleibt sichtbar)
   glanz:   { breite: 0.05, staerke: 1, an: false },                       // harter Glanz-Streifen — final AUS
-  additiv: { intens: 0.62, bloom: 0.24, bloomBreite: 1.35 },              // [TUNING] Bloom schmaler+schwächer → kein flächiges Aufhellen der ganzen Karte (war 0.35/1.7)
+  additiv: { intens: 0.68, bloom: 0.15, bloomBreite: 1.2 },              // #337: breiten Bloom-Pass zurückgenommen (0.24→0.15 / 1.35→1.2) → KEIN flächiges Aufhellen; Kern-Intensität leicht hoch (0.62→0.68) → Band bleibt der Blickfang
   tilt:    { reakt: 0.63, karte: 5, glanz: 0.5, parallax: 0.25 },         // karte (°) = DOM-Kartenkipp, hier nicht umgesetzt
 };
 
