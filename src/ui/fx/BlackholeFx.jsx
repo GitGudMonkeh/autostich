@@ -60,9 +60,12 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       for (let i = 0; i < n; i++) bgStars.push({ x: rng() * W, y: rng() * H, s: 0.35 + rng() * 0.5, dx: (rng() - 0.5) * 0.004, dy: (rng() - 0.5) * 0.004 });
       for (let i = 0; i < Math.round(n * 0.5); i++) fgStars.push({ x: rng() * W, y: rng() * H, s: 0.45 + rng() * 0.75, dx: (rng() - 0.5) * 0.010, dy: (rng() - 0.5) * 0.010 });
     };
+    // #perf: auf Mobile (pointer:coarse) die Canvas-Auflösung auf DPR 1.5 deckeln → ~40 % weniger Füllkosten für die
+    //   additive Akkretion (Pixelanzahl ∝ dpr²); bei bereits gedrosseltem Bloom praktisch unsichtbar. Desktop bleibt 2.
+    const coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
     const measure = () => {
       const pr = panel.getBoundingClientRect(); W = pr.width; H = pr.height; if (W < 4 || H < 4) return false;
-      D = Math.min(W, H); dpr = Math.min(window.devicePixelRatio || 1, 2);
+      D = Math.min(W, H); dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       canvas.style.width = `${W}px`; canvas.style.height = `${H}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       cx = W * 0.5;
@@ -87,6 +90,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     })();
 
     const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0 });
+    // #perf: Halo-Gradient cachen — createRadialGradient ist pro Frame teuer (+ GC). Nur neu bauen, wenn sich R spürbar
+    //   (>1px), die Position (Resize) oder die Farbe (Standard↔Deckfarbe-Toggle) ändert; sonst settled → Cache-Treffer.
+    let haloCache = { grad: null, r: -1, cx: -1, cy: -1, col: "" };
     const spawnFlyer = (p) => {
       sim.flyers.push({ a0: Math.atan2(oy - cy, ox - cx), d0: Math.hypot(ox - cx, oy - cy) || W * 0.2,
         t: 0, num: p.num, col: p.col || ctrlRef.current.color, spin: (p.id % 2 ? 1 : -1) });
@@ -209,9 +215,14 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         // 4) Surround-Halo (deck2-getönt) → silhouettiert das Loch nur noch dezent gegen den dunklen BG.
         //    #bloom-runter²: Halo enger (1.55→1.35·R) + noch dunkler (0.07/0.028) → weniger Schein-Dicke.
         ctx.globalCompositeOperation = "lighter";
-        const halo = ctx.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, R * 1.35);
-        halo.addColorStop(0, rgba(cDeck2, 0.07)); halo.addColorStop(0.5, rgba(cDeck2, 0.028)); halo.addColorStop(1, "transparent");
-        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, PI2); ctx.fill();
+        // #perf: Gradient nur neu bauen, wenn R (>1px), Position oder Farbe wechselt — sonst gecachten weiterverwenden.
+        const haloCol = ctrl.color2 || ctrl.color || "#ff3ea8";
+        if (!haloCache.grad || Math.abs(haloCache.r - R) > 1 || haloCache.cx !== cx || haloCache.cy !== cy || haloCache.col !== haloCol) {
+          const g = ctx.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, R * 1.35);
+          g.addColorStop(0, rgba(cDeck2, 0.07)); g.addColorStop(0.5, rgba(cDeck2, 0.028)); g.addColorStop(1, "transparent");
+          haloCache = { grad: g, r: R, cx, cy, col: haloCol };
+        }
+        ctx.fillStyle = haloCache.grad; ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, PI2); ctx.fill();
 
         // 5) Solider, OPAKER schwarzer Kern — globalAlpha VOR dem Kern auf 1 (sonst erbt er das Rest-Alpha der Schleife).
         ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0;
