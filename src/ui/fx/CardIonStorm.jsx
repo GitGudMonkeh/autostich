@@ -149,7 +149,8 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
       }
 
       const t = clockT;
-      const bucket = Math.floor(t / TUNE.RESEED_MS), humBucket = Math.floor(t / TUNE.HUM_RESEED_MS);
+      // #showcase-fix: Neuwürfel-Takt kartengrößen-relativ verlangsamen (kleine Karte → sc<1 → größerer Takt → ruhigere Bewegung; In-Game sc=1 unverändert)
+      const bucket = Math.floor(t / (TUNE.RESEED_MS / sc)), humBucket = Math.floor(t / (TUNE.HUM_RESEED_MS / sc));
 
       // Dauer-Knistern (ganze Kontur, leise)
       const hum = [];

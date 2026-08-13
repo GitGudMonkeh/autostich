@@ -150,7 +150,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
         acc -= 1; const s = grabFlame();
         s.x0 = ox + margin + Math.random() * width; s.y0 = oy + 3; s.born = clock;
         s.life = Math.max(120, C.FLAME_LIFE * (0.6 + 0.7 * Math.random()));
-        s.spd = C.FLAME_RISE * (0.7 + 0.6 * Math.random()) * C.FLAME_H;
+        s.spd = C.FLAME_RISE * fscale * (0.7 + 0.6 * Math.random()) * C.FLAME_H;   // #showcase: Steig-Tempo kartengrößen-relativ (kleine Karte → langsamer, wie in-game)
         s.sz = C.FLAME_SIZE * fscale * (0.55 + 0.7 * Math.random()); s.sway = C.FLAME_SWAY; s.lean = C.FLAME_LEAN; s.seed = Math.random() * 6.283;
       }
       for (let i = 0; i < MAX; i++) {
