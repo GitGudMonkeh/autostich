@@ -1,4 +1,4 @@
-import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
+import { ParticleContainer, Particle, Texture } from "pixi.js";
 
 /* Glutfunken als GPU-Vulkan-Lava-Fontäne (Pixi-Umbau, Phase 2) — der erste Effekt, der von DOM auf Pixi umzieht.
    Statt der alten, braven DOM-Punkte (bis 72 Nodes/Stich) eine echte Synthwave-Lava-Fontäne: pro Stich brechen an
@@ -27,13 +27,15 @@ function emberFountainXs(seed) {   // 3 x-Positionen (0..1), pro Stich neu (swee
 
 // ── TUNE ─────────────────────────────────────────────────────────────────────
 const TUNE = {
-  EMIT: 265,        // #perf: Basis-Ausstoßrate gesenkt (war 330) → weniger gleichzeitige Partikel (Update + Fill-Rate)
+  EMIT: 230,        // #340: Basis-Ausstoßrate leicht gesenkt (war 265) → etwas weniger gleichzeitige Partikel
   FLAME: 0.55,      // Flammen-Anteil relativ zu EMIT
   G_REF: 1750,      // Schwerkraft px/s² bei Referenzhöhe HREF
   HREF: 360,        // Referenz-Panelhöhe (Geschwindigkeiten/Höhe skalieren mit H/HREF)
   GLOW: 0.64,       // #perf/#schärfer: Footprint kleiner (war 0.75) → schärfere Partikel + weniger Fill-Rate
-  GLOW_A: 1.5,      // Glüh-Boost der farbigen Glut-Partikel (Faktor auf die additive Alpha, final auf 1 gedeckelt)
-  CRUST_P: 0.12,    // Anteil dunkler Krusten-Brocken
+  GLOW_A: 2.0,      // #340: Glüh-Boost der Glut-Partikel angehoben (war 1.5) → hellere Glut (final auf α 1 gedeckelt → kein Blowout)
+  CRUST_P: 0.08,    // #340: Anteil dunkler Krusten-Brocken leicht gesenkt (war 0.12) → weniger schwarze Partikel
+  // #340: feste Tiefe (0..1) der großen High-Tier-Fontäne (t≥1) → IMMER exakt die Feldmitte (0.5), nie zufällig vorn/hinten.
+  HIGH_TIER_DEPTH: 0.5,
   MAXGLOW: 2200, MAXCRUST: 560, MAXVENT: 10,   // Pools groß genug für die große Gottgleich-Fontäne. MAXVENT = Obergrenze gleichzeitiger Vents.
   // Boden-Bounce: fallende Glut/Krusten prallen an der Emissionslinie (fy) kurz zweimal niedrig ab, dann faden sie aus.
   BOUNCE_N: 2,        // Anzahl Bounces vor dem Ausfaden
@@ -130,24 +132,15 @@ function bounceParticle(s, fy, sc) {
 export function createEmberField(app) {
   const glowTex   = makeRadial([[0, 1], [0.55, 1], [0.66, 0.08], [1, 0]]);   // #schärfer: größerer solider Kern (0.55) + kürzerer Halo → weniger Bloom/Wash, schärfere Glut
   const crustTex  = makeRadial([[0, 1], [0.55, 0.9], [0.85, 0.35], [1, 0]]); // Brocken: kompakter, dunkel getönt
-  const craterTex = makeRadial([[0, 0], [0.45, 0.85], [1, 0]]);              // Krater-Rand: dunkler Ring (Mitte offen)
 
   // Schichten (Reihenfolge = Zeichenreihenfolge): dunkler Krater → additive Lava-Pools → additive Glut → dunkle Krusten.
   // blendMode wirkt pro gerendertem Objekt: ParticleContainer rendert selbst (Blend greift dort), die Krater/Pool sind
   // aber einfache Container-Gruppen → der additive Blend sitzt auf den SPRITES.
-  const craterC = new Container();
-  const poolC   = new Container();
+  // #340: Boden-Bloom-Scheibe (poolOut/poolIn) + Krater-Ring (craterSpr) ENTFERNT — kein Boden-Effekt mehr unter den
+  //   Fontänen. Nur noch die Fontänen-Partikel selbst (glow/crust).
   const glowPC  = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); glowPC.blendMode = "add";
   const crustPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); crustPC.blendMode = "normal";
-  app.stage.addChild(craterC, poolC, glowPC, crustPC);
-
-  // Krater/Pool-Sprites je Vent (fester Satz, ungenutzte auf alpha 0)
-  const craterSpr = [], poolOut = [], poolIn = [];
-  for (let i = 0; i < TUNE.MAXVENT; i++) {
-    const cr = new Sprite(craterTex); cr.anchor.set(0.5); cr.tint = 0x090302; cr.alpha = 0; craterC.addChild(cr); craterSpr.push(cr);
-    const po = new Sprite(glowTex);   po.anchor.set(0.5); po.tint = 0xe83512;  po.alpha = 0; po.blendMode = "add"; poolC.addChild(po); poolOut.push(po);
-    const pi = new Sprite(glowTex);   pi.anchor.set(0.5); pi.tint = 0xffe6be;  pi.alpha = 0; pi.blendMode = "add"; poolC.addChild(pi); poolIn.push(pi);
-  }
+  app.stage.addChild(glowPC, crustPC);
 
   // Partikel-Pools
   const glow = [], crust = [];
@@ -162,7 +155,6 @@ export function createEmberField(app) {
     vents.length = 0;
     for (const s of glow) { s.alive = false; s.p.alpha = 0; }
     for (const s of crust) { s.alive = false; s.p.alpha = 0; }
-    for (let i = 0; i < TUNE.MAXVENT; i++) { craterSpr[i].alpha = 0; poolOut[i].alpha = 0; poolIn[i].alpha = 0; }
   }
 
   function setParams(next) {
@@ -235,17 +227,20 @@ export function createEmberField(app) {
     // aber nicht so weit hinten wie der Komet. ny = Boden-Y (normiert), ds = Tiefen-Skala (hinten kleiner/kürzer),
     // halfW = x-Spanne (hinten schmaler → Trichter/Perspektive).
     const lp = (a, b, u) => a + (b - a) * u;
-    const d = Math.random();
-    const ny = lp(TUNE.P_FAR_Y, TUNE.P_NEAR_Y, d), ds = lp(TUNE.P_DEPTH_MIN, 1, d), halfW = lp(TUNE.P_FAR_HALF, TUNE.P_NEAR_HALF, d);
     // #perf E: Emissions-Budget an den Turbo koppeln (analog Battlefield fxScale) — schneller Takt → weniger Partikel je
     // Fontäne → billigerer Ticker/Draw (weniger lebende Partikel). sweepDur ≈ flipMs: bei 1× (~1750) = 1 (unverändert),
     // bei MAX (~290) ~0,45. Wirkt nur auf die Ausstoßrate (acc/flAcc im Ticker), nicht auf Choreografie/Höhe.
     const fx = clamp((sweepDur || 900) / 875, 0.45, 1) * (params.lite ? TUNE.LITE_EMIT : 1); // lite → weniger Partikel je Fontäne
     if (t >= 1) {
-      // ab „Stark": große, gebündelte Fontäne — bleibt MITTIG (x=0,5), erscheint aber an zufälliger Tiefe (vorn..hinten).
+      // #340: ab „Stark" große, gebündelte Fontäne — IMMER exakt mittig (x=0,5) UND auf fester Feld-Mitte-Tiefe
+      //   (HIGH_TIER_DEPTH), nie mehr zufällig vorn/hinten.
+      const d = TUNE.HIGH_TIER_DEPTH;
+      const ny = lp(TUNE.P_FAR_Y, TUNE.P_NEAR_Y, d), ds = lp(TUNE.P_DEPTH_MIN, 1, d);
       vents.push({ x: 0.5, side: 0, ny, ds, jetT: TIER_BURST[t], burst: TIER_BURST[t], stufe, mult: TIER_MULT[t], vscale: TIER_VSCALE[t], spread: 1.8, acc: 0, flAcc: 0, glow: 1, win: true, fx });
     } else {
-      // Schwach (normaler Sieg): EINE Fontäne an zufälliger Position auf der Fläche (x innerhalb der Tiefen-Spanne).
+      // Schwach (normaler Sieg): EINE Fontäne an ZUFÄLLIGER Position/Tiefe auf der Fläche (x innerhalb der Tiefen-Spanne).
+      const d = Math.random();
+      const ny = lp(TUNE.P_FAR_Y, TUNE.P_NEAR_Y, d), ds = lp(TUNE.P_DEPTH_MIN, 1, d), halfW = lp(TUNE.P_FAR_HALF, TUNE.P_NEAR_HALF, d);
       const burst = clamp((sweepDur || 900) * 0.0009, 0.42, 0.9);
       const x = clamp(0.5 + (Math.random() * 2 - 1) * halfW, 0.05, 0.95);
       vents.push({ x, side: x - 0.5, ny, ds, jetT: burst, burst, stufe, mult: 1, vscale: 1, spread: 1, acc: 0, flAcc: 0, glow: 1, win: true, fx });
@@ -261,8 +256,6 @@ export function createEmberField(app) {
     if (params.effect !== "embers") return;
     // Farb-Basis der Rampe: „Deckfarbe" → Deck-Hauptfarbe, „Standard" → warmes Feuer (deck-unabhängig).
     const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / TUNE.HREF), deck = params.deckTint ? params.deck : FIRE;
-    const deckInt = ((deck[0] & 255) << 16) | ((deck[1] & 255) << 8) | (deck[2] & 255);   // Krater/Pool in Deckfarbe
-    const hotInt = rampInt(0.88, deck);
     const fy = H - Math.min(22, H * 0.04);   // Emissionslinie leicht über dem Rand (näher am Boden) → steht auf dem Boden, nicht am Rahmen
 
     // #ambiente: kontinuierlich sanft aufsteigende Glut — hält Glutfunken IMMER sichtbar (auch Mobile/lite, wo die
@@ -292,22 +285,7 @@ export function createEmberField(app) {
       }
     }
 
-    // Krater + molten Pool je Vent (getönte Sprites; ungenutzte ausblenden). Pool-Helligkeit durch die Zahl
-    // aktiver Vents normalisiert → überlappende Böden summieren sich NICHT zu einem Riesen-Glow.
-    const pf = 1 / Math.sqrt(Math.max(1, vents.length));
-    for (let i = 0; i < TUNE.MAXVENT; i++) {
-      const v = vents[i], cr = craterSpr[i], po = poolOut[i], pi = poolIn[i];
-      if (!v) { cr.alpha = 0; po.alpha = 0; pi.alpha = 0; continue; }
-      const bx = v.x * W, vy = (v.ny != null ? v.ny : 0.95) * H, ds = v.ds || 1, act = v.jetT > 0 ? 1 : v.glow;  // #319b: Boden-Y + Tiefen-Skala der Fontäne
-      const fl = 0.72 + 0.28 * Math.sin(clock * 11 + bx * 0.06);
-      const baseK = (0.55 + 0.45 * (v.spread || 1)) * ds;   // größere Basis für die gebündelte Zentral-Fontäne · ×ds (hinten kleiner)
-      const pr = (28 + v.stufe * 12) * act * fl * sc * baseK;
-      po.tint = deckInt; pi.tint = hotInt;   // Vent glüht in Deckfarbe (heißer Kern deck-getönt hell)
-      // Boden kompakter/knackiger: kleinere Pools, geringere Alpha, dunklerer Krater-Rand (mehr Kontrast, weniger Wash).
-      cr.x = bx; cr.y = vy; cr.width = (44 + v.stufe * 14) * 2.6 * sc * baseK; cr.height = (44 + v.stufe * 14) * 0.9 * sc * ds; cr.alpha = 0.23 * act;  // „Ring am Boden" 0.25
-      po.x = bx; po.y = vy; po.width = pr * 3.3; po.height = pr * 1.3; po.alpha = 0.28 * act * pf;
-      pi.x = bx; pi.y = vy; pi.width = pr * 1.9; pi.height = pr * 0.82; pi.alpha = 0.42 * act * pf;
-    }
+    // #340: Krater/molten-Pool-Boden entfernt — keine Boden-Bloom-Scheibe mehr, nur die Fontänen-Partikel.
 
     // Glut-Partikel (core/body/flame) — additiv, pro Partikel getönt
     for (let i = 0; i < TUNE.MAXGLOW; i++) {
@@ -347,8 +325,8 @@ export function createEmberField(app) {
     erupt,
     destroy() {
       try { app.ticker.remove(update); } catch { /* ignore */ }
-      for (const c of [craterC, poolC, glowPC, crustPC]) { try { c.destroy({ children: true }); } catch { /* ignore */ } }
-      for (const t of [glowTex, crustTex, craterTex]) { try { t.destroy(true); } catch { /* ignore */ } }
+      for (const c of [glowPC, crustPC]) { try { c.destroy({ children: true }); } catch { /* ignore */ } }
+      for (const t of [glowTex, crustTex]) { try { t.destroy(true); } catch { /* ignore */ } }
     },
   };
 }
