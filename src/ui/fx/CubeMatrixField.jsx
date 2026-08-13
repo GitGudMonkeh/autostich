@@ -165,13 +165,21 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       // #317 Drahtgitter: nur die Kanten der sichtbaren Flächen additiv strichen → Würfel als LEUCHTENDE NEON-RAHMEN
       // (keine Füllung). Intensität ramped mit dem Ausschlag (glowA): Ruhe = zart, Bass = kräftig.
       if (propsRef.current.wire) {
-        const la = clamp(0.5 + glowA * 1.3, 0.3, 1) * (0.55 + 0.45 * alpha);
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
-        ctx.strokeStyle = rgba(glowC, la); ctx.lineWidth = Math.max(1, H * 0.0018); ctx.lineJoin = "round";
+        // #glow: LEUCHTENDER Neon-Look statt blasser Striche — heller Kern-Strich + ein breiterer, dimmerer additiver
+        //   Glow-Halo (Bloom um die Kanten). Beide in glowC (Deckfarbe, #343) → satter Neon-Rahmen ohne Weiß-Wäsche.
+        const laCore = clamp(0.78 + glowA * 1.2, 0.55, 1) * (0.55 + 0.45 * alpha);   // heller als vorher (war 0.5-Basis)
+        const litFull = !propsRef.current.lite;
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; ctx.lineJoin = "round";
         const face = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.stroke(); };
-        face(FBL, FBR, FTR, FTL);                                            // Front
-        face(FTL, FTR, BTR, BTL);                                            // Deckel
-        if (cx < 0) face(FBL, FTL, BTL, BBL); else face(FBR, FTR, BTR, BBR); // sichtbare Seite
+        const drawFaces = () => {
+          face(FBL, FBR, FTR, FTL);                                          // Front
+          face(FTL, FTR, BTR, BTL);                                          // Deckel
+          if (cx < 0) face(FBL, FTL, BTL, BBL); else face(FBR, FTR, BTR, BBR); // sichtbare Seite
+        };
+        // 1) Glow-Halo: breit + dim → weicher Neon-Schein (auf lite etwas schmaler = billiger).
+        ctx.strokeStyle = rgba(glowC, laCore * 0.34); ctx.lineWidth = Math.max(2, H * (litFull ? 0.0064 : 0.0050)); drawFaces();
+        // 2) Heller, etwas dickerer Kern-Strich obendrauf.
+        ctx.strokeStyle = rgba(glowC, laCore); ctx.lineWidth = Math.max(1.2, H * 0.0026); drawFaces();
         ctx.globalCompositeOperation = "source-over";
         return;
       }
