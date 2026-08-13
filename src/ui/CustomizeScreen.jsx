@@ -34,6 +34,27 @@ const CardIonStorm = lazy(() => import("./fx/CardIonStorm.jsx"));
 // #317 Cube-Matrix — musik-reaktives Würfelfeld für die Showcase (lazy wie die anderen FX).
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx"));
 import { Card } from "./Card.jsx";
+
+// #perf-shop (Plan A): Alle Effekt-Vorschau-Chunks beim Öffnen der Deck-Werkstatt im Hintergrund vorladen. Sonst muss
+//   der erste Blick auf einen Effekt erst dessen Chunk (v. a. den großen gemeinsamen Pixi-Chunk) laden → spürbare
+//   Verzögerung. import() nutzt DIESELBEN Specifier wie die lazy()-Wrapper oben → das Modul-Registry dedupt (kein
+//   Doppel-Load), das Vorladen wärmt also direkt die lazy-Komponenten. Best-effort: Fehler werden geschluckt, läuft im
+//   Idle, nur EINMAL pro Session (fxPrefetched-Guard).
+const FX_PREFETCH = [
+  () => import("./fx/PixiStage.jsx"), () => import("./fx/CardFxStage.jsx"),
+  () => import("./fx/SonnenPulsPixi.jsx"), () => import("./fx/LaserFaecherPixi.jsx"), () => import("./fx/PrismaKaskadePixi.jsx"),
+  () => import("./fx/HoloCubePixi.jsx"), () => import("./fx/SupernovaPixi.jsx"), () => import("./fx/HologridSlicePixi.jsx"),
+  () => import("./fx/FireHead.jsx"), () => import("./fx/MossGrow.jsx"), () => import("./fx/FrostIce.jsx"),
+  () => import("./fx/CardIonStorm.jsx"), () => import("./fx/CubeMatrixField.jsx"),
+];
+let fxPrefetched = false;
+function prefetchFxChunks() {
+  if (fxPrefetched || typeof window === "undefined") return;
+  fxPrefetched = true;
+  const run = () => { for (const imp of FX_PREFETCH) { try { imp().catch(() => {}); } catch { /* ignore */ } } };
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(run, { timeout: 1500 });
+  else setTimeout(run, 300);
+}
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { clamp } from "../game/deck.js"; // #: Serien-Kopplung des Brennstrahl-Loops (leiser Start → lauter/heißer)
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
@@ -809,6 +830,9 @@ const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.
 /* ============================ Haupt-Screen ============================ */
 export function CustomizeScreen({ options, profile, onChoose, onClose, onProfileChange }) {
   useEscape(onClose);
+  // #perf-shop (Plan A): beim Öffnen der Werkstatt alle Effekt-Chunks idle vorladen → kein Lade-Hitch beim ersten
+  //   Anzeigen eines Effekts. Läuft nur einmal pro Session (interner Guard).
+  useEffect(() => { prefetchFxChunks(); }, []);
   const p = profile || {};
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
