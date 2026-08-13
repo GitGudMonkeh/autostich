@@ -68,7 +68,7 @@ export const DECK_DEFS = {
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_arcade:     { id: "deck_arcade",     name: "Arcade",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   deck_polarlicht: { id: "deck_polarlicht", name: "Polarlicht", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
-  deck_seedrache:  { id: "deck_seedrache",  name: "Seedrache",  unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -107,7 +107,7 @@ export const BATTLEFIELD_DEFS = {
   // #312 DP-Kauf-Packs:
   bf_arcade:     { id: "bf_arcade",     name: "Arcade · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   bf_polarlicht: { id: "bf_polarlicht", name: "Polarlicht · Battlefield", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
-  bf_seedrache:  { id: "bf_seedrache",  name: "Seedrache · Battlefield",  unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

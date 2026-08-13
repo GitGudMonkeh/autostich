@@ -122,7 +122,7 @@ import arcadeFront     from "../assets/cards/decks_player/deck_arcade/front.webp
 import arcadeBack      from "../assets/cards/decks_player/deck_arcade/back.webp";
 import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.webp"; // Polarlicht
 import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";
-import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Seedrache
+import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Eldritch (ehem. Seedrache)
 import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";

@@ -203,7 +203,7 @@ export const THEME_DEFS = {
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
   polarlicht: { id: "polarlicht", name: "Polarlicht", emblem: "🌌", kind: "buy", price: 10, a1: "#7cc6ff", a2: "#4fe6b0",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
-  seedrache:  { id: "seedrache",  name: "Seedrache",  emblem: "🌊", kind: "buy", price: 10, a1: "#38b0ff", a2: "#39d6b8",
+  seedrache:  { id: "seedrache",  name: "Eldritch",   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
 };
 
