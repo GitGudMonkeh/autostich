@@ -1305,7 +1305,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
             konstant false → Key stabil, kein unnötiger Remount. */}
-        <GlobalFxScenePreview key={`${fx.key}:${deckTintOn ? "deck" : "std"}`} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+        {/* #perf-shop (Plan B): key trägt NUR den Effekt (nicht den Farbmodus) → Standard↔Deckfarbe-Toggle remountet die
+            Pixi-Bühne NICHT mehr (kein WebGL-Neuaufbau), sondern reicht deckTint als Live-Prop durch; die Effekte lesen
+            ihn zur Laufzeit (gott: st.current · Blackhole: ctrlRef · Feld: setParams · Cube: propsRef). Effekt-Wechsel
+            (anderer fx.key) remountet weiterhin, da ein anderer Effekt-Typ. */}
+        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
         {/* Gruppen-Schild oben links */}
         <span className="absolute left-2 top-2 text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-md"
           style={{ background: "#0b0a16aa", border: "1px solid #ffffff1f", color: "#cbd3ff" }}>{fx.group === "spezial" ? "Archetyp-Effekte" : group.title}</span>
