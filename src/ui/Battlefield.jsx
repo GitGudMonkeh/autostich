@@ -1381,7 +1381,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <BlackholeFx active={holeActive} pulse={holePulse}
           color={blackholeDeck ? (deckA1 || "#4aa0ff") : "#4aa0ff"}
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
-          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} reduced={reduced} />
+          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich

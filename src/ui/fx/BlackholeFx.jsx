@@ -23,11 +23,19 @@ const TUNE = {
   //   (ORBIT_R, mehrere Umläufe SPIRAL_TURNS — dabei auch HINTER dem Kern durch, Tiefen-Occlusion via ORBIT_TILT),
   //   erst ab ORBIT_END wird sie spiralig in den Kern gesogen. ORBIT_SC = kleine Orbit-Größe der Karte.
   FLYIN_DUR: 2.10, SPIRAL_TURNS: 2.6, ORBIT_R: 0.12, ORBIT_SC: 0.26, SHRINK_IN: 0.16, ORBIT_END: 0.80, ORBIT_TILT: 0.5, SPARKS: 2,
+  // #338-4: Bahn enger an R (war 1.45 → bei großem Loch zu weit) + Deckel gleichzeitiger Flyer → smooth bei Max.
+  ORBIT_TIGHT: 1.15, MAX_FLYERS: 6,
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
+  // #338-1: Kollaps-Puls, wenn das Loch MAX_HOLD_S Sekunden (Echtzeit) auf Maximum stand → Implosionsbombe (big-Nova).
+  MAX_HOLD_S: 120,
   DISK_ARMS: 3, DISK_DENSITY: 250, DISK_TURNS: 3.0, DISK_THICK: 1.0, ROT_SPEED: 0.20,
   // Bloom fast auf 0: RING_GLOW 0 (Photonenring nur minimaler Schein), BRIGHT ~1 (Akkretion nicht mehr überbelichtet).
-  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.0, BRIGHT: 1.05,
+  // #338-3: Photonenring DÜNNER (RING_W · coreR, war 0.13).
+  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.0, BRIGHT: 1.05, RING_W: 0.07,
 };
+
+// #338-4: Kartenmaße modulweit (auch für den Offscreen-Rückseiten-Cache außerhalb der Zeichenschleife).
+const CARD_W = 104, CARD_H = 144;
 
 const PI2 = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -36,14 +44,40 @@ function hexRGB(h) { let s = String(h || "#4aa0ff").replace("#", ""); if (s.leng
 const mixRGB = (a, b, t) => ({ r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t });
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
 function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
+function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, reduced = false }) {
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
   const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
+  // #338-4: Offscreen-Cache der eingesogenen Karte = Deck-RÜCKSEITE (pro Auswahl-Phase konstant). Einmal pro backSrc-
+  //   Wechsel in Kartengröße vorrendern → pro Flyer nur noch drawImage (kein Neuzeichnen je Wert/Frame, kein num mehr).
+  const backRef = useRef({ src: null, canvas: null, ready: false });
   useEffect(() => { ctrlRef.current.scale = scale; }, [scale]);
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
+  useEffect(() => {
+    const st = backRef.current;
+    if (!backSrc) { st.src = null; st.ready = false; st.canvas = null; return undefined; }
+    if (st.src === backSrc && st.ready) return undefined;
+    st.src = backSrc; st.ready = false;
+    const img = new Image(); let dead = false;
+    img.onload = () => {
+      if (dead || backRef.current.src !== backSrc) return;                    // veralteter Load → verwerfen
+      const R2 = 2, cv = document.createElement("canvas"); cv.width = CARD_W * R2; cv.height = CARD_H * R2;
+      const c = cv.getContext("2d"); if (!c) return;
+      roundRectPath(c, 0, 0, cv.width, cv.height, Math.max(6, cv.width * 0.06)); c.clip();
+      // „cover": Bild formatfüllend in die Kartenbox.
+      const ir = img.width / img.height, br = cv.width / cv.height;
+      let dw = cv.width, dh = cv.height, dx = 0, dy = 0;
+      if (ir > br) { dw = cv.height * ir; dx = (cv.width - dw) / 2; } else { dh = cv.width / ir; dy = (cv.height - dh) / 2; }
+      c.drawImage(img, dx, dy, dw, dh);
+      backRef.current.canvas = cv; backRef.current.ready = true;
+    };
+    img.src = backSrc;
+    return () => { dead = true; };
+  }, [backSrc]);
 
   useEffect(() => {
     if (!active || !panelRef?.current || !canvasRef.current) return undefined;
@@ -51,7 +85,6 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     const ctx = canvas.getContext("2d"); if (!ctx) return undefined;
 
     let W = 0, H = 0, D = 1, dpr = 1, cx = 0, cy = 0, ox = 0, oy = 0;
-    const cardW = 104, cardH = 144;
     // Sterne: zwei Tiefen-Ebenen (Vordergrund über dem Loch, Hintergrund verdeckt), sanfter Parallaxe-Drift, KEIN Twinkle.
     let bgStars = [], fgStars = [];
     const buildStars = () => {
@@ -89,27 +122,38 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       return out;
     })();
 
-    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0 });
+    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0 });
     // #perf: Halo-Gradient cachen — createRadialGradient ist pro Frame teuer (+ GC). Nur neu bauen, wenn sich R spürbar
     //   (>1px), die Position (Resize) oder die Farbe (Standard↔Deckfarbe-Toggle) ändert; sonst settled → Cache-Treffer.
     let haloCache = { grad: null, r: -1, cx: -1, cy: -1, col: "" };
     const spawnFlyer = (p) => {
+      // #338-4: Flyer-Deckel → bei Max stapeln sich sonst viele Karten (Ruckeln); ältesten sofort einsaugen.
+      if (sim.flyers.length >= TUNE.MAX_FLYERS) sim.flyers.shift();
       sim.flyers.push({ a0: Math.atan2(oy - cy, ox - cx), d0: Math.hypot(ox - cx, oy - cy) || W * 0.2,
-        t: 0, num: p.num, col: p.col || ctrlRef.current.color, spin: (p.id % 2 ? 1 : -1) });
+        t: 0, col: p.col || ctrlRef.current.color, spin: (p.id % 2 ? 1 : -1) });
     };
-    const implode = () => {
-      if (sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0 };
-      sim.level = 0; sim.peakR = 0; sim.dormant = true;
+    // #338-1: big = Implosionsbombe (2-Min-am-Max-Kollaps) → intensivere Nova; sonst normale Niederlagen-Implosion.
+    const implode = (big) => {
+      if (big || sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: !!big };
+      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0;
     };
 
-    const roundRect = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
-    const drawCard = (x, y, sc, rot, num, col, alpha) => {
-      const w = cardW * sc, h = cardH * sc;
+    const roundRect = (x, y, w, h, r) => roundRectPath(ctx, x, y, w, h, r);
+    // #338-4: eingesogene Karte = Deck-RÜCKSEITE aus dem Offscreen-Cache (drawImage), KEIN Wert mehr. Fallback (Cache
+    //   noch nicht geladen / keine backSrc): schlichte dunkle Rückseite mit dezentem Innenrahmen (ebenfalls ohne Zahl).
+    const drawCard = (x, y, sc, rot, col, alpha) => {
+      const w = CARD_W * sc, h = CARD_H * sc, rad = Math.max(3, w * 0.06);
       ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha = Math.max(0, alpha);
-      ctx.fillStyle = "#12121a"; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowBlur = 3; ctx.shadowColor = col; // #bloom-runter: Karten-Glow 10→3
-      roundRect(-w / 2, -h / 2, w, h, Math.max(3, w * 0.06)); ctx.fill(); ctx.stroke();
-      ctx.shadowBlur = 0; ctx.fillStyle = col; ctx.font = `700 ${Math.round(h * 0.42)}px system-ui, sans-serif`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(num), 0, 1); ctx.restore();
+      const bk = backRef.current;
+      if (bk.ready && bk.canvas) {
+        ctx.save(); roundRect(-w / 2, -h / 2, w, h, rad); ctx.clip(); ctx.drawImage(bk.canvas, -w / 2, -h / 2, w, h); ctx.restore();
+        ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(hexRGB(col), 0.5); roundRect(-w / 2, -h / 2, w, h, rad); ctx.stroke();
+      } else {
+        ctx.fillStyle = "#12121a"; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowBlur = 3; ctx.shadowColor = col;
+        roundRect(-w / 2, -h / 2, w, h, rad); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.lineWidth = 1; ctx.strokeStyle = rgba(hexRGB(col), 0.4); roundRect(-w * 0.34, -h * 0.34, w * 0.68, h * 0.68, Math.max(2, w * 0.05)); ctx.stroke();
+      }
+      ctx.restore();
     };
 
     let raf = 0, last = 0;
@@ -126,7 +170,11 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       if (ctrl.pulse && ctrl.pulse.id !== sim.pulseId) {
         sim.pulseId = ctrl.pulse.id; const p = ctrl.pulse;
         if (p.kind === "loss") {
-          if (!sim.dormant) { sim.level -= Math.max(TUNE.LOSS_MIN, sim.level * TUNE.LOSS_PCT); if (sim.level <= 0) implode(); }
+          if (!sim.dormant) { sim.level -= Math.max(TUNE.LOSS_MIN, sim.level * TUNE.LOSS_PCT); if (sim.level <= 0) implode(false); }
+        } else if (p.kind === "collapse") {
+          // #338-1: gescripteter Kollaps (nur die Shop-Vorschau nutzt das → demonstriert die Implosionsbombe; in-game
+          //   kommt der big-Kollaps ausschließlich aus dem 2-Min-am-Max-Timer).
+          if (!sim.dormant) implode(true);
         } else { // Sieg
           if (sim.dormant) { sim.dormant = false; sim.level = 0; sim.peakR = 0; }
           sim.level = Math.min(maxLevel(), sim.level + 1); spawnFlyer(p);
@@ -139,6 +187,13 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       sim.peakR = Math.max(sim.peakR, sim.R);
       const R = sim.R, coreR = TUNE.CORE_SIZE * R;
       const fill = clamp(sim.level / maxLevel(), 0, 1);
+
+      // #338-1: Kollaps-Puls — steht das Loch MAX_HOLD_S Sekunden (ECHTZEIT, unskaliertes dt) auf Maximum, detoniert es
+      //   als Implosionsbombe (big-Nova) und baut sich ab dem nächsten Sieg neu auf. Fällt das Level unter Max → Timer aus.
+      if (!sim.dormant && sim.level >= maxLevel() - 1e-6) {
+        sim.maxSince += dt;
+        if (sim.maxSince >= TUNE.MAX_HOLD_S * 1000) implode(true);
+      } else sim.maxSince = 0;
 
       ctx.clearRect(0, 0, W, H);
       const busy = R > 0.5 || sim.flyers.length || sim.sparks.length || sim.nova;
@@ -161,6 +216,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         // #partikel-weniger-weiss: bei kleinem Loch sammeln sich alle Partikel eng → additives Stapeln blies zu Weiß aus.
         //   sizeMul (0..1, voll ab R≈16% von D) dämpft sowohl den Kern-Weißanteil als auch die Grund-Helligkeit klein.
         const sizeMul = clamp(R / (0.16 * D), 0, 1);
+        // #338-2: bigK 0..1 (klein..groß) — bei großem Loch Sättigung/Definition anheben (weniger Weiß, vollere Alpha)
+        //   → Scheibe wirkt definiert statt ausgewaschen; bei kleinem Loch bleibt das additive Weiß stärker gedämpft.
+        const bigK = clamp((R - 0.24 * D) / (0.30 * D), 0, 1);
         for (let i = 0; i < nDraw; i++) {
           const p = disk[i];
           const rad = lerp(coreR * 1.03, R, p.tt);
@@ -168,10 +226,13 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           const s = Math.sin(ang); const front = s > 0;
           if (front !== frontWanted) continue;
           const x = cx + Math.cos(ang) * rad, y = cy + s * rad * TUNE.TILT;
-          // Farbe: außen deck → innen deck2, heißer Kern nur noch DEZENT weiß und erst bei größerem Loch (sizeMul).
+          // Farbe: außen deck → innen deck2, heißer Kern nur DEZENT weiß, erst bei größerem Loch (sizeMul) UND bei großem
+          //   Loch NOCH weniger Weiß (·(1−0.55·bigK)) → satte, definierte Farbe statt Wäsche.
           let col = mixRGB(cDeck, cDeck2, 1 - p.tt);
-          if (p.tt < 0.18) col = mixRGB(col, WHITE, (0.18 - p.tt) / 0.18 * 0.20 * sizeMul);
-          const a = clamp(p.aj * TUNE.BRIGHT * (0.30 + 0.55 * (1 - p.tt)) * (reduced ? 0.5 : 1) * (0.55 + 0.45 * sizeMul), 0, 1);
+          if (p.tt < 0.18) col = mixRGB(col, WHITE, (0.18 - p.tt) / 0.18 * 0.20 * sizeMul * (1 - 0.55 * bigK));
+          // klein: Grund-Alpha stärker gedämpft (0.40 statt 0.55 → weniger Weiß-Clip) · groß: +0.45·bigK → vollere,
+          //   definierte Partikel (Clamp macht mehr davon voll deckend = knackiger).
+          const a = clamp(p.aj * TUNE.BRIGHT * (0.30 + 0.55 * (1 - p.tt)) * (reduced ? 0.5 : 1) * (0.40 + 0.60 * sizeMul) * (1 + 0.45 * bigK), 0, 1);
           const sz = p.sz * TUNE.DISK_THICK * (0.7 + 0.9 * (1 - p.tt));
           ctx.fillStyle = rgba(col, a); ctx.beginPath(); ctx.arc(x, y, sz, 0, PI2); ctx.fill();
         }
@@ -183,7 +244,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       //    Loch — dabei läuft die Karte auch HINTER dem Kern durch (Tiefen-Occlusion): sin(Winkel)<0 → hinten (vor dem
       //    opaken Kern gezeichnet → verdeckt), sin>0 → vorne (über dem Kern). Erst ab ORBIT_END spiralig in den Kern.
       const flyDurMs = TUNE.FLYIN_DUR * 1000;
-      const orbitR = Math.max(TUNE.ORBIT_R * D, R * 1.45);   // enge Umlaufbahn dicht ums Loch
+      const orbitR = Math.max(TUNE.ORBIT_R * D, R * TUNE.ORBIT_TIGHT);   // #338-4: Bahn enger an R → skaliert stimmig mit der Loch-Größe
       const easeOut = (t) => t * (2 - t);
       const backFlyers = [], frontFlyers = [];
       for (let i = sim.flyers.length - 1; i >= 0; i--) {
@@ -205,9 +266,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         const depthCue = 0.82 + 0.18 * sd;              // vorne etwas größer, hinten etwas kleiner
         const x = cx + Math.cos(ang) * rr, y = cy + sd * rr * TUNE.ORBIT_TILT;
         const rot = Math.sin(ang) * 0.35 * f.spin;      // sanftes Kippen statt wildem Durchdrehen
-        (sd < 0 ? backFlyers : frontFlyers).push({ x, y, sc: sc * depthCue, rot, num: f.num, col: f.col, alpha });
+        (sd < 0 ? backFlyers : frontFlyers).push({ x, y, sc: sc * depthCue, rot, col: f.col, alpha });
       }
-      const drawFlyerList = (list) => { for (const fr of list) drawCard(fr.x, fr.y, fr.sc, fr.rot, fr.num, fr.col, fr.alpha); };
+      const drawFlyerList = (list) => { for (const fr of list) drawCard(fr.x, fr.y, fr.sc, fr.rot, fr.col, fr.alpha); };
       // Karten HINTEN (untere/hintere Umlauf-Hälfte) — jetzt zeichnen, gleich verdeckt sie der opake Kern.
       drawFlyerList(backFlyers);
 
@@ -228,13 +289,27 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         ctx.fillStyle = "#000000"; ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, PI2); ctx.fill();
 
-        // 6) Photonenring (additiv) + definierende Kante am Kernrand.
+        // #338-3: Reflexion → der Kern liest als 3D-KUGEL statt flacher Scheibe. Auf den Kern GECLIPPT: (a) weiches
+        //   spekulares Highlight oben-links (Lichtquelle), (b) Rim-Light am oberen/linken Rand. Dezent deck-weiß getönt,
+        //   additiv über dem opak-schwarzen Kern; reduced → schwächer (Photosensitivität).
+        if (!reduced && coreR > 3) {
+          const hglow = mixRGB(cDeck, WHITE, 0.65);
+          ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, PI2); ctx.clip(); ctx.globalCompositeOperation = "lighter";
+          const hx = cx - coreR * 0.36, hy = cy - coreR * 0.42, hr = coreR * 0.72;
+          const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+          hg.addColorStop(0, rgba(hglow, 0.22)); hg.addColorStop(0.6, rgba(hglow, 0.05)); hg.addColorStop(1, "transparent");
+          ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, PI2); ctx.fill();
+          ctx.lineWidth = Math.max(1, coreR * 0.09); ctx.strokeStyle = rgba(hglow, 0.5);
+          ctx.beginPath(); ctx.arc(cx, cy, coreR * 0.93, Math.PI * 0.95, Math.PI * 1.55); ctx.stroke();
+          ctx.restore();
+        }
+
+        // 6) Photonenring (additiv, DÜNN #338-3: RING_W) + schwache Definitions-Kante am Kernrand.
         ctx.globalCompositeOperation = "lighter";
-        // #bloom-runter²: Photonenring DÜNNER (0.22→0.13·coreR) + weniger Schein (3→2); weiße Definitions-Kante schwächer.
-        ctx.lineWidth = Math.max(1.0, coreR * 0.13); ctx.strokeStyle = rgba(mixRGB(cDeck, WHITE, 0.30), 0.85);
+        ctx.lineWidth = Math.max(1.0, coreR * TUNE.RING_W); ctx.strokeStyle = rgba(mixRGB(cDeck, WHITE, 0.30), 0.85);
         ctx.shadowBlur = 2 + TUNE.RING_GLOW * 60; ctx.shadowColor = ctrl.color || "#4aa0ff";
         ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, PI2); ctx.stroke();
-        ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.55;
+        ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 0.35;
         ctx.lineWidth = 1.0; ctx.strokeStyle = rgba(WHITE, 0.7); ctx.beginPath(); ctx.arc(cx, cy, coreR * 0.98, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
 
         // 7) Akkretion VOR dem Loch (untere Umlauf-Hälfte, sin>0) → zieht über den Kern (Wrap).
@@ -253,19 +328,29 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       // 8) Vordergrund-Sterne (über dem Loch sichtbar).
       if (!reduced) drawStars(fgStars, 0.46);
 
-      // Nova (bedingte Implosion): heller Flash + eine elliptische Schockwelle nach außen (über NOVA_DUR).
+      // Nova: heller Flash + elliptische Schockwelle(n) IN DER SCHEIBEN-EBENE (Neigung = TUNE.TILT, #338-1). `big` =
+      //   2-Min-am-Max-Kollaps → Implosionsbombe: greller Flash, mehrere schnelle/dicke Ringe. reduced dämpft (Photosensitivität).
       if (sim.nova) {
         const nv = sim.nova; nv.t += sdt / (TUNE.NOVA_DUR * 1000);
         if (nv.t >= 1) { sim.nova = null; }
         else {
-          const fade = 1 - nv.t; ctx.globalCompositeOperation = "lighter";
-          const fr = TUNE.NOVA_R * D * (0.2 + 0.5 * nv.t);
+          const big = !!nv.big, dim = reduced ? 0.4 : 1, fade = 1 - nv.t;
+          ctx.globalCompositeOperation = "lighter";
+          // Flash: bei big kürzer & greller (Weiß-Kern hoch, aber via reduced/dim gedämpft).
+          const flashK = big ? Math.pow(fade, 2.2) : fade;
+          const fr = TUNE.NOVA_R * D * (0.2 + 0.5 * nv.t) * (big ? 1.5 : 1);
           const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr);
-          fg.addColorStop(0, rgba(WHITE, 0.5 * fade)); fg.addColorStop(0.4, rgba(cDeck, 0.28 * fade)); fg.addColorStop(1, "transparent");
+          fg.addColorStop(0, rgba(WHITE, (big ? 0.85 : 0.5) * flashK * dim)); fg.addColorStop(0.4, rgba(cDeck, 0.28 * fade * dim)); fg.addColorStop(1, "transparent");
           ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(cx, cy, fr, 0, PI2); ctx.fill();
-          const sw = TUNE.NOVA_R * D * nv.t;
-          ctx.globalAlpha = fade; ctx.lineWidth = Math.max(1.5, 5 * fade); ctx.strokeStyle = rgba(cDeck2, 1); ctx.shadowBlur = 10; ctx.shadowColor = ctrl.color2 || "#ff3ea8"; // #bloom-runter: Nova-Schockwelle 22→10
-          ctx.beginPath(); ctx.ellipse(cx, cy, sw, sw * (0.55 + 0.45 * TUNE.TILT), 0, 0, PI2); ctx.stroke();
+          // Schockwelle(n): big = drei gestaffelte Ringe (dicker/schneller), sonst einer. Ellipse in der Scheiben-Ebene.
+          const rings = big ? [1, 0.72, 0.48] : [1];
+          for (const rk of rings) {
+            const sw = TUNE.NOVA_R * D * nv.t * (big ? 1.6 : 1) * rk;
+            ctx.globalAlpha = fade * dim * (0.55 + 0.45 * rk);
+            ctx.lineWidth = Math.max(1.5, (big ? 9 : 5) * fade); ctx.strokeStyle = rgba(cDeck2, 1);
+            ctx.shadowBlur = (big && !reduced) ? 16 : 10; ctx.shadowColor = ctrl.color2 || "#ff3ea8";
+            ctx.beginPath(); ctx.ellipse(cx, cy, sw, sw * TUNE.TILT, 0, 0, PI2); ctx.stroke();
+          }
           ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         }
       }

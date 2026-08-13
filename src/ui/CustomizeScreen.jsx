@@ -406,9 +406,13 @@ function BlackholeScene({ deckTint = false }) {
     // Loop-Choreografie: genug Siege, um bis zum (verdoppelten) MAXIMUM aufzubauen (im Showcase sichtbar), dann
     //   Niederlagen bis zum Kollaps → Supernova → kurze Pause → wieder von vorn. ~22 Siege ≈ voller Deckel; die
     //   Sieg-Kadenz ist bewusst geruhsam (640 ms), damit die eingesogenen Karten NICHT als Pulk übereinander liegen.
+    // #338-1: Choreo demonstriert BEIDES — Aufbau, Niederlagen-Shrink, Wiederaufbau bis Max, dann die Implosionsbombe
+    //   (gescripteter „collapse"-Puls, da der 2-Min-am-Max-Timer im Showcase nicht greift). Danach dormant → Loop baut neu auf.
     const seq = [
-      ...Array.from({ length: 22 }, () => ({ kind: "win" })),
-      ...Array.from({ length: 12 }, () => ({ kind: "loss" })),
+      ...Array.from({ length: 14 }, () => ({ kind: "win" })),
+      ...Array.from({ length: 5 }, () => ({ kind: "loss" })),
+      ...Array.from({ length: 16 }, () => ({ kind: "win" })),
+      { kind: "collapse" },
     ];
     let id = 0, i = 0, alive = true; const timers = [];
     // #320: eingesogene Karten = wechselnde „verlorene" Karten → echte Werte (1..10) UND wechselnde Suit-Farben, damit die
@@ -418,8 +422,9 @@ function BlackholeScene({ deckTint = false }) {
     const tick = () => {
       if (!alive) return;
       const step = seq[i % seq.length]; i++; id++;
-      setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length], col: cols[id % cols.length] } : { id, kind: "loss" });
-      timers.push(setTimeout(tick, step.kind === "win" ? 640 : 340));
+      setPulse(step.kind === "win" ? { id, kind: "win", num: nums[id % nums.length], col: cols[id % cols.length] } : { id, kind: step.kind });
+      // Nach dem Kollaps eine Pause (Nova ausklingen + kurz dormant), sonst Sieg 640 ms / Niederlage 340 ms.
+      timers.push(setTimeout(tick, step.kind === "collapse" ? 1600 : step.kind === "win" ? 640 : 340));
     };
     timers.push(setTimeout(tick, 400));
     return () => { alive = false; timers.forEach(clearTimeout); };
@@ -432,7 +437,7 @@ function BlackholeScene({ deckTint = false }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35 }} />}
       <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
       <div ref={oppRef} className="absolute" style={{ left: "72%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
-      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} />
+      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /> {/* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */}
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
