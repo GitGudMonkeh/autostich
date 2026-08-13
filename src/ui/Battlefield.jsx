@@ -62,7 +62,7 @@ const GLITCH_FORCE = cardAnimForce("glitch");
 const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
-import { cubeMatrixZoneProps } from "./fx/effectZones.js"; // feste Effekt-Zone (Boden) → 3D-Feld-Front bündig an den Panel-Rahmen
+import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
@@ -713,8 +713,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const deckGlowOn = pixiEnabled && deckGlow && !!battlefield; // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar, Gate wie Aurora)
   // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
   const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
-  // #zone: feste Effekt-Zone (Boden) → Cube-Matrix-Feld-Front bündig an den unteren Panel-Rahmen (höhenunabhängig).
-  const cmZone = cubeMatrixZoneProps();
+  // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
+  const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
