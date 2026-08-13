@@ -22,7 +22,7 @@ const TUNE = {
   // Karten-Einflug: Karte schrumpft SEHR schnell auf Orbit-Größe (SHRINK_IN-Anteil), umkreist dann das Loch ENG
   //   (ORBIT_R, mehrere Umläufe SPIRAL_TURNS — dabei auch HINTER dem Kern durch, Tiefen-Occlusion via ORBIT_TILT),
   //   erst ab ORBIT_END wird sie spiralig in den Kern gesogen. ORBIT_SC = kleine Orbit-Größe der Karte.
-  FLYIN_DUR: 2.10, SPIRAL_TURNS: 2.6, ORBIT_R: 0.12, ORBIT_SC: 0.26, SHRINK_IN: 0.16, ORBIT_END: 0.80, ORBIT_TILT: 0.5, SPARKS: 2,
+  FLYIN_DUR: 2.10, SPIRAL_TURNS: 2.6, ORBIT_R: 0.12, ORBIT_SC: 0.26, SHRINK_IN: 0.16, ORBIT_END: 0.80, ORBIT_TILT: 0.5, SPARKS: 0, // #: keine Funken beim Einsaugen (SPARKS 2→0)
   // #338-4: Bahn enger an R (war 1.45 → bei großem Loch zu weit) + Deckel gleichzeitiger Flyer → smooth bei Max.
   ORBIT_TIGHT: 1.15, MAX_FLYERS: 6,
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
@@ -31,7 +31,7 @@ const TUNE = {
   DISK_ARMS: 3, DISK_DENSITY: 250, DISK_TURNS: 3.0, DISK_THICK: 1.0, ROT_SPEED: 0.20,
   // Bloom fast auf 0: RING_GLOW 0 (Photonenring nur minimaler Schein), BRIGHT ~1 (Akkretion nicht mehr überbelichtet).
   // #338-3: Photonenring DÜNNER (RING_W · coreR, war 0.13).
-  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.0, BRIGHT: 1.05, RING_W: 0.07,
+  TILT: 0.30, CORE_SIZE: 0.20, RING_GLOW: 0.0, BRIGHT: 0.80, RING_W: 0.07, // #: Akkretion deutlich dunkler (1.05→0.80) — die „Sterne" ums Loch waren zu hell
 };
 
 // #338-4: Kartenmaße modulweit (auch für den Offscreen-Rückseiten-Cache außerhalb der Zeichenschleife).
@@ -177,7 +177,12 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           if (!sim.dormant) implode(true);
         } else { // Sieg
           if (sim.dormant) { sim.dormant = false; sim.level = 0; sim.peakR = 0; }
-          sim.level = Math.min(maxLevel(), sim.level + 1); spawnFlyer(p);
+          sim.level = Math.min(maxLevel(), sim.level + 1);
+          // #: Auf hohem Turbo (schneller Takt) würden zu viele Karten gleichzeitig fliegen → unruhig/unlesbar. Trick:
+          //   den gleichzeitigen Flyer-Deckel dynamisch senken; überzählige Siege spawnen dann KEINE Karte (übersprungen).
+          //   Das Loch wächst trotzdem regulär (level bereits erhöht) — nur die Einflug-Karte entfällt.
+          const cap = speed > 1.6 ? 2 : speed > 1.25 ? 3 : TUNE.MAX_FLYERS;
+          if (sim.flyers.length < cap) spawnFlyer(p);
         }
       }
 
@@ -205,7 +210,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       const drawStars = (arr, aMul) => { ctx.globalCompositeOperation = "source-over";
         for (const s of arr) { s.x += s.dx * sdt; s.y += s.dy * sdt; if (s.x < 0) s.x += W; else if (s.x > W) s.x -= W; if (s.y < 0) s.y += H; else if (s.y > H) s.y -= H;
           ctx.fillStyle = rgba(STAR, aMul); ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, PI2); ctx.fill(); } };
-      if (!reduced) drawStars(bgStars, 0.30);
+      if (!reduced) drawStars(bgStars, 0.20);
 
       // Akkretions-Partikel: Position + Vorder/Hinterseite je Frame berechnen.
       const drawDisk = (frontWanted) => {
@@ -232,7 +237,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           if (p.tt < 0.18) col = mixRGB(col, WHITE, (0.18 - p.tt) / 0.18 * 0.20 * sizeMul * (1 - 0.55 * bigK));
           // klein: Grund-Alpha stärker gedämpft (0.40 statt 0.55 → weniger Weiß-Clip) · groß: +0.45·bigK → vollere,
           //   definierte Partikel (Clamp macht mehr davon voll deckend = knackiger).
-          const a = clamp(p.aj * TUNE.BRIGHT * (0.30 + 0.55 * (1 - p.tt)) * (reduced ? 0.5 : 1) * (0.40 + 0.60 * sizeMul) * (1 + 0.45 * bigK), 0, 1);
+          const a = clamp(p.aj * TUNE.BRIGHT * (0.30 + 0.55 * (1 - p.tt)) * (reduced ? 0.5 : 1) * (0.24 + 0.62 * sizeMul) * (1 + 0.45 * bigK), 0, 1); // #: klein noch stärker gedämpft (0.40→0.24) → kein greller Blob am kleinen Loch
           const sz = p.sz * TUNE.DISK_THICK * (0.7 + 0.9 * (1 - p.tt));
           ctx.fillStyle = rgba(col, a); ctx.beginPath(); ctx.arc(x, y, sz, 0, PI2); ctx.fill();
         }
@@ -326,7 +331,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
       // 8) Vordergrund-Sterne (über dem Loch sichtbar).
-      if (!reduced) drawStars(fgStars, 0.46);
+      if (!reduced) drawStars(fgStars, 0.30);
 
       // Nova: heller Flash + elliptische Schockwelle(n) IN DER SCHEIBEN-EBENE (Neigung = TUNE.TILT, #338-1). `big` =
       //   2-Min-am-Max-Kollaps → Implosionsbombe: greller Flash, mehrere schnelle/dicke Ringe. reduced dämpft (Photosensitivität).
