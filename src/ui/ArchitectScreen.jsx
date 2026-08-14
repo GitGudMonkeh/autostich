@@ -19,7 +19,7 @@ import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { useEscape } from "./useEscape.js";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -586,19 +586,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
             Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
             Hero-Leiste der Aufstellphase. */}
-        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #20303d", background: "#0e1a24" }}>
+        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
             title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Gebäude-Boost</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
-          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "#20303d" }}>
+          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Baufeld</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
             <span className="text-[9px] font-mono opacity-45">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</span>
           </div>
           {state.lastCycleScore != null && (
-            <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "#20303d" }}>
+            <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
               <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Durchlauf-Score</span>
               <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
               {scoreHasDiff && <span className="text-[10px] font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
@@ -608,7 +608,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
-          <section ref={boardSectionRef} className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+          <section ref={boardSectionRef} className="rounded-xl p-3 order-2 md:order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
             {/* #UI: Farbauswahl (colorLocked-Gebäude: Buntglas/Zunfthaus) sitzt jetzt DIREKT über dem Brett — zwischen der
                 Bestätigen-Leiste (mobil darüber) und dem Brett. Eigener Rahmen + Abstand nach unten, damit man beim Tippen
                 der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
@@ -832,7 +832,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           <section className="contents md:flex md:flex-col md:gap-4 md:order-2">
             {/* Bau-Assistent (Referenz + Anleitung + Farbwahl) — scrollt normal. Die Aktions-Buttons stehen in der
                 schwebenden Leiste darunter (#UI „nur Buttons"). */}
-            <div className="rounded-xl p-3 order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+            <div className="rounded-xl p-3 order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
               <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}

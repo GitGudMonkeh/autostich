@@ -44,7 +44,7 @@ export const PANEL_CARD = {
 };
 
 /* ---- Phasen-Schale (In-Run-Overlays an die Hub-Bildsprache angeglichen) ----
-   Die Phasen behalten ihre Farb-Identität (Perk/Skill violett, Aufstellung/Ziel grün, Gletscher eisblau,
+   Die Phasen behalten ihre Farb-Identität (Perk rot, Skill violett, Aufstellung/Ziel grün, Gletscher eisblau,
    Legendär gold, Architekt blau); der Skin macht sie zur Familie, ohne sie gleichzuschalten. NUR die Schale
    (Hintergrund/Rahmen/Schein + gemeinsame Tri-Color-Haarlinie) kommt von hier — das Innenleben der Screens
    (Grids, Karten, Buttons, Klappfelder) bleibt unverändert. */
@@ -68,6 +68,20 @@ export function phaseCard(accent, base = ["#1b1a24", "#141019"]) {
     boxShadow: `0 0 26px rgba(${rgb},.12), 0 14px 44px rgba(0,0,0,.42)`,
   };
 }
+// Inneres Struktur-Panel in der Phasen-Identitätsfarbe rahmen (Gegenstück zu UpgradeScreen.panelStyle, hier
+// geteilt): dünner farbiger Rahmen + zarter Tint-Gradient (oben ~7 % Akzent → `base`) + weicher Außen-Glow.
+// NUR für NEUTRALE Struktur-Boxen (Stat-Readouts, Board-/Assistent-Container) gedacht — bedeutungscodierte Ränder
+// (Rarität/Fraktion/Eis/Zustand) bleiben unberührt. `accent` = PHASE_ACCENTS-Eintrag; `base` = Settle-Ton des Tints
+// (Default Menü-Familienton; der Architekt reicht seinen blauen Grund durch).
+export function phasePanel(accent, base = "#141419") {
+  const { c, rgb } = accent;
+  return {
+    background: `linear-gradient(180deg, rgba(${rgb},.07), ${base} 62%)`,
+    border: `1px solid rgba(${rgb},.42)`,
+    boxShadow: `0 0 22px -16px ${c}`,
+  };
+}
+
 // Tri-Color-Haarlinie bündig an der oberen Kante der Phasen-Karte. ABSOLUT positioniert (außerhalb des Flusses),
 // damit sie den Kopfinhalt NICHT nach oben zieht — die Karte behält ihr volles oberes Padding. Die Karte muss
 // `relative` sein; die runden Ecken klippen die Linie (overflow-y-auto ⇒ auch x). padX/padY werden nicht mehr

@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
@@ -148,12 +148,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
 
         {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold.
             Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}
-        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={{ border: "1px solid #26262e", background: "#1a1a22" }}>
+        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.green)}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formations-Bonus</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>+{pctOf(curStrength)} %</span>
           </div>
-          <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "#26262e" }}>
+          <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formationen</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>

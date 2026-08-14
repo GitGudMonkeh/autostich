@@ -1,5 +1,5 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
+import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { PerkList, DeckStrength } from "./BuildSummary.jsx";
@@ -53,11 +53,11 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
+          <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
             {(state.perks || []).length === 0 ? "Start" : `Durchlauf ${(state.cycle || 0) + 1}`}
           </div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
@@ -146,7 +146,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             <DeckStrength deck={deck} />
           </CollapsibleField>
           {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
-          <div className="mt-3 rounded-xl px-3 py-3" style={{ border: "1px solid #2a2a33" }}>
+          <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
             <FormationPanel state={state} title="Formationen" collapsible defaultOpen={false} />
           </div>
           <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
