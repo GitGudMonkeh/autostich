@@ -998,7 +998,7 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
           return (
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
-              style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55, 0 0 16px #54e08a22" : undefined }}>
+              style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55" : undefined }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
                 <DeckThumb deckId={pack.deckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
@@ -1361,7 +1361,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   return (
     <>
       {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
-      <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", boxShadow: "0 0 22px -10px #35e0ff66" }}>
+      <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a" }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
             (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
@@ -1421,8 +1421,8 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
       className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
       style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
         border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
-        boxShadow: selected ? "0 0 0 1px #9b82f0, 0 0 14px #9b82f022" : undefined }}>
-      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, boxShadow: `0 0 8px ${tint}66`, opacity: owned ? 1 : 0.85 }} />
+        boxShadow: selected ? "0 0 0 1px #9b82f0" : undefined }}>
+      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, opacity: owned ? 1 : 0.85 }} />
       <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
       <span className="flex items-center gap-1.5 text-[10px] font-bold shrink-0" style={{ color: status.c }}>
         {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}

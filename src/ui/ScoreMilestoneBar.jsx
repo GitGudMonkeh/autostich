@@ -51,14 +51,12 @@ export function ScoreMilestoneBar({ score = 0, challengeMods = [] }) {
   const accHi = TIER_HI[Math.min(reached, TIER_HI.length - 1)];
   const pct = Math.round(fill * 100);
 
-  // Neuer Panel-Rahmen (Design-Sweep): statischer Rahmen + zarter Tint + weicher Glow in der STUFENFARBE (acc) —
-  // wächst mit dem Fortschritt mit (Cyan→Grün→Blau→Violett→Gold, wie Balken & Zahl). Ersetzt den alten animierten
-  // as-panel-Sweep-Rahmen (kein Dauer-Repaint, ruhiger). Farbwechsel am Meilenstein sanft überblendet.
+  // Panel-Rahmen: NUR ein crisper Rahmen in der STUFENFARBE (acc) auf flachem Grund — kein Glow, kein Tint (clean).
+  // Wächst mit dem Fortschritt mit (Cyan→Grün→Blau→Violett→Gold, wie Balken & Zahl); Farbwechsel sanft überblendet.
   const frame = {
-    background: `linear-gradient(180deg, ${acc}14, #141019 62%)`,
+    background: "#141019",
     border: `1px solid ${acc}66`,
-    boxShadow: `0 0 22px -16px ${acc}`,
-    transition: "border-color .5s ease, box-shadow .5s ease",
+    transition: "border-color .5s ease",
   };
 
   return (

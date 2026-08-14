@@ -9,14 +9,12 @@ export const MODAL_CARD = {
   border: "1px solid #2c2a3a",
 };
 
-// Neutrales Menü-Panel im neuen Design (Stats/Analyse/Listen-Kacheln etc.): dezenter Verlauf (leiser Violett-Hauch
-// oben → dunkler Grund) + weicher violett-tendierter Rahmen + ganz leiser Glow. Ersetzt die flachen #141419/#26262e-
-// Kästen, damit die Menü-Panels einheitlich zur gerahmten Bildsprache der übrigen Screens passen. Nur Optik, neutral
-// (keine eigene Akzentfarbe) → überall gleich einsetzbar.
+// Neutrales Menü-Panel im neuen Design (Stats/Analyse/Listen-Kacheln etc.): flacher dunkler Grund + weicher
+// violett-tendierter Rahmen. KEIN Glow, kein Farb-Tint (wirkte „billig ad-game") — nur der crispe Rahmen macht
+// die einheitliche gerahmte Bildsprache. Neutral (keine Akzentfarbe) → überall gleich einsetzbar.
 export const MENU_PANEL = {
-  background: "linear-gradient(180deg, rgba(155,130,240,.045), #141320 70%)",
+  background: "#141320",
   border: "1px solid #302d40",
-  boxShadow: "0 0 20px -16px rgba(155,130,240,.8)",
 };
 
 export const HAIRLINE = { background: "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)", opacity: 0.85 };
@@ -79,16 +77,15 @@ export function phaseCard(accent, base = ["#1b1a24", "#141019"]) {
   };
 }
 // Inneres Struktur-Panel in der Phasen-Identitätsfarbe rahmen (Gegenstück zu UpgradeScreen.panelStyle, hier
-// geteilt): dünner farbiger Rahmen + zarter Tint-Gradient (oben ~7 % Akzent → `base`) + weicher Außen-Glow.
+// geteilt): NUR ein crisper farbiger Rahmen auf flachem `base`-Grund — kein Glow, kein Farb-Tint innen (clean).
 // NUR für NEUTRALE Struktur-Boxen (Stat-Readouts, Board-/Assistent-Container) gedacht — bedeutungscodierte Ränder
-// (Rarität/Fraktion/Eis/Zustand) bleiben unberührt. `accent` = PHASE_ACCENTS-Eintrag; `base` = Settle-Ton des Tints
+// (Rarität/Fraktion/Eis/Zustand) bleiben unberührt. `accent` = PHASE_ACCENTS-Eintrag; `base` = flacher Grundton
 // (Default Menü-Familienton; der Architekt reicht seinen blauen Grund durch).
 export function phasePanel(accent, base = "#141419") {
-  const { c, rgb } = accent;
+  const { rgb } = accent;
   return {
-    background: `linear-gradient(180deg, rgba(${rgb},.07), ${base} 62%)`,
+    background: base,
     border: `1px solid rgba(${rgb},.42)`,
-    boxShadow: `0 0 22px -16px ${c}`,
   };
 }
 

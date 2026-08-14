@@ -33,13 +33,11 @@ const GEN_LANES = [
 const nodeAccent = (n, laneAccent) =>
   n.maxTier ? tierColor(n.maxTier) : n.legLayer ? GOLD : (n.arch ? FACTION_GLOW[n.arch] : laneAccent);
 
-// Gruppen-Panel in der Gruppen-/Archetyp-Farbe rahmen — statt neutralem Grau. Dünner farbiger Rahmen +
-// zarter Tint-Gradient (oben ~7 % Farbe → dunkler Grund) + weicher Außen-Glow → jede Gruppe ist auf einen
-// Blick ihrer Farbe zuzuordnen (Feuer/Eis/Blitz/Pflanze bzw. Cyan/Violett bei Allgemein), ohne laut zu werden.
+// Gruppen-Panel in der Gruppen-/Archetyp-Farbe rahmen — NUR ein crisper farbiger Rahmen auf flachem, dunklem Grund.
+// Kein Glow, kein Farb-Tint innen (wirkte „billig ad-game") → jede Gruppe ist allein am Rahmen zuzuordnen, ruhig/clean.
 const panelStyle = (c) => ({
-  background: `linear-gradient(180deg, ${c}12, #141419 62%)`,
+  background: "#141419",
   border: `1px solid ${c}66`,
-  boxShadow: `0 0 22px -16px ${c}`,
 });
 
 // Innerer Inhalt einer Pille (Titel + Marke) — zentriert, damit gleich breite Pillen sauber in Spalten sitzen.
@@ -157,8 +155,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Upgrades</h2>
-            <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold min-w-0 truncate">Upgrades</h2>
+            <div className="flex items-center gap-2.5 shrink-0">
               <span className="flex items-baseline gap-1">
                 <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
                 <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>SP</span>
