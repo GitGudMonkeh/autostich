@@ -1,5 +1,6 @@
 import { fmtScore } from "./format.js";
 import { RunTimer } from "./RunTimer.jsx";
+import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
    in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
@@ -50,10 +51,10 @@ export function StatusBar({
   return (
     <div className="sticky top-0 z-20 -mx-1">
       <div className="as-statusbar flex flex-col rounded-xl overflow-hidden as-panel"
-        style={{ background: "linear-gradient(180deg,#1b1a24f2,#141019f2)", border: "1px solid #2c2a3a", backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
+        style={{ background: "linear-gradient(180deg,#1b1a24f2,#141019f2)", border: `1px solid ${DECK_BORDER}`, backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
 
         {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon. */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: "1px solid #26262e" }}>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
           {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
           <button type="button" onClick={onTogglePause} title={paused ? "Weiter" : "Pause"}
             className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
@@ -78,7 +79,7 @@ export function StatusBar({
           {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
           <div className="ml-auto flex items-stretch">
             <MiniCell label="Runde"><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
-            <MiniCell label="Zeit" className="border-l border-[#26262e]">
+            <MiniCell label="Zeit" className="border-l border-[color:var(--deck-border)]">
               {/* #perf A1: selbst-tickender Timer-Leaf statt App-weitem 250-ms-Tick; Fallback = statischer timeStr. */}
               {getElapsed
                 ? <RunTimer getElapsed={getElapsed} ticking={timerTicking} paused={paused} />
@@ -104,12 +105,12 @@ export function StatusBar({
             <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
           {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
-          <Cell label="Serie" className="border-l border-[#26262e]">
+          <Cell label="Serie" className="border-l border-[color:var(--deck-border)]">
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
             <span className="text-[9px] opacity-45 ml-1">best {bestStreak}</span>
           </Cell>
           {/* Mult — ganz rechts. */}
-          <Cell label="Mult" className="border-l border-[#26262e]">
+          <Cell label="Mult" className="border-l border-[color:var(--deck-border)]">
             <span className={mult?.shakeClass || ""}>
               <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
                 style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,

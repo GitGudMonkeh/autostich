@@ -33,9 +33,14 @@ export const PANEL_BG = "#1b1a24";
 /* Gemeinsame In-Run-Panel-Schale: StatusBar · Battlefield · Fraktions-Panels · Analyse · Build teilen dieselbe
    Verlaufsfläche + denselben Rahmen, damit der Spielscreen als EIN System liest (statt flachem #17171c/#14131c-Mix
    wie bisher). Akzent (Fraktionsfarbe) + dynamische Sieg-/Krit-Aura liegen weiterhin oben drauf. */
+// #356: deck-getönter Rahmen für die NEUTRALEN Struktur-Panels (StatusBar/StatusRail/Build/Formation/IndicatorPanel).
+// Auflösung in index.css (--deck-border = color-mix aus der Deckfarbe --deck-a1, am Run-Container gesetzt, + dunklem
+// Grund). Ohne --deck-a1 (Menü/deckloser Fallback) bleibt ein neutraler Grauton. Fraktions-/Zustands-gefärbte Rahmen
+// nutzen das bewusst NICHT (die kodieren Bedeutung). Deck-Anteil (45 %) in index.css tunebar. [TUNING]
+export const DECK_BORDER = "var(--deck-border)";
 export const PANEL_CARD = {
   background: "linear-gradient(180deg,#1b1a24,#141019)",
-  border: "1px solid #2c2a3a",
+  border: `1px solid ${DECK_BORDER}`,
 };
 
 /* ---- Phasen-Schale (In-Run-Overlays an die Hub-Bildsprache angeglichen) ----

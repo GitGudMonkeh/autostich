@@ -734,7 +734,11 @@ export function Autostich() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    <div className="app-root relative w-full flex justify-center">
+    // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
+    //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Nur während eines Laufs gesetzt; im Menü/ohne Deck
+    //   ungesetzt → die Rahmen fallen auf ihren neutralen Grauton zurück. Wechselt das Deck, ziehen die Rahmen mit.
+    <div className="app-root relative w-full flex justify-center"
+      style={inRun ? { "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined } : undefined}>
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />

@@ -4,6 +4,10 @@
 /* #314: iOS Safari vergrößert Text in manchen Layouts automatisch („text inflation") → Elemente wirken auf dem
    iPhone zu groß. text-size-adjust: 100% pinnt die vom Layout gesetzte Größe (kein Effekt auf Desktop/Android). */
 html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* #356: deck-getönter Rahmen der NEUTRALEN Struktur-Panels. --deck-a1 setzt App.jsx am Run-Container (aktive Deckfarbe);
+   fehlt sie (Menü/deckloser Fallback), greift der neutrale Grauton #2c2a3a. Der Deck-Anteil (45 %) ist hier tunebar.
+   Lazy substituiert → pro Element mit der dort kaskadierten --deck-a1 aufgelöst (in-Run getönt, außerhalb neutral). */
+:root { --deck-border: color-mix(in srgb, var(--deck-a1, #2c2a3a) 45%, #17171c); }
 * { box-sizing: border-box; }
 button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }

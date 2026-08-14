@@ -7,12 +7,13 @@ import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
+import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 
 // #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
 // Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
 function Collapsible({ title, collapsed, onToggle, children }) {
   return (
-    <div className="pt-1 border-t" style={{ borderColor: "#26262e" }}>
+    <div className="pt-1 border-t" style={{ borderColor: DECK_BORDER }}>
       <button type="button" onClick={onToggle} data-sfx="none"
         className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80"
         style={{ background: "transparent" }} aria-expanded={!collapsed}>
@@ -27,7 +28,7 @@ function Collapsible({ title, collapsed, onToggle, children }) {
 // Gameplay-Neu-Aufbau: Kennzahl-Kachel im Karten-Stil für den Multiplikator-Cluster (Formation/Gebäude/Crit).
 function MCell({ label, value, tone, sub }) {
   return (
-    <div className="rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: "#141419", border: "1px solid #26262e" }}>
+    <div className="rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
       <div className="text-[9px] uppercase tracking-wide opacity-50 truncate">{label}</div>
       <div className="font-bold text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: tone || "#e8e8ea" }}>
         {value}{sub && <span className="text-[10px] opacity-45 ml-1">{sub}</span>}
@@ -84,7 +85,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     // den Gebäude-Wert-Bonus, ohne die anderen Deps zu berühren (sonst zeigte der HUD-Prozentwert veraltet).
   }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
   return (
-    <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: "1px solid #2c2a3a" }}>
+    <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>
         <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2">Multiplikatoren</div>
@@ -97,7 +98,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       </div>
 
       {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier. */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs pt-2 border-t" style={{ borderColor: "#26262e" }}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs pt-2 border-t" style={{ borderColor: DECK_BORDER }}>
         <span><span className="opacity-50">Siege </span><b style={{ color: "#5ab87a" }}>{wins}</b></span>
         <span><span className="opacity-50">Verl. </span><b style={{ color: "#e0605a" }}>{losses}</b></span>
         <span><span className="opacity-50">Quote </span><b style={{ color: winPct == null ? "#e8e8ea" : winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct == null ? "–" : `${winPct}%`}</b></span>
@@ -106,7 +107,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       </div>
 
       {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}
-      <div className="pt-2 border-t grid gap-1" style={{ borderColor: "#26262e" }}>
+      <div className="pt-2 border-t grid gap-1" style={{ borderColor: DECK_BORDER }}>
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-wide opacity-50">Analyse</span>
           <span className="text-xs" title={fmtScore(best)}><span className="opacity-50">Bester </span><b style={{ color: "#d4a63a" }}>{fmtScoreShort(best)}</b></span>
