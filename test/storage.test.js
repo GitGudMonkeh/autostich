@@ -425,11 +425,61 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
   });
 });
 
+describe("#349 Datenintegrität (storage)", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  it("recordRun übernimmt ALLE Profilfelder via Spread (kein Feld-Drift)", () => {
+    const base = loadProfile();                 // frisches Profil = {...DEFAULT_PROFILE, ...}
+    saveProfile({ ...base, zukunftsFeld: 42 });  // ein künftig ergänztes Feld simulieren
+    const { profile } = recordRun({ score: 1000, ts: 1, completed: true });
+    for (const key of Object.keys(base)) expect(profile, `Feld ${key} bleibt erhalten`).toHaveProperty(key);
+    expect(profile.zukunftsFeld, "künftiges Profilfeld überlebt den Laufabschluss").toBe(42);
+  });
+
+  it("migrateProfile lässt ein Profil aus neuerem Build (schemaVersion > aktuell) unangetastet", () => {
+    const future = { schemaVersion: PROFILE_SCHEMA_VERSION + 1, deckPoints: 999, zukunft: "x" };
+    const out = migrateProfile(future);
+    expect(out.schemaVersion, "nicht heruntergestuft").toBe(PROFILE_SCHEMA_VERSION + 1);
+    expect(out.zukunft).toBe("x");
+  });
+
+  it("recordRun beschneidet die Historie bei QuotaExceeded (älteste deckSnapshots weg, jüngste bleiben) + signalisiert", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const many = Array.from({ length: 12 }, (_, i) => ({ score: i, ts: i, deckSnapshot: { cards: [1, 2, 3] } }));
+    global.localStorage.setItem("as_runhistory", JSON.stringify(many));
+    const real = global.localStorage;
+    let threw = false;
+    global.localStorage = {
+      getItem: (kk) => real.getItem(kk), removeItem: (kk) => real.removeItem(kk), clear: () => real.clear(),
+      setItem: (kk, v) => { if (kk === "as_runhistory" && !threw) { threw = true; const e = new Error("voll"); e.name = "QuotaExceededError"; throw e; } return real.setItem(kk, v); },
+    };
+    recordRun({ score: 999, ts: 999, completed: true, deckSnapshot: { cards: [9] } });
+    const saved = JSON.parse(global.localStorage.getItem("as_runhistory"));
+    expect(saved[0].deckSnapshot, "jüngster Lauf behält den Snapshot").toBeTruthy();
+    expect(saved[saved.length - 1].deckSnapshot, "ältester Lauf wird beschnitten").toBeUndefined();
+    expect(warn, "Quota-Fehler wird signalisiert (nicht stumm)").toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
 describe("Aktiver Lauf (Resume / Auto-Save)", () => {
   beforeEach(() => { global.localStorage = mockLS(); });
   afterEach(() => { delete global.localStorage; });
 
-  const runState = (over = {}) => ({ phase: "play", deck: [{ id: "R1", value: 3 }], cycle: 4, score: 1234, ...over });
+  // #349 B: vollständiger Kern-Shape (Pflichtfelder, die isResumableRunState prüft).
+  const runState = (over = {}) => ({ phase: "play", deck: [{ id: "R1", value: 3 }], oppDeck: [{ id: "O1", value: 2 }],
+    perks: [], skills: [], pos: 0, cycle: 4, trickNo: 0, score: 1234, ...over });
+
+  // #349 B: Alt-/inkompatibler Snapshot (Kern-Pflichtfeld fehlt/verrutscht) → sauber verwerfen statt in den Reducer laden.
+  it("verwirft Snapshot mit kaputtem State-Shape (Pflichtfeld fehlt) → null", () => {
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ deck: "nope" }) }));
+    expect(loadActiveRun()).toBeNull(); // deck kein Array
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ score: undefined }) }));
+    expect(loadActiveRun()).toBeNull(); // Pflicht-Zahl fehlt (undefined wird von JSON verworfen)
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ skills: null }) }));
+    expect(loadActiveRun()).toBeNull(); // skills kein Array
+  });
 
   it("saveActiveRun → loadActiveRun rundet State + meta zurück", () => {
     const s = runState();

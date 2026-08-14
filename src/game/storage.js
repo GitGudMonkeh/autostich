@@ -115,6 +115,9 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
 export function migrateProfile(p) {
   if (!p || typeof p !== "object") return p;
   let v = typeof p.schemaVersion === "number" ? p.schemaVersion : 0;
+  // #349 C: Profil aus einem NEUEREN Build (Rollback/Preview-Mix, v > aktuelle Schema-Version) NICHT anfassen oder
+  //   herunterstufen — unverändert zurückgeben. So bleiben neuere Felder erhalten und es läuft keine falsche Rück-Migration.
+  if (v > PROFILE_SCHEMA_VERSION) return { ...p };
   const out = { ...p };
   if (v < 1) {
     // v0 (unversioniert) → v1 (aktuelle Baseline): Alt-Profile sind strukturell bereits v1-kompatibel — fehlende
@@ -185,7 +188,8 @@ export function loadProfile() {
 // Profil-Blob persistieren (mit aktueller Schema-Version gestempelt). Für die Baum-Kauf-/Respec-Flows
 // (progression.buyNode/respec liefern ein neues Profil → hier speichern). recordRun schreibt separat.
 export function saveProfile(profile) {
-  const out = { ...profile, schemaVersion: PROFILE_SCHEMA_VERSION };
+  // #349 C: einen bereits höheren (neueren Build) Versions-Stempel nicht herunterstufen.
+  const out = { ...profile, schemaVersion: Math.max(PROFILE_SCHEMA_VERSION, Number(profile?.schemaVersion) || 0) };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(out)); } catch (e) {}
   return out;
 }
@@ -246,11 +250,33 @@ export function isMeisterNoRerollRun(record) {
   return !!record && record.completed === true && record.ranked === "meister" && n0(record.rerollsUsed) === 0;
 }
 
+// #349 C: Quota-Fehler nicht mehr komplett stumm schlucken. Einmal signalisieren (nicht spammen) + die Lauf-Historie
+//   progressiv beschneiden, damit der Fortschritt weiter persistiert (der schwere deckSnapshot ist der größte Posten).
+let _quotaWarned = false;
+const isQuotaError = (e) => !!e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+function signalQuota(where) {
+  if (_quotaWarned) return; _quotaWarned = true;
+  try { console.warn(`[storage] Speicher voll (QuotaExceeded) bei ${where} — Lauf-Historie wird beschnitten; Fortschritt kann eingeschränkt persistiert werden.`); } catch (e) {}
+}
+const stripSnapshot = (r) => { if (!r || !r.deckSnapshot) return r; const { deckSnapshot, ...rest } = r; return rest; };
+// Historie speichern; bei Quota-Fehler zunehmend beschneiden: erst deckSnapshots der ÄLTEREN Läufe fallenlassen (die
+// jüngsten behalten die volle Detailansicht), dann nur die jüngsten Läufe ganz ohne Snapshot. Nicht-Quota-Fehler still.
+const HISTORY_FULL_SNAPSHOTS = 6;
+function saveRunHistory(history) {
+  const key = k("as_runhistory");
+  try { localStorage.setItem(key, JSON.stringify(history)); return; } catch (e) { if (!isQuotaError(e)) return; }
+  signalQuota("Lauf-Historie");
+  const pruned = history.map((r, i) => (i < HISTORY_FULL_SNAPSHOTS ? r : stripSnapshot(r))); // ältere ohne Snapshot
+  try { localStorage.setItem(key, JSON.stringify(pruned)); return; } catch (e) { if (!isQuotaError(e)) return; }
+  const minimal = history.slice(0, HISTORY_FULL_SNAPSHOTS).map(stripSnapshot);                // nur die jüngsten, snapshotlos
+  try { localStorage.setItem(key, JSON.stringify(minimal)); } catch (e) { /* aufgegeben — bereits signalisiert */ }
+}
+
 // Einen abgeschlossenen Lauf in die Historie voranstellen (auf CAP gedeckelt) UND die kumulierten
 // Profil-Totals fortschreiben. Gibt { history, profile } für ein sofortiges UI-Update zurück.
 export function recordRun(record) {
   const history = [record, ...loadRunHistory()].slice(0, RUN_HISTORY_CAP);
-  try { localStorage.setItem(k("as_runhistory"), JSON.stringify(history)); } catch (e) {}
+  saveRunHistory(history);
   const p = loadProfile();
   const arch = new Set(p.archetypesEver);
   for (const a of (record.archetypes || [])) arch.add(a);
@@ -284,7 +310,10 @@ export function recordRun(record) {
   const unlocks = onboardingUnlocks(onboardingBefore, onbAfter);
   const ownedCosmetics = (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {};
   const profile = {
-    schemaVersion: PROFILE_SCHEMA_VERSION, // #229 T11: gespeicherte Profile tragen die Version (Migrations-Anker)
+    // #349 A: Basis via Spread übernehmen → ein künftig zu DEFAULT_PROFILE ergänztes Feld geht NICHT mehr still verloren,
+    //   wenn es hier vergessen wird. Die berechneten Felder unten überschreiben die Spread-Werte gezielt.
+    ...p,
+    schemaVersion: Math.max(PROFILE_SCHEMA_VERSION, Number(p.schemaVersion) || 0), // #229 T11 Migrations-Anker · #349 C: neueren Stempel nicht herunterstufen
     games: p.games + 1,
     totalScore: p.totalScore + n0(record.score),
     totalDurationMs: p.totalDurationMs + n0(record.durationMs),
@@ -382,10 +411,27 @@ export function saveSeenGuide() {
    (Lauf-Timer, runId, Geist-Linie), die nicht im Reducer-State stehen.
    Schema-Stempel: nach einem Deploy mit inkompatiblem State-Shape wird ein Alt-Snapshot verworfen (nie ein
    kaputter Run geladen). Menü-/Gameover-Snapshots gelten nicht als „fortsetzbar". */
-export const ACTIVE_RUN_SCHEMA = 1; // bei breaking change am Reducer-State-Shape hochzählen → Alt-Snapshots werden verworfen
+// #349 B: KONVENTION — ACTIVE_RUN_SCHEMA bei JEDER breaking change am Reducer-State-Shape (umbenanntes/entferntes
+//   Pflichtfeld, geänderte Semantik) hochzählen → Alt-Snapshots werden verworfen. Als zweite Absicherung gegen ein
+//   vergessenes Bump prüft isResumableRunState() zusätzlich die Kern-Pflichtfelder tief: fehlt/verrutscht eines, wird
+//   der Snapshot sauber verworfen (null) statt in den neuen Reducer geladen zu werden (Mid-Run-Crash/Korruption).
+export const ACTIVE_RUN_SCHEMA = 1;
+function isResumableRunState(s) {
+  if (!s || typeof s !== "object") return false;
+  if (typeof s.phase !== "string" || s.phase === "menu" || s.phase === "gameover") return false;
+  // Pflicht-Arrays: Kernstruktur eines laufenden Reducer-States (Spieler-/Gegner-Deck, Perks, Skills).
+  for (const key of ["deck", "oppDeck", "perks", "skills"]) {
+    if (!Array.isArray(s[key])) return false;
+  }
+  // Pflicht-Zahlen: Positions-/Score-Zähler, die Reducer & Battlefield sofort lesen.
+  for (const key of ["pos", "cycle", "trickNo", "score"]) {
+    if (typeof s[key] !== "number" || !Number.isFinite(s[key])) return false;
+  }
+  return true;
+}
 export function saveActiveRun(state, meta = {}) {
   try {
-    if (!state || !state.deck || state.phase === "menu" || state.phase === "gameover") return;
+    if (!isResumableRunState(state)) return; // nur fortsetzbare (nicht-Menü/Gameover) Kern-States sichern
     localStorage.setItem(k("as_activerun"), JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state, meta }));
   } catch (e) {}
 }
@@ -394,8 +440,7 @@ export function loadActiveRun() {
     const raw = localStorage.getItem(k("as_activerun"));
     if (raw) {
       const b = JSON.parse(raw);
-      if (b && b.schema === ACTIVE_RUN_SCHEMA && b.state && b.state.deck &&
-          b.state.phase !== "menu" && b.state.phase !== "gameover")
+      if (b && b.schema === ACTIVE_RUN_SCHEMA && isResumableRunState(b.state))
         return { state: b.state, meta: b.meta || {} };
     }
   } catch (e) {}
