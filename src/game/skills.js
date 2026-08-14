@@ -343,16 +343,10 @@ export const activeLightningCount = (skills) => (skills || []).filter((id) => SK
 export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
 // Hitze-Maximum (fix 100).
 export const heatMaxFor = () => C.HEAT_MAX;
-// Erster gehaltener Hitze-Konsument („conflagration"/„melt") oder null. #234: Feuer darf mehrere gleichzeitig halten →
-// die Engine nutzt NICHT mehr diesen (First-only), sondern hasHeatConsumer je Typ. Hier nur noch für Kompatibilität.
-export function heatConsumerOf(skills) {
-  for (const id of skills || []) { const c = SKILL_DEFS[id]?.heatConsumer; if (c) return c; }
-  return null;
-}
 // Anzahl gehaltener Hitze-Konsumenten (#234: informativ — nicht mehr im Reducer geblockt, seit Feuer mehrere halten darf).
 export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
 // Hält der Spieler den Hitze-Konsumenten `kind` ("conflagration"/"melt")? #234: mehrere gleichzeitig erlaubt (heben sich
-// nicht auf) → die Engine prüft jeden Konsumenten EINZELN hiermit, statt nur den ersten (heatConsumerOf).
+// nicht auf) → die Engine prüft jeden Konsumenten EINZELN hiermit, statt nur den ersten.
 export const hasHeatConsumer = (skills, kind) => (skills || []).some((id) => SKILL_DEFS[id]?.heatConsumer === kind);
 
 // Hitzegewinn bei Sieg (%). ctx = { winStreak, lostLast, deficit } für Serie/Rückzündung.
@@ -676,7 +670,6 @@ export const hasBlitzschlag    = (skills) => lightFlag(skills, "blitzschlag");  
 export const hasDauerstrom     = (skills) => lightFlag(skills, "dauerstrom");     // Serie → Ladung (+ On-Consume-Crit-Rampe)
 export const hasSeriesCrit     = (skills) => lightFlag(skills, "seriesCrit");     // Ladungsserie: Serie → Crit-Chance (kein Verbraucher)
 export const hasBlitzableiter  = (skills) => lightFlag(skills, "chargeOnCrit");   // Blitzableiter: Crit → Ladung (+ Ladung zurück bei Verbrauch)
-export const hasWetterleuchten = (skills) => lightFlag(skills, "wetterleuchten"); // Serienschwellen → ionisieren
 export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge"); // L: Konsumenten ×2
 export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
 export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
