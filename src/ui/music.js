@@ -17,6 +17,8 @@ import static_bloom from "../assets/music/static_bloom.m4a";
 import cobalt_drift from "../assets/music/cobalt_drift.m4a";
 import low_beam from "../assets/music/low_beam.m4a";
 import soft_reset from "../assets/music/soft_reset.m4a";
+import still_frame from "../assets/music/still_frame.m4a";
+import faded_neon from "../assets/music/faded_neon.m4a";
 // Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import neon_card_game from "../assets/music/neon_card_game.m4a";
 // v0.4-Batch (5 neue mid-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
@@ -97,6 +99,8 @@ const POOL = [
   { title: "Cobalt Drift", url: cobalt_drift, tier: "calm" },
   { title: "Low Beam", url: low_beam, tier: "calm" },
   { title: "Soft Reset", url: soft_reset, tier: "calm" },
+  { title: "Still Frame", url: still_frame, tier: "calm" },
+  { title: "Faded Neon", url: faded_neon, tier: "calm" },
   // mid
   { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
   { title: "Relay of Multipliers", url: relay_of_multipliers, tier: "mid" },
