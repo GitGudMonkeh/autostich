@@ -4,7 +4,6 @@
 // jeder Meilenstein = ein Viertel der Leiste. Bewusst grob (Balatro-Geist) — rein informativ, keine Engine-Kopplung.
 import { milestoneBarState } from "../game/progression.js";
 import { normalizeActive } from "../game/challenges.js"; // #301: Challenge-Ziel-Fortschritt (zweite Leiste)
-import { DECK_BORDER } from "./modalStyle.jsx"; // #365-Folge: deck-getönter Rahmen (Meilenstein-Panel; Füllung bleibt Tier-Farbe)
 
 // Aufsteigende Neon-Palette (Logo-Verlauf): Farbe je erreichter Stufe 0..4 — Cyan → Grün → Blau → Violett → Gold.
 const TIER = ["#26c6e6", "#4ade80", "#5a8ade", "#9b82f0", "#f2a83a"];
@@ -52,8 +51,18 @@ export function ScoreMilestoneBar({ score = 0, challengeMods = [] }) {
   const accHi = TIER_HI[Math.min(reached, TIER_HI.length - 1)];
   const pct = Math.round(fill * 100);
 
+  // Neuer Panel-Rahmen (Design-Sweep): statischer Rahmen + zarter Tint + weicher Glow in der STUFENFARBE (acc) —
+  // wächst mit dem Fortschritt mit (Cyan→Grün→Blau→Violett→Gold, wie Balken & Zahl). Ersetzt den alten animierten
+  // as-panel-Sweep-Rahmen (kein Dauer-Repaint, ruhiger). Farbwechsel am Meilenstein sanft überblendet.
+  const frame = {
+    background: `linear-gradient(180deg, ${acc}14, #141019 62%)`,
+    border: `1px solid ${acc}66`,
+    boxShadow: `0 0 22px -16px ${acc}`,
+    transition: "border-color .5s ease, box-shadow .5s ease",
+  };
+
   return (
-    <div className="rounded-xl px-3 py-2 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}
+    <div className="rounded-xl px-3 py-2" style={frame}
       title={atMax ? "Alle Score-Meilensteine erreicht" : `Nächster Meilenstein: ${mio(next.at)} (+${next.sp} SP)`}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[11px] font-pixel tracking-wide" style={{ color: accHi }}>

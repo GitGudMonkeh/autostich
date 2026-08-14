@@ -102,11 +102,12 @@ const OPP_DECK_SKINS = {
 // eines neuen Auswahl-Typs (Perk/Skill/Formation/Architekt/Legendär) nicht erst mitten im Lauf sein Bild dekodiert.
 export const OPP_SKIN_URLS = [...new Set(Object.values(OPP_DECK_SKINS).flatMap((s) => [s.front, s.back]))];
 
+// Ergebnis-Banner-Farben (Design-Sweep: frischer/kräftiger, an die neue Palette angeglichen — Grün/Rot/Violett/Neutral).
 const BANNER = {
-  win:     { text: "Gewonnen",            color: "#5ab87a" },
-  win_tie: { text: "Gleichstand → Sieg",  color: "#8a7de0" },
-  loss:    { text: "Verloren",            color: "#e0605a" },
-  tie:     { text: "Gleichstand",         color: "#8a8a92" },
+  win:     { text: "Gewonnen",            color: "#5fce86" },
+  win_tie: { text: "Gleichstand → Sieg",  color: "#a89bf5" },
+  loss:    { text: "Verloren",            color: "#ef6f68" },
+  tie:     { text: "Gleichstand",         color: "#a6a6b0" },
 };
 const CRIT_COLOR = "#e879f9";
 // Archetyp-„Treffer-Identitäten" des Score-Floats (engine liefert lastTrick.hitTypes[]): EIN Sieg kann mehrere zugleich
@@ -1600,7 +1601,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
         {banner ? (
-          <span className="text-lg font-bold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
+          <span className="text-lg font-extrabold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
         )}
