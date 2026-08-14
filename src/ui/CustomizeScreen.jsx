@@ -110,12 +110,14 @@ const PREVIEW_LOOK = Object.fromEntries(
 // #318 Preview-Key → CardFxStage-Layer-Flag (welcher Layer in der Showcase gezeigt wird).
 const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
 
-// „Standard"-Pack (UI-seitig): aktiviert wieder das Grund-Deck/-Battlefield. kind:"std" → immer im Besitz.
-const STD_PACK = { id: "default", name: "Standard", kind: "std", a1: "#8a7de0", deckId: "default", bfId: "default", els: ["deck", "bf"] };
-// #307/#Shop-Reorg: eigene Kategorien. „Packs" = Standard + Kauf-Packs, nach DP-Preis aufsteigend (billig oben, teuer
-// unten; Standard immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303), eigene Kategorie ganz separat.
+// Default-Pack (UI-seitig) = GENESIS: das immer-freie Start-/Grund-Deck inkl. Battlefield (ersetzt das frühere
+// „Standard"-Deck deck/bf "default"). kind:"std" → immer im Besitz, steht auf der Packs-Seite zuoberst. Genesis bleibt
+// in der puren Registry ein cond-Pack; hier wird es nur UI-seitig als Default (std) präsentiert.
+const STD_PACK = { ...(THEMES.find((t) => t.id === "genesis") || {}), kind: "std" };
+// #307/#Shop-Reorg: eigene Kategorien. „Packs" = Genesis (Default) + Kauf-Packs, nach DP-Preis aufsteigend (billig oben,
+// teuer unten; Genesis immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303) OHNE Genesis.
 const PACKS_TAB = [STD_PACK, ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
-const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond");
+const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genesis"); // Genesis raus aus Challenges → Packs-Seite (Default)
 // #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
 // vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
 function orderPacks(list, deckId) {

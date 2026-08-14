@@ -381,7 +381,7 @@ export function recordRun(record) {
 // Sonnen-Puls = freier Default (aktiv, kein Kauf). #347: ALLE Effekt-Toggles + Farbmodus-Flags explizit gelistet (Default
 // aus, außer fxSonnenPuls/fxCubeMatrixSun) — vorher liefen die fehlenden über undefined-als-falsy (inkonsistent/fragil).
 const DEFAULT_OPTIONS = {
-  skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default",
+  skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // Effekt-Toggles (Ein/Aus). fxSonnenPuls = freier Default an; alles andere aus.
