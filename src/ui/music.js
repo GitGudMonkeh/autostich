@@ -64,7 +64,7 @@ import neon_apocalypse from "../assets/music/neon_apocalypse.m4a";
 import fast_lane from "../assets/music/fast_lane.m4a";
 import chrome_runner from "../assets/music/chrome_runner.m4a";
 
-const MENU_TRACK = { title: "Relay of Multipliers", url: relay_of_multipliers }; // Main-Screen + Victory
+const MENU_TRACK = { title: "Midnight Drive", url: midnight_drive }; // Main-Screen + Victory (Relay bleibt reiner mid-Run-Track)
 
 // Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Der aktuelle SCORE (state.score) wählt die aktive Stufe
 // (von Runden ENTKOPPELT — die Musik folgt jetzt der erspielten Punktzahl); innerhalb einer Stufe werden Tracks
@@ -85,7 +85,8 @@ const TIER_FADE_MS = 600;   // #334: ms je Fade-Halbwelle (aus/ein) — satter (
 const POOL = [
   // calm
   { title: "Formation Shuffle", url: formation_shuffle, tier: "calm" },          // #171
-  { title: "Midnight Drive", url: midnight_drive, tier: "calm" },
+  // „Midnight Drive" ist jetzt Menü-/Victory-Theme (MENU_TRACK) → NICHT mehr im calm-Run-Pool (Runs starten calm →
+  //   sonst liefe der Menü-Song direkt in der ersten Run-Stufe nochmal). Import bleibt (von MENU_TRACK genutzt).
   { title: "Velvet Cruise", url: velvet_cruise, tier: "calm" },
   { title: "Neon Drift", url: neon_drift, tier: "calm" },
   // v0.4-Batch (10 neue calm-Tracks)
