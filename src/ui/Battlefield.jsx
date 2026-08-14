@@ -724,6 +724,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
   const oppSlotRef = useRef(null);
+  // #376 Neon-Brandung Loop-Bett (Plasma-See-Ambience): startet/endet mit dem aktiven Effekt. Nahtloser Loop über die
+  // gleichförmige Mitte der 29,9-s-Aufnahme (loopStart/loopEnd meiden die Anfang-/Ende-Fades → kein Naht-Klick). Gating
+  // (Pause/Overlays/Victory) erledigt die bestehende Loop-Suspend-Logik; beim Deselektieren/Unmount sanft ausklingen.
+  const surfSndRef = useRef(null);
+  useEffect(() => {
+    if (!neonsurfGL) return undefined;
+    surfSndRef.current = audio.loop("fx_neonsurf", { gain: 0.7, loopStart: 1.5, loopEnd: 28.4 }); // dezente Dauer-Ambience
+    return () => { audio.stopLoop(surfSndRef.current, { fade: 0.4 }); surfSndRef.current = null; };
+  }, [neonsurfGL]);
   const playerCardRef = useRef(null); // #blitz: Box der eigenen Karte für den Ionensturm-Rahmen (IonStorm)
   const oppCardRef = useRef(null);    // #318: Box der Gegnerkarte für die Karten-Animationen (CardFxStage)
   const deckSlotRef = useRef(null);   // #feuer: STABILER Karten-Slot der Spielerseite (Deck) — Anker für durchgängiges Feuer (remountet nicht pro Stich)
@@ -1092,6 +1101,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (neonsurfGL) {
       const surgeMag = toShow.epic ? 1.4 : (toShow.rank <= 1 ? 0.7 : toShow.rank === 2 ? 1.0 : 1.4);
       setSurfSurge({ id: `s${t.trickNo}-${bigSeq.current}`, mag: surgeMag });
+      // #376 Splash „on top" beim Surge — Lautstärke skaliert mit der Magnitude (Stark leiser ↔ Irre/Gott lauter),
+      //   Extra-Bass bei starkem Impact. Cooldown (audio.js 0,3 s) gegen Doppel-Trigger. Feste Surge-Dauer → keine rate.
+      audio.play("fx_neonsurf_splash", { gain: 0.6 + 0.7 * surgeMag, bass: surgeMag >= 1.2 ? 3 : 0 });
     }
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
     // #344: kein lane/jitter mehr (alle mittig) → Pool auf max 2 gleichzeitig gedeckelt.
