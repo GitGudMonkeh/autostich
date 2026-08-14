@@ -4,6 +4,7 @@
 // jeder Meilenstein = ein Viertel der Leiste. Bewusst grob (Balatro-Geist) — rein informativ, keine Engine-Kopplung.
 import { milestoneBarState } from "../game/progression.js";
 import { normalizeActive } from "../game/challenges.js"; // #301: Challenge-Ziel-Fortschritt (zweite Leiste)
+import { DECK_BORDER } from "./modalStyle.jsx"; // #365-Folge: deck-getönter Rahmen (Meilenstein-Panel; Füllung bleibt Tier-Farbe)
 
 // Aufsteigende Neon-Palette (Logo-Verlauf): Farbe je erreichter Stufe 0..4 — Cyan → Grün → Blau → Violett → Gold.
 const TIER = ["#26c6e6", "#4ade80", "#5a8ade", "#9b82f0", "#f2a83a"];
@@ -52,7 +53,7 @@ export function ScoreMilestoneBar({ score = 0, challengeMods = [] }) {
   const pct = Math.round(fill * 100);
 
   return (
-    <div className="rounded-xl px-3 py-2 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${acc}44` }}
+    <div className="rounded-xl px-3 py-2 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}
       title={atMax ? "Alle Score-Meilensteine erreicht" : `Nächster Meilenstein: ${mio(next.at)} (+${next.sp} SP)`}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[11px] font-pixel tracking-wide" style={{ color: accHi }}>
