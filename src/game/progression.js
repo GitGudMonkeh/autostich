@@ -1,74 +1,122 @@
 /* ============================================================
    UPGRADES / PROGRESSION-BAUM — laufübergreifende Meta-Progression über Stichpunkte (SP).
 
+   #369 KOMPLETT-REWORK: der alte 4-Ast-Baum (bau/auf/rar/mei, 13 Knoten) ist ERSETZT durch zwei Zweige —
+   DECKS (je Archetyp „Deck spielbar › Leg I › Leg II") und ALLGEMEIN (Baufeld/Energie/Rarität/Drop/2.-Perk).
+   Das Archetyp-/Rarität-/Legendär-Gating hängt jetzt am BAUM (nicht mehr am Onboarding, #316).
+
    PUR & node-testbar (Analogon zu rarity.js): hält NUR die Knoten-Defs (data-driven),
    die Kauf-/Voraussetzungs-/Gate-/Respec-Logik und die Effekt-Ableitungen. KEINE UI-/Asset-Importe,
    KEINE localStorage-Zugriffe, KEIN RNG/Date — die Persistenz lebt in storage.js (Profil), die
    Anwendung im reducer, die Anzeige in der UI. So bleibt das Modul in `environment: "node"` prüfbar
    und deterministisch.
 
-   Source of Truth der Knotendaten: src/ui/UpgradeScreen.jsx (hier gespiegelt), Design: docs/
-   progression-decisions.md. 13 Knoten, 4 Äste (Sequenzen I→II→III), Gesamt 134 SP; Nicht-Meister-
-   Knoten Σ 68 SP. Master-Rang ist entfernt — die alten Auto-Rewards werden hier zu wählbaren Knoten.
-
    Profil-Shape: { stichPoints, stichSpent, nodes: { [nodeId]: 1 } }  (Level 1 = gekauft).
    ============================================================ */
 
 // SIM-/Balance-Haken wie in constants.js: per ENV übersteuerbar, Default = aktueller Wert → in der App
-// (kein `process`) immer der Default. Erlaubt reproduzierbares Tuning der Gate-Schwellen ohne Code-Edit.
+// (kein `process`) immer der Default. Erlaubt reproduzierbares Tuning ohne Code-Edit.
 const envNum = (name, def) => {
   const v = (typeof process !== "undefined" && process.env) ? process.env[name] : undefined;
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
 };
 
-// Meister-Gate-Schwellen als Anteil der Nicht-Meister-SP (25 % / 50 % / 75 %). Tunebar; resolved
-// gegen NONMEISTER_TOTAL → 17 / 34 / 51 SP bei Default-Baum. Siehe docs/progression-decisions.md §.
-export const GATE_PCT_M2 = envNum("PROG_GATE_PCT_M2", 0.25);
-export const GATE_PCT_M3 = envNum("PROG_GATE_PCT_M3", 0.50);
-export const GATE_PCT_M4 = envNum("PROG_GATE_PCT_M4", 0.75);
+/* ---- Start-Zustand (frisches Profil, nichts investiert) — #369 §1 -----------------------------
+   Die „Böden", auf denen der Tree aufsetzt (Normal-Lauf mit Profil). Sim/Standard/Dev nutzen weiter
+   die Engine-Konstanten (C.ARCH_MAX_COVER / C.FORMATION_ENERGY) → byte-identische Baseline. */
+export const COVER_FLOOR  = envNum("PROG_COVER_FLOOR", 20);   // Baufeld-Start (20 → max 24 über den Baum)
+export const ENERGY_FLOOR = envNum("PROG_ENERGY_FLOOR", 3);   // Formations-Energie-Start (3 → max 5 über den Baum)
+export const RARITY_TIER_BASE = 2;                            // Start: nur Normal + Selten (grau/grün)
+export const REROLL_BASE  = envNum("PROG_REROLL_BASE", 1);    // Rerolls je Phase-Typ (Perk/Gebäude/Skill) im Normal-Lauf
 
-/* ---- Knoten-Defs (data-driven, exakt UpgradeScreen.jsx) -----------------------------------
-   Feld  prereq = Vorgänger-Knoten in der Ast-Sequenz (null = erster). Äste sind unabhängig.
-   Feld  cover  = Baufeld-Zellen-Zuwachs des Knotens (nur Baufeld-Ast). Feld gate = Meister-Gate. */
+// Von Beginn an spielbare Archetypen (#369 §1: nur Feuer + Blitz). Eis/Pflanze kommen über Deck-Knoten.
+export const ARCHETYPES_BASE = ["lightning", "fire"];
+
+// Legendär-Perk-Chance-Multiplikator je Drop-Stufe (#369 §4, [TUNING]): der „Legendär"-Knoten schaltet die
+// Perk-Legendär-Schicht an (Basis ×1 ≈ 3 %), jede Drop-Stufe hebt sie bis ~×3.3 (≈ 10 % bei Drop IV).
+export const LEG_MULT_PER_SHIFT = envNum("PROG_LEG_MULT_PER_SHIFT", 0.583);
+// Erzwungene Legendär-Perks in der generellen Legendär-Phase (2. Perk-Phase, #369 §5b): ein voller Legendär-Satz.
+export const LEG_PERK2_FORCE = envNum("PROG_LEG_PERK2_FORCE", 3);
+
+/* ---- Knoten-Defs (data-driven) ------------------------------------------------------------
+   Feld  prereq = Vorgänger-Knoten in der Kette (null = Kettenkopf).
+   Effekt-Felder (je Knoten eine Teilmenge):
+     arch        Archetyp-Schlüssel (Deck-Knoten; steuert das Fraktions-Icon in der UI)
+     deckUnlock  Archetyp wird spielbar
+     legLevel    Legendär-Kandidaten-Stufe dieses Archetyps (1 → 1 Kandidat, 2 → 2)
+     cover       +Baufeld-Zellen · energy +Formations-Energie
+     maxTier     hebt die anbietbare Max-Rarität auf diesen Wert (3 = Sehr selten, 4 = Rar)
+     legLayer    schaltet die Legendär-Perk-Schicht an
+     shift       Drop-Raten-Stufe (1..4)
+     flag        "deckReroll" | "perk2Leg" | "perk2Reroll"
+     placeholder „Bald verfügbar" (nie kaufbar)
+     gate        Sonder-Freischaltung (z. B. { type: "anyLeg" }) */
 export const NODES = [
-  // 🏗 Baufeld — Bau-Ökonomie (Zellen 24→28). cover summiert zu treeCoverBonus 0..4.
-  { id: "B1", branch: "bau", roman: "I",   label: "+1 Bauplatz",  detail: "Baufeld 24 → 25 Zellen", cost: 2,  prereq: null, cover: 1 },
-  { id: "B2", branch: "bau", roman: "II",  label: "+1 Bauplatz",  detail: "Baufeld 25 → 26 Zellen", cost: 5,  prereq: "B1", cover: 1 },
-  { id: "B3", branch: "bau", roman: "III", label: "+2 Bauplätze", detail: "Baufeld 26 → 28 Zellen", cost: 9,  prereq: "B2", cover: 2 },
-  // 🎬 Auftakt — Rerolls (+1 je Phase je Knoten). Anzahl gekaufter Knoten = treeRerollBonus 0..2.
-  { id: "A1", branch: "auf", roman: "I",   label: "+1 Reroll je Phase", detail: "Angebote öfter neu würfeln", cost: 6,  prereq: null },
-  { id: "A2", branch: "auf", roman: "II",  label: "+1 Reroll je Phase", detail: "stapelt mit Stufe I",        cost: 12, prereq: "A1" },
-  // ✨ Rarität — Angebots-Qualität (RareShift-Stufe = höchster gekaufter Rang, 0..3).
-  { id: "R1", branch: "rar", roman: "I",   label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 6,  prereq: null, shift: 1 },
-  { id: "R2", branch: "rar", roman: "II",  label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 10, prereq: "R1", shift: 2 },
-  { id: "R3", branch: "rar", roman: "III", label: "Bessere Seltenheit", detail: "hochwertigere Angebote", cost: 18, prereq: "R2", shift: 3 },
-  // 👑 Meister — Legendäre / Prestige. Zusätzlich zur Sequenz greifen die Gates (onb/pct/all).
-  { id: "M1", branch: "mei", roman: "I",   label: "Reroll: Legendär-Angebot",   detail: "Runde 29",       cost: 4,  prereq: null, flag: "legSlotReroll",       gate: { type: "onb" } },
-  { id: "M2", branch: "mei", roman: "II",  label: "2 Legendäre je Archetyp",    detail: "größere Auswahl", cost: 9,  prereq: "M1", flag: "legTwoPerArch",       gate: { type: "pct", pct: GATE_PCT_M2 } },
-  { id: "M3", branch: "mei", roman: "III", label: "Legendär-Chance ×2",         detail: "Perks & Gebäude", cost: 13, prereq: "M2", flag: "legDropDouble",       gate: { type: "pct", pct: GATE_PCT_M3 } },
-  { id: "M4", branch: "mei", roman: "IV",  label: "Garantierter Legendär-Perk", detail: "2. Perk-Phase",   cost: 18, prereq: "M3", flag: "legGuaranteedPerk2",  gate: { type: "pct", pct: GATE_PCT_M4 } },
-  { id: "M5", branch: "mei", roman: "V",   label: "Wahl aus 3 Legendären",      detail: "2. Perk-Phase",   cost: 22, prereq: "M4", flag: "legChoose3Perk2",     gate: { type: "all" } },
+  /* ===== DECK-Zweig (45 SP) — Reiter „Decks" ===== */
+  // Feuer/Blitz: Deck von Beginn an frei → nur die Legendär-Kette.
+  { id: "fireLeg1",  branch: "deck", arch: "fire",      label: "Legendär I",  detail: "1 Feuer-Kandidat in der Legendär-Phase",  cost: 3, prereq: null,       legLevel: 1 },
+  { id: "fireLeg2",  branch: "deck", arch: "fire",      label: "Legendär II", detail: "2 Feuer-Kandidaten",                       cost: 5, prereq: "fireLeg1", legLevel: 2 },
+  { id: "boltLeg1",  branch: "deck", arch: "lightning", label: "Legendär I",  detail: "1 Blitz-Kandidat in der Legendär-Phase",  cost: 3, prereq: null,       legLevel: 1 },
+  { id: "boltLeg2",  branch: "deck", arch: "lightning", label: "Legendär II", detail: "2 Blitz-Kandidaten",                       cost: 5, prereq: "boltLeg1", legLevel: 2 },
+  // Eis: erst Deck freischalten, dann die Legendär-Kette.
+  { id: "iceDeck",   branch: "deck", arch: "ice",       label: "Eis-Deck",    detail: "Eis-Archetyp spielbar",                    cost: 4, prereq: null,       deckUnlock: "ice" },
+  { id: "iceLeg1",   branch: "deck", arch: "ice",       label: "Legendär I",  detail: "1 Eis-Kandidat in der Legendär-Phase",    cost: 3, prereq: "iceDeck",  legLevel: 1 },
+  { id: "iceLeg2",   branch: "deck", arch: "ice",       label: "Legendär II", detail: "2 Eis-Kandidaten",                         cost: 5, prereq: "iceLeg1",  legLevel: 2 },
+  // Pflanze: analog.
+  { id: "plantDeck", branch: "deck", arch: "plant",     label: "Pflanze-Deck",detail: "Pflanze-Archetyp spielbar",               cost: 4, prereq: null,        deckUnlock: "plant" },
+  { id: "plantLeg1", branch: "deck", arch: "plant",     label: "Legendär I",  detail: "1 Pflanze-Kandidat in der Legendär-Phase",cost: 3, prereq: "plantDeck", legLevel: 1 },
+  { id: "plantLeg2", branch: "deck", arch: "plant",     label: "Legendär II", detail: "2 Pflanze-Kandidaten",                     cost: 5, prereq: "plantLeg1", legLevel: 2 },
+  // Reroll für die Archetyp-Legendär-Phase — unabhängig, sobald irgendein Leg I frei ist.
+  { id: "deckReroll",branch: "deck", label: "Reroll · Legendär-Phase", detail: "+1 Reroll in der Archetyp-Legendär-Phase", cost: 5, prereq: null, gate: { type: "anyLeg" }, flag: "deckReroll" },
+  // Platzhalter — kein Effekt, nie kaufbar.
+  { id: "synLeg",    branch: "deck", label: "Synergie-Legendäre", detail: "Bald verfügbar", cost: 0, prereq: null, placeholder: true },
+
+  /* ===== ALLGEMEIN-Zweig (92 SP) — Reiter „Allgemein" ===== */
+  // Baufeld 20 → 24 (Zellen).
+  { id: "cover1", branch: "gen", label: "Baufeld I",   detail: "Baufeld 20 → 21 Zellen", cost: 2, prereq: null,     cover: 1 },
+  { id: "cover2", branch: "gen", label: "Baufeld II",  detail: "Baufeld 21 → 22 Zellen", cost: 4, prereq: "cover1", cover: 1 },
+  { id: "cover3", branch: "gen", label: "Baufeld III", detail: "Baufeld 22 → 24 Zellen", cost: 6, prereq: "cover2", cover: 2 },
+  // Formations-Energie 3 → 5.
+  { id: "energy1", branch: "gen", label: "Energie I",  detail: "Formations-Energie 3 → 4", cost: 2, prereq: null,      energy: 1 },
+  { id: "energy2", branch: "gen", label: "Energie II", detail: "Formations-Energie 4 → 5", cost: 4, prereq: "energy1", energy: 1 },
+  // Rarität-Rahmen: Sehr selten (Tier III) → Rar (Tier IV) → Legendär-Schicht.
+  { id: "tier3",    branch: "gen", label: "Sehr selten", detail: "Rarität Sehr selten (blau) freischalten", cost: 2, prereq: null,     maxTier: 3 },
+  { id: "tier4",    branch: "gen", label: "Rar",         detail: "Rarität Rar (lila) freischalten",         cost: 3, prereq: "tier3",  maxTier: 4 },
+  { id: "legLayer", branch: "gen", label: "Legendär",    detail: "Legendär-Perk-Schicht (gold) an",         cost: 4, prereq: "tier4",  legLayer: true },
+  // Drop-Raten — nach „Legendär", dann sequenziell.
+  { id: "drop1", branch: "gen", label: "Drop-Rate I",   detail: "hochwertigere Perks & Gebäude", cost: 5,  prereq: "legLayer", shift: 1 },
+  { id: "drop2", branch: "gen", label: "Drop-Rate II",  detail: "hochwertigere Perks & Gebäude", cost: 8,  prereq: "drop1",    shift: 2 },
+  { id: "drop3", branch: "gen", label: "Drop-Rate III", detail: "hochwertigere Perks & Gebäude", cost: 12, prereq: "drop2",    shift: 3 },
+  { id: "drop4", branch: "gen", label: "Drop-Rate IV",  detail: "hochwertigere Perks & Gebäude", cost: 24, prereq: "drop3",    shift: 4 },
+  // 2. Perk-Phase → generelle Legendär-Phase, + eigener Reroll.
+  { id: "perk2Leg",    branch: "gen", label: "2. Perk → Legendär", detail: "2. Perk-Phase wird generelle Legendär-Phase", cost: 10, prereq: "legLayer",  flag: "perk2Leg" },
+  { id: "perk2Reroll", branch: "gen", label: "Reroll · 2. Perk-Phase", detail: "+1 Reroll in der generellen Legendär-Phase", cost: 6, prereq: "perk2Leg", flag: "perk2Reroll" },
 ];
 
-// Ast-Metadaten (Reihenfolge + Anzeige). Farben/Emoji leben in der UI; hier nur strukturelle Namen.
+// Zweig-Metadaten (Reihenfolge + Anzeige). Farben/Icons leben in der UI; hier nur strukturelle Namen.
 export const BRANCHES = [
-  { key: "bau", name: "Baufeld", desc: "Bau-Ökonomie" },
-  { key: "auf", name: "Auftakt", desc: "Rerolls" },
-  { key: "rar", name: "Rarität", desc: "Angebots-Qualität" },
-  { key: "mei", name: "Meister", desc: "Legendäre / Prestige" },
+  { key: "deck", name: "Decks",     desc: "Archetypen & Legendäre" },
+  { key: "gen",  name: "Allgemein", desc: "Baufeld · Energie · Rarität · Drops" },
 ];
 
 export const NODE_BY_ID = NODES.reduce((m, n) => { m[n.id] = n; return m; }, {});
 export const NODE_IDS = NODES.map((n) => n.id);
 
-// Nicht-Meister-Knoten (Baufeld/Auftakt/Rarität) — Basis für Gate-Prozente und Deckung.
-export const NONMEISTER_IDS = NODES.filter((n) => n.branch !== "mei").map((n) => n.id);
-export const MEISTER_IDS = NODES.filter((n) => n.branch === "mei").map((n) => n.id);
-// Σ SP über alle Nicht-Meister-Knoten (= 68 im Default-Baum) und Gesamtsumme (= 134).
-export const NONMEISTER_TOTAL = NONMEISTER_IDS.reduce((s, id) => s + NODE_BY_ID[id].cost, 0);
-export const TOTAL_COST = NODES.reduce((s, n) => s + n.cost, 0);
-export const TOTAL_NODES = NODES.length;
+// Kaufbare Knoten (ohne Platzhalter) — Basis für Kosten/Fortschritt/„komplett".
+export const BUYABLE_NODES = NODES.filter((n) => !n.placeholder);
+export const BUYABLE_IDS = BUYABLE_NODES.map((n) => n.id);
+export const DECK_IDS = NODES.filter((n) => n.branch === "deck" && !n.placeholder).map((n) => n.id);
+export const GEN_IDS  = NODES.filter((n) => n.branch === "gen").map((n) => n.id);
+// Σ SP über alle kaufbaren Knoten (= 137) und Knotenzahl (= 25).
+export const TOTAL_COST = BUYABLE_NODES.reduce((s, n) => s + n.cost, 0);
+export const TOTAL_NODES = BUYABLE_NODES.length;
+
+// Legendär-Ketten je Archetyp (Stufe 1/2) — Quelle der Zähl-Map für die Archetyp-Legendär-Phase.
+export const LEG_NODES_BY_ARCH = NODES.reduce((m, n) => {
+  if (n.legLevel && n.arch) { (m[n.arch] = m[n.arch] || []).push(n); }
+  return m;
+}, {});
 
 /* ---- Profil-Helfer ------------------------------------------------------------------------ */
 
@@ -81,120 +129,83 @@ export const emptyProfile = (sp = 0) => ({ stichPoints: Math.max(0, Math.floor(N
 // SP-Guthaben robust lesen.
 const points = (profile) => Math.max(0, Math.floor(Number(profile && profile.stichPoints) || 0));
 
-/* ---- Abgeleitete Größen ------------------------------------------------------------------- */
+/* ---- Gates & Voraussetzungen -------------------------------------------------------------- */
 
-// In Nicht-Meister-Knoten investierte SP (Basis der Meister-pct-Gates).
-export function nonMeisterSpent(profile) {
-  return NONMEISTER_IDS.reduce((s, id) => (owns(profile, id) ? s + NODE_BY_ID[id].cost : s), 0);
-}
+// Ist irgendein Leg-I-Knoten gekauft? (Meta-Gate: existiert die Archetyp-Legendär-Phase / der Deck-Reroll?)
+export const anyLegOwned = (profile) => Object.values(LEG_NODES_BY_ARCH).some((arr) => arr.some((n) => n.legLevel === 1 && owns(profile, n.id)));
 
-// Aufgelöste SP-Schwelle eines pct-Gates (aufgerundet gegen NONMEISTER_TOTAL). Bei Default 17/34/51.
-export const gateNeed = (node) => Math.ceil((node && node.gate && node.gate.pct ? node.gate.pct : 0) * NONMEISTER_TOTAL);
-
-// Onboarding-Status. Schritt 1: als erfüllt angenommen; liest optional profile.onboarding, wenn später
-// gesetzt (>=6 Glieder → true). Fehlt das Feld → true (Vorschau-/Default-Verhalten).
-export const onboardingDone = (profile) => {
-  if (profile && Object.prototype.hasOwnProperty.call(profile, "onboarding")) {
-    return (Number(profile.onboarding) || 0) >= ONBOARDING_LINKS;
-  }
-  return true;
-};
-export const ONBOARDING_LINKS = 6; // Länge der Onboarding-Kette (docs §4); Feld folgt in Schritt 2.
-
-// Archetyp-Freischaltung über das Onboarding (docs §4): Blitz+Feuer von Anfang an; Pflanze ab Glied 2,
-// Eis ab Glied 4. Rein & testbar; die Reducer-Naht reicht die Allowlist an buildSkillOffer (Default = alle → No-op).
-export const ARCHETYPES_BASE = ["lightning", "fire"];               // von Beginn an frei
-export const ONBOARDING_ARCH_UNLOCK = { plant: 2, ice: 4 };         // Glied, ab dem der Archetyp frei ist [TUNING]
-export function unlockedArchetypes(onboarding) {
-  const onb = Math.max(0, Math.floor(Number(onboarding) || 0));
-  const out = [...ARCHETYPES_BASE];
-  if (onb >= ONBOARDING_ARCH_UNLOCK.plant) out.push("plant");
-  if (onb >= ONBOARDING_ARCH_UNLOCK.ice) out.push("ice");
-  return out;
-}
-
-// Rarität-Obergrenze aus dem Onboarding (docs §4): Start = nur Stufe I+II (grau/grün); Glied 3 schaltet III (blau)
-// frei, Glied 5 die IV (violett/Rar). KEIN Verteilungs-Shift — der Baum-R-Ast (treeRareShift) verschiebt die
-// Gewichte orthogonal INNERHALB des freigeschalteten Rahmens. Rein & testbar; 4 = kein Deckel.
-export const RARITY_TIER_BASE = 2;                          // grau + grün von Beginn an
-export const ONBOARDING_RARITY_UNLOCK = { 3: 3, 5: 4 };     // Glied → ab da freigeschaltete Max-Stufe [TUNING]
-export function maxRarityTier(onboarding) {
-  const onb = Math.max(0, Math.floor(Number(onboarding) || 0));
-  let cap = RARITY_TIER_BASE;
-  for (const link of Object.keys(ONBOARDING_RARITY_UNLOCK)) {
-    if (onb >= Number(link)) cap = Math.max(cap, ONBOARDING_RARITY_UNLOCK[link]);
-  }
-  return cap;
-}
-
-// Legendär-Capstone (docs §4, Glied 6): die R29-Legendär-PICK-Phase im Normal-Lauf ist erst ab dem letzten
-// Onboarding-Glied frei. Davor ist Runde 29 eine GANZ NORMALE Perk-Phase (die Naht in engine.js entscheidet).
-// Rein & testbar; profil-los/Meister/Dev sind hiervon unberührt (Reducer setzt dort legPhaseEnabled = true).
-export const legendaryPhaseUnlocked = (onboarding) => Math.max(0, Math.floor(Number(onboarding) || 0)) >= ONBOARDING_LINKS;
-
-// Erfüllt der Knoten sein Gate? (Nicht-Meister-Knoten haben keins → true.)
+// Erfüllt der Knoten sein Sonder-Gate? (Knoten ohne Gate → true.)
 export function gateMet(profile, node) {
   const g = node && node.gate;
   if (!g) return true;
-  if (g.type === "onb") return onboardingDone(profile);
-  if (g.type === "pct") return nonMeisterSpent(profile) >= gateNeed(node);
-  if (g.type === "all") return NONMEISTER_IDS.every((id) => owns(profile, id)) && ["M1", "M2", "M3", "M4"].every((id) => owns(profile, id));
+  if (g.type === "anyLeg") return anyLegOwned(profile);
   return true;
 }
 
-// Vorgänger in der Ast-Sequenz gekauft? (Erster Knoten → true.)
+// Vorgänger in der Kette gekauft? (Kettenkopf → true.)
 export const prereqMet = (profile, node) => !node.prereq || owns(profile, node.prereq);
 
 /* ---- nodeEffects — die vom Reducer/UI konsumierten Ableitungen ----------------------------
-   Frisches/leeres Profil = beweisbares No-op: Cover 0, Reroll 0, RareShift 0, alle Flags false. */
+   Frisches/leeres Profil = beweisbares No-op (alle Boni 0/false, maxTier = Basis, nur Feuer+Blitz frei). */
 export function nodeEffects(profile) {
-  let treeCoverBonus = 0;
-  let treeRerollBonus = 0;
-  let treeRareShift = 0;
-  const flags = {
-    legSlotReroll: false,
-    legTwoPerArch: false,
-    legDropDouble: false,
-    legGuaranteedPerk2: false,
-    legChoose3Perk2: false,
-  };
+  let treeCoverBonus = 0;     // +Baufeld-Zellen (0..4)
+  let treeEnergyBonus = 0;    // +Formations-Energie (0..2)
+  let treeRareShift = 0;      // Drop-Raten-Stufe (0..4)
+  let maxTier = RARITY_TIER_BASE; // anbietbare Max-Rarität (2..4)
+  let legendaryLayer = false; // Legendär-Perk-Schicht an?
+  const unlockedSet = new Set(ARCHETYPES_BASE);
+  const legCountByArch = {};  // Archetyp → Legendär-Kandidaten (max gekaufte Stufe: 1 oder 2)
+  const flags = { deckReroll: false, perk2Leg: false, perk2Reroll: false };
   for (const n of NODES) {
-    if (!owns(profile, n.id)) continue;
-    if (n.branch === "bau") treeCoverBonus += n.cover || 0;
-    else if (n.branch === "auf") treeRerollBonus += 1;
-    else if (n.branch === "rar") treeRareShift = Math.max(treeRareShift, n.shift || 0);
-    else if (n.branch === "mei" && n.flag) flags[n.flag] = true;
+    if (n.placeholder || !owns(profile, n.id)) continue;
+    if (n.cover) treeCoverBonus += n.cover;
+    if (n.energy) treeEnergyBonus += n.energy;
+    if (n.shift) treeRareShift = Math.max(treeRareShift, n.shift);
+    if (n.maxTier) maxTier = Math.max(maxTier, n.maxTier);
+    if (n.legLayer) legendaryLayer = true;
+    if (n.deckUnlock) unlockedSet.add(n.deckUnlock);
+    if (n.legLevel && n.arch) legCountByArch[n.arch] = Math.max(legCountByArch[n.arch] || 0, n.legLevel);
+    if (n.flag) flags[n.flag] = true;
   }
-  return { treeCoverBonus, treeRerollBonus, treeRareShift, ...flags };
+  // Legendär-Perk-Multiplikator (#369 §4): 0 ohne Schicht, sonst ×(1 + Drop-Stufe·Schritt).
+  const legMult = legendaryLayer ? 1 + treeRareShift * LEG_MULT_PER_SHIFT : 0;
+  const archLegPhaseOn = Object.values(legCountByArch).some((c) => c > 0);
+  return {
+    treeCoverBonus, treeEnergyBonus, treeRareShift, maxTier, legendaryLayer, legMult,
+    unlockedArchetypes: [...unlockedSet], legCountByArch, archLegPhaseOn,
+    legPerkPhaseOn: flags.perk2Leg, rerollDeckLeg: flags.deckReroll ? 1 : 0, rerollPerk2: flags.perk2Reroll ? 1 : 0,
+  };
 }
 
-// M4/M5: Anzahl garantierter Legendärer in der 2. Perk-Phase — M5 „3 zur Wahl" (3) schlägt M4 „+1 garantiert" (1),
-// sonst 0. Nimmt das nodeEffects-Objekt (kann null sein → 0).
-export const legPerk2Force = (eff) => (!eff ? 0 : eff.legChoose3Perk2 ? 3 : eff.legGuaranteedPerk2 ? 1 : 0);
+/* ---- Einzel-Ableiter (Reducer-Nähte, alle profil-basiert) --------------------------------- */
 
-// Reroll-Basis im Normal-Lauf (docs §4/§8): Basis 1 aus Onboarding-Glied 1 + A1/A2 (treeRerollBonus 0..2),
-// gedeckelt bei REROLL_CAP. Der ALLERERSTE Lauf (onboarding 0) hat bewusst 0 Rerolls. Reine Ableitung —
-// der profil-lose Sim/Standard nutzt weiter C.BASE_REROLLS (kein Baseline-Shift), Meister den Rang.
-export const REROLL_ONBOARD_BASE = envNum("PROG_REROLL_ONBOARD_BASE", 1); // Basis-Reroll aus Onboarding-Glied 1
-export const REROLL_CAP = envNum("PROG_REROLL_CAP", 3);                    // max Rerolls/Phase (Basis 1 + A1 + A2)
-export function rerollBase(profile) {
-  const onb = Math.max(0, Math.floor(Number(profile && profile.onboarding) || 0));
-  const base = onb >= 1 ? REROLL_ONBOARD_BASE : 0;
-  return Math.max(0, Math.min(REROLL_CAP, base + nodeEffects(profile).treeRerollBonus));
-}
-
-// Einzel-Ableiter (spiegeln die Reducer-Nähte treeX(profile), analog masteryX(grade)).
+// Allowlist der im Lauf anbietbaren Archetypen — aus dem Baum (#369, früher Onboarding).
+export const unlockedArchetypes = (profile) => nodeEffects(profile).unlockedArchetypes;
+// Rarität-Obergrenze — aus dem Baum (2 = Normal+Selten, 3 = +Sehr selten, 4 = +Rar).
+export const maxRarityTier = (profile) => nodeEffects(profile).maxTier;
+// Existiert die Archetyp-Legendär-Phase? (irgendein Leg I gekauft.) Name wg. Reducer-Naht beibehalten.
+export const legendaryPhaseUnlocked = (profile) => nodeEffects(profile).archLegPhaseOn;
+// Zähl-Map je Archetyp für die Legendär-Phase (Pool = alle freigeschalteten, unabhängig vom Build).
+export const legCountByArch = (profile) => nodeEffects(profile).legCountByArch;
 export const treeCoverBonus = (profile) => nodeEffects(profile).treeCoverBonus;
-export const treeRerollBonus = (profile) => nodeEffects(profile).treeRerollBonus;
+export const treeEnergyBonus = (profile) => nodeEffects(profile).treeEnergyBonus;
 export const treeRareShift = (profile) => nodeEffects(profile).treeRareShift;
+
+// Reroll-Basis je Pool (#369 §6): fest 1 im Normal-/Meister-Lauf mit Profil. Der alte „Auftakt"-Ast entfällt;
+// die beiden Legendär-Phasen-Rerolls sind phasenspezifisch (rerollDeckLeg/rerollPerk2), nicht die Basis.
+export const rerollBase = (_profile) => REROLL_BASE;
+
+// Erzwungene Legendär-Perks in der generellen Legendär-Phase (2. Perk-Phase). Nimmt das nodeEffects-Objekt (kann null).
+export const legPerk2Force = (eff) => (eff && eff.legPerkPhaseOn ? LEG_PERK2_FORCE : 0);
 
 /* ---- Kauf-Zustand & -Aktionen ------------------------------------------------------------- */
 
-// Fein aufgelöster Knoten-Zustand (spiegelt UpgradeScreen.stateOf): owned / lock-prev / lock-gate /
-// lock-sp / buy. Rein & deterministisch → sowohl UI als auch Tests nutzen dieselbe Wahrheit.
+// Fein aufgelöster Knoten-Zustand (spiegelt die UI): owned / lock (Platzhalter) / lock-prev / lock-gate /
+// lock-sp / buy. Rein & deterministisch → UI und Tests nutzen dieselbe Wahrheit.
 export function nodeState(profile, id) {
   const n = NODE_BY_ID[id];
   if (!n) return "unknown";
+  if (n.placeholder) return "placeholder";
   if (owns(profile, id)) return "owned";
   if (!prereqMet(profile, n)) return "lock-prev";
   if (!gateMet(profile, n)) return "lock-gate";
@@ -205,8 +216,7 @@ export function nodeState(profile, id) {
 // Kaufbar? (nicht gekauft, Vorgänger + Gate erfüllt, genug SP.)
 export const canBuy = (profile, id) => nodeState(profile, id) === "buy";
 
-// Kauf → NEUES Profil (SP abziehen, in stichSpent buchen, Knoten auf Level 1). Nicht kaufbar → Eingabe
-// unverändert zurück (No-op, keine Mutation).
+// Kauf → NEUES Profil (SP abziehen, in stichSpent buchen, Knoten auf Level 1). Nicht kaufbar → No-op.
 export function buyNode(profile, id) {
   if (!canBuy(profile, id)) return profile;
   const n = NODE_BY_ID[id];
@@ -227,22 +237,37 @@ export function buyNode(profile, id) {
 // Respec → NEUES Profil: erstattet EXAKT die Kosten aller aktuell gekauften Knoten aufs Guthaben,
 // leert nodes und setzt stichSpent auf 0. Rechnet aus den Knoten (robust gegen stichSpent-Drift).
 export function respec(profile) {
-  const refund = NODES.reduce((s, n) => (owns(profile, n.id) ? s + n.cost : s), 0);
+  const refund = BUYABLE_NODES.reduce((s, n) => (owns(profile, n.id) ? s + n.cost : s), 0);
   return { ...profile, stichPoints: points(profile) + refund, stichSpent: 0, nodes: {} };
 }
 
-// Baum komplett? (alle 13 Knoten gekauft → schaltet Meister-Liga frei.)
-export const treeComplete = (profile) => NODE_IDS.every((id) => owns(profile, id));
+// Baum komplett? (alle kaufbaren Knoten gekauft → Meister-Liga frei.)
+export const treeComplete = (profile) => BUYABLE_IDS.every((id) => owns(profile, id));
 
-// Anzahl gekaufter Knoten (für die „X / 13"-Leiste).
-export const ownedCount = (profile) => NODE_IDS.reduce((c, id) => (owns(profile, id) ? c + 1 : c), 0);
+// Anzahl gekaufter (kaufbarer) Knoten (für die „X / N"-Leiste).
+export const ownedCount = (profile) => BUYABLE_IDS.reduce((c, id) => (owns(profile, id) ? c + 1 : c), 0);
 
 /* ============================================================
    SP-ÖKONOMIE & ONBOARDING — Ernte pro Lauf (docs/progression-decisions.md §4–§6).
 
-   REINE Regeln (kein RNG/Date/localStorage); storage.recordRun importiert und wendet sie an. Der Sim läuft
-   profil-los → diese Regeln berühren die Engine-Baseline NICHT (keine neuen RNG-Ströme, keine Reducer-Naht).
+   #369: die SP-Ökonomie (SP_PER_RUN / SP_MILESTONES / SP_LOYALTY_*) bleibt UNVERÄNDERT — nur der Tree-Inhalt
+   und die Reducer-Nähte ändern sich. Onboarding ist seit #316 auf 6/6 fixiert (die Funktionen bleiben für den
+   Victory-Rollup erhalten, laufen aber inert). REINE Regeln (kein RNG/Date/localStorage).
    ============================================================ */
+
+export const ONBOARDING_LINKS = 6; // Länge der (inerten) Onboarding-Kette; Profile starten bei 6/6 (#316).
+
+// Onboarding-Status: liest profile.onboarding (>=6 → true); fehlt das Feld → true (Vorschau-/Default-Verhalten).
+export const onboardingDone = (profile) => {
+  if (profile && Object.prototype.hasOwnProperty.call(profile, "onboarding")) {
+    return (Number(profile.onboarding) || 0) >= ONBOARDING_LINKS;
+  }
+  return true;
+};
+
+// Belohnungs-Deskriptoren der (inerten) Onboarding-Glieder — bleiben für den Victory-Rollup/StartScreen erhalten.
+export const ONBOARDING_ARCH_UNLOCK = { plant: 2, ice: 4 };
+export const ONBOARDING_RARITY_UNLOCK = { 3: 3, 5: 4 };
 
 // SP-Quellen (envNum-tunebar). Grundstock je abgeschlossenem SP-Lauf + kumulative Score-Meilensteine +
 // Treue-Drip je N SP-Läufe. Defaults = docs §6: +1/Lauf; +1/+1/+1/+2 bei 25/50/75/100 Mio; +5 je 10.
@@ -258,8 +283,8 @@ export const SP_LOYALTY_SP    = envNum("PROG_SP_LOYALTY_SP", 5);
 
 const num0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : Number(v) || 0);
 
-// Onboarding-Fortschritt nach einem Lauf (docs §4): ein NATÜRLICH abgeschlossener Lauf (record.completed)
-// rückt genau ein Glied vor, gedeckelt bei ONBOARDING_LINKS (6). Vorzeitiges Beenden zählt nicht.
+// Onboarding-Fortschritt nach einem Lauf: ein NATÜRLICH abgeschlossener Lauf (record.completed) rückt genau ein
+// Glied vor, gedeckelt bei ONBOARDING_LINKS (6). Vorzeitiges Beenden zählt nicht. (Inert bei Start 6/6.)
 export function onboardingAfter(current, record) {
   const cur = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(current))));
   return (record && record.completed === true && cur < ONBOARDING_LINKS) ? cur + 1 : cur;
@@ -272,9 +297,8 @@ export function spMilestones(score) {
   return SP_MILESTONES.reduce((sum, m) => (s >= m.at ? sum + m.sp : sum), 0);
 }
 
-// Score-Meilenstein-Balken (docs §6) — reine Anzeige-Ableitung für die Leiste überm Battlefield. Liefert erreichte
-// Meilensteine, die NICHT-LINEARE Balken-Füllung (jeder Meilenstein = 1/N der Leiste, egal wie groß der Mio-Sprung
-// ist; innerhalb des aktuellen Segments proportional zum nächsten Ziel), die kumulativen SP sowie das nächste Ziel.
+// Score-Meilenstein-Balken (docs §6) — reine Anzeige-Ableitung. Liefert erreichte Meilensteine, die NICHT-LINEARE
+// Balken-Füllung (jeder Meilenstein = 1/N der Leiste; innerhalb des Segments proportional), kumulative SP + nächstes Ziel.
 export function milestoneBarState(score) {
   const s = num0(score);
   const total = SP_MILESTONES.length;
@@ -291,13 +315,11 @@ export function milestoneBarState(score) {
   return { reached, total, fill, atMax, spSoFar: spMilestones(s), next: atMax ? null : SP_MILESTONES[reached] };
 }
 
-// Zählt der Lauf für die SP-Ökonomie? Nur ein abgeschlossener Lauf NACH vollendetem Onboarding (docs §5:
-// die Leiste „kippt" erst bei 6/6 in den SP-Modus, davor ist die Upgrades-Kachel gesperrt → keine SP).
+// Zählt der Lauf für die SP-Ökonomie? Nur ein abgeschlossener Lauf NACH vollendetem Onboarding (Start 6/6 → immer).
 export const isSpRun = (record, onboardingBefore) =>
   !!record && record.completed === true && num0(onboardingBefore) >= ONBOARDING_LINKS;
 
-// SP-Ertrag eines Laufs. onboardingBefore = Onboarding-Stand VOR dem Lauf; spRunsBefore = Anzahl bisheriger
-// SP-Läufe (Basis des Treue-Drips). Onboarding-Läufe & vorzeitig beendete Läufe → 0.
+// SP-Ertrag eines Laufs. onboardingBefore = Onboarding-Stand VOR dem Lauf; spRunsBefore = Anzahl bisheriger SP-Läufe.
 export function spForRun(record, onboardingBefore, spRunsBefore) {
   if (!isSpRun(record, onboardingBefore)) return 0;
   let sp = SP_PER_RUN + spMilestones(record.score);
@@ -307,15 +329,8 @@ export function spForRun(record, onboardingBefore, spRunsBefore) {
 }
 
 /* ============================================================
-   DP-ÖKONOMIE (Deckpunkte) — zweite Währung neben SP, für die Werkstatt-Packs (#299).
-
-   Zwei Quellen, beide REIN & testbar (kein RNG/Date/localStorage), dieselbe Lauf-Bedingung wie SP
-   (abgeschlossener Lauf NACH vollendetem Onboarding, isSpRun):
-     • NATIVE DP — läuft IMMER (nach Onboarding), unabhängig vom Baum:  DP = floor(runScore / DP_PER_SCORE)
-       (linear: je volle 10 Mio → +1 DP; 10M→1 … 100M→10).
-     • BAUM-KOMPLETT — sobald der GANZE Baum gekauft ist (treeComplete), fließt die komplette SP-Ökonomie
-       (Grundstock + Meilensteine + Treue) ZUSÄTZLICH als DP; SP werden dann nicht mehr gutgeschrieben.
-   Der Reducer nutzt spCreditForRun (0 bei vollem Baum) für SP und dpForRun für DP. */
+   DP-ÖKONOMIE (Deckpunkte) — zweite Währung neben SP (#299). Unverändert (#369).
+   ============================================================ */
 export const DP_PER_SCORE = envNum("PROG_DP_PER_SCORE", 10_000_000); // Score je 1 DP (native Formel)
 
 // Native DP eines Laufs: linear floor(score / DP_PER_SCORE) — reine Score-Ableitung (ohne Lauf-Gate).
@@ -323,9 +338,8 @@ export function dpNative(score) {
   return DP_PER_SCORE > 0 ? Math.floor(num0(score) / DP_PER_SCORE) : 0;
 }
 
-// DP-Ertrag eines Laufs. treeComplete = ganzer Baum gekauft (VOR/zum Zeitpunkt des Laufs). Native DP immer;
-// bei vollem Baum zusätzlich die komplette SP-Ökonomie als DP (bewusste Doppelquelle). Onboarding-/vorzeitige
-// Läufe → 0. spRunsBefore fließt (wie bei SP) in den Treue-Drip ein.
+// DP-Ertrag eines Laufs. treeComplete = ganzer Baum gekauft. Native DP immer; bei vollem Baum zusätzlich die
+// komplette SP-Ökonomie als DP (bewusste Doppelquelle). Onboarding-/vorzeitige Läufe → 0.
 export function dpForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
   if (!isSpRun(record, onboardingBefore)) return 0;
   let dp = dpNative(record.score);
@@ -333,18 +347,13 @@ export function dpForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
   return dp;
 }
 
-// Tatsächlich gutgeschriebene SP eines Laufs: die SP-Ökonomie — ABER 0, sobald der Baum komplett ist
-// (dann fließt sie als DP, SP sind nutzlos). Die Reducer-Naht schreibt genau diesen Wert den SP gut.
+// Tatsächlich gutgeschriebene SP eines Laufs: die SP-Ökonomie — ABER 0, sobald der Baum komplett ist.
 export function spCreditForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
   return treeComplete ? 0 : spForRun(record, onboardingBefore, spRunsBefore);
 }
 
-// #299 Freischaltungs-Diff des Onboardings: welche Glieder wurden mit DIESEM Lauf überschritten und was schalten sie
-// frei? Rein & testbar → liefert Deskriptoren fürs Victory-Banner (Labels/Buttons baut die UI). `target` ∈
-// "workshop" | "upgrades" | "leaderboard" | undefined. Reihenfolge nach Glied. Beim letzten Glied (6/6) ist der
-// Onboarding-Abschluss dabei (schaltet Genesis-Pack + Werkstatt + Upgrades frei → target "workshop").
-// #304/#UI: Welche Freischaltung sitzt an einem bestimmten Onboarding-Glied? (für „nächste Freischaltung"/Fortschritt).
-// null = Glied ohne eigene Belohnung. Rein & testbar.
+/* #299/#304 Onboarding-Freischalt-Diff fürs Victory-Banner — bleibt für die Rollup-Rückgabe von recordRun erhalten
+   (inert bei Start 6/6). null = Glied ohne eigene Belohnung. Rein & testbar. */
 export function onboardingRewardAt(link) {
   const l = Math.floor(num0(link));
   for (const [arch, ln] of Object.entries(ONBOARDING_ARCH_UNLOCK)) if (Number(ln) === l) return { type: "archetype", key: arch };
@@ -352,7 +361,6 @@ export function onboardingRewardAt(link) {
   if (l >= ONBOARDING_LINKS) return { type: "onboardingDone", target: "workshop" };
   return null;
 }
-// Nächste noch ausstehende Belohnung ab (exkl.) `after` bis ONBOARDING_LINKS — { link, reward } oder null (alles erreicht).
 export function nextOnboardingReward(after) {
   const a = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(num0(after))));
   for (let l = a + 1; l <= ONBOARDING_LINKS; l++) { const r = onboardingRewardAt(l); if (r) return { link: l, reward: r }; }
@@ -369,24 +377,15 @@ export function onboardingUnlocks(before, after) {
 }
 
 /* ============================================================
-   TEST-/DEV-CHEATS — geheime Seed-Codes (schnelles Onboarding-Testen zu zweit).
+   TEST-/DEV-CHEATS — geheime Seed-Codes.
 
-   REIN: nur Profil-Transformation + Code-Erkennung. Der Live-/Sim-Build wird NICHT berührt — die UI fängt
-   die Codes nur im Preview-Build ab (sonst ließe sich per `unlock`/treeComplete die Meister-Liga aushebeln)
-   und storage/App wenden das Ergebnis an. Alles-freigeschaltet leitet sich aus onboarding + nodes ab —
-   KEINE separaten „unlocked"-Flags (dieselbe Wahrheit, die Reducer/Onboarding-Gates in Schritt 3/4 lesen).
+   REIN: nur Profil-Transformation + Code-Erkennung. "unlock" = ganzer Baum frei; "reset" = Profil wipen
+   (storage.js); "onboarding" = nur das (inerte) Onboarding-Feld + kleine Gutschrift.
    ============================================================ */
-
-// SP-Polster, das `unlock` gutschreibt, damit man nach einem Respec (Erstattung = TOTAL_COST) bequem den
-// Kauf-/Gate-Flow durchtesten kann. envNum-tunebar.
 export const UNLOCK_SP_CUSHION = envNum("PROG_UNLOCK_SP_CUSHION", 500);
-
-// Geheime Seed-Codes (Kleinbuchstaben, exakt) — in der UI VOR parseSeed abgefangen (würden sonst als gültige
-// Seeds durchgehen). "unlock" = alles frei; "reset" = ganzes Profil wipen (storage.js); "onboarding" = nur das
-// Onboarding überspringen (6/6) + 10 SP + 50 DP gutschreiben (sonst nichts).
 export const SECRET_SEEDS = { unlock: "unlock", reset: "reset", onboarding: "onboarding" };
 
-// Erkennt einen geheimen Code in der Seed-Eingabe → "unlock" | "reset" | "onboarding" | null (case-insensitiv, getrimmt).
+// Erkennt einen geheimen Code → "unlock" | "reset" | "onboarding" | null (case-insensitiv, getrimmt).
 export function matchSecretSeed(input) {
   const s = String(input == null ? "" : input).trim().toLowerCase();
   if (s === SECRET_SEEDS.unlock) return "unlock";
@@ -395,20 +394,18 @@ export function matchSecretSeed(input) {
   return null;
 }
 
-// `unlock`: NEUES Profil — Onboarding fertig (6/6), alle 13 Knoten gekauft (stichSpent = TOTAL_COST) plus
-// SP-Polster. Übrige Profil-Felder (Stats/Flags/Cosmetics) bleiben unangetastet.
+// `unlock`: NEUES Profil — alle kaufbaren Knoten gekauft (stichSpent = TOTAL_COST) plus SP-Polster. Onboarding 6/6.
 export function unlockAllProfile(profile) {
   return {
     ...profile,
     onboarding: ONBOARDING_LINKS,
-    nodes: Object.fromEntries(NODE_IDS.map((id) => [id, 1])),
+    nodes: Object.fromEntries(BUYABLE_IDS.map((id) => [id, 1])),
     stichSpent: TOTAL_COST,
     stichPoints: UNLOCK_SP_CUSHION,
   };
 }
 
-// `onboarding` (Test-Code): NUR das Onboarding überspringen (6/6) und 10 SP + 50 DP gutschreiben — kein Baum,
-// keine Cosmetics. Rein additiv auf ein bestehendes Profil; alle übrigen Felder bleiben unangetastet.
+// `onboarding` (Test-Code): NUR das Onboarding-Feld (6/6) + 10 SP + 50 DP; kein Baum. Rein additiv.
 export function skipOnboardingProfile(profile) {
   const num = (x) => Math.max(0, Math.floor(Number(x) || 0));
   return {

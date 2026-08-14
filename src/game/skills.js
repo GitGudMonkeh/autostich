@@ -608,11 +608,24 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
 // schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
 // da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
 const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
-// perArchBonus (Progression M2): +N Kandidaten JE aktivem Archetyp im Angebot — reine „mehr Auswahl", der Pick
-// bleibt einer. 0 = Bestand (byte-identisch). Nur im Normal-Lauf mit gekauftem M2 > 0.
-export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null, perArchBonus = 0) {
+// #369 §5a: countMap = { [arch]: n } — Pool = ALLE im Baum freigeschalteten Archetypen (unabhängig vom Build), je Archetyp
+// n VERSCHIEDENE Kandidaten (Tree-Stufe 1 = 1, Stufe 2 = 2; Beiträge addieren sich über die Archetypen). Ist countMap
+// gesetzt, ersetzt es activeArchetypes/perArch/perArchBonus komplett. null = Bestand (Sim/Standard: Build-Breite bestimmt die Größe).
+// perArchBonus (Alt): +N Kandidaten je aktivem Archetyp — reine „mehr Auswahl". 0 = byte-identisch.
+export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null, perArchBonus = 0, countMap = null) {
   const ownedSet = new Set(owned || []);
   const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
+  if (countMap) {
+    // Zähl-Map-Pfad (#369): stabile Reihenfolge (ARCHETYPE_ORDER), je Archetyp countMap[arch] verschiedene Legendäre.
+    const offer = [];
+    const archs = ARCHETYPE_ORDER.filter((a) => (countMap[a] || 0) > 0 && legsOf(a).length > 0);
+    for (const arch of shuffle(archs, rng)) {
+      const pool = shuffle(legsOf(arch), rng);
+      const per = countMap[arch] || 0;
+      for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
+    }
+    return offer;
+  }
   const archs = [...new Set(activeArchetypes || [])].filter((a) => legsOf(a).length > 0);
   const per = (perArch ?? legendaryPerArch(archs.length)) + Math.max(0, perArchBonus);
   const offer = [];

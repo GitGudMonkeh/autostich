@@ -18,11 +18,13 @@ export const TIERS = [1, 2, 3, 4];
 
 // Stufen-Metadaten (Spec §1 + §8). `rarity` = interner Schlüssel, `label` = sichtbarer deutscher Name,
 // `color` = UI-Farbe (I Grau · II Grün · III Blau · IV Lila), `price` = Shoppreis der Zielstufe.
+// #369 §3 Umbenennung: die 5er-Leiter Normal · Selten · Sehr selten · Rar · Legendär mappt auf die vier regulären
+// Stufen + Legendär-Layer. Tier II heißt jetzt „Selten" (grün), Tier III „Sehr selten" (blau).
 export const TIER_META = {
-  1: { tier: 1, rarity: "normal",   label: "Normal",       color: "#8a8a95", price: 8 },
-  2: { tier: 2, rarity: "uncommon", label: "Ungewöhnlich", color: "#4ade80", price: 12 },
-  3: { tier: 3, rarity: "rare",     label: "Selten",       color: "#5a8ade", price: 18 },
-  4: { tier: 4, rarity: "epic",     label: "Rar",          color: "#a855f7", price: 30 },
+  1: { tier: 1, rarity: "normal",   label: "Normal",      color: "#8a8a95", price: 8 },
+  2: { tier: 2, rarity: "uncommon", label: "Selten",      color: "#4ade80", price: 12 },
+  3: { tier: 3, rarity: "rare",     label: "Sehr selten", color: "#5a8ade", price: 18 },
+  4: { tier: 4, rarity: "epic",     label: "Rar",         color: "#a855f7", price: 30 },
 };
 
 // Römische Stufe direkt hinter dem Familiennamen (Spec §8: „Momentum III").
@@ -33,12 +35,14 @@ export const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 // #217 Meistergrade — Rarität-Shift: höhere Grade verschieben Gewicht zu Selten/Rar. shift 0 = Basis,
 // 1 (Grad III) / 2 (Grad IV+). Tabellen IDENTISCH zu architect.js (Single Source hier → kein Drift; der
 // Sim-Env-Hook SIM_RARE_SHIFT und der Grad-Reward greifen auf dieselbe Skala zu).
-// shift 3 (Progression-Baum Rarität III, R3): weiterer Schub zu Rar/Legendär. [TUNING — Playtest-justierbar]
+// shift 3 (Drop-Rate III): weiterer Schub zu Sehr selten/Rar. #369 §4: Drop IV = neuer shift 4 (22/18/32/28).
+// [TUNING — Playtest-justierbar]
 const TIER_WEIGHTS_BY_SHIFT = {
   0: { 1: 60, 2: 25, 3: 12, 4: 3 },
   1: { 1: 52, 2: 25, 3: 16, 4: 7 },
   2: { 1: 40, 2: 23, 3: 25, 4: 12 },
   3: { 1: 30, 2: 20, 3: 30, 4: 20 },
+  4: { 1: 22, 2: 18, 3: 32, 4: 28 },
 };
 // maxTier (Progression §4, Onboarding-Rarität): Obergrenze der anbietbaren Stufe — Stufen DARÜBER werden auf
 // Gewicht 0 gesetzt (der gewichtete Zug renormalisiert automatisch → „diese Stufe gibt es noch nicht"). Default 4

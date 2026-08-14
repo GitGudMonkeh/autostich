@@ -145,20 +145,21 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(m.deckSpent).toBe(0);
   });
 
-  it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map", () => {
+  it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map; v7 leert den Alt-Baum", () => {
     const m = migrateProfile({ schemaVersion: 2, stichPoints: 7, nodes: { B1: 1 } });
     expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
-    expect(m.stichPoints).toBe(7);        // Altfeld erhalten
-    expect(m.nodes).toEqual({ B1: 1 });
+    expect(m.stichPoints).toBe(7);        // Altfeld erhalten (kein stichSpent → keine Rückbuchung)
+    expect(m.nodes).toEqual({});          // #369 v7: Alt-Baum-Knoten (tote IDs) geleert
     expect(m.ownedCosmetics).toEqual({});
   });
 
-  it("gespeicherte SP-/Baum-/Onboarding-Werte überleben migrateProfile (nicht überschrieben)", () => {
+  it("v7 (#369): Alt-Baum wird geleert, investierte SP (stichSpent) fließen zurück aufs Guthaben", () => {
     const v2 = { schemaVersion: 2, stichPoints: 12, stichSpent: 5, nodes: { B1: 1 }, onboarding: 6, spRuns: 3 };
     const m = migrateProfile(v2);
-    expect(m.stichPoints).toBe(12);
-    expect(m.nodes).toEqual({ B1: 1 });
-    expect(m.onboarding).toBe(6);
+    expect(m.stichPoints).toBe(17);       // 12 + 5 (gratis Respec beim Umstieg, kein SP-Verlust)
+    expect(m.stichSpent).toBe(0);
+    expect(m.nodes).toEqual({});          // Alt-Knoten geleert
+    expect(m.onboarding).toBe(6);         // übrige Felder unberührt
     expect(m.spRuns).toBe(3);
   });
 

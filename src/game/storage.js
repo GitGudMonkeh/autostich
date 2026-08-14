@@ -87,7 +87,9 @@ export function loadRunHistory() {
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
 // v6 (#316): Onboarding-Phase entfernt — jedes Profil startet mit onboarding = ONBOARDING_LINKS (alle Archetypen,
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
-export const PROFILE_SCHEMA_VERSION = 6;
+// v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
+// Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
+export const PROFILE_SCHEMA_VERSION = 7;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -161,6 +163,19 @@ export function migrateProfile(p) {
     // Grant: Deckpunkte/SP bleiben unberührt (der 50-DP-Startbonus gilt nur für frische Profile über DEFAULT_PROFILE).
     if ((Number(out.onboarding) || 0) < ONBOARDING_LINKS) out.onboarding = ONBOARDING_LINKS;
     v = 6;
+  }
+  if (v < 7) {
+    // v6 → v7 (#369 Progression-Rework): der alte Baum (bau/auf/rar/mei) ist ersetzt. Alt-Knoten (B1/M5/…) referenzieren
+    // tote IDs → leeren; die dafür investierten SP (stichSpent) wandern zurück aufs Guthaben (gratis Respec beim Umstieg,
+    // KEIN SP-Verlust). „Kompletter Neustart für alle" (Rollout separat); Währungen/Stats/Cosmetics bleiben unberührt.
+    const spent = Math.max(0, Math.floor(Number(out.stichSpent) || 0));
+    const hasOldNodes = out.nodes && typeof out.nodes === "object" && Object.keys(out.nodes).length > 0;
+    if (spent > 0 || hasOldNodes) {
+      out.stichPoints = Math.max(0, Math.floor(Number(out.stichPoints) || 0)) + spent;
+      out.stichSpent = 0;
+      out.nodes = {};
+    }
+    v = 7;
   }
   out.schemaVersion = v;
   return out;

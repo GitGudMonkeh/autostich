@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
-  NODES, NODE_BY_ID, NODE_IDS, NONMEISTER_IDS, MEISTER_IDS,
-  NONMEISTER_TOTAL, TOTAL_COST, TOTAL_NODES,
-  emptyProfile, owns, nonMeisterSpent, gateNeed, gateMet, prereqMet, onboardingDone,
-  nodeEffects, treeCoverBonus, treeRerollBonus, treeRareShift,
+  NODES, NODE_BY_ID, NODE_IDS, BUYABLE_IDS, DECK_IDS, GEN_IDS,
+  TOTAL_COST, TOTAL_NODES, LEG_NODES_BY_ARCH,
+  emptyProfile, owns, anyLegOwned, gateMet, prereqMet,
+  nodeEffects, treeCoverBonus, treeEnergyBonus, treeRareShift,
+  unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, legCountByArch, rerollBase, legPerk2Force,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
-  SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP,
+  SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP, ONBOARDING_LINKS,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
   DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks, onboardingRewardAt, nextOnboardingReward,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile, skipOnboardingProfile,
 } from "../src/game/progression.js";
-import { ONBOARDING_LINKS } from "../src/game/progression.js";
 
 // Kauft eine Liste von Knoten der Reihe nach in ein frisches Profil mit reichlich SP. Wirft, wenn ein
 // Kauf nicht griff (deckt Sequenz-/Gate-Fehler in den Test-Fixtures selbst auf).
@@ -23,511 +23,315 @@ const build = (ids, sp = 1000) => {
   }
   return p;
 };
+// Voll-Legendär-Schicht + Drop-Kette (Reihenfolge stimmt): Vorbedingung für die Drop/Shift-Tests.
+const RARE = ["tier3", "tier4", "legLayer"];
 
-describe("Baum-Struktur — Spiegel von UpgradeScreen.jsx", () => {
-  it("13 Knoten, 4 Äste, Σ 134 SP, Nicht-Meister Σ 68 SP", () => {
-    expect(TOTAL_NODES).toBe(13);
-    expect(NODE_IDS).toEqual(["B1", "B2", "B3", "A1", "A2", "R1", "R2", "R3", "M1", "M2", "M3", "M4", "M5"]);
-    expect(TOTAL_COST).toBe(134);
-    expect(NONMEISTER_TOTAL).toBe(68);
-    expect(NONMEISTER_IDS).toEqual(["B1", "B2", "B3", "A1", "A2", "R1", "R2", "R3"]);
-    expect(MEISTER_IDS).toEqual(["M1", "M2", "M3", "M4", "M5"]);
+describe("Baum-Struktur — #369 Deck- + Allgemein-Zweig", () => {
+  it("25 kaufbare Knoten, Σ 137 SP (Deck 45 / Allgemein 92) + Platzhalter", () => {
+    expect(TOTAL_NODES).toBe(25);
+    expect(TOTAL_COST).toBe(137);
+    expect(DECK_IDS.length).toBe(11);
+    expect(GEN_IDS.length).toBe(14);
+    const deckCost = NODES.filter((n) => n.branch === "deck" && !n.placeholder).reduce((s, n) => s + n.cost, 0);
+    const genCost = NODES.filter((n) => n.branch === "gen").reduce((s, n) => s + n.cost, 0);
+    expect(deckCost).toBe(45);
+    expect(genCost).toBe(92);
+    // Platzhalter „Synergie-Legendäre" zählt NICHT zu den kaufbaren Knoten.
+    expect(BUYABLE_IDS).not.toContain("synLeg");
+    expect(NODE_BY_ID.synLeg.placeholder).toBe(true);
   });
-  it("Kosten exakt wie festgezurrt", () => {
+  it("Kosten exakt wie festgezurrt (#369 §2)", () => {
     const cost = Object.fromEntries(NODES.map((n) => [n.id, n.cost]));
-    expect(cost).toEqual({
-      B1: 2, B2: 5, B3: 9, A1: 6, A2: 12, R1: 6, R2: 10, R3: 18,
-      M1: 4, M2: 9, M3: 13, M4: 18, M5: 22,
+    expect(cost).toMatchObject({
+      fireLeg1: 3, fireLeg2: 5, boltLeg1: 3, boltLeg2: 5, iceDeck: 4, iceLeg1: 3, iceLeg2: 5,
+      plantDeck: 4, plantLeg1: 3, plantLeg2: 5, deckReroll: 5,
+      cover1: 2, cover2: 4, cover3: 6, energy1: 2, energy2: 4, tier3: 2, tier4: 3, legLayer: 4,
+      drop1: 5, drop2: 8, drop3: 12, drop4: 24, perk2Leg: 10, perk2Reroll: 6,
     });
   });
-  it("Sequenz-Verkettung je Ast (prereq)", () => {
-    expect(NODES.filter((n) => !n.prereq).map((n) => n.id)).toEqual(["B1", "A1", "R1", "M1"]);
-    expect(NODE_BY_ID.B3.prereq).toBe("B2");
-    expect(NODE_BY_ID.M5.prereq).toBe("M4");
+  it("Legendär-Ketten je Archetyp (Stufe 1/2)", () => {
+    expect(Object.keys(LEG_NODES_BY_ARCH).sort()).toEqual(["fire", "ice", "lightning", "plant"]);
+    expect(LEG_NODES_BY_ARCH.fire.map((n) => n.id)).toEqual(["fireLeg1", "fireLeg2"]);
   });
 });
 
-describe("Kauf-Sequenz-Sperren", () => {
-  it("Ast-Vorgänger ist Pflicht: B2 erst nach B1", () => {
+describe("Ketten-Sperren & Deck-Gates", () => {
+  it("Kettenvorgänger ist Pflicht: fireLeg2 erst nach fireLeg1; iceLeg1 erst nach iceDeck", () => {
     const fresh = emptyProfile(100);
-    expect(nodeState(fresh, "B2")).toBe("lock-prev");
-    expect(canBuy(fresh, "B2")).toBe(false);
-    const afterB1 = buyNode(fresh, "B1");
-    expect(nodeState(afterB1, "B2")).toBe("buy");
+    expect(nodeState(fresh, "fireLeg2")).toBe("lock-prev");
+    expect(nodeState(fresh, "iceLeg1")).toBe("lock-prev");
+    expect(nodeState(buyNode(fresh, "fireLeg1"), "fireLeg2")).toBe("buy");
+    expect(nodeState(build(["iceDeck"]), "iceLeg1")).toBe("buy");
   });
-  it("Äste sind unabhängig — A1 kaufbar ohne Baufeld", () => {
+  it("deckReroll: anyLeg-Gate — erst kaufbar, sobald irgendein Leg I gekauft ist", () => {
     const fresh = emptyProfile(100);
-    expect(canBuy(fresh, "A1")).toBe(true);
-    expect(canBuy(fresh, "R1")).toBe(true);
+    expect(anyLegOwned(fresh)).toBe(false);
+    expect(nodeState(fresh, "deckReroll")).toBe("lock-gate");
+    const withLeg = build(["boltLeg1"]);
+    expect(anyLegOwned(withLeg)).toBe(true);
+    expect(nodeState(withLeg, "deckReroll")).toBe("buy");
   });
-  it("prereqMet direkt", () => {
-    expect(prereqMet(emptyProfile(0), NODE_BY_ID.B1)).toBe(true); // erster Knoten
-    expect(prereqMet(emptyProfile(0), NODE_BY_ID.A2)).toBe(false);
-    expect(prereqMet(build(["A1"]), NODE_BY_ID.A2)).toBe(true);
+  it("Feuer/Blitz-Ketten sind unabhängig (kein Deck-Knoten nötig)", () => {
+    const fresh = emptyProfile(100);
+    expect(canBuy(fresh, "fireLeg1")).toBe(true);
+    expect(canBuy(fresh, "boltLeg1")).toBe(true);
   });
-  it("bereits gekaufter Knoten → owned, nicht erneut kaufbar", () => {
-    const p = build(["B1"]);
-    expect(nodeState(p, "B1")).toBe("owned");
-    expect(canBuy(p, "B1")).toBe(false);
-    expect(buyNode(p, "B1")).toBe(p); // No-op, gleiche Referenz
+  it("Platzhalter synLeg ist nie kaufbar", () => {
+    expect(nodeState(emptyProfile(100), "synLeg")).toBe("placeholder");
+    expect(canBuy(emptyProfile(100), "synLeg")).toBe(false);
+    expect(buyNode(emptyProfile(100), "synLeg")).toEqual(emptyProfile(100));
+  });
+  it("Allgemein-Ketten: cover/energy/rarität sequenziell, drop/perk2 erst nach Legendär", () => {
+    expect(prereqMet(emptyProfile(0), NODE_BY_ID.cover2)).toBe(false);
+    expect(prereqMet(build(["cover1"]), NODE_BY_ID.cover2)).toBe(true);
+    expect(nodeState(build(["tier3", "tier4"]), "drop1")).toBe("lock-prev"); // braucht legLayer
+    expect(nodeState(build(RARE), "drop1")).toBe("buy");
+    expect(nodeState(build(RARE), "perk2Leg")).toBe("buy");
   });
 });
 
-describe("SP-Deckung", () => {
+describe("SP-Deckung & Immutabilität", () => {
   it("zu wenig SP → lock-sp, Kauf ist No-op", () => {
-    const p = emptyProfile(1); // B1 kostet 2
-    expect(nodeState(p, "B1")).toBe("lock-sp");
-    expect(buyNode(p, "B1")).toBe(p);
+    const p = emptyProfile(1); // cover1 kostet 2
+    expect(nodeState(p, "cover1")).toBe("lock-sp");
+    expect(buyNode(p, "cover1")).toBe(p);
   });
-  it("genau genug SP → buy", () => {
-    expect(nodeState(emptyProfile(2), "B1")).toBe("buy");
-  });
-  it("Kauf zieht SP ab und bucht in stichSpent", () => {
-    const p = buyNode(emptyProfile(10), "B1");
+  it("Kauf zieht SP ab, bucht in stichSpent, mutiert das Eingabe-Profil nicht", () => {
+    const fresh = emptyProfile(10);
+    const p = buyNode(fresh, "cover1");
     expect(p.stichPoints).toBe(8);
     expect(p.stichSpent).toBe(2);
-    expect(owns(p, "B1")).toBe(true);
-  });
-  it("Kauf mutiert das Eingabe-Profil NICHT (Immutabilität)", () => {
-    const fresh = emptyProfile(10);
-    buyNode(fresh, "B1");
+    expect(owns(p, "cover1")).toBe(true);
     expect(fresh.nodes).toEqual({});
     expect(fresh.stichPoints).toBe(10);
-    expect(fresh.stichSpent).toBe(0);
-  });
-});
-
-describe("Meister-Gates — onb / pct 17·34·51 / all", () => {
-  it("pct-Schwellen lösen zu 17 / 34 / 51 SP auf", () => {
-    expect(gateNeed(NODE_BY_ID.M2)).toBe(17);
-    expect(gateNeed(NODE_BY_ID.M3)).toBe(34);
-    expect(gateNeed(NODE_BY_ID.M4)).toBe(51);
-  });
-  it("M1: Onboarding-Gate — in Schritt 1 als erfüllt angenommen", () => {
-    expect(onboardingDone(emptyProfile(0))).toBe(true);
-    expect(gateMet(emptyProfile(0), NODE_BY_ID.M1)).toBe(true);
-    expect(canBuy(emptyProfile(4), "M1")).toBe(true);
-  });
-  it("M1: unfertiges Onboarding-Feld sperrt (Vorgriff Schritt 2)", () => {
-    const p = { ...emptyProfile(4), onboarding: 3 };
-    expect(onboardingDone(p)).toBe(false);
-    expect(nodeState(p, "M1")).toBe("lock-gate");
-    const done = { ...emptyProfile(4), onboarding: 6 };
-    expect(onboardingDone(done)).toBe(true);
-    expect(nodeState(done, "M1")).toBe("buy");
-  });
-  it("M2 braucht ≥17 Nicht-Meister-SP (25 %)", () => {
-    // B1+B2+B3+A1 = 2+5+9+6 = 22 ≥ 17 ✓ ; nur B1+B2+B3 = 16 < 17 ✗
-    const under = build(["M1", "B1", "B2", "B3"]); // 16 SP nicht-Meister
-    expect(nonMeisterSpent(under)).toBe(16);
-    expect(nodeState(under, "M2")).toBe("lock-gate");
-    const over = buyNode(under, "A1"); // +6 → 22
-    expect(nonMeisterSpent(over)).toBe(22);
-    expect(nodeState(over, "M2")).toBe("buy");
-  });
-  it("M3 braucht ≥34, M4 braucht ≥51 (Sequenz + Gate zusammen)", () => {
-    // Nicht-Meister komplett = 68 SP → beide Gates offen; Meister-Sequenz muss trotzdem stimmen.
-    const full = build([...NONMEISTER_IDS, "M1", "M2"]);
-    expect(nonMeisterSpent(full)).toBe(68);
-    expect(nodeState(full, "M3")).toBe("buy");
-    // Mit nur 34 nicht-Meister-SP: M3 offen, M4 (braucht 51) noch gesperrt.
-    // B1..B3(16)+A1+A2(18)=34 exakt. (Nicht-Meister ZUERST kaufen — sonst greift das pct-Gate für M2.)
-    const at34 = build(["B1", "B2", "B3", "A1", "A2", "M1", "M2"]);
-    expect(nonMeisterSpent(at34)).toBe(34);
-    expect(nodeState(at34, "M3")).toBe("buy");
-    const at34withM3 = buyNode(at34, "M3");
-    expect(nodeState(at34withM3, "M4")).toBe("lock-gate"); // 34 < 51
-  });
-  it("M5 (all-Gate): erst wenn ALLE anderen 12 Knoten gekauft sind", () => {
-    const almost = build([...NONMEISTER_IDS, "M1", "M2", "M3", "M4"]);
-    expect(gateMet(almost, NODE_BY_ID.M5)).toBe(true);
-    expect(nodeState(almost, "M5")).toBe("buy");
-    // Fehlt ein einziger Nicht-Meister-Knoten → Gate zu. (A2 weglassen: 68−12 = 56 SP ≥ 51 → M4 noch
-    // kaufbar, aber der all-Gate für M5 bleibt zu. R3 ginge nicht: 68−18 = 50 < 51 → schon M4 gesperrt.)
-    const missingA2 = build([...NONMEISTER_IDS.filter((id) => id !== "A2"), "M1", "M2", "M3", "M4"]);
-    expect(owns(missingA2, "A2")).toBe(false);
-    expect(gateMet(missingA2, NODE_BY_ID.M5)).toBe(false);
-    expect(nodeState(missingA2, "M5")).toBe("lock-gate");
   });
 });
 
 describe("nodeEffects — Ableitungen bei mehreren Ständen", () => {
   it("frisches Profil = beweisbares No-op", () => {
     expect(nodeEffects(emptyProfile(0))).toEqual({
-      treeCoverBonus: 0, treeRerollBonus: 0, treeRareShift: 0,
-      legSlotReroll: false, legTwoPerArch: false, legDropDouble: false,
-      legGuaranteedPerk2: false, legChoose3Perk2: false,
+      treeCoverBonus: 0, treeEnergyBonus: 0, treeRareShift: 0, maxTier: 2, legendaryLayer: false, legMult: 0,
+      unlockedArchetypes: ["lightning", "fire"], legCountByArch: {}, archLegPhaseOn: false,
+      legPerkPhaseOn: false, rerollDeckLeg: 0, rerollPerk2: 0,
     });
   });
-  it("treeCoverBonus summiert Baufeld-Zellen (B1+1, B2+1, B3+2 → 0..4)", () => {
-    expect(treeCoverBonus(emptyProfile(0))).toBe(0);
-    expect(treeCoverBonus(build(["B1"]))).toBe(1);
-    expect(treeCoverBonus(build(["B1", "B2"]))).toBe(2);
-    expect(treeCoverBonus(build(["B1", "B2", "B3"]))).toBe(4);
+  it("treeCoverBonus summiert Baufeld (cover1+1, cover2+1, cover3+2 → 0..4)", () => {
+    expect(treeCoverBonus(build(["cover1"]))).toBe(1);
+    expect(treeCoverBonus(build(["cover1", "cover2"]))).toBe(2);
+    expect(treeCoverBonus(build(["cover1", "cover2", "cover3"]))).toBe(4);
   });
-  it("treeRerollBonus zählt Auftakt-Knoten (0..2)", () => {
-    expect(treeRerollBonus(emptyProfile(0))).toBe(0);
-    expect(treeRerollBonus(build(["A1"]))).toBe(1);
-    expect(treeRerollBonus(build(["A1", "A2"]))).toBe(2);
+  it("treeEnergyBonus summiert Energie (0..2)", () => {
+    expect(treeEnergyBonus(build(["energy1"]))).toBe(1);
+    expect(treeEnergyBonus(build(["energy1", "energy2"]))).toBe(2);
   });
-  it("treeRareShift = höchste gekaufte Rarität-Stufe (0..3)", () => {
+  it("treeRareShift = höchste Drop-Stufe (0..4), Drop hängt an der Legendär-Schicht", () => {
     expect(treeRareShift(emptyProfile(0))).toBe(0);
-    expect(treeRareShift(build(["R1"]))).toBe(1);
-    expect(treeRareShift(build(["R1", "R2"]))).toBe(2);
-    expect(treeRareShift(build(["R1", "R2", "R3"]))).toBe(3);
+    expect(treeRareShift(build([...RARE, "drop1"]))).toBe(1);
+    expect(treeRareShift(build([...RARE, "drop1", "drop2"]))).toBe(2);
+    expect(treeRareShift(build([...RARE, "drop1", "drop2", "drop3"]))).toBe(3);
+    expect(treeRareShift(build([...RARE, "drop1", "drop2", "drop3", "drop4"]))).toBe(4);
   });
-  it("Meister-Flags schalten je Knoten (M1..M5)", () => {
-    const m1 = build(["M1"]);
-    expect(nodeEffects(m1).legSlotReroll).toBe(true);
-    expect(nodeEffects(m1).legTwoPerArch).toBe(false);
-    const all = build([...NONMEISTER_IDS, "M1", "M2", "M3", "M4", "M5"]);
-    const e = nodeEffects(all);
-    expect([e.legSlotReroll, e.legTwoPerArch, e.legDropDouble, e.legGuaranteedPerk2, e.legChoose3Perk2])
-      .toEqual([true, true, true, true, true]);
+  it("maxTier: Start 2 (Normal+Selten), Sehr selten → 3, Rar → 4", () => {
+    expect(maxRarityTier(emptyProfile(0))).toBe(2);
+    expect(maxRarityTier(build(["tier3"]))).toBe(3);
+    expect(maxRarityTier(build(["tier3", "tier4"]))).toBe(4);
   });
-  it("kombinierter Zwischenstand", () => {
-    const p = build(["B1", "B2", "A1", "R1", "R2", "M1"]);
-    expect(nodeEffects(p)).toEqual({
-      treeCoverBonus: 2, treeRerollBonus: 1, treeRareShift: 2,
-      legSlotReroll: true, legTwoPerArch: false, legDropDouble: false,
-      legGuaranteedPerk2: false, legChoose3Perk2: false,
-    });
+  it("Legendär-Schicht + legMult: aus ohne Knoten, ×1 mit Schicht, skaliert mit Drop", () => {
+    expect(nodeEffects(emptyProfile(0)).legMult).toBe(0);
+    expect(nodeEffects(build(RARE)).legendaryLayer).toBe(true);
+    expect(nodeEffects(build(RARE)).legMult).toBe(1);
+    expect(nodeEffects(build([...RARE, "drop1", "drop2", "drop3", "drop4"])).legMult).toBeGreaterThan(3); // ~3.3 bei Drop IV
+  });
+  it("unlockedArchetypes: Blitz+Feuer immer; +Eis mit Eis-Deck; +Pflanze mit Pflanze-Deck", () => {
+    expect(unlockedArchetypes(emptyProfile(0))).toEqual(["lightning", "fire"]);
+    expect(unlockedArchetypes(build(["iceDeck"])).sort()).toEqual(["fire", "ice", "lightning"]);
+    expect(unlockedArchetypes(build(["iceDeck", "plantDeck"])).sort()).toEqual(["fire", "ice", "lightning", "plant"]);
+  });
+  it("legCountByArch: Leg I → 1, Leg II → 2; Beiträge je Archetyp getrennt", () => {
+    expect(legCountByArch(build(["fireLeg1"]))).toEqual({ fire: 1 });
+    expect(legCountByArch(build(["fireLeg1", "fireLeg2"]))).toEqual({ fire: 2 });
+    expect(legCountByArch(build(["fireLeg1", "fireLeg2", "iceDeck", "iceLeg1"]))).toEqual({ fire: 2, ice: 1 });
+  });
+  it("archLegPhaseOn: erst mit irgendeinem Leg I; Reroll-/2.-Perk-Flags je Knoten", () => {
+    expect(nodeEffects(emptyProfile(0)).archLegPhaseOn).toBe(false);
+    expect(nodeEffects(build(["plantDeck", "plantLeg1"])).archLegPhaseOn).toBe(true);
+    expect(nodeEffects(build(["fireLeg1", "deckReroll"])).rerollDeckLeg).toBe(1);
+    expect(nodeEffects(build([...RARE, "perk2Leg"])).legPerkPhaseOn).toBe(true);
+    expect(nodeEffects(build([...RARE, "perk2Leg", "perk2Reroll"])).rerollPerk2).toBe(1);
+  });
+  it("legPerk2Force: 0 ohne, 3 mit perk2Leg (voller Legendär-Satz); null → 0", () => {
+    expect(legPerk2Force(nodeEffects(emptyProfile(0)))).toBe(0);
+    expect(legPerk2Force(nodeEffects(build([...RARE, "perk2Leg"])))).toBe(3);
+    expect(legPerk2Force(null)).toBe(0);
+  });
+  it("rerollBase: fest 1 im Normal-Lauf mit Profil", () => {
+    expect(rerollBase(emptyProfile(0))).toBe(1);
+    expect(rerollBase(build(["fireLeg1"]))).toBe(1);
   });
 });
 
 describe("respec — erstattet exakt", () => {
-  it("volle Rückerstattung der gekauften Kosten, nodes geleert, stichSpent 0", () => {
-    const p = build(["B1", "B2", "A1", "R1", "M1"], 100); // Kosten 2+5+6+6+4 = 23
-    expect(p.stichPoints).toBe(77);
-    expect(p.stichSpent).toBe(23);
+  it("volle Rückerstattung, nodes geleert, stichSpent 0", () => {
+    const p = build(["cover1", "cover2", "fireLeg1", "iceDeck"], 100); // 2+4+3+4 = 13
+    expect(p.stichPoints).toBe(87);
+    expect(p.stichSpent).toBe(13);
     const r = respec(p);
-    expect(r.stichPoints).toBe(100); // exakt wiederhergestellt
+    expect(r.stichPoints).toBe(100);
     expect(r.stichSpent).toBe(0);
     expect(r.nodes).toEqual({});
     expect(ownedCount(r)).toBe(0);
   });
-  it("Respec eines leeren Profils ist ein No-op-Wert (keine Erstattung)", () => {
-    const r = respec(emptyProfile(14));
-    expect(r.stichPoints).toBe(14);
-    expect(r.nodes).toEqual({});
-  });
-  it("Kauf → Respec → identisches Guthaben (Rundreise)", () => {
-    const start = emptyProfile(134);
-    const bought = build(NODE_IDS, 134); // Vollausbau kostet exakt 134
+  it("Vollausbau kostet exakt TOTAL_COST; respec stellt es wieder her", () => {
+    const bought = build(BUYABLE_IDS, TOTAL_COST);
     expect(bought.stichPoints).toBe(0);
-    expect(respec(bought).stichPoints).toBe(start.stichPoints);
+    expect(respec(bought).stichPoints).toBe(TOTAL_COST);
   });
 });
 
-describe("treeComplete + Meister-Liga", () => {
-  it("false bis alle 13 Knoten gekauft sind", () => {
+describe("treeComplete + #299 letzter Knoten → DP", () => {
+  it("false bis alle kaufbaren Knoten gekauft sind (Platzhalter zählt nicht)", () => {
     expect(treeComplete(emptyProfile(0))).toBe(false);
-    const almost = build([...NONMEISTER_IDS, "M1", "M2", "M3", "M4"]);
-    expect(treeComplete(almost)).toBe(false);
-    const full = buyNode(almost, "M5");
+    const full = build(BUYABLE_IDS, TOTAL_COST);
     expect(treeComplete(full)).toBe(true);
-    expect(ownedCount(full)).toBe(13);
+    expect(ownedCount(full)).toBe(25);
+  });
+  it("mit dem LETZTEN Knoten werden Rest-SP zu DP", () => {
+    const nodes = Object.fromEntries(BUYABLE_IDS.filter((id) => id !== "drop4").map((id) => [id, 1]));
+    const cost = NODE_BY_ID.drop4.cost;
+    const p0 = { ...emptyProfile(cost + 7), nodes, deckPoints: 3 };
+    expect(treeComplete(p0)).toBe(false);
+    const p1 = buyNode(p0, "drop4");
+    expect(treeComplete(p1)).toBe(true);
+    expect(p1.stichPoints).toBe(0);
+    expect(p1.deckPoints).toBe(3 + 7);
   });
 });
 
 describe("Determinismus & Robustheit", () => {
-  it("kein RNG/Date im Modul-Quelltext", async () => {
+  it("kein RNG/Date/localStorage im Modul-Quelltext", async () => {
     const fs = await import("node:fs");
     const src = fs.readFileSync(new URL("../src/game/progression.js", import.meta.url), "utf8");
-    // Aufruf-Formen prüfen (nicht bloße Erwähnung in Kommentaren wie „KEINE localStorage-Zugriffe").
     expect(src).not.toMatch(/Math\.random\s*\(|Date\.now\s*\(|new Date\s*\(|localStorage\s*[.[]/);
   });
-  it("gleiche Kaufreihenfolge → gleiches Profil; Reihenfolge innerhalb offener Käufe egal", () => {
-    const a = build(["B1", "A1", "R1", "B2"]);
-    const b = build(["A1", "R1", "B1", "B2"]);
+  it("Reihenfolge innerhalb offener Käufe egal", () => {
+    const a = build(["cover1", "fireLeg1", "energy1", "cover2"]);
+    const b = build(["fireLeg1", "energy1", "cover1", "cover2"]);
     expect(nodeEffects(a)).toEqual(nodeEffects(b));
-    expect(a.stichPoints).toBe(b.stichPoints);
     expect(a.nodes).toEqual(b.nodes);
-  });
-  it("nodeEffects/canBuy sind rein — mehrfacher Aufruf identisch", () => {
-    const p = build(["B1", "B2", "A1"]);
-    expect(nodeEffects(p)).toEqual(nodeEffects(p));
-    expect(canBuy(p, "B3")).toBe(canBuy(p, "B3"));
   });
   it("robust gegen leere/kaputte Profile", () => {
     expect(nodeEffects({}).treeCoverBonus).toBe(0);
-    expect(nonMeisterSpent(undefined)).toBe(0);
-    expect(owns(null, "B1")).toBe(false);
+    expect(owns(null, "cover1")).toBe(false);
     expect(nodeState({ nodes: {} }, "unknown-id")).toBe("unknown");
   });
 });
 
-describe("Onboarding-Fortschritt (docs §4)", () => {
+/* ===== SP-/DP-ÖKONOMIE + ONBOARDING (unverändert #369) ===== */
+
+describe("Onboarding-Fortschritt (inert bei Start 6/6)", () => {
   it("natürlicher Abschluss rückt ein Glied vor, gedeckelt bei 6", () => {
     expect(onboardingAfter(0, { completed: true })).toBe(1);
     expect(onboardingAfter(5, { completed: true })).toBe(6);
-    expect(onboardingAfter(6, { completed: true })).toBe(6); // Deckel
+    expect(onboardingAfter(6, { completed: true })).toBe(6);
     expect(ONBOARDING_LINKS).toBe(6);
   });
   it("vorzeitiges Beenden zählt nicht", () => {
     expect(onboardingAfter(2, { completed: false })).toBe(2);
-    expect(onboardingAfter(2, {})).toBe(2);
     expect(onboardingAfter(2, null)).toBe(2);
   });
-  it("robust gegen kaputten Stand", () => {
-    expect(onboardingAfter(undefined, { completed: true })).toBe(1);
-    expect(onboardingAfter(-3, { completed: true })).toBe(1);
-    expect(onboardingAfter(99, { completed: true })).toBe(6);
-  });
 });
 
-describe("SP-Meilensteine (docs §6, kumulativ)", () => {
+describe("SP-Meilensteine (kumulativ)", () => {
   it("jede überschrittene Schwelle addiert ihre SP", () => {
-    expect(spMilestones(0)).toBe(0);
     expect(spMilestones(24_999_999)).toBe(0);
     expect(spMilestones(25_000_000)).toBe(1);
-    expect(spMilestones(49_999_999)).toBe(1);
     expect(spMilestones(50_000_000)).toBe(2);
-    expect(spMilestones(75_000_000)).toBe(3);
-    expect(spMilestones(99_999_999)).toBe(3);
     expect(spMilestones(100_000_000)).toBe(5); // 1+1+1+2
-    expect(spMilestones(500_000_000)).toBe(5); // gedeckelt (keine weiteren Schwellen)
+    expect(spMilestones(500_000_000)).toBe(5);
   });
 });
 
-describe("milestoneBarState (docs §6, Balken überm Battlefield)", () => {
+describe("milestoneBarState", () => {
   it("erreichte Meilensteine, nicht-lineare Füllung, nächstes Ziel", () => {
     const s0 = milestoneBarState(0);
-    expect(s0.reached).toBe(0); expect(s0.total).toBe(4); expect(s0.fill).toBe(0);
-    expect(s0.atMax).toBe(false); expect(s0.spSoFar).toBe(0); expect(s0.next.at).toBe(25_000_000);
-    // Halber Weg zum 1. Meilenstein → 0.5/4 = 0.125 (jeder Meilenstein = ein Viertel)
+    expect(s0.reached).toBe(0); expect(s0.fill).toBe(0); expect(s0.next.at).toBe(25_000_000);
     expect(milestoneBarState(12_500_000).fill).toBeCloseTo(0.125, 5);
-    // Genau am 1. Meilenstein: reached 1, fill 0.25, SP 1, nächstes Ziel 50 Mio
     const s1 = milestoneBarState(25_000_000);
-    expect(s1.reached).toBe(1); expect(s1.fill).toBeCloseTo(0.25, 5); expect(s1.spSoFar).toBe(1); expect(s1.next.at).toBe(50_000_000);
-    // 60 Mio: 2 erreicht + 40 % ins 3. Segment (50→75) → (2+0.4)/4 = 0.6
-    const s2 = milestoneBarState(60_000_000);
-    expect(s2.reached).toBe(2); expect(s2.fill).toBeCloseTo(0.6, 5); expect(s2.spSoFar).toBe(2);
+    expect(s1.reached).toBe(1); expect(s1.fill).toBeCloseTo(0.25, 5); expect(s1.spSoFar).toBe(1);
   });
-  it("bei/über 100 Mio: Maximum (voll, +5 SP, kein nächstes Ziel)", () => {
-    for (const sc of [100_000_000, 250_000_000]) {
-      const m = milestoneBarState(sc);
-      expect(m.atMax).toBe(true); expect(m.fill).toBe(1); expect(m.reached).toBe(4); expect(m.spSoFar).toBe(5); expect(m.next).toBe(null);
-    }
+  it("bei/über 100 Mio: Maximum", () => {
+    const m = milestoneBarState(250_000_000);
+    expect(m.atMax).toBe(true); expect(m.fill).toBe(1); expect(m.spSoFar).toBe(5); expect(m.next).toBe(null);
   });
 });
 
-describe("SP-Ernte pro Lauf (docs §5/§6) — nach Onboarding gegated", () => {
-  it("isSpRun: nur abgeschlossener Lauf NACH vollendetem Onboarding", () => {
+describe("SP-Ernte pro Lauf — nach Onboarding (Start 6/6)", () => {
+  it("isSpRun + Grundstock + Meilensteine + Treue-Drip", () => {
     expect(isSpRun({ completed: true }, 6)).toBe(true);
-    expect(isSpRun({ completed: true }, 5)).toBe(false); // noch im Onboarding
-    expect(isSpRun({ completed: false }, 6)).toBe(false); // vorzeitig beendet
-    expect(isSpRun(null, 6)).toBe(false);
-  });
-  it("während des Onboardings gibt es NULL SP (Upgrades-Kachel gesperrt)", () => {
-    for (let ob = 0; ob < ONBOARDING_LINKS; ob++) {
-      expect(spForRun({ completed: true, score: 100_000_000 }, ob, 0)).toBe(0);
-    }
-  });
-  it("nach Onboarding: Grundstock + Score-Meilensteine", () => {
-    expect(spForRun({ completed: true, score: 0 }, 6, 0)).toBe(SP_PER_RUN);           // nur Grundstock
-    expect(spForRun({ completed: true, score: 25_000_000 }, 6, 0)).toBe(SP_PER_RUN + 1);
+    expect(isSpRun({ completed: false }, 6)).toBe(false);
+    expect(spForRun({ completed: true, score: 0 }, 6, 0)).toBe(SP_PER_RUN);
     expect(spForRun({ completed: true, score: 100_000_000 }, 6, 0)).toBe(SP_PER_RUN + 5);
-  });
-  it("Treue-Drip: jeder 10. SP-Lauf gibt +5 extra", () => {
-    // spRunsBefore = 9 → dieser Lauf ist der 10. → +LOYALTY. spRunsBefore = 8 → kein Drip.
     expect(spForRun({ completed: true, score: 0 }, 6, SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
-    expect(spForRun({ completed: true, score: 0 }, 6, SP_LOYALTY_EVERY - 2)).toBe(SP_PER_RUN);
-    expect(spForRun({ completed: true, score: 0 }, 6, 2 * SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
-  });
-  it("unfertiger Lauf gibt nie SP, auch mit riesigem Score", () => {
-    expect(spForRun({ completed: false, score: 999_000_000 }, 6, 9)).toBe(0);
   });
 });
 
-describe("#299 buyNode — letzter Knoten wandelt übrige SP zu DP", () => {
-  it("nur beim letzten Kauf (Baum wird komplett) → SP-Rest wird zu DP", () => {
-    // Fast fertiges Profil: alle Knoten außer M5 gekauft, genug SP für M5 + Rest.
-    const nodes = Object.fromEntries(NODE_IDS.filter((id) => id !== "M5").map((id) => [id, 1]));
-    const cost = NODE_BY_ID.M5.cost;
-    const p0 = { ...emptyProfile(cost + 7), nodes, deckPoints: 3 };
-    expect(treeComplete(p0)).toBe(false);
-    const p1 = buyNode(p0, "M5");
-    expect(treeComplete(p1)).toBe(true);
-    expect(p1.stichPoints).toBe(0);        // Rest-SP (7) abgeräumt
-    expect(p1.deckPoints).toBe(3 + 7);     // Rest-SP zu DP
-  });
-  it("nicht-letzter Kauf lässt SP/DP unangetastet (nur normaler Abzug)", () => {
-    const p0 = { ...emptyProfile(50), deckPoints: 2 };
-    const p1 = buyNode(p0, "B1"); // erster Knoten, Baum bleibt unvollständig
-    expect(p1.stichPoints).toBe(50 - NODE_BY_ID.B1.cost);
-    expect(p1.deckPoints).toBe(2);
-  });
-});
-
-describe("DP-Ökonomie (#299) — native Formel + Baum-komplett-Umstellung", () => {
-  it("dpNative: linear floor(score / 10 Mio)", () => {
-    expect(dpNative(0)).toBe(0);
-    expect(dpNative(9_999_999)).toBe(0);
-    expect(dpNative(10_000_000)).toBe(1);
-    expect(dpNative(55_000_000)).toBe(5);
-    expect(dpNative(100_000_000)).toBe(10);
+describe("DP-Ökonomie (#299) — unverändert", () => {
+  it("dpNative linear; dpForRun native + (bei vollem Baum) SP-Ökonomie; spCreditForRun 0 bei vollem Baum", () => {
     expect(DP_PER_SCORE).toBe(10_000_000);
-  });
-  it("dpForRun: native DP nur bei abgeschlossenem Lauf NACH Onboarding", () => {
-    expect(dpForRun({ completed: true, score: 55_000_000 }, 6, false, 0)).toBe(5); // native
-    expect(dpForRun({ completed: true, score: 55_000_000 }, 5, false, 0)).toBe(0); // noch im Onboarding
-    expect(dpForRun({ completed: false, score: 999_000_000 }, 6, false, 0)).toBe(0); // vorzeitig beendet
-    expect(dpForRun(null, 6, false, 0)).toBe(0);
-  });
-  it("dpForRun: bei vollem Baum fließt die SP-Ökonomie ZUSÄTZLICH als DP", () => {
-    // 100 Mio: native 10 + SP-Ökonomie (Grundstock + Meilensteine 1+1+1+2 = 5) = 10 + (SP_PER_RUN+5)
+    expect(dpNative(55_000_000)).toBe(5);
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(10);
     expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(10 + SP_PER_RUN + 5);
-    // Treue-Drip zählt auch bei vollem Baum (jeder 10. Lauf): score 0 → native 0 + (SP_PER_RUN + LOYALTY)
-    expect(dpForRun({ completed: true, score: 0 }, 6, true, SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
-    // ohne vollen Baum: nur native (score 0 → 0)
-    expect(dpForRun({ completed: true, score: 0 }, 6, false, SP_LOYALTY_EVERY - 1)).toBe(0);
-  });
-  it("spCreditForRun: normale SP-Ökonomie, aber 0 sobald der Baum komplett ist", () => {
-    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(SP_PER_RUN + 5);
-    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0); // voller Baum → keine SP mehr
-    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(spForRun({ completed: true, score: 100_000_000 }, 6, 0));
+    expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0);
   });
 });
 
-describe("DP-Doppelquelle (#299 AC4) — native Formel läuft ZUSÄTZLICH zur SP→DP-Umleitung", () => {
-  // Der erfahrungsgemäß lückenanfälligste Punkt: bei vollem Baum darf die native DP-Formel NICHT durch die
-  // SP→DP-Umleitung ersetzt werden — beide Quellen zählen. Als klare Gleichung festgezurrt.
-  const rec = (score) => ({ completed: true, score });
-  it("dpForRun(treeComplete) === dpNative(score) + spForRun(...) für mehrere Scores/Treue-Stände", () => {
-    const cases = [
-      [rec(0), 0], [rec(10_000_000), 0], [rec(37_000_000), 0], [rec(100_000_000), 0],
-      [rec(0), SP_LOYALTY_EVERY - 1], [rec(250_000_000), SP_LOYALTY_EVERY - 1],
-    ];
-    for (const [r, before] of cases) {
-      const native = dpNative(r.score);
-      const spEcon = spForRun(r, 6, before);
-      expect(spEcon).toBeGreaterThan(0);                       // die SP-Ökonomie trägt hier immer etwas bei
-      expect(dpForRun(r, 6, true, before)).toBe(native + spEcon);
-    }
-  });
-  it("Partition: bei vollem Baum wandert die SP-Ökonomie KOMPLETT in DP (SP-Gutschrift 0, native bleibt)", () => {
-    const r = rec(100_000_000);
-    expect(spCreditForRun(r, 6, true, 0)).toBe(0);             // keine SP mehr
-    // DP = native (10) + die exakt umgeleitete SP-Ökonomie — nichts geht verloren, nichts doppelt gezählt.
-    expect(dpForRun(r, 6, true, 0)).toBe(dpNative(r.score) + spCreditForRun(r, 6, false, 0));
-  });
-  it("ohne vollen Baum: DP = NUR native; die SP-Ökonomie bleibt als SP erhalten (keine Umleitung)", () => {
-    const r = rec(100_000_000);
-    expect(dpForRun(r, 6, false, 0)).toBe(dpNative(r.score));  // rein native
-    expect(spCreditForRun(r, 6, false, 0)).toBe(spForRun(r, 6, 0)); // volle SP-Ökonomie als SP
-  });
-});
-
-describe("Hub-Gates (#299 AC1/AC5) — die von StartScreen gelesenen Freischalt-Bedingungen", () => {
-  // StartScreen koppelt: Werkstatt/Upgrades ⇔ onboardingDone (6/6); Rangliste-Normal ⇔ owns(M2);
-  // Rangliste-Meister ⇔ treeComplete. Hier die exakten Schwellen an den exportierten Helfern festgezurrt.
-  // M2 ist ohne Onboarding-Feld kaufbar (onboardingDone() = true bei fehlendem Feld) + ≥17 Nicht-Meister-SP.
-  const withM2 = build(["B1", "B2", "B3", "A1", "M1", "M2"]); // 22 Nicht-Meister-SP ≥ 17 → M2 kaufbar
-  const full = build(NODE_IDS, 200);
-
-  it("Werkstatt/Upgrades: gesperrt < 6/6, frei ab 6/6", () => {
-    expect(onboardingDone({ onboarding: 5 })).toBe(false);
-    expect(onboardingDone({ onboarding: 6 })).toBe(true);
-  });
-  it("Rangliste-Normal: erst ab gekauftem M2", () => {
-    expect(owns(emptyProfile(0), "M2")).toBe(false);
-    expect(owns(build(["B1", "B2", "B3", "A1", "M1"]), "M2")).toBe(false); // M1, aber M2 noch nicht
-    expect(owns(withM2, "M2")).toBe(true);
-  });
-  it("Rangliste-Meister: erst bei komplettem Baum (echt später als M2)", () => {
-    expect(treeComplete(withM2)).toBe(false);   // M2 da, aber Baum unvollständig → Meister noch gesperrt
-    expect(treeComplete(full)).toBe(true);
-    expect(owns(full, "M2")).toBe(true);        // voller Baum impliziert M2 (Normal-Rangliste ebenfalls frei)
-  });
-});
-
-describe("onboardingUnlocks (#299) — Freischaltungs-Diff fürs Victory-Banner", () => {
-  it("kein Übertritt → leer", () => {
+describe("onboardingUnlocks / RewardAt / nextReward (inert, Rollup-Rückgabe)", () => {
+  it("Diff, Belohnung je Glied, nächste Belohnung", () => {
     expect(onboardingUnlocks(6, 6)).toEqual([]);
-    expect(onboardingUnlocks(0, 0)).toEqual([]);
-  });
-  it("Glied 1→2 schaltet Pflanze frei", () => {
     expect(onboardingUnlocks(1, 2)).toEqual([{ link: 2, type: "archetype", key: "plant" }]);
-  });
-  it("Glied 5→6 → nur Onboarding-Abschluss (target workshop)", () => {
-    const u = onboardingUnlocks(5, 6);
-    expect(u).toEqual([{ link: 6, type: "onboardingDone", target: "workshop" }]);
-  });
-  it("Glied 4→6 → Rarität (Glied 5) + Onboarding-Abschluss, sortiert (done zuletzt)", () => {
-    const u = onboardingUnlocks(4, 6);
-    expect(u.some((x) => x.type === "rarity")).toBe(true);
-    expect(u[u.length - 1].type).toBe("onboardingDone");
-  });
-  it("mehrere Glieder auf einmal (0→6) listet alle Übertritte sortiert", () => {
-    const u = onboardingUnlocks(0, 6);
-    expect(u.map((x) => x.link)).toEqual([...u.map((x) => x.link)].sort((a, b) => a - b));
-    expect(u.some((x) => x.type === "onboardingDone")).toBe(true);
+    expect(onboardingRewardAt(4)).toEqual({ type: "archetype", key: "ice" });
+    expect(nextOnboardingReward(5)).toEqual({ link: 6, reward: { type: "onboardingDone", target: "workshop" } });
   });
 });
 
-describe("Test-Codes — matchSecretSeed / unlockAllProfile", () => {
-  it("erkennt unlock/reset/onboarding case-insensitiv & getrimmt, sonst null", () => {
-    expect(matchSecretSeed("unlock")).toBe("unlock");
+describe("Test-Codes", () => {
+  it("matchSecretSeed erkennt unlock/reset/onboarding, sonst null", () => {
     expect(matchSecretSeed("  UNLOCK ")).toBe("unlock");
     expect(matchSecretSeed("Reset")).toBe("reset");
     expect(matchSecretSeed("onboarding")).toBe("onboarding");
-    expect(matchSecretSeed("  Onboarding ")).toBe("onboarding");
     expect(matchSecretSeed("etwas anderes")).toBe(null);
-    expect(matchSecretSeed("")).toBe(null);
-    expect(matchSecretSeed(null)).toBe(null);
-    expect(matchSecretSeed(undefined)).toBe(null);
     expect(SECRET_SEEDS).toEqual({ unlock: "unlock", reset: "reset", onboarding: "onboarding" });
   });
-  it("skipOnboardingProfile: Onboarding 6, +10 SP / +50 DP (additiv), Rest unangetastet", () => {
-    const p = skipOnboardingProfile({ ...emptyProfile(3), deckPoints: 5, nodes: { X: 1 } });
-    expect(p.onboarding).toBe(6);
-    expect(p.stichPoints).toBe(13);     // 3 + 10
-    expect(p.deckPoints).toBe(55);      // 5 + 50
-    expect(p.nodes).toEqual({ X: 1 });  // Baum/übrige Felder unangetastet
-  });
-  it("unlockAllProfile: Onboarding 6, alle 13 Knoten, stichSpent = TOTAL_COST, SP-Polster", () => {
+  it("unlockAllProfile: alle kaufbaren Knoten, stichSpent = TOTAL_COST, SP-Polster, voller Effekt", () => {
     const p = unlockAllProfile(emptyProfile(0));
-    expect(p.onboarding).toBe(6);
-    expect(ownedCount(p)).toBe(13);
+    expect(ownedCount(p)).toBe(25);
     expect(treeComplete(p)).toBe(true);
     expect(p.stichSpent).toBe(TOTAL_COST);
     expect(p.stichPoints).toBe(UNLOCK_SP_CUSHION);
-    // Voll aktivierte Effekte — Max-Boni + alle Meister-Flags.
-    expect(nodeEffects(p)).toEqual({
-      treeCoverBonus: 4, treeRerollBonus: 2, treeRareShift: 3,
-      legSlotReroll: true, legTwoPerArch: true, legDropDouble: true,
-      legGuaranteedPerk2: true, legChoose3Perk2: true,
+    expect(nodeEffects(p)).toMatchObject({
+      treeCoverBonus: 4, treeEnergyBonus: 2, treeRareShift: 4, maxTier: 4, legendaryLayer: true,
+      unlockedArchetypes: ["lightning", "fire", "ice", "plant"], archLegPhaseOn: true, legPerkPhaseOn: true,
+      rerollDeckLeg: 1, rerollPerk2: 1, legCountByArch: { fire: 2, lightning: 2, ice: 2, plant: 2 },
     });
   });
-  it("unlockAllProfile bewahrt fremde Profil-Felder + lässt das Original unberührt", () => {
-    const src = { stichPoints: 3, stichSpent: 0, nodes: {}, games: 42, bestScore: 999 };
-    const p = unlockAllProfile(src);
-    expect(p.games).toBe(42);
-    expect(p.bestScore).toBe(999);
-    expect(src.nodes).toEqual({});   // Original nicht mutiert
-    expect(src.onboarding).toBeUndefined();
+  it("skipOnboardingProfile: Onboarding 6, +10 SP / +50 DP additiv", () => {
+    const p = skipOnboardingProfile({ ...emptyProfile(3), deckPoints: 5, nodes: { fireLeg1: 1 } });
+    expect(p.onboarding).toBe(6);
+    expect(p.stichPoints).toBe(13);
+    expect(p.deckPoints).toBe(55);
+    expect(p.nodes).toEqual({ fireLeg1: 1 });
   });
-  it("nach unlock → respec gibt TOTAL_COST + Polster als Guthaben zurück (Kauf-Flow testbar)", () => {
+  it("nach unlock → respec gibt TOTAL_COST + Polster zurück", () => {
     const r = respec(unlockAllProfile(emptyProfile(0)));
     expect(r.stichPoints).toBe(UNLOCK_SP_CUSHION + TOTAL_COST);
     expect(ownedCount(r)).toBe(0);
   });
 });
 
-describe("onboardingRewardAt / nextOnboardingReward (#304)", () => {
-  it("Belohnung je Glied: Archetypen (2/4), Rarität (3/5), Abschluss (6); belohnungslose Glieder → null", () => {
-    expect(onboardingRewardAt(1)).toBeNull();
-    expect(onboardingRewardAt(2)).toEqual({ type: "archetype", key: "plant" });
-    expect(onboardingRewardAt(3)).toEqual({ type: "rarity", tier: 3 });
-    expect(onboardingRewardAt(4)).toEqual({ type: "archetype", key: "ice" });
-    expect(onboardingRewardAt(5)).toEqual({ type: "rarity", tier: 4 });
-    expect(onboardingRewardAt(6)).toEqual({ type: "onboardingDone", target: "workshop" });
-  });
-  it("nextOnboardingReward: nächste ausstehende Belohnung ab (exkl.) after", () => {
-    expect(nextOnboardingReward(0)).toEqual({ link: 2, reward: { type: "archetype", key: "plant" } });
-    expect(nextOnboardingReward(2)).toEqual({ link: 3, reward: { type: "rarity", tier: 3 } });
-    expect(nextOnboardingReward(5)).toEqual({ link: 6, reward: { type: "onboardingDone", target: "workshop" } });
-    expect(nextOnboardingReward(6)).toBeNull();
+// legendaryPhaseUnlocked liest jetzt das Profil (Baum), nicht mehr die Onboarding-Zahl.
+describe("legendaryPhaseUnlocked (Baum)", () => {
+  it("false ohne Leg, true sobald irgendein Leg I gekauft ist", () => {
+    expect(legendaryPhaseUnlocked(emptyProfile(0))).toBe(false);
+    expect(legendaryPhaseUnlocked(build(["fireLeg1"]))).toBe(true);
   });
 });

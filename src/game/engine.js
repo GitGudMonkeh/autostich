@@ -1243,23 +1243,25 @@ export function resolveTrick(state, rng) {
       const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
       // Reward-Ableitungen aus dem Progressions-Baum (Normal-/Meister-Lauf; Standard/Sim = neutral: Shift 0, Mult ×1).
       const rareShift = state.treeRareShift || 0;
-      const legMult = state.treeLegMult || 1;   // M3: Legendär-Drop ×2 (Baum)
-      const rareCapEff = state.rareCap || 4;    // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
+      // #369 §4: Perk-Legendär — 0 ohne „Legendär"-Knoten (?? bewahrt die 0); Gebäude-Legendär — 0 → Basis-Chance ×1 (|| 1).
+      const legMultPerk = state.treeLegMult ?? 1;
+      const legMultArch = state.treeLegMult || 1;
+      const rareCapEff = state.rareCap || 4;    // Rarität-Deckel aus dem Baum (4 = kein Deckel)
       if (decision === "skill") {
         const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, 0, rareCapEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · §4c Rarität-Deckel
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
         const legForce2 = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
-        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, legForce2, rareCapEff); // M3: Perk-Legendär ×2 · M4/M5: 2. Perk-Phase · §4c Rarität-Deckel
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
         // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen. Dev-Run → voller Katalog.
         phase = "architect";
-        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), rareShift, legMult, rareCapEff); // M3: Gebäude-Legendär ×2 (Baum) · §4c Rarität-Deckel
+        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), rareShift, legMultArch, rareCapEff); // Gebäude-Legendär (Drop-skaliert) · Rarität-Deckel
         newArchitect = { ...(newArchitect || architect), offers: archOffers, actedMain: false, moved: false };
       } else if (decision === "shop") {
         // #229: Shop entfernt — ohne aktiven Architekten (Sim-Baseline / architect:false) ist die 'shop'-Entscheidung
@@ -1269,7 +1271,7 @@ export function resolveTrick(state, rng) {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
-        newFormationEnergy = (state.devEnergy ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
+        newFormationEnergy = (state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
           + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
@@ -1284,7 +1286,7 @@ export function resolveTrick(state, rng) {
           // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
           // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
           // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, state.legOfferBonus || 0); // M2: +Kandidaten je Archetyp
+          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, 0, state.legCountByArch || null); // #369 §5a: Pool = alle freigeschalteten Archetypen (Zähl-Map); Sim/Standard → null = Bestand
           if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
           else {
             const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
@@ -1292,7 +1294,7 @@ export function resolveTrick(state, rng) {
           }
         } else {
           // Capstone noch gesperrt (Onboarding < 6): Runde 29 = normale Perk-Phase (identisch zum "perk"-Zweig, legForce 0).
-          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, 0, rareCapEff);
+          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff);
           if (off.length > 0) { phase = "levelup"; newOffer = off; }
         }
       }
