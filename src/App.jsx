@@ -86,6 +86,16 @@ const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.Up
 const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
 const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importChallenge, importDevSetup, importArchitect];
 
+// #372 Prewarm der In-Game-Archetyp-Karteneffekte: Chunk laden UND den teuren Erst-Bitmap-Aufbau im Leerlauf erledigen,
+// BEVOR die erste Archetyp-Karte im Stichspiel kommt → kein synchroner Erst-Render-Ruckler auf dem Deal-Frame mehr.
+// Nur der Effekt des AKTIVEN Archetyps wird geladen (dynamischer import → kein ungewollter Chunk im Prod-Bundle, wenn
+// der Archetyp nicht vorkommt). „lightning" (Ionensturm) rendert per Frame ohne Bitmap-Cache → hier nur Chunk vorladen.
+const FX_PREWARM = {
+  plant:     (opts) => import("./ui/fx/MossGrow.jsx").then((m) => m.prewarmMoss?.(opts)),
+  ice:       (opts) => import("./ui/fx/FrostIce.jsx").then((m) => m.prewarmFrost?.(opts)),
+  lightning: () => import("./ui/fx/CardIonStorm.jsx"),
+};
+
 // Suspense-Fallback = derselbe abgedunkelte Blur-Grund wie die Overlays selbst → beim (seltenen, weil vorgeladenen)
 // Nachladen kein weißer Blitz, sondern ein nahtloser Übergang. pointer-events blockt Klicks während des Ladens.
 function OverlayFallback() {
@@ -582,6 +592,31 @@ export function Autostich() {
     cubematrixSun: options.fxCubeMatrixSun !== false, // #317 Cube-Matrix Retro-Sonne an/aus (Default an)
     cubematrixWire: !!options.fxCubeMatrixWire, // #317 Cube-Matrix Optik: false = gefüllt, true = nur leuchtende Rahmen
   };
+
+  // #372 Archetyp-Karten-FX (Neon-Moos/Frost/Ionensturm) im Leerlauf vorwärmen — NUR außerhalb des Stichspiels
+  // (Entscheidungs-/Ruhephasen: Skill-/Perk-Wahl, Formation, Architekt, Menü), damit Chunk-Load + Erst-Bitmap-Aufbau
+  // nicht selbst mitten in Animationsframes fallen. Je Session einmal pro aktivem Archetyp; gestaffelt (ein Effekt je
+  // Idle-Slot). Deckfarben werden nur beim Auslösen gelesen (je Lauf stabil).
+  const fxPrewarmedRef = useRef(new Set());
+  useEffect(() => {
+    const arch = state.activeArchetypes || [];
+    if (!arch.length || state.phase === "play") return undefined;   // nie mitten im Stichspiel prewarmen
+    const todo = arch.filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a));
+    if (!todo.length) return undefined;
+    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 400));
+    let i = 0;
+    const step = () => {
+      if (i >= todo.length) return;
+      const a = todo[i++];
+      fxPrewarmedRef.current.add(a);
+      try { Promise.resolve(FX_PREWARM[a](opts)).catch(() => {}); } catch { /* Prewarm nie kritisch */ }
+      idle(step);
+    };
+    const id = idle(step);
+    return () => (window.cancelIdleCallback || clearTimeout)(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deckFx bewusst nur beim Trigger gelesen (Deckfarben je Lauf stabil)
+  }, [state.activeArchetypes, state.phase]);
 
   function beginRun() {
     clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot

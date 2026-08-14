@@ -98,6 +98,20 @@ function getMossBitmap(cov, nA, nB) {
   return e;
 }
 
+/* #372 Prewarm — Moos-Feld + Reif-Stufen-Bitmap im LEERLAUF aufbauen, BEVOR die erste reife Karte kommt → das teure
+   Erst-Zeichnen hängt dann nicht mehr synchron auf dem Deal-/Flip-Frame (der gemeldete einmalige Ruckler). Wärmt den
+   modul-weiten Cache (getField + getMossBitmap für die Reif-Stufe: covOf(STAGE_MAX) === REIF_COV). Standard-Palette
+   immer; die Deckfarben zusätzlich, falls der Deckfarbe-Modus aktiv ist. Kein DOM-Mount nötig, rein Cache-füllend. */
+export function prewarmMoss({ deckTint = false, deckColor = null, deckColor2 = null } = {}) {
+  try {
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+    getField();
+    const cov = TUNE.REIF_COV; // Reif-Stufe (Stufe STAGE_MAX → grün)
+    getMossBitmap(cov, TUNE.NEON_A, TUNE.NEON_B);                                   // Standard-Palette
+    if (deckTint && deckColor) getMossBitmap(cov, deckColor, deckColor2 || deckColor); // Deckfarbe-Modus
+  } catch { /* Prewarm ist nie kritisch */ }
+}
+
 // nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
 function renderMossBitmap(g, field, RDPR, nA, nB) {
   const moss = document.createElement("canvas"), mctx = moss.getContext("2d");

@@ -94,6 +94,19 @@ function getFrostBitmap(front, nA, nB) {
   return e;
 }
 
+/* #372 Prewarm — Frost-Feld + Voll-Stufen-Bitmap im LEERLAUF aufbauen, BEVOR die erste vereiste Karte kommt → das teure
+   Erst-Zeichnen hängt dann nicht mehr synchron auf dem Deal-Frame. Wärmt den modul-weiten Cache (getField + getFrostBitmap
+   für die volle Frost-Stufe). Standard-Palette immer; Deckfarben zusätzlich im Deckfarbe-Modus. Rein Cache-füllend. */
+export function prewarmFrost({ deckTint = false, deckColor = null, deckColor2 = null } = {}) {
+  try {
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+    getField();
+    const front = frontOf(MASS_MAX); // volle Vereisung
+    getFrostBitmap(front, TUNE.NEON_A, TUNE.NEON_B);                                   // Standard-Palette
+    if (deckTint && deckColor) getFrostBitmap(front, deckColor, deckColor2 || deckColor); // Deckfarbe-Modus
+  } catch { /* Prewarm ist nie kritisch */ }
+}
+
 // nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
 function renderFrostBitmap(front, field, RDPR, nA, nB) {
   const frost = document.createElement("canvas"), fx = frost.getContext("2d");
