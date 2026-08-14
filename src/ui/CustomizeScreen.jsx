@@ -505,6 +505,10 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   // Jeder Prunk-„Fire": Ansage poppen + (falls gesetzt) den gedrosselten Prunk-Sound spielen.
   const fire = () => {
     pop();
+    // #sound: gemeinsamer Gott-Punch (wie in-game bei jedem epischen Sieg) → spielt bei JEDEM Prunk-Fire, damit ALLE
+    // Prunk-Showcases (Sonne/Laserfächer/Prisma/Holo-Würfel/Supernova) hörbar sind, nicht nur die Supernova.
+    audio.play("fx_godlike", { gain: 0.55 });
+    // Zusätzlicher effekt-spezifischer Swell (aktuell Supernova) — gedrosselt, da ~11 s lang (sonst Überlappung im Loop).
     if (sfx) { const now = Date.now(); if (now - lastSfxRef.current > 10000) { lastSfxRef.current = now; audio.play(sfx, { gain: 0.9 }); } }
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
@@ -769,6 +773,8 @@ function FieldFxPreview({ effect, deckTint = false }) {
         // #komet: Sternenfeld-Sound auch im Showcase — Datei nach gezeigtem Tier (≥1 Woosh+Impact, sonst kleiner Komet).
         if (effect === "starfield") audio.play(nextTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: 0.27 });
       }
+      // #345/#sound: Neon-Brandung spielt je Surge den Splash (wie in-game, Battlefield.jsx) → Vorschau ist hörbar.
+      if (effect === "neonsurf") audio.play("fx_neonsurf_splash", { gain: 0.3 });
     }, 1500);
     return () => clearInterval(id);
   }, [effect, pixiField]);
