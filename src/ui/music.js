@@ -13,6 +13,17 @@ import relay_of_multipliers from "../assets/music/relay_of_multipliers.m4a";
 import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
 import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
+// v0.4-Batch (10 neue calm-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
+import amber_standby from "../assets/music/amber_standby.m4a";
+import slow_circuit from "../assets/music/slow_circuit.m4a";
+import glass_horizon from "../assets/music/glass_horizon.m4a";
+import velvet_signal from "../assets/music/velvet_signal.m4a";
+import quiet_overpass from "../assets/music/quiet_overpass.m4a";
+import neon_idle from "../assets/music/neon_idle.m4a";
+import static_bloom from "../assets/music/static_bloom.m4a";
+import cobalt_drift from "../assets/music/cobalt_drift.m4a";
+import low_beam from "../assets/music/low_beam.m4a";
+import soft_reset from "../assets/music/soft_reset.m4a";
 // Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import neon_card_game from "../assets/music/neon_card_game.m4a";
 import static_charge from "../assets/music/static_charge.m4a";
@@ -78,6 +89,17 @@ const POOL = [
   { title: "Midnight Drive", url: midnight_drive, tier: "calm" },
   { title: "Velvet Cruise", url: velvet_cruise, tier: "calm" },
   { title: "Neon Drift", url: neon_drift, tier: "calm" },
+  // v0.4-Batch (10 neue calm-Tracks)
+  { title: "Amber Standby", url: amber_standby, tier: "calm" },
+  { title: "Slow Circuit", url: slow_circuit, tier: "calm" },
+  { title: "Glass Horizon", url: glass_horizon, tier: "calm" },
+  { title: "Velvet Signal", url: velvet_signal, tier: "calm" },
+  { title: "Quiet Overpass", url: quiet_overpass, tier: "calm" },
+  { title: "Neon Idle", url: neon_idle, tier: "calm" },
+  { title: "Static Bloom", url: static_bloom, tier: "calm" },
+  { title: "Cobalt Drift", url: cobalt_drift, tier: "calm" },
+  { title: "Low Beam", url: low_beam, tier: "calm" },
+  { title: "Soft Reset", url: soft_reset, tier: "calm" },
   // mid
   { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
   { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
