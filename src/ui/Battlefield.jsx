@@ -931,9 +931,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Pixi-Glutfunken: Hit-Tier des gewonnenen Stichs (0 Schwach · 1 Stark · 2 Brutal · 3 Irre · 4 Gottgleich) — ab Stark
   // bündelt sich die Fontäne zu EINER großen mittigen (Eskalation). Die Groß-Ansage kommt weiterhin vom Spiel.
   const hitTier = win && t && t.gained > 0 ? fxIntensity(t.gained).tier : 0;
-  // Serien-Meilenstein hat Vorrang: eine 200er-Serie feiert „Gönn dir" (unabhängig vom Stich-Score), sonst Lawine bzw. Score-Stufe.
+  // Serien-Meilenstein: eine 200er-Serie feiert „Gönn dir" (unabhängig vom Stich-Score). #355: NICHT mehr hier vorab zu
+  // `bigScore` kollabieren — die Ansage-Auswahl (Gönn dir → sonst Lawine/Score-Stufe) fällt jetzt IM Effekt, NACH den
+  // Once-Guards, damit ein bereits gezeigter Meilenstein die zugrunde liegende Stufe (Lawine/Gottgleich) nicht verschluckt.
   const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
-  const bigScore = goennMilestone ? GOENNDIR_TIER : (baseBigTier && t && t.grosseLawine ? LAWINE_TIER : baseBigTier);
 
   // #ui: Die Ergebnis-Aufschlüsselung (Faktorenkette Basis/Flats/Serie/Form/Crit + Summe) wurde ENTFERNT — die
   // Multiplikatoren sind im Spielfluss ohnehin nicht lesbar. Der gewonnene Score steigt weiter als Float aus der
@@ -1051,12 +1052,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   useEffect(() => {
     if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
     if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
-    if (!bigScore) return;                   // nur bei einem großen Sieg-Stich
-    if (bigScore === GOENNDIR_TIER) {        // Serien-Meilenstein: die Ansage nur EINMAL je 200er-Serie
-      if (goennShown.current) return;
-      goennShown.current = true;
-    }
-    if (bigScore === LAWINE_TIER) {          // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
+    // #355: Auswahl der anzuzeigenden Ansage ERST hier (nach dem Meilenstein-Once-Guard). Kann „Gönn dir" nicht (mehr)
+    // gezeigt werden (schon gelaufen), fällt es auf die zugrunde liegende Stufe zurück — Lawine bzw. Score-Stufe
+    // (Gottgleich/Irre/…) — statt die Ansage komplett zu verschlucken. Der Prunk-Trigger läuft separat → Text + Prunk synchron.
+    let toShow;
+    if (goennMilestone && !goennShown.current) { toShow = GOENNDIR_TIER; goennShown.current = true; }
+    else { toShow = (baseBigTier && t.grosseLawine) ? LAWINE_TIER : baseBigTier; } // Fallback: Lawine bzw. Score-Stufe
+    if (!toShow) return;                      // nichts anzuzeigen (kein großer Sieg-Stich)
+    if (toShow === LAWINE_TIER) {             // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
       if (lawineShown.current) return;
       lawineShown.current = true;
     }
@@ -1065,28 +1068,28 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     //   1) Dominanz: eine NIEDRIGERE Stufe kurz (BIG_DOMINANCE_MS) nach einer HÖHEREN unterdrücken → „nur die höchsten".
     //   2) Throttle je Stufe (`cool`): dieselbe Stufe nicht bei jedem Stich → erscheint regelmäßig, aber reduziert.
     // Übersprungene Ansagen kosten NICHTS am Score (der floatet unverändert weiter).
-    if (bigScore.rank) {
+    if (toShow.rank) {
       const nowMs = Date.now();
-      if (bigScore.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
-      if (bigScore.cool > 0 && nowMs - (bigCoolRef.current[bigScore.text] || 0) < bigScore.cool) return;
-      bigCoolRef.current[bigScore.text] = nowMs;
-      bigCoolRef.current._rank = bigScore.rank;
+      if (toShow.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
+      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.text] || 0) < toShow.cool) return;
+      bigCoolRef.current[toShow.text] = nowMs;
+      bigCoolRef.current._rank = toShow.rank;
       bigCoolRef.current._at = nowMs;
     }
     // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
     // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
-    if (bigScore.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
+    if (toShow.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
     //   Stark 0.7 · Brutal 1.0 · Irre 1.4 · epische Ansagen (Gottgleich/Gönn dir/Lawine) 1.4. Nur wenn der Effekt aktiv
     //   ist (sonst ungenutzter State); der Shader klingt den Puls über SURGE_DUR selbst ab.
     if (neonsurfGL) {
-      const surgeMag = bigScore.epic ? 1.4 : (bigScore.rank <= 1 ? 0.7 : bigScore.rank === 2 ? 1.0 : 1.4);
+      const surgeMag = toShow.epic ? 1.4 : (toShow.rank <= 1 ? 0.7 : toShow.rank === 2 ? 1.0 : 1.4);
       setSurfSurge({ id: `s${t.trickNo}-${bigSeq.current}`, mag: surgeMag });
     }
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
     // #344: kein lane/jitter mehr (alle mittig) → Pool auf max 2 gleichzeitig gedeckelt.
-    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: bigScore };
+    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: toShow };
     setBigFloats((cur) => [...cur, entry].slice(-2));
     const tm = setTimeout(() => {
       setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
