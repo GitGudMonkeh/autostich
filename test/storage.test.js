@@ -20,7 +20,18 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxNeonsurf: false, fxStarfield: false, finisher: "standard", fxSonnenPuls: true, archColor: "standard" };
+const DEFAULT_OPTIONS = {
+  skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default",
+  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
+  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
+  fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
+  fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
+  fxCubeMatrixSun: true, fxCubeMatrixWire: false,
+  fxAuroraDeck: false, fxNeonsurfDeck: false, fxStarfieldDeck: false, fxCubeMatrixDeck: false,
+  fxScorchDeck: false, fxBlackholeDeck: false, fxKlingeDeck: false, fxHologridDeck: false,
+  fxSonnenPulsDeck: false, fxLaserFaecherDeck: false, fxPrismaKaskadeDeck: false, fxHoloCubeDeck: false, fxSupernovaDeck: false,
+};
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
