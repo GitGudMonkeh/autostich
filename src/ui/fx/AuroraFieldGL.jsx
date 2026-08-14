@@ -26,7 +26,7 @@ const FRAG = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2; uniform float uLayers;",
   // #342 finale Tuner-Werte (const-Block aus dem Artifact übernommen)
-  "const float I_=1.38, SAT=1.25, ALPHA=0.620;",   // #aurora-buff: etwas heller/sichtbarer (war I_=1.20, ALPHA=0.540)
+  "const float I_=1.45, SAT=1.25, ALPHA=0.720;",   // #353 aurora-buff: deutlich sichtbarer (war I_=1.38, ALPHA=0.620 → davor 1.20/0.540)
   "const float NEAR_BOT=0.360, HORIZON=0.660;",    // #aurora-buff: Vorhang-Band ein wenig tiefer (war 0.420 / 0.720)
   "const float DOME=0.150, DOME_VAR=0.080, DOME_SHIFT=0.200;",
   "const float DEPTH_CURVE=0.400, PERSP=0.350, DEPTH_FADE=0.0;",

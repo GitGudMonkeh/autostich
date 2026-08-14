@@ -606,10 +606,11 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
             im Regelfall via suppressField) — hier zählt v. a. der Nicht-Pixi-Pfad. Desktop/voll unverändert. */}
         {/* #: Aurora etwas tiefer angesetzt (top −10%→0% / −6%→4%) → hängt nicht mehr am oberen Rand, sondern zieht
             sichtbar ins Feld (analog zum tieferen WebGL-BASEY). */}
+        {/* #353 DOM-Fallback (Prod) intensiver — analog zum GL-Buff (I_/ALPHA), damit Aurora auch auf der Hauptseite gut sichtbar ist. */}
         <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "0%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(130% 82% at 50% 0%, ${color}99, ${color}33 34%, transparent 66%)`, filter: `blur(${lite ? 8 : 12}px)`, opacity: 0.75 }} />
+          background: `radial-gradient(130% 82% at 50% 0%, ${color}cc, ${color}44 34%, transparent 66%)`, filter: `blur(${lite ? 8 : 12}px)`, opacity: 0.92 }} />
         <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "4%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(118% 74% at 44% 0%, ${c2}77, transparent 60%)`, filter: `blur(${lite ? 12 : 18}px)`, opacity: 0.6 }} />
+          background: `radial-gradient(118% 74% at 44% 0%, ${c2}99, transparent 60%)`, filter: `blur(${lite ? 12 : 18}px)`, opacity: 0.78 }} />
         {AURORA_STARS.map((st, i) => (
           <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y + 8}%`, width: st.s, height: st.s,
             borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 ${(st.s * 2).toFixed(0)}px #ffffffcc`, opacity: 0.6, animationDelay: `${st.d}s` }} />

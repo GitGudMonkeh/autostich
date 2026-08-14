@@ -34,11 +34,11 @@ export const GLOBAL_FX = [
   // (#311 überarbeitet wieder eingeführt) und der synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott")
   // bleibt (nur „Standard"), dort kommt später neuer Prunk rein.
   { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
-    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 20, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #farbsystem: blau = 20 DP
+    ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #353 Rarität: grün/Selten = 10 DP
   // #317 Cube-Matrix: musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer. Kontinuierlich (kein
   // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
   { key: "cubematrix", name: "Würfel-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
-    ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
+    ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 40, group: "bgfx" }, // #353 Rarität: gold/Legendär = 40 DP
   // #345 Neon-Brandung: Plasma-See am unteren Rand (eigene WebGL-Canvas wie Aurora). Bei starken Ansagen drückt ein
   // Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen (Gefäß/Rahmen). Reiner BG (bgfx).
   { key: "neonsurf", name: "Neon-Brandung", desc: "Eine Plasma-See am unteren Rand — Neon-Fluss mit heller Wasserlinie; bei starken Ansagen drückt ein Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen. In der Deckfarbe.",
@@ -58,7 +58,7 @@ export const GLOBAL_FX = [
   { key: "holo", name: "Holo-Sweep", desc: "Ein prismatisches Lichtband wandert diagonal über die Karte — Regenbogen-Hues in der Deckfarbe, tilt-reaktiv (Pointer/Gyro). Dauerhaft, additiv.",
     ownKey: "fx:holo", option: "fxHolo", preview: "holo", price: 20, group: "anim" }, // [TUNING] Preis
   { key: "glitch", name: "Glitch", desc: "Cyberpunk-Digital-Glitch über der ganzen Karte inkl. Zahl — Chroma-Split, Tear-Slices, Scanlines und Farb-Bars, mit ruhiger Grundlast und gelegentlichen Bursts.",
-    ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 20, group: "anim" }, // [TUNING] Preis
+    ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 30, group: "anim" }, // #353 Rarität: lila/Rar = 30 DP
   // #322–#326 Gottgleich-Prunk (group "gott", PIXI): feuert bei gottgleichem Sieg OHNE Krit, EINFACH-EXKLUSIV (genau
   // einer aktiv, oder „gottStandard" = kein Prunk). Sonnen-Puls ist der FREIE Default (alwaysOwned, 0 DP); die anderen
   // kosten nach Rarity (Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40 = grün/blau/lila/gold). `hidden` blendet die

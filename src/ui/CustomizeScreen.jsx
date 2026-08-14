@@ -143,16 +143,16 @@ const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "kli
 const SCORCH = { key: "scorch", name: "Laser", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
   desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
 
-/* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (20 DP, ownKey fx:hologridSlice). Eine Laserlinie
+/* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (#353: 30 DP, lila/Rar, ownKey fx:hologridSlice). Eine Laserlinie
    fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
    dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
-const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 20,
+const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 30,
   desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe." };
 
-/* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (30 DP, violette Rarity, ownKey fx:blackhole). Ein
+/* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (#353: 40 DP, gold/Legendär, ownKey fx:blackhole). Ein
    PERSISTENTES Serien-Loch — jeder Sieg füttert es (es wächst + saugt die Gegnerkarte ein), eine Niederlage lässt es
    schrumpfen; kollabiert es bei genug Masse, folgt eine Supernova. Standard blau/pink oder in der Deckfarbe. */
-const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 30,
+const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
   desc: "Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe." };
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
@@ -192,17 +192,41 @@ const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxByGroup = (g) => GLOBAL_FX.filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
 const fxKey = (k) => GLOBAL_FX_BY_KEY[k]; // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
-const fxGroupItems = (group) => {
-  // #331 Reihenfolge = Anzeige-Reihenfolge aus dem Issue; Default-/Aus-Kacheln voran.
-  if (group === "karten") return [SPEZIAL, ANIM_NONE, ...fxByGroup("anim")]; // #328 Skill-Effekt (ein Tile) · Keine · Neonrahmen · Holo-Sweep · Glitch
-  if (group === "stich")  return [FIN_STANDARD, KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE]; // Standard · Klinge · Laser · Hologrid-Laser · Schwarzes Loch
-  // #331 Hintergrund: „Leuchten" (frei) voran, dann der Aus-Zustand + der EINE exklusive Vierer in fester Reihenfolge.
-  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, fxKey("aurora"), fxKey("neonsurf"), fxKey("cubematrix"), fxKey("starfield")].filter(Boolean); // #glutfunken-raus: embers entfernt · #345 neonsurf
-  if (group === "score")  return [GOTT_STANDARD, ...fxByGroup("gott")]; // „Standard" (kein Prunk) voran, dann Sonne · Laserfächer · Prisma · Holo-Würfel · Supernova (nach Preis)
+const byFxPrice = (a, b) => globalFxPrice(a) - globalFxPrice(b); // #353 Seltenheit = Preis (aufsteigend)
+// #353 Basis-Reihenfolge je Reiter: die festen Führungs-Kacheln (Standard/„Kein …"/Leuchten/Skill) voran, der REST nach
+// Seltenheit (= Preis) sortiert. (Vorher stand der Hintergrund-Vierer in fixer Reihenfolge — jetzt ebenfalls nach Preis.)
+const fxGroupBase = (group) => {
+  if (group === "karten") return [SPEZIAL, ANIM_NONE, ...fxByGroup("anim")]; // #328 Skill-Effekt · Keine · (Neonrahmen/Holo/Glitch nach Preis)
+  if (group === "stich")  return [FIN_STANDARD, ...[KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE].sort(byFxPrice)]; // Standard · Rest nach Preis
+  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, ...[fxKey("aurora"), fxKey("neonsurf"), fxKey("cubematrix"), fxKey("starfield")].filter(Boolean).sort(byFxPrice)]; // Leuchten · Kein · Rest nach Preis
+  if (group === "score")  return [GOTT_STANDARD, ...fxByGroup("gott")]; // „Standard" (kein Prunk) voran, dann nach Preis
   return [];
 };
-// #shopB: orderFxItems/FX_STD_KEY entfallen — Variante B zeigt je Kategorie eine STABILE vertikale Liste
-// (fxGroupItems: „Kein/Standard" voran, dann nach Preis), kein „aktiven an die erste Stelle rücken" mehr.
+// #353 Führungs-Kacheln, die IMMER oben bleiben (Standard/„Kein …"/Leuchten/Skill) — NICHT der aktive Effekt. sonnenPuls
+// ist zwar alwaysOwned, aber ein echter (Preis-0-)Effekt → gehört in den nach Seltenheit sortierten Rest, nicht hierher.
+const LEADING_FX_KEYS = new Set(["standard", "gottStandard", "none", "spezial", "deckglow"]);
+const isLeadingFx = (fx) => LEADING_FX_KEYS.has(fx.key);
+const activeFxKeyOf = (mode, options, p) =>
+    mode === "finisher" ? finisherSelOf(options, p)
+  : mode === "bg"       ? bgSelOf(options, p)
+  : mode === "gott"     ? gottSelOf(options)
+  : mode === "cardanim" ? cardAnimSelOf(options, p)
+  : null;
+// #353 Reihenfolge je Reiter: Führungs-Kacheln oben → der aktuell aktive Effekt direkt darunter → Rest nach Seltenheit.
+// Ohne Options-Kontext (z. B. useState-Init) nur die Basis-Reihenfolge. Wird auf Liste UND Bühnen-Navigation angewandt.
+const fxGroupItems = (group, options = null, p = null) => {
+  const base = fxGroupBase(group);
+  if (!options) return base;
+  const mode = (FX_GROUPS.find((g) => g.key === group) || {}).mode;
+  const activeKey = activeFxKeyOf(mode, options, p);
+  const idx = activeKey ? base.findIndex((f) => f.key === activeKey && !isLeadingFx(f)) : -1;
+  if (idx < 0) return base;                                  // aktiv ist Führungs-Kachel oder nicht in der Liste → Basis
+  const active = base[idx];
+  const rest = base.filter((f) => f !== active);
+  const lead = rest.filter(isLeadingFx).length;             // Anzahl Führungs-Kacheln → aktiven direkt dahinter einfügen
+  rest.splice(lead, 0, active);
+  return rest;
+};
 
 /* Sieg-Finisher einfach-exklusiv (genau EINER aktiv): die Auswahl steckt als einzelner String in options.finisher.
    „standard" (Gratis-Default, Wegflug) und „klinge" (kaufbar, 10 DP) sind wählbar. finisherFlags schreibt die Auswahl;
@@ -1098,7 +1122,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
   const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
-  const selItems = fxGroupItems(selGroup.key);
+  const selItems = fxGroupItems(selGroup.key, options, p); // #353 Standard oben → aktiver darunter → Rest nach Seltenheit
   const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
 
   // Ist ein Effekt in seiner Gruppe „aktiv"? (als Finisher/Prunk/Hintergrund/Animation gewählt bzw. Toggle an).
@@ -1115,7 +1139,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   // #shopB Tab-Wechsel: die Bühne springt auf den AKTIVEN Effekt der Kategorie (oder den ersten) → man sieht sofort, was läuft.
   const pickCat = (gKey) => {
     const g = FX_GROUPS.find((x) => x.key === gKey);
-    const its = fxGroupItems(gKey);
+    const its = fxGroupItems(gKey, options, p);
     const aKey = activeKeyOf(g);
     setSel({ group: gKey, key: (aKey && its.some((f) => f.key === aKey)) ? aKey : its[0].key });
   };
@@ -1140,7 +1164,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
             const on = g.key === sel.group;
             return (
               <button key={g.key} onClick={() => pickCat(g.key)}
-                className="flex-1 py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-lg text-[11px] font-extrabold transition-colors"
                 style={{ background: on ? "#241f38" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`, color: on ? "#e9e4ff" : "#9a97ab", boxShadow: on ? "0 0 0 1px #9b82f0" : undefined }}>
                 {TAB_LABEL[g.key]}
               </button>

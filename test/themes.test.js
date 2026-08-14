@@ -249,8 +249,8 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.aurora)).toBe(true);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.starfield)).toBe(false);
   });
-  it("#307/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (blau 20, lila 30)", () => {
-    const want = { aurora: 20, starfield: 20, cubematrix: 30 }; // #glutfunken-raus: embers (grün 10) entfernt
+  it("#353/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (grün 10 · blau 20 · lila 30 · gold 40)", () => {
+    const want = { aurora: 10, starfield: 20, glitch: 30, cubematrix: 40 }; // #353: aurora 20→10, cubematrix 30→40, glitch 20→30
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
   });
 });
