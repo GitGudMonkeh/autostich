@@ -64,7 +64,7 @@ function startOrderInBand(deck, rng) {
 function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devEnergy, devMode = false) {
   const mRareShift = s.treeRareShift || 0;              // Baum-RareShift (Normal-Lauf; Standard/Sim = 0)
   const legMultPerk = s.treeLegMult ?? 1;               // #369: Perk-Legendär — 0 ohne Legendär-Schicht (?? bewahrt die 0)
-  const legChanceMult = s.treeLegMult || 1;             // Gebäude-Legendär — 0 fällt auf Basis-Chance ×1 zurück
+  const legChanceMult = s.treeLegMult ?? 1;             // #369: Gebäude-Legendär ebenfalls hinter dem „Legendär"-Knoten (0 ohne Schicht)
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   const rareCap = s.rareCap || 4; // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
@@ -374,7 +374,7 @@ export function reducer(state, action) {
       const tokens = state.rerollsArch || 0;
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                      // #205: frischer adressierter Strom (seed,cycle,"arch",idx)
-      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), state.treeRareShift || 0, state.treeLegMult || 1, state.rareCap || 4);
+      const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), state.treeRareShift || 0, state.treeLegMult ?? 1, state.rareCap || 4);
       return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
     // #361 (+ Folge) „↶ Rückgängig" — NUR die letzte Verschiebung zurücknehmen (Fußabdrücke vom Stapel). Gebaute

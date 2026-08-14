@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
+import { buildArchitectOffer } from "../src/game/architect.js";
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase,
   maxRarityTier, legendaryPhaseUnlocked, unlockedArchetypes, COVER_FLOOR, ENERGY_FLOOR } from "../src/game/progression.js";
 import { BASE_REROLLS, FORMATION_ENERGY, perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../src/game/constants.js";
@@ -55,12 +56,27 @@ describe("START_RUN: Drop-Shift & Rarität-Deckel aus dem Baum", () => {
   });
 });
 
-describe("Legendär-PERK-Schicht: 0 ohne Knoten, skaliert mit Drop", () => {
+describe("Legendär-Schicht (Perks UND Gebäude): 0 ohne Knoten, skaliert mit Drop", () => {
+  const mulberry = (a) => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   it("treeLegMult: 0 (frisch profiliert) / 1 (Legendär) / >3 (Drop IV); Sim = 1", () => {
     expect(start({ profile: emptyProfile(0) }).treeLegMult).toBe(0);
     expect(start({ profile: withNodes(RARE) }).treeLegMult).toBe(1);
     expect(start({ profile: withNodes([...RARE, "drop1", "drop2", "drop3", "drop4"]) }).treeLegMult).toBeGreaterThan(3);
     expect(start().treeLegMult).toBe(1); // profil-los (Sim/Standard) unverändert
+  });
+  it("Legendaere GEBAEUDE sind hinter dem Legendaer-Knoten gated: mult 0 -> nie legendaer, mult 1 -> moeglich", () => {
+    const anyLegBuilding = (mult) => {
+      for (let s = 1; s <= 80; s++) { const off = buildArchitectOffer({ buildings: [] }, mulberry(s), 0, mult, 4); if (off.some((o) => o.legendary)) return true; }
+      return false;
+    };
+    expect(anyLegBuilding(0)).toBe(false); // frisches Profil (treeLegMult 0) → keine legendären Gebäude
+    expect(anyLegBuilding(1)).toBe(true);  // ab Legendär-Schicht wieder möglich
+  });
+  it("Tier-Deckel gilt auch für Gebäude: rareCap 2 bietet nie Gebäude-Stufe III/IV", () => {
+    for (let s = 1; s <= 40; s++) {
+      const off = buildArchitectOffer({ buildings: [] }, mulberry(s), 3 /*starker Shift*/, 1, 2 /*Deckel Normal+Selten*/);
+      for (const o of off) if (typeof o.tier === "number") expect(o.tier).toBeLessThanOrEqual(2);
+    }
   });
 });
 

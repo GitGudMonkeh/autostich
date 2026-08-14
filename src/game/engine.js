@@ -1243,9 +1243,10 @@ export function resolveTrick(state, rng) {
       const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
       // Reward-Ableitungen aus dem Progressions-Baum (Normal-/Meister-Lauf; Standard/Sim = neutral: Shift 0, Mult ×1).
       const rareShift = state.treeRareShift || 0;
-      // #369 §4: Perk-Legendär — 0 ohne „Legendär"-Knoten (?? bewahrt die 0); Gebäude-Legendär — 0 → Basis-Chance ×1 (|| 1).
+      // #369 §4: Legendär-Chance (Perks UND Gebäude) — 0 ohne „Legendär"-Knoten (?? bewahrt die 0), sonst ×(1 + Drop·Schritt).
+      // Sim/Standard/Dev → 1 (byte-identisch). Die Tier-I..IV-Deckelung der Gebäude läuft separat über rareCapEff.
       const legMultPerk = state.treeLegMult ?? 1;
-      const legMultArch = state.treeLegMult || 1;
+      const legMultArch = state.treeLegMult ?? 1;
       const rareCapEff = state.rareCap || 4;    // Rarität-Deckel aus dem Baum (4 = kein Deckel)
       if (decision === "skill") {
         const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
