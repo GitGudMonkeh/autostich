@@ -150,11 +150,11 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
                       {unlocked ? "✓ frei" : "🔒 gesperrt"}
                     </span>
                   </div>
-                  {/* Echte Deck-Skin-Grafik (Vorschau) — gesperrt: abgedunkelt. */}
+                  {/* Echte Deck-Skin-Grafik (Vorschau) — GANZE Karte sichtbar (contain, nicht beschnitten); gesperrt: abgedunkelt. */}
                   {assets?.back && (
-                    <div className="rounded-xl overflow-hidden mb-2.5" style={{ border: "1px solid #2a2a33", background: "#0c0c11" }}>
+                    <div className="rounded-xl overflow-hidden mb-2.5 flex justify-center py-2" style={{ border: "1px solid #2a2a33", background: "#0c0c11" }}>
                       <img src={assets.back} alt={`${pk.name} Deck-Skin`} draggable={false}
-                        className="w-full h-auto block" style={{ maxHeight: 168, objectFit: "cover", opacity: unlocked ? 1 : 0.4, filter: unlocked ? "none" : "grayscale(0.6)" }} />
+                        className="block h-auto mx-auto" style={{ width: "auto", maxWidth: "100%", maxHeight: 420, objectFit: "contain", opacity: unlocked ? 1 : 0.45, filter: unlocked ? "none" : "grayscale(0.6)" }} />
                     </div>
                   )}
                   {prog && (
@@ -190,13 +190,13 @@ function SkillGroup({ title, skills, color, legendary = false }) {
         {skills.map((s) => (
           <div key={s.id} className="rounded-xl px-3 py-2.5"
             style={legendary
-              ? { background: "linear-gradient(180deg,#1e1a10,#16140e)", border: `1px solid ${color}55` }
-              : { background: "#141419", border: "1px solid #2a2a33" }}>
+              ? { background: `linear-gradient(180deg, ${color}1a, #16140e)`, border: `1px solid ${color}55`, borderLeft: `3px solid ${color}` }
+              : { background: `linear-gradient(180deg, ${color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}` }}>
             <div className="flex items-center gap-1.5">
               {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
-              <span className="text-[13px] font-semibold" style={{ color: legendary ? color : "#e2e0ee" }}>{s.name}</span>
+              <span className="text-[13px] font-bold" style={{ color }}>{s.name}</span>
             </div>
-            <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{s.desc}</div>
+            <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{s.desc}</div>
           </div>
         ))}
       </div>

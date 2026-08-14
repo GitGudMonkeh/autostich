@@ -33,7 +33,18 @@ const GEN_LANES = [
 const nodeAccent = (n, laneAccent) =>
   n.maxTier ? tierColor(n.maxTier) : n.legLayer ? GOLD : (n.arch ? FACTION_GLOW[n.arch] : laneAccent);
 
+// Innerer Inhalt einer Pille (Titel + Marke) — zentriert, damit gleich breite Pillen sauber in Spalten sitzen.
+function PillBody({ label, mark, titleColor, markColor }) {
+  return (
+    <>
+      <span className="text-[11px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
+      <span className="text-[9.5px] font-bold tabular-nums leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
+    </>
+  );
+}
+
 // Eine Knoten-Pille (Zustand aus nodeState). Kaufbar → klickbar (gold). Platzhalter/gesperrt → inert.
+// flex-1 → alle Pillen einer Lane sind gleich breit (saubere Spalten-Ausrichtung, kein Umbruch).
 function NodePill({ node, st, accent, onBuy }) {
   const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
   const mark = isOwned ? "✓" : isPlaceholder ? "Bald" : (isBuy || st === "lock-sp") ? `${node.cost} SP` : "🔒";
@@ -47,26 +58,24 @@ function NodePill({ node, st, accent, onBuy }) {
   const markColor = isOwned ? accent : (isBuy || st === "lock-sp") ? GOLD : "#8a8a95";
   return (
     <span title={`${node.detail}`} onClick={isBuy ? () => onBuy(node.id) : undefined}
-      className="inline-flex flex-col items-start rounded-lg px-2.5 py-1.5 transition-transform hover:-translate-y-px"
-      style={{ minWidth: 74, ...style }}>
-      <span className="text-[11px] font-semibold leading-tight" style={{ color: isOwned ? "#e8e8ea" : isBuy ? "#f0e8d0" : "#c8c8d0" }}>{node.label}</span>
-      <span className="text-[9.5px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: markColor }}>{mark}</span>
+      className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 transition-transform hover:-translate-y-px"
+      style={style}>
+      <PillBody label={node.label} mark={mark} titleColor={isOwned ? "#e8e8ea" : isBuy ? "#f0e8d0" : "#c8c8d0"} markColor={markColor} />
     </span>
   );
 }
 
-// Ein Lane-Fluss: Pillen mit „›"-Verbindung (umbruchfähig).
+// Ein Lane-Fluss: gleich breite Pillen (flex-1) mit „›"-Verbindung, EINE Reihe (kein Umbruch → ausgerichtet).
 function Lane({ nodes, p, laneAccent, onBuy, lead = null }) {
   const items = [];
-  if (lead) items.push(<span key="lead" className="inline-flex flex-col items-start rounded-lg px-2.5 py-1.5" style={{ minWidth: 74, border: `1px solid ${lead.color}`, background: `${lead.color}18` }}>
-    <span className="text-[11px] font-semibold leading-tight" style={{ color: "#e8e8ea" }}>{lead.label}</span>
-    <span className="text-[9.5px] font-bold leading-tight mt-0.5" style={{ color: lead.color }}>✓ frei</span>
+  if (lead) items.push(<span key="lead" className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2" style={{ border: `1px solid ${lead.color}`, background: `${lead.color}18` }}>
+    <PillBody label={lead.label} mark="✓ frei" titleColor="#e8e8ea" markColor={lead.color} />
   </span>);
-  nodes.forEach((n, i) => {
-    if (items.length) items.push(<span key={`sep${n.id}`} className="text-[13px] self-center" style={{ color: "#4a4a55" }}>›</span>);
+  nodes.forEach((n) => {
+    if (items.length) items.push(<span key={`sep${n.id}`} className="flex-none self-center text-[12px]" style={{ color: "#4a4a55" }}>›</span>);
     items.push(<NodePill key={n.id} node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, laneAccent)} onBuy={onBuy} />);
   });
-  return <div className="flex flex-wrap items-stretch gap-1.5">{items}</div>;
+  return <div className="flex items-stretch gap-1">{items}</div>;
 }
 
 export function UpgradeScreen({ onClose, profile, onProfileChange }) {

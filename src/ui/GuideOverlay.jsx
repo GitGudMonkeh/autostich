@@ -69,7 +69,7 @@ function LoopRing({ color, nodes, center }) {
 function Bar({ b }) {
   const single = !!b.scale;
   return (
-    <div className="rounded-xl px-3.5 py-3" style={{ background: "#141419", border: "1px solid #2a2a33" }}>
+    <div className="rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <span className="text-[13px] tracking-wide" style={{ color: "#e2e0ee" }}>
           <span className="mr-1.5" style={{ color: b.color }}>{b.faction ? <FactionIcon type={b.faction} size={12} /> : b.glyph}</span>{b.name}
@@ -144,7 +144,7 @@ export function GuideBody({ archetype, showTitle = true }) {
       <div className="grid gap-2.5">
         {g.pillars.map((p, i) => (
           <div key={i} className="grid gap-3 items-start rounded-xl px-3.5 py-3"
-               style={{ gridTemplateColumns: "38px 1fr", background: "#141419", border: "1px solid #2a2a33" }}>
+               style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
             <div className="w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
                  style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
             <div>
@@ -184,7 +184,7 @@ export function GuideBody({ archetype, showTitle = true }) {
       <ul className="grid gap-2.5 list-none p-0 m-0">
         {g.principle.map((p, i) => (
           <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
-              style={{ gridTemplateColumns: "auto 1fr", background: "#141419", border: "1px solid #2a2a33", color: "#d3d3dd" }}>
+              style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
             <span className="h-fit text-[10.5px] font-mono uppercase tracking-wide px-2 py-1 rounded-md whitespace-nowrap"
                   style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
             <span className="leading-relaxed"><RT t={p.text} /></span>
