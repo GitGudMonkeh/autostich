@@ -222,10 +222,11 @@ button { font-family: inherit; }
    (60→84→100) → glühender Laserklingen-Nachhall statt schnellem Abriss. */
 @keyframes as-blade-hall {
   0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
-  14%  { opacity: 0.95; }
-  26%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
-  60%  { opacity: 1; }     /* Spitzenhelligkeit länger halten */
-  84%  { opacity: 0.34; }  /* weicher, langgezogener Abfall … */
+  12%  { opacity: 0.95; }
+  22%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  66%  { opacity: 1; }     /* #klinge: Spitzenhelligkeit noch länger halten */
+  82%  { opacity: 0.5; }   /* weicher, langgezogener Abfall … */
+  93%  { opacity: 0.22; }  /* … in drei Stufen, damit die dünne Glut sichtbar ausklingt … */
   100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig ausgeglüht */
 }
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge

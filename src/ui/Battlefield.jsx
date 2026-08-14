@@ -224,8 +224,8 @@ export const KLINGE_TUNE = {
   bladeTint: "#bcd6ff", // Glow-Ton der Klinge (kühles Stahlweiß); Kern bleibt weiß
   bladeTaper: true,     // Schwung-Form: Schnittlinie läuft zu beiden Enden spitz zu (Linse) statt Balken
   sparkMetal: true,     // Metall-Funken: weiß + warme orange (Stahl-auf-Stahl) statt suit-farbig
-  bladeThick: 3,        // #klinge: Strichstärke des Schnitts (px) — deutlich dünner als früher (war 5/7)
-  bladeThickZ: 4,       // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
+  bladeThick: 2,        // #klinge: Strichstärke des Schnitts (px) — dünn wie der Laser-Finisher (2px-Strahl); glüht dafür kräftiger [TUNING]
+  bladeThickZ: 3,       // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
   followSwing: 42,      // #klinge: EINHEITLICHER Nachschwung/Überschlag — die Klinge schwingt nach JEDEM Schnitt gleich
                         // weit (px, entlang ihrer Längsachse) durch. Gilt identisch für rechts/links/oben/Z (Performance-Look).
 };
@@ -447,7 +447,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     const startMs = delay + stMs;
-    const hallDur = Math.round(dur * 3.2);   // #360: Nachhall deutlich länger als der Schnitt (× 2.1 → × 3.2) → glüht wie eine Laserklinge sichtbar aus [TUNING]
+    const hallDur = Math.round(dur * 5.0);   // #klinge: Nachhall nochmals länger (× 3.2 → × 5.0) → dünne Klinge glüht deutlich länger aus [TUNING]
     const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
       transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (
@@ -456,12 +456,12 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
         {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht SATT aus (verstärkt). */}
         <div style={{ ...common, height: h + 2, marginTop: -(h + 2) / 2, filter: "blur(0.5px)",
           background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 20%, #ffffff 50%, ${bladeGlow} 80%, transparent 100%)`,
-          boxShadow: `0 0 14px ${bladeGlow}, 0 0 ${(38 + intensity * 18).toFixed(0)}px ${bladeGlow}, 0 0 ${(72 + intensity * 28).toFixed(0)}px ${bladeGlow}, 0 0 ${(110 + intensity * 36).toFixed(0)}px ${bladeGlow}aa`, // #360: Glow dezent kräftiger für den Laser-Look
+          boxShadow: `0 0 20px ${bladeGlow}, 0 0 ${(52 + intensity * 22).toFixed(0)}px ${bladeGlow}, 0 0 ${(96 + intensity * 34).toFixed(0)}px ${bladeGlow}, 0 0 ${(150 + intensity * 44).toFixed(0)}px ${bladeGlow}aa`, // #klinge: dünne Klinge → kräftigerer, weiter reichender Glow
           "--cut-rot": `${rot}deg`, animation: `as-blade-hall ${hallDur}ms ease-out ${startMs}ms both` }} />
         {/* Die Klinge selbst: weiß-heißer Kern + Deck-Glow, wächst heraus und schwingt einheitlich durch (--cut-swing). */}
         <div style={{ ...common, height: h, marginTop: -h / 2,
           background: `linear-gradient(90deg, transparent 0%, ${bladeGlow}aa 12%, #ffffff 50%, ${bladeGlow}aa 88%, transparent 100%)`,
-          boxShadow: `0 0 6px #ffffff, 0 0 ${(14 + intensity * 8).toFixed(0)}px ${bladeGlow}, 0 0 ${(26 + intensity * 12).toFixed(0)}px ${bladeGlow}aa`,
+          boxShadow: `0 0 8px #ffffff, 0 0 ${(22 + intensity * 10).toFixed(0)}px ${bladeGlow}, 0 0 ${(42 + intensity * 16).toFixed(0)}px ${bladeGlow}, 0 0 ${(64 + intensity * 20).toFixed(0)}px ${bladeGlow}aa`,
           "--cut-rot": `${rot}deg`, "--cut-swing": `${KLINGE_TUNE.followSwing}px`, animation: `as-cut-line ${dur}ms ease-out ${startMs}ms both` }} />
       </div>
     );
