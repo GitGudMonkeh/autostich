@@ -18,7 +18,7 @@ import catFront      from "../assets/cards/decks_player/deck_cat/front.webp";   
 import catBack       from "../assets/cards/decks_player/deck_cat/back.webp";
 import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.webp";      // Slurp City
 import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.webp";
-import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.webp";   // Star Pup
+import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.webp";   // Kosmospanther (ehem. Star Pup)
 import spacedogBack  from "../assets/cards/decks_player/deck_spacedog/back.webp";
 import waleFront     from "../assets/cards/decks_player/deck_wale/front.webp";       // Moonwhale
 import waleBack      from "../assets/cards/decks_player/deck_wale/back.webp";
@@ -39,7 +39,7 @@ import meisterBack     from "../assets/cards/decks_player/deck_meister/back.webp
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
 import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.webp"; // Sunset Rider
 import sunsetBack  from "../assets/cards/decks_player/deck_sunset/back.webp";
-import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.webp";   // Lofi Nights
+import lofiFront   from "../assets/cards/decks_player/deck_lofi/front.webp";   // Kitsune (ehem. Lofi Nights)
 import lofiBack    from "../assets/cards/decks_player/deck_lofi/back.webp";
 // #IP: deck_kaiju (Neon Kaiju) entfernt.
 import bfSunsetDesktop from "../assets/battlefields/bf_sunset/desktop.jpg";

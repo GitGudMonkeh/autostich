@@ -139,7 +139,7 @@ export const THEME_DEFS = {
   // ---- Kaufbare Packs (1 Kauf = Deck + Battlefield) — #307 je Pack ein eigener DP-Preis ----
   sunset: { id: "sunset", name: "Sunset Rider", emblem: "🏍️", kind: "buy", price: 10, a1: "#ff5a4d", a2: "#ffab3a",
     deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf"] },
-  lofi:   { id: "lofi",   name: "Lofi Nights",  emblem: "🎧", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff7ab0",
+  lofi:   { id: "lofi",   name: "Kitsune",      emblem: "🦊", kind: "buy", price: 5, a1: "#bcd8ff", a2: "#7fb0ff",
     deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf"] },
   // #IP: „Neon Kaiju" / „Super Aura" / „Mecha Ronin" wegen IP-Bedenken entfernt.
 
@@ -150,7 +150,7 @@ export const THEME_DEFS = {
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
   ramen:    { id: "ramen",    name: "Slurp City",      emblem: "🍜", kind: "buy", price: 10, a1: "#ff5a7a", a2: "#ffab3a",
     deckId: "deck_ramen",      bfId: "bf_ramen",      els: ["deck", "bf"] },
-  spacedog: { id: "spacedog", name: "Star Pup",        emblem: "🐕", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
+  spacedog: { id: "spacedog", name: "Kosmospanther",   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
   wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
@@ -168,7 +168,7 @@ export const THEME_DEFS = {
     deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
   serie600:   { id: "serie600",   name: "Serie 600",  emblem: "☄️", kind: "cond", a1: "#ff3a12", a2: "#ff9a3f",
     deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
-  sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "🦊", kind: "cond", a1: "#e0a44a", a2: "#7a5a2a",
+  sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
   meister:    { id: "meister",    name: "Meister",    emblem: "🏆", kind: "cond", a1: "#d4a63a", a2: "#cfd3e0",
     deckId: "deck_meister",    bfId: "bf_meister",    els: ["deck", "bf"] },

@@ -35,13 +35,13 @@ export const DECK_DEFS = {
   // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
   // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
   deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
-  deck_lofi:   { id: "deck_lofi",   name: "Lofi Nights",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  deck_lofi:   { id: "deck_lofi",   name: "Kitsune",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
   // #IP: deck_kaiju / deck_aura / deck_mecha entfernt.
   // v0.4 Kauf-Packs:
   deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   deck_cat:        { id: "deck_cat",        name: "Biolumen", unlock: { kind: "buy", ownKey: "pack:cat" } },
   deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
-  deck_spacedog:   { id: "deck_spacedog",   name: "Star Pup",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  deck_spacedog:   { id: "deck_spacedog",   name: "Kosmospanther",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
   // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
@@ -76,13 +76,13 @@ export const BATTLEFIELD_DEFS = {
   // #299: alte „Läufe"-Progressions-Battlefields (bf_1–4) entfernt. Deck-Werkstatt Kauf-Packs (#deckshop):
   // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
   bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
-  bf_lofi:   { id: "bf_lofi",   name: "Lofi Nights · Battlefield",  unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  bf_lofi:   { id: "bf_lofi",   name: "Kitsune · Battlefield",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
   // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
   bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   bf_cat:        { id: "bf_cat",        name: "Biolumen · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
   bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
-  bf_spacedog:   { id: "bf_spacedog",   name: "Star Pup · Battlefield",        unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  bf_spacedog:   { id: "bf_spacedog",   name: "Kosmospanther · Battlefield",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).

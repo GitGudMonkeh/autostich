@@ -97,7 +97,7 @@ export const LOOK_REFS = { // #327 exportiert für den Drift-Guard-Test (kein Ef
   laserFaecher:  { pack: "blitz" },      // Score-Prunk — Deckfarbe = Blitz (violett)
   prismaKaskade: { pack: "polarlicht" },// Score-Prunk — Deckfarbe = Polarlicht (blau/grün)
   holoCube:      { pack: "geometrie" },  // Score-Prunk — Deckfarbe = Metatron (violett/gold)
-  supernova:     { pack: "spacedog" },   // Score-Prunk — Deckfarbe = Star Pup (violett/magenta)
+  supernova:     { pack: "spacedog" },   // Score-Prunk — Deckfarbe = Kosmospanther (violett/magenta)
   edgeglow:      { pack: "genesis" },    // Karten-Anim — immer Deckfarbe, neutraler Genesis-Backdrop
   holo:          { pack: "genesis" },
   glitch:        { pack: "genesis" },
