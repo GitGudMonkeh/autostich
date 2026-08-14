@@ -511,9 +511,9 @@ export function Autostich() {
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
       max_formations: state.maxFormations, formation_score: state.formationScore,
       crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
-      // §7 (Schritt 6): Ranglisten-Läufe tragen ihr Board (standard/meister) → getrennte Boards. Casual-Läufe posten
-      // OHNE board (→ NULL) und tauchen so auf keinem Wettbewerbs-Board auf (§7 „kein Leaderboard-Zwang").
-      ...(state.ranked === "standard" ? { board: "standard" } : state.ranked === "meister" ? { board: "meister" } : {}) };
+      // #370: Ranglisten-Läufe posten aufs Wochen-Board (Board-String bleibt vorerst "meister" = bestehendes
+      //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
+      ...(state.ranked ? { board: "meister" } : {}) };
     setMyEntry(gEntry);
     if (leaderboardConfigured && name) {
       publishRun(gEntry).then((saved) => {
@@ -679,12 +679,10 @@ export function Autostich() {
     if (kind === "onboarding") { setProfile(saveProfile(skipOnboardingProfile(loadProfile()))); return; } // Onboarding skippen + 10 SP / 50 DP
     if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
   }
-  // §7 (Schritt 6): Ranglisten-Standard — tree-unabhängige Baseline (fix 2 Rerolls, alle Archetypen, R29 an; für alle gleich).
-  function startStandardRun() { launchRun({ ranked: "standard" }); }
-  // §7 (Schritt 6): Ranglisten-Meister — spielt mit dem VOLLEN Baum (freigeschaltet, wenn alle Upgrades gekauft sind).
-  function startMeisterRun() { launchRun({ ranked: "meister", seed: currentWeek(new Date()).seed }); } // §7: alle spielen den Wochen-Seed
-  // Neustart behält die Lauf-Art (Ranglisten-Standard/Meister → gleicher Modus; sonst normal).
-  function restartRun() { launchRun({ ranked: state.ranked || null, seed: state.ranked === "meister" ? currentWeek(new Date()).seed : null }); } // Meister-Neustart bleibt auf dem Wochen-Seed
+  // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
+  function startRankedRun() { launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
+  // Neustart behält die Lauf-Art (Ranked → gleicher Modus + Wochen-Seed; sonst normal).
+  function restartRun() { launchRun({ ranked: state.ranked || null, seed: state.ranked ? currentWeek(new Date()).seed : null }); }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
@@ -825,7 +823,7 @@ export function Autostich() {
       {state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onStandardRun={startStandardRun} onMeisterRun={startMeisterRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedRun={startRankedRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
@@ -995,7 +993,7 @@ export function Autostich() {
         {showLeaderboard && (
           <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
             onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
-            onPlayMeister={() => { setShowLeaderboard(false); startMeisterRun(); }}
+            onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}
             onClose={() => setShowLeaderboard(false)} />
         )}
       </Suspense>

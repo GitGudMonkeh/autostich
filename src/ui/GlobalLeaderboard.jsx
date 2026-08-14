@@ -59,7 +59,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
-  const boardLabel = board === "standard" ? "Standard" : board === "meister" ? "Meister" : "Global";
+  const boardLabel = board === "standard" ? "Standard" : board === "meister" ? "Rangliste" : "Global"; // #370: Wochen-Ranked (Board-String bleibt "meister")
 
   // Eigenen Lauf genau einmal hervorheben (erste Übereinstimmung).
   // #229 N2: bevorzugt per eindeutiger id (das Board vergibt sie, publishRun reicht sie in myEntry nach) → trifft

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   NODES, NODE_BY_ID, NODE_IDS, BUYABLE_IDS, DECK_IDS, GEN_IDS,
   TOTAL_COST, TOTAL_NODES, LEG_NODES_BY_ARCH,
-  emptyProfile, owns, anyLegOwned, gateMet, prereqMet,
+  emptyProfile, owns, rankedUnlocked, anyLegOwned, gateMet, prereqMet,
   nodeEffects, treeCoverBonus, treeEnergyBonus, treeRareShift,
   unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, legCountByArch, rerollBase, legPerk2Force,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
@@ -333,5 +333,20 @@ describe("legendaryPhaseUnlocked (Baum)", () => {
   it("false ohne Leg, true sobald irgendein Leg I gekauft ist", () => {
     expect(legendaryPhaseUnlocked(emptyProfile(0))).toBe(false);
     expect(legendaryPhaseUnlocked(build(["fireLeg1"]))).toBe(true);
+  });
+});
+
+describe("#370 rankedUnlocked — Freischaltung (alle Decks + je ≥1 abgeschlossener Lauf)", () => {
+  it("false ohne Deck-Knoten; erst mit iceDeck+plantDeck UND je ≥1 Lauf je Archetyp true", () => {
+    const base = emptyProfile();
+    expect(rankedUnlocked(base)).toBe(false);                                  // keine Deck-Knoten
+    const decks = { ...base, nodes: { iceDeck: 1, plantDeck: 1 } };
+    expect(rankedUnlocked(decks)).toBe(false);                                 // Decks frei, aber keine Läufe
+    const partial = { ...decks, archetypeRunsCompleted: { lightning: 1, fire: 1, ice: 1 } };
+    expect(rankedUnlocked(partial)).toBe(false);                              // plant fehlt
+    const missingDeck = { ...base, nodes: { iceDeck: 1 }, archetypeRunsCompleted: { lightning: 1, fire: 1, ice: 1, plant: 1 } };
+    expect(rankedUnlocked(missingDeck)).toBe(false);                          // plantDeck-Knoten fehlt
+    const full = { ...decks, archetypeRunsCompleted: { lightning: 1, fire: 2, ice: 1, plant: 1 } };
+    expect(rankedUnlocked(full)).toBe(true);
   });
 });

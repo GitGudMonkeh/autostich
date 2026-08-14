@@ -197,17 +197,24 @@ describe("Archetyp-Allowlist aus dem Baum", () => {
   });
 });
 
-describe("Ranglisten: Standard = tree-unabhängig, Meister = voller Baum", () => {
+describe("#370 Rangliste: EIN Ranked-Modus = tree-unabhängige Baseline (ersetzt Standard/Meister)", () => {
   const maxed = unlockAllProfile(emptyProfile(1000));
-  it("Standard ignoriert den Baum trotz vollem Profil", () => {
-    const s = start({ profile: maxed, ranked: "standard" });
+  it("Ranked ignoriert den Baum trotz vollem Profil (fixe faire Baseline)", () => {
+    const s = start({ profile: maxed, ranked: "ranked" });
     expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([BASE_REROLLS, BASE_REROLLS, BASE_REROLLS]);
     expect(s.treeRareShift).toBe(0);
     expect(s.rareCap).toBe(4);
     expect(s.unlockedArchetypes).toBe(null);
     expect(s.legPhaseEnabled).toBe(true);
     expect(s.legCountByArch).toBe(null);
-    expect(s.ranked).toBe("standard");
+    expect(s.ranked).toBe("ranked");
+  });
+  it("Ranked ohne Profil = dieselbe Baseline", () => {
+    const s = start({ ranked: "ranked" });
+    expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([BASE_REROLLS, BASE_REROLLS, BASE_REROLLS]);
+    expect(s.treeRareShift).toBe(0);
+    expect(s.rareCap).toBe(4);
+    expect(s.ranked).toBe("ranked");
   });
   it("Normal-Lauf mit demselben Profil zieht den vollen Baum", () => {
     const n = start({ profile: maxed });
@@ -216,14 +223,5 @@ describe("Ranglisten: Standard = tree-unabhängig, Meister = voller Baum", () =>
     expect(n.rareCap).toBe(4);
     expect(n.legCountByArch).toEqual({ fire: 2, lightning: 2, ice: 2, plant: 2 });
     expect(n.ranked).toBe(null);
-  });
-  it("Meister spielt den vollen Baum ohne Profil", () => {
-    const s = start({ ranked: "meister" });
-    expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([1, 1, 1]);
-    expect(s.treeRareShift).toBe(4);
-    expect(s.rareCap).toBe(4);
-    expect(s.treeLegForce2).toBe(3);
-    expect(s.rerollsLeg).toBe(1);
-    expect(s.ranked).toBe("meister");
   });
 });

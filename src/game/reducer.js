@@ -13,11 +13,8 @@ import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
-import { nodeEffects, legPerk2Force, rerollBase, unlockAllProfile, COVER_FLOOR, ENERGY_FLOOR } from "./progression.js"; // #369 Progression-Baum: Cover/Energie-Floor + Rarität + Archetyp-/Legendär-Gatung + Reroll-Pools (alles aus dem Baum, treeEff-Felder)
+import { nodeEffects, legPerk2Force, rerollBase, COVER_FLOOR, ENERGY_FLOOR } from "./progression.js"; // #369 Progression-Baum: Cover/Energie-Floor + Rarität + Archetyp-/Legendär-Gatung + Reroll-Pools (alles aus dem Baum, treeEff-Felder)
 
-// §7 (Schritt 6): der Meister-Ranglisten-Lauf spielt mit dem VOLLEN Baum — unabhängig vom echten Profil. Ein einmalig
-// gebautes Voll-Profil (alle Knoten + Onboarding 6) speist dieselbe Tree-Maschinerie wie ein Normal-Lauf.
-const FULL_MEISTER_PROFILE = unlockAllProfile({});
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 import { normalizeActive as normalizeChallenges } from "./challenges.js"; // #301 Challenge-Modifikatoren (Präfix-Normalisierung)
@@ -202,12 +199,12 @@ export function reducer(state, action) {
       // Dev-Run (nur Preview): action.dev = { rounds, schedule, cover, energy } konfiguriert einen frei einstellbaren Lauf.
       // Nur dieser Zweig weicht ab; ohne action.dev bleibt der normale Lauf-Start UNVERÄNDERT (Start = Stat).
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
-      // §7 (Schritt 6): zwei Ranglisten-Varianten über den `ranked`-Flag, beide über DIESELBE Tree-Maschinerie:
-      //  · 'standard' = tree-UNABHÄNGIGE Baseline (kein Baum → fix 2 Rerolls, alle Archetypen, R29 an) = Referenzwert.
-      //  · 'meister'  = VOLLER Baum (unabhängig vom echten Profil).
-      // Sonst zählt das echte Profil (Normal-Lauf). effProfile null → treeEff null (Baseline/Sim/profil-los).
+      // #370 EIN Ranglisten-Modus („ranked") über den `ranked`-Flag: tree-UNABHÄNGIGE, faire Baseline (kein Baum →
+      //   fix 2 Rerolls, alle Archetypen, rareCap 4, R29 an) — für alle gleich, unabhängig vom echten Upgrade-Tree.
+      //   Ersetzt den alten Standard/Meister-Split. Sonst (Normal-/Seed-Lauf) zählt das echte Profil (action.profile).
+      //   effProfile null → treeEff null (Baseline/Sim/profil-los). Die Wochen-Modifikatoren kommen in Phase 2/3 obendrauf.
       const ranked = action.ranked || null;
-      const effProfile = ranked === "meister" ? FULL_MEISTER_PROFILE : (ranked === "standard" ? null : action.profile);
+      const effProfile = ranked ? null : action.profile;
       const treeEff = (!dev && effProfile) ? nodeEffects(effProfile) : null;
       const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
       const treeEnergyBonus = treeEff ? treeEff.treeEnergyBonus : 0; // +Formations-Energie (0..2)

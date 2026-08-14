@@ -123,6 +123,16 @@ export const LEG_NODES_BY_ARCH = NODES.reduce((m, n) => {
 // Sicheres Lesen: gilt ein Knoten als gekauft? (Level 1 = gekauft; alles Wahre zählt.)
 export const owns = (profile, id) => !!(profile && profile.nodes && profile.nodes[id]);
 
+// #370 Ranked-Freischaltung: alle vier Archetypen freigeschaltet (Blitz/Feuer = Basis · Eis/Pflanze via Deck-Knoten)
+//   UND mit jedem ≥1 ABGESCHLOSSENER Lauf (archetypeRunsCompleted aus storage.recordRun). Upgrade-Tree ist egal.
+export const RANKED_ARCHETYPES = [...new Set([...ARCHETYPES_BASE, ...NODES.filter((n) => n.deckUnlock).map((n) => n.deckUnlock)])];
+export function rankedUnlocked(profile) {
+  const p = profile || {};
+  if (!NODES.every((n) => !n.deckUnlock || owns(p, n.id))) return false; // alle Deck-Freischalt-Knoten gekauft
+  const runs = p.archetypeRunsCompleted || {};
+  return RANKED_ARCHETYPES.every((a) => (Number(runs[a]) || 0) >= 1);
+}
+
 // Frisches Profil (kein RNG/Date). sp = Startguthaben (default 0).
 export const emptyProfile = (sp = 0) => ({ stichPoints: Math.max(0, Math.floor(Number(sp) || 0)), stichSpent: 0, nodes: {} });
 

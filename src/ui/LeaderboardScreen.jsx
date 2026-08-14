@@ -13,7 +13,7 @@ import { loadRunHistory } from "../game/storage.js";
 import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
-import { treeComplete } from "../game/progression.js";
+import { rankedUnlocked } from "../game/progression.js";
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
 
 const TOP_N = 20;
@@ -23,11 +23,12 @@ const LILA = "#8a7de0";
 const CY = "#26c6e6";   // Standard-Akzent (Spaß-Modus)
 const AM = "#f2a83a";   // Meister-Akzent (Wochen-Challenge)
 // Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs.
+// #370: EIN Wochen-Ranked-Board (ersetzt Standard/Meister). Board-String bleibt intern "meister" (Wochen-Board +
+//   Champions unverändert), Reiter heißen nach dem neuen Modell. „Regeln"-Reiter folgt mit den Wochen-Mods (Phase 2).
 const TABS = [
-  { id: "mine",       label: "Meine Runs", accent: LILA },
-  { id: "standard",   label: "Standard",   accent: CY },
-  { id: "meister",    label: "Meister",    accent: AM },
-  { id: "champions",  label: "🏆 Champions", accent: GOLD },
+  { id: "mine",       label: "Meine Runs",   accent: LILA },
+  { id: "meister",    label: "Diese Woche",  accent: AM },
+  { id: "champions",  label: "🏆 Challenger", accent: GOLD },
 ];
 
 const fmtDate = (ts) => {
@@ -111,7 +112,7 @@ function ChampionsList({ reloadToken }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayMeister = null, profile = null }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayRanked = null, profile = null }) {
   useEscape(onClose);
   const [tab, setTab] = useState("mine");
   const [detail, setDetail] = useState(null); // gewählter lokaler Lauf → RunDetail-Overlay
@@ -125,7 +126,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
   }, [tab]);
 
   const week = useMemo(() => currentWeek(new Date(now)), [now]);
-  const canPlayMeister = treeComplete(profile || {}); // Teilnahme frei bei 13/13 Upgrades
+  const canPlayRanked = rankedUnlocked(profile || {}); // #370: frei bei allen Decks + je ≥1 abgeschlossenem Lauf
 
   // Alle eigenen Läufe: Run-Historie (bis 30, mit Deck-Snapshot) + Top-5-Highscores, per Zeitstempel dedupliziert
   // (Historie zuerst → die reichere Version gewinnt), nach Score sortiert.
@@ -184,19 +185,6 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
               </>
             )}
 
-            {tab === "standard" && (
-              leaderboardConfigured ? (
-                <>
-                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                    <span className="text-[13px] font-extrabold" style={{ color: CY }}>Standard</span>
-                    <span className="text-[11px] opacity-50">Allzeit · Top {TOP_N}</span>
-                  </div>
-                  <div className="text-[11.5px] opacity-55 leading-relaxed mb-3">Zufällige Seeds, Upgrades ignoriert — für alle gleich. Just for fun.</div>
-                  <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="standard" onPlaySeed={onPlaySeed} hideHeader />
-                </>
-              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
-            )}
-
             {tab === "meister" && (
               leaderboardConfigured ? (
                 <>
@@ -211,14 +199,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
                       <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
                       <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
                     </div>
-                    {canPlayMeister && (
-                      <button onClick={onPlayMeister || undefined}
+                    {canPlayRanked && (
+                      <button onClick={onPlayRanked || undefined}
                         className="w-full mt-3 border-none rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5"
                         style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
                     )}
-                    {!canPlayMeister && (
+                    {!canPlayRanked && (
                       <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
-                        🔒 Teilnahme frei bei 13/13 Upgrades · ansehen jederzeit
+                        🔒 Frei, sobald alle Decks freigeschaltet sind + je ≥1 Lauf beendet · ansehen jederzeit
                       </div>
                     )}
                   </div>

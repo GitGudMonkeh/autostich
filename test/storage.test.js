@@ -430,6 +430,32 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(profile.hadChampionWeek).toBe(false);
     });
 
+    it("#370 Ranked-Wochenbonus + Freischalt-Tracker (erste abgeschlossene Ranked-Runde/Woche gibt +5 DP)", () => {
+      const p0 = loadProfile();
+      // Erste Ranked-Runde der Woche (Seed 111): Bonus + Tracker. score 0 → native DP 0, sauberes Bonus-Delta.
+      const a = recordRun({ score: 0, ts: 1, completed: true, ranked: "ranked", seed: 111, archetypes: ["fire", "ice"] });
+      expect(a.profile.lastRankedWeekSeed).toBe(111);
+      expect(a.profile.archetypeRunsCompleted).toEqual({ fire: 1, ice: 1 });
+      const dA = a.profile.deckPoints - p0.deckPoints;
+      // Zweite Ranked-Runde DERSELBEN Woche (gleicher Seed) → kein Bonus mehr, Tracker zählt weiter.
+      const b = recordRun({ score: 0, ts: 2, completed: true, ranked: "ranked", seed: 111, archetypes: ["fire"] });
+      expect(b.profile.lastRankedWeekSeed).toBe(111);
+      expect(b.profile.archetypeRunsCompleted.fire).toBe(2);
+      const dB = b.profile.deckPoints - a.profile.deckPoints;
+      expect(dA - dB).toBe(5); // +5 DP nur beim ersten Lauf der Woche
+      // Neue Woche (anderer Seed) → wieder Bonus.
+      const c = recordRun({ score: 0, ts: 3, completed: true, ranked: "ranked", seed: 222, archetypes: ["fire"] });
+      expect(c.profile.lastRankedWeekSeed).toBe(222);
+      expect((c.profile.deckPoints - b.profile.deckPoints) - dB).toBe(5);
+      // Nicht-Ranked completed Lauf zählt für den Tracker, setzt aber KEINE Wochen-Marke.
+      const d = recordRun({ score: 0, ts: 4, completed: true, archetypes: ["plant"] });
+      expect(d.profile.archetypeRunsCompleted.plant).toBe(1);
+      expect(d.profile.lastRankedWeekSeed).toBe(222);
+      // Unvollständiger Lauf zählt NICHT für den Tracker.
+      const e = recordRun({ score: 0, ts: 5, completed: false, archetypes: ["lightning"] });
+      expect(e.profile.archetypeRunsCompleted.lightning).toBeUndefined();
+    });
+
     it("#214: noReroll-Lauf setzt hadNoRerollRun (persistiert), ein Reroll-Lauf nicht", () => {
       const { profile } = recordRun({ score: 100, ts: 1, completed: true, rerollsUsed: 0, statPicks: [] });
       expect(profile.hadNoRerollRun).toBe(true);

@@ -96,6 +96,10 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
+  // #370 Ranked-Rework: „Archetyp X war in einem ABGESCHLOSSENEN Lauf dabei" (Map Archetyp→Anzahl) → Ranked-Freischaltung
+  //   (alle vier Archetypen + je ≥1 completed). lastRankedWeekSeed = Wochen-Seed der zuletzt gewerteten Ranked-Runde
+  //   (identifiziert die Woche eindeutig) → erste Ranked-Runde je Woche bekommt den Bonus genau einmal.
+  archetypeRunsCompleted: {}, lastRankedWeekSeed: null,
   // #303 Challenge-Decks — sticky Freischalt-Flags (einmal true → bleibt): Gottgleich (erstmals GOTTGLEICH-Stich),
   // Sparfuchs (Meisterrang-Wochenlauf ohne Reroll), Meister (Platz 1 einer Wochen-Rangliste — Champion-Board, Trigger folgt).
   hadGottgleichRun: false, hadMeisterNoRerollRun: false, hadChampionWeek: false,
@@ -261,8 +265,10 @@ export const GOTTGLEICH_TRICK_MIN = 500000; // = FX_TIER_MINS[3] (Battlefield.js
 export function isGottgleichRun(record) {
   return !!record && n0(record.bestTrickScore) >= GOTTGLEICH_TRICK_MIN;
 }
+// #370: „ranked" ist der neue Wochen-Ranglisten-Modus (ersetzt „meister"); Alt-Records mit „meister" bleiben gültig.
+export const isRankedMode = (r) => !!r && (r.ranked === "ranked" || r.ranked === "meister");
 export function isMeisterNoRerollRun(record) {
-  return !!record && record.completed === true && record.ranked === "meister" && n0(record.rerollsUsed) === 0;
+  return !!record && record.completed === true && isRankedMode(record) && n0(record.rerollsUsed) === 0;
 }
 
 // #349 C: Quota-Fehler nicht mehr komplett stumm schlucken. Einmal signalisieren (nicht spammen) + die Lauf-Historie
@@ -300,6 +306,9 @@ export function recordRun(record) {
   const monoArchetypeRuns = { ...(p.monoArchetypeRuns || {}) };
   const monoArch = monoArchetypeOf(record);
   if (monoArch) monoArchetypeRuns[monoArch] = n0(monoArchetypeRuns[monoArch]) + 1;
+  // #370 Ranked-Freischaltung: je Archetyp zählen, in wie vielen ABGESCHLOSSENEN Läufen er dabei war (Misch- wie Mono-Läufe).
+  const archetypeRunsCompleted = { ...(p.archetypeRunsCompleted || {}) };
+  if (record.completed === true) for (const a of new Set(record.archetypes || [])) archetypeRunsCompleted[a] = n0(archetypeRunsCompleted[a]) + 1;
   // Progression/Upgrades (docs §4–§6): Onboarding rückt bei natürlichem Abschluss ein Glied vor; SP werden erst
   // NACH vollendetem Onboarding geerntet (Grundstock + Score-Meilensteine + Treue-Drip). spRuns zählt nur SP-Läufe.
   // Reine Regeln aus progression.js (Sim läuft profil-los → Baseline unberührt). stichSpent/nodes bleiben unangetastet
@@ -316,8 +325,15 @@ export function recordRun(record) {
   const chMods = normalizeActive(record.challengeMods);
   const chSettle = (chMods.length && record.completed) ? settleChallenges(chMods, n0(record.score), gainedDp) : null;
   const runDp = chSettle ? chSettle.runDp : gainedDp;
+  // #370 Ranked-Wochenbonus: die ERSTE abgeschlossene Ranked-Runde je Woche gibt +5 SP & +5 DP (bei vollem Baum
+  //   stattdessen +10 DP, da SP dann nutzlos). Woche = Wochen-Seed des Records (eindeutig je Woche); lastRankedWeekSeed
+  //   verhindert Mehrfach-Bonus. Seed-basiert → deterministisch/testbar (kein new Date() in recordRun).
+  const rankedSeed = isRankedMode(record) && record.completed === true && record.seed != null ? (record.seed >>> 0) : null;
+  const firstRankedThisWeek = rankedSeed != null && rankedSeed !== (p.lastRankedWeekSeed ?? null);
+  const rankedSpBonus = firstRankedThisWeek && !treeDone ? 5 : 0;
+  const rankedDpBonus = firstRankedThisWeek ? (treeDone ? 10 : 5) : 0;
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
-  const spBalance = n0(p.stichPoints) + gainedSp;
+  const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus;
   const spSweep = treeDone ? spBalance : 0;
   // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner. Genesis wird NICHT mehr als Pack
   // geschenkt — es ist ein Onboarding-Freischalt-Deck (kind "cond"/onboardingDone), frei sobald onboarding 6/6.
@@ -341,6 +357,9 @@ export function recordRun(record) {
     hadNoRerollRun: !!p.hadNoRerollRun || isNoRerollRun(record),
     // #215: Archetyp-Decks — Mono-Läufe je Fraktion (deck_c5..c8) + Element-Bund (alle vier, deck_c9).
     monoArchetypeRuns,
+    // #370 Ranked-Freischalt-Tracker + „diese Woche schon gewertet"-Marke (Wochen-Seed).
+    archetypeRunsCompleted,
+    lastRankedWeekSeed: firstRankedThisWeek ? rankedSeed : (p.lastRankedWeekSeed ?? null),
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
     // #303 Challenge-Decks — sticky (einmal true → bleibt). Gottgleich- & Sparfuchs-Flags werden hier gesetzt;
     // hadChampionWeek bleibt vorerst nur erhalten (der Trigger folgt mit dem Champion-Board, s. #299/#303).
@@ -354,7 +373,7 @@ export function recordRun(record) {
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
     // #301: im Challenge-Lauf ersetzt runDp (native + Challenge-Netto, ≥ 0) die native DP.
-    deckPoints: n0(p.deckPoints) + runDp + spSweep,
+    deckPoints: n0(p.deckPoints) + runDp + spSweep + rankedDpBonus,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
