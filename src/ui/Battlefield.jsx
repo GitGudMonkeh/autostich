@@ -1568,18 +1568,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }} />
           ) : (
-          // #344: Neon-Synthwave-CHROME (statisch, kein Sweep) — metallischer Verlauf in die Glyphen geclippt
-          //   (transparente Füllung), Glow via drop-shadow. Exakt mittig (translate aus as-bigscore bzw. reduced-transform).
-          <div key={b.id} className="pointer-events-none absolute font-extrabold whitespace-nowrap"
+          // #344/#354: Neon-Synthwave-CHROME (statisch, kein Sweep). ZWEI-SCHICHT für Präsenz wie Gottgleich: eine solide,
+          //   kontrastreiche Basis-Glyphe (near-white + kräftiger Farb-Glow-Halo) UNTER dem metallischen Chrome-Verlauf.
+          //   #354: Vorher war die Wortmarke NUR transparent-gefülltes Chrome → deutlich blasser als der solide Gottgleich-
+          //   SVG-Text und darum neben dem Krit-Trubel leicht zu übersehen. Die Basis macht Stark/Brutal/Irre bei JEDEM Sieg
+          //   (auch Krit) sicher lesbar; das Chrome (leicht durchscheinend) legt den Metallic-Look darüber. Exakt mittig.
+          <div key={b.id} className="pointer-events-none absolute" aria-hidden="true"
             style={{ left: "50%", top: "50%", zIndex: 30,
-                     textTransform: "uppercase", // Q2/Loc: Caps zentral über CSS (Übersetzer liefert STARK/BRUTAL/… normal)
-                     fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px`, // höhere Stufe = luftiger
-                     backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
-                     WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
-                     filter: chromeFilter(b.tier.chrome, gBig, gMid),
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
-            {b.tier.text}
+            {(() => {
+              const ws = { margin: 0, fontWeight: 800, whiteSpace: "nowrap", lineHeight: 1, textTransform: "uppercase", // Q2/Loc: Caps zentral über CSS
+                fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px` }; // höhere Stufe = luftiger
+              return (<>
+                <span style={{ ...ws, position: "absolute", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
+                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{b.tier.text}</span>
+                <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
+                  WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
+                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{b.tier.text}</span>
+              </>);
+            })()}
           </div>
           );
         })}
