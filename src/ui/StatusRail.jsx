@@ -85,7 +85,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     // den Gebäude-Wert-Bonus, ohne die anderen Deps zu berühren (sonst zeigte der HUD-Prozentwert veraltet).
   }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
   return (
-    <div className="rounded-xl p-4 grid gap-3 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
+    <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>
         <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2">Multiplikatoren</div>

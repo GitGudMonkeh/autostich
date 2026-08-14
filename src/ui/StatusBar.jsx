@@ -50,7 +50,7 @@ export function StatusBar({
   const cyc = Math.min(cycle + 1, totalCycles);
   return (
     <div className="sticky top-0 z-20 -mx-1">
-      <div className="as-statusbar flex flex-col rounded-xl overflow-hidden as-panel"
+      <div className="as-statusbar flex flex-col rounded-xl overflow-hidden as-panel as-panel-deck"
         style={{ background: "linear-gradient(180deg,#1b1a24f2,#141019f2)", border: `1px solid ${DECK_BORDER}`, backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
 
         {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon. */}

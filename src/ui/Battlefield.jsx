@@ -70,7 +70,7 @@ import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
 const IceCrystalField = lazy(() => import("./fx/IceCrystalField.jsx").then((m) => ({ default: m.IceCrystalField }))); // #364 Eis-Kristall-Feld (Canvas-2D, lazy → nur bei Eis-Deck geladen)
-import { PhaseHairline } from "./modalStyle.jsx";
+import { PhaseHairline, DECK_BORDER } from "./modalStyle.jsx"; // #365: deck-getönter Nicht-CRT-Fallback des Battlefield-Rahmens
 import { fmtScore } from "./format.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Treffer-Identität im Score-Float)
 import cardBackImg  from "../assets/cards/card-back.webp";  // Default-Deck-Rücken: „Prisma" (v0.4, ersetzt den Schwerter-Rücken #180)
@@ -1248,7 +1248,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // --- Panel-Rahmen + äußerer Bloom ---
   // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
   // das Battlefield bleibt neutral, nur die Sieg-/Krit-Aura des aktuellen Stich-Ergebnisses liegt noch am Panel.
-  const panelBorder = "1px solid #2c2a3a";
+  const panelBorder = `1px solid ${DECK_BORDER}`; // #365/#356: Nicht-CRT-Fallback deck-getönt (unter CRT übernimmt die .as-panel-deck-Regel)
   const outerParts = [];
   // #192: der Screen-Shake eines großen NORMALEN Siegs bekommt eine dezente grün/gold Panel-Aura (Sieg-Identität,
   // WIN_TIER_COLORS), damit die „grün/gold"-Wirkung sichtbar ist, ohne Flash/Vignette (die Crit-exklusiv bleiben).
@@ -1261,7 +1261,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel relative"
+    <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
       style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
                // #296: eigener Stacking-Context → die Panel-Overlays (Schwarzes Loch/BounceBurst/PrunkFx mit hohem
                // zIndex) bleiben INNERHALB des Battlefields und liegen nie über anderen Screens (z. B. Perk-Auswahl).

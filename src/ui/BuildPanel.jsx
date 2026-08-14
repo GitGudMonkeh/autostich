@@ -8,7 +8,7 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutrale
 export function BuildPanel({ perks, skills = [], familyTiers = {}, zinsBonus }) {
   const famCount = Object.values(familyTiers).filter((t) => t > 0).length;
   return (
-    <div className="rounded-xl p-4 as-panel" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
+    <div className="rounded-xl p-4 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
