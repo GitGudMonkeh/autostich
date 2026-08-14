@@ -16,6 +16,11 @@ import blackholeUrl from "../assets/sounds/fx_blackhole.mp3";
 // #320 Schwarzes-Loch-Finisher: fx_blackhole = persistentes Loop-Bett (Sog/Drone), fx_blackhole_implode = Einmal-Impact
 // bei der Implosion (Kollaps → Flash/Nova). Registriert/vorbereitet; das Abspielen/Verdrahten folgt per Issue.
 import blackholeImplodeUrl from "../assets/sounds/fx_blackhole_implode.mp3";
+// #345 Neon-Brandung (Boden-BG-Effekt): fx_neonsurf = persistentes Loop-Bett (Plasma-See-Ambience, läuft solange der
+// Effekt aktiv ist), fx_neonsurf_splash = One-Shot „on top", wenn eine Groß-Ansage das Wasser wegdrückt (Surge).
+// Registriert/vorbereitet; das Abspielen/Verdrahten folgt mit der Effekt-Umsetzung (Issue #345).
+import neonsurfUrl from "../assets/sounds/fx_neonsurf.mp3";
+import neonsurfSplashUrl from "../assets/sounds/fx_neonsurf_splash.mp3";
 // #300 Sieg-Finisher „Überladung" (Blitz) / „Zerstäubung" (Partikel) — eigene Sounds; fx_bass = tiefer Impact-Layer.
 // #: „Gottgleich"-Bass-Drop (fx_godlike) — feuert bei den epischen Groß-Ansagen (Gottgleich/Gönn dir/Lawine).
 import lightningUrl from "../assets/sounds/fx_lightning.mp3";
@@ -32,7 +37,7 @@ import cometUrl from "../assets/sounds/fx_comet.mp3";
 import cometImpactUrl from "../assets/sounds/fx_comet_impact.mp3";
 
 const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl,
-              fx_blade: bladeUrl, fx_laser: laserUrl, fx_lasergrid: lasergridUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl, fx_blackhole_implode: blackholeImplodeUrl,
+              fx_blade: bladeUrl, fx_laser: laserUrl, fx_lasergrid: lasergridUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl, fx_blackhole_implode: blackholeImplodeUrl, fx_neonsurf: neonsurfUrl, fx_neonsurf_splash: neonsurfSplashUrl,
               fx_lightning: lightningUrl, fx_atomize: atomizeUrl, fx_bass: bassUrl, fx_godlike: godlikeUrl, fx_scorch: scorchUrl,
               fx_comet: cometUrl, fx_comet_impact: cometImpactUrl };
 
@@ -46,7 +51,7 @@ const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwa
 //  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
 //  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
 const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
-const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_scorch: 0.06, fx_comet: 0.11, fx_comet_impact: 0.11, fx_blackhole_implode: 0.5 };  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen; fx_blackhole_implode selten → 0,5 s reicht
+const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_scorch: 0.06, fx_comet: 0.11, fx_comet_impact: 0.11, fx_blackhole_implode: 0.5, fx_neonsurf_splash: 0.3 };  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen; fx_blackhole_implode selten → 0,5 s reicht
 const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
 const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;
