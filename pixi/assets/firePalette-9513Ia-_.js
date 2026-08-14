@@ -1,0 +1,1 @@
+const o=s=>{const a=String(s).replace("#",""),t=parseInt(a,16)||0;return[t>>16&255,t>>8&255,t&255]},n={bot:"#2f6bff",mid:"#ff2ea0",top:"#ff4a2a"},c=o(n.bot),E=o(n.mid),N=o(n.top);export{c as F,E as a,N as b};
