@@ -99,7 +99,6 @@ const POOL = [
   { title: "Cobalt Drift", url: cobalt_drift, tier: "calm" },
   { title: "Low Beam", url: low_beam, tier: "calm" },
   { title: "Soft Reset", url: soft_reset, tier: "calm" },
-  { title: "Still Frame", url: still_frame, tier: "calm" },
   { title: "Faded Neon", url: faded_neon, tier: "calm" },
   // mid
   { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
@@ -113,6 +112,7 @@ const POOL = [
   { title: "Chrome Rally", url: chrome_rally, tier: "mid" },
   { title: "Neon Circuit", url: neon_circuit, tier: "mid" },
   { title: "Voltage Drive", url: voltage_drive, tier: "mid" },
+  { title: "Still Frame", url: still_frame, tier: "mid" },                        // #: von calm → mid verschoben
   // hot
   { title: "Static Charge", url: static_charge, tier: "hot" },
   { title: "Static Surge", url: static_surge, tier: "hot" },
