@@ -287,7 +287,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {(() => { const tileCls = "relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5";
           const tileSty = { background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" };
           const Stripe = ({ c, dim }) => (<span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]"
-            style={{ background: c, boxShadow: dim ? "none" : `0 0 8px ${c}88`, opacity: dim ? 0.45 : 1 }} />);
+            style={{ background: c, opacity: dim ? 0.45 : 1 }} />);
           const head = (t) => (<b className="text-[13.5px] tracking-tight">{t}</b>);
           const arrow = <span className="text-[13px] opacity-35">›</span>;
           const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"

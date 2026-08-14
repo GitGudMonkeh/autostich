@@ -1420,7 +1420,7 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
     <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : owned ? "Doppeltippen: auswählen" : undefined}
       className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
       style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
-        border: `1px solid ${selected ? "#9b82f0" : "#2a2836"}`,
+        border: `1px solid ${selected ? "#9b82f0" : tint + "55"}`,
         boxShadow: selected ? "0 0 0 1px #9b82f0" : undefined }}>
       <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, opacity: owned ? 1 : 0.85 }} />
       <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>

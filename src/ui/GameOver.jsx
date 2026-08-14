@@ -3,7 +3,7 @@ import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
 import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
 import { CardGrid } from "./CardGrid.jsx";
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, MENU_PANEL, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
@@ -157,7 +157,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
         {!onboarding && earn && (earn.sp > 0 || earn.dpGross > 0 || earn.dpNet > 0 || score > 0) && (
           <div className="mt-4">
-            <div className="rounded-xl px-3 py-2.5" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: "1px solid #2c2a3a" }}>
+            <div className="rounded-xl px-3 py-2.5" style={MENU_PANEL}>
               <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
                 <span style={{ color: "#9a9aa6" }}>💠 Meilensteine {mb.reached}/{mb.total}</span>
                 <span style={{ color: "#8a8896" }}>{mb.atMax ? "Maximum" : `nächster bei ${Math.round(mb.next.at / 1_000_000)} Mio`}</span>
@@ -275,7 +275,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* #301 Challenge-Abrechnung dieses Laufs: je Modifikator Ziel erfüllt/verfehlt (±DP), darunter das Lauf-Netto
             (native + Challenge, bei 0 gedeckelt). Roter „Challenge"-Rahmen zur Abgrenzung vom Gold-Freischalt-Banner. */}
         {challengeResult && challengeResult.results && challengeResult.results.length > 0 && (
-          <div className="mt-4 rounded-xl p-3" style={{ background: "#180d0f", border: "1px solid rgba(224,85,85,.5)", boxShadow: "0 0 20px rgba(224,85,85,.14)" }}>
+          <div className="mt-4 rounded-xl p-3" style={{ background: "#180d0f", border: "1px solid rgba(224,85,85,.5)" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2 flex items-center justify-center gap-1.5" style={{ color: "#ff9a9a" }}>
               <span aria-hidden="true">⚔</span> Challenge-Abrechnung
             </div>
@@ -312,7 +312,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">Motor-Kennzahlen</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {motor.map((m) => (
-                    <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: `1px solid #2a2a34`, borderLeft: `3px solid ${m.color}` }}>
+                    <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}` }}>
                       <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
                       <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={m.value.toLocaleString("de-DE")} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
                     </div>
@@ -355,7 +355,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (
-          <details className="mt-5 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+          <details className="mt-5 rounded-xl overflow-hidden" style={MENU_PANEL}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
@@ -393,7 +393,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
                           className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
-                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}` }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                             <b>{fam.name}</b>
