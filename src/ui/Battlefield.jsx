@@ -828,6 +828,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
   const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
   const [holePulse, setHolePulse] = useState(null);           // #320 Puls-Kanal ans persistente Loch (win → wachsen+saugen · loss → schrumpfen)
+  // #375 Schwarzes-Loch Loop-Bett (Sog/Drone): lebt exakt mit dem persistenten Loch (holeActive = Mount-Bedingung von
+  //   BlackholeFx). Nahtloser Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der 32,6-s-
+  //   Aufnahme). Gain/Rate wachsen über den onSize-Callback mit der Lochgröße mit. Gating (Pause/Overlay/Victory) über
+  //   die bestehende Loop-Suspend-Logik; sanfter Ausklang (fade 0.3) beim Verschwinden.
+  const holeSndRef = useRef(null);
+  useEffect(() => {
+    if (!holeActive) return undefined;
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 }); // Start = onSize(level 0)-Pegel
+    return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
+  }, [holeActive]);
   const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
@@ -1428,7 +1438,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <BlackholeFx active={holeActive} pulse={holePulse}
           color={blackholeDeck ? (deckA1 || "#4aa0ff") : "#4aa0ff"}
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
-          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
+          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced}
+          /* #375 Implosions-Impact: große Nova wuchtiger (gain+bass); rate an den Turbo-Kollaps gekoppelt (spd), bei 2× gedeckelt. */
+          onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
+          /* #375 Bett wächst mit der Lochgröße: Gain 0.6→~0.95, Rate 0.96→~1.06 (dezent). setLoopGain/Rate rampen sanft. */
+          onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich

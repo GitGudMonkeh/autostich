@@ -51,7 +51,7 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 // Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false }) {
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
   const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
@@ -61,6 +61,8 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
   useEffect(() => { ctrlRef.current.scale = scale; }, [scale]);
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
+  // #375 SFX-Callbacks live in den ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps, onSize(level, maxLevel) bei Größenänderung.
+  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; }, [onImplode, onSize]);
   useEffect(() => {
     const st = backRef.current;
     if (!backSrc) { st.src = null; st.ready = false; st.canvas = null; return undefined; }
@@ -141,6 +143,8 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     const implode = (big) => {
       if (big || sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: !!big };
       sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0; sim.fastCollapse = !!big;
+      // #375 Impact vertonen — Turbo-Faktor (wie im step: 1/scale) mitgeben, damit der Sound bei schnellen Kollapsen mitzieht.
+      const c = ctrlRef.current; c.onImplode && c.onImplode(!!big, 1 / clamp(c.scale || 1, 0.45, 1));
     };
 
     const roundRect = (x, y, w, h, r) => roundRectPath(ctx, x, y, w, h, r);
@@ -166,6 +170,8 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       if (!last) last = now;
       const dt = Math.min(50, now - last); last = now;
       const ctrl = ctrlRef.current;
+      // #375 Lochgröße ans Loop-Bett melden — nur bei Änderung (level ist piecewise-konstant → kein Frame-Spam).
+      if (sim.level !== sim._emitLevel) { sim._emitLevel = sim.level; ctrl.onSize && ctrl.onSize(sim.level, maxLevel()); }
       const speed = 1 / clamp(ctrl.scale || 1, 0.45, 1);   // Turbo: kleiner scale → schneller
       const sdt = dt * speed;
       sim.clock += sdt;
