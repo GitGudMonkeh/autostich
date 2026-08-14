@@ -158,7 +158,7 @@ describe("Musik Lazy-Gating (#264)", () => {
       music.subscribe((tt) => { title = tt; });
       music.setVolume(0.5);
       music.enterRun(0);                 // Score 0 → calm → erster calm-Track
-      expect(title).toBe("Table Dust");
+      expect(title).toBe("Formation Shuffle");
       music.enterRun(95000000);          // 95 Mio → overdrive_plus → erster Track dieser Stufe
       expect(title).toBe("Redline");
     } finally {

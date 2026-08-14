@@ -2,25 +2,17 @@
    Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Relay of Multipliers"; im Run ein zufälliger Track
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
-import morning_deck from "../assets/music/morning_deck.m4a";
 import card_momentum from "../assets/music/card_momentum.m4a";
 import deck_alignment from "../assets/music/deck_alignment.m4a";
-import glass_sequence from "../assets/music/glass_sequence.m4a";
 import neon_card_rush from "../assets/music/neon_card_rush.m4a";
 import neon_card_rush_2 from "../assets/music/neon_card_rush_2.m4a";
 import pulsing_cards from "../assets/music/pulsing_cards.m4a";
 import relay_of_multipliers from "../assets/music/relay_of_multipliers.m4a";
-import shuffle_pulse from "../assets/music/shuffle_pulse.m4a";
-import stacked_multipliers from "../assets/music/stacked_multipliers.m4a";
-import table_dust from "../assets/music/table_dust.m4a";
-import table_dust_2 from "../assets/music/table_dust_2.m4a";
-// #171: sechs neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) zusätzlich in den Run-Pool.
-// Morning Deck ist seit #: ein Run-Track (calm); Main-Screen/Victory spielt jetzt „Relay of Multipliers".
+// #171: neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) im Run-Pool.
+// Main-Screen/Victory spielt „Relay of Multipliers".
 import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
 import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
-import neon_static from "../assets/music/neon_static.m4a";
-import neon_static_remaster from "../assets/music/neon_static_remaster.m4a";
 // Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import neon_card_game from "../assets/music/neon_card_game.m4a";
 import static_charge from "../assets/music/static_charge.m4a";
@@ -82,15 +74,7 @@ const TIER_FADE_MS = 600;   // #334: ms je Fade-Halbwelle (aus/ein) — satter (
 // Run-Zufallspool (harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
-  { title: "Table Dust", url: table_dust, tier: "calm" },
-  { title: "Table Dust 2", url: table_dust_2, tier: "calm" },
-  { title: "Glass Sequence", url: glass_sequence, tier: "calm" },
   { title: "Formation Shuffle", url: formation_shuffle, tier: "calm" },          // #171
-  { title: "Neon Static", url: neon_static, tier: "calm" },                      // #171
-  { title: "Neon Static (Remaster)", url: neon_static_remaster, tier: "calm" },  // #171
-  { title: "Shuffle Pulse", url: shuffle_pulse, tier: "calm" },
-  { title: "Stacked Multipliers", url: stacked_multipliers, tier: "calm" },
-  { title: "Morning Deck", url: morning_deck, tier: "calm" },                    // war Menü-Theme → jetzt Run-Track
   { title: "Midnight Drive", url: midnight_drive, tier: "calm" },
   { title: "Velvet Cruise", url: velvet_cruise, tier: "calm" },
   { title: "Neon Drift", url: neon_drift, tier: "calm" },
