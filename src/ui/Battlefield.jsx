@@ -224,8 +224,8 @@ export const KLINGE_TUNE = {
   bladeTint: "#bcd6ff", // Glow-Ton der Klinge (kühles Stahlweiß); Kern bleibt weiß
   bladeTaper: true,     // Schwung-Form: Schnittlinie läuft zu beiden Enden spitz zu (Linse) statt Balken
   sparkMetal: true,     // Metall-Funken: weiß + warme orange (Stahl-auf-Stahl) statt suit-farbig
-  bladeThick: 2,        // #klinge: Strichstärke des Schnitts (px) — dünn wie der Laser-Finisher (2px-Strahl); glüht dafür kräftiger [TUNING]
-  bladeThickZ: 3,       // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
+  bladeThick: 1,        // #klinge: Strichstärke des Schnitts (px) — nochmals ~50 % dünner (haarfeine Klinge); der Glow trägt den Look [TUNING]
+  bladeThickZ: 1.5,     // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
   followSwing: 42,      // #klinge: EINHEITLICHER Nachschwung/Überschlag — die Klinge schwingt nach JEDEM Schnitt gleich
                         // weit (px, entlang ihrer Längsachse) durch. Gilt identisch für rechts/links/oben/Z (Performance-Look).
 };
@@ -447,7 +447,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     const startMs = delay + stMs;
-    const hallDur = Math.round(dur * 5.0);   // #klinge: Nachhall nochmals länger (× 3.2 → × 5.0) → dünne Klinge glüht deutlich länger aus [TUNING]
+    const hallDur = Math.round(dur * 6.5);   // #klinge: Nachhall länger + langsamerer Transparenz-Abfall (× 5.0 → × 6.5) → haarfeine Klinge fadet sanfter aus [TUNING]
     const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
       transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (

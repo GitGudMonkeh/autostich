@@ -222,12 +222,13 @@ button { font-family: inherit; }
    (60→84→100) → glühender Laserklingen-Nachhall statt schnellem Abriss. */
 @keyframes as-blade-hall {
   0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
-  12%  { opacity: 0.95; }
-  22%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
-  66%  { opacity: 1; }     /* #klinge: Spitzenhelligkeit noch länger halten */
-  82%  { opacity: 0.5; }   /* weicher, langgezogener Abfall … */
-  93%  { opacity: 0.22; }  /* … in drei Stufen, damit die dünne Glut sichtbar ausklingt … */
-  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig ausgeglüht */
+  10%  { opacity: 0.95; }
+  20%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  40%  { opacity: 1; }     /* #klinge: Spitze halten, dann LANG + sanft ausfaden (Abfall über 60 % der Dauer) */
+  60%  { opacity: 0.62; }  /* langgezogener, gleichmäßiger Transparenz-Abfall … */
+  80%  { opacity: 0.32; }
+  92%  { opacity: 0.13; }  /* … in feinen Stufen, damit die haarfeine Glut sichtbar langsam verschwindet … */
+  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig transparent */
 }
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge
    rendert ALLE Stücke (2 Hälften bzw. 4 Z-Ecken) einheitlich über as-boom-shard (--sx/--sy/--sr), je Einfahrrichtung. */
