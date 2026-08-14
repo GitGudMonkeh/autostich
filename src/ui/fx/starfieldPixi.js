@@ -1,5 +1,6 @@
 import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
 import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
+import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: Standard-Farbe = Feuer-Archetyp (FireHead)
 
 /* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
@@ -21,9 +22,10 @@ import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341:
 // ── deterministische Helfer ──────────────────────────────────────────────────
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// #341: alle Kometen-Größen (Kopf/Schweif/Impact) +20 % über EINEN globalen Faktor — die Tier-Relationen (TIER_SIZE)
+// #341/#357: alle Kometen-Größen (Kopf/Schweif/Impact) über EINEN globalen Faktor — die Tier-Relationen (TIER_SIZE)
 //   bleiben unangetastet, nur die absolute Größe wächst. Ambiente-Sterne (K_AMB) sind KEINE Kometen → unverändert.
-const COMET_SIZE_MUL = 1.2;
+//   #357: von 1.2 (#341: +20 %) auf 1.4 (+40 %) angehoben — Meteor deutlich größer. [TUNING]
+const COMET_SIZE_MUL = 1.4;
 // #341: die Komet-Einschlagfläche (PLANE_*) ans gemeinsame fixe Effekt-Boden-Feld (effectZones.js) koppeln → Kometen
 //   schlagen auf DERSELBEN Bodenfläche ein wie alle anderen Boden-Effekte (Desktop-Zone als geteilte Referenz).
 const _FLOOR = EFFECT_ZONES.desktop;
@@ -88,20 +90,24 @@ const TX = 64;         // Kantenlänge der Radial-Textur
 
 // Pools: Ambiente = AMB_COUNT; Schnuppen (überlappende Stiche) MAXCOMET × (TRAIL_SAMPLES+1); Funken für die große
 // Gottgleich-Explosion (IMP_SPARKS × max(TIER_IMP) = 90 × 5 = 450) + Reserve.
-const MAXCOMET = 4;
+// #357: von 4 auf 5 angehoben — bei Max-Turbo (Stich alle ~350 ms, Flug SHOOT_DUR 1 s) überlappen bis zu ~4 Kometen;
+//   mit Cap 5 (und lite 4, s. erupt) passt die maximale Überlappung hinein → kein Komet wird mehr MID-FLIGHT weggecullt
+//   (Bogen/Einschlag spielen vollständig aus). Der Schweif-Pool ist auf MAXCOMET dimensioniert (exakt 5 × 97 Slots).
+const MAXCOMET = 5;
 const TRAIL_POOL = MAXCOMET * (TUNE.TRAIL_SAMPLES + 1); // ~388
 const SPARK_POOL = 512;
 const NEB_BLOBS = 4;
 
-// ── Standard-Palette ─ #meteor: Standard = FEUERKOMET (warm) statt Weiß-Blau. Weiß-heißer Kern → Gold → Orange → Glut.
-//   Der Deckfarbe-Modus (deckTint) bleibt unberührt (nutzt deck/deck2).
+// ── Standard-Palette ─ #357: Standard = FEUER-ARCHETYP (FireHead-Neon-Palette, geteilt über firePalette.js) statt der
+//   alten warmen Gold/Orange-Glut. Schweif-Rampe: weiß-heißer Kopf → ROT (heiß hinter dem Kopf) → MAGENTA (Mitte) →
+//   BLAU (Ausklang). Deckfarbe-Modus (deckTint) bleibt unberührt (nutzt deck/deck2).
 const WHITE    = [255, 255, 255]; // weiß-heißer Kopf-Kern
-const KERN     = [255, 236, 150]; // helles Gold direkt hinter dem Kopf
-const MITTE    = [255, 150, 40];  // Orange (Schweif-Mitte)
-const AUSKLANG = [150, 45, 10];   // tiefe rot-orange Glut (Schweif-Ende)
-const AMB_COL  = [255, 234, 208]; // warm-weiße Ambiente-Sterne (Standard)
-const FIRE_SPARK = [255, 150, 55]; // warme Einschlag-Funken (Standard)
-const FIRE_NEB   = [255, 120, 40]; // warmer Nebel-Backdrop (Standard)
+const KERN     = FIRE_NEON_TOP;   // #ff4a2a rot glühend — direkt hinter dem Kopf (FireHead-Spitze)
+const MITTE    = FIRE_NEON_MID;   // #ff2ea0 magenta — Schweif-Mitte (FireHead-Mitte)
+const AUSKLANG = FIRE_NEON_BOT;   // #2f6bff blau — Schweif-Ende (FireHead-Basis)
+const AMB_COL  = [255, 234, 208]; // warm-weiße Ambiente-Sterne (Standard) — neutraler Hintergrund, unverändert
+const FIRE_SPARK = FIRE_NEON_TOP;  // #357: Einschlag-Funken in der Feuer-Palette (rot glühend) statt warmem Orange
+const FIRE_NEB   = FIRE_NEON_MID;  // #357: Nebel-Backdrop magenta (Feuer-Palette) statt warmem Orange
 
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 const rgbInt = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
@@ -250,7 +256,10 @@ export function createStarfield(app) {
       age: 0, life: TUNE.SHOOT_DUR, tier: t, size: TIER_SIZE[t] * ds,
       imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
     });
-    const maxC = params.lite ? 2 : MAXCOMET; // #perf-mobile: max. 2 gleichzeitige Kometen auf lite (statt 4)
+    // #357: Cap so gewählt, dass die maximale Turbo-Überlappung (~4) hineinpasst → der Splice greift NICHT mehr
+    //   mid-flight (jeder Komet spielt Flug + Impact voll aus). lite 4 (mobil tragbar: halbe Schweif-Samples je Komet),
+    //   Desktop MAXCOMET(5). Bleibt als reine Pool-Sicherung, falls doch mehr anfällt → dann der älteste (fast fertige).
+    const maxC = params.lite ? 4 : MAXCOMET; // #perf-mobile: etwas niedrigerer Cap auf lite
     if (comets.length > maxC) comets.splice(0, comets.length - maxC);
   }
 

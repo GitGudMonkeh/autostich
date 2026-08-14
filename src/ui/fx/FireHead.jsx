@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
+import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: geteilte Feuer-Standard-Palette (auch Komet)
 
 /* Archetyp-Karteneffekt „Feuer" — Brennender Kartenkopf (docs/archetyp-karteneffekte.md §5.2, Redesign).
    Der KOPF der eigenen Karte brennt: eine verankerte Flammenlinie lodert oben ÜBER dem Rahmen nach oben; optional
@@ -34,7 +35,7 @@ const zeroPhase = () => ({ ...PH[20], FLAME_RATE: 0, GLOW_ALPHA: 0, SMOKE: 0 });
 // #neon: Farbgebung wie die Neon-Seide — vertikaler Verlauf über die Flammenhöhe: unten BLAU → Mitte MAGENTA → oben
 // ROT glühend. Die Phasen (20/50/80/100) steuern weiterhin nur Intensität (Rate/Höhe/Größe/Rauch), NICHT die Farbe.
 // Weiß entsteht (wie bei der Seide) allein aus der additiven Überlappung vieler Partikel, nicht aus einem weißen Tint.
-const NEON_BOT = hexRGB("#2f6bff"), NEON_MID = hexRGB("#ff2ea0"), NEON_TOP = hexRGB("#ff4a2a");
+const NEON_BOT = FIRE_NEON_BOT, NEON_MID = FIRE_NEON_MID, NEON_TOP = FIRE_NEON_TOP; // #357: aus geteilter firePalette (unten blau → magenta → oben rot)
 // Vertikaler Verlauf über die Flammenhöhe — Palette (bot/mid/top) kommt von außen: Standard-Neon ODER Deckfarben.
 const neonAt = (hf, bot, mid, top) => { const h = hf < 0 ? 0 : hf > 1 ? 1 : hf; return h < 0.5 ? lerpRGB(bot, mid, h / 0.5) : lerpRGB(mid, top, (h - 0.5) / 0.5); };
 
