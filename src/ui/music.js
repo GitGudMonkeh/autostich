@@ -2,12 +2,10 @@
    Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Relay of Multipliers"; im Run ein zufälliger Track
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
-import card_momentum from "../assets/music/card_momentum.m4a";
 import relay_of_multipliers from "../assets/music/relay_of_multipliers.m4a";
 // #171: neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) im Run-Pool.
 // Main-Screen/Victory spielt „Relay of Multipliers".
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
-import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
 // v0.4-Batch (10 neue calm-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import amber_standby from "../assets/music/amber_standby.m4a";
 import slow_circuit from "../assets/music/slow_circuit.m4a";
@@ -23,8 +21,6 @@ import soft_reset from "../assets/music/soft_reset.m4a";
 import neon_card_game from "../assets/music/neon_card_game.m4a";
 import static_charge from "../assets/music/static_charge.m4a";
 import static_surge from "../assets/music/static_surge.m4a";
-import circuit_rush from "../assets/music/circuit_rush.m4a";
-import circuit_breaker from "../assets/music/circuit_breaker.m4a";
 import live_wire from "../assets/music/live_wire.m4a";
 import full_tilt from "../assets/music/full_tilt.m4a";
 import event_horizon from "../assets/music/event_horizon.m4a";
@@ -102,12 +98,8 @@ const POOL = [
   { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
   { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
   // hot
-  { title: "Mutation Funk Drive", url: mutation_funk_drive, tier: "hot" },       // #171
-  { title: "Card Momentum", url: card_momentum, tier: "hot" },
   { title: "Static Charge", url: static_charge, tier: "hot" },
   { title: "Static Surge", url: static_surge, tier: "hot" },
-  { title: "Circuit Rush", url: circuit_rush, tier: "hot" },
-  { title: "Circuit Breaker", url: circuit_breaker, tier: "hot" },
   { title: "Live Wire", url: live_wire, tier: "hot" },
   { title: "Full Tilt", url: full_tilt, tier: "hot" },
   { title: "Neon Night Drive", url: neon_night_drive, tier: "hot" },
