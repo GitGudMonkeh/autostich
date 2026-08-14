@@ -56,7 +56,7 @@ Quellen: `src/ui/FactionIcon.jsx` (Icons + `FACTION_GLOW`), `src/game/skills.js`
 | # | Archetyp | Konzept | Board | Abgesegnet | Code | Issue | Status |
 |---|----------|---------|-------|------------|------|-------|--------|
 | 1 | **Eis** | Wachsendes Eiskristall-Feld (Gletscher-Brüche) + Bersten | `docs/prototypes/eis-kristall-feld-tuning.html` | ✓ | `src/ui/fx/IceCrystalField.jsx` | [#364](https://github.com/GitGudMonkeh/autostich/issues/364) | **Umgesetzt (Renderer portiert + verdrahtet)** |
-| 2 | TBD | TBD | – | – | – | – | offen |
+| 2 | **Pflanze** | Rahmen-Bewuchs (Stiche ausgewachsener Pflanze) + Fallen/Verblassen bei 20 | `docs/prototypes/pflanze-rahmen-tuning.html` | ✓ | offen | [#367](https://github.com/GitGudMonkeh/autostich/issues/367) | **Werte abgesegnet → Code offen** |
 | 3 | TBD | TBD | – | – | – | – | offen |
 | 4 | TBD | TBD | – | – | – | – | offen |
 
@@ -121,8 +121,60 @@ const TUNE = {
 
 ---
 
-## 6. Session-Log
+## 6. Effekt 2 — Pflanze · Rahmen-Bewuchs (eigenständig)
 
+**User-Spec (2026-08-14, wörtlich):**
+> „ähnlich zu dem pflanzen effekt den wir schon haben das der rahmen vom battlefield mit jedem stich
+> einer ausgewachsenen pflanze etwas zuwächst. aber es sollt nicht so dicht sein wie bei der karte. und
+> wenn dann 20 stiche mit einer ausgewachsenen karte gemacht wurden fallen die pflanzen nach unten und
+> verblassen in neon partikel. müssen hier nur sehr auf die performance last für mobile achten."
+
+**Abgeleitetes Konzept:**
+- **Eigenständiges Feld-Ambiente** (unterste Effekt-Ebene, wie Eis): Neon-Pflanzen wachsen am
+  **Battlefield-Rahmen** (Rand-Band, nach innen) — DNA wie der Karten-Effekt `MossGrow.jsx`, aber
+  **deutlich weniger dicht**.
+- **Wachstum = Stiche mit ausgewachsener (grüner) Pflanzen-Karte**, Zähler **0→20**; mit jedem Stich
+  wächst der Rahmen etwas zu (Akkretion, bottom-up am Rahmen hoch).
+- **Fallen bei 20:** nach 20 Stichen lösen sich die Pflanzen, **fallen nach unten** und **verblassen in
+  Neon-Partikel**; danach leer (Zyklus wie Eis-Bersten).
+
+**Mobile-Perf (Kernanforderung):**
+- **Statisches Bitmap je Stufe** (0–20) gecacht — kein Dauer-rAF im Ruhezustand (wie `MossGrow`,
+  Cross-Fade beim Stufenwechsel). **Nur das Fallen** ist eine kurze One-Shot-Animation.
+- **Niedrige Dichte**: perimeter-basiert (nicht flächenfüllend) + wenige Filamente je Tuft.
+- Renderpfad Canvas-2D (Pixi-Shader laufen auf Mobile nicht).
+
+**Board-TUNE-Gruppen:** Farben · Neon-Licht · Rahmen & Wuchs (Inset, Ecken-R, Band, Dichte, Reichweite,
+Bottom-Bias, Tilt/Spread) · Filamente · Fallen (Schwerkraft/Streuung/Dauer/Partikel).
+
+**Board (interaktiv):** https://claude.ai/code/artifact/a7ffb553-bccf-4e63-b372-0c50636f91af
+(Quelle: `docs/prototypes/pflanze-rahmen-tuning.html`)
+
+**Perf-Maßnahmen (Board):** Moos-Feld offscreen je Stufe gecacht (Ruhezustand = 1× blitten); Bloom **ein Puff je
+Büschel** statt pro Härchen; ausgefaserter Rand per Rauschen. In-Game: statisch je Stufe cachen (wie `MossGrow`),
+reduced-fx-Pfad (Mobile: weniger Tufts / Fallen aus).
+
+**Abgesegnete Werte (2026-08-14):**
+```js
+const TUNE = {
+  MOSS_DARK: "#20331a", MOSS_MID: "#c251aa", MOSS_TIP: "#9bc255",
+  NEON_A: "#ea34d1", NEON_B: "#66b450", NEON_ANGLE: -74, NEON_RIM: 0.82, NEON_TIP: 0.44, NEON_PUNCH: 0, NEON_BLOOM: 0.46, NEON_BASE: 1,
+  INSET: 0.005, FRAME_R: 0.005, EDGE_BAND: 0.065, DENSITY: 1, OVERHANG: 1.46, RAGGED: 1, DOWN_BIAS: 1, GROW_BAND: 0.35, GROW_MS: 260,
+  FILA_PER: 8, FILA_LEN: 3.3, FILA_THICK: 0.6, TILT: 6, SPREAD: 0.72, TIP_LIGHT: 0.8,
+  FALL_GRAV: 2, FALL_SPREAD: 0.62, FALL_DRIFT: 0.74, FALL_LIFE: 1050, FALL_FLASH: 0, PART_SIZE: 0.6,
+};
+```
+(Board-DEFAULTS auf diese Werte gesetzt.) **Achtung `DENSITY: 1`** (max) — Perf auf echtem Mobilgerät verifizieren
+(dünnes Band `EDGE_BAND 0.065` begrenzt die Tuft-Zahl, aber Dichte ist voll aufgedreht).
+
+---
+
+## 7. Session-Log
+
+- **2026-08-14** — Effekt 2 = **Pflanze** (Rahmen-Bewuchs) spezifiziert + Board gebaut; nach Feedback auf
+  echte `MossGrow`-DNA umgebaut (weiche Härchen, von oben/den Seiten herunter, unten frei), Rand ausgefasert,
+  Mobile-Perf (Bloom pro Büschel, Caching, weniger Tufts). TUNE abgesegnet, **Issue #367 erstellt**. Perf auf
+  echtem Mobilgerät noch zu verifizieren.
 - **2026-08-14** — Doc angelegt. Workflow + 4-Archetypen-Rahmen festgehalten. Effekt 1 = **Eis**
   (Kristall-Feld) spezifiziert; Tuning-Board `docs/prototypes/eis-kristall-feld-tuning.html` gebaut.
   Nächster Schritt: User dreht die Regler, segnet TUNE ab → dann Code + eigenes Issue.
