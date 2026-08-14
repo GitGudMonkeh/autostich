@@ -866,8 +866,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const deckId = options?.deckId || "default";
   // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie; aktives Pack steht nach Standard vorn (orderPacks).
   const catList = (cat) => orderPacks(cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB, deckId);
-  const spBal = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
-  const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs
+  const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs (SP wird in der Werkstatt nicht gezeigt)
 
   // #fx-floater: Höhe des Sticky-Kopfs messen → die Effekt-Vorschau klebt exakt darunter (mitlaufender Floater, kein Überlappen).
   const headRef = useRef(null);
@@ -900,21 +899,33 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         {/* Sticky Kopf */}
         <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Deck-Werkstatt</h2>
-            <div className="flex items-center gap-2">
-              {/* DP = Werkstatt-Währung (Packs UND Effekte, #307); SP-Guthaben nur zur Info (Upgrade-Baum). */}
-              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #2b5a68", color: "#35c6e6" }}>{dpBal} DP</span>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: "#141320", border: "1px solid #34333f", color: "#f2c14a" }}>{spBal} SP</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 className="text-lg font-bold whitespace-nowrap">Deck-Werkstatt</h2>
+            <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+              {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
+                  Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
+              <span className="flex items-baseline gap-1 whitespace-nowrap">
+                <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+              </span>
               <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
             </div>
           </div>
-          {/* Tab-Umschalter: Packs · Challenges · Effekte */}
-          <div className="flex gap-1.5 mt-3 p-1 rounded-xl" style={{ background: "#131219", border: "1px solid #2a2836" }}>
-            {[["packs", "Packs"], ["challenges", "Challenges"], ["fx", "Effekte"]].map(([m, label]) => (
-              <button key={m} onClick={() => setTab(m)} className="flex-1 py-2 rounded-lg text-[12.5px] font-extrabold transition-colors"
-                style={{ background: tab === m ? "#9b82f0" : "transparent", color: tab === m ? "#141419" : "#9a97ab" }}>{label}</button>
-            ))}
+          {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
+              Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
+          <div className="flex gap-1.5 mt-3">
+            {[["packs", "Packs", "#9b82f0"], ["challenges", "Challenges", "#e05555"], ["fx", "Effekte", "#d4a63a"]].map(([m, label, col]) => {
+              const on = tab === m;
+              return (
+                <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
+                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
+                  style={on
+                    ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
+                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
