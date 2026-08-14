@@ -228,6 +228,16 @@ const fxGroupItems = (group, options = null, p = null) => {
   return rest;
 };
 
+// #373 Default-AUSWAHL je Reiter (statt blind [0]). Karten: „Keine Animation" (key "none") → der Showcase zeigt beim
+// Öffnen/Tab-Wechsel die schlichte Karte, die Skill-Effekt-Szene (SpezialScene) läuft NICHT automatisch an. Reihenfolge/
+// Namen der Kacheln bleiben unverändert; nur was initial angewählt ist, ändert sich. Fallback = erstes Item.
+const DEFAULT_FX_KEY = { karten: "none" };
+const defaultSelFor = (gKey) => {
+  const its = fxGroupItems(gKey);
+  const want = DEFAULT_FX_KEY[gKey];
+  return { group: gKey, key: (want && its.some((f) => f.key === want)) ? want : its[0].key };
+};
+
 /* Sieg-Finisher einfach-exklusiv (genau EINER aktiv): die Auswahl steckt als einzelner String in options.finisher.
    „standard" (Gratis-Default, Wegflug) und „klinge" (kaufbar, 10 DP) sind wählbar. finisherFlags schreibt die Auswahl;
    „none" (Abwählen des aktiven) fällt auf den Gratis-Standard zurück (es gibt keinen „gar kein Finisher"-Zustand).
@@ -1134,7 +1144,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const deckGlowOn = !!options?.fxDeckGlow; // #331 Leuchten (freier Toggle, unabhängig vom Hintergrund-Set)
   const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bg" ? bgSel : g.mode === "gott" ? gottSel : g.mode === "cardanim" ? cardAnimSel : null;
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
-  const [sel, setSel] = useState(() => { const g = FX_GROUPS[0]; return { group: g.key, key: fxGroupItems(g.key)[0].key }; });
+  const [sel, setSel] = useState(() => defaultSelFor(FX_GROUPS[0].key)); // #373 Karten-Reiter startet auf „Keine Animation" (kein Auto-Showcase)
   const selGroup = FX_GROUPS.find((g) => g.key === sel.group) || FX_GROUPS[0];
   const selItems = fxGroupItems(selGroup.key, options, p); // #353 Standard oben → aktiver darunter → Rest nach Seltenheit
   const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
@@ -1152,6 +1162,9 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 
   // #shopB Tab-Wechsel: die Bühne springt auf den AKTIVEN Effekt der Kategorie (oder den ersten) → man sieht sofort, was läuft.
   const pickCat = (gKey) => {
+    // #373 Karten: bewusst „Keine Animation" als Default (kein Auto-Loslaufen der Skill-Effekt-Showcase), auch beim
+    // erneuten Anwählen des Reiters. Übrige Reiter springen wie bisher auf ihren AKTIVEN Effekt (oder das erste Item).
+    if (DEFAULT_FX_KEY[gKey]) { setSel(defaultSelFor(gKey)); return; }
     const g = FX_GROUPS.find((x) => x.key === gKey);
     const its = fxGroupItems(gKey, options, p);
     const aKey = activeKeyOf(g);
