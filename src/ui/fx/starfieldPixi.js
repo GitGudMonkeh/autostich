@@ -93,12 +93,15 @@ const TRAIL_POOL = MAXCOMET * (TUNE.TRAIL_SAMPLES + 1); // ~388
 const SPARK_POOL = 512;
 const NEB_BLOBS = 4;
 
-// ── Standard-Palette (deck-unabhängig) ───────────────────────────────────────
-const WHITE    = [255, 255, 255]; // Kopf
-const KERN     = [219, 238, 255]; // #dbeeff Kern
-const MITTE    = [127, 180, 255]; // #7fb4ff Mitte
-const AUSKLANG = [63, 107, 208];  // #3f6bd0 Ausklang
-const AMB_COL  = [207, 227, 255]; // #cfe3ff Ambiente
+// ── Standard-Palette ─ #meteor: Standard = FEUERKOMET (warm) statt Weiß-Blau. Weiß-heißer Kern → Gold → Orange → Glut.
+//   Der Deckfarbe-Modus (deckTint) bleibt unberührt (nutzt deck/deck2).
+const WHITE    = [255, 255, 255]; // weiß-heißer Kopf-Kern
+const KERN     = [255, 236, 150]; // helles Gold direkt hinter dem Kopf
+const MITTE    = [255, 150, 40];  // Orange (Schweif-Mitte)
+const AUSKLANG = [150, 45, 10];   // tiefe rot-orange Glut (Schweif-Ende)
+const AMB_COL  = [255, 234, 208]; // warm-weiße Ambiente-Sterne (Standard)
+const FIRE_SPARK = [255, 150, 55]; // warme Einschlag-Funken (Standard)
+const FIRE_NEB   = [255, 120, 40]; // warmer Nebel-Backdrop (Standard)
 
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 const rgbInt = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
@@ -210,7 +213,7 @@ export function createStarfield(app) {
   function grabFlash() { for (const f of flashes) if (!f.alive) return f; return flashes[0]; }
 
   // ── Impact (Blitz + Funken) — nur ab Tier ≥ 1 ──────────────────────────────
-  function impact(x, y, sc, imp, headInt) {
+  function impact(x, y, sc, imp, headInt, sparkTint) {
     if (imp <= 0) return;
     const f = grabFlash();
     f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
@@ -221,7 +224,7 @@ export function createStarfield(app) {
       const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);
       s.x = x; s.y = y; s.vx = Math.cos(ang) * sp; s.vy = Math.sin(ang) * sp;
       s.age = 0; s.life = TUNE.IMP_SPARK_LIFE * (0.6 + Math.random() * 0.5);
-      s.sz = TUNE.IMP_SPARK_SZ * (0.7 + Math.random() * 0.7); s.seed = Math.random() * 6.28; s.tint = headInt;
+      s.sz = TUNE.IMP_SPARK_SZ * (0.7 + Math.random() * 0.7); s.seed = Math.random() * 6.28; s.tint = sparkTint;
     }
   }
 
@@ -261,8 +264,10 @@ export function createStarfield(app) {
     const deckTint = params.deckTint, deck = params.deck, deck2 = params.deck2;
     const stops = trailStops(deckTint, deck, deck2);
     const headInt = rgbInt(stops[0][1]);
+    // #meteor: Einschlag-Funken im Standard warm (Feuerkomet); im Deckfarbe-Modus wie bisher der getönte Kopf.
+    const sparkInt = deckTint ? headInt : rgbInt(FIRE_SPARK);
     const ambInt = rgbInt(deckTint ? mix(AMB_COL, deck, 0.35) : AMB_COL);
-    const nebInt = rgbInt(deckTint ? deck : MITTE);
+    const nebInt = rgbInt(deckTint ? deck : FIRE_NEB);
 
     // Nebel-Backdrop (sehr niedrige Alpha, langsames Twinkle).
     for (const nb of nebSpr) {
@@ -302,7 +307,7 @@ export function createStarfield(app) {
       const dxu = dpx / dlen, dyu = dpy / dlen;                    // Einheitsrichtung (Schweif-Orientierung)
       const k = prog / TUNE.IMP_AT;
       const hx = startX + dpx * k, hy = startY + dpy * k;
-      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp, headInt); }
+      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp, headInt, sparkInt); }
       const trailLen = TUNE.TRAIL_LEN * c.size * sc;
       const headFoot = TUNE.HEAD_SIZE * c.size * sc * K_HEAD;
       const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;
