@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
-import { matchSecretSeed, ownedCount, nodeState, treeComplete, owns, NODES, BRANCHES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
+import { matchSecretSeed, ownedCount, nodeState, treeComplete, owns, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
@@ -22,9 +22,6 @@ const BLUE = "#5a8ade";  // Logo-Übergang Cyan→Violett
 const VI = "#9b82f0";   // Logo Mitte (Violett) — Ranglisten
 const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Upgrades / SP-Währung
 const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
-
-// Zweig-Farben für die Hub-Progressionsanzeige (#369: Decks / Allgemein; Knotendaten aus progression.js).
-const BR_COLOR = { deck: VI, gen: CY };
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
@@ -51,10 +48,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const ranglisteNormalFree = owns(prof, "legLayer");
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
   const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
-  const branchViews = BRANCHES.map((b) => ({
-    name: b.name, col: BR_COLOR[b.key],
-    states: NODES.filter((n) => n.branch === b.key && !n.placeholder).map((n) => nodeState(prof, n.id)),
-  }));
   const tryPlaySeed = () => {
     // Test-Codes „unlock"/„reset" VOR parseSeed abfangen (beide würden sonst als gültiger Seed durchgehen).
     // onSecretSeed ist nur im Preview-Build gesetzt → im Live-Spiel sind die Codes wirkungslos.
@@ -283,108 +276,93 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
-      {/* Deck-Werkstatt — eigener Button zwischen Rangliste und Upgrades, im Amber des Logo-ENDES (rechts).
-          #299 §1: während des Onboardings (< 6/6) gesperrt + ausgegraut mit Countdown, ab 6/6 frei. */}
-      {onCustomize && (onbDone ? (
-        <button onClick={onCustomize}
-          className="w-full max-w-sm px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-between gap-2"
-          style={{ background: "#1f1a10", border: `1px solid ${AM}66`, color: AM }}>
-          <span>Deck-Werkstatt</span>
-          {/* #301: DP-Guthaben am Button anzeigen — analog zur SP-Anzeige auf der Upgrades-Card. */}
-          <span className="flex items-center gap-2">
-            <span className="flex items-baseline gap-1">
-              <span className="text-[17px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
-              <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
-            </span>
-            <span className="text-[13px]">›</span>
-          </span>
-        </button>
-      ) : (
-        <div className="w-full max-w-sm px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-70 cursor-default"
-          style={{ background: "#1a160e", border: `1px solid ${AM}33`, color: AM }}
-          title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
-          <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Deck-Werkstatt</span>
-          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
-            style={{ background: "#2a2113", color: AM }}>
-            noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
-          </span>
-        </div>
-      ))}
-
-      {/* Upgrades-Card (Vorschau) — SP-Guthaben, Äste als Kreise, Öffnen. Kern des künftigen Hubs.
-          Dünne Logo-Verlaufs-Haarlinie oben bindet die Card an die Wortmarke. */}
-      <div className="w-full max-w-sm rounded-2xl relative overflow-hidden"
-        style={{ background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a", opacity: onbDone ? 1 : 0.6 }}>
-        <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${CY}, ${VI}, ${AM})`, opacity: .85 }} />
-        <div className="p-3">
-          <div className="flex items-center justify-between gap-3 relative">
-            <div className="flex items-center gap-2">
-              <b className="text-[14.5px] tracking-tight">Upgrades</b>
-              {!onbDone && <span className="text-[12px] opacity-70" title="Frei nach Abschluss des Onboardings" aria-label="gesperrt">🔒</span>}
-            </div>
-            <div className="flex items-center gap-2.5">
-              {progBuyable > 0 && (
-                <span className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-full"
-                  style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>{progBuyable} kaufbar</span>
-              )}
-              {/* #299: bei komplettem Baum sind SP nutzlos (zu DP umgewandelt) → SP-Anzeige verschwindet, stattdessen „komplett". */}
-              {progLigaFree ? (
-                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full" style={{ background: "transparent", border: `1px solid ${AM}66`, color: AM }}>✓ komplett</span>
-              ) : (
+      {/* Variante C — Verwaltungszone als ruhiges, einheitliches 2×2-Kachel-Grid (Werkstatt · Upgrades ·
+          Bestenliste · Statistik). Statt vieler unterschiedlich lauter Blöcke: gleich große Kacheln, deren
+          EINZIGES Farbsignal ein dünner Stripe an der linken Kachel-Seite ist. Die vier Stripes folgen in
+          Lesereihenfolge (TL→TR→BL→BR) dem Logo-Verlauf CY → BLUE → VI → AM. Keine Icons — nur Titel, Stripe
+          und (wo vorhanden) Kennzahl. Währungs-Zahlen (DP/SP) bleiben im Gold der Währung, unabhängig vom
+          dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge statt Kennzahl. */}
+      <div className="w-full max-w-sm grid grid-cols-2 gap-2.5">
+        {/* Kachel-Basis: gleiche Höhe (justify-between), Stripe links absolut, keine Icons. */}
+        {(() => { const tileCls = "relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5";
+          const tileSty = { background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" };
+          const Stripe = ({ c, dim }) => (<span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]"
+            style={{ background: c, boxShadow: dim ? "none" : `0 0 8px ${c}88`, opacity: dim ? 0.45 : 1 }} />);
+          const head = (t) => (<b className="text-[13.5px] tracking-tight">{t}</b>);
+          const arrow = <span className="text-[13px] opacity-35">›</span>;
+          const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
+            style={{ background: bg, color: "#c9c9d2" }}>🔒 noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}</span>);
+          return (<>
+            {/* 1 · Deck-Werkstatt — Stripe CY. DP-Guthaben in Gold. Onboarding-Gate. */}
+            {onCustomize && (onbDone ? (
+              <button onClick={onCustomize} className={tileCls} style={tileSty} title="Deck-Werkstatt">
+                <Stripe c={CY} />
+                <div className="flex items-center justify-between gap-1">{head("Deck-Werkstatt")}{arrow}</div>
                 <span className="flex items-baseline gap-1">
-                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
-                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
+                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
+                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
                 </span>
-              )}
-            </div>
-          </div>
-
-          {/* Äste: nur Name + Kreise (gekauft / kaufbar / gesperrt), keine Icons. Farben = Logo-Verlauf. */}
-          <div className="grid grid-cols-2 gap-2 mt-2.5">
-            {branchViews.map((b) => (
-              <div key={b.name} className="rounded-lg px-1.5 py-2 flex flex-col items-center gap-1.5"
-                style={{ background: "#12121a", border: "1px solid #26262e" }}>
-                <span className="flex flex-wrap gap-1 justify-center">
-                  {b.states.map((st, i) => (
-                    <i key={i} className="w-2 h-2 rounded-full"
-                      style={st === "owned"
-                        ? { background: b.col, border: `1px solid ${b.col}`, boxShadow: `0 0 6px ${b.col}` }
-                        : st === "buy"
-                          ? { background: "transparent", border: `1px solid ${AM}`, boxShadow: `0 0 5px rgba(242,168,58,.6)` }
-                          : { background: "#2a2a33", border: "1px solid #3a3a45" }} />
-                  ))}
-                </span>
-                <span className="text-[10px] font-bold tracking-tight opacity-60">{b.name}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between gap-3 mt-2.5">
-            <span className="text-[11.5px] opacity-60 tabular-nums"><b className="opacity-95">{progOwned} / {TOTAL_NODES}</b> · Meister-Liga {progLigaFree ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}</span>
-            {onbDone ? (
-              <button onClick={onUpgrades || undefined}
-                className="border-none font-extrabold text-[12.5px] px-3 py-2 rounded-lg cursor-pointer transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
-                style={{ background: AM, color: "#141419" }} title="Upgrade-Screen (Vorschau)">
-                Öffnen <span>›</span>
               </button>
             ) : (
-              /* Gesperrt bis Onboarding-Ende — leicht ausgegraut + Lock + Countdown (wie der Ranglisten-Lock). */
-              <span className="text-[11px] font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 cursor-default whitespace-nowrap"
-                style={{ background: "#20202a", border: "1px solid #33333e", color: "#8a8a95" }}
-                title="Frei nach Abschluss des Onboardings">
-                🔒 noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}
-              </span>
+              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
+                <Stripe c={CY} dim />
+                {head("Deck-Werkstatt")}
+                {lockBadge("#20202a")}
+              </div>
+            ))}
+
+            {/* 2 · Upgrades — Stripe BLUE. SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
+            {onbDone ? (
+              <button onClick={onUpgrades || undefined} className={tileCls} style={tileSty} title="Upgrade-Screen (Vorschau)">
+                <Stripe c={BLUE} />
+                <div className="flex items-center justify-between gap-1">
+                  {head("Upgrades")}
+                  {progBuyable > 0
+                    ? <span className="shrink-0 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{progBuyable} kaufbar</span>
+                    : arrow}
+                </div>
+                {progLigaFree ? (
+                  <span className="text-[13px] font-extrabold" style={{ color: AM }}>✓ komplett</span>
+                ) : (
+                  <span className="flex items-baseline gap-1">
+                    <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
+                    <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
+                    <span className="text-[10px] opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
+                  </span>
+                )}
+              </button>
+            ) : (
+              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Frei nach Abschluss des Onboardings">
+                <Stripe c={BLUE} dim />
+                {head("Upgrades")}
+                {lockBadge("#20202a")}
+              </div>
             )}
-          </div>
-        </div>
+
+            {/* 3 · Bestenliste — Stripe VI (Violett = Wettbewerb/Rang, passt semantisch). */}
+            {onLeaderboard && (
+              <button onClick={onLeaderboard} className={tileCls} style={tileSty} title="Bestenliste">
+                <Stripe c={VI} />
+                <div className="flex items-center justify-between gap-1">{head("Bestenliste")}{arrow}</div>
+                <span className="text-[11px] opacity-50">Globale Highscores</span>
+              </button>
+            )}
+
+            {/* 4 · Statistiken — Stripe AM (Logo-Ende). */}
+            {onStats && (
+              <button onClick={onStats} className={tileCls} style={tileSty} title="Statistiken">
+                <Stripe c={AM} />
+                <div className="flex items-center justify-between gap-1">{head("Statistiken")}{arrow}</div>
+                <span className="text-[11px] opacity-50">Läufe &amp; Rekorde</span>
+              </button>
+            )}
+          </>); })()}
       </div>
 
-      {/* Sekundär-Navigation — ruhige Chip-Reihe statt fünf gleich breiter Balken. */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-xs sm:max-w-md">
-        {onLeaderboard && <button onClick={onLeaderboard} className={chipCls} style={chipSty}>Bestenliste</button>}
-        {onStats && <button onClick={onStats} className={chipCls} style={chipSty}>Statistiken</button>}
-        {onOptions && <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>}
-      </div>
+      {/* Optionen — bleibt als einzelner ruhiger Chip unter dem Grid (kein eigener Grid-Platz nötig). */}
+      {onOptions && (
+        <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>
+      )}
 
       {/* Lokaler Nickname (#14). */}
       {onEditName && (
