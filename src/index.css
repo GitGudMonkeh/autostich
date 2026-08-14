@@ -596,6 +596,15 @@ button { font-family: inherit; }
     linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%) !important;
   box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent);
 }
+/* #365-Folge: Archetyp-Leisten (FactionShell, Opt-in `as-panel-fac` + --fac = Fraktionsfarbe) tragen den Rahmen-Verlauf
+   in ihrer FRAKTIONSFARBE statt Violett (Feuer warm / Blitz lila / Eis kalt / Pflanze grün) — Bedeutungs-Kodierung auch
+   unter CRT sichtbar. Mittiger Highlight = heller Fraktions-Ton (color-mix mit Weiß). Ohne --fac → Violett-Fallback. */
+[data-skin="crt"] .as-panel.as-panel-fac {
+  background-image:
+    linear-gradient(#17171c, #17171c),
+    linear-gradient(90deg, #3a3a48 0%, var(--fac, #8a7de0) 25%, color-mix(in srgb, var(--fac, #8a7de0) 55%, #ffffff) 50%, var(--fac, #8a7de0) 75%, #3a3a48 100%) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--fac, #8a7de0) 22%, transparent);
+}
 @keyframes as-panel-sweep {
   from { background-position: 0% center, 0% center; }
   to   { background-position: 0% center, 200% center; }

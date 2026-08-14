@@ -26,8 +26,8 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
   return (
     // isolation:isolate → eigener Stacking-Context, damit die negative-z Ambient-Ebene HINTER den Inhalt fällt,
     // ohne dass der Inhalt (oder ein absoluter Kind-Effekt wie ChargeBars as-blitz-pulse) positioniert werden muss.
-    <div className={`rounded-xl p-3 as-panel relative overflow-hidden ${className}`}
-      style={{ ...PANEL_STYLE, border: `1px solid ${color}33`, isolation: "isolate" }}>
+    <div className={`rounded-xl p-3 as-panel as-panel-fac relative overflow-hidden ${className}`}
+      style={{ ...PANEL_STYLE, border: `1px solid ${color}33`, isolation: "isolate", "--fac": color }}>
       {ambient && (
         <div aria-hidden="true" className={`absolute inset-0 rounded-xl pointer-events-none${ambientPulse ? ` ${ambientPulse}` : ""}`}
           style={{ zIndex: -1, boxShadow: ambient }} />
