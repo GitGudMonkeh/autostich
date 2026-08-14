@@ -484,9 +484,12 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null }) { // #330 label/tint entfallen (Chrome zentral in FxStage)
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null }) { // #330 label/tint entfallen (Chrome zentral in FxStage)
   const panelRef = useRef(null);
   const cardRef = useRef(null);
+  // #377: optionaler Prunk-Sound im Showcase (aktuell nur Supernova-Swell). Der Swell ist 11 s lang, der visuelle
+  // Loop aber viel kürzer → eigene ~10-s-Drossel, damit er ausklingen kann statt bei jedem Loop neu zu überlappen.
+  const lastSfxRef = useRef(0);
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-Backdrop (look.bf)
   //   + die Pack-Deckfarbe (look.a1/a2). Vorher zeigte der Prunk-Showcase den Pack-BG auch im Standard (Inkonsistenz).
   const bf = battlefieldAssets(deckTint ? (look?.bf || SHOWCASE_BF) : SHOWCASE_BF);
@@ -497,6 +500,11 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null })
   const isMobile = useIsMobile();
   const [annKey, setAnnKey] = useState(0);
   const pop = () => setAnnKey((k) => k + 1);
+  // Jeder Prunk-„Fire": Ansage poppen + (falls gesetzt) den gedrosselten Prunk-Sound spielen.
+  const fire = () => {
+    pop();
+    if (sfx) { const now = Date.now(); if (now - lastSfxRef.current > 10000) { lastSfxRef.current = now; audio.play(sfx, { gain: 0.9 }); } }
+  };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
   useEffect(() => {
     if (Fx) return undefined;
@@ -511,7 +519,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null })
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       {Fx && (
         <Suspense fallback={null}>
-          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} onFire={pop} />
+          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} onFire={fire} />
         </Suspense>
       )}
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
@@ -715,7 +723,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
   if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} />; // #326 (Pixi)
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" />; // #326 (Pixi) · #377 Swell im Showcase
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (

@@ -1077,9 +1077,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       bigCoolRef.current._rank = toShow.rank;
       bigCoolRef.current._at = nowMs;
     }
-    // #: „Gottgleich"-Bass-Drop — feuert MIT dem Wort bei den epischen Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine";
-    // alle drei tragen epic:true, Stark/Brutal/Irre nicht). Cooldown in audio.js verhindert Dröhnen bei dichten Stichen.
-    if (toShow.epic) audio.play("fx_godlike", { gain: 1.5, bass: 4 });
+    // #377: epische Ansagen (Gottgleich ≥500k, „Gönn dir", „Lawine"; alle epic:true, Stark/Brutal/Irre nicht) →
+    // sofortiger fx_godlike-Bass-Punch + darübergelegter 11-s-Supernova-Swell, der den Moment austrägt (Layer, nicht
+    // Ersatz). Cooldowns in audio.js (godlike 1,8 s · supernova 3,0 s) verhindern Dröhnen bei dichten epischen Stichen.
+    // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
+    if (toShow.epic) {
+      audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
+      audio.play("fx_supernova", { gain: 1.0 });        // Swell darüber
+    }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
     //   Stark 0.7 · Brutal 1.0 · Irre 1.4 · epische Ansagen (Gottgleich/Gönn dir/Lawine) 1.4. Nur wenn der Effekt aktiv
