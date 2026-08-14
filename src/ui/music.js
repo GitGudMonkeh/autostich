@@ -19,6 +19,12 @@ import low_beam from "../assets/music/low_beam.m4a";
 import soft_reset from "../assets/music/soft_reset.m4a";
 // Neue Tracks (mid/hot/overdrive) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 import neon_card_game from "../assets/music/neon_card_game.m4a";
+// v0.4-Batch (5 neue mid-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
+import pulse_highway from "../assets/music/pulse_highway.m4a";
+import grid_runner from "../assets/music/grid_runner.m4a";
+import chrome_rally from "../assets/music/chrome_rally.m4a";
+import neon_circuit from "../assets/music/neon_circuit.m4a";
+import voltage_drive from "../assets/music/voltage_drive.m4a";
 import static_charge from "../assets/music/static_charge.m4a";
 import static_surge from "../assets/music/static_surge.m4a";
 import live_wire from "../assets/music/live_wire.m4a";
@@ -97,6 +103,12 @@ const POOL = [
   { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
   { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
   { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
+  // v0.4-Batch (5 neue mid-Tracks)
+  { title: "Pulse Highway", url: pulse_highway, tier: "mid" },
+  { title: "Grid Runner", url: grid_runner, tier: "mid" },
+  { title: "Chrome Rally", url: chrome_rally, tier: "mid" },
+  { title: "Neon Circuit", url: neon_circuit, tier: "mid" },
+  { title: "Voltage Drive", url: voltage_drive, tier: "mid" },
   // hot
   { title: "Static Charge", url: static_charge, tier: "hot" },
   { title: "Static Surge", url: static_surge, tier: "hot" },
