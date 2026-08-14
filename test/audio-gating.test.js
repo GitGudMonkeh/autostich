@@ -147,6 +147,24 @@ describe("Musik Lazy-Gating (#264)", () => {
       vi.useRealTimers();
     }
   });
+
+  // #339: Fortgesetzter Lauf startet auf der zum gespeicherten Score passenden Stufe (nicht immer „calm").
+  it("enterRun(score) wählt die zum Score passende Stufe; enterRun(0) bleibt calm", async () => {
+    vi.resetModules();
+    const rnd = vi.spyOn(Math, "random").mockReturnValue(0); // deterministisch: immer der ERSTE Track der Stufe
+    try {
+      const { music } = await import("../src/ui/music.js");
+      let title = null;
+      music.subscribe((tt) => { title = tt; });
+      music.setVolume(0.5);
+      music.enterRun(0);                 // Score 0 → calm → erster calm-Track
+      expect(title).toBe("Table Dust");
+      music.enterRun(95000000);          // 95 Mio → overdrive_plus → erster Track dieser Stufe
+      expect(title).toBe("Redline");
+    } finally {
+      rnd.mockRestore();
+    }
+  });
 });
 
 /* #329 — Effektsound-Gating: außerhalb von aktivem Spiel/Werkstatt (Victory/Gameover, Pause, Overlays) sind One-Shot-

@@ -269,7 +269,10 @@ function randomPoolTrack(wantTier = null) {
 
 export const music = {
   menu() { mode = "menu"; tier = "calm"; playTrack(MENU_TRACK); },                 // Menü + Victory
-  enterRun() { mode = "run"; tier = "calm"; playTrack(randomPoolTrack(tier)); },   // Run-Start → ruhige Stufe
+  // #339: Run-/Resume-Start score-abhängig initialisieren — ein fortgesetzter High-Score-Lauf startet SOFORT mit der zur
+  //   gespeicherten Score-Schwelle passenden Stufe (frischer Lauf: Score 0 → weiterhin calm). setProgress übernimmt danach
+  //   nur die laufenden Stufenwechsel; ohne das lief ein ganzer Calm-Song aus, bevor die Musik hochschaltete.
+  enterRun(score = 0) { mode = "run"; tier = tierForScore(score); playTrack(randomPoolTrack(tier)); },
   next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
   // Aktueller Score (state.score): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
   // angeschnitten — er läuft aus, dann reiht onEnded den neuen-Stufen-Track. Lief er schon länger, wird JETZT weich

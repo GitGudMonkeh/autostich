@@ -242,7 +242,11 @@ export function Autostich() {
   const [musicTitle, setMusicTitle] = useState(null);
   useEffect(() => music.subscribe(setMusicTitle), []);
   const musicHome = state.phase === "menu" || state.phase === "gameover";
-  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(); }, [musicHome]);
+  // #339: aktuellen Score über einen Ref bereithalten (KEINE Effekt-Dep → die Musik startet nicht bei jedem Score-Tick neu),
+  //   damit enterRun beim Run-/Resume-Start die zum gespeicherten Score passende Stufe wählt (statt immer calm).
+  const scoreRef = useRef(state.score || 0);
+  useEffect(() => { scoreRef.current = state.score || 0; }, [state.score]);
+  useEffect(() => { if (musicHome) music.menu(); else music.enterRun(scoreRef.current); }, [musicHome]);
   // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
   useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
