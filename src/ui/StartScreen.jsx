@@ -81,11 +81,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
   const hasResume = !!(onResume && resume);
-  // „Normaler Lauf": getönter Glas-Fill statt Vollblock — halbtransparentes Blau (lässt den Grund leicht
-  // durchscheinen → weniger „Farbblock"), definierender Rand hält die Form, helle Schrift bleibt lesbar.
-  const normalFill  = { background: "rgba(90,138,222,0.55)", border: "1px solid rgba(122,162,235,0.75)", color: "#eef4ff", boxShadow: "0 0 14px rgba(90,138,222,.2)" };
+  // Cyan-Primär-Optik (hell, mit kräftigem Cyan-Glow) — geteilte Quelle für „Lauf fortsetzen" UND „Normaler Lauf",
+  // wenn dieser (ohne laufenden Run) selbst die Primär-Aktion ist → beide glühen identisch (#).
+  const cyanPrimary = { background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" };
+  // Läuft ein Run, tritt „Normaler Lauf" hinter das helle „Fortsetzen" zurück → ruhiger Cyan/Blau-Outline (unverändert).
   const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
-  const normalStyle = hasResume ? normalGhost : normalFill;
+  const normalStyle = hasResume ? normalGhost : cyanPrimary;
 
   return (
     <div className="relative isolate flex flex-col items-center gap-3.5 pt-5 pb-5">
@@ -160,7 +161,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {onResume && resume && (
           <button onClick={onResume}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={{ background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" }}>
+            style={cyanPrimary}>
             <span className="text-[19px]">▶ Lauf fortsetzen</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
               Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}
