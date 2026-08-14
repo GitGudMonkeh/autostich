@@ -361,7 +361,7 @@ export function recordRun(record) {
    `deckId`/`battlefieldId` (#190): gewähltes kosmetisches Deck-/Battlefield-Skin (Default = aktueller
    Look). Merge über Default degradiert Alt-Daten sauber; die UI fällt zusätzlich defensiv auf "default"
    zurück, falls ein gespeicherter Skin (noch) nicht existiert oder nicht mehr freigeschaltet ist. */
-// #110/#111 Sound + #190 Kosmetik + #200 Effekte-reduziert (auto|an|aus) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles
+// #110/#111 Sound + #190 Kosmetik + #200/#363 Effekte-reduziert (aus|mobile|an; Gerätedefault via loadOptions) + #207 Haptik (nur Mobile) + #243 Baumodus-Toggles
 // + #252 StatusRail-Panels default eingeklappt · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322
 // Sonnen-Puls = freier Default (aktiv, kein Kauf). #347: ALLE Effekt-Toggles + Farbmodus-Flags explizit gelistet (Default
 // aus, außer fxSonnenPuls/fxCubeMatrixSun) — vorher liefen die fehlenden über undefined-als-falsy (inkonsistent/fragil).
@@ -412,12 +412,38 @@ export function normalizeFxOptions(o) {
   reduceExclusive(o, CARD_ANIM_OPTS);
   return o;
 }
+/* #363 „Effekte reduziert" hat jetzt genau 3 Zustände: „aus" (full) · „mobile" (balanced/lite) · „an" (minimal).
+   Der frühere „auto"-Knopf entfällt — die Geräteabhängigkeit steckt jetzt im DEFAULT (Handy → „mobile", Desktop → „aus").
+   `prefers-reduced-motion` erzwingt weiterhin immer „minimal" (in useFxLevel, nicht hier). */
+export function deviceDefaultReducedFx() {
+  try {
+    return (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ? "mobile" : "aus";
+  } catch (e) { return "aus"; }
+}
+const REDUCED_FX_VALUES = ["aus", "mobile", "an"];
+// Migration der Alt-Werte auf die 3 Zustände: „ausgewogen" → „mobile"; „auto"/fehlend/ungültig → Gerätedefault
+// (Handy „mobile", Desktop „aus"). So verbleibt kein „auto"/„ausgewogen" mehr im gespeicherten Profil.
+export function migrateReducedFx(raw) {
+  if (raw === "ausgewogen") return "mobile";
+  if (REDUCED_FX_VALUES.includes(raw)) return raw;
+  return deviceDefaultReducedFx();
+}
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));
-    if (raw) { const o = JSON.parse(raw); if (o && typeof o === "object") return normalizeFxOptions({ ...DEFAULT_OPTIONS, ...o }); }
+    if (raw) {
+      const o = JSON.parse(raw);
+      if (o && typeof o === "object") {
+        const before = o.reducedFx;
+        const merged = normalizeFxOptions({ ...DEFAULT_OPTIONS, ...o });
+        merged.reducedFx = migrateReducedFx(before);
+        // #363 einmalig zurückschreiben, damit kein „auto"/„ausgewogen" (oder fehlender Schlüssel) im Profil verbleibt.
+        if (merged.reducedFx !== before) { try { saveOptions(merged); } catch (e) {} }
+        return merged;
+      }
+    }
   } catch (e) {}
-  return { ...DEFAULT_OPTIONS };
+  return { ...DEFAULT_OPTIONS, reducedFx: deviceDefaultReducedFx() };
 }
 export function saveOptions(opts) {
   try { localStorage.setItem(k("as_options"), JSON.stringify(opts)); } catch (e) {}

@@ -49,10 +49,12 @@ function Segmented({ value, options, onChange }) {
   );
 }
 
-/* Eine Options-Zeile: Titel + Beschreibung links, Steuerung rechts. */
-function Row({ title, desc, children }) {
+/* Eine Options-Zeile: Titel + Beschreibung links, Steuerung rechts. `stack` (#363) → Text OBEN, Steuerung darunter
+   (voll-breit) — für Zeilen mit breiter Steuerung + langem Text (z. B. „Effekte reduziert"), damit auf schmalen
+   Breiten weder Text noch die Knöpfe gequetscht werden. */
+function Row({ title, desc, children, stack = false }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg p-3" style={{ background: "#20202a" }}>
+    <div className={`rounded-lg p-3 ${stack ? "flex flex-col gap-2.5" : "flex items-center gap-3"}`} style={{ background: "#20202a" }}>
       <div className="flex-1">
         <div className="font-bold text-sm">{title}</div>
         {desc && <div className="text-sm opacity-70 leading-snug">{desc}</div>}
@@ -61,6 +63,19 @@ function Row({ title, desc, children }) {
     </div>
   );
 }
+
+/* #363 „Effekte reduziert" — 3 Zustände mit je eigener, kurzer Beschreibung (statt eines überladenen Satzes).
+   Wird dynamisch die Beschreibung des GEWÄHLTEN Zustands gezeigt. */
+const RFX_OPTIONS = [
+  { v: "aus", label: "Aus" },       // full
+  { v: "mobile", label: "Mobile" }, // balanced/lite
+  { v: "an", label: "An" },         // minimal
+];
+const RFX_DESC = {
+  aus: "Volle Effekte.",
+  mobile: "Ausgewogen: Karten-Flip, Hintergrund, Glow & Finisher bleiben; Screen-Shake, Funken-Fontänen, Blur & Sweeps aus. Schont schwächere Geräte.",
+  an: "Alle Effekte minimal — maximal ruhig, entlastet schwache Geräte stark.",
+};
 
 export function OptionsModal({ options, onChange, onClose }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
@@ -100,10 +115,11 @@ export function OptionsModal({ options, onChange, onClose }) {
               aria-label="Musik-Lautstärke"
               style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
-          {/* #200: Effekte reduziert (auto/an/mittel/aus) — dreistufig. „Mittel"=ausgewogen: Kartenflip + Ambiente + Finisher bleiben, nur Screen-Shake + Partikel-Fontänen fallen weg. */}
-          <Row title="Effekte reduziert" desc="„Aus“ = volle Effekte. „Mittel“ behält Kartenflip, Hintergrund & Finisher, lässt aber die teuren Ruckel-Treiber (Screen-Shake, Funken-Fontänen) weg. „An“ reduziert alles. „Auto“ wählt am Handy Mittel, am Desktop volle Effekte.">
-            <Segmented value={options.reducedFx ?? "auto"}
-              options={[{ v: "auto", label: "Auto" }, { v: "aus", label: "Aus" }, { v: "ausgewogen", label: "Mittel" }, { v: "an", label: "An" }]}
+          {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
+              auf schmalen Breiten. Beschreibung wechselt mit dem gewählten Zustand. Handy-Default „Mobile", Desktop „Aus". */}
+          <Row stack title="Effekte reduziert" desc={RFX_DESC[options.reducedFx] || RFX_DESC.aus}>
+            <Segmented value={RFX_DESC[options.reducedFx] ? options.reducedFx : "aus"}
+              options={RFX_OPTIONS}
               onChange={(v) => onChange({ reducedFx: v })} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}

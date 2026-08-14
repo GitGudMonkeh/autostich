@@ -689,8 +689,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   gottEffect = "gottStandard", gottDeck = false,
   // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Farbmodus false = Standard-Neon, true = Deckfarbe (deckA1/deckA2).
   archDeckColor = false,
-  // #200 B: „Effekte reduziert" (auto|an|aus). Löst zusammen mit prefers-reduced-motion/Mobile den `reduced`-Modus aus.
-  reducedFx = "auto" }) {
+  // #200/#363 B: „Effekte reduziert" (aus|mobile|an). Löst zusammen mit prefers-reduced-motion den `reduced`-Modus aus.
+  reducedFx = "aus" }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.

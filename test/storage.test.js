@@ -5,7 +5,8 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
-  saveProfile, wipeProfileStorage, saveOptions } from "../src/game/storage.js";
+  saveProfile, wipeProfileStorage, saveOptions,
+  migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 import { ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
 
@@ -286,6 +287,28 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
   it("loadOptions: korrupter JSON → reine Defaults", () => {
     global.localStorage.setItem("as_options", "nope");
     expect(loadOptions()).toEqual(DEFAULT_OPTIONS);
+  });
+  // #363: „Effekte reduziert" auf 3 Zustände (aus|mobile|an); auto/ausgewogen werden migriert.
+  it("migrateReducedFx: gültige Zustände bleiben, ausgewogen→mobile, auto/ungültig→Gerätedefault", () => {
+    const dev = deviceDefaultReducedFx();
+    expect(["aus", "mobile"]).toContain(dev);      // Node/jsdom: kein coarse pointer → „aus"
+    expect(migrateReducedFx("aus")).toBe("aus");
+    expect(migrateReducedFx("mobile")).toBe("mobile");
+    expect(migrateReducedFx("an")).toBe("an");
+    expect(migrateReducedFx("ausgewogen")).toBe("mobile");
+    expect(migrateReducedFx("auto")).toBe(dev);    // kein „auto" mehr
+    expect(migrateReducedFx(undefined)).toBe(dev); // fehlender Schlüssel → Gerätedefault
+    expect(migrateReducedFx("quatsch")).toBe(dev);
+  });
+  it("loadOptions migriert reducedFx und schreibt den Alt-Wert einmalig zurück (kein auto/ausgewogen im Profil)", () => {
+    global.localStorage.setItem("as_options", JSON.stringify({ reducedFx: "ausgewogen" }));
+    expect(loadOptions().reducedFx).toBe("mobile");
+    expect(JSON.parse(global.localStorage.getItem("as_options")).reducedFx).toBe("mobile"); // persistiert
+    global.localStorage.setItem("as_options", JSON.stringify({ reducedFx: "auto" }));
+    const r = loadOptions().reducedFx;
+    expect(r).not.toBe("auto");
+    expect(["aus", "mobile"]).toContain(r);
+    expect(JSON.parse(global.localStorage.getItem("as_options")).reducedFx).not.toBe("auto");
   });
   it("recordHighscore persistiert; loadHighscores liest zurück, Nicht-Array → []", () => {
     recordHighscore({ score: 100, level: 1, tricks: 5, cycles: 0, ts: 1 });
