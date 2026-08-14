@@ -37,7 +37,7 @@ const ICE_FORCE = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) 
 // #eis Basis-Frost-Boden: ein frisch gefrorener Gletscher (Masse 0) sieht trotzdem vereist aus (dünner Basis-Frost,
 //   Stufe 0), wächst dann mit seiner Firn-Masse. Frost gehört PER KARTE nur auf gefrorene Gletscher, nicht global.
 const ICE_BASE_FREEZE = 3;
-// #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow · später Holo/Glitch/Materialize), lazy wie oben.
+// #318 Karten-Animationen: geteilte Pixi-Overlay-Bühne ÜBER den Karten (Edge-Glow/Holo/Glitch), lazy wie oben.
 const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ default: m.CardFxStage })));
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
 // (Render-Branch mountet nur bei gottTrigger>0) → Prod-Bundle bleibt Pixi-frei, bis der Effekt wirklich spielt.
@@ -261,9 +261,6 @@ const FLOAT_SCALE_DECAY   = 0.9;  // Maßstab = max(Gewinn, Maßstab·DECAY) →
 // #110: Karten-Aufdeck-Sound — DEZENTE Turbo-Kopplung der Abspielrate (leicht justierbar). Rate>1 = kürzer/schneller.
 const CARDFLIP_RATE_REF = 700;  // ms-Referenz: unter diesem Stich-Takt wird der Sound schneller (bei ~1× bleibt Rate 1)
 const CARDFLIP_RATE_CAP = 1.6;  // Deckel bewusst niedrig → bei MAX-Turbo bleibt ein leichtes Überlappen („MG"), wie gewünscht
-// Ergebnisabhängige Flip-Lautstärke (tunable): Sieg laut & erkennbar, Niederlage deutlich leiser → klarer
-// hörbarer Kontrast Sieg↔Niederlage. Effektiv = Gain × SFX-Lautstärke (Default 0,4 → Sieg 0,6 · Niederlage 0,08).
-const CARDFLIP_GAIN = { win: 1.5, win_tie: 1.5, tie: 0.6, loss: 0.2 };
 const CARDFLIP_GAIN_CONST = 0.9; // #: konstante Flip-Lautstärke bei JEDEM Flip (Mitte zwischen altem Sieg-/Niederlage-Pegel)
 const STICH_WIN_PITCH = 1.14;    // #finisher-standard: gewonnener Stich stimmt den Flip-Sound dezent höher (nur Standard-Finisher; leicht justierbar)
 // Deterministischer Jitter aus einem Integer-Seed (kein Math.random im Render, #68) → [-amp, +amp].
@@ -587,23 +584,8 @@ export const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.
 // #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
 // Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
 // Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
-// #: Sternschnuppen-Pfade — je Stich (sweepId) ein anderer: Start (top/left), Flugwinkel (ang°) + Strecke (dist).
-// Gemischte Richtungen/Seiten (oben-links→unten-rechts, oben-rechts→unten-links, flach, steil) → nie „einfach gerade durch".
-// dist in PX (der Anker ist 0px breit → translateX-% wäre 0; px bewegt zuverlässig).
-const SHOOT_PATHS = [
-  { top: "6%", left: "-8%", ang: 26, dist: "620px" },   // oben-links → unten-rechts
-  { top: "-6%", left: "62%", ang: 124, dist: "620px" }, // oben-rechts → unten-links
-  { top: "24%", left: "-10%", ang: 9, dist: "680px" },  // flach, links → rechts
-  { top: "-8%", left: "34%", ang: 68, dist: "460px" },  // steil nach unten
-  { top: "14%", left: "72%", ang: 152, dist: "600px" }, // rechts → unten-links, flach
-  { top: "-6%", left: "12%", ang: 48, dist: "560px" },  // oben-links → unten-rechts, mittel
-];
-// #: Sternschnuppen-Schweif als echte PARTIKEL (statt statischem Farbverlauf): Punkte hinter dem Kopf (x = px entgegen
-// der Flugrichtung), nach hinten kleiner + blasser, mit leichtem Größen-Flackern (as-comet-p) → lebendiger Partikelstrom.
-const COMET_TRAIL = Array.from({ length: 14 }, (_, i) => {
-  const t = i / 13;
-  return { x: 3 + i * 4.6, y: (i % 2 ? 1 : -1) * (0.5 + t * 2.4), s: +(3 - t * 2.1).toFixed(2), o: +(0.85 - t * 0.72).toFixed(2), d: +(i * 0.045).toFixed(2) };
-});
+// #347: SHOOT_PATHS/COMET_TRAIL (DOM-Sternschnuppen) entfernt — der Komet/Meteor läuft ausschließlich über den Pixi-
+//   Emitter (starfieldPixi.js); die DOM-Fassung ist tot (FieldFxLayer kennt nur „aurora").
 // #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
 const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
 const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, suppressField = false }) {
@@ -640,7 +622,7 @@ const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, 
   return <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>{inner}</div>;
 };
 export const FieldFxLayer = memo(FieldFxLayerInner);
-function SlashGhostLayer({ ghosts, panelRef = null }) {
+function SlashGhostLayer({ ghosts }) {
   return (
     <>
       {ghosts.map((g) => {
@@ -680,7 +662,7 @@ function SlashGhostLayer({ ghosts, panelRef = null }) {
 
 // #: CritScreenFx (Vollbild-Flash/Vignette bei Krit) entfernt — Krit-Finisher-Animationen raus.
 
-export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, lightning = null, oppDeck = "stat", score = 0,
+export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen = TRICKS_PER_CYCLE, flipMs = 1000, pe = {}, heat = null, oppDeck = "stat", score = 0,
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
@@ -1006,7 +988,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
-    const dur = floatDur; // #68/#95: lange Float-Dauer, geteilt mit dem Formations-Float
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
     // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
     const hits = t.hitTypes || [];
@@ -1338,7 +1319,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Kartenvorderseite (siehe pCardEl oben) → es flippt/dealt/fliegt mit der Karte mit, statt den 3D-Flip flach zu
           verdecken. Hinweis: dadurch liegt das Moos im Karten-Stacking-Context (nicht mehr über dem Panel-IonStorm). */}
       {/* #318 Karten-Animationen — geteilte Pixi-Overlay-Bühne ÜBER beiden Karten (z-11). Stapelbare Dauer-Layer
-          (Edge-Glow · Holo/Glitch/Materialize), pro Karten-Rechteck gezeichnet. Aktiv aus cardAnims (Shop-Toggle) bzw.
+          (Edge-Glow/Holo/Glitch), pro Karten-Rechteck gezeichnet. Aktiv aus cardAnims (Shop-Toggle) bzw.
           ?edgeglow=1 (Dev). KAUFBARE Shop-Effekte → laufen auch in Produktion (CARD_FX_ENABLED); Pixi lädt nur lazy,
           wenn wirklich eine Animation an ist (sonst return null → kein Pixi). */}
       {CARD_FX_ENABLED && (() => {

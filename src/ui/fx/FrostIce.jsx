@@ -302,7 +302,7 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       disposed = true; document.removeEventListener("visibilitychange", onVis);
       if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); try { host.removeChild(canvas); } catch { /* ignore */ }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   useEffect(() => { syncRef.current?.(); }, [mass, reduced, nA, nB]);

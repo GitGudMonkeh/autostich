@@ -107,7 +107,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
       const geo = place(); if (!geo) return;
-      const { W, H, cx, cy } = geo;
+      const { H, cx, cy } = geo;
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
       const env = envelope(prog), A = env.alpha * TUNE.BRIGHT;
       const s = st.current, dr = rgb(s.deckColor), dr2 = rgb(s.deckColor2 || s.deckColor);
@@ -178,7 +178,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
       for (const t of [coronaTex, coreTex]) { try { t.destroy(true); } catch { /* ignore */ } }
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- App EINMAL bauen; Props über st-Ref, Trigger über den Effekt unten.
+     
   }, [panelRef, cardRef]);
 
   // Trigger-Wechsel → Einmal-Effekt neu starten. Der erste Lauf (Mount) wird übersprungen (init spielt selbst).

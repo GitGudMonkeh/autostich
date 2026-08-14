@@ -15,7 +15,7 @@
 
    Die UI (CustomizeScreen) rendert rein aus diesen Ableitungen — dieselbe Wahrheit für Tests & Screen. */
 
-import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress } from "./cosmetics.js";
+import { DECK_DEFS, isUnlocked, unlockProgress } from "./cosmetics.js";
 
 /* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Pack), wirken laufweit. #307: Kauf in
    DP, je Effekt ein eigener Preis (fx.price); Besitz in ownedCosmetics[ownKey]; ein An/Aus-Toggle (option) steuert sie.
@@ -226,8 +226,6 @@ export function showcaseLook(packId, override = {}) {
 }
 export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
-// SP-Guthaben robust lesen (spiegelt progression.points).
-const sp = (profile) => Math.max(0, Math.floor(Number(profile && profile.stichPoints) || 0));
 // DP-Guthaben (Deckpunkte) robust lesen — Währung der Werkstatt-Packs (#299).
 const dp = (profile) => Math.max(0, Math.floor(Number(profile && profile.deckPoints) || 0));
 

@@ -149,7 +149,6 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
 // B9 Perfekte Folge → Familie B_PERFECT (#167), Treppen-Ordinal-Tests ebenfalls in families.test.js.
 
 describe("buildPerkOffer — Legendäre koppeln an die Rarität (lila/Stufe IV) (#Onboarding-Fix)", () => {
-  const rng = () => 0.5; // deterministisch genug für die Poolzusammensetzung
   it("maxTier < 4 (Onboarding-Deckel): KEIN legendärer Perk im Angebot", () => {
     for (const mt of [2, 3]) {
       for (let s = 0; s < 8; s++) {

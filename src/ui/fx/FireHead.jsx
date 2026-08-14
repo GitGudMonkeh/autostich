@@ -128,7 +128,6 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
       if (ccx < -CW || ccx > pr.width + CW || ccy < -CH || ccy > pr.height + CH) { hideAll(); return; }
 
       const dt = ticker.deltaMS, C = paramsAt(H);
-      const colInt = rgbInt(C.cCOLOR), coreInt = rgbInt(C.cCORE), embInt = rgbInt(C.cEMBER);
       const cx = ox + CW / 2, margin = (1 - C.FLAME_SPREAD) * CW / 2, width = CW - 2 * margin;
       clock += dt;
 

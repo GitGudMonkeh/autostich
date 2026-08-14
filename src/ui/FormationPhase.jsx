@@ -68,7 +68,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const [openLegend, setOpenLegend] = useState(false);   // #UI Aufstellung-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar, default zu
   const [openDetails, setOpenDetails] = useState(false);  // #UI Aufstellung-Redesign: Gebäude · Perks · Eis-Effekte einklappbar, default zu
   const architect = state.architect;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
+   
   const archBuildings = (state.architectEnabled && architect && architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
   // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster

@@ -394,7 +394,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     raf = requestAnimationFrame(step);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); ctx.clearRect(0, 0, W, H); simRef.current = null; };
     // Deps bewusst nur [active, panelRef, oppRef, reduced]: laufende Steuerwerte (pulse/scale/color) über ctrlRef.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [active, panelRef, oppRef, reduced]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none rounded-xl" style={{ zIndex: 22 }} aria-hidden="true" />;

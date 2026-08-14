@@ -530,7 +530,7 @@ function StandardFinisherScene() {
 
 // #317 Cube-Matrix-Showcase: das ECHTE In-Game-Modul (CubeMatrixField) über dem neutralen BF-Bild. Reagiert live auf
 // die laufende (Menü-)Musik. deckTint → Deckfarbe statt Standard-Cyan/Magenta. Nur Preview/Dev (wie die anderen GL-FX).
-function CubeMatrixPreview({ deckTint = false, sun = true, wire = false }) {
+function CubeMatrixPreview({ deckTint = false, wire = false }) {
   const look = PREVIEW_LOOK.cubematrix;
   // #327: Standard-Modus = Genesis (SHOWCASE_BF); nur Deckfarbe-Modus zeigt den Pack-BG (look.bf = bf_arcade).
   const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);

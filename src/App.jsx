@@ -12,7 +12,6 @@ import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardi
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
-import { fmtScore } from "./ui/format.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
@@ -526,7 +525,7 @@ export function Autostich() {
   // Auto-Dump bei Game-Over: jeder Lauf hinterlässt eine Perf-Bilanz in der Konsole (nur Preview).
   useEffect(() => {
     if (import.meta.env.VITE_PREVIEW === "1" && options.perfHud && state.phase === "gameover") {
-      // eslint-disable-next-line no-console
+       
       console.log("%c" + formatReport(getReport()), "font-family:monospace");
     }
   }, [state.phase]);

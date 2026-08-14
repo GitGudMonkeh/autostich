@@ -1,5 +1,4 @@
 import { fmtScore } from "./format.js";
-import { fmtDuration } from "../game/deck.js";
 import { RunTimer } from "./RunTimer.jsx";
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs

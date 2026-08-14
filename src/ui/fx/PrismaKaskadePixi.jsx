@@ -17,9 +17,6 @@ const TUNE = {
   BRIGHT: 1, SCAN: 0.2,
   TAIL: 0.15,
 };
-const STD_A = "#31d0ff", STD_B = "#ff5db1";
-
-const TAU = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }

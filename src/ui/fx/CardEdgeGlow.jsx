@@ -20,7 +20,6 @@ const EDGE_TUNE = {
 const CARD_CORNER = 12;   // rounded-xl der Karte (echte Geometrie in CSS-px, NICHT sc-skaliert)
 const HREF = 360;         // Board-Referenz-Kartenhöhe
 
-const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false, lite = false }) {
@@ -106,7 +105,7 @@ export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false
       disposed = true; document.removeEventListener("visibilitychange", onVis);
       if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); try { host.removeChild(canvas); } catch { /* ignore */ }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   useEffect(() => { syncRef.current?.(); }, [color, color2, reduced, lite]);

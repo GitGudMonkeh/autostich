@@ -44,9 +44,9 @@ export function PerfOverlay() {
 
   const doReport = () => {
     const r = getReport();
-    // eslint-disable-next-line no-console
+     
     console.log("%c" + formatReport(r), "font-family:monospace");
-    // eslint-disable-next-line no-console
+     
     console.log("PERF_JSON", r);
     try {
       navigator.clipboard?.writeText(JSON.stringify(r, null, 2));

@@ -153,7 +153,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
       for (const t of [beamTex, hubTex]) { try { t.destroy(true); } catch { /* ignore */ } }
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [panelRef, cardRef]);
 
   useEffect(() => { if (firstRef.current) { firstRef.current = false; return; } startRef.current?.(); }, [trigger]);

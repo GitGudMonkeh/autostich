@@ -5,7 +5,7 @@ import { drawHolo } from "./cardFx/holo.js";
 import { createGlitch } from "./cardFx/glitch.js";
 
 /* CardFxStage (#318) — EINE geteilte Pixi-Overlay-Bühne ÜBER den Karten (z>10) für die stapelbaren
-   Karten-Dauer-Layer (Edge-Glow · Holo-Sweep · später Glitch) und die Materialize-Reveal-Transition.
+   Karten-Dauer-Layer (Edge-Glow · Holo-Sweep · Glitch). (#347: die frühere Materialize-Reveal-Transition wurde entfernt.)
    Zeichnet pro Karten-Rechteck (Spieler- UND Gegnerkarte) an deren Bildschirm-Box, relativ zu `panelRef`
    — Vorbild ist der Blitzrahmen (IonStorm) und die Feuer-Glut (FireBurn), NICHT ein Canvas pro Karte.
 
@@ -19,9 +19,7 @@ import { createGlitch } from "./cardFx/glitch.js";
    - Pixi v8 init ist async → `disposed`-Guard; Cleanup zerstört die App (Container/Graphics hängen dran).
    - Gate am Mount-Ort (Preview/Dev) → Produktion lädt kein Pixi (Ziel des Pixi-Umbaus: DOM-Effekte vermeiden).
 
-   Renderreihenfolge pro Karte (unten→oben): Edge-Glow · Holo-Sweep · (Glitch). Materialize (Layer 4, Reveal-
-   Transition) dockt später an und reicht seinen Build-Fortschritt nach außen, damit der Blitzrahmen (IonStorm)
-   MIT der Karte erscheint statt vor ihr.
+   Renderreihenfolge pro Karte (unten→oben): Edge-Glow · Holo-Sweep · Glitch.
 
    Hinweis Overlay-Grenze: Holo liegt konzeptionell „unter der Zahl" — die Zahl ist DOM (z-2 der Karte), das
    Overlay-Canvas liegt darüber (z-11). Das Band wandert additiv über die (hohle Neon-)Zahl; das ist bewusst so,
