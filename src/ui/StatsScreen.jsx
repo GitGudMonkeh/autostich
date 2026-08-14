@@ -151,7 +151,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
-          <h2 className="text-lg font-bold flex items-center gap-2 min-w-0 truncate">Statistiken</h2>
+          <h2 className="text-lg font-bold flex items-center gap-2">Statistiken</h2>
           <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
         </div>
 

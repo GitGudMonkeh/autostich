@@ -154,13 +154,15 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen + Reiter. */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold min-w-0 truncate">Upgrades</h2>
+          {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
+              (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
+          <h2 className="text-lg font-bold">Upgrades</h2>
+          <div className="flex items-center justify-between gap-2.5 mt-2.5">
+            <span className="flex items-baseline gap-1 shrink-0">
+              <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>SP</span>
+            </span>
             <div className="flex items-center gap-2.5 shrink-0">
-              <span className="flex items-baseline gap-1">
-                <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
-                <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>SP</span>
-              </span>
               <button onClick={doRespec} disabled={owned === 0}
                 className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
                 style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>↺ Respec</button>
