@@ -92,7 +92,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone, onUndo, onReset }) {
   useEscape(onDone);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const architect = state.architect || { buildings: [], offers: [] };
@@ -100,6 +100,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const committed = architect.buildings || [];
   const offers = architect.offers || [];
   const maxCover = architect.maxCover ?? N_POS;
+  // #361: „↶ Rückgängig"/„Zurücksetzen" — aktiv, sobald in DIESER Phase etwas geschah (Undo-Stapel nicht leer),
+  // analog `hasSwaps` in der Aufstellungsphase. Gleiche Beschriftung/Look wie dort.
+  const canArchUndo = (architect.phaseHistory || []).length > 0;
   const round = (state.cycle || 0) + 1;
   // #301 C2: gesperrte Bau-Zellen (Challenge) — als „belegt" für alle Platzierungs-Enumerationen und interaktions-/render-seitig geblockt.
   const chLockArch = state.challengeBlockArch || [];
@@ -336,6 +339,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [inspectId]);
   // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
   const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
+  // #361: nach „↶ Rückgängig"/„Zurücksetzen" zurück in den Haupt-Fluss (interne phase:"choose") und alle Sub-Auswahl-
+  // Zustände lösen — sonst zeigte die UI evtl. auf ein soeben entferntes/zurückgesetztes Gebäude (Issue: „danach zurück auf choose").
+  const resetArchUi = () => { setPhase("choose"); setSelId(null); setInspectId(null); setPending(null); setPendingUpgrade(null); setRemoveFor(null); setDemolishIds([]); setUpgradeMsg(null); setDragPrev(null); };
+  const doArchUndo = () => { onUndo?.(); resetArchUi(); };
+  const doArchReset = () => { onReset?.(); resetArchUi(); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
   // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
   // verbraucht (actedMain) oder das Gebäude nicht (mehr) aufwertbar (Stufe IV/legendär/inert), lehnt der Reducer
@@ -996,6 +1004,17 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {showRotate && rotateMsg && (
                 <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
                   ⟳ {rotateMsg}
+                </div>
+              )}
+              {/* #361: „↶ Rückgängig" + „Zurücksetzen" — identische Beschriftung/Look wie die Aufstellungsphase
+                  (FormationPhase). Im Haupt-Fluss (choose/move) über den Phasen-Buttons; NICHT mit der bestehenden
+                  „← Zurück"-Sub-Navigation (Upgrade/Ersetzen) vermengen. Aktiv, sobald in dieser Phase etwas geschah. */}
+              {!removeFor && (phase === "choose" || phase === "move") && (
+                <div className="flex gap-2 mb-2">
+                  <button onClick={doArchUndo} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>↶ Rückgängig</button>
+                  <button onClick={doArchReset} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>Zurücksetzen</button>
                 </div>
               )}
               {removeFor ? (

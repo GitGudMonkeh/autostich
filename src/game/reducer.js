@@ -28,6 +28,23 @@ import { normalizeActive as normalizeChallenges } from "./challenges.js"; // #30
 // Architekt (#202, Shop-Ersatz): an computeFormations weitergereicht, damit Formations-Vorschauen (Aufstellungsphase)
 // die Gebäude-Effekte sehen. null, solange das Flag aus ist (A/B-neutral).
 const archOf = (s) => (s && s.architectEnabled ? s.architect : null);
+/* #361 Architekt-Undo/Reset — Snapshot der UMKEHRBAREN Architekt-Felder (NICHT phaseHistory/phaseBaseline selbst, sonst
+   würden die Snapshots wachsen/verschachteln). `phaseHistory` = Stapel dieser Snapshots (einer VOR jeder Platzier-Aktion
+   dieser Phase) → UNDO nimmt genau den letzten Schritt zurück (analog UNDO_SWAP). `phaseBaseline` = Snapshot bei Phasen-
+   Eintritt → RESET stellt den Stand bei Phasen-Beginn wieder her (analog RESET_FORMATION); persistente Vorrunden-Gebäude
+   bleiben. */
+function archSnap(a) {
+  return {
+    buildings: (a.buildings || []).map((b) => ({ ...b, footprint: [...(b.footprint || [])] })),
+    nextId: a.nextId,
+    winCounters: { ...(a.winCounters || {}) },
+    actedMain: a.actedMain,
+    moved: a.moved,
+    offers: a.offers ? a.offers.map((o) => ({ ...o })) : a.offers,
+  };
+}
+// Snapshot VOR einer Platzier-Aktion auf den Historien-Stapel legen → gibt das neue phaseHistory-Array zurück.
+const archPush = (a) => [...(a.phaseHistory || []), archSnap(a)];
 // #205 Challenger Mode: adressierte rng-Ableitung. Bei gesetztem seed ein FRISCHER, build-unabhängig
 // adressierter Sub-Strom `(seed, ...parts)`; sonst der als Action-Payload injizierte rng (Sim/Alt-Verhalten
 // byte-identisch). Adressen nutzen state.cycle + eine feste Kennung, damit jeder Zieh-Punkt seinen eigenen Strom hat.
@@ -65,7 +82,9 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   if (decision === "shop") {
     if (!architectEnabled) return { phase: "play" };
     const offers = devMode ? fullArchitectOffer() : buildArchitectOffer(s.architect, rngAtOr("arch"), mRareShift, legChanceMult, rareCap);
-    return { phase: "architect", architect: { ...s.architect, offers, actedMain: false, moved: false } };
+    // #361: Baseline für „Zurücksetzen" (Stand bei Phasen-Beginn) + leerer Undo-Stapel für diese Phase.
+    const archAtEntry = { ...s.architect, offers, actedMain: false, moved: false };
+    return { phase: "architect", architect: { ...archAtEntry, phaseBaseline: archSnap(archAtEntry), phaseHistory: [] } };
   }
   if (decision === "formation") {
     const formations = computeFormations(s.playerOrder, s.deck, s.roles, [], [], s.shop?.anchors || [], s.familyTiers, architectEnabled ? s.architect : null);
@@ -281,7 +300,7 @@ export function reducer(state, action) {
       const footprint = [...action.footprint].sort((x, y) => x - y);
       const building = { id: a.nextId, familyId: fam.id, tier: off.tier, footprint, colorChoice: fam.colorLocked ? action.colorChoice : null };
       const offers = a.offers.map((o) => (o === off ? { ...o, used: true } : o));
-      return { ...state, architect: { ...a, buildings: [...a.buildings, building], nextId: a.nextId + 1, actedMain: true, offers } };
+      return { ...state, architect: { ...a, buildings: [...a.buildings, building], nextId: a.nextId + 1, actedMain: true, offers, phaseHistory: archPush(a) } };
     }
     case "ARCHITECT_UPGRADE": { // ausbauen: bestehendes Gebäude +1 Stufe (max 4; Legendäre haben keine Stufen)
       if (state.phase !== "architect") return state;
@@ -292,7 +311,7 @@ export function reducer(state, action) {
       const fam = archFamily(b.familyId);
       if (!fam || fam.legendary || b.tier >= ARCH_MAX_TIER) return state; // legendär/Maximalstufe → nicht ausbaubar
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, tier: x.tier + 1 } : x));
-      return { ...state, architect: { ...a, buildings, actedMain: true } };
+      return { ...state, architect: { ...a, buildings, actedMain: true, phaseHistory: archPush(a) } };
     }
     case "ARCHITECT_MOVE": { // versetzen: BELIEBIG OFT bis zum Bestätigen (#224.10), an neue gültige Position (ohne Overlap mit den ANDEREN)
       if (state.phase !== "architect") return state;
@@ -304,7 +323,7 @@ export function reducer(state, action) {
       if (!fam || !isValidFootprint(fam.form, action.footprint, others, state.challengeBlockArch)) return state;
       const footprint = [...action.footprint].sort((x, y) => x - y);
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, footprint } : x));
-      return { ...state, architect: { ...a, buildings, moved: true } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
+      return { ...state, architect: { ...a, buildings, moved: true, phaseHistory: archPush(a) } }; // moved-Flag bleibt (Telemetrie), deckelt aber nicht mehr
     }
     case "ARCHITECT_MOVE_MULTI": { // atomarer Mehrfach-Move (Drop über ein Gebäude → getroffene weichen aus / Swap). Prüft die END-Lage.
       if (state.phase !== "architect") return state;
@@ -324,7 +343,7 @@ export function reducer(state, action) {
         const others = finalBuildings.filter((x) => x.id !== b.id);
         if (!isValidFootprint(fam.form, newFp[b.id], others, state.challengeBlockArch)) return state;
       }
-      return { ...state, architect: { ...a, buildings: finalBuildings, moved: true } };
+      return { ...state, architect: { ...a, buildings: finalBuildings, moved: true, phaseHistory: archPush(a) } };
     }
     case "ARCHITECT_RECOLOR": { // #261: Buff-Farbe eines colorLocked-Gebäudes anpassen — freie Anpassung bis zum Bestätigen (wie MOVE, kein actedMain)
       if (state.phase !== "architect") return state;
@@ -334,7 +353,7 @@ export function reducer(state, action) {
       const fam = archFamily(b.familyId);
       if (!fam || !fam.colorLocked || !C.SUIT_ORDER.includes(action.colorChoice)) return state;
       const buildings = a.buildings.map((x) => (x.id === b.id ? { ...x, colorChoice: action.colorChoice } : x));
-      return { ...state, architect: { ...a, buildings } };
+      return { ...state, architect: { ...a, buildings, phaseHistory: archPush(a) } };
     }
     case "ARCHITECT_DEMOLISH": { // abreißen: jederzeit, unbegrenzt, ohne Gegenwert (nur Platz frei)
       if (state.phase !== "architect") return state;
@@ -342,7 +361,7 @@ export function reducer(state, action) {
       const buildings = a.buildings.filter((x) => x.id !== action.buildingId);
       if (buildings.length === a.buildings.length) return state;       // nichts entfernt → kein Fortschritt
       const winCounters = { ...a.winCounters }; delete winCounters[action.buildingId];
-      return { ...state, architect: { ...a, buildings, winCounters } };
+      return { ...state, architect: { ...a, buildings, winCounters, phaseHistory: archPush(a) } };
     }
     case "REROLL_ARCHITECT": { // #263: Architekt-Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch).
       if (state.phase !== "architect") return state;
@@ -354,9 +373,33 @@ export function reducer(state, action) {
       const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), state.treeRareShift || 0, state.treeLegMult || 1, state.rareCap || 4);
       return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
+    // #361 „↶ Rückgängig" — letzten Schritt DIESER Phase zurücknehmen (analog UNDO_SWAP: letzten vom Stapel poppen).
+    case "ARCHITECT_UNDO": {
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const hist = a.phaseHistory || [];
+      if (!hist.length) return state;                                  // in dieser Phase noch nichts geschehen
+      const prev = hist[hist.length - 1];                              // Snapshot VOR dem letzten Schritt
+      // prev restauriert buildings/nextId/winCounters/actedMain/moved/offers exakt; phaseBaseline bleibt, Stapel −1.
+      return { ...state, architect: { ...a, ...prev, phaseHistory: hist.slice(0, -1) } };
+    }
+    // #361 „Zurücksetzen" — Stand bei Phasen-Beginn (analog RESET_FORMATION). Persistente Vorrunden-Gebäude bleiben.
+    case "ARCHITECT_RESET": {
+      if (state.phase !== "architect") return state;
+      const a = state.architect;
+      const base = a.phaseBaseline;
+      if (!base) return state;
+      return { ...state, architect: { ...a,
+        buildings: base.buildings.map((b) => ({ ...b, footprint: [...(b.footprint || [])] })),
+        nextId: base.nextId, winCounters: { ...base.winCounters }, actedMain: false, moved: false,
+        // Angebot behalten (Rerolls bleiben verbraucht), aber „used"-Flags freigeben → wieder baubar wie zu Phasen-Beginn.
+        offers: (a.offers || []).map((o) => ({ ...o, used: false })),
+        phaseHistory: [] } };
+    }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
       if (state.phase !== "architect") return state;
-      return { ...state, phase: "play", architect: { ...state.architect, offers: null } };
+      // #361 transiente Undo-Daten mit der Phase verwerfen (nicht in den gespeicherten Lauf mitschleppen).
+      return { ...state, phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseBaseline: null } };
     }
 
     case "RESOLVE_TRICK":
