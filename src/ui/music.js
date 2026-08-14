@@ -3,14 +3,9 @@
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
 import card_momentum from "../assets/music/card_momentum.m4a";
-import deck_alignment from "../assets/music/deck_alignment.m4a";
-import neon_card_rush from "../assets/music/neon_card_rush.m4a";
-import neon_card_rush_2 from "../assets/music/neon_card_rush_2.m4a";
-import pulsing_cards from "../assets/music/pulsing_cards.m4a";
 import relay_of_multipliers from "../assets/music/relay_of_multipliers.m4a";
 // #171: neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) im Run-Pool.
 // Main-Screen/Victory spielt „Relay of Multipliers".
-import asymmetric_loop from "../assets/music/asymmetric_loop.m4a";
 import formation_shuffle from "../assets/music/formation_shuffle.m4a";
 import mutation_funk_drive from "../assets/music/mutation_funk_drive.m4a";
 // v0.4-Batch (10 neue calm-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
@@ -102,12 +97,7 @@ const POOL = [
   { title: "Soft Reset", url: soft_reset, tier: "calm" },
   // mid
   { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
-  { title: "Deck Alignment", url: deck_alignment, tier: "mid" },
-  { title: "Asymmetric Loop", url: asymmetric_loop, tier: "mid" },               // #171
   { title: "Relay of Multipliers", url: relay_of_multipliers, tier: "mid" },
-  { title: "Neon Card Rush", url: neon_card_rush, tier: "mid" },                 // ungetaggt → wie „Neon Card Rush 2" auf mid (anpassbar)
-  { title: "Neon Card Rush 2", url: neon_card_rush_2, tier: "mid" },
-  { title: "Pulsing Cards", url: pulsing_cards, tier: "mid" },
   { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
   { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
   { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
