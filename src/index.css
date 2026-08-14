@@ -216,15 +216,17 @@ button { font-family: inherit; }
   55%  { transform: rotate(var(--cut-rot, -24deg)) translateX(0) scaleX(1); opacity: 1; }
   100% { transform: rotate(var(--cut-rot, -24deg)) translateX(var(--cut-swing, 0px)) scaleX(1); opacity: 0; }
 }
-/* #klinge-laser: NACHHALL der Laserklinge — die glühende Spur wächst mit dem Schnitt heraus (bis ~35 %, wenn die Klinge
-   voll durch ist), bleibt dann am Einschlag STEHEN (kein Nachschwung) und glüht über den Rest der (längeren) Dauer aus.
-   → kurzer, sichtbarer Hall wie bei einer schnell durchgezogenen Laserklinge. */
+/* #klinge-laser/#360: NACHHALL der Laserklinge — die glühende Spur wächst mit dem Schnitt heraus (bis ~26 %, wenn die
+   Klinge voll durch ist), bleibt dann am Einschlag STEHEN (kein Nachschwung) und glüht über den Rest der (deutlich
+   längeren, × 3.2) Dauer aus. #360: Spitze länger gehalten (bis ~60 %) und der Abfall in zwei Stufen langgezogen/weich
+   (60→84→100) → glühender Laserklingen-Nachhall statt schnellem Abriss. */
 @keyframes as-blade-hall {
   0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
-  18%  { opacity: 0.9; }
-  30%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
-  50%  { opacity: 1; }   /* Spitze länger halten → kräftigeres, sichtbareres Ausglühen */
-  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; }
+  14%  { opacity: 0.95; }
+  26%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  60%  { opacity: 1; }     /* Spitzenhelligkeit länger halten */
+  84%  { opacity: 0.34; }  /* weicher, langgezogener Abfall … */
+  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig ausgeglüht */
 }
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge
    rendert ALLE Stücke (2 Hälften bzw. 4 Z-Ecken) einheitlich über as-boom-shard (--sx/--sy/--sr), je Einfahrrichtung. */

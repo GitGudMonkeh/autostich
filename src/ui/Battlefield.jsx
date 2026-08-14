@@ -447,7 +447,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     const startMs = delay + stMs;
-    const hallDur = Math.round(dur * 2.1);   // #klinge-laser: Nachhall dauert länger als der Schnitt → sichtbares Ausglühen (verlängert)
+    const hallDur = Math.round(dur * 3.2);   // #360: Nachhall deutlich länger als der Schnitt (× 2.1 → × 3.2) → glüht wie eine Laserklinge sichtbar aus [TUNING]
     const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
       transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (
@@ -456,7 +456,7 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
         {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht SATT aus (verstärkt). */}
         <div style={{ ...common, height: h + 2, marginTop: -(h + 2) / 2, filter: "blur(0.5px)",
           background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 20%, #ffffff 50%, ${bladeGlow} 80%, transparent 100%)`,
-          boxShadow: `0 0 12px ${bladeGlow}, 0 0 ${(32 + intensity * 16).toFixed(0)}px ${bladeGlow}, 0 0 ${(62 + intensity * 26).toFixed(0)}px ${bladeGlow}, 0 0 ${(96 + intensity * 34).toFixed(0)}px ${bladeGlow}aa`,
+          boxShadow: `0 0 14px ${bladeGlow}, 0 0 ${(38 + intensity * 18).toFixed(0)}px ${bladeGlow}, 0 0 ${(72 + intensity * 28).toFixed(0)}px ${bladeGlow}, 0 0 ${(110 + intensity * 36).toFixed(0)}px ${bladeGlow}aa`, // #360: Glow dezent kräftiger für den Laser-Look
           "--cut-rot": `${rot}deg`, animation: `as-blade-hall ${hallDur}ms ease-out ${startMs}ms both` }} />
         {/* Die Klinge selbst: weiß-heißer Kern + Deck-Glow, wächst heraus und schwingt einheitlich durch (--cut-swing). */}
         <div style={{ ...common, height: h, marginTop: -h / 2,
