@@ -18,8 +18,11 @@ import { useRef, useEffect } from "react";
    Props: srcDesktop/srcMobile = Battlefield-Bild je Viewport · deckColor = Glutfarbe (Standard-Neon oder Deckfarbe)
           on = an/aus (weiche Überblendung) · animate = laufende Animation (false → statisches Standbild). */
 
-// [TUNING] Werte aus dem Deck-Glow-Regler (Shop-Preset). Umfärbung=0 → rein additive Glut.
-const TUNE = { intensity: 2.5, threshold: 0.26, bloom: 2.2, flow: 1.4, flowSpeed: 3.55 };
+// [TUNING] Werte aus dem Deck-Glow-Regler (Shop-Preset). Glut = Deckfarbe (uMode fest 1, #336).
+//   hlk  = Highlight-Rolloff [A]: wie stark die Glut zurückgeht, wo das Bild schon hell ist (schützt Details vor dem Ausbrennen).
+//   flat = Flächen-Gewicht [C]: wie stark flache gesättigte Flächen (nicht nur Kanten) glühen — niedriger = enger auf Konturen.
+//   edLo/edHi = Kanten-Schwellen [C]: High-Pass-Fenster der Linien-Maske (höher = nur echte Kanten).
+const TUNE = { intensity: 2.5, threshold: 0.28, bloom: 2.0, flow: 1.4, flowSpeed: 3.55, hlk: 0.8, flat: 0.55, edLo: 0.05, edHi: 0.24 };
 
 const VERT = "attribute vec2 aPos; varying vec2 vUv; void main(){ vUv = aPos*0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }";
 
@@ -27,8 +30,9 @@ const FRAG = [
   "precision highp float;",
   "varying vec2 vUv;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMix; uniform float uImgAspect;",
-  "uniform vec3 uDeck; uniform float uMode; uniform sampler2D uTex;",  // uMode: 0 = Eigenfarbe (buff), 1 = Deckfarbe (tint)
+  "uniform vec3 uDeck; uniform sampler2D uTex;",  // #336: Glut immer Deckfarbe → uMode entfällt
   "const float I_=" + TUNE.intensity.toFixed(3) + ", TH=" + TUNE.threshold.toFixed(3) + ", BL=" + TUNE.bloom.toFixed(3) + ", FL=" + TUNE.flow.toFixed(3) + ", FS=" + TUNE.flowSpeed.toFixed(3) + ";",
+  "const float HLK=" + TUNE.hlk.toFixed(3) + ", FLAT=" + TUNE.flat.toFixed(3) + ", EDLO=" + TUNE.edLo.toFixed(3) + ", EDHI=" + TUNE.edHi.toFixed(3) + ";",
   "float luma(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }",
   "float sat(vec3 c){ float mx=max(c.r,max(c.g,c.b)); float mn=min(c.r,min(c.g,c.b)); return mx-mn; }",
   // „Farbstärke" einer Linie: Helligkeit gewichtet mit Sättigung (kräftige Neonlinien am stärksten)
@@ -41,25 +45,22 @@ const FRAG = [
   "  vec3 base = texture2D(uTex, cuv).rgb;",
   "  float Lc = luma(base);",
   "  vec2 texel = vec2(1.0/uRes.x, 1.0/uRes.y) * sc;",  // Nachbar-Offsets im Bildraum (cover-korrigiert)
-  // Ring-Sampling: Kanten-Mittel (avg), Halo-Stärke (scalar, für Deckfarbe) UND farbiges Halo in den EIGENEN
-  // Farbtönen der Nachbarn (haloCol) — Letzteres trägt die Linienfarbe ins Umfeld, ohne umzufärben.
-  "  float halo = 0.0, avg = 0.0; vec3 haloCol = vec3(0.0);",
+  // Ring-Sampling: Kanten-Mittel (avg) + Halo-Stärke (scalar) für die Glut im Konturen-Umfeld.
+  "  float halo = 0.0, avg = 0.0;",
   "  for(int i=0;i<16;i++){",
   "    float a = 6.2831853 * float(i)/16.0;",
   "    vec2 dir = vec2(cos(a), sin(a));",
   "    vec3 c1 = texture2D(uTex, cuv + dir*texel*2.5).rgb;",
   "    vec3 c2 = texture2D(uTex, cuv + dir*texel*5.5).rgb;",
-  "    float s1 = strength(c1), s2 = strength(c2);",
   "    avg += luma(c1);",
-  "    halo += s1*0.65 + s2*0.35;",
-  "    vec3 h1 = c1 / max(max(c1.r, max(c1.g, c1.b)), 0.08);",  // Nachbar-Farbton (voll gesättigt, Helligkeit raus)
-  "    vec3 h2 = c2 / max(max(c2.r, max(c2.g, c2.b)), 0.08);",
-  "    haloCol += h1*(s1*0.65) + h2*(s2*0.35);",
+  "    halo += strength(c1)*0.65 + strength(c2)*0.35;",
   "  }",
-  "  halo /= 16.0; avg /= 16.0; haloCol /= 16.0;",
-  // Linien-Maske w: helle Kante (High-Pass: heller als Umgebung) ODER kräftige gesättigte Fläche
-  "  float lineEdge = smoothstep(0.035, 0.22, Lc - avg);",
-  "  float w = clamp(max(strength(base)*0.85, lineEdge), 0.0, 1.0);",
+  "  halo /= 16.0; avg /= 16.0;",
+  // [C] Linien-Maske enger auf ECHTE Kanten: High-Pass (etwas höhere Schwelle EDLO/EDHI) ODER — schwächer gewichtet
+  //     (FLAT) — kräftige gesättigte Fläche. Auf detailreichen Decks feuerte die Fläche zu breit → große Bereiche
+  //     überstrahlt; FLAT<1 zieht das auf die Konturen zurück.
+  "  float lineEdge = smoothstep(EDLO, EDHI, Lc - avg);",
+  "  float w = clamp(max(strength(base)*FLAT, lineEdge), 0.0, 1.0);",
   "  float pulse = 0.82 + 0.18*sin(uTime*2.2);",
   // Lauflicht: zwei gegenläufige Wellen, zu scharfen Kämmen geformt, NUR auf den Linien (×w) → wandert an Konturen entlang
   "  float axis  = dot(vUv, normalize(vec2(1.0, 0.55)));",
@@ -67,25 +68,19 @@ const FRAG = [
   "  float wv  = 0.5 + 0.5*sin(axis*18.0  - uTime*FS);",
   "  float wv2 = 0.5 + 0.5*sin(axis2*11.0 - uTime*FS*0.6);",
   "  float band = pow(wv, 4.0)*0.75 + pow(wv2, 5.0)*0.45;",
-  // EIGENFARBE (Standard): WICHTIG — Farbe von Intensität trennen. Ausgegeben wird der GESÄTTIGTE Eigen-Farbton
-  // (Max-Kanal = 1, wird NIE über Weiß hinausgetrieben); die Intensität (Linie + Lauflicht + Halo) läuft übers
-  // ALPHA (premultiplied). So macht das Lauflicht die Farbe PRÄSENTER, nicht weißer. Weiß entsteht nur, wenn die
-  // Linie im Bild selbst (nahezu) weiß ist → dann ist der Eigen-Farbton eben weiß.
-  "  float mxc = max(base.r, max(base.g, base.b));",
-  "  vec3 coreHue = base / max(mxc, 0.08);",                                  // Eigen-Farbton, voll gesättigt
-  "  float coreI = w*(I_*0.45) + w*band*(FL*2.0);",                           // Kern-Intensität (Linie + Lauflicht)
-  "  float haloI = max(haloCol.r, max(haloCol.g, haloCol.b));",
-  "  vec3 haloHue = haloCol / max(haloI, 0.001);",                            // Halo-Farbton (Eigenfarben der Nachbarn)
-  "  haloI *= BL*1.6;",
-  "  vec3 selfCol = (coreHue*coreI + haloHue*haloI) / max(coreI + haloI, 0.001);",  // gemischter Eigen-Farbton (bleibt gesättigt)
-  "  float selfA = coreI + haloI;",                                           // Gesamt-Intensität → Alpha
-  // DECKFARBE (Opt-in): fester Deck-Farbton, Intensität ebenfalls übers Alpha (bewusstes Umfärben).
-  "  vec3 deckCol = uDeck;",
-  "  float deckA = w*(I_*0.5) + halo*BL + w*band*(FL*2.4);",
-  "  vec3 col = mix(selfCol, deckCol, uMode);",
-  "  float amt = mix(selfA, deckA, uMode) * pulse * (1.0 - 0.3*Lc);",
+  // [B] Deckfarbe „mehr rausbringen ohne Überbelichten": den Deck-Farbton VOLL SÄTTIGEN (Max-Kanal = 1). Die Glut
+  //     kompositet als premultiplied-OVER über dem Bild — mit einem hellen uDeck läuft das bei hohem Alpha auf helle,
+  //     entsättigte Flächen (=„überbelichtet"). Der gesättigte Farbton zeigt bei jedem Alpha die satte Deckfarbe.
+  //     Farbe von Intensität getrennt: die Farbe bleibt satt, die Intensität (Linie + Lauflicht + Halo) läuft übers ALPHA.
+  "  float dmx = max(uDeck.r, max(uDeck.g, uDeck.b));",
+  "  vec3 deckCol = uDeck / max(dmx, 0.08);",                                 // gesättigter Deck-Farbton (Helligkeit raus)
+  "  float amtRaw = w*(I_*0.5) + halo*BL + w*band*(FL*2.4);",                 // Linie + Halo + Lauflicht → Roh-Intensität
+  // [A] Highlight-Rolloff: wo das Bild schon hell ist (Laternen, Rim-Light), die Glut gezielt zurücknehmen. Lc² →
+  //     nur echte Highlights stark gedämpft (Mitten/Dunkel bleiben voll) → Bilddetails brennen nicht mehr aus.
+  "  float hi = 1.0 - HLK*Lc*Lc;",
+  "  float amt = amtRaw * pulse * hi;",
   "  float alpha = clamp(amt, 0.0, 1.0) * uMix;",
-  "  gl_FragColor = vec4(col * alpha, alpha);",                              // premultiplied: gesättigte Farbe, Alpha = Intensität  // PREMULTIPLIED → korrektes Kompositing auch auf iOS-Safari
+  "  gl_FragColor = vec4(deckCol * alpha, alpha);",                          // premultiplied: satte Deckfarbe, Alpha = Intensität // korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
 
@@ -145,7 +140,6 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
     const uMix = gl.getUniformLocation(prog, "uMix");
     const uImgAspect = gl.getUniformLocation(prog, "uImgAspect");
     const uDeck = gl.getUniformLocation(prog, "uDeck");
-    const uMode = gl.getUniformLocation(prog, "uMode");
     const uTex = gl.getUniformLocation(prog, "uTex");
 
     const tex = gl.createTexture();
@@ -207,7 +201,6 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
       gl.uniform1f(uMix, mix);
       gl.uniform1f(uImgAspect, imgAspect);
       gl.uniform3f(uDeck, c[0], c[1], c[2]);
-      gl.uniform1f(uMode, 1.0); // #336: immer Deckfarbe (Tint)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
