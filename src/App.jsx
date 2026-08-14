@@ -56,6 +56,10 @@ import { multTierColor, multTierLevel } from "./ui/multTier.js";
 // Faktor 0,6 = ~40 % leiser (tunebar); 1 = volle Lautstärke im aktiven Stichspiel.
 const MUSIC_DUCK = 0.6;
 
+// #351: harter Boden für den Auto-Play-Takt — selbst bei sehr hoher dynamischer Rundengeschwindigkeit (viele Siege ×
+//   MAX-Turbo) nie unter dieses Delay, und ein endlicher Fallback gegen NaN/Infinity. Verhindert 0-ms-Runaway/Nie-Feuern.
+const MIN_FLIP_MS = 60;
+
 /* #perf B1: Selten geöffnete, schwere Screens (Menü/Settings/Architekt) werden per code-split lazy geladen — das
    verkleinert den initialen JS-Chunk (schnellere Parse/Eval-Zeit, v. a. auf Mobile). WICHTIG für Desktop-Parität:
    (1) die häufigen Gameplay-Overlays im Stich-Takt (Perk/Skill/Formation/Target/…) bleiben EAGER — kein Fallback-
@@ -189,13 +193,17 @@ export function Autostich() {
   // Dynamische Rundengeschwindigkeit (#95): jeder Durchlauf startet bei +0 % und beschleunigt
   // +2 % je in DIESEM Durchlauf gewonnenem Stich → sichtbare Eskalation zum Rundenende, Reset je Durchlauf.
   // Rein Anzeige/Ablauf (score-neutral wie der Turbo). cycleWins = Siege seit Durchlauf-Beginn.
-  const cycleStartWins = useRef(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  useEffect(() => { cycleStartWins.current = state.wins || 0; }, [state.cycle]);
-  const cycleWins = Math.max(0, (state.wins || 0) - cycleStartWins.current);
+  // #351: Basis-Wins des aktuellen Durchlaufs SYNCHRON beim ersten Render mitführen (nicht erst im [state.cycle]-Effekt) —
+  //   sonst ist cycleWins beim Durchlauf-/Run-Start einen Render lang stale → die erste flipMs-Berechnung kurz verfälscht.
+  const cycleWinBase = useRef({ cycle: state.cycle, wins: state.wins || 0 });
+  if (cycleWinBase.current.cycle !== state.cycle) cycleWinBase.current = { cycle: state.cycle, wins: state.wins || 0 };
+  const cycleWins = Math.max(0, (state.wins || 0) - cycleWinBase.current.wins);
   const dynamicSpeed = 1 + 0.02 * cycleWins;
   // Effektive Flip-Zeit: Basis / (Turbo intern 1×/2×/4×/5× — Buttons X2/X4/MAX — × dynamische Rundengeschwindigkeit).
-  const flipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
+  // #351: immer ENDLICH & > 0 halten (gegen NaN/0/Infinity aus transient invaliden Faktoren) — sonst würde der
+  //   Auto-Play-setTimeout mit NaN/Infinity nie bzw. sofort feuern → Hänger „vor dem ersten Stich".
+  const rawFlipMs = BASE_FLIP_MS / (speedMult * dynamicSpeed);
+  const flipMs = Number.isFinite(rawFlipMs) && rawFlipMs > 0 ? rawFlipMs : BASE_FLIP_MS;
   // #188 v2: Hit-Stop/Slow-Mo nach großen Krit-Siegen auf Wunsch ENTFERNT → der nächste Stich läuft immer im
   // normalen Takt (flipMs), keine Verzögerung mehr.
   const hitStopMs = 0;
@@ -343,12 +351,34 @@ export function Autostich() {
   useEffect(() => {
     if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
-    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), flipMs + hitStopMs);
+    // #351: Delay hart auf ein endliches Minimum clampen (nie 0/NaN/Infinity → setTimeout feuert zuverlässig).
+    const delay = Math.max(MIN_FLIP_MS, Number.isFinite(flipMs + hitStopMs) ? flipMs + hitStopMs : BASE_FLIP_MS);
+    const id = setTimeout(() => dispatch({ type: "RESOLVE_TRICK", rng: Math.random }), delay);
     return () => clearTimeout(id);
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
   }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
+
+  // #351 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/Pause,
+  //   sichtbar), bewegt sich trickNo aber > STUCK_MS nicht, den Guard-Zustand EINMAL loggen (Diagnose) und EINEN
+  //   RESOLVE_TRICK anstoßen (self-heal). Greift nur, wenn ALLE Auto-Play-Guards frei sind → derselbe Fall, in dem der
+  //   normale Takt längst hätte feuern müssen; im Normalbetrieb (trickNo alle ≤ flipMs) triggert es nie (STUCK_MS ≫ flipMs).
+  const lastTrickAt = useRef(0);
+  const stuckNudged = useRef(false);
+  useEffect(() => { lastTrickAt.current = Date.now(); stuckNudged.current = false; }, [state.trickNo, state.phase]);
+  useEffect(() => {
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return;
+    const STUCK_MS = 3000;
+    const id = setInterval(() => {
+      if (stuckNudged.current || Date.now() - lastTrickAt.current < STUCK_MS) return;
+      stuckNudged.current = true;
+      console.warn("[watchdog #351] Lauf hängt vor dem nächsten Stich — self-heal RESOLVE_TRICK.",
+        { paused, visible, confirmAbort, confirmRestart, showOptions, showChronik, glossaryOpen, flipMs, speedMult });
+      dispatch({ type: "RESOLVE_TRICK", rng: Math.random });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -552,6 +582,12 @@ export function Autostich() {
     // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
     segStart.current = Date.now();
     setPaused(false);
+    // #351: Run-Start-Guards sauber zurücksetzen, BEVOR der erste phase:"play"-Render kommt (im selben Batch wie START_RUN):
+    //   - Turbo auf 1× (ein neuer Lauf erbte sonst den MAX-Turbo des vorigen — und nahm ihn als Hänger-Variable mit).
+    //   - offene Abbruch-/Neustart-Rückfragen zu, sonst friert der Auto-Play-Guard den frischen Lauf ein.
+    setSpeedMult(1);
+    setConfirmAbort(false);
+    setConfirmRestart(false);
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
