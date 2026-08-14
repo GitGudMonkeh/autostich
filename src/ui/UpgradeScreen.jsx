@@ -33,6 +33,15 @@ const GEN_LANES = [
 const nodeAccent = (n, laneAccent) =>
   n.maxTier ? tierColor(n.maxTier) : n.legLayer ? GOLD : (n.arch ? FACTION_GLOW[n.arch] : laneAccent);
 
+// Gruppen-Panel in der Gruppen-/Archetyp-Farbe rahmen — statt neutralem Grau. Dünner farbiger Rahmen +
+// zarter Tint-Gradient (oben ~7 % Farbe → dunkler Grund) + weicher Außen-Glow → jede Gruppe ist auf einen
+// Blick ihrer Farbe zuzuordnen (Feuer/Eis/Blitz/Pflanze bzw. Cyan/Violett bei Allgemein), ohne laut zu werden.
+const panelStyle = (c) => ({
+  background: `linear-gradient(180deg, ${c}12, #141419 62%)`,
+  border: `1px solid ${c}66`,
+  boxShadow: `0 0 22px -16px ${c}`,
+});
+
 // Innerer Inhalt einer Pille (Titel + Marke) — zentriert, damit gleich breite Pillen sauber in Spalten sitzen.
 function PillBody({ label, mark, titleColor, markColor }) {
   return (
@@ -147,7 +156,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               const hasDeckNode = chain.some((n) => n.deckUnlock);
               const lead = hasDeckNode ? null : { label: "Deck", color: accent }; // Feuer/Blitz: Deck von Beginn an frei
               return (
-                <div key={arch} className="rounded-2xl p-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div key={arch} className="rounded-2xl p-3" style={panelStyle(accent)}>
                   <button onClick={() => setDetailArch(arch)}
                     className="flex items-center gap-2 w-full text-left mb-2.5 group" title={`${meta?.label}: Details`}>
                     <FactionIcon type={arch} size={20} />
@@ -159,7 +168,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               );
             })}
             {/* Extras: Deck-Reroll + Platzhalter. */}
-            <div className="rounded-2xl p-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+            <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
               <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>Legendär-Phase</div>
               <Lane nodes={[NODE_BY_ID.deckReroll, NODE_BY_ID.synLeg]} p={p} laneAccent={VI} onBuy={buy} />
             </div>
@@ -170,7 +179,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         {tab === "gen" && (
           <div className="mt-4 grid gap-2.5">
             {GEN_LANES.map((lane) => (
-              <div key={lane.name} className="rounded-2xl p-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+              <div key={lane.name} className="rounded-2xl p-3" style={panelStyle(lane.accent)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
                   <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{lane.name}</span>
                   {lane.note && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{lane.note}</span>}
