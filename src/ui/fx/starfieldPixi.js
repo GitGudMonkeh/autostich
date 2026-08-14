@@ -42,13 +42,13 @@ const TUNE = {
   NEBULA: 1.95,
   // Schnuppe
   SHOOT_DUR: 1,
-  HEAD_SIZE: 2.5,
+  HEAD_SIZE: 3.2,      // #meteor: dickerer Feuerball-Kopf (war 2.5) → Meteor statt zarter Sternschnuppe
   HEAD_TINT: 0.61,
-  HEAD_BOOST: 1.35,
+  HEAD_BOOST: 1.7,     // #meteor: hellerer, glühender Kopf (war 1.35)
   TRAIL_LEN: 206,
   TRAIL_SAMPLES: 96,
-  TAIL_WIDTH: 1.05,
-  TAPER: 0.56,
+  TAIL_WIDTH: 1.22,    // #meteor: breiterer Brennschweif am Kopf (war 1.05)
+  TAPER: 0.66,         // #meteor: stärkere Verjüngung zum Schweifende (war 0.56) → fetter Kopf, dünner Auslauf
   TAIL_FADE: 1,
   TRAIL_ALPHA: 0.83,
   TRAIL_FLICK: 0,
@@ -147,7 +147,7 @@ export function createStarfield(app) {
   const nebulaC = new Container();
   const ambPC   = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); ambPC.blendMode = "add";
   const trailPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); trailPC.blendMode = "add";
-  const sparkPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); sparkPC.blendMode = "add";
+  const sparkPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: true, uvs: false } }); sparkPC.blendMode = "add"; // #meteor: rotation dynamisch → Funken als Motion-Streak entlang der Flugrichtung dehnbar (Verschweif)
   const flashC  = new Container();
   app.stage.addChild(nebulaC, ambPC, trailPC, sparkPC, flashC);
 
@@ -345,7 +345,14 @@ export function createStarfield(app) {
       const lifeF = 1 - s.age / s.life;
       const foot = s.sz * sc * K_SPARK * (0.6 + 0.4 * lifeF);
       const flick = 0.8 + 0.2 * Math.sin(clock * 34 + s.seed);
-      const p = s.p; p.x = s.x; p.y = s.y; p.scaleX = p.scaleY = foot / TX; p.tint = s.tint; p.alpha = clamp(lifeF * flick, 0, 1);
+      const p = s.p; p.x = s.x; p.y = s.y; p.tint = s.tint; p.alpha = clamp(lifeF * flick, 0, 1);
+      // #meteor: Verschweif — die wegfliegende Funke entlang ihrer Flugrichtung dehnen (Motion-Streak). Länger je schneller;
+      //   klingt beim Abbremsen/Ausleben auf rund aus. Radial-Textur → gestreckt ergibt ein weiches, verjüngtes Schweifchen.
+      const speed = Math.hypot(s.vx, s.vy);
+      const stretch = clamp(1 + speed * 0.006, 1, 3.6);
+      const base = foot / TX;
+      p.rotation = Math.atan2(s.vy, s.vx);
+      p.scaleX = base * stretch; p.scaleY = base * 0.9;
     }
 
     // Blitz (Impact): expandiert + fadet.
