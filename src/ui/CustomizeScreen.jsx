@@ -609,7 +609,7 @@ function SpezialScene({ deckTint = false }) {
         ))}
       </div>
       {/* Hitze = FireHead (Panel-Overlay über der ersten Karte); Flammen loder nach oben in den Freiraum über den Karten. */}
-      <Suspense fallback={null}><FireHead heat={1} panelRef={panelRef} cardRef={fireCardRef} deckTint={deckTint} deckColor={DC} deckColor2={DC2} /></Suspense>
+      <Suspense fallback={null}><FireHead heat={1} panelRef={panelRef} cardRef={fireCardRef} deckTint={deckTint} deckColor={DC} deckColor2={DC2} lite /></Suspense>
     </div>
   );
 }

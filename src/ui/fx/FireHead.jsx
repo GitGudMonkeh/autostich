@@ -71,7 +71,7 @@ function makeVGrad() {
   return Texture.from(c);
 }
 
-export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckColor = null, deckColor2 = null }) {
+export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckColor = null, deckColor2 = null, lite = false }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const applyRunRef = useRef(null);
@@ -86,6 +86,13 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
     const host = hostRef.current;
     if (!host) return undefined;
     let disposed = false;
+    // #partikel-perf: Partikelzahl (Pool-Alloc beim Mount + Draw je Frame) auf Mobile (pointer:coarse) UND im Showcase
+    //   (lite-Prop) reduzieren → geringerer Mount-Ruckler + glattere Frames. Emission wird mitskaliert, damit der
+    //   kleinere Pool nicht überläuft (sonst würde grabFlame lebende Flammen früh recyceln). Desktop in-game = voll (1.0).
+    const coarse = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : false;
+    const pmul = (lite || coarse) ? 0.5 : 1;
+    const maxFlames = Math.max(80, Math.round(MAX * pmul));
+    const smokeMax = Math.max(8, Math.round(SMOKE_N * pmul));
     const canvas = document.createElement("canvas");
     const app = new Application();
 
@@ -95,8 +102,8 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
     const baseSpr = [];      // Sprites der Brennlinie
     let fHead = 0, sHead = 0, acc = 0, sAcc = 0, clock = 0;
 
-    const grabFlame = () => { const s = flames[fHead]; fHead = (fHead + 1) % MAX; s.alive = true; return s; };
-    const grabSmoke = () => { const s = smoke[sHead]; sHead = (sHead + 1) % SMOKE_N; s.alive = true; return s; };
+    const grabFlame = () => { const s = flames[fHead]; fHead = (fHead + 1) % maxFlames; s.alive = true; return s; };
+    const grabSmoke = () => { const s = smoke[sHead]; sHead = (sHead + 1) % smokeMax; s.alive = true; return s; };
 
     const hideAll = () => {
       if (glow) glow.alpha = 0;
@@ -145,7 +152,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
       }
 
       // ── Flammen spawnen + updaten (nach oben lodernd, über dem Rahmen) ──
-      acc += C.FLAME_RATE * fscale * (dt / 1000);
+      acc += C.FLAME_RATE * fscale * pmul * (dt / 1000);
       while (acc >= 1) {
         acc -= 1; const s = grabFlame();
         s.x0 = ox + margin + Math.random() * width; s.y0 = oy + 3; s.born = clock;
@@ -153,7 +160,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
         s.spd = C.FLAME_RISE * fscale * (0.7 + 0.6 * Math.random()) * C.FLAME_H;   // #showcase: Steig-Tempo kartengrößen-relativ (kleine Karte → langsamer, wie in-game)
         s.sz = C.FLAME_SIZE * fscale * (0.55 + 0.7 * Math.random()); s.sway = C.FLAME_SWAY; s.lean = C.FLAME_LEAN; s.seed = Math.random() * 6.283;
       }
-      for (let i = 0; i < MAX; i++) {
+      for (let i = 0; i < maxFlames; i++) {
         const s = flames[i]; if (!s.alive) continue;
         const age = clock - s.born;
         if (age >= s.life) { s.alive = false; s.p.alpha = 0; continue; }
@@ -173,7 +180,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
 
       // ── Rauch (über den Flammen) ──
       if (C.SMOKE > 0.01) {
-        sAcc += 11 * C.SMOKE * (dt / 1000);
+        sAcc += 11 * C.SMOKE * pmul * (dt / 1000);
         while (sAcc >= 1) {
           sAcc -= 1; const s = grabSmoke();
           s.x0 = ox + CW * (0.2 + 0.6 * Math.random()); s.y0 = oy - 6; s.born = clock;
@@ -181,7 +188,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
           s.drift = (Math.random() - 0.5) * 20; s.seed = Math.random() * 6.28;
         }
       }
-      for (let i = 0; i < SMOKE_N; i++) {
+      for (let i = 0; i < smokeMax; i++) {
         const s = smoke[i]; if (!s.alive) continue;
         const age = clock - s.born;
         if (age >= s.life) { s.alive = false; s.s.alpha = 0; continue; }
@@ -212,9 +219,9 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
       for (let i = 0; i < BASE_N; i++) { const s = new Sprite(glowTex); s.anchor.set(0.5); s.alpha = 0; s.blendMode = "add"; baseC.addChild(s); baseSpr.push(s); }
       flamePC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } });
       flamePC.blendMode = "add"; app.stage.addChild(flamePC);
-      for (let i = 0; i < MAX; i++) { const p = new Particle({ texture: flameTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); flamePC.addParticle(p); flames.push({ p, alive: false }); }
+      for (let i = 0; i < maxFlames; i++) { const p = new Particle({ texture: flameTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); flamePC.addParticle(p); flames.push({ p, alive: false }); }
       smokeC = new Container(); app.stage.addChild(smokeC);
-      for (let i = 0; i < SMOKE_N; i++) { const s = new Sprite(glowTex); s.anchor.set(0.5); s.alpha = 0; s.tint = 0x282220; smokeC.addChild(s); smoke.push({ s, alive: false }); }
+      for (let i = 0; i < smokeMax; i++) { const s = new Sprite(glowTex); s.anchor.set(0.5); s.alpha = 0; s.tint = 0x282220; smokeC.addChild(s); smoke.push({ s, alive: false }); }
 
       app.ticker.add(update);
       applyRun();
