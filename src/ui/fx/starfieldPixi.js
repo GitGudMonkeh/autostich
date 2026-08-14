@@ -6,7 +6,7 @@ import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; 
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
      1) ein DICHTES Parallax-Ambiente über 3 Tiefen-Ebenen (fern klein/dunkel/viele → nah groß/hell/wenige) mit
         eigenem Drift + Twinkle je Ebene und einem dezenten, additiven Nebel-Backdrop,
-     2) eine Sternschnuppe je Stich, deren Größe stufenweise mit dem Hit-Tier eskaliert (TIER_SIZE),
+     2) eine Sternschnuppe je GEWONNENEM Stich (#357-Folge: bei Niederlage kein Komet), Größe stufenweise mit dem Hit-Tier (TIER_SIZE),
      3) einen Impact (Blitz + Funken-Burst) am Kopf — NUR ab Tier ≥ 1 (TIER_IMP[0] = 0 → „Schwach" bleibt impact-frei),
      4) einen Deck-Dual: Standard (Weiß-Blau-Sternenlicht) vs. Deck (getönter Kopf + Deck→deck2-Schweif).
 
@@ -236,9 +236,8 @@ export function createStarfield(app) {
 
   // ── Schnuppe je Stich ──────────────────────────────────────────────────────
   function erupt({ sweepId, win, tier = 0 }) {
-    // Feuert je Stich (Sieg UND Niederlage) — bei Niederlage tier = 0 → kleine Basis-Schnuppe ohne Impact.
-    if (params.effect !== "starfield" || params.reduced || !(sweepId > 0)) return;
-    void win;
+    // #357-Folge: Komet feuert NUR bei einem GEWONNENEN Stich (Niederlage → kein Komet). Der Showcase ruft mit win=true.
+    if (params.effect !== "starfield" || params.reduced || !win || !(sweepId > 0)) return;
     const t = clamp(tier | 0, 0, 4);
     // #317-artig: ZUFÄLLIGER Einschlagpunkt auf einer perspektivischen Fläche (Trapez): d=0 fern (hinten, hoch, schmal,
     // klein) .. d=1 nah (vorn, tief, breit, groß). Kopf/Schweif/Impact skalieren mit der Tiefe → 3D-Streuung übers Feld.
