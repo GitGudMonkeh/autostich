@@ -728,3 +728,11 @@ button { font-family: inherit; }
 :root[data-reduced-fx="1"][data-skin="crt"] .crt-title {
   animation: none !important;
 }
+/* AUSNAHME (auf Wunsch): die WENIGEN In-Run-Identitäts-Panels (Deckfarbe `as-panel-deck`, Fraktionsfarbe
+   `as-panel-fac`) behalten ihren leicht wandernden Rahmen-Verlauf AUCH auf Mobile/reduced-fx — höhere Spezifität
+   (2 Panel-Klassen) sticht die Freeze-Regel oben. Menü-/Indikator-Panels (nur `.as-panel`) bleiben eingefroren, der
+   große Perf-Anteil des Dauer-Sweeps bleibt also gespart; nur diese paar Spielfeld-Rahmen animieren wieder. */
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-deck,
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-fac {
+  animation: as-panel-sweep 7s linear infinite !important;
+}

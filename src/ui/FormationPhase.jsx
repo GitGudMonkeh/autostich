@@ -133,7 +133,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
-        <div className="relative w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel"
+        <div className="relative w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
           style={phaseCard(PHASE_ACCENTS.green)}>
         <PhaseHairline />
         {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}

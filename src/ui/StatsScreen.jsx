@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
+import { MODAL_CARD, MENU_PANEL, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
 import { factionShares } from "./RunGraphs.jsx"; // Stats-Redesign: dieselbe Fraktions-Score-Herkunft wie im Victory-Screen
@@ -31,7 +31,7 @@ const pct = (x) => `${Math.round((x || 0) * 100)}%`;
 // `className` erlaubt Spalten-Spans (mobil bekommen die Score-Kacheln eine ganze halbe Reihe, damit „Mio." nicht abgeschnitten wird).
 function Kpi({ label, value, color, title, className = "" }) {
   return (
-    <div title={title} className={`rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={{ background: "#141419", border: "1px solid #26262e" }}>
+    <div title={title} className={`rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={MENU_PANEL}>
       <div className="opacity-50 text-[11px] truncate">{label}</div>
       <div className="font-bold text-lg tabular-nums whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
     </div>
@@ -103,7 +103,7 @@ function BarRow({ label, color, frac, right }) {
 // rechts. So bleibt es auch auf schmalen Screens sauber lesbar (statt Tag/Text/Wert in einer engen Zeile zu quetschen).
 function WinRow({ tag, children, val }) {
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#141419", border: "1px solid #26262e" }}>
+    <div className="rounded-lg px-3 py-2 text-xs" style={MENU_PANEL}>
       <div className="text-[10px] font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{children}</span>
@@ -170,7 +170,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 <Kpi className="col-span-2 sm:col-span-1" label="Spiele" value={games} />
                 <Kpi className="col-span-2 sm:col-span-1" label="Beste Serie" value={`${profile.bestStreak || 0}×`} />
               </div>
-              <div className="mt-3 rounded-lg px-3 py-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
+              <div className="mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
                 <div className="text-[11px] opacity-50 mb-1">Score-Verlauf · letzte {trend.length} Läufe</div>
                 <Sparkline current={trend} record={[]} height={70} />
               </div>
@@ -181,7 +181,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
               <Section title="Bestes Build" hint="Rekord-Lauf · Details ansehen ›">
                 <button onClick={() => setDetail({ entry: best, rank: 1 })} title="Details anzeigen"
                   className="w-full text-left rounded-xl px-4 py-4 transition-all hover:brightness-125"
-                  style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+                  style={MENU_PANEL}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-3xl font-bold tabular-nums leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
@@ -227,14 +227,14 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Am häufigsten — was du wählst: Skills + Perks nebeneinander, darunter Archetyp-Nutzung (ersetzt „Analyse"). */}
             <Section title="Am häufigsten" hint="über deine Historie">
               <div className="grid sm:grid-cols-2 gap-3">
-                <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div className="rounded-lg px-3 py-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">Meistgewählte Skills</div>
                   <div className="grid gap-2.5">
                     {skillRates.length === 0 ? <span className="text-xs opacity-40">Noch keine Skills gespielt.</span> :
                       skillRates.map((s) => <BarRow key={s.id} label={skillLabel(s.id)} color={skillColor(s.id)} frac={s.rate} right={pct(s.rate)} />)}
                   </div>
                 </div>
-                <div className="rounded-lg px-3 py-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div className="rounded-lg px-3 py-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">Meistgewählte Perks</div>
                   <div className="grid gap-2.5">
                     {perkRates.length === 0 ? <span className="text-xs opacity-40">–</span> :
@@ -243,7 +243,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 </div>
               </div>
               {archUse.length > 0 && (
-                <div className="rounded-lg px-3 py-3 mt-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div className="rounded-lg px-3 py-3 mt-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">Archetyp-Nutzung</div>
                   <div className="grid gap-2.5">
                     {archUse.map((a) => (
@@ -258,7 +258,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Was am besten läuft — die belastbaren Insights als kompakte Highlight-Zeilen (ersetzt „Optimale Analyse"). */}
             <Section title="Was am besten läuft" hint={`ab ${MIN_SAMPLE} Läufen`}>
               {!enough ? (
-                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
                   Zu wenige Läufe für belastbare Aussagen ({history.length}/{MIN_SAMPLE}). Spiel noch ein paar Runs.
                 </div>
               ) : (bestArch[0] || skillLift[0] || perkLift[0]) ? (
@@ -283,7 +283,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={{ background: "#141419", border: "1px solid #26262e" }}>
+                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
                   Noch keine klaren Muster — deine Wahl variiert (noch) zu stark für belastbare Lift-Aussagen.
                 </div>
               )}

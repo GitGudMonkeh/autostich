@@ -571,7 +571,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
-      <div ref={scrollerRef} className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
+      <div ref={scrollerRef} className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card"
         style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5" }}>
         <PhaseHairline />
 
@@ -606,7 +606,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
+        <div className="grid gap-4 mt-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
           <section ref={boardSectionRef} className="rounded-xl p-3 order-2 md:order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
             {/* #UI: Farbauswahl (colorLocked-Gebäude: Buntglas/Zunfthaus) sitzt jetzt DIREKT über dem Brett — zwischen der

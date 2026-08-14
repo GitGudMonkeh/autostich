@@ -9,6 +9,16 @@ export const MODAL_CARD = {
   border: "1px solid #2c2a3a",
 };
 
+// Neutrales Menü-Panel im neuen Design (Stats/Analyse/Listen-Kacheln etc.): dezenter Verlauf (leiser Violett-Hauch
+// oben → dunkler Grund) + weicher violett-tendierter Rahmen + ganz leiser Glow. Ersetzt die flachen #141419/#26262e-
+// Kästen, damit die Menü-Panels einheitlich zur gerahmten Bildsprache der übrigen Screens passen. Nur Optik, neutral
+// (keine eigene Akzentfarbe) → überall gleich einsetzbar.
+export const MENU_PANEL = {
+  background: "linear-gradient(180deg, rgba(155,130,240,.045), #141320 70%)",
+  border: "1px solid #302d40",
+  boxShadow: "0 0 20px -16px rgba(155,130,240,.8)",
+};
+
 export const HAIRLINE = { background: "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)", opacity: 0.85 };
 
 // Die 3px-Gradient-Haarlinie als eigenes, nicht-scrollendes Element (als erstes Kind der Karte platzieren).
