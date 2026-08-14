@@ -701,15 +701,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const fxLevel = useFxLevel(reducedFx);
   const reduced = fxLevel === "minimal";
   const lite    = fxLevel !== "full";
-  // Pixi-Umbau: Übernimmt der GPU-Emitter das aktive Feld-Ambiente? Nur im Preview/Dev (env-Gate), wenn der aktive
-  // Feld-Effekt portiert ist (PIXI_FIELD), eine Deckfarbe existiert und der A/B-Umschalter auf „pixi" steht. Wenn ja,
-  // rendert die DOM-Fassung (FieldFxLayer) für diesen Effekt keine Nodes (suppressField) → er zieht komplett auf die GPU.
+  // Pixi-Umbau A/B-Umschalter: NUR im Preview/Dev (env-Gate) + „pixi"-Schalter — nur noch für Aurora relevant (die als
+  // EINZIGE eine DOM-Fassung in FieldFxLayer hat, gegen die man A/B messen kann). Wenn aktiv, rendert die DOM-Fassung
+  // keine Aurora-Nodes (suppressField) → sie zieht komplett auf die WebGL-Canvas.
   const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
-  const pixiFin = pixiEnabled && PIXI_FIELD.has(bgFinisher);  // BG-Finisher (z. B. Glutfunken) läuft auf der GPU-Bühne (Pixi)
-  const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi)
-  const deckGlowOn = pixiEnabled && deckGlow && !!battlefield; // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar, Gate wie Aurora)
-  // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv), Gate wie Aurora (Preview/Dev; Produktion lädt sie nicht).
-  const cubeMatrixOn = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && bgFx === "cubematrix" && !!deckA1;
+  const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi) — bleibt Preview/Dev (hat DOM-Fallback)
+  // #346 Prod-Renderpfad: Komet/Sternenfeld (Pixi), Leuchten & Würfel-Matrix (WebGL/Canvas) laufen — wie neonsurf — bewusst
+  // AUCH in echter Produktion. Grund: für diese drei gibt es KEINE DOM-Fassung mehr (FieldFxLayer kennt nur „aurora") →
+  // sonst wäre der gekaufte Effekt auf der Hauptseite kaufbar-aber-unsichtbar. Opt-in (nur wenn gewählt) + intern
+  // gedrosselt; die Pixi/Canvas-Komponenten sind lazy → laden erst, wenn der Effekt tatsächlich aktiv ist.
+  const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
+  const deckGlowOn = deckGlow && !!battlefield && !!deckA1;    // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar)
+  const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
   // #345 Neon-Brandung: eigene WebGL-Canvas (rohes WebGL1, mobil-sicher). ANDERS als Aurora bewusst AUCH in Produktion,
   // weil es keine DOM-Fassung gibt (FieldFxLayer kennt nur „aurora") → sonst wäre der gekaufte Effekt im Spiel unsichtbar.
   // Opt-in (nur wenn als bgFx gewählt) + intern coarse-DPR/30fps/fbm-Oktaven-gedrosselt. Lawine/Ansagen treiben den Puls.
@@ -1266,9 +1269,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Sieg-/Krit-Schein liegt weiter über outerGlow — die Farbe kommt vom Spielausgang, nicht vom Skin. */}
       <PhaseHairline />
       {/* Pixi-Umbau: GPU-Bühne als z-2-Overlay (über BF-Bild z-0 + Ambiente z-1, unter Karten z-10). Transparent +
-          pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (embers),
-          sobald der Effekt portiert ist (PIXI_FIELD) UND der A/B-Umschalter auf „pixi" steht. Der Ticker pausiert im
-          Hintergrund-Tab. Nur Preview/Test- oder Dev-Build — Produktion bleibt identisch (Pixi wird dort nie geladen). */}
+          pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (Komet/Sternenfeld),
+          sobald der Effekt portiert ist (PIXI_FIELD). Der Ticker pausiert im Hintergrund-Tab. #346: läuft auch in
+          Produktion — Pixi lädt aber lazy und NUR, wenn der Spieler den Effekt tatsächlich aktiviert hat. */}
       {/* Hintergrund-Effekt (reiner BG) — Aurora als eigene WebGL-Canvas, z-2 HINTER dem Finisher. */}
       {auroraGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
@@ -1297,9 +1300,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         </>
       )}
-      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && (
+      {(import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV || pixiFin) && (
         <Suspense fallback={null}>
-          {/* Hintergrund-Finisher (reagiert je Stich) — Pixi, z-3 VOR dem BG-Effekt */}
+          {/* Hintergrund-Finisher (reagiert je Stich) — Pixi, z-3 VOR dem BG-Effekt. #346: mountet in Produktion NUR,
+              wenn pixiFin aktiv ist (Komet/Sternenfeld gewählt) → Pixi lädt dann lazy; ohne aktiven Effekt bleibt es aus. */}
           <PixiStage className="z-[3]"
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}

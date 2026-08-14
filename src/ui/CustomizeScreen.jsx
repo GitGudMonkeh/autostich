@@ -536,7 +536,7 @@ function CubeMatrixPreview({ deckTint = false, wire = false }) {
   const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
-  const on = import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV;
+  const on = true; // #346: Würfel-Matrix läuft jetzt auch in Produktion → Showcase muss den Effekt überall zeigen (lazy CubeMatrixField)
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -709,8 +709,8 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const [sweep, setSweep] = useState(1);
   const [tierStep, setTierStep] = useState(0);
   const tierRef = useRef(0); // #komet: spiegelt tierStep (der setTierStep-Updater darf keinen Sound spielen → StrictMode ruft ihn doppelt)
-  const pixiField = EMBER_PIXI_PREVIEW && PIXI_FIELD_KEYS.includes(effect); // Sternenfeld/Komet → Pixi-Bühne im Showcase
-  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas
+  const pixiField = PIXI_FIELD_KEYS.includes(effect); // #346: Sternenfeld/Komet → Pixi-Bühne im Showcase, AUCH in Prod (lazy PixiStage) — spiegelt den In-Game-Renderpfad
+  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas (bleibt Preview/Dev; in Prod DOM-Fallback via FieldFxLayer)
   const neonsurfGL = effect === "neonsurf";                                // #345 Neon-Brandung → eigene WebGL-Canvas (auch in Prod, kein Pixi-Gate)
   useEffect(() => {
     if (effect === "none") return undefined;
