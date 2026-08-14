@@ -75,6 +75,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const startRef = useRef(null);
+  const recolorRef = useRef(null); // #359: Live-Umfärben der Kachel-Rahmen bei Farbmodus-Wechsel (kein Remount → build() läuft nicht neu)
   const firstRef = useRef(true);
   const imgRef = useRef(null);
   const p = useRef({ frontImage, value, suit, deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
@@ -140,7 +141,8 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
         cont.position.set(homeX, homeY);
         const fill = new Sprite(tex); fill.anchor.set(0.5); fill.width = tw + 0.6; fill.height = th + 0.6;   // 0.6px Overlap → keine Naht-Ritzen vor Reveal
         // Rahmen (Hologrid): Rechteck-Kontur in Deckfarbe, lokal um die Kachelmitte. Alpha animiert (Reveal → Wire → Fade).
-        const holo = holoAt((c + 0.5) / cols);
+        const hf = (c + 0.5) / cols;           // #359: Verlaufs-Anteil quer über die Karte (für Live-Umfärben gespeichert)
+        const holo = holoAt(hf);
         const frame = new Graphics(); frame.rect(-tw / 2, -th / 2, tw, th).stroke({ width: TUNE.SEAM_W, color: holo, alpha: 1 });
         frame.blendMode = "add"; frame.alpha = 0;
         cont.addChild(fill, frame); root.addChild(cont);
@@ -149,7 +151,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
                                : (sweepy > 0 ? (homeY - cardY) / cardH : 1 - (homeY - cardY) / cardH);
         // Ausricht-Richtung (vom Kartenzentrum nach außen) für den Wegflug.
         const ox = homeX - cx, oy = homeY - cy, ol = Math.hypot(ox, oy) || 1;
-        tiles.push({ cont, fill, frame, homeX, homeY, u, holo,
+        tiles.push({ cont, fill, frame, homeX, homeY, u, hf, holo,
           outx: ox / ol, outy: oy / ol, released: false, dead: false,
           x: homeX, y: homeY, vx: 0, vy: 0, ang: 0, spin: 0, tphase: rndSeed() * TAU, life: 0,
           jx: (rndSeed() - 0.5), jy: (rndSeed() - 0.5) });
@@ -294,6 +296,25 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
     }
     startRef.current = startPlay;
 
+    // #359 Live-Umfärben: der Farbmodus-Toggle (Standard↔Deckfarbe) remountet die Bühne NICHT (Key trägt nur den
+    //   Effekt, #perf-shop Plan B), und build() läuft im Showcase nur EINMAL (trigger konstant) — der Loop restart()
+    //   baut die Kacheln nicht neu. Ohne diesen Sync behielten die Hologrid-Rahmen ihre beim Mount gebackene Farbe →
+    //   nach dem Wechsel auf „Standard" leuchteten sie NOCH in der Deckfarbe. Hier die Rahmen (+ gespeicherte holo-Farbe
+    //   je Kachel, die auch die Wegflug-Pixel erben) mit der aktuellen Farbe neu strichen. Der Beam liest die Farbe
+    //   ohnehin live pro Frame. Nur Rahmen neu strichen (kein Textur-/Geometrie-Neubau) → günstig.
+    function recolor() {
+      if (disposed || !geo || !tiles.length) return;
+      const s = p.current;
+      const ca = rgb(s.deckColor || STD_A), cb = rgb(s.deckColor2 || s.deckColor || STD_B);
+      const { tw, th } = geo;
+      for (const tl of tiles) {
+        tl.holo = intOf(mix(ca, cb, clamp01(tl.hf)));
+        tl.frame.clear();
+        tl.frame.rect(-tw / 2, -th / 2, tw, th).stroke({ width: TUNE.SEAM_W, color: tl.holo, alpha: 1 });
+      }
+    }
+    recolorRef.current = recolor;
+
     app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
       resolution: Math.min(p.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
@@ -317,6 +338,9 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
 
   // Neuer Sieg (trigger wechselt je Stich) → neu abspielen (Karte neu backen + Kacheln neu).
   useEffect(() => { if (firstRef.current) { firstRef.current = false; return; } startRef.current?.(); }, [trigger]);
+
+  // #359 Farbmodus-Wechsel (Standard↔Deckfarbe) ohne Remount → Kachel-Rahmen live umfärben (s. recolor()).
+  useEffect(() => { recolorRef.current?.(); }, [deckColor, deckColor2]);
 
   // z-11: Finisher liegt über der (in-place unsichtbar gerenderten) Gegnerkarte.
   return <div ref={hostRef} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 11 }} />;

@@ -86,7 +86,7 @@ const DEMO_C = "#35e0ff";
    Karten-Animationen (edgeglow/holo/glitch) laufen IMMER in der Deckfarbe → neutraler Genesis-Backdrop (Pack „genesis"). */
 export const LOOK_REFS = { // #327 exportiert für den Drift-Guard-Test (kein Effekt darf still eine Fremdfarbe einführen)
   aurora:        { pack: "wale" },       // Feld IST der Effekt (bgfx) — Deckfarbe = Moonwhale (kühl)
-  starfield:     { pack: "drache" },     // bgfin — Deckfarbe = Goldener Drache (warm)
+  starfield:     { pack: "arcade" },     // #359 bgfin — Deckfarbe = Beryll (grün/cyan): grünes Neon-Arcade-Feld hebt die Deckfarbe klar vom weiß-blauen Standard-Kometen ab (war Drache gold/warm)
   cubematrix:    { pack: "arcade" },     // bgfx — Deckfarbe = Beryll (grün/cyan)
   neonsurf:      { pack: "polarlicht" }, // #345 bgfx — Deckfarbe = Polarlicht (blau/grün, Tiefsee-Biolumineszenz)
   klinge:        { pack: "drache" },     // Sieg-Finisher — Deckfarbe = Drache (warm-gold)
@@ -766,7 +766,10 @@ function FieldFxPreview({ effect, deckTint = false }) {
       )}
       {auroraGL && (
         <div className="absolute inset-0 z-[2] pointer-events-none">
-          <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate />
+          {/* #359: Die Showcase-Box ist niedrig+breit — der In-Game-Bogen (Scheitel bei ~1,2 der Höhe) würde oben
+              abgeschnitten. bandScale/bandShift legen NUR im Showcase den Bogen tiefer + leicht gestaucht in die Box
+              (voller Bogen sichtbar). In-Game bleibt bei den Defaults (1/0) → unverändert. [TUNING] */}
+          <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate bandScale={1.12} bandShift={0.2} />
         </div>
       )}
       {/* #345 Neon-Brandung — je Sweep-Tick ein Ansage-Puls (Stufe rotiert 0.7/1.0/1.4), damit das Gefäß-Schwappen sichtbar ist. */}

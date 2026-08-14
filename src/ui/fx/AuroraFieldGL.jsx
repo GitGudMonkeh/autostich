@@ -25,6 +25,10 @@ const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.
 const FRAG = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2; uniform float uLayers;",
+  // #359 Showcase-Platzierung: vertikale Skalierung/Verschiebung NUR des Vorhang-Bandes (nicht der Sterne). Default
+  // (uBandScale=1, uBandShift=0) = Identität → In-Game unverändert. Die kurze, breite Showcase-Box setzt das Band tiefer
+  // + etwas gestaucht (uBandScale>1, uBandShift>0), damit der volle Bogen (Scheitel inklusive) in die Box passt.
+  "uniform float uBandScale; uniform float uBandShift;",
   // #342 finale Tuner-Werte (const-Block aus dem Artifact übernommen)
   "const float I_=1.45, SAT=1.25, ALPHA=0.720;",   // #353 aurora-buff: deutlich sichtbarer (war I_=1.38, ALPHA=0.620 → davor 1.20/0.540)
   "const float NEAR_BOT=0.360, HORIZON=0.660;",    // #aurora-buff: Vorhang-Band ein wenig tiefer (war 0.420 / 0.720)
@@ -95,7 +99,9 @@ const FRAG = [
   // Sternschnuppen
   "  float shoot=shootingStar(uv,t,aspect);",
   "  vec3 shootCol=vec3(0.95,0.97,1.0)*shoot*SHOOT_BRIGHT;",
-  // Aurora-Vorhänge (perspektivisch, in die Tiefe gestaffelt)
+  // Aurora-Vorhänge (perspektivisch, in die Tiefe gestaffelt). #359: das Band rechnet in der verschobenen/skalierten
+  // Vertikalen `yy` (Sterne bleiben auf uv.y) → Showcase kann den Bogen tiefer/gestaucht in die kurze Box legen.
+  "  float yy = uv.y * uBandScale + uBandShift;",
   "  vec3 aur=vec3(0.0);",
   "  for(int i=0;i<6;i++){",
   "    if(float(i)>=uLayers) break;",
@@ -103,7 +109,7 @@ const FRAG = [
   "    float d = uLayers>1.5 ? fi/(uLayers-1.0) : 0.0;", // 0 = vorne/nah .. 1 = hinten/fern
   "    d = pow(clamp(d,0.0,1.0), DEPTH_CURVE);",
   "    float persp = 1.0/(1.0+PERSP*d);",
-  "    float warp = WAVE_A*persp*(fbm(vec2(uv.y*WAVE_F + fi*7.0, fi*2.1 + t*DRIFT))-0.5);",
+  "    float warp = WAVE_A*persp*(fbm(vec2(yy*WAVE_F + fi*7.0, fi*2.1 + t*DRIFT))-0.5);",
   "    float x = uv.x + warp;",
   // Wölbung je Band unterschiedlich (Basis DOME ± Streuung, Scheitel horizontal versetzt)
   "    float rA = hash(vec2(fi, 1.7));",
@@ -113,14 +119,14 @@ const FRAG = [
   "    float arch = domeI*(1.0 - 4.0*cx*cx)*persp;", // fern flacher (×persp)
   "    float topY = mix(1.05, HORIZON+0.05, d) + arch;",
   "    float botY = mix(NEAR_BOT, HORIZON, d) + arch + SPACING*(fbm(vec2(x*1.5+fi,0.7))-0.5);",
-  "    float env = smoothstep(botY, botY+SOFT_B*persp, uv.y) * smoothstep(topY, topY-SOFT_T*persp, uv.y);",
+  "    float env = smoothstep(botY, botY+SOFT_B*persp, yy) * smoothstep(topY, topY-SOFT_T*persp, yy);",
   "    if(env<=0.0) continue;",
-  "    float rays = fbm(vec2(x*RAY_F + fi*20.0, uv.y*RAY_VF/max(persp,0.15) - t*RAY_S));",
+  "    float rays = fbm(vec2(x*RAY_F + fi*20.0, yy*RAY_VF/max(persp,0.15) - t*RAY_S));",
   "    rays = pow(clamp(rays,0.0,1.0), RAY_C);",
   "    float patch = smoothstep(PATCH_FL, PATCH_FL+PATCH_C, fbm(vec2(x*PATCH_S + fi*3.0, 1.5 + t*DRIFT*0.5)));",
   "    float haze = mix(1.0, DEPTH_FADE, d);", // atmosphärische Tiefe: fern blasser
   "    float v = env*(0.18+0.82*rays)*patch*haze;",
-  "    float h = clamp((uv.y-botY)/max(topY-botY,0.001),0.0,1.0);",
+  "    float h = clamp((yy-botY)/max(topY-botY,0.001),0.0,1.0);",
   "    aur += auroraCol(h)*v;",
   "  }",
   "  aur = saturate3(aur,SAT)*I_;",
@@ -140,7 +146,7 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true }) {
+export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true, bandScale = 1, bandShift = 0 }) {
   const canvasRef = useRef(null);
 
   // #313/#342-bugfix: Farbe/Modus als LIVE-Ref, den der Draw-Loop pro Frame liest — NICHT als useEffect-Dep. Sonst riss
@@ -153,9 +159,11 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
   stateRef.current.d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);  // Deck-Default #b06afa
   stateRef.current.deckColored = deckColored;
   stateRef.current.animate = animate;
+  stateRef.current.bandScale = Number.isFinite(bandScale) ? bandScale : 1;   // #359 vertikale Band-Skalierung (Showcase)
+  stateRef.current.bandShift = Number.isFinite(bandShift) ? bandShift : 0;   // #359 vertikale Band-Verschiebung (Showcase)
   const dirtyRef = useRef(true);
   // Prop-Änderung → einen Redraw anfordern (nötig fürs Standbild bei animate=false; im Animate-Fall zeichnet der Loop ohnehin).
-  useEffect(() => { dirtyRef.current = true; }, [color, color2, deckColored, animate]);
+  useEffect(() => { dirtyRef.current = true; }, [color, color2, deckColored, animate, bandScale, bandShift]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -187,6 +195,8 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     const uDeck1 = gl.getUniformLocation(prog, "uDeck1");
     const uDeck2 = gl.getUniformLocation(prog, "uDeck2");
     const uLayers = gl.getUniformLocation(prog, "uLayers");
+    const uBandScale = gl.getUniformLocation(prog, "uBandScale");
+    const uBandShift = gl.getUniformLocation(prog, "uBandShift");
 
     // #perf-A1 / #342: Mobile drosseln. Der neue Vorhang-Loop ruft je Band mehrfach fbm → mehr fbm/Fragment als der
     // alte 3-Bögen-Loop; laut Effekt-Audit ohnehin der größte Mobile-GPU-Posten. Auf Mobile (coarse): DPR-Deckel senken
@@ -212,6 +222,8 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
       gl.uniform3f(uDeck1, st.d1[0], st.d1[1], st.d1[2]);
       gl.uniform3f(uDeck2, st.d2[0], st.d2[1], st.d2[2]);
       gl.uniform1f(uLayers, layers);
+      gl.uniform1f(uBandScale, st.bandScale || 1);   // #359 Default 1 → In-Game-Bogen unverändert
+      gl.uniform1f(uBandShift, st.bandShift || 0);   // #359 Default 0 → keine Verschiebung
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
