@@ -1143,7 +1143,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #321 Hologrid-Slice — monotoner Trigger → Replay der persistent gemounteten Pixi-Komponente (kein WebGL-Remount/Sieg).
   const [hologridTrigger, setHologridTrigger] = useState(0);
   useEffect(() => {
-    if (t && win && hologrid && !reduced && flipMs > 170) setHologridTrigger((n) => n + 1);
+    if (t && win && hologrid && !reduced && flipMs > 170) {
+      setHologridTrigger((n) => n + 1);
+      // #374 Laser-Sweep vertonen (war stumm): rate an die Sweep-Geschwindigkeit gekoppelt — der Effekt läuft mit
+      //   speed={scorchSpeed}, also denselben Turbo-Faktor nehmen und (wie fx_scorch) bei 2× deckeln (scorchSndRate) →
+      //   Ton bleibt bei schnellen Stichen synchron, hängt nicht nach. gain wie Klinge/Scorch. flipMs>170-Gate +
+      //   Cooldown (audio.js 0,08 s) verhindern Stapeln/„MG" bei Max-Turbo.
+      audio.play("fx_lasergrid", { rate: scorchSndRate, gain: 1.05 });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/hologrid wechseln synchron mit t.trickNo
   }, [t?.trickNo]);
 
