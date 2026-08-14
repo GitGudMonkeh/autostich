@@ -326,9 +326,21 @@ export function Autostich() {
       if (hidden) persistActiveRun();
       setVisible(!hidden); // pausiert/reaktiviert Clock-Tick + Auto-Play (Akku/Hitze im Hintergrund)
     };
+    // #366: `visible` NICHT nur an `visibilitychange` koppeln. Auf iOS Safari wird das „wieder sichtbar"-Event bei
+    //   schnellen UI-Übergängen / während des RunLoader-Vorladens gelegentlich verschluckt → `visible` bliebe stale
+    //   `false` und der Lauf hinge für immer. `focus`/`pageshow` synchronisieren die Sichtbarkeit spätestens beim
+    //   nächsten Fokus/Interaktion aus dem LIVE-Zustand nach → ein stale-false heilt von selbst.
+    const onResync = () => setVisible(document.visibilityState !== "hidden");
     window.addEventListener("pagehide", persistActiveRun);
+    window.addEventListener("focus", onResync);
+    window.addEventListener("pageshow", onResync);
     document.addEventListener("visibilitychange", onVis);
-    return () => { window.removeEventListener("pagehide", persistActiveRun); document.removeEventListener("visibilitychange", onVis); };
+    return () => {
+      window.removeEventListener("pagehide", persistActiveRun);
+      window.removeEventListener("focus", onResync);
+      window.removeEventListener("pageshow", onResync);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
   // Checkpoints im Lauf: bei jedem Durchlauf-Wechsel und jeder Entscheidungsphase (levelup/formation/architect/…)
   // sofort snapshotten — niederfrequent, deckt die üblichen Verlustpunkte ab (die feineren fängt visibilitychange).
@@ -359,25 +371,31 @@ export function Autostich() {
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
   }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
 
-  // #351 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/Pause,
-  //   sichtbar), bewegt sich trickNo aber > STUCK_MS nicht, den Guard-Zustand EINMAL loggen (Diagnose) und EINEN
-  //   RESOLVE_TRICK anstoßen (self-heal). Greift nur, wenn ALLE Auto-Play-Guards frei sind → derselbe Fall, in dem der
-  //   normale Takt längst hätte feuern müssen; im Normalbetrieb (trickNo alle ≤ flipMs) triggert es nie (STUCK_MS ≫ flipMs).
+  // #351/#366 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/
+  //   Pause), bewegt sich trickNo aber > STUCK_MS nicht UND ist die Seite LIVE sichtbar, den Guard-Zustand EINMAL loggen
+  //   (Diagnose) und EINEN RESOLVE_TRICK anstoßen (self-heal). #366: bewusst NICHT auf das `visible`-Flag gaten (ein stale
+  //   false soll den Watchdog nicht lahmlegen) — die Sichtbarkeit wird im Intervall live geprüft. Im Normalbetrieb
+  //   (trickNo alle ≤ flipMs) triggert es nie (STUCK_MS ≫ flipMs).
   const lastTrickAt = useRef(0);
   const stuckNudged = useRef(false);
   useEffect(() => { lastTrickAt.current = Date.now(); stuckNudged.current = false; }, [state.trickNo, state.phase]);
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return;
+    // #366: Der Watchdog darf NICHT auf `visible` gaten — genau der Fall „stale visible===false" (führender Verdacht)
+    //   soll ihn nicht mitlahmlegen. Stattdessen prüft er die Sichtbarkeit im Intervall LIVE (document.visibilityState):
+    //   echt im Hintergrund → nichts tun (Akku/Hitze bleibt respektiert); sichtbar, aber trickNo hängt → resync + nudge.
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart) return;
     const STUCK_MS = 3000;
     const id = setInterval(() => {
       if (stuckNudged.current || Date.now() - lastTrickAt.current < STUCK_MS) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return; // echte Hintergrund-Pause: nicht im Hintergrund weiterspielen
       stuckNudged.current = true;
-      console.warn("[watchdog #351] Lauf hängt vor dem nächsten Stich — self-heal RESOLVE_TRICK.",
-        { paused, visible, confirmAbort, confirmRestart, showOptions, showChronik, glossaryOpen, flipMs, speedMult });
+      setVisible(true); // #366: ein evtl. stale `visible===false` resynchronisieren → der reguläre Auto-Play-Effekt plant danach selbst wieder
+      console.warn("[watchdog #351/#366] Lauf hängt vor dem nächsten Stich — self-heal RESOLVE_TRICK.",
+        { paused, visibilityState: typeof document !== "undefined" ? document.visibilityState : "?", confirmAbort, confirmRestart, showOptions, showChronik, glossaryOpen, flipMs, speedMult });
       dispatch({ type: "RESOLVE_TRICK", rng: Math.random });
     }, 1000);
     return () => clearInterval(id);
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, speedMult]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, flipMs, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -581,6 +599,10 @@ export function Autostich() {
     // verhindert Doppel-Setzen bei echten false→true-Einstiegen (Menü→Play, GameOver→Neu).
     segStart.current = Date.now();
     setPaused(false);
+    // #366: Sichtbarkeit beim Start FRISCH aus dem Live-Zustand setzen. Sonst kann ein während des RunLoader-Vorladens
+    //   verschlucktes „wieder sichtbar"-Event ein stale `visible===false` hinterlassen → Auto-Play-Guard blockt den
+    //   frischen Lauf dauerhaft („Bereit — starte den Autobattler" bis Reload). Ein neuer Lauf beginnt immer sichtbar.
+    setVisible(typeof document === "undefined" || document.visibilityState !== "hidden");
     // #351: Run-Start-Guards sauber zurücksetzen, BEVOR der erste phase:"play"-Render kommt (im selben Batch wie START_RUN):
     //   - Turbo auf 1× (ein neuer Lauf erbte sonst den MAX-Turbo des vorigen — und nahm ihn als Hänger-Variable mit).
     //   - offene Abbruch-/Neustart-Rückfragen zu, sonst friert der Auto-Play-Guard den frischen Lauf ein.
