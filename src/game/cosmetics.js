@@ -45,8 +45,8 @@ export const DECK_DEFS = {
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
   // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
-  deck_gottgleich: { id: "deck_gottgleich", name: "Gottgleich", unlock: { kind: "gottgleichRun" } },
-  deck_serie300:   { id: "deck_serie300",   name: "Serie 300",  unlock: { kind: "streak", n: 300 } },
+  deck_gottgleich: { id: "deck_gottgleich", name: "Ascension", unlock: { kind: "gottgleichRun" } },
+  deck_serie300:   { id: "deck_serie300",   name: "Flamingo",   unlock: { kind: "streak", n: 300 } },
   deck_serie600:   { id: "deck_serie600",   name: "Serie 600",  unlock: { kind: "streak", n: 600 } },
   deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
   deck_meister:    { id: "deck_meister",    name: "Meister",    unlock: { kind: "championWeek" } },
@@ -86,8 +86,8 @@ export const BATTLEFIELD_DEFS = {
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
-  bf_gottgleich: { id: "bf_gottgleich", name: "Gottgleich · Battlefield", unlock: { kind: "gottgleichRun" } },
-  bf_serie300:   { id: "bf_serie300",   name: "Serie 300 · Battlefield",  unlock: { kind: "streak", n: 300 } },
+  bf_gottgleich: { id: "bf_gottgleich", name: "Ascension · Battlefield", unlock: { kind: "gottgleichRun" } },
+  bf_serie300:   { id: "bf_serie300",   name: "Flamingo · Battlefield",  unlock: { kind: "streak", n: 300 } },
   bf_serie600:   { id: "bf_serie600",   name: "Serie 600 · Battlefield",  unlock: { kind: "streak", n: 600 } },
   bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
   bf_meister:    { id: "bf_meister",    name: "Meister · Battlefield",    unlock: { kind: "championWeek" } },

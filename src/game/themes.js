@@ -162,9 +162,9 @@ export const THEME_DEFS = {
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
 
   // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
-  gottgleich: { id: "gottgleich", name: "Gottgleich", emblem: "👑", kind: "cond", a1: "#d4a63a", a2: "#8fce6a",
+  gottgleich: { id: "gottgleich", name: "Ascension", emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
-  serie300:   { id: "serie300",   name: "Serie 300",  emblem: "🔥", kind: "cond", a1: "#ff7a2f", a2: "#ffd36a",
+  serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
     deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
   serie600:   { id: "serie600",   name: "Serie 600",  emblem: "☄️", kind: "cond", a1: "#ff3a12", a2: "#ff9a3f",
     deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
