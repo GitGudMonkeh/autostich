@@ -3,7 +3,7 @@ import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
 import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GUIDES } from "./guides.js";
 import { useEscape } from "./useEscape.js";
-import { ActionButton } from "./modalStyle.jsx";
+import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 
 /* ============================================================
    LEITFADEN-UI — das „Wie spiele ich das"-Overlay je Archetyp (Datenquelle: guides.js).
@@ -115,22 +115,107 @@ export function GuideButton({ onClick, className = "", style }) {
   );
 }
 
-export function GuideOverlay({ onClose, initial = "lightning" }) {
-  const [active, setActive] = useState(ARCHETYPE_ORDER.includes(initial) ? initial : "lightning");
-  useEscape(onClose);
+/* Reiner Leitfaden-INHALT je Archetyp (ohne Schale) — Single Source, damit sowohl das GuideOverlay als auch
+   die Deck-Detailansicht (#369) exakt dasselbe rendern (kein Abschreiben). showTitle blendet den großen
+   Archetyp-Titel + die Fußzeile aus, wenn der Aufrufer (Deck-Detail) bereits einen eigenen Kopf hat. */
+export function GuideBody({ archetype, showTitle = true }) {
+  const active = ARCHETYPE_ORDER.includes(archetype) ? archetype : "lightning";
   const g = GUIDES[active];
   const meta = ARCHETYPE_META[active];
   const color = meta.color;
+  return (
+    <>
+      {showTitle ? (
+        <div className="pt-4">
+          <h1 className="text-3xl font-extrabold tracking-wide uppercase leading-none"
+              style={{ color: "#f4f2ff", textShadow: `0 0 22px ${color}66` }}>
+            <ArchIcon meta={meta} size={16} className="mr-2" />{meta.label}
+          </h1>
+          <p className="text-[13.5px] mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
+        </div>
+      ) : (
+        <p className="text-[13.5px] pt-1 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
+      )}
+
+      <SecLabel color={color}>Kernidee</SecLabel>
+      <p className="text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
+
+      <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
+      <div className="grid gap-2.5">
+        {g.pillars.map((p, i) => (
+          <div key={i} className="grid gap-3 items-start rounded-xl px-3.5 py-3"
+               style={{ gridTemplateColumns: "38px 1fr", background: "#141419", border: "1px solid #2a2a33" }}>
+            <div className="w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
+                 style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
+            <div>
+              <div className="text-[14.5px] font-semibold" style={{ color: p.color }}>
+                {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
+              </div>
+              <div className="text-[13px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <SecLabel color={color}>Der Kreislauf</SecLabel>
+      <div className="grid gap-4 items-center sm:grid-cols-[190px_1fr]">
+        <div className="mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
+        <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
+          {g.loop.steps.map((s, i) => (
+            <li key={i} className="grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
+              <span className="grid place-items-center text-[11px] font-mono rounded-md"
+                    style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
+              <span><RT t={s} /></span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="mt-3.5 rounded-xl px-3.5 py-3 text-[13px] leading-relaxed"
+           style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
+        <RT t={g.loop.valve} />
+      </div>
+
+      <SecLabel color={color}>{g.status.label}</SecLabel>
+      <div className="grid gap-2.5">
+        {g.status.bars.map((b, i) => <Bar key={i} b={b} />)}
+      </div>
+
+      <SecLabel color={color}>Spielprinzip</SecLabel>
+      <ul className="grid gap-2.5 list-none p-0 m-0">
+        {g.principle.map((p, i) => (
+          <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
+              style={{ gridTemplateColumns: "auto 1fr", background: "#141419", border: "1px solid #2a2a33", color: "#d3d3dd" }}>
+            <span className="h-fit text-[10.5px] font-mono uppercase tracking-wide px-2 py-1 rounded-md whitespace-nowrap"
+                  style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
+            <span className="leading-relaxed"><RT t={p.text} /></span>
+          </li>
+        ))}
+      </ul>
+
+      {showTitle && (
+        <div className="mt-6 pt-3.5 text-[11px] font-mono flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
+          <ArchIcon meta={meta} size={14} /> {meta.label} · Archetyp {ARCHETYPE_ORDER.indexOf(active) + 1} von {ARCHETYPE_ORDER.length}
+        </div>
+      )}
+    </>
+  );
+}
+
+export function GuideOverlay({ onClose, initial = "lightning" }) {
+  const [active, setActive] = useState(ARCHETYPE_ORDER.includes(initial) ? initial : "lightning");
+  useEscape(onClose);
 
   return (
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Leitfaden">
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card"
-          style={{ maxHeight: "92dvh", background: "linear-gradient(180deg,#16131f 0%,#131318 42%)", border: "1px solid #2a2a33", boxShadow: "0 30px 80px -30px #000" }}>
+        {/* #369: Werkstatt-Schale (MODAL_CARD + Tri-Color-Hairline) statt der alten Sonderschale. */}
+        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card relative"
+          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
+          <TopHairline />
 
           {/* Kopf */}
-          <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: "#15121e" }}>
+          <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
             <div className="flex items-center gap-2.5">
               <span aria-hidden="true">📖</span>
               <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Leitfaden</h2>
@@ -160,75 +245,9 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             })}
           </div>
 
-          {/* Körper */}
+          {/* Körper (Single-Source-Inhalt) */}
           <div className="flex-1 overflow-y-auto overlay-card px-4 pb-8" style={{ overscrollBehavior: "contain" }}>
-            {/* Titel des aktiven Archetyps */}
-            <div className="pt-4">
-              <h1 className="text-3xl font-extrabold tracking-wide uppercase leading-none"
-                  style={{ color: "#f4f2ff", textShadow: `0 0 22px ${color}66` }}>
-                <ArchIcon meta={meta} size={16} className="mr-2" />{meta.label}
-              </h1>
-              <p className="text-[13.5px] mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
-            </div>
-
-            <SecLabel color={color}>Kernidee</SecLabel>
-            <p className="text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
-
-            <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
-            <div className="grid gap-2.5">
-              {g.pillars.map((p, i) => (
-                <div key={i} className="grid gap-3 items-start rounded-xl px-3.5 py-3"
-                     style={{ gridTemplateColumns: "38px 1fr", background: "#141419", border: "1px solid #2a2a33" }}>
-                  <div className="w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
-                       style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
-                  <div>
-                    <div className="text-[14.5px] font-semibold" style={{ color: p.color }}>
-                      {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
-                    </div>
-                    <div className="text-[13px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <SecLabel color={color}>Der Kreislauf</SecLabel>
-            <div className="grid gap-4 items-center sm:grid-cols-[190px_1fr]">
-              <div className="mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
-              <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
-                {g.loop.steps.map((s, i) => (
-                  <li key={i} className="grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
-                    <span className="grid place-items-center text-[11px] font-mono rounded-md"
-                          style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
-                    <span><RT t={s} /></span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <div className="mt-3.5 rounded-xl px-3.5 py-3 text-[13px] leading-relaxed"
-                 style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
-              <RT t={g.loop.valve} />
-            </div>
-
-            <SecLabel color={color}>{g.status.label}</SecLabel>
-            <div className="grid gap-2.5">
-              {g.status.bars.map((b, i) => <Bar key={i} b={b} />)}
-            </div>
-
-            <SecLabel color={color}>Spielprinzip</SecLabel>
-            <ul className="grid gap-2.5 list-none p-0 m-0">
-              {g.principle.map((p, i) => (
-                <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
-                    style={{ gridTemplateColumns: "auto 1fr", background: "#141419", border: "1px solid #2a2a33", color: "#d3d3dd" }}>
-                  <span className="h-fit text-[10.5px] font-mono uppercase tracking-wide px-2 py-1 rounded-md whitespace-nowrap"
-                        style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
-                  <span className="leading-relaxed"><RT t={p.text} /></span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-6 pt-3.5 text-[11px] font-mono flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
-              <ArchIcon meta={meta} size={14} /> {meta.label} · Archetyp {ARCHETYPE_ORDER.indexOf(active) + 1} von {ARCHETYPE_ORDER.length}
-            </div>
+            <GuideBody archetype={active} />
           </div>
         </div>
       </div>

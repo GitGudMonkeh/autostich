@@ -23,8 +23,8 @@ const VI = "#9b82f0";   // Logo Mitte (Violett) — Ranglisten
 const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Upgrades / SP-Währung
 const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
-// Ast-Farben für die Hub-Progressionsanzeige (Knotendaten kommen aus progression.js).
-const BR_COLOR = { bau: CY, auf: BLUE, rar: VI, mei: AM };
+// Zweig-Farben für die Hub-Progressionsanzeige (#369: Decks / Allgemein; Knotendaten aus progression.js).
+const BR_COLOR = { deck: VI, gen: CY };
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
@@ -46,13 +46,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const progLigaFree = treeComplete(prof);
   const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
   const onbDone = onbStep >= ONBOARDING_LINKS;
-  // #299 Hub-Gates: Werkstatt/Upgrades ab 6/6; Rangliste normal ab Meister-Stufe II (M2), Meister ab vollem Baum.
-  const ranglisteNormalFree = owns(prof, "M2");
+  // #299/#369 Hub-Gates: Werkstatt/Upgrades ab 6/6; Rangliste normal ab freigeschalteter Legendär-Schicht
+  // (legLayer = klarer Mid-Tree-Meilenstein), Meister ab vollem Baum.
+  const ranglisteNormalFree = owns(prof, "legLayer");
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
   const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
   const branchViews = BRANCHES.map((b) => ({
     name: b.name, col: BR_COLOR[b.key],
-    states: NODES.filter((n) => n.branch === b.key).map((n) => nodeState(prof, n.id)),
+    states: NODES.filter((n) => n.branch === b.key && !n.placeholder).map((n) => nodeState(prof, n.id)),
   }));
   const tryPlaySeed = () => {
     // Test-Codes „unlock"/„reset" VOR parseSeed abfangen (beide würden sonst als gültiger Seed durchgehen).
@@ -228,15 +229,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {(onStandardRun || onMeisterRun) && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
           {!ranglisteNormalFree ? (
-            /* #299 §5: Rangliste-Normal erst ab Meister-Stufe II (M2). Während des Onboardings zeigt der Lock den
-               Onboarding-Countdown, danach den Hinweis „ab Meister II". */
+            /* #299/#369: Rangliste-Normal erst ab freigeschalteter Legendär-Schicht (legLayer). */
             <div className="w-full px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-80 cursor-default"
               style={{ background: "#161320", border: `1px solid ${VI}33`, color: VI }}
-              title={onbDone ? "Rangliste wird ab Meister-Stufe II (M2) frei" : "Ranglisten-Läufe werden nach Abschluss des Onboardings frei"}>
+              title={onbDone ? "Rangliste wird ab freigeschalteter Legendär-Schicht frei" : "Ranglisten-Läufe werden nach Abschluss des Onboardings frei"}>
               <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Ranglisten-Lauf</span>
               <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
                 style={{ background: "#241d3a", color: VI }}>
-                {onbDone ? "ab Meister II" : `noch ${ONBOARDING_LINKS - onbStep} ${ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}`}
+                {onbDone ? "ab Legendär" : `noch ${ONBOARDING_LINKS - onbStep} ${ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}`}
               </span>
             </div>
           ) : (
@@ -339,11 +339,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </div>
 
           {/* Äste: nur Name + Kreise (gekauft / kaufbar / gesperrt), keine Icons. Farben = Logo-Verlauf. */}
-          <div className="grid grid-cols-4 gap-2 mt-2.5">
+          <div className="grid grid-cols-2 gap-2 mt-2.5">
             {branchViews.map((b) => (
               <div key={b.name} className="rounded-lg px-1.5 py-2 flex flex-col items-center gap-1.5"
                 style={{ background: "#12121a", border: "1px solid #26262e" }}>
-                <span className="flex gap-1">
+                <span className="flex flex-wrap gap-1 justify-center">
                   {b.states.map((st, i) => (
                     <i key={i} className="w-2 h-2 rounded-full"
                       style={st === "owned"
