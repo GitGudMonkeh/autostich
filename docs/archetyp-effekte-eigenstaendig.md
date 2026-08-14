@@ -55,7 +55,7 @@ Quellen: `src/ui/FactionIcon.jsx` (Icons + `FACTION_GLOW`), `src/game/skills.js`
 
 | # | Archetyp | Konzept | Board | Abgesegnet | Code | Issue | Status |
 |---|----------|---------|-------|------------|------|-------|--------|
-| 1 | **Eis** | Wachsendes Eiskristall-Feld (Gletscher-Brüche) + Bersten | `docs/prototypes/eis-kristall-feld-tuning.html` | ✓ | `src/ui/fx/IceCrystalField.jsx` | [#364](https://github.com/GitGudMonkeh/autostich/issues/364) | **Umgesetzt (Renderer portiert + verdrahtet)** |
+| 1 | **Eis** | Wachsendes Eiskristall-Feld (Gletscher-Brüche) + Bersten | `docs/prototypes/eis-kristall-feld-tuning.html` | ✓ | entfernt (User-Wunsch) | [#364](https://github.com/GitGudMonkeh/autostich/issues/364) | **Verworfen** (User mag den Effekt nicht + Perf zu teuer) |
 | 2 | **Pflanze** | Rahmen-Bewuchs (Stiche ausgewachsener Pflanze) + Fallen/Verblassen bei 20 | `docs/prototypes/pflanze-rahmen-tuning.html` | ✓ | offen | [#367](https://github.com/GitGudMonkeh/autostich/issues/367) | **Werte abgesegnet → Code offen** |
 | 3 | TBD | TBD | – | – | – | – | offen |
 | 4 | TBD | TBD | – | – | – | – | offen |
@@ -170,6 +170,11 @@ const TUNE = {
 ---
 
 ## 7. Session-Log
+
+- **2026-08-14** — **#364 (Eis-Kristall-Feld) wieder ENTFERNT** auf User-Wunsch („mag ich nicht + kostet zu
+  viel Performance"). Zurückgebaut: `src/ui/fx/IceCrystalField.jsx` gelöscht, Mount + Props aus
+  `Battlefield.jsx`, Zähler (`iceBreaks`) aus `App.jsx`, `lastTrick.glacierBroke` aus `engine.js`. Board/Spec
+  bleiben als Referenz erhalten, falls der Effekt (perf-freundlicher) neu aufgesetzt wird.
 
 - **2026-08-14** — Effekt 2 = **Pflanze** (Rahmen-Bewuchs) spezifiziert + Board gebaut; nach Feedback auf
   echte `MossGrow`-DNA umgebaut (weiche Härchen, von oben/den Seiten herunter, unten frei), Rand ausgefasert,

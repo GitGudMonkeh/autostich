@@ -69,7 +69,6 @@ import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow 
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
-const IceCrystalField = lazy(() => import("./fx/IceCrystalField.jsx").then((m) => ({ default: m.IceCrystalField }))); // #364 Eis-Kristall-Feld (Canvas-2D, lazy → nur bei Eis-Deck geladen)
 import { PhaseHairline, DECK_BORDER } from "./modalStyle.jsx"; // #365: deck-getönter Nicht-CRT-Fallback des Battlefield-Rahmens
 import { fmtScore } from "./format.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Treffer-Identität im Score-Float)
@@ -677,7 +676,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, neonsurfDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false, // #glutfunken-raus: emberDeck entfernt
   deckGlow = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene. #336: immer Deckfarbe (kein Farbmodus mehr)
-  iceActive = false, iceBreaks = 0, // #364 Eis-Kristall-Feld (Hintergrund): aktiv bei Eis-Deck; iceBreaks = Gletscher-Brüche/Lauf (0→10)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -1462,16 +1460,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
               deckColor={deckA1 || "#7fdcff"} on animate={!reduced} />
           )}
-        </div>
-      )}
-      {/* #364 Eis-Kristall-Feld — eigenständiger Archetyp-Feld-Effekt, UNTERSTE Effekt-Ebene (z-1, direkt über dem
-          BF-Bild; alle anderen Effekte + Karten liegen darüber, da später im Source bzw. z-2+). Nur bei aktivem Eis-Deck.
-          Wächst mit den Gletscher-Brüchen (iceBreaks 0→10), berstet bei 10. Canvas-2D (mobil-sicher wie FrostIce), lazy. */}
-      {iceActive && (
-        <div aria-hidden="true" className="absolute inset-0 z-[1] pointer-events-none">
-          <Suspense fallback={null}>
-            <IceCrystalField count={iceBreaks} reduced={reduced} lite={lite} />
-          </Suspense>
         </div>
       )}
       {/* #306 Battlefield-Ambiente (einfach-exklusiv): genau EIN Feld-Effekt (Hologrid/Sternenfeld/Aurora/Glutfunken/

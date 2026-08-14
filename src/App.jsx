@@ -178,8 +178,6 @@ export function Autostich() {
   const timeBase = useRef(0);
   const segStart = useRef(null);
   const prevMult = useRef(1);     // vorheriger Score-Mult (Puls nur bei Anstieg, #37)
-  const [iceBreaks, setIceBreaks] = useState(0); // #364 Gletscher-Brüche pro Lauf (0→10 lässt das Eis-Kristallfeld wachsen/bersten)
-  const prevIceTrickRef = useRef(null);          // zuletzt für den Bruch-Zähler verarbeiteter Stich (Objekt-Identität)
   // Offenes Optionen-Overlay friert den Lauf ein (wie andere Overlays) — ohne den
   // Nutzer-Pause-Toggle zu verändern: beim Schließen läuft es im vorherigen Zustand weiter.
   // #260: Der Lauf-Timer zählt in ALLEN Spielphasen (auch Auswahlen: Skill-/Perk-/Stat-/Ziel-Wahl, Architekt,
@@ -188,15 +186,6 @@ export function Autostich() {
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
   const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart;
   stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
-  // #364 Eis-Kristall-Feld: Gletscher-Brüche pro Lauf zählen (monoton) — jeder Bruch (lastTrick.glacierBroke) lässt das
-  //   Hintergrund-Kristallfeld wachsen (0→10), bei 10 berstet es und der Zyklus beginnt neu; Menü/neuer Lauf → zurück auf 0.
-  useEffect(() => {
-    if (!inRun) { prevIceTrickRef.current = null; setIceBreaks(0); return; }
-    const t = state.lastTrick;
-    if (!t || t === prevIceTrickRef.current) return;   // jeden Stich nur einmal zählen (Objekt-Identität)
-    prevIceTrickRef.current = t;
-    if (t.glacierBroke) setIceBreaks((n) => n + 1);
-  }, [state.lastTrick, inRun]);
   // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
   // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
   const totalCycles = state.maxCycles || state.difficulty?.maxCycles || MAX_CYCLES;
@@ -865,7 +854,6 @@ export function Autostich() {
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
                 deckGlow={deckFx.deckGlow}
-                iceActive={(state.activeArchetypes || []).includes("ice")} iceBreaks={iceBreaks}
                 reducedFx={options.reducedFx}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
