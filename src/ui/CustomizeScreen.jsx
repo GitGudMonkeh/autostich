@@ -1319,10 +1319,12 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             Pixi-Bühne NICHT mehr (kein WebGL-Neuaufbau), sondern reicht deckTint als Live-Prop durch; die Effekte lesen
             ihn zur Laufzeit (gott: st.current · Blackhole: ctrlRef · Feld: setParams · Cube: propsRef). Effekt-Wechsel
             (anderer fx.key) remountet weiterhin, da ein anderer Effekt-Typ.
-            #328 AUSNAHME Skill-Effekt: die Canvas-2D-Renderer im Showcase (v. a. FireHead/Feuer) lesen den Farbmodus NICHT
-            live nach (die eigentlichen Renderer bleiben unangetastet) → für „spezial" trägt der Key den Farbmodus mit, damit
-            der Standard↔Deckfarbe-Toggle die Vorschau sofort umfärbt (billiger Canvas-Remount, kein Pixi/WebGL betroffen). */}
-        <GlobalFxScenePreview key={fx.group === "spezial" ? `spezial:${deckTintOn ? "deck" : "std"}` : fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+            #345-perf: Auch der Skill-Effekt („spezial") trägt den Farbmodus NICHT mehr im Key. Alle vier Archetyp-
+            Renderer färben live um (FireHead: Palette je Render in stateRef, Ticker liest sie pro Frame · IonStorm/
+            FrostIce: stateRef + Sync-Effekt · MossGrow: Effekt-Deps [growth,nA,nB]). Der frühere `spezial:deck/std`-Key
+            remountete die GANZE Bühne bei jedem Farb-Toggle → riss FireHeads Pixi/WebGL-Context + 700 Partikel ab und
+            baute sie neu auf (spürbarer Ruckler). Jetzt stabiler Key → deckTint fließt als Live-Prop, kein Remount. */}
+        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
         {/* #330 Verbindliches 4-Ecken-Template — hier zentral, EINMAL. Scenes bringen KEIN eigenes Chrome mehr mit.
             TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·
             BL: leer — reservierter Ausnahme-Slot (aktuell nur Deck-Glow zeichnet dort „mit/ohne" im PanelChip-Design). */}
