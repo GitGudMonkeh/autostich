@@ -37,6 +37,7 @@ const TUNE = {
 const TAU = Math.PI * 2;
 const THRESHOLDS = [4, 8, 12];   // glacier.js — Schwellen; Stufe = #Schwellen ≤ Masse (0..3)
 const MASS_MAX = 12;             // glacier.js TOP / BURST_AT
+const STAGE_FADE_MS = 300;       // #352: Cross-Fade-Dauer beim Front-Stufen-Wechsel (weich statt hartem Swap)
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3), identisch zu MossGrow
 const CARD_R = 12;               // Karten-Eckenradius (rounded-xl) — für den strikten Composite-Clip
 const M = 20;                    // Rand ums Frost-Bitmap, in Referenz-px (wird beim Clip weggeschnitten → kein Überstand)
@@ -235,6 +236,8 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
     host.appendChild(canvas);
     const ctx = canvas.getContext("2d");
     let cw = 0, ch = 0, DPR = 1, clockT = 0, last = 0, raf = 0, disposed = false;
+    // #352 Cross-Fade-Zustand: zuletzt gezeigte Front-Stufe + laufende Transition (alte → neue Front über STAGE_FADE_MS).
+    let prevFront = null, fadeFrom = 0, fadeStart = 0, fading = false;
 
     function size() {
       const w = host.clientWidth, h = host.clientHeight;
@@ -244,25 +247,35 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       return true;
     }
 
+    // Ein Front-Stufen-Bitmap (Frost + additiver Bloom) mit Alpha strikt in die geclippte Kartenbox blitten.
+    function blitFront(front, alpha, pulse, mLeft, mTop) {
+      const { frost, glow } = getFrostBitmap(front, stateRef.current.nA, stateRef.current.nB);
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = alpha;
+      ctx.drawImage(frost, 0, 0, frost.width, frost.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
+      if (TUNE.NEON_BLOOM > 0) {
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * clamp01(TUNE.NEON_BLOOM * pulse);
+        ctx.drawImage(glow, 0, 0, glow.width, glow.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
+        ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+      }
+    }
+
     function compose() {
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
       const front = frontOf(mass);
       if (front <= 0 || !size()) { canvas.style.display = "none"; return; }
       canvas.style.display = "block";
-      const { frost, glow } = getFrostBitmap(front, stateRef.current.nA, stateRef.current.nB);
       const sx = cw / REF_W, sy = ch / REF_H, mLeft = M * sx, mTop = M * sy;
       const anim = !stateRef.current.reduced;
       const pulse = (anim && TUNE.SHIMMER > 0 && stageOf(mass) >= 3) ? 1 + TUNE.SHIMMER * 0.35 * Math.sin(clockT * 0.004) : 1;
+      // #352 Cross-Fade: während der Transition die alte Front-Stufe aus- (1−f), die neue einblenden (f). Beide Bitmaps gecacht.
+      let f = 1;
+      if (fading) { f = clamp01((performance.now() - fadeStart) / STAGE_FADE_MS); if (f >= 1) fading = false; }
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.clearRect(0, 0, cw, ch);
       ctx.save();
       roundRectPath(ctx, 0, 0, cw, ch, CARD_R); ctx.clip();                     // STRIKT: exaktes Karten-RoundRect
-      ctx.drawImage(frost, 0, 0, frost.width, frost.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
-      if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM * pulse);
-        ctx.drawImage(glow, 0, 0, glow.width, glow.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
-        ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
-      }
+      if (fading && f < 1) { blitFront(fadeFrom, 1 - f, pulse, mLeft, mTop); blitFront(front, f, pulse, mLeft, mTop); }
+      else blitFront(front, 1, pulse, mLeft, mTop);
       if (anim && TUNE.SPARKLE > 0) {                                           // Funkeln (live über dem Frost)
         ctx.globalCompositeOperation = "lighter"; const { sparks } = getField();
         for (let s = 0; s < sparks.length; s++) { const sp = sparks[s]; if (front <= sp.birthF) continue;
@@ -287,7 +300,18 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
     // Startet den rAF (animiert Funkeln/Puls), solange Masse > 0 & nicht reduced & Tab sichtbar; sonst einmal statisch.
     function ensureRun() {
       if (disposed) return;
-      const run = (stateRef.current.mass || 0) > 0 && !stateRef.current.reduced && document.visibilityState !== "hidden";
+      const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
+      const front = frontOf(mass);
+      const anim = !stateRef.current.reduced && document.visibilityState !== "hidden";
+      // #352 Front-Stufen-Wechsel → Cross-Fade von der zuletzt gezeigten Front auf die neue starten (nur animiert &
+      // sichtbar & Masse > 0; sonst hart/sofort, kein Fade — Barrierefreiheit/Mobile bleiben wie bisher).
+      if (prevFront !== null && front !== prevFront && anim && mass > 0) {
+        fadeFrom = prevFront; fadeStart = performance.now(); fading = true;
+      } else if (front !== prevFront) {
+        fading = false;   // reduced/verdeckt oder erster Draw → kein Fade
+      }
+      prevFront = front;
+      const run = mass > 0 && !stateRef.current.reduced && document.visibilityState !== "hidden";
       if (run) { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
       else { if (raf) { cancelAnimationFrame(raf); raf = 0; } compose(); }   // reduced/aus → einmal statisch zeichnen
     }

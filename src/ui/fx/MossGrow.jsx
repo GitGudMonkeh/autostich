@@ -34,6 +34,7 @@ const TUNE = {
 
 const TAU = Math.PI * 2;
 const STAGE_MAX = 8;          // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
+const STAGE_FADE_MS = 300;    // #352: Cross-Fade-Dauer beim Stufen-Wechsel (weiches Ein-/Ausblenden statt hartem Pop)
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3: 300*1.3=390, 390*104/144≈282)
 const CARD_R = 12;            // Karten-Eckenradius (rounded-xl) — für den Composite-Clip
 const M = 20;                 // Rand ums Moos-Bitmap (Überwuchs), in Referenz-px
@@ -41,6 +42,14 @@ const LDX = -0.55, LDY = -0.83; // Lichtrichtung (oben-links)
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+// #352: Reduzierte Bewegung? Globales data-reduced-fx (App: alles ≠ „full", inkl. Mobile) ODER prefers-reduced-motion.
+// → dann Stufen-Wechsel OHNE Fade (Sofort-Draw wie bisher); Mobile-Perf/Barrierefreiheit bleiben unangetastet.
+function prefersReducedFx() {
+  try {
+    if (typeof document !== "undefined" && document.documentElement.hasAttribute("data-reduced-fx")) return true;
+    return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch { return false; }
+}
 function hexRGB(h) { let s = String(h || "#4f78c8").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
 const mix = (a, b, t) => ({ r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t });
@@ -197,21 +206,29 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
   // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 als Bühnenlicht.
   const nA = deckTint && deckColor ? deckColor : TUNE.NEON_A;
   const nB = deckTint && deckColor ? (deckColor2 || deckColor) : TUNE.NEON_B;
+  // #352: Über Re-Renders/Effekt-Läufe STABILER Zustand — die Canvas bleibt bestehen (kein Neuaufbau je Stufe), damit
+  // der Cross-Fade von der zuletzt gezeigten Stufe auf die neue laufen kann (statt gegen eine frische, leere Canvas).
+  const S = useRef({ growth, nA, nB, prevStage: null, drawStatic: null, fadeTo: null });
+  S.current.growth = growth; S.current.nA = nA; S.current.nB = nB;
 
+  // Setup: Canvas + Zeichen-Funktionen EINMAL aufbauen (Deps []). growth/Farbe kommen über S.current rein → das teure
+  // Kartenerzeugen entfällt (Bitmaps sind ohnehin modul-weit gecacht); je Wechsel nur noch Fade bzw. statischer Draw.
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "position:absolute;pointer-events:none;display:block";
     host.appendChild(canvas);
     const ctx = canvas.getContext("2d");
-    let disposed = false;
+    const st = S.current;
+    let disposed = false, raf = 0;
 
-    function draw() {
-      if (disposed) return;
-      const stage = clamp(Math.round(growth || 0), 0, STAGE_MAX);
-      const cov = (stage / STAGE_MAX) * TUNE.REIF_COV;
+    const stageOf = (g) => clamp(Math.round(g || 0), 0, STAGE_MAX);
+    const covOf = (stage) => (stage / STAGE_MAX) * TUNE.REIF_COV;
+
+    // Canvas an die Kartenbox (inkl. Überwuchs-Rand) anpassen; liefert Geometrie oder null (zu klein).
+    function computeGeo() {
       const cw = host.clientWidth, ch = host.clientHeight;
-      if (cov <= 0 || cw < 4 || ch < 4) { canvas.style.display = "none"; return; }
+      if (cw < 4 || ch < 4) return null;
       const DPR = Math.min(2, window.devicePixelRatio || 1);
       const sx = cw / REF_W, sy = ch / REF_H, mLeft = M * sx, mTop = M * sy;
       const cwF = cw + 2 * mLeft, chF = ch + 2 * mTop;           // Canvas mit Überwuchs-Rand (ragt über die Karte hinaus)
@@ -219,27 +236,89 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
       canvas.style.left = (-mLeft) + "px"; canvas.style.top = (-mTop) + "px";
       canvas.style.width = cwF + "px"; canvas.style.height = chF + "px";
       canvas.width = Math.max(1, Math.round(cwF * DPR)); canvas.height = Math.max(1, Math.round(chF * DPR));
-      const { moss, glow } = getMossBitmap(cov, nA, nB);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      ctx.clearRect(0, 0, cwF, chF);
+      return { cw, ch, cwF, chF, sx, sy, mLeft, mTop, DPR };
+    }
+
+    // Ein Stufen-Bitmap (Moos + additiver Bloom) mit Alpha in die geclippte Kartenbox blitten.
+    function paintStage(cov, alpha, geo) {
+      if (cov <= 0 || alpha <= 0) return;
+      const { moss, glow } = getMossBitmap(cov, st.nA, st.nB);
+      const { cw, ch, cwF, chF, sx, sy, mLeft, mTop } = geo;
       const growX = M * TUNE.OVERHANG * sx, growY = M * TUNE.OVERHANG * sy, grow = Math.min(growX, growY);
-      const cardX = mLeft, cardY = mTop;                         // Kartenbox innerhalb des (größeren) Canvas
       ctx.save();
-      roundRectPath(ctx, cardX - growX, cardY - growY, cw + 2 * growX, ch + 2 * growY, CARD_R + grow); ctx.clip();
+      roundRectPath(ctx, mLeft - growX, mTop - growY, cw + 2 * growX, ch + 2 * growY, CARD_R + grow); ctx.clip();
+      ctx.globalAlpha = alpha;
       ctx.drawImage(moss, 0, 0, moss.width, moss.height, 0, 0, cwF, chF);
       if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = clamp01(TUNE.NEON_BLOOM);
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * clamp01(TUNE.NEON_BLOOM);
         ctx.drawImage(glow, 0, 0, glow.width, glow.height, 0, 0, cwF, chF);
-        ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+        ctx.globalCompositeOperation = "source-over";
       }
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
-    draw();
+    // Statischer Sofort-Draw einer Stufe (kein Fade) — Erststart, Resize, reduzierte Bewegung, Farbwechsel.
+    st.drawStatic = (g) => {
+      if (disposed) return;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      const stage = stageOf(g), cov = covOf(stage), geo = computeGeo();
+      if (!geo) { canvas.style.display = "none"; return; }
+      ctx.setTransform(geo.DPR, 0, 0, geo.DPR, 0, 0);
+      ctx.clearRect(0, 0, geo.cwF, geo.chF);
+      paintStage(cov, 1, geo);
+      st.prevStage = stage;
+    };
+
+    // Cross-Fade von der zuletzt gezeigten Stufe auf die neue über ~STAGE_FADE_MS. Beide Bitmaps sind gecacht → nur
+    // 2 drawImage/Frame für ~300 ms; danach wieder komplett statisch (kein Dauer-rAF). Springt growth mehrere Stufen,
+    // wird direkt von „zuletzt gezeigt" auf „neu" geblendet (kein Zwischenschritt).
+    st.fadeTo = (g) => {
+      if (disposed) return;
+      const toStage = stageOf(g);
+      const fromStage = st.prevStage == null ? toStage : st.prevStage;
+      if (toStage === fromStage) { st.drawStatic(g); return; }   // gleiche Stufe (z. B. growth 3.2→3.4) → kein Fade nötig
+      if (raf) cancelAnimationFrame(raf);
+      const geo = computeGeo();
+      if (!geo) { canvas.style.display = "none"; return; }
+      const fromCov = covOf(fromStage), toCov = covOf(toStage), t0 = performance.now();
+      const tick = (now) => {
+        if (disposed) return;
+        const f = clamp01((now - t0) / STAGE_FADE_MS);
+        ctx.setTransform(geo.DPR, 0, 0, geo.DPR, 0, 0);
+        ctx.clearRect(0, 0, geo.cwF, geo.chF);
+        paintStage(fromCov, 1 - f, geo);
+        paintStage(toCov, f, geo);
+        if (f < 1) { raf = requestAnimationFrame(tick); return; }
+        ctx.clearRect(0, 0, geo.cwF, geo.chF);                    // Abschluss: sauber statisch, rAF aus
+        paintStage(toCov, 1, geo);
+        st.prevStage = toStage; raf = 0;
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    st.drawStatic(st.growth);   // Erststart: aktuelle Stufe sofort statisch (setzt prevStage)
     let ro = null;
-    try { ro = new ResizeObserver(() => draw()); ro.observe(host); } catch { /* ignore */ }
-    return () => { disposed = true; if (ro) ro.disconnect(); try { host.removeChild(canvas); } catch { /* ignore */ } };
-  }, [growth, nA, nB]);
+    try { ro = new ResizeObserver(() => st.drawStatic(st.growth)); ro.observe(host); } catch { /* ignore */ }
+    return () => {
+      disposed = true; if (raf) cancelAnimationFrame(raf); if (ro) ro.disconnect();
+      try { host.removeChild(canvas); } catch { /* ignore */ }
+      st.drawStatic = null; st.fadeTo = null;
+    };
+  }, []);
+
+  // #352 Stufen-/Wachstums-Wechsel: weich überblenden — bzw. bei reduzierter Bewegung sofort statisch (Barrierefreiheit/Mobile).
+  useEffect(() => {
+    const st = S.current;
+    if (!st.fadeTo) return;                          // Setup noch nicht gelaufen
+    if (prefersReducedFx()) st.drawStatic(growth);
+    else st.fadeTo(growth);
+  }, [growth]);
+
+  // Farbmodus-Wechsel (Standard ↔ Deckfarbe): Sofort-Redraw der aktuellen Stufe, kein Fade.
+  useEffect(() => {
+    if (S.current.drawStatic) S.current.drawStatic(S.current.growth);
+  }, [nA, nB]);
 
   // Füllt die Kartenvorderseite; overflow:visible lässt den Überwuchs-Rand über die Karte hinausragen. z-2 = über dem
   // Karten-Skin, unter der großen Wert-Zahl (die die Karte im Card-Overlay trägt) — Moos „überwächst" die Kartenfläche.
