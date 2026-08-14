@@ -449,13 +449,23 @@ button { font-family: inherit; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(ellipse at center,
-    rgba(209,70,47,0.18) 0%,
-    rgba(209,70,47,0.34) 42%,
-    rgba(209,70,47,0.14) 66%,
-    rgba(209,70,47,0) 82%);
+  /* #358: Vollflächen-Rot über die GANZE Zelle (statt der zentrierten Ellipse/„Kreis"). Ambient-Puls bleibt. */
+  background: rgba(209,70,47,0.26);
   animation: arch-struct-glow 1.7s ease-in-out infinite;
 }
+
+/* #358 Platzier-Flash: beim Setzen eines Baus, der einen Bonus AUSLÖST, blitzt der Bonus kurz hell auf und klingt
+   dann zum Ambient-Zustand zurück (Struktur-Rotfläche / Distrikt-Rahmen bleiben danach persistent bestehen). Beide
+   Flash-Keyframes ENDEN bei opacity 0 → unter reduced-motion (Regel unten, praktisch instant) hinterlassen sie nichts,
+   nur der persistente Glow/Rot bleibt (der Flash wird zusätzlich in JS bei reduzierter Bewegung gar nicht erst gesetzt). */
+@keyframes arch-place-flash { 0% { opacity: 0.95; } 100% { opacity: 0; } }
+.arch-struct-flash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: rgba(255,120,90,0.55);
+  box-shadow: inset 0 0 12px rgba(255,95,60,0.8);
+  animation: arch-place-flash 0.85s ease-out forwards;
+}
+.arch-district-flash { animation: arch-place-flash 0.85s ease-out forwards; }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {

@@ -227,6 +227,36 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archSig]);
 
+  /* #358 Platzier-Flash: löst ein neu gesetzter Bau einen Bonus aus, blitzt er kurz auf — der Struktur-Rotfläche bei
+     vollen Zeilen/Spalten/Diagonalen, dem Außenrahmen BEIDER Gebäude bei einem Distrikt. Reine Optik (kein Score-Change).
+     Vorher/Nachher-Diff der Faktor-Maps (comboF/districtF) beim Commit → nur die durch DIESE Platzierung neu/erweiterten
+     Boni. Am `key` gekeyt → jede Platzierung startet die Animation neu. Reduced-Motion: gar nicht erst setzen (die
+     persistenten Glows/Rotflächen bleiben ohnehin bestehen). */
+  const [placeFlash, setPlaceFlash] = useState(null); // { key, structCells:Set<pos>, distBids:Set<id> }
+  const flashPrevRef = useRef(null);                  // { sig, comboF, districtF } der letzten Auswertung
+  const flashTimerRef = useRef(null);
+  const flashSig = useMemo(() => buildings.map((b) => `${b.id}@${b.footprint.join(".")}`).join("|"), [buildings]);
+  useEffect(() => {
+    const prev = flashPrevRef.current;
+    if (!prev) { flashPrevRef.current = { sig: flashSig, comboF, districtF }; return; } // Erst-Mount → nur merken
+    if (prev.sig === flashSig) return;
+    const prefersReduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const structCells = new Set(), distBids = new Set();
+    for (let p = 0; p < N_POS; p++) {
+      const cNow = comboF[p] || 1, cWas = prev.comboF[p] || 1;
+      if (cNow > 1 && cNow > cWas) structCells.add(p);                              // Struktur (Zeile/Spalte/Diagonale) neu vervollständigt
+      const dNow = districtF[p] || 1, dWas = prev.districtF[p] || 1;
+      if (dNow > 1 && dNow > dWas) { const bb = buildings.find((x) => x.footprint.includes(p)); if (bb) distBids.add(bb.id); } // Distrikt neu/erweitert → beteiligte Gebäude
+    }
+    flashPrevRef.current = { sig: flashSig, comboF, districtF };
+    if (prefersReduced || (!structCells.size && !distBids.size)) return;            // Abriss/Undo/kein Bonus → kein Flash
+    setPlaceFlash((pf) => ({ key: (pf?.key || 0) + 1, structCells, distBids }));
+    clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setPlaceFlash(null), 900);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flashSig]);
+  useEffect(() => () => clearTimeout(flashTimerRef.current), []);
+
   // #UI: Drag-Ghost — beim Verschieben folgt NUR der (leicht transparente) Gebäude-Rahmen dem Finger; die Karten
   // darunter bleiben liegen (kein Mitziehen, keine Lücke). Rechtecke aus den gemessenen Zellen; der Versatz kommt
   // ref-getrieben (dragOffsetRef) → das transform wird im pointermove direkt am DOM gesetzt, nicht über einen State.
@@ -621,6 +651,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="2.5" strokeLinecap="square"
                       opacity={phase === "upgrade" && !upgradeableBids.has(l.bid) ? 0.28 : 1} />
                   ))}
+                  {/* #358 Distrikt-Platzier-Flash: der Außenrahmen der am neuen Distrikt beteiligten Gebäude blitzt kurz
+                      hell auf (dickere, glühende Linie über der Kontur), danach zurück auf den persistenten Distrikt-Glow. */}
+                  {showCombos && placeFlash && archFrame.lines.filter((l) => placeFlash.distBids.has(l.bid)).map((l, i) => (
+                    <line key={`df${placeFlash.key}-${i}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.color} strokeWidth="4.5" strokeLinecap="square"
+                      className="arch-district-flash" style={{ filter: `drop-shadow(0 0 5px ${l.color}) drop-shadow(0 0 10px ${l.color})` }} />
+                  ))}
                 </svg>
               )}
               {/* #UI: Drag-Ghost — NUR der leicht transparente Gebäude-Rahmen folgt dem Finger (Karten bleiben liegen). */}
@@ -709,6 +745,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       const glow = CAT[fam?.category]?.color || "#5a8ade"; // Distrikt → Typ-Farb-Glow (etwas kräftiger)
                       return <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ boxShadow: `0 0 16px 2px ${glow}cc, inset 0 0 9px ${glow}66, inset 0 0 0 1px ${glow}` }} />;
                     })()}
+                    {/* #358 Struktur-Platzier-Flash: die neu vervollständigte Zeile/Spalte/Diagonale blitzt kurz heller
+                        rot auf (über der persistenten Vollflächen-Rotfläche). Am key gekeyt → jede Platzierung neu. */}
+                    {showCombos && !dragPrev && b && placeFlash && placeFlash.structCells.has(pos) && (
+                      <span key={placeFlash.key} aria-hidden className="arch-struct-flash rounded-md" />
+                    )}
                     {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
                     {chLocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
