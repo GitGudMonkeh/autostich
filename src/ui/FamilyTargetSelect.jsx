@@ -1,5 +1,5 @@
 import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
-import { PANEL_BG } from "./modalStyle.jsx";
+import { PANEL_BG, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { familyDef, allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { CATEGORIES } from "../game/perks.js";
@@ -9,7 +9,6 @@ import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
 
-const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe (raritätsunabhängig)
 
 /* Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — öffnet nach dem Pick einer Stufe mit `pickTarget`.
    Zwei Modi (state.familyTarget.kind):
@@ -54,6 +53,12 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           <h2 className="text-xl font-bold mt-1">{fam.name} {romanOf(ft.tier)}</h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{tierDef.desc}</p>
         </div>
+
+        <ActionBar pad={5}>
+          <span className="text-xs opacity-60 tabular-nums self-center">{sel.length} / {need} gewählt</span>
+          <span className="flex-1" />
+          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm()}>Bestätigen</ActionButton>
+        </ActionBar>
 
         {isCards ? (
           <div className="mt-4">
@@ -132,14 +137,6 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             })()}
           </div>
         )}
-        <div className="flex items-center justify-between mt-5">
-          <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
-          <button onClick={() => ready && onConfirm()} disabled={!ready}
-            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
-            Bestätigen
-          </button>
-        </div>
       </div>
     </div>
   );

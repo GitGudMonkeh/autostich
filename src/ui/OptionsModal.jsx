@@ -1,5 +1,5 @@
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
+import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
 
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
    der Lauf, solange offen). Bewusst erweiterbar — künftig Sound, Tempo-Default etc.
@@ -69,6 +69,11 @@ export function OptionsModal({ options, onChange, onClose }) {
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={MODAL_CARD}>
         <ModalHairline />
         <div className="p-6 overflow-y-auto">
+        {/* #362 Aktionsleiste OBEN (sticky) — „Schließen" rechts, einheitlich. */}
+        <ActionBar pad={6} bg={STICKY_HEAD_BG}>
+          <span className="flex-1" />
+          <ActionButton kind="secondary" onClick={onClose}>Schließen</ActionButton>
+        </ActionBar>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Optionen</div>
           <h2 className="text-xl font-bold mt-1">Einstellungen</h2>
@@ -118,9 +123,6 @@ export function OptionsModal({ options, onChange, onClose }) {
           Weitere Optionen (Tempo-Default …) folgen hier.
         </div>
 
-        <button onClick={onClose} className="w-full mt-5 py-2.5 rounded-lg font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#141419" }}>
-          Schließen
-        </button>
         </div>
       </div>
     </div>

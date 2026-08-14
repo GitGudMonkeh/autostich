@@ -76,3 +76,43 @@ export function PhaseHairline({ className = "" }) {
   return <div aria-hidden="true" className={`absolute top-0 left-0 right-0 z-20 ${className}`}
     style={{ height: 3, background: HAIRLINE.background, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
 }
+
+/* #362 — EINHEITLICHE Aktionsleiste (sticky OBEN). EINE Quelle für die Button-Zone aller Panels/Modals: feste
+   Position (oben, schwebt beim Scrollen mit), feste Reihenfolge (sekundär/ablehnen LINKS · primär/bestätigen RECHTS),
+   einheitliche Farben + Standard-Beschriftungen. Ersetzt die zuvor pro Panel selbstgebaute (teils unten liegende) Zone.
+
+   `ActionBar` = der sticky Container. `pad` muss zum horizontalen Padding der umgebenden Karte passen (Bleed = negatives
+   Margin, damit die Leiste über die volle Kartenbreite läuft und durchscrollende Inhalte maskiert). `bg` = Füllung
+   (PANEL_BG für Phasen-Overlays, STICKY_HEAD_BG für Modal-Screens). Kinder frei anordnen (mit `flex-1`/Spacer). */
+const ACTIONBAR_BLEED = {
+  3: "-mx-3 px-3", 4: "-mx-4 px-4", 5: "-mx-5 px-5", 6: "-mx-6 px-6",
+  "5s6": "-mx-5 sm:-mx-6 px-5 sm:px-6", // Karte mit px-5 sm:px-6
+};
+export function ActionBar({ pad = 5, bg = PANEL_BG, top = 0, border = true, className = "", children }) {
+  return (
+    <div className={`sticky z-20 ${ACTIONBAR_BLEED[pad] || ACTIONBAR_BLEED[5]} pt-2.5 pb-2.5 mb-3 flex items-stretch gap-2 ${className}`}
+      style={{ top, background: bg, ...(border ? { borderBottom: "1px solid #2a2a34" } : null) }}>
+      {children}
+    </div>
+  );
+}
+
+// Standard-Aktions-Button. `kind`: primary (Gold/Bestätigen) · secondary (grau/Schließen/Abbrechen) · reroll (Gold-Umriss) ·
+//   decline (grau, gedämpft/„ablehnen") · danger (rot/Beenden). `flex` → nimmt gleichen Raum ein (nebeneinander).
+const ACTIONBTN_BASE = "rounded-lg font-bold text-sm px-4 py-2.5 whitespace-nowrap transition-all";
+export function ActionButton({ kind = "secondary", onClick, disabled = false, flex = false, title, className = "", children }) {
+  const style = disabled
+    ? { background: "#2a2a33", color: "#8a8a92", cursor: "not-allowed" }
+    : kind === "primary" ? { background: "#d4a63a", color: "#141419" }
+    : kind === "danger"  ? { background: "#20202a", color: "#e0605a", border: "1px solid #e0605a55" }
+    : kind === "reroll"  ? { background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }
+    : kind === "decline" ? { background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }
+    :                      { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
+  return (
+    <button type="button" onClick={disabled ? undefined : onClick} disabled={disabled} title={title}
+      className={`${ACTIONBTN_BASE} ${flex ? "flex-1" : ""} ${disabled ? "" : "hover:brightness-110"} ${className}`}
+      style={style}>
+      {children}
+    </button>
+  );
+}

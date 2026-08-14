@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
-const GOLD = "#d4a63a"; // einheitliche Bestätigen-Farbe (wie TargetSelect)
 const ICE = "#7fd4f0";
 
 /* Eis-Neudesign (docs §2.1): Gletscher-Wahl nach jedem Eis-Skill-Pick. Genau EINE Karte antippen, dann bestätigen —
@@ -38,6 +37,12 @@ export function GlacierPick({ state, onConfirm }) {
           </p>
         </div>
 
+        <ActionBar pad={5}>
+          <span className="text-xs opacity-60 tabular-nums self-center">{sel != null ? "1" : "0"} / 1 gewählt</span>
+          <span className="flex-1" />
+          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>Bestätigen</ActionButton>
+        </ActionBar>
+
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
@@ -47,14 +52,6 @@ export function GlacierPick({ state, onConfirm }) {
             onTilePick={(pos) => pick(pos)} />
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs opacity-60 tabular-nums">{sel != null ? "1" : "0"} / 1 gewählt</span>
-          <button onClick={() => ready && onConfirm(sel)} disabled={!ready}
-            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
-            Bestätigen
-          </button>
-        </div>
       </div>
     </div>
   );

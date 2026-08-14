@@ -1,6 +1,6 @@
 import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 
@@ -29,6 +29,10 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
             Ein mächtiger Skill für deinen <b>7. Slot</b> — nur aus Fraktionen, in denen du schon aktive Skills hast.
             Die Wahl steht danach <b>fest</b> (kein Tausch). Oder wähle stattdessen einen normalen Skill.
           </p>
+          <ActionBar pad={6}>
+            {onReroll && rerollsLeg > 0 && <ActionButton kind="reroll" flex onClick={onReroll}>↻ Neu würfeln <span className="opacity-70">({rerollsLeg})</span></ActionButton>}
+            <ActionButton kind="decline" flex onClick={onDecline}>Keinen Legendär — stattdessen einen Skill wählen</ActionButton>
+          </ActionBar>
           <div className="grid gap-3 sm:grid-cols-2">
             {legs.map((s) => {
               const meta = ac(s.id);
@@ -47,16 +51,6 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
               );
             })}
           </div>
-          {onReroll && rerollsLeg > 0 && (
-            <button onClick={onReroll} className="w-full mt-4 rounded-lg py-2.5 text-sm font-bold transition-all hover:brightness-110"
-              style={{ background: `${GOLD}1f`, border: `1px solid ${GOLD}`, color: GOLD }}>
-              ↻ Neu würfeln <span className="opacity-70">({rerollsLeg})</span>
-            </button>
-          )}
-          <button onClick={onDecline} className="w-full mt-3 rounded-lg py-2.5 text-sm font-bold"
-            style={{ background: "#20202a", border: "1px solid #3a3a48", color: "#aeb4c2" }}>
-            Keinen Legendär — stattdessen einen Skill wählen
-          </button>
         </div>
       </div>
     </div>

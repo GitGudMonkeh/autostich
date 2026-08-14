@@ -1,5 +1,5 @@
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { PerkList, DeckStrength } from "./BuildSummary.jsx";
@@ -63,6 +63,13 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
+
+        {!state.devMode && (onDecline || canReroll) && (
+          <ActionBar pad={6}>
+            {canReroll && <ActionButton kind="reroll" flex onClick={onReroll}>🎲 Neu würfeln · {rerollTokens}</ActionButton>}
+            {onDecline && <ActionButton kind="decline" flex onClick={onDecline}>Alle ablehnen</ActionButton>}
+          </ActionBar>
+        )}
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-3">
@@ -128,28 +135,6 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {!state.devMode && (
         <div className="text-center text-xs opacity-40 mt-3">
           Jeder Perk ist pro Lauf nur einmal wählbar.
-        </div>
-        )}
-
-        {/* #138: Neu würfeln (links) + „Alle ablehnen" (rechts) nebeneinander über die Breite — eine Perk-Runde ist nie
-            „verschwendet" (keine Münzen mehr, #225.1). Im Dev-Modus hat der Katalog sein eigenes „Überspringen". */}
-        {!state.devMode && (onDecline || canReroll) && (
-        <div className="flex items-stretch gap-2 mt-3">
-          {canReroll && (
-            // #UI: Reroll etwas breiter (flex-[1.5]) + nowrap → „· 2" bricht nicht mehr um.
-            <button onClick={onReroll}
-              className="flex-[1.5] whitespace-nowrap text-xs px-3 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
-              🎲 Neu würfeln · {rerollTokens}
-            </button>
-          )}
-          {onDecline && (
-            <button onClick={onDecline}
-              className="flex-1 whitespace-nowrap text-xs px-3 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
-              Alle ablehnen
-            </button>
-          )}
         </div>
         )}
 

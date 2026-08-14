@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { PERK_DEFS } from "../game/perks.js";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
 
-const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 
 /* Kartenrollen-Zielauswahl (V2 §22.6 C / §22.5): öffnet nach dem Pick eines Ziel-Perks.
    Genau needsTarget Karten antippen, dann bestätigen. Danach ist die Rolle fixiert.
@@ -34,20 +33,18 @@ export function TargetSelect({ state, onConfirm }) {
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.desc}</p>
         </div>
 
+        <ActionBar pad={5}>
+          <span className="text-xs opacity-60 tabular-nums self-center">{sel.length} / {need} gewählt</span>
+          <span className="flex-1" />
+          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>Bestätigen</ActionButton>
+        </ActionBar>
+
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles} {...glacierGridProps(state)}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             architectCover={architectCover} pickedIds={sel} onTilePick={(pos, c) => toggle(c.id)} />
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs opacity-60 tabular-nums">{sel.length} / {need} gewählt</span>
-          <button onClick={() => ready && onConfirm(sel)} disabled={!ready}
-            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
-            Bestätigen
-          </button>
-        </div>
       </div>
     </div>
   );
