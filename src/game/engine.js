@@ -1090,6 +1090,9 @@ export function resolveTrick(state, rng) {
     formations: posForm.formations,
     // Große Lawine: brach dieser Gletscher als Teil des Finishers? → HUD zeigt „Lawine" statt der Score-Stufe („Gottgleich").
     grosseLawine: !!(glacierPreNow && glacierPreNow.grosseLawine && glacierPreNow.breaks.some((b) => b.pos === actualPos)),
+    // #364 Eis-Kristall-Feld: brach an DIESER (gespielten) Position ein Gletscher? → UI zählt die Gletscher-Brüche pro Lauf
+    //   hoch (0→10) und lässt das Hintergrund-Kristallfeld wachsen; bei 10 berstet es. Rein visuelles Signal (kein Gameplay).
+    glacierBroke: !!(glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)),
     winStreak, // aktuelle Siegesserie NACH diesem Stich (0 bei Niederlage) — Battlefield feiert Meilensteine (Serie 200 → „Gönn dir")
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null

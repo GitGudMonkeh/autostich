@@ -55,7 +55,7 @@ Quellen: `src/ui/FactionIcon.jsx` (Icons + `FACTION_GLOW`), `src/game/skills.js`
 
 | # | Archetyp | Konzept | Board | Abgesegnet | Code | Issue | Status |
 |---|----------|---------|-------|------------|------|-------|--------|
-| 1 | **Eis** | Wachsendes Eiskristall-Feld (Gletscher-Siege) + Bersten | `docs/prototypes/eis-kristall-feld-tuning.html` | ✓ | offen | [#364](https://github.com/GitGudMonkeh/autostich/issues/364) | **Werte abgesegnet → Code offen** |
+| 1 | **Eis** | Wachsendes Eiskristall-Feld (Gletscher-Brüche) + Bersten | `docs/prototypes/eis-kristall-feld-tuning.html` | ✓ | `src/ui/fx/IceCrystalField.jsx` | [#364](https://github.com/GitGudMonkeh/autostich/issues/364) | **Umgesetzt (Renderer portiert + verdrahtet)** |
 | 2 | TBD | TBD | – | – | – | – | offen |
 | 3 | TBD | TBD | – | – | – | – | offen |
 | 4 | TBD | TBD | – | – | – | – | offen |
@@ -129,4 +129,13 @@ const TUNE = {
 - **2026-08-14** — TUNE abgesegnet („sehr sehr geil"), als Board-Default gebacken. Effekt auf echten
   Battlefields (Eis/Kosmos/Polarlicht/Feuer) hinter Karten-Reihe gezeigt — passt. Ebene bestätigt:
   **unterste Effekt-Ebene**. **Issue [#364](https://github.com/GitGudMonkeh/autostich/issues/364) erstellt.**
-  Nächster Schritt: Implementierung (`IceCrystalField.jsx`) — auf Zuruf.
+- **2026-08-14** — **#364 umgesetzt.** Renderer 1:1 aus dem Board portiert → `src/ui/fx/IceCrystalField.jsx`
+  (Canvas-2D, mobil-sicher wie FrostIce/Aurora). Trigger-Semantik geklärt (User: **„Gletscher bruch"**):
+  ein monotoner Zähler `iceBreaks` pro Lauf zählt die **Gletscher-Brüche** (`engine.js` neues Feld
+  `lastTrick.glacierBroke` = Bruch an der gespielten Position); der Zähler wächst 0→10 (Kristalle wachsen weich
+  hoch), berstet bei 10 (Splitter + glatter Feld-Fade), dann leerer neuer Zyklus. **Persistenz: pro Lauf**
+  (UI-Zähler in `App.jsx`, Reset im Menü/neuen Lauf). Ebene: `IceCrystalField` als `z-[1]` in `Battlefield.jsx`
+  direkt über dem BF-Bild, hinter allen anderen Effekten + Karten; nur bei aktivem Eis-Deck (`iceActive`), lazy.
+  **Perf:** rAF läuft nur während Wachs-Übergang/Bersten (abgesegnetes TUNE hat keine Dauer-Details → ruhendes
+  Feld statisch), auf `lite` reduzierte Kristall-Dichte. Reduzierte Bewegung → Snap ohne Motion. Build + 1020
+  Tests grün; Renderer + In-Game-Ebene via Playwright-Harness verifiziert.
