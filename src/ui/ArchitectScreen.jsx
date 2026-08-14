@@ -369,11 +369,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [inspectId]);
   // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
   const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
-  // #361: nach „↶ Rückgängig"/„Zurücksetzen" zurück in den Haupt-Fluss (interne phase:"choose") und alle Sub-Auswahl-
-  // Zustände lösen — sonst zeigte die UI evtl. auf ein soeben entferntes/zurückgesetztes Gebäude (Issue: „danach zurück auf choose").
-  const resetArchUi = () => { setPhase("choose"); setSelId(null); setInspectId(null); setPending(null); setPendingUpgrade(null); setRemoveFor(null); setDemolishIds([]); setUpgradeMsg(null); setDragPrev(null); };
-  const doArchUndo = () => { onUndo?.(); resetArchUi(); };
-  const doArchReset = () => { onReset?.(); resetArchUi(); };
+  // #361-Folge: „↶ Rückgängig"/„Zurücksetzen" betreffen NUR Verschiebungen (die Gebäude bleiben, actedMain unberührt) →
+  // KEIN Phasenwechsel mehr (kein Zurückspringen ins Bauplan-Fenster). Nur die transiente Drag-Vorschau aufräumen.
+  const doArchUndo = () => { onUndo?.(); setDragPrev(null); setRotateMsg(null); };
+  const doArchReset = () => { onReset?.(); setDragPrev(null); setRotateMsg(null); };
   // #237: markiertes Gebäude wirklich aufwerten (erst nach „Aufwerten bestätigen" — nie durch einen Fehltipp).
   // Härtung: NUR weiterschalten, wenn das Upgrade wirklich anwendbar ist. Ist die Hauptaktion der Bauphase schon
   // verbraucht (actedMain) oder das Gebäude nicht (mehr) aufwertbar (Stufe IV/legendär/inert), lehnt der Reducer
@@ -890,8 +889,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               })()}
 
               {/* #261: Auswahl im Perk-Stil — 3 Baupläne + „Aufwerten" als 4. Karte, alle vier NEBENEINANDER (kompakt).
-                  Die Wahl ist verbindlich: chooseOffer baut sofort und geht in die Verschiebe-Phase (kein Zurück). */}
-              {!removeFor && phase === "choose" && (
+                  Die Wahl ist verbindlich: chooseOffer baut sofort und geht in die Verschiebe-Phase (kein Zurück).
+                  #361-Folge: Sobald die Hauptaktion verbraucht ist (gebaut/aufgewertet), ist das Bauplan-Fenster WEG —
+                  es bliebe sonst nur ein totes Auswahlfenster (Bauen/Aufwerten sind dann ohnehin gesperrt). */}
+              {!removeFor && phase === "choose" && !architect.actedMain && (
                 <div>
                   <div className="text-sm font-semibold mb-2">Was baust du diese Phase?</div>
                   {state.devMode ? (
