@@ -52,45 +52,89 @@ function PillBody({ label, mark, titleColor, markColor }) {
   );
 }
 
-// Eine Knoten-Pille (Zustand aus nodeState). Kaufbar → klickbar (gold). Platzhalter/gesperrt → inert.
+// Eine Knoten-Pille (Zustand aus nodeState). JEDE Pille ist antippbar → wählt den Knoten (Tipp-zum-Erklären, #):
+// die Detailzeile unter der Lane erklärt dann, was er bewirkt. Kauf passiert NICHT mehr per Direkt-Tipp, sondern
+// über den Kaufen-Button in der Detailzeile (bewusster 2. Schritt, keine Fehlkäufe). Angetippt = Akzent-Ring.
 // flex-1 → alle Pillen einer Lane sind gleich breit (saubere Spalten-Ausrichtung, kein Umbruch).
-function NodePill({ node, st, accent, onBuy }) {
+function NodePill({ node, st, accent, selected, onSelect }) {
   const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
   const mark = isOwned ? "✓" : isPlaceholder ? "Bald" : (isBuy || st === "lock-sp") ? `${node.cost} SP` : "🔒";
-  const style = isOwned
+  const base = isOwned
     ? { border: `1px solid ${accent}`, background: `${accent}18` }
     : isBuy
-      ? { border: `1px solid ${GOLD}`, boxShadow: `0 0 0 1px ${GOLD}22, 0 0 10px ${GOLD}22`, cursor: "pointer" }
+      ? { border: `1px solid ${GOLD}`, boxShadow: `0 0 0 1px ${GOLD}22, 0 0 10px ${GOLD}22` }
       : isPlaceholder
         ? { border: "1px dashed #3a3a45", background: "transparent", opacity: 0.6 }
         : { border: "1px solid #26262e", opacity: 0.5 };
+  // Angetippt: Akzent-Ring + volle Deckkraft (auch gesperrte/Platzhalter werden beim Lesen klar hervorgehoben).
+  const style = selected ? { ...base, boxShadow: `0 0 0 2px ${accent}`, opacity: 1 } : base;
   const markColor = isOwned ? accent : (isBuy || st === "lock-sp") ? GOLD : "#8a8a95";
   return (
-    <span title={`${node.detail}`} onClick={isBuy ? () => onBuy(node.id) : undefined}
-      className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 transition-transform hover:-translate-y-px"
+    <span title={`${node.detail}`} onClick={() => onSelect(node.id)} role="button" aria-pressed={selected}
+      className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 cursor-pointer transition-transform hover:-translate-y-px"
       style={style}>
       <PillBody label={node.label} mark={mark} titleColor={isOwned ? "#e8e8ea" : isBuy ? "#f0e8d0" : "#c8c8d0"} markColor={markColor} />
     </span>
   );
 }
 
+// Status-Klartext eines Knotens für die Detailzeile — erklärt bei gesperrten Knoten AUCH warum (Vorgänger/Gate/SP).
+function nodeStatusText(node, st) {
+  if (st === "owned") return "✓ Gekauft";
+  if (st === "placeholder") return "Bald verfügbar";
+  if (st === "lock-sp") return `Zu wenig SP — kostet ${node.cost} SP`;
+  if (st === "lock-prev") { const pr = NODE_BY_ID[node.prereq]; return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
+  if (st === "lock-gate") return node.gate?.type === "anyLeg" ? "Braucht eine freigeschaltete Legendär-Stufe" : "Noch gesperrt";
+  return "Kaufbar";
+}
+
+// Detailzeile (Tipp-zum-Erklären): erscheint unter der Lane des angetippten Knotens. Name + Wirkung (node.detail)
+// + Status; kaufbare Knoten bekommen hier den Kaufen-Button. Rahmen im Lane-/Knoten-Akzent.
+function NodeDetail({ node, st, accent, onBuy }) {
+  return (
+    <div className="mt-2 rounded-lg px-3 py-2.5 flex items-center gap-3" style={{ background: "#12121a", border: `1px solid ${accent}55` }}>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12.5px] font-extrabold" style={{ color: accent }}>{node.label}</div>
+        <div className="text-[11.5px] leading-snug opacity-75 mt-0.5">{node.detail}</div>
+        <div className="text-[10.5px] font-semibold mt-1" style={{ color: st === "owned" ? accent : st === "buy" ? GOLD : "#8a8a95" }}>{nodeStatusText(node, st)}</div>
+      </div>
+      {st === "buy" && (
+        <button onClick={() => onBuy(node.id)}
+          className="shrink-0 px-3 py-2 rounded-lg text-[12px] font-extrabold transition-transform hover:-translate-y-0.5"
+          style={{ background: GOLD, color: "#141419" }}>Kaufen · {node.cost} SP</button>
+      )}
+    </div>
+  );
+}
+
 // Ein Lane-Fluss: gleich breite Pillen (flex-1) mit „›"-Verbindung, EINE Reihe (kein Umbruch → ausgerichtet).
-function Lane({ nodes, p, laneAccent, onBuy, lead = null }) {
+// Ist ein Knoten dieser Lane angetippt (selected), klappt darunter seine Detailzeile auf.
+function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) {
   const items = [];
   if (lead) items.push(<span key="lead" className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2" style={{ border: `1px solid ${lead.color}`, background: `${lead.color}18` }}>
     <PillBody label={lead.label} mark="✓ frei" titleColor="#e8e8ea" markColor={lead.color} />
   </span>);
   nodes.forEach((n) => {
     if (items.length) items.push(<span key={`sep${n.id}`} className="flex-none self-center text-[12px]" style={{ color: "#4a4a55" }}>›</span>);
-    items.push(<NodePill key={n.id} node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, laneAccent)} onBuy={onBuy} />);
+    items.push(<NodePill key={n.id} node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, laneAccent)} selected={selected === n.id} onSelect={onSelect} />);
   });
-  return <div className="flex items-stretch gap-1">{items}</div>;
+  const selNode = nodes.find((n) => n.id === selected);
+  return (
+    <div>
+      <div className="flex items-stretch gap-1">{items}</div>
+      {selNode && <NodeDetail node={selNode} st={nodeState(p, selNode.id)} accent={nodeAccent(selNode, laneAccent)} onBuy={onBuy} />}
+    </div>
+  );
 }
 
 export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   const [tab, setTab] = useState("deck");
   const [detailArch, setDetailArch] = useState(null);
-  useEscape(detailArch ? () => setDetailArch(null) : onClose);
+  const [selNode, setSelNode] = useState(null); // Tipp-zum-Erklären: aktuell aufgeklappter Knoten (id) oder null
+  const toggleNode = (id) => setSelNode((cur) => (cur === id ? null : id)); // nochmal antippen = zuklappen
+  // Reiter-Wechsel schließt die offene Detailzeile (sonst hinge sie im anderen Reiter nach).
+  const selectTab = (key) => { setTab(key); setSelNode(null); };
+  useEscape(selNode ? () => setSelNode(null) : detailArch ? () => setDetailArch(null) : onClose);
   const p = profile || emptyProfile();
   const sp = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const owned = ownedCount(p);
@@ -130,7 +174,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {[{ key: "deck", label: "Decks" }, { key: "gen", label: "Allgemein" }].map((t) => {
               const on = t.key === tab, col = t.key === "deck" ? VI : CY;
               return (
-                <button key={t.key} onClick={() => setTab(t.key)} role="tab" aria-selected={on}
+                <button key={t.key} onClick={() => selectTab(t.key)} role="tab" aria-selected={on}
                   className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
                   style={on
                     ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
@@ -144,6 +188,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
             <b className="text-[#e8e8ea]">{owned}</b> / {TOTAL_NODES} Knoten · Meister-Liga {treeComplete(p) ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}
           </div>
+          <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>Knoten antippen zeigt, was er bewirkt.</div>
         </div>
 
         {/* ===== Reiter „Decks" ===== */}
@@ -163,14 +208,14 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                     <span className="text-[14px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
                     <span className="ml-auto text-[10.5px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>Details ›</span>
                   </button>
-                  <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} />
+                  <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} selected={selNode} onSelect={toggleNode} />
                 </div>
               );
             })}
             {/* Extras: Deck-Reroll + Platzhalter. */}
             <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
               <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>Legendär-Phase</div>
-              <Lane nodes={[NODE_BY_ID.deckReroll, NODE_BY_ID.synLeg]} p={p} laneAccent={VI} onBuy={buy} />
+              <Lane nodes={[NODE_BY_ID.deckReroll, NODE_BY_ID.synLeg]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
         )}
@@ -184,7 +229,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{lane.name}</span>
                   {lane.note && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{lane.note}</span>}
                 </div>
-                <Lane nodes={lane.ids.map((id) => NODE_BY_ID[id])} p={p} laneAccent={lane.accent} onBuy={buy} />
+                <Lane nodes={lane.ids.map((id) => NODE_BY_ID[id])} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>
             ))}
           </div>
