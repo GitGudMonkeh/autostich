@@ -25,7 +25,7 @@ function ChallengeTargetBar({ score, challengeMods }) {
   return (
     <div className="mt-2 pt-2" style={{ borderTop: "1px solid #2a1a1c" }}>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-pixel tracking-wide" style={{ color: "#ff9a9a" }}>
+        <span className="text-[11px] font-semibold tracking-wide" style={{ color: "#ff9a9a" }}>
           ⚔ Challenge-Ziel {reached}/{targets.length}
         </span>
         <span className="text-[10px] font-semibold" style={{ color: allDone ? "#86efac" : "#9a9aa6" }}>
@@ -63,7 +63,7 @@ export function ScoreMilestoneBar({ score = 0, challengeMods = [] }) {
     <div className="rounded-xl px-3 py-2" style={frame}
       title={atMax ? "Alle Score-Meilensteine erreicht" : `Nächster Meilenstein: ${mio(next.at)} (+${next.sp} SP)`}>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-pixel tracking-wide" style={{ color: accHi }}>
+        <span className="text-[11px] font-semibold tracking-wide" style={{ color: accHi }}>
           💠 Meilensteine {reached}/{total}{spSoFar > 0 ? ` · +${spSoFar} SP` : ""}
         </span>
         <span className="text-[10px] font-semibold" style={{ color: atMax ? accHi : "#9a9aa6" }}>

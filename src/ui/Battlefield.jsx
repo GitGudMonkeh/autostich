@@ -1601,7 +1601,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
         {banner ? (
-          <span className="text-lg font-extrabold tracking-wide font-pixel as-banner" style={{ color: banner.color }}>{banner.text}</span>
+          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
         )}
