@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { Sparkline } from "./Sparkline.jsx";
 import { RunDetail } from "./RunDetail.jsx";
 import { factionShares } from "./RunGraphs.jsx"; // Stats-Redesign: dieselbe Fraktions-Score-Herkunft wie im Victory-Screen
@@ -152,7 +152,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <h2 className="text-lg font-bold flex items-center gap-2">Statistiken</h2>
-          <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
         </div>
 
         {empty ? (

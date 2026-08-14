@@ -4,7 +4,7 @@ import {
 } from "../game/glossary.js";
 import { useEscape } from "./useEscape.js";
 import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
 
 /* ============================================================
    GLOSSAR-UI (Glossar-Rework) — drei Bausteine:
@@ -102,9 +102,7 @@ export function GlossaryOverlay({ onClose }) {
             <div className="flex items-center gap-2.5">
               <span className="gloss-i-mark">i</span>
               <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Glossar</h2>
-              <button type="button" onClick={onClose} aria-label="Schließen"
-                className="ml-auto w-7 h-7 grid place-items-center rounded-lg text-base leading-none"
-                style={{ border: "1px solid #33333e", background: "#1c1c22", color: "#9a9aa4" }}>✕</button>
+              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>Schließen</ActionButton>
             </div>
             <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>Begriffe &amp; Sonderregeln — keine einzelnen Perks/Skills</div>
             <div className="relative mt-2.5">

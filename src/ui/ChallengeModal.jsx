@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CHALLENGES, challengeStakes } from "../game/challenges.js";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
 import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
 
 /* #301 Challenge-Auswahl-Fenster (vor Run-Start). Die drei Modifikatoren werden KUMULATIV & nacheinander zugeschaltet
@@ -22,12 +22,16 @@ export function ChallengeModal({ onConfirm, onClose }) {
       <div className="relative w-full max-w-md rounded-2xl overflow-hidden" style={phaseCard(A)} onClick={(e) => e.stopPropagation()}>
         <PhaseHairline />
         <div className="p-5">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center mb-1">
             <h2 className="text-lg font-extrabold flex items-center gap-2" style={{ color: A.c }}>
               <span aria-hidden="true">⚔</span> Challenges
             </h2>
-            <button onClick={onClose} aria-label="Schließen" className="text-lg leading-none px-2 py-1 rounded hover:bg-white/5" style={{ color: "#9a97ab" }}>✕</button>
           </div>
+          {/* #362 Aktionsleiste OBEN — Abbrechen (ersetzt das ✕) links, Starten rechts. */}
+          <ActionBar pad={5}>
+            <ActionButton kind="secondary" flex onClick={onClose}>Abbrechen</ActionButton>
+            <ActionButton kind="primary" flex disabled={level === 0} onClick={start}>⚔ Starten</ActionButton>
+          </ActionBar>
           <p className="text-[12px] mb-3 leading-snug" style={{ color: "#9a97ab" }}>
             Schalte Modifikatoren nacheinander zu. Jeder hat ein <b style={{ color: "#cfccda" }}>Score-Ziel</b> (50 / 75 / 100 Mio):
             <b style={{ color: "#8fe0a8" }}> erreichst du es, gewinnst du Deck-Punkte</b> — <b style={{ color: "#e79a9a" }}>verfehlst du es, verlierst du Deck-Punkte</b>.
@@ -86,16 +90,7 @@ export function ChallengeModal({ onConfirm, onClose }) {
             </span>
           </div>
 
-          <div className="mt-4 flex gap-2">
-            <button onClick={onClose} className="flex-1 rounded-lg px-4 py-2.5 text-[14px] font-bold transition-all hover:-translate-y-0.5"
-              style={{ background: "#20202a", color: "#cfccda", border: "1px solid #30303a" }}>Abbrechen</button>
-            <button onClick={start} disabled={level === 0}
-              className="flex-1 rounded-lg px-4 py-2.5 text-[14px] font-extrabold transition-all hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: level === 0 ? "#241416" : A.c, color: level === 0 ? "#8b8898" : "#180a0a", boxShadow: level === 0 ? "none" : "0 0 16px rgba(224,85,85,.4)" }}>
-              ⚔ Starten
-            </button>
-          </div>
-          {level === 0 && <p className="mt-2 text-center text-[11px]" style={{ color: "#6d6a80" }}>Mindestens C1 zuschalten, um zu starten.</p>}
+          {level === 0 && <p className="mt-3 text-center text-[11px]" style={{ color: "#6d6a80" }}>Mindestens C1 zuschalten, um zu starten.</p>}
         </div>
       </div>
     </div>

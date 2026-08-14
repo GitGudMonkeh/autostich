@@ -3,7 +3,7 @@ import { useEscape } from "./useEscape.js";
 import { RunStats } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
 import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in den Lauf-Details
 import { ARCH_CAT } from "./indicators/vocab.js";
@@ -40,7 +40,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}
           </div>
-          <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
         </div>
         <div className="text-center my-3">
           <div className="text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>

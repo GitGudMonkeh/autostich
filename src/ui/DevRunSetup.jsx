@@ -2,6 +2,7 @@ import { useState } from "react";
 import { N_POS, MAX_COVER } from "../game/architect.js";
 import { FORMATION_ENERGY } from "../game/constants.js";
 import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
+import { ActionButton } from "./modalStyle.jsx";
 
 /* Dev-Run-Setup (Test-Layout, nur Preview-Build) — ein frei konfigurierbarer Lauf zum Testen.
    Phase 1: Rundenzahl (20–100), Master-Auswahl der Angebotstypen, Gleichverteilung, Pro-Runde-Plan (aufklappbar),
@@ -86,7 +87,7 @@ export function DevRunSetup({ onStart, onClose }) {
             <h2 className="text-lg font-bold font-pixel" style={{ color: "#d4a63a" }}>DEV RUN</h2>
             <p className="text-xs opacity-55">Frei konfigurierbarer Testlauf — nur für Devs.</p>
           </div>
-          <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-sm" style={{ background: "#1c1c22", border: "1px solid #30303a" }}>✕</button>
+          <ActionButton kind="secondary" onClick={onClose}>Schließen</ActionButton>
         </div>
 
         {/* Rundenzahl */}

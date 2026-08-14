@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { CardDetail } from "./CardDetail.jsx";
@@ -72,7 +72,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Chronik</div>
             <h2 className="text-xl font-bold">Kartenübersicht</h2>
           </div>
-          <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
         </div>
 
         <div className="md:flex md:gap-4 md:items-start">

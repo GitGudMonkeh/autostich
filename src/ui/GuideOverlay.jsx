@@ -3,6 +3,7 @@ import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
 import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GUIDES } from "./guides.js";
 import { useEscape } from "./useEscape.js";
+import { ActionButton } from "./modalStyle.jsx";
 
 /* ============================================================
    LEITFADEN-UI — das „Wie spiele ich das"-Overlay je Archetyp (Datenquelle: guides.js).
@@ -133,9 +134,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             <div className="flex items-center gap-2.5">
               <span aria-hidden="true">📖</span>
               <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Leitfaden</h2>
-              <button type="button" onClick={onClose} aria-label="Schließen"
-                className="ml-auto w-7 h-7 grid place-items-center rounded-lg text-base leading-none"
-                style={{ border: "1px solid #33333e", background: "#1c1c22", color: "#9a9aa4" }}>✕</button>
+              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>Schließen</ActionButton>
             </div>
             <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>So spielst du jeden Archetyp — durchklicken</div>
           </div>

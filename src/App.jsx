@@ -13,6 +13,7 @@ import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wo
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
+import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
@@ -974,15 +975,21 @@ export function Autostich() {
       {confirmAbort && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmAbort(false)}>
-          <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+            <ModalHairline />
+            <div className="p-5">
             <div className="text-base font-bold">Lauf pausieren oder beenden?</div>
-            <div className="text-sm opacity-70 mt-1.5"><b>Beenden &amp; speichern</b> merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. <b>Beenden</b> wertet ihn und zeigt den Endscreen.</div>
-            <div className="flex flex-col gap-2 mt-4">
-              <button onClick={suspendRun} className="rounded-lg py-2 text-sm font-bold" style={{ background: "#2f6d3a", color: "#fff" }}>Beenden &amp; speichern</button>
-              <div className="flex gap-2">
-                <button onClick={() => setConfirmAbort(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
-                <button onClick={() => { setConfirmAbort(false); endRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Beenden</button>
+            {/* #362 Aktionsleiste OBEN: primär (Beenden & speichern) obenauf, darunter Weiterspielen/Beenden. */}
+            <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
+              <div className="flex flex-col gap-2 w-full">
+                <ActionButton kind="primary" onClick={suspendRun}>Beenden &amp; speichern</ActionButton>
+                <div className="flex gap-2">
+                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>Weiterspielen</ActionButton>
+                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>Beenden</ActionButton>
+                </div>
               </div>
+            </ActionBar>
+            <div className="text-sm opacity-70"><b>Beenden &amp; speichern</b> merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. <b>Beenden</b> wertet ihn und zeigt den Endscreen.</div>
             </div>
           </div>
         </div>
@@ -992,12 +999,16 @@ export function Autostich() {
       {confirmRestart && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmRestart(false)}>
-          <div className="w-full max-w-xs rounded-2xl p-5" style={{ background: "#181820", border: "1px solid #33333e" }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+            <ModalHairline />
+            <div className="p-5">
             <div className="text-base font-bold">Wirklich neustarten?</div>
-            <div className="text-sm opacity-70 mt-1.5">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setConfirmRestart(false)} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#16161c", border: "1px solid #33333e" }}>Weiterspielen</button>
-              <button onClick={() => { setConfirmRestart(false); restartRun(); }} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#e0605a", color: "#fff" }}>Neustarten</button>
+            {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
+            <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
+              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>Weiterspielen</ActionButton>
+              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>Neustarten</ActionButton>
+            </ActionBar>
+            <div className="text-sm opacity-70">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
             </div>
           </div>
         </div>

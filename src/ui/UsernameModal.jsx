@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
+import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
    späteren Ändern. Minimal validiert — nur Trim + Länge 1–20; keine Eindeutigkeit,
@@ -24,6 +24,12 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
         style={MODAL_CARD}>
         <ModalHairline />
         <div className="p-6">
+        {/* #362 Aktionsleiste OBEN — Abbrechen links, Speichern rechts. */}
+        <ActionBar pad={6} bg={STICKY_HEAD_BG}>
+          {!firstTime && <ActionButton kind="secondary" onClick={onClose}>Abbrechen</ActionButton>}
+          <span className="flex-1" />
+          <ActionButton kind="primary" disabled={!trimmed} onClick={submit}>Speichern</ActionButton>
+        </ActionBar>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: CY }}>
             {firstTime ? "Willkommen" : "Name ändern"}
@@ -63,21 +69,6 @@ export function UsernameModal({ initial = "", firstTime = false, onSave, onClose
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4">
-          {!firstTime && (
-            <button onClick={onClose} className="py-2.5 px-4 rounded-lg font-bold transition-all"
-              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-              Abbrechen
-            </button>
-          )}
-          <button onClick={submit} disabled={!trimmed}
-            className="flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
-            style={{ background: trimmed ? "#d4a63a" : "#26262c", color: trimmed ? "#141419" : "#666",
-              boxShadow: trimmed ? "0 0 16px rgba(212,166,58,0.4)" : "none",
-              cursor: trimmed ? "pointer" : "not-allowed" }}>
-            Speichern
-          </button>
-        </div>
         </div>
       </div>
     </div>

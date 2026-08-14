@@ -1,5 +1,5 @@
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import {
   NODES, BRANCHES, NODE_BY_ID, TOTAL_NODES,
   emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
@@ -55,7 +55,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             <button onClick={doRespec} disabled={owned === 0}
               className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
               style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>↺ Respec</button>
-            <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+            <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
           </div>
         </div>
 

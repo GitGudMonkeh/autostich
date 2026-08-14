@@ -14,7 +14,7 @@ import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
 import { treeComplete } from "../game/progression.js";
-import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
+import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
@@ -154,7 +154,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
             <h2 className="text-lg font-extrabold flex items-center gap-2">🏆 Bestenliste</h2>
-            <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+            <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
           </div>
 
           {/* Reiter — eine Zeile (bei Bedarf horizontal scrollbar), aktiver Reiter in seiner Akzentfarbe. */}
