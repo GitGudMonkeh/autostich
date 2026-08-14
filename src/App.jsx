@@ -280,6 +280,8 @@ export function Autostich() {
   // Rückgabe true = Geste verbraucht (Guard hält die App), false = normale Navigation (z. B. Menü verlassen).
   const handleBack = () => {
     if (showUsername) { setShowUsername(false); return true; }
+    if (showChallenge) { setShowChallenge(false); return true; }  // #350: Challenge-Fenster → schließen (nicht die App verlassen)
+    if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
     if (showOptions) { setShowOptions(false); return true; }

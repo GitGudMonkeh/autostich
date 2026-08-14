@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { N_POS, MAX_COVER } from "../game/architect.js";
 import { FORMATION_ENERGY } from "../game/constants.js";
+import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
 
 /* Dev-Run-Setup (Test-Layout, nur Preview-Build) — ein frei konfigurierbarer Lauf zum Testen.
    Phase 1: Rundenzahl (20–100), Master-Auswahl der Angebotstypen, Gleichverteilung, Pro-Runde-Plan (aufklappbar),
@@ -28,6 +29,7 @@ function distribute(n, enabledTokens) {
 }
 
 export function DevRunSetup({ onStart, onClose }) {
+  useEscape(onClose); // #350: Escape schließt das Fenster
   const [rounds, setRounds] = useState(40);
   const [enabled, setEnabled] = useState(["skill", "perk", "formation", "shop"]); // Stats default aus (Test-Layout)
   const [schedule, setSchedule] = useState(() => distribute(40, ["skill", "perk", "formation", "shop"]));

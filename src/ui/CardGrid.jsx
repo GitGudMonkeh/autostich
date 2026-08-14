@@ -10,6 +10,10 @@ import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { glacierFormations } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 
+// #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
+//   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
+const EMPTY_ROLES = [];
+
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -285,7 +289,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 const pos = s * SEGMENT_SIZE + k;
                 const ally = linkedPartnerOf(pe, c.suit);
                 const disabled = disabledSet.has(pos);
-                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
+                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
                   anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}

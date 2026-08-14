@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CHALLENGES, challengeStakes } from "../game/challenges.js";
 import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
 
 /* #301 Challenge-Auswahl-Fenster (vor Run-Start). Die drei Modifikatoren werden KUMULATIV & nacheinander zugeschaltet
    (erst C1, dann C1+C2, dann C1+C2+C3 — ein späterer setzt die früheren voraus). Immer sichtbar: die laufende Summe des
@@ -10,6 +11,7 @@ const A = PHASE_ACCENTS.red;
 const mio = (n) => `${Math.round(n / 1_000_000)} Mio`;
 
 export function ChallengeModal({ onConfirm, onClose }) {
+  useEscape(onClose); // #350: Escape schließt das Fenster
   const [level, setLevel] = useState(0); // 0..3 = „C1..CN aktiv"
   const stakes = challengeStakes(level);
   const start = () => onConfirm(CHALLENGES.slice(0, level).map((c) => c.id));
