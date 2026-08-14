@@ -202,6 +202,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   }, [buildings]);
   const boardRef = useRef(null);
   const colorBarRef = useRef(null); // #: Farbauswahl-Leiste (colorLocked-Gebäude) — Ziel des Auto-Scrolls, damit sie sichtbar bleibt
+  const scrollerRef = useRef(null);     // #: Scroll-Container (das Architekt-Panel selbst) — Ziel für den Bau-Auto-Scroll
+  const boardSectionRef = useRef(null); // #: der ganze Brett-Abschnitt (Farbleiste/Kombis-Toggle + Gitter) — hierhin scrollt der Bau
+  const stickyBarRef = useRef(null);    // #: die sticky Aktionsleiste oben — ihre Höhe halten wir beim Scrollen frei
   const [archFrame, setArchFrame] = useState(null);
   const archSig = Object.keys(archCover).map((p) => `${p}:${archCover[p].bid}:${archCover[p].color}`).join(",");
   useLayoutEffect(() => {
@@ -335,13 +338,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const newId = architect.nextId;                      // Reducer vergibt genau diese id an das neue Gebäude
     onBuild?.({ familyId: o.familyId, tier: o.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
     setSelId(newId); setPhase("move");
-    // #UI: nach der Bauplan-Wahl automatisch zum Brett scrollen — das eben platzierte Gebäude ist sofort sichtbar und
-    // greifbar (auf Mobil liegt das Brett unter der Steuerung, sonst müsste man erst manuell runterscrollen).
-    // Bei colorLocked-Gebäuden (Buntglas/Zunfthaus) NUR so weit, dass die Farbauswahl-Leiste (über dem Brett) ganz
-    // sichtbar bleibt — statt das Brett zu zentrieren (was die Leiste nach oben aus dem Bild schöbe).
+    // #UI: nach der Bauplan-Wahl automatisch zum Brett scrollen — der OBERE Rand des Brett-Abschnitts (Farbauswahl-
+    // Leiste bei colorLocked, sonst die Kombis/Formationen-Zeile) rutscht direkt UNTER die sticky Aktionsleiste, sodass
+    // das eben gesetzte Gebäude (oberste Brett-Reihe) voll sichtbar ist statt hinter der Leiste zu verschwinden (#).
+    // Deckt beide Fälle mit EINER Logik ab: ohne Farbe → Kombis-Zeile oben; mit Farbe → Farbauswahl-Leiste oben.
     if (typeof requestAnimationFrame !== "undefined") requestAnimationFrame(() => {
-      if (fam.colorLocked && colorBarRef.current) colorBarRef.current.scrollIntoView({ block: "start", behavior: "smooth" });
-      else boardRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      const sec = boardSectionRef.current, scroller = scrollerRef.current;
+      if (sec && scroller) {
+        const offset = (stickyBarRef.current?.offsetHeight || 0) + 12; // sticky Aktionsleiste freihalten
+        const delta = sec.getBoundingClientRect().top - scroller.getBoundingClientRect().top - offset;
+        scroller.scrollTo({ top: Math.max(0, scroller.scrollTop + delta), behavior: "smooth" });
+      } else {
+        (fam.colorLocked ? colorBarRef.current : boardRef.current)?.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
     });
   };
   // Sobald durch Entfernen Platz frei wird, den wartenden Bauplan automatisch bauen (und in die Verschiebe-Phase).
@@ -562,7 +571,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
-      <div className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
+      <div ref={scrollerRef} className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card as-panel-arch"
         style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5" }}>
         <PhaseHairline />
 
@@ -599,7 +608,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
-          <section className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
+          <section ref={boardSectionRef} className="rounded-xl p-3 order-2 md:order-1" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
             {/* #UI: Farbauswahl (colorLocked-Gebäude: Buntglas/Zunfthaus) sitzt jetzt DIREKT über dem Brett — zwischen der
                 Bestätigen-Leiste (mobil darüber) und dem Brett. Eigener Rahmen + Abstand nach unten, damit man beim Tippen
                 der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
@@ -1031,7 +1040,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             {/* #UI „nur Buttons": schmale, schwebende Aktions-Leiste (mobil oben angeheftet) — nur die Phasen-Buttons,
                 damit sie beim Ziehen am Brett erreichbar bleiben. Anleitung/Referenz/Farbwahl bleiben im Panel drüber.
                 Desktop: normale Leiste (md:static). */}
-            <div className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
+            <div ref={stickyBarRef} className="order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0" style={{ background: "#0e1822", border: "1px solid #20303d", boxShadow: "0 6px 16px #0006" }}>
               {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
                   „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
               {showRotate && phase !== "move" && (selRotatable ? (
