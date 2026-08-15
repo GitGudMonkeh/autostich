@@ -40,7 +40,7 @@ export const SKILL_DEFS = {
     desc: `Nach jedem vollen Ladungsverbrauch bleiben ${C.REST_CHARGE_FLOOR} Ladungen erhalten (statt 0).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeFloor: () => C.REST_CHARGE_FLOOR },
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"],
-    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.STORM_CRIT_STEP)} pp Crit-Chance — ohne Deckel. Der Überschuss über 100 % fließt über Überschlag zurück in Ladung.`,
+    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.STORM_CRIT_STEP)} pp Crit-Chance (bis +${pct(C.STORM_CRIT_CAP)} pp). Der Überschuss über 100 % fließt über Überschlag zurück in Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, storm: true },
   SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"],
     desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${de(C.ENTLADUNG_MULT_STEP)}× Crit-Multiplikator (bis +${de(C.ENTLADUNG_MULT_CAP)}×).`,
@@ -52,7 +52,7 @@ export const SKILL_DEFS = {
 ▸ Sieg mit ionisierter Karte: +${C.ION_SCORE_PER_STACK} Score je Stapel.
 ▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} pp Crit-Chance für alle Karten (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).
 ▸ Sind ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten ionisiert: alle Karten +${C.ION_SATURATION_VALUE} Wert.
-▸ Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % voll ionisiert: überschüssige Crit-Chance wird zu Crit-Multiplikator (nur mit Überschlag).`,
+▸ Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % voll ionisiert: Überschlag holt doppelt so viel Ladung aus überschüssiger Crit-Chance.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
     desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} pp Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} pp). Verbraucht keine Ladung.`,
@@ -75,7 +75,7 @@ export const SKILL_DEFS = {
     desc: `Jeder Sieg ohne Crit gibt +${pct(C.SPANNUNGSSTAU_STEP)} pp Crit-Chance für den nächsten Sieg (bis +${pct(C.SPANNUNGSSTAU_CAP)} pp); ein Crit entlädt den Stau und setzt ihn zurück.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, spannungsstau: true },
   SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit", "charge"],
-    desc: "Crit-Chance über 100 % verfällt nicht: vor Voll-Tiefe wird sie in Ladung umgewandelt (Sturm-Loop), ab Voll-Tiefe stattdessen in Crit-Multiplikator.",
+    desc: `Crit-Chance über 100 % verfällt nicht — sie wird bei jedem Sieg in Ladung umgewandelt: je ${C.UEBERSCHLAG_PP_PER_CHARGE} Prozentpunkte über 100 % gibt es +1 Ladung. Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % der Karten voll ionisiert (Voll-Tiefe), reichen ${C.UEBERSCHLAG_DEPTH_PP_PER_CHARGE} Prozentpunkte je Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberschlag: true },
   // Linie 5 — Kaskade (Verkabelung — Ereignis zündet Ereignis)
   SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"],
@@ -86,7 +86,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
   // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
-    desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Verbrauch gibt zudem dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} pp Crit-Chance (ohne Deckel).`,
+    desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Verbrauch gibt zudem dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} pp Crit-Chance (bis +${pct(C.DAUERSTROM_CRIT_CAP)} pp).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"],
     desc: `Verlierst du einen Stich, während du mindestens die halbe Ladung (${pct(C.SERIENSCHUTZ_COST_FRAC)} %) hast, bricht deine Serie nicht — dafür wird diese Ladung verbraucht.`,

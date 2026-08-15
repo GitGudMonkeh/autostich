@@ -632,8 +632,10 @@ export function resolveTrick(state, rng) {
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers) + lightningCritMult(skills)
                    + (lightning?.durchschlagMult || 0)
                    + (lightning?.entladungMult || 0);
-    // Überschlag-Graduierung (v0.5): bei Voll-TIEFE geht der Crit-Überschuss (>100 %) in Crit-Multiplikator statt in Ladung.
-    if (hasUeberschlag(skills) && lightDepth && rawCrit > 1) critMultiplier += (rawCrit - 1) * C.UEBERSCHLAG_EXCESS_TO_MULT;
+    // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird hart gedeckelt. Bis hierher summieren sich nur
+    // gedeckelte Kanäle (~7,4× im Maximum) — der Deckel greift also erst, wenn eine künftige Quelle wieder unbegrenzt
+    // einspeist. Bewusst NACH allen Additionen, damit keine Quelle ihn umgehen kann.
+    critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = L10; reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
@@ -800,8 +802,13 @@ export function resolveTrick(state, rng) {
       } else if (hasStaticCharge(skills)) {
         gainedCharge += C.STATIC_CHARGE; // Statische Aufladung: Sieg ohne Crit → 1 Ladung
       }
-      // Überschlag: Crit-Chance-Überschuss über 100 % → Ladung (jeder Sieg). Dauerstrom: Serie → Ladung (skaliert mit Länge).
-      if (hasUeberschlag(skills) && rawCrit > 1 && !lightDepth) gainedCharge += Math.floor((rawCrit - 1) * C.UEBERSCHLAG_PER); // vor Tiefe → Ladung; ab Tiefe → Crit-Mult (Graduierung v0.5)
+      // Überschlag = Ventil: Crit-Chance-Überschuss über 100 % ist für den Wurf tot und wird bei JEDEM Sieg in Ladung
+      // umgewandelt — je N Prozentpunkte +1 Ladung, ab Voll-Tiefe reicht die Hälfte (doppelte Ausbeute statt des
+      // früheren, ungedeckelten Crit-Mult-Pfads). Das Ladungsdach deckelt den Ertrag von selbst.
+      if (hasUeberschlag(skills) && rawCrit > 1) {
+        const ppPer = lightDepth ? C.UEBERSCHLAG_DEPTH_PP_PER_CHARGE : C.UEBERSCHLAG_PP_PER_CHARGE;
+        gainedCharge += Math.floor(((rawCrit - 1) * 100) / ppPer);
+      }
       if (hasDauerstrom(skills)) gainedCharge += Math.min(Math.floor(serieStreak / C.DAUERSTROM_PER_STREAK), C.DAUERSTROM_MAX);
       if (gainedCharge > 0) {
         lightning = addCharge(lightning, gainedCharge);
@@ -843,14 +850,15 @@ export function resolveTrick(state, rng) {
             if (hasDischarge(skills)) lightning = { ...lightning, entladungMult: Math.min(C.ENTLADUNG_MULT_CAP, (lightning.entladungMult || 0) + C.ENTLADUNG_MULT_STEP) };
             // On-Consume-Passives (Rework v0) — kleiner Payoff bei JEDEM vollen Verbrauch, hält die Kettenfantasie am Laufen:
             if (hasBlitzableiter(skills)) lightning = addCharge(lightning, C.BLITZABLEITER_CONSUME_CHARGE); // Blitzableiter: Ladung zurück
-            if (hasDauerstrom(skills)) // Dauerstrom (v0.5): dauerhafte Crit-Chance-Rampe je Verbrauch — UNCAPPED (3. Momentum-Zugang)
-              lightning = { ...lightning, dauerstromCritBonus: (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT };
+            if (hasDauerstrom(skills)) // Dauerstrom: dauerhafte Crit-Chance-Rampe je Verbrauch, GEDECKELT (Crit-Bändigung)
+              lightning = { ...lightning, dauerstromCritBonus: Math.min(C.DAUERSTROM_CRIT_CAP, (lightning.dauerstromCritBonus || 0) + C.DAUERSTROM_CONSUME_CRIT) };
             if (hasStaticCharge(skills)) { // Statische Aufladung: +Flat-Score bei jedem Verbrauch (Direkt-Score, nicht multipliziert)
               score += C.CONSUME_SCORE; gained += C.CONSUME_SCORE; lightYield += C.CONSUME_SCORE;
               breakdown.lightDirect = (breakdown.lightDirect || 0) + C.CONSUME_SCORE; breakdown.total = (breakdown.total || 0) + C.CONSUME_SCORE;
             }
-            // Gewitterfront (v0.5): Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag ist das Ventil; „ab Cap → Score" entfällt).
-            if (hasStorm(skills)) lightning = { ...lightning, stormCritBonus: (lightning.stormCritBonus || 0) + C.STORM_CRIT_STEP };
+            // Gewitterfront: Crit-Chance-Momentum je Verbrauch, GEDECKELT (Crit-Bändigung — Überschlag ist das Ventil
+            // für den Überschuss ÜBER 100 %, war aber nie eine Grenze für die Rampe selbst).
+            if (hasStorm(skills)) lightning = { ...lightning, stormCritBonus: Math.min(C.STORM_CRIT_CAP, (lightning.stormCritBonus || 0) + C.STORM_CRIT_STEP) };
           }
         }
       }
