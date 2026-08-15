@@ -491,12 +491,7 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null }) { // #330 label/tint entfallen (Chrome zentral in FxStage)
-  const panelRef = useRef(null);
-  const cardRef = useRef(null);
-  // #377: optionaler Prunk-Sound im Showcase (aktuell nur Supernova-Swell). Der Swell ist 11 s lang, der visuelle
-  // Loop aber viel kürzer → eigene ~10-s-Drossel, damit er ausklingen kann statt bei jedem Loop neu zu überlappen.
-  const lastSfxRef = useRef(0);
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-Backdrop (look.bf)
   //   + die Pack-Deckfarbe (look.a1/a2). Vorher zeigte der Prunk-Showcase den Pack-BG auch im Standard (Inkonsistenz).
   const bf = battlefieldAssets(deckTint ? (look?.bf || SHOWCASE_BF) : SHOWCASE_BF);
@@ -507,14 +502,13 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   const isMobile = useIsMobile();
   const [annKey, setAnnKey] = useState(0);
   const pop = () => setAnnKey((k) => k + 1);
-  // Jeder Prunk-„Fire": Ansage poppen + (falls gesetzt) den gedrosselten Prunk-Sound spielen.
+  // Jeder Prunk-„Fire": Ansage poppen + Prunk-Sound spielen. #379: Der Loop ist per `speed` so verlangsamt, dass seine
+  // Periode ≥ der Soundlänge ist (≥ ~2 s für fx_godlike, ~11 s für den Supernova-Swell) → Ton bei JEDEM Loop synchron,
+  // kein Schlucken durch den Cooldown und keine Drossel mehr nötig.
   const fire = () => {
     pop();
-    // #sound: gemeinsamer Gott-Punch (wie in-game bei jedem epischen Sieg) → spielt bei JEDEM Prunk-Fire, damit ALLE
-    // Prunk-Showcases (Sonne/Laserfächer/Prisma/Holo-Würfel/Supernova) hörbar sind, nicht nur die Supernova.
-    audio.play("fx_godlike", { gain: 0.55 });
-    // Zusätzlicher effekt-spezifischer Swell (aktuell Supernova) — gedrosselt, da ~11 s lang (sonst Überlappung im Loop).
-    if (sfx) { const now = Date.now(); if (now - lastSfxRef.current > 10000) { lastSfxRef.current = now; audio.play(sfx, { gain: 0.9 }); } }
+    audio.play("fx_godlike", { gain: 0.55 });           // gemeinsamer Gott-Punch (wie in-game), je Loop hörbar
+    if (sfx) audio.play(sfx, { gain: 0.9 });             // effekt-spezifischer Swell (Supernova) — voll je Loop, synchron
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
   useEffect(() => {
@@ -530,7 +524,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       {Fx && (
         <Suspense fallback={null}>
-          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} onFire={fire} />
+          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} speed={speed} onFire={fire} />
         </Suspense>
       )}
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
@@ -730,11 +724,13 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel (Name/Status/Farbmodus
   //   zeichnet zentral die Bühne, #330).
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} />; // #322 (Pixi)
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} />; // #323 (Pixi)
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} />; // #324 (Pixi)
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} />; // #325 (Pixi)
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" />; // #326 (Pixi) · #377 Swell im Showcase
+  // #379 Showcase-Loop verlangsamen (speed<1), damit die Loop-Periode ≥ Soundlänge ist → Ton bei JEDEM Loop synchron.
+  //   Periode = Basis-Loop-Länge (LIFE/TOTAL + TAIL) / speed. Ziel: ≥ ~2,4 s (fx_godlike 1,8 s); Supernova ≈ Swell (~11 s).
+  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} speed={0.45} />; // Basis 1,15 s → ~2,6 s
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} speed={0.48} />; // Basis 1,2 s → ~2,5 s
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} speed={0.85} />; // Basis 2,11 s → ~2,5 s
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} speed={0.72} />; // Basis 1,8 s → ~2,5 s
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={0.18} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
