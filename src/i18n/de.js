@@ -1056,7 +1056,7 @@ export default {
   "unlock.onboardingDone": "Schließe das Onboarding ab",
 
   /* ---- Feedback-Melder (#396) ---- */
-  "start.feedback": "🐞 Feedback",
+  "start.feedback": "Feedback",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Feedback senden",
   "feedback.kind": "Art",

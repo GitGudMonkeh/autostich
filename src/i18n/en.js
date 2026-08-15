@@ -1039,7 +1039,7 @@ export default {
   "unlock.onboardingDone": "Finish the onboarding",
 
   /* ---- Feedback reporter (#396) ---- */
-  "start.feedback": "🐞 Feedback",
+  "start.feedback": "Feedback",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Send feedback",
   "feedback.kind": "Type",
