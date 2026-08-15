@@ -963,47 +963,54 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const anyOverlay = !!packOv;
 
   return (
-    <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}
+    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
-      <div className="w-full max-w-xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
-        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
-        {/* Sticky Kopf */}
-        <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
-          <TopHairline />
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h2 className="text-lg font-bold whitespace-nowrap">Deck-Werkstatt</h2>
-            <div className="flex items-center gap-2.5 shrink-0 ml-auto">
-              {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
-                  Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
-              <span className="flex items-baseline gap-1 whitespace-nowrap">
-                <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
-              </span>
-              <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+      {/* #394 FESTE Kartenhöhe (wie Bestenliste #385) → das Fenster bleibt über ALLE Reiter (Packs/Challenges/Effekte)
+          UND alle Filter gleich groß; auch eine leere Ansicht („Nichts in dieser Ansicht") lässt es nicht schrumpfen.
+          Gescrollt wird nur noch der Inhaltsbereich darunter — der Sticky-Kopf lebt weiter IN diesem Scroll-Container,
+          damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
+      <div className="w-full max-w-xl rounded-2xl my-auto as-panel flex flex-col overflow-hidden"
+        style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
+        <div className={`overlay-card flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}>
+          {/* Sticky Kopf */}
+          <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
+            <TopHairline />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2 className="text-lg font-bold whitespace-nowrap">Deck-Werkstatt</h2>
+              <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+                {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
+                    Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
+                <span className="flex items-baseline gap-1 whitespace-nowrap">
+                  <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                  <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+                </span>
+                <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+              </div>
+            </div>
+            {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
+                Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
+            <div className="flex gap-1.5 mt-3">
+              {[["packs", "Packs", "#9b82f0"], ["challenges", "Challenges", "#e05555"], ["fx", "Effekte", "#d4a63a"]].map(([m, label, col]) => {
+                const on = tab === m;
+                return (
+                  <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
+                    className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
+                    style={on
+                      ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
+                      : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
-              Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
-          <div className="flex gap-1.5 mt-3">
-            {[["packs", "Packs", "#9b82f0"], ["challenges", "Challenges", "#e05555"], ["fx", "Effekte", "#d4a63a"]].map(([m, label, col]) => {
-              const on = tab === m;
-              return (
-                <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
-                  style={on
-                    ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
-                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} />
-          : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
-          : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+          {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} />
+            : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
+            : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+        </div>
       </div>
 
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
