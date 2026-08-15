@@ -27,11 +27,10 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 const ONB_REWARDS = ["Reroll +1", "Pflanze frei", "Rarität: Blau", "Eis frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onChallenge = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
-  const [normalOpen, setNormalOpen] = useState(false);
 
   // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
   const prof = profile || {};
@@ -160,58 +159,32 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         )}
 
-        {/* Normaler Lauf — Aufklapper: Normal (+ Dev Run im Preview) + Seed-Feld. Gefüllt, wenn kein
-            Resume läuft (= Held); mit Resume ruhiger Cyan-Outline. */}
-        <button onClick={() => setNormalOpen((o) => !o)}
-          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+        {/* #382 „Normaler Lauf" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline. */}
+        <button onClick={onStart}
+          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
           style={normalStyle}>
           Normaler Lauf
-          <span className="text-[13px] transition-transform" style={{ transform: normalOpen ? "rotate(90deg)" : "none" }}>›</span>
         </button>
-        {normalOpen && (
-          <div className="flex flex-col gap-2.5">
-            <div className="grid grid-cols-2 gap-2.5">
-              <button onClick={onStart}
-                className="as-guide-glow w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold transition-all hover:-translate-y-0.5"
-                style={{ background: "#0e1b22", border: "1px solid #5fe0f7", color: "#a8ecf7" }}>Normal</button>
-              {/* #301 Challenges — erst nach komplettem Upgrade-Baum spielbar (treeComplete), sonst gesperrt.
-                  Öffnet das Modifikator-Auswahl-Fenster (onChallenge). Ersetzt den Dev-Run-Button. */}
-              {progLigaFree && onChallenge ? (
-                <button onClick={onChallenge} aria-label="Challenges"
-                  className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5"
-                  style={{ background: "#1c1012", border: "1px solid #e05555", color: "#ff9a9a", boxShadow: "0 0 14px rgba(224,85,85,.35)" }}>
-                  <span aria-hidden="true">⚔</span> Challenges
-                </button>
-              ) : (
-                <button disabled aria-label="Challenges (gesperrt — kompletter Upgrade-Baum nötig)" title="Erst mit komplettem Upgrade-Baum"
-                  className="w-full rounded-lg px-4 py-2.5 text-[15px] font-extrabold flex items-center justify-center gap-1.5 cursor-not-allowed"
-                  style={{ background: "#1c1012", border: "1px solid #e0555566", color: "#e07a7a", opacity: 0.7 }}>
-                  <span aria-hidden="true">🔒</span> Challenges
-                </button>
-              )}
-            </div>
-            {/* #205: Seed einfügen — jetzt im Normaler-Lauf-Aufklapper unter Normal/Dev. */}
-            {onPlaySeed && (
-              <div>
-                <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
-                  <input
-                    value={seedInput}
-                    onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
-                    placeholder="Seed einfügen"
-                    aria-label="Seed einfügen und spielen"
-                    className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
-                    style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
-                  />
-                  <button type="submit" disabled={!seedInput.trim()}
-                    className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
-                    style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-                    ↻ Spielen
-                  </button>
-                </form>
-                {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
-                {secretMsg && <div className="text-xs mt-1" style={{ color: "#6ad39f" }}>{secretMsg}</div>}
-              </div>
-            )}
+        {/* #382 Seed-Chip dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad tryPlaySeed). */}
+        {onPlaySeed && (
+          <div>
+            <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
+              <input
+                value={seedInput}
+                onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
+                placeholder="Seed einfügen"
+                aria-label="Seed einfügen und spielen"
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+                style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
+              />
+              <button type="submit" disabled={!seedInput.trim()}
+                className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+                style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+                ↻ Spielen
+              </button>
+            </form>
+            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+            {secretMsg && <div className="text-xs mt-1" style={{ color: "#6ad39f" }}>{secretMsg}</div>}
           </div>
         )}
       </div>

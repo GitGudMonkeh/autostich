@@ -72,7 +72,7 @@ function useDpRollup({ gross = 0, net = 0, raw = 0 }) {
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], challengeResult = null, earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   const [guideArch, setGuideArch] = useState(null); // #: Leitfaden-Overlay aus einem Archetyp-Freischalt-Button (Onboarding)
   // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
@@ -80,7 +80,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const scoreUp = useCountUp(score, 1100);
   const barFill = useCountUp(Math.round((mb.fill || 0) * 1000), 850, 300) / 1000; // 0..1 (×1000 für ganzzahliges Count-up)
   const spUp = useCountUp(earn ? earn.sp : 0, 1100, 200);
-  const dpRoll = useDpRollup({ gross: earn ? earn.dpGross : 0, net: earn ? earn.dpNet : 0, raw: earn ? earn.challengeRaw : 0 });
+  const dpRoll = useDpRollup({ gross: earn ? earn.dpGross : 0, net: earn ? earn.dpNet : 0 });
   // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
   const finalOrder = state.playerOrder || [];
   const finalCards = finalOrder.map((di) => state.deck[di]);
@@ -272,34 +272,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </div>
         )}
 
-        {/* #301 Challenge-Abrechnung dieses Laufs: je Modifikator Ziel erfüllt/verfehlt (±DP), darunter das Lauf-Netto
-            (native + Challenge, bei 0 gedeckelt). Roter „Challenge"-Rahmen zur Abgrenzung vom Gold-Freischalt-Banner. */}
-        {challengeResult && challengeResult.results && challengeResult.results.length > 0 && (
-          <div className="mt-4 rounded-xl p-3" style={{ background: "#180d0f", border: "1px solid rgba(224,85,85,.5)" }}>
-            <div className="text-xs uppercase tracking-widest text-center mb-2 flex items-center justify-center gap-1.5" style={{ color: "#ff9a9a" }}>
-              <span aria-hidden="true">⚔</span> Challenge-Abrechnung
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {challengeResult.results.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: "#141019", border: "1px solid #2a1a1c" }}>
-                  <span className="text-[12px] font-bold leading-snug flex items-center gap-1.5" style={{ color: r.met ? "#8fe0a8" : "#e79a9a" }}>
-                    <span aria-hidden="true">{r.met ? "✓" : "✕"}</span> {r.name}
-                    <span className="font-mono font-normal" style={{ color: "#6d6a80" }}>&gt; {Math.round(r.target / 1_000_000)} Mio</span>
-                  </span>
-                  <span className="shrink-0 font-mono text-[13px] font-extrabold" style={{ color: r.delta >= 0 ? "#5ab87a" : "#e07a7a" }}>
-                    {r.delta >= 0 ? `+${r.delta}` : r.delta} Deck-Punkte
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "#1c0f11", border: "1px solid rgba(224,85,85,.35)" }}>
-              <span className="text-[12px] font-bold" style={{ color: "#ffd0d0" }}>
-                Lauf-Deck-Punkte {challengeResult.raw >= 0 ? "" : "(Netto ≥ 0 gedeckelt)"}
-              </span>
-              <span className="font-mono text-[14px] font-extrabold" style={{ color: "#ff9a9a" }}>{challengeResult.runDp} Deck-Punkte</span>
-            </div>
-          </div>
-        )}
 
         {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
             je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}

@@ -18,7 +18,6 @@ import { pickWeekMods, hasWeekMod, weekModMag } from "./weekMods.js"; // #370 Ra
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
-import { normalizeActive as normalizeChallenges } from "./challenges.js"; // #301 Challenge-Modifikatoren (Präfix-Normalisierung)
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -168,9 +167,9 @@ export function initialState(rng = Math.random, seed = null) {
     rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
     rerollsUsed: 0,                // #214/#263: Zähler benutzter Rerolls über ALLE Kategorien → Sparfuchs-Challenge (deck_c3 „noRerollRun")
     offerRerolls: 0,               // #205: Reroll-Index des AKTUELLEN Angebots (Original = 0) → adressiert `(seed,cycle,kind,offerRerolls)`; von der Engine bei jedem frischen Angebot auf 0 gesetzt
-    // #301 Challenge-Modus: aktive Modifikatoren (ids) + deterministisch gewählte gesperrte Felder (Positionen 0..39).
-    // Leer = kein Challenge-Lauf. Als Arrays gehalten (serialisierbar für RESTORE_RUN-Snapshots).
-    challengeMods: [], challengeBlockArch: [], challengeBlockForm: [],
+    // #382 Gesperrte Felder (Positionen 0..39) — nur noch aus den Ranked-Wochen-Mods (blockForm/blockArch) gespeist;
+    // der Challenge-Modus ist entfernt. Leer außerhalb Ranked. Als Arrays gehalten (serialisierbar für RESTORE_RUN).
+    challengeBlockArch: [], challengeBlockForm: [],
     lastTrick: null,
   };
 }
@@ -250,20 +249,13 @@ export function reducer(state, action) {
       // die Engine-Basis ARCH_MAX_COVER (byte-identisch). Der Dev-Zweig setzt maxCover separat (devCover).
       const coverBase = treeEff ? COVER_FLOOR : s.architect.maxCover;
       const architectStart = { ...s.architect, maxCover: coverBase + treeCover };
-      // #301 Challenge-Modus: aktive Modifikatoren (nur als gültiges Präfix c1..cN). Gesperrte Felder deterministisch
-      // aus dem Lauf-Seed ziehen (eigene Adress-Ströme → stören keine Deal-/Perk-/Skill-Ströme; gleicher Seed → gleiche
-      // Felder). C1 nullt alle Reroll-Pools (die Handler no-oppen bei ≤ 0).
-      const chMods = normalizeChallenges(action.challengeMods);
-      const chEff = new Set(chMods.map((c) => c.effect));
-      const chBlockArch = (chEff.has("archLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockArch"), N_POS, 10) : [];
-      const chBlockForm = (chEff.has("formLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockForm"), N_POS, 10) : [];
-      const chNoReroll = chEff.has("noRerolls");
       // #370 Wochen-Modifikatoren (nur Ranked, seed-deterministisch) — Reducer-native Nähte: Rerolls, Feld-Sperren,
       //   Bauplätze, Aufstell-Energie, Perk-Rarität-Deckel. Die Engine-Nähte (Karten-Wert/Boni/Angebote/Deck-Shuffle)
-      //   folgen in Phase 3b und lesen dieselbe state.weekMods-Liste. Eigene rngAt-Adress-Ströme (kein Deal-Störer).
+      //   lesen dieselbe state.weekMods-Liste. Eigene rngAt-Adress-Ströme (kein Deal-Störer). #382: Challenge-Modus
+      //   entfernt — die Feld-Sperren (challengeBlockForm/Arch) speisen sich jetzt AUSSCHLIESSLICH aus weekMods.
       const wmActive = (ranked && seed != null) ? pickWeekMods(seed) : [];
       const wm = Object.fromEntries(wmActive.map((m) => [m.effect, m]));
-      const noReroll = chNoReroll || !!wm.noReroll;
+      const noReroll = !!wm.noReroll;
       const effReroll = noReroll ? 0 : normalRerolls;
       const wmBlockForm = wm.blockForm ? pickCells(rngAt(seed, "weekmods", "blockForm"), N_POS, wm.blockForm.mag) : [];
       const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
@@ -277,9 +269,8 @@ export function reducer(state, action) {
         rerollsLeg: noReroll ? 0 : treeLegSlotReroll, rerollsPerk2: noReroll ? 0 : rerollPerk2,
         legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, legPhaseEnabled, ranked,
         weekMods: weekModsState,
-        challengeMods: chMods.map((c) => c.id),
-        challengeBlockArch: [...new Set([...chBlockArch, ...wmBlockArch])],
-        challengeBlockForm: [...new Set([...chBlockForm, ...wmBlockForm])] };
+        challengeBlockArch: [...new Set(wmBlockArch)],
+        challengeBlockForm: [...new Set(wmBlockForm)] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         difficulty: null,

@@ -1,6 +1,9 @@
 import { GHOST_STEP } from "./constants.js";
 import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS } from "./progression.js";
-import { settleChallenges, normalizeActive } from "./challenges.js"; // #301 Challenge-Abrechnung (DP-Einsatz)
+
+// #382 Abschluss-Bonus: jeder abgeschlossene NORMALE (Nicht-Ranked) Lauf gibt +N DP — Ausgleich für die entfernte
+//   Challenge-DP-Quelle (#301). Ranked hat seinen eigenen Wochenbonus (rankedDpBonus).
+export const RUN_COMPLETE_DP = 5;
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
@@ -319,12 +322,10 @@ export function recordRun(record) {
   const treeDone = treeComplete(p);
   const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
-  // #301 Challenge-Abrechnung: nur ein ABGESCHLOSSENER Challenge-Lauf wertet (Abbruch/Niederlage = neutral). Die
-  // Challenge-DP (±) kommen auf die native DP obendrauf; das Lauf-Netto (native + challenge) wird bei 0 gedeckelt →
-  // Abzüge fressen die Sieges-DP des Laufs, ziehen aber nie das DP-Guthaben ins Minus. runDp ersetzt gainedDp bei aktivem Lauf.
-  const chMods = normalizeActive(record.challengeMods);
-  const chSettle = (chMods.length && record.completed) ? settleChallenges(chMods, n0(record.score), gainedDp) : null;
-  const runDp = chSettle ? chSettle.runDp : gainedDp;
+  // #382 Challenge-Modus entfernt → keine ±DP-Abrechnung mehr; die native DP-Formel bleibt.
+  const runDp = gainedDp;
+  // Abschluss-Bonus: +RUN_COMPLETE_DP für jeden abgeschlossenen Nicht-Ranked-Lauf (Ranked hat den Wochenbonus unten).
+  const completionDp = record.completed === true && !isRankedMode(record) ? RUN_COMPLETE_DP : 0;
   // #370 Ranked-Wochenbonus: die ERSTE abgeschlossene Ranked-Runde je Woche gibt +5 SP & +5 DP (bei vollem Baum
   //   stattdessen +10 DP, da SP dann nutzlos). Woche = Wochen-Seed des Records (eindeutig je Woche); lastRankedWeekSeed
   //   verhindert Mehrfach-Bonus. Seed-basiert → deterministisch/testbar (kein new Date() in recordRun).
@@ -372,8 +373,8 @@ export function recordRun(record) {
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
-    // #301: im Challenge-Lauf ersetzt runDp (native + Challenge-Netto, ≥ 0) die native DP.
-    deckPoints: n0(p.deckPoints) + runDp + spSweep + rankedDpBonus,
+    // #382: + Abschluss-Bonus (completionDp) für abgeschlossene Nicht-Ranked-Läufe.
+    deckPoints: n0(p.deckPoints) + runDp + completionDp + spSweep + rankedDpBonus,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
@@ -383,9 +384,9 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, spSweep, challengeRaw: chSettle ? chSettle.raw : 0 };
+  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
-  return { history, profile, unlocks, challenge: chSettle, earn, onboarding };
+  return { history, profile, unlocks, earn, onboarding };
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).

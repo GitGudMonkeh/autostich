@@ -72,7 +72,6 @@ const importChronik     = () => import("./ui/ChronikOverview.jsx");
 const importStats       = () => import("./ui/StatsScreen.jsx");
 const importCustomize   = () => import("./ui/CustomizeScreen.jsx");
 const importDevSetup    = () => import("./ui/DevRunSetup.jsx");
-const importChallenge   = () => import("./ui/ChallengeModal.jsx");
 const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
 const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
 const importOptions     = () => import("./ui/OptionsModal.jsx");
@@ -81,11 +80,10 @@ const ChronikOverview  = lazy(() => importChronik().then((m) => ({ default: m.Ch
 const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.StatsScreen })));
 const CustomizeScreen  = lazy(() => importCustomize().then((m) => ({ default: m.CustomizeScreen })));
 const DevRunSetup      = lazy(() => importDevSetup().then((m) => ({ default: m.DevRunSetup })));
-const ChallengeModal   = lazy(() => importChallenge().then((m) => ({ default: m.ChallengeModal })));
 const LeaderboardScreen = lazy(() => importLeaderboard().then((m) => ({ default: m.LeaderboardScreen })));
 const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.UpgradeScreen })));
 const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
-const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importChallenge, importDevSetup, importArchitect];
+const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importDevSetup, importArchitect];
 
 // #372 Prewarm der In-Game-Archetyp-Karteneffekte: Chunk laden UND den teuren Erst-Bitmap-Aufbau im Leerlauf erledigen,
 // BEVOR die erste Archetyp-Karte im Stichspiel kommt → kein synchroner Erst-Render-Ruckler auf dem Deal-Frame mehr.
@@ -127,16 +125,13 @@ export function Autostich() {
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
-  const [challengeResult, setChallengeResult] = useState(null);   // #301: Challenge-Abrechnung dieses Laufs → Victory-Banner (null = kein Challenge-Lauf)
   const [runEarn, setRunEarn] = useState(null);                   // #304: Lauf-Ertrag (SP/DP) für den Victory-Rollup
   const [onboardingBanner, setOnboardingBanner] = useState(null); // #: Onboarding-Fortschritt/Belohnung fürs Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
-  const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('standard' = Baseline · 'meister' = voller Baum)
-  const pendingChallenge = useRef(null);                          // #301: aktive Challenge-Modifikatoren (ids) für den nächsten Lauf (null = kein Challenge-Lauf)
+  const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
-  const [showChallenge, setShowChallenge] = useState(false);      // #301 Challenge-Auswahl-Fenster
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
@@ -299,7 +294,6 @@ export function Autostich() {
   // Rückgabe true = Geste verbraucht (Guard hält die App), false = normale Navigation (z. B. Menü verlassen).
   const handleBack = () => {
     if (showUsername) { setShowUsername(false); return true; }
-    if (showChallenge) { setShowChallenge(false); return true; }  // #350: Challenge-Fenster → schließen (nicht die App verlassen)
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
@@ -460,12 +454,11 @@ export function Autostich() {
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
     };
-    const { profile: nextProfile, unlocks: metaUnlocks, challenge: challengeResult, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+    const { profile: nextProfile, unlocks: metaUnlocks, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
-      ranked: state.ranked || null, // #303 Sparfuchs: „meister" ⇒ Meisterrang-Wochen-Seed (Freischalt-Bedingung)
-      completed, deckSnapshot, challengeMods: state.challengeMods || [] }); // #301 Challenge-Modifikatoren → DP-Abrechnung
+      ranked: state.ranked || null, // #303 Sparfuchs: Ranked-Wochen-Seed (Freischalt-Bedingung)
+      completed, deckSnapshot }); // #382 Challenge-Modus entfernt
     setProfile(nextProfile);
-    setChallengeResult(challengeResult || null); // #301 Challenge-Ergebnis fürs Victory-Banner (null = kein Challenge-Lauf)
     setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
@@ -649,20 +642,18 @@ export function Autostich() {
     setIsRecord(false);
     setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
-    const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('standard' = Baseline · 'meister' = voller Baum)
-    const challengeMods = pendingChallenge.current; pendingChallenge.current = null; // #301: Challenge-Modifikatoren für DIESEN Lauf
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, profile, challengeMods }); // #202 Architekt · #205 Seed · Dev-Run · Progression-Baum · §7 Rangliste · #301 Challenge
+    const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, profile }); // #202 Architekt · #205 Seed · Dev-Run · Progression-Baum · §7 Rangliste
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null, challenge = null } = {}) {
+  function launchRun({ seed = null, dev = null, ranked = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
-    pendingRanked.current = ranked; // §7: 'standard' = tree-unabhängige Baseline · 'meister' = voller Baum
-    pendingChallenge.current = (Array.isArray(challenge) && challenge.length) ? challenge : null; // #301: Challenge-Modifikatoren (null = kein Challenge-Lauf)
+    pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
     // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
     // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).
     try { importArchitect(); } catch (e) { /* egal */ }
@@ -829,7 +820,6 @@ export function Autostich() {
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
             onUpgrades={() => setShowUpgrades(true)} profile={profile}
-            onChallenge={() => setShowChallenge(true)}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             username={username} onEditName={() => setShowUsername(true)} />
@@ -881,7 +871,7 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
-              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} challengeMods={state.challengeMods || []} />}
+              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} />}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={bfPe}
                 heat={state.heat} lightning={state.lightning} score={state.score || 0}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
@@ -971,7 +961,7 @@ export function Autostich() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} challengeResult={challengeResult} earn={runEarn} onboarding={onboardingBanner}
+          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} earn={runEarn} onboarding={onboardingBanner}
           onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
       )}
 
@@ -989,11 +979,6 @@ export function Autostich() {
 
         {showDevSetup && (
           <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
-        )}
-
-        {showChallenge && (
-          <ChallengeModal onClose={() => setShowChallenge(false)}
-            onConfirm={(mods) => { setShowChallenge(false); launchRun({ challenge: mods }); }} />
         )}
 
         {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}

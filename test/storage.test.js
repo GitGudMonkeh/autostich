@@ -216,8 +216,15 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     let p = loadProfile();
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(50 + 5);     // 55 Mio → +5 DP native (auf den Startbonus)
+    expect(p.deckPoints).toBe(50 + 5 + 5); // 55 Mio → +5 DP native + #382 Abschluss-Bonus 5 (auf den Startbonus)
     expect(p.stichPoints).toBe(1 + 2);     // +1 Grundstock + 2 Meilensteine (25M+50M)
+  });
+
+  it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
+    const done = recordRun(runRec({ ts: 1, score: 0 })).profile;                        // Startbonus 50 + Abschluss 5
+    expect(done.deckPoints).toBe(50 + 5);
+    const aborted = recordRun(runRec({ ts: 2, score: 0, completed: false })).profile;   // Abbruch → kein Bonus
+    expect(aborted.deckPoints).toBe(50 + 5);                                            // unverändert
   });
 
   it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
@@ -225,7 +232,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
-    expect(p.deckPoints).toBe(100 + 10 + 6); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) als DP
+    expect(p.deckPoints).toBe(100 + 10 + 6 + 5); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) + #382 Abschluss-Bonus 5
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {

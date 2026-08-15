@@ -1,7 +1,7 @@
 /* ============================================================
    WOCHEN-MODIFIKATOREN (#370 Ranked-Rework, Phase 2) — die „Roulette"-Regeln der Wochen-Rangliste.
 
-   PUR & node-testbar (wie challenges.js/progression.js): NUR die Modifikator-Defs (data-driven) + die
+   PUR & node-testbar (wie progression.js): NUR die Modifikator-Defs (data-driven) + die
    seed-deterministische Wochen-Auswahl. KEIN UI-/Asset-Import, KEIN localStorage, KEIN Date. rngAt(seed,…) ist
    seed-rein (kein globaler Zustand) → für alle Spieler identisch, bei Neustart reproduzierbar.
 
