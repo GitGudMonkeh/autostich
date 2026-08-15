@@ -507,7 +507,10 @@ export function saveSeenGuide() {
 //   Pflichtfeld, geänderte Semantik) hochzählen → Alt-Snapshots werden verworfen. Als zweite Absicherung gegen ein
 //   vergessenes Bump prüft isResumableRunState() zusätzlich die Kern-Pflichtfelder tief: fehlt/verrutscht eines, wird
 //   der Snapshot sauber verworfen (null) statt in den neuen Reducer geladen zu werden (Mid-Run-Crash/Korruption).
-export const ACTIVE_RUN_SCHEMA = 1;
+// v2 (#369/#370/#382): Der State hat seit v1 mehrere Pflichtfelder dazubekommen (weekMods, rareFloor, skillSlots,
+//   legPicksMade, challengeBlockArch/Form) bzw. umgewidmet — der Stempel blieb dabei versehentlich auf 1, sodass
+//   Alt-Snapshots über einen Deploy hinweg weitergeladen wurden. Bump verwirft sie einmalig (gewollt).
+export const ACTIVE_RUN_SCHEMA = 2;
 function isResumableRunState(s) {
   if (!s || typeof s !== "object") return false;
   if (typeof s.phase !== "string" || s.phase === "menu" || s.phase === "gameover") return false;
@@ -519,6 +522,11 @@ function isResumableRunState(s) {
   for (const key of ["pos", "cycle", "trickNo", "score"]) {
     if (typeof s[key] !== "number" || !Number.isFinite(s[key])) return false;
   }
+  // #370: Ein RANKED-Snapshot ohne `weekMods` ist nicht fortsetzbar — hasWeekMod läse überall false, alle
+  //   Wochen-Modifikatoren wären still aus, und der Lauf ginge trotzdem mit board/Wochen-Seed auf die Rangliste
+  //   (Eintrag unter anderen Regeln als der Rest der Woche). Lieber sauber verwerfen. Zweite Absicherung gegen
+  //   ein vergessenes ACTIVE_RUN_SCHEMA-Bump — genau der Fall, der v1→v2 nötig gemacht hat.
+  if (s.ranked && !Array.isArray(s.weekMods)) return false;
   return true;
 }
 export function saveActiveRun(state, meta = {}) {

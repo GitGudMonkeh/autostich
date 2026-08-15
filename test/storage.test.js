@@ -550,6 +550,19 @@ describe("Aktiver Lauf (Resume / Auto-Save)", () => {
     expect(loadActiveRun()).toBeNull(); // skills kein Array
   });
 
+  // #370/v2: Ein Ranked-Snapshot ohne weekMods lief bis v1 durch — alle Wochen-Modifikatoren wären still aus
+  // gewesen, der Lauf aber trotzdem mit Wochen-Seed auf die Rangliste gegangen. Jetzt verworfen.
+  it("verwirft Ranked-Snapshot ohne weekMods, behält ihn mit weekMods", () => {
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ ranked: "ranked" }) }));
+    expect(loadActiveRun()).toBeNull();
+    const ok = runState({ ranked: "ranked", weekMods: [{ id: "noReroll", effect: "noReroll", sign: "neg", mag: null }] });
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: ok }));
+    expect(loadActiveRun().state).toEqual(ok);
+    // Nicht-Ranked bleibt ohne weekMods fortsetzbar (Casual/Challenge kennt keine Wochen-Mods).
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState() }));
+    expect(loadActiveRun()).not.toBeNull();
+  });
+
   it("saveActiveRun → loadActiveRun rundet State + meta zurück", () => {
     const s = runState();
     saveActiveRun(s, { timeBase: 5000, runId: 42, currentTraj: [1, 2] });
