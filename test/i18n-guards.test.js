@@ -91,6 +91,8 @@ describe("i18n · Katalog-Parität", () => {
     "guide.lightning.pillars.0.name", "guide.lightning.loop.nodes.0",  // Crit
     "guide.lightning.principle.0.tag", "guide.fire.principle.1.tag",   // Mono · Payoff
     "guide.ice.principle.1.tag", "guide.plant.principle.1.tag",        // Position · Mono
+    "gameover.milestones.max", "gameover.build",   // „Maximum" · „Build" — beide Sprachen gleich
+    "bar.lightning.state.crit",  // „Crit ×{mult}" — Crit bleibt Crit (§3.1)
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -383,7 +385,10 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migrierten Datei und schrumpft nie — so kann eine schon zweisprachige Ansicht nicht durch
      einen schnellen Zugang wieder einsprachig werden. Neue Dateien hier eintragen, sobald sie
      migriert sind. */
-  const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx"];
+  const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
+    "src/ui/GameOver.jsx",
+    // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
+    "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

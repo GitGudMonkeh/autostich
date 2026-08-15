@@ -59,6 +59,11 @@ export function skillDef(id) {
 // Ganze Liste, übersetzt. Funktion statt Konstante: ein Modul-Level-Array fröre die Sprache ein.
 export const skillList = () => SKILL_LIST.map((s) => skillDef(s.id));
 
+// Die trimmbaren Wachstums-Skills als Aufzählung — übersetztes Gegenstück zu `trimmableSkillNames`
+// aus skills.js (das bleibt die deutsche Quelle). Anzeigezeit-Leser, weil sich die Sprache ändern kann.
+export const trimmableNames = (sep = ", ") =>
+  SKILL_LIST.filter((s) => s.trimGrowth).map((s) => skillDef(s.id).name).join(sep);
+
 export function archMeta(key) {
   const m = ARCHETYPE_META[key];
   if (!m) return null;

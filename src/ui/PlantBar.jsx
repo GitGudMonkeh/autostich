@@ -13,11 +13,14 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
          WURZELSCHLAG_PER_GROWTH, SKILL_SLOTS, MUTTERBAUM_DIRECT, MUTTERBAUM_OVERFLOW_CAP, WELTENBAUM_DIRECT, WELTENBAUM_OVERFLOW_CAP } from "../game/constants.js";
-import { hasUeberwucherung, hasEwigerFruehling, hasMutterbaum, hasWeltenbaum, plantSkillCount, trimmableSkillNames } from "../game/skills.js";
+import { hasUeberwucherung, hasEwigerFruehling, hasMutterbaum, hasWeltenbaum, plantSkillCount } from "../game/skills.js";
+import { t, fmtNum } from "../i18n/index.js"; // #sprache
+import { archetypeLabel, trimmableNames } from "../i18n/labels.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
-const grp = (n) => Math.round(n).toLocaleString("de-DE");
-const fmtG = (g) => String(Math.round((g || 0) * 10) / 10).replace(".", ","); // Wachstum mit einer Nachkommastelle
+// #sprache: Trennzeichen aus dem Katalog (de „1.234,5" · en „1,234.5"), kein festes de-DE mehr.
+const grp = (n) => fmtNum(Math.round(n));
+const fmtG = (g) => fmtNum(Math.round((g || 0) * 10) / 10); // Wachstum mit einer Nachkommastelle
 
 const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
 
@@ -33,10 +36,10 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   for (const c of deck) {
     if (c.green) {
       if (c.value >= PLANT_VALUE_CAP) { ausgewachsen += 1; }        // ausgewachsen = reif am Wert-Deckel
-      else { gruen += 1; maturing.push({ id: c.id, stage: "green", pct: Math.min(1, c.value / PLANT_VALUE_CAP), label: `Grün · W${c.value}` }); }
+      else { gruen += 1; maturing.push({ id: c.id, stage: "green", pct: Math.min(1, c.value / PLANT_VALUE_CAP), label: t("bar.plant.strip.green", { value: c.value }) }); }
     } else if ((growth[c.id] || 0) > 0) {
       setzling += 1;
-      maturing.push({ id: c.id, stage: "seed", pct: Math.min(1, (growth[c.id] || 0) / PLANT_GREEN_THRESHOLD), remG: Math.max(0, PLANT_GREEN_THRESHOLD - (growth[c.id] || 0)), label: `Setzling ${fmtG(growth[c.id])}/${PLANT_GREEN_THRESHOLD}` });
+      maturing.push({ id: c.id, stage: "seed", pct: Math.min(1, (growth[c.id] || 0) / PLANT_GREEN_THRESHOLD), remG: Math.max(0, PLANT_GREEN_THRESHOLD - (growth[c.id] || 0)), label: t("bar.plant.strip.seed", { growth: fmtG(growth[c.id]), need: PLANT_GREEN_THRESHOLD }) });
     }
   }
   maturing.sort((a, b) => b.pct - a.pct);                 // am nächsten an der nächsten Stufe zuerst
@@ -87,58 +90,58 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacPlant ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacPlant: !collapsed });
-  const stateText = overgrown ? "Überwuchert" : `Grün ${Math.round(pct)} %`;
+  const stateText = overgrown ? t("bar.plant.state.overgrown") : t("bar.plant.state.green", { pct: Math.round(pct) });
 
   return (
-    <FactionShell icon={<FactionIcon type="plant" size={15} />} name="Pflanze" color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
+    <FactionShell icon={<FactionIcon type="plant" size={15} />} name={archetypeLabel("plant")} color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">
-        <YieldMeter title="Garten-Ertrag" accent={PLANT_RIPE} channels={[
-          { label: "Wurzel", value: rootScore, color: PLANT },
-          { label: "Blüte", value: bloomScore, color: BLOOM },
-          { label: "Ernte", value: harvestScore, color: PLANT_RIPE },
+        <YieldMeter title={t("bar.plant.yield")} accent={PLANT_RIPE} channels={[
+          { label: t("bar.plant.root"), value: rootScore, color: PLANT },
+          { label: t("bar.plant.bloom"), value: bloomScore, color: BLOOM },
+          { label: t("bar.plant.harvest"), value: harvestScore, color: PLANT_RIPE },
         ]} />
         {growthTotal > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">Gewachsen <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">Wachstum gesamt</span></div>
+          <div className="text-[10px] opacity-55 mt-1">{t("bar.plant.grown")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">{t("bar.plant.grown.unit")}</span></div>
         )}
         {/* #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator. */}
         {trimCount > 0 && (
-          <div className="text-[10px] opacity-70 mt-1" title={`Trimmen: jeder ersetzte Wachstums-Skill (${trimmableSkillNames(" / ")}) hebt dauerhaft den Wurzel- & Blüten-Score.`}>
-            ✂ Getrimmt <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">· Wurzel/Blüte</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{trimMult.toFixed(2).replace(".", ",")}</b>
+          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.trimmed.title", { skills: trimmableNames(" / ") })}>
+            {t("bar.plant.trimmed")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">{t("bar.plant.trimmed.unit")}</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{fmtNum(trimMult.toFixed(2))}</b>
           </div>
         )}
         {/* Mutterbaum (Legendär): der höchste Baum + was er je grünem Sieg an Direkt-Score zahlt (Überlauf-Wachstum × DIRECT). */}
         {hasMb && mbCard && (
-          <div className="text-[10px] opacity-70 mt-1" title="Mutterbaum: der tiefste Baum (Überlauf-Wachstum über dem Wert-Deckel) zahlt je grünem Sieg — und verdoppelt seinen Wurzel-Score.">
-            🌳 Höchster Baum <b style={{ color: PLANT_FULL }}>Wert {mbCard.value}</b> <span className="opacity-70">· Überlauf</span> <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(maxOv)}</b> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(mbScore)}</b> <span className="opacity-70">Score/Sieg</span>
+          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.tallest.title")}>
+            {t("bar.plant.tallest")} <b style={{ color: PLANT_FULL }}>{t("bar.plant.tallest.value", { value: mbCard.value })}</b> <span className="opacity-70">{t("bar.plant.overflow")}</span> <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(maxOv)}</b> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(mbScore)}</b> <span className="opacity-70">{t("bar.plant.perWin")}</span>
           </div>
         )}
         {/* Weltenbaum (Legendär): das gesamte Überlauf-Wachstum des Waldes + der Direkt-Score je grünem Sieg. */}
         {hasWb && (
-          <div className="text-[10px] opacity-70 mt-1" title="Weltenbaum: die Summe des Überlauf-Wachstums über alle grünen Karten zahlt je grünem Sieg (der ganze alte Wald).">
-            🌲 Wald <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(sumOv)}</b> <span className="opacity-70">Überlauf-Wachstum</span> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(wbScore)}</b> <span className="opacity-70">Score/Sieg</span>
+          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.forest.title")}>
+            {t("bar.plant.forest")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(sumOv)}</b> <span className="opacity-70">{t("bar.plant.forest.unit")}</span> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(wbScore)}</b> <span className="opacity-70">{t("bar.plant.perWin")}</span>
           </div>
         )}
       </div>
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}
       <div className="flex justify-between text-xs mb-1.5">
-        <span className="opacity-60">Grün-Anteil des Feldes
-          {overgrown && <span style={{ color: PLANT_FULL }}> · ÜBERWUCHERT</span>}
+        <span className="opacity-60">{t("bar.plant.share")}
+          {overgrown && <span style={{ color: PLANT_FULL }}>{t("bar.plant.share.badge")}</span>}
         </span>
-        <span className="font-bold tabular-nums" style={{ color: overgrown ? PLANT_FULL : PLANT_RIPE }}>{greenN} / {total} · {Math.round(pct)} %</span>
+        <span className="font-bold tabular-nums" style={{ color: overgrown ? PLANT_FULL : PLANT_RIPE }}>{t("bar.plant.share.value", { green: greenN, total, pct: Math.round(pct) })}</span>
       </div>
       <div className="relative rounded-sm overflow-hidden" style={{ height: 12, background: "#26262e" }}
-        title="Anteil grüner (reifer + ausgewachsener) Karten am Feld.">
+        title={t("bar.plant.share.title")}>
         <div className="absolute inset-y-0 left-0 transition-all"
           style={{ width: `${pct}%`, background: overgrown ? `linear-gradient(90deg, ${PLANT}, ${PLANT_FULL})` : PLANT,
                    boxShadow: overgrown ? `0 0 8px ${PLANT}` : undefined }} />
-        {hasEfr && <Mark atPct={efrPct} label={`Ewiger Frühling — Überwucherung schon ab ${Math.round(efrPct)} % Feld grün`} />}
-        {hasUeb && <Mark atPct={uebPct} label={`Überwucherung — ab ${Math.round(uebPct)} % alle Farbblöcke +Faktor`} />}
+        {hasEfr && <Mark atPct={efrPct} label={t("bar.plant.mark.spring.title", { pct: Math.round(efrPct) })} />}
+        {hasUeb && <Mark atPct={uebPct} label={t("bar.plant.mark.overgrowth.title", { pct: Math.round(uebPct) })} />}
       </div>
       {(hasEfr || hasUeb) && (
         <div className="relative h-3 text-[10px] opacity-45 mt-1">
-          {hasEfr && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${efrPct}%` }}>Ew. Frühling</span>}
-          {hasUeb && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${uebPct}%` }}>Überwucherung</span>}
+          {hasEfr && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${efrPct}%` }}>{t("bar.plant.mark.spring")}</span>}
+          {hasUeb && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${uebPct}%` }}>{t("bar.plant.mark.overgrowth")}</span>}
         </div>
       )}
 
@@ -147,17 +150,17 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       <div className="mt-2.5">
         {nextRipe != null && (
           <div className="flex items-baseline justify-between text-xs mb-1.5">
-            <span className="opacity-60">Nächste Reife</span>
-            <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }} title="Grobe Schätzung: nächster Setzling wird grün (aus Wachstumsrate × Restdistanz).">~{nextRipe} {nextRipe === 1 ? "Sieg" : "Siege"}</span>
+            <span className="opacity-60">{t("bar.plant.nextRipe")}</span>
+            <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }} title={t("bar.plant.nextRipe.title")}>{t("bar.plant.nextRipe.wins", { count: nextRipe })}</span>
           </div>
         )}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { n: setzling, lab: "Setzling", col: SEED, bar: avg(seedList), title: "Wachsende, noch nicht reife Karten (Balken = Ø Fortschritt zur Reife)." },
-            { n: gruen, lab: "Grün", col: PLANT, bar: avg(greenList), title: "Reife grüne Karten, Wert unter dem Deckel (Balken = Ø Fortschritt zum Wert-Deckel)." },
-            { n: ausgewachsen, lab: "Ausgewachsen", col: PLANT_FULL, bar: ausgewachsen > 0 ? 1 : 0, title: `Voll ausgewachsen (Wert ${PLANT_VALUE_CAP}).` },
+            { k: "seed", n: setzling, lab: t("bar.plant.stage.seed"), col: SEED, bar: avg(seedList), title: t("bar.plant.stage.seed.title") },
+            { k: "green", n: gruen, lab: t("bar.plant.stage.green"), col: PLANT, bar: avg(greenList), title: t("bar.plant.stage.green.title") },
+            { k: "full", n: ausgewachsen, lab: t("bar.plant.stage.full"), col: PLANT_FULL, bar: ausgewachsen > 0 ? 1 : 0, title: t("bar.plant.stage.full.title", { cap: PLANT_VALUE_CAP }) },
           ].map((s) => (
-            <div key={s.lab} className="rounded-lg px-2 py-1.5 text-center" title={s.title}
+            <div key={s.k} className="rounded-lg px-2 py-1.5 text-center" title={s.title}
               style={{ background: `${s.col}12`, border: `1px solid ${s.col}${s.n ? "44" : "22"}`, opacity: s.n ? 1 : 0.5 }}>
               <div className="text-base font-bold tabular-nums leading-none" style={{ color: s.col }}>{s.n}</div>
               <div className="text-[9px] uppercase tracking-wide opacity-55 mt-0.5">{s.lab}</div>
@@ -175,7 +178,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           <button type="button" onClick={() => onOption && onOption({ collapsePlantMaturing: !stripCollapsed })} data-sfx="none"
             className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80" style={{ background: "transparent" }} aria-expanded={!stripCollapsed}>
             <span className="inline-block w-2 text-center" aria-hidden="true">{stripCollapsed ? "▸" : "▾"}</span>
-            <span>Reifende Karten · {maturing.length}</span>
+            <span>{t("bar.plant.maturing", { n: maturing.length })}</span>
           </button>
           {!stripCollapsed && (
             <div className="flex flex-col gap-1 mt-1.5">
@@ -192,7 +195,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
                   </div>
                 );
               })}
-              {maturing.length > 8 && <div className="text-[9px] opacity-40 mt-0.5">+{maturing.length - 8} weitere</div>}
+              {maturing.length > 8 && <div className="text-[9px] opacity-40 mt-0.5">{t("bar.plant.maturing.more", { n: maturing.length - 8 })}</div>}
             </div>
           )}
         </div>
@@ -201,7 +204,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       {/* Ausläufer (kolonisierte Gegnerkarten) — eigene, getrennte Zeile: der Griff ins Gegnerdeck (Ernte/Dornenkönig). */}
       {colonizedN > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${PLANT}22` }}>
-          <span className="opacity-55 shrink-0">Ausläufer · Kolonisiert</span>
+          <span className="opacity-55 shrink-0">{t("bar.plant.runners")}</span>
           <span className="tabular-nums font-bold shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
           <span className="inline-flex flex-wrap gap-0.5 min-w-0">
             {Array.from({ length: Math.min(colonizedN, 12) }, (_, i) => (

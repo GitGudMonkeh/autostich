@@ -135,8 +135,19 @@ for (const [k, v] of Object.entries(ARCH_CAT)) {
   push(`ui.archcat.${k}.label`, "ui", v.label, "Architekt — Bau-Kategorie (Chip)", "10");
 }
 
-/* ============ 14 · Kuratierte UI-Texte ============ */
-for (const r of uiRows()) push(r.id, r.category, r.de, r.context, r.limit, r.note);
+/* ============ 14 · Kuratierte UI-Texte ============
+   `music.js` liefert ausschließlich MUSIKTITEL. Die sind Eigennamen (und bereits englisch) —
+   sie werden nicht übersetzt und sollen die Restliste nicht aufblähen. Deshalb markiert, nicht
+   migriert: status „n/a" heißt „bewusst einsprachig", nicht „noch offen". */
+for (const r of uiRows()) {
+  const isTrack = /ui\/music\.js/.test(r.context || "");
+  if (isTrack) {
+    rows.push({ id: r.id, category: "system", de: r.de, en: r.de,
+      context: "Musiktitel — Eigenname, wird NICHT übersetzt", limit: "", status: "n/a", note: "do-not-translate" });
+  } else {
+    push(r.id, r.category, r.de, r.context, r.limit, r.note);
+  }
+}
 
 /* ============ 15 · i18n-Katalog (#sprache) ============
    Migrierte Texte kommen NICHT mehr aus der Heuristik, sondern direkt aus src/i18n/. Sie bringen

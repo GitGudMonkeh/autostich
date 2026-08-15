@@ -4,6 +4,8 @@ import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartex
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
+import { t, t as tr } from "../i18n/index.js"; // #sprache (tr = Alias, wo `t` lokal die Schwelle ist)
+import { archetypeLabel } from "../i18n/labels.js"; // Fraktionsname aus dem Archetyp-Register
 
 const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
 
@@ -62,18 +64,19 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   // Feuerwalze DAUERHAFT anzeigen, sobald der Skill gehalten wird; die +N nur, wenn die Walze wirklich aktiv ist (>0).
   if (fireFlag(skills, "fireRoll")) {
     const fr = heat.fireRoll || 0;
-    badges.push({ k: "fw", t: fr > 0 ? `Feuerwalze +${fr}` : "Feuerwalze", c: HOT, dim: fr === 0 });
+    badges.push({ k: "fw", t: fr > 0 ? t("bar.fire.badge.fireRoll.n", { n: fr }) : t("bar.fire.badge.fireRoll"), c: HOT, dim: fr === 0 });
   }
   // #219.5: Glühende Klinge als fixes, immer sichtbares Readout (Bonus 0/+1/+2/+3 je nach Hitze) — wie Feuerwalze.
   if (glow) {
     const gv = glowingValueFor(value, skills);
-    badges.push({ k: "gk", t: gv > 0 ? `Glühende Klinge +${gv}` : "Glühende Klinge", c: HOT, dim: gv === 0 });
+    badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0 });
   }
 
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacFire ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacFire: !collapsed });
-  const stateText = conflagReady ? "Flächenbrand bereit" : whiteGlow ? "Weißglut" : `Hitze ${Math.round(value)}/${max}`;
+  const stateText = conflagReady ? t("bar.fire.state.conflag") : whiteGlow ? t("bar.fire.state.white")
+    : t("bar.fire.state.heat", { value: Math.round(value), max });
   const stateOn = conflagReady || whiteGlow || hot;
 
   // #deckshop: Feuer-Glut wandert vom Battlefield ins eigene Panel — warme Innen-Aura, Deckkraft = Hitze; Puls nahe voll.
@@ -84,27 +87,27 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
 
   return (
-    <FactionShell icon={<FactionIcon type="fire" size={15} />} name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+    <FactionShell icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Überlauf) + verbrannte Asche (Lauf-Zähler).
           Der Überlauf-Kanal summiert BEIDE Überlauf-Pfade — Weißglut (Hitze über 100 %) und Ascheglut (Asche über die
           Schmiede-Kapazität); deshalb heißt er neutral „Überlauf" und nicht nach einem der beiden (Sprachprüfung B1). */}
       <div className="mb-2">
-        <YieldMeter title="Feuer-Ertrag" accent={HOT} channels={[
+        <YieldMeter title={t("bar.fire.yield")} accent={HOT} channels={[
           { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
           { label: "Überlauf", value: fireWhite, color: WHITE_HEAT, hint: "Weißglut (Hitze über 100 %) + Ascheglut (Asche über die Schmiede-Kapazität)" },
         ]} />
         {ashBurned > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">Asche verbrannt <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">über den Lauf</span></div>
+          <div className="text-[10px] opacity-55 mt-1">{t("bar.fire.ashBurned")} <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">{t("bar.fire.overRun")}</span></div>
         )}
       </div>
       <div className="flex items-stretch gap-3">
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="opacity-60">Hitze
-              {conflagReady && <span style={{ color: HOT }}> · FLÄCHENBRAND BEREIT</span>}
-              {whiteGlow && <span style={{ color: WHITE_HEAT }}> · WEISSGLUT</span>}
+            <span className="opacity-60">{t("bar.fire.heat")}
+              {conflagReady && <span style={{ color: HOT }}>{t("bar.fire.conflagReady")}</span>}
+              {whiteGlow && <span style={{ color: WHITE_HEAT }}>{t("bar.fire.whiteGlow")}</span>}
             </span>
             <span className="font-bold" style={{ color: whiteGlow ? WHITE_HEAT : hot ? HOT : FIRE }}>{Math.round(value)} / {max}</span>
           </div>
@@ -115,7 +118,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
                        boxShadow: conflagReady ? `0 0 8px ${HOT}` : hot ? `0 0 6px ${FIRE}88` : undefined }} />
             {glow && [GLOWING_T1_HEAT, GLOWING_T2_HEAT].map((t) => (
               <div key={t} className="absolute inset-y-0" style={{ left: `${(t / max) * 100}%`, width: 2, background: "#ffffff55" }}
-                title={`Glühende Klinge: +Wert ab ${t} % Hitze`} />
+                title={tr("bar.fire.tick.glow", { n: t })} />
             ))}
             {/* Weißglut-Kappe am heißen Ende — „brennt weiß aus" bei voller Hitze (kein Zähler, s. o.). */}
             {whiteHeat && (
@@ -124,7 +127,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
                          background: `linear-gradient(90deg, transparent, ${WHITE_HEAT})`,
                          opacity: atMax ? 1 : 0.45,
                          boxShadow: atMax ? `0 0 9px ${WHITE_HEAT}, 0 0 4px #ffffff` : undefined }}
-                title={`Weißglut: bei voller Hitze wird jeder Überschuss zu +${WHITEHEAT_PER_POINT} Score je überlaufendem Hitzepunkt`} />
+                title={t("bar.fire.tick.white", { n: WHITEHEAT_PER_POINT })} />
             )}
           </div>
           {badges.length > 0 && (
@@ -142,13 +145,13 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
         {(showAsh || showForge) && (
           <div className="flex flex-col justify-center gap-1.5 shrink-0">
             {showAsh && (
-              <CounterCell icon={<AshIcon />} value={ash} label="Asche" color={ASH} dim={ash === 0}
-                title={`Asche — ${GLOSSARY.ash.text}`} />
+              <CounterCell icon={<AshIcon />} value={ash} label={t("bar.fire.ash")} color={ASH} dim={ash === 0}
+                title={t("bar.fire.ash.title", { text: glossaryEntry("ash").text })} />
             )}
             {showForge && (
-              <CounterCell icon={<AnvilIcon />} value={`+${totalForged}`} label="Schmiedungen" color={FORGE}
+              <CounterCell icon={<AnvilIcon />} value={`+${totalForged}`} label={t("bar.fire.forges")} color={FORGE}
                 glow={totalForged > 0} dim={totalForged === 0}
-                title="Geschmiedeter Kartenwert — Summe der ⚒-Aufwertungen über alle Karten." />
+                title={t("bar.fire.forges.title")} />
             )}
           </div>
         )}
@@ -158,7 +161,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           Zeile. #UI: nur wenige 🔥 als Akzent (nicht je Brand eins → sonst umbricht die Leiste); die echte Zahl steht daneben. */}
       {brandTotal > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
-          <span className="opacity-55 shrink-0">Brand · Gegner</span>
+          <span className="opacity-55 shrink-0">{t("bar.fire.brand")}</span>
           <span className="tabular-nums font-bold shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
           <span className="inline-flex gap-0.5 shrink-0 overflow-hidden">
             {Array.from({ length: Math.min(brandTotal, 6) }, (_, i) => (
