@@ -133,6 +133,30 @@ export function OptionsModal({ options, onChange, onClose }) {
               <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
             </Row>
           )}
+          {/* #389 Floating-Text: Master-Schalter + drei Einzel-Schalter (Score · Multiplier · Win/Lose). „An" = sichtbar
+              (Flag false). Master spiegelt „alle sichtbar" und setzt beim Umschalten alle drei zugleich. Score/Werte
+              zählen unabhängig weiter — nur die aufsteigenden Popups verschwinden. Die großen Ansagen (Stark/Brutal/
+              Irre/Gottgleich) sind bewusst NICHT ausblendbar und bleiben immer sichtbar. */}
+          <Row title="Floating-Text anzeigen" desc="Aufsteigende Zahlen/Texte über dem Feld. Master-Schalter für alle drei unten. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich) bleiben immer sichtbar.">
+            <Toggle
+              on={!(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose)}
+              onClick={() => {
+                const anyVisible = !(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose);
+                const hide = anyVisible; // etwas sichtbar → alles ausblenden; sonst alles einblenden
+                onChange({ hideFloatScore: hide, hideFloatMult: hide, hideFloatWinLose: hide });
+              }} />
+          </Row>
+          <div className="flex flex-col gap-2.5 pl-3 ml-1" style={{ borderLeft: "2px solid #8a7de044" }}>
+            <Row title="↳ Score" desc="Aufsteigende Punktzahlen bei gewonnenen Stichen.">
+              <Toggle on={!options.hideFloatScore} onClick={() => onChange({ hideFloatScore: !options.hideFloatScore })} />
+            </Row>
+            <Row title="↳ Multiplikator" desc="„Kritisch!“- und Formations-Text (Multiplikator-Boni).">
+              <Toggle on={!options.hideFloatMult} onClick={() => onChange({ hideFloatMult: !options.hideFloatMult })} />
+            </Row>
+            <Row title="↳ Sieg / Niederlage" desc="Gewonnen/Verloren-Text am Stich-Ausgang.">
+              <Toggle on={!options.hideFloatWinLose} onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
+            </Row>
+          </div>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>

@@ -691,7 +691,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Farbmodus false = Standard-Neon, true = Deckfarbe (deckA1/deckA2).
   archDeckColor = false,
   // #200/#363 B: „Effekte reduziert" (aus|mobile|an). Löst zusammen mit prefers-reduced-motion den `reduced`-Modus aus.
-  reducedFx = "aus" }) {
+  reducedFx = "aus",
+  // #389 Floating-Text ausblenden (Default sichtbar = false). Score/Werte zählen unabhängig weiter — nur die aufsteigenden
+  // Popups verschwinden. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich, bigFloats) bleiben IMMER sichtbar.
+  hideFloatScore = false, hideFloatMult = false, hideFloatWinLose = false }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
@@ -1517,8 +1520,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
       <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
-        {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". */}
-        {isCrit && (
+        {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
+        {isCrit && !hideFloatMult && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
@@ -1542,8 +1545,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
         {/* Aufsteigende Zahlen (#49/#68): je Typ eigene Streuzone (Score links / Leben rechts) mit
             kleinem, deterministischem Jitter aus trickNo → gleiche Typen dicht, verschiedene getrennt,
-            aufeinanderfolgende überlappen nur leicht statt exakt zu stapeln. Pool gedeckelt. */}
-        {floats.map((f) => {
+            aufeinanderfolgende überlappen nur leicht statt exakt zu stapeln. Pool gedeckelt.
+            #389: per hideFloatScore ausblendbar (Score zählt unabhängig weiter — nur die Popups verschwinden). */}
+        {!hideFloatScore && floats.map((f) => {
           const z = FLOAT_ZONES[f.zone];
           // #: Score-Zahlen fächern über die Spur (lane) vertikal auf; nur noch kleiner Rest-Jitter (statt voller JITTER_Y),
           // damit die aufsteigende Spalte sauber lesbar bleibt statt sich zu stapeln.
@@ -1568,8 +1572,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         })}
         {/* Benanntes Formations-Feedback (§17): unten rechts, eigene Bahn; Peak-Styling ab ×6/×12.
             Aus formFloat (stich-entkoppelt): aktiv → as-combo-hold (hält); beim Verlassen → as-combo-out
-            (klingt über FORM_LINGER_MS aus) → bleibt so ~1,5 s länger stehen als sein Stich. */}
-        {formFloat && (
+            (klingt über FORM_LINGER_MS aus) → bleibt so ~1,5 s länger stehen als sein Stich. #389: per hideFloatMult ausblendbar. */}
+        {formFloat && !hideFloatMult && (
           <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(formFloat.key * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(formFloat.key * 4 + 11, JITTER_Y)}px)`,
@@ -1641,7 +1645,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
       <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
-        {banner ? (
+        {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
+            kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
+        {banner && hideFloatWinLose ? null : banner ? (
           <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{banner.text}</span>
         ) : (
           <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
