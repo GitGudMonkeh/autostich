@@ -1,17 +1,18 @@
-import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { archetypeOf } from "../game/skills.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot (kein Tausch).
 // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
 // Ablehnen → stattdessen normale Skill-Wahl (nie „verschwendet"). Gold-Theming wie die Legendär-Rarität sonst.
 const GOLD = "#d4a63a";
-const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Legendär", icon: "★", color: GOLD };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: "Legendär", icon: "★", color: GOLD };
 
 export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null, state = {} }) {
-  const legs = offer.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  const legs = offer.map((id) => skillDef(id)).filter(Boolean);
   const rerollsLeg = state.rerollsLeg || 0; // M1: dedizierter R29-Reroll-Token
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>

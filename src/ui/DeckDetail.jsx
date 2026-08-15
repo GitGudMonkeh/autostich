@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_META, SKILL_LIST, SKILL_DEFS, isLegendarySkill } from "../game/skills.js";
+import { SKILL_LIST, SKILL_DEFS } from "../game/skills.js";
 import { GUIDES } from "./guides.js";
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
 import { deckAssets } from "./cosmeticAssets.js";
 import { NODES, owns } from "../game/progression.js";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* ============================================================
    DECK-DETAILANSICHT (#369, Ebene 2) — VOLLSTÄNDIG DATENGETRIEBEN.
@@ -46,7 +47,7 @@ function StatusPill({ label, on, color }) {
 export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const [tab, setTab] = useState("passives");
   useEscape(onBack);
-  const meta = ARCHETYPE_META[archetype];
+  const meta = archMeta(archetype);
   const color = meta?.color || FACTION_GLOW[archetype] || GOLD;
   const p = profile || {};
 
@@ -197,10 +198,10 @@ function SkillGroup({ title, skills, color, legendary = false }) {
               <span className="text-[13px] font-bold" style={{ color }}>{s.name}</span>
               {/* Voraussetzung sichtbar machen: Verstärker-Skills tun ohne ihren Basis-Skill NICHTS. Im Angebot
                   sind sie dadurch gegatet (skills.js `enabler`), im Katalog stand die Abhängigkeit bisher nirgends. */}
-              {s.enabler && SKILL_DEFS[s.enabler] && (
+              {s.enabler && skillDef(s.enabler) && (
                 <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>
-                  braucht {SKILL_DEFS[s.enabler].name}
+                  braucht {skillDef(s.enabler).name}
                 </span>
               )}
               {(s.heatConsumer || s.onFullCharge) && (

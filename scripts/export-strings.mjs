@@ -14,7 +14,7 @@ import { writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, relative, join } from "node:path";
 
-import { SKILL_LIST, ARCHETYPE_META } from "../src/game/skills.js";
+import { ARCHETYPE_META } from "../src/game/skills.js";   // nur noch für die Leitfaden-Kontextspalte
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
 import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES, TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
@@ -61,16 +61,8 @@ const push = (id, category, de, context, limit = "", note = "") => {
   rows.push({ id, category, de: s, en: "", context, limit, status: "new", note });
 };
 
-/* ============ 1 · Skills ============ */
-for (const s of SKILL_LIST) {
-  const meta = ARCHETYPE_META[s.archetype] || { label: s.archetype };
-  const leg = s.legendary ? ", legendär" : "";
-  push(`ability.${s.id}.name`, "ability", s.name, `Skill-Name (${meta.label}${leg}) — Skill-Auswahl/Detailkarte`);
-  push(`ability.${s.id}.desc`, "ability", s.desc, `Skill-Beschreibung (${meta.label}${leg}) — Skill-Auswahl/Detailkarte`);
-}
-for (const [k, m] of Object.entries(ARCHETYPE_META)) {
-  push(`ui.archetype.${k}.label`, "ui", m.label, "Archetyp-Name — HUD, Skill-Auswahl, Statistik", "12");
-}
+/* ============ 1 · Skills + Archetypen ============
+   (Migriert — beide kommen unten aus dem i18n-Katalog, samt englischer Spalte.) */
 
 /* ============ 2 · Perks (flache Legendäre) ============ */
 for (const p of Object.values(PERK_DEFS)) {

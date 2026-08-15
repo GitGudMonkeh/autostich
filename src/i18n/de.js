@@ -10,6 +10,7 @@
    ============================================================ */
 import { LEG_PHASE_CYCLE, FORMATION_LABELS } from "../game/constants.js";
 import { TIER_META } from "../game/rarity.js";
+import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -24,6 +25,11 @@ for (const [type, label] of Object.entries(FORMATION_LABELS)) {
   fromRegistries[`formation.${type}.label`] = label;
   fromRegistries[`formation.${type}.abbr`] = ABBR_DE[type] || "";
 }
+for (const sk of SKILL_LIST) {
+  fromRegistries[`ability.${sk.id}.name`] = sk.name;
+  fromRegistries[`ability.${sk.id}.desc`] = sk.desc;
+}
+for (const m of Object.values(ARCHETYPE_META)) fromRegistries[`archetype.${m.key}.label`] = m.label;
 
 export default {
   ...fromRegistries,

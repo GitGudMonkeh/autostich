@@ -2,13 +2,14 @@ import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { SKILL_DEFS, archetypeOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
-const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
 
 /* Gemeinsame Build-Kontext-Bausteine (#22): geteilt von BuildPanel und PerkSelect. */
 
@@ -122,14 +123,14 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
 /* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1). */
 export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
   const [openSkill, setOpenSkill] = useState(null);
-  const open = openSkill && skills.includes(openSkill) ? SKILL_DEFS[openSkill] : null;
+  const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill) : null;
   if (skills.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
   const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5">
         {skills.map((id) => {
-          const s = SKILL_DEFS[id];
+          const s = skillDef(id);
           if (!s) return null;
           const active = openSkill === id;
           const c = ac(id).color;

@@ -6,7 +6,7 @@ import { RunDetail } from "./RunDetail.jsx";
 import { factionShares } from "./RunGraphs.jsx"; // Stats-Redesign: dieselbe Fraktions-Score-Herkunft wie im Victory-Screen
 import { loadRunHistory, loadProfile } from "../game/storage.js";
 import { PERK_DEFS, CATEGORIES } from "../game/perks.js";
-import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
+
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import {
   MIN_SAMPLE, hasEnoughData, pickRates,
@@ -14,17 +14,18 @@ import {
 } from "../game/runStats.js";
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { fmtDuration } from "../game/deck.js";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* #172 FB-10 — Statistik-Hub (Hauptmenü). Rein lokal aus der Lauf-Historie (storage.loadRunHistory)
    + Profil-Totals (loadProfile), aggregiert über game/runStats.js. Wiederverwendung: Sparkline (Score-Trend),
    RunDetail/RunStats (Klick auf einen Lauf → derselbe Statblock wie im Victory-Screen, #169 FB-8). */
 
 const perkLabel = (id) => PERK_DEFS[id]?.label || id;
-const skillLabel = (id) => SKILL_DEFS[id]?.name || id;
+const skillLabel = (id) => skillDef(id)?.name || id;
 const perkColor = (id) => CATEGORIES[PERK_DEFS[id]?.cat]?.color || "#8a8a95";
-const skillColor = (id) => (ARCHETYPE_META[SKILL_DEFS[id]?.archetype] || {}).color || "#8a8a95";
-const archLabel = (a) => (ARCHETYPE_META[a] || {}).label || a;
-const archColor = (a) => (ARCHETYPE_META[a] || {}).color || "#8a8a95";
+const skillColor = (id) => (archMeta(skillDef(id)?.archetype) || {}).color || "#8a8a95";
+const archLabel = (a) => (archMeta(a) || {}).label || a;
+const archColor = (a) => (archMeta(a) || {}).color || "#8a8a95";
 const pct = (x) => `${Math.round((x || 0) * 100)}%`;
 
 // #253/Stats-Redesign: nowrap+truncate + optionaler Tooltip → große Score-Werte (fmtScoreShort am Aufrufer) sprengen die Kachel nicht.

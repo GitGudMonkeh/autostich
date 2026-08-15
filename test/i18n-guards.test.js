@@ -91,17 +91,54 @@ describe("i18n · Katalog-Parität", () => {
 });
 
 describe("i18n · Zahl- und Satzformate", () => {
-  /* Deutsch schreibt 1.234,5 — Englisch 1,234.5. Ein deutsches Dezimalkomma im englischen
-     Katalog („2,25×") liest sich für englische Spieler als Zweitausendzweihundertfünfzig. */
+  /* Deutsch schreibt 1.234,5 — Englisch 1,234.5. Beide Sprachen benutzen BEIDE Zeichen, nur in
+     vertauschten Rollen; ein nacktes /\d,\d/ träfe deshalb auch den englischen Tausendertrenner
+     („12,000"). Unterscheidungsmerkmal: ein Tausenderblock hat GENAU drei Ziffern. Alles andere
+     hinter dem Trennzeichen ist ein Dezimalteil — und damit in der falschen Sprache. */
+  const DE_DECIMAL_IN_EN = /\d,(\d{1,2}(?!\d)|\d{4,})/;
+  const EN_DECIMAL_IN_DE = /\d\.(\d{1,2}(?!\d)|\d{4,})/;
+
   it("englische Texte enthalten keine deutschen Dezimalkommas", () => {
-    const bad = KEYS_EN.filter((k) => /\d,\d/.test(en[k]));
+    const bad = KEYS_EN.filter((k) => DE_DECIMAL_IN_EN.test(en[k]));
     expect(bad, `Deutsches Dezimalkomma in en.js:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("deutsche Texte enthalten keine englischen Dezimalpunkte", () => {
-    // Ausgenommen: Auslassungspunkte, Versions-/Aufzählungspunkte und Prozentsätze wie „p95".
-    const bad = KEYS_DE.filter((k) => /\d\.\d/.test(de[k]));
+    // Ausgenommen: Auslassungspunkte, Aufzählungspunkte („2. / 3. Schwelle") und Kürzel wie „p95".
+    const bad = KEYS_DE.filter((k) => EN_DECIMAL_IN_DE.test(de[k]));
     expect(bad, `Englischer Dezimalpunkt in de.js:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  /* DER wichtigste Wächter für die Registertexte: beide Sprachen müssen DIESELBEN Zahlen nennen.
+     Die englischen Skill-Texte interpolieren zwar dieselben Konstanten wie die deutschen, aber
+     nichts erzwingt das — jemand könnte eine Zahl abtippen, und beim nächsten Balancing liefe sie
+     still weg. Hier fliegt genau das auf: Zahlmengen extrahieren, Trennzeichen normalisieren,
+     vergleichen. Schlägt fehl, sobald eine Zahl in einer Sprache fehlt, zu viel ist oder abweicht. */
+  const numbersOf = (text, loc) => {
+    const grouped = loc === "de" ? /(\d)\.(\d{3})(?!\d)/g : /(\d),(\d{3})(?!\d)/g;
+    let s = String(text);
+    for (let i = 0; i < 3; i++) s = s.replace(grouped, "$1$2");   // 1.234.567 → mehrfach zusammenziehen
+    if (loc === "de") s = s.replace(/(\d),(\d)/g, "$1.$2");       // Dezimal-Komma → Punkt
+    return (s.match(/\d+(?:\.\d+)?/g) || []).map(Number).sort((a, b) => a - b);
+  };
+
+  /* Ausnahmen: NUR wo eine Zahl im Englischen ausgeschrieben besser ist als als Ziffer.
+     Jeder Eintrag braucht eine Begründung — die Liste soll klein bleiben, sonst entwertet sie
+     den Wächter. Ein „das passt schon" ist keine Begründung. */
+  const NUM_OK = new Map([
+    ["ability.SK_FIRE_L02.desc", "de „1×/Durchlauf“ → en „once per cycle“; „1× per cycle“ wäre steifes Englisch"],
+  ]);
+
+  it("beide Sprachen nennen dieselben Zahlen", () => {
+    const bad = [];
+    for (const k of KEYS_DE) {
+      if (!(k in en) || NUM_OK.has(k)) continue;
+      const a = numbersOf(de[k], "de"), b = numbersOf(en[k], "en");
+      if (a.length !== b.length || a.some((n, i) => n !== b[i])) {
+        bad.push(`${k}\n     de: [${a.join(", ")}]\n     en: [${b.join(", ")}]`);
+      }
+    }
+    expect(bad, `Zahlen laufen zwischen den Sprachen auseinander:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("deutsche Anführungszeichen sind typografisch („…“), englische kurvig (“…”)", () => {

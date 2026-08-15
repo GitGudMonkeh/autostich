@@ -14,6 +14,7 @@ import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -75,7 +76,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   // Gehaltene Eis-Skills, die die Formationserkennung beeinflussen (Keyword „formation") → im Formationsfenster
   // sichtbar machen. Reuse der bestehenden desc-Texte aus SKILL_DEFS (kein Desc↔Code-Drift).
   const iceFormSkills = (state.skills || []).filter((id) => {
-    const d = SKILL_DEFS[id];
+    const d = skillDef(id);
     return d && d.archetype === "ice" && (d.keywords || []).includes("formation");
   });
 
@@ -243,8 +244,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                     <div className="font-bold inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={13} /> Eis-Effekte auf Formationen</div>
                     {iceFormSkills.map((id) => (
                       <div key={id}>
-                        <b style={{ color: "#8be0f8" }}>{SKILL_DEFS[id].name}</b>
-                        <span> — <GlossaryText text={SKILL_DEFS[id].desc} /></span>
+                        <b style={{ color: "#8be0f8" }}>{skillDef(id).name}</b>
+                        <span> — <GlossaryText text={skillDef(id).desc} /></span>
                       </div>
                     ))}
                   </div>

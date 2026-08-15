@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop, fetchBoardTop } from "../game/leaderboard.js";
-import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+import { decodeArchetypes } from "../game/skills.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
+import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
-const archetypeIcons = (value) => decodeArchetypes(value).map((a) => ARCHETYPE_META[a]);
+const archetypeIcons = (value) => decodeArchetypes(value).map((a) => archMeta(a));
 
 // #169 FB-8: DB-Zeile (snake_case; perks/skills als kompakte ID-Liste) → normalisierter RunStats-Eintrag.
 // Alt-/pre-Migration-Zeilen liefern die Zusatzfelder nicht → RunStats zeigt „–" bzw. blendet leere Blöcke aus.

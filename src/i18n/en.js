@@ -7,8 +7,11 @@
    synonyms: one German term maps to exactly one English term, everywhere.
    ============================================================ */
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
+import enSkills from "./enSkills.js";   // 84 skills + archetype names — own file, it is long
 
 export default {
+  ...enSkills,
+
   /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
      Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,
      skills and buildings, plus their own phase), so a ladder ending in Legendary would collide. */
@@ -66,7 +69,7 @@ export default {
   "start.ranked.badge": "Week",
   "start.ranked.badge.aria": "Weekly challenge",
   "start.ranked.open": "Open the weekly ranking",
-  "start.ranked.locked": "View the weekly ranking — playing unlocks once every deck is unlocked and you have finished at least one run with each",
+  "start.ranked.locked": "View the weekly ranking — playing unlocks once every deck is unlocked and you have finished at least 1 run with each",
 
   "start.tile.workshop": "Deck workshop",
   "start.tile.workshop.locked": "The deck workshop unlocks when onboarding is complete",

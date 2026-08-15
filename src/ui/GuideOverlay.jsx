@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
+import { ARCHETYPE_ORDER } from "../game/skills.js";
 import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GUIDES } from "./guides.js";
 import { useEscape } from "./useEscape.js";
 import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* ============================================================
    LEITFADEN-UI — das „Wie spiele ich das"-Overlay je Archetyp (Datenquelle: guides.js).
@@ -121,7 +122,7 @@ export function GuideButton({ onClick, className = "", style }) {
 export function GuideBody({ archetype, showTitle = true }) {
   const active = ARCHETYPE_ORDER.includes(archetype) ? archetype : "lightning";
   const g = GUIDES[active];
-  const meta = ARCHETYPE_META[active];
+  const meta = archMeta(active);
   const color = meta.color;
   return (
     <>
@@ -227,7 +228,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
           {/* Archetyp-Reiter */}
           <div className="flex gap-1.5 px-3 pt-2.5 pb-0 flex-none overflow-x-auto" style={{ borderBottom: "1px solid #2a2a33" }}>
             {ARCHETYPE_ORDER.map((k) => {
-              const m = ARCHETYPE_META[k];
+              const m = archMeta(k);
               const on = k === active;
               return (
                 <button key={k} type="button" onClick={() => setActive(k)} role="tab" aria-selected={on}

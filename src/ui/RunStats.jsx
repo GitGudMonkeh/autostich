@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
-import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
+
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -101,8 +102,8 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const archCounts = [];
   if (skills && skills.length) {
     const by = {};
-    for (const id of skills) { const a = SKILL_DEFS[id]?.archetype; if (a) by[a] = (by[a] || 0) + 1; }
-    for (const a of Object.keys(by)) { const m = ARCHETYPE_META[a]; if (m) archCounts.push({ ...m, n: by[a] }); }
+    for (const id of skills) { const a = skillDef(id)?.archetype; if (a) by[a] = (by[a] || 0) + 1; }
+    for (const a of Object.keys(by)) { const m = archMeta(a); if (m) archCounts.push({ ...m, n: by[a] }); }
     archCounts.sort((x, y) => y.n - x.n);
   }
 
@@ -111,7 +112,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const selDetail = !sel ? null
     : sel.kind === "perk"
       ? (PERK_DEFS[sel.id] ? { title: PERK_DEFS[sel.id].label, desc: PERK_DEFS[sel.id].desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
-      : (SKILL_DEFS[sel.id] ? { title: SKILL_DEFS[sel.id].name, desc: SKILL_DEFS[sel.id].desc, color: (ARCHETYPE_META[SKILL_DEFS[sel.id].archetype] || {}).color || "#8a8a95" } : null);
+      : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
   const hasChips = (perks && perks.length > 0) || (skills && skills.length > 0);
   if (!archCounts.length && !(!anonymized && hasChips)) return null;
@@ -154,9 +155,9 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
           {skills && skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
               {skills.map((id) => {
-                const d = SKILL_DEFS[id];
+                const d = skillDef(id);
                 if (!d) return null;
-                const am = ARCHETYPE_META[d.archetype] || { color: "#8a8a95", icon: "" };
+                const am = archMeta(d.archetype) || { color: "#8a8a95", icon: "" };
                 const on = sel && sel.kind === "skill" && sel.id === id;
                 return (
                   <button key={id} onClick={() => toggle("skill", id)} title="Beschreibung anzeigen"

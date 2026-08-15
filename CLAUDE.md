@@ -122,8 +122,11 @@ Autostich ist zweisprachig (DE/EN). **Jeder neue spieler-sichtbare Text gehört 
 - **Register-Muster** (an Rarität + Formationen erprobt): Register bleibt deutsche Quelle → `de.js` ERZEUGT seine
   Einträge daraus (nie abtippen) → `en.js` übersetzt → Auflösung zur Anzeigezeit über `src/i18n/labels.js`.
   Kein `import { t }` in einem Register (Zyklus über `de.js`).
-- Migriert: `OptionsModal.jsx`, `StartScreen.jsx`, `UsernameModal.jsx`, Rarität, Formationstypen (Namen + Badges).
-  Offen: Skills, Perks, Familien, Gebäude, Glossar, Upgrade-Knoten, Wochen-Mods, Kosmetik.
+- **Zahlen in übersetzten Registertexten**: EN tippt sie NICHT ab, sondern benutzt dieselben Konstanten-Ausdrücke
+  wie DE (`${C.X}`, `${pct(C.Y)}`). Wächter „beide Sprachen nennen dieselben Zahlen" sichert die Naht ab.
+- Migriert: `OptionsModal.jsx`, `StartScreen.jsx`, `UsernameModal.jsx`, Rarität, Formationstypen (Namen + Badges),
+  **Skills (84) + Archetyp-Namen** (`src/i18n/enSkills.js`, Leser `skillDef`/`archMeta` in `src/i18n/labels.js`).
+  Offen: Perks, Familien, Gebäude, Glossar, Upgrade-Knoten, Wochen-Mods, Kosmetik.
 
 ### Sonstiges
 - Bash-cwd persistiert zwischen Calls; nach `cd` in node_modules zurück nach `/home/user/autostich`.

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { SKILL_DEFS, ARCHETYPE_META, ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
@@ -13,9 +13,10 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
-const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "•", color: "#8a8a95" };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
 
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
@@ -70,7 +71,7 @@ function KeywordGlossary({ tokens }) {
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
    Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption }) {
-  const held = skills.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  const held = skills.map((id) => skillDef(id)).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
@@ -107,7 +108,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
   const groups = ARCHETYPE_ORDER
-    .map((arch) => ({ arch, meta: ARCHETYPE_META[arch], ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
+    .map((arch) => ({ arch, meta: archMeta(arch), ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
   const showFormations = groups.some((g) => g.arch === "ice") || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
@@ -128,7 +129,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
-  const consumerTypeOf = (id) => (SKILL_DEFS[id]?.heatConsumer ? "heat" : SKILL_DEFS[id]?.onFullCharge ? "charge" : null);
+  const consumerTypeOf = (id) => (skillDef(id)?.heatConsumer ? "heat" : skillDef(id)?.onFullCharge ? "charge" : null);
   const CONSUMER_LABEL = { heat: "Hitze", charge: "Ladungs" };
 
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken → Ersetzen-Fenster (#234).
@@ -226,8 +227,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           <div className="mt-3 rounded-lg px-3 py-3 text-xs leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
             <div className="mb-2">
               Du hältst bereits den {CONSUMER_LABEL[pendingConsumer.type]}-Konsumenten{" "}
-              <b style={{ color: ac(pendingConsumer.replace).color }}>{SKILL_DEFS[pendingConsumer.replace]?.name}</b>.{" "}
-              <b style={{ color: ac(pendingConsumer.id).color }}>{SKILL_DEFS[pendingConsumer.id]?.name}</b> ersetzt ihn
+              <b style={{ color: ac(pendingConsumer.replace).color }}>{skillDef(pendingConsumer.replace)?.name}</b>.{" "}
+              <b style={{ color: ac(pendingConsumer.id).color }}>{skillDef(pendingConsumer.id)?.name}</b> ersetzt ihn
               (höchstens 1 {CONSUMER_LABEL[pendingConsumer.type]}-Konsument). Deine aktuelle Ressource bleibt erhalten.
             </div>
             <div className="flex gap-2">
@@ -255,7 +256,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Slots voll</div>
                 <h3 className="text-lg font-bold mt-1">Welchen Skill ersetzen?</h3>
                 <p className="text-xs opacity-65 mt-1">
-                  Neu: <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {SKILL_DEFS[pending]?.name}</b>. Tippe den Skill, der weichen soll.
+                  Neu: <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {skillDef(pending)?.name}</b>. Tippe den Skill, der weichen soll.
                 </p>
               </div>
               <div className="grid gap-2">
@@ -323,7 +324,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               )}
               <div className="grid sm:grid-cols-2 gap-2">
                 {curG.ids.map((id) => {
-                  const s = SKILL_DEFS[id];
+                  const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
                   return (
