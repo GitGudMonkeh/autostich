@@ -1019,11 +1019,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
-    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
+    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst DECKFARBE (#390; Gold nur
+    // noch als Rückfall, wenn kein Deck gewählt ist → deckA1 null, z. B. Standard-/Genesis-Deck). Icons bleiben immer.
     const hits = t.hitTypes || [];
     const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
     const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
-    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : "#d4a63a");
+    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : (deckA1 || "#d4a63a"));
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0) {
