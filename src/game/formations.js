@@ -19,7 +19,8 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
-  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
+  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP,
+  FORMATION_LABELS as C_FORMATION_LABELS } from "./constants.js";
 import { hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
@@ -42,7 +43,9 @@ export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe l
 const MAX_TREPPE_STEP  = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
-export const FORMATION_TYPE_LABELS = { wiederholung: "Wiederholung", farbblock: "Farbblock", treppe: "Treppe", wechsel: "Wechsel" };
+// Anzeigenamen: EINE Quelle in constants.js (Sprachprüfung A12/E1) — hier nur die vier Basistypen davon,
+// damit die bestehenden Aufrufer (Zielauswahl Formationskern) unverändert bleiben.
+export const FORMATION_TYPE_LABELS = Object.fromEntries(FORMATION_TYPES.map((t) => [t, C_FORMATION_LABELS[t]]));
 
 // Shop „Verstärkte Wiederholung" (#164): secondBonus = 2. Karte, thirdBonus = 3. Karte, allMult = Faktor auf ALLE
 // Wiederholungsfaktoren (Stufe IV ×1,20; nur auf echte Faktoren > 1, nie auf die Einzelkarte).

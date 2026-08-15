@@ -4,8 +4,12 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
+import { rarityLabel } from "../i18n/labels.js";      // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
+import { LEG_PHASE_CYCLE } from "../game/constants.js"; // Legendär-Phase: Durchlauf-Nr. aus dem Plan (Sprachprüfung E3)
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
+import { fmtNum } from "../i18n/index.js";
+import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
    Farbsystem aus dem Neon-Logo abgeleitet (Verlauf Cyan → Violett → Amber): Cyan = Start/SP/Energie,
@@ -25,12 +29,20 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
-const ONB_REWARDS = ["Reroll +1", "Pflanze frei", "Rarität: Blau", "Eis frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
+// Sprachprüfung C1/E3: Raritäts-Namen aus TIER_META (kein „Blau"/„Violett"), Legendär-Phase mit ausgeschriebenem
+// Durchlauf statt der Chiffre „R29" — die Zahl kommt aus dem Entscheidungsplan (constants.js).
+// #sprache: als Funktion, damit der Sprachwechsel greift — Name UND Raritätsstufe lösen zur Anzeigezeit auf.
+const onbRewards = (t) => [
+  t("start.onb.reroll"), t("start.onb.plant"), t("start.onb.rarity", { tier: rarityLabel(3) }),
+  t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
+];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
+  const t = useT();
+  const ONB_REWARDS = onbRewards(t);
 
   // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
   const prof = profile || {};
@@ -51,9 +63,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     const secret = onSecretSeed && matchSecretSeed(seedInput);
     if (secret) {
       setSeedError(false); setSeedInput("");
-      setSecretMsg(secret === "unlock" ? "🔓 Alles freigeschaltet."
-        : secret === "onboarding" ? "⏭️ Onboarding übersprungen · +10 SP · +50 DP"
-        : "🔄 Profil wird zurückgesetzt …");
+      setSecretMsg(secret === "unlock" ? t("start.secret.unlock")
+        : secret === "onboarding" ? t("start.secret.onboarding")
+        : t("start.secret.reset"));
       onSecretSeed(secret);
       return;
     }
@@ -102,7 +114,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
       <div className="relative inline-block mt-1">
-        <img src={logo} alt="AUTOSTICH" draggable="false"
+        <img src={logo} alt={t("start.logo.alt")} draggable="false"
           className="w-full max-w-[288px] h-auto select-none" />
         {/* Versions-Banner unten rechts an der Marke — Gold/Amber aus dem Logo. */}
         <span
@@ -113,7 +125,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           v{APP_VERSION}
         </span>
       </div>
-      <p className="text-xs opacity-45 -mt-1">Roguelite-Autobattler-Stechspiel · Prototyp</p>
+      <p className="text-xs opacity-45 -mt-1">{t("start.tagline")}</p>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
@@ -122,12 +134,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
-            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>💠 Bonus-{progLigaFree ? "DP" : "SP"} · nächste +5</span>
+            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
           ) : (
-            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: VI }}>🎓 Onboarding</span>
+            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
           )}
           <span className="text-[11.5px] opacity-55 font-mono tabular-nums">
-            {onbDone ? `${dripInto} / ${SP_LOYALTY_EVERY} Läufe` : `${onbStep} / ${ONBOARDING_LINKS}`}
+            {onbDone ? t("start.progress.runs", { done: dripInto, total: SP_LOYALTY_EVERY })
+                     : t("start.progress.links", { done: onbStep, total: ONBOARDING_LINKS })}
           </span>
         </div>
         <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
@@ -138,7 +151,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* (Schritt 4e) Nächste Freischaltung — nur während des Onboardings; danach übernimmt die SP-Drip-Zeile oben. */}
         {!onbDone && ONB_REWARDS[onbStep] && (
           <div className="flex items-center gap-1.5 text-[11px] -mb-0.5">
-            <span className="opacity-50">Nächste Freischaltung:</span>
+            <span className="opacity-50">{t("start.progress.next")}</span>
             <b style={{ color: VI }}>{ONB_REWARDS[onbStep]}</b>
           </div>
         )}
@@ -152,9 +165,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <button onClick={onResume}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
             style={cyanPrimary}>
-            <span className="text-[19px]">▶ Lauf fortsetzen</span>
+            <span className="text-[19px]">{t("start.resume")}</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
-              Durchlauf {Math.min((resume.cycle || 0) + 1, resume.totalCycles)}/{resume.totalCycles} · Score {Math.round(resume.score || 0).toLocaleString("de-DE")}
+              {t("start.resume.sub", {
+                cycle: Math.min((resume.cycle || 0) + 1, resume.totalCycles),
+                total: resume.totalCycles,
+                score: fmtNum(Math.round(resume.score || 0)),
+              })}
             </span>
           </button>
         )}
@@ -163,7 +180,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         <button onClick={onStart}
           className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
           style={normalStyle}>
-          Normaler Lauf
+          {t("start.normal")}
         </button>
         {/* #382 Seed-Chip dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad tryPlaySeed). */}
         {onPlaySeed && (
@@ -172,18 +189,18 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <input
                 value={seedInput}
                 onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
-                placeholder="Seed einfügen"
-                aria-label="Seed einfügen und spielen"
+                placeholder={t("start.seed.placeholder")}
+                aria-label={t("start.seed.aria")}
                 className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
                 style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
               />
               <button type="submit" disabled={!seedInput.trim()}
                 className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
                 style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-                ↻ Spielen
+                {t("start.seed.play")}
               </button>
             </form>
-            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>Kein gültiger Seed — prüf den Code und versuch es erneut.</div>}
+            {seedError && <div className="text-xs mt-1" style={{ color: "#e06a6a" }}>{t("start.seed.error")}</div>}
             {secretMsg && <div className="text-xs mt-1" style={{ color: "#6ad39f" }}>{secretMsg}</div>}
           </div>
         )}
@@ -199,10 +216,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <button onClick={onRankedBoard}
             className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}
-            title={rankedFree ? "Wochen-Rangliste öffnen" : "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde"}>
-            <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} Rangliste</span>
+            title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
+            <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
             <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-              style={{ background: "#241d3a", color: VI }} aria-label="Wochen-Challenge">Woche</span>
+              style={{ background: "#241d3a", color: VI }} aria-label={t("start.ranked.badge.aria")}>{t("start.ranked.badge")}</span>
           </button>
         </div>
       )}
@@ -222,69 +239,69 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           const head = (t) => (<b className="text-[13.5px] tracking-tight">{t}</b>);
           const arrow = <span className="text-[13px] opacity-35">›</span>;
           const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
-            style={{ background: bg, color: "#c9c9d2" }}>🔒 noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}</span>);
+            style={{ background: bg, color: "#c9c9d2" }}>{t("start.tile.lock", { count: ONBOARDING_LINKS - onbStep })}</span>);
           return (<>
             {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe CY (Grid-Position TL, Logo-Verlauf bleibt). SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
             {onbDone ? (
-              <button onClick={onUpgrades || undefined} className={tileCls} style={tileSty} title="Upgrade-Screen (Vorschau)">
+              <button onClick={onUpgrades || undefined} className={tileCls} style={tileSty} title={t("start.tile.upgrades.title")}>
                 <Stripe c={CY} />
                 <div className="flex items-center justify-between gap-1">
-                  {head("Upgrades")}
+                  {head(t("start.tile.upgrades"))}
                   {progBuyable > 0
-                    ? <span className="shrink-0 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{progBuyable} kaufbar</span>
+                    ? <span className="shrink-0 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
                     : arrow}
                 </div>
                 {progLigaFree ? (
-                  <span className="text-[13px] font-extrabold" style={{ color: AM }}>✓ komplett</span>
+                  <span className="text-[13px] font-extrabold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
                 ) : (
                   <span className="flex items-baseline gap-1">
                     <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
-                    <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>SP</span>
+                    <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>{t("common.cur.sp")}</span>
                     <span className="text-[10px] opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
                   </span>
                 )}
               </button>
             ) : (
-              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Frei nach Abschluss des Onboardings">
+              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title={t("start.tile.upgrades.locked")}>
                 <Stripe c={CY} dim />
-                {head("Upgrades")}
+                {head(t("start.tile.upgrades"))}
                 {lockBadge("#20202a")}
               </div>
             )}
 
             {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe BLUE (Grid-Position TR, Logo-Verlauf bleibt). DP-Guthaben in Gold. Onboarding-Gate. */}
             {onCustomize && (onbDone ? (
-              <button onClick={onCustomize} className={tileCls} style={tileSty} title="Deck-Werkstatt">
+              <button onClick={onCustomize} className={tileCls} style={tileSty} title={t("start.tile.workshop")}>
                 <Stripe c={BLUE} />
-                <div className="flex items-center justify-between gap-1">{head("Deck-Werkstatt")}{arrow}</div>
+                <div className="flex items-center justify-between gap-1">{head(t("start.tile.workshop"))}{arrow}</div>
                 <span className="flex items-baseline gap-1">
                   <span className="text-[19px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
-                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
+                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>{t("common.cur.dp")}</span>
                 </span>
               </button>
             ) : (
-              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
+              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title={t("start.tile.workshop.locked")}>
                 <Stripe c={BLUE} dim />
-                {head("Deck-Werkstatt")}
+                {head(t("start.tile.workshop"))}
                 {lockBadge("#20202a")}
               </div>
             ))}
 
             {/* 3 · Bestenliste — Stripe VI (Violett = Wettbewerb/Rang, passt semantisch). */}
             {onLeaderboard && (
-              <button onClick={onLeaderboard} className={tileCls} style={tileSty} title="Bestenliste">
+              <button onClick={onLeaderboard} className={tileCls} style={tileSty} title={t("start.tile.leaderboard")}>
                 <Stripe c={VI} />
-                <div className="flex items-center justify-between gap-1">{head("Bestenliste")}{arrow}</div>
-                <span className="text-[11px] opacity-50">Globale Highscores</span>
+                <div className="flex items-center justify-between gap-1">{head(t("start.tile.leaderboard"))}{arrow}</div>
+                <span className="text-[11px] opacity-50">{t("start.tile.leaderboard.sub")}</span>
               </button>
             )}
 
             {/* 4 · Statistiken — Stripe AM (Logo-Ende). */}
             {onStats && (
-              <button onClick={onStats} className={tileCls} style={tileSty} title="Statistiken">
+              <button onClick={onStats} className={tileCls} style={tileSty} title={t("start.tile.stats")}>
                 <Stripe c={AM} />
-                <div className="flex items-center justify-between gap-1">{head("Statistiken")}{arrow}</div>
-                <span className="text-[11px] opacity-50">Läufe &amp; Rekorde</span>
+                <div className="flex items-center justify-between gap-1">{head(t("start.tile.stats"))}{arrow}</div>
+                <span className="text-[11px] opacity-50">{t("start.tile.stats.sub")}</span>
               </button>
             )}
           </>); })()}
@@ -292,15 +309,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Optionen — bleibt als einzelner ruhiger Chip unter dem Grid (kein eigener Grid-Platz nötig). */}
       {onOptions && (
-        <button onClick={onOptions} aria-label="Optionen" className={chipCls} style={chipSty}>Optionen</button>
+        <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
       )}
 
       {/* Lokaler Nickname (#14). */}
       {onEditName && (
         <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1">
           {username
-            ? <>Angemeldet als <b style={{ color: CY }}>{username}</b> · Name ändern</>
-            : <>Namen festlegen für den globalen Highscore</>}
+            ? <>{t("start.name.signedIn")} <b style={{ color: CY }}>{username}</b> · {t("start.name.change")}</>
+            : <>{t("start.name.set")}</>}
         </button>
       )}
 
@@ -308,7 +325,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <PwaInstall />
 
       {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title="Version · Umgebung · Commit">{VERSION_FULL}</div>
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title={t("start.version.title")}>{VERSION_FULL}</div>
     </div>
   );
 }

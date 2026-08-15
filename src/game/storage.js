@@ -404,7 +404,11 @@ export function recordRun(record) {
 // + #252 StatusRail-Panels default eingeklappt · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322
 // Sonnen-Puls = freier Default (aktiv, kein Kauf). #347: ALLE Effekt-Toggles + Farbmodus-Flags explizit gelistet (Default
 // aus, außer fxSonnenPuls/fxCubeMatrixSun) — vorher liefen die fehlenden über undefined-als-falsy (inkonsistent/fragil).
+// #sprache `lang`: gewählte Anzeigesprache ("de"|"en"). Default `null` = „noch nicht gewählt" → loadOptions
+// setzt beim ersten Start die Browsersprache ein. Sobald der Spieler in den Optionen wählt, steht hier ein
+// fester Wert und die Browsersprache wird nie wieder befragt.
 const DEFAULT_OPTIONS = {
+  lang: null,
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",

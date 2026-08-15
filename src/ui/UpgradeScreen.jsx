@@ -6,9 +6,12 @@ import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
 import { tierColor } from "../game/rarity.js";
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
-  NODES, NODE_BY_ID, TOTAL_NODES,
-  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
+  // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
+  NODE_BY_ID, TOTAL_NODES,
+  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete, owns,
 } from "../game/progression.js";
+import { nodeDef, nodeList } from "../i18n/labels.js"; // #sprache: Knotentexte zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* Upgrade-Screen (#369 KOMPLETT-REWORK) — hängt am ECHTEN Profil (progression.js + storage). Zwei Reiter:
    „Decks" (je Archetyp die Kette Deck › Leg I › Leg II, tippbar → Deck-Detailansicht) und „Allgemein"
@@ -81,7 +84,7 @@ function nodeStatusText(node, st) {
   if (st === "owned") return "✓ Gekauft";
   if (st === "placeholder") return "Bald verfügbar";
   if (st === "lock-sp") return `Zu wenig SP — kostet ${node.cost} SP`;
-  if (st === "lock-prev") { const pr = NODE_BY_ID[node.prereq]; return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
+  if (st === "lock-prev") { const pr = nodeDef(node.prereq); return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
   if (st === "lock-gate") return node.gate?.type === "anyLeg" ? "Braucht eine freigeschaltete Legendär-Stufe" : "Noch gesperrt";
   return "Kaufbar";
 }
@@ -156,7 +159,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <TopHairline />
           {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
               (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
-          <h2 className="text-lg font-bold">Upgrades</h2>
+          <h2 className="text-lg font-bold">{t("upgrades.title")}</h2>
           <div className="flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
               <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
@@ -165,8 +168,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             <div className="flex items-center gap-2.5 shrink-0">
               <button onClick={doRespec} disabled={owned === 0}
                 className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
-                style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>↺ Respec</button>
-              <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
+                style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>{t("upgrades.respec")}</button>
+              <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
           </div>
           {/* Reiter Decks / Allgemein */}
@@ -186,9 +189,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           </div>
           <div className="h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${VI}, ${CY}, ${AM})`, opacity: .7 }} />
           <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
-            <b className="text-[#e8e8ea]">{owned}</b> / {TOTAL_NODES} Knoten · Meister-Liga {treeComplete(p) ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}
+            <b className="text-[#e8e8ea]">{owned}</b>{t("upgrades.nodes", { total: TOTAL_NODES })} {treeComplete(p) ? <b style={{ color: AM }}>{t("upgrades.ranked.free")}</b> : t("upgrades.ranked.at", { total: TOTAL_NODES })}
           </div>
-          <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>Knoten antippen zeigt, was er bewirkt.</div>
+          <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
         </div>
 
         {/* ===== Reiter „Decks" ===== */}
@@ -197,7 +200,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {ARCHETYPE_ORDER.map((arch) => {
               const meta = ARCHETYPE_META[arch];
               const accent = FACTION_GLOW[arch] || VI;
-              const chain = NODES.filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
+              const chain = nodeList().filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
               const hasDeckNode = chain.some((n) => n.deckUnlock);
               const lead = hasDeckNode ? null : { label: "Deck", color: accent }; // Feuer/Blitz: Deck von Beginn an frei
               return (
@@ -206,7 +209,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                     className="flex items-center gap-2 w-full text-left mb-2.5 group" title={`${meta?.label}: Details`}>
                     <FactionIcon type={arch} size={20} />
                     <span className="text-[14px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
-                    <span className="ml-auto text-[10.5px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>Details ›</span>
+                    <span className="ml-auto text-[10.5px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
                   </button>
                   <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} selected={selNode} onSelect={toggleNode} />
                 </div>
@@ -214,7 +217,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             })}
             {/* Extras: Deck-Reroll + Platzhalter. */}
             <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
-              <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>Legendär-Phase</div>
+              <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>{t("upgrades.legPhase")}</div>
               <Lane nodes={[NODE_BY_ID.deckReroll, NODE_BY_ID.synLeg]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
@@ -229,7 +232,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{lane.name}</span>
                   {lane.note && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{lane.note}</span>}
                 </div>
-                <Lane nodes={lane.ids.map((id) => NODE_BY_ID[id])} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
+                <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>
             ))}
           </div>
@@ -237,9 +240,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
 
         {/* Legende. */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px]" style={{ color: "#a6a6b0" }}>
-          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> gekauft</span>
-          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> kaufbar</span>
-          <span>🔒 gesperrt · <span style={{ opacity: .7 }}>Bald = Platzhalter</span></span>
+          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> {t("upgrades.owned")}</span>
+          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
+          <span>{t("upgrades.locked")} <span style={{ opacity: .7 }}>{t("upgrades.soon")}</span></span>
         </div>
       </div>
     </div>

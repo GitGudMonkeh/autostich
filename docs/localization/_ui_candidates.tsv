@@ -1,0 +1,1121 @@
+src/App.jsx:415	[watchdog #351/#366] Lauf hängt vor dem nächsten Stich — self-heal RESOLVE_TRICK.
+src/App.jsx:480	Pflanze
+src/App.jsx:480	Eis
+src/App.jsx:480	Feuer
+src/App.jsx:480	Blitz
+src/App.jsx:485	Genesis-Pack · Werkstatt · Upgrades
+src/App.jsx:487	Neue Raritätsstufe
+src/App.jsx:487	Freischaltung
+src/App.jsx:489	Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei
+src/App.jsx:492	Freischaltung
+src/App.jsx:523	), skills: (state.skills || []).join(
+src/App.jsx:589	fx:hologridSlice
+src/App.jsx:862	h-14 w-auto select-none block
+src/App.jsx:1030	text-base font-bold
+src/App.jsx:1030	Lauf pausieren oder beenden?
+src/App.jsx:1036	Weiterspielen
+src/App.jsx:1037	Beenden
+src/App.jsx:1041	merkt sich den Lauf — du kannst ihn später im Menü fortsetzen.
+src/App.jsx:1041	Beenden
+src/App.jsx:1041	wertet ihn und zeigt den Endscreen.
+src/App.jsx:1054	text-base font-bold
+src/App.jsx:1054	Wirklich neustarten?
+src/App.jsx:1057	Weiterspielen
+src/App.jsx:1058	Neustarten
+src/App.jsx:1060	Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.
+src/ui/ArchPanels.jsx:13	≥2 gleiche Werte nebeneinander (×1,25 / ×1,50 / ×1,80, dann +0,40 je weitere)
+src/ui/ArchPanels.jsx:14	≥3 Karten gleicher Farbe (ab ×1,35, +0,20 je weitere)
+src/ui/ArchPanels.jsx:15	≥3 streng steigende Werte, Schritt ≤4 (ab ×1,35, +0,20 je weitere)
+src/ui/ArchPanels.jsx:16	≥3 im Zick-Zack, Nachbardifferenz ≥4 (ab ×1,40, +0,20 je weitere)
+src/ui/ArchPanels.jsx:17	eine einzelne Position zählt als Formation (Faktor je Quelle)
+src/ui/ArchPanels.jsx:18	der Faktor einer endenden Formation wirkt auf die nächste Karte nach
+src/ui/ArchPanels.jsx:19	dein gewählter Formationstyp bekommt einen Zusatzfaktor
+src/ui/ArchPanels.jsx:20	eine Formation läuft über eine Segmentgrenze und zahlt zusätzlich ×1,25
+src/ui/ArchPanels.jsx:25	onInspect(nextBid)
+src/ui/ArchPanels.jsx:30	text-[11px] uppercase tracking-wide font-bold mb-0.5
+src/ui/ArchPanels.jsx:31	Antippen zeigt am Brett, wo es liegt — und umgekehrt.
+src/ui/ArchPanels.jsx:46	Legendär
+src/ui/ArchPanels.jsx:72	● Rolle — Ziel eines Perks/einer Familie an dieser Karte
+src/ui/ArchitectScreen.jsx:239	, distBids:Set
+src/ui/ArchitectScreen.jsx:396	Gebäude
+src/ui/ArchitectScreen.jsx:409	Gebäude
+src/ui/ArchitectScreen.jsx:536	Kein Platz zum Drehen — zieh das Gebäude erst an eine freiere Stelle.
+src/ui/ArchitectScreen.jsx:569	0 ? "#5ab87a" : scorePctDiff
+src/ui/ArchitectScreen.jsx:570	0 ? "+" : scorePctDiff
+src/ui/ArchitectScreen.jsx:583	text-xl font-bold mt-0.5
+src/ui/ArchitectScreen.jsx:583	Der Architekt
+src/ui/ArchitectScreen.jsx:585	ml-auto shrink-0
+src/ui/ArchitectScreen.jsx:592	Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.
+src/ui/ArchitectScreen.jsx:593	text-[10px] uppercase tracking-wide font-bold
+src/ui/ArchitectScreen.jsx:593	Gebäude-Boost
+src/ui/ArchitectScreen.jsx:594	font-pixel-dense leading-none
+src/ui/ArchitectScreen.jsx:597	text-[10px] uppercase tracking-wide font-bold
+src/ui/ArchitectScreen.jsx:597	Baufeld
+src/ui/ArchitectScreen.jsx:598	font-pixel-dense leading-none
+src/ui/ArchitectScreen.jsx:603	text-[10px] uppercase tracking-wide font-bold
+src/ui/ArchitectScreen.jsx:603	Durchlauf-Score
+src/ui/ArchitectScreen.jsx:604	font-pixel-dense leading-none
+src/ui/ArchitectScreen.jsx:618	text-[11px] font-mono uppercase tracking-wide font-bold
+src/ui/ArchitectScreen.jsx:618	🎨 Bufft Farbe
+src/ui/ArchitectScreen.jsx:635	0 ? "#5fce86" : dragDelta.dBoost
+src/ui/ArchitectScreen.jsx:636	0 ? "#155e3126" : dragDelta.dBoost
+src/ui/ArchitectScreen.jsx:637	0 ? "#2f9d5566" : dragDelta.dBoost
+src/ui/ArchitectScreen.jsx:638	Änderung des Gebäude-Boosts an dieser Vorschau-Position
+src/ui/ArchitectScreen.jsx:639	0 ? "▲ +" : dragDelta.dBoost
+src/ui/ArchitectScreen.jsx:645	Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe
+src/ui/ArchitectScreen.jsx:648	Formationsrahmen (Ring + Label) am Brett ein-/ausblenden
+src/ui/ArchitectScreen.jsx:747	2px dashed #d1462f
+src/ui/ArchitectScreen.jsx:747	2px dashed #ffffffcc
+src/ui/ArchitectScreen.jsx:761	arch-struct-flash rounded-md
+src/ui/ArchitectScreen.jsx:794	legendär
+src/ui/ArchitectScreen.jsx:820	Stufe (Ecke):
+src/ui/ArchitectScreen.jsx:824	legendär
+src/ui/ArchitectScreen.jsx:828	Wiederholung
+src/ui/ArchitectScreen.jsx:828	Farbblock
+src/ui/ArchitectScreen.jsx:828	Treppe
+src/ui/ArchitectScreen.jsx:828	Wechsel
+src/ui/ArchitectScreen.jsx:828	Anker
+src/ui/ArchitectScreen.jsx:841	Struktur & Distrikt · ×Score je Durchlauf
+src/ui/ArchitectScreen.jsx:843	Zeile
+src/ui/ArchitectScreen.jsx:844	Spalte
+src/ui/ArchitectScreen.jsx:845	Diagonale
+src/ui/ArchitectScreen.jsx:846	Distrikt
+src/ui/ArchitectScreen.jsx:848	Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr
+src/ui/ArchitectScreen.jsx:848	Score
+src/ui/ArchitectScreen.jsx:848	. Faktoren stapeln multiplikativ.
+src/ui/ArchitectScreen.jsx:849	Distrikt:
+src/ui/ArchitectScreen.jsx:849	Gebäude
+src/ui/ArchitectScreen.jsx:849	gleicher Farbe
+src/ui/ArchitectScreen.jsx:860	Kein Platz
+src/ui/ArchitectScreen.jsx:862	Markiere ein Gebäude zum Abriss (am Brett oder unten) — bei einem großen Bauplan evtl. mehrere. Abgerissen wird erst nach Bestätigen.
+src/ui/ArchitectScreen.jsx:865	Abriss reicht noch nicht — markiere ein weiteres Gebäude.
+src/ui/ArchitectScreen.jsx:881	Legendär
+src/ui/ArchitectScreen.jsx:882	· markiert ✓
+src/ui/ArchitectScreen.jsx:882	· reicht allein
+src/ui/ArchitectScreen.jsx:889	Markierte Gebäude gehen beim Abriss verloren.
+src/ui/ArchitectScreen.jsx:891	← Zurück
+src/ui/ArchitectScreen.jsx:908	text-sm font-semibold mb-2
+src/ui/ArchitectScreen.jsx:908	Was baust du diese Phase?
+src/ui/ArchitectScreen.jsx:932	w-[9px] h-[9px] rounded-full inline-block shrink-0
+src/ui/ArchitectScreen.jsx:935	Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).
+src/ui/ArchitectScreen.jsx:935	⟳ nicht drehbar
+src/ui/ArchitectScreen.jsx:936	kein Platz → ersetzen
+src/ui/ArchitectScreen.jsx:945	text-[13px] font-bold leading-tight
+src/ui/ArchitectScreen.jsx:945	Aufwerten
+src/ui/ArchitectScreen.jsx:952	w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110
+src/ui/ArchitectScreen.jsx:970	w-[9px] h-[9px] rounded-full inline-block
+src/ui/ArchitectScreen.jsx:976	Jetzt:
+src/ui/ArchitectScreen.jsx:979	Danach:
+src/ui/ArchitectScreen.jsx:982	Unten bestätigen, dann wird aufgewertet.
+src/ui/ArchitectScreen.jsx:987	Aufwerten
+src/ui/ArchitectScreen.jsx:988	wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.
+src/ui/ArchitectScreen.jsx:1006	w-[8px] h-[8px] rounded-full inline-block
+src/ui/ArchitectScreen.jsx:1035	Platzieren & Verschieben
+src/ui/ArchitectScreen.jsx:1036	zieh Gebäude am Brett an ihren Platz (Griff überall,
+src/ui/ArchitectScreen.jsx:1036	⟳ Drehen
+src/ui/ArchitectScreen.jsx:1036	oben) — beliebig oft. Unten
+src/ui/ArchitectScreen.jsx:1036	Bestätigen
+src/ui/ArchitectScreen.jsx:1036	startet den Durchlauf.
+src/ui/ArchitectScreen.jsx:1045	order-1 sticky top-0 z-20 md:static rounded-xl p-2 -mt-2 md:mt-0
+src/ui/ArchitectScreen.jsx:1049	w-full mb-2 rounded-lg py-2 text-sm font-bold
+src/ui/ArchitectScreen.jsx:1049	⟳ Drehen
+src/ui/ArchitectScreen.jsx:1052	Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).
+src/ui/ArchitectScreen.jsx:1053	w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed
+src/ui/ArchitectScreen.jsx:1054	⟳ Nicht drehbar
+src/ui/ArchitectScreen.jsx:1062	+ „Zurücksetzen
+src/ui/ArchitectScreen.jsx:1068	↶ Rückgängig
+src/ui/ArchitectScreen.jsx:1070	Zurücksetzen
+src/ui/ArchitectScreen.jsx:1074	w-full rounded-lg py-2 text-xs font-bold
+src/ui/ArchitectScreen.jsx:1074	← Anderer Bauplan
+src/ui/ArchitectScreen.jsx:1080	↔ Gebäude umstellen
+src/ui/ArchitectScreen.jsx:1081	Nichts bauen · Fortfahren →
+src/ui/ArchitectScreen.jsx:1084	w-full rounded-lg py-2 text-xs font-bold
+src/ui/ArchitectScreen.jsx:1084	Nichts bauen · Fortfahren →
+src/ui/ArchitectScreen.jsx:1088	Abbrechen
+src/ui/ArchitectScreen.jsx:1089	⬆ Aufwerten bestätigen
+src/ui/ArchitectScreen.jsx:1092	w-full rounded-lg py-2 text-xs font-bold
+src/ui/ArchitectScreen.jsx:1092	← Zurück
+src/ui/ArchitectScreen.jsx:1097	⟳ Drehen
+src/ui/ArchitectScreen.jsx:1099	Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).
+src/ui/ArchitectScreen.jsx:1100	⟳ nicht drehbar
+src/ui/ArchitectScreen.jsx:1102	✓ Bestätigen · Durchlauf starten
+src/ui/ArchitectScreen.jsx:1115	w-[9px] h-[9px] rounded-full inline-block
+src/ui/ArchitectScreen.jsx:1117	Legendär
+src/ui/ArchitectScreen.jsx:1130	Antippen zeigt am Brett, wo es liegt — und umgekehrt.
+src/ui/ArchitectScreen.jsx:1140	w-[8px] h-[8px] rounded-full inline-block
+src/ui/ArchitectScreen.jsx:1142	Legendär
+src/ui/ArchitectScreen.jsx:1154	Vorschau & Brett-Status
+src/ui/ArchitectScreen.jsx:1160	Vorschau
+src/ui/ArchitectScreen.jsx:1160	passt hier nicht
+src/ui/ArchitectScreen.jsx:1162	Σ Wert
+src/ui/ArchitectScreen.jsx:1163	Formationen
+src/ui/ArchitectScreen.jsx:1169	Struktur-Bonus
+src/ui/ArchitectScreen.jsx:1170	Σ Kartenwert
+src/ui/ArchitectScreen.jsx:1171	Baufeld belegt
+src/ui/ArchitectScreen.jsx:1172	Häuserzeilen
+src/ui/ArchitectScreen.jsx:1189	Bauplan
+src/ui/ArchitectScreen.jsx:1196	text-xl font-extrabold tabular-nums mt-0.5
+src/ui/ArchitectScreen.jsx:1222	Voll-Katalog (Dev): Kategorie → Familie → Stufe. Ein Bau pro Phase (danach Verschieben/Bestätigen).
+src/ui/ArchitectScreen.jsx:1247	font-semibold text-sm
+src/ui/ArchitectScreen.jsx:1250	▲ Stufe
+src/ui/ArchitectScreen.jsx:1250	▼ Stufe
+src/ui/Battlefield.jsx:107	Gewonnen
+src/ui/Battlefield.jsx:108	Gleichstand → Sieg
+src/ui/Battlefield.jsx:109	Verloren
+src/ui/Battlefield.jsx:110	Gleichstand
+src/ui/Battlefield.jsx:148	Gottgleich
+src/ui/Battlefield.jsx:149	Irre
+src/ui/Battlefield.jsx:151	Brutal
+src/ui/Battlefield.jsx:153	Stark
+src/ui/Battlefield.jsx:169	Lawine
+src/ui/Battlefield.jsx:172	Gönn dir
+src/ui/Battlefield.jsx:252	"Helvetica Neue", Arial, sans-serif
+src/ui/Battlefield.jsx:359	as-flip3d-face as-flip3d-back
+src/ui/Battlefield.jsx:360	as-flip3d-face as-flip3d-front
+src/ui/Battlefield.jsx:758	Gewonnen · Kritisch
+src/ui/Battlefield.jsx:948	Formation
+src/ui/Battlefield.jsx:1099	0 && nowMs - (bigCoolRef.current[toShow.text] || 0)
+src/ui/Battlefield.jsx:1533	Kritisch!
+src/ui/Battlefield.jsx:1543	Gegner
+src/ui/Battlefield.jsx:1652	text-lg font-extrabold tracking-wide uppercase
+src/ui/Battlefield.jsx:1654	Bereit — starte den Autobattler
+src/ui/BuildPanel.jsx:11	rounded-xl p-4 as-panel as-panel-deck
+src/ui/BuildPanel.jsx:17	Noch keine Perks. In manchen Durchläufen wählst du einen dazu.
+src/ui/BuildSummary.jsx:13	Skill
+src/ui/BuildSummary.jsx:29	Kapital:
+src/ui/BuildSummary.jsx:31	· Zinssatz
+src/ui/BuildSummary.jsx:35	Auszahlung bei Erfolg:
+src/ui/BuildSummary.jsx:39	Siege dieser Durchlauf:
+src/ui/BuildSummary.jsx:41	· Hürde genommen
+src/ui/BuildSummary.jsx:41	· sonst Crash
+src/ui/BuildSummary.jsx:49	Noch keine Perks.
+src/ui/BuildSummary.jsx:125	Noch keine Skills.
+src/ui/BuildSummary.jsx:157	text-xs leading-snug mt-1.5
+src/ui/BuildSummary.jsx:186	w-8 shrink-0 text-[10px] font-bold leading-none pb-0.5
+src/ui/BuildSummary.jsx:207	Werte über 10 (violett) überbieten jede Gegnerkarte.
+src/ui/BuildSummary.jsx:232	w-2 h-2 rounded-full shrink-0
+src/ui/BuildSummary.jsx:233	w-8 shrink-0 font-bold leading-none
+src/ui/Card.jsx:103	text-5xl font-bold card-num
+src/ui/Card.jsx:103	"Helvetica Neue", Arial, sans-serif
+src/ui/Card.jsx:120	text-[9px] font-bold mt-0.5
+src/ui/Card.jsx:125	Grün (reif) — Teil des Farbblocks
+src/ui/Card.jsx:146	rounded-full transition-all
+src/ui/CardDetail.jsx:25	Karte antippen für Rolle & Modifikatoren …
+src/ui/CardDetail.jsx:49	font-bold text-sm
+src/ui/CardDetail.jsx:53	Rollen:
+src/ui/CardDetail.jsx:77	Formationen:
+src/ui/CardDetail.jsx:81	(Mitglied)
+src/ui/CardDetail.jsx:88	Ionisierung:
+src/ui/CardDetail.jsx:100	Ausgewachsen
+src/ui/CardDetail.jsx:100	Grün (reif)
+src/ui/CardDetail.jsx:100	Setzling
+src/ui/CardDetail.jsx:106	Pflanze:
+src/ui/CardDetail.jsx:110	(×2 Form.)
+src/ui/CardDetail.jsx:119	Feuer:
+src/ui/CardDetail.jsx:127	🏗 Gebäude:
+src/ui/CardDetail.jsx:132	keine direkte Wirkung an dieser Karte
+src/ui/CardGrid.jsx:19	Kraft
+src/ui/CardGrid.jsx:19	Score
+src/ui/CardGrid.jsx:19	Crit
+src/ui/CardGrid.jsx:19	Serie
+src/ui/CardGrid.jsx:19	Formation
+src/ui/CardGrid.jsx:19	Joker
+src/ui/CardGrid.jsx:54	0) || same(down + 1, down
+src/ui/CardGrid.jsx:136	Teil einer aktiven Gletscher-Formation (2D)
+src/ui/CardGrid.jsx:138	Grün (reif) — zählt für den Farbblock
+src/ui/CardGrid.jsx:143	text-xl sm:text-2xl font-bold font-pixel-dense
+src/ui/CardGrid.jsx:144	text-[9px] sm:text-xs font-bold leading-none
+src/ui/CardGrid.jsx:147	text-[9px] sm:text-[11px] font-bold leading-none
+src/ui/CardGrid.jsx:190	⇕ Grenze offen
+src/ui/CardGrid.jsx:281	w-9 shrink-0 text-right leading-tight
+src/ui/CardGrid.jsx:284	text-[9px] font-bold font-pixel-dense tabular-nums
+src/ui/ChargeBar.jsx:18	Ionisierung
+src/ui/ChargeBar.jsx:51	· hält
+src/ui/ChargeBar.jsx:52	font-bold tabular-nums
+src/ui/ChargeBar.jsx:72	h-full rounded-full transition-all
+src/ui/ChargeBar.jsx:110	Voll geladen
+src/ui/ChargeBar.jsx:123	Blitz
+src/ui/ChargeBar.jsx:131	🌐 Sturm-Sättigung
+src/ui/ChargeBar.jsx:132	Sturmgröße
+src/ui/ChargeBar.jsx:133	Sturmintensität
+src/ui/ChargeBar.jsx:141	font-bold tabular-nums
+src/ui/ChargeBar.jsx:160	Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.
+src/ui/ChargeBar.jsx:160	Entladungen
+src/ui/ChargeBar.jsx:161	Gewitterfront
+src/ui/ChargeBar.jsx:162	Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.
+src/ui/ChargeBar.jsx:162	Entladung
+src/ui/ChargeBar.jsx:169	Blitzfrequenz
+src/ui/ChargeBar.jsx:170	font-bold tabular-nums
+src/ui/ChargeBar.jsx:171	Crit voll — die Leiste zeigt jetzt den Crit-Multiplikator.
+src/ui/ChargeBar.jsx:171	Crit-Chance des nächsten Siegs.
+src/ui/ChargeBar.jsx:176	h-full rounded-full transition-all
+src/ui/ChargeBar.jsx:195	Serienschutz: eine Niederlage mit genug Ladung hielt die Serie (½ Ladung verbraucht).
+src/ui/ChargeBar.jsx:212	Ionisierung
+src/ui/ChronikOverview.jsx:26	Kraft
+src/ui/ChronikOverview.jsx:26	Score
+src/ui/ChronikOverview.jsx:26	Crit
+src/ui/ChronikOverview.jsx:26	Serie
+src/ui/ChronikOverview.jsx:26	Formation
+src/ui/ChronikOverview.jsx:26	Joker
+src/ui/ChronikOverview.jsx:73	text-xs uppercase tracking-widest
+src/ui/ChronikOverview.jsx:73	Chronik
+src/ui/ChronikOverview.jsx:74	Kartenübersicht
+src/ui/ChronikOverview.jsx:76	Schließen
+src/ui/ChronikOverview.jsx:98	⏱ Zeitraffer · gekoppelte Position (20 & 40)
+src/ui/ChronikOverview.jsx:125	Anker
+src/ui/ChronikOverview.jsx:138	Deck-Stärke je Farbe
+src/ui/ChronikOverview.jsx:147	Aktuelle Formationen
+src/ui/ChronikOverview.jsx:159	Keine aktiven Formationen mit Multiplikator.
+src/ui/ChronikOverview.jsx:167	🏗 Architektenphase
+src/ui/ChronikOverview.jsx:188	Formationen & Rahmenfarben
+src/ui/Controls.jsx:25	Optionen
+src/ui/Controls.jsx:25	⚙ Optionen
+src/ui/Controls.jsx:26	Neustart
+src/ui/Controls.jsx:27	Beenden
+src/ui/CustomizeScreen.jsx:136	Standard
+src/ui/CustomizeScreen.jsx:137	Der schlichte Grund-Finisher (immer verfügbar, Standard-Auswahl): Die geschlagene Gegnerkarte fliegt nach dem Stich einfach zur Seite weg — genau wie deine eigene Karte bei einer Niederlage. Beim Sieg wird der Aufdeck-Sound leicht höher gestimmt. Kein Schnitt, kein Prunk.
+src/ui/CustomizeScreen.jsx:141	Klinge
+src/ui/CustomizeScreen.jsx:146	Laser
+src/ui/CustomizeScreen.jsx:147	Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe.
+src/ui/CustomizeScreen.jsx:152	Hologrid-Laser
+src/ui/CustomizeScreen.jsx:152	fx:hologridSlice
+src/ui/CustomizeScreen.jsx:153	Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe.
+src/ui/CustomizeScreen.jsx:158	Schwarzes Loch
+src/ui/CustomizeScreen.jsx:159	Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe.
+src/ui/CustomizeScreen.jsx:167	Standard
+src/ui/CustomizeScreen.jsx:168	Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf).
+src/ui/CustomizeScreen.jsx:173	Skill-Effekt
+src/ui/CustomizeScreen.jsx:174	Die vier Archetyp-Effekte (Feuer · Blitz · Eis · Pflanze) — immer aktiv. Wähle die Farbe: feste Neon-Standardfarbe oder die Farbe deines aktiven Decks.
+src/ui/CustomizeScreen.jsx:184	Karten
+src/ui/CustomizeScreen.jsx:184	Skill immer an · eine Animation
+src/ui/CustomizeScreen.jsx:185	Stich
+src/ui/CustomizeScreen.jsx:185	nur einer aktiv
+src/ui/CustomizeScreen.jsx:186	Hintergrund
+src/ui/CustomizeScreen.jsx:186	einer aktiv · Leuchten frei
+src/ui/CustomizeScreen.jsx:187	Score
+src/ui/CustomizeScreen.jsx:187	nur einer aktiv
+src/ui/CustomizeScreen.jsx:191	Kein Effekt
+src/ui/CustomizeScreen.jsx:192	Kein Hintergrund-Effekt — nur das Battlefield-Bild (immer verfügbar). Leuchten kann zusätzlich aktiv bleiben.
+src/ui/CustomizeScreen.jsx:196	Keine Animation
+src/ui/CustomizeScreen.jsx:197	Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar).
+src/ui/CustomizeScreen.jsx:249	(Gratis-Default, Wegflug) und „klinge
+src/ui/CustomizeScreen.jsx:250	(Abwählen des aktiven) fällt auf den Gratis-Standard zurück (es gibt keinen „gar kein Finisher
+src/ui/CustomizeScreen.jsx:251	gilt nur, wenn Klinge auch im Besitz ist — sonst zurück auf „standard
+src/ui/CustomizeScreen.jsx:277	-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard
+src/ui/CustomizeScreen.jsx:552	Gottgleich
+src/ui/CustomizeScreen.jsx:554	ws-gott-word 1.5s ease-out both
+src/ui/CustomizeScreen.jsx:652	Feuer
+src/ui/CustomizeScreen.jsx:653	Blitz
+src/ui/CustomizeScreen.jsx:654	Eis
+src/ui/CustomizeScreen.jsx:655	Pflanze
+src/ui/CustomizeScreen.jsx:686	Eis
+src/ui/CustomizeScreen.jsx:687	Ronin
+src/ui/CustomizeScreen.jsx:688	Schwarzes Loch
+src/ui/CustomizeScreen.jsx:689	Laternenfest
+src/ui/CustomizeScreen.jsx:690	Scarab
+src/ui/CustomizeScreen.jsx:699	(Referenz), dann „mit
+src/ui/CustomizeScreen.jsx:721	· mit Deck-Glow
+src/ui/CustomizeScreen.jsx:766	Schwach
+src/ui/CustomizeScreen.jsx:766	Stark
+src/ui/CustomizeScreen.jsx:766	Brutal
+src/ui/CustomizeScreen.jsx:766	Irre
+src/ui/CustomizeScreen.jsx:766	Gottgleich
+src/ui/CustomizeScreen.jsx:809	Stark
+src/ui/CustomizeScreen.jsx:809	Brutal
+src/ui/CustomizeScreen.jsx:809	Irre
+src/ui/CustomizeScreen.jsx:850	ws-gott-word 1.6s ease-out both
+src/ui/CustomizeScreen.jsx:909	Kein Battlefield
+src/ui/CustomizeScreen.jsx:976	Deck-Werkstatt
+src/ui/CustomizeScreen.jsx:981	text-lg font-extrabold tabular-nums
+src/ui/CustomizeScreen.jsx:982	text-[10px] font-bold tracking-wider
+src/ui/CustomizeScreen.jsx:984	Schließen
+src/ui/CustomizeScreen.jsx:990	Packs
+src/ui/CustomizeScreen.jsx:990	Challenges
+src/ui/CustomizeScreen.jsx:990	Effekte
+src/ui/CustomizeScreen.jsx:1027	Alle
+src/ui/CustomizeScreen.jsx:1027	Frei
+src/ui/CustomizeScreen.jsx:1027	Gesperrt
+src/ui/CustomizeScreen.jsx:1027	Besitz
+src/ui/CustomizeScreen.jsx:1027	Kaufbar
+src/ui/CustomizeScreen.jsx:1058	tippen → Details
+src/ui/CustomizeScreen.jsx:1070	text-[12px] font-extrabold truncate block
+src/ui/CustomizeScreen.jsx:1071	text-[10px] truncate block
+src/ui/CustomizeScreen.jsx:1079	Nichts in dieser Ansicht.
+src/ui/CustomizeScreen.jsx:1082	text-[11px] mt-4 leading-snug pt-3
+src/ui/CustomizeScreen.jsx:1084	Ein
+src/ui/CustomizeScreen.jsx:1084	Challenge-Deck
+src/ui/CustomizeScreen.jsx:1084	wird über eine Herausforderung
+src/ui/CustomizeScreen.jsx:1085	Ein
+src/ui/CustomizeScreen.jsx:1085	Pack
+src/ui/CustomizeScreen.jsx:1085	Kaufen aktiviert das Pack direkt
+src/ui/CustomizeScreen.jsx:1095	Karte hinten
+src/ui/CustomizeScreen.jsx:1095	Karte vorne
+src/ui/CustomizeScreen.jsx:1095	Hintergrund
+src/ui/CustomizeScreen.jsx:1096	Karte hinten
+src/ui/CustomizeScreen.jsx:1096	Karte vorne
+src/ui/CustomizeScreen.jsx:1110	45) onStep(dx
+src/ui/CustomizeScreen.jsx:1114	text-[15px] font-extrabold truncate
+src/ui/CustomizeScreen.jsx:1115	Schließen
+src/ui/CustomizeScreen.jsx:1138	rounded-full transition-all
+src/ui/CustomizeScreen.jsx:1143	Aktiv ✓
+src/ui/CustomizeScreen.jsx:1145	w-full rounded-xl font-extrabold text-[13px] py-3
+src/ui/CustomizeScreen.jsx:1146	Aktivieren
+src/ui/CustomizeScreen.jsx:1152	(zu wenig DP)
+src/ui/CustomizeScreen.jsx:1173	Karten
+src/ui/CustomizeScreen.jsx:1173	Stich
+src/ui/CustomizeScreen.jsx:1173	Hintergrund
+src/ui/CustomizeScreen.jsx:1173	Score
+src/ui/CustomizeScreen.jsx:1177	Dauerhafter Neon-Rand in der Deckfarbe.
+src/ui/CustomizeScreen.jsx:1178	Prismatisches Lichtband, tilt-reaktiv.
+src/ui/CustomizeScreen.jsx:1179	Cyberpunk-Glitch mit gelegentlichen Bursts.
+src/ui/CustomizeScreen.jsx:1181	Plasma-See am unteren Rand — starke Ansagen drücken das Wasser mittig ein, es steigt an den Rändern hoch.
+src/ui/CustomizeScreen.jsx:1182	Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.
+src/ui/CustomizeScreen.jsx:1183	Neon-Würfelfeld — reagiert auf die Musik.
+src/ui/CustomizeScreen.jsx:1184	Sternschnuppe je Stich — größer mit dem Score.
+src/ui/CustomizeScreen.jsx:1185	Klingenschnitt — skaliert mit der Siegesserie.
+src/ui/CustomizeScreen.jsx:1187	Schwarzes Loch saugt die Gegnerkarte ein.
+src/ui/CustomizeScreen.jsx:1188	Outrun-Sonne — feuert beim gottgleichen Sieg.
+src/ui/CustomizeScreen.jsx:1189	Laser fächern auf — gottgleicher Sieg.
+src/ui/CustomizeScreen.jsx:1190	Prismatische Schockwellen — gottgleicher Sieg.
+src/ui/CustomizeScreen.jsx:1191	Holowürfel zerspringt — gottgleicher Sieg.
+src/ui/CustomizeScreen.jsx:1192	Kollaps → Detonation → Tunnel — gottgleicher Sieg.
+src/ui/CustomizeScreen.jsx:1195	Alle Karten-Animationen aus.
+src/ui/CustomizeScreen.jsx:1195	Kein Hintergrund-Effekt (Leuchten bleibt möglich).
+src/ui/CustomizeScreen.jsx:1196	Feuer · Blitz · Eis · Pflanze — immer aktiv, nur Farbwahl (Standard/Deckfarbe).
+src/ui/CustomizeScreen.jsx:1197	Verliererkarte fliegt einfach zur Seite weg.
+src/ui/CustomizeScreen.jsx:1198	Gottgleicher Sieg ohne Prunk-Effekt.
+src/ui/CustomizeScreen.jsx:1203	nur bei Besitz aktiv, sonst „standard
+src/ui/CustomizeScreen.jsx:1272	normal-case tracking-normal font-semibold text-[10px]
+src/ui/CustomizeScreen.jsx:1286	text-[11px] mt-4 leading-snug pt-3
+src/ui/CustomizeScreen.jsx:1287	wählen / an-aus
+src/ui/CustomizeScreen.jsx:1287	Doppeltippen
+src/ui/CustomizeScreen.jsx:1312	w-full rounded-xl font-extrabold text-[12.5px] py-2.5
+src/ui/CustomizeScreen.jsx:1318	Standard — immer aktiv, kein Kauf nötig
+src/ui/CustomizeScreen.jsx:1324	(zu wenig DP)
+src/ui/CustomizeScreen.jsx:1328	✓ Ausgewählt
+src/ui/CustomizeScreen.jsx:1328	Als Finisher wählen
+src/ui/CustomizeScreen.jsx:1338	Standard
+src/ui/CustomizeScreen.jsx:1338	Deckfarbe
+src/ui/CustomizeScreen.jsx:1349	✓ An — tippen zum Ausschalten
+src/ui/CustomizeScreen.jsx:1349	Einschalten
+src/ui/CustomizeScreen.jsx:1355	✓ Aktiv — kein Hintergrund
+src/ui/CustomizeScreen.jsx:1355	Kein Hintergrund
+src/ui/CustomizeScreen.jsx:1357	✓ Ausgewählt
+src/ui/CustomizeScreen.jsx:1357	Als Hintergrund wählen
+src/ui/CustomizeScreen.jsx:1363	Standard
+src/ui/CustomizeScreen.jsx:1363	Deckfarbe
+src/ui/CustomizeScreen.jsx:1373	Gefüllt
+src/ui/CustomizeScreen.jsx:1373	◇ Nur Rahmen
+src/ui/CustomizeScreen.jsx:1387	✓ Ausgewählt
+src/ui/CustomizeScreen.jsx:1387	Als Standard wählen (kein Prunk)
+src/ui/CustomizeScreen.jsx:1387	Als Prunk wählen
+src/ui/CustomizeScreen.jsx:1392	Standard
+src/ui/CustomizeScreen.jsx:1392	Deckfarbe
+src/ui/CustomizeScreen.jsx:1405	Standard
+src/ui/CustomizeScreen.jsx:1405	Deckfarbe
+src/ui/CustomizeScreen.jsx:1415	✓ Aktiv — keine Animation
+src/ui/CustomizeScreen.jsx:1415	Alle Animationen aus
+src/ui/CustomizeScreen.jsx:1419	✓ Ausgewählt
+src/ui/CustomizeScreen.jsx:1419	Als Animation wählen
+src/ui/CustomizeScreen.jsx:1421	✓ An — tippen zum Ausschalten
+src/ui/CustomizeScreen.jsx:1421	Einschalten
+src/ui/CustomizeScreen.jsx:1449	Deckfarbe
+src/ui/CustomizeScreen.jsx:1449	Standard
+src/ui/CustomizeScreen.jsx:1473	im Besitz
+src/ui/CustomizeScreen.jsx:1483	Doppeltippen: abwählen
+src/ui/CustomizeScreen.jsx:1483	Doppeltippen: auswählen
+src/ui/CustomizeScreen.jsx:1491	rounded-full shrink-0
+src/ui/DeckDetail.jsx:66	Skills
+src/ui/DeckDetail.jsx:67	Leitfaden
+src/ui/DeckDetail.jsx:68	Challenges
+src/ui/DeckDetail.jsx:81	Zurück
+src/ui/DeckDetail.jsx:83	‹ Zurück
+src/ui/DeckDetail.jsx:86	text-lg font-bold leading-none
+src/ui/DeckDetail.jsx:89	ml-auto shrink-0
+src/ui/DeckDetail.jsx:89	Schließen
+src/ui/DeckDetail.jsx:92	Deck
+src/ui/DeckDetail.jsx:121	Skills
+src/ui/DeckDetail.jsx:122	Legendäre
+src/ui/DeckDetail.jsx:137	Keine deck-gebundenen Freischaltungen.
+src/ui/DeckDetail.jsx:158	block h-auto mx-auto
+src/ui/DeckDetail.jsx:165	text-[11px] font-bold tabular-nums shrink-0
+src/ui/DeckDetail.jsx:187	text-[10px] tracking-[0.22em] uppercase font-bold
+src/ui/DeckDetail.jsx:209	Konsument
+src/ui/DeckDetail.jsx:216	text-[12px] leading-relaxed mt-0.5
+src/ui/DevPerkCatalog.jsx:46	Voll-Katalog (Dev): Kategorie aufklappen → Familie wählen → Stufe klicken.
+src/ui/DevPerkCatalog.jsx:64	font-semibold text-sm
+src/ui/DevPerkCatalog.jsx:67	▲ Stufe
+src/ui/DevPerkCatalog.jsx:67	▼ Stufe
+src/ui/DevPerkCatalog.jsx:94	? null :
+src/ui/DevPerkCatalog.jsx:95	★ Legendär
+src/ui/DevPerkCatalog.jsx:104	font-bold text-sm
+src/ui/DevRunSetup.jsx:14	Skill
+src/ui/DevRunSetup.jsx:15	Perk
+src/ui/DevRunSetup.jsx:16	Aufstellung
+src/ui/DevRunSetup.jsx:17	Architekt
+src/ui/DevRunSetup.jsx:87	text-lg font-bold font-pixel
+src/ui/DevRunSetup.jsx:88	Frei konfigurierbarer Testlauf — nur für Devs.
+src/ui/DevRunSetup.jsx:90	Schließen
+src/ui/DevRunSetup.jsx:96	Durchläufe
+src/ui/DevRunSetup.jsx:108	Angebotstypen im Plan
+src/ui/DevRunSetup.jsx:134	Plan je Durchlauf
+src/ui/DevRunSetup.jsx:161	Baupunkte (Baufeld)
+src/ui/DevRunSetup.jsx:168	Formations-Energie
+src/ui/FamilyTargetSelect.jsx:50	w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card
+src/ui/FamilyTargetSelect.jsx:52	text-xs uppercase tracking-widest
+src/ui/FamilyTargetSelect.jsx:53	text-xl font-bold mt-1
+src/ui/FamilyTargetSelect.jsx:60	Bestätigen
+src/ui/FamilyTargetSelect.jsx:66	Karte
+src/ui/FamilyTargetSelect.jsx:66	Karten
+src/ui/FamilyTargetSelect.jsx:74	Wähle einen Formationstyp
+src/ui/FamilyTargetSelect.jsx:89	& Gebäude
+src/ui/FamilyTargetSelect.jsx:116	Deck-Werte je Farbe
+src/ui/FamilyTargetSelect.jsx:121	& Gebäude
+src/ui/FamilyTargetSelect.jsx:131	Formations-Stärke:
+src/ui/FamilyTargetSelect.jsx:132	tabular-nums font-pixel-dense
+src/ui/FamilyTargetSelect.jsx:136	tabular-nums font-pixel-dense
+src/ui/FormationPanel.jsx:16	Deine aktiven Formationen
+src/ui/FormationPanel.jsx:52	Platzierte Architekt-Gebäude als Rahmen über dem Brett anzeigen
+src/ui/FormationPanel.jsx:52	🏗 Gebäude
+src/ui/FormationPhase.jsx:32	text-[11px] font-bold uppercase tracking-wide
+src/ui/FormationPhase.jsx:137	w-full max-w-4xl
+src/ui/FormationPhase.jsx:144	text-xs uppercase tracking-widest
+src/ui/FormationPhase.jsx:145	Deck aufstellen
+src/ui/FormationPhase.jsx:147	ml-auto shrink-0
+src/ui/FormationPhase.jsx:155	text-[10px] uppercase tracking-wide font-bold
+src/ui/FormationPhase.jsx:155	Formations-Bonus
+src/ui/FormationPhase.jsx:156	font-pixel-dense leading-none
+src/ui/FormationPhase.jsx:159	text-[10px] uppercase tracking-wide font-bold
+src/ui/FormationPhase.jsx:159	Formationen
+src/ui/FormationPhase.jsx:160	font-pixel-dense leading-none
+src/ui/FormationPhase.jsx:171	↶ Rückgängig
+src/ui/FormationPhase.jsx:173	Zurücksetzen
+src/ui/FormationPhase.jsx:179	Fortfahren
+src/ui/FormationPhase.jsx:180	Formations-Differenz seit Durchlaufbeginn · verbleibende Formations-Energie
+src/ui/FormationPhase.jsx:189	Segmentarbeit:
+src/ui/FormationPhase.jsx:189	alle Grenzen offen, segmentübergreifend
+src/ui/FormationPhase.jsx:190	Segmentarbeit:
+src/ui/FormationPhase.jsx:190	die mit
+src/ui/FormationPhase.jsx:190	markierten Grenzen dürfen überschritten werden
+src/ui/FormationPhase.jsx:225	Formationen & Rahmenfarben
+src/ui/FormationPhase.jsx:225	Legende
+src/ui/FormationPhase.jsx:233	Perks & Effekte
+src/ui/FormationPhase.jsx:244	Eis-Effekte auf Formationen
+src/ui/GameOver.jsx:101	Gewachsen
+src/ui/GameOver.jsx:102	Ionisierungen
+src/ui/GameOver.jsx:103	Asche verbrannt
+src/ui/GameOver.jsx:104	Brände
+src/ui/GameOver.jsx:132	text-xs uppercase tracking-widest
+src/ui/GameOver.jsx:132	Lauf beendet
+src/ui/GameOver.jsx:134	text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight
+src/ui/GameOver.jsx:150	Durchschnittlicher Score je Stich
+src/ui/GameOver.jsx:151	Durchlauf
+src/ui/GameOver.jsx:151	Durchläufe
+src/ui/GameOver.jsx:163	Maximum
+src/ui/GameOver.jsx:175	Stichpunkte
+src/ui/GameOver.jsx:176	font-mono text-[18px] font-extrabold tabular-nums
+src/ui/GameOver.jsx:179	Deck-Punkte
+src/ui/GameOver.jsx:182	font-mono text-[18px] font-extrabold tabular-nums
+src/ui/GameOver.jsx:194	as-legendary mt-4 rounded-xl p-3
+src/ui/GameOver.jsx:202	text-[12px] font-bold leading-snug
+src/ui/GameOver.jsx:215	Fortschritt gesichert
+src/ui/GameOver.jsx:215	Lauf abgeschlossen
+src/ui/GameOver.jsx:232	★ Neu freigeschaltet
+src/ui/GameOver.jsx:246	Auswählbar im Menü unter „Deck“.
+src/ui/GameOver.jsx:254	as-legendary mt-4 rounded-xl p-3
+src/ui/GameOver.jsx:255	✦ Freigeschaltet
+src/ui/GameOver.jsx:258	Zur Werkstatt
+src/ui/GameOver.jsx:259	Zu den Upgrades
+src/ui/GameOver.jsx:260	Zur Rangliste
+src/ui/GameOver.jsx:263	text-[12px] font-bold leading-snug
+src/ui/GameOver.jsx:280	Build
+src/ui/GameOver.jsx:284	Motor-Kennzahlen
+src/ui/GameOver.jsx:313	Score-Verlauf
+src/ui/GameOver.jsx:315	Lauf
+src/ui/GameOver.jsx:316	Rekord
+src/ui/GameOver.jsx:316	erster Lauf
+src/ui/GameOver.jsx:331	Finale Aufstellung ansehen
+src/ui/GameOver.jsx:356	text-[11px] uppercase tracking-wide font-bold mb-0.5
+src/ui/GameOver.jsx:357	Antippen zeigt am Brett, wo es liegt.
+src/ui/GameOver.jsx:372	Legendär
+src/ui/GlacierBar.jsx:49	Bricht
+src/ui/GlacierBar.jsx:53	Spielreihenfolge (Position)
+src/ui/GlacierBar.jsx:54	Kartenwert
+src/ui/GlacierBar.jsx:146	Bruch bereit
+src/ui/GlacierBar.jsx:149	Eis
+src/ui/GlacierBar.jsx:153	, top: 26, pointerEvents:
+src/ui/GlacierBar.jsx:160	Gletscher-Ertrag
+src/ui/GlacierBar.jsx:161	Kaskade
+src/ui/GlacierBar.jsx:162	Größtes Cluster
+src/ui/GlacierBar.jsx:183	Firn-Boden lädt
+src/ui/GlacierBar.jsx:184	Firn-Reserve
+src/ui/GlacierBar.jsx:185	Gegner eingefroren
+src/ui/GlacierBar.jsx:186	Duo-Buff
+src/ui/GlacierBar.jsx:187	Große Lawine · verbraucht
+src/ui/GlacierBar.jsx:187	Große Lawine · bereit
+src/ui/GlacierFormLegend.jsx:16	Block
+src/ui/GlacierFormLegend.jsx:16	2×2-Quadrat (4 Gletscher)
+src/ui/GlacierFormLegend.jsx:17	Kreuz
+src/ui/GlacierFormLegend.jsx:17	Zentrum + 4 Nachbarn (5 Gletscher)
+src/ui/GlacierFormLegend.jsx:18	Linie
+src/ui/GlacierFormLegend.jsx:19	Große Fläche
+src/ui/GlacierFormLegend.jsx:19	gefülltes 3×3 (9 Gletscher)
+src/ui/GlacierFormLegend.jsx:25	Gletscher-Formationen (2D):
+src/ui/GlacierFormLegend.jsx:36	Gletscher-Formationen (2D)
+src/ui/GlacierFormLegend.jsx:40	Karten in einer aktiven Formation tragen ein blaues
+src/ui/GlacierFormLegend.jsx:40	· höchster Faktor je Typ zählt.
+src/ui/GlacierPick.jsx:32	Gletscher
+src/ui/GlacierPick.jsx:33	text-xl font-bold mt-1
+src/ui/GlacierPick.jsx:33	Wähle eine Karte als Gletscher
+src/ui/GlacierPick.jsx:43	Bestätigen
+src/ui/GlobalLeaderboard.jsx:63	Standard
+src/ui/GlobalLeaderboard.jsx:63	Rangliste
+src/ui/GlobalLeaderboard.jsx:63	Global
+src/ui/GlobalLeaderboard.jsx:86	Lädt Bestenliste …
+src/ui/GlobalLeaderboard.jsx:88	Noch keine Einträge — mach den Anfang.
+src/ui/GlobalLeaderboard.jsx:97	Details anzeigen
+src/ui/GlobalLeaderboard.jsx:110	font-bold shrink-0
+src/ui/GlobalLeaderboard.jsx:122	w-full max-w-sm rounded-xl p-4 as-panel
+src/ui/Glossary.jsx:29	(p.bold ?
+src/ui/Glossary.jsx:41	Glossar öffnen
+src/ui/Glossary.jsx:95	Glossar
+src/ui/Glossary.jsx:106	text-xs font-bold tracking-[0.28em] uppercase
+src/ui/Glossary.jsx:106	Glossar
+src/ui/Glossary.jsx:107	Schließen
+src/ui/Glossary.jsx:113	Suchen … z. B. Nachhall, Schichten, Hitze
+src/ui/Glossary.jsx:114	w-full py-2 pl-8 pr-8 rounded-lg text-sm gloss-search
+src/ui/Glossary.jsx:125	Alle
+src/ui/Glossary.jsx:142	text-[10px] tracking-[0.24em] uppercase font-bold
+src/ui/Glossary.jsx:169	inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle
+src/ui/Glossary.jsx:180	font-bold text-[13px] leading-tight
+src/ui/Glossary.jsx:181	text-[11.5px] leading-relaxed mt-0.5
+src/ui/GuideOverlay.jsx:33	text-[10px] tracking-[0.22em] uppercase font-bold
+src/ui/GuideOverlay.jsx:41	w-full h-auto block
+src/ui/GuideOverlay.jsx:111	Leitfaden öffnen
+src/ui/GuideOverlay.jsx:111	Leitfaden
+src/ui/GuideOverlay.jsx:131	text-3xl font-extrabold tracking-wide uppercase leading-none
+src/ui/GuideOverlay.jsx:141	Kernidee
+src/ui/GuideOverlay.jsx:155	text-[13px] leading-relaxed mt-0.5
+src/ui/GuideOverlay.jsx:161	Der Kreislauf
+src/ui/GuideOverlay.jsx:163	mx-auto w-full max-w-[190px]
+src/ui/GuideOverlay.jsx:184	Spielprinzip
+src/ui/GuideOverlay.jsx:188	auto 1fr
+src/ui/GuideOverlay.jsx:210	Leitfaden
+src/ui/GuideOverlay.jsx:222	text-xs font-bold tracking-[0.28em] uppercase
+src/ui/GuideOverlay.jsx:222	Leitfaden
+src/ui/GuideOverlay.jsx:223	Schließen
+src/ui/GuideOverlay.jsx:225	So spielst du jeden Archetyp — durchklicken
+src/ui/HeatBar.jsx:65	Feuerwalze
+src/ui/HeatBar.jsx:70	Glühende Klinge
+src/ui/HeatBar.jsx:76	Flächenbrand bereit
+src/ui/HeatBar.jsx:76	Weißglut
+src/ui/HeatBar.jsx:87	Feuer
+src/ui/HeatBar.jsx:93	Feuer-Ertrag
+src/ui/HeatBar.jsx:94	Feuer-Score
+src/ui/HeatBar.jsx:95	Überlauf
+src/ui/HeatBar.jsx:95	Weißglut (Hitze über 100 %) + Ascheglut (Asche über die Schmiede-Kapazität)
+src/ui/HeatBar.jsx:98	Asche verbrannt
+src/ui/HeatBar.jsx:98	über den Lauf
+src/ui/HeatBar.jsx:145	Asche
+src/ui/HeatBar.jsx:149	Schmiedungen
+src/ui/HeatBar.jsx:151	Geschmiedeter Kartenwert — Summe der ⚒-Aufwertungen über alle Karten.
+src/ui/HeatBar.jsx:161	Brand · Gegner
+src/ui/HeatBar.jsx:162	tabular-nums font-bold shrink-0
+src/ui/LayoutPerks.jsx:16	text-[10px] uppercase tracking-wide mb-1 font-semibold
+src/ui/LeaderboardScreen.jsx:27	Diese Woche
+src/ui/LeaderboardScreen.jsx:28	🏆 Challenger
+src/ui/LeaderboardScreen.jsx:29	Regeln
+src/ui/LeaderboardScreen.jsx:46	text-[10px] font-bold uppercase tracking-wider
+src/ui/LeaderboardScreen.jsx:49	Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat
+src/ui/LeaderboardScreen.jsx:49	3–5 zufällige Modifikatoren
+src/ui/LeaderboardScreen.jsx:50	Positive Modifikatoren
+src/ui/LeaderboardScreen.jsx:52	Negative Modifikatoren
+src/ui/LeaderboardScreen.jsx:54	Ausschluss-Paare (nie zusammen)
+src/ui/LeaderboardScreen.jsx:93	Champions sind nicht verfügbar.
+src/ui/LeaderboardScreen.jsx:97	Meister
+src/ui/LeaderboardScreen.jsx:97	-Woche landet hier —
+src/ui/LeaderboardScreen.jsx:97	eine Person pro Woche
+src/ui/LeaderboardScreen.jsx:100	Lädt Champions …
+src/ui/LeaderboardScreen.jsx:102	Noch keine Wochensieger — die erste Meister-Woche muss erst abgeschlossen sein.
+src/ui/LeaderboardScreen.jsx:112	font-bold shrink-0 tabular-nums
+src/ui/LeaderboardScreen.jsx:148	🏆 Bestenliste
+src/ui/LeaderboardScreen.jsx:149	Schließen
+src/ui/LeaderboardScreen.jsx:180	Seed der Woche
+src/ui/LeaderboardScreen.jsx:186	▶ Spielen
+src/ui/LeaderboardScreen.jsx:195	Modifikatoren dieser Woche
+src/ui/LeaderboardScreen.jsx:199	Bestenliste ist nicht verfügbar.
+src/ui/LegendarySelect.jsx:12	Legendär
+src/ui/LegendarySelect.jsx:19	w-full max-w-2xl
+src/ui/LegendarySelect.jsx:24	text-[10px] uppercase tracking-[0.2em] font-mono mb-1
+src/ui/LegendarySelect.jsx:24	Legendär · einmalige Wahl
+src/ui/LegendarySelect.jsx:25	text-2xl font-bold mb-1
+src/ui/LegendarySelect.jsx:25	★ Legendärer Skill
+src/ui/LegendarySelect.jsx:27	7. Slot
+src/ui/LegendarySelect.jsx:31	↻ Neu würfeln
+src/ui/LegendarySelect.jsx:32	Keinen Legendär — stattdessen einen Skill wählen
+src/ui/LegendarySelect.jsx:43	font-bold text-lg leading-tight
+src/ui/MusicBar.jsx:12	Musik
+src/ui/MusicBar.jsx:16	Nächster Track
+src/ui/MusicBar.jsx:17	Nächster Track
+src/ui/MuteButton.jsx:7	Ton einschalten
+src/ui/MuteButton.jsx:7	Ton stummschalten
+src/ui/OptionsModal.jsx:61	font-bold text-sm
+src/ui/OptionsModal.jsx:90	text-xs uppercase tracking-widest
+src/ui/OptionsModal.jsx:91	text-xl font-bold mt-1
+src/ui/OptionsModal.jsx:123	, Desktop „Aus
+src/ui/OptionsModal.jsx:136	options.perfHud.title
+src/ui/OptionsModal.jsx:136	options.perfHud.desc
+src/ui/PerfOverlay.jsx:72	Report → Konsole + Zwischenablage
+src/ui/PerfOverlay.jsx:73	Messung zurücksetzen
+src/ui/PerfOverlay.jsx:75	Feld-Effekt-Renderer umschalten (GPU-Emitter ↔ DOM) + neu laden
+src/ui/PerkSelect.jsx:56	w-full max-w-3xl
+src/ui/PerkSelect.jsx:61	text-xs uppercase tracking-widest
+src/ui/PerkSelect.jsx:62	Start
+src/ui/PerkSelect.jsx:64	text-xl font-bold mt-1
+src/ui/PerkSelect.jsx:64	Wähle einen Perk
+src/ui/PerkSelect.jsx:71	Alle ablehnen
+src/ui/PerkSelect.jsx:77	Crit
+src/ui/PerkSelect.jsx:78	Score-Mult
+src/ui/PerkSelect.jsx:146	Deck-Stärke je Farbe
+src/ui/PerkSelect.jsx:151	Formationen
+src/ui/PerkSelect.jsx:155	Noch keine Perks gewählt.
+src/ui/PlantBar.jsx:90	Überwuchert
+src/ui/PlantBar.jsx:93	Pflanze
+src/ui/PlantBar.jsx:96	Garten-Ertrag
+src/ui/PlantBar.jsx:97	Wurzel
+src/ui/PlantBar.jsx:98	Blüte
+src/ui/PlantBar.jsx:99	Ernte
+src/ui/PlantBar.jsx:102	Gewachsen
+src/ui/PlantBar.jsx:102	Wachstum gesamt
+src/ui/PlantBar.jsx:107	· Wurzel/Blüte
+src/ui/PlantBar.jsx:112	Mutterbaum: der tiefste Baum (Überlauf-Wachstum über dem Wert-Deckel) zahlt je grünem Sieg — und verdoppelt seinen Wurzel-Score.
+src/ui/PlantBar.jsx:113	· Überlauf
+src/ui/PlantBar.jsx:113	Score/Sieg
+src/ui/PlantBar.jsx:118	Weltenbaum: die Summe des Überlauf-Wachstums über alle grünen Karten zahlt je grünem Sieg (der ganze alte Wald).
+src/ui/PlantBar.jsx:119	Überlauf-Wachstum
+src/ui/PlantBar.jsx:119	Score/Sieg
+src/ui/PlantBar.jsx:128	font-bold tabular-nums
+src/ui/PlantBar.jsx:131	Anteil grüner (reifer + ausgewachsener) Karten am Feld.
+src/ui/PlantBar.jsx:140	Ew. Frühling
+src/ui/PlantBar.jsx:141	Überwucherung
+src/ui/PlantBar.jsx:150	Nächste Reife
+src/ui/PlantBar.jsx:151	font-bold tabular-nums
+src/ui/PlantBar.jsx:151	Grobe Schätzung: nächster Setzling wird grün (aus Wachstumsrate × Restdistanz).
+src/ui/PlantBar.jsx:151	Sieg
+src/ui/PlantBar.jsx:151	Siege
+src/ui/PlantBar.jsx:156	Setzling
+src/ui/PlantBar.jsx:157	Grün
+src/ui/PlantBar.jsx:158	Ausgewachsen
+src/ui/PlantBar.jsx:162	text-base font-bold tabular-nums leading-none
+src/ui/PlantBar.jsx:165	h-full rounded-full
+src/ui/PlantBar.jsx:189	h-full rounded-full
+src/ui/PlantBar.jsx:204	Ausläufer · Kolonisiert
+src/ui/PlantBar.jsx:205	tabular-nums font-bold shrink-0
+src/ui/PwaInstall.jsx:15	MacIntel
+src/ui/PwaInstall.jsx:56	Als App zum Startbildschirm hinzufügen
+src/ui/RoundScoreBadge.jsx:20	Durchlauf-Score
+src/ui/RoundScoreBadge.jsx:21	font-bold font-pixel-dense
+src/ui/RoundScoreBadge.jsx:23	Differenz zur Vorrunde
+src/ui/RoundScoreBadge.jsx:24	keine Vorrunde zum Vergleich
+src/ui/RoundScoreBadge.jsx:24	erster Durchlauf
+src/ui/RunDetail.jsx:40	text-xs uppercase tracking-widest
+src/ui/RunDetail.jsx:41	text-lg font-bold mt-0.5 truncate
+src/ui/RunDetail.jsx:43	Schließen
+src/ui/RunDetail.jsx:47	Score
+src/ui/RunDetail.jsx:60	Finale Aufstellung ansehen
+src/ui/RunDetail.jsx:84	text-[11px] uppercase tracking-wide font-bold mb-0.5
+src/ui/RunDetail.jsx:85	Antippen zeigt am Brett, wo es liegt.
+src/ui/RunDetail.jsx:100	Legendär
+src/ui/RunGraphs.jsx:13	Formation
+src/ui/RunGraphs.jsx:14	Crit
+src/ui/RunGraphs.jsx:15	Gebäude
+src/ui/RunGraphs.jsx:16	Serie
+src/ui/RunGraphs.jsx:17	Sonstige
+src/ui/RunGraphs.jsx:27	Gletscher-Ertrag
+src/ui/RunGraphs.jsx:28	Wurzel + Blüte
+src/ui/RunGraphs.jsx:29	Blitz-Ertrag
+src/ui/RunGraphs.jsx:30	Feuer-Score
+src/ui/RunGraphs.jsx:31	Formation
+src/ui/RunGraphs.jsx:32	Crit-Bonus
+src/ui/RunGraphs.jsx:33	Serie
+src/ui/RunGraphs.jsx:34	Gebäude
+src/ui/RunGraphs.jsx:35	Sonstige
+src/ui/RunGraphs.jsx:60	Score-Herkunft
+src/ui/RunGraphs.jsx:72	text-[13px] font-medium truncate
+src/ui/RunGraphs.jsx:74	font-mono tabular-nums text-[13px]
+src/ui/RunGraphs.jsx:107	Score-Herkunft
+src/ui/RunGraphs.jsx:139	Stich-Score je Durchlauf ansehen
+src/ui/RunGraphs.jsx:142	Sieg
+src/ui/RunGraphs.jsx:143	kein Sieg
+src/ui/RunLoader.jsx:54	text-base font-bold font-pixel tracking-wide mb-4
+src/ui/RunStats.jsx:13	-Sektion, Build-Chips in die „Build
+src/ui/RunStats.jsx:16	RunStats
+src/ui/RunStats.jsx:66	Winrate
+src/ui/RunStats.jsx:66	Anteil gewonnener Stiche
+src/ui/RunStats.jsx:67	Beste Serie
+src/ui/RunStats.jsx:67	Längste Siegesserie
+src/ui/RunStats.jsx:68	Bester Stich
+src/ui/RunStats.jsx:68	Höchster Score aus einem Stich
+src/ui/RunStats.jsx:69	Crit-Quote
+src/ui/RunStats.jsx:69	Anteil Stiche mit kritischem Treffer
+src/ui/RunStats.jsx:76	Bester Gletscherstich
+src/ui/RunStats.jsx:77	Höchster Score aus einem Gletscher-Stich (Bruch)
+src/ui/RunStats.jsx:84	Formationen
+src/ui/RunStats.jsx:84	Maximal gleichzeitig aktive Formationen
+src/ui/RunStats.jsx:85	Form.-Score
+src/ui/RunStats.jsx:85	Score-Anteil aus Formations-Multiplikatoren
+src/ui/RunStats.jsx:86	Geb.-Score
+src/ui/RunStats.jsx:86	Score-Anteil aus Architekt-Gebäuden
+src/ui/RunStats.jsx:87	Crit-Bonus
+src/ui/RunStats.jsx:87	Score-Anteil aus kritischen Treffern
+src/ui/RunStats.jsx:146	Beschreibung anzeigen
+src/ui/RunStats.jsx:163	Beschreibung anzeigen
+src/ui/ScoreMilestoneBar.jsx:23	border-color .5s ease
+src/ui/ScoreMilestoneBar.jsx:28	Alle Score-Meilensteine erreicht
+src/ui/ScoreMilestoneBar.jsx:30	text-[11px] font-semibold tracking-wide
+src/ui/ScoreMilestoneBar.jsx:34	Maximum · +5 SP
+src/ui/SeedChip.jsx:18	Seed kopieren
+src/ui/SeedChip.jsx:25	Diesen Seed nachspielen
+src/ui/SkillSelect.jsx:20	Skill
+src/ui/SkillSelect.jsx:25	alle grünen Karten, das Wachstum und die Kolonisierungen gehen verloren
+src/ui/SkillSelect.jsx:27	Hitze, Asche und der Schmiede-Zähler gehen verloren
+src/ui/SkillSelect.jsx:28	die Ladung geht verloren
+src/ui/SkillSelect.jsx:130	page ? 1 : (i
+src/ui/SkillSelect.jsx:134	Hitze
+src/ui/SkillSelect.jsx:134	Ladungs
+src/ui/SkillSelect.jsx:156	w-full max-w-3xl
+src/ui/SkillSelect.jsx:161	text-xs uppercase tracking-widest
+src/ui/SkillSelect.jsx:162	text-xl font-bold mt-1
+src/ui/SkillSelect.jsx:162	Wähle einen Skill
+src/ui/SkillSelect.jsx:180	Runde überspringen
+src/ui/SkillSelect.jsx:180	Ablehnen → Perk
+src/ui/SkillSelect.jsx:188	1fr auto 1fr
+src/ui/SkillSelect.jsx:191	vorheriger Typ
+src/ui/SkillSelect.jsx:192	font-bold text-lg leading-none
+src/ui/SkillSelect.jsx:193	truncate text-[11px]
+src/ui/SkillSelect.jsx:203	Georgia, serif
+src/ui/SkillSelect.jsx:208	nächster Typ
+src/ui/SkillSelect.jsx:209	truncate text-[11px]
+src/ui/SkillSelect.jsx:210	font-bold text-lg leading-none
+src/ui/SkillSelect.jsx:218	h-1.5 rounded-full transition-all
+src/ui/SkillSelect.jsx:237	Ersetzen
+src/ui/SkillSelect.jsx:239	Abbrechen
+src/ui/SkillSelect.jsx:257	text-xs uppercase tracking-widest
+src/ui/SkillSelect.jsx:257	Slots voll
+src/ui/SkillSelect.jsx:258	text-lg font-bold mt-1
+src/ui/SkillSelect.jsx:258	Welchen Skill ersetzen?
+src/ui/SkillSelect.jsx:279	font-bold text-sm
+src/ui/SkillSelect.jsx:281	text-[10px] font-bold mt-0.5
+src/ui/SkillSelect.jsx:281	↔ diesen ersetzen
+src/ui/SkillSelect.jsx:285	Bereits aufgewerteter Kartenwert bleibt.
+src/ui/SkillSelect.jsx:292	w-full mt-3 rounded-lg py-2 text-sm font-bold
+src/ui/SkillSelect.jsx:292	Abbrechen
+src/ui/SkillSelect.jsx:302	ArrowLeft
+src/ui/SkillSelect.jsx:302	ArrowRight
+src/ui/SkillSelect.jsx:311	text-[11px] font-bold uppercase tracking-wide
+src/ui/SkillSelect.jsx:354	✓ ausgewählt
+src/ui/SkillSelect.jsx:356	font-bold text-[15px]
+src/ui/SkillSelect.jsx:396	Deine aktiven Formationen
+src/ui/SkillSelect.jsx:404	Eis biegt die Erkennung
+src/ui/Sparkline.jsx:13	Verlauf erscheint nach den ersten Stichen…
+src/ui/StartScreen.jsx:110	0.375rem 0.75rem
+src/ui/StartScreen.jsx:118	w-full max-w-[288px] h-auto select-none
+src/ui/StartScreen.jsx:147	h-full rounded-full
+src/ui/StartScreen.jsx:185	: Seed einfügen + „↻ Spielen
+src/ui/StartScreen.jsx:250	text-[19px] font-extrabold tabular-nums
+src/ui/StartScreen.jsx:276	text-[19px] font-extrabold tabular-nums
+src/ui/StatsScreen.jsx:53	text-xs uppercase tracking-widest
+src/ui/StatsScreen.jsx:97	h-full rounded
+src/ui/StatsScreen.jsx:155	Statistiken
+src/ui/StatsScreen.jsx:156	Schließen
+src/ui/StatsScreen.jsx:160	Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.
+src/ui/StatsScreen.jsx:166	Übersicht
+src/ui/StatsScreen.jsx:168	Bestscore
+src/ui/StatsScreen.jsx:169	Ø-Score
+src/ui/StatsScreen.jsx:170	Spielzeit
+src/ui/StatsScreen.jsx:171	Spiele
+src/ui/StatsScreen.jsx:172	Beste Serie
+src/ui/StatsScreen.jsx:182	Bestes Build
+src/ui/StatsScreen.jsx:182	Rekord-Lauf · Details ansehen ›
+src/ui/StatsScreen.jsx:183	Details anzeigen
+src/ui/StatsScreen.jsx:188	text-3xl font-bold tabular-nums leading-none
+src/ui/StatsScreen.jsx:195	Älterer Lauf — grobes Herkunft-Modell (Formation / Crit / Gebäude / Sonstige). Neue Läufe zeigen die feine Fraktions-Aufschlüsselung.
+src/ui/StatsScreen.jsx:202	Deine Läufe
+src/ui/StatsScreen.jsx:208	Details anzeigen
+src/ui/StatsScreen.jsx:210	auto minmax(0,1fr) auto
+src/ui/StatsScreen.jsx:213	font-bold tabular-nums shrink-0
+src/ui/StatsScreen.jsx:214	tabular-nums shrink-0
+src/ui/StatsScreen.jsx:214	Rekord
+src/ui/StatsScreen.jsx:229	Am häufigsten
+src/ui/StatsScreen.jsx:229	über deine Historie
+src/ui/StatsScreen.jsx:232	Meistgewählte Skills
+src/ui/StatsScreen.jsx:234	Noch keine Skills gespielt.
+src/ui/StatsScreen.jsx:239	Meistgewählte Perks
+src/ui/StatsScreen.jsx:248	Archetyp-Nutzung
+src/ui/StatsScreen.jsx:260	Was am besten läuft
+src/ui/StatsScreen.jsx:268	Bester Archetyp
+src/ui/StatsScreen.jsx:274	Größter Skill-Lift
+src/ui/StatsScreen.jsx:280	Größter Perk-Lift
+src/ui/StatusBar.jsx:27	text-[9px] uppercase tracking-wide font-bold
+src/ui/StatusBar.jsx:37	text-[10px] uppercase tracking-wide font-bold
+src/ui/StatusBar.jsx:52	sticky top-0 z-20 -mx-1
+src/ui/StatusBar.jsx:59	Weiter
+src/ui/StatusBar.jsx:59	Pause
+src/ui/StatusBar.jsx:66	Tempo ×2
+src/ui/StatusBar.jsx:67	Tempo ×4
+src/ui/StatusBar.jsx:68	Tempo maximal
+src/ui/StatusBar.jsx:70	Kartenübersicht öffnen
+src/ui/StatusBar.jsx:76	Karten
+src/ui/StatusBar.jsx:81	Durchl.
+src/ui/StatusBar.jsx:82	Zeit
+src/ui/StatusBar.jsx:96	text-[10px] uppercase tracking-wide font-bold
+src/ui/StatusBar.jsx:96	Score
+src/ui/StatusBar.jsx:98	⚑ Rekord
+src/ui/StatusBar.jsx:108	Serie
+src/ui/StatusBar.jsx:113	Mult
+src/ui/StatusBar.jsx:119	as-multpulse 420ms ease-out
+src/ui/StatusRail.jsx:91	Multiplikatoren
+src/ui/StatusRail.jsx:93	Formation
+src/ui/StatusRail.jsx:94	Gebäude
+src/ui/StatusRail.jsx:95	Crit-Chance
+src/ui/StatusRail.jsx:96	Crit-Mult
+src/ui/StatusRail.jsx:96	Jackpot
+src/ui/StatusRail.jsx:102	Siege
+src/ui/StatusRail.jsx:103	Verl.
+src/ui/StatusRail.jsx:104	Quote
+src/ui/StatusRail.jsx:105	Stiche
+src/ui/StatusRail.jsx:106	Crits
+src/ui/StatusRail.jsx:112	Analyse
+src/ui/StatusRail.jsx:113	Bester
+src/ui/StatusRail.jsx:116	Score-Herkunft
+src/ui/StatusRail.jsx:122	Score-Verlauf
+src/ui/StatusRail.jsx:127	Lauf
+src/ui/StatusRail.jsx:128	Rekord
+src/ui/StatusRail.jsx:128	erster Lauf
+src/ui/TargetSelect.jsx:31	text-xs uppercase tracking-widest
+src/ui/TargetSelect.jsx:32	text-xl font-bold mt-1
+src/ui/TargetSelect.jsx:32	Karte
+src/ui/TargetSelect.jsx:32	Karten
+src/ui/TargetSelect.jsx:39	Bestätigen
+src/ui/UpgradeScreen.jsx:15	(je Archetyp die Kette Deck › Leg I › Leg II, tippbar → Deck-Detailansicht) und „Allgemein
+src/ui/UpgradeScreen.jsx:26	Baufeld
+src/ui/UpgradeScreen.jsx:27	Energie
+src/ui/UpgradeScreen.jsx:28	Rarität
+src/ui/UpgradeScreen.jsx:29	Drop-Raten
+src/ui/UpgradeScreen.jsx:29	öffnet sich nach dem Legendär-Unlock
+src/ui/UpgradeScreen.jsx:30	2. Perk-Phase
+src/ui/UpgradeScreen.jsx:30	perk2Leg
+src/ui/UpgradeScreen.jsx:30	perk2Reroll
+src/ui/UpgradeScreen.jsx:30	öffnet sich nach dem Legendär-Unlock
+src/ui/UpgradeScreen.jsx:48	text-[11px] font-semibold leading-tight
+src/ui/UpgradeScreen.jsx:49	text-[9.5px] font-bold tabular-nums leading-tight mt-1
+src/ui/UpgradeScreen.jsx:60	: isPlaceholder ?
+src/ui/UpgradeScreen.jsx:66	1px dashed #3a3a45
+src/ui/UpgradeScreen.jsx:82	✓ Gekauft
+src/ui/UpgradeScreen.jsx:83	Bald verfügbar
+src/ui/UpgradeScreen.jsx:85	Vorgänger nötig
+src/ui/UpgradeScreen.jsx:86	Braucht eine freigeschaltete Legendär-Stufe
+src/ui/UpgradeScreen.jsx:86	Noch gesperrt
+src/ui/UpgradeScreen.jsx:87	Kaufbar
+src/ui/UpgradeScreen.jsx:98	text-[10.5px] font-semibold mt-1
+src/ui/UpgradeScreen.jsx:160	Upgrades
+src/ui/UpgradeScreen.jsx:163	text-xl font-extrabold tabular-nums
+src/ui/UpgradeScreen.jsx:164	text-[10px] font-bold tracking-wider
+src/ui/UpgradeScreen.jsx:169	↺ Respec
+src/ui/UpgradeScreen.jsx:170	Schließen
+src/ui/UpgradeScreen.jsx:175	Decks
+src/ui/UpgradeScreen.jsx:175	Allgemein
+src/ui/UpgradeScreen.jsx:188	h-[2px] w-full rounded-full mt-2.5
+src/ui/UpgradeScreen.jsx:192	Knoten antippen zeigt, was er bewirkt.
+src/ui/UpgradeScreen.jsx:203	Deck
+src/ui/UpgradeScreen.jsx:210	Details ›
+src/ui/UpgradeScreen.jsx:218	text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5
+src/ui/UpgradeScreen.jsx:218	Legendär-Phase
+src/ui/UpgradeScreen.jsx:241	w-2.5 h-2.5 rounded-full inline-block
+src/ui/UpgradeScreen.jsx:242	w-2.5 h-2.5 rounded-full inline-block
+src/ui/UpgradeScreen.jsx:243	🔒 gesperrt ·
+src/ui/UsernameModal.jsx:44	text-xs uppercase tracking-widest
+src/ui/UsernameModal.jsx:48	text-xl font-bold mt-1 font-pixel
+src/ui/UsernameModal.jsx:57	as-guide-glow rounded-lg
+src/ui/UsernameModal.jsx:60	Enter
+src/ui/WeekMods.jsx:60	Wochen-Modifikatoren
+src/ui/format.js:15	Bio.
+src/ui/format.js:16	Mrd.
+src/ui/format.js:17	Mio.
+src/ui/guides.js:21	Der einzige Archetyp, der seinen kritischen Treffer selbst erzeugt — eine Maschine, die sich mit jedem Sieg weiter auflädt, bis ein sich selbst speisender Sturm über das Feld rollt.
+src/ui/guides.js:22	Andere Builds warten auf den Zufall. Blitz **baut** den Crit — und dreht ihn zu einem Kreislauf, der sich selbst antreibt.
+src/ui/guides.js:23	Die drei Ressourcen
+src/ui/guides.js:26	Dein Treibstoff. Siege und Crits laden sie auf. Hältst du einen **Konsumenten** (Ionisierung), feuert er bei voller Ladung und verbraucht sie — ohne Konsumenten bleibt die Leiste einfach voll stehen.
+src/ui/guides.js:27	Dauerhafte Marken auf deinen Karten. Der Konsument (Ionisierung) verteilt sie auf noch ungespielte Karten. Jeder Stapel gibt bei einem Sieg mit der Karte extra Score — und **jeder Stapel im Deck hebt feldweit deine Crit-Chance**.
+src/ui/guides.js:30	Crit
+src/ui/guides.js:30	Ladung
+src/ui/guides.js:30	Ionisierung
+src/ui/guides.js:30	Feld ↑
+src/ui/guides.js:31	nährt sich selbst
+src/ui/guides.js:33	Ein **Crit** (oder Sieg) erzeugt Ladung.
+src/ui/guides.js:34	Volle Ladung feuert deinen **Konsumenten** → er ionisiert Karten, dann fällt die Ladung zurück.
+src/ui/guides.js:35	Hältst du die Momentum-Skills (Gewitterfront, Entladung, Dauerstrom), gibt jeder Verbrauch **dauerhaft** mehr Crit-Chance und -Multiplikator — den ganzen Lauf.
+src/ui/guides.js:36	Das ionisierte Feld hebt deine Crit-Chance → du crittest öfter → mehr Ladung → mehr Ionisierung → …
+src/ui/guides.js:38	Fällt mehr Crit-Chance an, als ein Sieg überhaupt braucht, geht der Überschuss **nicht verloren**: Überschlag wandelt ihn in **Ladung** um — je ein paar Prozentpunkte über 100 % eine Ladung, bei voller Sturmintensität doppelt so ergiebig. Der Sturm lädt sich also aus seinem eigenen Übermaß nach.
+src/ui/guides.js:41	Wie weit ist dein Sturm?
+src/ui/guides.js:43	Sturmgröße
+src/ui/guides.js:43	fast alle Karten ionisiert → **alle Karten stärker**
+src/ui/guides.js:44	Sturmintensität
+src/ui/guides.js:44	fast alle Karten voll → **Überschlag holt doppelt so viel Ladung**
+src/ui/guides.js:48	Mono
+src/ui/guides.js:48	**Mono lohnt sich.** Fast jeder Wert von Blitz — Crit-Chance, Crit-Multiplikator, wie schnell du das Feld ionisierst — wächst mit der Zahl deiner Blitz-Skills. Je reiner der Build, desto heftiger der Sturm.
+src/ui/guides.js:49	Motor
+src/ui/guides.js:50	Tempo
+src/ui/guides.js:50	**Früh geduldig, spät explosiv.** Anfangs ist Blitz zurückhaltend — die Maschine läuft erst warm. Der Lohn kommt spät, wenn Momentum und ionisiertes Feld sich gegenseitig hochschaukeln.
+src/ui/guides.js:51	Serie
+src/ui/guides.js:51	**Serie ist Treibstoff.** Manche Blitz-Skills verwandeln deine Siegesserie direkt in Ladung oder Crit-Chance — Siege am Stück halten den Sturm am Laufen.
+src/ui/guides.js:57	Hitze belohnt totale Überlegenheit — je klarer du einen Stich dominierst, desto heißer die Leiste und desto mehr Score fällt sofort ab.
+src/ui/guides.js:58	Feuer belohnt nicht bloßes Gewinnen, sondern **überlegenes** Gewinnen. Je größer dein **Wertvorsprung**, desto heißer die Leiste — und desto härter schlägt jeder Sieg zu. Der Archetyp der brachialen Dominanz.
+src/ui/guides.js:59	Die drei Ressourcen
+src/ui/guides.js:61	Feuers eigentliche Währung. Nicht **ob** du gewinnst zählt, sondern **wie klar**. Ein knapper Sieg zahlt kaum, ein erdrückender zahlt massiv.
+src/ui/guides.js:62	Hitze
+src/ui/guides.js:66	Vorsprung
+src/ui/guides.js:66	Hitze ↑
+src/ui/guides.js:66	Karten ↑
+src/ui/guides.js:66	Boni
+src/ui/guides.js:67	rollt weiter
+src/ui/guides.js:70	Gehaltene Hitze zahlt zusätzlich bei jedem Sieg die **Glutdividende** — Feuers Motor, der immer läuft.
+src/ui/guides.js:71	Mit Glühender Klinge schaltet hohe Hitze **Schwellen-Boni** frei → deine Karten bekommen Stichwert → du gewinnst noch klarer.
+src/ui/guides.js:72	Parallel: **Brände** schwächen Gegnerkarten und füllen die **Schmiede** → deine Karten werden dauerhaft stärker, die Margen wachsen mit.
+src/ui/guides.js:74	Ist die Leiste **voll**, verfällt weiterer Hitzegewinn — es sei denn, du hältst den Skill **Weißglut**: dann läuft jeder weitere Punkt direkt in Score über. Und wann immer du willst, schüttest du die gesammelte Hitze aus: als einen großen Schlag oder als steten Tropf.
+src/ui/guides.js:77	Wie heiß bist du?
+src/ui/guides.js:79	Hitze
+src/ui/guides.js:79	↑ Schwellen-Boni ↑
+src/ui/guides.js:79	voll → Überlauf
+src/ui/guides.js:83	Marge
+src/ui/guides.js:83	**Gewinne groß, nicht knapp.** Feuers Währung ist der Vorsprung. Baue Karten und Aufstellung auf klare Überlegenheit — ein erdrückender Sieg ist ein Vielfaches eines knappen wert.
+src/ui/guides.js:84	Payoff
+src/ui/guides.js:85	Wahl
+src/ui/guides.js:85	**Ausschütten oder halten.** Verwandle die Hitze in Score-Schübe (Feuer-Konsumenten sind **kombinierbar**) — oder halte sie einfach hoch und lebe von den Schwellen-Boni.
+src/ui/guides.js:86	Schmiede
+src/ui/guides.js:86	**Die Schmiede sammelt.** Brand → Asche → dauerhafter Kartenwert. Diese Linie zahlt sich nicht sofort aus, sondern verbreitert deine Margen über den ganzen Lauf.
+src/ui/guides.js:92	Der räumliche Archetyp — du frierst Karten zu Gletschern fest, sammelst Masse und löst eine Kaskade aus Brüchen aus.
+src/ui/guides.js:94	Die drei Säulen
+src/ui/guides.js:96	Sie sammelt sich auf dem **Brettfeld** an (nicht auf der Karte), jeden Durchlauf ein Stück — ganz von selbst, ob Sieg oder Niederlage — und mehr, wenn ein Gletscher gewinnt. Masse fällt nie.
+src/ui/guides.js:98	Gletscher **nebeneinander** verstärken einander: je dichter das Feld, desto heftiger jeder Bruch — und ein Bruch kann eine **Kaskade** durchs ganze Cluster auslösen.
+src/ui/guides.js:101	Masse ↑
+src/ui/guides.js:101	Bruch
+src/ui/guides.js:101	Kaskade
+src/ui/guides.js:101	auf null
+src/ui/guides.js:102	lädt & bricht
+src/ui/guides.js:104	**Friere Karten fest** → sie werden starr, sammeln ab jetzt aber **Masse** (jeden Durchlauf, unaufhaltsam).
+src/ui/guides.js:106	Stehen Gletscher **dicht beieinander**, verstärkt jeder Bruch die Nachbarn — und kann eine **Kaskade** durchs Cluster rollen lassen.
+src/ui/guides.js:107	Schießt ein Gletscher **über die Schwelle hinaus**, wird der Überschuss sofort als Score ausgezahlt — nichts geht verloren.
+src/ui/guides.js:108	**Firn** sammelt sich auf offenen Feldern (Dauerfrost, Schneetreiben, Eiszeit) und wird zur **Reserve** des Gletschers, der später dort einfriert — sie füllt ihn nach jedem Bruch wieder auf.
+src/ui/guides.js:110	Ein Gletscher ist **starr** — du gibst seine Umstellbarkeit auf. Dafür ist er **unaufhaltsam**: die Masse steigt nur, und der Bruch hängt an ihr, nicht am Stich — er kommt, ob die Karte den Stich gewinnt oder verliert.
+src/ui/guides.js:113	Wie voll ist dein Gletscher?
+src/ui/guides.js:115	Masse
+src/ui/guides.js:115	, ticks: [29, 59], breakMarker: 88, overflow: true, scale: [
+src/ui/guides.js:119	Dichte
+src/ui/guides.js:120	Position
+src/ui/guides.js:120	**Position statt Flexibilität.** Jeder Gletscher fixiert eine Karte für immer. Plane das Brett voraus — setze Anker, lass Lücken für spätere Nachbarn.
+src/ui/guides.js:121	Tempo
+src/ui/guides.js:121	**Unaufhaltsam, aber geduldig.** Masse steigt von selbst — Eis verliert nie den Fortschritt, braucht aber Zeit, bis die großen Brüche kommen.
+src/ui/guides.js:122	Bruchstil
+src/ui/guides.js:128	Der langsamste, aber unaufhaltsame Archetyp — du ziehst einen Garten hoch, der mit jeder Runde mehr Score trägt.
+src/ui/guides.js:129	Siege lassen deine Karten **wachsen**, bis sie dauerhaft grün werden und gemeinsam ein Feld bilden. Kein Sofort-Payoff — ein Garten, der langsam anschwillt und dann alles überwuchert.
+src/ui/guides.js:130	Die drei Ressourcen
+src/ui/guides.js:132	Wachstum
+src/ui/guides.js:133	Grünes Feld
+src/ui/guides.js:133	· Breite
+src/ui/guides.js:133	Reife grüne Karten teilen sich einen **Farbblock**. Je größer und grüner dein Feld, desto mehr Score — Blüte, Überwucherung.
+src/ui/guides.js:134	Wurzeln
+src/ui/guides.js:134	· Tiefe
+src/ui/guides.js:137	Wachstum
+src/ui/guides.js:137	Grün ↑
+src/ui/guides.js:137	Feld ↑
+src/ui/guides.js:137	Siege ↑
+src/ui/guides.js:138	wächst weiter
+src/ui/guides.js:140	Siege lassen Karten **wachsen** → ab einer Schwelle werden sie **grün** und bleiben es.
+src/ui/guides.js:141	Grüne Karten **verbreiten Grün** — färben Nachbarn, säen Wachstum, kolonisieren sogar Gegnerkarten.
+src/ui/guides.js:142	Im reinen Build treiben **Wurzeln** den Wert grüner Karten in die Tiefe → sie gewinnen leichter und zahlen Wurzel-Score.
+src/ui/guides.js:143	Je größer das grüne Feld, desto mehr Payoff — und mehr Siege bedeuten wieder mehr Wachstum.
+src/ui/guides.js:145	Ist eine grüne Karte am **Wert-Deckel**, wächst sie weiter — die legendären Bäume (Weltenbaum, Mutterbaum) zahlen diesen Überlauf als Score aus. Und mit dem Skill Überwucherung schaltet ein fast voll grünes Feld alle Farbblöcke stärker, Blüte zählt doppelt.
+src/ui/guides.js:148	Wie steht dein Garten?
+src/ui/guides.js:150	Breite
+src/ui/guides.js:150	Feld voll grün → **Überwucherung** (Skill)
+src/ui/guides.js:151	Tiefe
+src/ui/guides.js:151	am Wert-Deckel → **Überlauf-Score** (legendär)
+src/ui/guides.js:155	Tempo
+src/ui/guides.js:155	**Langsam, aber unaufhaltsam.** Pflanze startet schwach — Wachstum braucht Siege und Zeit. Der Lohn kommt spät, wenn ein reifes grünes Feld steht.
+src/ui/guides.js:156	Mono
+src/ui/guides.js:156	**Mono schaltet die Wurzeln frei.** Nur im reinen Pflanzen-Build wird Wachstum zu echtem Kartenwert — deine grünen Karten werden dann wirklich stärker. Mischst du, bleibt Grün nur eine Farbe fürs Feld.
+src/ui/guides.js:157	Fokus
+src/ui/guides.js:157	**Breite oder Tiefe.** Zwei Wege zum Score: ein weites grünes Feld (Farbblock, Blüte) oder wenige, hoch gewachsene Wurzel-Bäume — such dir deinen Schwerpunkt, oder verbinde beides.
+src/ui/guides.js:158	Trimmen
+src/ui/guides.js:158	**Trimmen ist der Wendepunkt zur Ernte.** Ersetzt du einen Wachstums-Skill, „trimmst" du: dauerhaft mehr Wurzel- und Blüten-Score. Die Wachstums-Skills sterben nicht — sie veredeln die Ernte.
+src/ui/indicators/panelKit.jsx:38	font-bold text-sm
+src/ui/indicators/panelKit.jsx:67	font-bold tabular-nums
+src/ui/indicators/panelKit.jsx:115	font-bold text-sm tabular-nums
+src/ui/indicators/vocab.js:43	Wert
+src/ui/indicators/vocab.js:44	Score
+src/ui/indicators/vocab.js:45	Formation
+src/ui/modalStyle.jsx:24	h-[3px] w-full shrink-0
+src/ui/modalStyle.jsx:105	ActionBar
+src/ui/music.js:67	Midnight Drive
+src/ui/music.js:87	Formation Shuffle
+src/ui/music.js:90	Velvet Cruise
+src/ui/music.js:91	Neon Drift
+src/ui/music.js:93	Amber Standby
+src/ui/music.js:94	Slow Circuit
+src/ui/music.js:95	Glass Horizon
+src/ui/music.js:96	Velvet Signal
+src/ui/music.js:97	Quiet Overpass
+src/ui/music.js:98	Neon Idle
+src/ui/music.js:99	Static Bloom
+src/ui/music.js:100	Cobalt Drift
+src/ui/music.js:101	Low Beam
+src/ui/music.js:102	Soft Reset
+src/ui/music.js:103	Faded Neon
+src/ui/music.js:105	Neon Pulse
+src/ui/music.js:106	Relay of Multipliers
+src/ui/music.js:107	Neon Card Game
+src/ui/music.js:108	Neon Cruise
+src/ui/music.js:109	Chrome Horizon
+src/ui/music.js:111	Pulse Highway
+src/ui/music.js:112	Grid Runner
+src/ui/music.js:113	Chrome Rally
+src/ui/music.js:114	Neon Circuit
+src/ui/music.js:115	Voltage Drive
+src/ui/music.js:116	Still Frame
+src/ui/music.js:118	Static Charge
+src/ui/music.js:119	Static Surge
+src/ui/music.js:120	Live Wire
+src/ui/music.js:121	Full Tilt
+src/ui/music.js:122	Neon Night Drive
+src/ui/music.js:123	Neon Overdrive
+src/ui/music.js:124	Fast Lane
+src/ui/music.js:125	Chrome Runner
+src/ui/music.js:127	Event Horizon
+src/ui/music.js:128	Circuit Overload
+src/ui/music.js:129	Static Storm
+src/ui/music.js:130	Power Surge
+src/ui/music.js:131	Overdrive
+src/ui/music.js:132	Final Showdown
+src/ui/music.js:133	Last Stand
+src/ui/music.js:134	Endgame
+src/ui/music.js:135	No Limits
+src/ui/music.js:137	Redline
+src/ui/music.js:138	Nitro Surge
+src/ui/music.js:139	Afterburner
+src/ui/music.js:140	Warp Speed
+src/ui/music.js:141	Terminal Velocity
+src/ui/music.js:142	Last Light
+src/ui/music.js:143	Point of No Return
+src/ui/music.js:144	Concrete Collapse
+src/ui/music.js:145	Fault Line
+src/ui/music.js:146	Drift King
+src/ui/music.js:147	Neon Thunder
+src/ui/music.js:148	Neon Apocalypse
+src/ui/perfRecorder.js:161	Ruckler nach Event (schlimmster zuerst):
+src/ui/perfRecorder.js:165	Schlimmste Frames:
+src/ui/useBackGuard.js:5	onBack()
+src/ui/useEscape.js:9	Escape
+src/ui/useReducedFx.js:10	→ nur reduziert, wenn das System „reduzierte Bewegung
+src/ui/useReducedFx.js:13	, Desktop → „aus
+src/ui/useReducedFx.js:43	→full (OS-Wunsch bleibt bindend). Kein dynamischer „auto

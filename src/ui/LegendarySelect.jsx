@@ -1,17 +1,19 @@
-import { SKILL_DEFS, ARCHETYPE_META, archetypeOf } from "../game/skills.js";
+import { archetypeOf } from "../game/skills.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
+import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot (kein Tausch).
 // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
 // Ablehnen → stattdessen normale Skill-Wahl (nie „verschwendet"). Gold-Theming wie die Legendär-Rarität sonst.
 const GOLD = "#d4a63a";
-const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Legendär", icon: "★", color: GOLD };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: t("leg.fallbackLabel"), icon: "★", color: GOLD };
 
 export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null, state = {} }) {
-  const legs = offer.map((id) => SKILL_DEFS[id]).filter(Boolean);
+  const legs = offer.map((id) => skillDef(id)).filter(Boolean);
   const rerollsLeg = state.rerollsLeg || 0; // M1: dedizierter R29-Reroll-Token
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
@@ -20,15 +22,14 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
           <PhaseHairline />
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
           {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
-          <div className="text-[10px] uppercase tracking-[0.2em] font-mono mb-1" style={{ color: GOLD }}>Legendär · einmalige Wahl</div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: GOLD }}>★ Legendärer Skill</h2>
+          <div className="text-[10px] uppercase tracking-[0.2em] font-mono mb-1" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
           <p className="text-sm opacity-70 mb-4 leading-snug">
-            Ein mächtiger Skill für deinen <b>7. Slot</b> — nur aus Fraktionen, in denen du schon aktive Skills hast.
-            Die Wahl steht danach <b>fest</b> (kein Tausch). Oder wähle stattdessen einen normalen Skill.
+            {t("leg.intro.a")} <b>{t("leg.intro.slot")}</b> {t("leg.intro.b")} <b>{t("leg.intro.final")}</b>{t("leg.intro.c")}
           </p>
           <ActionBar pad={6}>
-            {onReroll && rerollsLeg > 0 && <ActionButton kind="reroll" flex onClick={onReroll}>↻ Neu würfeln <span className="opacity-70">({rerollsLeg})</span></ActionButton>}
-            <ActionButton kind="decline" flex onClick={onDecline}>Keinen Legendär — stattdessen einen Skill wählen</ActionButton>
+            {onReroll && rerollsLeg > 0 && <ActionButton kind="reroll" flex onClick={onReroll}>{t("leg.reroll")} <span className="opacity-70">({rerollsLeg})</span></ActionButton>}
+            <ActionButton kind="decline" flex onClick={onDecline}>{t("leg.decline")}</ActionButton>
           </ActionBar>
           <div className="grid gap-3 sm:grid-cols-2">
             {legs.map((s) => {

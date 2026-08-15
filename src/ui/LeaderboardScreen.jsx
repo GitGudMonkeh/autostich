@@ -11,9 +11,11 @@ import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
 import { rankedUnlocked } from "../game/progression.js";
+import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
 import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
 import { WeekModChips, catalogDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
+import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Reiter)
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
@@ -23,9 +25,9 @@ const AM = "#f2a83a";   // Wochen-Akzent (Diese Woche)
 // Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs. #385: „Meine Runs" entfernt
 //   (steht in der Statistik) → 3 Reiter, gleich breit. Board-String bleibt intern "meister" (Wochen-Board + Champions).
 const TABS = [
-  { id: "meister",    label: "Diese Woche",  accent: AM },
-  { id: "champions",  label: "🏆 Challenger", accent: GOLD },
-  { id: "regeln",     label: "Regeln",       accent: CY },
+  { id: "meister",    labelKey: "board.tab.week",       accent: AM },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: GOLD },
+  { id: "regeln",     labelKey: "board.tab.rules",      accent: CY },
 ];
 // #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
 //   positiv/negativ; darunter die Ausschluss-Paare.
@@ -45,12 +47,12 @@ function RegelnPanel() {
   const head = "text-[10px] font-bold uppercase tracking-wider";
   return (
     <div className="text-[12px] leading-relaxed">
-      <p className="opacity-75 mb-3">Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat <b>keine</b> Wirkung (2 Rerolls je Phase, Raritäten bis Rar, Legendär ab R29). Jede Woche verändern <b>3–5 zufällige Modifikatoren</b> (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.</p>
-      <div className={`${head} mb-1.5`} style={{ color: MOD_POS }}>Positive Modifikatoren</div>
+      <p className="opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
+      <div className={`${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
       <div className="grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
-      <div className={`${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>Negative Modifikatoren</div>
+      <div className={`${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>
       <div className="grid gap-1.5">{neg.map((m) => <ModBox key={m.id} m={m} />)}</div>
-      <div className={`${head} mt-3 mb-1.5 opacity-60`}>Ausschluss-Paare (nie zusammen)</div>
+      <div className={`${head} mt-3 mb-1.5 opacity-60`}>{tr("board.rules.pairs")}</div>
       <div className="grid gap-1 text-[11.5px] opacity-75">
         {WEEK_MOD_PAIRS.map((p) => (
           <div key={p.key}><b style={{ color: MOD_POS }}>{WEEK_MOD_BY_ID[p.pos].name}</b> ↔ <b style={{ color: MOD_NEG }}>{WEEK_MOD_BY_ID[p.neg].name}</b></div>
@@ -66,7 +68,7 @@ function fmtCountdown(ms) {
   const d = Math.floor(s / 86400); s -= d * 86400;
   const h = Math.floor(s / 3600); s -= h * 3600;
   const m = Math.floor(s / 60); s -= m * 60;
-  return `${d}t ${h}h ${m}m ${s}s`;
+  return tr("board.countdown", { d, h, m, s });
 }
 
 // Seed-Code hübsch mit Trenner (4-3): „A7F39K2" → „A7F3-9K2".
@@ -89,16 +91,16 @@ function ChampionsList({ reloadToken }) {
     return () => { alive = false; };
   }, [reloadToken]);
 
-  if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">Champions sind nicht verfügbar.</div>;
+  if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">{tr("board.champions.unavailable")}</div>;
   return (
     <>
       <div className="text-[11px] opacity-55 leading-relaxed mb-3">
-        Platz 1 jeder abgelaufenen <b style={{ color: AM }}>Meister</b>-Woche landet hier — <b>eine Person pro Woche</b>.
+        {tr("board.champions.intro")}
       </div>
       {champs === null ? (
-        <div className="text-xs opacity-40 text-center py-3">Lädt Champions …</div>
+        <div className="text-xs opacity-40 text-center py-3">{tr("board.champions.loading")}</div>
       ) : champs.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-6">Noch keine Wochensieger — die erste Meister-Woche muss erst abgeschlossen sein.</div>
+        <div className="text-xs opacity-40 text-center py-6">{tr("board.champions.empty")}</div>
       ) : (
         <div className="grid gap-1">
           {champs.map((c) => (
@@ -144,13 +146,13 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
         <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">🏆 Bestenliste</h2>
-            <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
+            <h2 className="text-lg font-extrabold flex items-center gap-2">{tr("board.title")}</h2>
+            <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{tr("common.close")}</ActionButton>
           </div>
 
           {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
           <div className="flex gap-1.5 mb-4 shrink-0" role="tablist">
-            {TABS.map(({ id, label, accent }) => {
+            {TABS.map(({ id, labelKey, accent }) => {
               const on = tab === id;
               return (
                 <button key={id} role="tab" aria-selected={on} onClick={() => setTab(id)}
@@ -158,7 +160,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   style={on
                     ? { color: accent, background: "#131318", border: `1px solid ${accent}55`, boxShadow: `0 0 16px -9px ${accent}` }
                     : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
-                  {label}
+                  {tr(labelKey)}
                 </button>
               );
             })}
@@ -171,31 +173,31 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="flex items-baseline justify-between gap-2 mb-2.5">
                     <span className="text-[14px] font-extrabold" style={{ color: AM }}>{week.label}</span>
-                    <span className="text-[11px] opacity-60 tabular-nums">Reset in {fmtCountdown(msUntilWeekEnd(new Date(now)))}</span>
+                    <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#221b0f,#1b1610)", border: `1px solid ${AM}44` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
                       <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
                     </div>
                     {canPlayRanked && (
                       <button onClick={onPlayRanked || undefined}
                         className="w-full mt-3 border-none rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5"
-                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
+                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>{tr("board.play")}</button>
                     )}
                     {!canPlayRanked && (
                       <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
-                        🔒 Frei, sobald alle Decks freigeschaltet sind + je ≥1 Lauf beendet · ansehen jederzeit
+                        {tr("board.locked")}
                       </div>
                     )}
                   </div>
                   {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Modifikatoren dieser Woche</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
                   <div className="mb-3"><WeekModChips mods={weekMods} /></div>
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
-              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
+              ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
             {tab === "champions" && <ChampionsList reloadToken={reloadToken} />}

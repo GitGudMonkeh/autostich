@@ -91,6 +91,9 @@ export const LEG_OFFER_PER_ARCH_BONUS = envNum("PROG_LEG_OFFER_PER_ARCH_BONUS", 
 // Erste Skill-Runde (1-indexierter Durchlauf), driftfest aus dem festen Plan abgeleitet — für UI-Texte, die dem
 // Spieler sagen, ab wann Skills wählbar sind. Ändert sich der Plan, wandert die Zahl automatisch mit.
 export const FIRST_SKILL_CYCLE = DECISION_SCHEDULE.indexOf("skill") + 1;
+// Legendär-Phase (1-indexierter Durchlauf), ebenfalls aus dem Plan abgeleitet — für UI-/Glossartexte, die sie
+// benennen. Verschiebt sich die Phase im Plan, wandert die Zahl automatisch mit (kein „R29" im Text hartkodiert).
+export const LEG_PHASE_CYCLE = DECISION_SCHEDULE.indexOf("legendary") + 1;
 
 // (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
 // Anzeige-Labels der (ex-Shop-)Kategorien — von der Chronik-Ziel-Beschriftung noch referenziert.
@@ -600,3 +603,23 @@ export const BOARD_POSITIONS = TRICKS_PER_CYCLE;
 
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");
+
+/* ============================================================
+   FORMATIONS-ANZEIGENAMEN — EINE Quelle für alle Spielertexte (Sprachprüfung A12/E1).
+   Liegt hier im Blatt-Modul, weil sowohl formations.js als auch architect.js sie brauchen und
+   formations.js bereits architect.js importiert (ein Import in die Gegenrichtung wäre ein Zyklus).
+   Vorher: die Basistypen standen in formations.js, alle acht (+ Kürzel) noch einmal in ui/formationLabels.js,
+   und der Architekt gab die ROHEN Schlüssel aus („Formations-Joker (wiederholung/farbblock)").
+   ============================================================ */
+export const FORMATION_LABELS = {
+  wiederholung:   "Wiederholung",
+  farbblock:      "Farbblock",
+  treppe:         "Treppe",
+  wechsel:        "Wechsel",
+  anker:          "Anker",
+  nachhall:       "Nachhall",
+  formationskern: "Kern",
+  grenzbonus:     "Grenzbonus",
+};
+// Anzeigename eines Formationstyps (Fallback: der rohe Typ, falls je ein neuer ohne Eintrag auftaucht).
+export const formationLabel = (type) => FORMATION_LABELS[type] ?? type;

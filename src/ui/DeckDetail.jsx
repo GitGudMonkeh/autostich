@@ -2,18 +2,22 @@ import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_META, SKILL_LIST } from "../game/skills.js";
+// #sprache: Archetyp-Meta und Skill-Definitionen kommen zur Anzeigezeit aus labels.js (archMeta/skillDef) —
+// aus dem Register brauchen wir hier nur noch die Liste.
+import { SKILL_LIST } from "../game/skills.js";
 import { GUIDES } from "./guides.js";
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
 import { deckAssets } from "./cosmeticAssets.js";
-import { NODES, owns } from "../game/progression.js";
+import { owns } from "../game/progression.js";
+import { skillDef, archMeta , nodeList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* ============================================================
    DECK-DETAILANSICHT (#369, Ebene 2) — VOLLSTÄNDIG DATENGETRIEBEN.
    Öffnet beim Tippen auf ein Deck im Decks-Reiter des Upgrade-Baums. Drei Reiter, die dynamisch aus den
    Single-Source-Modulen rendern (kein hartkodierter Inhalt, keine Handpflege):
-     1. Passives  — SKILL_DEFS/SKILL_LIST gefiltert nach Archetyp (inkl. legendär), name + desc live.
+     1. Skills    — SKILL_DEFS/SKILL_LIST gefiltert nach Archetyp (inkl. legendär), name + desc live.
      2. Leitfaden — GUIDES[archetype] über die geteilte GuideBody (nicht abgeschrieben).
      3. Challenges— die archetyp-gebundenen cond-Packs (themes.js) + echte Deck-Skin-Grafik + Fortschritt.
    Neue Skills / geänderte desc / neue Challenge-Decks erscheinen automatisch.
@@ -46,13 +50,13 @@ function StatusPill({ label, on, color }) {
 export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const [tab, setTab] = useState("passives");
   useEscape(onBack);
-  const meta = ARCHETYPE_META[archetype];
+  const meta = archMeta(archetype);
   const color = meta?.color || FACTION_GLOW[archetype] || GOLD;
   const p = profile || {};
 
   // Datengetriebene Ableitungen — alles live aus den Single-Source-Modulen.
-  const deckNode = NODES.find((n) => n.arch === archetype && n.deckUnlock); // ice/plant; fire/lightning = frei
-  const legNodes = NODES.filter((n) => n.arch === archetype && n.legLevel).sort((a, b) => a.legLevel - b.legLevel);
+  const deckNode = nodeList().find((n) => n.arch === archetype && n.deckUnlock); // ice/plant; fire/lightning = frei
+  const legNodes = nodeList().filter((n) => n.arch === archetype && n.legLevel).sort((a, b) => a.legLevel - b.legLevel);
   const deckOwned = deckNode ? owns(p, deckNode.id) : true;
   const skills = SKILL_LIST.filter((s) => s.archetype === archetype);
   const normalSkills = skills.filter((s) => !s.legendary);
@@ -62,9 +66,9 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const packs = PACKS.filter((pk) => packCond(pk)?.archetype === archetype);
 
   const TABS = [
-    { key: "passives", label: "Passives" },
-    { key: "leitfaden", label: "Leitfaden" },
-    { key: "challenges", label: "Challenges" },
+    { key: "passives", label: t("deckdetail.tab.skills") },
+    { key: "leitfaden", label: t("guide.title") },
+    { key: "challenges", label: t("deckdetail.tab.challenges") },
   ];
 
   return (
@@ -77,18 +81,18 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="flex items-center gap-2.5">
-            <button onClick={onBack} title="Zurück" aria-label="Zurück"
+            <button onClick={onBack} title={t("deckdetail.back.title")} aria-label={t("deckdetail.back.title")}
               className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>‹ Zurück</button>
+              style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>{t("deckdetail.back")}</button>
             <FactionIcon type={archetype} size={26} />
             <div className="min-w-0">
               <h2 className="text-lg font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
-              {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-tight truncate" style={{ color: "#a6a6b0", maxWidth: "30ch" }}>{guide.subtitle}</div>}
+              {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-snug" style={{ color: "#a6a6b0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{guide.subtitle}</div>}
             </div>
-            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>Schließen</ActionButton>
+            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2.5">
-            <StatusPill label="Deck" on={deckOwned} color={color} />
+            <StatusPill label={t("deckdetail.deck")} on={deckOwned} color={color} />
             {legNodes.map((n, i) => <StatusPill key={n.id} label={`Leg ${["I", "II"][i] || n.legLevel}`} on={owns(p, n.id)} color={color} />)}
           </div>
           {/* Reiter */}
@@ -117,8 +121,8 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
                 {String(guide.kernidee).replace(/\*\*/g, "")}
               </div>
             )}
-            <SkillGroup title="Skills" skills={normalSkills} color={color} />
-            {legendarySkills.length > 0 && <SkillGroup title="Legendäre" skills={legendarySkills} color={GOLD} legendary />}
+            <SkillGroup title={t("deckdetail.tab.skills")} skills={normalSkills} color={color} />
+            {legendarySkills.length > 0 && <SkillGroup title={t("deckdetail.legendaries")} skills={legendarySkills} color={GOLD} legendary />}
           </div>
         )}
 
@@ -133,7 +137,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
         {tab === "challenges" && (
           <div className="mt-4 grid gap-3">
             {packs.length === 0 && (
-              <div className="text-[12px] text-center py-6" style={{ color: "#a6a6b0" }}>Keine deck-gebundenen Freischaltungen.</div>
+              <div className="text-[12px] text-center py-6" style={{ color: "#a6a6b0" }}>{t("deckdetail.noUnlocks")}</div>
             )}
             {packs.map((pk) => {
               const prog = packUnlock(p, pk);          // { done, cur, target, label }
@@ -192,9 +196,25 @@ function SkillGroup({ title, skills, color, legendary = false }) {
             style={legendary
               ? { background: `linear-gradient(180deg, ${color}1a, #16140e)`, border: `1px solid ${color}55`, borderLeft: `3px solid ${color}` }
               : { background: `linear-gradient(180deg, ${color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}` }}>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
               <span className="text-[13px] font-bold" style={{ color }}>{s.name}</span>
+              {/* Voraussetzung sichtbar machen: Verstärker-Skills tun ohne ihren Basis-Skill NICHTS. Im Angebot
+                  sind sie dadurch gegatet (skills.js `enabler`), im Katalog stand die Abhängigkeit bisher nirgends. */}
+              {s.enabler && skillDef(s.enabler) && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>
+                  braucht {skillDef(s.enabler).name}
+                </span>
+              )}
+              {(s.heatConsumer || s.onFullCharge) && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.consumer")}</span>
+              )}
+              {s.trimGrowth && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.trimmable")}</span>
+              )}
             </div>
             <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{s.desc}</div>
           </div>

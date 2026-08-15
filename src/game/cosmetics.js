@@ -71,50 +71,55 @@ export const DECK_DEFS = {
   deck_obsidian:   { id: "deck_obsidian",   name: "Obsidian",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
 };
 
+/* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
+   hier ein zweites Mal abgetippt — beim Umbenennen eines Decks wäre das Spielfeld zurückgeblieben.
+   Jetzt eine Quelle; nur das Suffix ist eigener Text. */
+export const BF_SUFFIX = " · Battlefield";
+const bfName = (deckId) => `${DECK_DEFS[deckId].name}${BF_SUFFIX}`;
+
 export const BATTLEFIELD_DEFS = {
   default: { id: "default", name: "Standard",       unlock: null },
   // #299: alte „Läufe"-Progressions-Battlefields (bf_1–4) entfernt. Deck-Werkstatt Kauf-Packs (#deckshop):
   // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
-  bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
-  bf_lofi:   { id: "bf_lofi",   name: "Kitsune · Battlefield",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  bf_sunset: { id: "bf_sunset", name: bfName("deck_sunset"), unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  bf_lofi:   { id: "bf_lofi",   name: bfName("deck_lofi"),      unlock: { kind: "buy", ownKey: "pack:lofi" } },
   // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
-  bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
-  bf_cat:        { id: "bf_cat",        name: "Biolumen · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  bf_spacedog:   { id: "bf_spacedog",   name: "Kosmospanther · Battlefield",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
-  bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
-  bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
+  bf_beach:      { id: "bf_beach",      name: bfName("deck_beach"),     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  bf_cat:        { id: "bf_cat",        name: bfName("deck_cat"), unlock: { kind: "buy", ownKey: "pack:cat" } },
+  bf_spacedog:   { id: "bf_spacedog",   name: bfName("deck_spacedog"),   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  bf_wale:       { id: "bf_wale",       name: bfName("deck_wale"),       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  bf_onboarding: { id: "bf_onboarding", name: bfName("deck_onboarding"),         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
-  bf_gottgleich: { id: "bf_gottgleich", name: "Ascension · Battlefield", unlock: { kind: "gottgleichRun" } },
-  bf_serie300:   { id: "bf_serie300",   name: "Flamingo · Battlefield",  unlock: { kind: "streak", n: 300 } },
-  bf_serie600:   { id: "bf_serie600",   name: "Peacock · Battlefield",    unlock: { kind: "streak", n: 600 } },
-  bf_serie1500:  { id: "bf_serie1500",  name: "Königspfau · Battlefield", unlock: { kind: "streak", n: 1500 } },
-  bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
+  bf_gottgleich: { id: "bf_gottgleich", name: bfName("deck_gottgleich"), unlock: { kind: "gottgleichRun" } },
+  bf_serie300:   { id: "bf_serie300",   name: bfName("deck_serie300"),  unlock: { kind: "streak", n: 300 } },
+  bf_serie600:   { id: "bf_serie600",   name: bfName("deck_serie600"),    unlock: { kind: "streak", n: 600 } },
+  bf_serie1500:  { id: "bf_serie1500",  name: bfName("deck_serie1500"), unlock: { kind: "streak", n: 1500 } },
+  bf_sparfuchs:  { id: "bf_sparfuchs",  name: bfName("deck_sparfuchs"),  unlock: { kind: "meisterNoReroll" } },
   // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
-  bf_feuer:     { id: "bf_feuer",     name: "Feuer · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
-  bf_eis:       { id: "bf_eis",       name: "Eis · Battlefield",            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
-  bf_blitz:     { id: "bf_blitz",     name: "Blitz · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
-  bf_pflanze:   { id: "bf_pflanze",   name: "Pflanze · Battlefield",        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
-  bf_elementar: { id: "bf_elementar", name: "Prisma · Battlefield",         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
-  bf_ronin:     { id: "bf_ronin",     name: "Ronin · Battlefield",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
-  bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
-  bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
-  bf_geometrie: { id: "bf_geometrie", name: "Seraph · Battlefield",         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  bf_feuer:     { id: "bf_feuer",     name: bfName("deck_feuer"),          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  bf_eis:       { id: "bf_eis",       name: bfName("deck_eis"),            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  bf_blitz:     { id: "bf_blitz",     name: bfName("deck_blitz"),          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  bf_pflanze:   { id: "bf_pflanze",   name: bfName("deck_pflanze"),        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  bf_elementar: { id: "bf_elementar", name: bfName("deck_elementar"),         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  bf_ronin:     { id: "bf_ronin",     name: bfName("deck_ronin"),          unlock: { kind: "buy", ownKey: "pack:ronin" } },
+  bf_kosmos:    { id: "bf_kosmos",    name: bfName("deck_kosmos"), unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  bf_oni:       { id: "bf_oni",       name: bfName("deck_oni"),      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  bf_geometrie: { id: "bf_geometrie", name: bfName("deck_geometrie"),         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs:
-  bf_sonne:  { id: "bf_sonne",  name: "Kolossus · Battlefield",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
-  bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
+  bf_sonne:  { id: "bf_sonne",  name: bfName("deck_sonne"),         unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  bf_drache: { id: "bf_drache", name: bfName("deck_drache"),     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
-  bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
-  bf_polarlicht: { id: "bf_polarlicht", name: "Scarab · Battlefield",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
-  bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
-  bf_obsidian:   { id: "bf_obsidian",   name: "Obsidian · Battlefield",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
+  bf_arcade:     { id: "bf_arcade",     name: bfName("deck_arcade"),     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  bf_polarlicht: { id: "bf_polarlicht", name: bfName("deck_polarlicht"),     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  bf_seedrache:  { id: "bf_seedrache",  name: bfName("deck_seedrache"),   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  bf_obsidian:   { id: "bf_obsidian",   name: bfName("deck_obsidian"),   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
-const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
-const ARCHS = Object.keys(ARCH_LABEL);
+// Die vier Archetyp-Schlüssel (Namen kommen aus dem Archetyp-Register, nicht von hier).
+const ARCHS = ["fire", "lightning", "ice", "plant"];
 // #310: robuster Mono-Lauf-Zähler je Fraktion. Toleriert Alt-Werte (Boolean true → 1) und fehlende Map.
 const monoCount = (p, a) => {
   const m = p && p.monoArchetypeRuns;
@@ -139,74 +144,80 @@ export function isUnlocked(def, profile) {
     case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
     case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
     case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
-    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit SP gekauft (im Besitz)
+    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit DP gekauft (im Besitz)
     case "onboardingDone": return onboardingDone(p);                                             // #: Genesis — Onboarding abgeschlossen (6/6)
     default:            return true;
   }
 }
 
-// Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
-//   { done, cur, target, label } — label = Klartext-Bedingung; cur/target = Fortschritt.
-// Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+/* Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
+   { done, cur, target, kind, vars } — cur/target = Fortschritt, kind + vars beschreiben die Bedingung.
+   Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+
+   #sprache: Der KLARTEXT steht nicht mehr hier, sondern im Katalog (`unlock.<kind>`), aufgelöst über
+   `unlockLabel` in src/i18n/unlockText.js — genau wie die Architekt-Effekttexte. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus (cosmetics.js → i18n/index.js → de.js → cosmetics.js), und mit
+   dem eingebauten deutschen Text hier hätte die englische Fassung eine zweite Pflegestelle. */
 export function unlockProgress(def, profile) {
   const u = def && def.unlock;
-  if (!u) return { done: true, cur: 1, target: 1, label: "Immer verfügbar" };
+  if (!u) return { done: true, cur: 1, target: 1, kind: "none", vars: {} };
   const p = profile || {};
   switch (u.kind) {
     case "games": {
       const have = p.games || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Spiele ${u.n} Läufe` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "streak": {
       const have = p.bestStreak || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche eine Serie von ${u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "score": {
       const have = p.bestScore || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Score ${grp(u.n)}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "monoArchetypeRun": {
       const need = u.n || 1;
       const have = monoCount(p, u.archetype);
       return { done: have >= need, cur: Math.min(have, need), target: need,
-        label: `Schließe ${need} Läufe nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+        kind: u.kind, vars: { n: need, archetype: u.archetype } };
     }
     case "allMonoArchetypes": {
       const need = u.n || 1;
       const have = ARCHS.reduce((acc, a) => acc + (monoCount(p, a) >= need ? 1 : 0), 0);
-      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length,
-        label: `Schalte alle vier Element-Decks frei (je ${need} Mono-Läufe)` };
+      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length, kind: u.kind, vars: { n: need } };
     }
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "gottgleichRun": {
       const done = !!p.hadGottgleichRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Triggere zum ersten Mal einen „Gottgleich“-Stich" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "meisterNoReroll": {
       const done = !!p.hadMeisterNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Meisterrang-Wochenlauf ohne einen einzigen Reroll ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "championWeek": {
       const done = !!p.hadChampionWeek;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Beende eine Wochen-Rangliste auf Platz 1 (Champion-Board)" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
-      return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt kaufen (1 SP)" };
+      // Der Preis steht auf der Pack-Kachel (je Pack verschieden, themes.js `price`) — der Text nennt
+      // nur die WÄHRUNG. Kein Import von themes.js: das gäbe einen Zyklus (themes.js → cosmetics.js).
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "onboardingDone": {
       const done = onboardingDone(p);
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe das Onboarding ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     default:
-      return { done: true, cur: 1, target: 1, label: "" };
+      return { done: true, cur: 1, target: 1, kind: "unknown", vars: {} };
   }
 }
 

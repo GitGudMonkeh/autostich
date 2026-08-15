@@ -10,8 +10,11 @@
    - Angebot: nur Stufen ECHT ÜBER dem aktuellen Rang (canOfferFamilyTier); Stufe IV schließt ab.
    - Legendäre bleiben AUSSERHALB dieses Systems (eigener Legendär-Wurf, unverändert).
 
-   Interne Bezeichnung Stufe IV = "epic" (technisch sauber); die sichtbare deutsche Bezeichnung
-   bleibt "Rar" (Spec §10). Drop-Gewichte + Preise sind Tuning-Konstanten.
+   Interne Bezeichnung Stufe IV = "epic" (technisch sauber). Die sichtbare deutsche Bezeichnung war
+   „Rar" und heißt seit der Sprachprüfung „Episch": „rar" und „selten" sind Synonyme, die Leiter
+   steigerte damit rückwärts (Selten → Sehr selten → Rar). „Episch" steigert und deckt sich mit der
+   englischen Leiter (Common · Uncommon · Rare · Epic, Übersetzerpaket §3.5).
+   Drop-Gewichte + Preise sind Tuning-Konstanten.
    ============================================================ */
 
 export const TIERS = [1, 2, 3, 4];
@@ -24,7 +27,7 @@ export const TIER_META = {
   1: { tier: 1, rarity: "normal",   label: "Normal",      color: "#8a8a95", price: 8 },
   2: { tier: 2, rarity: "uncommon", label: "Selten",      color: "#4ade80", price: 12 },
   3: { tier: 3, rarity: "rare",     label: "Sehr selten", color: "#5a8ade", price: 18 },
-  4: { tier: 4, rarity: "epic",     label: "Rar",         color: "#a855f7", price: 30 },
+  4: { tier: 4, rarity: "epic",     label: "Episch",      color: "#a855f7", price: 30 },
 };
 
 // Römische Stufe direkt hinter dem Familiennamen (Spec §8: „Momentum III").

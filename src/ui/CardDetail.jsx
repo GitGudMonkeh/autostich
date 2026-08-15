@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { familyDef } from "../game/families.js";
+
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 import { formationBorder } from "./formationStyle.js"; // Rahmenfarbe = Anzahl Formationen (grau/grün/blau/lila/gold), wie die Kacheln
+import { familyDef, perkDef, suitLabel } from "../i18n/labels.js"; // #sprache: Perks/Farben zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // #UI: Wachstum/Überlauf sind durch das Skill-Gating gebrochen (z. B. 4,333…) → auf EINE Nachkommastelle runden.
@@ -21,7 +23,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
   if (!card) {
-    return <div className="text-xs opacity-40 py-1.5">Karte antippen für Rolle & Modifikatoren …</div>;
+    return <div className="text-xs opacity-40 py-1.5">{t("carddetail.empty")}</div>;
   }
   const col = suitColor(card.suit);
   const permBoost = card.baseRank != null ? card.value - card.baseRank : 0;
@@ -34,7 +36,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
     .map(([pid]) => {
       const fam = familyDef(pid);
       const famDesc = fam ? (fam.tiers[familyTiers[pid] || 1]?.desc || "") : "";
-      return { pid, label: PERK_DEFS[pid]?.label || fam?.name || pid, desc: PERK_DEFS[pid]?.desc || famDesc };
+      return { pid, label: perkDef(pid)?.label || fam?.name || pid, desc: perkDef(pid)?.desc || famDesc };
     });
 
   const Chip = ({ children, c }) => (
@@ -45,11 +47,11 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
     <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#1b1b22", border: `1.5px solid ${formationBorder(posForm).color || "#5a6672"}` }}>
       <div className="flex items-center gap-2 mb-1.5">
         {pos != null && <span className="opacity-40 tabular-nums">#{pos + 1}</span>}
-        <span className="font-bold text-sm" style={{ color: col }}>{suitName(card.suit)} {card.value}</span>
-        {permBoost > 0 && <span style={{ color: "#8a7de0" }}>Ursprung {card.baseRank} (+{permBoost} Kartenwert)</span>}
+        <span className="font-bold text-sm" style={{ color: col }}>{suitLabel(card.suit)} {card.value}</span>
+        {permBoost > 0 && <span style={{ color: "#8a7de0" }}>{t("carddetail.origin", { base: card.baseRank, boost: permBoost })}</span>}
       </div>
       <div className="flex flex-wrap gap-1.5 items-center">
-        <span className="opacity-45">Rollen:</span>
+        <span className="opacity-45">{t("carddetail.roles")}</span>
         {roleEntries.length
           ? roleEntries.map((r) => {
               const open = openRole === r.pid;
@@ -62,7 +64,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
                 </button>
               );
             })
-          : <span className="opacity-40">keine</span>}
+          : <span className="opacity-40">{t("carddetail.none")}</span>}
       </div>
       {openRole && (() => {
         const desc = roleEntries.find((r) => r.pid === openRole)?.desc;
@@ -73,21 +75,21 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
         ) : null;
       })()}
       <div className="flex flex-wrap gap-1.5 items-center mt-1">
-        <span className="opacity-45">Formationen:</span>
+        <span className="opacity-45">{t("carddetail.formations")}</span>
         {forms.length
           ? forms.map((f, i) => (
               <Chip key={i} c={f.factor > 1 ? "#5ab87a" : "#8a8a92"}>
-                {formationLabel(f.type)}{f.factor > 1 ? ` ×${fmt(f.factor)}` : " (Mitglied)"}
+                {formationLabel(f.type)}{f.factor > 1 ? ` ×${fmt(f.factor)}` : t("carddetail.member")}
               </Chip>
             ))
-          : <span className="opacity-40">keine</span>}
+          : <span className="opacity-40">{t("carddetail.none")}</span>}
       </div>
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
-          <span className="opacity-45">Ionisierung:</span>
+          <span className="opacity-45">{t("carddetail.ion")}</span>
           <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
           {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
-          <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} pp Feld-Crit</Chip>
+          <Chip c="#8a7de0">{t("carddetail.fieldCrit", { pct: Math.round(ion * ION_CRIT_PP_PER_STACK * 100) })}</Chip>
         </div>
       )}
       {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score
@@ -96,18 +98,18 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {plantReadout && (card.green || plantGrowth > 0) && (() => {
         const ripe = !!card.green;
         const full = ripe && card.value >= PLANT_VALUE_CAP;
-        const stateLabel = full ? "Ausgewachsen" : ripe ? "Grün (reif)" : "Setzling";
+        const stateLabel = t(full ? "carddetail.plant.full" : ripe ? "carddetail.plant.ripe" : "carddetail.plant.seed");
         const stateCol = full ? PLANT_FULL : ripe ? PLANT_RIPE : "#9aa4a0";
         const need = Math.max(0, PLANT_VALUE_CAP - card.value) * WURZELSCHLAG_PER_GROWTH; // Wachstum bis zum Wert-Deckel
         const overflow = ripe ? Math.max(0, plantGrowth - need) : 0;                      // „alter Wald" (Direkt-Score der Legendären)
         return (
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
-            <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="plant" size={12} /> Pflanze:</span>
+            <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="plant" size={12} /> {t("carddetail.plant")}</span>
             <Chip c={stateCol}>{stateLabel}</Chip>
-            <Chip c={PLANT}>Wachstum {fmt1(plantGrowth)}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
-            <Chip c={PLANT}>Kartenwert {card.value} / {PLANT_VALUE_CAP}</Chip>
-            {ripe && plantRoots > 0 && <Chip c={PLANT}>+{plantRoots} Wurzel-Score/Sieg{plantPfahl ? " (×2 Form.)" : ""}</Chip>}
-            {overflow > 0 && <Chip c={PLANT_FULL}>Überlauf {fmt1(overflow)}</Chip>}
+            <Chip c={PLANT}>{t("carddetail.growth", { n: fmt1(plantGrowth) })}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
+            <Chip c={PLANT}>{t("carddetail.cardValue", { value: card.value, cap: PLANT_VALUE_CAP })}</Chip>
+            {ripe && plantRoots > 0 && <Chip c={PLANT}>{t("carddetail.rootScore", { n: plantRoots })}{plantPfahl ? t("carddetail.rootScore.tap") : ""}</Chip>}
+            {overflow > 0 && <Chip c={PLANT_FULL}>{t("carddetail.overflow", { n: fmt1(overflow) })}</Chip>}
           </div>
         );
       })()}
@@ -115,20 +117,20 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
           Spielerdecks (Brand liegt auf Gegnerkarten, Hitze/Asche/Weißglut sind global). ⚒ wie der Karten-Indikator (#206). */}
       {forgedValue > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
-          <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="fire" size={12} /> Feuer:</span>
-          <Chip c="#e0714a">⚒ Geschmiedet +{forgedValue} Kartenwert</Chip>
+          <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="fire" size={12} /> {t("carddetail.fire")}</span>
+          <Chip c="#e0714a">{t("carddetail.forged", { n: forgedValue })}</Chip>
         </div>
       )}
       {/* #UI: Architekt-Gebäude, das auf diese Position (Karte) wirkt — Name + die konkreten Effekte an dieser Zelle
           (Wert-Boost · Score-Effekt · Struktur-Faktor). Speist sich aus architectCover (Chronik/Aufstellung). */}
       {arch && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
-          <span className="opacity-45">🏗 Gebäude:</span>
-          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}{arch.legendary ? " ★" : arch.tier ? ` · Stufe ${arch.tier}` : ""}</Chip>
+          <span className="opacity-45">{t("carddetail.building")}</span>
+          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}{arch.legendary ? " ★" : arch.tier ? t("carddetail.building.tier", { tier: arch.tier }) : ""}</Chip>
           {(arch.effects || []).map((e, i) => (
             <Chip key={i} c={arch.legendary ? "#d4a63a" : arch.color}>{e}</Chip>
           ))}
-          {(arch.effects || []).length === 0 && <span className="opacity-40">keine direkte Wirkung an dieser Karte</span>}
+          {(arch.effects || []).length === 0 && <span className="opacity-40">{t("carddetail.building.none")}</span>}
         </div>
       )}
     </div>

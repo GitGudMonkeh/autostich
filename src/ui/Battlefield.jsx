@@ -87,6 +87,7 @@ import oppSkillFront     from "../assets/cards/decks_opponent/deck_opp_skill/fro
 import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/back.webp";
 import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.webp"; // 💎 Legendär    → legendary
 import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.webp";
+import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Stich)
 
 // Auswahl-Typ (DECISION_SCHEDULE) → Gegner-Deck-Skin (Cover/Front). Eigene, phasen-farbcodierte v0.4-Decks.
 // Fällt auf „stat" zurück = Skill/purple (die erste Runde ist immer Skill).
@@ -104,10 +105,10 @@ export const OPP_SKIN_URLS = [...new Set(Object.values(OPP_DECK_SKINS).flatMap((
 
 // Ergebnis-Banner-Farben (Design-Sweep: frischer/kräftiger, an die neue Palette angeglichen — Grün/Rot/Violett/Neutral).
 const BANNER = {
-  win:     { text: "Gewonnen",            color: "#5fce86" },
-  win_tie: { text: "Gleichstand → Sieg",  color: "#a89bf5" },
-  loss:    { text: "Verloren",            color: "#ef6f68" },
-  tie:     { text: "Gleichstand",         color: "#a6a6b0" },
+  win:     { key: "bf.banner.win",     color: "#5fce86" },
+  win_tie: { key: "bf.banner.winTie",  color: "#a89bf5" },
+  loss:    { key: "bf.banner.loss",    color: "#ef6f68" },
+  tie:     { key: "bf.banner.tie",     color: "#a6a6b0" },
 };
 const CRIT_COLOR = "#e879f9";
 // Archetyp-„Treffer-Identitäten" des Score-Floats (engine liefert lastTrick.hitTypes[]): EIN Sieg kann mehrere zugleich
@@ -145,12 +146,12 @@ const FLOAT_ZONES = {
 //   via drop-shadow. „Light" = viel Weiß/Silber mit Farbbändern je Stufe; jede Stufe eine Spur „cooler". KEIN Sweep
 //   (Verlauf steht still), reiner Text. Gottgleich (epic) bleibt UNVERÄNDERT (solides Weiß + Bloom, SVG).
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "Gottgleich", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
-  { min: 150000, text: "Irre",   size: 90, rank: 3, cool: 3600,
+  { min: 500000, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
+  { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#ffe4f5,#ff7ed4,#e2a9ff,#ff7ed4,#ffe4f5,#ffffff)", glow: "#ff2d95", aura: "#b14bff" } },
-  { min: 50000,  text: "Brutal", size: 78, rank: 2, cool: 4600,
+  { min: 50000,  key: "bf.big.brutal", size: 78, rank: 2, cool: 4600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#efe4ff,#b98bff,#7a5cff,#b98bff,#efe4ff,#ffffff)", glow: "#8b5cff", aura: "#12d6ff" } },
-  { min: 10000,  text: "Stark",  size: 68, rank: 1, cool: 5600,
+  { min: 10000,  key: "bf.big.fierce", size: 68, rank: 1, cool: 5600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#eafcff,#7fe6ff,#ffffff,#7fe6ff,#eafcff,#ffffff)", glow: "#12d6ff" } },
 ];
 const BIG_DOMINANCE_MS = 2000; // #315/#344: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
@@ -166,10 +167,10 @@ const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) re
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine".
 // #: Lawine bekommt EXAKT den Gottgleich-Schrifteffekt (kein fester Farbton mehr) → Synthwave-Chrome-Zweiton bzw. im
 //   Prunk-Deckfarbe-Modus die Deckfarbe (wie Gottgleich). Zusätzlich löst Lawine denselben Gottgleich-Prunk aus (s. u.).
-const LAWINE_TIER = { text: "Lawine", size: 104, epic: true };
+const LAWINE_TIER = { key: "bf.big.avalanche", size: 104, epic: true };
 // Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
 const STREAK_GOENN = 200;
-const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24a" };
+const GOENNDIR_TIER = { key: "bf.big.letsgo", size: 104, epic: true, color: "#ffd24a" };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -343,7 +344,7 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
         {children}
         {overlay}
       </div>
-      <div className="text-[11px] opacity-55">Deck: {position} / {deckLen}</div>
+      <div className="text-[11px] opacity-55">Stich {position} / {deckLen}</div>
     </div>
   );
 }
@@ -755,7 +756,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const isCrit = !!(t && t.isCrit);
   const critColor = CRIT_COLOR;
   const banner = t
-    ? (isCrit ? { text: "Gewonnen · Kritisch", color: CRIT_COLOR } : BANNER[t.result])
+    ? (isCrit ? { key: "bf.banner.winCrit", color: CRIT_COLOR } : BANNER[t.result])
     : null;
 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
@@ -1097,8 +1098,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (toShow.rank) {
       const nowMs = Date.now();
       if (toShow.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
-      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.text] || 0) < toShow.cool) return;
-      bigCoolRef.current[toShow.text] = nowMs;
+      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.key] || 0) < toShow.cool) return;
+      bigCoolRef.current[toShow.key] = nowMs;
       bigCoolRef.current._rank = toShow.rank;
       bigCoolRef.current._at = nowMs;
     }
@@ -1535,13 +1536,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef} baseCard
+        <Side label={tr("bf.side.you")} remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef} baseCard
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
         <div ref={oppSlotRef} className="flex">
-          <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg} slotRef={oppDeckSlotRef}
+          <Side label={tr("bf.side.opponent")} remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg} slotRef={oppDeckSlotRef}
                 overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} panelRef={panelRef} /> : null}>{oppCard}</Side>
         </div>
 
@@ -1608,7 +1609,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
           return b.tier.epic ? (
             // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
-            <GottChromeWord key={b.id} text={b.tier.text}
+            <GottChromeWord key={b.id} text={tr(b.tier.key)}
               /* #335: „Gottgleich" UND „Lawine" (ohne feste tier.color) folgen dem Prunk-Farbmodus → im Deckfarbe-Modus in
                  der Deckfarbe (Zweiton deckA1→deckA2), sonst Chrome-Zweiton. Nur „Gönn dir" behält seine feste tier.color (Gold). */
               color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
@@ -1633,10 +1634,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                 fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px` }; // höhere Stufe = luftiger
               return (<>
                 <span style={{ ...ws, position: "absolute", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
-                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{b.tier.text}</span>
+                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{tr(b.tier.key)}</span>
                 <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
                   WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
-                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{b.tier.text}</span>
+                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
               </>);
             })()}
           </div>
@@ -1650,9 +1651,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
             kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
         {banner && hideFloatWinLose ? null : banner ? (
-          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{banner.text}</span>
+          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{tr(banner.key)}</span>
         ) : (
-          <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
+          <span className="opacity-40 text-sm">{tr("bf.ready")}</span>
         )}
       </div>
     </div>

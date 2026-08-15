@@ -3,6 +3,7 @@
 // liefert eine kompakte Zähler-Zelle für Sekundär-Akkus (Asche/Schmieden; später Blitz/Eis/Pflanze).
 
 import { PANEL_CARD } from "../modalStyle.jsx";
+import { fmtNum } from "../../i18n/index.js"; // #sprache: Trennzeichen folgen der Sprache
 
 // Alle Fraktions-/Indikator-Panels teilen die gemeinsame In-Run-Schale (Verlaufsfläche + Rahmen).
 export const PANEL_STYLE = PANEL_CARD;
@@ -54,7 +55,7 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
 // „Auf einen Blick, wie mein Motor läuft": ein gestapelter Anteils-Balken zeigt, WELCHE Fantasie gerade trägt, die
 // Summe die Größenordnung. NUR aktive Kanäle (value > 0) erscheinen — leere Fantasien bleiben aus (kein überfülltes
 // Panel). Gibt null zurück, solange der Archetyp noch nichts eingespielt hat. `channels`: [{ label, value, color }].
-const nfmt = (n) => Math.round(n).toLocaleString("de-DE");
+const nfmt = (n) => fmtNum(Math.round(n));
 export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
   const active = channels.filter((c) => c.value > 0);
   const total = active.reduce((t, c) => t + c.value, 0);
@@ -76,7 +77,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
         return (
           <div className="flex w-full rounded-sm overflow-hidden" style={{ height: 10, background: "#26262e" }}>
             {active.map((c) => (
-              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)`}
+              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)${c.hint ? ` — ${c.hint}` : ""}`}
                 style={{ width: `${pctOf(c)}%`, background: c.color }} />
             ))}
           </div>
@@ -85,7 +86,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
       {/* Legende: nur aktive Kanäle, Punkt + Name + Zahl. */}
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
         {active.map((c) => (
-          <span key={c.label} className="inline-flex items-center gap-1">
+          <span key={c.label} className="inline-flex items-center gap-1" title={c.hint || undefined}>
             <span className="w-[8px] h-[8px] rounded-[2px] shrink-0" style={{ background: c.color }} />
             <span className="opacity-65">{c.label}</span>
             <b className="tabular-nums" style={{ color: c.color }}>{nfmt(c.value)}</b>

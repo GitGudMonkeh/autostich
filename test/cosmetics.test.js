@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId,
 } from "../src/game/cosmetics.js";
+import { unlockLabel } from "../src/i18n/unlockText.js"; // #sprache: der Klartext entsteht jetzt hier
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
 const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoRerollRun: false, ...o });
@@ -78,8 +80,11 @@ describe("cosmetics — isUnlocked", () => {
     const noReroll = { unlock: { kind: "noRerollRun" } };
     expect(isUnlocked(noReroll, prof())).toBe(false);
     expect(isUnlocked(noReroll, prof({ hadNoRerollRun: true }))).toBe(true);
-    expect(unlockProgress(noReroll, prof())).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
-    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    setLocale(SOURCE_LOCALE);
+    expect(unlockProgress(noReroll, prof())).toMatchObject({ done: false, cur: 0, target: 1, kind: "noRerollRun" });
+    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toMatchObject({ done: true, cur: 1, target: 1, kind: "noRerollRun" });
+    // Der Klartext kommt aus dem Katalog (unlockLabel), nicht mehr aus cosmetics.js.
+    expect(unlockLabel(unlockProgress(noReroll, prof()))).toBe("Schließe einen Lauf ab, ohne einen Reroll zu benutzen");
   });
 
   it("unbekannter kind blockiert nicht (defensiv)", () => {
@@ -106,27 +111,35 @@ describe("cosmetics — isUnlocked", () => {
   it("#303: neue Flag-Bedingungen liefern Klartext-Fortschritt", () => {
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).done).toBe(false);
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true })).done).toBe(true);
-    expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).label).toMatch(/Gottgleich/i);
-    expect(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()).label).toMatch(/Meisterrang.*Reroll/i);
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_gottgleich, prof()))).toMatch(/Gottgleich/i);
+    // Sprachprüfung A10: der Modus heißt „Ranglisten-Lauf" (früher „Meisterrang") — storage.js führt den alten
+    // record-Key `ranked === "meister"` nur noch aus Kompatibilität.
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()))).toMatch(/Ranglisten.*Reroll/i);
   });
 });
 
 describe("cosmetics — unlockProgress", () => {
   it("null-unlock: done, immer verfügbar", () => {
+    setLocale(SOURCE_LOCALE);
     const p = unlockProgress(DECK_DEFS.default, prof());
     expect(p.done).toBe(true);
-    expect(p.label).toMatch(/verfügbar/i);
+    expect(unlockLabel(p)).toMatch(/verfügbar/i);
   });
 
   it("games: cur auf target gedeckelt, Klartext-Label", () => {
     const d = { unlock: { kind: "games", n: 5 } };
-    expect(unlockProgress(d, prof({ games: 3 }))).toEqual({ done: false, cur: 3, target: 5, label: "Spiele 5 Läufe" });
-    expect(unlockProgress(d, prof({ games: 8 }))).toEqual({ done: true, cur: 5, target: 5, label: "Spiele 5 Läufe" });
+    setLocale(SOURCE_LOCALE);
+    expect(unlockProgress(d, prof({ games: 3 }))).toMatchObject({ done: false, cur: 3, target: 5 });
+    expect(unlockProgress(d, prof({ games: 8 }))).toMatchObject({ done: true, cur: 5, target: 5 });
+    expect(unlockLabel(unlockProgress(d, prof({ games: 3 })))).toBe("Spiele 5 Läufe");
   });
 
   it("streak: Label nennt die Serie, cur = beste bisher (gedeckelt)", () => {
+    setLocale(SOURCE_LOCALE);
     const p = unlockProgress({ unlock: { kind: "streak", n: 100 } }, prof({ bestStreak: 63 }));
-    expect(p).toEqual({ done: false, cur: 63, target: 100, label: "Erreiche eine Serie von 100" });
+    expect(p).toMatchObject({ done: false, cur: 63, target: 100 });
+    expect(unlockLabel(p)).toBe("Erreiche eine Serie von 100");
   });
 
   it("score: Label mit Tausenderpunkten (keine ICU-Abhängigkeit)", () => {
@@ -134,14 +147,21 @@ describe("cosmetics — unlockProgress", () => {
     expect(p.done).toBe(false);
     expect(p.cur).toBe(5_000_000);
     expect(p.target).toBe(10_000_000);
-    expect(p.label).toBe("Erreiche Score 10.000.000");
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(p)).toBe("Erreiche Score 10.000.000");
+    // Gegenprobe Englisch: dieselbe Zahl, englische Tausendertrennung.
+    setLocale("en");
+    expect(unlockLabel(p)).toBe("Reach a score of 10,000,000");
+    setLocale(SOURCE_LOCALE);
   });
 
   it("Flag-Challenges: target 1, cur 0/1, Klartext-Bedingung", () => {
+    setLocale(SOURCE_LOCALE);
     const locked = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof());
-    expect(locked).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    expect(locked).toMatchObject({ done: false, cur: 0, target: 1, kind: "noRerollRun" });
     const done = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof({ hadNoRerollRun: true }));
-    expect(done).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    expect(done).toMatchObject({ done: true, cur: 1, target: 1, kind: "noRerollRun" });
+    expect(unlockLabel(done)).toBe("Schließe einen Lauf ab, ohne einen Reroll zu benutzen");
   });
 });
 

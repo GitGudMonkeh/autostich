@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MODAL_CARD, ModalHairline, HAIRLINE } from "./modalStyle.jsx"; // Hub-Bildsprache + Logo-Verlauf (Cyan→Violett→Amber) für den Ladebalken
+import { t } from "../i18n/index.js"; // #sprache
 
 /* #190 — schlanker Vorlade-Balken für die kosmetischen Skins beim Run-Start.
    Lädt die aktiven Deck-/Battlefield-Bilder vor und ruft onReady, sobald alle da sind (Cache → sofort).
@@ -54,7 +55,7 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
           <div className="text-base font-bold font-pixel tracking-wide mb-4"
             style={{ backgroundImage: HAIRLINE.background, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
-            Lade Deck …
+            {t("runloader.loading")}
           </div>
           {/* Ladebalken im Logo-Verlauf: die volle Farbleiste (Cyan→Violett→Amber) liegt fest im Track, die noch nicht
               geladene Strecke wird rechts abgedeckt → sichtbare Farbe = Fortschritt (wie die Tri-Color-Haarlinie, die sich füllt). */}

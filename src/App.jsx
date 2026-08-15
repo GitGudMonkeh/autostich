@@ -1,6 +1,7 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
+import { rarityLabel, deckDef, battlefieldDef } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
@@ -12,6 +13,7 @@ import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardi
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
+import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -122,7 +124,15 @@ function pickRandomOwnedPack(profile) {
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
-  const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
+  // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang die
+  // falsche Sprache auf. Deshalb direkt im Initializer (idempotent, StrictMode-fest) statt im Effekt.
+  // `lang: null` = noch nie gewählt → DEFAULT_LOCALE (Englisch). Beim ersten Start wählt der Spieler
+  // im Namens-Dialog selbst; danach in den Optionen. Die Browsersprache wird bewusst nicht befragt.
+  const [options, setOptions] = useState(() => {
+    const o = loadOptions();
+    setLocale(o.lang || undefined);
+    return o;
+  });   // Optionen (#41): u. a. CRT-Skin
   // Perf: reducedFx auflösen (Mobile/schwaches Gerät/System-Wunsch) und als data-Attribut ans Root hängen.
   // Eine zentrale CSS-Regel (index.css) schaltet damit den teuren Overlay-Blur (backdrop-filter) ab —
   // der wird hinter Gameplay-Overlays sonst pro Frame neu berechnet (laufende Puls-/Glow-Animationen).
@@ -272,6 +282,12 @@ export function Autostich() {
   // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
   useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
   useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
+  // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
+  // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
+  useEffect(() => {
+    const loc = setLocale(options.lang || undefined);
+    try { document.documentElement.lang = loc; } catch (e) {}
+  }, [options.lang]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
   const prevBuys = useRef(0);
@@ -491,15 +507,17 @@ export function Autostich() {
     setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
-    const RAR_DE = { 3: "Seltenheit III (Blau)", 4: "Seltenheit IV (Lila)" };
+    // Sprachprüfung C1: EIN Vokabular für die Raritätsstufen — die Namen kommen aus rarity.js (TIER_META),
+// nicht aus einer zweiten, hier gepflegten Liste („Seltenheit III (Blau)" u. Ä.).
+  const RAR_DE = { 3: `Rarität: ${rarityLabel(3)}`, 4: `Rarität: ${rarityLabel(4)}` };
     const rewardLabel = (r) => r == null ? null
       : r.type === "onboardingDone" ? "Genesis-Pack · Werkstatt · Upgrades"
       : r.type === "archetype" ? `Archetyp: ${ARCH_DE[r.key] || r.key}`
-      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Seltenheitsstufe") : "Freischaltung";
+      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Raritätsstufe") : "Freischaltung";
     setProgressUnlocks((metaUnlocks || []).map((u) => {
       if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
       if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null, guide: u.key, guideName: ARCH_DE[u.key] || u.key }; // #: guide → Leitfaden-Button im Onboarding-Banner (öffnet die Fraktions-Seite)
-      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: "Neue Seltenheitsstufe freigeschaltet", target: null };
+      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: `Neue Rarität freigeschaltet: ${rarityLabel(u.tier)}`.trim(), target: null };
       return { id: `u-${u.link}`, label: "Freischaltung", target: null };
     }));
     // #: Onboarding-Fortschritt fürs Victory-Banner — damit NACH JEDEM Onboarding-Lauf sichtbar ist, wo man steht und was
@@ -510,8 +528,8 @@ export function Autostich() {
       : null);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
-      ...Object.values(DECK_DEFS).map((d) => ({ def: d, type: "deck" })),
-      ...Object.values(BATTLEFIELD_DEFS).map((d) => ({ def: d, type: "battlefield" })),
+      ...Object.keys(DECK_DEFS).map((id) => ({ def: deckDef(id), type: "deck" })),
+      ...Object.keys(BATTLEFIELD_DEFS).map((id) => ({ def: battlefieldDef(id), type: "battlefield" })),
     ];
     setNewUnlocks(
       catalog
@@ -897,7 +915,7 @@ export function Autostich() {
                     "radial-gradient(58% 62% at 30% 50%, rgba(38,198,230,.20), transparent 60%)," +
                     "radial-gradient(60% 64% at 52% 46%, rgba(155,130,240,.22), transparent 60%)," +
                     "radial-gradient(58% 62% at 74% 50%, rgba(242,168,58,.16), transparent 60%)" }} />
-                <img src={logo} alt="AUTOSTICH" draggable="false" className="h-14 w-auto select-none block" />
+                <img src={logo} alt={t("start.logo.alt")} draggable="false" className="h-14 w-auto select-none block" />
               </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
@@ -1055,6 +1073,7 @@ export function Autostich() {
 
       {showUsername && (
         <UsernameModal initial={username} firstTime={!username}
+          onLang={(id) => changeOptions({ lang: id })}
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
       {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}
@@ -1064,18 +1083,18 @@ export function Autostich() {
           <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
-            <div className="text-base font-bold">Lauf pausieren oder beenden?</div>
+            <div className="text-base font-bold">{t("app.abort.title")}</div>
             {/* #362 Aktionsleiste OBEN: primär (Beenden & speichern) obenauf, darunter Weiterspielen/Beenden. */}
             <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
               <div className="flex flex-col gap-2 w-full">
                 <ActionButton kind="primary" onClick={suspendRun}>Beenden &amp; speichern</ActionButton>
                 <div className="flex gap-2">
-                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>Weiterspielen</ActionButton>
-                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>Beenden</ActionButton>
+                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>{t("app.keepPlaying")}</ActionButton>
+                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>{t("app.end")}</ActionButton>
                 </div>
               </div>
             </ActionBar>
-            <div className="text-sm opacity-70"><b>Beenden &amp; speichern</b> merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. <b>Beenden</b> wertet ihn und zeigt den Endscreen.</div>
+            <div className="text-sm opacity-70">{t("app.abort.help")}</div>
             </div>
           </div>
         </div>
@@ -1088,13 +1107,13 @@ export function Autostich() {
           <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
-            <div className="text-base font-bold">Wirklich neustarten?</div>
+            <div className="text-base font-bold">{t("app.restart.title")}</div>
             {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
             <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
-              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>Weiterspielen</ActionButton>
-              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>Neustarten</ActionButton>
+              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>{t("app.keepPlaying")}</ActionButton>
+              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>{t("app.restart")}</ActionButton>
             </ActionBar>
-            <div className="text-sm opacity-70">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
+            <div className="text-sm opacity-70">{t("app.restart.help")}</div>
             </div>
           </div>
         </div>

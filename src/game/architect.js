@@ -84,6 +84,19 @@ export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1)
 const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
 /* ============================================================
+   SPIELER-BESCHREIBUNG eines Bauplans/Gebäudes (Sprachprüfung A13) — die EINE Quelle.
+   Vorher stand dieselbe Logik dreimal, mit auseinandergelaufenem Wortlaut: ArchitectScreen.famEff (im Spiel),
+   scripts/gen-db.mjs (öffentliche Core-DB-Seite) und ui/archEffects.js (Kartendetail). Ergebnis waren drei
+   Fassungen desselben Satzes („+160 Score" / „+160 Punkte"), zwei Zahlformate (×1,10 vs. ×1.10) und rohe
+   Enum-Schlüssel im Spielertext („Formations-Joker (wiederholung/farbblock)").
+   Zahlformat folgt dem Style-Guide: Dezimal-KOMMA, Malzeichen ×, echtes Minus −.
+   ============================================================ */
+/* #sprache: `familyEffectText` ist nach src/i18n/buildingText.js gewandert (`buildingEffect`).
+   Der Wortlaut ist Anzeigetext und lebt jetzt als Satzbausteine im Katalog; die Zahlen-Helfer
+   (tierNum/tierFactor/bindSpanFor) bleiben hier, weil sie zur Mechanik gehören. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus: architect.js → i18n → de.js → families.js → architect.js. */
+
+/* ============================================================
    FORMEN (Polyominoes) — Zellenmengen [dr,dc] relativ zu einem Anker (0,0). Rotation in 4 Lagen (außer `zeile`,
    die immer eine ganze Segment-Zeile ist). `line4` (Tetromino I) deckt rotiert auch die vertikale Linie ab
    (Pfeiler „über Segmente"). `block_2x3` und `zeile` sind die großen Legendär-Formen.

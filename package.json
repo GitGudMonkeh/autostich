@@ -15,6 +15,7 @@
     "probe": "node sim/probe.js",
     "impact": "node sim/perk-impact.mjs",
     "gen:db": "node scripts/gen-db.mjs",
+    "loc:export": "node scripts/export-strings.mjs",
     "compress:music": "node scripts/compress-music.mjs",
     "music:overview": "node maintenance/music-overview.mjs"
   },

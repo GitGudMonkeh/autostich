@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RunGraphs, sourceShares } from "../src/ui/RunGraphs.jsx";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js"; // #sprache: Sprache explizit setzen statt implizit annehmen
 
 // #251: Score-Quellen-Zerlegung (Näherung, sequentiell geklemmt, Rest = „Sonstige").
 describe("RunGraphs sourceShares", () => {
@@ -34,6 +35,7 @@ describe("RunGraphs sourceShares", () => {
   });
 
   it("rendert Balken + Durchlauf-Graph ohne Fehler mit echten trickLog-Daten", () => {
+    setLocale(SOURCE_LOCALE);
     const state = {
       score: 1000, formationScore: 300, critBonusScore: 200, buildingScore: 100, streakScore: 150,
       trickLog: [[{ gained: 50, won: true }, { gained: 0, won: false }], [{ gained: 120, won: true }]],
@@ -42,6 +44,20 @@ describe("RunGraphs sourceShares", () => {
     expect(html).toContain("Score-Herkunft");
     expect(html).toContain("Stich-Score je Durchlauf");
     expect(html).toContain("D1"); // Durchlauf-Label
+  });
+
+  // Gegenprobe: dieselbe Ansicht auf Englisch — die Durchlauf-Abkürzung wechselt mit (D→C).
+  it("rendert dieselbe Ansicht auf Englisch", () => {
+    setLocale("en");
+    const state = {
+      score: 1000, formationScore: 300, critBonusScore: 200, buildingScore: 100, streakScore: 150,
+      trickLog: [[{ gained: 50, won: true }]],
+    };
+    const html = renderToStaticMarkup(createElement(RunGraphs, { state }));
+    expect(html).toContain("Score sources");
+    expect(html).toContain("See trick score per cycle");
+    expect(html).toContain("C1");
+    setLocale(SOURCE_LOCALE);
   });
 
   it("rendert nichts bei leerem Lauf (kein Score, kein trickLog)", () => {

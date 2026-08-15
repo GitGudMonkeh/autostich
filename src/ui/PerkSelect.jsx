@@ -1,7 +1,9 @@
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
-import { familyDef, hasCritFamily } from "../game/families.js";
+import { hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
+import { familyDef, perkCat, perkDef, rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsname zur Anzeigezeit
+import { t as tr, fmtNum } from "../i18n/index.js"; // tr = Alias: `t` ist hier lokal die Stufe
 import { PerkList, DeckStrength } from "./BuildSummary.jsx";
 import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog statt Zufallsangebot
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -11,7 +13,7 @@ import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes kla
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
-const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+const fmtMult = (x) => fmtNum(x.toFixed(2));
 
 /* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den
    Familiennamen mit römischer Stufe, die Stufenfarbe (grau/grün/blau/lila) und — bei bereits gehaltener
@@ -20,19 +22,19 @@ function offerView(entry, familyTiers = {}) {
   if (entry && typeof entry === "object" && entry.familyId) {
     const fam = familyDef(entry.familyId);
     const t = entry.tier;
-    const tm = tierMeta(t) || { color: "#8a8a95", label: "" };
+    const tm = tierMeta(t) || { color: "#8a8a95" };
     const held = familyTierOf(familyTiers, entry.familyId); // 0 = neu, sonst gehaltener Rang
     return {
-      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: CATEGORIES[fam.cat],
-      accent: tm.color, tierLabel: tm.label, tier: t, held, upgrade: held > 0,
+      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: perkCat(fam.cat),
+      accent: tm.color, tierLabel: rarityLabel(t), tier: t, held, upgrade: held > 0,
       name: `${fam.name} ${romanOf(t)}`, desc: (fam.tiers[t] || {}).desc || "",
       glow: t >= 3, // Selten/Rar erhalten einen dezenten Farbschein
     };
   }
-  const p = PERK_DEFS[entry];
+  const p = perkDef(entry);
   const rar = rarityOf(entry);
   const rm = RARITY_META[rar];
-  return { key: entry, entry, isFamily: false, cat: CATEGORIES[p.cat], accent: rm.color, rar, rm,
+  return { key: entry, entry, isFamily: false, cat: perkCat(p.cat), accent: rm.color, rar, rm,
            leg: rar === "legendary", name: p.label, desc: p.desc };
 }
 
@@ -58,23 +60,23 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
-            {(state.perks || []).length === 0 ? "Start" : `Durchlauf ${(state.cycle || 0) + 1}`}
+            {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
+          <h2 className="text-xl font-bold mt-1">{tr("perk.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
         {!state.devMode && (onDecline || canReroll) && (
           <ActionBar pad={6}>
-            {canReroll && <ActionButton kind="reroll" flex onClick={onReroll}>🎲 Neu würfeln · {rerollTokens}</ActionButton>}
-            {onDecline && <ActionButton kind="decline" flex onClick={onDecline}>Alle ablehnen</ActionButton>}
+            {canReroll && <ActionButton kind="reroll" flex onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
+            {onDecline && <ActionButton kind="decline" flex onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
           </ActionBar>
         )}
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-3">
-          {showCrit && <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
-          <span><span className="opacity-50">Score-Mult </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
+          {showCrit && <span><span className="opacity-50">{tr("perk.stat.crit")} </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
+          <span><span className="opacity-50">{tr("perk.stat.scoreMult")} </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
         </div>
 
         {state.devMode ? (
@@ -111,7 +113,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                       {v.upgrade && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${v.accent}14`, color: v.accent, border: `1px dashed ${v.accent}88` }}>
-                          ⬆ AUFWERTEN · {romanOf(v.held)}→{romanOf(v.tier)}
+                          {tr("perk.upgrade", { from: romanOf(v.held), to: romanOf(v.tier) })}
                         </span>
                       )}
                     </>
@@ -134,7 +136,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
 
         {!state.devMode && (
         <div className="text-center text-xs opacity-40 mt-3">
-          Jeder Perk ist pro Lauf nur einmal wählbar.
+          {tr("perk.onceHint")}
         </div>
         )}
 
@@ -142,16 +144,16 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}
         {/* Reihenfolge: Deck-Stärke oben, dann Formationen, „Dein Build" ganz unten — alle als klappbare Felder. */}
         <div className="mt-4">
-          <CollapsibleField title="Deck-Stärke je Farbe">
+          <CollapsibleField title={tr("perk.deckStrength")}>
             <DeckStrength deck={deck} />
           </CollapsibleField>
           {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
           <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
-            <FormationPanel state={state} title="Formationen" collapsible defaultOpen={false} />
+            <FormationPanel state={state} title={tr("perk.formations")} collapsible defaultOpen={false} />
           </div>
-          <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
-            return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()} defaultOpen={false}>
-            <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty="Noch keine Perks gewählt." />
+          <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
+            return tr("perk.build", { count: n }); })()} defaultOpen={false}>
+            <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty={tr("perk.build.empty")} />
           </CollapsibleField>
         </div>
         </div>
