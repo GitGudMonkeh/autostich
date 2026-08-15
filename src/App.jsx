@@ -823,7 +823,7 @@ export function Autostich() {
       {state.phase === "menu" && <CrtParticles />}
       <div className="w-full max-w-5xl grid gap-4">
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedRun={startRankedRun} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("meister")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
@@ -992,6 +992,7 @@ export function Autostich() {
         {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
         {showLeaderboard && (
           <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
+            initialTab={typeof showLeaderboard === "string" ? showLeaderboard : "mine"}
             onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
             onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}
             onClose={() => setShowLeaderboard(false)} />

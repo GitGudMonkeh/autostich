@@ -27,7 +27,7 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 const ONB_REWARDS = ["Reroll +1", "Pflanze frei", "Rarität: Blau", "Eis frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedRun = null, onChallenge = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onChallenge = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -218,25 +218,19 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* #370 Ranglisten-Gruppe — EIN Wochen-Ranked-Modus (ersetzt Standard/Meister): fixe faire Baseline, alle spielen
           den Wochen-Seed. Frei, sobald alle Decks freigeschaltet sind UND mit jedem ≥1 Lauf beendet wurde. */}
-      {onRankedRun && (
+      {/* #370: EIN Einstieg „Rangliste" → öffnet die Übersicht (Reiter Diese Woche · Challenger · Regeln). Gespielt wird
+          im Reiter „Diese Woche" (▶ Spielen, gegated). Der Einstieg ist IMMER offen (ansehen jederzeit); das Schloss
+          signalisiert nur, dass Spielen noch gesperrt ist. */}
+      {onRankedBoard && (
         <div className="w-full max-w-sm flex flex-col gap-2.5">
-          {rankedFree ? (
-            <button onClick={onRankedRun}
-              className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}>
-              ▶ Ranglisten-Lauf
-              <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-                style={{ background: "#241d3a", color: VI }} aria-label="Wochen-Challenge">Woche</span>
-            </button>
-          ) : (
-            <div className="w-full px-4 py-2.5 rounded-lg text-[14px] font-bold flex items-center justify-between gap-2 opacity-80 cursor-default"
-              style={{ background: "#161320", border: `1px solid ${VI}33`, color: VI }}
-              title="Ranglisten-Lauf wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde">
-              <span className="flex items-center gap-2"><span className="opacity-70">🔒</span> Ranglisten-Lauf</span>
-              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
-                style={{ background: "#241d3a", color: VI }}>alle Decks + je 1 Lauf</span>
-            </div>
-          )}
+          <button onClick={onRankedBoard}
+            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}
+            title={rankedFree ? "Wochen-Rangliste öffnen" : "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde"}>
+            <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} Rangliste</span>
+            <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+              style={{ background: "#241d3a", color: VI }} aria-label="Wochen-Challenge">Woche</span>
+          </button>
         </div>
       )}
 

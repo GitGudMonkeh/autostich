@@ -163,9 +163,10 @@ function ChampionsList({ reloadToken }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayRanked = null, profile = null }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "mine" }) {
   useEscape(onClose);
-  const [tab, setTab] = useState("mine");
+  // #370 Einstieg über „Rangliste" (Hub) öffnet direkt „Diese Woche"; „Bestenliste"-Kachel öffnet „Meine Runs".
+  const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "mine");
   const [detail, setDetail] = useState(null); // gewählter lokaler Lauf → RunDetail-Overlay
   const [now, setNow] = useState(() => Date.now()); // Live-Ticker für den Wochen-Countdown
 
