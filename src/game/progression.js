@@ -292,6 +292,13 @@ export const SP_MILESTONES = [
   { at: envNum("PROG_SP_MS3_AT", 75_000_000),  sp: envNum("PROG_SP_MS3_SP", 1) },
   { at: envNum("PROG_SP_MS4_AT", 100_000_000), sp: envNum("PROG_SP_MS4_SP", 2) },
 ];
+/* Willkommensbonus: EINMALIG nach dem ersten ABGESCHLOSSENEN Lauf. Ein frisches Profil startet mit
+   0 SP (#316) — die ersten Baum-Knoten wären damit weit weg, obwohl der Baum das ist, was einen
+   zweiten Lauf attraktiv macht. Die 50 SP überbrücken genau diese Lücke: sie kommen nach dem ersten
+   vollständigen Lauf, also erst, wenn der Spieler die Schleife einmal gesehen hat.
+   Bewusst an „abgeschlossen" gekoppelt, nicht an „gestartet" — sonst holt man ihn mit Abbrechen ab. */
+export const WELCOME_SP = envNum("PROG_WELCOME_SP", 50);
+
 export const SP_LOYALTY_EVERY = envNum("PROG_SP_LOYALTY_EVERY", 10);
 export const SP_LOYALTY_SP    = envNum("PROG_SP_LOYALTY_SP", 5);
 

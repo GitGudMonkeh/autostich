@@ -1,5 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
-import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS } from "./progression.js";
+import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS, WELCOME_SP } from "./progression.js";
 
 // #382 Abschluss-Bonus: jeder abgeschlossene NORMALE (Nicht-Ranked) Lauf gibt +N DP — Ausgleich für die entfernte
 //   Challenge-DP-Quelle (#301). Ranked hat seinen eigenen Wochenbonus (rankedDpBonus).
@@ -92,7 +92,7 @@ export function loadRunHistory() {
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
-export const PROFILE_SCHEMA_VERSION = 7;
+export const PROFILE_SCHEMA_VERSION = 8;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -111,6 +111,9 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // #316: onboarding startet direkt bei ONBOARDING_LINKS (6/6, „fertig") → keine Onboarding-Phase mehr, alle
   // Post-Onboarding-Unlocks (Archetypen/Rarität/Legendär/Genesis) sofort frei. stichPoints = 0 (SP werden im Spiel verdient).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: ONBOARDING_LINKS, spRuns: 0,
+  // Willkommensbonus (WELCOME_SP): sticky, damit er genau einmal fällt — nach dem ersten
+  // abgeschlossenen Lauf. Frisches Profil = noch nicht ausgezahlt.
+  welcomeSpPaid: false,
   // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
@@ -184,6 +187,15 @@ export function migrateProfile(p) {
     }
     v = 7;
   }
+  if (v < 8) {
+    // v7 → v8 (Willkommensbonus): das Flag `welcomeSpPaid` ist neu. Wer schon gespielt hat, ist am
+    // Willkommens-Moment vorbei → als ausgezahlt markieren, OHNE die 50 SP nachzureichen. Das folgt
+    // der Linie von v5→v6: Migrationen schenken keine Währung, sonst bekämen alle Bestandsspieler
+    // rückwirkend ein Guthaben, das die SP-Ökonomie nie eingeplant hat. Frische Profile (games 0)
+    // bleiben auf `false` und holen den Bonus regulär mit ihrem ersten abgeschlossenen Lauf.
+    if (typeof out.welcomeSpPaid !== "boolean") out.welcomeSpPaid = (Number(out.games) || 0) > 0;
+    v = 8;
+  }
   out.schemaVersion = v;
   return out;
 }
@@ -223,7 +235,13 @@ export function saveProfile(profile) {
 // Onboarding startet neu. Betroffen: Profil (Progression/Stats/Freischalt-Flags), Highscores, Geist-Rekord,
 // Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen" — PLUS die Kosmetik-AUSWAHL (Deck/Battlefield/Effekte) wird
 // deselektiert (auf Default). Übrige Präferenzen (Ton/Lautstärke/UI/Name) bleiben. Nur im Preview-Build aufrufbar.
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done"];
+/* Was der Test-Code `reset` löscht. `as_username` gehört bewusst DAZU: „reset" soll den Erstbesuch
+   herstellen, und der beginnt mit der Namenseingabe (die zeigt sich genau dann, wenn kein Name
+   gespeichert ist). Ohne den Schlüssel landete man nach dem Wipe im Hub — mit fremdem Fortschritt,
+   aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
+   weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
+   direkt wieder wählen. */
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_username"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -337,8 +355,12 @@ export function recordRun(record) {
   const firstRankedThisWeek = rankedSeed != null && rankedSeed !== (p.lastRankedWeekSeed ?? null);
   const rankedSpBonus = firstRankedThisWeek && !treeDone ? 5 : 0;
   const rankedDpBonus = firstRankedThisWeek ? (treeDone ? 10 : 5) : 0;
+  // Willkommensbonus: einmalig nach dem ERSTEN abgeschlossenen Lauf. Läuft über dasselbe SP-Guthaben
+  // wie alles andere — bei komplettem Baum fegt ihn der spSweep unten also korrekt nach DP (kann ein
+  // frisches Profil zwar nicht erreichen, bleibt aber konsistent, falls jemand mit `unlock` testet).
+  const welcomeSp = record.completed === true && !p.welcomeSpPaid ? WELCOME_SP : 0;
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
-  const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus;
+  const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus + welcomeSp;
   const spSweep = treeDone ? spBalance : 0;
   // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner. Genesis wird NICHT mehr als Pack
   // geschenkt — es ist ein Onboarding-Freischalt-Deck (kind "cond"/onboardingDone), frei sobald onboarding 6/6.
@@ -374,6 +396,8 @@ export function recordRun(record) {
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
     // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
     stichPoints: spBalance - spSweep,
+    // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
+    welcomeSpPaid: !!p.welcomeSpPaid || welcomeSp > 0,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
@@ -388,7 +412,7 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep };
+  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeSp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
 }

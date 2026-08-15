@@ -8,7 +8,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   saveProfile, wipeProfileStorage, saveOptions,
   migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
-import { ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
+import { WELCOME_SP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -187,7 +187,14 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(q.games).toBe(3); // games zählt jeden Lauf
   });
 
+  /* Die SP-Tests unten messen den LAUF-Ertrag. Der einmalige Willkommensbonus (WELCOME_SP, fällt nach
+     dem ersten abgeschlossenen Lauf) würde jede dieser Zahlen um 50 verschieben und die eigentliche
+     Aussage verdecken — deshalb wird er hier vorweg als „schon ausgezahlt" markiert. Der Bonus selbst
+     hat einen eigenen Test weiter unten. */
+  const veteran = (extra = {}) => saveProfile({ ...loadProfile(), welcomeSpPaid: true, ...extra });
+
   it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
+    veteran();
     // 1. Lauf: +1 Grundstock + 6 Meilenstein-SP (100 Mio: 1+1+1+1+2) = 7.
     let p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(7);
@@ -199,6 +206,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("Treue-Drip: der 10. SP-Lauf gibt +5 extra", () => {
+    veteran();
     let p;
     // 9 SP-Läufe à +1 → 9 SP (kein Onboarding-Vorlauf mehr — jeder abgeschlossene Lauf ist ein SP-Lauf).
     for (let i = 0; i < 9; i++) p = recordRun(runRec({ ts: 100 + i })).profile;
@@ -218,6 +226,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("DP: Score-DP = SP-Meilensteine ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
+    veteran();
     let p = loadProfile();
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
@@ -234,7 +243,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
     const allNodes = Object.fromEntries(NODE_IDS.map((id) => [id, 1]));
-    saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
+    veteran({ onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
     expect(p.deckPoints).toBe(100 + 6 + 1 + 5); // gefegte 100 SP + 6 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
@@ -242,11 +251,46 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
     // Profil mit einem gekauften Knoten + Onboarding fertig vorbereiten.
-    saveProfile({ ...loadProfile(), onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
+    veteran({ onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
     const p = recordRun(runRec({ ts: 1, score: 0 })).profile;
     expect(p.nodes).toEqual({ B1: 1 }); // Knoten bleiben
     expect(p.stichSpent).toBe(2);        // ausgegeben bleibt
     expect(p.stichPoints).toBe(4);       // +1 Grundstock (Onboarding war fertig)
+  });
+
+  /* ---- Willkommensbonus (WELCOME_SP) ---- */
+
+  it("Willkommensbonus: +50 SP nach dem ERSTEN abgeschlossenen Lauf, danach nie wieder", () => {
+    expect(loadProfile().welcomeSpPaid).toBe(false);   // frisches Profil hat ihn noch offen
+    // Erster abgeschlossener Lauf: Bonus + der normale Grundstock (+1).
+    const first = recordRun(runRec({ ts: 1, score: 0 }));
+    expect(first.earn.welcomeSp).toBe(WELCOME_SP);
+    expect(first.profile.stichPoints).toBe(WELCOME_SP + 1);
+    expect(first.profile.welcomeSpPaid).toBe(true);
+    // Zweiter Lauf: nur noch der Grundstock, kein Bonus mehr.
+    const second = recordRun(runRec({ ts: 2, score: 0 }));
+    expect(second.earn.welcomeSp).toBe(0);
+    expect(second.profile.stichPoints).toBe(WELCOME_SP + 2);
+  });
+
+  it("Willkommensbonus hängt an ABGESCHLOSSEN — ein Abbruch löst ihn nicht aus", () => {
+    const aborted = recordRun(runRec({ ts: 1, score: 0, completed: false }));
+    expect(aborted.earn.welcomeSp).toBe(0);
+    expect(aborted.profile.welcomeSpPaid).toBe(false);  // bleibt offen
+    // Der nächste ABGESCHLOSSENE Lauf holt ihn dann nach.
+    const done = recordRun(runRec({ ts: 2, score: 0 }));
+    expect(done.earn.welcomeSp).toBe(WELCOME_SP);
+  });
+
+  it("Migration v7→v8: wer schon gespielt hat, gilt als ausgezahlt — ohne Nachschlag", () => {
+    // Alt-Profil ohne das Flag, aber mit Spielhistorie.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 12, stichPoints: 30 }));
+    const p = loadProfile();
+    expect(p.welcomeSpPaid).toBe(true);
+    expect(p.stichPoints).toBe(30);        // KEIN rückwirkender Grant (wie v5→v6)
+    // Ein Alt-Profil, das noch nie einen Lauf beendet hat, bekommt den Bonus dagegen regulär.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 0, stichPoints: 0 }));
+    expect(loadProfile().welcomeSpPaid).toBe(false);
   });
 
   it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
@@ -258,7 +302,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.onboarding).toBe(6);
   });
 
-  it("wipeProfileStorage (Test-Code `reset`): löscht Fortschritt → Erstbesuch, behält Präferenzen", () => {
+  it("wipeProfileStorage (Test-Code `reset`): löscht Fortschritt UND Namen → echte Erstbesuch-Maske", () => {
     // Fortschritt + Präferenzen anlegen.
     saveProfile({ stichPoints: 50, nodes: { B1: 1 }, onboarding: 6 });
     recordHighscore({ score: 500, level: 1, tricks: 9, cycles: 0, ts: 1 });
@@ -277,9 +321,12 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(loadHighscores()).toEqual([]);
     expect(loadGhost().total).toBe(0);
     expect(loadTutorialDone()).toBe(false); // das Tutorial wird wieder angeboten
-    // Präferenzen bleiben bewusst erhalten.
+    // Der Name geht MIT: „reset" soll den Erstbesuch herstellen, und der beginnt bei der
+    // Namenseingabe — die zeigt sich genau dann, wenn kein Name gespeichert ist.
+    expect(loadUsername()).toBe("");
+    // Die übrigen Präferenzen (Lautstärke, Haptik, Sprache) bleiben bewusst erhalten: sie hängen
+    // nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog direkt wieder wählen.
     expect(loadOptions().musicVol).toBe(0.9);
-    expect(loadUsername()).toBe("Bruder");
   });
 });
 
