@@ -1,8 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS,
-  glossaryEntries, glossaryKeywords, isGlossaryTerm, tokenizeGlossary,
+  glossaryKeywords, isGlossaryTerm,
 } from "../src/game/glossary.js";
+/* #sprache: `glossaryEntries` und `tokenizeGlossary` liegen jetzt in der i18n-Schicht — die
+   Auto-Fettung baut ihre Regex je Sprache (vorher einmal beim Modul-Laden). Der Test prüft den
+   deutschen Bestand, also wird die Sprache gesetzt. */
+import { glossaryEntries, tokenizeGlossary } from "../src/i18n/glossaryText.js";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+
+beforeEach(() => setLocale(SOURCE_LOCALE));
 
 const CAT_IDS = new Set(GLOSSARY_CATEGORIES.map((c) => c.id));
 const GROUP_IDS = new Set(Object.keys(GLOSSARY_GROUPS));

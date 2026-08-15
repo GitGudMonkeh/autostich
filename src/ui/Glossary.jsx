@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import {
-  GLOSSARY_CATEGORIES, GLOSSARY_GROUPS, glossaryEntries, tokenizeGlossary,
-} from "../game/glossary.js";
+import { glossaryCategories, glossaryGroups, glossaryEntries, tokenizeGlossary } from "../i18n/glossaryText.js";
+import { useLocale } from "../i18n/useLocale.js"; // #sprache: Neuaufbau bei Sprachwechsel
 import { useEscape } from "./useEscape.js";
 import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
@@ -21,7 +20,8 @@ import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalSt
 // lange Beschreibungen (z. B. Ionisierung) in kurze, strukturierte Zeilen gliedern statt als Textwand zu erscheinen.
 // Normale einzeilige Beschreibungen bleiben unberührt (pre-line bewahrt nur Umbrüche, kollabiert Mehrfach-Leerraum).
 export function GlossaryText({ text, className }) {
-  const parts = useMemo(() => tokenizeGlossary(text), [text]);
+  const [locale] = useLocale();   // #sprache: bei Wechsel neu tokenisieren (andere Wortformen)
+  const parts = useMemo(() => tokenizeGlossary(text, locale), [text, locale]);
   const cls = `whitespace-pre-line${className ? ` ${className}` : ""}`;
   if (!parts.length) return text ? <span className={cls}>{text}</span> : null;
   return (
@@ -47,7 +47,8 @@ export function GlossaryButton({ onClick, className = "", style, title = "Glossa
   );
 }
 
-const GROUP_ORDER = Object.keys(GLOSSARY_GROUPS);
+// Reihenfolge der Archetyp-Gruppen — sprachunabhängig, deshalb aus den Schlüsseln selbst.
+const GROUP_ORDER = ["gen", "fire", "lightning", "ice", "plant"];
 
 // Das durchsuchbare, kategorisierte Overlay.
 export function GlossaryOverlay({ onClose }) {
@@ -57,7 +58,8 @@ export function GlossaryOverlay({ onClose }) {
   const secRefs = useRef({});
   useEscape(onClose);
 
-  const entries = useMemo(() => glossaryEntries(), []);
+  const [locale] = useLocale();
+  const entries = useMemo(() => glossaryEntries(), [locale]);
   const query = q.trim().toLowerCase();
   const match = (e) =>
     !query ||
@@ -67,19 +69,19 @@ export function GlossaryOverlay({ onClose }) {
 
   // Nach Kategorie (und innerhalb „frak" nach Gruppe) gebündelt, leere Sektionen fallen beim Suchen raus.
   const sections = useMemo(() => {
-    return GLOSSARY_CATEGORIES.map((cat) => {
+    return glossaryCategories().map((cat) => {
       const items = entries.filter((e) => e.category === cat.id && match(e));
       if (!items.length) return null;
       let groups = null;
       if (cat.id === "frak") {
         groups = GROUP_ORDER
-          .map((g) => ({ g, meta: GLOSSARY_GROUPS[g], items: items.filter((e) => e.group === g) }))
+          .map((g) => ({ g, meta: glossaryGroups()[g], items: items.filter((e) => e.group === g) }))
           .filter((x) => x.items.length);
       }
       return { cat, items, groups };
     }).filter(Boolean);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [entries, query]);
+  }, [entries, query, locale]);
 
   const jump = (catId) => {
     setActiveCat(catId);
@@ -121,7 +123,7 @@ export function GlossaryOverlay({ onClose }) {
           {/* Kategorie-Chips (Sprungnavigation) */}
           <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
             <Chip label="Alle" active={activeCat === "all"} onClick={() => jump("all")} />
-            {GLOSSARY_CATEGORIES.map((c) => (
+            {glossaryCategories().map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />
             ))}
           </div>

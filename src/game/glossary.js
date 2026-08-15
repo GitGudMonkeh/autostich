@@ -443,34 +443,8 @@ export function glossaryKeywords(ids = [], skillDefs = {}) {
   return out;
 }
 
-// Alle Einträge als flache Liste MIT id (für das Overlay). Reihenfolge = Definitionsreihenfolge (nach Kategorie).
-export function glossaryEntries() {
-  return Object.entries(GLOSSARY).map(([id, e]) => ({ id, ...e }));
-}
-
-/* ---- Auto-Fett: jede Glossar-Wortform in einem Beschreibungstext markieren ----
-   Formen (label + match) werden EINMAL zu einer Regex verdichtet (längste zuerst → „Crit-Multiplikator"
-   schlägt „Crit"). Grenzen schließen Buchstaben/Ziffern/Bindestrich aus → keine Treffer INNERHALB von Wörtern.
-   Rein (kein React) → in glossary.test.js unit-getestet; die UI (GlossaryText) rendert die Teile nur fett,
-   NICHT klickbar (bewusst: die Auswahlkarten sind ganzflächig klickbar). */
-const _forms = [];
-for (const e of Object.values(GLOSSARY)) for (const f of (e.match || [e.label])) _forms.push(f);
-const _uniqForms = [...new Set(_forms)].sort((a, b) => b.length - a.length);
-const _esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const _RE = new RegExp("(?<![\\p{L}\\p{N}\\-])(?:" + _uniqForms.map(_esc).join("|") + ")(?![\\p{L}\\p{N}\\-])", "gu");
-
-// Zerlegt `text` in Teile { text, bold } — bold=true für Glossar-Wortformen. Leerer/kein Text → [].
-export function tokenizeGlossary(text) {
-  if (!text) return [];
-  const out = [];
-  let last = 0, m;
-  _RE.lastIndex = 0;
-  while ((m = _RE.exec(text)) !== null) {
-    if (m.index > last) out.push({ text: text.slice(last, m.index), bold: false });
-    out.push({ text: m[0], bold: true });
-    last = m.index + m[0].length;
-    if (_RE.lastIndex === m.index) _RE.lastIndex++; // Schutz gegen Nulllängen-Match (keine hier, aber sicher)
-  }
-  if (last < text.length) out.push({ text: text.slice(last), bold: false });
-  return out;
-}
+/* #sprache: `glossaryEntries` und `tokenizeGlossary` sind nach src/i18n/glossaryText.js gewandert.
+   Grund: die Auto-Fettung verdichtete die Wortformen EINMAL beim Modul-Laden zu einer Regex — damit
+   hing sie an der Sprache, die beim Import zufällig aktiv war. Dort wird sie jetzt je Sprache
+   gebaut und gecacht. Ein `import { t }` an dieser Stelle wäre ein Zyklus (de.js → glossary.js →
+   i18n → de.js), deshalb liegt beides eine Schicht darüber. Dieses Register bleibt ein Blatt. */

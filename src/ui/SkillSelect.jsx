@@ -8,12 +8,13 @@ import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_C
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
          HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
-import { GLOSSARY } from "../game/glossary.js";
+
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -57,8 +58,8 @@ function KeywordGlossary({ tokens }) {
     <div className="grid gap-1.5 mt-2">
       {tokens.map((k) => (
         <div key={k} className="text-xs leading-snug">
-          <span className="font-bold inline-flex items-center gap-1" style={{ color: GLOSSARY[k].color }}>{FACTION_ICON_SRC[GLOSSARY[k].group] ? <FactionIcon type={GLOSSARY[k].group} size={12} /> : GLOSSARY[k].icon} {GLOSSARY[k].label}</span>
-          <span className="opacity-70"> — {GLOSSARY[k].text}</span>
+          <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}>{FACTION_ICON_SRC[glossaryEntry(k).group] ? <FactionIcon type={glossaryEntry(k).group} size={12} /> : glossaryEntry(k).icon} {glossaryEntry(k).label}</span>
+          <span className="opacity-70"> — {glossaryEntry(k).text}</span>
         </div>
       ))}
     </div>

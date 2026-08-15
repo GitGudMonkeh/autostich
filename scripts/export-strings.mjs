@@ -19,7 +19,6 @@ import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
 import { ARCHITECT_FAMILIES, TIER_INERT_KINDS } from "../src/game/architect.js";
 import { buildingEffect } from "../src/i18n/buildingText.js";
 import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
-import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../src/game/glossary.js";
 import { TIER_META } from "../src/game/rarity.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
 import CAT_DE from "../src/i18n/de.js";
@@ -100,17 +99,10 @@ for (const fam of Object.values(ARCHITECT_FAMILIES)) {
 }
 setLocale(SOURCE_LOCALE); // für alles Weitere wieder Deutsch
 
-/* ============ 5 · Glossar ============ */
-for (const c of GLOSSARY_CATEGORIES) push(`tutorial.glossary.cat.${c.id}`, "tutorial", c.label, "Glossar — Kategorieüberschrift", "22");
-for (const [k, g] of Object.entries(GLOSSARY_GROUPS)) push(`tutorial.glossary.group.${k}`, "tutorial", g.label, "Glossar — Untergruppe (Archetypen)", "14");
-for (const [id, e] of Object.entries(GLOSSARY)) {
-  push(`tutorial.glossary.${id}.label`, "tutorial", e.label, "Glossar — Begriff (Überschrift)", "28");
-  push(`tutorial.glossary.${id}.text`, "tutorial", e.text, `Glossar — Erklärung zu „${e.label}"`);
-  if (e.match?.length) {
-    push(`tutorial.glossary.${id}.match`, "tutorial", e.match.join(" | "),
-      `KEINE Anzeige — Wortformen für die Auto-Fettung in Beschreibungen. Für EN neu pflegen (Flexionen!).`, "", "wortformen");
-  }
-}
+/* ============ 5 · Glossar ============
+   (Migriert — Labels, Texte UND die `match`-Wortformen kommen unten aus dem i18n-Katalog.
+   Die Wortformen sind kein Anzeigetext: sie steuern die Auto-Fettung und wurden für Englisch
+   NEU GESCHRIEBEN, nicht übersetzt.) */
 
 /* ============ 6 · Rarität / Stufen ============
    (Migriert — die Namen kommen unten aus dem i18n-Katalog, samt englischer Spalte.) */

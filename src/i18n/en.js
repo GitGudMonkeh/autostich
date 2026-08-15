@@ -7,24 +7,27 @@
    synonyms: one German term maps to exactly one English term, everywhere.
    ============================================================ */
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
+import { RARITY_EN } from "./enTerms.js";
 import enSkills from "./enSkills.js";   // 84 skills + archetype names — own file, it is long
 import enPerks from "./enPerks.js";     // legendary perks + perk categories
 import enFamilies from "./enFamilies.js"; // 73 perk families × name + tier descriptions
 import enMeta from "./enMeta.js";       // upgrade tree + weekly modifiers
+import enGlossary from "./enGlossary.js"; // 109 glossary entries + categories + groups
 
 export default {
   ...enSkills,
   ...enPerks,
   ...enFamilies,
   ...enMeta,
+  ...enGlossary,
 
   /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
      Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,
      skills and buildings, plus their own phase), so a ladder ending in Legendary would collide. */
-  "rarity.tier1.label": "Common",
-  "rarity.tier2.label": "Uncommon",
-  "rarity.tier3.label": "Rare",
-  "rarity.tier4.label": "Epic",
+  "rarity.tier1.label": RARITY_EN[0],
+  "rarity.tier2.label": RARITY_EN[1],
+  "rarity.tier3.label": RARITY_EN[2],
+  "rarity.tier4.label": RARITY_EN[3],
 
   /* ---- Formation types (§3.3) ----
      The abbreviations are card badges with a HARD one-character limit and must stay pairwise

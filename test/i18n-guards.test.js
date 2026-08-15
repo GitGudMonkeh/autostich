@@ -4,6 +4,7 @@ import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import { t, fmtNum, fmtPct, LOCALE_IDS, setLocale, getLocale, interpolate,
   SOURCE_LOCALE, DEFAULT_LOCALE } from "../src/i18n/index.js";
+import { tokenizeGlossary } from "../src/i18n/glossaryText.js";
 
 /* ============================================================
    I18N-GUARDS — dieselbe Idee wie registry-guards.test.js: Meta-Tests, die AUTOMATISCH
@@ -82,6 +83,10 @@ describe("i18n · Katalog-Parität", () => {
     "family.C_FINISHER.name",   // Finisher
     "building.kick.active",     // reine Struktur: „{base} · {kick}" — kein übersetzbarer Text
     "branch.deck.name",         // „Decks" ist in beiden Sprachen dasselbe Wort
+    // Glossar-Begriffe, die im Englischen genauso heißen (Fremdwort oder Fachbegriff):
+    "glossary.crit.label", "glossary.deck.label", "glossary.position.label",
+    "glossary.segment.label", "glossary.formation.label", "glossary.cluster.label",
+    "glossary.perk.label",
   ]);
 
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
@@ -139,6 +144,7 @@ describe("i18n · Zahl- und Satzformate", () => {
      den Wächter. Ein „das passt schon" ist keine Begründung. */
   const NUM_OK = new Map([
     ["ability.SK_FIRE_L02.desc", "de „1×/Durchlauf“ → en „once per cycle“; „1× per cycle“ wäre steifes Englisch"],
+    ["glossary.rankedrun.text", "de „Platz 1“ → en „first place“; „place 1“ liest sich im Englischen falsch"],
   ]);
 
   it("beide Sprachen nennen dieselben Zahlen", () => {
@@ -268,6 +274,46 @@ describe("i18n · Längenschranken", () => {
       const need = tier ? [en[`rarity.tier${tier}.label`]] : [en["rarity.tier3.label"], en["rarity.tier4.label"]];
       for (const w of need) expect(en[k], `${k} muss „${w}" nennen`).toContain(w);
     }
+  });
+});
+
+describe("i18n · Glossar-Wortformen", () => {
+  /* Die `match`-Listen sind KEIN Anzeigetext — sie steuern die Auto-Fettung in jeder Beschreibung.
+     Für Englisch wurden sie neu geschrieben (Plurale, Verbformen), nicht übersetzt. Zwei Dinge
+     müssen stimmen, sonst fettet das Spiel still falsch oder gar nicht. */
+  const forms = (cat) => Object.entries(cat)
+    .filter(([k]) => /^glossary\..+\.match$/.test(k))
+    .map(([k, v]) => [k, String(v).split("|").filter(Boolean)]);
+
+  it("jeder Eintrag hat mindestens eine Wortform, keine leer, keine doppelt", () => {
+    for (const [name, cat] of [["de", de], ["en", en]]) {
+      const all = forms(cat);
+      expect(all.length, `${name}: keine Wortformen im Katalog`).toBeGreaterThan(0);
+      const bad = all.filter(([, list]) => !list.length || list.some((f) => f !== f.trim() || !f));
+      expect(bad.map(([k]) => k), `${name}: leere/ungetrimmte Wortform`).toEqual([]);
+      const dupes = all.filter(([, list]) => new Set(list).size !== list.length);
+      expect(dupes.map(([k]) => k), `${name}: Wortform doppelt im selben Eintrag`).toEqual([]);
+    }
+  });
+
+  it("die Auto-Fettung ist in beiden Sprachen verlustfrei", () => {
+    const before = getLocale();
+    for (const [name, cat] of [["de", de], ["en", en]]) {
+      setLocale(name);
+      const texts = Object.entries(cat)
+        .filter(([k]) => /^(ability|family|perk)\..*\.(desc|text)$/.test(k))
+        .map(([, v]) => v);
+      let hits = 0;
+      for (const text of texts) {
+        const parts = tokenizeGlossary(text);
+        expect(parts.map((p) => p.text).join(""), `${name}: Tokenizer verändert den Text`).toBe(text);
+        hits += parts.filter((p) => p.bold).length;
+      }
+      // Greift die Fettung überhaupt? Ohne diese Schranke könnte eine kaputte EN-Wortformliste
+      // unbemerkt NULL Treffer liefern — der Roundtrip allein würde das nicht merken.
+      expect(hits, `${name}: die Auto-Fettung greift praktisch nicht`).toBeGreaterThan(texts.length / 2);
+    }
+    setLocale(before);
   });
 });
 

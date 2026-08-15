@@ -10,9 +10,8 @@
 import { MAX_COVER } from "../game/architect.js";
 import { TIGHT_BUILD_COVER, BOOST_FACTOR } from "../game/weekMods.js";
 
-/* Die Raritätsnamen können hier nicht aus en.js kommen (en.js importiert diese Datei → Zyklus).
-   Ein eigener Guard prüft dafür, dass die englische Leiter Common · Uncommon · Rare · Epic bleibt. */
-const RARE = "Rare", EPIC = "Epic";
+// Raritätsnamen aus der geteilten Quelle (en.js importiert diese Datei → kein Zugriff auf en.js selbst).
+import { RARE, EPIC } from "./enTerms.js";
 
 export default {
   /* ---- Upgrade tree · branches ---- */

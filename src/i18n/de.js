@@ -16,6 +16,7 @@ import { FAMILY_LIST } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
 import { NODES, BRANCHES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
+import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../game/glossary.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -60,6 +61,16 @@ for (const b of BRANCHES) {
 for (const m of WEEK_MODS) {
   fromRegistries[`weekmod.${m.id}.name`] = m.name;
   fromRegistries[`weekmod.${m.id}.desc`] = typeof m.desc === "function" ? m.desc("{v}") : String(m.desc || "");
+}
+/* Glossar: Label, Text UND die Wortformen für die Auto-Fettung. Die `match`-Liste ist KEIN
+   Anzeigetext — sie steuert, welche Wörter in Beschreibungen fett werden. Englisch braucht dafür
+   eigene Formen (Plurale, Verbformen), keine Übersetzung der deutschen Flexionen. */
+for (const c of GLOSSARY_CATEGORIES) fromRegistries[`glossary.cat.${c.id}`] = c.label;
+for (const [k, g] of Object.entries(GLOSSARY_GROUPS)) fromRegistries[`glossary.group.${k}`] = g.label;
+for (const [gid, e] of Object.entries(GLOSSARY)) {
+  fromRegistries[`glossary.${gid}.label`] = e.label;
+  fromRegistries[`glossary.${gid}.text`] = e.text;
+  fromRegistries[`glossary.${gid}.match`] = (e.match && e.match.length ? e.match : [e.label]).join("|");
 }
 // Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
 for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;

@@ -1,6 +1,6 @@
 import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT, WHITEHEAT_PER_POINT } from "../game/constants.js";
-import { GLOSSARY } from "../game/glossary.js";
+import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
