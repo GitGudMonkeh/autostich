@@ -649,6 +649,13 @@ export function resolveTrick(state, rng) {
     const architectScoreRes = archPreNow
       ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}, alliance) // #289: grün → „G" + Farballianz (Zunfthaus)
       : { flat: 0, mult: 1, bump: null };
+    // #370 Bau-Boost (Wochen-Mod, nur Ranked): Architekt-Gebäude-Boni verdoppeln — Flat + Serien-Flat additiv, der
+    // Mult-Überschuss über 1 verdoppelt (neutrale Gebäude ohne Wirkung bleiben unberührt).
+    if (hasWeekMod(state.weekMods, "buildBoost")) {
+      architectScoreRes.flat *= 2;
+      architectScoreRes.streakFlat = (architectScoreRes.streakFlat || 0) * 2;
+      architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * 2;
+    }
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;
     // Serien-Flat (Reihenhaus): läuft am globalen Serien-Mult VORBEI (kein Doppel-Dip — die Serie skaliert diesen Flat
@@ -694,7 +701,10 @@ export function resolveTrick(state, rng) {
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
     // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
     const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
-    const formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
+    // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
+    if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * 2;
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;

@@ -9,6 +9,7 @@ import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCOR
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
 import { streakBaseMult } from "../src/game/perks.js";
+import { precomputeArchitect } from "../src/game/architect.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 // Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
@@ -754,5 +755,37 @@ describe("#370 Wochen-Mods: Angebots-Umfang (Perk-/Skill-Verknappung, nur Ranked
     const scarce = firstOffers([{ effect: "scarcePerks" }, { effect: "scarceSkills" }]);
     expect(scarce.perkOffer.length).toBe(1);
     expect(scarce.skillOffer.length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe("#370 Wochen-Mods: Formations-Boost (nur Ranked)", () => {
+  // gained bei Sieg an pos 5, nur die Formation an pos 5 variiert → alle übrigen Score-Faktoren konstant (K).
+  const g = (formations, wm = []) => resolveTrick(scenario(12, 0, { pos: 5, formations, weekMods: wm }), rng).lastTrick.gained;
+  const neutralForms = () => identity().map(() => ({ mult: 1, baseMult: 1, formations: [] }));
+  it("verdoppelt den Formations-BONUS (Überschuss über 1); neutraler Sieg unberührt", () => {
+    const forms = neutralForms();
+    forms[5] = { mult: 2, baseMult: 2, formations: [{ type: "treppe", factor: 2 }] }; // formMult 2 → Bonus = K
+    const neutral = g(neutralForms());                       // formMult 1 → gained = K
+    const withForm = g(forms);                               // formMult 2 → gained = 2K
+    const boosted  = g(forms, [{ effect: "formBoost" }]);    // formMult 1+(2-1)*2 = 3 → gained = 3K
+    expect(withForm).toBeGreaterThan(neutral);
+    expect(boosted - neutral).toBeCloseTo((withForm - neutral) * 2); // Bonus exakt verdoppelt
+    expect(g(neutralForms(), [{ effect: "formBoost" }])).toBeCloseTo(neutral); // formMult 1 → kein Bonus, unberührt
+  });
+});
+
+describe("#370 Wochen-Mods: Bau-Boost (Architekt-Gebäude, nur Ranked)", () => {
+  it("verdoppelt den Gebäude-Bonus (Flat + Mult); ohne Gebäude ohne Wirkung", () => {
+    // Zollhaus (Flat auf Sieg) + Schatzkammer (×Mult) decken pos 5 → beide Kanäle aktiv.
+    const pre = precomputeArchitect({ buildings: [
+      { id: 1, familyId: "A_ZOLLHAUS", tier: 3, footprint: [4, 5], colorChoice: null },
+      { id: 2, familyId: "A_SCHATZ", tier: "legendary", footprint: [4, 5, 6, 7], colorChoice: null },
+    ] }, identity(), constDeck(12));
+    const withArch = (wm) => resolveTrick(scenario(12, 0, { pos: 5, architectEnabled: true, architect: { winCounters: {}, buildings: [] }, architectPre: pre, weekMods: wm }), rng).lastTrick.gained;
+    expect(withArch([{ effect: "buildBoost" }])).toBeGreaterThan(withArch([])); // Gebäude-Bonus verdoppelt
+    // Ohne Architekt: Bau-Boost darf nichts ändern (flat 0, mult 1 bleiben nach Verdopplung 0/1).
+    const noArchBase    = resolveTrick(scenario(12, 0, { pos: 5 }), rng).lastTrick.gained;
+    const noArchBoosted = resolveTrick(scenario(12, 0, { pos: 5, weekMods: [{ effect: "buildBoost" }] }), rng).lastTrick.gained;
+    expect(noArchBoosted).toBe(noArchBase);
   });
 });
