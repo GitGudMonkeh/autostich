@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   THEME_DEFS, THEMES, PACKS,
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
-  canBuyPack, buyPack, unlockAllCosmetics,
+  canBuyPack, buyPack, unlockAllCosmetics, BUYABLE_FINISHER_FX,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
 } from "../src/game/themes.js";
+import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
 const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
@@ -143,11 +144,15 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
     const p0 = prof({ deckPoints: 0 });
     expect(buyPack(p0, THEME_DEFS.sunset)).toBe(p0);
   });
-  it("unlockAllCosmetics schaltet ALLE Kauf-Packs + globalen Effekte frei (additiv)", () => {
+  it("unlockAllCosmetics schaltet ALLE Kauf-Packs + globalen Effekte + Finisher frei (additiv)", () => {
     const p = unlockAllCosmetics(prof({ ownedCosmetics: { existing: true } }));
     expect(p.ownedCosmetics.existing).toBe(true); // Bestand bleibt
     for (const pack of THEMES) if (isBuyPack(pack)) expect(p.ownedCosmetics[packOwnKey(pack)]).toBe(true);
     for (const fx of GLOBAL_FX) expect(p.ownedCosmetics[fx.ownKey]).toBe(true);
+    for (const key of BUYABLE_FINISHER_FX) expect(p.ownedCosmetics[key]).toBe(true); // synthetische Sieg-Finisher
+  });
+  it("Drift-Guard: BUYABLE_FINISHER_FX deckt exakt die kaufbaren Finisher-Kacheln (CustomizeScreen)", () => {
+    expect([...BUYABLE_FINISHER_FX].sort()).toEqual([...BUYABLE_FINISHER_OWNKEYS].sort());
   });
 });
 

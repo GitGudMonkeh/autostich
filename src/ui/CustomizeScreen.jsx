@@ -157,6 +157,10 @@ const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "f
 const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
   desc: "Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe." };
 
+// Alle KAUFBAREN Sieg-Finisher (ownKey-tragend). Quelle für die Voll-Freischaltung: der Drift-Guard-Test hält diese
+// Liste mit themes.BUYABLE_FINISHER_FX synchron, damit „unlock" nie einen neuen Finisher übersieht.
+export const BUYABLE_FINISHER_OWNKEYS = [KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE].map((f) => f.ownKey);
+
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
 const GOTT_STANDARD = { key: "gottStandard", name: "Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",

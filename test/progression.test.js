@@ -308,6 +308,7 @@ describe("Test-Codes", () => {
     expect(treeComplete(p)).toBe(true);
     expect(p.stichSpent).toBe(TOTAL_COST);
     expect(p.stichPoints).toBe(UNLOCK_SP_CUSHION);
+    expect(rankedUnlocked(p)).toBe(true); // #370: „unlock" schaltet auch die Rangliste frei (je Archetyp ≥1 Lauf)
     expect(nodeEffects(p)).toMatchObject({
       treeCoverBonus: 4, treeEnergyBonus: 2, treeRareShift: 4, maxTier: 4, legendaryLayer: true,
       unlockedArchetypes: ["lightning", "fire", "ice", "plant"], archLegPhaseOn: true, legPerkPhaseOn: true,

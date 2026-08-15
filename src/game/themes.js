@@ -281,9 +281,14 @@ export function buyPack(profile, pack) {
 
 // #299 Test-Code „unlock": schaltet ALLE Kauf-Packs + globalen Effekte frei (in ownedCosmetics). Rein additiv —
 // bestehender Besitz bleibt; ergänzt jedes Pack (pack:<id>) und jeden globalen Effekt (fx:<key>). Neues Profil.
+// Kaufbare Sieg-Finisher: synthetische Kacheln in CustomizeScreen (KEIN GLOBAL_FX-Eintrag), Besitz über diese ownKeys.
+// Single Source für die Voll-Freischaltung („unlock"-Code) — CustomizeScreen prüft dieselben Keys (Drift-Guard im Test).
+export const BUYABLE_FINISHER_FX = ["fx:klinge", "fx:scorch", "fx:hologridSlice", "fx:blackhole"];
+
 export function unlockAllCosmetics(profile) {
   const owned = { ...(profile && profile.ownedCosmetics) };
   for (const pack of PACKS) if (isBuyPack(pack)) owned[packOwnKey(pack)] = true;
   for (const fx of GLOBAL_FX) owned[fx.ownKey] = true;
+  for (const key of BUYABLE_FINISHER_FX) owned[key] = true; // synthetische Finisher (Klinge/Laser/Hologrid/Schwarzes Loch)
   return { ...profile, ownedCosmetics: owned };
 }

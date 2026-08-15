@@ -406,12 +406,17 @@ export function matchSecretSeed(input) {
 
 // `unlock`: NEUES Profil — alle kaufbaren Knoten gekauft (stichSpent = TOTAL_COST) plus SP-Polster. Onboarding 6/6.
 export function unlockAllProfile(profile) {
+  // #370 Rangliste mitfreischalten: rankedUnlocked verlangt je Archetyp ≥1 abgeschlossenen Lauf. Der „unlock"-Code
+  // stellt für jeden RANKED_ARCHETYPES eine 1 sicher (bestehende, höhere Zähler bleiben erhalten) → Ranked sofort frei.
+  const runs = { ...(profile && profile.archetypeRunsCompleted) };
+  for (const a of RANKED_ARCHETYPES) runs[a] = Math.max(1, Number(runs[a]) || 0);
   return {
     ...profile,
     onboarding: ONBOARDING_LINKS,
     nodes: Object.fromEntries(BUYABLE_IDS.map((id) => [id, 1])),
     stichSpent: TOTAL_COST,
     stichPoints: UNLOCK_SP_CUSHION,
+    archetypeRunsCompleted: runs,
   };
 }
 
