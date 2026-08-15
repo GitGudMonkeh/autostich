@@ -852,6 +852,14 @@ export default {
   /* ---- Deck-Werkstatt (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Freischalten: {cond}",
   "shop.title": "Deck-Werkstatt",
+  // #tiered Stufen-Decks (I/II/III): {roman} ist die römische Stufenziffer — sie bleibt in beiden Sprachen gleich.
+  "shop.tier.active": "Stufe {roman} aktiv ✓",
+  "shop.tier.activate": "Stufe {roman} aktivieren",
+  // Untertitel der Pack-Kachel.
+  "shop.tile.sub.active": "aktiv",
+  "shop.tile.sub.details": "tippen → Details",
+  "shop.tile.sub.detailsTier": "Stufe {roman} · tippen → Details",
+  "shop.tile.sub.buyable": "kaufbar",
   // #393 Zufalls-Deck je Lauf (Packs-Reiter).
   "shop.randomDeck.title": "🎲 Zufalls-Deck je Lauf",
   "shop.randomDeck.desc": "Jeder Lauf startet mit einem zufälligen deiner Decks; alle aktiven Effekte in Deckfarbe.",

@@ -841,6 +841,14 @@ export default {
   /* ---- Deck workshop (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Unlock: {cond}",
   "shop.title": "Deck workshop",
+  // #tiered tiered decks (I/II/III): {roman} is the Roman tier numeral — identical in both languages.
+  "shop.tier.active": "Tier {roman} active ✓",
+  "shop.tier.activate": "Activate tier {roman}",
+  // Pack tile subtitle.
+  "shop.tile.sub.active": "active",
+  "shop.tile.sub.details": "tap → details",
+  "shop.tile.sub.detailsTier": "Tier {roman} · tap → details",
+  "shop.tile.sub.buyable": "available",
   // #393 Random deck per run (packs tab).
   "shop.randomDeck.title": "🎲 Random deck per run",
   "shop.randomDeck.desc": "Every run starts with a random one of your decks; all active effects in that deck's color.",

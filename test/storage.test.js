@@ -29,6 +29,7 @@ const DEFAULT_OPTIONS = {
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   numScale: 1,
   randomDeckEachRun: false,
+  tierSel: {},
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,

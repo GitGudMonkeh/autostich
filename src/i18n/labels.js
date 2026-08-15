@@ -170,9 +170,18 @@ export const battlefieldDef = (id) => {
   const base = t(`cosmetic.${deckIdOfBf(id)}.name`);
   return { ...b, name: id === "default" ? base : `${base}${t("cosmetic.bf.suffix")}` };
 };
+/* #tiered: Ein Stufen-Deck trägt drei Stufen, die je ein eigenes Deck SIND — ihre Namen kommen deshalb aus
+   demselben Kosmetik-Katalog wie jeder andere Deckname, nicht aus einer zweiten Liste. `nameDeckId` sagt,
+   welchem Deck das Paket selbst seinen Namen verdankt (Peacock = Stufe II), während `deckId` für den
+   generischen Pack-Code weiter auf Stufe I zeigt. */
 export const themeDef = (id) => {
   const th = THEME_DEFS[id];
-  return th ? { ...th, name: t(`cosmetic.${th.deckId}.name`) } : null;
+  if (!th) return null;
+  const out = { ...th, name: t(`cosmetic.${th.nameDeckId || th.deckId}.name`) };
+  if (Array.isArray(th.tiers)) {
+    out.tiers = th.tiers.map((ti) => ({ ...ti, name: t(`cosmetic.${ti.deckId}.name`) }));
+  }
+  return out;
 };
 export const globalFxList = () => GLOBAL_FX.map((f) => ({
   ...f, name: t(`fx.${f.key}.name`), desc: f.desc ? t(`fx.${f.key}.desc`) : f.desc,
