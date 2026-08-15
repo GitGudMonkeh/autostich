@@ -46,6 +46,8 @@ create policy "anon can insert reports" on public.autostich_reports
   for insert to anon with check (true);
 
 -- ------------------------------------------------------------
--- Stufe 3 (Discord-Ping) kommt hier dazu und braucht KEINEN neuen Client-Build: der Client weiß von
--- Discord nichts. Fällt der Ping aus, steht der Report trotzdem in der Tabelle.
+-- Stufe 3 (Discord-Ping) steht in `docs/autostich-reports-discord.sql` — als ZWEITE Datei, damit
+-- diese hier ohne Discord auskommt: die Tabelle ist der Transportweg, der Ping nur Bequemlichkeit.
+-- Sie braucht KEINEN neuen Client-Build (der Client weiß von Discord nichts) und fällt der Ping aus,
+-- steht der Report trotzdem in der Tabelle.
 -- ------------------------------------------------------------
