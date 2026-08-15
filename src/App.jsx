@@ -556,6 +556,9 @@ export function Autostich() {
        
       console.log("%c" + formatReport(getReport()), "font-family:monospace");
     }
+  // Bewusst NUR am Phasenwechsel gekeyt: options.perfHud ist eine Bedingung, kein Auslöser. Als Dep würde ein
+  // Umschalten des HUD-Schalters im Gameover-Screen den Perf-Report erneut in die Konsole dumpen. (Nur Preview.)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
   // #deckshop: Hauptfarbe (Hologrid-Gitter/Frame-Glow) aus dem aktiven Deck-Pack ableiten.
   const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
@@ -997,7 +1000,7 @@ export function Autostich() {
 
         {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
         {showLeaderboard && (
-          <LeaderboardScreen mine={myEntry} reloadToken={pubToken} highscores={highscores} best={best} profile={profile}
+          <LeaderboardScreen mine={myEntry} reloadToken={pubToken} profile={profile}
             initialTab={typeof showLeaderboard === "string" ? showLeaderboard : "mine"}
             onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
             onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}

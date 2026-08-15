@@ -117,7 +117,7 @@ function ChampionsList({ reloadToken }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister" }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister" }) {
   useEscape(onClose);
   // #385 Default-Reiter „Diese Woche" (meister); „Meine Runs" ist entfernt (steht in der Statistik).
   const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "meister");

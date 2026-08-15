@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_META, SKILL_LIST, isLegendarySkill } from "../game/skills.js";
+import { ARCHETYPE_META, SKILL_LIST } from "../game/skills.js";
 import { GUIDES } from "./guides.js";
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";

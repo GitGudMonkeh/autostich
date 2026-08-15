@@ -94,9 +94,14 @@ export const globalFxActive = (profile, options, key) => {
   const fx = GLOBAL_FX_BY_KEY[key];
   return !!fx && globalFxOwned(profile, fx) && !!(options && options[fx.option]);
 };
-// #306/#kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (kein Stich-Bezug) und Hintergrund-
-// Finisher (Stich-Interaktion). Beide können GLEICHZEITIG aktiv sein → activeBgFx + activeBgFinisher liefern je
-// einen Key. Nach dem #cleanup gibt es je Slot nur noch einen Effekt (Aurora bzw. Glutfunken).
+/* #306/#kategorien → #331: EIN Hintergrund-Slot, zwei KATEGORIEN. Ursprünglich waren „reiner Hintergrund" (kein
+   Stich-Bezug) und „Hintergrund-Finisher" (Stich-Interaktion) zwei unabhängige Slots, die gleichzeitig aktiv sein
+   durften. #331 hat sie zu EINEM einfach-exklusiven Set verschmolzen: genau ein Hintergrund-Effekt ist aktiv, oder
+   keiner. Durchgesetzt wird das an zwei Stellen — `BG_EXCL_OPTS` in storage.normalizeFxOptions (Migration/Laden,
+   listet BG_FX_KEYS + BG_FIN_KEYS gemeinsam) und in der Auswahl-UI (CustomizeScreen, Gruppe „hintergrund").
+   Die beiden Auflöser unten bleiben nach KATEGORIE getrennt, weil Battlefield sie unterschiedlich rendert
+   (Dauer-Effekt vs. Stich-Eruption) — aber es liefert per Konstruktion IMMER höchstens einer von beiden einen Key.
+   Wer hier einen Effekt ergänzt, muss ihn auch in BG_EXCL_OPTS eintragen, sonst bricht die Exklusivität. */
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 // #deckglow: Deck-Glow ist eine UNABHÄNGIGE Ebene (kein exklusiver Slot) → gekauft UND per Option an = aktiv,
 // unabhängig davon, welcher bgfx/bgfin-Effekt gewählt ist. So kombiniert es mit allen anderen Effekten.

@@ -8,6 +8,11 @@ import {
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
 } from "../src/game/themes.js";
 import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
+import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
+import { BOARD_POSITIONS } from "../src/game/constants.js";
+import { N_POS } from "../src/game/architect.js";
+import { buildDeck, makeRng } from "../src/game/deck.js";
+import { initialState } from "../src/game/reducer.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
 const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
@@ -294,5 +299,47 @@ describe("gottgleich-prunk (#322-#326) — group gott, einfach-exklusiv (PIXI)",
     expect(activeGottFx(prof(), { fxLaserFaecher: true })).toBe(null);            // an, aber nicht gekauft
     const owned = prof({ ownedCosmetics: { "fx:laserFaecher": true } });
     expect(activeGottFx(owned, { fxLaserFaecher: true })).toBe("laserFaecher");
+  });
+});
+
+/* #331 Hintergrund = EIN einfach-exklusiver Slot über zwei Kategorien (bgfx + bgfin).
+   Die Exklusivität wird in storage.normalizeFxOptions über BG_EXCL_OPTS durchgesetzt, die Kategorien stehen aber
+   in themes.js (BG_FX_KEYS/BG_FIN_KEYS). Zwei getrennte Listen, die zusammenpassen MÜSSEN — wer hier einen Effekt
+   ergänzt und den Eintrag in BG_EXCL_OPTS vergisst, bricht die Exklusivität still. Dieser Test bindet sie aneinander. */
+describe("#331 Hintergrund-Exklusivität deckt alle Hintergrund-Effekte ab", () => {
+  const optionOf = (key) => GLOBAL_FX_BY_KEY[key].option;
+
+  it("jeder bgfx- UND bgfin-Effekt steht in der Exklusiv-Gruppe", () => {
+    const shouldBeExclusive = [...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf);
+    for (const opt of shouldBeExclusive) expect(BG_EXCL_OPTS).toContain(opt);
+  });
+
+  it("die Exklusiv-Gruppe enthält nichts Fremdes (kein Karten-/Gott-/Leuchten-Effekt)", () => {
+    const allowed = new Set([...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf));
+    for (const opt of BG_EXCL_OPTS) expect(allowed).toContain(opt);
+  });
+
+  it("normalizeFxOptions lässt genau EINEN Hintergrund-Effekt stehen (Priorität = Listenreihenfolge)", () => {
+    const o = {};
+    for (const opt of BG_EXCL_OPTS) o[opt] = true;
+    normalizeFxOptions(o);
+    expect(BG_EXCL_OPTS.filter((opt) => o[opt])).toEqual([BG_EXCL_OPTS[0]]);
+  });
+});
+
+/* Brettgröße: positions-indizierte Zustände hängen an BOARD_POSITIONS. Früher stand die 40 als Literal im
+   Reducer, während N_POS (Gebäude-Overlay) und die Deckgröße dieselbe Zahl anders schrieben. */
+describe("Brettgröße hat eine Quelle", () => {
+  it("BOARD_POSITIONS == Deckgröße == Gebäude-Overlay-Positionen", () => {
+    expect(BOARD_POSITIONS).toBe(buildDeck().length);
+    expect(BOARD_POSITIONS).toBe(N_POS);
+  });
+
+  it("initialState legt die Gletscher-Arrays in Brettgröße an", () => {
+    const s = initialState(makeRng(1));
+    expect(s.glacierMass).toHaveLength(BOARD_POSITIONS);
+    expect(s.firnStack).toHaveLength(BOARD_POSITIONS);
+    expect(s.glacierLocked).toHaveLength(BOARD_POSITIONS);
+    expect(s.playerOrder).toHaveLength(BOARD_POSITIONS);
   });
 });

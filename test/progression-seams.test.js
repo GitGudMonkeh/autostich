@@ -5,7 +5,7 @@ import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } f
 import { buildArchitectOffer, N_POS } from "../src/game/architect.js";
 import { pickWeekMods } from "../src/game/weekMods.js"; // #370 Phase 3: Wochen-Modifikatoren
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase,
-  maxRarityTier, legendaryPhaseUnlocked, unlockedArchetypes, COVER_FLOOR, ENERGY_FLOOR } from "../src/game/progression.js";
+  legendaryPhaseUnlocked, unlockedArchetypes, COVER_FLOOR, ENERGY_FLOOR } from "../src/game/progression.js";
 import { BASE_REROLLS, FORMATION_ENERGY, perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../src/game/constants.js";
 import { makeRng } from "../src/game/deck.js";
 

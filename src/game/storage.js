@@ -439,7 +439,9 @@ export const COSMETIC_OPTION_KEYS = [
    Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
    denen mehrere gleichzeitig an waren (z. B. Aurora + Glutfunken), werden auf GENAU EINEN reduziert (feste Priorität =
    Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) ist frei kombinierbar → unberührt. Besitz (ownedCosmetics) unberührt. */
-const BG_EXCL_OPTS   = ["fxAurora", "fxCubeMatrix", "fxNeonsurf", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt · #345 neonsurf
+// Exportiert, damit ein Test sie gegen themes.BG_FX_KEYS + BG_FIN_KEYS binden kann: die Kategorien stehen dort,
+// die Exklusivität wird hier durchgesetzt — wer einen Effekt ergänzt und diesen Eintrag vergisst, bräche sie still.
+export const BG_EXCL_OPTS = ["fxAurora", "fxCubeMatrix", "fxNeonsurf", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt · #345 neonsurf
 const CARD_ANIM_OPTS = ["fxEdgeGlow", "fxHolo", "fxGlitch"];                    // Priorität: Neonrahmen zuerst
 function reduceExclusive(o, keys) {
   let kept = false;

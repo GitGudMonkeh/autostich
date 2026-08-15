@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  NODES, NODE_BY_ID, NODE_IDS, BUYABLE_IDS, DECK_IDS, GEN_IDS,
+  NODES, NODE_BY_ID, BUYABLE_IDS, DECK_IDS, GEN_IDS,
   TOTAL_COST, TOTAL_NODES, LEG_NODES_BY_ARCH,
-  emptyProfile, owns, rankedUnlocked, anyLegOwned, gateMet, prereqMet,
+  emptyProfile, owns, rankedUnlocked, anyLegOwned, prereqMet,
   nodeEffects, treeCoverBonus, treeEnergyBonus, treeRareShift,
   unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, legCountByArch, rerollBase, legPerk2Force,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,

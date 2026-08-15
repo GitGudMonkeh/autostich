@@ -7,7 +7,7 @@ import { tierColor } from "../game/rarity.js";
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
   NODES, NODE_BY_ID, TOTAL_NODES,
-  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete, owns,
+  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
 } from "../game/progression.js";
 
 /* Upgrade-Screen (#369 KOMPLETT-REWORK) — hängt am ECHTEN Profil (progression.js + storage). Zwei Reiter:

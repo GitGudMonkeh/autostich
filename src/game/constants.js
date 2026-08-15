@@ -505,6 +505,11 @@ export const SUIT_ORDER = ["R", "B", "G", "Y"];
 export const RANKS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10 (#34: 40 Karten, keine schwache 0)
 // Stiche je Deck-Durchlauf = Deckgröße (4 Farben × 10 Werte = 40). Abgeleitet → folgt RANKS automatisch (#34).
 export const TRICKS_PER_CYCLE = SUIT_ORDER.length * RANKS.length;
+/* Brett-Positionen eines Durchlaufs — dieselbe Zahl, aber ein anderer Begriff: positions-indizierte Zustände
+   (Gletscher-Masse, Firn-Reserve, Gletscher-Lock, gesperrte Zellen) meinen eine BRETTGRÖSSE, keine Stichzahl.
+   Eigener Name statt `new Array(40)` an vier Stellen im Reducer; abgeleitet → kein Drift, wenn das Deck wächst.
+   Deckungsgleich mit architect.N_POS (ROWS × COLS) — das Gebäude-Overlay liegt über genau diesen Positionen. */
+export const BOARD_POSITIONS = TRICKS_PER_CYCLE;
 
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");

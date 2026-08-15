@@ -29,6 +29,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # QA-Gate: --max-warnings=0 — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
+      - run: npm run lint -- --max-warnings=0
       # #250: Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
       - name: Build-Metadaten
         run: |
