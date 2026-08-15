@@ -285,6 +285,16 @@ angeboten, IV schließt ab (Karten-Familien bleiben nachkaufbar). `TIER_META` li
 - **Globale Bestenliste** (`leaderboard.js`, Supabase Data API, dependency-frei per `fetch`): Top-N lesen +
   Lauf veröffentlichen. Robust gegen eine noch nicht migrierte `archetypes`-Spalte (bei 400 Rückfall auf
   Basis-Spalten); der Preview-Build schreibt nie in die echte Tabelle.
+- **Feedback-Melder** (#396, `reports.js` + `FeedbackModal.jsx`): Chip „🐞 Feedback" im Hauptmenü, Insert in
+  `autostich_reports` (Schema: `docs/autostich-reports-schema.sql`, einmal im Dashboard ausführen). RLS
+  erlaubt anon **nur insert, kein select** — der öffentliche Schlüssel taugt damit zum Melden, nicht zum
+  Mitlesen. Der Discord-Ping hängt serverseitig an der Tabelle; der Client weiß davon nichts.
+  **Umgekehrt zum Leaderboard:** der Melder schreibt in JEDER Umgebung (die Preview-Builds *sind* die
+  Playtest-Builds), unterschieden wird über die Spalte `build_env`. Mitgeschickt wird ohne Zutun der
+  Kontext des zuletzt gespielten Laufs (Seed/Durchlauf/Score), Version, Gerät und ein Ring-Puffer der
+  letzten JS-Fehler (`errorBuffer.js`) — der überbrückt, dass der Absturz im Lauf passiert, gemeldet aber
+  danach im Menü wird. Fehlgeschlagene Sendungen parken in `as_feedback_draft` und gehen beim nächsten
+  Öffnen still raus.
 
 ---
 

@@ -82,6 +82,7 @@ const importDevSetup    = () => import("./ui/DevRunSetup.jsx");
 const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
 const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
 const importOptions     = () => import("./ui/OptionsModal.jsx");
+const importFeedback    = () => import("./ui/FeedbackModal.jsx");   // #396 Melder — nur im Menü
 const ArchitectScreen  = lazy(() => importArchitect().then((m) => ({ default: m.ArchitectScreen })));
 const ChronikOverview  = lazy(() => importChronik().then((m) => ({ default: m.ChronikOverview })));
 const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.StatsScreen })));
@@ -90,6 +91,7 @@ const DevRunSetup      = lazy(() => importDevSetup().then((m) => ({ default: m.D
 const LeaderboardScreen = lazy(() => importLeaderboard().then((m) => ({ default: m.LeaderboardScreen })));
 const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.UpgradeScreen })));
 const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
+const FeedbackModal    = lazy(() => importFeedback().then((m) => ({ default: m.FeedbackModal })));
 const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importDevSetup, importArchitect];
 
 // #372 Prewarm der In-Game-Archetyp-Karteneffekte: Chunk laden UND den teuren Erst-Bitmap-Aufbau im Leerlauf erledigen,
@@ -178,6 +180,7 @@ export function Autostich() {
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
+  const [showFeedback, setShowFeedback] = useState(false);      // #396 Feedback-Melder (nur im Menü, deshalb OHNE Einfrier-Kopplung)
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
@@ -936,6 +939,7 @@ export function Autostich() {
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onTutorial={startTutorialRun} tutorialDone={tutorialDone}
+            onFeedback={() => setShowFeedback(true)}
             username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
@@ -1108,6 +1112,9 @@ export function Autostich() {
             onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}
             onClose={() => setShowLeaderboard(false)} />
         )}
+        {/* #396 Feedback-Melder. Steht bewusst in dieser Grenze, braucht aber — anders als Optionen
+            und Glossar — KEINE Einfrier-Kopplung: er ist nur im Menü erreichbar, wo kein Lauf läuft. */}
+        {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       </Suspense>
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}

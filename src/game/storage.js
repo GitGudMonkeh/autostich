@@ -241,7 +241,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_username"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -597,3 +597,61 @@ export function loadActiveRun() {
 export function clearActiveRun() {
   try { localStorage.removeItem(k("as_activerun")); } catch (e) {}
 }
+
+/* ============================================================
+   FEEDBACK-MELDER (#396) — Entwurf parken + Bremse
+
+   Zwei kleine Schlüssel, beide in RESET_KEYS:
+     as_feedback_draft — ein Report, dessen Versand fehlschlug. Geht beim nächsten Menü-Besuch
+                         still noch einmal raus. Ohne das wäre ein Report bei Funkloch verloren,
+                         und genau dann tippt jemand am ausführlichsten.
+     as_feedback_sent  — Zeitstempel der letzten Sendungen für die clientseitige Bremse.
+   ============================================================ */
+const FEEDBACK_MIN_GAP_MS = 30_000;   // frühestens 30 s nach dem letzten Report
+const FEEDBACK_MAX_PER_DAY = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function loadFeedbackDraft() {
+  try {
+    const raw = localStorage.getItem(k("as_feedback_draft"));
+    if (raw) { const d = JSON.parse(raw); if (d && typeof d === "object") return d; }
+  } catch (e) {}
+  return null;
+}
+export function saveFeedbackDraft(entry) {
+  try { localStorage.setItem(k("as_feedback_draft"), JSON.stringify(entry)); } catch (e) {}
+}
+export function clearFeedbackDraft() {
+  try { localStorage.removeItem(k("as_feedback_draft")); } catch (e) {}
+}
+
+const loadSentStamps = () => {
+  try {
+    const raw = localStorage.getItem(k("as_feedback_sent"));
+    if (raw) { const l = JSON.parse(raw); if (Array.isArray(l)) return l.filter((n) => typeof n === "number"); }
+  } catch (e) {}
+  return [];
+};
+
+/* Darf JETZT gesendet werden? Gibt `{ ok }` bzw. `{ ok:false, reason, waitMs }` zurück — der
+   Aufrufer zeigt daraus einen sichtbaren Hinweis. Bewusst KEIN stilles Verweigern: wer nicht
+   erfährt, warum nichts passiert, meldet kein zweites Mal.
+   `now` ist Parameter (nicht `Date.now()` innen), damit der Test die Uhr stellen kann. */
+export function feedbackRateCheck(now = Date.now()) {
+  const stamps = loadSentStamps().filter((t) => now - t < DAY_MS);
+  const last = stamps.length ? Math.max(...stamps) : 0;
+  if (last && now - last < FEEDBACK_MIN_GAP_MS) {
+    return { ok: false, reason: "tooSoon", waitMs: FEEDBACK_MIN_GAP_MS - (now - last) };
+  }
+  if (stamps.length >= FEEDBACK_MAX_PER_DAY) return { ok: false, reason: "dailyCap", waitMs: 0 };
+  return { ok: true };
+}
+
+// Eine erfolgreiche Sendung vermerken (hält nur das Tagesfenster vor).
+export function noteFeedbackSent(now = Date.now()) {
+  const stamps = loadSentStamps().filter((t) => now - t < DAY_MS);
+  stamps.push(now);
+  try { localStorage.setItem(k("as_feedback_sent"), JSON.stringify(stamps)); } catch (e) {}
+}
+
+export { FEEDBACK_MIN_GAP_MS, FEEDBACK_MAX_PER_DAY };

@@ -36,7 +36,7 @@ const onbRewards = (t) => [
   t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -332,6 +332,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
         {onTutorial && (
           <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
+        )}
+        {/* #396 Feedback-Melder — bewusst „Feedback" und nicht „Bug melden": sonst kommen nur Bugs
+            und keine Ideen. Nur hier im Menü, nie im Lauf. */}
+        {onFeedback && (
+          <button onClick={onFeedback} aria-label={t("start.feedback")} className={chipCls} style={chipSty}>{t("start.feedback")}</button>
         )}
       </div>
 

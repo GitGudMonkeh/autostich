@@ -123,6 +123,13 @@ describe("i18n · Katalog-Parität", () => {
     "fxsyn.standard.name", "fxsyn.gottStandard.name", // „Standard"
     "fxsyn.scorch.name",      // „Laser"
     "dev.run.title",          // „DEV RUN" — Entwickler-Kennzeichnung, bewusst englisch
+    // Feedback-Melder (#396): Fremdwörter, die im Deutschen genauso benutzt werden.
+    "start.feedback",         // „🐞 Feedback" — im Deutschen das etablierte Wort (§3.5)
+    "feedback.eyebrow",       // „Playtest"
+    "feedback.kind.bug",      // „Bug"
+    "feedback.kind.balance",  // „Balance"
+    "feedback.name",          // „Name"
+    "feedback.name.placeholder", // „optional"
     // Architekt: Kategorienamen und reine Struktur-Zeilen.
     "archcat.score.label",    // Score bleibt Score (§3.1)
     "archcat.formation.label", // „Formation" — beide Sprachen gleich

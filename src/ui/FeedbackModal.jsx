@@ -1,0 +1,222 @@
+import { useEffect, useRef, useState } from "react";
+import { useEscape } from "./useEscape.js";
+import { MODAL_CARD, ModalHairline, ActionBar, ActionButton } from "./modalStyle.jsx";
+import { loadUsername, loadFeedbackDraft, saveFeedbackDraft, clearFeedbackDraft,
+  feedbackRateCheck, noteFeedbackSent, FEEDBACK_MIN_GAP_MS } from "../game/storage.js";
+import { submitReport, reportsConfigured } from "../game/reports.js";
+import { lastRunContext, buildContext } from "./feedbackContext.js";
+import { t } from "../i18n/index.js";
+
+/* FEEDBACK-MELDER (#396) — Bug/Idee aus dem Spiel heraus melden.
+
+   NUR im Hauptmenü erreichbar. Das ist der Hauptgewinn dieser Variante: weil kein Lauf läuft,
+   braucht das Modal KEINERLEI Einfrier-Logik (kein Eintrag in die Auto-Play-/Timer-/Watchdog-/
+   Audio-Bedingungen wie bei Glossar und Optionen).
+
+   Preis der Menü-Entscheidung: es gibt keinen laufenden Lauf, dessen Kontext man greifen könnte.
+   Der Bezug kommt deshalb aus dem ZULETZT gespielten Lauf und wird sichtbar ausgewiesen — mit der
+   Möglichkeit, ihn abzuwählen. Der Fehler-Ring-Puffer (errorBuffer.js) überbrückt dieselbe Lücke
+   für Abstürze: der Crash passiert im Lauf, gemeldet wird danach im Menü. */
+
+const KINDS = ["bug", "idea", "balance", "other"];
+const MIN_LEN = 10;
+const MAX_LEN = 1000;
+
+export function FeedbackModal({ onClose }) {
+  useEscape(onClose);
+  const draft = useRef(loadFeedbackDraft()).current;   // geparkter Entwurf eines Fehlversuchs
+  const [kind, setKind] = useState(draft?.kind || "bug");
+  const [message, setMessage] = useState(draft?.message || "");
+  const [name, setName] = useState(draft?.name ?? loadUsername());
+  const [honey, setHoney] = useState("");              // Honeypot — Menschen füllen ihn nie aus
+  const [state, setState] = useState("form");          // form | sending | done | error
+  const [err, setErr] = useState("");
+  const [run, setRun] = useState(null);
+  const [useRun, setUseRun] = useState(true);
+  const [sentDraft, setSentDraft] = useState(false);   // geparkter Entwurf ging still raus
+
+  // Den Lauf-Bezug erst beim Öffnen holen (localStorage-Zugriff gehört nicht in den Render).
+  useEffect(() => { setRun(lastRunContext()); }, []);
+
+  /* Geparkten Entwurf STILL nachsenden: Wer beim letzten Mal kein Netz hatte, soll den Report
+     nicht noch einmal tippen müssen. Läuft im Hintergrund; klappt es, ist das Formular wieder leer.
+     Schlägt es erneut fehl, bleibt der Entwurf einfach stehen — kein zweiter Fehlerhinweis, der
+     Melder hat ja gerade gar nichts angestoßen. */
+  useEffect(() => {
+    if (!draft || !reportsConfigured) return;
+    let alive = true;
+    (async () => {
+      try {
+        await submitReport({ ...draft, ...buildContext(lastRunContext()) });
+        noteFeedbackSent();
+        clearFeedbackDraft();
+        if (alive) { setMessage(""); setSentDraft(true); }
+      } catch (e) { /* bleibt geparkt, nächster Versuch beim nächsten Öffnen */ }
+    })();
+    return () => { alive = false; };
+  }, [draft]);
+
+  // Nach dem Danke-Zustand von selbst schließen — wer gerade abgeschickt hat, will nicht noch
+  // einen Knopf drücken. Lang genug, dass die Bestätigung wirklich gelesen wird.
+  useEffect(() => {
+    if (state !== "done") return undefined;
+    const id = setTimeout(onClose, 1600);
+    return () => clearTimeout(id);
+  }, [state, onClose]);
+
+  const text = message.trim();
+  const tooShort = text.length < MIN_LEN;
+  const canSend = !tooShort && state !== "sending" && reportsConfigured;
+
+  async function send() {
+    if (!canSend) return;
+    if (honey) { setState("done"); return; }  // Bot: stillschweigend „erfolgreich" beenden
+    const gate = feedbackRateCheck();
+    if (!gate.ok) {
+      // Sichtbarer Hinweis statt stiller Verweigerung — sonst hält der Melder es für kaputt.
+      setErr(gate.reason === "dailyCap"
+        ? t("feedback.err.dailyCap")
+        : t("feedback.err.tooSoon", { s: Math.ceil((gate.waitMs || FEEDBACK_MIN_GAP_MS) / 1000) }));
+      setState("error");
+      return;
+    }
+    const entry = { kind, message: text, name: name.trim(), ...buildContext(useRun ? run : null) };
+    setState("sending");
+    setErr("");
+    try {
+      await submitReport(entry);
+      noteFeedbackSent();
+      clearFeedbackDraft();
+      setState("done");
+    } catch (e) {
+      // Kein Report geht verloren: Entwurf parken (geht beim nächsten Menü-Besuch still raus) UND
+      // in die Zwischenablage legen, damit der Text auch bei einem localStorage-Ausfall nicht weg ist.
+      saveFeedbackDraft({ kind, message: text, name: name.trim() });
+      try { navigator.clipboard?.writeText(text); } catch (e2) { /* Zwischenablage ist Kür */ }
+      setErr(t("feedback.err.send"));
+      setState("error");
+    }
+  }
+
+  const chipCls = "px-3 py-1.5 rounded-full text-xs font-bold transition-all";
+  const runLabel = run && run.seed != null
+    ? t("feedback.run.with", { seed: run.seed, cycle: run.cycle ?? "?" })
+    : t("feedback.run.none");
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
+      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={MODAL_CARD}>
+        <ModalHairline />
+        <div className="p-6">
+          <ActionBar pad={6}>
+            <span className="flex-1" />
+            <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
+          </ActionBar>
+
+          <div className="text-center mb-4">
+            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("feedback.eyebrow")}</div>
+            <h2 className="text-xl font-bold mt-1">{t("feedback.title")}</h2>
+          </div>
+
+          {state === "done" ? (
+            <div className="rounded-xl px-4 py-8 text-center" style={{ background: "#123a25", border: "1px solid #2f7a4f" }}>
+              <div className="text-2xl mb-1" aria-hidden="true">✓</div>
+              <div className="font-bold" style={{ color: "#54e08a" }}>{t("feedback.thanks")}</div>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {/* Art — vorausgewählt „Bug", aber die Idee steht gleichberechtigt daneben. */}
+              <div>
+                <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.kind")}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {KINDS.map((kk) => (
+                    <button key={kk} type="button" onClick={() => setKind(kk)}
+                      className={chipCls}
+                      style={kind === kk
+                        ? { background: "#8a7de0", color: "#141419", border: "1px solid #8a7de0" }
+                        : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
+                      {t(`feedback.kind.${kk}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Was ist passiert — das einzige Pflichtfeld. Jedes weitere kostet Reports. */}
+              <div>
+                <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                  <span className="text-[11px] uppercase tracking-wide opacity-55">{t("feedback.message")}</span>
+                  <span className="text-[10px] tabular-nums" style={{ color: text.length > MAX_LEN - 100 ? "#e0a05a" : "#6d6a80" }}>
+                    {text.length}/{MAX_LEN}
+                  </span>
+                </div>
+                <textarea value={message} maxLength={MAX_LEN} rows={5}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={t("feedback.message.placeholder")}
+                  className="w-full rounded-lg px-3 py-2 text-sm leading-snug"
+                  style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea", resize: "vertical" }} />
+              </div>
+
+              {/* Name — vorbefüllt, änderbar, optional. */}
+              <div>
+                <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.name")}</div>
+                <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
+                  placeholder={t("feedback.name.placeholder")}
+                  className="w-full rounded-lg px-3 py-2 text-sm"
+                  style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea" }} />
+              </div>
+
+              {/* Honeypot: für Menschen unsichtbar, für simple Bots verlockend. */}
+              <input value={honey} onChange={(e) => setHoney(e.target.value)} tabIndex={-1} autoComplete="off"
+                aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} />
+
+              {/* Lauf-Bezug — sichtbar ausgewiesen und abwählbar. */}
+              <label className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer" style={{ background: "#20202a" }}>
+                <input type="checkbox" checked={useRun && !!run} disabled={!run}
+                  onChange={(e) => setUseRun(e.target.checked)}
+                  style={{ marginTop: 2, accentColor: "#8a7de0" }} />
+                <span className="min-w-0">
+                  <span className="text-[12px] font-bold block">{runLabel}</span>
+                  <span className="text-[11px] opacity-60 leading-snug block">{t("feedback.run.hint")}</span>
+                </span>
+              </label>
+
+              {sentDraft && (
+                <div className="rounded-lg px-3 py-2 text-[12px] leading-snug" style={{ background: "#123a25", border: "1px solid #2f7a4f", color: "#9fe0b8" }}>
+                  {t("feedback.draftSent")}
+                </div>
+              )}
+              {state === "error" && (
+                <div className="rounded-lg px-3 py-2 text-[12px] leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
+                  {err}
+                </div>
+              )}
+              {!reportsConfigured && (
+                <div className="rounded-lg px-3 py-2 text-[12px] leading-snug" style={{ background: "#3a2a15", border: "1px solid #d0902f", color: "#f0d9a8" }}>
+                  {t("feedback.err.offline")}
+                </div>
+              )}
+
+              <button type="button" onClick={send} disabled={!canSend}
+                className="w-full rounded-lg py-2.5 text-sm font-bold transition-all"
+                style={{ background: canSend ? "#8a7de0" : "#2a2733", color: canSend ? "#141419" : "#6d6a80",
+                         cursor: canSend ? "pointer" : "not-allowed" }}>
+                {t(state === "sending" ? "feedback.sending" : "feedback.send")}
+              </button>
+              {tooShort && (
+                <div className="text-[11px] text-center opacity-55">{t("feedback.tooShort", { n: MIN_LEN })}</div>
+              )}
+
+              {/* Zweitweg für alle, die ohnehin einen GitHub-Account haben. Bewusst klein und unten:
+                  als Hauptweg wäre ein Account für Playtester zu viel Reibung. */}
+              <a href="https://github.com/GitGudMonkeh/autostich/issues/new" target="_blank" rel="noreferrer"
+                className="text-[11px] text-center opacity-45 hover:opacity-80 transition-opacity">
+                {t("feedback.github")}
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
