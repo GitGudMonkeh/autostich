@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { tierWeightsForShift } from "../src/game/rarity.js";
 import { buildLegendaryOffer, isLegendarySkill, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
-import { buildArchitectOffer } from "../src/game/architect.js";
+import { buildArchitectOffer, N_POS } from "../src/game/architect.js";
+import { pickWeekMods } from "../src/game/weekMods.js"; // #370 Phase 3: Wochen-Modifikatoren
 import { emptyProfile, buyNode, unlockAllProfile, nodeEffects, legPerk2Force, rerollBase,
   maxRarityTier, legendaryPhaseUnlocked, unlockedArchetypes, COVER_FLOOR, ENERGY_FLOOR } from "../src/game/progression.js";
 import { BASE_REROLLS, FORMATION_ENERGY, perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../src/game/constants.js";
@@ -223,5 +224,39 @@ describe("#370 Rangliste: EIN Ranked-Modus = tree-unabhängige Baseline (ersetzt
     expect(n.rareCap).toBe(4);
     expect(n.legCountByArch).toEqual({ fire: 2, lightning: 2, ice: 2, plant: 2 });
     expect(n.ranked).toBe(null);
+  });
+});
+
+describe("#370 Phase 3a: Wochen-Modifikatoren aktivieren die Reducer-nativen Nähte (nur Ranked)", () => {
+  it("pro Seed spiegelt der State die gewürfelten Reducer-nativen Mods", () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const mods = pickWeekMods(seed);
+      const eff = new Set(mods.map((m) => m.effect));
+      const s = start({ ranked: "ranked", seed });
+      // Kein Reroll → alle Pools 0, sonst Baseline (2/2/2)
+      if (eff.has("noReroll")) expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([0, 0, 0]);
+      else expect([s.rerollsPerk, s.rerollsArch, s.rerollsSkill]).toEqual([BASE_REROLLS, BASE_REROLLS, BASE_REROLLS]);
+      // Energie (Ausschluss-Paar → nie beide)
+      if (eff.has("energyEbb")) expect(s.formationEnergyBase).toBe(0);
+      else if (eff.has("energyFlood")) expect(s.formationEnergyBase).toBe(FORMATION_ENERGY * 2);
+      else expect(s.formationEnergyBase).toBe(FORMATION_ENERGY);
+      // Bauplätze (Ausschluss-Paar → nie beide)
+      if (eff.has("tightBuild")) expect(s.architect.maxCover).toBe(12);
+      else if (eff.has("noBuildLimit")) expect(s.architect.maxCover).toBe(N_POS);
+      // Perk-Deckel → rareCap 2, sonst Baseline 4
+      expect(s.rareCap).toBe(eff.has("perkCap") ? 2 : 4);
+      // Gesperrte Felder = gerollte Magnitude
+      const bf = mods.find((m) => m.effect === "blockForm");
+      const ba = mods.find((m) => m.effect === "blockArch");
+      expect(s.challengeBlockForm.length).toBe(bf ? bf.mag : 0);
+      expect(s.challengeBlockArch.length).toBe(ba ? ba.mag : 0);
+      // state.weekMods trägt die volle Auswahl
+      expect(s.weekMods.map((m) => m.effect).sort()).toEqual([...eff].sort());
+    }
+  });
+  it("Normal-Lauf (nicht Ranked) hat keine Wochen-Mods", () => {
+    const s = start({ seed: 123 });
+    expect(s.weekMods).toEqual([]);
+    expect(s.rareCap).toBe(4);
   });
 });

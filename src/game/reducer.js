@@ -14,6 +14,7 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { nodeEffects, legPerk2Force, rerollBase, COVER_FLOOR, ENERGY_FLOOR } from "./progression.js"; // #369 Progression-Baum: Cover/Energie-Floor + Rarität + Archetyp-/Legendär-Gatung + Reroll-Pools (alles aus dem Baum, treeEff-Felder)
+import { pickWeekMods } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
@@ -253,20 +254,35 @@ export function reducer(state, action) {
       const chBlockArch = (chEff.has("archLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockArch"), N_POS, 10) : [];
       const chBlockForm = (chEff.has("formLock") && seed != null) ? pickCells(rngAt(seed, "challenge", "blockForm"), N_POS, 10) : [];
       const chNoReroll = chEff.has("noRerolls");
-      const chReroll = chNoReroll ? 0 : normalRerolls;
-      const sBase = { ...s, architect: architectStart, architectEnabled, treeRareShift, treeLegMult, treeLegForce2,
-        rerollsLeg: chNoReroll ? 0 : treeLegSlotReroll, rerollsPerk2: chNoReroll ? 0 : rerollPerk2,
-        legCountByArch: legCountMap, formationEnergyBase, unlockedArchetypes: unlockedArch, rareCap, legPhaseEnabled, ranked,
-        challengeMods: chMods.map((c) => c.id), challengeBlockArch: chBlockArch, challengeBlockForm: chBlockForm };
+      // #370 Wochen-Modifikatoren (nur Ranked, seed-deterministisch) — Reducer-native Nähte: Rerolls, Feld-Sperren,
+      //   Bauplätze, Aufstell-Energie, Perk-Rarität-Deckel. Die Engine-Nähte (Karten-Wert/Boni/Angebote/Deck-Shuffle)
+      //   folgen in Phase 3b und lesen dieselbe state.weekMods-Liste. Eigene rngAt-Adress-Ströme (kein Deal-Störer).
+      const wmActive = (ranked && seed != null) ? pickWeekMods(seed) : [];
+      const wm = Object.fromEntries(wmActive.map((m) => [m.effect, m]));
+      const noReroll = chNoReroll || !!wm.noReroll;
+      const effReroll = noReroll ? 0 : normalRerolls;
+      const wmBlockForm = wm.blockForm ? pickCells(rngAt(seed, "weekmods", "blockForm"), N_POS, wm.blockForm.mag) : [];
+      const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
+      const effRareCap = wm.perkCap ? 2 : rareCap;                                   // Perk-Deckel → max Selten (kein Sehr selten/Rar)
+      const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? formationEnergyBase * 2 : formationEnergyBase;
+      const effCover = wm.tightBuild ? 12 : wm.noBuildLimit ? N_POS : (coverBase + treeCover); // Enge Aufstellung / Kein Gebäudelimit
+      const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
+      const sBase = { ...s, architect: { ...architectStart, maxCover: effCover }, architectEnabled, treeRareShift, treeLegMult, treeLegForce2,
+        rerollsLeg: noReroll ? 0 : treeLegSlotReroll, rerollsPerk2: noReroll ? 0 : rerollPerk2,
+        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, legPhaseEnabled, ranked,
+        weekMods: weekModsState,
+        challengeMods: chMods.map((c) => c.id),
+        challengeBlockArch: [...new Set([...chBlockArch, ...wmBlockArch])],
+        challengeBlockForm: [...new Set([...chBlockForm, ...wmBlockForm])] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
       return { ...sBase, architectEnabled,
         difficulty: null,
         // #263: drei getrennte Reroll-Pools. (Schritt 4) Normal-/Meister-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1
         // + A1/A2 (rerollBase, Cap 3) — erster Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2).
-        // #301 C1 (Keine Rerolls) nullt alle drei Pools.
-        rerollsPerk: chReroll,
-        rerollsArch: chReroll,
-        rerollsSkill: chReroll,
+        // #301 C1 (Keine Rerolls) / #370 Wochen-Mod „Kein Reroll" nullen alle drei Pools (noReroll → effReroll).
+        rerollsPerk: effReroll,
+        rerollsArch: effReroll,
+        rerollsSkill: effReroll,
         ...startPatch };
     }
 
