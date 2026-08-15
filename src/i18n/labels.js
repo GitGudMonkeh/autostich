@@ -11,8 +11,9 @@
    übersetzt, liegt eine Schicht darüber.
 
    Migrationsstand: Rarität · Formationstypen · Skills + Archetypen · Perks + Perk-Kategorien ·
-   Perk-Familien · Architekt-Gebäude · Upgrade-Knoten · Wochen-Mods. Das Glossar folgt — solange
-   es fehlt, zeigt es in beiden Sprachen Deutsch (sichtbar, nicht still).
+   Perk-Familien · Architekt-Gebäude · Upgrade-Knoten · Wochen-Mods · Glossar · Kosmetik.
+   Offen sind nur noch die restlichen UI-Dateien (Inline-Strings in src/ui/*.jsx, src/App.jsx) —
+   solange sie fehlen, zeigen sie in beiden Sprachen Deutsch (sichtbar, nicht still).
    ============================================================ */
 import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
@@ -21,6 +22,8 @@ import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
 import { NODES, BRANCHES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
+import { DECK_DEFS, BATTLEFIELD_DEFS } from "../game/cosmetics.js";
+import { THEME_DEFS, GLOBAL_FX } from "../game/themes.js";
 
 /* ---- Rarität (TIER_META) ---- */
 // Sichtbarer Name einer Raritätsstufe: „Sehr selten" / „Rare".
@@ -121,3 +124,27 @@ export const weekModList = () => WEEK_MODS.map((m) => ({
   ...m, name: t(`weekmod.${m.id}.name`), desc: (v) => t(`weekmod.${m.id}.desc`, { v }),
 }));
 export const weekModDef = (id) => weekModList().find((m) => m.id === id) || null;
+
+/* ---- Kosmetik (DECK_DEFS / BATTLEFIELD_DEFS / THEME_DEFS / GLOBAL_FX) ----
+   EIN Name je Set: Spielfeld = Deckname + Suffix, Paket = Deckname. Genauso wie im Register,
+   nur eben übersetzt — sonst gäbe es die alte Dreifach-Pflege auf der englischen Seite wieder. */
+const deckIdOfBf = (bfId) => (bfId === "default" ? "default" : `deck_${bfId.replace(/^bf_/, "")}`);
+
+export const deckDef = (id) => {
+  const d = DECK_DEFS[id];
+  return d ? { ...d, name: t(`cosmetic.${id}.name`) } : null;
+};
+export const battlefieldDef = (id) => {
+  const b = BATTLEFIELD_DEFS[id];
+  if (!b) return null;
+  const base = t(`cosmetic.${deckIdOfBf(id)}.name`);
+  return { ...b, name: id === "default" ? base : `${base}${t("cosmetic.bf.suffix")}` };
+};
+export const themeDef = (id) => {
+  const th = THEME_DEFS[id];
+  return th ? { ...th, name: t(`cosmetic.${th.deckId}.name`) } : null;
+};
+export const globalFxList = () => GLOBAL_FX.map((f) => ({
+  ...f, name: t(`fx.${f.key}.name`), desc: f.desc ? t(`fx.${f.key}.desc`) : f.desc,
+}));
+export const globalFxDef = (key) => globalFxList().find((f) => f.key === key) || null;

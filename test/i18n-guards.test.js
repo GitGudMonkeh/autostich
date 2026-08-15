@@ -89,9 +89,31 @@ describe("i18n · Katalog-Parität", () => {
     "glossary.perk.label",
   ]);
 
+  /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
+     überwiegend Eigennamen (Kitsune, Ronin, Seraph, Aurora, Supernova) und lauten in beiden
+     Sprachen gleich. Der Preis dieser Ausnahme: eine vergessene Kosmetik-Übersetzung fällt hier
+     nicht auf. Deshalb prüft der Test darunter positiv nach, dass die beschreibenden Namen
+     (allen voran die vier Archetyp-Decks) tatsächlich übersetzt sind. */
+  const SAME_OK_CLASS = /^(cosmetic\..+\.name|cosmetic\.bf\.suffix|fx\..+\.name)$/;
+
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
-    const same = KEYS_DE.filter((k) => k in en && de[k] === en[k] && !SAME_OK.has(k));
+    const same = KEYS_DE.filter((k) => k in en && de[k] === en[k] && !SAME_OK.has(k) && !SAME_OK_CLASS.test(k));
     expect(same, `Unübersetzt (oder in SAME_OK eintragen, wenn das Wort wirklich identisch ist):\n  ${same.join("\n  ")}`).toEqual([]);
+  });
+
+  /* Gegenprobe zur Eigennamen-Klasse: Kosmetik-Namen, die etwas BESCHREIBEN statt zu benennen,
+     müssen übersetzt sein. Die vier Archetyp-Decks tragen zusätzlich exakt die Archetyp-Namen —
+     sie SIND diese Decks, ein Auseinanderlaufen wäre für Spieler direkt verwirrend. */
+  it("beschreibende Kosmetik-Namen sind übersetzt, Archetyp-Decks tragen ihre Archetyp-Namen", () => {
+    for (const [arch, deckId] of [["lightning", "deck_blitz"], ["fire", "deck_feuer"],
+      ["ice", "deck_eis"], ["plant", "deck_pflanze"]]) {
+      expect(en[`cosmetic.${deckId}.name`], `${deckId} muss wie der Archetyp heißen`)
+        .toBe(en[`archetype.${arch}.label`]);
+    }
+    for (const k of ["cosmetic.deck_kosmos.name", "cosmetic.deck_oni.name", "cosmetic.deck_drache.name",
+      "cosmetic.deck_serie1500.name", "cosmetic.deck_sparfuchs.name", "cosmetic.deck_sonne.name"]) {
+      expect(en[k], `${k} beschreibt etwas und muss übersetzt sein`).not.toBe(de[k]);
+    }
   });
 
   it("Plural-Schlüssel treten immer als _one/_other-Paar auf", () => {

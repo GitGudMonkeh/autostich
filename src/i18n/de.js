@@ -17,6 +17,8 @@ import { ARCHITECT_FAMILIES } from "../game/architect.js";
 import { NODES, BRANCHES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../game/glossary.js";
+import { DECK_DEFS, BF_SUFFIX } from "../game/cosmetics.js";
+import { GLOBAL_FX } from "../game/themes.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -71,6 +73,14 @@ for (const [gid, e] of Object.entries(GLOSSARY)) {
   fromRegistries[`glossary.${gid}.label`] = e.label;
   fromRegistries[`glossary.${gid}.text`] = e.text;
   fromRegistries[`glossary.${gid}.match`] = (e.match && e.match.length ? e.match : [e.label]).join("|");
+}
+/* Kosmetik: EIN Name je Set. Spielfeld- und Paketname leiten sich im Register vom Decknamen ab
+   (cosmetics.js/themes.js) — hier steht deshalb nur der Deckname plus das Spielfeld-Suffix. */
+for (const d of Object.values(DECK_DEFS)) fromRegistries[`cosmetic.${d.id}.name`] = d.name;
+fromRegistries["cosmetic.bf.suffix"] = BF_SUFFIX;
+for (const f of GLOBAL_FX) {
+  fromRegistries[`fx.${f.key}.name`] = f.name;
+  if (f.desc) fromRegistries[`fx.${f.key}.desc`] = f.desc;
 }
 // Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
 for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;

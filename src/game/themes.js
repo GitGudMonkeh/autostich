@@ -135,77 +135,81 @@ export function activeGottFx(profile, options) {
               (DECK_DEFS[deckId].unlock) — das Deck ist das definierende Element des Packs.
    a1 = Hauptfarbe (u. a. Hologrid-Gitterlinien/Frame-Glow), a2 = Sekundärfarbe (Akzente/Beams).
    els = welche Slots das Pack anbietet: ["deck","bf"] (Deck + Battlefield) oder ["deck"] (nur Deck). */
+/* Sprachprüfung: Ein Paket IST das Kosmetik-Set seines Decks — der Name war hier ein drittes Mal
+   abgetippt (Deck · Spielfeld · Paket). Jetzt aus dem Deck gezogen; `deckId` steht ohnehin daneben. */
+const packName = (deckId) => (DECK_DEFS[deckId] || {}).name || deckId;
+
 export const THEME_DEFS = {
   // ---- Kaufbare Packs (1 Kauf = Deck + Battlefield) — #307 je Pack ein eigener DP-Preis ----
-  sunset: { id: "sunset", name: "Sunset Rider", emblem: "🏍️", kind: "buy", price: 10, a1: "#ff5a4d", a2: "#ffab3a",
+  sunset: { id: "sunset", name: packName("deck_sunset"), emblem: "🏍️", kind: "buy", price: 10, a1: "#ff5a4d", a2: "#ffab3a",
     deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf"] },
-  lofi:   { id: "lofi",   name: "Kitsune",      emblem: "🦊", kind: "buy", price: 5, a1: "#bcd8ff", a2: "#7fb0ff",
+  lofi:   { id: "lofi",   name: packName("deck_lofi"),      emblem: "🦊", kind: "buy", price: 5, a1: "#bcd8ff", a2: "#7fb0ff",
     deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf"] },
   // #IP: „Neon Kaiju" / „Super Aura" / „Mecha Ronin" wegen IP-Bedenken entfernt.
 
   // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield) ----
-  beach:    { id: "beach",    name: "Malibu Wave",     emblem: "🌴", kind: "buy", price: 10, a1: "#ff5aa0", a2: "#35d0e0",
+  beach:    { id: "beach",    name: packName("deck_beach"),     emblem: "🌴", kind: "buy", price: 10, a1: "#ff5aa0", a2: "#35d0e0",
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
-  cat:      { id: "cat",      name: "Biolumen",        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
+  cat:      { id: "cat",      name: packName("deck_cat"),        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
-  spacedog: { id: "spacedog", name: "Kosmospanther",   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
+  spacedog: { id: "spacedog", name: packName("deck_spacedog"),   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
-  wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
+  wale:     { id: "wale",     name: packName("deck_wale"),       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
   // Genesis = Onboarding-Starter → Bedingungs-Pack (kind "cond"): NICHT kaufbar, frei nach abgeschlossenem
   // Onboarding (6/6). Bedingung kommt via packCond aus deck_onboarding.unlock ({ kind: "onboardingDone" }).
-  genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
+  genesis:  { id: "genesis",  name: packName("deck_onboarding"),         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
   // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
 
   // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
-  gottgleich: { id: "gottgleich", name: "Ascension", emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
+  gottgleich: { id: "gottgleich", name: packName("deck_gottgleich"), emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
-  serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
+  serie300:   { id: "serie300",   name: packName("deck_serie300"),   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
     deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
-  serie600:   { id: "serie600",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
+  serie600:   { id: "serie600",   name: packName("deck_serie600"),    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
     deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
-  serie1500:  { id: "serie1500",  name: "Königspfau", emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
+  serie1500:  { id: "serie1500",  name: packName("deck_serie1500"), emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
     deckId: "deck_serie1500",  bfId: "bf_serie1500",  els: ["deck", "bf"] },
-  sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
+  sparfuchs:  { id: "sparfuchs",  name: packName("deck_sparfuchs"),  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
 
   // ---- #310 Element-Challenge-Packs (kind "cond": kein Kauf; frei über N Mono-Läufe je Fraktion; Bedingung aus DECK_DEFS) ----
-  feuer:   { id: "feuer",   name: "Feuer",   emblem: "🔥", kind: "cond", a1: "#ff5a2a", a2: "#ffb03a",
+  feuer:   { id: "feuer",   name: packName("deck_feuer"),   emblem: "🔥", kind: "cond", a1: "#ff5a2a", a2: "#ffb03a",
     deckId: "deck_feuer",   bfId: "bf_feuer",   els: ["deck", "bf"] },
-  eis:     { id: "eis",     name: "Eis",     emblem: "❄️", kind: "cond", a1: "#46c6ff", a2: "#9fe8ff",
+  eis:     { id: "eis",     name: packName("deck_eis"),     emblem: "❄️", kind: "cond", a1: "#46c6ff", a2: "#9fe8ff",
     deckId: "deck_eis",     bfId: "bf_eis",     els: ["deck", "bf"] },
-  blitz:   { id: "blitz",   name: "Blitz",   emblem: "⚡", kind: "cond", a1: "#9b6cff", a2: "#c77bff",
+  blitz:   { id: "blitz",   name: packName("deck_blitz"),   emblem: "⚡", kind: "cond", a1: "#9b6cff", a2: "#c77bff",
     deckId: "deck_blitz",   bfId: "bf_blitz",   els: ["deck", "bf"] },
-  pflanze: { id: "pflanze", name: "Pflanze", emblem: "🌿", kind: "cond", a1: "#57e08a", a2: "#b6ff3a",
+  pflanze: { id: "pflanze", name: packName("deck_pflanze"), emblem: "🌿", kind: "cond", a1: "#57e08a", a2: "#b6ff3a",
     deckId: "deck_pflanze", bfId: "bf_pflanze", els: ["deck", "bf"] },
   // Prisma (Element-Bund): frei, sobald alle vier Element-Decks frei sind.
-  elementar: { id: "elementar", name: "Prisma", emblem: "🌈", kind: "cond", a1: "#6cf0ff", a2: "#ff6ac0",
+  elementar: { id: "elementar", name: packName("deck_elementar"), emblem: "🌈", kind: "cond", a1: "#6cf0ff", a2: "#ff6ac0",
     deckId: "deck_elementar", bfId: "bf_elementar", els: ["deck", "bf"] },
 
   // ---- #310 DP-Kauf-Packs (kind "buy", eigener Preis via price) ----
-  ronin:     { id: "ronin",     name: "Ronin",          emblem: "⚔️", kind: "buy", price: 15, a1: "#ff2f4f", a2: "#4aa8ff",
+  ronin:     { id: "ronin",     name: packName("deck_ronin"),          emblem: "⚔️", kind: "buy", price: 15, a1: "#ff2f4f", a2: "#4aa8ff",
     deckId: "deck_ronin",     bfId: "bf_ronin",     els: ["deck", "bf"] },
-  kosmos:    { id: "kosmos",    name: "Schwarzes Loch", emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
+  kosmos:    { id: "kosmos",    name: packName("deck_kosmos"), emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
     deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
-  oni:       { id: "oni",       name: "Roter Oni",      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
+  oni:       { id: "oni",       name: packName("deck_oni"),      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
     deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
-  geometrie: { id: "geometrie", name: "Seraph",         emblem: "😇", kind: "buy", price: 5,  a1: "#ffe08a", a2: "#fff2c0",
+  geometrie: { id: "geometrie", name: packName("deck_geometrie"),         emblem: "😇", kind: "buy", price: 5,  a1: "#ffe08a", a2: "#fff2c0",
     deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
 
   // ---- #311 DP-Kauf-Packs (je 10 DP) ----
-  sonne:  { id: "sonne",  name: "Kolossus",         emblem: "🐉", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
+  sonne:  { id: "sonne",  name: packName("deck_sonne"),         emblem: "🐉", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
     deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
-  drache: { id: "drache", name: "Laternenfest",     emblem: "🏮", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
+  drache: { id: "drache", name: packName("deck_drache"),     emblem: "🏮", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
-  arcade:     { id: "arcade",     name: "Beryll",     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
+  arcade:     { id: "arcade",     name: packName("deck_arcade"),     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
-  polarlicht: { id: "polarlicht", name: "Scarab",     emblem: "🪲", kind: "buy", price: 10, a1: "#2ee0c0", a2: "#ffcf3a",
+  polarlicht: { id: "polarlicht", name: packName("deck_polarlicht"),     emblem: "🪲", kind: "buy", price: 10, a1: "#2ee0c0", a2: "#ffcf3a",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
-  seedrache:  { id: "seedrache",  name: "Eldritch",   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
+  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
 };
 

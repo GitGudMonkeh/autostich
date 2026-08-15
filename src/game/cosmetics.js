@@ -70,42 +70,48 @@ export const DECK_DEFS = {
   deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
+/* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
+   hier ein zweites Mal abgetippt — beim Umbenennen eines Decks wäre das Spielfeld zurückgeblieben.
+   Jetzt eine Quelle; nur das Suffix ist eigener Text. */
+export const BF_SUFFIX = " · Battlefield";
+const bfName = (deckId) => `${DECK_DEFS[deckId].name}${BF_SUFFIX}`;
+
 export const BATTLEFIELD_DEFS = {
   default: { id: "default", name: "Standard",       unlock: null },
   // #299: alte „Läufe"-Progressions-Battlefields (bf_1–4) entfernt. Deck-Werkstatt Kauf-Packs (#deckshop):
   // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
-  bf_sunset: { id: "bf_sunset", name: "Sunset Rider · Battlefield", unlock: { kind: "buy", ownKey: "pack:sunset" } },
-  bf_lofi:   { id: "bf_lofi",   name: "Kitsune · Battlefield",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  bf_sunset: { id: "bf_sunset", name: bfName("deck_sunset"), unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  bf_lofi:   { id: "bf_lofi",   name: bfName("deck_lofi"),      unlock: { kind: "buy", ownKey: "pack:lofi" } },
   // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
-  bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
-  bf_cat:        { id: "bf_cat",        name: "Biolumen · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  bf_spacedog:   { id: "bf_spacedog",   name: "Kosmospanther · Battlefield",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
-  bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
-  bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
+  bf_beach:      { id: "bf_beach",      name: bfName("deck_beach"),     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  bf_cat:        { id: "bf_cat",        name: bfName("deck_cat"), unlock: { kind: "buy", ownKey: "pack:cat" } },
+  bf_spacedog:   { id: "bf_spacedog",   name: bfName("deck_spacedog"),   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  bf_wale:       { id: "bf_wale",       name: bfName("deck_wale"),       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  bf_onboarding: { id: "bf_onboarding", name: bfName("deck_onboarding"),         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
-  bf_gottgleich: { id: "bf_gottgleich", name: "Ascension · Battlefield", unlock: { kind: "gottgleichRun" } },
-  bf_serie300:   { id: "bf_serie300",   name: "Flamingo · Battlefield",  unlock: { kind: "streak", n: 300 } },
-  bf_serie600:   { id: "bf_serie600",   name: "Peacock · Battlefield",    unlock: { kind: "streak", n: 600 } },
-  bf_serie1500:  { id: "bf_serie1500",  name: "Königspfau · Battlefield", unlock: { kind: "streak", n: 1500 } },
-  bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
+  bf_gottgleich: { id: "bf_gottgleich", name: bfName("deck_gottgleich"), unlock: { kind: "gottgleichRun" } },
+  bf_serie300:   { id: "bf_serie300",   name: bfName("deck_serie300"),  unlock: { kind: "streak", n: 300 } },
+  bf_serie600:   { id: "bf_serie600",   name: bfName("deck_serie600"),    unlock: { kind: "streak", n: 600 } },
+  bf_serie1500:  { id: "bf_serie1500",  name: bfName("deck_serie1500"), unlock: { kind: "streak", n: 1500 } },
+  bf_sparfuchs:  { id: "bf_sparfuchs",  name: bfName("deck_sparfuchs"),  unlock: { kind: "meisterNoReroll" } },
   // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
-  bf_feuer:     { id: "bf_feuer",     name: "Feuer · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
-  bf_eis:       { id: "bf_eis",       name: "Eis · Battlefield",            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
-  bf_blitz:     { id: "bf_blitz",     name: "Blitz · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
-  bf_pflanze:   { id: "bf_pflanze",   name: "Pflanze · Battlefield",        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
-  bf_elementar: { id: "bf_elementar", name: "Prisma · Battlefield",         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
-  bf_ronin:     { id: "bf_ronin",     name: "Ronin · Battlefield",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
-  bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
-  bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
-  bf_geometrie: { id: "bf_geometrie", name: "Seraph · Battlefield",         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  bf_feuer:     { id: "bf_feuer",     name: bfName("deck_feuer"),          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  bf_eis:       { id: "bf_eis",       name: bfName("deck_eis"),            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  bf_blitz:     { id: "bf_blitz",     name: bfName("deck_blitz"),          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  bf_pflanze:   { id: "bf_pflanze",   name: bfName("deck_pflanze"),        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  bf_elementar: { id: "bf_elementar", name: bfName("deck_elementar"),         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  bf_ronin:     { id: "bf_ronin",     name: bfName("deck_ronin"),          unlock: { kind: "buy", ownKey: "pack:ronin" } },
+  bf_kosmos:    { id: "bf_kosmos",    name: bfName("deck_kosmos"), unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  bf_oni:       { id: "bf_oni",       name: bfName("deck_oni"),      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  bf_geometrie: { id: "bf_geometrie", name: bfName("deck_geometrie"),         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs:
-  bf_sonne:  { id: "bf_sonne",  name: "Kolossus · Battlefield",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
-  bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
+  bf_sonne:  { id: "bf_sonne",  name: bfName("deck_sonne"),         unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  bf_drache: { id: "bf_drache", name: bfName("deck_drache"),     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
-  bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
-  bf_polarlicht: { id: "bf_polarlicht", name: "Scarab · Battlefield",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
-  bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  bf_arcade:     { id: "bf_arcade",     name: bfName("deck_arcade"),     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  bf_polarlicht: { id: "bf_polarlicht", name: bfName("deck_polarlicht"),     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  bf_seedrache:  { id: "bf_seedrache",  name: bfName("deck_seedrache"),   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

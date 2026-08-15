@@ -20,10 +20,8 @@ import { ARCHITECT_FAMILIES, TIER_INERT_KINDS } from "../src/game/architect.js";
 import { buildingEffect } from "../src/i18n/buildingText.js";
 import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
 import { TIER_META } from "../src/game/rarity.js";
-import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
 import CAT_DE from "../src/i18n/de.js";
 import CAT_EN from "../src/i18n/en.js";
-import { GLOBAL_FX, THEME_DEFS } from "../src/game/themes.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
 import { unlockProgress, MONO_CHALLENGE_N } from "../src/game/cosmetics.js";
 import { GUIDES } from "../src/ui/guides.js";
@@ -111,24 +109,10 @@ setLocale(SOURCE_LOCALE); // für alles Weitere wieder Deutsch
    (Formationsnamen sind migriert und kommen unten aus dem i18n-Katalog.) */
 for (const s of SUIT_ORDER) push(`ui.suit.${s}.name`, "ui", suitName(s), "Kartenfarbe", "6");
 
-/* ============ 8 · Kosmetik (Decks / Spielfelder / FX / Packs) ============ */
-for (const d of Object.values(DECK_DEFS)) {
-  push(`item.deck.${d.id}.name`, "item", d.name, "Kartenrücken — Name (Kosmetik)");
-  if (d.hint) push(`item.deck.${d.id}.hint`, "item", d.hint, `Kartenrücken „${d.name}" — Freischalt-Hinweis`);
-}
-for (const b of Object.values(BATTLEFIELD_DEFS)) {
-  push(`item.battlefield.${b.id}.name`, "item", b.name, "Spielfeld-Skin — Name (Kosmetik)");
-  if (b.hint) push(`item.battlefield.${b.id}.hint`, "item", b.hint, `Spielfeld „${b.name}" — Freischalt-Hinweis`);
-}
-for (const f of GLOBAL_FX) {
-  push(`item.fx.${f.key}.label`, "item", f.label, "Globaler Effekt — Name (Kosmetik-Shop)");
-  if (f.desc) push(`item.fx.${f.key}.desc`, "item", f.desc, `Globaler Effekt „${f.label}" — Beschreibung`);
-}
-for (const p of Object.values(THEME_DEFS)) {
-  push(`item.pack.${p.id}.name`, "item", p.name, "Kosmetik-Paket — Name");
-  if (p.desc) push(`item.pack.${p.id}.desc`, "item", p.desc, `Kosmetik-Paket „${p.name}" — Beschreibung`);
-  if (p.hint) push(`item.pack.${p.id}.hint`, "item", p.hint, `Kosmetik-Paket „${p.name}" — Freischalt-Hinweis`);
-}
+/* ============ 8 · Kosmetik ============
+   (Migriert — EIN Name je Set plus die globalen Effekte kommen unten aus dem i18n-Katalog.
+   Spielfeld- und Paketname leiten sich im Register vom Decknamen ab, es gibt also nichts
+   Zusätzliches zu übersetzen.) */
 
 /* ============ 9 · Wochen-Modifikatoren ============
    (Migriert — Namen und {v}-Beschreibungen kommen unten aus dem i18n-Katalog.) */

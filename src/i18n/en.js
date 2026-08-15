@@ -13,6 +13,7 @@ import enPerks from "./enPerks.js";     // legendary perks + perk categories
 import enFamilies from "./enFamilies.js"; // 73 perk families × name + tier descriptions
 import enMeta from "./enMeta.js";       // upgrade tree + weekly modifiers
 import enGlossary from "./enGlossary.js"; // 109 glossary entries + categories + groups
+import enCosmetics from "./enCosmetics.js"; // skin sets + global effects
 
 export default {
   ...enSkills,
@@ -20,6 +21,7 @@ export default {
   ...enFamilies,
   ...enMeta,
   ...enGlossary,
+  ...enCosmetics,
 
   /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
      Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,

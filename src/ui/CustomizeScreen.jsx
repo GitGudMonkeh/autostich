@@ -6,7 +6,7 @@ import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.
 import {
   THEMES, THEME_DEFS, showcaseLook,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
-  GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
@@ -59,6 +59,7 @@ function prefetchFxChunks() {
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
+import { deckDef, battlefieldDef, themeDef, globalFxList, globalFxDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
 
 // #327 Standard-Backdrop für ALLE Effekt-Showcases: das Genesis-Battlefield (Default-Standard-BG, Single Source of Truth
 // = THEME_DEFS.genesis.bfId). Im Standard-Modus zeigt jeder Showcase Genesis; nur der Deckfarbe-Modus zeigt den Pack-BG.
@@ -178,7 +179,7 @@ const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", always
 //   • Skill-Effekt (Archetyp, group "spezial") — immer aktiv, nur Farbwahl (zählt nicht in die Einfachauswahl).
 // mode: "cardanim" (Karten-Animationen einfach-exklusiv) | "finisher" (Stich) | "bg" (Hintergrund-Set einfach-exklusiv,
 //   Leuchten separat frei) | "gott" (Score). Die alten Gruppen (anim/bgfx/bgglow/bgfin/finisher/gott) bleiben als
-//   DATEN-Gruppe (GLOBAL_FX.group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
+//   DATEN-Gruppe (globalFxList().group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
 const FX_GROUPS = [
   { key: "karten",      title: "Karten",      hint: "Skill immer an · eine Animation", mode: "cardanim" },
   { key: "stich",       title: "Stich",       hint: "nur einer aktiv",                 mode: "finisher" },
@@ -194,10 +195,10 @@ const FIELD_NONE = { key: "none", name: "Kein Effekt", group: "field", preview: 
    Ambiente, nur dass die anim-Gruppe eine Mehrfachauswahl ist). preview „none" → schlichte Karte ohne Overlay. */
 const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview: "none", alwaysOwned: true,
   desc: "Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar)." };
-// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
+// Items einer Gruppe (in Detail-Reihenfolge): globalFxList() der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
-const fxByGroup = (g) => GLOBAL_FX.filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-const fxKey = (k) => GLOBAL_FX_BY_KEY[k]; // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
+const fxByGroup = (g) => globalFxList().filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
+const fxKey = (k) => globalFxDef(k); // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
 const byFxPrice = (a, b) => globalFxPrice(a) - globalFxPrice(b); // #353 Seltenheit = Preis (aufsteigend)
 // #353 Basis-Reihenfolge je Reiter: die festen Führungs-Kacheln (Standard/„Kein …"/Leuchten/Skill) voran, der REST nach
 // Seltenheit (= Preis) sortiert. (Vorher stand der Hintergrund-Vierer in fixer Reihenfolge — jetzt ebenfalls nach Preis.)
@@ -266,7 +267,7 @@ const finisherSelOf = (options, profile) => {
    true, „none" = alle false). „Leuchten" (deckglow) bleibt ein UNABHÄNGIGER freier Toggle (fxDeckGlow) außerhalb dieses
    Sets. bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
 const BG_EXCL_KEYS = ["aurora", "cubematrix", "neonsurf", "starfield"]; // feste Priorität (Aurora zuerst) — #glutfunken-raus: embers entfernt · #345 neonsurf
-const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => GLOBAL_FX_BY_KEY[k]).filter(Boolean);
+const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => globalFxDef(k)).filter(Boolean);
 const bgFlags = (key) => Object.fromEntries(BG_EXCL_FX.map((f) => [f.option, f.key === key]));
 const bgSelOf = (options, profile) => {
   for (const f of BG_EXCL_FX) if (options?.[f.option]) { if (profile && !globalFxOwned(profile, f)) continue; return f.key; }
@@ -274,14 +275,14 @@ const bgSelOf = (options, profile) => {
 };
 /* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
    „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
-const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
+const GOTT_FX = globalFxList().filter((f) => f.group === "gott");
 const gottFlags = (key) => Object.fromEntries(GOTT_FX.map((f) => [f.option, f.key === key]));
 const gottSelOf = (options) => { for (const f of GOTT_FX) if (options?.[f.option]) return f.key; return "gottStandard"; };
 /* #331 Karten-Animationen (mode "cardanim") sind jetzt EINFACH-EXKLUSIV (früher frei kombinierbar): genau EINE
    Animation aktiv, oder keine (= „Keine Animation"). cardAnimFlags(key) schreibt {fxEdgeGlow,fxHolo,fxGlitch} in einem
    Rutsch (genau eine true, „none" = alle false); animNoneFlags = alle aus (für die „Keine"-Kachel). cardAnimSelOf
    gated auf Besitz (ungekaufte Auswahl zählt nicht). Der Skill-Effekt (Archetyp) läuft getrennt (immer aktiv). */
-const ANIM_FX = GLOBAL_FX.filter((f) => f.group === "anim");
+const ANIM_FX = globalFxList().filter((f) => f.group === "anim");
 const cardAnimFlags = (key) => Object.fromEntries(ANIM_FX.map((f) => [f.option, f.key === key]));
 const animNoneFlags = () => Object.fromEntries(ANIM_FX.map((f) => [f.option, false]));
 const cardAnimSelOf = (options, profile) => {

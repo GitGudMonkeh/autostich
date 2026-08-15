@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { rarityLabel } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
+import { rarityLabel, deckDef, battlefieldDef } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
@@ -499,8 +499,8 @@ export function Autostich() {
       : null);
     // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
     const catalog = [
-      ...Object.values(DECK_DEFS).map((d) => ({ def: d, type: "deck" })),
-      ...Object.values(BATTLEFIELD_DEFS).map((d) => ({ def: d, type: "battlefield" })),
+      ...Object.keys(DECK_DEFS).map((id) => ({ def: deckDef(id), type: "deck" })),
+      ...Object.keys(BATTLEFIELD_DEFS).map((id) => ({ def: battlefieldDef(id), type: "battlefield" })),
     ];
     setNewUnlocks(
       catalog
