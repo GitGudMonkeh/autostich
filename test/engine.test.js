@@ -194,7 +194,7 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     expect(t(4).critChance).toBeCloseTo(0.25); // Serie 5 (post-win) → 0,25
     expect(t(24).critChance).toBeCloseTo(1);   // Serie 25 → 1,25, geklemmt auf 1
   });
-  it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % wird additiv zu Crit-Schaden (max +100 %, total-aware) (#115)", () => {
+  it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % hebt additiv den Crit-Multiplikator (max +1,00×, total-aware) (#115)", () => {
     const cm = (ws, over = {}) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws, ...over }), rng).lastTrick.critMultiplier;
     expect(cm(9)).toBeCloseTo(CRIT_BASE_MULT);               // Serie 10 → rawCrit 0,5 < 1 → nur Basis
     expect(cm(29)).toBeCloseTo(CRIT_BASE_MULT + 0.5);        // Serie 30 → rawCrit 1,5 → +0,5
