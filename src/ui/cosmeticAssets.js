@@ -135,6 +135,15 @@ import hirsch2Front from "../assets/cards/decks_player/deck_hirsch2/front.webp";
 import hirsch2Back  from "../assets/cards/decks_player/deck_hirsch2/back.webp";
 import hirsch3Front from "../assets/cards/decks_player/deck_hirsch3/front.webp";
 import hirsch3Back  from "../assets/cards/decks_player/deck_hirsch3/back.webp";
+// #deck40 Gaia · Glazius · Voltaris · Pyrros (je 40 DP)
+import gaiaFront     from "../assets/cards/decks_player/deck_gaia/front.webp";
+import gaiaBack      from "../assets/cards/decks_player/deck_gaia/back.webp";
+import glaziusFront  from "../assets/cards/decks_player/deck_glazius/front.webp";
+import glaziusBack   from "../assets/cards/decks_player/deck_glazius/back.webp";
+import voltarisFront from "../assets/cards/decks_player/deck_voltaris/front.webp";
+import voltarisBack  from "../assets/cards/decks_player/deck_voltaris/back.webp";
+import pyrrosFront   from "../assets/cards/decks_player/deck_pyrros/front.webp";
+import pyrrosBack    from "../assets/cards/decks_player/deck_pyrros/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -155,6 +164,14 @@ import bfHirsch2Desktop from "../assets/battlefields/bf_hirsch2/desktop.jpg";
 import bfHirsch2Mobile  from "../assets/battlefields/bf_hirsch2/mobile.jpg";
 import bfHirsch3Desktop from "../assets/battlefields/bf_hirsch3/desktop.jpg";
 import bfHirsch3Mobile  from "../assets/battlefields/bf_hirsch3/mobile.jpg";
+import bfGaiaDesktop     from "../assets/battlefields/bf_gaia/desktop.jpg";
+import bfGaiaMobile      from "../assets/battlefields/bf_gaia/mobile.jpg";
+import bfGlaziusDesktop  from "../assets/battlefields/bf_glazius/desktop.jpg";
+import bfGlaziusMobile   from "../assets/battlefields/bf_glazius/mobile.jpg";
+import bfVoltarisDesktop from "../assets/battlefields/bf_voltaris/desktop.jpg";
+import bfVoltarisMobile  from "../assets/battlefields/bf_voltaris/mobile.jpg";
+import bfPyrrosDesktop   from "../assets/battlefields/bf_pyrros/desktop.jpg";
+import bfPyrrosMobile    from "../assets/battlefields/bf_pyrros/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -198,6 +215,10 @@ export const DECK_ASSETS = {
   deck_hirsch1: { front: hirsch1Front, back: hirsch1Back },
   deck_hirsch2: { front: hirsch2Front, back: hirsch2Back },
   deck_hirsch3: { front: hirsch3Front, back: hirsch3Back },
+  deck_gaia:     { front: gaiaFront,     back: gaiaBack },
+  deck_glazius:  { front: glaziusFront,  back: glaziusBack },
+  deck_voltaris: { front: voltarisFront, back: voltarisBack },
+  deck_pyrros:   { front: pyrrosFront,   back: pyrrosBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -243,6 +264,10 @@ export const BATTLEFIELD_ASSETS = {
   bf_hirsch1: { desktop: bfHirsch1Desktop, mobile: bfHirsch1Mobile },
   bf_hirsch2: { desktop: bfHirsch2Desktop, mobile: bfHirsch2Mobile },
   bf_hirsch3: { desktop: bfHirsch3Desktop, mobile: bfHirsch3Mobile },
+  bf_gaia:     { desktop: bfGaiaDesktop,     mobile: bfGaiaMobile },
+  bf_glazius:  { desktop: bfGlaziusDesktop,  mobile: bfGlaziusMobile },
+  bf_voltaris: { desktop: bfVoltarisDesktop, mobile: bfVoltarisMobile },
+  bf_pyrros:   { desktop: bfPyrrosDesktop,   mobile: bfPyrrosMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

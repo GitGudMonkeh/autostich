@@ -77,6 +77,11 @@ export const DECK_DEFS = {
   deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "games", n: 10 } },
   deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "games", n: 20 } },
   deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "games", n: 30 } },
+  // #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Gaia · Glazius · Voltaris · Pyrros
+  deck_gaia:     { id: "deck_gaia",     name: "Gaia",     unlock: { kind: "buy", ownKey: "pack:gaia" } },
+  deck_glazius:  { id: "deck_glazius",  name: "Glazius",  unlock: { kind: "buy", ownKey: "pack:glazius" } },
+  deck_voltaris: { id: "deck_voltaris", name: "Voltaris", unlock: { kind: "buy", ownKey: "pack:voltaris" } },
+  deck_pyrros:   { id: "deck_pyrros",   name: "Pyrros",   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -129,6 +134,11 @@ export const BATTLEFIELD_DEFS = {
   bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "games", n: 10 } },
   bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "games", n: 20 } },
   bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "games", n: 30 } },
+  // #deck40 Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_gaia:     { id: "bf_gaia",     name: bfName("deck_gaia"),     unlock: { kind: "buy", ownKey: "pack:gaia" } },
+  bf_glazius:  { id: "bf_glazius",  name: bfName("deck_glazius"),  unlock: { kind: "buy", ownKey: "pack:glazius" } },
+  bf_voltaris: { id: "bf_voltaris", name: bfName("deck_voltaris"), unlock: { kind: "buy", ownKey: "pack:voltaris" } },
+  bf_pyrros:   { id: "bf_pyrros",   name: bfName("deck_pyrros"),   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

@@ -246,6 +246,16 @@ export const THEME_DEFS = {
   // Obsidian — monochromes Kristall-Monolith-Pack (schwarz mit weiß glühenden Rissen).
   obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 15, a1: "#e8edf5", a2: "#9aa6bd",
     deckId: "deck_obsidian",   bfId: "bf_obsidian",   els: ["deck", "bf"] },
+
+  // ---- #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Elementar-Kreaturen ----
+  gaia:     { id: "gaia",     name: packName("deck_gaia"),     emblem: "🐢", kind: "buy", price: 40, a1: "#35e06a", a2: "#a6ff8f",
+    deckId: "deck_gaia",     bfId: "bf_gaia",     els: ["deck", "bf"] },
+  glazius:  { id: "glazius",  name: packName("deck_glazius"),  emblem: "🦣", kind: "buy", price: 40, a1: "#4db3ff", a2: "#a8e6ff",
+    deckId: "deck_glazius",  bfId: "bf_glazius",  els: ["deck", "bf"] },
+  voltaris: { id: "voltaris", name: packName("deck_voltaris"), emblem: "🦂", kind: "buy", price: 40, a1: "#9b5cff", a2: "#c9a0ff",
+    deckId: "deck_voltaris", bfId: "bf_voltaris", els: ["deck", "bf"] },
+  pyrros:   { id: "pyrros",   name: packName("deck_pyrros"),   emblem: "🐼", kind: "buy", price: 40, a1: "#ff5a2a", a2: "#ffb347",
+    deckId: "deck_pyrros",   bfId: "bf_pyrros",   els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

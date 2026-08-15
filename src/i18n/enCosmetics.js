@@ -53,6 +53,11 @@ export default {
   "cosmetic.deck_hirsch1.name": "Stag · Constellation",
   "cosmetic.deck_hirsch2.name": "Stag · Awakened",
   "cosmetic.deck_hirsch3.name": "Stag · Starfall",
+  // #deck40 — Eigennamen, in beiden Sprachen gleich
+  "cosmetic.deck_gaia.name": "Gaia",
+  "cosmetic.deck_glazius.name": "Glazius",
+  "cosmetic.deck_voltaris.name": "Voltaris",
+  "cosmetic.deck_pyrros.name": "Pyrros",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —
