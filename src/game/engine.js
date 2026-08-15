@@ -74,6 +74,13 @@ export function effectivePlayerValue(baseValue, perks, ctx) {
   return baseValue + sumHook(perks, "cardBonus", { ...ctx, pValueBase: baseValue });
 }
 
+// #370 Wochen-Mod-Magnitude lesen (0 wenn nicht aktiv). state.weekMods = [{ effect, mag, … }] — nur im Ranked-Lauf gesetzt.
+export function weekModMag(weekMods, effect) {
+  if (!Array.isArray(weekMods)) return 0;
+  const m = weekMods.find((x) => x.effect === effect);
+  return m ? (Number(m.mag) || 0) : 0;
+}
+
 /* Einen Stich auflösen → neuer State (pure). V2 (§22): KEIN Leben/Schaden/Heilung/Schild/Tempo mehr —
    der Run läuft garantiert über MAX_CYCLES Durchläufe. rng wird nur bei Durchlauf-Ende (Gegner neu
    mischen, Perk-/Skill-Angebot) gebraucht — als Abhängigkeit injiziert, damit die Schicht
@@ -332,11 +339,14 @@ export function resolveTrick(state, rng) {
   // (unten im Auszahlungs-Block). Hier: im Kampf unterdrücken, damit er nicht doppelt (Wert + Masse) zählt.
   const verdichtung = glacierActive && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG) && !!glacierLocked[actualPos];
   const architectValueEff = verdichtung ? 0 : architectValue;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff;
+  // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
+  const wmCardBonus = weekModMag(state.weekMods, "cardValue");
+  const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff + wmCardBonus;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
-  const oppValueMod = difficulty ? (difficulty.oppValue || 0) + rampMod : 0;
+  const oppValueMod = (difficulty ? (difficulty.oppValue || 0) + rampMod : 0) + wmEnemyBonus;
   // Brand (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value + oppValueMod - (brandActive[oCard.id] || 0)); // Brand (Feuer)
   // Der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht (Blitzfänger).

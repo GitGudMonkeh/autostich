@@ -714,3 +714,18 @@ describe("resolveTrick — Nicht-play früher Rückgabezweig (#158)", () => {
     expect(resolveTrick(over, rng)).toBe(over);
   });
 });
+
+describe("#370 Wochen-Mods: Karten-Wert (nur im Ranked-Lauf gesetzt)", () => {
+  it("Starke Karten (+mag Spielerwert) dreht einen knappen Stich zum Sieg", () => {
+    expect(resolveTrick(scenario(5, 7), rng).lastResult).toBe("loss");
+    expect(resolveTrick(scenario(5, 7, { weekMods: [{ effect: "cardValue", mag: 3 }] }), rng).lastResult).toBe("win");
+  });
+  it("Stärkere Gegner (+mag Gegnerwert) dreht einen knappen Sieg zur Niederlage", () => {
+    expect(resolveTrick(scenario(9, 7), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(9, 7, { weekMods: [{ effect: "enemyValue", mag: 3 }] }), rng).lastResult).toBe("loss");
+  });
+  it("ohne Wochen-Mods (Normal-/Sim-Lauf) unverändert", () => {
+    expect(resolveTrick(scenario(8, 7, { weekMods: [] }), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(8, 7), rng).lastResult).toBe("win");
+  });
+});
