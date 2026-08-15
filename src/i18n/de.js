@@ -878,20 +878,19 @@ export default {
   "start.tutorial.offer.sub": "Ein geführter Lauf erklärt dir alles Schritt für Schritt",
 
   "tutorial.eyebrow": "Tutorial",
-  "tutorial.progress": "Schritt {n}/{total}",
   "tutorial.aria.dialog": "Tutorial-Hinweis",
   "tutorial.btn.next": "Verstanden",
   "tutorial.btn.finish": "Weiterspielen",
   "tutorial.btn.skipStep": "Überspringen",
   "tutorial.btn.end": "Tutorial beenden",
 
-  "tutorial.intro.title": "Ein geführter Lauf",
-  "tutorial.intro.body": "Willkommen bei Autostich!\n\nAutostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.\n\nEin Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.\n\nJede Phase wird dir einmal erklärt, sobald sie zum ersten Mal auftaucht.",
+  "tutorial.intro.title": "Willkommen bei Autostich",
+  "tutorial.intro.body": "Autostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.\n\nEin Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.\n\nDieser geführte Lauf erklärt dir jede Phase einmal, sobald sie zum ersten Mal auftaucht.",
 
   "tutorial.play.title": "Das Stichspiel",
   "tutorial.play.body": "Beide Decks decken ihre {cards} Karten Stich für Stich auf. Die höhere Karte gewinnt, bei Gleichstand bekommt niemand Punkte.\n\nEin gewonnener Stich bringt {win} Basispunkte. Darauf legen sich Faktoren: deine Siegesserie, Crits, Formationen und deine Gebäude — deshalb wächst dein Score gegen Ende eines Laufs so steil.\n\nBeispiel: Bei Serie {exStreak} steht dein Serien-Faktor auf ×{exStreakMult} — aus {win} Basispunkten werden {exTotal}. Formationen, Crits und Gebäude multiplizieren darauf weiter.",
   "tutorial.play.mark.board": "Hier laufen die Stiche: links deine Karte, rechts die des Gegners. Am Brett siehst du auch das Ergebnis und die Faktoren, die auf den Stich gewirkt haben.",
-  "tutorial.play.mark.status": "Die Leiste zeigt Score, Serie und Durchlauf. Über sie hältst du den Lauf an oder änderst das Tempo — sonst läuft er von allein weiter.",
+  "tutorial.play.mark.status": "Die Leiste zeigt Score, Serie und Durchlauf; darüber hältst du den Lauf an oder änderst das Tempo. Das Karten-Symbol öffnet die Chronik — die Übersicht all deiner Karten, Formationen und Gebäude im laufenden Lauf.",
   "tutorial.play.mark.bars": "Sobald ein Archetyp aktiv ist, erscheint hier seine Ressourcenleiste: Ladung bei Blitz, Hitze bei Feuer, Masse bei Eis, Wachstum bei Pflanze. Sie füllt sich während der Stiche und treibt die Effekte deiner Skills an.",
   "tutorial.play.mark.milestone": "Der Meilensteinbalken zeigt, wie weit dein Score bis zur nächsten Stufe ist — jede erreichte Stufe bringt dir Stichpunkte für den Upgrade-Baum.",
   "tutorial.play.mark.rail": "Die Seitenpanels verraten, woher dein Score kommt und was dein Build gerade kann.",

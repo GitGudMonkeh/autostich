@@ -867,20 +867,19 @@ export default {
   "start.tutorial.offer.sub": "A guided run walks you through everything, step by step",
 
   "tutorial.eyebrow": "Tutorial",
-  "tutorial.progress": "Step {n}/{total}",
   "tutorial.aria.dialog": "Tutorial hint",
   "tutorial.btn.next": "Got it",
   "tutorial.btn.finish": "Continue",
   "tutorial.btn.skipStep": "Skip",
   "tutorial.btn.end": "End tutorial",
 
-  "tutorial.intro.title": "A guided run",
-  "tutorial.intro.body": "Welcome to Autostich!\n\nAutostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.\n\nA run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.\n\nEvery phase is explained once, the first time it comes up.",
+  "tutorial.intro.title": "Welcome to Autostich",
+  "tutorial.intro.body": "Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.\n\nA run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.\n\nThis guided run explains every phase once, the first time it comes up.",
 
   "tutorial.play.title": "The trick play",
   "tutorial.play.body": "Both decks turn up their {cards} cards, trick by trick. The higher card wins; on a tie nobody scores.\n\nA won trick pays {win} base points. Factors pile on top of that: your win streak, crits, formations and your buildings — which is why your score climbs so steeply towards the end of a run.\n\nExample: at a streak of {exStreak} your streak factor sits at ×{exStreakMult} — {win} base points turn into {exTotal}. Formations, crits and buildings multiply on top of that.",
   "tutorial.play.mark.board": "The tricks run here: your card on the left, your opponent's on the right. The board also shows the result and the factors that applied to the trick.",
-  "tutorial.play.mark.status": "The bar shows score, streak and cycle. Use it to hold the run or change its speed — otherwise it keeps going on its own.",
+  "tutorial.play.mark.status": "The bar shows score, streak and cycle; use it to hold the run or change its speed. The card icon opens the Chronicle — the overview of all your cards, formations and buildings in the current run.",
   "tutorial.play.mark.bars": "As soon as an archetype is active, its resource bar appears here: Charge for Lightning, Heat for Fire, Mass for Ice, Growth for Plant. It fills up during the tricks and drives the effects of your skills.",
   "tutorial.play.mark.milestone": "The milestone bar shows how far your score is from the next tier — every tier you reach pays Trick Points towards the upgrade tree.",
   "tutorial.play.mark.rail": "The side panels show where your score comes from and what your build can do.",

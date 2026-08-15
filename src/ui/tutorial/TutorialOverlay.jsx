@@ -146,7 +146,7 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const t = useT();
   const fx = useFxLevel(reducedFx);   // Effekt-Stufe des Spielers, nicht nur prefers-reduced-motion
   const animate = fx === "full";
-  const { step, mark, isOutro, stepNo, stepTotal, next, skipStep, end } = tut;
+  const { step, mark, isOutro, next, skipStep, end } = tut;
   const rect = useAnchorRect(mark ? mark.anchor : null);
   const [viewH, setViewH] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
   const cardRef = useRef(null);
@@ -185,16 +185,12 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
       style={{ ...MODAL_CARD, maxHeight: box.center ? "80dvh" : box.maxH }}>
       <TopHairline />
 
-      <div className="flex items-baseline gap-2 mb-1.5">
+      {/* Kein „Schritt n/m" mehr — bewusst nur die Rubrik. Die Zahl verunsicherte mehr als sie half
+          (bedingte Phasen ohne Nummer, Reihenfolge ≠ Skript). */}
+      <div className="mb-1.5">
         <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "#9b82f0" }}>
           {t("tutorial.eyebrow")}
         </span>
-        {/* Nummer NUR im erklärten Bogen — die bedingten Phasen tragen keine (stepNo 0). */}
-        {stepNo > 0 && !showMark && (
-          <span className="text-[10px] tabular-nums ml-auto" style={{ color: "#8a8a95" }}>
-            {t("tutorial.progress", { n: stepNo, total: stepTotal })}
-          </span>
-        )}
       </div>
 
       {title && <h2 className="text-[17px] font-extrabold mb-1.5 leading-tight">{title}</h2>}
@@ -227,8 +223,14 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
            damit es in BEIDEN Achsen mittig sitzt und nicht nur waagerecht. */
         <div className="absolute inset-0 grid place-items-center p-3 sm:p-6 pointer-events-none">{card}</div>
       ) : (
+        /* Safe-Area einrechnen: das Overlay hängt per Portal am <body>, NICHT unter `.app-root` (das die
+           Notch-/Home-Indicator-Insets als Padding trägt). Ohne env() klebte die oben angeheftete
+           Coach-Mark-Karte auf großen Panels (Aufstellbrett, Baufeld) unter der Notch und wurde
+           abgeschnitten. Lieber verdeckt die Karte etwas mehr vom Brett, als dass ihr Kopf fehlt. */
         <div className="absolute inset-x-0 flex justify-center px-3 sm:px-6 pointer-events-none"
-          style={box.top != null ? { top: box.top } : { bottom: box.bottom }}>
+          style={box.top != null
+            ? { top: `calc(env(safe-area-inset-top) + ${box.top}px)` }
+            : { bottom: `calc(env(safe-area-inset-bottom) + ${box.bottom}px)` }}>
           {card}
         </div>
       )}
