@@ -8,7 +8,6 @@ import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js"
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
 // Tausendertrenner (400000 → „400.000") — Style-Guide §2: der einzige zulässige Punkt in Zahlen.
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // Zinseszins-Bank: nötige Siege eines Durchlaufs für die Auszahlung. GETEILTE QUELLE für Engine (Abrechnung)
 // und UI (Fortschritts-Readout) → kein Drift zwischen Regel und Anzeige.
 export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen * C.ZINS_HURDLE_RATE);

@@ -1,6 +1,5 @@
 import { memo, useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
-import { PERK_DEFS } from "../game/perks.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";

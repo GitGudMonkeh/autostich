@@ -7,7 +7,7 @@ import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
 import { archFamily, formationName, archCatList, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
-import { t, fmtNum } from "../i18n/index.js";
+import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";

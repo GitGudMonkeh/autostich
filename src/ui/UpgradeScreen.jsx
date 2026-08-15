@@ -8,7 +8,7 @@ import { DeckDetail } from "./DeckDetail.jsx";
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
   NODE_BY_ID, TOTAL_NODES,
-  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete, owns,
+  emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
 } from "../game/progression.js";
 import { nodeDef, nodeList } from "../i18n/labels.js"; // #sprache: Knotentexte zur Anzeigezeit
 import { t } from "../i18n/index.js";

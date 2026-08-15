@@ -16,12 +16,9 @@ import { writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, relative, join } from "node:path";
 
-import { ARCHETYPE_META } from "../src/game/skills.js";   // nur noch für die Leitfaden-Kontextspalte
-import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
 import { ARCHITECT_FAMILIES, TIER_INERT_KINDS } from "../src/game/architect.js";
 import { buildingEffect } from "../src/i18n/buildingText.js";
 import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
-import { TIER_META } from "../src/game/rarity.js";
 import CAT_DE from "../src/i18n/de.js";
 import CAT_EN from "../src/i18n/en.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
@@ -203,7 +200,7 @@ function uiRows() {
         const s = (c || "").trim();
         if (s.length < 2 || seen.has(s) || DROP.has(s)) continue;
         if (/\b(catch|const|return|else|of|current|null|undefined|typeof)\b/.test(s)) continue;  // Code-Reste
-        if (/^[)(\[\],.:|&?]+$|^[)(]|[)(]$/.test(s)) continue;
+        if (/^[)([\],.:|&?]+$|^[)(]|[)(]$/.test(s)) continue;
         if (!GERMAN.test(s) && !/^[A-Z]/.test(s)) continue;   // Musiktitel sind englisch, aber Großbuchstabe am Anfang
         if (CSSY.test(s) || FRAGMENT.test(s) || unbalanced(s)) continue;
         if (!/\s/.test(s) && /^[a-z][A-Za-z0-9_]*$/.test(s)) continue;  // camelCase-/Enum-Bezeichner

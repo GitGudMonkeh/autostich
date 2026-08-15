@@ -63,7 +63,7 @@ function prefetchFxChunks() {
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
-import { deckDef, battlefieldDef, themeDef, globalFxList, globalFxDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
+import { globalFxList, globalFxDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { unlockLabel } from "../i18n/unlockText.js"; // #sprache: Freischalt-Bedingung zur Anzeigezeit
 

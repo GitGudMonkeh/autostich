@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
-import { PERK_DEFS } from "../game/perks.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";

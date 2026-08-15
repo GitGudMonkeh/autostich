@@ -23,7 +23,7 @@ import { useEscape } from "./useEscape.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
-import { archCatList, archCatDef, suitLabel } from "../i18n/labels.js";
+import { suitLabel } from "../i18n/labels.js";
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.

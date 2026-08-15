@@ -1,4 +1,3 @@
-import { ARCH_CAT } from "./indicators/vocab.js";
 import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import FormIcon from "./FormIcon.jsx";
 import { formationLabel, formationAbbr } from "./formationLabels.js"; // Namen/Kuerzel: EINE Quelle (Sprachpruefung A12)

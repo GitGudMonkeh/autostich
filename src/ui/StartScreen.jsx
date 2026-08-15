@@ -5,7 +5,6 @@ import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, N
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { rarityLabel } from "../i18n/labels.js";      // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
-import { LEG_PHASE_CYCLE } from "../game/constants.js"; // Legendär-Phase: Durchlauf-Nr. aus dem Plan (Sprachprüfung E3)
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 import { fmtNum } from "../i18n/index.js";

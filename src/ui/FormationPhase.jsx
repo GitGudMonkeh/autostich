@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from "react";
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { SKILL_DEFS, hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
+import { hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -15,7 +15,7 @@ import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef, archCatList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
-import { t, fmtNum } from "../i18n/index.js";
+import { t } from "../i18n/index.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).

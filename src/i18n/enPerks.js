@@ -11,7 +11,6 @@ import { SEGMENT_SIZE } from "../game/formations.js"; // wie in perks.js — die
 
 const num = (x) => String(x);
 const pct = (x) => Math.round(x * 100);
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 export default {
   /* ---- Perk categories (chips on the offer cards — keep the names SHORT) ---- */

@@ -60,6 +60,8 @@ export function GlossaryOverlay({ onClose }) {
   useEscape(onClose);
 
   const [locale] = useLocale();
+  // glossaryEntries() liest die aktive Sprache intern → bei Sprachwechsel neu berechnen (locale als Trigger).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const entries = useMemo(() => glossaryEntries(), [locale]);
   const query = q.trim().toLowerCase();
   const match = (e) =>
