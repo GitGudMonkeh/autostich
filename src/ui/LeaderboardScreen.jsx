@@ -14,7 +14,8 @@ import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
 import { rankedUnlocked } from "../game/progression.js";
-import { WEEK_MODS, WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
+import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
+import { WeekModChips, catalogDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
 
 const TOP_N = 20;
@@ -32,46 +33,18 @@ const TABS = [
   { id: "champions",  label: "🏆 Challenger", accent: GOLD },
   { id: "regeln",     label: "Regeln",       accent: CY },
 ];
-// #370 Wochen-Modifikatoren-Anzeige — positive grün, negative rot.
-const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
-function WeekModList({ mods }) {
-  if (!mods || !mods.length) return null;
-  return (
-    <div className="grid gap-1.5 mb-3">
-      {mods.map((m) => {
-        const c = m.sign === "pos" ? MOD_POS : MOD_NEG;
-        return (
-          <div key={m.id} className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5" style={{ background: "#141320", border: `1px solid ${c}44`, borderLeft: `3px solid ${c}` }}>
-            <span className="text-[12px] shrink-0" style={{ color: c }}>{m.sign === "pos" ? "▲" : "▼"}</span>
-            <span className="flex-1 min-w-0">
-              <b className="text-[12.5px]" style={{ color: c }}>{m.name}</b>
-              <span className="text-[11px] opacity-70 ml-1.5">{m.text}</span>
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-// #370 Regeln-Reiter — Modus-Baseline + voller Modifikator-Katalog + Ausschluss-Paare.
+// #381 Regeln-Reiter — Modus-Baseline + voller Modifikator-Katalog (als Chips) + Ausschluss-Paare.
 function RegelnPanel() {
-  const line = (list, c) => (
-    <div className="grid gap-1">
-      {list.map((m) => (
-        <div key={m.id} className="flex items-baseline gap-2 text-[11.5px]">
-          <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: c, marginTop: 6 }} />
-          <span><b style={{ color: c }}>{m.name}</b> <span className="opacity-70">— {m.desc(m.range ? m.range[0] : undefined)}{m.range ? ` (${m.range[0]}–${m.range[1]})` : ""}</span>{m.pair ? <span className="opacity-40"> · Paar</span> : null}</span>
-        </div>
-      ))}
-    </div>
-  );
+  const catalog = catalogDisplayMods();
+  const pos = catalog.filter((m) => m.sign === "pos");
+  const neg = catalog.filter((m) => m.sign === "neg");
   return (
     <div className="text-[12px] leading-relaxed">
       <p className="opacity-75 mb-3">Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat <b>keine</b> Wirkung (2 Rerolls je Phase, Raritäten bis Rar, Legendär ab R29). Jede Woche verändern <b>3–5 zufällige Modifikatoren</b> (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.</p>
       <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: MOD_POS }}>Positive Modifikatoren</div>
-      {line(WEEK_MODS.filter((m) => m.sign === "pos"), MOD_POS)}
+      <WeekModChips mods={pos} size="sm" />
       <div className="text-[10px] font-bold uppercase tracking-wider mt-3 mb-1.5" style={{ color: MOD_NEG }}>Negative Modifikatoren</div>
-      {line(WEEK_MODS.filter((m) => m.sign === "neg"), MOD_NEG)}
+      <WeekModChips mods={neg} size="sm" />
       <div className="text-[10px] font-bold uppercase tracking-wider mt-3 mb-1.5 opacity-60">Ausschluss-Paare (nie zusammen)</div>
       <div className="grid gap-1 text-[11.5px] opacity-75">
         {WEEK_MOD_PAIRS.map((p) => (
@@ -263,9 +236,9 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
                       </div>
                     )}
                   </div>
-                  {/* #370 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch). Wirkung folgt in Phase 3. */}
+                  {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
                   <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Modifikatoren dieser Woche</div>
-                  <WeekModList mods={weekMods} />
+                  <div className="mb-3"><WeekModChips mods={weekMods} /></div>
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
               ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>

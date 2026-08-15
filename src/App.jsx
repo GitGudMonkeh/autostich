@@ -24,6 +24,7 @@ import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Per
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
+import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
@@ -922,6 +923,12 @@ export function Autostich() {
             <div className="order-3 lg:col-start-1 lg:row-start-2">
               <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} />
             </div>
+            {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
+            {state.weekMods?.length > 0 && (
+              <div className="order-4 lg:col-start-1 lg:row-start-3">
+                <WeekModPanel mods={state.weekMods} />
+              </div>
+            )}
           </div>
 
           {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenübersicht" (🎴, nach Mult)
