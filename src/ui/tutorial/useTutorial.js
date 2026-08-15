@@ -22,6 +22,11 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
   const seen = useRef(new Set());
   const [cur, setCur] = useState(null);        // { stepId, view, markIndex }
   const outroPending = useRef(false);
+  /* Nummer je Schritt — vergeben in der Reihenfolge des AUFTRETENS, nicht der Skript-Reihenfolge.
+     Der Unterschied ist sichtbar: DECISION_SCHEDULE stellt die Skill-Wahl VOR die ersten Stiche, im
+     Skript steht „play" aber vor „skill" (weil es der Erklärbogen so will). Vorher las der Spieler
+     auf dem zweiten Fenster, das er überhaupt sah, „Schritt 3/6". */
+  const stepNos = useRef(new Map());
 
   /* Ein frisch gestartetes Tutorial fängt wieder bei null an — sonst bliebe der zweite Durchgang stumm.
      `runKey` zählt jeden Start eines geführten Laufs mit: Bei einem NEUSTART bleibt `active` durchgehend
@@ -29,9 +34,11 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
   useEffect(() => {
     if (active) {
       seen.current = new Set();
+      stepNos.current = new Map();
       outroPending.current = false;
       setCur({ stepId: "intro", view: VIEW_POPUP, markIndex: 0 });
       seen.current.add("intro");
+      stepNos.current.set("intro", 1);
     } else {
       setCur(null);
     }
@@ -44,6 +51,11 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
     const step = TUTORIAL_STEPS.find((s) => !seen.current.has(s.id) && stepMatches(s, phase, state));
     if (!step) return;
     seen.current.add(step.id);
+    // Nummer erst JETZT vergeben — beim ersten Auftreten. Bedingte Phasen (Gletscher, Ziel …) tragen
+    // keine: sie kommen unregelmäßig und würden den Nenner unehrlich machen (Plan §13.9d).
+    if (TUTORIAL_MAIN_STEPS.some((s) => s.id === step.id) && !stepNos.current.has(step.id)) {
+      stepNos.current.set(step.id, stepNos.current.size + 1);
+    }
     setCur({ stepId: step.id, view: VIEW_POPUP, markIndex: 0 });
   }, [active, cur, phase, state]);
 
@@ -93,12 +105,11 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
     onDone && onDone();
   }, [onDone]);
 
-  /* Fortschritt „Schritt n/m" aus der Skriptlänge (Plan §10). Bedingte Phasen tragen keine Nummer:
-     sie kommen unregelmäßig und würden den Nenner unehrlich machen. */
+  /* Fortschritt „Schritt n/m": Nenner aus der Skriptlänge (Plan §10), Zähler aus der Reihenfolge des
+     Auftretens (oben vergeben). Bedingte Phasen tragen keine Nummer. */
   const mainIndex = useMemo(() => {
     if (!cur || cur.view === VIEW_OUTRO) return 0;
-    const i = TUTORIAL_MAIN_STEPS.findIndex((s) => s.id === cur.stepId);
-    return i < 0 ? 0 : i + 1;
+    return stepNos.current.get(cur.stepId) || 0;
   }, [cur]);
 
   const marks = (step && step.coachmarks) || [];

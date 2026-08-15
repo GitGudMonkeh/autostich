@@ -376,6 +376,8 @@ export default {
   "form.hint.pre": "Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur",
   "form.hint.within": "innerhalb",
   "form.hint.post": "der {size}er-Segmente",
+  "form.seg.strength": "+{pct} %",
+  "form.seg.strength.title": "Formations-Bonus dieses Segments in Prozent — grün: seit Durchlaufbeginn stärker, rot: schwächer",
   "form.segwork": "Segmentarbeit:",
   "form.segwork.all": "alle Grenzen offen, segmentübergreifend",
   "form.segwork.marked": "die mit ⇕ markierten Grenzen dürfen überschritten werden",
@@ -856,6 +858,15 @@ export default {
   /* ---- Deck-Werkstatt (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Freischalten: {cond}",
   "shop.title": "Deck-Werkstatt",
+
+  /* ---- Score-Meilenstein-Balken (ScoreMilestoneBar) ---- */
+  "milestone.mio": "{n} Mio",
+  "milestone.label": "💠 Meilensteine {n}/{total}",
+  "milestone.label.sp": "💠 Meilensteine {n}/{total} · +{sp} SP",
+  "milestone.max": "Maximum · +{sp} SP",
+  "milestone.next": "→ {at} +{sp}",
+  "milestone.title.max": "Alle Score-Meilensteine erreicht",
+  "milestone.title.next": "Nächster Meilenstein: {at} (+{sp} SP)",
   /* ===================== TUTORIAL (geführter Lauf) =====================
      Ablauf und Anker stehen in src/ui/tutorial/tutorialScript.js, die Sprache hier. Alle Zahlen sind
      Platzhalter und kommen aus constants.js — ein abgetipptes „50 Durchläufe" wäre beim nächsten
@@ -875,10 +886,10 @@ export default {
   "tutorial.btn.end": "Tutorial beenden",
 
   "tutorial.intro.title": "Ein geführter Lauf",
-  "tutorial.intro.body": "Autostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.\n\nEin Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck.\n\nDein Ziel ist ein möglichst hoher Score. Verlieren kannst du nicht: es gibt nur mehr oder weniger Punkte. Jede Phase wird dir einmal erklärt, sobald sie zum ersten Mal auftaucht.",
+  "tutorial.intro.body": "Willkommen bei Autostich!\n\nAutostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.\n\nEin Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.\n\nJede Phase wird dir einmal erklärt, sobald sie zum ersten Mal auftaucht.",
 
   "tutorial.play.title": "Das Stichspiel",
-  "tutorial.play.body": "Beide Decks decken ihre {cards} Karten Stich für Stich auf. Die höhere Karte gewinnt, bei Gleichstand bekommt niemand Punkte.\n\nEin gewonnener Stich bringt {win} Basispunkte. Darauf legen sich Faktoren: deine Siegesserie, Crits, Formationen und deine Gebäude — deshalb wächst dein Score gegen Ende eines Laufs so steil.",
+  "tutorial.play.body": "Beide Decks decken ihre {cards} Karten Stich für Stich auf. Die höhere Karte gewinnt, bei Gleichstand bekommt niemand Punkte.\n\nEin gewonnener Stich bringt {win} Basispunkte. Darauf legen sich Faktoren: deine Siegesserie, Crits, Formationen und deine Gebäude — deshalb wächst dein Score gegen Ende eines Laufs so steil.\n\nBeispiel: Bei Serie {exStreak} steht dein Serien-Faktor auf ×{exStreakMult} — aus {win} Basispunkten werden {exTotal}. Formationen, Crits und Gebäude multiplizieren darauf weiter.",
   "tutorial.play.mark.board": "Hier laufen die Stiche: links deine Karte, rechts die des Gegners. Am Brett siehst du auch das Ergebnis und die Faktoren, die auf den Stich gewirkt haben.",
   "tutorial.play.mark.status": "Die Leiste zeigt Score, Serie und Durchlauf. Über sie hältst du den Lauf an oder änderst das Tempo — sonst läuft er von allein weiter.",
   "tutorial.play.mark.bars": "Sobald ein Archetyp aktiv ist, erscheint hier seine Ressourcenleiste: Ladung bei Blitz, Hitze bei Feuer, Masse bei Eis, Wachstum bei Pflanze. Sie füllt sich während der Stiche und treibt die Effekte deiner Skills an.",
@@ -886,7 +897,7 @@ export default {
   "tutorial.play.mark.rail": "Die Seitenpanels verraten, woher dein Score kommt und was dein Build gerade kann.",
 
   "tutorial.skill.title": "Skills wählen",
-  "tutorial.skill.body": "Vier Archetypen treten an: Blitz, Feuer, Eis und Pflanze. Dein erster Skill eines Archetyps macht ihn aktiv und blendet seine Ressourcenleiste ein. Mehr als {slots} Skills hältst du nicht gleichzeitig.",
+  "tutorial.skill.body": "Vier Archetypen treten an: Blitz, Feuer, Eis und Pflanze. Zu Beginn spielst du Blitz und Feuer; Eis und Pflanze schaltest du im Hauptmenü unter Upgrades frei.\n\nDein erster Skill eines Archetyps macht ihn aktiv und blendet seine Ressourcenleiste ein. Mehr als {slots} Skills hältst du nicht gleichzeitig.",
   "tutorial.skill.mark.offer": "Das Angebot ist nach Archetyp gruppiert — ein Verstärker wirkt erst mit dem Skill, den er verlangt. Das kleine i am Archetyp öffnet seinen Leitfaden.",
   "tutorial.skill.mark.slots": "Hier steht, wie viele deiner {slots} Slots schon belegt sind. Sind alle voll, geht die nächste Wahl nur noch als Tausch — du bestimmst dann, welcher Skill weichen soll.",
 
@@ -899,7 +910,7 @@ export default {
   "tutorial.formation.body": "Hier legst du die Ziehreihenfolge deiner {cards} Karten neu. Jeder Tausch kostet Formations-Energie, und du hast {energy} je Aufstellungsphase. Karten, die ein Muster bilden, ergeben eine Formation und vervielfachen deinen Score.",
   "tutorial.formation.mark.board": "Das ist deine Ziehreihenfolge: {cards} Positionen in {segments} Segmenten zu je {segment} Karten. Tippe zwei Karten an, um sie zu tauschen. Wichtig: Eine Formation zählt nur innerhalb eines Segments — über eine Segmentgrenze hinweg entsteht keine.",
   "tutorial.formation.mark.energy": "Die Energieanzeige sagt dir, wie viele Tausche dir noch bleiben.",
-  "tutorial.formation.mark.legend": "Es gibt {formTypeCount} Formationsarten: {formTypes}. Die Legende zeigt, welche deine aktuelle Reihenfolge schon trifft, und färbt die Rahmen der beteiligten Karten passend ein.",
+  "tutorial.formation.mark.legend": "Es gibt {formTypeCount} Formationsarten: {formTypes}. Jede beteiligte Karte trägt unten rechts das Kürzel ihrer Formation und einen farbigen Rahmen, darüber ihren Faktor; links am Segment steht, wie stark das ganze Segment gerade ist.",
 
   "tutorial.architect.title": "Der Architekt",
   "tutorial.architect.body": "Du legst Gebäude als Polyomino-Formen auf dein Baufeld. Ein Gebäude wirkt, solange es liegt; volle Zeilen, Spalten und Diagonalen geben zusätzlich einen Faktor. Aufwerten, versetzen und abreißen darfst du jederzeit.",
@@ -920,7 +931,7 @@ export default {
   "tutorial.legendary.body": "In Durchlauf {cycle} wählst du einen legendären Skill aus deinen aktiven Archetypen. Er belegt einen eigenen Slot und lässt sich später nicht tauschen.",
 
   "tutorial.outro.title": "Du hast alles gesehen",
-  "tutorial.outro.body": "Ab hier läuft der Lauf ganz normal weiter und zählt für Statistik und Bestenliste.\n\nAm Ende bringt er dir zwei Währungen: Stichpunkte (SP) für den Upgrade-Baum, der jeden künftigen Lauf stärker starten lässt, und Deckpunkte (DP) für die Deck-Werkstatt, in der du dein Deck umbaust.\n\nDas ⓘ oben rechts öffnet jederzeit das Glossar mit allen Begriffen; wie ein Archetyp gespielt wird, steht im Leitfaden.",
+  "tutorial.outro.body": "Ab hier läuft der Lauf ganz normal weiter und zählt für Statistik und Bestenliste.\n\nAm Ende bringt er dir zwei Währungen: Stichpunkte (SP) für den Upgrade-Baum, der jeden künftigen Lauf stärker starten lässt und dir Eis und Pflanze freischaltet, und Deckpunkte (DP) für die Deck-Werkstatt, in der du das Aussehen deines Decks umgestaltest — Kartenbilder, Spielfeld und Effekte.\n\nDas ⓘ oben rechts öffnet jederzeit das Glossar mit allen Begriffen; wie ein Archetyp gespielt wird, steht im Leitfaden.",
 
   // #tiered Stufen-Decks (I/II/III): {roman} ist die römische Stufenziffer — sie bleibt in beiden Sprachen gleich.
   "shop.tier.active": "Stufe {roman} aktiv ✓",

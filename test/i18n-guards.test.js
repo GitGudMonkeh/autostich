@@ -146,6 +146,7 @@ describe("i18n · Katalog-Parität", () => {
     "board.tab.challenger",   // „Challenger" ist der Name des Modus
     "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
     "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"
+    "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -465,7 +466,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
     "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx",
     // Tutorial (geführter Lauf) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/tutorial/TutorialOverlay.jsx"];
+    "src/ui/tutorial/TutorialOverlay.jsx",
+    // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
+    "src/ui/ScoreMilestoneBar.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

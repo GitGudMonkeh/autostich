@@ -1142,6 +1142,8 @@
 "form.legend","i18n","Formationen & Rahmenfarben","Formations & frame colours","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "form.legend.chip","i18n","Legende","Legend","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "form.reset","i18n","Zurücksetzen","Reset","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"form.seg.strength","i18n","+{pct} %","+{pct}%","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"form.seg.strength.title","i18n","Formations-Bonus dieses Segments in Prozent — grün: seit Durchlaufbeginn stärker, rot: schwächer","Formation bonus of this segment in percent — green: stronger than at the start of the cycle, red: weaker","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "form.segwork","i18n","Segmentarbeit:","Segment work:","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "form.segwork.all","i18n","alle Grenzen offen, segmentübergreifend","all boundaries open, across segments","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "form.segwork.marked","i18n","die mit ⇕ markierten Grenzen dürfen überschritten werden","boundaries marked with ⇕ may be crossed","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -1837,6 +1839,13 @@
 "leg.intro.slot","i18n","7. Slot","7th slot","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "leg.reroll","i18n","↻ Neu würfeln","↻ Reroll","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "leg.title","i18n","★ Legendärer Skill","★ Legendary skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.label","i18n","💠 Meilensteine {n}/{total}","💠 Milestones {n}/{total}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.label.sp","i18n","💠 Meilensteine {n}/{total} · +{sp} SP","💠 Milestones {n}/{total} · +{sp} TP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.max","i18n","Maximum · +{sp} SP","Maximum · +{sp} TP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.mio","i18n","{n} Mio","{n}M","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.next","i18n","→ {at} +{sp}","→ {at} +{sp}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.title.max","i18n","Alle Score-Meilensteine erreicht","Every score milestone reached","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"milestone.title.next","i18n","Nächster Meilenstein: {at} (+{sp} SP)","Next milestone: {at} (+{sp} TP)","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "music.next","i18n","Nächster Track","Next track","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "music.playing","i18n","Läuft: {title} — nächster Track","Playing: {title} — next track","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "music.title","i18n","Musik","Music","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2164,7 +2173,7 @@
 "skill.slotsFull.hint","i18n","Alle {slots} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.","All {slots} slots are taken. Choose a new skill — a dialog then asks which one it replaces.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.title","i18n","Wähle einen Skill","Choose a skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "sparkline.empty","i18n","Verlauf erscheint nach den ersten Stichen…","The trend appears after the first tricks…","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"start.feedback","i18n","🐞 Feedback","🐞 Feedback","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.feedback","i18n","Feedback","Feedback","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.logo.alt","i18n","AUTOSTICH","AUTOSTICH","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.change","i18n","Name ändern","change name","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.set","i18n","Namen festlegen für den globalen Highscore","Set a name for the global high score","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2270,29 +2279,33 @@
 "tutorial.formation.body","i18n","Hier legst du die Ziehreihenfolge deiner {cards} Karten neu. Jeder Tausch kostet Formations-Energie, und du hast {energy} je Aufstellungsphase. Karten, die ein Muster bilden, ergeben eine Formation und vervielfachen deinen Score.","Here you rearrange the draw order of your {cards} cards. Every swap costs order energy, and you have {energy} per order phase. Cards that form a pattern make a formation and multiply your score.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.formation.mark.board","i18n","Das ist deine Ziehreihenfolge: {cards} Positionen in {segments} Segmenten zu je {segment} Karten. Tippe zwei Karten an, um sie zu tauschen. Wichtig: Eine Formation zählt nur innerhalb eines Segments — über eine Segmentgrenze hinweg entsteht keine.","This is your draw order: {cards} positions in {segments} segments of {segment} cards. Tap two cards to swap them. Important: a formation only counts inside a segment — none forms across a segment boundary.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.formation.mark.energy","i18n","Die Energieanzeige sagt dir, wie viele Tausche dir noch bleiben.","The energy readout tells you how many swaps you have left.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"tutorial.formation.mark.legend","i18n","Es gibt {formTypeCount} Formationsarten: {formTypes}. Die Legende zeigt, welche deine aktuelle Reihenfolge schon trifft, und färbt die Rahmen der beteiligten Karten passend ein.","There are {formTypeCount} formation types: {formTypes}. The legend shows which ones your current order already hits and tints the frames of the cards involved.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"tutorial.formation.mark.legend","i18n","Es gibt {formTypeCount} Formationsarten: {formTypes}. Jede beteiligte Karte trägt unten rechts das Kürzel ihrer Formation und einen farbigen Rahmen, darüber ihren Faktor; links am Segment steht, wie stark das ganze Segment gerade ist.","There are {formTypeCount} formation types: {formTypes}. Every card involved carries its formation's letter in the bottom right corner and a coloured frame, with its factor above; on the left of each segment you see how strong that whole segment currently is.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.formation.title","i18n","Aufstellungsphase","The order phase","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.glacier.body","i18n","Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht.","After every Ice skill you pick exactly one card for the glacier — this step is mandatory.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.glacier.title","i18n","Gletscher-Wahl","Glacier pick","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"tutorial.intro.body","i18n","Autostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.
+"tutorial.intro.body","i18n","Willkommen bei Autostich!
 
-Ein Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck.
+Autostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.
 
-Dein Ziel ist ein möglichst hoher Score. Verlieren kannst du nicht: es gibt nur mehr oder weniger Punkte. Jede Phase wird dir einmal erklärt, sobald sie zum ersten Mal auftaucht.","Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.
+Ein Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.
 
-A run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck.
+Jede Phase wird dir einmal erklärt, sobald sie zum ersten Mal auftaucht.","Welcome to Autostich!
 
-Your goal is the highest score you can reach. You cannot lose: there is only more or less score. Every phase is explained once, the first time it comes up.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.
+
+A run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.
+
+Every phase is explained once, the first time it comes up.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.intro.title","i18n","Ein geführter Lauf","A guided run","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.legendary.body","i18n","In Durchlauf {cycle} wählst du einen legendären Skill aus deinen aktiven Archetypen. Er belegt einen eigenen Slot und lässt sich später nicht tauschen.","In cycle {cycle} you pick a legendary skill from your active archetypes. It takes a slot of its own and cannot be swapped later.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.legendary.title","i18n","Legendär-Phase","The legendary phase","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.outro.body","i18n","Ab hier läuft der Lauf ganz normal weiter und zählt für Statistik und Bestenliste.
 
-Am Ende bringt er dir zwei Währungen: Stichpunkte (SP) für den Upgrade-Baum, der jeden künftigen Lauf stärker starten lässt, und Deckpunkte (DP) für die Deck-Werkstatt, in der du dein Deck umbaust.
+Am Ende bringt er dir zwei Währungen: Stichpunkte (SP) für den Upgrade-Baum, der jeden künftigen Lauf stärker starten lässt und dir Eis und Pflanze freischaltet, und Deckpunkte (DP) für die Deck-Werkstatt, in der du das Aussehen deines Decks umgestaltest — Kartenbilder, Spielfeld und Effekte.
 
 Das ⓘ oben rechts öffnet jederzeit das Glossar mit allen Begriffen; wie ein Archetyp gespielt wird, steht im Leitfaden.","From here the run simply carries on and counts towards your stats and the leaderboard.
 
-At the end it pays two currencies: Trick Points (TP) for the upgrade tree, which lets every future run start stronger, and Deck Points (DP) for the deck workshop, where you rebuild your deck.
+At the end it pays two currencies: Trick Points (TP) for the upgrade tree, which lets every future run start stronger and unlocks Ice and Plant for you, and Deck Points (DP) for the deck workshop, where you restyle the look of your deck — card art, battlefield and effects.
 
 The ⓘ in the top right corner opens the glossary with every term, at any time; the guides explain how to play each archetype.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.outro.title","i18n","Du hast alles gesehen","That’s the whole loop","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2302,9 +2315,13 @@ The ⓘ in the top right corner opens the glossary with every term, at any time;
 "tutorial.perk.title","i18n","Perks wählen","Picking perks","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.play.body","i18n","Beide Decks decken ihre {cards} Karten Stich für Stich auf. Die höhere Karte gewinnt, bei Gleichstand bekommt niemand Punkte.
 
-Ein gewonnener Stich bringt {win} Basispunkte. Darauf legen sich Faktoren: deine Siegesserie, Crits, Formationen und deine Gebäude — deshalb wächst dein Score gegen Ende eines Laufs so steil.","Both decks turn up their {cards} cards, trick by trick. The higher card wins; on a tie nobody scores.
+Ein gewonnener Stich bringt {win} Basispunkte. Darauf legen sich Faktoren: deine Siegesserie, Crits, Formationen und deine Gebäude — deshalb wächst dein Score gegen Ende eines Laufs so steil.
 
-A won trick pays {win} base points. Factors pile on top of that: your win streak, crits, formations and your buildings — which is why your score climbs so steeply towards the end of a run.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+Beispiel: Bei Serie {exStreak} steht dein Serien-Faktor auf ×{exStreakMult} — aus {win} Basispunkten werden {exTotal}. Formationen, Crits und Gebäude multiplizieren darauf weiter.","Both decks turn up their {cards} cards, trick by trick. The higher card wins; on a tie nobody scores.
+
+A won trick pays {win} base points. Factors pile on top of that: your win streak, crits, formations and your buildings — which is why your score climbs so steeply towards the end of a run.
+
+Example: at a streak of {exStreak} your streak factor sits at ×{exStreakMult} — {win} base points turn into {exTotal}. Formations, crits and buildings multiply on top of that.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.play.mark.bars","i18n","Sobald ein Archetyp aktiv ist, erscheint hier seine Ressourcenleiste: Ladung bei Blitz, Hitze bei Feuer, Masse bei Eis, Wachstum bei Pflanze. Sie füllt sich während der Stiche und treibt die Effekte deiner Skills an.","As soon as an archetype is active, its resource bar appears here: Charge for Lightning, Heat for Fire, Mass for Ice, Growth for Plant. It fills up during the tricks and drives the effects of your skills.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.play.mark.board","i18n","Hier laufen die Stiche: links deine Karte, rechts die des Gegners. Am Brett siehst du auch das Ergebnis und die Faktoren, die auf den Stich gewirkt haben.","The tricks run here: your card on the left, your opponent's on the right. The board also shows the result and the factors that applied to the trick.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.play.mark.milestone","i18n","Der Meilensteinbalken zeigt, wie weit dein Score bis zur nächsten Stufe ist — jede erreichte Stufe bringt dir Stichpunkte für den Upgrade-Baum.","The milestone bar shows how far your score is from the next tier — every tier you reach pays Trick Points towards the upgrade tree.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2312,7 +2329,11 @@ A won trick pays {win} base points. Factors pile on top of that: your win streak
 "tutorial.play.mark.status","i18n","Die Leiste zeigt Score, Serie und Durchlauf. Über sie hältst du den Lauf an oder änderst das Tempo — sonst läuft er von allein weiter.","The bar shows score, streak and cycle. Use it to hold the run or change its speed — otherwise it keeps going on its own.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.play.title","i18n","Das Stichspiel","The trick play","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.progress","i18n","Schritt {n}/{total}","Step {n}/{total}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"tutorial.skill.body","i18n","Vier Archetypen treten an: Blitz, Feuer, Eis und Pflanze. Dein erster Skill eines Archetyps macht ihn aktiv und blendet seine Ressourcenleiste ein. Mehr als {slots} Skills hältst du nicht gleichzeitig.","Four archetypes are on offer: Lightning, Fire, Ice and Plant. Your first skill of an archetype activates it and brings up its resource bar. You never hold more than {slots} skills at once.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"tutorial.skill.body","i18n","Vier Archetypen treten an: Blitz, Feuer, Eis und Pflanze. Zu Beginn spielst du Blitz und Feuer; Eis und Pflanze schaltest du im Hauptmenü unter Upgrades frei.
+
+Dein erster Skill eines Archetyps macht ihn aktiv und blendet seine Ressourcenleiste ein. Mehr als {slots} Skills hältst du nicht gleichzeitig.","Four archetypes are on offer: Lightning, Fire, Ice and Plant. You start out playing Lightning and Fire; Ice and Plant are unlocked under Upgrades in the main menu.
+
+Your first skill of an archetype activates it and brings up its resource bar. You never hold more than {slots} skills at once.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.skill.mark.offer","i18n","Das Angebot ist nach Archetyp gruppiert — ein Verstärker wirkt erst mit dem Skill, den er verlangt. Das kleine i am Archetyp öffnet seinen Leitfaden.","The offer is grouped by archetype — an amplifier only works with the skill it asks for. The little i next to the archetype opens its guide.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.skill.mark.slots","i18n","Hier steht, wie viele deiner {slots} Slots schon belegt sind. Sind alle voll, geht die nächste Wahl nur noch als Tausch — du bestimmst dann, welcher Skill weichen soll.","This line tells you how many of your {slots} slots are taken. Once they are all full, the next pick is a swap — you decide which skill has to go.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.skill.title","i18n","Skills wählen","Picking skills","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

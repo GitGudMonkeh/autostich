@@ -45,10 +45,17 @@ function useAnchorRect(anchor) {
     };
     /* IMMER hinscrollen, nicht nur wenn das Element ganz außerhalb liegt: die Auswahl-Overlays
        scrollen intern, und auf dem Handy stand das erklärte Panel regelmäßig halb unter dem
-       Bildschirmrand. `center` bringt es in die Mitte, damit darüber UND darunter Platz für die
-       Karte bleibt. scrollIntoView löst auch verschachtelte Scroll-Container mit auf. */
+       Bildschirmrand. scrollIntoView löst auch verschachtelte Scroll-Container mit auf.
+
+       Die Ausrichtung hängt an der Größe des Panels: kleine mittig (Platz auf beiden Seiten), GROSSE
+       ans untere Ende. Ein Brett, das den halben Schirm füllt, ließ mittig oben und unten je einen
+       Streifen — zu wenig für die Karte, die dann den Spotlight überlagern musste. Unten ausgerichtet
+       sammelt sich der freie Platz oben, genau dort, wo die Karte hin soll (cardBox). */
     const el0 = document.querySelector(`[data-tut="${anchor}"]`);
-    if (el0 && el0.scrollIntoView) el0.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+    if (el0 && el0.scrollIntoView) {
+      const tall = el0.getBoundingClientRect().height > window.innerHeight * 0.45;
+      el0.scrollIntoView({ block: tall ? "end" : "center", inline: "nearest", behavior: "auto" });
+    }
     measure();
     // Zweimal nachmessen: das Scrollen und ein etwaiger Layout-Nachlauf brauchen je einen Frame.
     raf1 = requestAnimationFrame(() => { measure(); raf2 = requestAnimationFrame(measure); });
@@ -109,16 +116,30 @@ function Spotlight({ rect, animate }) {
   );
 }
 
-/* Wohin die Coach-Mark-Karte? Bevorzugt UNTER den Spotlight (man liest von oben nach unten und die
-   Erklärung folgt dem Erklärten), sonst darüber. Ohne Rechteck bleibt sie mittig. */
-function cardBox(rect, viewH) {
+/* Wohin die Coach-Mark-Karte?
+
+   Reihenfolge: ÜBER den Spotlight · sonst darunter · sonst oben angeheftet.
+
+   „Oben" ist bewusst die erste Wahl (Playtest): unten stand die Karte regelmäßig halb außerhalb des
+   Bildschirms, und beim Lesen sucht man den erklärten Punkt UNTER dem Text, nicht darüber.
+
+   Die dritte Stufe ist der eigentliche Fehler-Fix: passt die Karte auf keiner Seite ganz hin (großes
+   Panel wie das Aufstellungsbrett oder das Baufeld), wird sie oben angeheftet und ÜBERLAGERT den
+   Spotlight. Vorher erzwang ein `Math.max(CARD_MIN, …)` eine Mindesthöhe, die größer als der Platz
+   sein konnte — die Karte lief dann unten aus dem Bild und die Knöpfe waren nicht erreichbar.
+   Lieber ein teilweise verdecktes Panel als eine abgeschnittene Erklärung. */
+export function cardBox(rect, viewH) {
   if (!rect) return { center: true };
-  const below = viewH - (rect.top + rect.height + SPOT_PAD);
-  const above = rect.top - SPOT_PAD;
-  if (below >= CARD_MIN || below >= above) {
-    return { top: Math.round(rect.top + rect.height + SPOT_PAD + CARD_GAP), maxH: Math.max(CARD_MIN, below - CARD_GAP * 2) };
-  }
-  return { bottom: Math.round(viewH - rect.top + SPOT_PAD + CARD_GAP - SPOT_PAD), maxH: Math.max(CARD_MIN, above - CARD_GAP * 2) };
+  /* Gerechnet wird mit dem SICHTBAREN Ausschnitt des Spotlights, nicht mit dem rohen Rechteck: ein
+     Panel kann teilweise über dem oberen Rand liegen (negatives `top`), während der Nachlauf-Frame
+     noch misst. Ungeklemmt kam dabei eine Karte mit negativem `top` heraus. */
+  const spotTop = Math.max(0, Math.min(viewH, rect.top - SPOT_PAD));
+  const spotBot = Math.min(viewH, Math.max(0, rect.top + rect.height + SPOT_PAD));
+  const above = spotTop - CARD_GAP;
+  const below = viewH - spotBot - CARD_GAP;
+  if (above >= CARD_MIN) return { bottom: Math.round(viewH - spotTop + CARD_GAP), maxH: above - CARD_GAP };
+  if (below >= CARD_MIN) return { top: Math.round(spotBot + CARD_GAP), maxH: below - CARD_GAP };
+  return { top: CARD_GAP, maxH: Math.round(viewH * 0.5) };
 }
 
 export function TutorialOverlay({ tut, reducedFx = "aus" }) {

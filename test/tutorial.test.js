@@ -8,6 +8,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_TOTAL, TUTORIAL_MAIN_STEPS, stepMatches } from "../src/ui/tutorial/tutorialScript.js";
 import { DISPLAY_VAR_KEYS, displayVars } from "../src/ui/tutorial/tutorialVars.js";
+import { cardBox } from "../src/ui/tutorial/TutorialOverlay.jsx";
+import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 
@@ -135,6 +137,63 @@ describe("Tutorial · Texte", () => {
     const got = displayVars();
     expect(Object.keys(got).sort()).toEqual([...DISPLAY_VAR_KEYS].sort());
     for (const k of DISPLAY_VAR_KEYS) expect(String(got[k]).length, `${k} ist leer`).toBeGreaterThan(0);
+  });
+});
+
+/* Die Karte darf NIE über den Bildschirmrand hinauslaufen — genau das war der Playtest-Befund
+   („Panel abgeschnitten, Knöpfe nicht erreichbar"). Ursache war eine erzwungene Mindesthöhe, die
+   größer als der vorhandene Platz sein konnte. */
+describe("Tutorial · Karten-Platzierung", () => {
+  const VIEW = 800;
+  const fits = (box) => {
+    if (box.center) return true;
+    const top = box.top != null ? box.top : VIEW - box.bottom - box.maxH;
+    return top >= 0 && top + box.maxH <= VIEW;
+  };
+
+  it("ohne Anker bleibt das Fenster mittig", () => {
+    expect(cardBox(null, VIEW).center).toBe(true);
+  });
+
+  it("liegt ÜBER dem Spotlight, wenn dort Platz ist", () => {
+    const box = cardBox({ top: 500, left: 0, width: 300, height: 200 }, VIEW);
+    expect(box.bottom).toBeGreaterThan(0);   // von unten verankert = über dem Panel
+    expect(box.top).toBeUndefined();
+    expect(fits(box)).toBe(true);
+  });
+
+  it("weicht nach unten aus, wenn oben kein Platz ist", () => {
+    const box = cardBox({ top: 10, left: 0, width: 300, height: 100 }, VIEW);
+    expect(box.top).toBeGreaterThan(100);
+    expect(fits(box)).toBe(true);
+  });
+
+  it("bleibt bei einem bildschirmfüllenden Panel ganz sichtbar (heftet oben an)", () => {
+    // Aufstellungsbrett/Baufeld: oben wie unten zu wenig Platz → überlagern statt abschneiden.
+    const box = cardBox({ top: 40, left: 0, width: 300, height: 730 }, VIEW);
+    expect(fits(box)).toBe(true);
+    expect(box.top).toBeLessThan(50);
+  });
+
+  it("passt in JEDER Anker-Lage vollständig auf den Schirm", () => {
+    for (let top = -200; top <= VIEW + 200; top += 25) {
+      for (const height of [20, 120, 400, 700, 1200]) {
+        const box = cardBox({ top, left: 0, width: 300, height }, VIEW);
+        expect(fits(box), `top=${top} height=${height} → ${JSON.stringify(box)}`).toBe(true);
+      }
+    }
+  });
+});
+
+/* Warum die Schrittnummer in useTutorial.js beim AUFTRETEN vergeben wird und nicht aus der
+   Skript-Reihenfolge kommt: der Plan stellt „play" vor „skill" (Erklärbogen), gespielt wird aber
+   zuerst die Skill-Wahl. Wer das Skript umsortiert, um die Nummer zu „reparieren", zerreißt den
+   Bogen — dieser Test hält den Grund fest. */
+describe("Tutorial · Schrittnummer", () => {
+  it("Skript-Reihenfolge ist NICHT die Reihenfolge des Auftretens", () => {
+    expect(DECISION_SCHEDULE[0]).toBe("skill");
+    const ids = TUTORIAL_MAIN_STEPS.map((s) => s.id);
+    expect(ids.indexOf("play")).toBeLessThan(ids.indexOf("skill"));
   });
 });
 

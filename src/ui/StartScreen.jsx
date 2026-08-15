@@ -331,14 +331,18 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
 
       {/* Optionen + Tutorial — zwei ruhige Chips unter dem Grid (kein eigener Grid-Platz nötig). Das Tutorial
-          steht bewusst hier und nicht als fünfte Kachel: es ist jederzeit wiederholbar, aber kein Dauerziel. */}
-      <div className="flex items-center gap-2">
-        {onOptions && (
-          <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
-        )}
-        {tutorialOffered && (
-          <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
-        )}
+          steht bewusst hier und nicht als fünfte Kachel: es ist jederzeit wiederholbar, aber kein Dauerziel.
+          Feedback bekommt eine EIGENE Zeile darunter: die beiden oberen Chips führen ins Spiel, der
+          Melder führt heraus. Nebeneinander lasen sich alle drei wie eine Reihe gleichrangiger Knöpfe. */}
+      <div className="grid gap-2 justify-items-center">
+        <div className="flex items-center gap-2">
+          {onOptions && (
+            <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
+          )}
+          {tutorialOffered && (
+            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
+          )}
+        </div>
         {/* #396 Feedback-Melder — bewusst „Feedback" und nicht „Bug melden": sonst kommen nur Bugs
             und keine Ideen. Nur hier im Menü, nie im Lauf. */}
         {onFeedback && (

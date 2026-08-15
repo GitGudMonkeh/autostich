@@ -56,11 +56,14 @@ export const TUTORIAL_STEPS = [
     titleKey: "tutorial.play.title",
     bodyKey: "tutorial.play.body",
     vars: { win: C.SCORE_PER_WIN, cards: C.TRICKS_PER_CYCLE },
+    /* Erst das Brett (darum geht es), danach die übrigen Panels in ihrer Reihenfolge AUF DEM SCHIRM,
+       von oben nach unten: Kopfleiste → Meilensteine → [Brett] → Fraktionsleisten → Seitenpanels.
+       Vorher sprang der Blick zwischen oben und unten hin und her. */
     coachmarks: [
       { anchor: "bf-board",     key: "tutorial.play.mark.board" },
       { anchor: "bf-status",    key: "tutorial.play.mark.status" },
-      { anchor: "bf-bars",      key: "tutorial.play.mark.bars" },
       { anchor: "bf-milestone", key: "tutorial.play.mark.milestone" },
+      { anchor: "bf-bars",      key: "tutorial.play.mark.bars" },
       { anchor: "bf-rail",      key: "tutorial.play.mark.rail" },
     ],
   },

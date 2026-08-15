@@ -278,11 +278,15 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         const segTint = Math.abs(segD) <= 0.001 ? "#8a8a92" : (segD > 0.001 ? "#5ab87a" : "#e0605a");
         const row = (
           <div key={`seg${s}`} className="flex items-center gap-2">
-            <div className="w-9 shrink-0 text-right leading-tight">
-              <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+            {/* Segment-Spalte (Bereich + Stärke). Etwas größer als früher (w-9 / 10px / 9px): auf dem
+                Handy war die Prozentzahl kaum lesbar. Die Breite wächst erst ab `sm` mit — auf
+                schmalen Geräten kostet jeder Pixel hier direkt Kartenbreite (die Karten teilen sich
+                den Rest über flex-1). */}
+            <div className="w-10 sm:w-12 shrink-0 text-right leading-tight">
+              <div className="text-[11px] opacity-45 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
               {segS != null && (
-                <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
-                  title="Formations-Bonus dieses Segments in % (grün = seit Durchlaufbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
+                <div className="text-[10px] sm:text-[11px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
+                  title={t("form.seg.strength.title")}>{t("form.seg.strength", { pct: Math.round(segS * 100) })}</div>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">
