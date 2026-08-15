@@ -47,16 +47,26 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
   // Fälligen Schritt suchen: erste Phasenart, die noch nicht dran war. Läuft NICHT, solange schon
   // etwas offen ist — sonst überschriebe eine Phase, die hinter dem Pop-up weiterläuft, den Text.
   useEffect(() => {
-    if (!active || cur) return;
+    if (!active) return;
     const step = TUTORIAL_STEPS.find((s) => !seen.current.has(s.id) && stepMatches(s, phase, state));
     if (!step) return;
-    seen.current.add(step.id);
-    // Nummer erst JETZT vergeben — beim ersten Auftreten. Bedingte Phasen (Gletscher, Ziel …) tragen
-    // keine: sie kommen unregelmäßig und würden den Nenner unehrlich machen (Plan §13.9d).
-    if (TUTORIAL_MAIN_STEPS.some((s) => s.id === step.id) && !stepNos.current.has(step.id)) {
-      stepNos.current.set(step.id, stepNos.current.size + 1);
-    }
-    setCur({ stepId: step.id, view: VIEW_POPUP, markIndex: 0 });
+    /* Funktionaler Updater statt `if (cur) return`: Beim Lauf-Start setzt der Intro-Effekt (oben) das
+       Willkommen im SELBEN Commit, in dem diese Phasen-Erkennung feuert (beide hängen an `active`).
+       Über den Closure-Wert `cur` (Render-Snapshot = noch null) hätte sie das Intro sofort mit dem
+       ersten Phasen-Schritt überschrieben — DECISION_SCHEDULE[0]="skill", also stand der Spieler direkt
+       vor der Archetyp-Erklärung und sah nie das Willkommen. Der Updater liest den AKTUELLEN Zustand:
+       ist schon etwas offen, bleibt es offen; die Seen-/Nummern-Markierung passiert erst, wenn der
+       Schritt wirklich gesetzt wird (`step` ist außen berechnet → StrictMode-Doppelaufruf bleibt stabil). */
+    setCur((c) => {
+      if (c) return c;
+      seen.current.add(step.id);
+      // Nummer erst JETZT vergeben — beim ersten Auftreten. Bedingte Phasen (Gletscher, Ziel …) tragen
+      // keine: sie kommen unregelmäßig und würden den Nenner unehrlich machen (Plan §13.9d).
+      if (TUTORIAL_MAIN_STEPS.some((s) => s.id === step.id) && !stepNos.current.has(step.id)) {
+        stepNos.current.set(step.id, stepNos.current.size + 1);
+      }
+      return { stepId: step.id, view: VIEW_POPUP, markIndex: 0 };
+    });
   }, [active, cur, phase, state]);
 
   const step = useMemo(() => {

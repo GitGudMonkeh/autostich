@@ -224,13 +224,15 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
         <div className="absolute inset-0 grid place-items-center p-3 sm:p-6 pointer-events-none">{card}</div>
       ) : (
         /* Safe-Area einrechnen: das Overlay hängt per Portal am <body>, NICHT unter `.app-root` (das die
-           Notch-/Home-Indicator-Insets als Padding trägt). Ohne env() klebte die oben angeheftete
-           Coach-Mark-Karte auf großen Panels (Aufstellbrett, Baufeld) unter der Notch und wurde
-           abgeschnitten. Lieber verdeckt die Karte etwas mehr vom Brett, als dass ihr Kopf fehlt. */
+           Notch-/Home-Indicator-Insets als Padding trägt). Ohne diesen Abstand klebte die oben
+           angeheftete Coach-Mark-Karte auf großen Panels (Aufstellbrett, Baufeld) unter der Notch und
+           war abgeschnitten. Denselben Floor `max(1.5rem, env(...))` wie `.app-root` benutzen — env()
+           allein ist auf manchen Geräten 0, dann fehlte der Abstand ganz. Lieber verdeckt die Karte
+           etwas mehr vom Brett, als dass ihr Kopf fehlt. */
         <div className="absolute inset-x-0 flex justify-center px-3 sm:px-6 pointer-events-none"
           style={box.top != null
-            ? { top: `calc(env(safe-area-inset-top) + ${box.top}px)` }
-            : { bottom: `calc(env(safe-area-inset-bottom) + ${box.bottom}px)` }}>
+            ? { top: `calc(max(1.5rem, env(safe-area-inset-top)) + ${box.top}px)` }
+            : { bottom: `calc(max(1.5rem, env(safe-area-inset-bottom)) + ${box.bottom}px)` }}>
           {card}
         </div>
       )}
