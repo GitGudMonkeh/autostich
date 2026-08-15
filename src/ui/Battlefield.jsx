@@ -145,8 +145,13 @@ const FLOAT_ZONES = {
 // #344: Stark/Brutal/Irre = Neon-Synthwave-CHROME (Light-Variante) — metallischer Verlauf in die Glyphen geclippt, Glow
 //   via drop-shadow. „Light" = viel Weiß/Silber mit Farbbändern je Stufe; jede Stufe eine Spur „cooler". KEIN Sweep
 //   (Verlauf steht still), reiner Text. Gottgleich (epic) bleibt UNVERÄNDERT (solides Weiß + Bloom, SVG).
+/* #322 Gottgleich-Schwelle — EINE Quelle für Ansage UND Prunk-Effekt. Sie stand vorher zweimal als
+   Literal 500000 im File (hier und weiter unten), und die beiden Stellen sind auseinandergelaufen:
+   die Ansage prüfte den Stich-Score NACH dem Krit, der Effekt den Wert DAVOR. Ein Sieg, der die
+   Schwelle erst durch den Krit-Multiplikator reißt, zeigte deshalb „GOTTGLEICH" ohne jeden Effekt. */
+const GOTT_FX_MIN = 500000;
 const BIG_SCORE_TIERS = [
-  { min: 500000, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
+  { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
   { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#ffe4f5,#ff7ed4,#e2a9ff,#ff7ed4,#ffe4f5,#ffffff)", glow: "#ff2d95", aura: "#b14bff" } },
   { min: 50000,  key: "bf.big.brutal", size: 78, rank: 2, cool: 4600,
@@ -163,7 +168,10 @@ const chromeFilter = (c, gBig, gMid) => {
   parts.push("drop-shadow(0 2px 3px #000a)");
   return parts.join(" ");
 };
-const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// Exportiert für test/battlefield-gottgleich.test.js: dort wird geprüft, dass Ansage und Effekt
+// über den GESAMTEN Wertebereich dieselbe Antwort geben.
+export const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+export { GOTT_FX_MIN };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine".
 // #: Lawine bekommt EXAKT den Gottgleich-Schrifteffekt (kein fester Farbton mehr) → Synthwave-Chrome-Zweiton bzw. im
 //   Prunk-Deckfarbe-Modus die Deckfarbe (wie Gottgleich). Zusätzlich löst Lawine denselben Gottgleich-Prunk aus (s. u.).
@@ -180,10 +188,12 @@ const BIG_ANNOUNCE_MS = 1900;       // feste Lebensdauer der Groß-Ansage — tu
 // BIG_SCORE_TIERS → Slice/Explosion + Groß-Ansage eskalieren gemeinsam. Rückgabe:
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
 //   tier = harte Stufe 0..4 (0 Base · 1 STARK · 2 BRUTAL · 3 IRRE · 4 GOTTGLEICH) für Unlock-Flourishes
-const FX_TIER_MINS = [10000, 50000, 150000, 500000]; // STARK · BRUTAL · IRRE · GOTTGLEICH (aus BIG_SCORE_TIERS)
-// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe (≥500k, dieselbe wie die epische Ansage). Feuert bei jedem Sieg,
-// dessen Wert VOR dem Krit-Multiplikator (scoreBeforeCrit bei Krit, sonst gained) die Schwelle erreicht — auch bei Krit.
-const GOTT_FX_MIN = 500000;
+// STARK · BRUTAL · IRRE · GOTTGLEICH — AUS BIG_SCORE_TIERS abgeleitet statt abgetippt (dort absteigend,
+// hier aufsteigend). Vorher stand dieselbe Leiter ein zweites Mal als Literal-Array da; genau solche
+// Doppelungen haben Ansage und Prunk-Effekt auseinanderlaufen lassen.
+const FX_TIER_MINS = BIG_SCORE_TIERS.map((s) => s.min).slice().reverse();
+// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe, dieselbe wie die epische Ansage (GOTT_FX_MIN, oben
+// definiert und von BIG_SCORE_TIERS mitbenutzt). Wer die Ansage sieht, sieht auch den Effekt.
 // #322 Cooldown: der volle Prunk höchstens alle 30 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
 // (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt.
 const GOTT_FX_COOLDOWN_MS = 30000;
@@ -1144,11 +1154,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const gottLastAt = useRef(0);
   useEffect(() => {
     if (!t) { gottLastAt.current = 0; return; }
-    // Vor-Krit-Wert: bei Krit ist gained = scoreBeforeCrit × critMultiplier → wir prüfen scoreBeforeCrit; ohne Krit = gained.
-    const gottBase = isCrit ? (t.scoreBeforeCrit || 0) : (t.gained || 0);
+    /* Derselbe Wert wie die Ansage: `t.gained`, also der Stich-Score NACH dem Krit-Multiplikator.
+       Vorher stand hier bei Krit `scoreBeforeCrit` — ein Stich, der die 500k erst DURCH den Krit
+       erreicht (z. B. 250k × 2,4), fiel damit durch dieses Gatter, während die Ansage längst
+       „GOTTGLEICH" rief. Genau das war im Playtest zu sehen: Wort ja, Effekt nie.
+       Die Häufigkeit bremst weiterhin der 30-s-Cooldown unten, nicht ein zweiter Schwellenwert. */
+    const gottBase = t.gained || 0;
     // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
     //   ist der One-Shot-Finisher-Bruch). Gleicher 30-s-Cooldown/reduced-Gate wie Gottgleich.
-    const gottWin = win && (gottBase >= GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
+    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
     if (!gottWin) return;
     const now = Date.now();
     if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
