@@ -8,7 +8,7 @@ import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCOR
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
-import { streakBaseMult } from "../src/game/perks.js";
+import { streakBaseMult, isLegendary } from "../src/game/perks.js";
 import { precomputeArchitect } from "../src/game/architect.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
@@ -787,5 +787,19 @@ describe("#370 Wochen-Mods: Bau-Boost (Architekt-Gebäude, nur Ranked)", () => {
     const noArchBase    = resolveTrick(scenario(12, 0, { pos: 5 }), rng).lastTrick.gained;
     const noArchBoosted = resolveTrick(scenario(12, 0, { pos: 5, weekMods: [{ effect: "buildBoost" }] }), rng).lastTrick.gained;
     expect(noArchBoosted).toBe(noArchBase);
+  });
+});
+
+describe("#370 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
+  const hasLeg = (offer) => Array.isArray(offer) && offer.some((e) => typeof e === "string" && isLegendary(e));
+  it("Kadenz-Runde (cycle % mag === 0) erzwingt eine Legendär-Perk-Phase mit ≥1 Legendär", () => {
+    // cycle 2 + pos 39 → nach cycle+=1 = 3; mag 3 → 3 % 3 === 0 → erzwungene Legendär-Perk-Phase.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).toBe("levelup");
+    expect(hasLeg(s.offer)).toBe(true);
+  });
+  it("gleiche Runde ohne Wochen-Mods folgt dem Plan (Plan[3] = shop, kein erzwungener Legendär)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng);
+    expect(s.phase === "levelup" && hasLeg(s.offer)).toBe(false);
   });
 });

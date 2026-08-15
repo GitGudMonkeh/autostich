@@ -1254,7 +1254,12 @@ export function resolveTrick(state, rng) {
       // Entscheidung VOR dem neuen Durchlauf nach dem Plan (Shop-Spec §2.2): schedule[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       // Dev-Run (Test-Layout): state.devSchedule überschreibt den globalen Plan pro Lauf; null → Bestand.
-      const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
+      let decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
+      // #370 Legendär-Takt (nur Ranked): jede mag-te Runde wird zur Legendär-Perk-Phase (überschreibt den Plan-Entscheid,
+      // erzwingt unten ≥1 legendären Perk). mag 0 (Nicht-Ranked) → No-op, Plan unverändert (byte-identisch).
+      const legTaktMag = weekModMag(state.weekMods, "legTakt");
+      const onLegTakt = legTaktMag > 0 && cycle > 0 && cycle % legTaktMag === 0;
+      if (onLegTakt) decision = "perk";
       // Reward-Ableitungen aus dem Progressions-Baum (Normal-/Meister-Lauf; Standard/Sim = neutral: Shift 0, Mult ×1).
       const rareShift = state.treeRareShift || 0;
       // #369 §4: Legendär-Chance (Perks UND Gebäude) — 0 ohne „Legendär"-Knoten (?? bewahrt die 0), sonst ×(1 + Drop·Schritt).
@@ -1274,7 +1279,8 @@ export function resolveTrick(state, rng) {
         } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
-        const legForce2 = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
+        const legForce2Base = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
+        const legForce2 = onLegTakt ? Math.max(1, legForce2Base) : legForce2Base; // #370 Legendär-Takt garantiert ≥1 Legendär
         const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff, rareFloorEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
