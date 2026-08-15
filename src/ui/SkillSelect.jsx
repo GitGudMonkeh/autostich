@@ -12,7 +12,6 @@ import { GLOSSARY } from "../game/glossary.js";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
-import { firstSentence } from "./LegendarySelect.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -353,8 +352,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
-                      {/* #UI: Legendäre Beschreibungen sind lang → im Angebot nur der erste Satz. */}
-                      <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.legendary ? firstSentence(s.desc) : s.desc} /></div>
+                      {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
+                      <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
                 })}
