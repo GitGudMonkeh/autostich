@@ -202,8 +202,10 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 // ACHTUNG Wechselwirkung: die Auszahlung geht über `gained` in cycleBestTrick ein, also multipliziert ECHO (×1,6 am
 // Durchlauf-Ende) sie mit. Bei MULT 6 zeigte sich das im Schwanz (p90 des Referenz-Arms 100M → 299M); bei 4 liegt der
 // p90 wieder bei 114M (Median 45M) = Baseline-Niveau. Wer MULT anhebt, muss den p90 mitlesen.
-// ACHTUNG bei den übrigen Flat-Perks: ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×) haben Defekt 1 ebenfalls,
-// sind aber bewusst NICHT mitgeändert (eigene Entscheidung, eigener Mess-Pass).
+// Derselbe Flat-Defekt traf ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×). Beide sind inzwischen weg:
+// Richtfest siehe unten (Anteil am Durchlauf-Ertrag), Zinseszins wurde parallel zur „Bank" umgebaut (Kapital ×
+// Zinssatz, Block oben) — dieselbe Diagnose, unabhängig gefunden. Damit ist im Legendär-Pool kein flacher,
+// post-stack laufender Score-Betrag mehr übrig.
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
