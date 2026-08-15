@@ -179,9 +179,20 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 // Baseline-Max): ×-Cluster (Brennpunkt/Henker/Sammler) CLEAN (0,51–1,12× — feste ×-Multiplikatoren gedeckelt). Winrate-
 // Hebel Patt/Unaufhaltsam/Umverteilung tragen erwartete Fat-Tails (Serien-Snowball, von STREAK_STAT_CAP gebändigt, abs. in
 // der Elementar-Chase-Decke ~73M, Max-Ratio < Elementar-Max-Spread 7,47×). Straffungs-Knöpfe: PATT_MARGIN, UNAUFHALTSAM_VALUE.
-// VABANQUE: nativer Kontext ist FRONT-LOAD (stärkste Karten nach vorn → Eröffnung sichern); ohne Aufstellung ~1,11× (falscher
-// Kontext). `playerOrder` ist persistent+arrangierbar → ohne Deckel per-Durchlauf-Exploit (~24×/Lauf, +8,4M). VABANQUE_MAX_
-// PAYOUTS deckelt hart: Front-Load max 3× (1,31×), Greedy natürlich ~2× → Exploit erschlagen, Front-Load kaum voraus.
+// VABANQUE: `playerOrder` ist persistent+arrangierbar → ohne Deckel per-Durchlauf-Exploit (~24×/Lauf, +8,4M). VABANQUE_MAX_
+// PAYOUTS deckelt hart: Front-Load max 3 Auszahlungen, Greedy natürlich ~2 → Exploit erschlagen.
+//
+// v0.2 (2026-08-15, `npm run impact`): VABANQUE_SCORE (flach) → VABANQUE_MULT (selbstskalierend). Der flache Betrag war
+// auf 1,03× abgesunken — post-stack am ganzen Multiplikator-Stapel vorbei, während die Läufe auf 100–200M gewachsen sind.
+// Ein fester Betrag KANN das Band nicht über die Run-Spanne halten (18M sind auf 45M +40 %, auf 150M +12 %), darum ein
+// Vielfaches der eigenen Eröffnung. Messreihe (--only L_VAB --runs 150 --explore 400): MULT 10 → 1,17× · 20 → 1,36× ·
+// 25 → 1,41× · 30 → 1,63×. Gewählt: 25 (Bandmitte). Gegenprobe mit aktivem Formations-Solver (--formations 1): 1,37× —
+// Formationsspiel treibt es also nicht aus dem Band. (Ein expliziter FRONT-LOAD-Gegner fehlt der Sim weiterhin; der
+// Solver optimiert Formationen, nicht „stärkste Karten nach vorn". Worst Case bleibt insoweit ungetestet.) Der Deckel
+// wirkt jetzt doppelt, weil die Auszahlung an die frühen, noch kleinen Durchläufe gebunden ist — sie skaliert NICHT
+// mit dem späten Score mit.
+// ACHTUNG bei den übrigen Flat-Perks: ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×) haben denselben Defekt, sind
+// aber bewusst NICHT mitgeändert (eigene Entscheidung, eigener Mess-Pass).
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
@@ -203,7 +214,7 @@ export const ZINS_RATE_MAX       = envNum("SIM_ZINS_RATE_MAX", 0.40);     // …
 export const ZINS_HURDLE_RATE    = envNum("SIM_ZINS_HURDLE_RATE", 0.65);  // … nötiger Sieg-Anteil eines Durchlaufs für die Auszahlung (× Durchlauf-Länge, aufgerundet)
 export const ZINS_CRASH_KEEP     = envNum("SIM_ZINS_CRASH_KEEP", 0.75);   // … Crash (Hürde verfehlt): so viel Kapital bleibt
 export const ZINS_CRASH_STEPS    = envNum("SIM_ZINS_CRASH_STEPS", 1);     // … Crash: um so viele Stufen fällt der Zinssatz (min. Startwert)
-export const VABANQUE_SCORE      = envNum("SIM_VABANQUE_SCORE", 400000);  // Vabanque (Eröffnung): erste N Stiche eines Durchlaufs in Folge → +Score [3000→400000: per Durchlauf, s. engine.js]
+export const VABANQUE_MULT       = envNum("SIM_VABANQUE_MULT", 25);       // Vabanque (Eröffnung): erste N Stiche in Folge → Auszahlung = MULT × Score dieser Eröffnung [flach 400.000 → selbstskalierend; 25 = Bandmitte, s. Messreihe unten]
 export const VABANQUE_TRICKS     = envNum("SIM_VABANQUE_TRICKS", 5);      // …          … so viele Eröffnungs-Stiche
 export const VABANQUE_MAX_PAYOUTS = envNum("SIM_VABANQUE_MAX_PAYOUTS", 3); // … Lauf-Deckel: so oft zahlt Vabanque max je Lauf (Anti-Front-Load-Exploit; s. engine.js)
 export const HENKER_MULT         = envNum("SIM_HENKER_MULT", 2.0);        // Henker (Segment-Finale): Score × in der End-Zone + garantierter Crit

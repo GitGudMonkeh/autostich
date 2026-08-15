@@ -114,6 +114,7 @@ export function resolveTrick(state, rng) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsCapital = 0, zinsRate = C.ZINS_RATE_START, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
     richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore = 0, // bester Stich + bester Gletscher-Stich (Bruch getrennt geführt)
@@ -810,24 +811,38 @@ export function resolveTrick(state, rng) {
     // Kurzschluss (Rework): eine VOLLE (5) Siegkarte „kurzschließt" bei JEDEM Sieg → Direkt-Score-Burst (post-stack),
     // OHNE die Stapel zu opfern. Wiederkehrender Payoff fürs Maxen (Stapel bleiben → weiter Flat-Score + Feld-Crit #271).
     if (hasKurzschluss(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS) lightDirect += C.KURZSCHLUSS_SCORE;
-    // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
-    // +VABANQUE_SCORE DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
-    // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
-    // LAUF-DECKEL (vabanquePaid < VABANQUE_MAX_PAYOUTS): `playerOrder` ist persistent + in der Formationsphase spieler-
-    // arrangierbar → ohne Deckel ließe sich die Eröffnung durch Vorne-Legen der stärksten Karten JEDEN Durchlauf
-    // abgreifen (~24–60×/Lauf → Runaway, gemessen +8,4M/Lauf). Der Deckel begrenzt den Exploit auf MAX_PAYOUTS×SCORE;
-    // ein Greedy-Spieler trifft die Eröffnung natürlich ~2×/Lauf, ein Front-Loader erreicht nur den Deckel.
-    let perkDirect = 0;
-    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
-      perkDirect = C.VABANQUE_SCORE; vabanquePaid += 1;
-    }
     // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
     // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     const fireDirectApplied = fireDirect * fireStructMult;
-    gained += fireDirectApplied + lightDirect + plantDirect + perkDirect;
+    // Voller Stich-Ertrag OHNE die Vabanque-Auszahlung — Bezugsgröße der Wette (s. u.) und Basis für `gained`.
+    const gainedPreBet = gained + fireDirectApplied + lightDirect + plantDirect;
+    // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
+    // Auszahlung DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
+    // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
+    //
+    // SELBSTSKALIEREND (Ablösung des flachen VABANQUE_SCORE): die Wette zahlt VABANQUE_MULT × den Score der
+    // EIGENEN Eröffnung (Summe der VABANQUE_TRICKS Eröffnungsstiche dieses Durchlaufs, `cycleOpenScore`), nicht
+    // mehr einen festen Betrag. Grund: perkDirect läuft post-stack an allen Multiplikatoren vorbei, ein fester
+    // Betrag verliert also mit jedem Score-Inflationsschritt an Wirkung — gemessen (sim/perk-impact.mjs) war der
+    // flache Wert auf 1,03× abgesunken, praktisch wirkungslos, genau wie die anderen Flat-Perks (Zinseszins/
+    // Richtfest). Ein Vielfaches der eigenen Eröffnung wächst mit der Ökonomie mit und bleibt „Verstärker, kein
+    // Motor": ein starker Build bekommt mehr, aber verhältnismäßig dasselbe.
+    //
+    // LAUF-DECKEL (vabanquePaid < VABANQUE_MAX_PAYOUTS): `playerOrder` ist persistent + in der Formationsphase spieler-
+    // arrangierbar → ohne Deckel ließe sich die Eröffnung durch Vorne-Legen der stärksten Karten JEDEN Durchlauf
+    // abgreifen (~24–60×/Lauf → Runaway, gemessen +8,4M/Lauf). Der Deckel begrenzt den Exploit auf MAX_PAYOUTS
+    // Auszahlungen; ein Greedy-Spieler trifft die Eröffnung natürlich ~2×/Lauf, ein Front-Loader erreicht den Deckel.
+    // Er wirkt jetzt doppelt: die Auszahlung ist an die FRÜHEN (noch kleinen) Durchläufe gebunden, in denen der
+    // Deckel zuerst greift — der Front-Load-Exploit skaliert dadurch NICHT mit dem späten Score mit.
+    if (pos < C.VABANQUE_TRICKS) cycleOpenScore += gainedPreBet; // Eröffnungs-Score dieses Durchlaufs (ohne die Wette selbst)
+    let perkDirect = 0;
+    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
+      perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1;
+    }
+    gained = gainedPreBet + perkDirect;
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
     // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
@@ -1216,7 +1231,7 @@ export function resolveTrick(state, rng) {
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
     // oben schon gebaut; Mutation einer const-Objekt-Property ist erlaubt.
     if (cycleEndScore) { lastTrick.gained += cycleEndScore; lastTrick.scoreGain += cycleEndScore; }
-    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; // Pro-Durchlauf-States zurücksetzen (#203)
+    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
     // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
     prevCycleScore = lastCycleScore;
@@ -1434,7 +1449,7 @@ export function resolveTrick(state, rng) {
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
+    zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase

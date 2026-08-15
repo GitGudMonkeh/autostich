@@ -94,7 +94,7 @@ export const PERK_DEFS = {
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
         desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Punkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt eine Stufe.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
+        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, zahlen sie das ${de(C.VABANQUE_MULT)}-fache ihres Scores noch einmal aus (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
         desc: `Im letzten Segment (Positionen ${C.HENKER_ZONE_START + 1}–40) zählt jeder Sieg ${de(C.HENKER_MULT)}-fach und ist garantiert ein Crit.` },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,

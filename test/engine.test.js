@@ -4,7 +4,7 @@ import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
   STORM_CRIT_CAP, DAUERSTROM_CRIT_CAP, CRIT_MULT_CAP,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
@@ -242,11 +242,18 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     const noPatt = resolveTrick(scenario(12 - PATT_MARGIN, 12, {}), rng);              // ohne Patt → Niederlage
     expect(noPatt.lastTrick.result).toBe("loss");
   });
-  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, je Lauf gedeckelt (#203)", () => {
+  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → VABANQUE_MULT × Eröffnungs-Score, je Lauf gedeckelt (#203)", () => {
     // TRICKS-ter Stich (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS) → Payout + Zähler hoch.
     const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0 }), rng);
-    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);
+    const bdPaid = paid.lastTrick.breakdown;
+    // Bezugsgröße ist der Eröffnungs-Score OHNE die Wette selbst (hier nur dieser eine Stich, cycleOpenScore startet 0).
+    expect(bdPaid.perkDirect).toBeCloseTo((bdPaid.total - bdPaid.perkDirect) * VABANQUE_MULT, 6);
+    expect(bdPaid.perkDirect).toBeGreaterThan(0);
     expect(paid.vabanquePaid).toBe(1);
+    // SELBSTSKALIEREND: mit bereits gesammelter Eröffnung wächst die Auszahlung mit — ein flacher Betrag täte das nicht.
+    const rich = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0, cycleOpenScore: 10_000 }), rng);
+    const bdRich = rich.lastTrick.breakdown;
+    expect(bdRich.perkDirect).toBeCloseTo(bdPaid.perkDirect + 10_000 * VABANQUE_MULT, 6);
     // Serie vorher gerissen (cycleWins < TRICKS am TRICKS-ten Stich) → kein Payout.
     const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2, vabanquePaid: 0 }), rng);
     expect(voided.lastTrick.breakdown.perkDirect).toBe(0);
