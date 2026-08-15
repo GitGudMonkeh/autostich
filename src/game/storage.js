@@ -318,7 +318,8 @@ export function recordRun(record) {
   // (nur Kauf/Respec im Baum ändern sie).
   const onboardingBefore = n0(p.onboarding);
   // #299: SP werden gutgeschrieben, bis der Baum komplett ist (danach 0 → die SP-Ökonomie fließt als DP). DP kommen
-  // aus der nativen Formel (floor(score/10M)) und — bei vollem Baum — zusätzlich aus der SP-Ökonomie.
+  // aus den SP-Meilensteinen (gleiche Anzahl wie die Meilenstein-SP) plus dem flachen Abschluss-Bonus (RUN_COMPLETE_DP)
+  // und — bei vollem Baum — zusätzlich aus der restlichen SP-Ökonomie.
   const treeDone = treeComplete(p);
   const gainedSp = spCreditForRun(record, onboardingBefore, treeDone, n0(p.spRuns));
   const gainedDp = dpForRun(record, onboardingBefore, treeDone, n0(p.spRuns));

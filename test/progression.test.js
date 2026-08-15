@@ -8,7 +8,7 @@ import {
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
   SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP, ONBOARDING_LINKS,
   onboardingAfter, spMilestones, isSpRun, spForRun, milestoneBarState,
-  DP_PER_SCORE, dpNative, dpForRun, spCreditForRun, onboardingUnlocks, onboardingRewardAt, nextOnboardingReward,
+  dpForRun, spCreditForRun, onboardingUnlocks, onboardingRewardAt, nextOnboardingReward,
   SECRET_SEEDS, UNLOCK_SP_CUSHION, matchSecretSeed, unlockAllProfile, skipOnboardingProfile,
 } from "../src/game/progression.js";
 
@@ -275,12 +275,12 @@ describe("SP-Ernte pro Lauf — nach Onboarding (Start 6/6)", () => {
   });
 });
 
-describe("DP-Ökonomie (#299) — unverändert", () => {
-  it("dpNative linear; dpForRun native + (bei vollem Baum) SP-Ökonomie; spCreditForRun 0 bei vollem Baum", () => {
-    expect(DP_PER_SCORE).toBe(10_000_000);
-    expect(dpNative(55_000_000)).toBe(5);
-    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(10);
-    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(10 + SP_PER_RUN + 5);
+describe("DP-Ökonomie — Score-DP folgt den SP-Meilensteinen", () => {
+  it("dpForRun = spMilestones(score); bei vollem Baum + restliche SP-Ökonomie; spCreditForRun 0 bei vollem Baum", () => {
+    expect(dpForRun({ completed: true, score: 55_000_000 }, 6, false, 0)).toBe(2);   // 25M+50M → 1+1
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(5);  // alle Meilensteine (1+1+1+2)
+    // Voller Baum: + restliche SP-Ökonomie (Grundstock; Treue 0 im 1. Lauf) obendrauf, Meilensteine nicht doppelt.
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(5 + SP_PER_RUN);
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0);
   });
 });

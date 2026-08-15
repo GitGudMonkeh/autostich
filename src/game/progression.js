@@ -341,19 +341,16 @@ export function spForRun(record, onboardingBefore, spRunsBefore) {
 /* ============================================================
    DP-ÖKONOMIE (Deckpunkte) — zweite Währung neben SP (#299). Unverändert (#369).
    ============================================================ */
-export const DP_PER_SCORE = envNum("PROG_DP_PER_SCORE", 10_000_000); // Score je 1 DP (native Formel)
-
-// Native DP eines Laufs: linear floor(score / DP_PER_SCORE) — reine Score-Ableitung (ohne Lauf-Gate).
-export function dpNative(score) {
-  return DP_PER_SCORE > 0 ? Math.floor(num0(score) / DP_PER_SCORE) : 0;
-}
-
-// DP-Ertrag eines Laufs. treeComplete = ganzer Baum gekauft. Native DP immer; bei vollem Baum zusätzlich die
-// komplette SP-Ökonomie als DP (bewusste Doppelquelle). Onboarding-/vorzeitige Läufe → 0.
+// Score-abhängige DP eines Laufs = die GLEICHE Anzahl wie die SP-Meilensteine (spMilestones), statt der früheren
+//   linearen, ungedeckelten Formel floor(score/DP_PER_SCORE). Der flache Grundstock (RUN_COMPLETE_DP = 5 je
+//   abgeschlossenem Nicht-Ranked-Lauf) kommt separat in storage.js dazu → Normal-Lauf = 5 + spMilestones (gedeckelt).
+// treeComplete = ganzer Baum gekauft. Onboarding-/vorzeitige Läufe → 0.
 export function dpForRun(record, onboardingBefore, treeComplete, spRunsBefore) {
   if (!isSpRun(record, onboardingBefore)) return 0;
-  let dp = dpNative(record.score);
-  if (treeComplete) dp += spForRun(record, onboardingBefore, spRunsBefore);
+  let dp = spMilestones(record.score); // gleiche Anzahl DP wie die SP-Meilensteine
+  // Bei vollem Baum sind SP nutzlos → die RESTLICHE SP-Ökonomie (Grundstock + Treue; die Meilensteine sind oben
+  //   schon als DP gezählt → hier abziehen, kein Doppelzählen) fließt zusätzlich als DP.
+  if (treeComplete) dp += spForRun(record, onboardingBefore, spRunsBefore) - spMilestones(record.score);
   return dp;
 }
 

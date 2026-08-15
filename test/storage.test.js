@@ -212,11 +212,11 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(res.unlocks).toEqual([]); // keine Onboarding-Glied-Unlocks mehr (Startprofil ist schon fertig)
   });
 
-  it("#316 DP: native DP = floor(score/10M) ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
+  it("DP: Score-DP = SP-Meilensteine ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
     let p = loadProfile();
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(50 + 5 + 5); // 55 Mio → +5 DP native + #382 Abschluss-Bonus 5 (auf den Startbonus)
+    expect(p.deckPoints).toBe(50 + 2 + 5); // 55 Mio → +2 DP (Meilensteine 25M+50M) + #382 Abschluss-Bonus 5
     expect(p.stichPoints).toBe(1 + 2);     // +1 Grundstock + 2 Meilensteine (25M+50M)
   });
 
@@ -232,7 +232,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
-    expect(p.deckPoints).toBe(100 + 10 + 6 + 5); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) + #382 Abschluss-Bonus 5
+    expect(p.deckPoints).toBe(100 + 5 + 1 + 5); // gefegte 100 SP + 5 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
