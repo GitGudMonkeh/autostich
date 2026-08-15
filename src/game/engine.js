@@ -1,6 +1,7 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
+import { weekModMag, hasWeekMod } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
@@ -72,13 +73,6 @@ export function rollCrit(chance, guaranteed, rng) {
 // Effektiver Kampfwert der Spielerkarte in DIESEM Stich (Basiswert + Kat.-B-Boni).
 export function effectivePlayerValue(baseValue, perks, ctx) {
   return baseValue + sumHook(perks, "cardBonus", { ...ctx, pValueBase: baseValue });
-}
-
-// #370 Wochen-Mod-Magnitude lesen (0 wenn nicht aktiv). state.weekMods = [{ effect, mag, … }] — nur im Ranked-Lauf gesetzt.
-export function weekModMag(weekMods, effect) {
-  if (!Array.isArray(weekMods)) return 0;
-  const m = weekMods.find((x) => x.effect === effect);
-  return m ? (Number(m.mag) || 0) : 0;
 }
 
 /* Einen Stich auflösen → neuer State (pure). V2 (§22): KEIN Leben/Schaden/Heilung/Schild/Tempo mehr —
@@ -1258,15 +1252,19 @@ export function resolveTrick(state, rng) {
       const legMultPerk = state.treeLegMult ?? 1;
       const legMultArch = state.treeLegMult ?? 1;
       const rareCapEff = state.rareCap || 4;    // Rarität-Deckel aus dem Baum (4 = kein Deckel)
+      // #370 Wochen-Mods (nur Ranked): Perk-Verknappung → nur 1 Perk je Auswahl · Skill-Verknappung → 1 Skill je Fraktion
+      //   (Default 12 = 3/Fraktion → 4 = 1/Fraktion). Sonst die Konstanten (Normal-/Sim-Lauf byte-identisch).
+      const perksOffered = hasWeekMod(state.weekMods, "scarcePerks") ? 1 : C.PERKS_OFFERED;
+      const skillsOffered = hasWeekMod(state.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
       if (decision === "skill") {
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
         const legForce2 = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
-        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
@@ -1300,12 +1298,12 @@ export function resolveTrick(state, rng) {
           const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, 0, state.legCountByArch || null); // #369 §5a: Pool = alle freigeschalteten Archetypen (Zähl-Map); Sim/Standard → null = Bestand
           if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
           else {
-            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
             if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
           }
         } else {
           // Capstone noch gesperrt (Onboarding < 6): Runde 29 = normale Perk-Phase (identisch zum "perk"-Zweig, legForce 0).
-          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff);
+          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff);
           if (off.length > 0) { phase = "levelup"; newOffer = off; }
         }
       }

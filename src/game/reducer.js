@@ -14,7 +14,7 @@ import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { nodeEffects, legPerk2Force, rerollBase, COVER_FLOOR, ENERGY_FLOOR } from "./progression.js"; // #369 Progression-Baum: Cover/Energie-Floor + Rarität + Archetyp-/Legendär-Gatung + Reroll-Pools (alles aus dem Baum, treeEff-Felder)
-import { pickWeekMods } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
+import { pickWeekMods, hasWeekMod } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
@@ -66,8 +66,11 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   const rareCap = s.rareCap || 4; // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
+  // #370 Wochen-Mods (nur Ranked): Perk-/Skill-Verknappung verkleinern das Erst-Angebot (Perks 3→1, Skills 12→4 = 1/Fraktion).
+  const perksOffered = hasWeekMod(s.weekMods, "scarcePerks") ? 1 : PERKS_OFFERED;
+  const skillsOffered = hasWeekMod(s.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
   if (decision === "perk") {
-    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
+    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
   }
   if (decision === "shop") {
@@ -82,9 +85,9 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(s.shop), false, s.unlockedArchetypes); // §4b: Archetyp-Gatung
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), skillsOffered, skillLegendaryChance(s.shop), false, s.unlockedArchetypes); // §4b: Archetyp-Gatung
   if (soff.length) return { phase: "levelup", skillOffer: soff };
-  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), PERKS_OFFERED, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
+  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
 

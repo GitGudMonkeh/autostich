@@ -52,6 +52,17 @@ export const WEEK_MOD_PAIRS = [
   { key: "build",  pos: "noBuildLimit", neg: "tightBuild" },
 ];
 
+// Ist ein Wochen-Mod (nach effect) in der Liste aktiv? Für Flag-Mods ohne Magnitude (z. B. scarcePerks).
+export function hasWeekMod(weekMods, effect) {
+  return Array.isArray(weekMods) && weekMods.some((m) => m.effect === effect);
+}
+// Magnitude eines Wochen-Mods lesen (0 wenn nicht aktiv / kein mag). state.weekMods = [{ effect, mag, … }] (nur Ranked).
+export function weekModMag(weekMods, effect) {
+  if (!Array.isArray(weekMods)) return 0;
+  const m = weekMods.find((x) => x.effect === effect);
+  return m ? (Number(m.mag) || 0) : 0;
+}
+
 // Fisher-Yates mit dem seed-Rng → deterministische Reihenfolge.
 function shuffled(arr, r) {
   const a = arr.slice();

@@ -729,3 +729,30 @@ describe("#370 Wochen-Mods: Karten-Wert (nur im Ranked-Lauf gesetzt)", () => {
     expect(resolveTrick(scenario(8, 7), rng).lastResult).toBe("win");
   });
 });
+
+describe("#370 Wochen-Mods: Angebots-Umfang (Perk-/Skill-Verknappung, nur Ranked)", () => {
+  // Treibt einen frischen Lauf durch die Zyklen und fängt das ERSTE Perk- und Skill-Angebot der Engine ab.
+  function firstOffers(weekMods) {
+    let s = { ...initialState(makeRng(7)), weekMods };
+    let perkOffer = null, skillOffer = null;
+    for (let i = 0; i < 1500 && s.phase !== "gameover" && (!perkOffer || !skillOffer); i++) {
+      if (s.phase === "levelup") {
+        if (s.offer && !perkOffer) perkOffer = s.offer;
+        if (s.skillOffer && !skillOffer) skillOffer = s.skillOffer;
+        s = { ...s, phase: "play", offer: null, skillOffer: null, legendaryOffer: null, statOffer: null };
+        continue;
+      }
+      if (s.phase === "formation" || s.phase === "architect" || s.phase === "legendary") { s = { ...s, phase: "play" }; continue; }
+      s = resolveTrick(s, makeRng(100 + i));
+    }
+    return { perkOffer, skillOffer };
+  }
+  it("ohne Mods volles Angebot; mit Verknappung Perk=1 und Skill ≤4 (1/Fraktion)", () => {
+    const base = firstOffers([]);
+    expect(base.perkOffer && base.perkOffer.length).toBeGreaterThan(1);   // Default 3
+    expect(base.skillOffer && base.skillOffer.length).toBeGreaterThan(4); // Default 12 (3/Fraktion)
+    const scarce = firstOffers([{ effect: "scarcePerks" }, { effect: "scarceSkills" }]);
+    expect(scarce.perkOffer.length).toBe(1);
+    expect(scarce.skillOffer.length).toBeLessThanOrEqual(4);
+  });
+});
