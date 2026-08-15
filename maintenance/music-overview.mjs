@@ -14,14 +14,15 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MUSIC_JS = join(ROOT, "src/ui/music.js");
-const ASSET_DIR = join(ROOT, "src/assets/music");
+const ASSET_DIR = join(ROOT, "media/music"); // #F-01: Musik liegt außerhalb des Vite-Graphen
 
 const src = readFileSync(MUSIC_JS, "utf8");
 
-// 1) Imports: Variablenname → Dateiname (nur ../assets/music/*).
+// 1) Track-Konstanten: Variablenname → Dateiname. #F-01: music.js importiert die Dateien nicht mehr
+//    (sie liegen außerhalb des Vite-Graphen), sondern baut URLs über `const x = track("x")`.
 const imports = new Map();
-for (const m of src.matchAll(/import\s+(\w+)\s+from\s+"\.\.\/assets\/music\/([^"]+)"/g)) {
-  imports.set(m[1], m[2]);
+for (const m of src.matchAll(/const\s+(\w+)\s*=\s*track\("([^"]+)"\)/g)) {
+  imports.set(m[1], `${m[2]}.m4a`);
 }
 
 // 2) TIER_ORDER (Reihenfolge der Stufen).
