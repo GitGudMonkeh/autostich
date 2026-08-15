@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_META, SKILL_LIST, isLegendarySkill } from "../game/skills.js";
+import { ARCHETYPE_META, SKILL_LIST, SKILL_DEFS, isLegendarySkill } from "../game/skills.js";
 import { GUIDES } from "./guides.js";
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
@@ -13,7 +13,7 @@ import { NODES, owns } from "../game/progression.js";
    DECK-DETAILANSICHT (#369, Ebene 2) — VOLLSTÄNDIG DATENGETRIEBEN.
    Öffnet beim Tippen auf ein Deck im Decks-Reiter des Upgrade-Baums. Drei Reiter, die dynamisch aus den
    Single-Source-Modulen rendern (kein hartkodierter Inhalt, keine Handpflege):
-     1. Passives  — SKILL_DEFS/SKILL_LIST gefiltert nach Archetyp (inkl. legendär), name + desc live.
+     1. Skills    — SKILL_DEFS/SKILL_LIST gefiltert nach Archetyp (inkl. legendär), name + desc live.
      2. Leitfaden — GUIDES[archetype] über die geteilte GuideBody (nicht abgeschrieben).
      3. Challenges— die archetyp-gebundenen cond-Packs (themes.js) + echte Deck-Skin-Grafik + Fortschritt.
    Neue Skills / geänderte desc / neue Challenge-Decks erscheinen automatisch.
@@ -62,7 +62,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const packs = PACKS.filter((pk) => packCond(pk)?.archetype === archetype);
 
   const TABS = [
-    { key: "passives", label: "Passives" },
+    { key: "passives", label: "Skills" },
     { key: "leitfaden", label: "Leitfaden" },
     { key: "challenges", label: "Challenges" },
   ];
@@ -83,7 +83,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
             <FactionIcon type={archetype} size={26} />
             <div className="min-w-0">
               <h2 className="text-lg font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
-              {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-tight truncate" style={{ color: "#a6a6b0", maxWidth: "30ch" }}>{guide.subtitle}</div>}
+              {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-snug" style={{ color: "#a6a6b0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{guide.subtitle}</div>}
             </div>
             <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>Schließen</ActionButton>
           </div>
@@ -192,9 +192,25 @@ function SkillGroup({ title, skills, color, legendary = false }) {
             style={legendary
               ? { background: `linear-gradient(180deg, ${color}1a, #16140e)`, border: `1px solid ${color}55`, borderLeft: `3px solid ${color}` }
               : { background: `linear-gradient(180deg, ${color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}` }}>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
               <span className="text-[13px] font-bold" style={{ color }}>{s.name}</span>
+              {/* Voraussetzung sichtbar machen: Verstärker-Skills tun ohne ihren Basis-Skill NICHTS. Im Angebot
+                  sind sie dadurch gegatet (skills.js `enabler`), im Katalog stand die Abhängigkeit bisher nirgends. */}
+              {s.enabler && SKILL_DEFS[s.enabler] && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>
+                  braucht {SKILL_DEFS[s.enabler].name}
+                </span>
+              )}
+              {(s.heatConsumer || s.onFullCharge) && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>Konsument</span>
+              )}
+              {s.trimGrowth && (
+                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>trimmbar</span>
+              )}
             </div>
             <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{s.desc}</div>
           </div>
