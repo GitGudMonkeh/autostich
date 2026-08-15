@@ -831,17 +831,18 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
   const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
   const [holePulse, setHolePulse] = useState(null);           // #320 Puls-Kanal ans persistente Loch (win → wachsen+saugen · loss → schrumpfen)
-  // #375/#380 Schwarzes-Loch Loop-Bett (Sog/Drone): läuft DURCHGEHEND, solange der Finisher gewählt ist (blackhole,
-  //   nicht reduced) — NICHT mehr an den pro-Stich-`holeActive` gekoppelt (das stoppte/startete es je Stich neu → nie
-  //   hörbar aufgebaut, #380). Nahtloser Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der
-  //   32,6-s-Aufnahme). Gain/Rate wachsen über onSize mit der Lochgröße mit. Gating (Pause/Overlay/Victory) über die
-  //   bestehende Loop-Suspend-Logik; sanfter Ausklang (fade 0.3) beim Verschwinden.
+  const [holeGrown, setHoleGrown] = useState(false);          // #: Loch nach einem Sieg tatsächlich aktiv/gewachsen → steuert das Loop-Bett (false vor dem 1. Sieg UND nach dem Kollaps auf 0)
+  // #375/#380 Schwarzes-Loch Loop-Bett (Sog/Drone): läuft NUR, wenn das Loch nach einem Sieg aktiv ist (holeGrown) —
+  //   nicht schon vor dem ersten Sieg und nicht mehr nach dem Kollaps. Nicht an den pro-Stich-`holeActive` gekoppelt
+  //   (das stoppte/startete es je Stich neu → nie hörbar aufgebaut, #380), sondern an den Sieg/Kollaps-Zustand. Nahtloser
+  //   Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der 32,6-s-Aufnahme). Gain/Rate wachsen
+  //   über onSize mit der Lochgröße mit; sanfter Ausklang (fade 0.3) beim Kollaps/Verschwinden.
   const holeSndRef = useRef(null);
   useEffect(() => {
-    if (reduced || !blackhole) return undefined;
+    if (reduced || !blackhole || !holeGrown) return undefined;
     holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 }); // Start = onSize(level 0)-Pegel
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
-  }, [blackhole, reduced]);
+  }, [blackhole, reduced, holeGrown]);
   const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
@@ -1011,7 +1012,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
       //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
       //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
-      if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) });
+      if (holeFinish) { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); } // #: Sieg → Loch aktiv → Loop-Bett an
       else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
@@ -1444,7 +1445,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
           scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced}
           /* #375 Zusammenzieh-Impact am Kollaps-Start: große Nova wuchtiger (gain+bass); rate an den Turbo-Kollaps gekoppelt (spd), bei 2× gedeckelt. */
-          onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
+          onImplode={(big, spd, grew) => { setHoleGrown(false); if (big || grew) audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) }); }} /* #: Kollaps auf 0 → Loop-Bett aus; Implosions-Sound nur bei großem Kollaps (big) oder wenn das Loch vorher ausreichend gewachsen war (grew) */
           /* #380 Nova-Flash NACH dem Zusammenziehen (nur großer Kollaps): der Supernova-Puls (Pegel wie im Gott-Showcase). */
           onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
           /* #375 Bett wächst mit der Lochgröße: Gain 0.6→~0.95, Rate 0.96→~1.06 (dezent). setLoopGain/Rate rampen sanft. */
