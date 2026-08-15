@@ -541,10 +541,10 @@ button { font-family: inherit; }
   text-shadow: none;
 }
 
-/* Kartenzahl: Orbitron (geometrisch, klar lesbar bei 1–10). Normal breit → größer als die alte Press-Start-2P-Fassung. */
+/* Kartenzahl: Orbitron (geometrisch, klar lesbar bei 1–10). Cap-Height größer als Press Start 2P → etwas kleiner setzen. */
 [data-skin="crt"] .card-num {
   font-family: "Orbitron", ui-monospace, monospace;
-  font-size: 2.4rem; line-height: 1;
+  font-size: 2rem; line-height: 1;
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
 }
 
