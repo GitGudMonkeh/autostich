@@ -47,11 +47,13 @@ const TIER_WEIGHTS_BY_SHIFT = {
 // maxTier (Progression §4, Onboarding-Rarität): Obergrenze der anbietbaren Stufe — Stufen DARÜBER werden auf
 // Gewicht 0 gesetzt (der gewichtete Zug renormalisiert automatisch → „diese Stufe gibt es noch nicht"). Default 4
 // = kein Deckel → EXAKT dieselbe Objektreferenz (byte-identisch für Sim/Meister/Dev/Bestandstests, kein rng-Drift).
-export const tierWeightsForShift = (shift, maxTier = 4) => {
+// minTier (#370 Wochen-Mod „Perk-Segen"): Untergrenze der anbietbaren Stufe — Stufen DARUNTER auf Gewicht 0
+// (symmetrisch zum maxTier-Deckel). Default 1 = kein Boden → base-Referenz unverändert (byte-identisch).
+export const tierWeightsForShift = (shift, maxTier = 4, minTier = 1) => {
   const base = TIER_WEIGHTS_BY_SHIFT[shift] || TIER_WEIGHTS_BY_SHIFT[0];
-  if (maxTier >= 4) return base;
+  if (maxTier >= 4 && minTier <= 1) return base;
   const capped = {};
-  for (const t of TIERS) capped[t] = t <= maxTier ? base[t] : 0;
+  for (const t of TIERS) capped[t] = (t <= maxTier && t >= minTier) ? base[t] : 0;
   return capped;
 };
 export const TIER_WEIGHTS = TIER_WEIGHTS_BY_SHIFT[0]; // Basis (shift 0) — unveränderte Bestandssemantik

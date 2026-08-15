@@ -115,6 +115,10 @@ export const PERK_LIST = Object.values(PERK_DEFS);
 
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";
+// #370 Perk-Segen: flache Perk-Rarität → grobe Stufe (I..IV) für den Rarität-Boden. Flache Nicht-Legendäre sind
+// „common" (I); die 4-Stufen-Namen decken potenzielle künftige flache Perks mit ab. Legendär wird separat behandelt.
+const RARITY_TIER_APPROX = { common: 1, normal: 1, uncommon: 2, rare: 3, epic: 4 };
+export const rarityTierApprox = (rarity) => RARITY_TIER_APPROX[rarity || "common"] || 1;
 
 // UI-Metadaten je Seltenheit (#71): grau / grün / gold — geteilte Quelle für PerkSelect,
 // BuildSummary und GameOver (analog zu CATEGORIES.color). `badge` leer = keine Marke (Normal).
@@ -154,15 +158,19 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false, legForce = 0, maxTier = 4) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false, legForce = 0, maxTier = 4, minTier = 1) {
   // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   // (Schritt 4c) maxTier = Onboarding-Rarität-Deckel: Stufen darüber fallen auf Gewicht 0 (nicht anbietbar). 4 = kein Deckel.
-  const tierWeights = tierWeightsForShift(rareShift, maxTier);
+  // #370 minTier = Wochen-Mod „Perk-Segen": Rarität-BODEN — Stufen darunter fallen weg (nur ≥ minTier). 1 = kein Boden.
+  const tierWeights = tierWeightsForShift(rareShift, maxTier, minTier);
   // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
   // Gebäude-Legendäre (needsArchitect) nur mit aktivem Architekten — sonst inert (kein Gebäude-Overlay).
   let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p)
     && !(p.needsArchitect && !architectEnabled));
+  // #370 Perk-Segen (minTier > 1): flache Perks unter dem Boden fallen weg — Legendäre (eigener Layer) bleiben immer.
+  //   Flache Nicht-Legendäre sind rarität-„normal" (Stufe 1) → bei Boden ≥ 3 bleibt das Angebot rein aus Familien-III/IV.
+  if (minTier > 1) flat = flat.filter((p) => p.rarity === "legendary" || rarityTierApprox(p.rarity) >= minTier);
   // Legendäre Perks sind an die Rarität gekoppelt: sie schalten ZUSAMMEN MIT „lila" (Stufe IV) frei. Solange der
   // Onboarding-Deckel die IV noch nicht erlaubt (maxTier < 4), werden sie GAR NICHT angeboten — sonst leckten sie
   // (bei legendaryChance 0) über den gewichteten Pool ins Angebot. Default maxTier 4 (Sim/Standard/Dev/Post-Onboarding)

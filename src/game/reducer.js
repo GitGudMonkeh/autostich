@@ -66,11 +66,12 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   const rngAtOr = (...parts) => (seed != null ? rngAt(seed, 0, ...parts) : actionRng);
   // (#267: „stat"-Zweig entfernt — es gibt keine Stat-Phase mehr.)
   const rareCap = s.rareCap || 4; // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
+  const rareFloor = s.rareFloor || 1; // #370 Perk-Segen: Rarität-Boden (1 = kein Boden)
   // #370 Wochen-Mods (nur Ranked): Perk-/Skill-Verknappung verkleinern das Erst-Angebot (Perks 3→1, Skills 12→4 = 1/Fraktion).
   const perksOffered = hasWeekMod(s.weekMods, "scarcePerks") ? 1 : PERKS_OFFERED;
   const skillsOffered = hasWeekMod(s.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
   if (decision === "perk") {
-    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
+    const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
   }
   if (decision === "shop") {
@@ -87,7 +88,7 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
   const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), skillsOffered, skillLegendaryChance(s.shop), false, s.unlockedArchetypes); // §4b: Archetyp-Gatung
   if (soff.length) return { phase: "levelup", skillOffer: soff };
-  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap);
+  const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
 
@@ -267,12 +268,13 @@ export function reducer(state, action) {
       const wmBlockForm = wm.blockForm ? pickCells(rngAt(seed, "weekmods", "blockForm"), N_POS, wm.blockForm.mag) : [];
       const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
       const effRareCap = wm.perkCap ? 2 : rareCap;                                   // Perk-Deckel → max Selten (kein Sehr selten/Rar)
+      const effRareFloor = wm.perkBlessing ? 3 : 1;                                  // Perk-Segen → Boden Sehr selten (nur Stufe III/IV)
       const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? formationEnergyBase * 2 : formationEnergyBase;
       const effCover = wm.tightBuild ? 12 : wm.noBuildLimit ? N_POS : (coverBase + treeCover); // Enge Aufstellung / Kein Gebäudelimit
       const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
       const sBase = { ...s, architect: { ...architectStart, maxCover: effCover }, architectEnabled, treeRareShift, treeLegMult, treeLegForce2,
         rerollsLeg: noReroll ? 0 : treeLegSlotReroll, rerollsPerk2: noReroll ? 0 : rerollPerk2,
-        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, legPhaseEnabled, ranked,
+        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, rareFloor: effRareFloor, legPhaseEnabled, ranked,
         weekMods: weekModsState,
         challengeMods: chMods.map((c) => c.id),
         challengeBlockArch: [...new Set([...chBlockArch, ...wmBlockArch])],
@@ -649,7 +651,7 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
@@ -724,7 +726,7 @@ export function reducer(state, action) {
       const tokens = usePerk2 ? perk2 : (state.rerollsPerk || 0);     // #263: eigener Perk-Pool (+ #369 Phasen-Token)
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, inLegPerkPhase ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, inLegPerkPhase ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden
       return { ...state, offer, offerRerolls: idx, ...(usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 

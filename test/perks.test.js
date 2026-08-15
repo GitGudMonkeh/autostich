@@ -166,3 +166,25 @@ describe("buildPerkOffer — Legendäre koppeln an die Rarität (lila/Stufe IV) 
     expect(sawLeg).toBe(true);
   });
 });
+
+describe("buildPerkOffer — #370 Perk-Segen: Rarität-Boden (minTier)", () => {
+  it("minTier 3: nur Familien-Stufen ≥ III; flache Normal-Perks (Stufe I) fallen weg", () => {
+    let sawFam = false;
+    for (let s = 0; s < 40; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, 4, 3);
+      for (const e of offer) {
+        if (e && typeof e === "object") { expect(e.tier).toBeGreaterThanOrEqual(3); sawFam = true; }
+        else expect(isLegendary(e)).toBe(true); // flache Normal-Perks ausgeschlossen → nur Legendäre als Strings
+      }
+    }
+    expect(sawFam).toBe(true); // es kamen überhaupt Familien-III/IV-Angebote (Boden nicht leer)
+  });
+  it("ohne Boden (minTier 1 = Default): Stufen I/II erscheinen weiter (der Boden ist die Differenz)", () => {
+    let sawLow = false;
+    for (let s = 0; s < 40 && !sawLow; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, 4, 1);
+      if (offer.some((e) => e && typeof e === "object" && e.tier <= 2)) sawLow = true;
+    }
+    expect(sawLow).toBe(true);
+  });
+});
