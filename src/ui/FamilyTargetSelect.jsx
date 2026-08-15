@@ -4,7 +4,7 @@ import { familyDef, allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { CATEGORIES } from "../game/perks.js";
 import { FORMATION_TYPES, FORMATION_TYPE_LABELS, computeFormations } from "../game/formations.js";
-import { DeckHistogram } from "./BuildSummary.jsx";
+import { DeckStrength } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
@@ -111,17 +111,18 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
                 );
               })}
             </div>
-            {/* Deck-Kontext (nur Farb-Modus): aktuelle Werte je Farbe — hilft, die stärkste bzw. schwächste Farbe zu wählen. */}
-            <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
-              <DeckHistogram deck={state.deck} />
-            </div>
             {/* #UI: Deck mit aktuellen Formationen + Gebäuden — für eine informierte Farbwahl. */}
             <div className="mt-4">
               <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Dein Deck · aktuelle Formationen{architectCover ? " & Gebäude" : ""}</div>
               <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={architectCover} onTilePick={() => {}} quietTiles />
+            </div>
+            {/* #391 Deck-Kontext (nur Farb-Modus) UNTER dem Aufstellbrett: kompakte Deck-Stärke je Farbe (DeckStrength) —
+                hilft, die stärkste bzw. schwächste Farbe zu wählen. */}
+            <div className="mt-4">
+              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
+              <DeckStrength deck={state.deck} />
             </div>
           </div>
         )}
