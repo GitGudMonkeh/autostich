@@ -86,6 +86,18 @@ Das ist der wichtigste Abschnitt. Autostich hat ein enges, wiederkehrendes Regel
 deutsche Vokabel muss durchgängig auf genau eine englische abgebildet werden.** Die Spalte
 „Vorschlag EN" ist ein Vorschlag — bitte einmal komplett gegenlesen und dann einfrieren.
 
+> **Woher die Vorschläge kommen:** Die Kernbegriffe sind gegen die Genre-Konvention geprüft
+> (Balatro, Slay the Spire, Hearthstone, Super Auto Pets, TFT, klassische Stichspiele) — die
+> Begründung je Begriff steht in `genre-terminologie.md`. Kurz: `cycle` und `trick` sind die
+> etablierten Fachbegriffe, nicht Übersetzungen; die Raritätsleiter endet auf `Epic` statt
+> `Legendary`, weil „legendär" bei uns eine eigene Achse ist; unsere eigenwilligen Wörter
+> (Weißglut, Firn, Grenzbonus) bleiben distinktiv, weil genau das die Genre-Norm ist.
+>
+> **Einzige offene Frage:** `Aufstellungsphase`. Der Vorschlag `layout phase` hat nach der
+> Recherche keinen Rückhalt — umgestellt wird die **Ziehreihenfolge**, kein Raum. Kandidaten:
+> **`order phase`** (passend zu `draw order`) oder `arrangement phase`. Siehe
+> `genre-terminologie.md` §8.
+
 ### 3.1 Grundbegriffe
 
 | DE (kanonisch) | Vorschlag EN | Anmerkung |

@@ -1,162 +1,337 @@
 # Autostich — Tutorial / Guided Run (Durchplanung)
 
-> **Status:** Reine **Durchplanung** — kein Code. Nordstern-Doc für das Feature „Tutorial-Button mit geführtem Run".
-> **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Run**, der einem alles erklärt. **Vor jeder Phase** erscheint ein **Erklär-Pop-up**, das erklärt, was man in der Phase macht, und **kurz die Panels erklärt**.
+> **Status:** Durchplanung, kein Code.
+> **Stand:** 2026-08-15 — auf den aktuellen Mechanikstand gezogen (Branch `Autostich/pixi`).
+> **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Lauf**, der einem alles erklärt.
+> **Vor jeder Phase** erscheint ein Erklär-Pop-up, das sagt, was man in der Phase macht, und kurz die Panels erklärt.
+
+> **Revision gegenüber der Erstfassung:** Die Erstfassung beschrieb ein Spiel, das es so nicht mehr gibt —
+> Stat-Phase, Shop mit Münzen, 44 Durchläufe, `AnleitungModal`, drei Archetypen, vier Skill-Slots,
+> vier Formationstypen. Alles davon ist ersetzt oder entfernt. Die **Architektur** der Erstfassung
+> (UI-only, fester Seed, Skript-Modul + Overlay + Hook, `data-tut`-Anker, Wellen W0–W4) trägt weiter
+> und ist unverändert übernommen. Neu ist §14: das Tutorial ist der erste **zweisprachige** Inhalt.
 
 ---
 
 ## 1. Ziel & Abgrenzung
 
-- **Ziel:** Neue Spieler lernen den kompletten Loop nicht aus einem Textblock, sondern **im echten Spiel**, Schritt für Schritt, mit kurzen Erklär-Pop-ups als „Lehrern".
-- **Abgrenzung zur bestehenden `AnleitungModal` (#12):** Die ist ein **statischer** 6-Kachel-Schnellstart. Das Tutorial ist **interaktiv** (geführter Run). Beide können koexistieren: Anleitung = „nachlesen", Tutorial = „machen". (Entscheidung §12.)
-- **Keine `game/`-Änderung nötig:** Das Tutorial ist **reine UI/Overlay-Logik**. Der geführte Run ist ein normaler Run — nur mit festem Seed + Erklär-Overlay obendrauf. Der pure, deterministische `game/`-Layer bleibt unangetastet.
+- **Ziel:** Neue Spieler lernen den Loop nicht aus einem Textblock, sondern **im echten Lauf**,
+  Schritt für Schritt, mit kurzen Erklär-Pop-ups als „Lehrern".
+- **Abgrenzung zum vorhandenen Lehrmaterial:** Es gibt bereits zwei **statische** Nachschlage-Ebenen:
+  - **Glossar** (`src/game/glossary.js` + `Glossary.jsx`) — 109 Begriffe, durchsuchbar, kategorisiert,
+    erreichbar über das ⓘ auf jedem Auswahlpanel und im Hub.
+  - **Leitfaden** (`src/ui/guides.js` + `GuideOverlay.jsx`) — vier Archetyp-Leitfäden („wie spiele ich
+    Feuer"), Reiter zum Durchklicken.
+
+  Das Tutorial ist die dritte, **interaktive** Ebene. Arbeitsteilung: **Glossar = nachschlagen ·
+  Leitfaden = Strategie lesen · Tutorial = einmal machen.** Die frühere `AnleitungModal` (#12)
+  existiert **nicht mehr** — es gibt also keinen Konflikt mehr aufzulösen (alte §12.4 entfällt).
+- **Keine `game/`-Änderung nötig:** Das Tutorial ist reine UI-/Overlay-Logik. Der geführte Lauf ist
+  ein normaler Lauf mit festem Seed plus Erklär-Overlay. Der pure, deterministische `game/`-Layer
+  bleibt unangetastet — auch die Sim- und Determinismus-Tests bleiben dadurch byte-identisch.
 
 ---
 
 ## 2. Kernkonzept
 
-Zwei Erklär-Ebenen, genau wie vom Nutzer beschrieben:
+Zwei Erklär-Ebenen:
 
-1. **Phasen-Intro-Pop-up (blockierend):** Beim **ersten** Betreten jeder Phase erscheint ein Pop-up mit kurzer Erklärung „was mache ich hier". Bestätigen mit „Verstanden/Weiter".
-2. **Panel-Coach-Marks (kurz):** Direkt danach werden **die relevanten Panels der Phase** kurz erklärt — Spotlight/Marker auf ein Panel + ein Satz. Steppbar (Weiter) oder auf einmal.
+1. **Phasen-Intro-Pop-up (blockierend):** Beim **ersten** Betreten jeder Phasenart erscheint ein
+   Pop-up mit kurzer Erklärung „was mache ich hier". Bestätigen mit „Verstanden".
+2. **Panel-Coach-Marks (kurz):** Direkt danach werden die relevanten Panels der Phase erklärt —
+   Spotlight auf ein Panel + ein Satz. Steppbar.
 
-**Ablauf-Prinzip:** Die Pop-ups feuern beim **ersten Auftreten** jeder Phasenart (nicht in jedem Durchlauf). Sobald alle Phasenarten einmal erklärt wurden, verschwindet das Overlay und der Run läuft normal weiter (der Spieler kann ihn zu Ende spielen oder aufgeben).
+**Ablauf-Prinzip:** Die Pop-ups feuern beim **ersten Auftreten** jeder Phasenart, nicht in jedem
+Durchlauf. Sind alle erklärt, verschwindet das Overlay und der Lauf läuft normal weiter.
 
-**Warum das so gut passt:** `DECISION_SCHEDULE` beginnt mit **`stat, perk, formation, stat, shop, skill`** — d.h. **alle fünf Entscheidungs­phasen erscheinen schon in den ersten 6 Durchläufen**. Der Tutorial-Bogen ist also von Natur aus kurz, ohne dass wir den Run künstlich abschneiden müssen.
+**Warum der Bogen von selbst kurz ist:** `DECISION_SCHEDULE` ist ein fester 50-Einträge-Plan, dessen
+Grundmuster ein Viererblock ist — **Skill → Perk → Aufstellen → Architekt**. Die Runden 1–4 zeigen
+also **alle vier Hauptphasen** genau einmal. Zusammen mit dem Stichspiel selbst ist der Kern nach
+**vier Durchläufen** erklärt (die Erstfassung rechnete mit sechs, weil damals fünf Phasenarten
+existierten).
+
+Die einzige Phasenart außerhalb des Blocks ist die **Legendär-Phase in Durchlauf 29**
+(`LEG_PHASE_CYCLE`, aus dem Plan abgeleitet — nie abtippen). Die liegt weit hinter dem
+Tutorial-Bogen. Siehe Entscheidung §13.5.
 
 ---
 
-## 3. Der geführte Run: fester Seed
+## 3. Der geführte Lauf: fester Seed
 
-- Start über den Tutorial-Button dispatcht `START_RUN` mit **festem Seed** (`makeRng(TUTORIAL_SEED)`), statt `Math.random`. Der `game/`-Layer nimmt `rng` bereits als Action-Payload — **keine Änderung nötig**.
-- **Wirkung:** Kartenreihenfolge, Angebote, Crits sind **deterministisch** → das Skript kann konkrete Dinge garantieren (im Kampf fällt ein Sieg/Crit; die erste Formationsphase zeigt eine echte Formation; der erste Shop hat bezahlbare Items).
-- **Robustheit:** Die Erklärtexte bleiben **phasen-allgemein** („So funktioniert der Shop"), nicht angebots-spezifisch („kauf Item X"). So driftet das Tutorial nicht, wenn sich Angebote/Balance ändern. Der Seed sorgt nur dafür, dass **überhaupt** etwas Sehenswertes auftaucht.
-- **Seed-Auswahl** = Autoren-Aufgabe: per Sim ein Seed finden, der einen „schönen" frühen Verlauf liefert (sichtbare Formation, ein Crit, bezahlbarer Shop). Als Konstante ablegen.
+- Der Tutorial-Button dispatcht `START_RUN` mit **festem Seed** statt `Math.random`. Der `game/`-Layer
+  nimmt `rng`/`seed` bereits als Action-Payload — **keine Änderung nötig**. Der Pfad existiert
+  produktiv: der Seed-Chip im Hub startet Läufe genauso.
+- **Wirkung:** Kartenreihenfolge, Angebote und Crits sind deterministisch → das Skript kann garantieren,
+  dass **überhaupt** etwas Sehenswertes auftaucht (ein Crit im ersten Durchlauf, eine echte Formation
+  in der ersten Aufstellungsphase, ein platzierbares Gebäude in der ersten Architekt-Phase).
+- **Robustheit:** Die Erklärtexte bleiben **phasen-allgemein** („So funktioniert der Architekt"), nicht
+  angebots-spezifisch („bau Gebäude X"). Sonst driftet das Tutorial bei jeder Balance-Änderung.
+- **Seed-Auswahl** = Autorenaufgabe: per Sim (`npm run sim`) einen Seed suchen, der einen schönen
+  frühen Verlauf liefert. Als Konstante ablegen.
+- **Achtung Wochen-Mods:** Der Tutorial-Lauf ist ein **normaler** Lauf (`mode` ≠ `"ranked"`), also ohne
+  `weekMods`. Das ist richtig so — die Wochen-Modifikatoren würden die erklärten Regeln verbiegen.
 
 ---
 
-## 4. Phasen-Abdeckung
+## 4. Phasen-Abdeckung (aktueller Stand)
 
-| Reihenfolge | Phase (State) | „Was mache ich hier" (Kern) |
-|---|---|---|
-| 0 | Run-Start / `play` | Ziel: **maximaler Score** über 44 Durchläufe, kein Leben/Tod. Der Autobattler spielt von selbst. |
-| 1 | Kampf (`play`) | Höhere Karte gewinnt, Gleichstand zählt nicht. Serie & Score wachsen. |
-| 2 | Stat (`levelup`/`statOffer`) | Einen von fünf Stats dauerhaft wählen (Crit-Chance/-Mult, Formation, Serie, Einkommen). |
-| 3 | Perk (`levelup`/`offer`) | Einen von 3 Perks (A–E + Legendär), einmal pro Lauf; alle ablehnen → Münze. |
-| 4 | Formation (`formation`) | Deck-Aufstellung: Karten tauschen (Energie), Formationen bauen (multiplizieren Score). |
-| 5 | Shop (`shop`) | Münzen ausgeben: Karten/Anker/Formationen/Planung, Preisstufen, Ziel-Auswahl. |
-| 6 | Skill (`levelup`/`skillOffer`) | Archetyp-Skills (⚡Blitz/🔥Feuer/❄️Eis), 4 Slots; erster Skill aktiviert den Archetyp. |
-| 7 | Ziel-Auswahl (`target`/`shop-target`) | Wenn ein Perk/Item Karten braucht: N Karten antippen. |
-| 8 | Game Over | Score, Aufschlüsselung, Build lesen. |
+Zustandsnamen wie im Reducer. `levelup` ist ein Sammelzustand, die Auswahlart hängt am gesetzten
+Angebots-Feld — das muss der Tutorial-Hook mitlesen.
+
+| # | Phase (State) | Erkennung | „Was mache ich hier" (Kern) |
+|---|---|---|---|
+| 0 | Lauf-Start | — | Ziel: **maximaler Score** über **50 Durchläufe**. Kein Leben/Tod, kein Verlieren — nur Punkte. Der Autobattler spielt von selbst. |
+| 1 | Stichspiel | `play` | Je 40 Karten, Stich für Stich. Höhere Karte gewinnt, Gleichstand zählt nicht. Sieg = **400 Basispunkte** (`SCORE_PER_WIN`), mal Serie, Crit und Formationen. |
+| 2 | Skill | `levelup` + `skillOffer` | **12 Skills im Angebot** (3 je Archetyp), **6 Slots**. Vier Archetypen: ⚡ Blitz · 🔥 Feuer · ❄️ Eis · 🌿 Pflanze. Der erste Skill eines Archetyps macht ihn aktiv. |
+| 3 | Perk | `levelup` + `offer` | **3 Perks im Angebot**, Kategorien A–E, vier Raritätsstufen. Ablehnen ist erlaubt. |
+| 4 | Aufstellen | `formation` | Die 40 Karten der Ziehreihenfolge umsortieren. **4 Formations-Energie** je Phase (`FORMATION_ENERGY`), jeder Tausch kostet. Formationen multiplizieren den Score. |
+| 5 | Architekt | `architect` | **Ersetzt den früheren Shop** (#229). Polyomino-Gebäude auf ein Baufeld legen, aufwerten, versetzen, abreißen. Keine Münzen mehr. |
+| 6 | Gletscher-Wahl | `glacier-target` | **Pflichtschritt nach jedem Eis-Skill:** genau eine Karte für den Gletscher wählen. Kommt nur, wenn Eis gespielt wird. |
+| 7 | Ziel-Auswahl | `target` | Wenn ein Perk Karten braucht: N Karten antippen. |
+| 8 | Familien-Ziel | `family-target` | Wenn eine Perk-Familie eine Farbe / Karte / einen Formationstyp als Ziel braucht. |
+| 9 | Legendär | `levelup` + `legendaryOffer` | **Durchlauf 29** (`LEG_PHASE_CYCLE`): 2 Legendäre aus den aktiven Archetypen, fixer 7. Slot, kein Tausch. |
+| 10 | Ende | `gameover` | Score, Aufschlüsselung, Build lesen. |
+
+**Entfallen gegenüber der Erstfassung:** `stat`/`statOffer` (die Stat-Phase gibt es nicht mehr, #267) ·
+`shop`/`shop-target` (Münz-Shop ersetzt durch den Architekten, #229).
+
+**Verteilung im 50er-Plan** (aus `BASE_SCHEDULE`): 9 Skill · 13 Perk · 13 Aufstellen · 14 Architekt ·
+1 Legendär. Skills sind front-loaded (Runden 1, 5, 9, 13, 17, 22 füllen die 6 Slots) und laufen dann
+als Tausch-Fenster aus (31, 39, 43).
 
 ---
 
 ## 5. Panel-Erklärungen (Coach-Marks) je Phase
 
-- **Kampf:** `Battlefield` (zwei Decks, aufgedeckte Karten, Ergebnis-Banner) · `StatusRail` (Score, Serie, Durchlauf, Siege/Verluste, Geist-Delta) · `Controls` (Pause/Tempo/Nächster Stich).
-- **Stat:** `StatSelect` (die 5 Stats + was sie tun) + Kern-Readout (Crit/Formation/Serie).
-- **Perk:** `PerkSelect` (3 Karten, Kategorie-Farben, Legendär-Hervorhebung, „einmal pro Lauf", Ablehnen→Münze) · `BuildPanel` (wachsender Build + Deck-Histogramm).
-- **Formation:** `FormationPhase` (40 Karten in 8 Segmenten, Energie, Live-Formationsmarker W/F/T/Z, Buttons) — hier auch die **Formationstypen** kurz erklären.
-- **Shop:** `ShopScreen` (Münzstand, 4 Kategorien, Preisstufen, Kauf) · Ziel-/Reroll-Hinweis.
-- **Skill:** `SkillSelect` (Archetyp-Gruppen, Slots, Ressourcenleiste Ladung/Hitze/Frost).
-- **Ziel-Auswahl:** `TargetSelect`/`ShopTargetSelect` (N Karten wählen, Bestätigen).
-- **Game Over:** `GameOver` (Score groß, Faktorenkette, Build-Liste).
+- **Stichspiel:** `Battlefield` (beide Decks, aufgedeckte Karten, Ergebnis-Banner, Groß-Ansagen) ·
+  `StatusBar` (schwebende Kompaktleiste: Score, Serie, Durchlauf, Pause/Tempo) · `StatusRail`
+  (Seitenpanels: Score-Quelle, Trend, Build) · die **Archetyp-Ressourcenleisten**, sobald eine aktiv ist:
+  `ChargeBar` (Ladung) · `HeatBar` (Hitze) · `GlacierBar` (Masse) · `PlantBar` (Wachstum) ·
+  `ScoreMilestoneBar`.
+- **Skill:** `SkillSelect` — Archetyp-Gruppen, belegte/freie Slots, Verstärker-Hinweis
+  („braucht Skill X"), das ⓘ zum Glossar, der 📖 zum Leitfaden.
+- **Perk:** `PerkSelect` (3 Karten, Kategorie-Farben, Raritätschip, Ablehnen) · `BuildPanel`
+  (wachsender Build + Deck-Histogramm) · `LayoutPerks`.
+- **Aufstellen:** `FormationPhase` (40 Positionen in 8 Segmenten à 5, Energieanzeige, Live-Marker) ·
+  `FormationPanel` / `ArchPanels` (Formationslegende). Hier gehören **alle acht Formationstypen** kurz
+  erklärt: Wiederholung · Farbblock · Treppe · Wechsel · Anker · Nachhall · Kern · Grenzbonus.
+  (Die Erstfassung nannte nur W/F/T/Z — N/K/G fehlten.)
+- **Architekt:** `ArchitectScreen` — Baufeld, Bauplan-Angebot, Polyomino-Formen und Drehen, Kategorien
+  (Tragwerk · Handelsbau · Sakralbau), Aufwerten/Versetzen/Abriss, Strukturen (Zeile/Spalte/Diagonale)
+  und Distrikte.
+- **Gletscher-Wahl:** `GlacierPick` (genau eine Karte, Pflicht).
+- **Ziel-Auswahl:** `TargetSelect` · `FamilyTargetSelect`.
+- **Legendär:** `LegendarySelect` (2 Angebote, fixer 7. Slot, kein Tausch).
+- **Ende:** `GameOver` (Score groß, Faktorenkette, Build-Liste, freigeschaltete Skins).
 
 ---
 
 ## 6. Content-Skript (datengetrieben)
 
-Der gesamte Text lebt in **einem** Modul (`src/ui/tutorial/tutorialScript.js`), auf Deutsch, leicht editierbar — analog zur Daten-Registry-Idee von `perks.js`.
+Der gesamte Text lebt in **einem** Modul (`src/ui/tutorial/tutorialScript.js`) — analog zur
+Registry-Idee von `perks.js`. **Aber:** die Texte selbst stehen dort **nicht** als Literale, sondern
+als i18n-Schlüssel (§14).
 
 ```js
-// Schema (Vorschlag)
+// Schema (Vorschlag, i18n-fest)
 {
-  id: "phase-shop",
-  trigger: { phase: "shop", firstOnly: true },   // feuert beim ersten Shop
-  title: "Der Shop",
-  body: "Hier gibst du deine Münzen aus …",
+  id: "phase-architect",
+  trigger: { phase: "architect", firstOnly: true },
+  titleKey: "tutorial.architect.title",
+  bodyKey:  "tutorial.architect.body",
   coachmarks: [
-    { anchor: "shop-coins",      text: "Dein Münzstand." },
-    { anchor: "shop-categories", text: "Vier Warengruppen …" },
-    { anchor: "shop-buy",        text: "Antippen zum Kaufen." },
+    { anchor: "arch-board",  key: "tutorial.architect.board" },
+    { anchor: "arch-offers", key: "tutorial.architect.offers" },
+    { anchor: "arch-done",   key: "tutorial.architect.done" },
   ],
-  placement: "auto",   // Pop-up-Position relativ zum Panel
+  placement: "auto",
 }
 ```
 
-- **Anker:** Panels bekommen `data-tut="shop-coins"`-Attribute; die Coach-Marks referenzieren diese IDs → Spotlight/Marker findet das Element responsiv.
-- **Trigger-Arten:** `run-start`, `phase` (mit `firstOnly`), evtl. `result` (z. B. „erster Crit gefallen" → kurzer Hinweis).
+- **Anker:** Panels bekommen `data-tut="arch-board"`; die Coach-Marks referenzieren diese IDs →
+  der Spotlight findet das Element responsiv. Rein additiv, keine Logikänderung.
+- **Trigger-Arten:** `run-start`, `phase` (mit `firstOnly` und optionaler Unterscheidung nach
+  `offer`/`skillOffer`/`legendaryOffer`), `result` (z. B. „erster Crit gefallen").
 
 ---
 
 ## 7. Architektur / Code-Integration
 
-Alles **UI-Layer**, kein `game/`-Eingriff:
+Alles UI-Layer, kein `game/`-Eingriff:
 
-- **Neu:**
-  - `src/ui/tutorial/tutorialScript.js` — Inhalte (Daten).
-  - `src/ui/tutorial/TutorialOverlay.jsx` — Erklär-Pop-up + Coach-Mark-Spotlight + Fortschritt/Skip.
-  - `src/ui/tutorial/useTutorial.js` — State-Maschine: beobachtet `state.phase` (+ abgeleitete Entscheidungsart), zeigt den passenden Step beim **ersten** Auftreten, merkt gezeigte Steps.
-  - `TUTORIAL_SEED` (Konstante) + `as_tutorial_done` (Persistenz).
-- **Geändert (minimal):**
-  - `App.jsx`: `onStartTutorial` → `START_RUN` mit `makeRng(TUTORIAL_SEED)` + `tutorialActive`-Flag; rendert `TutorialOverlay`, wenn aktiv.
-  - `StartScreen.jsx`: neuer Button **„Tutorial"** neben „Neuer Run/Anleitung".
-  - Panels bekommen `data-tut`-Anker (rein additiv, keine Logikänderung): `Battlefield`, `StatusRail`, `Controls`, `StatSelect`, `PerkSelect`, `BuildPanel`, `FormationPhase`, `ShopScreen`, `SkillSelect`, `TargetSelect`/`ShopTargetSelect`, `GameOver`.
-- **Progression:** Pop-up dismissen → Phase normal spielen. **Keine harte Blockade** — nur erklären; die vorhandene Regel „ohne Auswahl geht’s nicht weiter" reicht als Führung. (Entscheidung §12: optional den empfohlenen Button hervorheben.)
+**Neu**
+- `src/ui/tutorial/tutorialScript.js` — Schritte (Daten, i18n-Schlüssel).
+- `src/ui/tutorial/TutorialOverlay.jsx` — Pop-up + Coach-Mark-Spotlight + Fortschritt/Skip.
+- `src/ui/tutorial/useTutorial.js` — Zustandsmaschine: beobachtet `state.phase` **und** die
+  Angebots-Felder (weil `levelup` drei Auswahlarten trägt), zeigt jeden Schritt beim ersten
+  Auftreten, merkt sich Gezeigtes.
+- `TUTORIAL_SEED` (Konstante) + `as_tutorial_done` (Persistenz, `storage.js`).
+
+**Geändert (minimal)**
+- `App.jsx`: `onStartTutorial` → geseedeter `START_RUN` + `tutorialActive`-Flag; rendert
+  `TutorialOverlay`, wenn aktiv.
+- `StartScreen.jsx`: neuer Tutorial-Einstieg. **Achtung:** der Hub ist ein bewusst ruhiges
+  2×2-Kachel-Grid mit genau zwei lauten CTAs. Ein dritter lauter Knopf bricht die Hierarchie —
+  siehe Entscheidung §13.4.
+- Panels bekommen `data-tut`-Anker (heute existiert **kein einziger** im Code, das ist Neuarbeit
+  in W2): `Battlefield`, `StatusBar`, `StatusRail`, `SkillSelect`, `PerkSelect`, `BuildPanel`,
+  `FormationPhase`, `ArchPanels`, `ArchitectScreen`, `GlacierPick`, `TargetSelect`,
+  `FamilyTargetSelect`, `LegendarySelect`, `GameOver`.
+
+**Progression:** Pop-up wegklicken → Phase normal spielen. Keine harte Blockade; die vorhandene Regel
+„ohne Auswahl geht's nicht weiter" reicht als Führung.
 
 ---
 
 ## 8. Determinismus
 
-- Seed-Zug **einmal** bei Run-Start (wie regulär). Kein `Math.random` im Tutorial-Kern-Flow.
-- Da `DECISION_SCHEDULE` fix ist, ist die **Phasenreihenfolge** ohnehin deterministisch; der Seed pinnt nur den **Inhalt** (Karten/Angebote/Crits).
+- Seed-Zug **einmal** bei Lauf-Start (wie regulär). Kein `Math.random` im Tutorial-Kernfluss —
+  das ist keine Stilfrage, sondern die Architekturgrenze von `src/game/`.
+- `DECISION_SCHEDULE` ist fix, die **Phasenreihenfolge** also ohnehin deterministisch; der Seed pinnt
+  nur den **Inhalt** (Karten, Angebote, Crits).
 
 ---
 
 ## 9. Persistenz & Wiederholbarkeit
 
-- `as_tutorial_done` (localStorage, via `storage.js`) — analog zu `as_seen_guide`.
-- **Wiederholbar:** Tutorial-Button ist immer sichtbar; Spieler können es erneut starten.
-- **Erststart:** Statt (oder neben) der auto-öffnenden `AnleitungModal` bietet der Erststart „**Tutorial starten**" an (interaktiv) vs. „Kurz-Anleitung" (Text). Entscheidung §12.
+- `as_tutorial_done` (localStorage über `storage.js`). Die Reset-Liste `RESET_KEYS` muss den Schlüssel
+  mit aufnehmen, sonst überlebt „Tutorial gesehen" den Profil-Wipe.
+- **Wiederholbar:** der Einstieg bleibt sichtbar, das Tutorial ist erneut startbar.
+- **Erststart:** Seit dem Onboarding-Rückbau (#316) startet **jedes Profil voll freigeschaltet**
+  (`onboarding = ONBOARDING_LINKS`, 0 SP / 50 DP). Es gibt also keine Freischalt-Treppe mehr, die den
+  Erstkontakt strukturiert — das Tutorial ist damit die **einzige** Führung für neue Spieler. Das
+  erhöht seine Priorität gegenüber der Erstfassung deutlich.
+- **Alt-Schlüssel:** `as_seen_guide` liegt noch in `storage.js` und in `RESET_KEYS`, wird aber von
+  keinem Code mehr gelesen (die `AnleitungModal` ist weg). Beim Tutorial-Bau mit aufräumen oder
+  bewusst als Alt-Last stehen lassen.
 
 ---
 
 ## 10. UX-Details
 
-- **Skip:** pro Step „Überspringen" + global „Tutorial beenden" (setzt `as_tutorial_done`).
-- **Fortschritt:** kleine Anzeige „Schritt 3/8".
-- **Mobil:** Pop-up als Bottom-Sheet; Coach-Mark-Marker repositionieren. `data-tut`-Anker müssen im Scroll-Container gefunden werden.
-- **`prefers-reduced-motion`:** Spotlight-Animation aus (wie beim übrigen „Juice").
-- **Nicht nerven:** Pop-ups nur beim **ersten** Auftreten; kurze Texte; jederzeit wegklickbar.
+- **Skip:** pro Schritt „Überspringen" + global „Tutorial beenden" (setzt `as_tutorial_done`).
+- **Fortschritt:** kleine Anzeige „Schritt 3/8" — die Zahl **aus der Skriptlänge ableiten**, nicht
+  in den Text schreiben (sonst driftet sie beim ersten neuen Schritt).
+- **Mobil:** Pop-up als Bottom-Sheet; Coach-Mark-Marker repositionieren. Anker müssen im
+  Scroll-Container gefunden werden.
+- **Effekt-Stufen:** Das Spiel hat drei (`useFxLevel`: `full` / `balanced` / `minimal`, gesteuert über
+  die Option „Effekte reduziert" **und** `prefers-reduced-motion`). Der Spotlight muss sich daran
+  halten, nicht nur an `prefers-reduced-motion` — sonst animiert das Tutorial fröhlich weiter,
+  während der Spieler alles andere abgeschaltet hat.
+- **Pause-Kopplung:** Ein offenes Tutorial-Pop-up muss den Lauf einfrieren wie jedes andere Overlay
+  (`showOptions`/`glossaryOpen`-Muster in `App.jsx`) — sonst laufen im Stichspiel Stiche weiter,
+  während der Spieler liest, und die Musik/Loop-Gatung stimmt nicht.
+- **Nicht nerven:** nur beim ersten Auftreten, kurze Texte, jederzeit wegklickbar.
 
 ---
 
-## 11. Implementierungs-Wellen (später, nicht jetzt)
+## 11. Implementierungs-Wellen
 
-Jede Welle lauffähig, Spiel bleibt spielbar:
+Jede Welle lauffähig, das Spiel bleibt spielbar:
 
-- **W0 — Gerüst:** `tutorialActive`-Flag, geseedeter `START_RUN`, `TutorialOverlay`-Skelett, Step-Engine an `state.phase`, Persistenz, StartScreen-Button.
-- **W1 — Phasen-Pop-up:** Erklär-Bubble je Phase + Weiter/Skip + Fortschritt.
-- **W2 — Coach-Marks:** Spotlight/Marker-System + `data-tut`-Anker auf allen Panels; Panel-Erklärungen.
-- **W3 — Inhalte:** alle Phasentexte final; Seed per Sim wählen (schöner Demo-Verlauf).
-- **W4 — Politur:** Bottom-Sheet/Mobil, reduced-motion, Wiederholung, Erststart-Integration mit `AnleitungModal`, Text-Feinschliff.
-
----
-
-## 12. Offene Entscheidungen (vor dem Bauen klären)
-
-1. **Geführter Run:** fester Seed (empfohlen) — bestätigen. Alternativ Overlay auf normalem Zufallsrun.
-2. **Führung:** nur erklären (empfohlen) oder den „empfohlenen" Button je Phase aktiv hervorheben/soft-gaten?
-3. **Tutorial-Ende:** Nach allen erklärten Phasen den Run **normal weiterlaufen** lassen (empfohlen) oder mit „Du bist bereit!"-Screen früh beenden?
-4. **Erststart:** Tutorial die auto-öffnende `AnleitungModal` **ersetzen** lassen, oder beide anbieten (empfohlen: beide)?
-5. **Tiefe:** Sub-Phasen (Ziel-Auswahl, Game Over) auch mit Coach-Marks, oder nur die 5 Hauptphasen + Kampf?
-6. **Text/Stimme:** Tonfall der Erklärtexte — wer schreibt die finale Copy?
+- **W0 — Gerüst:** `tutorialActive`-Flag, geseedeter `START_RUN`, Overlay-Skelett, Schritt-Engine an
+  `state.phase` + Angebots-Feldern, Persistenz, Hub-Einstieg.
+- **W1 — Phasen-Pop-up:** Erklär-Bubble je Phase, Weiter/Skip, Fortschritt, Pause-Kopplung.
+- **W2 — Coach-Marks:** Spotlight-System + `data-tut`-Anker auf allen Panels.
+- **W3 — Inhalte:** alle Phasentexte final **in beiden Sprachen**; Seed per Sim wählen.
+- **W4 — Politur:** Bottom-Sheet/Mobil, Effekt-Stufen, Wiederholung, Textfeinschliff.
 
 ---
 
-## 13. Aufwand & Risiko
+## 12. Was das Tutorial NICHT erklären sollte
 
-- **Umfang:** mittel-groß, ~4 Wellen. **Kein Spiellogik-Risiko** (UI-only, `game/` unangetastet).
-- **Hauptrisiko:** responsives Ankern der Coach-Marks (Scroll/Mobil) + „nicht nervig" halten (Skip/Kürze).
-- **Synergien:** kann Texte aus `AnleitungModal` recyceln.
-```
+Der Bogen soll kurz bleiben. Bewusst außerhalb:
+
+- **Meta-Ebene:** Upgrade-Baum, Stichpunkte/Deckpunkte, Deck-Werkstatt, Kosmetik. Das sind
+  Hub-Themen nach dem ersten Lauf, nicht Lauf-Themen.
+- **Wochen-Rangliste und Wochen-Modifikatoren:** eigener Modus mit eigener Baseline; im Tutorial
+  nicht aktiv (§3) und deshalb dort auch nicht zu erklären.
+- **Archetyp-Strategie:** dafür gibt es die vier Leitfäden. Das Tutorial erklärt, **dass** es
+  Archetypen gibt und wie man einen aktiviert — nicht, wie man Feuer optimal spielt.
+- **Einzelne Perks/Skills/Gebäude:** dafür gibt es Glossar und Detailkarten.
+
+---
+
+## 13. Offene Entscheidungen (vor dem Bauen klären)
+
+Mit Empfehlung. Die alte Frage „Tutorial vs. `AnleitungModal`" ist durch deren Wegfall erledigt.
+
+1. **Geführter Lauf: fester Seed?**
+   → **Ja, fester Seed.** Ohne ihn kann das Skript nicht garantieren, dass in der ersten
+   Aufstellungsphase überhaupt eine Formation sichtbar ist. Kosten: eine Konstante.
+
+2. **Führung: nur erklären oder den empfohlenen Zug hervorheben?**
+   → **Nur erklären.** Autostich hat keine Verlierbedingung — eine „falsche" Wahl kostet nichts und
+   ist die ehrlichere Lernerfahrung. Eine Soft-Empfehlung würde außerdem bei jeder Balance-Änderung
+   falsch werden, also genau den Drift einführen, den §3 vermeidet.
+
+3. **Tutorial-Ende: normal weiterlaufen oder „Du bist bereit!"-Screen?**
+   → **Normal weiterlaufen**, plus ein einmaliger Abschluss-Hinweis nach der letzten erklärten Phase
+   (Runde 4), der auf Glossar und Leitfaden zeigt. Den Lauf abzuschneiden wäre unnötig: er ist ab
+   da ein ganz normaler Lauf und zählt für Statistik und Bestenliste.
+
+4. **Wo sitzt der Einstieg im Hub?**
+   → **Als ruhiger Chip neben „Optionen"**, nicht als dritter CTA und nicht als fünfte Kachel.
+   Zusätzlich: **beim allerersten Start automatisch anbieten** (Profil ohne beendeten Lauf und ohne
+   `as_tutorial_done`) — dort darf es laut sein. Danach nur noch der Chip.
+
+5. **Tiefe: welche Phasen bekommen Coach-Marks?**
+   → **Die vier Hauptphasen + Stichspiel bekommen volle Coach-Marks.** Gletscher-Wahl, Ziel-Auswahl
+   und Familien-Ziel bekommen **nur ein Ein-Satz-Pop-up beim ersten Auftreten** (sie erscheinen
+   bedingt und würden den Bogen sonst zerfasern). Die **Legendär-Phase** liegt in Durchlauf 29 —
+   ein eigener Ein-Satz-Hinweis dort, unabhängig davon, ob das Tutorial „fertig" ist.
+
+6. **Tonfall und wer schreibt die Copy?**
+   → **Zweiter Person, Präsens, Bedingung → Wirkung**, wie in `docs/text-style-guide.md`; maximal
+   drei Sätze pro Pop-up, ein Satz pro Coach-Mark. Copy schreibe ich, Freigabe beim Nutzer.
+
+7. **NEU — zählt der Tutorial-Lauf für Statistik, Bestenliste und Freischaltungen?**
+   → **Ja, ganz normal.** Er ist mechanisch ein regulärer Lauf mit festem Seed; ihn auszuklammern
+   hieße, `recordRun`/`publishRun` einen Sonderfall beizubringen — Komplexität ohne Gegenwert.
+   Bewusste Nebenwirkung: alle Tutorial-Läufe teilen einen Seed. Für die globale Bestenliste ist das
+   unkritisch (nur der Wochen-Ranked-Modus hat eine faire Baseline), sollte aber bekannt sein.
+
+8. **NEU — was passiert beim Abbruch mitten im Tutorial?**
+   → **`as_tutorial_done` NICHT setzen.** Wer abbricht, hat es nicht gesehen; der nächste Start bietet
+   es erneut an. Nur „Tutorial beenden" und das Durchlaufen bis zum Abschluss-Hinweis setzen die Flagge.
+
+---
+
+## 14. Zweisprachigkeit — das Tutorial ist der erste bilinguale Inhalt
+
+Seit dem i18n-Fundament (`docs/localization/i18n.md`) gilt: **jeder neue Anzeigetext gehört in
+`src/i18n/de.js` und `src/i18n/en.js`.** Das Tutorial ist der erste Inhalt, der von der ersten Zeile
+an unter dieser Regel entsteht — und damit der beste Praxistest für die Schicht.
+
+Konkret:
+
+- `tutorialScript.js` enthält **Schlüssel, keine Texte** (Schema in §6). Das Skript beschreibt Ablauf
+  und Anker; die Sprache liegt im Katalog.
+- Namensraum `tutorial.<phase>.<sache>`, z. B. `tutorial.architect.title`,
+  `tutorial.architect.board`.
+- `test/i18n-guards.test.js` erzwingt dann automatisch Schlüssel-Parität, Platzhalter-Parität,
+  Zahlformat und Terminologie. Ein einsprachiger Tutorial-Schritt macht die Suite rot.
+- `TutorialOverlay.jsx` gehört nach Fertigstellung in die `MIGRATED`-Ratsche des Guard-Tests.
+- Zahlen im Text (50 Durchläufe, 400 Punkte, 6 Slots, 4 Energie) kommen als Interpolation aus
+  `constants.js`, nicht abgetippt — sonst driftet das Tutorial beim nächsten Balancing genauso, wie
+  es die Handtexte vor der Sprachprüfung getan haben.
+
+**Reihenfolge-Empfehlung:** Erst die **Registermigration** (Skills, Perks, Familien, Gebäude, Glossar,
+Rarität) — oder zumindest Rarität und Formationstypen —, dann die Tutorial-Inhalte. Sonst erklärt ein
+englisches Tutorial die „Rarity: Sehr selten". Für W0–W2 (Gerüst, Pop-up, Anker) spielt das keine
+Rolle; erst W3 (Inhalte) hängt daran.
+
+---
+
+## 15. Aufwand & Risiko
+
+- **Umfang:** mittel-groß, vier Wellen. **Kein Spiellogik-Risiko** (UI-only, `game/` unangetastet,
+  Sim- und Determinismustests unberührt).
+- **Hauptrisiken:**
+  1. **Responsives Ankern** der Coach-Marks (Scroll, Mobil, Bottom-Sheet) — der teuerste Teil.
+  2. **`data-tut`-Anker über 14 Panels** — heute existiert keiner; das ist breite, aber flache Arbeit.
+  3. **Textdrift** — abgefangen durch Konstanten-Interpolation und die i18n-Guards (§14).
+  4. **Pause-/Overlay-Kopplung** im Stichspiel (§10) — leicht zu übersehen, führt sonst zu Stichen,
+     die hinter dem Pop-up weiterlaufen.
+- **Synergien:** Glossar (109 Begriffe) und die vier Leitfäden liefern den Wortlaut; die Coach-Marks
+  können auf sie verweisen, statt Erklärungen zu duplizieren.
