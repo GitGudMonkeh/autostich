@@ -236,7 +236,7 @@ export const GLOSSARY = {
     text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jede Runde +${de(G_EWIGER_FROST)} Masse — bedingungslos, ob Sieg oder Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
     match: ["Masse"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "❄️", color: CLR.ice,
-    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Burst-Score aus Masse × Stufen-Wucht (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und baut neu auf.`,
+    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Burst-Score aus Masse × Stufen-Wucht (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Rundenstart aus seiner Firn-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Berst-Schwelle", "Berst-Faktor"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "🔗", color: CLR.ice,
     text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Viele Eis-Skills messen die Cluster-Größe (z. B. Verschmelzen, Verzahnung); Eisbrücke zählt auch die Diagonalen dazu.",
@@ -246,7 +246,7 @@ export const GLOSSARY = {
     match: ["Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Firn-Boden".
   freeze: { category: "frak", group: "ice", label: "Firn-Boden", icon: "❄️", color: CLR.ice,
-    text: "Masse liegt auf dem Brettfeld, nicht auf der Karte (Firn-Boden). Frierst du einen Gletscher auf ein bereits aufgeladenes Feld, erbt er dessen Masse — er startet nicht bei 0. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf.",
+    text: `Firn liegt als Reserve auf dem Brettfeld (Firn-Boden), getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Firn zu seiner Reserve; der Gletscher startet leer und zieht daraus jede Runde wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf — nie unter einen Gletscher.`,
     match: ["Firn-Boden", "Firn"] },
 
   /* ============ 4 · Pflanze ============ */

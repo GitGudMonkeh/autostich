@@ -53,6 +53,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const glacierLocked = state.glacierLocked || [];
   const glacierMass = state.glacierMass || [];
+  const firnStack = state.firnStack || []; // #386 Firn-Boden-Reserve
   const glacierPos = useMemo(() => { const s = new Set(); glacierLocked.forEach((v, i) => { if (v) s.add(i); }); return s; }, [glacierLocked]);
   // #301 C3: gesperrte Aufstell-Zellen — fixiert (nicht tauschbar). disabledPos greift Klick + Ausgrauen; die Karte zählt
   // aber normal für Formationen (Scoring unverändert). Als Array für stabile Memo-Dep.
@@ -207,7 +208,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               </div>
             )}
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
-              glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} />
+              glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} firnStackByPos={iceActive ? firnStack : null} />
           </div>
 
           {/* Info-Panel (rechts auf Desktop, sonst darunter) */}

@@ -33,7 +33,7 @@ describe("eiszeitTick — Flut + Auto-Lock", () => {
 describe("Eiszeit — Engine", () => {
   it("über einen Durchlauf: Brett geflutet + ein Feld neu eingefroren", () => {
     const s = runCycle(scen({ glacierLocked: lockAt(0), glacierRoles: [ROLES.L_EISZEIT], oppDeck: oppOf(99) }));
-    expect(s.glacierMass[39]).toBe(EISZEIT_FLOOD);         // ungefrorenes Feld geflutet
+    expect(s.firnStack[39]).toBe(EISZEIT_FLOOD);          // #386: ungefrorenes Feld flutet die Boden-Reserve (firnStack)
     expect(s.glacierLocked.filter(Boolean).length).toBe(2); // ein Feld ist neu zum Gletscher geworden
   });
 });

@@ -11,7 +11,7 @@ const ICE = "#7fd4f0";
    sie friert auf ihrer Zelle fest (starr) und sammelt Masse. Analog zu TargetSelect (Perk-Kartenziel), aber Einzelwahl
    per Brett-Position; bestätigen dispatcht GLACIER_LOCK. Bereits gefrorene Felder sind gesperrt. */
 export function GlacierPick({ state, onConfirm }) {
-  const { deck = [], playerOrder = [], formations = [], roles = {}, glacierLocked = [], glacierMass = [], challengeBlockForm = [] } = state;
+  const { deck = [], playerOrder = [], formations = [], roles = {}, glacierLocked = [], glacierMass = [], firnStack = [], challengeBlockForm = [] } = state;
   const [sel, setSel] = useState(null); // gewählte Brett-Position (pos) oder null
 
   const cards = playerOrder.map((di) => deck[di]);
@@ -48,7 +48,7 @@ export function GlacierPick({ state, onConfirm }) {
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             architectCover={architectCover}
             pickedIds={sel != null && cards[sel] ? [cards[sel].id] : []} disabledPos={disabledPos} lockedPos={chLock}
-            glacierPos={glacierPos} glacierMassByPos={glacierMass}
+            glacierPos={glacierPos} glacierMassByPos={glacierMass} firnStackByPos={firnStack}
             onTilePick={(pos) => pick(pos)} />
         </div>
 

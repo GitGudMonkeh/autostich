@@ -164,9 +164,9 @@ export const SKILL_DEFS = {
   SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN",
     desc: `Ein Gletscher-Sieg gibt +${de(G_ANFRIEREN_WIN)} Masse extra; siegt der Gletscher in einer Formation, zusätzlich +${de(G_ANFRIEREN_FORM)}.` },
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier"], role: "G_SCHNEETREIBEN",
-    desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Masse auf ein angrenzendes Feld (bevorzugt offenen Boden) — zusätzlich, ohne eigene Masse abzugeben; nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Nur die 4 direkten Nachbarn, Eisbrücke zählt hier nicht.` },
+    desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Firn in die Boden-Reserve eines angrenzenden offenen Feldes — zusätzlich, ohne eigene Masse abzugeben; nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Nur offener Boden (nie unter einen Gletscher), nur die 4 direkten Nachbarn, Eisbrücke zählt hier nicht.` },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier"], role: "G_DAUERFROST",
-    desc: `Jede Runde frostet offener Boden zu: ungefrorene Felder sammeln Masse nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer.` },
+    desc: `Jede Runde frostet offener Boden zu: ungefrorene Felder sammeln Firn in ihrer Boden-Reserve nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer. Die Reserve füllt einen später hier gefrorenen Gletscher zum Rundenstart wieder auf.` },
   SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG",
     desc: `Erhöht ein Gebäude die Kartenstärke einer Gletscher-Karte, wird dieser Wert-Bonus nicht ausgespielt (die Karte kämpft ohne ihn), sondern in Masse getankt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
   // Linie 2 — Eisschild (Cluster/Dichte)
@@ -200,7 +200,7 @@ export const SKILL_DEFS = {
     desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht — und füttert stattdessen +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_EISZEIT",
-    desc: `Jede Runde: +${de(G_EISZEIT_FLOOD)} Masse auf jedes ungefrorene Feld, dann friert das massereichste davon zum Gletscher ein — bis zu ${G_EISZEIT_MAX} Gletscher.` },
+    desc: `Jede Runde: +${de(G_EISZEIT_FLOOD)} Firn in die Boden-Reserve jedes ungefrorenen Felds, dann friert das reservestärkste davon zum Gletscher ein (startet leer, füllt sich aus seiner Reserve nach) — bis zu ${G_EISZEIT_MAX} Gletscher.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Das ganze Feld wird zu EINEM Übergletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch und bekommen +${G_SCHILD_BONUS} Masse obendrauf (nie fallend). Beim Bruch gilt jeder Gletscher als Nachbar aller anderen — volle Kaskade und Kollision, egal wo sie liegen. Anordnung wird bedeutungslos, nur die stärkste Masse zählt.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",

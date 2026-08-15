@@ -114,7 +114,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const deck = state.deck || [];
   const cards = order.map((di) => deck[di]).filter(Boolean);
   // Eis: Gletscher-/Firn-Marker (gleicher Positionsraum wie das Brett) — nur befüllt, wenn Eis aktiv ist.
-  const { glacierPos = null, glacierMassByPos = null } = glacierGridProps(state);
+  const { glacierPos = null, glacierMassByPos = null, firnStackByPos = null } = glacierGridProps(state); // #386 Firn-Boden-Reserve
 
   // Ablauf-Zustand.
   const [phase, setPhase] = useState("choose");            // choose | place | upgrade | after | move
@@ -690,8 +690,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
                 const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
                 const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
-                const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // angesammelte Masse
-                const isFirn = !isGlacier && gMass >= 1;                                           // Firn-Boden (Masse, noch kein Gletscher)
+                const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // Gletscher-Eigenmasse
+                const fMass = firnStackByPos ? Math.round(firnStackByPos[pos] || 0) : 0;           // #386 Boden-Reserve (firnStack)
+                const isFirn = !isGlacier && fMass >= 1;                                           // Firn-Boden (Reserve, noch kein Gletscher)
                 const anchorCell = b ? Math.min(...b.footprint) : -1;
                 const isSel = b && b.id === selId;
                 const pf = formations[pos] || { mult: 1, formations: [] };
@@ -769,13 +770,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}`}>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
                         <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${gMass}`}><FactionIcon type="ice" size={8} glow={false} />{gMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${fMass} (füllt einen Gletscher hier zum Rundenstart)`}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>

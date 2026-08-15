@@ -6,5 +6,5 @@ export function glacierGridProps(state = {}) {
   const ice = (state.activeArchetypes || []).includes("ice");
   if (!ice || !state.glacierLocked) return locked;
   const glacierPos = new Set(state.glacierLocked.map((v, i) => (v ? i : -1)).filter((i) => i >= 0));
-  return { ...locked, glacierPos, glacierMassByPos: state.glacierMass || [] };
+  return { ...locked, glacierPos, glacierMassByPos: state.glacierMass || [], firnStackByPos: state.firnStack || [] }; // #386 Firn-Boden-Reserve
 }

@@ -67,7 +67,7 @@ function Glacier({ mass, order = null, value = null }) {
   );
 }
 
-export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
+export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
                             deck = [], playerOrder = [],
                             frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
                             options = {}, onOption, manyActive = false }) {
@@ -84,7 +84,11 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   const cascade = glacierPre?.breaks?.length || 0;                        // Brüche in diesem Durchlauf
   const clusters = glacierClusters(glacierLocked, glacierNeighborFn(glacierRoles));
   const biggest = clusters.reduce((m, c) => Math.max(m, c.length), 0);    // größtes zusammenhängendes Cluster
-  let firn = 0; for (let i = 0; i < glacierMass.length; i++) if (!glacierLocked[i] && (glacierMass[i] || 0) > 0) firn++;
+  // #386 Firn-Boden-Reserve: offener Boden mit Reserve (firnStack) = „lädt"; gefrorene Gletscher halten ihre Restreserve
+  // (füllt sie zum Rundenstart wieder auf 12 nach). Getrennt von glacierMass (Gletscher-Eigenmasse).
+  let firn = 0; for (let i = 0; i < firnStack.length; i++) if (!glacierLocked[i] && (firnStack[i] || 0) > 0) firn++;
+  let reserve = 0; for (let i = 0; i < firnStack.length; i++) if (glacierLocked[i]) reserve += (firnStack[i] || 0);
+  reserve = Math.round(reserve);
   const frozenOpp = new Set([...Object.keys(frozenOppActive || {}), ...Object.keys(frozenOppPending || {})]).size;
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
@@ -174,9 +178,10 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
         </div>
       )}
 
-      {(firn > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
+      {(firn > 0 || reserve > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
           {firn > 0 && chip("Firn-Boden lädt", firn, FROST)}
+          {reserve > 0 && chip("Firn-Reserve", reserve, FROST)}
           {frozenOpp > 0 && chip("Gegner eingefroren", frozenOpp, "#7ea6ff")}
           {duo > 0 && chip("Duo-Buff", duo, "#d4a63a")}
           {hasLawine && chip(grosseLawineFired ? "Große Lawine · verbraucht" : "Große Lawine · bereit", null, "#d4a63a", grosseLawineFired)}

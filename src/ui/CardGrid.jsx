@@ -71,7 +71,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
-                   glacier = false, glacierMass = 0, glacierForm = false, locked = false }) {
+                   glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -82,9 +82,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
-  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Masse (noch kein Gletscher). Dezent (nur leichter
-  // Blau-Schimmer + ❄-Marker), damit man es klar von einem echten Gletscher (Cyan-Rahmen/Glow/Icon) unterscheidet.
-  const firn = !glacier && glacierMass >= 0.5;
+  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Boden-Reserve (#386 firnStack, noch kein Gletscher).
+  // Dezent (nur leichter Blau-Schimmer + ❄-Marker), klar abgesetzt vom echten Gletscher (Cyan-Rahmen/Glow/Icon).
+  const firn = !glacier && firnMass >= 0.5;
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Gletscher-Cyan vor Formations-/Farbrand.
   const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : glacier ? "#5ec8f0" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
@@ -150,15 +150,15 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Rundenstart auf 12)` : ""}`}>
           <FactionIcon type="ice" size={11} />
           {Math.round(glacierMass)}
         </span>
       )}
-      {/* Firn-Boden-Marker: dezenter ❄ + Masse (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
+      {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${Math.round(glacierMass)}`}>
-          <FactionIcon type="ice" size={8} glow={false} />{Math.round(glacierMass)}
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Rundenstart)`}>
+          <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
         </span>
       )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
@@ -197,7 +197,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
                           segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null,
-                          glacierPos = null, glacierMassByPos = null, lockedPos = [] }) {
+                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
@@ -297,6 +297,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
                   glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
+                  firnMass={firnStackByPos ? (firnStackByPos[pos] || 0) : 0}
                   glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}
                   locked={lockedSet.has(pos)}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
