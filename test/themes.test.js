@@ -6,6 +6,7 @@ import {
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
+  isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
 import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
 import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
@@ -107,7 +108,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "serie300", "serie600", "serie1500", "sparfuchs",
+    const challenge = ["gottgleich", "peacock", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
     for (const id of challenge) {
@@ -121,6 +122,57 @@ describe("packs — Zustände & Besitz", () => {
       if (challenge.includes(pack.id)) continue;
       expect(pack.kind).toBe("buy");
     }
+  });
+});
+
+describe("#tiered — Stufen-Deck Peacock (serie300/600/1500 zusammengefasst)", () => {
+  const PEACOCK = THEME_DEFS.peacock;
+  it("die drei Einzel-Challenges sind aus der Registry entfernt; Peacock ist EIN Stufen-Pack", () => {
+    for (const id of ["serie300", "serie600", "serie1500"]) expect(THEME_DEFS[id]).toBeUndefined();
+    expect(PEACOCK).toBeDefined();
+    expect(isTieredPack(PEACOCK)).toBe(true);
+    expect(PEACOCK.tiers.map((t) => t.deckId)).toEqual(["deck_serie300", "deck_serie600", "deck_serie1500"]);
+    expect(PEACOCK.tiers.map((t) => t.roman)).toEqual(["I", "II", "III"]);
+    expect(isTieredPack(THEME_DEFS.gottgleich)).toBe(false);
+  });
+  it("Stufen schalten einzeln an ihren Streak-Schwellen frei (300/600/1500)", () => {
+    expect(unlockedTiers(prof({ bestStreak: 0 }), PEACOCK)).toEqual([]);
+    expect(unlockedTiers(prof({ bestStreak: 300 }), PEACOCK).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestStreak: 600 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(unlockedTiers(prof({ bestStreak: 1500 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II", "III"]);
+  });
+  it("highestUnlockedTier / coverTier: Cover = höchste freie Stufe (gesperrt → Stufe I)", () => {
+    expect(highestUnlockedTier(prof({ bestStreak: 0 }), PEACOCK)).toBe(null);
+    expect(coverTier(prof({ bestStreak: 0 }), PEACOCK).roman).toBe("I");         // gesperrt zeigt Stufe I
+    expect(coverTier(prof({ bestStreak: 600 }), PEACOCK).roman).toBe("II");
+    expect(coverTier(prof({ bestStreak: 1500 }), PEACOCK).roman).toBe("III");
+    expect(highestUnlockedTier(prof({ bestStreak: 1500 }), PEACOCK).deckId).toBe("deck_serie1500");
+  });
+  it("packOwned = Stufe I frei; packState/packUnlock hängen an Stufe I (Streak 300)", () => {
+    expect(packOwned(prof({ bestStreak: 299 }), PEACOCK)).toBe(false);
+    expect(packOwned(prof({ bestStreak: 300 }), PEACOCK)).toBe(true);
+    expect(packState(prof({ bestStreak: 0 }), PEACOCK)).toBe("lock");
+    expect(packState(prof({ bestStreak: 300 }), PEACOCK)).toBe("own");
+    expect(packUnlock(prof(), PEACOCK)).toMatchObject({ target: 300 });
+    expect(packPrice(PEACOCK)).toBe(null);
+  });
+  it("tierByDeckId / packHasTierDeck / tierAsPack", () => {
+    expect(tierByDeckId(PEACOCK, "deck_serie600").roman).toBe("II");
+    expect(tierByDeckId(PEACOCK, "deck_nope")).toBe(null);
+    expect(packHasTierDeck(PEACOCK, "deck_serie1500")).toBe(true);
+    expect(packHasTierDeck(PEACOCK, "deck_obsidian")).toBe(false);
+    const view = tierAsPack(PEACOCK, PEACOCK.tiers[1]);
+    expect(view.deckId).toBe("deck_serie600");
+    expect(view.bfId).toBe("bf_serie600");
+    expect(view.a1).toBe("#7b3ff0");
+  });
+  it("resolvePackByDeckId: jede Stufe → Peacock + Stufen-eigene Farben", () => {
+    expect(resolvePackByDeckId("deck_serie300")).toMatchObject({ a1: "#ff2d9b" });
+    expect(resolvePackByDeckId("deck_serie600")).toMatchObject({ a1: "#7b3ff0" });
+    expect(resolvePackByDeckId("deck_serie1500")).toMatchObject({ a1: "#8a4dff" });
+    expect(resolvePackByDeckId("deck_serie600").pack.id).toBe("peacock");
+    expect(resolvePackByDeckId("deck_obsidian").pack.id).toBe("obsidian"); // Nicht-Stufen-Pack unverändert
+    expect(resolvePackByDeckId("default")).toBe(null);                    // Standard-Deck → kein Pack, keine Deckfarbe
   });
 });
 

@@ -415,6 +415,9 @@ const DEFAULT_OPTIONS = {
   // #393 Zufalls-Deck je Lauf: jeder neue Lauf startet mit einem zufälligen besessenen (farbigen) Deck-Pack + alle aktiven
   //   Effekte in Deckfarbe. Reine UI-Pref (überlebt Reset, wie haptics) → NICHT in COSMETIC_OPTION_KEYS.
   randomDeckEachRun: false,
+  // #tiered zuletzt gewählte Stufe je Stufen-Deck: { <packId>: <deckId> } — merkt sich die I/II/III-Wahl, damit
+  //   der Zufalls-Modus dieselbe Stufe zieht. Kosmetik-Auswahl → in COSMETIC_OPTION_KEYS (Reset setzt zurück).
+  tierSel: {},
   // Effekt-Toggles (Ein/Aus). fxSonnenPuls = freier Default an; alles andere aus.
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
@@ -433,7 +436,7 @@ const DEFAULT_OPTIONS = {
 // #347: alle Kosmetik-Auswahlfelder (equipped Deck/Battlefield + ALLE Effekt-Toggles + Farbmodus-Flags + Cube-Optik) →
 //   der Profil-Wipe setzt sie sauber auf DEFAULT_OPTIONS zurück. Nicht-Kosmetik-Prefs (Ton/Lautstärke/UI/Haptik) bleiben.
 export const COSMETIC_OPTION_KEYS = [
-  "deckId", "battlefieldId", "finisher", "archColor",
+  "deckId", "battlefieldId", "finisher", "archColor", "tierSel",
   "fxAurora", "fxNeonsurf", "fxStarfield", "fxCubeMatrix", "fxDeckGlow", "fxEdgeGlow", "fxHolo", "fxGlitch",
   "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova",
   "fxCubeMatrixSun", "fxCubeMatrixWire",

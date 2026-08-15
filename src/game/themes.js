@@ -167,12 +167,17 @@ export const THEME_DEFS = {
   // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
   gottgleich: { id: "gottgleich", name: "Ascension", emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
-  serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
-    deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
-  serie600:   { id: "serie600",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
-    deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
-  serie1500:  { id: "serie1500",  name: "Königspfau", emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
-    deckId: "deck_serie1500",  bfId: "bf_serie1500",  els: ["deck", "bf"] },
+  // #tiered Stufen-Deck „Peacock" — EIN Challenge-Eintrag mit drei je eigen freigeschalteten Stufen (I/II/III).
+  // Die Stufen zeigen auf die realen Skins deck_serie300/600/1500 (Streak 300/600/1500, Bedingung aus DECK_DEFS).
+  // Cover = höchste freigeschaltete Stufe (UI via coverTier); Top-Level-Felder spiegeln Stufe I als Fallback für
+  // generischen Pack-Code (packCond/packOwned lesen deckId=deck_serie300 → „im Besitz", sobald Stufe I frei ist).
+  peacock: { id: "peacock", name: "Peacock", emblem: "🦚", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
+    deckId: "deck_serie300", bfId: "bf_serie300", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Flamingo",    deckId: "deck_serie300",  bfId: "bf_serie300",  a1: "#ff2d9b", a2: "#ff6ac0" },
+      { roman: "II",  name: "Peacock",     deckId: "deck_serie600",  bfId: "bf_serie600",  a1: "#7b3ff0", a2: "#ffcf3a" },
+      { roman: "III", name: "Königspfau",  deckId: "deck_serie1500", bfId: "bf_serie1500", a1: "#8a4dff", a2: "#ffd84a" },
+    ] },
   sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
 
@@ -232,6 +237,20 @@ export function showcaseLook(packId, override = {}) {
 }
 export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
+// Pack + passende Akzentfarben zu einer equippten deckId — löst bei Stufen-Decks die konkrete Stufe (eigene a1/a2) auf.
+// null, wenn keine Zuordnung (z. B. Genesis/Standard). Nutzt die Battlefield-/Deck-Farb-Ableitung in-game (App.jsx).
+export function resolvePackByDeckId(deckId) {
+  for (const t of THEMES) {
+    if (isTieredPack(t)) {
+      const tier = tierByDeckId(t, deckId);
+      if (tier) return { pack: t, a1: tier.a1, a2: tier.a2 };
+    } else if (t.deckId === deckId) {
+      return { pack: t, a1: t.a1, a2: t.a2 };
+    }
+  }
+  return null;
+}
+
 // DP-Guthaben (Deckpunkte) robust lesen — Währung der Werkstatt-Packs (#299).
 const dp = (profile) => Math.max(0, Math.floor(Number(profile && profile.deckPoints) || 0));
 
@@ -263,6 +282,35 @@ export function packState(profile, pack) {
 
 // Preis eines Packs in DP (nur Kauf-Packs; sonst null — Bedingungs-Packs sind gratis freischaltbar). #307: je Pack ein eigener Preis.
 export const packPrice = (pack) => (isBuyPack(pack) ? Math.max(0, Math.floor(Number(pack && pack.price) || 0)) : null);
+
+/* ---- #tiered: Stufen-Decks (EIN Challenge-Eintrag, mehrere je eigen freigeschaltete Stufen I/II/III) ----
+   Ein Stufen-Deck trägt `tiers: [{ roman, name, deckId, bfId, a1, a2 }, …]` (aufsteigend). Jede Stufe ist ein realer
+   Skin mit eigener Freischalt-Bedingung (aus DECK_DEFS[tier.deckId].unlock). Cover/Preview/Aktivierung lösen die
+   passende Stufe über diese Helfer auf; der übrige Pack-Code arbeitet mit den Top-Level-Feldern (= Stufe I) weiter. */
+export const isTieredPack = (pack) => Array.isArray(pack && pack.tiers) && pack.tiers.length > 0;
+// Freigeschaltete Stufen (in Reihenfolge I→…). Nicht-Stufen-Pack → [].
+export function unlockedTiers(profile, pack) {
+  if (!isTieredPack(pack)) return [];
+  return pack.tiers.filter((t) => isUnlocked(DECK_DEFS[t.deckId], profile));
+}
+// Höchste freigeschaltete Stufe (oder null).
+export function highestUnlockedTier(profile, pack) {
+  const u = unlockedTiers(profile, pack);
+  return u.length ? u[u.length - 1] : null;
+}
+// Cover-/Anzeige-Stufe: höchste freigeschaltete, sonst Stufe I (für die gesperrte Kachel).
+export function coverTier(profile, pack) {
+  return highestUnlockedTier(profile, pack) || (isTieredPack(pack) ? pack.tiers[0] : null);
+}
+// Stufe per deckId finden (oder null).
+export const tierByDeckId = (pack, deckId) => (isTieredPack(pack) ? pack.tiers.find((t) => t.deckId === deckId) : null) || null;
+// Ist diese deckId (irgend)eine Stufe dieses Packs?
+export const packHasTierDeck = (pack, deckId) => !!tierByDeckId(pack, deckId);
+// „Pack-Sicht" einer Stufe: pack-artiges Objekt mit den Feldern der Stufe (für Preview/Aktivierung/Farbe).
+export function tierAsPack(pack, tier) {
+  if (!tier) return pack;
+  return { ...pack, deckId: tier.deckId, bfId: tier.bfId, a1: tier.a1, a2: tier.a2, tierName: tier.name, tierRoman: tier.roman };
+}
 
 // Klartext-Freischaltung eines (Bedingungs-)Packs — Label + Fortschritt (für die Sperr-Anzeige).
 export const packUnlock = (profile, pack) => unlockProgress({ unlock: packCond(pack) }, profile);

@@ -43,7 +43,8 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive, packOwned } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive, packOwned,
+  isTieredPack, tierByDeckId, highestUnlockedTier, resolvePackByDeckId } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
@@ -112,10 +113,18 @@ const ALL_DECK_TINT = {
 };
 // #393 Zufälligen besessenen FARBIGEN Pack ziehen (Genesis/Standard ausgeschlossen — hätte keine Deckfarbe). Nur Skin/BF/
 //   Farben, rein kosmetisch → Math.random unbedenklich (keine Engine-Determinismus-Wirkung). Leerer Pool → null (kein Override).
-function pickRandomOwnedPack(profile) {
+//   #tiered: Fällt die Wahl auf ein Stufen-Deck, wird die zuletzt manuell gewählte Stufe (options.tierSel[id]) genommen —
+//   sofern noch freigeschaltet, sonst die höchste freie Stufe. So bleibt die Auswahl auch im Zufalls-Modus konsistent.
+function pickRandomOwnedPack(profile, options = null) {
   const pool = THEMES.filter((t) => t.id !== "genesis" && t.a1 && packOwned(profile, t));
   if (!pool.length) return null;
   const t = pool[Math.floor(Math.random() * pool.length)];
+  if (isTieredPack(t)) {
+    const selDeck = options && options.tierSel ? options.tierSel[t.id] : null;
+    const selTier = tierByDeckId(t, selDeck);
+    const tier = (selTier && isUnlocked(DECK_DEFS[selTier.deckId], profile)) ? selTier : highestUnlockedTier(profile, t);
+    if (tier) return { deckId: tier.deckId, battlefieldId: tier.bfId };
+  }
   return { deckId: t.deckId, battlefieldId: t.bfId };
 }
 
@@ -591,10 +600,11 @@ export function Autostich() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
   // #deckshop: Hauptfarbe (Hologrid-Gitter/Frame-Glow) aus dem aktiven Deck-Pack ableiten.
-  const activePack = THEMES.find((t) => t.deckId === activeDeckId) || null;
+  // #tiered: resolvePackByDeckId löst bei Stufen-Decks die konkrete Stufe (eigene a1/a2) auf.
+  const activePackRes = resolvePackByDeckId(activeDeckId);
   const deckFx = {
-    deckA1: activePack?.a1 || null,
-    deckA2: activePack?.a2 || null, // Aurora nutzt beide Deck-Akzentfarben
+    deckA1: activePackRes?.a1 || null,
+    deckA2: activePackRes?.a2 || null, // Aurora nutzt beide Deck-Akzentfarben
     // #kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (Aurora) UND Hintergrund-Finisher
     // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
     // #393: alle Farbmodus/Deckfarben-Ableitungen lesen aus vOpt (= options, im Zufalls-Lauf mit Deck-Override + allen
@@ -698,7 +708,7 @@ export function Autostich() {
     // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
     //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
     //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
-    const rv = (options.randomDeckEachRun && !ranked) ? pickRandomOwnedPack(profile) : null;
+    const rv = (options.randomDeckEachRun && !ranked) ? pickRandomOwnedPack(profile, options) : null;
     setRunVisual(rv);
     // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
     // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).

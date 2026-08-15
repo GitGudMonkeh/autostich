@@ -6,8 +6,10 @@ import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.
 import {
   THEMES, THEME_DEFS, showcaseLook,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
+  isTieredPack, coverTier, highestUnlockedTier, tierByDeckId, tierAsPack, packHasTierDeck,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
+import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js"; // #tiered: Stufen-Freischaltung/Label pro Stufe
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
@@ -121,7 +123,7 @@ const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genes
 // #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
 // vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
 function orderPacks(list, deckId) {
-  const active = list.find((pk) => pk.kind !== "std" && pk.deckId === deckId);
+  const active = list.find((pk) => pk.kind !== "std" && (pk.deckId === deckId || packHasTierDeck(pk, deckId)));
   if (!active) return list;
   const rest = list.filter((pk) => pk !== active);
   const stdFirst = rest[0] && rest[0].kind === "std";
@@ -955,6 +957,9 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
+  // #tiered: eine bestimmte Stufe aktivieren + als zuletzt gewählte Stufe merken (tierSel[packId]=deckId → Zufalls-Modus).
+  const activateTier = (pack, tier) => onChoose({ deckId: tier.deckId, battlefieldId: tier.bfId,
+    tierSel: { ...((options && options.tierSel) || {}), [pack.id]: tier.deckId } });
 
   const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("back"); };
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
@@ -1018,7 +1023,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       {packOv && createPortal(
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
-          onActivate={activate} onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
+          options={options} onActivate={activate} onActivateTier={activateTier}
+          onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
         document.body)}
     </div>
   );
@@ -1072,15 +1078,21 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
         {shown.map((pack) => {
           const gi = list.indexOf(pack);
           const s = stateOf(pack);
-          const active = deckId === pack.deckId;
+          // #tiered: Cover = höchste freigeschaltete Stufe (sonst Stufe I); aktiv, wenn irgendeine Stufe equippt ist.
+          const tiered = isTieredPack(pack);
+          const cover = tiered ? coverTier(p, pack) : null;
+          const coverDeckId = cover ? cover.deckId : pack.deckId;
+          const active = tiered ? packHasTierDeck(pack, deckId) : deckId === pack.deckId;
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
+          // #tiered: Stufen-Badge (I/II/III) der höchsten freien Stufe, wenn im Besitz.
+          const tierBadge = tiered && owned && cover ? cover.roman : null;
           const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
           const sub = active ? ["aktiv", "#54e08a"]
-            : s === "own" ? ["tippen → Details", "#9a97ab"]
+            : s === "own" ? [tiered ? `Stufe ${cover?.roman || "I"} · tippen → Details` : "tippen → Details", "#9a97ab"]
             : s === "buy" ? ["kaufbar", "#f2c14a"]
             : [packUnlock(p, pack).label, "#6d6a80"];
           return (
@@ -1088,8 +1100,9 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
               style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55" : undefined }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
-                <DeckThumb deckId={pack.deckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
+                <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
+                {tierBadge && !active && <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: "#1a1330", color: "#c9b6ff", border: "1px solid #6a4fb0" }}>{tierBadge}</span>}
               </div>
               <div className="px-2 py-1.5">
                 <span className="text-[12px] font-extrabold truncate block">{pack.name}</span>
@@ -1113,16 +1126,40 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
   );
 }
 
-/* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren. */
-function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, onActivate, onBuy }) {
+/* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren.
+   #tiered: Bei Stufen-Decks steht über der Aktion ein I/II/III-Wähler (nur freigeschaltete Stufen wählbar); Vorschau,
+   Farbe und Aktivierung folgen der gewählten Stufe. Ohne tiers verhält sich alles unverändert. */
+function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, options = null, onActivate, onActivateTier, onBuy }) {
   const touch = useRef(0);
+  const tiered = isTieredPack(pack);
+  const tiers = tiered ? pack.tiers : [];
+  const equippedTier = tiered ? tierByDeckId(pack, deckId) : null;
+  const tierUnlocked = (t) => isUnlocked(DECK_DEFS[t.deckId], p);
+  // Default-Stufe: equippte → gemerkte (tierSel) falls frei → höchste freie → Stufe I. Bei Pack-Wechsel (‹ ›) neu setzen.
+  const defaultTierDeck = (pk) => {
+    const eq = tierByDeckId(pk, deckId);
+    if (eq) return eq.deckId;
+    const remembered = tierByDeckId(pk, options && options.tierSel ? options.tierSel[pk.id] : null);
+    if (remembered && isUnlocked(DECK_DEFS[remembered.deckId], p)) return remembered.deckId;
+    const hi = highestUnlockedTier(p, pk);
+    return (hi || pk.tiers[0]).deckId;
+  };
+  const [selDeck, setSelDeck] = useState(() => (tiered ? defaultTierDeck(pack) : null));
+  useEffect(() => { if (isTieredPack(pack)) setSelDeck(defaultTierDeck(pack)); }, [pack.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const selTier = tiered ? (tierByDeckId(pack, selDeck) || tiers[0]) : null;
+  // „Ansichts-Pack" = Stufen-Sicht (eigene deckId/bfId/a1) oder das Pack selbst.
+  const viewPack = tiered ? tierAsPack(pack, selTier) : pack;
+
   const hasBf = hasBattlefield(pack);
   const segs = hasBf ? [["back", "Karte hinten"], ["front", "Karte vorne"], ["bg", "Hintergrund"]]
                      : [["back", "Karte hinten"], ["front", "Karte vorne"]];
   const activeSel = (sel === "bg" && !hasBf) ? "back" : sel;
 
   const s = pack.kind === "std" ? "own" : packState(p, pack);
-  const active = deckId === pack.deckId;
+  // #tiered: „aktiv" bezieht sich auf die GEWÄHLTE Stufe (nicht nur irgendeine equippte).
+  const active = tiered ? (!!equippedTier && equippedTier.deckId === selTier.deckId) : deckId === pack.deckId;
+  const selTierUnlocked = tiered ? tierUnlocked(selTier) : false;
+  const selTierLock = tiered && !selTierUnlocked ? unlockProgress(DECK_DEFS[selTier.deckId], p) : null;
   const price = packPrice(pack);
   const canBuy = pack.kind === "buy" && canBuyPack(p, pack);
   const unlock = pack.kind === "cond" ? packUnlock(p, pack) : null;
@@ -1136,7 +1173,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] font-extrabold truncate">{pack.name}</span>
+            <span className="text-[15px] font-extrabold truncate">{pack.name}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
           </div>
 
@@ -1145,8 +1182,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
             <div className="flex-1 min-w-0 h-full flex items-center justify-center">
               {activeSel === "bg"
-                ? <BfPreview bfId={pack.bfId} a1={pack.a1} className="w-full" showVersion />
-                : <CardPreview deckId={pack.deckId} a1={pack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
+                ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
+                : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
             </div>
             <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
           </div>
@@ -1159,12 +1196,43 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             ))}
           </div>
 
+          {/* #tiered: Stufen-Wähler I / II / III — nur freigeschaltete Stufen wählbar (gesperrte 🔒 & disabled). */}
+          {tiered && (
+            <div className="flex gap-1.5 justify-center mt-2.5">
+              {tiers.map((t) => {
+                const on = t.deckId === selTier.deckId;
+                const free = tierUnlocked(t);
+                const isEq = equippedTier && equippedTier.deckId === t.deckId;
+                return (
+                  <button key={t.deckId} disabled={!free} onClick={() => free && setSelDeck(t.deckId)}
+                    className="flex-1 max-w-[96px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                    style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`,
+                      color: free ? (on ? "#e8e6ff" : "#c9c6dd") : "#5b5870", opacity: free ? 1 : 0.7, cursor: free ? "pointer" : "not-allowed" }}>
+                    {free ? "" : "🔒 "}{t.roman}{isEq ? " ✓" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex gap-1.5 justify-center my-2.5">
             {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
           </div>
 
           {/* Aktion */}
-          {active ? (
+          {tiered ? (
+            active ? (
+              <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>Stufe {selTier.roman} aktiv ✓</div>
+            ) : selTierUnlocked ? (
+              <button onClick={() => { onActivateTier(pack, selTier); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
+                style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>Stufe {selTier.roman} aktivieren</button>
+            ) : (
+              <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+                🔒 Freischalten: {selTierLock.label}
+                {selTierLock.target > 1 && <span className="opacity-70"> · {selTierLock.cur} / {selTierLock.target}</span>}
+              </div>
+            )
+          ) : active ? (
             <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>Aktiv ✓</div>
           ) : s === "own" ? (
             <button onClick={() => { onActivate(pack); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
