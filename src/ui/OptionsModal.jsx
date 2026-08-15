@@ -1,11 +1,18 @@
+import { useEffect, useRef, useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
+import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { LOCALES, fmtPct } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
-   der Lauf, solange offen). Bewusst erweiterbar — künftig Sound, Tempo-Default etc.
-   Erste Option: der CRT-/Pixel-Skin-Toggle. */
+   der Lauf, solange offen).
+
+   #395 Gliederung: Die Liste war über die Zeit flach und lang geworden. Jetzt EIN Scroll, aber in vier
+   Sektionen mit KLEBENDER Überschrift — man sieht jederzeit, in welchem Bereich man liest. Darüber ein
+   FIXER Kopf (Titel · Schließen · Sprung-Chips), der nicht mitscrollt: nur so kann die Sektions-
+   Überschrift sauber bei `top: 0` des Scroll-Bodys kleben. Vorher lag die Aktionsleiste selbst sticky IM
+   Scroll-Fluss — zwei sticky-Ebenen im selben Container hätten sich gegenseitig überlagert.
+   Bewusst ohne Icons (nur Text), wie im Rest der UI. */
 
 /* Ein/Aus-Schalter im Stil der übrigen UI. */
 function Toggle({ on, onClick }) {
@@ -71,27 +78,102 @@ function Row({ title, desc, children, stack = false }) {
    („aus"/„mobile"/„an") — sie stehen so im gespeicherten Profil; übersetzt wird nur das Label. */
 const RFX_VALUES = ["aus", "mobile", "an"];
 
+/* Die vier Sektionen (#395, Reihenfolge festgelegt). `id` ist zugleich Sprungziel und Chip-Schlüssel;
+   `title` steht in der klebenden Überschrift, `chip` kurz in der Sprungleiste („Grafik" statt
+   „Grafik & Leistung", damit die Reihe auf schmalen Geräten nicht ausfranst). */
+const SECTIONS = [
+  { id: "general",  titleKey: "options.sec.general",  chipKey: "options.chip.general" },
+  { id: "graphics", titleKey: "options.sec.graphics", chipKey: "options.chip.graphics" },
+  { id: "sound",    titleKey: "options.sec.sound",    chipKey: "options.chip.sound" },
+  { id: "display",  titleKey: "options.sec.display",  chipKey: "options.chip.display" },
+];
+
+/* Ein Abschnitt mit klebender Überschrift. Die negative Marge + gleich großes Padding ziehen den
+   Kopf über die volle Kartenbreite — sonst schöben sich die Zeilen an seinen Rändern vorbei, statt
+   sauber darunter zu verschwinden. */
+function Section({ id, title, innerRef, children }) {
+  return (
+    <section ref={innerRef} data-sec={id} className="pb-1">
+      <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-xs font-bold uppercase tracking-widest"
+        style={{ color: "#8a7de0", background: STICKY_HEAD_BG }}>{title}</h3>
+      <div className="grid gap-2.5 pt-2.5">{children}</div>
+    </section>
+  );
+}
+
+// Sprung-Chip — teilt sich den Stil mit der Glossar-Chipreihe (.as-chip in index.css).
+function JumpChip({ label, active, onClick }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-full" + (active ? " as-chip-on" : "")}>
+      {label}
+    </button>
+  );
+}
+
 export function OptionsModal({ options, onChange, onClose }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   const t = useT();
   const [locale, setLocaleId] = useLocale();
   const rfx = RFX_VALUES.includes(options.reducedFx) ? options.reducedFx : "aus";
+  const bodyRef = useRef(null);
+  const secRefs = useRef({});
+  const [active, setActive] = useState(SECTIONS[0].id);
+
+  /* Aktiver Chip folgt dem Scrollen: beobachtet werden die Sektionen, gezählt wird aber nur das obere
+     Band des Scroll-Bodys (rootMargin schneidet die unteren 65 % weg) — sonst gälte beim Scrollen immer
+     die längste sichtbare Sektion als aktiv statt der, die gerade oben klebt. Bei mehreren Treffern
+     gewinnt die in SECTIONS-Reihenfolge erste. */
+  useEffect(() => {
+    const root = bodyRef.current;
+    if (!root || typeof IntersectionObserver === "undefined") return undefined;
+    const visible = new Set();
+    const obs = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visible.add(e.target.dataset.sec);
+        else visible.delete(e.target.dataset.sec);
+      }
+      const first = SECTIONS.find((sec) => visible.has(sec.id));
+      if (first) setActive(first.id);
+    }, { root, rootMargin: "0px 0px -65% 0px", threshold: 0 });
+    for (const sec of SECTIONS) { const el = secRefs.current[sec.id]; if (el) obs.observe(el); }
+    return () => obs.disconnect();
+  }, []);
+
+  const jump = (id) => {
+    setActive(id); // sofort setzen: das sanfte Scrollen meldet der Observer erst mit Verzögerung
+    const el = secRefs.current[id];
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: "smooth" });
+    else if (bodyRef.current) bodyRef.current.scrollTop = 0;
+  };
+
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={MODAL_CARD}>
         <ModalHairline />
-        <div className="p-6 overflow-y-auto">
-        {/* #362 Aktionsleiste OBEN (sticky) — „Schließen" rechts, einheitlich. */}
-        <ActionBar pad={6} bg={STICKY_HEAD_BG}>
-          <span className="flex-1" />
-          <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
-        </ActionBar>
-        <div className="text-center mb-4">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("options.eyebrow")}</div>
-          <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
+
+        {/* FIXER KOPF (#395): Titel · Schließen · Sprung-Chips — scrollt NICHT mit, damit die
+            Sektions-Überschriften darunter bei top:0 kleben können. */}
+        <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
+          <div className="flex items-start gap-3">
+            <div className="min-w-0">
+              <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("options.eyebrow")}</div>
+              <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
+            </div>
+            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+          </div>
+          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 mt-3 overflow-x-auto sm:overflow-x-visible as-chiprow">
+            {SECTIONS.map((sec) => (
+              <JumpChip key={sec.id} label={t(sec.chipKey)} active={active === sec.id} onClick={() => jump(sec.id)} />
+            ))}
+          </div>
         </div>
 
-        <div className="grid gap-2.5">
+        {/* SCROLL-BODY: nur die Sektionen scrollen. */}
+        <div ref={bodyRef} className="flex-1 overflow-y-auto px-6 pt-1 pb-6" style={{ overscrollBehavior: "contain" }}>
+        <div className="grid gap-1">
+          <Section id="general" title={t("options.sec.general")}
+            innerRef={(el) => { secRefs.current.general = el; }}>
           {/* #sprache: Sprachwahl ganz oben. Die Labels der Sprachen stehen bewusst in ihrer EIGENEN Sprache
               („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem. */}
           <Row title={t("options.language.title")} desc={t("options.language.desc")}>
@@ -99,6 +181,30 @@ export function OptionsModal({ options, onChange, onClose }) {
               options={LOCALES.map((l) => ({ v: l.id, label: l.label }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
+          {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
+          <Row title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
+            <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
+          </Row>
+          </Section>
+          <Section id="graphics" title={t("options.sec.graphics")}
+            innerRef={(el) => { secRefs.current.graphics = el; }}>
+          {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
+              auf schmalen Breiten. Beschreibung wechselt mit dem gewählten Zustand. Handy-Default „Mobile", Desktop „Aus". */}
+          <Row stack title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
+            <Segmented value={rfx}
+              options={RFX_VALUES.map((v) => ({ v, label: t(`options.rfx.${v}`) }))}
+              onChange={(v) => onChange({ reducedFx: v })} />
+          </Row>
+          {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
+              FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
+          {import.meta.env.VITE_PREVIEW === "1" && (
+            <Row title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
+              <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
+            </Row>
+          )}
+          </Section>
+          <Section id="sound" title={t("options.sec.sound")}
+            innerRef={(el) => { secRefs.current.sound = el; }}>
           {/* Retro-Skin (CRT) ist jetzt der feste Look des Spiels — immer an, kein Toggle mehr. */}
           {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
           <Row title={t("options.mute.title")} desc={t("options.mute.desc")}>
@@ -119,24 +225,9 @@ export function OptionsModal({ options, onChange, onClose }) {
               aria-label={t("options.music.aria")}
               style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
-          {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
-              auf schmalen Breiten. Beschreibung wechselt mit dem gewählten Zustand. Handy-Default „Mobile", Desktop „Aus". */}
-          <Row stack title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
-            <Segmented value={rfx}
-              options={RFX_VALUES.map((v) => ({ v, label: t(`options.rfx.${v}`) }))}
-              onChange={(v) => onChange({ reducedFx: v })} />
-          </Row>
-          {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
-          <Row title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
-            <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
-          </Row>
-          {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
-              FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
-          {import.meta.env.VITE_PREVIEW === "1" && (
-            <Row title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
-              <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
-            </Row>
-          )}
+          </Section>
+          <Section id="display" title={t("options.sec.display")}
+            innerRef={(el) => { secRefs.current.display = el; }}>
           {/* #389 Floating-Text: Master-Schalter + drei Einzel-Schalter (Score · Multiplier · Win/Lose). „An" = sichtbar
               (Flag false). Master spiegelt „alle sichtbar" und setzt beim Umschalten alle drei zugleich. Score/Werte
               zählen unabhängig weiter — nur die aufsteigenden Popups verschwinden. Die großen Ansagen (Stark/Brutal/
@@ -168,12 +259,12 @@ export function OptionsModal({ options, onChange, onClose }) {
               aria-label={t("options.numScale.aria")}
               style={{ width: 120, accentColor: "#d4a63a", cursor: "pointer" }} />
           </Row>
+          </Section>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
           {t("options.footer")}
         </div>
-
         </div>
       </div>
     </div>

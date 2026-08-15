@@ -812,6 +812,7 @@ export default {
 
   /* ---- Glossar (Glossary) ---- */
   "glossary.title": "Glossar",
+  "glossary.subtitle": "Begriffe & Sonderregeln — keine einzelnen Perks/Skills",
   "glossary.open": "Glossar öffnen",
   "glossary.search": "Suchen … z. B. Nachhall, Schichten, Hitze",
   "glossary.clear": "Suche löschen",
@@ -1122,6 +1123,15 @@ export default {
   "name.preview.you": "du",
 
   /* ---- Optionen ---- */
+  /* ---- Optionen: Sektionen (#395). Kopf = klebende Überschrift, Chip = kurze Sprungmarke. ---- */
+  "options.sec.general": "Allgemein",
+  "options.sec.graphics": "Grafik & Leistung",
+  "options.sec.sound": "Ton",
+  "options.sec.display": "Anzeige",
+  "options.chip.general": "Allgemein",
+  "options.chip.graphics": "Grafik",
+  "options.chip.sound": "Ton",
+  "options.chip.display": "Anzeige",
   "options.eyebrow": "Optionen",
   "options.title": "Einstellungen",
   "options.footer": "Weitere Optionen (Tempo-Default …) folgen hier.",

@@ -801,6 +801,7 @@ export default {
 
   /* ---- Glossary ---- */
   "glossary.title": "Glossary",
+  "glossary.subtitle": "Terms & special rules — no individual perks/skills",
   "glossary.open": "Open the glossary",
   "glossary.search": "Search … e.g. echo, layers, heat",
   "glossary.clear": "Clear the search",
@@ -1103,6 +1104,15 @@ export default {
   "name.preview.you": "you",
 
   /* ---- Options ---- */
+  /* ---- Options: sections (#395). Header = sticky heading, chip = short jump label. ---- */
+  "options.sec.general": "General",
+  "options.sec.graphics": "Graphics & performance",
+  "options.sec.sound": "Sound",
+  "options.sec.display": "Display",
+  "options.chip.general": "General",
+  "options.chip.graphics": "Graphics",
+  "options.chip.sound": "Sound",
+  "options.chip.display": "Display",
   "options.eyebrow": "Options",
   "options.title": "Settings",
   "options.footer": "More options (default speed …) will appear here.",

@@ -109,7 +109,7 @@ export function GlossaryOverlay({ onClose }) {
               <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("glossary.title")}</h2>
               <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
-            <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>Begriffe &amp; Sonderregeln — keine einzelnen Perks/Skills</div>
+            <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("glossary.subtitle")}</div>
             <div className="relative mt-2.5">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#5c5c68" }}>⌕</span>
               <input value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false}
@@ -124,7 +124,7 @@ export function GlossaryOverlay({ onClose }) {
           </div>
 
           {/* Kategorie-Chips (Sprungnavigation) */}
-          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
+          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible as-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
             <Chip label={t("glossary.all")} active={activeCat === "all"} onClick={() => jump("all")} />
             {glossaryCategories().map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />
@@ -168,7 +168,7 @@ export function GlossaryOverlay({ onClose }) {
 function Chip({ label, dot, active, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      className={"gloss-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-full" + (active ? " gloss-chip-on" : "")}>
+      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-full" + (active ? " as-chip-on" : "")}>
       {dot && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: dot }} />}
       {label}
     </button>
