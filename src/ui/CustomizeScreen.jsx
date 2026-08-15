@@ -444,16 +444,18 @@ function BlackholeScene({ deckTint = false }) {
   const bf = battlefieldAssets(deckTint ? (PREVIEW_LOOK.blackhole.bf || SHOWCASE_BF) : SHOWCASE_BF);
   const [pulse, setPulse] = useState(null);
   useEffect(() => {
-    // Loop-Choreografie: genug Siege, um bis zum (verdoppelten) MAXIMUM aufzubauen (im Showcase sichtbar), dann
-    //   Niederlagen bis zum Kollaps → Supernova → kurze Pause → wieder von vorn. ~22 Siege ≈ voller Deckel; die
-    //   Sieg-Kadenz ist bewusst geruhsam (640 ms), damit die eingesogenen Karten NICHT als Pulk übereinander liegen.
-    // #338-1: Choreo demonstriert BEIDES — Aufbau, Niederlagen-Shrink, Wiederaufbau bis Max, dann die Implosionsbombe
-    //   (gescripteter „collapse"-Puls, da der 2-Min-am-Max-Timer im Showcase nicht greift). Danach dormant → Loop baut neu auf.
+    // Loop-Choreografie: das Loch wächst sichtbar bis zum MAXIMUM auf und implodiert dann. maxLevel ≈ 23
+    //   ((MAX_R−BASE_R)/STEP_R), Siege erhöhen den Level je um 1 → der Wiederaufbau braucht so viele Sieg-Pulse, dass der
+    //   Deckel WIRKLICH erreicht wird (die letzten paar Siege halten das Loch am Max — Vorbedingung für die Implosionsbombe).
+    //   Sieg-Kadenz bewusst geruhsam (640 ms), damit die eingesogenen Karten NICHT als Pulk übereinander liegen.
+    // #338-1: Choreo demonstriert alles — Aufbau, kurzer Niederlagen-Shrink, Wiederaufbau bis GANZ ans Maximum, dann die
+    //   Implosionsbombe (gescripteter „collapse"-Puls, da der 2-Min-am-Max-Timer im Showcase nicht greift; er zündet erst,
+    //   wenn das Loch am Max steht → Vorbeben-Zucken → schnelles Zusammenziehen → Supernova). Danach dormant → Loop baut neu auf.
     const seq = [
-      ...Array.from({ length: 14 }, () => ({ kind: "win" })),
-      ...Array.from({ length: 5 }, () => ({ kind: "loss" })),
-      ...Array.from({ length: 16 }, () => ({ kind: "win" })),
-      { kind: "collapse" },
+      ...Array.from({ length: 8 }, () => ({ kind: "win" })),   // erster Aufbau
+      ...Array.from({ length: 3 }, () => ({ kind: "loss" })),  // Niederlagen schrumpfen das Loch (heat-artig)
+      ...Array.from({ length: 24 }, () => ({ kind: "win" })),  // Wiederaufbau bis ans MAXIMUM (≥ maxLevel ≈ 23 → Deckel erreicht + kurz gehalten)
+      { kind: "collapse" },                                    // am Max: Vorbeben → schnelles Zusammenziehen → Supernova
     ];
     let id = 0, i = 0, alive = true; const timers = [];
     // #320: eingesogene Karten = wechselnde „verlorene" Karten → echte Werte (1..10) UND wechselnde Suit-Farben, damit die
