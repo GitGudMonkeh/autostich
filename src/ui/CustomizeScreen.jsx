@@ -471,6 +471,13 @@ function BlackholeScene({ deckTint = false }) {
     timers.push(setTimeout(tick, 400));
     return () => { alive = false; timers.forEach(clearTimeout); };
   }, []);
+  // #380 Loop-Bett (Sog/Drone) wie in-game: läuft durchgehend über die ganze Vorschau-Choreografie, Gain/Rate wachsen
+  //   via onSize mit der Lochgröße → der Aufbau ist hörbar, nicht nur der Kollaps.
+  const holeSndRef = useRef(null);
+  useEffect(() => {
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 });
+    return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
+  }, []);
   const look = PREVIEW_LOOK.blackhole;
   const c1 = deckTint ? look.a1 : "#4aa0ff";
   const c2 = deckTint ? (look.a2 || look.a1) : "#ff3ea8";
@@ -479,7 +486,11 @@ function BlackholeScene({ deckTint = false }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35 }} />}
       <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
       <div ref={oppRef} className="absolute" style={{ left: "72%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
-      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /> {/* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */}
+      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */
+        /* #380 Sound wie in-game: Zusammenzieh-Impact · Nova-Flash → fx_supernova (nur großer Kollaps) · Bett-Pegel via onSize. */
+        onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
+        onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
+        onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );

@@ -51,7 +51,7 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 // Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null }) {
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
   const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
@@ -61,8 +61,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
   useEffect(() => { ctrlRef.current.scale = scale; }, [scale]);
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
-  // #375 SFX-Callbacks live in den ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps, onSize(level, maxLevel) bei Größenänderung.
-  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; }, [onImplode, onSize]);
+  // #375/#380 SFX-Callbacks im ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps-START (Zusammenzieh-
+  //   Sound), onSize(level, maxLevel) bei Größenänderung, onNova(big) am FLASH-Moment (nach dem Zusammenziehen → fx_supernova).
+  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; ctrlRef.current.onNova = onNova; }, [onImplode, onSize, onNova]);
   useEffect(() => {
     const st = backRef.current;
     if (!backSrc) { st.src = null; st.ready = false; st.canvas = null; return undefined; }
@@ -128,7 +129,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       return out;
     })();
 
-    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0, collapseArm: 0, fastCollapse: false });
+    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0, collapseArm: 0, fastCollapse: false, novaArm: false });
     // #perf: Halo-Gradient cachen — createRadialGradient ist pro Frame teuer (+ GC). Nur neu bauen, wenn sich R spürbar
     //   (>1px), die Position (Resize) oder die Farbe (Standard↔Deckfarbe-Toggle) ändert; sonst settled → Cache-Treffer.
     let haloCache = { grad: null, r: -1, cx: -1, cy: -1, col: "" };
@@ -141,9 +142,13 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     // #338-1: big = Implosionsbombe (2-Min-am-Max-Kollaps) → intensivere Nova; sonst normale Niederlagen-Implosion.
     //   #kollaps: big zieht sich SCHNELL zusammen (fastCollapse) bevor der Flash kommt.
     const implode = (big) => {
-      if (big || sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: !!big };
-      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0; sim.fastCollapse = !!big;
-      // #375 Impact vertonen — Turbo-Faktor (wie im step: 1/scale) mitgeben, damit der Sound bei schnellen Kollapsen mitzieht.
+      // #380 Choreografie: der GROSSE Kollaps zieht sich erst schnell zusammen (fastCollapse); der weiße Flash/Nova +
+      //   fx_supernova kommen DANACH (novaArm → beim Erreichen von R≈0). Der kleine/normale Kollaps blitzt sofort (nur
+      //   bei ausreichend großem Peak) — ohne Supernova.
+      if (big) { sim.fastCollapse = true; sim.novaArm = true; }
+      else { if (sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: false }; sim.fastCollapse = false; }
+      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0;
+      // #375 Zusammenzieh-Sound (Impact) am Kollaps-START — Turbo-Faktor (1/scale) mitgeben, damit er bei schnellen Kollapsen mitzieht.
       const c = ctrlRef.current; c.onImplode && c.onImplode(!!big, 1 / clamp(c.scale || 1, 0.45, 1));
     };
 
@@ -202,7 +207,11 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       const targetR = (sim.dormant || sim.level <= 0) ? 0 : clamp(TUNE.BASE_R * D + (sim.level - 1) * TUNE.STEP_R * D, 0, TUNE.MAX_R * D);
       const collapseSpd = sim.dormant ? (sim.fastCollapse ? TUNE.FAST_COLLAPSE_SPD : TUNE.IMPLODE_SPD) : TUNE.SMOOTH;
       sim.R += (targetR - sim.R) * Math.min(1, collapseSpd * speed);
-      if (sim.fastCollapse && sim.R < 0.5) sim.fastCollapse = false;
+      if (sim.fastCollapse && sim.R < 0.5) {
+        sim.fastCollapse = false;
+        // #380 Zusammenziehen fertig → jetzt bricht der weiße Flash aus: Nova spawnen + onNova (fx_supernova, nur big).
+        if (sim.novaArm) { sim.novaArm = false; sim.nova = { t: 0, big: true }; const c = ctrlRef.current; c.onNova && c.onNova(true); }
+      }
       sim.peakR = Math.max(sim.peakR, sim.R);
       const fill = clamp(sim.level / maxLevel(), 0, 1);
 
