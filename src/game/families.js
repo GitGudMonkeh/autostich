@@ -214,7 +214,11 @@ const D_FAMILIES = {
       1: { desc: "Crit über 110 % effektiver Crit-Chance: +200 Score.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1.1 ? 200 : 0) },
       2: { desc: "Crit über 100 % effektiver Crit-Chance: +300 Score.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 300 : 0) },
       3: { desc: "Jeder Überschuss-Crit (über 100 %): +500 Score.",         scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 : 0) },
-      4: { desc: "Jeder Überschuss-Crit: +500 Score plus 5 je Prozentpunkt über 100 %.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 + Math.round(((c.rawCrit || 0) - 1) * 100) * 5 : 0) },
+      // Crit-Bändigung 2026-08-15: der Zuschlag je Prozentpunkt war UNGEDECKELT und las dieselbe unbegrenzte Roh-Crit-
+      // Chance wie Überschlag — bei +1.800 pp waren das ~9.500 Flat je Crit, und der Flat läuft durch den ganzen
+      // Multiplikator-Stack. Jetzt zählen höchstens OVERCRIT_EXCESS_PP_CAP Prozentpunkte Überschuss.
+      4: { desc: `Jeder Überschuss-Crit: +500 Score plus 5 je Prozentpunkt über 100 % (höchstens ${C.OVERCRIT_EXCESS_PP_CAP} Punkte gezählt).`,
+           scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 + Math.min(Math.round(((c.rawCrit || 0) - 1) * 100), C.OVERCRIT_EXCESS_PP_CAP) * 5 : 0) },
     },
   },
   D_BEBAUUNG: {

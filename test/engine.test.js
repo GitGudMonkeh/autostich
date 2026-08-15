@@ -6,6 +6,7 @@ import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
+  STORM_CRIT_CAP, DAUERSTROM_CRIT_CAP, CRIT_MULT_CAP,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
@@ -637,12 +638,12 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
     expect(s.lightning.charge).toBe(REST_CHARGE_FLOOR);
   });
 
-  it("Gewitterfront (v0.5): je Verbrauch +Crit-Momentum, UNCAPPED (kein Score-Fallback mehr)", () => {
+  it("Gewitterfront: je Verbrauch +Crit-Momentum, am Deckel gestoppt (Crit-Bändigung)", () => {
     const step = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(step.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_STEP);
-    // Über dem alten Cap (0,20) rampt es einfach weiter — kein Umschalten auf Score.
-    const high = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.50 }) }), () => 0);
-    expect(high.lightning.stormCritBonus).toBeCloseTo(0.50 + STORM_CRIT_STEP);
+    // Am Deckel hört die Rampe auf — sie lief früher unbegrenzt weiter (Runaway-Quelle).
+    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: STORM_CRIT_CAP }) }), () => 0);
+    expect(capped.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_CAP);
   });
 
   it("Entladung (v0.5): je Verbrauch +Crit-Mult-Momentum, dauerhaft (weicher Cap)", () => {
@@ -694,9 +695,29 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
     expect(s.lightning.charge).toBe(BLITZABLEITER_CONSUME_CHARGE);                   // 0 (Boden) + 1 zurück
   });
 
-  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft (dauerstromCritBonus)", () => {
+  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft — bis zum Deckel (Crit-Bändigung)", () => {
     const s = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CONSUME_CRIT, 6);
+    // Am Deckel stoppt die Rampe. Ungedeckelt erreichte sie im Sim +1.844 pp und speiste über Überschlag den Crit-Mult.
+    const capped = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9, dauerstromCritBonus: DAUERSTROM_CRIT_CAP }) }), () => 0);
+    expect(capped.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CRIT_CAP, 6);
+  });
+
+  it("Überschlag ist ein Ventil: Crit-Überschuss über 100 % wird zu Ladung, NICHT zu Crit-Multiplikator", () => {
+    const UE = "SK_LIGHTNING_14";
+    // +150 pp Rohchance über die (gedeckelten) Rampen → 50 pp Überschuss → 50/10 = +5 Ladung. Kein Konsument im
+    // Build (Ionisierung fehlt) → die Ladung bleibt liegen und ist direkt ablesbar.
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0, stormCritBonus: STORM_CRIT_CAP, dauerstromCritBonus: DAUERSTROM_CRIT_CAP, stauBonus: 0.5 }) }), () => 0);
+    expect(s.lightning.charge).toBeGreaterThan(0);
+    // Der Crit-Mult bleibt bei den regulären (gedeckelten) Kanälen — der Überschuss fließt NICHT hinein.
+    const ohneUeberschuss = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0 }) }), () => 0);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(ohneUeberschuss.lastTrick.critMultiplier, 6);
+  });
+
+  it("Backstop: der Crit-Multiplikator ist hart gedeckelt, egal welcher Kanal ihn treibt", () => {
+    // Durchschlag/Entladung weit über dem Deckel angesetzt → der fertige Mult wird auf CRIT_MULT_CAP geklemmt.
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, I], lightning: lit({ charge: 9, durchschlagMult: 50, entladungMult: 50 }) }), () => 0);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_MULT_CAP, 6);
   });
 
   it("On-Consume: Statische Aufladung gibt bei jedem vollen Verbrauch +CONSUME_SCORE Flat-Score", () => {

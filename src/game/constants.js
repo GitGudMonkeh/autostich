@@ -27,6 +27,13 @@ export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
 export const FIRE_STRUCT_DIVIDEND_AMP = envNum("SIM_FIRE_STRUCT_DIV_AMP", 2);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
+// BACKSTOP (Crit-Bändigung 2026-08-15): harter Deckel auf den fertigen Crit-Multiplikator, egal aus welchen Kanälen er
+// kommt. Die legitime Summe aller gedeckelten Quellen liegt bei ~7,4× (Basis 2,25 + Wucht IV 0,90 + 6 Blitz-Skills 0,60
+// + Donnergott 0,40 + Durchschlag 2,00 + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
+// fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
+export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8);
+// D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
+export const OVERCRIT_EXCESS_PP_CAP = envNum("SIM_OVERCRIT_EXCESS_PP_CAP", 100);
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.25);  // Basis-Crit-Multiplikator. #268: 1,5→2,25 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: Blitz-Floor 1,47×→1,93× Mix), Nicht-Blitz nur schwach (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]
 export const PERKS_OFFERED    = 3;      // Perks pro Level-Up-Auswahl [TUNING]
 // SIM-SÄTTIGUNGSHEBEL (Pacing-Experiment, Default AUS): weicher Deckel auf den Score JE SIEG. Ab dem Knie
@@ -240,7 +247,9 @@ export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Ver
 export const ION_SAT_BREADTH_FRAC = envNum("SIM_ION_SAT_BREADTH_FRAC", 0.85); // Anteil ionisierter Karten für „Breite voll" [Sim-tunebar]
 export const ION_SAT_DEPTH_FRAC   = envNum("SIM_ION_SAT_DEPTH_FRAC", 0.85);   // Anteil voller (5-Stapel-)Karten für „Tiefe voll" [Sim-tunebar]
 export const ION_SATURATION_VALUE = envNum("SIM_ION_SATURATION_VALUE", 1);    // +Wert auf alle Karten solange Breite voll [v0.5 Rework-Tune: 2→1, der Runaway-Fix · Sim-tunebar]
-export const UEBERSCHLAG_EXCESS_TO_MULT = envNum("SIM_UEBERSCHLAG_EXCESS_TO_MULT", 0.5); // ab Tiefe: Crit-Überschuss (je volle 100 %) → +Crit-Mult statt Ladung [Sim-tunebar]
+// (entfallen 2026-08-15: UEBERSCHLAG_EXCESS_TO_MULT — der Überschuss ging ab Voll-Tiefe UNGEDECKELT in den Crit-
+//  Multiplikator; genau der Verstärker, der aus einer unbegrenzten Chance einen unbegrenzten Multiplikator machte.
+//  Überschuss fließt jetzt AUSSCHLIESSLICH in Ladung; Voll-Tiefe verdoppelt nur noch die Ausbeute. s. UEBERSCHLAG_*_PER)
 // Ionisierungs-Geschwindigkeit ∝ Blitz-Skills (Mono): Breite je Verbrauch steigt mit jedem Blitz-Skill über der Schwelle.
 export const ION_SPEED_MIN_SKILLS = envNum("SIM_ION_SPEED_MIN_SKILLS", 2);    // ab dieser Blitz-Skill-Zahl skaliert die Ionisierungs-Breite
 export const ION_SPEED_PER_SKILL  = envNum("SIM_ION_SPEED_PER_SKILL", 1);     // +ionisierte Karten je Verbrauch je Blitz-Skill über der Schwelle
@@ -249,7 +258,8 @@ export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte K
 export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
 // Reaktoren (Reststrom-Boden + Gewitterfront)
 export const REST_CHARGE_FLOOR = envNum("SIM_REST_CHARGE_FLOOR", 4);    // Reststrom: Ladungsboden nach jedem Verbrauch [v0.5: 3→4, Rapid-Fire-Hebel]
-export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.01); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch — UNCAPPED (Überschlag = Ventil) [v0.5 Rework-Tune: 0,02→0,01 · Sim-tunebar]
+export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.01); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch [v0.5 Rework-Tune: 0,02→0,01 · Sim-tunebar]
+export const STORM_CRIT_CAP    = envNum("SIM_STORM_CRIT_CAP", 0.50);  // … Deckel der Rampe (Crit-Bändigung 2026-08-15: war UNGEDECKELT, erreichte +325 pp @p90)
 /* ============================================================
    BLITZ-REWORK v0 — „Der Sturm, der sich selbst nährt." 4 Währungen (⚡Crit · 🔋Ladung · 🧲Ionisierung ·
    📈Serie) + 🔗Kaskade. Blitz BESITZT die Crit-Erzeugung. Werte v0, cross-archetype Sim-Pass. [v0 · tunebar]
@@ -266,7 +276,12 @@ export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 250); // Direk
 export const KURZSCHLUSS_CHARGE = envNum("SIM_KURZSCHLUSS_CHARGE", 3);  // + Ladungs-Burst je Sieg mit voller Karte
 export const SPANNUNGSSTAU_STEP       = 0.05; // Spannungsstau: +5 pp Crit-Chance je Sieg ohne Crit (ein Crit resettet) // v0
 export const SPANNUNGSSTAU_CAP        = 0.50; // Spannungsstau: … bis +50 pp                                       // v0 — tunebar
-export const UEBERSCHLAG_PER          = envNum("SIM_UEBERSCHLAG_PER", 10);   // Überschlag: Crit-Chance-Überschuss (>100 %) ×N → Ladung // v0 · Sim-tunebar
+// Überschlag = das Ventil der Crit-Maschine: Crit-Chance über 100 % ist für den Wurf tot (der Crit ist ohnehin sicher)
+// und wird in Ladung umgewandelt. Lesbare Regel: je UEBERSCHLAG_PP_PER_CHARGE Prozentpunkte über 100 % → +1 Ladung bei
+// jedem Sieg; ab Voll-Tiefe (ION_SAT_DEPTH_FRAC) reicht die Hälfte. Das Ladungsdach (LIGHTNING_MAX_CHARGE) deckelt die
+// Ausbeute von selbst → echtes Ventil statt Verstärker.
+export const UEBERSCHLAG_PP_PER_CHARGE       = envNum("SIM_UEBERSCHLAG_PP_PER_CHARGE", 10); // Prozentpunkte Überschuss je +1 Ladung
+export const UEBERSCHLAG_DEPTH_PP_PER_CHARGE = envNum("SIM_UEBERSCHLAG_DEPTH_PP_PER_CHARGE", 5); // … ab Voll-Tiefe (doppelte Ausbeute)
 export const BLITZSCHLAG_STACKS       = 1;    // Blitzschlag: ein Crit ionisiert die Siegkarte (+1 Stapel)          // v0
 export const DAUERSTROM_PER_STREAK    = 3;    // Dauerstrom: je 3 Serienpunkte +1 Ladung je Sieg in Folge           // v0
 export const DAUERSTROM_MAX           = 3;    // Dauerstrom: … höchstens +3 Ladung/Sieg                             // v0 — tunebar
@@ -276,7 +291,8 @@ export const SERIESCRIT_CAP           = 0.30; // Ladungsserie: … bis +30 pp   
 // On-Consume-Passives (jeder volle Ladungsverbrauch): Statische Aufladung (Flat-Score), Blitzableiter (Ladung zurück), Dauerstrom (Crit-Rampe).
 export const CONSUME_SCORE            = 40;   // Statische Aufladung: +Score bei jedem vollen Ladungsverbrauch      // v0 — tunebar
 export const BLITZABLEITER_CONSUME_CHARGE = 1;// Blitzableiter: +Ladung zurück bei jedem vollen Verbrauch           // v0 — tunebar
-export const DAUERSTROM_CONSUME_CRIT  = 0.02; // Dauerstrom: +2 pp Crit-Chance je vollem Verbrauch (dauerhaft, ohne Deckel) // v0 — tunebar
+export const DAUERSTROM_CONSUME_CRIT  = 0.02; // Dauerstrom: +2 pp Crit-Chance je vollem Verbrauch (dauerhaft)         // v0 — tunebar
+export const DAUERSTROM_CRIT_CAP      = envNum("SIM_DAUERSTROM_CRIT_CAP", 0.40); // … Deckel der Rampe (Crit-Bändigung 2026-08-15: war UNGEDECKELT, erreichte +1.844 pp im Maximum)
 export const SERIENSCHUTZ_COST_FRAC   = envNum("SIM_SERIENSCHUTZ_COST_FRAC", 0.5); // Serienschutz (v0.5, ex-Wetterleuchten): Niederlage mit ≥ diesem Anteil der Max-Ladung → Serie hält, Anteil verbraucht // Sim-tunebar
 export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
 export const DURCHSCHLAG_CRIT_MULT    = envNum("SIM_DURCHSCHLAG_CRIT_MULT", 0.18); // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +Crit-Mult [Legendär-Angleich: 0,25→0,18 — Spitze kappen, Sim unterschätzt Crit]

@@ -1,14 +1,15 @@
 import { Fragment } from "react";
 import { chargeConsumerOf } from "../game/skills.js";
 import { streakBaseMult } from "../game/perks.js";
-import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP } from "../game/constants.js";
+import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP,
+  STORM_CRIT_CAP, UEBERSCHLAG_DEPTH_PP_PER_CHARGE } from "../game/constants.js";
 import { FactionShell } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 
 // ⚡ Blitz-Motor (Blitz-Archetyp) — eigener Block, nur sichtbar bei aktivem Blitz (lightning.active). v0.5:
 //   • Sturm-Sättigung  zwei Stufen (Sturmgröße = Breite, Sturmintensität = Tiefe) je in % gegen die Schwelle;
-//                      ⚡-Marker + Payoff, sobald die Stufe zündet (+Wert / Überschuss→Crit-Multi).
+//                      ⚡-Marker + Payoff, sobald die Stufe zündet (+Wert / doppelte Überschlag-Ausbeute).
 //   • Ladung           Segment-Maximum (Donnergott-Turbo löst früher aus).
 //   • Entladungen       Kern-Metrik (volle Verbräuche/Runde) + Crit-Momentum (Gewitterfront/Entladung).
 //   • Blitzfrequenz    Balken = Crit-Chance; ab 100 % überlagert der Crit-Multiplikator (von vorne). Pulst je Entladung.
@@ -129,7 +130,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         <div className="grid gap-1.5">
           <div className="text-xs opacity-60">🌐 Sturm-Sättigung</div>
           <SatRow label="Sturmgröße" cur={ionN} max={breadthThresh} on={breadthOn} payoff={`+${ION_SATURATION_VALUE} Wert / Karte`} />
-          <SatRow label="Sturmintensität" cur={ionFull} max={depthThresh} on={depthOn} payoff="Überschuss → Crit-Multi" />
+          <SatRow label="Sturmintensität" cur={ionFull} max={depthThresh} on={depthOn} payoff={`Überschlag: ${UEBERSCHLAG_DEPTH_PP_PER_CHARGE} pp → 1 Ladung`} />
         </div>
       )}
 
@@ -157,7 +158,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[11px]">
           <span className="opacity-60" title="Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.">Entladungen <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
-          {stormPp > 0 && <span className="opacity-60" title="Gewitterfront: Crit-Chance-Momentum je Entladung (uncapped, Überschlag ist das Ventil).">Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} pp</b></span>}
+          {stormPp > 0 && <span className="opacity-60" title={`Gewitterfront: Crit-Chance-Momentum je Entladung (bis +${Math.round(STORM_CRIT_CAP * 100)} pp).`}>Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} pp</b><span className="opacity-45"> / {Math.round(STORM_CRIT_CAP * 100)}</span></span>}
           {entMult > 0 && <span className="opacity-60" title="Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.">Entladung <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
         </div>
       )}
