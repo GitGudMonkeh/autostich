@@ -164,9 +164,9 @@ export const THEME_DEFS = {
   // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
   gottgleich: { id: "gottgleich", name: "Ascension", emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
-  serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
+  serie300:   { id: "serie300",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
     deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
-  serie600:   { id: "serie600",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
+  serie600:   { id: "serie600",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
     deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
   serie1500:  { id: "serie1500",  name: "Königspfau", emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
     deckId: "deck_serie1500",  bfId: "bf_serie1500",  els: ["deck", "bf"] },

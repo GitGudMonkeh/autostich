@@ -27,9 +27,9 @@ import genesisBack   from "../assets/cards/decks_player/deck_onboarding/back.web
 // #303 Challenge-Decks (über eine Challenge freigeschaltet) — Deck-Paare:
 import gottgleichFront from "../assets/cards/decks_player/deck_gottgleich/front.webp"; // Gottgleich
 import gottgleichBack  from "../assets/cards/decks_player/deck_gottgleich/back.webp";
-import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.webp";   // Serie 300
+import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.webp";   // Peacock (Serie 300)
 import serie300Back    from "../assets/cards/decks_player/deck_serie300/back.webp";
-import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.webp";   // Peacock (Serie 600)
+import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.webp";   // Flamingo (Serie 600)
 import serie600Back    from "../assets/cards/decks_player/deck_serie600/back.webp";
 import serie1500Front  from "../assets/cards/decks_player/deck_serie1500/front.webp"; // Königspfau (Serie 1500)
 import serie1500Back   from "../assets/cards/decks_player/deck_serie1500/back.webp";
