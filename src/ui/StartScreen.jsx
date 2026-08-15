@@ -224,28 +224,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
             style={{ background: bg, color: "#c9c9d2" }}>🔒 noch {ONBOARDING_LINKS - onbStep} {ONBOARDING_LINKS - onbStep === 1 ? "Lauf" : "Läufe"}</span>);
           return (<>
-            {/* 1 · Deck-Werkstatt — Stripe CY. DP-Guthaben in Gold. Onboarding-Gate. */}
-            {onCustomize && (onbDone ? (
-              <button onClick={onCustomize} className={tileCls} style={tileSty} title="Deck-Werkstatt">
-                <Stripe c={CY} />
-                <div className="flex items-center justify-between gap-1">{head("Deck-Werkstatt")}{arrow}</div>
-                <span className="flex items-baseline gap-1">
-                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
-                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
-                </span>
-              </button>
-            ) : (
-              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
-                <Stripe c={CY} dim />
-                {head("Deck-Werkstatt")}
-                {lockBadge("#20202a")}
-              </div>
-            ))}
-
-            {/* 2 · Upgrades — Stripe BLUE. SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
+            {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe CY (Grid-Position TL, Logo-Verlauf bleibt). SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
             {onbDone ? (
               <button onClick={onUpgrades || undefined} className={tileCls} style={tileSty} title="Upgrade-Screen (Vorschau)">
-                <Stripe c={BLUE} />
+                <Stripe c={CY} />
                 <div className="flex items-center justify-between gap-1">
                   {head("Upgrades")}
                   {progBuyable > 0
@@ -264,11 +246,29 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               </button>
             ) : (
               <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Frei nach Abschluss des Onboardings">
-                <Stripe c={BLUE} dim />
+                <Stripe c={CY} dim />
                 {head("Upgrades")}
                 {lockBadge("#20202a")}
               </div>
             )}
+
+            {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe BLUE (Grid-Position TR, Logo-Verlauf bleibt). DP-Guthaben in Gold. Onboarding-Gate. */}
+            {onCustomize && (onbDone ? (
+              <button onClick={onCustomize} className={tileCls} style={tileSty} title="Deck-Werkstatt">
+                <Stripe c={BLUE} />
+                <div className="flex items-center justify-between gap-1">{head("Deck-Werkstatt")}{arrow}</div>
+                <span className="flex items-baseline gap-1">
+                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
+                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>DP</span>
+                </span>
+              </button>
+            ) : (
+              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title="Die Deck-Werkstatt wird nach Abschluss des Onboardings frei">
+                <Stripe c={BLUE} dim />
+                {head("Deck-Werkstatt")}
+                {lockBadge("#20202a")}
+              </div>
+            ))}
 
             {/* 3 · Bestenliste — Stripe VI (Violett = Wettbewerb/Rang, passt semantisch). */}
             {onLeaderboard && (
