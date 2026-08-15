@@ -108,7 +108,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "peacock", "sparfuchs",
+    const challenge = ["gottgleich", "peacock", "titan", "hirsch", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
     for (const id of challenge) {
@@ -173,6 +173,31 @@ describe("#tiered — Stufen-Deck Peacock (serie300/600/1500 zusammengefasst)", 
     expect(resolvePackByDeckId("deck_serie600").pack.id).toBe("peacock");
     expect(resolvePackByDeckId("deck_obsidian").pack.id).toBe("obsidian"); // Nicht-Stufen-Pack unverändert
     expect(resolvePackByDeckId("default")).toBe(null);                    // Standard-Deck → kein Pack, keine Deckfarbe
+  });
+});
+
+describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", () => {
+  it("Titan: drei Score-Stufen, Cover = höchste freie Stufe", () => {
+    const T = THEME_DEFS.titan;
+    expect(isTieredPack(T)).toBe(true);
+    expect(T.tiers.map((t) => t.deckId)).toEqual(["deck_titan1", "deck_titan2", "deck_titan3"]);
+    expect(unlockedTiers(prof({ bestScore: 24999999 }), T)).toEqual([]);
+    expect(unlockedTiers(prof({ bestScore: 25000000 }), T).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestScore: 50000000 }), T).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ bestScore: 100000000 }), T).roman).toBe("III");
+    expect(packUnlock(prof(), T)).toMatchObject({ target: 25000000 });
+    expect(resolvePackByDeckId("deck_titan2").a1).toBe("#9b3fff");
+  });
+  it("Hirsch: drei Läufe-Stufen, Cover = höchste freie Stufe", () => {
+    const H = THEME_DEFS.hirsch;
+    expect(isTieredPack(H)).toBe(true);
+    expect(H.tiers.map((t) => t.deckId)).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(unlockedTiers(prof({ games: 9 }), H)).toEqual([]);
+    expect(unlockedTiers(prof({ games: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ games: 30 }), H).roman).toBe("III");
+    expect(packOwned(prof({ games: 10 }), H)).toBe(true);
+    expect(packOwned(prof({ games: 9 }), H)).toBe(false);
+    expect(resolvePackByDeckId("deck_hirsch3").pack.id).toBe("hirsch");
   });
 });
 

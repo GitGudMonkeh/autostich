@@ -69,6 +69,14 @@ export const DECK_DEFS = {
   deck_polarlicht: { id: "deck_polarlicht", name: "Scarab",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
   deck_obsidian:   { id: "deck_obsidian",   name: "Obsidian",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
+  // #tiered Titan — Stufen-Challenge über Score (25/50/100 Mio). Die drei Skins sind einzeln freischaltbar.
+  deck_titan1:  { id: "deck_titan1",  name: "Titan · Erwachen",   unlock: { kind: "score", n: 25000000 } },
+  deck_titan2:  { id: "deck_titan2",  name: "Titan · Aufstieg",   unlock: { kind: "score", n: 50000000 } },
+  deck_titan3:  { id: "deck_titan3",  name: "Titan · Entfesselt", unlock: { kind: "score", n: 100000000 } },
+  // #tiered Hirsch — Stufen-Challenge über abgeschlossene Läufe (10/20/30).
+  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "games", n: 10 } },
+  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "games", n: 20 } },
+  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "games", n: 30 } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -114,6 +122,13 @@ export const BATTLEFIELD_DEFS = {
   bf_polarlicht: { id: "bf_polarlicht", name: bfName("deck_polarlicht"),     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   bf_seedrache:  { id: "bf_seedrache",  name: bfName("deck_seedrache"),   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
   bf_obsidian:   { id: "bf_obsidian",   name: bfName("deck_obsidian"),   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
+  // #tiered Titan/Hirsch Battlefields (gleiche Bedingung wie ihr Deck).
+  bf_titan1:  { id: "bf_titan1",  name: bfName("deck_titan1"),  unlock: { kind: "score", n: 25000000 } },
+  bf_titan2:  { id: "bf_titan2",  name: bfName("deck_titan2"),  unlock: { kind: "score", n: 50000000 } },
+  bf_titan3:  { id: "bf_titan3",  name: bfName("deck_titan3"),  unlock: { kind: "score", n: 100000000 } },
+  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "games", n: 10 } },
+  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "games", n: 20 } },
+  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "games", n: 30 } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

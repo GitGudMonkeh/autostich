@@ -44,11 +44,15 @@ describe("cosmetics — Katalog", () => {
       expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
     }
   });
-  it("#299: keine games-Progressions-Decks/-Battlefields mehr (nur Default + Kauf-Packs)", () => {
-    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games");
-    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games");
-    expect(deckGames).toEqual([]);
-    expect(bfGames).toEqual([]);
+  it("games-Bedingung nur noch für das Hirsch-Stufen-Deck (#tiered: 10/20/30 abgeschlossene Läufe)", () => {
+    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
+    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
+    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3"]);
+    // korrekte Schwellen
+    expect(DECK_DEFS.deck_hirsch1.unlock.n).toBe(10);
+    expect(DECK_DEFS.deck_hirsch2.unlock.n).toBe(20);
+    expect(DECK_DEFS.deck_hirsch3.unlock.n).toBe(30);
   });
 });
 

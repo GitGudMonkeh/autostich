@@ -46,6 +46,13 @@ export default {
   "cosmetic.deck_polarlicht.name": "Scarab",
   "cosmetic.deck_seedrache.name": "Eldritch",
   "cosmetic.deck_obsidian.name": "Obsidian", // gleiches Wort in beiden Sprachen — nichts zu übersetzen
+  // #tiered Titan (Score) + Hirsch (Läufe) — Stufen-Decks
+  "cosmetic.deck_titan1.name": "Titan · Awakening",
+  "cosmetic.deck_titan2.name": "Titan · Ascent",
+  "cosmetic.deck_titan3.name": "Titan · Unbound",
+  "cosmetic.deck_hirsch1.name": "Stag · Constellation",
+  "cosmetic.deck_hirsch2.name": "Stag · Awakened",
+  "cosmetic.deck_hirsch3.name": "Stag · Starfall",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

@@ -186,6 +186,24 @@ export const THEME_DEFS = {
       { roman: "II",  name: packName("deck_serie600"),  deckId: "deck_serie600",  bfId: "bf_serie600",  a1: "#7b3ff0", a2: "#ffcf3a" },
       { roman: "III", name: packName("deck_serie1500"), deckId: "deck_serie1500", bfId: "bf_serie1500", a1: "#8a4dff", a2: "#ffd84a" },
     ] },
+  // #tiered Titan — Stufen-Deck über Score (25/50/100 Mio). Lila Steingigant, der über die Stufen erwacht/aufsteigt.
+  // Pack-Name = Kategorie „Titan" (kein einzelnes Stufen-Deck heißt so); die Stufennamen sind die kurzen Stufenwörter
+  // (Header zeigt „Titan · Erwachen" …). Deutsche Quelle; Übersetzung erfolgt zur Anzeigezeit.
+  titan: { id: "titan", name: "Titan", emblem: "⛰️", kind: "cond", a1: "#7a3fd0", a2: "#b98bff",
+    deckId: "deck_titan1", bfId: "bf_titan1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Erwachen",   deckId: "deck_titan1", bfId: "bf_titan1", a1: "#7a3fd0", a2: "#b98bff" },
+      { roman: "II",  name: "Aufstieg",   deckId: "deck_titan2", bfId: "bf_titan2", a1: "#9b3fff", a2: "#c88bff" },
+      { roman: "III", name: "Entfesselt", deckId: "deck_titan3", bfId: "bf_titan3", a1: "#b455ff", a2: "#e0b0ff" },
+    ] },
+  // #tiered Hirsch — Stufen-Deck über abgeschlossene Läufe (10/20/30). Blaues Sternbild-Reh, das über die Stufen erstrahlt.
+  hirsch: { id: "hirsch", name: "Hirsch", emblem: "🦌", kind: "cond", a1: "#5b7cff", a2: "#b8c8ff",
+    deckId: "deck_hirsch1", bfId: "bf_hirsch1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Sternbild",  deckId: "deck_hirsch1", bfId: "bf_hirsch1", a1: "#5b7cff", a2: "#b8c8ff" },
+      { roman: "II",  name: "Erwacht",    deckId: "deck_hirsch2", bfId: "bf_hirsch2", a1: "#6f8cff", a2: "#c4d4ff" },
+      { roman: "III", name: "Sternenlauf", deckId: "deck_hirsch3", bfId: "bf_hirsch3", a1: "#89a4ff", a2: "#dbe6ff" },
+    ] },
   sparfuchs:  { id: "sparfuchs",  name: packName("deck_sparfuchs"),  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
 

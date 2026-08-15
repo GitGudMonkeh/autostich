@@ -179,7 +179,15 @@ export const themeDef = (id) => {
   if (!th) return null;
   const out = { ...th, name: t(`cosmetic.${th.nameDeckId || th.deckId}.name`) };
   if (Array.isArray(th.tiers)) {
-    out.tiers = th.tiers.map((ti) => ({ ...ti, name: t(`cosmetic.${ti.deckId}.name`) }));
+    out.tiers = th.tiers.map((ti) => {
+      /* Nur übersetzen, wenn die Stufe im Register WIRKLICH den Namen ihres Decks trägt (Peacock:
+         Flamingo/Peacock/Königspfau). Titan und Hirsch führen dort Kurzformen („Erwachen"), die im
+         Kosmetik-Katalog nicht vorkommen — ihnen den vollen Decknamen unterzuschieben ergäbe im
+         Kopf der Detailansicht „Titan · Titan · Awakening". Solche Stufen bleiben unübersetzt,
+         bis sie eigene Schlüssel bekommen. */
+      const deckName = (DECK_DEFS[ti.deckId] || {}).name;
+      return ti.name === deckName ? { ...ti, name: t(`cosmetic.${ti.deckId}.name`) } : ti;
+    });
   }
   return out;
 };

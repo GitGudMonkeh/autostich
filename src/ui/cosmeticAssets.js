@@ -122,6 +122,19 @@ import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.w
 import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
 import obsidianFront   from "../assets/cards/decks_player/deck_obsidian/front.webp";   // Obsidian
 import obsidianBack    from "../assets/cards/decks_player/deck_obsidian/back.webp";
+// #tiered Titan (I/II/III) + Hirsch (I/II/III) — Stufen-Decks
+import titan1Front from "../assets/cards/decks_player/deck_titan1/front.webp";
+import titan1Back  from "../assets/cards/decks_player/deck_titan1/back.webp";
+import titan2Front from "../assets/cards/decks_player/deck_titan2/front.webp";
+import titan2Back  from "../assets/cards/decks_player/deck_titan2/back.webp";
+import titan3Front from "../assets/cards/decks_player/deck_titan3/front.webp";
+import titan3Back  from "../assets/cards/decks_player/deck_titan3/back.webp";
+import hirsch1Front from "../assets/cards/decks_player/deck_hirsch1/front.webp";
+import hirsch1Back  from "../assets/cards/decks_player/deck_hirsch1/back.webp";
+import hirsch2Front from "../assets/cards/decks_player/deck_hirsch2/front.webp";
+import hirsch2Back  from "../assets/cards/decks_player/deck_hirsch2/back.webp";
+import hirsch3Front from "../assets/cards/decks_player/deck_hirsch3/front.webp";
+import hirsch3Back  from "../assets/cards/decks_player/deck_hirsch3/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -130,6 +143,18 @@ import bfSeedracheDesktop  from "../assets/battlefields/bf_seedrache/desktop.jpg
 import bfSeedracheMobile   from "../assets/battlefields/bf_seedrache/mobile.jpg";
 import bfObsidianDesktop   from "../assets/battlefields/bf_obsidian/desktop.jpg";
 import bfObsidianMobile    from "../assets/battlefields/bf_obsidian/mobile.jpg";
+import bfTitan1Desktop from "../assets/battlefields/bf_titan1/desktop.jpg";
+import bfTitan1Mobile  from "../assets/battlefields/bf_titan1/mobile.jpg";
+import bfTitan2Desktop from "../assets/battlefields/bf_titan2/desktop.jpg";
+import bfTitan2Mobile  from "../assets/battlefields/bf_titan2/mobile.jpg";
+import bfTitan3Desktop from "../assets/battlefields/bf_titan3/desktop.jpg";
+import bfTitan3Mobile  from "../assets/battlefields/bf_titan3/mobile.jpg";
+import bfHirsch1Desktop from "../assets/battlefields/bf_hirsch1/desktop.jpg";
+import bfHirsch1Mobile  from "../assets/battlefields/bf_hirsch1/mobile.jpg";
+import bfHirsch2Desktop from "../assets/battlefields/bf_hirsch2/desktop.jpg";
+import bfHirsch2Mobile  from "../assets/battlefields/bf_hirsch2/mobile.jpg";
+import bfHirsch3Desktop from "../assets/battlefields/bf_hirsch3/desktop.jpg";
+import bfHirsch3Mobile  from "../assets/battlefields/bf_hirsch3/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -167,6 +192,12 @@ export const DECK_ASSETS = {
   deck_polarlicht: { front: polarlichtFront, back: polarlichtBack },
   deck_seedrache:  { front: seedracheFront,  back: seedracheBack },
   deck_obsidian:   { front: obsidianFront,   back: obsidianBack },
+  deck_titan1:  { front: titan1Front,  back: titan1Back },
+  deck_titan2:  { front: titan2Front,  back: titan2Back },
+  deck_titan3:  { front: titan3Front,  back: titan3Back },
+  deck_hirsch1: { front: hirsch1Front, back: hirsch1Back },
+  deck_hirsch2: { front: hirsch2Front, back: hirsch2Back },
+  deck_hirsch3: { front: hirsch3Front, back: hirsch3Back },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -206,6 +237,12 @@ export const BATTLEFIELD_ASSETS = {
   bf_polarlicht: { desktop: bfPolarlichtDesktop, mobile: bfPolarlichtMobile },
   bf_seedrache:  { desktop: bfSeedracheDesktop,  mobile: bfSeedracheMobile },
   bf_obsidian:   { desktop: bfObsidianDesktop,   mobile: bfObsidianMobile },
+  bf_titan1:  { desktop: bfTitan1Desktop,  mobile: bfTitan1Mobile },
+  bf_titan2:  { desktop: bfTitan2Desktop,  mobile: bfTitan2Mobile },
+  bf_titan3:  { desktop: bfTitan3Desktop,  mobile: bfTitan3Mobile },
+  bf_hirsch1: { desktop: bfHirsch1Desktop, mobile: bfHirsch1Mobile },
+  bf_hirsch2: { desktop: bfHirsch2Desktop, mobile: bfHirsch2Mobile },
+  bf_hirsch3: { desktop: bfHirsch3Desktop, mobile: bfHirsch3Mobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
