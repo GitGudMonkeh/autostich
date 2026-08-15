@@ -33,8 +33,6 @@ import serie1500Front  from "../assets/cards/decks_player/deck_serie1500/front.w
 import serie1500Back   from "../assets/cards/decks_player/deck_serie1500/back.webp";
 import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.webp";  // Sparfuchs
 import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.webp";
-import meisterFront    from "../assets/cards/decks_player/deck_meister/front.webp";    // Meister
-import meisterBack     from "../assets/cards/decks_player/deck_meister/back.webp";
 // #299: alte Progressions-Battlefields (bf_1–4) entfernt.
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
 import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.webp"; // Sunset Rider
@@ -69,8 +67,6 @@ import bfSerie1500Desktop  from "../assets/battlefields/bf_serie1500/desktop.jpg
 import bfSerie1500Mobile   from "../assets/battlefields/bf_serie1500/mobile.jpg";
 import bfSparfuchsDesktop  from "../assets/battlefields/bf_sparfuchs/desktop.jpg";
 import bfSparfuchsMobile   from "../assets/battlefields/bf_sparfuchs/mobile.jpg";
-import bfMeisterDesktop    from "../assets/battlefields/bf_meister/desktop.jpg";
-import bfMeisterMobile     from "../assets/battlefields/bf_meister/mobile.jpg";
 // #310 Element-Challenge-Decks (Feuer/Eis/Blitz/Pflanze · Mono-Läufe) + Prisma (Element-Bund) + 4 DP-Kauf-Packs.
 import feuerFront     from "../assets/cards/decks_player/deck_feuer/front.webp";        // Feuer (Challenge · fire)
 import feuerBack      from "../assets/cards/decks_player/deck_feuer/back.webp";
@@ -149,7 +145,6 @@ export const DECK_ASSETS = {
   deck_serie600:   { front: serie600Front,   back: serie600Back },
   deck_serie1500:  { front: serie1500Front,  back: serie1500Back },
   deck_sparfuchs:  { front: sparfuchsFront,   back: sparfuchsBack },
-  deck_meister:    { front: meisterFront,     back: meisterBack },
   // #310 Element-Challenge-Decks + Prisma (Multi) + DP-Kauf-Packs:
   deck_feuer:     { front: feuerFront,     back: feuerBack },
   deck_eis:       { front: eisFront,       back: eisBack },
@@ -188,7 +183,6 @@ export const BATTLEFIELD_ASSETS = {
   bf_serie600:   { desktop: bfSerie600Desktop,   mobile: bfSerie600Mobile },
   bf_serie1500:  { desktop: bfSerie1500Desktop,  mobile: bfSerie1500Mobile },
   bf_sparfuchs:  { desktop: bfSparfuchsDesktop,  mobile: bfSparfuchsMobile },
-  bf_meister:    { desktop: bfMeisterDesktop,    mobile: bfMeisterMobile },
   // #310 Element-Challenge-Battlefields + Prisma + DP-Kauf-Packs:
   bf_feuer:     { desktop: bfFeuerDesktop,     mobile: bfFeuerMobile },
   bf_eis:       { desktop: bfEisDesktop,       mobile: bfEisMobile },

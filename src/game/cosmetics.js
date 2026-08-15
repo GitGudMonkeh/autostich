@@ -49,7 +49,6 @@ export const DECK_DEFS = {
   deck_serie600:   { id: "deck_serie600",   name: "Peacock",    unlock: { kind: "streak", n: 600 } },
   deck_serie1500:  { id: "deck_serie1500",  name: "Königspfau", unlock: { kind: "streak", n: 1500 } },
   deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
-  deck_meister:    { id: "deck_meister",    name: "Meister",    unlock: { kind: "championWeek" } },
   // #310 Element-Challenge-Decks (Freischalt via N Mono-Läufe je Fraktion):
   deck_feuer:     { id: "deck_feuer",     name: "Feuer",   unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
   deck_eis:       { id: "deck_eis",       name: "Eis",     unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
@@ -90,7 +89,6 @@ export const BATTLEFIELD_DEFS = {
   bf_serie600:   { id: "bf_serie600",   name: "Peacock · Battlefield",    unlock: { kind: "streak", n: 600 } },
   bf_serie1500:  { id: "bf_serie1500",  name: "Königspfau · Battlefield", unlock: { kind: "streak", n: 1500 } },
   bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
-  bf_meister:    { id: "bf_meister",    name: "Meister · Battlefield",    unlock: { kind: "championWeek" } },
   // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
   bf_feuer:     { id: "bf_feuer",     name: "Feuer · Battlefield",          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
   bf_eis:       { id: "bf_eis",       name: "Eis · Battlefield",            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },

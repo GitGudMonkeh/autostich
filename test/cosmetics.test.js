@@ -93,13 +93,11 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(DECK_DEFS.deck_serie300, prof({ bestStreak: 299 }))).toBe(false);
     expect(isUnlocked(DECK_DEFS.deck_serie300, prof({ bestStreak: 300 }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_serie600, prof({ bestStreak: 600 }))).toBe(true);
-    // Gottgleich / Sparfuchs / Meister hängen an eigenen sticky Flags.
+    // Gottgleich / Sparfuchs hängen an eigenen sticky Flags.
     expect(isUnlocked(DECK_DEFS.deck_gottgleich, prof())).toBe(false);
     expect(isUnlocked(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true }))).toBe(true);
     expect(isUnlocked(DECK_DEFS.deck_sparfuchs, prof())).toBe(false);
     expect(isUnlocked(DECK_DEFS.deck_sparfuchs, prof({ hadMeisterNoRerollRun: true }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_meister, prof())).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_meister, prof({ hadChampionWeek: true }))).toBe(true);
     // Battlefields tragen dieselbe Bedingung wie ihr Deck.
     expect(isUnlocked(BATTLEFIELD_DEFS.bf_gottgleich, prof({ hadGottgleichRun: true }))).toBe(true);
     expect(isUnlocked(BATTLEFIELD_DEFS.bf_sparfuchs, prof({ hadMeisterNoRerollRun: true }))).toBe(true);
@@ -110,7 +108,6 @@ describe("cosmetics — isUnlocked", () => {
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true })).done).toBe(true);
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).label).toMatch(/Gottgleich/i);
     expect(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()).label).toMatch(/Meisterrang.*Reroll/i);
-    expect(unlockProgress(DECK_DEFS.deck_meister, prof()).label).toMatch(/Champion-Board/i);
   });
 });
 
