@@ -3,6 +3,7 @@ import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import FormIcon from "./FormIcon.jsx";
 import { formationLabel, formationAbbr } from "./formationLabels.js"; // Namen/Kuerzel: EINE Quelle (Sprachpruefung A12)
 import { archFamily } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 // #UI: Geteilte Bausteine für Aufstellphase UND Chronik (eine Quelle → keine getrennte Pflege).
 const TIER_ROMAN = ["", "I", "II", "III", "IV"];
@@ -28,7 +29,7 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
   return (
     <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
       <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Deine Gebäude ({buildings.length})</div>
-      <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+      <div className="text-[10px] opacity-45 mb-1.5">{t("archpanels.tapHint")}</div>
       <div className="grid gap-1">
         {buildings.map((b) => {
           const fam = archFamily(b.familyId); if (!fam) return null;
@@ -69,7 +70,7 @@ export function FormationLegend({ state = {}, className = "" }) {
             <span style={{ color: "#6fc48f" }}>{formationLabel(type)}</span> — {rule}
           </div>
         ))}
-        <div style={{ color: "#d4a63a" }}>● Rolle — Ziel eines Perks/einer Familie an dieser Karte</div>
+        <div style={{ color: "#d4a63a" }}>{t("archpanels.roleLegend")}</div>
         <div style={{ color: "#d4a63a" }}>⧉ Überlappung — mehr Formationen = mehr Multiplikator: 2 ×1,5 · 3 ×2 · 4 ×3</div>
         <div style={{ color: "#9a9aa4" }}>Rahmenfarbe = Anzahl Formationen (<b style={{ color: "#5ab87a" }}>1</b>·<b style={{ color: "#5a8ade" }}>2</b>·<b style={{ color: "#8a7de0" }}>3</b>·<b style={{ color: "#d4a63a" }}>4</b>) — mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator</div>
       </div>

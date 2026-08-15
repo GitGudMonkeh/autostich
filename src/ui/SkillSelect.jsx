@@ -15,23 +15,24 @@ import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
+import { t, fmtNum } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
-const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
 
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
 const ARCH_LOSS = {
-  plant:     { text: "alle grünen Karten, das Wachstum und die Kolonisierungen gehen verloren", baked: true },
-  ice:       { text: "alle Gletscher tauen auf; Masse und Firn-Reserve gehen verloren", baked: false },
-  fire:      { text: "Hitze, Asche und der Schmiede-Zähler gehen verloren", baked: true },
-  lightning: { text: "die Ladung geht verloren", baked: false },
+  plant:     { key: "skill.loss.plant", baked: true },
+  ice:       { key: "skill.loss.ice", baked: false },
+  fire:      { key: "skill.loss.fire", baked: true },
+  lightning: { key: "skill.loss.lightning", baked: false },
 };
 
 const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
 const FIRST_CRIT_PCT = SOCKET_PCT + PER_SKILL_PCT;               // Crit-Chance nach dem ERSTEN Blitz-Skill (Sockel + 1×)
-const PER_SKILL_MULT = String(LIGHTNING_CRIT_MULT_PER_SKILL).replace(".", ","); // +Crit-Multiplikator je Blitz-Skill (0,1)
+const PER_SKILL_MULT = () => fmtNum(LIGHTNING_CRIT_MULT_PER_SKILL); // +Crit-Multiplikator je Blitz-Skill (0,1)
 // Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
 const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
 const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
@@ -95,13 +96,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const unlockLine = (arch) => {
     switch (arch) {
       case "lightning":
-        return `Der erste Blitz-Skill gibt +${FIRST_CRIT_PCT} % Crit-Chance, jeder weitere +${PER_SKILL_PCT} %. Dazu +${PER_SKILL_MULT}× Crit-Multiplikator je Blitz-Skill.`;
+        return t("skill.passive.lightning", { first: FIRST_CRIT_PCT, each: PER_SKILL_PCT, mult: PER_SKILL_MULT() });
       case "fire":
-        return `Jeder Sieg mit mindestens ${HEAT_MIN_MARGIN} Wertvorsprung heizt die Hitze um ${FIRE_MIN_HEAT} % auf und gibt +${FIRE_MIN_SCORE} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um ${FIRE_LOSS_PCT} % ab (plus Wert-Rückstand, bis ${HEAT_LOSS_MAX}). Jeder weitere Feuer-Skill gibt +${FIRE_SCORE_PER_SKILL} Feuer-Score je Vorsprungspunkt.`;
+        return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, heat: FIRE_MIN_HEAT, score: FIRE_MIN_SCORE,
+          cool: FIRE_LOSS_PCT, coolMax: HEAT_LOSS_MAX, perSkill: FIRE_SCORE_PER_SKILL });
       case "ice":
-        return `Jeder Eis-Skill friert eine eigene Karte als Gletscher fest — sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber jeden Durchlauf Masse und bricht schließlich gewaltig über ihre Nachbarn. Jeder Pick friert einen neuen Gletscher (auch ein Tausch bei vollen Slots); ab ${G_DECLINE_MIN_SKILLS} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen — so kannst du mehr Gletscher haben als Skill-Slots.`;
+        return t("skill.passive.ice", { declineFrom: G_DECLINE_MIN_SKILLS });
       case "plant":
-        return `Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab ${PLANT_GROWTH_SKILL_REF} Pflanze-Skills). Ab ${PLANT_GREEN_THRESHOLD} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je ${WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${PLANT_VALUE_CAP}, danach ist sie voll ausgewachsen), ab ${WURZELSCHLAG_LOSS_MIN_SKILLS} Pflanzen-Skills auch bei jeder ${WURZELSCHLAG_LOSS_EVERY}. Niederlage.`;
+        return t("skill.passive.plant", { ref: PLANT_GROWTH_SKILL_REF, green: PLANT_GREEN_THRESHOLD,
+          perValue: WURZELSCHLAG_PER_GROWTH, cap: PLANT_VALUE_CAP, minSkills: WURZELSCHLAG_LOSS_MIN_SKILLS,
+          everyLoss: WURZELSCHLAG_LOSS_EVERY });
       default: return "";
     }
   };
@@ -131,7 +135,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (skillDef(id)?.heatConsumer ? "heat" : skillDef(id)?.onFullCharge ? "charge" : null);
-  const CONSUMER_LABEL = { heat: "Hitze", charge: "Ladungs" };
+  const CONSUMER_LABEL = { get heat() { return t("skill.consumer.heat"); }, get charge() { return t("skill.consumer.charge"); } };
 
   // Freier Slot → direkt wählen. Volle Slots → neuen Skill vormerken → Ersetzen-Fenster (#234).
   // #234: Nur Blitz-LADUNGS-Konsumenten sind exklusiv (max 1) → Ersatzdialog beim zweiten. Feuer-HITZE-Konsumenten
@@ -158,8 +162,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{slots} Slots</div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
+          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots })}</div>
+          <h2 className="text-xl font-bold mt-1">{t("skill.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
@@ -171,13 +175,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               <button onClick={onReroll}
                 className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
                 style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
-                🎲 Neu würfeln · {rerollTokens}
+                {t("skill.reroll", { n: rerollTokens })}
               </button>
             )}
             <button onClick={onDecline}
               className="flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80"
               style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-              {devMode ? "Runde überspringen" : "Ablehnen → Perk"}
+              {t(devMode ? "skill.skipCycle" : "skill.decline")}
             </button>
           </div>
 
@@ -188,7 +192,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(-1)}
-                    className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title="vorheriger Typ">
+                    className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title={t("skill.nav.prev")}>
                     <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
                     {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
                   </button>
@@ -198,14 +202,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
                   {/* i im Kreis → öffnet den Leitfaden direkt auf der Seite dieses Archetyps (#UI). */}
                   <button type="button" onClick={() => setGuideArch(curG.arch)}
-                    title={`Leitfaden: ${curG.meta.label}`} aria-label={`Leitfaden ${curG.meta.label} öffnen`}
+                    title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
                     className="inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
                     style={{ width: 16, height: 16, fontSize: 10, fontStyle: "italic", fontFamily: "Georgia, serif",
                              color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
                 </span>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(1)}
-                    className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title="nächster Typ">
+                    className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title={t("skill.nav.next")}>
                     {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
                     <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
                   </button>
@@ -227,16 +231,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {pendingConsumer && (
           <div className="mt-3 rounded-lg px-3 py-3 text-xs leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
             <div className="mb-2">
-              Du hältst bereits den {CONSUMER_LABEL[pendingConsumer.type]}-Konsumenten{" "}
+              {t("skill.consumer.pre", { kind: CONSUMER_LABEL[pendingConsumer.type] })}{" "}
               <b style={{ color: ac(pendingConsumer.replace).color }}>{skillDef(pendingConsumer.replace)?.name}</b>.{" "}
-              <b style={{ color: ac(pendingConsumer.id).color }}>{skillDef(pendingConsumer.id)?.name}</b> ersetzt ihn
-              (höchstens 1 {CONSUMER_LABEL[pendingConsumer.type]}-Konsument). Deine aktuelle Ressource bleibt erhalten.
+              <b style={{ color: ac(pendingConsumer.id).color }}>{skillDef(pendingConsumer.id)?.name}</b>{" "}
+              {t("skill.consumer.post", { kind: CONSUMER_LABEL[pendingConsumer.type] })}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { pick(pendingConsumer.id, pendingConsumer.replace); setPendingConsumer(null); }}
-                className="px-3 py-1.5 rounded font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#0c0c10" }}>Ersetzen</button>
+                className="px-3 py-1.5 rounded font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#0c0c10" }}>{t("skill.replace")}</button>
               <button onClick={() => setPendingConsumer(null)}
-                className="px-3 py-1.5 rounded transition-all hover:opacity-80" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#e8e8ea" }}>Abbrechen</button>
+                className="px-3 py-1.5 rounded transition-all hover:opacity-80" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#e8e8ea" }}>{t("skill.cancel")}</button>
             </div>
           </div>
         )}
@@ -244,7 +248,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* Bei vollen Slots: Hinweis, dass beim Wählen ein Ersetzen-Fenster erscheint (#234). */}
         {full && !pending && (
           <div className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
-            Alle {slots} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.
+            {t("skill.slotsFull.hint", { slots })}
           </div>
         )}
 
@@ -254,10 +258,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             <div className="relative w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
               <PhaseHairline />
               <div className="text-center mb-3">
-                <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>Slots voll</div>
-                <h3 className="text-lg font-bold mt-1">Welchen Skill ersetzen?</h3>
+                <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>{t("skill.slotsFull")}</div>
+                <h3 className="text-lg font-bold mt-1">{t("skill.replace.which")}</h3>
                 <p className="text-xs opacity-65 mt-1">
-                  Neu: <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {skillDef(pending)?.name}</b>. Tippe den Skill, der weichen soll.
+                  {t("skill.replace.new")} <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {skillDef(pending)?.name}</b>. {t("skill.replace.tap")}
                 </p>
               </div>
               <div className="grid gap-2">
@@ -273,23 +277,23 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     style={{ background: "#20202a", border: `1px solid ${deactivates ? "#d1462f" : ac(s.id).color + "66"}` }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
-                      {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>KONSUMENT</span>}
-                      {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>★ LEGENDÄR</span>}
+                      {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
+                      {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-sm" style={{ color: ac(s.id).color }}>{s.name}</div>
                     <div className="text-xs opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
-                    <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>↔ diesen ersetzen</div>
+                    <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>{t("skill.replace.this")}</div>
                     {/* #238b: gezielte Warnung — nur wenn dieses Ersetzen den letzten Skill des Archetyps entfernt. */}
                     {deactivates && (
                       <div className="mt-1 rounded px-2 py-1 text-[10px] font-bold leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
-                        ⚠ Letzter {ac(s.id).label}-Skill: {ARCH_LOSS[arch].text}.{ARCH_LOSS[arch].baked ? " Bereits aufgewerteter Kartenwert bleibt." : ""}
+                        {t("skill.lastOfArch", { arch: ac(s.id).label, loss: t(ARCH_LOSS[arch].key) })}{ARCH_LOSS[arch].baked ? t("skill.lastOfArch.baked") : ""}
                       </div>
                     )}
                   </button>
                   );
                 })}
               </div>
-              <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>Abbrechen</button>
+              <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>{t("skill.cancel")}</button>
             </div>
           </div>
         )}
@@ -307,12 +311,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               {/* Passiv-Beschreibung — einklappbar (default zu). */}
               <button type="button" onClick={() => setOpenArch(detailOpen ? null : curG.arch)}
                 className="w-full flex items-center gap-2 mb-2 text-left" aria-expanded={detailOpen}
-                title={`${curG.meta.label}: Passiv ${detailOpen ? "einklappen" : "ausklappen"}`}>
-                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {curG.meta.label} · Passiv</span>
+                title={t(detailOpen ? "skill.passive.collapse" : "skill.passive.expand", { arch: curG.meta.label })}>
+                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {t("skill.passive.head", { arch: curG.meta.label })}</span>
                 <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}3a` }}>
                   <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
-                  {detailOpen ? "weniger" : "mehr"}
+                  {t(detailOpen ? "skill.less" : "skill.more")}
                 </span>
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
@@ -342,16 +346,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         {(s.heatConsumer || s.onFullCharge) && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                             style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
-                            KONSUMENT
+                            {t("skill.badge.consumer")}
                           </span>
                         )}
                         {s.legendary && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                             style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
-                            ★ LEGENDÄR
+                            {t("skill.badge.legendary")}
                           </span>
                         )}
-                        {sel && <span className="text-[10px] font-bold" style={{ color: col }}>✓ ausgewählt</span>}
+                        {sel && <span className="text-[10px] font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
                       </div>
                       <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
@@ -367,7 +371,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              Deine Skills — {held.length}/{slots} · bereits gehalten
+              {t("skill.held", { held: held.length, slots })}
             </div>
             {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
                 Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
@@ -378,7 +382,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <div className="flex items-center gap-1.5 mb-1">
                     <ArchIcon meta={ac(s.id)} size={13} />
                     <b style={{ color: "#c8c8d0" }}>{s.name}</b>
-                    <span className="opacity-40 text-[11px]">✓ gehalten</span>
+                    <span className="opacity-40 text-[11px]">{t("skill.heldBadge")}</span>
                   </div>
                   <div className="opacity-70 leading-snug whitespace-pre-line" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
                 </div>
@@ -392,16 +396,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {showFormations && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <button type="button" onClick={() => setOpenForms((o) => !o)} aria-expanded={openForms}
-              className="w-full flex items-center gap-2 text-left" title={`Aufstellfeld ${openForms ? "einklappen" : "ausklappen"}`}>
-              <span className="text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={12} /> Deine aktiven Formationen</span>
+              className="w-full flex items-center gap-2 text-left" title={t(openForms ? "skill.forms.collapse" : "skill.forms.expand")}>
+              <span className="text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={12} /> {t("skill.forms.head")}</span>
               <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                 style={{ color: "#7fd4f0", background: "#7fd4f014", border: "1px solid #7fd4f03a" }}>
                 <span className="transition-transform" style={{ display: "inline-block", transform: openForms ? "rotate(90deg)" : "none" }}>▸</span>
-                {openForms ? "weniger" : "mehr"}
+                {t(openForms ? "skill.less" : "skill.more")}
               </span>
               <div className="flex-1 h-px" style={{ background: "#7fd4f033" }} />
             </button>
-            {openForms && <div className="mt-3"><FormationPanel state={state} title="Eis biegt die Erkennung" /></div>}
+            {openForms && <div className="mt-3"><FormationPanel state={state} title={t("skill.forms.iceTitle")} /></div>}
           </div>
         )}
         </div>

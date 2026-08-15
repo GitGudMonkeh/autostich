@@ -9,7 +9,7 @@
 // eine dritte, abweichende Fassung, u. a. mit dem Entwickler-Kürzel „(±Span)" im Spielertext.
 import { architectValueBonus } from "../game/architect.js";
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: EIN Generator, beide Sprachen
-import { suitName } from "../game/constants.js";
+import { suitLabel } from "../i18n/labels.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
@@ -26,7 +26,7 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1, all
       case "mult":      out.push(`×${fmt(sc.factor)} Score`); break;
       case "streak":    out.push(`+${sc.amount} Score je Serienpunkt`); break;
       case "crit":      out.push(`+${sc.amount} Score bei Crit`); break;
-      case "color":     out.push(`+${sc.amount} Score bei ${suitName(sc.colorChoice)}`); break;
+      case "color":     out.push(`+${sc.amount} Score bei ${suitLabel(sc.colorChoice)}`); break;
       case "milestone": out.push(`+${sc.amount} Score alle ${sc.every} Siege`); break;
       case "target":    out.push(`+${sc.amount} Score`); break;
       case "gamble":    out.push(`+${sc.crit} Score bei Crit, sonst −${sc.penalty} Score`); break; // #Pool Batch 4: Crit-Wette

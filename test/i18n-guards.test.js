@@ -102,6 +102,12 @@ describe("i18n · Katalog-Parität", () => {
     "rail.formation",         // „Formation" ist in beiden Sprachen dasselbe Wort
     "rail.jackpot",           // „Jackpot" — Fremdwort im Deutschen
     "rail.crits",             // „Crits" (§3.1)
+    // Entscheidungs-Panels: dieselbe Lage — Fremdwort, Eigenname oder reine Zahlenzeile.
+    "glacierform.block.name", // „Block" ist in beiden Sprachen dasselbe Wort
+    "skill.arch.none",        // „Skill" (§3.1)
+    "perk.start",             // „Start" — in beiden Sprachen gleich
+    "perk.stat.crit",         // „Crit" (§3.1)
+    "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -399,7 +405,12 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
     "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
-    "src/ui/StatusBar.jsx", "src/ui/StatusRail.jsx", "src/ui/Battlefield.jsx", "src/ui/FormationPhase.jsx"];
+    "src/ui/StatusBar.jsx", "src/ui/StatusRail.jsx", "src/ui/Battlefield.jsx", "src/ui/FormationPhase.jsx",
+    // Die Entscheidungen eines Durchlaufs — Angebote, Ziel-Auswahlen und die Panels, die sie begleiten.
+    "src/ui/SkillSelect.jsx", "src/ui/PerkSelect.jsx", "src/ui/LegendarySelect.jsx", "src/ui/GlacierPick.jsx",
+    "src/ui/TargetSelect.jsx", "src/ui/FamilyTargetSelect.jsx", "src/ui/RoundScoreBadge.jsx",
+    "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",
+    "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

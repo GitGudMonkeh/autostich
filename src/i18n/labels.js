@@ -17,6 +17,8 @@
    ============================================================ */
 import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
+import { SUITS } from "../game/constants.js";
+import { GLACIER_FORM_LABEL } from "../game/glacier.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
@@ -28,6 +30,13 @@ import { THEME_DEFS, GLOBAL_FX } from "../game/themes.js";
 /* ---- Rarität (TIER_META) ---- */
 // Sichtbarer Name einer Raritätsstufe: „Sehr selten" / „Rare".
 export const rarityLabel = (tier) => t(`rarity.tier${tier}.label`);
+
+/* ---- Kartenfarben (SUITS) ---- */
+// Angezeigter Farbname. Unbekannt/leer → derselbe Gedankenstrich wie `suitName` im Register.
+export const suitLabel = (s) => (s && SUITS[s] ? t(`suit.${s}.name`) : "—");
+
+/* ---- 2D-Gletscher-Formationen (GLACIER_FORM_LABEL) ---- */
+export const glacierFormName = (k) => (GLACIER_FORM_LABEL[k] ? t(`glacierform.${k}.name`) : k);
 
 /* ---- Formationstypen (FORMATION_LABELS) ---- */
 // Ausgeschriebener Name. Fallback bleibt der rohe Typ — t() gibt bei unbekanntem Schlüssel den

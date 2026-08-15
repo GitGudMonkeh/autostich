@@ -8,12 +8,12 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierNeighborFn, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
 import glacierIcon from "./assets/glacier.webp"; // #308b: das detaillierte Gletscher-Bild NUR für das wachsende Panel-Hero-Visual behalten
 import { t } from "../i18n/index.js"; // #sprache
-import { archetypeLabel } from "../i18n/labels.js"; // Fraktionsname aus dem Archetyp-Register
+import { archetypeLabel, glacierFormName } from "../i18n/labels.js"; // Fraktions-/Formationsname aus den Registern
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
@@ -177,7 +177,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
 
       {activeForms.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" }}>
-          {activeForms.map(([t, f]) => chip(GLACIER_FORM_LABEL[t] || t, "×" + dfmt(f), FROST))}
+          {activeForms.map(([k, f]) => chip(glacierFormName(k), "×" + dfmt(f), FROST))}
         </div>
       )}
 

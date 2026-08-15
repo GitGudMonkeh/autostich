@@ -10,6 +10,7 @@ import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { glacierFormations } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { familyDef, perkDef } from "../i18n/labels.js"; // #sprache: Perks zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 // #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
 //   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
@@ -187,7 +188,7 @@ function SegmentBridge({ segA, segB }) {
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
         <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide px-1.5 py-[1px] rounded-full whitespace-nowrap"
-          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>⇕ Grenze offen</span>
+          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>{t("cardgrid.openBoundary")}</span>
         <div className="h-px flex-1" style={line} />
       </div>
     </div>
@@ -275,7 +276,8 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
         const segS = segStrength[s];
         const segD = segDelta[s] ?? 0;
-        const segTint = segD > 0.001 ? "#5ab87a" : segD < -0.001 ? "#e0605a" : "#8a8a92";
+        // (Nulllage zuerst — hält die Zeile frei von der Folge „> … <", die der i18n-Textgreifer sonst greift.)
+        const segTint = Math.abs(segD) <= 0.001 ? "#8a8a92" : (segD > 0.001 ? "#5ab87a" : "#e0605a");
         const row = (
           <div key={`seg${s}`} className="flex items-center gap-2">
             <div className="w-9 shrink-0 text-right leading-tight">

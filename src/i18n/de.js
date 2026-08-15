@@ -8,7 +8,7 @@
    - Tuning-Zahlen aus den Konstanten interpolieren (Template-Literal), nicht abtippen.
    - Plural: Schlüsselpaare `…_one` / `…_other`, ausgewählt über die Variable `count`.
    ============================================================ */
-import { LEG_PHASE_CYCLE, FORMATION_LABELS } from "../game/constants.js";
+import { LEG_PHASE_CYCLE, FORMATION_LABELS, SUITS } from "../game/constants.js";
 import { TIER_META } from "../game/rarity.js";
 import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
@@ -17,6 +17,7 @@ import { ARCHITECT_FAMILIES } from "../game/architect.js";
 import { NODES, BRANCHES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../game/glossary.js";
+import { GLACIER_FORM_LABEL } from "../game/glacier.js";
 import { DECK_DEFS, BF_SUFFIX } from "../game/cosmetics.js";
 import { GLOBAL_FX } from "../game/themes.js";
 import { guideStrings } from "./guideWalk.js";
@@ -30,6 +31,8 @@ for (const m of Object.values(TIER_META)) fromRegistries[`rarity.tier${m.tier}.l
 // Badge-Kürzel der Formationen: genau EIN Zeichen, paarweise verschieden (harte UI-Schranke).
 const ABBR_DE = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z",
   anker: "A", nachhall: "N", formationskern: "K", grenzbonus: "G" };
+for (const su of Object.values(SUITS)) fromRegistries[`suit.${su.key}.name`] = su.name;
+for (const [k, label] of Object.entries(GLACIER_FORM_LABEL)) fromRegistries[`glacierform.${k}.name`] = label;
 for (const [type, label] of Object.entries(FORMATION_LABELS)) {
   fromRegistries[`formation.${type}.label`] = label;
   fromRegistries[`formation.${type}.abbr`] = ABBR_DE[type] || "";
@@ -391,6 +394,175 @@ export default {
   // Währungs-Kürzel. Stichpunkte heißen im Englischen „Trick Points" → TP, nicht SP.
   "common.cur.sp": "SP",
   "common.cur.dp": "DP",
+
+  /* ---- Allgemein (Auswahl-Panels) ---- */
+  "common.confirm": "Bestätigen",
+  "common.chosen": "{n} / {need} gewählt",
+
+  /* ---- Skill-Auswahl (SkillSelect) ---- */
+  "skill.eyebrow": "Skill · Durchlauf {cycle} · {held}/{slots} Slots",
+  "skill.title": "Wähle einen Skill",
+  "skill.arch.none": "Skill",
+  "skill.reroll": "🎲 Neu würfeln · {n}",
+  "skill.decline": "Ablehnen → Perk",
+  "skill.skipCycle": "Runde überspringen",
+  "skill.nav.prev": "vorheriger Typ",
+  "skill.nav.next": "nächster Typ",
+  "skill.guide.title": "Leitfaden: {arch}",
+  "skill.guide.aria": "Leitfaden {arch} öffnen",
+  "skill.more": "mehr",
+  "skill.less": "weniger",
+  // Konsumenten (Hitze/Ladung): höchstens einer je Art — der zweite ersetzt den ersten.
+  "skill.consumer.heat": "Hitze",
+  "skill.consumer.charge": "Ladungs",
+  "skill.consumer.pre": "Du hältst bereits den {kind}-Konsumenten",
+  "skill.consumer.post": "ersetzt ihn (höchstens 1 {kind}-Konsument). Deine aktuelle Ressource bleibt erhalten.",
+  "skill.replace": "Ersetzen",
+  "skill.cancel": "Abbrechen",
+  "skill.slotsFull": "Slots voll",
+  "skill.slotsFull.hint": "Alle {slots} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.",
+  "skill.replace.which": "Welchen Skill ersetzen?",
+  "skill.replace.new": "Neu:",
+  "skill.replace.tap": "Tippe den Skill, der weichen soll.",
+  "skill.replace.this": "↔ diesen ersetzen",
+  "skill.badge.consumer": "KONSUMENT",
+  "skill.badge.legendary": "★ LEGENDÄR",
+  "skill.selected": "✓ ausgewählt",
+  "skill.held": "Deine Skills — {held}/{slots} · bereits gehalten",
+  "skill.heldBadge": "✓ gehalten",
+  // Was verschwindet, wenn der LETZTE Skill einer Fraktion abgelegt wird.
+  "skill.lastOfArch": "⚠ Letzter {arch}-Skill: {loss}.",
+  "skill.lastOfArch.baked": " Bereits aufgewerteter Kartenwert bleibt.",
+  "skill.loss.plant": "alle grünen Karten, das Wachstum und die Kolonisierungen gehen verloren",
+  "skill.loss.ice": "alle Gletscher tauen auf; Masse und Firn-Reserve gehen verloren",
+  "skill.loss.fire": "Hitze, Asche und der Schmiede-Zähler gehen verloren",
+  "skill.loss.lightning": "die Ladung geht verloren",
+  "skill.passive.head": "{arch} · Passiv",
+  "skill.passive.expand": "{arch}: Passiv ausklappen",
+  "skill.passive.collapse": "{arch}: Passiv einklappen",
+  // Die Zahlen stehen als Platzhalter: sie kommen zur Anzeigezeit aus constants.js/glacier.js,
+  // damit ein Balancing-Dreh nicht am Text vorbeigeht.
+  "skill.passive.lightning": "Der erste Blitz-Skill gibt +{first} % Crit-Chance, jeder weitere +{each} %. Dazu +{mult}× Crit-Multiplikator je Blitz-Skill.",
+  "skill.passive.fire": "Jeder Sieg mit mindestens {margin} Wertvorsprung heizt die Hitze um {heat} % auf und gibt +{score} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um {cool} % ab (plus Wert-Rückstand, bis {coolMax}). Jeder weitere Feuer-Skill gibt +{perSkill} Feuer-Score je Vorsprungspunkt.",
+  "skill.passive.ice": "Jeder Eis-Skill friert eine eigene Karte als Gletscher fest — sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber jeden Durchlauf Masse und bricht schließlich gewaltig über ihre Nachbarn. Jeder Pick friert einen neuen Gletscher (auch ein Tausch bei vollen Slots); ab {declineFrom} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen — so kannst du mehr Gletscher haben als Skill-Slots.",
+  "skill.passive.plant": "Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab {ref} Pflanze-Skills). Ab {green} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je {perValue} Wachstum +1 Kartenwert (bis {cap}, danach ist sie voll ausgewachsen), ab {minSkills} Pflanzen-Skills auch bei jeder {everyLoss}. Niederlage.",
+  "skill.forms.head": "Deine aktiven Formationen",
+  "skill.forms.expand": "Aufstellfeld ausklappen",
+  "skill.forms.collapse": "Aufstellfeld einklappen",
+  "skill.forms.iceTitle": "Eis biegt die Erkennung",
+
+  /* ---- Perk-Auswahl (PerkSelect) ---- */
+  "perk.start": "Start",
+  "perk.cycle": "Durchlauf {cycle}",
+  "perk.title": "Wähle einen Perk",
+  "perk.reroll": "🎲 Neu würfeln · {n}",
+  "perk.declineAll": "Alle ablehnen",
+  "perk.stat.crit": "Crit",
+  "perk.stat.scoreMult": "Score-Mult",
+  "perk.upgrade": "⬆ AUFWERTEN · {from}→{to}",
+  "perk.onceHint": "Jeder Perk ist pro Lauf nur einmal wählbar.",
+  "perk.deckStrength": "Deck-Stärke je Farbe",
+  "perk.formations": "Formationen",
+  "perk.build_one": "Dein Build — {count} Perk",
+  "perk.build_other": "Dein Build — {count} Perks",
+  "perk.build.empty": "Noch keine Perks gewählt.",
+
+  /* ---- Legendär-Wahl (LegendarySelect) ---- */
+  "leg.fallbackLabel": "Legendär",
+  "leg.eyebrow": "Legendär · einmalige Wahl",
+  "leg.title": "★ Legendärer Skill",
+  "leg.intro.a": "Ein mächtiger Skill für deinen",
+  "leg.intro.slot": "7. Slot",
+  "leg.intro.b": "— nur aus Fraktionen, in denen du schon aktive Skills hast. Die Wahl steht danach",
+  "leg.intro.final": "fest",
+  "leg.intro.c": " (kein Tausch). Oder wähle stattdessen einen normalen Skill.",
+  "leg.reroll": "↻ Neu würfeln",
+  "leg.decline": "Keinen Legendär — stattdessen einen Skill wählen",
+
+  /* ---- Gletscher-Wahl (GlacierPick) ---- */
+  "glacierpick.eyebrow": "Gletscher",
+  "glacierpick.title": "Wähle eine Karte als Gletscher",
+  "glacierpick.intro.a": "Sie friert auf ihrer Zelle fest — ab dann",
+  "glacierpick.intro.rigid": "starr",
+  "glacierpick.intro.b": "(nicht mehr verschiebbar) und sammelt Masse, bis sie bricht. Entscheide zwischen Position und Wert.",
+  "glacierpick.chosen": "{n} / 1 gewählt",
+
+  /* ---- Ziel-Auswahlen (TargetSelect · FamilyTargetSelect) ---- */
+  "target.eyebrow": "Rolle · {perk}",
+  "target.pickCards_one": "Wähle {count} Karte",
+  "target.pickCards_other": "Wähle {count} Karten",
+  "famtarget.alreadyBound": " ({n} bereits als Rolle gebunden)",
+  "famtarget.pickType": "Wähle einen Formationstyp",
+  "famtarget.deck": "Dein Deck · aktuelle Formationen",
+  "famtarget.deck.arch": "Dein Deck · aktuelle Formationen & Gebäude",
+  "famtarget.ordered": "Reihenfolge: erste Farbe = Gewinner (+), zweite = Verlierer (−)",
+  "famtarget.pickSuits_one": "Wähle eine Farbe",
+  "famtarget.pickSuits_other": "Wähle {count} Farben",
+  "famtarget.deckValues": "Deck-Werte je Farbe",
+  "famtarget.strength": "Formations-Stärke:",
+
+  /* ---- Durchlauf-Score-Chip (RoundScoreBadge) ---- */
+  "roundscore.label": "Durchlauf-Score",
+  "roundscore.diff": "{sign}{pct} %",
+  "roundscore.diff.title": "Differenz zur Vorrunde",
+  "roundscore.noPrev.title": "keine Vorrunde zum Vergleich",
+  "roundscore.firstCycle": "erster Durchlauf",
+
+  /* ---- Formations-Panel (FormationPanel) ---- */
+  "formpanel.title": "Deine aktiven Formationen",
+  "formpanel.count": "{n} · max ×{max}",
+  "formpanel.archToggle": "🏗 Gebäude",
+  "formpanel.archToggle.title": "Platzierte Architekt-Gebäude als Rahmen über dem Brett anzeigen",
+
+  /* ---- Gletscher-Formations-Legende (GlacierFormLegend) ---- */
+  "glacierlegend.head": "Gletscher-Formationen (2D)",
+  "glacierlegend.head.compact": "Gletscher-Formationen (2D):",
+  "glacierlegend.block": "2×2-Quadrat (4 Gletscher)",
+  "glacierlegend.kreuz": "Zentrum + 4 Nachbarn (5 Gletscher)",
+  "glacierlegend.linie": "volle Reihe (5) oder Spalte (8)",
+  "glacierlegend.linie.wall": "volle Reihe (5) oder Spalte (8) · Eiswall",
+  "glacierlegend.flaeche": "gefülltes 3×3 (9 Gletscher)",
+  "glacierlegend.mark.a": "blaues",
+  "glacierlegend.mark.compact": "= Karte in aktiver Formation",
+  "glacierlegend.mark.pre": "Karten in einer aktiven Formation tragen ein blaues",
+  "glacierlegend.mark.post": "· höchster Faktor je Typ zählt.",
+
+  /* ---- Zinseszins-Readout (BuildSummary) ---- */
+  "zins.capital": "Kapital:",
+  "zins.rate": "· Zinssatz",
+  "zins.payout": "Auszahlung bei Erfolg:",
+  "zins.wins": "Siege dieser Durchlauf:",
+  "zins.cleared": "· Hürde genommen",
+  "zins.crash": "· sonst Crash",
+
+  /* ---- Karten-Detail (CardDetail) ---- */
+  "carddetail.empty": "Karte antippen für Rolle & Modifikatoren …",
+  "carddetail.origin": "Ursprung {base} (+{boost} Kartenwert)",
+  "carddetail.roles": "Rollen:",
+  "carddetail.none": "keine",
+  "carddetail.formations": "Formationen:",
+  "carddetail.member": " (Mitglied)",
+  "carddetail.ion": "Ionisierung:",
+  "carddetail.fieldCrit": "+{pct} % Feld-Crit",
+  "carddetail.plant": "Pflanze:",
+  "carddetail.plant.full": "Ausgewachsen",
+  "carddetail.plant.ripe": "Grün (reif)",
+  "carddetail.plant.seed": "Setzling",
+  "carddetail.growth": "Wachstum {n}",
+  "carddetail.cardValue": "Kartenwert {value} / {cap}",
+  "carddetail.rootScore": "+{n} Wurzel-Score/Sieg",
+  "carddetail.rootScore.tap": " (×2 Form.)",
+  "carddetail.overflow": "Überlauf {n}",
+  "carddetail.fire": "Feuer:",
+  "carddetail.forged": "⚒ Geschmiedet +{n} Kartenwert",
+  "carddetail.building": "🏗 Gebäude:",
+  "carddetail.building.tier": " · Stufe {tier}",
+  "carddetail.building.none": "keine direkte Wirkung an dieser Karte",
+
+  /* ---- Brett-Raster (CardGrid) · Architekt-Panels (ArchPanels) ---- */
+  "cardgrid.openBoundary": "⇕ Grenze offen",
+  "archpanels.tapHint": "Antippen zeigt am Brett, wo es liegt — und umgekehrt.",
+  "archpanels.roleLegend": "● Rolle — Ziel eines Perks/einer Familie an dieser Karte",
 
   /* ---- Startbildschirm ---- */
   "start.tagline": "Roguelite-Autobattler-Stechspiel · Prototyp",

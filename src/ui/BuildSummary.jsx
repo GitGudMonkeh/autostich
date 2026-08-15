@@ -5,8 +5,9 @@ import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, archetypeOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { glossaryKeywords } from "../game/glossary.js";
-import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
-import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { SUIT_ORDER, suitColor } from "../game/constants.js";
+import { archMeta, familyDef, perkCat, perkDef, skillDef, suitLabel } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Farben zur Anzeigezeit
+import { t, fmtNum } from "../i18n/index.js";
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
@@ -26,19 +27,19 @@ export function ZinsReadout({ zins, color = "#5ab87a" }) {
   return (
     <div className="mt-2 pt-2 text-xs font-mono grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
       <div className="flex items-center gap-1.5">
-        <span className="opacity-55">Kapital:</span>
-        <b style={{ color }}>{Math.round(zins.capital).toLocaleString("de-DE")}</b>
-        <span className="opacity-55">· Zinssatz</span>
+        <span className="opacity-55">{t("zins.capital")}</span>
+        <b style={{ color }}>{fmtNum(Math.round(zins.capital))}</b>
+        <span className="opacity-55">{t("zins.rate")}</span>
         <b style={{ color }}>{Math.round(zins.rate * 100)} %</b>
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="opacity-55">Auszahlung bei Erfolg:</span>
-        <b style={{ color }}>+{Math.round(zins.capital * zins.rate).toLocaleString("de-DE")}</b>
+        <span className="opacity-55">{t("zins.payout")}</span>
+        <b style={{ color }}>+{fmtNum(Math.round(zins.capital * zins.rate))}</b>
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="opacity-55">Siege dieser Durchlauf:</span>
+        <span className="opacity-55">{t("zins.wins")}</span>
         <b style={{ color: genommen ? "#4ade80" : "#e0605a" }}>{zins.wins} / {zins.hurdle}</b>
-        <span className="opacity-55">{genommen ? "· Hürde genommen" : "· sonst Crash"}</span>
+        <span className="opacity-55">{t(genommen ? "zins.cleared" : "zins.crash")}</span>
       </div>
     </div>
   );
@@ -183,11 +184,11 @@ export function DeckHistogram({ deck }) {
       <div className="grid gap-1">
         {SUIT_ORDER.map((su) => (
           <div key={su} className="flex items-end gap-1">
-            <div className="w-8 shrink-0 text-[10px] font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitName(su)}</div>
+            <div className="w-8 shrink-0 text-[10px] font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitLabel(su)}</div>
             <div className="flex-1 flex items-end gap-[2px]" style={{ height: ROW_H }}>
               {values.map((v) => {
                 const n = (counts[v] && counts[v][su]) || 0;
-                return <div key={v} className="flex-1 rounded-t" title={`${suitName(su)} ${v}: ${n} Karten`}
+                return <div key={v} className="flex-1 rounded-t" title={`${suitLabel(su)} ${v}: ${n} Karten`}
                   style={{ height: (n / maxCount) * ROW_H, minHeight: n ? 1 : 0, background: suitColor(su) }} />;
               })}
             </div>
@@ -230,7 +231,7 @@ export function DeckStrength({ deck = [] }) {
           return (
             <div key={su} className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col }} />
-              <span className="w-8 shrink-0 font-bold leading-none" style={{ color: col }}>{suitName(su)}</span>
+              <span className="w-8 shrink-0 font-bold leading-none" style={{ color: col }}>{suitLabel(su)}</span>
               <span className="flex-1 rounded-full overflow-hidden flex" style={{ height: 9, background: "#111119" }}>
                 <span style={{ width: `${fillPct}%`, background: col }} />
                 {overPct > 0 && <span style={{ width: `${overPct}%`, background: UNBEAT }} />}
