@@ -19,6 +19,7 @@ import { WEEK_MODS } from "../game/weekMods.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../game/glossary.js";
 import { DECK_DEFS, BF_SUFFIX } from "../game/cosmetics.js";
 import { GLOBAL_FX } from "../game/themes.js";
+import { guideStrings } from "./guideWalk.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -82,6 +83,8 @@ for (const f of GLOBAL_FX) {
   fromRegistries[`fx.${f.key}.name`] = f.name;
   if (f.desc) fromRegistries[`fx.${f.key}.desc`] = f.desc;
 }
+// Archetyp-Leitfäden: EIN Baum-Durchlauf sammelt alle Anzeigetexte (src/i18n/guideText.js).
+Object.assign(fromRegistries, guideStrings());
 // Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
 for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;
 // Nur anbietbare Perks — `offerable: false` sind Alt-Einträge, die kein Spieler je sieht.

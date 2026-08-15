@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ARCHETYPE_ORDER } from "../game/skills.js";
 import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { GUIDES } from "./guides.js";
+import { guideDef } from "../i18n/guideText.js"; // #sprache: Leitfaden zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
 import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
@@ -121,7 +121,7 @@ export function GuideButton({ onClick, className = "", style }) {
    Archetyp-Titel + die Fußzeile aus, wenn der Aufrufer (Deck-Detail) bereits einen eigenen Kopf hat. */
 export function GuideBody({ archetype, showTitle = true }) {
   const active = ARCHETYPE_ORDER.includes(archetype) ? archetype : "lightning";
-  const g = GUIDES[active];
+  const g = guideDef(active);
   const meta = archMeta(active);
   const color = meta.color;
   return (

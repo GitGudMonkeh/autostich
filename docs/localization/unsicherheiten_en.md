@@ -1,12 +1,21 @@
 # Unsicherheitsliste Englisch — wo ich deine Meinung will
 
-> Stand: 2026-08-15 · Ergänzt sich, solange übersetzt wird.
+> **Stand: 2026-08-15 — FREIGEGEBEN.** Alle Vorschläge unten sind bestätigt und im Katalog
+> umgesetzt: Penny Pincher · Cosmos Panther · Royal Peacock · Biolumen (unverändert) ·
+> Sun Pulse · Laser Fan · Prism Cascade · Neon Surf · und die zwei ausgeschriebenen Zahlen
+> („once per cycle", „first place") bleiben mit ihrer `NUM_OK`-Ausnahme.
+>
+> Die Liste bleibt offen: kommt beim Übersetzen der restlichen UI-Texte eine neue Klangfrage dazu,
+> wird sie hier ergänzt und einzeln vorgelegt.
 > Alles hier ist **Klang, nicht Korrektheit.** Die Mechanik stimmt in allen Fällen; die Frage ist,
 > ob es sich gut anhört. Wo ein Begriff prüfbar war (Fachbegriff, Marktkonvention,
 > Kollisionsfreiheit), steht er in der eingefrorenen Begriffstabelle und nicht hier.
 
 Bereits entschieden und deshalb **nicht** mehr auf dieser Liste: `order phase` · `LET’S GO!` ·
 `FIERCE` · die deutsche Umbenennung „Rar" → „Episch".
+
+Die Spalte „Mein Vorschlag" ist damit die **geltende Fassung** — die Alternativen daneben bleiben
+nur als Begründung stehen, warum die Entscheidung überhaupt eine war.
 
 ---
 

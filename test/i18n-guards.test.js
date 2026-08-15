@@ -87,6 +87,10 @@ describe("i18n · Katalog-Parität", () => {
     "glossary.crit.label", "glossary.deck.label", "glossary.position.label",
     "glossary.segment.label", "glossary.formation.label", "glossary.cluster.label",
     "glossary.perk.label",
+    // Leitfaden-Schlagwörter, die als Fremdwort schon englisch sind:
+    "guide.lightning.pillars.0.name", "guide.lightning.loop.nodes.0",  // Crit
+    "guide.lightning.principle.0.tag", "guide.fire.principle.1.tag",   // Mono · Payoff
+    "guide.ice.principle.1.tag", "guide.plant.principle.1.tag",        // Position · Mono
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind

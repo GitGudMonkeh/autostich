@@ -24,7 +24,6 @@ import CAT_DE from "../src/i18n/de.js";
 import CAT_EN from "../src/i18n/en.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
 import { unlockProgress, MONO_CHALLENGE_N } from "../src/game/cosmetics.js";
-import { GUIDES } from "../src/ui/guides.js";
 import { ARCH_CAT } from "../src/ui/indicators/vocab.js";
 
 // Freischalt-Bedingungen: je `kind` EIN Muster-Def, damit unlockProgress seinen Klartext-Label liefert.
@@ -126,33 +125,9 @@ for (const [key, def] of Object.entries(UNLOCK_SAMPLES)) {
   push(`item.unlock.${key}.label`, "item", l, `Freischalt-Bedingung (Kosmetik) — Kind „${key}"`, "", def.note || "");
 }
 
-/* ============ 12 · Archetyp-Leitfäden (GuideOverlay) ============ */
-for (const [arch, g] of Object.entries(GUIDES)) {
-  const a = (ARCHETYPE_META[arch] || { label: arch }).label;
-  const base = `tutorial.guide.${arch}`;
-  push(`${base}.subtitle`, "tutorial", g.subtitle, `Leitfaden ${a} — Untertitel`);
-  push(`${base}.kernidee`, "tutorial", g.kernidee, `Leitfaden ${a} — Kernidee (Fett-Markup **so**)`);
-  push(`${base}.pillarsLabel`, "tutorial", g.pillarsLabel, `Leitfaden ${a} — Überschrift Säulen-Sektion`, "26");
-  (g.pillars || []).forEach((p, i) => {
-    push(`${base}.pillar${i + 1}.name`, "tutorial", p.name, `Leitfaden ${a} — Säule ${i + 1}: Name`, "18");
-    if (p.sub) push(`${base}.pillar${i + 1}.sub`, "tutorial", p.sub, `Leitfaden ${a} — Säule ${i + 1}: Zusatz`, "12");
-    push(`${base}.pillar${i + 1}.text`, "tutorial", p.text, `Leitfaden ${a} — Säule ${i + 1}: Text (Fett-Markup **so**)`);
-  });
-  (g.loop?.nodes || []).forEach((n, i) => push(`${base}.loop.node${i + 1}`, "tutorial", n, `Leitfaden ${a} — Kreislauf-Knoten ${i + 1} (Diagramm, sehr kurz)`, "14"));
-  (g.loop?.center || []).forEach((n, i) => push(`${base}.loop.center${i + 1}`, "tutorial", n, `Leitfaden ${a} — Kreislauf-Mitte, Zeile ${i + 1}`, "14"));
-  (g.loop?.steps || []).forEach((s, i) => push(`${base}.loop.step${i + 1}`, "tutorial", s, `Leitfaden ${a} — Kreislauf-Schritt ${i + 1} (Fett-Markup **so**)`));
-  if (g.loop?.valve) push(`${base}.loop.valve`, "tutorial", g.loop.valve, `Leitfaden ${a} — „Ventil"-Absatz (Überlauf-Regel)`);
-  if (g.status?.label) push(`${base}.status.label`, "tutorial", g.status.label, `Leitfaden ${a} — Überschrift Status-Sektion`, "26");
-  (g.status?.bars || []).forEach((b, i) => {
-    push(`${base}.status.bar${i + 1}.name`, "tutorial", b.name, `Leitfaden ${a} — Status-Leiste ${i + 1}: Name`, "18");
-    if (b.payoff) push(`${base}.status.bar${i + 1}.payoff`, "tutorial", b.payoff, `Leitfaden ${a} — Status-Leiste ${i + 1}: Auszahlung`);
-    (b.scale || []).forEach((s, j) => push(`${base}.status.bar${i + 1}.scale${j + 1}`, "tutorial", s, `Leitfaden ${a} — Status-Leiste ${i + 1}: Skalen-Marke ${j + 1}`, "16"));
-  });
-  (g.principle || []).forEach((p, i) => {
-    push(`${base}.principle${i + 1}.tag`, "tutorial", p.tag, `Leitfaden ${a} — Prinzip ${i + 1}: Schlagwort`, "12");
-    push(`${base}.principle${i + 1}.text`, "tutorial", p.text, `Leitfaden ${a} — Prinzip ${i + 1}: Text (Fett-Markup **so**)`);
-  });
-}
+/* ============ 12 · Archetyp-Leitfäden ============
+   (Migriert — alle vier Leitfäden kommen unten aus dem i18n-Katalog. Die Schlüssel entstehen aus
+   EINEM Baum-Durchlauf über GUIDES, siehe src/i18n/guideWalk.js.) */
 
 /* ============ 13 · Bau-Kategorien ============
    (Formationsnamen + Kürzel sind migriert und kommen unten aus dem i18n-Katalog.) */
