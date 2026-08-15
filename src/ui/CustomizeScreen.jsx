@@ -1001,7 +1001,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           </div>
         </div>
 
-        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} />
+        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} />
           : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
           : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
       </div>
@@ -1020,7 +1020,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* ============================ Packs- / Challenges-Tab ============================ */
 // #Shop-Reorg: geteilte Ansicht für „Packs" (Kauf-Packs, nach DP-Preis sortiert) und „Challenges" (freischaltbare
 // cond-Packs). `list` kommt vorsortiert rein; die Reihenfolge bleibt (kein erneutes Sortieren) → billig oben, teuer unten.
-function PacksView({ p, deckId, list, cat, onOpen }) {
+function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null }) {
   const challenge = cat === "challenges";
   const [filter, setFilter] = useState("alle");
   const chips = challenge ? [["alle", "Alle"], ["besitz", "Frei"], ["gesperrt", "Gesperrt"]] : [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
@@ -1032,9 +1032,28 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
     if (filter === "gesperrt") return s === "lock";
     return true;
   });
+  // #393 Zufalls-Deck je Lauf (nur Packs-Tab): togglebar; jeder neue Lauf startet mit einem zufälligen deiner besessenen
+  //   (farbigen) Decks und rendert alle aktiven Effekte in dessen Deckfarbe. Reine UI-Pref (überlebt Reset).
+  const randomOn = !!(options && options.randomDeckEachRun);
 
   return (
     <>
+      {!challenge && options && onOption && (
+        <div className="mt-3 rounded-xl p-3 flex items-center gap-3"
+          style={{ background: randomOn ? "#1a1330" : "#14131c", border: `1px solid ${randomOn ? "#9b82f0aa" : "#2a2836"}` }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-extrabold">🎲 Zufalls-Deck je Lauf</div>
+            <div className="text-[11px] leading-snug" style={{ color: "#9a97ab" }}>Jeder Lauf startet mit einem zufälligen deiner Decks; alle aktiven Effekte in Deckfarbe.</div>
+          </div>
+          <button type="button" role="switch" aria-checked={randomOn} aria-label="Zufalls-Deck je Lauf"
+            onClick={() => onOption({ randomDeckEachRun: !randomOn })}
+            className="relative shrink-0 rounded-full transition-colors"
+            style={{ width: 46, height: 26, background: randomOn ? "#9b82f0" : "#2a2836", border: `1px solid ${randomOn ? "#b9a6ff" : "#3a3a44"}` }}>
+            <span className="absolute top-1/2 rounded-full transition-all"
+              style={{ width: 20, height: 20, background: "#fff", transform: "translateY(-50%)", left: randomOn ? 23 : 3 }} />
+          </button>
+        </div>
+      )}
       <div className="flex gap-1.5 mt-3 flex-wrap">
         {chips.map(([k, label]) => (
           <button key={k} onClick={() => setFilter(k)} className="px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-colors"

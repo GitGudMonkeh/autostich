@@ -43,7 +43,7 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive } from "./game/themes.js";
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive, packOwned } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
 import { haptics } from "./ui/haptics.js";
@@ -101,6 +101,24 @@ function OverlayFallback() {
   return <div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />;
 }
 
+// #393 Zufalls-Deck je Lauf — alle Deckfarben-Flags auf „an" (Effekte in Deckfarbe des zufällig gezogenen Packs). Wirkt
+//   nur auf tatsächlich AKTIVE Effekte: die active…-Ableitungen gaten weiter auf Besitz+Toggle, das …Deck-Flag ist nur der
+//   Farbmodus des ohnehin gerenderten Effekts → inaktive Flags sind wirkungslos. archColor:"deck" zieht die Archetyp-FX mit.
+const ALL_DECK_TINT = {
+  fxScorchDeck: true, fxBlackholeDeck: true, fxKlingeDeck: true, fxHologridDeck: true,
+  fxAuroraDeck: true, fxNeonsurfDeck: true, fxStarfieldDeck: true, fxCubeMatrixDeck: true,
+  fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
+  archColor: "deck",
+};
+// #393 Zufälligen besessenen FARBIGEN Pack ziehen (Genesis/Standard ausgeschlossen — hätte keine Deckfarbe). Nur Skin/BF/
+//   Farben, rein kosmetisch → Math.random unbedenklich (keine Engine-Determinismus-Wirkung). Leerer Pool → null (kein Override).
+function pickRandomOwnedPack(profile) {
+  const pool = THEMES.filter((t) => t.id !== "genesis" && t.a1 && packOwned(profile, t));
+  if (!pool.length) return null;
+  const t = pool[Math.floor(Math.random() * pool.length)];
+  return { deckId: t.deckId, battlefieldId: t.bfId };
+}
+
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
@@ -128,6 +146,7 @@ export function Autostich() {
   const [runEarn, setRunEarn] = useState(null);                   // #304: Lauf-Ertrag (SP/DP) für den Victory-Rollup
   const [onboardingBanner, setOnboardingBanner] = useState(null); // #: Onboarding-Fortschritt/Belohnung fürs Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
+  const [runVisual, setRunVisual] = useState(null);               // #393: Zufalls-Deck-Override für DIESEN Lauf ({deckId,battlefieldId}) oder null (gewähltes Deck)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
@@ -534,9 +553,15 @@ export function Autostich() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [state.phase]);
 
-  // #190: aktive Skins aus den Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).
-  const activeDeckId = resolveSkinId(DECK_DEFS, options.deckId, profile);
-  const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, options.battlefieldId, profile);
+  // #393 Zufalls-Deck je Lauf: im laufenden Lauf (inRun) überschreibt runVisual die Deck-/Battlefield-Wahl + setzt alle
+  //   aktiven Effekte auf Deckfarbe — als reiner VISUAL-Override (options bleiben gespeichert unverändert, Ton/UI/etc. weiter
+  //   aus options). Im Menü/Gameover greift der Override NICHT → dort zeigt der Shop weiter das echte gewählte Deck.
+  const vOpt = (runVisual && inRun)
+    ? { ...options, deckId: runVisual.deckId, battlefieldId: runVisual.battlefieldId, ...ALL_DECK_TINT }
+    : options;
+  // #190: aktive Skins aus den (effektiven) Optionen (defensiver Fallback auf "default", falls (noch) gesperrt/unbekannt).
+  const activeDeckId = resolveSkinId(DECK_DEFS, vOpt.deckId, profile);
+  const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, vOpt.battlefieldId, profile);
   const deckSkin = deckAssets(activeDeckId);
   const bfSkin   = battlefieldAssets(activeBfId);
 
@@ -567,32 +592,34 @@ export function Autostich() {
     deckA2: activePack?.a2 || null, // Aurora nutzt beide Deck-Akzentfarben
     // #kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (Aurora) UND Hintergrund-Finisher
     // (Glutfunken) können GLEICHZEITIG aktiv sein. Battlefield rendert beide Layer übereinander.
-    bgFx: activeBgFx(profile, options),
-    bgFinisher: activeBgFinisher(profile, options),
+    // #393: alle Farbmodus/Deckfarben-Ableitungen lesen aus vOpt (= options, im Zufalls-Lauf mit Deck-Override + allen
+    //   …Deck-Flags true). bgFx/Finisher/cardAnims/gottEffect hängen an unveränderten Toggles → vOpt ≡ options-Ergebnis.
+    bgFx: activeBgFx(profile, vOpt),
+    bgFinisher: activeBgFinisher(profile, vOpt),
     // #deckglow: unabhängige, mit allem kombinierbare Glow-Ebene (gekauft + Option an); Farbmodus Standard ↔ Deckfarbe.
-    deckGlow: deckGlowActive(profile, options), // #336: Glow ist immer Deckfarbe (kein Farbmodus mehr)
-    cardAnims: activeCardAnims(profile, options), // #318 aktive Karten-Animationen (group "anim", stapelbar)
+    deckGlow: deckGlowActive(profile, vOpt), // #336: Glow ist immer Deckfarbe (kein Farbmodus mehr)
+    cardAnims: activeCardAnims(profile, vOpt), // #318 aktive Karten-Animationen (group "anim", stapelbar)
     // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
     // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
-    finisher: (options.finisher === "klinge" && !!profile?.ownedCosmetics?.["fx:klinge"]) ? "klinge"
-            : (options.finisher === "scorch" && !!profile?.ownedCosmetics?.["fx:scorch"]) ? "scorch"
-            : (options.finisher === "hologridSlice" && !!profile?.ownedCosmetics?.["fx:hologridSlice"]) ? "hologridSlice"
-            : (options.finisher === "blackhole" && !!profile?.ownedCosmetics?.["fx:blackhole"]) ? "blackhole" : "standard",
-    scorchDeck: !!options.fxScorchDeck, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
-    blackholeDeck: !!options.fxBlackholeDeck, // #320 Schwarzes-Loch-Farbmodus: false = Standard blau/pink, true = Deckfarbe
-    klingeDeck: !!options.fxKlingeDeck, // #klinge-deck: false = kühles Stahlweiß, true = Deckfarbe
-    hologridDeck: !!options.fxHologridDeck, // #hologrid-deck: false = Standard Cyan/Magenta, true = Deckfarbe
+    finisher: (vOpt.finisher === "klinge" && !!profile?.ownedCosmetics?.["fx:klinge"]) ? "klinge"
+            : (vOpt.finisher === "scorch" && !!profile?.ownedCosmetics?.["fx:scorch"]) ? "scorch"
+            : (vOpt.finisher === "hologridSlice" && !!profile?.ownedCosmetics?.["fx:hologridSlice"]) ? "hologridSlice"
+            : (vOpt.finisher === "blackhole" && !!profile?.ownedCosmetics?.["fx:blackhole"]) ? "blackhole" : "standard",
+    scorchDeck: !!vOpt.fxScorchDeck, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
+    blackholeDeck: !!vOpt.fxBlackholeDeck, // #320 Schwarzes-Loch-Farbmodus: false = Standard blau/pink, true = Deckfarbe
+    klingeDeck: !!vOpt.fxKlingeDeck, // #klinge-deck: false = kühles Stahlweiß, true = Deckfarbe
+    hologridDeck: !!vOpt.fxHologridDeck, // #hologrid-deck: false = Standard Cyan/Magenta, true = Deckfarbe
     // #322–#326 Gottgleich-Prunk (PIXI): aktiver Effekt (besessen + Option an) oder „gottStandard" (kein Prunk), plus
     // dessen Farbmodus-Flag (Standard vs. Deckfarbe). gottFlags in CustomizeScreen hält die Exklusivität (genau einer an).
-    gottEffect: activeGottFx(profile, options) || "gottStandard",
-    gottDeck: !!(options[{ sonnenPuls: "fxSonnenPulsDeck", laserFaecher: "fxLaserFaecherDeck", prismaKaskade: "fxPrismaKaskadeDeck", holoCube: "fxHoloCubeDeck", supernova: "fxSupernovaDeck" }[activeGottFx(profile, options)] || ""]),
-    archDeckColor: options.archColor === "deck", // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Standard-Neon vs. Deckfarbe
-    auroraDeck: !!options.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
-    neonsurfDeck: !!options.fxNeonsurfDeck, // #345 Neon-Brandung-Farbmodus: false = Standard (violett→cyan), true = Deckfarbe
-    starfieldDeck: !!options.fxStarfieldDeck, // #311 Sternenfeld-Farbmodus: false = Weiß-Blau, true = Deckfarbe
-    cubematrixDeck: !!options.fxCubeMatrixDeck, // #317 Cube-Matrix-Farbmodus: false = Cyan/Magenta, true = Deckfarbe
-    cubematrixSun: options.fxCubeMatrixSun !== false, // #317 Cube-Matrix Retro-Sonne an/aus (Default an)
-    cubematrixWire: !!options.fxCubeMatrixWire, // #317 Cube-Matrix Optik: false = gefüllt, true = nur leuchtende Rahmen
+    gottEffect: activeGottFx(profile, vOpt) || "gottStandard",
+    gottDeck: !!(vOpt[{ sonnenPuls: "fxSonnenPulsDeck", laserFaecher: "fxLaserFaecherDeck", prismaKaskade: "fxPrismaKaskadeDeck", holoCube: "fxHoloCubeDeck", supernova: "fxSupernovaDeck" }[activeGottFx(profile, vOpt)] || ""]),
+    archDeckColor: vOpt.archColor === "deck", // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Standard-Neon vs. Deckfarbe
+    auroraDeck: !!vOpt.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
+    neonsurfDeck: !!vOpt.fxNeonsurfDeck, // #345 Neon-Brandung-Farbmodus: false = Standard (violett→cyan), true = Deckfarbe
+    starfieldDeck: !!vOpt.fxStarfieldDeck, // #311 Sternenfeld-Farbmodus: false = Weiß-Blau, true = Deckfarbe
+    cubematrixDeck: !!vOpt.fxCubeMatrixDeck, // #317 Cube-Matrix-Farbmodus: false = Cyan/Magenta, true = Deckfarbe
+    cubematrixSun: vOpt.fxCubeMatrixSun !== false, // #317 Cube-Matrix Retro-Sonne an/aus (Default an)
+    cubematrixWire: !!vOpt.fxCubeMatrixWire, // #317 Cube-Matrix Optik: false = gefüllt, true = nur leuchtende Rahmen
   };
 
   // #372 Archetyp-Karten-FX (Neon-Moos/Frost/Ionensturm) im Leerlauf vorwärmen — NUR außerhalb des Stichspiels
@@ -663,12 +690,20 @@ export function Autostich() {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
+    // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
+    //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
+    //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
+    const rv = (options.randomDeckEachRun && !ranked) ? pickRandomOwnedPack(profile) : null;
+    setRunVisual(rv);
     // #perf: den ArchitectScreen-Chunk (erscheint mitten im Lauf in der Architekt-Phase) schon jetzt anstoßen —
     // nicht-blockierend, damit der Phasenübergang später ohne Nachlade-Hitch ist. Fehlschlag unkritisch (Suspense fängt).
     try { importArchitect(); } catch (e) { /* egal */ }
     // #perf: neben dem eigenen Deck/Battlefield jetzt auch die Gegner-Deck-Bilder vorladen → keine Bild-Dekodier-Hitches,
     // wenn im Lauf erstmals eine Gegnerkarte eines neuen Auswahl-Typs erscheint. RunLoader dedupt + hat Timeout-Sicherheitsnetz.
-    setPendingRun([deckSkin.front, deckSkin.back, ...(bfSkin ? [bfSkin.desktop, bfSkin.mobile] : []), ...OPP_SKIN_URLS]);
+    // #393: bei aktivem Zufalls-Override die Bilder des GEZOGENEN Packs vorladen (nicht die des gewählten Decks).
+    const preDeck = rv ? deckAssets(resolveSkinId(DECK_DEFS, rv.deckId, profile)) : deckSkin;
+    const preBf   = rv ? battlefieldAssets(resolveSkinId(BATTLEFIELD_DEFS, rv.battlefieldId, profile)) : bfSkin;
+    setPendingRun([preDeck.front, preDeck.back, ...(preBf ? [preBf.desktop, preBf.mobile] : []), ...OPP_SKIN_URLS]);
   }
   // Normaler Lauf — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }

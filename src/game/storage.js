@@ -410,6 +410,9 @@ const DEFAULT_OPTIONS = {
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  // #393 Zufalls-Deck je Lauf: jeder neue Lauf startet mit einem zufälligen besessenen (farbigen) Deck-Pack + alle aktiven
+  //   Effekte in Deckfarbe. Reine UI-Pref (überlebt Reset, wie haptics) → NICHT in COSMETIC_OPTION_KEYS.
+  randomDeckEachRun: false,
   // Effekt-Toggles (Ein/Aus). fxSonnenPuls = freier Default an; alles andere aus.
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,

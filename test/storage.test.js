@@ -26,6 +26,7 @@ const DEFAULT_OPTIONS = {
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  randomDeckEachRun: false,
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
