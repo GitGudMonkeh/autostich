@@ -158,8 +158,8 @@ export default {
   "gameover.milestones.max": "Maximum",
   "gameover.milestones.next": "nächster bei {n} Mio",
   "gameover.welcome": "✦ Willkommensbonus",
-  "gameover.welcome.hint": "für deinen ersten abgeschlossenen Lauf — steck sie in den Upgrade-Baum.",
-  "gameover.welcome.value": "+{n} SP",
+  "gameover.welcome.hint": "für deinen ersten abgeschlossenen Lauf — steck sie in die Deck-Werkstatt und hol dir ein Pack.",
+  "gameover.welcome.value": "+{n} DP",
   "gameover.sp": "Stichpunkte",
   "gameover.dp": "Deck-Punkte",
   "gameover.unlocked.inline": "✦ Freigeschaltet: {label}",
@@ -485,7 +485,7 @@ export default {
   "leg.intro.final": "fest",
   "leg.intro.c": " (kein Tausch). Oder wähle stattdessen einen normalen Skill.",
   "leg.reroll": "↻ Neu würfeln",
-  "leg.decline": "Keinen Legendär — stattdessen einen Skill wählen",
+  "leg.decline": "Keinen Legendär — Skill wählen",
 
   /* ---- Gletscher-Wahl (GlacierPick) ---- */
   "glacierpick.eyebrow": "Gletscher",

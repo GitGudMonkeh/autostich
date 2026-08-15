@@ -8,7 +8,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   saveProfile, wipeProfileStorage, saveOptions,
   migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
-import { WELCOME_SP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
+import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -187,11 +187,11 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(q.games).toBe(3); // games zählt jeden Lauf
   });
 
-  /* Die SP-Tests unten messen den LAUF-Ertrag. Der einmalige Willkommensbonus (WELCOME_SP, fällt nach
+  /* Die SP-Tests unten messen den LAUF-Ertrag. Der einmalige Willkommensbonus (WELCOME_DP, fällt nach
      dem ersten abgeschlossenen Lauf) würde jede dieser Zahlen um 50 verschieben und die eigentliche
      Aussage verdecken — deshalb wird er hier vorweg als „schon ausgezahlt" markiert. Der Bonus selbst
      hat einen eigenen Test weiter unten. */
-  const veteran = (extra = {}) => saveProfile({ ...loadProfile(), welcomeSpPaid: true, ...extra });
+  const veteran = (extra = {}) => saveProfile({ ...loadProfile(), welcomeBonusPaid: true, ...extra });
 
   it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
     veteran();
@@ -235,6 +235,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
+    veteran();   // ohne das läge der einmalige Willkommensbonus (DP) mit im Delta
     const done = recordRun(runRec({ ts: 1, score: 0 })).profile;                        // Startbonus 50 + Abschluss 5
     expect(done.deckPoints).toBe(50 + 5);
     const aborted = recordRun(runRec({ ts: 2, score: 0, completed: false })).profile;   // Abbruch → kein Bonus
@@ -258,39 +259,57 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.stichPoints).toBe(4);       // +1 Grundstock (Onboarding war fertig)
   });
 
-  /* ---- Willkommensbonus (WELCOME_SP) ---- */
+  /* ---- Willkommensbonus (WELCOME_DP) ---- */
 
-  it("Willkommensbonus: +50 SP nach dem ERSTEN abgeschlossenen Lauf, danach nie wieder", () => {
-    expect(loadProfile().welcomeSpPaid).toBe(false);   // frisches Profil hat ihn noch offen
-    // Erster abgeschlossener Lauf: Bonus + der normale Grundstock (+1).
+  it("Willkommensbonus: einmalig DECKPUNKTE nach dem ERSTEN abgeschlossenen Lauf, danach nie wieder", () => {
+    const dp0 = loadProfile().deckPoints;                 // Fresh-Start-Guthaben (START_DECK_POINTS)
+    expect(loadProfile().welcomeBonusPaid).toBe(false);   // frisches Profil hat ihn noch offen
+    // Erster abgeschlossener Lauf: Bonus auf die DP, SP bekommen nur ihren Grundstock (+1).
     const first = recordRun(runRec({ ts: 1, score: 0 }));
-    expect(first.earn.welcomeSp).toBe(WELCOME_SP);
-    expect(first.profile.stichPoints).toBe(WELCOME_SP + 1);
-    expect(first.profile.welcomeSpPaid).toBe(true);
-    // Zweiter Lauf: nur noch der Grundstock, kein Bonus mehr.
+    expect(first.earn.welcomeDp).toBe(WELCOME_DP);
+    expect(first.profile.stichPoints).toBe(1);            // der Bonus liegt NICHT mehr auf den SP
+    expect(first.profile.welcomeBonusPaid).toBe(true);
+    // Zweiter Lauf: kein Bonus mehr. Gemessen wird die DIFFERENZ der beiden Läufe — beide tragen den
+    // #382-Abschluss-Bonus, der Unterschied ist also genau der Willkommensbonus.
     const second = recordRun(runRec({ ts: 2, score: 0 }));
-    expect(second.earn.welcomeSp).toBe(0);
-    expect(second.profile.stichPoints).toBe(WELCOME_SP + 2);
+    expect(second.earn.welcomeDp).toBe(0);
+    const d1 = first.profile.deckPoints - dp0;
+    const d2 = second.profile.deckPoints - first.profile.deckPoints;
+    expect(d1 - d2).toBe(WELCOME_DP);
+    expect(second.profile.stichPoints).toBe(2);
   });
 
   it("Willkommensbonus hängt an ABGESCHLOSSEN — ein Abbruch löst ihn nicht aus", () => {
     const aborted = recordRun(runRec({ ts: 1, score: 0, completed: false }));
-    expect(aborted.earn.welcomeSp).toBe(0);
-    expect(aborted.profile.welcomeSpPaid).toBe(false);  // bleibt offen
+    expect(aborted.earn.welcomeDp).toBe(0);
+    expect(aborted.profile.welcomeBonusPaid).toBe(false);  // bleibt offen
     // Der nächste ABGESCHLOSSENE Lauf holt ihn dann nach.
     const done = recordRun(runRec({ ts: 2, score: 0 }));
-    expect(done.earn.welcomeSp).toBe(WELCOME_SP);
+    expect(done.earn.welcomeDp).toBe(WELCOME_DP);
   });
 
   it("Migration v7→v8: wer schon gespielt hat, gilt als ausgezahlt — ohne Nachschlag", () => {
     // Alt-Profil ohne das Flag, aber mit Spielhistorie.
     global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 12, stichPoints: 30 }));
     const p = loadProfile();
-    expect(p.welcomeSpPaid).toBe(true);
+    expect(p.welcomeBonusPaid).toBe(true);
     expect(p.stichPoints).toBe(30);        // KEIN rückwirkender Grant (wie v5→v6)
     // Ein Alt-Profil, das noch nie einen Lauf beendet hat, bekommt den Bonus dagegen regulär.
     global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 0, stichPoints: 0 }));
-    expect(loadProfile().welcomeSpPaid).toBe(false);
+    expect(loadProfile().welcomeBonusPaid).toBe(false);
+  });
+
+  it("Migration v9→v10: das Flag wird ÜBERNOMMEN, der Bonus nicht ein zweites Mal ausgezahlt", () => {
+    // Wer den Bonus damals in SP bekam, bekommt ihn nicht noch einmal in DP — und die SP bleiben liegen.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 9, games: 3, welcomeSpPaid: true, stichPoints: 55, deckPoints: 0 }));
+    const p = loadProfile();
+    expect(p.welcomeBonusPaid).toBe(true);
+    expect(p.welcomeSpPaid).toBeUndefined();   // der irreführende Name ist weg
+    expect(p.stichPoints).toBe(55);            // nichts zurückgeholt
+    expect(p.deckPoints).toBe(0);              // nichts nachgereicht
+    // Wer ihn noch offen hatte, behält ihn offen und bekommt ihn beim nächsten Lauf in DP.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 9, games: 0, welcomeSpPaid: false }));
+    expect(loadProfile().welcomeBonusPaid).toBe(false);
   });
 
   /* ---- Tutorial-Angebot (hadCompletedRun) ---- */
@@ -305,9 +324,9 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("Migration v8→v9: Alt-Profile mit Spielhistorie gelten als „hat schon gespielt“", () => {
-    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 3, welcomeSpPaid: true }));
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 3, welcomeBonusPaid: true }));
     expect(loadProfile().hadCompletedRun).toBe(true);
-    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 0, welcomeSpPaid: false }));
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 0, welcomeBonusPaid: false }));
     expect(loadProfile().hadCompletedRun).toBe(false);
   });
 
@@ -510,6 +529,7 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
     });
 
     it("#370 Ranked-Wochenbonus + Freischalt-Tracker (erste abgeschlossene Ranked-Runde/Woche gibt +5 DP)", () => {
+      saveProfile({ ...loadProfile(), welcomeBonusPaid: true }); // sonst liegt der einmalige Willkommensbonus im Delta
       const p0 = loadProfile();
       // Erste Ranked-Runde der Woche (Seed 111): Bonus + Tracker. score 0 → native DP 0, sauberes Bonus-Delta.
       const a = recordRun({ score: 0, ts: 1, completed: true, ranked: "ranked", seed: 111, archetypes: ["fire", "ice"] });

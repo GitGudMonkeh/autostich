@@ -76,6 +76,10 @@ export default {
   "node.perk2Leg.detail": "The 2nd perk phase becomes a general legendary phase",
   "node.perk2Reroll.label": "Reroll · 2nd perk phase",
   "node.perk2Reroll.detail": "+1 reroll in the general legendary phase",
+  "node.reroll1.label": "Reroll I",
+  "node.reroll1.detail": "+1 reroll per offer (perk · building · skill)",
+  "node.reroll2.label": "Reroll II",
+  "node.reroll2.detail": "+1 reroll per offer (perk · building · skill)",
 
   /* ---- Weekly modifiers ---- */
   "weekmod.blockForm.name": "Blocked order slots",

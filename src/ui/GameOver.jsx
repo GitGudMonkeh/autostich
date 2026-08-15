@@ -189,7 +189,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             {/* Willkommensbonus: einmalig nach dem ersten abgeschlossenen Lauf. Bewusst als EIGENE Zeile
                 statt in die SP-Kachel addiert — sonst stünde da nur eine große Zahl und der Spieler
                 wüsste nicht, wofür. Der goldene Rahmen (as-legendary) markiert das Einmalige. */}
-            {earn && earn.welcomeSp > 0 && (
+            {earn && earn.welcomeDp > 0 && (
               <div className="as-legendary mt-2 rounded-xl px-3 py-2.5 flex items-center justify-between gap-3"
                 style={{ background: "#1a1608" }}>
                 <span className="min-w-0">
@@ -197,7 +197,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   <span className="text-[10.5px] leading-snug block" style={{ color: "#c8bb8a" }}>{t("gameover.welcome.hint")}</span>
                 </span>
                 <span className="font-mono text-[18px] font-extrabold tabular-nums shrink-0" style={{ color: "#f2c14a" }}>
-                  {t("gameover.welcome.value", { n: earn.welcomeSp })}
+                  {t("gameover.welcome.value", { n: earn.welcomeDp })}
                 </span>
               </div>
             )}

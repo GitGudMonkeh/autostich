@@ -327,7 +327,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <KeywordGlossary tokens={groupKws} />
                 </div>
               )}
-              <div className="grid sm:grid-cols-2 gap-2">
+              {/* `gridAutoRows: 1fr` zieht alle Angebots-Karten auf dieselbe Höhe. Vorher hing sie am
+                  Beschreibungstext, und die Liste wirkte zerrissen (Playtest, gleiche Änderung in
+                  LegendarySelect). Content-agnostisch: ein längerer Skilltext hebt die ganze Zeile. */}
+              <div className="grid sm:grid-cols-2 gap-2" style={{ gridAutoRows: "1fr" }}>
                 {curG.ids.map((id) => {
                   const s = skillDef(id);
                   const sel = pending === id;

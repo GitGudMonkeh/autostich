@@ -219,7 +219,8 @@ describe("#370 Rangliste: EIN Ranked-Modus = tree-unabhängige Baseline (ersetzt
   });
   it("Normal-Lauf mit demselben Profil zieht den vollen Baum", () => {
     const n = start({ profile: maxed });
-    expect([n.rerollsPerk, n.rerollsArch, n.rerollsSkill]).toEqual([1, 1, 1]);
+    // Basis 1 + die beiden Baum-Knoten reroll1/reroll2 → 3 je Pool. Ranked bleibt bei BASE_REROLLS (Test darüber).
+    expect([n.rerollsPerk, n.rerollsArch, n.rerollsSkill]).toEqual([3, 3, 3]);
     expect(n.treeRareShift).toBe(4);
     expect(n.rareCap).toBe(4);
     expect(n.legCountByArch).toEqual({ fire: 2, lightning: 2, ice: 2, plant: 2 });

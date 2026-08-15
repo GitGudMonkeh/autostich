@@ -160,8 +160,8 @@ export default {
   "gameover.milestones.max": "Maximum",
   "gameover.milestones.next": "next at {n}M",
   "gameover.welcome": "✦ Welcome bonus",
-  "gameover.welcome.hint": "for your first completed run — spend it in the upgrade tree.",
-  "gameover.welcome.value": "+{n} TP",
+  "gameover.welcome.hint": "for your first completed run — spend it in the deck workshop and grab a pack.",
+  "gameover.welcome.value": "+{n} DP",
   "gameover.sp": "Trick Points",
   "gameover.dp": "Deck Points",
   "gameover.unlocked.inline": "✦ Unlocked: {label}",
@@ -476,7 +476,7 @@ export default {
   "leg.intro.final": "final",
   "leg.intro.c": " (no swapping). Or take a normal skill instead.",
   "leg.reroll": "↻ Reroll",
-  "leg.decline": "No legendary — take a skill instead",
+  "leg.decline": "No legendary — take a skill",
 
   /* ---- Glacier choice (GlacierPick) ---- */
   "glacierpick.eyebrow": "Glacier",

@@ -147,6 +147,9 @@ describe("i18n · Katalog-Parität", () => {
     "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
     "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"
     "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text
+    "node.reroll1.label",     // „Reroll" ist im Deutschen bereits das englische Wort (wie start.onb.reroll)
+    "node.reroll2.label",     // dito
+    "gameover.welcome.value", // „+{n} DP" — Kürzel, in beiden Sprachen gleich (wie common.cur.dp)
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind

@@ -1,4 +1,5 @@
-import { archetypeOf } from "../game/skills.js";
+import { useRef, useState } from "react";
+import { archetypeOf, ARCHETYPE_ORDER } from "../game/skills.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -15,6 +16,26 @@ const ac = (id) => archMeta(archetypeOf(id)) || { label: t("leg.fallbackLabel"),
 export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null, state = {} }) {
   const legs = offer.map((id) => skillDef(id)).filter(Boolean);
   const rerollsLeg = state.rerollsLeg || 0; // M1: dedizierter R29-Reroll-Token
+
+  /* Swipe-Pager je Archetyp — dieselbe Bedienung wie die Skill-Auswahl (SkillSelect §Pager).
+     Seit die Phase bis zu drei Fraktionen anbietet (Trio = 6 Karten), stand hier sonst eine lange
+     Liste, in der die Fraktionen nur am Chip zu unterscheiden waren. Eine Seite je Archetyp, Ring
+     (modulo) wie drüben, Pfeiltasten und Wischen. */
+  const [pageState, setPageState] = useState(null);
+  const tx = useRef(0);
+  const dir = useRef(1);
+
+  const groups = ARCHETYPE_ORDER
+    .map((arch) => ({ arch, meta: archMeta(arch), list: legs.filter((s) => archetypeOf(s.id) === arch) }))
+    .filter((g) => g.list.length);
+  const nPages = groups.length;
+  const page = nPages > 0 ? (((Number(pageState) || 0) % nPages) + nPages) % nPages : 0;
+  const curG = groups[page];
+  const prevG = nPages > 1 ? groups[(page - 1 + nPages) % nPages] : null;
+  const nextG = nPages > 1 ? groups[(page + 1) % nPages] : null;
+  const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
+  const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
+
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-2xl">
@@ -31,24 +52,64 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
             {onReroll && rerollsLeg > 0 && <ActionButton kind="reroll" flex onClick={onReroll}>{t("leg.reroll")} <span className="opacity-70">({rerollsLeg})</span></ActionButton>}
             <ActionButton kind="decline" flex onClick={onDecline}>{t("leg.decline")}</ActionButton>
           </ActionBar>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {legs.map((s) => {
-              const meta = ac(s.id);
-              return (
-                <button key={s.id} onClick={() => onPick(s.id)}
-                  className="text-left rounded-xl p-4 transition-all hover:brightness-110 flex flex-col gap-2"
-                  style={{ background: "#20202a", border: `1px solid ${GOLD}`, boxShadow: `0 0 12px ${GOLD}22` }}>
-                  <div className="flex items-center gap-2">
-                    <ArchIcon meta={meta} size={18} />
-                    <span className="font-bold text-lg leading-tight" style={{ color: GOLD }}>{s.name}</span>
-                    <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
-                      style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}66` }}>{meta.label}</span>
-                  </div>
-                  <div className="text-sm leading-snug opacity-90 whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+
+          {/* Archetyp-Navi wie in der Skill-Auswahl: Nachbarn links/rechts im Endlos-Ring + Punkte. */}
+          {nPages > 1 && curG && (
+            <div className="mb-3">
+              <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+                <button type="button" onClick={() => go(-1)}
+                  className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title={t("skill.nav.prev")}>
+                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
+                  {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
                 </button>
-              );
-            })}
-          </div>
+                <span className="inline-flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full whitespace-nowrap"
+                  style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
+                  <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
+                </span>
+                <button type="button" onClick={() => go(1)}
+                  className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title={t("skill.nav.next")}>
+                  {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
+                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
+                </button>
+              </div>
+              <div className="flex justify-center gap-2 mt-2">
+                {groups.map((g, i) => (
+                  <button key={g.arch} type="button" onClick={() => goTo(i)} title={g.meta.label}
+                    className="h-1.5 rounded-full transition-all" style={{ width: i === page ? 22 : 16, background: i === page ? g.meta.color : "#31313c" }} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {curG && (
+            <div tabIndex={0} className="outline-none"
+              onKeyDown={(e) => { if (e.key === "ArrowLeft") { go(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { go(1); e.preventDefault(); } }}
+              onTouchStart={(e) => { tx.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - tx.current; if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1); }}>
+              {/* `gridAutoRows: 1fr` zieht ALLE Karten auf die Höhe der längsten — vorher hing die Höhe
+                  je Karte am Beschreibungstext, und die Reihe wirkte zerrissen (Playtest). Content-agnostisch:
+                  ein neuer, längerer Legendär-Text verschiebt die Zeile mit, statt sie zu sprengen. */}
+              <div key={curG.arch} className="grid gap-3 sm:grid-cols-2" style={{ gridAutoRows: "1fr",
+                animation: `${dir.current < 0 ? "as-page-in-left" : "as-page-in-right"} .26s cubic-bezier(.22,.61,.36,1)` }}>
+                {curG.list.map((s) => {
+                  const meta = ac(s.id);
+                  return (
+                    <button key={s.id} onClick={() => onPick(s.id)}
+                      className="text-left rounded-xl p-4 transition-all hover:brightness-110 flex flex-col gap-2"
+                      style={{ background: "#20202a", border: `1px solid ${GOLD}`, boxShadow: `0 0 12px ${GOLD}22` }}>
+                      <div className="flex items-center gap-2">
+                        <ArchIcon meta={meta} size={18} />
+                        <span className="font-bold text-lg leading-tight" style={{ color: GOLD }}>{s.name}</span>
+                        <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
+                          style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}66` }}>{meta.label}</span>
+                      </div>
+                      <div className="text-sm leading-snug opacity-90 whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

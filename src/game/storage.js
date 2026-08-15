@@ -1,5 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
-import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS, WELCOME_SP } from "./progression.js";
+import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS, WELCOME_DP } from "./progression.js";
 
 // #382 Abschluss-Bonus: jeder abgeschlossene NORMALE (Nicht-Ranked) Lauf gibt +N DP — Ausgleich für die entfernte
 //   Challenge-DP-Quelle (#301). Ranked hat seinen eigenen Wochenbonus (rankedDpBonus).
@@ -92,7 +92,7 @@ export function loadRunHistory() {
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
-export const PROFILE_SCHEMA_VERSION = 9;
+export const PROFILE_SCHEMA_VERSION = 10;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -111,9 +111,9 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // #316: onboarding startet direkt bei ONBOARDING_LINKS (6/6, „fertig") → keine Onboarding-Phase mehr, alle
   // Post-Onboarding-Unlocks (Archetypen/Rarität/Legendär/Genesis) sofort frei. stichPoints = 0 (SP werden im Spiel verdient).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: ONBOARDING_LINKS, spRuns: 0,
-  // Willkommensbonus (WELCOME_SP): sticky, damit er genau einmal fällt — nach dem ersten
+  // Willkommensbonus (WELCOME_DP): sticky, damit er genau einmal fällt — nach dem ersten
   // abgeschlossenen Lauf. Frisches Profil = noch nicht ausgezahlt.
-  welcomeSpPaid: false,
+  welcomeBonusPaid: false,
   /* „Mindestens ein Lauf ist ABGESCHLOSSEN" — sticky. Steuert, ob das Tutorial noch angeboten wird:
      wer einen Lauf durchgespielt hat, kennt die Schleife und braucht den Einstieg nicht mehr im Menü
      stehen zu haben. Bewusst NICHT `games > 0`: das zählt auch Abbrüche, und wer nach zwei Stichen
@@ -194,11 +194,13 @@ export function migrateProfile(p) {
     v = 7;
   }
   if (v < 8) {
-    // v7 → v8 (Willkommensbonus): das Flag `welcomeSpPaid` ist neu. Wer schon gespielt hat, ist am
-    // Willkommens-Moment vorbei → als ausgezahlt markieren, OHNE die 50 SP nachzureichen. Das folgt
-    // der Linie von v5→v6: Migrationen schenken keine Währung, sonst bekämen alle Bestandsspieler
-    // rückwirkend ein Guthaben, das die SP-Ökonomie nie eingeplant hat. Frische Profile (games 0)
-    // bleiben auf `false` und holen den Bonus regulär mit ihrem ersten abgeschlossenen Lauf.
+    // v7 → v8 (Willkommensbonus): das Flag ist neu. Wer schon gespielt hat, ist am Willkommens-Moment
+    // vorbei → als ausgezahlt markieren, OHNE den Bonus nachzureichen. Das folgt der Linie von v5→v6:
+    // Migrationen schenken keine Währung, sonst bekämen alle Bestandsspieler rückwirkend ein Guthaben,
+    // das die Ökonomie nie eingeplant hat. Frische Profile (games 0) bleiben auf `false` und holen den
+    // Bonus regulär mit ihrem ersten abgeschlossenen Lauf.
+    // (In v10 heißt das Flag `welcomeBonusPaid`; hier steht bewusst noch der alte Name, damit ein
+    //  Profil, das von v7 kommt, dieselbe Kette durchläuft wie eines, das schon auf v8 lag.)
     if (typeof out.welcomeSpPaid !== "boolean") out.welcomeSpPaid = (Number(out.games) || 0) > 0;
     v = 8;
   }
@@ -208,6 +210,20 @@ export function migrateProfile(p) {
     // wer schon gespielt hat, braucht das Tutorial-Angebot nicht mehr im Menü.
     if (typeof out.hadCompletedRun !== "boolean") out.hadCompletedRun = (Number(out.games) || 0) > 0;
     v = 9;
+  }
+  if (v < 10) {
+    /* v9 → v10: Der Willkommensbonus wird in DECKPUNKTEN ausgezahlt statt in Stichpunkten, das Flag
+       heißt deshalb `welcomeBonusPaid` statt `welcomeSpPaid` (der alte Name hätte gelogen).
+       Der Wert wird ÜBERNOMMEN, nicht neu abgeleitet: Wer den Bonus in SP schon bekommen hat, bekommt
+       ihn nicht ein zweites Mal in DP — und die SP von damals werden auch nicht zurückgeholt. Beides
+       wäre schlechter als die kleine Ungleichheit zwischen früher und später gestarteten Profilen. */
+    if (typeof out.welcomeBonusPaid !== "boolean") {
+      out.welcomeBonusPaid = typeof out.welcomeSpPaid === "boolean"
+        ? out.welcomeSpPaid
+        : (Number(out.games) || 0) > 0;
+    }
+    delete out.welcomeSpPaid;
+    v = 10;
   }
   out.schemaVersion = v;
   return out;
@@ -368,12 +384,11 @@ export function recordRun(record) {
   const firstRankedThisWeek = rankedSeed != null && rankedSeed !== (p.lastRankedWeekSeed ?? null);
   const rankedSpBonus = firstRankedThisWeek && !treeDone ? 5 : 0;
   const rankedDpBonus = firstRankedThisWeek ? (treeDone ? 10 : 5) : 0;
-  // Willkommensbonus: einmalig nach dem ERSTEN abgeschlossenen Lauf. Läuft über dasselbe SP-Guthaben
-  // wie alles andere — bei komplettem Baum fegt ihn der spSweep unten also korrekt nach DP (kann ein
-  // frisches Profil zwar nicht erreichen, bleibt aber konsistent, falls jemand mit `unlock` testet).
-  const welcomeSp = record.completed === true && !p.welcomeSpPaid ? WELCOME_SP : 0;
+  // Willkommensbonus: einmalig nach dem ERSTEN abgeschlossenen Lauf, in DECKPUNKTEN (s. progression.js).
+  // Er hängt deshalb NICHT am SP-Guthaben und wird vom spSweep unten nicht angefasst.
+  const welcomeDp = record.completed === true && !p.welcomeBonusPaid ? WELCOME_DP : 0;
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
-  const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus + welcomeSp;
+  const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus;
   const spSweep = treeDone ? spBalance : 0;
   // #299 Onboarding-Fortschritt + Freischaltungs-Diff fürs Victory-Banner. Genesis wird NICHT mehr als Pack
   // geschenkt — es ist ein Onboarding-Freischalt-Deck (kind "cond"/onboardingDone), frei sobald onboarding 6/6.
@@ -410,13 +425,13 @@ export function recordRun(record) {
     // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
     stichPoints: spBalance - spSweep,
     // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
-    welcomeSpPaid: !!p.welcomeSpPaid || welcomeSp > 0,
+    welcomeBonusPaid: !!p.welcomeBonusPaid || welcomeDp > 0,
     hadCompletedRun: !!p.hadCompletedRun || record.completed === true,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
     // #382: + Abschluss-Bonus (completionDp) für abgeschlossene Nicht-Ranked-Läufe.
-    deckPoints: n0(p.deckPoints) + runDp + completionDp + spSweep + rankedDpBonus,
+    deckPoints: n0(p.deckPoints) + runDp + completionDp + spSweep + rankedDpBonus + welcomeDp,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
@@ -426,7 +441,7 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeSp };
+  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
 }
