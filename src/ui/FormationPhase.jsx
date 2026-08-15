@@ -15,6 +15,7 @@ import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t, fmtNum } from "../i18n/index.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -24,16 +25,16 @@ const pctOf = (x) => Math.round(x * 100);
 
 // #UI Aufstellung-Redesign: einklappbare Sektion (Referenz-Legende / Details) — gleiches Muster wie der Passiv-Toggle
 // in der Skill-Auswahl. Default zu, damit die Aufstellung nicht von Referenztexten zugestellt wird.
-function FormCollapse({ label, chipWord = "mehr", color = "#8a7de0", open, onToggle, children }) {
+function FormCollapse({ label, chipWord, color = "#8a7de0", open, onToggle, children }) {
   return (
     <div>
       <button type="button" onClick={onToggle} aria-expanded={open}
-        className="w-full flex items-center gap-2 text-left" title={`${label} ${open ? "einklappen" : "ausklappen"}`}>
+        className="w-full flex items-center gap-2 text-left" title={t(open ? "form.collapse.close" : "form.collapse.open", { label })}>
         <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
         <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
           style={{ color, background: `${color}14`, border: `1px solid ${color}3a` }}>
           <span className="transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
-          {open ? "weniger" : chipWord}
+          {open ? t("form.collapse.less") : (chipWord || t("form.collapse.more"))}
         </span>
         <div className="flex-1 h-px" style={{ background: `${color}33` }} />
       </button>
@@ -118,9 +119,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     baseStrength.current = { cycle: state.cycle, base: curStrength };
   const base = baseStrength.current.base;
   const delta = base === null ? 0 : curStrength - base;
-  const deltaStr = `${delta >= 0 ? "+" : "−"}${pctOf(Math.abs(delta))} %`;
+  const deltaStr = t("form.delta", { sign: delta >= 0 ? "+" : "−", pct: pctOf(Math.abs(delta)) });
   // #UI: dunkle Δ-Tönung, die AUF Gold lesbar bleibt (grün/rot/neutral) — für den Fortfahren-Knopf (Live-Feedback beim Tauschen).
-  const deltaOnGold = delta > 0.001 ? "#155e31" : delta < -0.001 ? "#8a1e1e" : "#141419";
+  // (Die Nulllage zuerst zu prüfen hält die Zeile frei von der Folge „> … <", die der
+  //  i18n-Textgreifer sonst als JSX-Textknoten missversteht.)
+  const deltaOnGold = Math.abs(delta) <= 0.001 ? "#141419" : (delta > 0.001 ? "#155e31" : "#8a1e1e");
 
   // #201.5: Pro-Segment-Stärke + Verbesserungs-Highlight. Analog zur Gesamt-Baseline oben, aber je 5er-Segment:
   // jedes Segment zeigt seine eigene Formations-Stärke am Bereichs-Label; ein seit Phasenbeginn stärker gewordenes
@@ -141,8 +144,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>Aufstellung · Durchlauf {(state.cycle || 0) + 1}</div>
-            <h2 className="text-xl font-bold">Deck aufstellen</h2>
+            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>{t("form.eyebrow", { cycle: (state.cycle || 0) + 1 })}</div>
+            <h2 className="text-xl font-bold">{t("form.title")}</h2>
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
@@ -152,11 +155,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.green)}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formations-Bonus</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>+{pctOf(curStrength)} %</span>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.bonus")}</span>
+            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>{t("form.bonus.value", { pct: pctOf(curStrength) })}</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Formationen</span>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>
         </div>
@@ -168,26 +171,26 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
             <button onClick={onUndo} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>↶ Rückgängig</button>
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.undo")}</button>
             <button onClick={onReset} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>Zurücksetzen</button>
+              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.reset")}</button>
           </div>
           {/* Fortfahren voll-breit — trägt das Live-Feedback (Differenz seit Durchlaufbeginn + Restenergie), damit man es
               bei jedem Tausch direkt sieht (der Knopf klebt oben, im Gegensatz zum scrollenden Hero-Wert). */}
           <button onClick={onConfirm} className="w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
             style={{ background: GOLD, color: "#141419" }}>
-            <span className="text-sm">Fortfahren</span>
-            <span className="text-[11px] mt-0.5" title="Formations-Differenz seit Durchlaufbeginn · verbleibende Formations-Energie">
+            <span className="text-sm">{t("form.confirm")}</span>
+            <span className="text-[11px] mt-0.5" title={t("form.confirm.title")}>
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
-              <span style={{ opacity: 0.55 }}> · noch {formationEnergy} Energie</span>
+              <span style={{ opacity: 0.55 }}>{t("form.energyLeft", { n: formationEnergy })}</span>
             </span>
           </button>
         </div>
         <p className="text-xs opacity-55 mb-2">
-          Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur <b>innerhalb</b> der {SEGMENT_SIZE}er-Segmente
+          {t("form.hint.pre")} <b>{t("form.hint.within")}</b> {t("form.hint.post", { size: SEGMENT_SIZE })}
           {segInfo.active && (segInfo.all
-            ? <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> alle Grenzen offen, segmentübergreifend</span></>
-            : <> — <span style={{ color: "#8be0a8" }}><b>Segmentarbeit:</b> die mit <b>⇕</b> markierten Grenzen dürfen überschritten werden</span></>)}.
+            ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
+            : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}.
         </p>
 
         <div className="md:flex md:gap-4 md:items-start">
@@ -199,7 +202,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
                   style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
                                   : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
-                  🏗 Gebäude {showArch ? "an" : "aus"}
+                  {t(showArch ? "form.arch.on" : "form.arch.off")}
                 </button>
                 {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
@@ -222,7 +225,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
             {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
-            <FormCollapse label="Formationen & Rahmenfarben" chipWord="Legende" color="#5ab87a"
+            <FormCollapse label={t("form.legend")} chipWord={t("form.legend.chip")} color="#5ab87a"
               open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
               {/* #UI: geteilte Legende (ArchPanels) — dieselbe Erklärung in Aufstellphase & Chronik. */}
               <FormationLegend state={state} />
@@ -230,7 +233,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
 
             {/* #UI-Redesign: Gebäude · Perks · Eis-Effekte einklappbar — default zu; nur zeigen, wenn es überhaupt Inhalt gibt. */}
             {(hasArch || (state.perks || []).length > 0 || iceFormSkills.length > 0) && (
-              <FormCollapse label={hasArch ? `🏗 Deine Gebäude (${archBuildings.length}) · Perks` : "Perks & Effekte"} chipWord="mehr" color="#8a7de0"
+              <FormCollapse label={hasArch ? t("form.details.arch", { n: archBuildings.length }) : t("form.details.plain")} color="#8a7de0"
                 open={openDetails} onToggle={() => setOpenDetails((o) => !o)}>
                 {/* #UI: geteilte Gebäude-Liste (ArchPanels) — identisch in Aufstellphase & Chronik. */}
                 {hasArch && (
@@ -241,7 +244,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
                 {iceFormSkills.length > 0 && (
                   <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
-                    <div className="font-bold inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={13} /> Eis-Effekte auf Formationen</div>
+                    <div className="font-bold inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={13} /> {t("form.iceEffects")}</div>
                     {iceFormSkills.map((id) => (
                       <div key={id}>
                         <b style={{ color: "#8be0f8" }}>{skillDef(id).name}</b>

@@ -1,4 +1,5 @@
 import { fmtScore } from "./format.js";
+import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { RunTimer } from "./RunTimer.jsx";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 
@@ -46,7 +47,7 @@ export function StatusBar({
   cycle = 0, totalCycles = 1,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack,
 }) {
-  const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+  const fmtMult = (x) => fmtNum(x.toFixed(2));
   const cyc = Math.min(cycle + 1, totalCycles);
   return (
     <div className="sticky top-0 z-20 -mx-1">
@@ -56,30 +57,30 @@ export function StatusBar({
         {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon. */}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
           {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
-          <button type="button" onClick={onTogglePause} title={paused ? "Weiter" : "Pause"}
+          <button type="button" onClick={onTogglePause} title={t(paused ? "hud.resume" : "hud.pause")}
             className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
             style={paused
               ? { background: "#8a7de0", color: "#141419", border: "1px solid #8a7de0" }
               : { background: "#8a7de022", color: "#8a7de0", border: "1px solid #8a7de066" }}>
             {paused ? "▶" : "⏸"}
           </button>
-          <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">×2</Pill>
-          <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">×4</Pill>
-          <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title="Tempo maximal">MAX</Pill>
+          <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title={t("hud.speed.x2")}>×2</Pill>
+          <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title={t("hud.speed.x4")}>×4</Pill>
+          <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title={t("hud.speed.max")}>{t("hud.speed.max.label")}</Pill>
           {onChronik && (
-            <button type="button" onClick={onChronik} title="Kartenübersicht öffnen"
+            <button type="button" onClick={onChronik} title={t("hud.cards.title")}
               className="flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap"
               style={{ background: "#20202a", color: "#c8c8d0", border: "1px solid #33333e" }}>
               {deckBack
                 ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
                 : <span>🎴</span>}
-              <span className="hidden sm:inline">Karten</span>
+              <span className="hidden sm:inline">{t("hud.cards")}</span>
             </button>
           )}
           {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
           <div className="ml-auto flex items-stretch">
-            <MiniCell label="Durchl."><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
-            <MiniCell label="Zeit" className="border-l border-[color:var(--deck-border)]">
+            <MiniCell label={t("hud.cycle")}><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
+            <MiniCell label={t("hud.time")} className="border-l border-[color:var(--deck-border)]">
               {/* #perf A1: selbst-tickender Timer-Leaf statt App-weitem 250-ms-Tick; Fallback = statischer timeStr. */}
               {getElapsed
                 ? <RunTimer getElapsed={getElapsed} ticking={timerTicking} paused={paused} />
@@ -93,9 +94,9 @@ export function StatusBar({
         <div className="flex items-stretch">
           <div className="flex-1 flex flex-col justify-center gap-1 px-3.5 py-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>Score</span>
+              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("hud.score")}</span>
               {ghost.hasGhost && (ghost.passed
-                ? <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>⚑ Rekord</span>
+                ? <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>{t("hud.record")}</span>
                 : ghost.delta != null
                   ? <span className="text-[10px] font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
                   : null)}
@@ -105,12 +106,12 @@ export function StatusBar({
             <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
           {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
-          <Cell label="Serie" className="border-l border-[color:var(--deck-border)]">
+          <Cell label={t("hud.streak")} className="border-l border-[color:var(--deck-border)]">
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-            <span className="text-[9px] opacity-45 ml-1">best {bestStreak}</span>
+            <span className="text-[9px] opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
           </Cell>
           {/* Mult — ganz rechts. */}
-          <Cell label="Mult" className="border-l border-[color:var(--deck-border)]">
+          <Cell label={t("hud.mult")} className="border-l border-[color:var(--deck-border)]">
             <span className={mult?.shakeClass || ""}>
               <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
                 style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,

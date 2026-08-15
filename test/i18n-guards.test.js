@@ -93,6 +93,15 @@ describe("i18n · Katalog-Parität", () => {
     "guide.ice.principle.1.tag", "guide.plant.principle.1.tag",        // Position · Mono
     "gameover.milestones.max", "gameover.build",   // „Maximum" · „Build" — beide Sprachen gleich
     "bar.lightning.state.crit",  // „Crit ×{mult}" — Crit bleibt Crit (§3.1)
+    // Stichspiel-HUD: Fremdwörter, Kürzel und reine Zahlenzeilen, die in beiden Sprachen gleich lauten.
+    "hud.pause",              // „Pause" ist im Deutschen das englische Wort
+    "hud.speed.max.label",    // „MAX" — Knopfbeschriftung
+    "hud.score",              // Score bleibt Score (§3.1)
+    "hud.streak.best",        // „best {n}" — Kurzform, in beiden Sprachen gleich
+    "hud.mult",               // „Mult" — Kürzel des Multiplikators
+    "rail.formation",         // „Formation" ist in beiden Sprachen dasselbe Wort
+    "rail.jackpot",           // „Jackpot" — Fremdwort im Deutschen
+    "rail.crits",             // „Crits" (§3.1)
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -388,7 +397,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
   const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
     "src/ui/GameOver.jsx",
     // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
-    "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx"];
+    "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
+    // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
+    "src/ui/StatusBar.jsx", "src/ui/StatusRail.jsx", "src/ui/Battlefield.jsx", "src/ui/FormationPhase.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
