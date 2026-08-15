@@ -9,7 +9,7 @@ import {
   isTieredPack, coverTier, highestUnlockedTier, tierByDeckId, tierAsPack, packHasTierDeck,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
-import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js"; // #tiered: Stufen-Freischaltung/Label pro Stufe
+import { DECK_DEFS, isUnlocked, unlockProgress, grp } from "../game/cosmetics.js"; // #tiered: Stufen-Freischaltung/Label pro Stufe
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
@@ -1085,8 +1085,6 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
           const active = tiered ? packHasTierDeck(pack, deckId) : deckId === pack.deckId;
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
-          // #tiered: Stufen-Badge (I/II/III) der höchsten freien Stufe, wenn im Besitz.
-          const tierBadge = tiered && owned && cover ? cover.roman : null;
           const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
@@ -1102,7 +1100,16 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
                 <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
-                {tierBadge && !active && <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: "#1a1330", color: "#c9b6ff", border: "1px solid #6a4fb0" }}>{tierBadge}</span>}
+                {/* #tiered: Mehrstufen-Markierung — Stufen-Pills (I/II/III), freigeschaltete hell, gesperrte gedimmt. Signalisiert „Deck mit mehreren Stufen". */}
+                {tiered && (
+                  <span className="absolute bottom-1 left-1 flex gap-0.5">
+                    {pack.tiers.map((t) => {
+                      const free = isUnlocked(DECK_DEFS[t.deckId], p);
+                      return <span key={t.deckId} className="text-[8px] font-extrabold leading-none px-1 py-[3px] rounded"
+                        style={{ background: free ? "#1a1330e6" : "#0a0a12e6", color: free ? "#c9b6ff" : "#6a6780", border: `1px solid ${free ? "#6a4fb0" : "#33313f"}` }}>{t.roman}</span>;
+                    })}
+                  </span>
+                )}
               </div>
               <div className="px-2 py-1.5">
                 <span className="text-[12px] font-extrabold truncate block">{pack.name}</span>
@@ -1196,7 +1203,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             ))}
           </div>
 
-          {/* #tiered: Stufen-Wähler I / II / III — nur freigeschaltete Stufen wählbar (gesperrte 🔒 & disabled). */}
+          {/* #tiered: Stufen-Wähler I / II / III — ALLE Stufen anklickbar (auch gesperrte = Vorschau); gesperrte tragen 🔒
+              und zeigen unten die Freischalt-Bedingung. Nur der Aktivieren-Button hängt an der Freischaltung. */}
           {tiered && (
             <div className="flex gap-1.5 justify-center mt-2.5">
               {tiers.map((t) => {
@@ -1204,10 +1212,10 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
                 const free = tierUnlocked(t);
                 const isEq = equippedTier && equippedTier.deckId === t.deckId;
                 return (
-                  <button key={t.deckId} disabled={!free} onClick={() => free && setSelDeck(t.deckId)}
+                  <button key={t.deckId} onClick={() => setSelDeck(t.deckId)}
                     className="flex-1 max-w-[96px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
                     style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`,
-                      color: free ? (on ? "#e8e6ff" : "#c9c6dd") : "#5b5870", opacity: free ? 1 : 0.7, cursor: free ? "pointer" : "not-allowed" }}>
+                      color: on ? "#e8e6ff" : (free ? "#c9c6dd" : "#8b88a0") }}>
                     {free ? "" : "🔒 "}{t.roman}{isEq ? " ✓" : ""}
                   </button>
                 );
@@ -1229,7 +1237,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             ) : (
               <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
                 🔒 Freischalten: {selTierLock.label}
-                {selTierLock.target > 1 && <span className="opacity-70"> · {selTierLock.cur} / {selTierLock.target}</span>}
+                {selTierLock.target > 1 && <span className="opacity-70"> · {grp(selTierLock.cur)} / {grp(selTierLock.target)}</span>}
               </div>
             )
           ) : active ? (
@@ -1247,7 +1255,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
           ) : (
             <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
               🔒 Freischalten: {unlock.label}
-              {unlock.target > 1 && <span className="opacity-70"> · {unlock.cur} / {unlock.target}</span>}
+              {unlock.target > 1 && <span className="opacity-70"> · {grp(unlock.cur)} / {grp(unlock.target)}</span>}
             </div>
           )}
         </div>

@@ -111,7 +111,7 @@ export const BATTLEFIELD_DEFS = {
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+export const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
 const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
 const ARCHS = Object.keys(ARCH_LABEL);
@@ -155,11 +155,11 @@ export function unlockProgress(def, profile) {
   switch (u.kind) {
     case "games": {
       const have = p.games || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Spiele ${u.n} Läufe` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Spiele ${grp(u.n)} Läufe` };
     }
     case "streak": {
       const have = p.bestStreak || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche eine Serie von ${u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche eine Serie von ${grp(u.n)}` };
     }
     case "score": {
       const have = p.bestScore || 0;
