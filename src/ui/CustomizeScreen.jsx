@@ -773,6 +773,9 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const [sweep, setSweep] = useState(1);
   const [tierStep, setTierStep] = useState(0);
   const tierRef = useRef(0); // #komet: spiegelt tierStep (der setTierStep-Updater darf keinen Sound spielen → StrictMode ruft ihn doppelt)
+  const [neonSurge, setNeonSurge] = useState(null); // #383 Neon-Brandung: 6-s-Impact-Puls { id, mag } (null = ruhige See)
+  const [neonAnn, setNeonAnn] = useState(null);     // #383 Ansage-Pop zum Impact { id, label, color }
+  const neonRef = useRef(0);                         // rotiert die Impact-Stufe (Stark/Brutal/Irre)
   const pixiField = PIXI_FIELD_KEYS.includes(effect); // #346: Sternenfeld/Komet → Pixi-Bühne im Showcase, AUCH in Prod (lazy PixiStage) — spiegelt den In-Game-Renderpfad
   const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas (bleibt Preview/Dev; in Prod DOM-Fallback via FieldFxLayer)
   const neonsurfGL = effect === "neonsurf";                                // #345 Neon-Brandung → eigene WebGL-Canvas (auch in Prod, kein Pixi-Gate)
@@ -789,11 +792,29 @@ function FieldFxPreview({ effect, deckTint = false }) {
         // #komet: Sternenfeld-Sound auch im Showcase — Datei nach gezeigtem Tier (≥1 Woosh+Impact, sonst kleiner Komet).
         if (effect === "starfield") audio.play(nextTier >= 1 ? "fx_comet_impact" : "fx_comet", { gain: 0.27 });
       }
-      // #345/#sound: Neon-Brandung spielt je Surge den Splash (wie in-game, Battlefield.jsx) → Vorschau ist hörbar.
-      if (effect === "neonsurf") audio.play("fx_neonsurf_splash", { gain: 0.3 });
+      // #383: der per-Tick-Splash der Neon-Brandung entfällt hier — sie hat jetzt einen eigenen ruhigen 6-s-Impact (unten).
     }, 1500);
     return () => clearInterval(id);
   }, [effect, pixiField]);
+
+  // #383 Neon-Brandung im Showcase spiegelt In-Game: ruhige Plasma-See als Default (leise Ambience `fx_neonsurf`), und
+  //   alle ~6 s EIN angesagter Impact — ein Surge-Puls + `fx_neonsurf_splash` + eine Ansage (Stufe rotiert Stark/Brutal/
+  //   Irre → Magnitude 0.7/1.0/1.4, wie die Groß-Ansage in Battlefield). Zwischen den Impacts KEIN Surge → See bleibt ruhig.
+  useEffect(() => {
+    if (effect !== "neonsurf") return undefined;
+    const bed = audio.loop("fx_neonsurf", { gain: 0.55, loopStart: 1.5, loopEnd: 28.4 }); // dezente Dauer-Ambience (wie Battlefield)
+    const TIERS = [{ mag: 0.7, label: "Stark", color: "#5fe0f7" }, { mag: 1.0, label: "Brutal", color: "#b3a8f5" }, { mag: 1.4, label: "Irre", color: "#f5c76a" }];
+    const impact = () => {
+      const t = TIERS[neonRef.current % TIERS.length]; neonRef.current += 1;
+      const id = neonRef.current;
+      setNeonSurge({ id, mag: t.mag });
+      setNeonAnn({ id, label: t.label, color: t.color });
+      audio.play("fx_neonsurf_splash", { gain: 0.6 + 0.7 * t.mag, bass: t.mag >= 1.2 ? 3 : 0 }); // Pegel wie in-game
+    };
+    const first = setTimeout(impact, 900); // erster Impact bald nach dem Öffnen (nicht 6 s warten)
+    const iv = setInterval(impact, 6000);
+    return () => { clearTimeout(first); clearInterval(iv); audio.stopLoop(bed, { fade: 0.4 }); };
+  }, [effect]);
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
@@ -814,11 +835,18 @@ function FieldFxPreview({ effect, deckTint = false }) {
           <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate bandScale={1.12} bandShift={0.2} />
         </div>
       )}
-      {/* #345 Neon-Brandung — je Sweep-Tick ein Ansage-Puls (Stufe rotiert 0.7/1.0/1.4), damit das Gefäß-Schwappen sichtbar ist. */}
+      {/* #383 Neon-Brandung — ruhige See als Default; der Surge kommt NUR beim 6-s-Impact (neonSurge, sonst null). */}
       {neonsurfGL && (
         <div className="absolute inset-0 z-[2] pointer-events-none">
-          <NeonSurfFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate surge={{ id: sweep, mag: [0.7, 1.0, 1.4][sweep % 3] }} />
+          <NeonSurfFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate surge={neonSurge} />
         </div>
+      )}
+      {/* #383 Ansage zum Impact (Stark/Brutal/Irre) — poppt synchron zum Surge/Splash; key erzwingt den Neustart der Pop-Animation. */}
+      {neonsurfGL && neonAnn && (
+        <span key={neonAnn.id} className="absolute font-extrabold tracking-wider pointer-events-none z-[3]"
+          style={{ left: "50%", top: "44%", fontSize: 44, color: neonAnn.color, textShadow: `0 0 20px ${neonAnn.color}cc`, animation: "ws-gott-word 1.6s ease-out both" }}>
+          {neonAnn.label}
+        </span>
       )}
       {effect !== "none" && !pixiField && !auroraGL && !neonsurfGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={0} />}
       {/* #330 Tier/Score-Chip entfernt — kein Scene-Chrome mehr (nur noch das 4-Ecken-Template der Bühne). */}
