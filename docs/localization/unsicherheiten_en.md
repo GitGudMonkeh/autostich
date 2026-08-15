@@ -79,7 +79,7 @@ Sag Bescheid, wenn dir die Ziffer lieber ist — dann fällt die Ausnahme weg.
 
 ---
 
-## 5. Tutorial (geführter Lauf) — vier Klangfragen, Stand 2026-08-15
+## 5. Tutorial (geführter Lauf) — vier Klangfragen, **entschieden 2026-08-15**
 
 Der Tutorial-Text ist der erste Inhalt, der von der ersten Zeile an zweisprachig entstanden ist.
 Die Mechanik-Wörter kamen alle aus der eingefrorenen Tabelle (cycle · trick · streak · order phase ·
@@ -92,6 +92,20 @@ der Ton an vier Stellen:
 | **Weiterspielen** (Knopf am Abschluss-Hinweis) | **Keep playing** | Naheliegend wäre „Let's go" — das ist aber in §3.6 fest an die Score-Ansage „Gönn dir" vergeben. Eine deutsche Vokabel → genau eine englische, also darf „Let's go" hier nicht zweitverwendet werden. |
 | **Verstanden** (Weiter-Knopf) | **Got it** | Locker und kurz. Alternativen: **Understood** (steifer) · **Next** (sagt nur die Richtung, nicht das Verstehen). |
 | **Du hast alles gesehen** (Titel des Abschlusses) | **That is the whole loop** | Das Deutsche ist eine Feststellung über den Spieler, das Englische eine über das Spiel — wörtlich („You have seen everything") klingt im EN nach Prahlerei. Alternative: **You have seen the loop**. |
+
+**Freigabe des Nutzers:** Ausbau → **Kit** · Verstanden → **Got it** (beide wie vorgeschlagen,
+unverändert im Katalog) · Weiterspielen → **Continue** (statt „Keep playing") · Du hast alles
+gesehen → **That’s the whole loop** (mit Kontraktion, wie im UI üblich).
+
+Zwei Anmerkungen zur letzten Zeile:
+
+- Der Apostroph ist der typografische (`’`, U+2019), wie in `LET’S GO!` und `This week’s modifiers`.
+- „Weiterspielen" steht im Katalog jetzt zweimal mit **verschiedenen** englischen Fassungen:
+  `app.keepPlaying` = „Keep playing" (Pause-Dialog: nicht abbrechen) und `tutorial.btn.finish` =
+  „Continue" (Tutorial-Abschluss: der Lauf geht normal weiter). Das ist kein Bruch der Regel „eine
+  deutsche Vokabel → genau eine englische" — die gilt für die eingefrorene **Mechanik**-Tabelle §3.
+  Hier sind es zwei verschiedene Bedeutungen desselben Alltagsworts, und die englische Trennung
+  macht sie sogar deutlicher als das Deutsche.
 
 Alles andere im Tutorial ist beschreibend und damit prüfbar; die Zahlen darin sind ohnehin
 Platzhalter aus `constants.js` und in beiden Sprachen dieselben (der Wächter misst das).

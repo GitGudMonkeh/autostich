@@ -67,8 +67,10 @@ Tutorial-Bogen. Siehe Entscheidung §13.5.
   in der ersten Aufstellungsphase, ein platzierbares Gebäude in der ersten Architekt-Phase).
 - **Robustheit:** Die Erklärtexte bleiben **phasen-allgemein** („So funktioniert der Architekt"), nicht
   angebots-spezifisch („bau Gebäude X"). Sonst driftet das Tutorial bei jeder Balance-Änderung.
-- **Seed-Auswahl** = Autorenaufgabe: per Sim (`npm run sim`) einen Seed suchen, der einen schönen
-  frühen Verlauf liefert. Als Konstante ablegen.
+- **Seed-Auswahl:** `TUTORIAL_SEED = 952`, vom Nutzer freigegeben (2026-08-15). Die Wahl ist bewusst
+  frei — beide Kriterien, die §3 ursprünglich an den Seed knüpfte, sind gemessen seed-unabhängig
+  (§13.9 b/c). Der feste Seed trägt deshalb nur noch Reproduzierbarkeit: alle Spieler sehen denselben
+  geführten Lauf, und Support-Fragen haben eine gemeinsame Grundlage.
 - **Achtung Wochen-Mods:** Der Tutorial-Lauf ist ein **normaler** Lauf (`mode` ≠ `"ranked"`), also ohne
   `weekMods`. Das ist richtig so — die Wochen-Modifikatoren würden die erklärten Regeln verbiegen.
 

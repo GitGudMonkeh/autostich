@@ -32,9 +32,12 @@ import { SEGMENT_SIZE } from "../../game/formations.js";
    Determinismus-Tests unberührt: der Seed pinnt nur den INHALT (Karten, Angebote, Crits), die
    Phasenreihenfolge steht ohnehin fest in DECISION_SCHEDULE.
 
-   ⚠ Vom Nutzer freizugeben — siehe docs/tutorial-guided-run-plan.md §3. Bis dahin ein per Sim
-   gewählter Kandidat. */
-export const TUTORIAL_SEED = 0;
+   Vom Nutzer freigegeben (2026-08-15). Die Wahl ist bewusst frei: die beiden Kriterien aus §3 sind
+   gemessen seed-unabhängig — Formationen in der ersten Aufstellungsphase zeigen 2000 von 2000 Seeds
+   (§13.9c), einen frühen Crit garantiert KEIN Seed (§13.9b). Der feste Seed trägt deshalb nur noch
+   Reproduzierbarkeit: alle Spieler sehen denselben geführten Lauf, und Support-Fragen haben eine
+   gemeinsame Grundlage. */
+export const TUTORIAL_SEED = 952;
 
 /* Die vier Hauptphasen + Stichspiel bekommen volle Coach-Marks, die bedingten Phasen nur einen Satz
    (Plan §13.5). Reihenfolge hier = Reihenfolge der Fortschrittsanzeige „Schritt n/m". */

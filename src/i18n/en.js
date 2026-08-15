@@ -855,7 +855,7 @@ export default {
   "tutorial.progress": "Step {n}/{total}",
   "tutorial.aria.dialog": "Tutorial hint",
   "tutorial.btn.next": "Got it",
-  "tutorial.btn.finish": "Keep playing",
+  "tutorial.btn.finish": "Continue",
   "tutorial.btn.skipStep": "Skip",
   "tutorial.btn.end": "End tutorial",
 
@@ -902,7 +902,7 @@ export default {
   "tutorial.legendary.title": "The legendary phase",
   "tutorial.legendary.body": "In cycle {cycle} you pick a legendary skill from your active archetypes. It takes a slot of its own and cannot be swapped later.",
 
-  "tutorial.outro.title": "That is the whole loop",
+  "tutorial.outro.title": "That’s the whole loop",
   "tutorial.outro.body": "From here the run simply carries on and counts towards your stats and the leaderboard. You can look terms up in the glossary at any time; the guides explain how to play each archetype.",
 
   // #tiered tiered decks (I/II/III): {roman} is the Roman tier numeral — identical in both languages.
