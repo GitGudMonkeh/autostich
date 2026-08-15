@@ -900,7 +900,7 @@ export function Autostich() {
               <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
                 glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []}
                 glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
-                glacierPre={state.glacierPre}
+                glacierPre={state.glacierPre} deck={state.deck || []} playerOrder={state.playerOrder || []}
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
                 grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={manyFac} />
