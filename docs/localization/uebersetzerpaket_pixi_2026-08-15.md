@@ -84,19 +84,24 @@ zuverlässig, was sich seit der letzten Lieferung geändert hat.
 
 Das ist der wichtigste Abschnitt. Autostich hat ein enges, wiederkehrendes Regelvokabular; **eine
 deutsche Vokabel muss durchgängig auf genau eine englische abgebildet werden.** Die Spalte
-„Vorschlag EN" ist ein Vorschlag — bitte einmal komplett gegenlesen und dann einfrieren.
+„Vorschlag EN" war ein Vorschlag. **Seit 2026-08-15 ist die Tabelle FREIGEGEBEN und eingefroren** —
+ab hier ist sie Prüfregel, nicht Diskussionsgrundlage (`test/i18n-guards.test.js`).
 
+> **Freigabe-Entscheidungen vom 15.08.2026** (alle drei offenen Punkte plus eine Korrektur):
+> 1. `Aufstellungsphase` → **`order phase`** (nicht `layout phase`).
+> 2. `Formations-Energie` → **`order energy`** (zieht mit Punkt 1 mit).
+> 3. `Gönn dir` → **`LET’S GO!`** (nicht `TREAT YOURSELF` — Wirkung vor Wörtlichkeit).
+> 4. `Stark` → **`FIERCE`** (nicht `STRONG` — steigert besser in die Kette FIERCE › BRUTAL › INSANE › GODLIKE).
+> 5. Deutsche Seite: Raritätsstufe IV heißt jetzt **„Episch"** statt „Rar" (im Code umgesetzt,
+>    `TIER_META` in `rarity.js`). Die englische Leiter bleibt Common · Uncommon · Rare · **Epic**.
+>
 > **Woher die Vorschläge kommen:** Die Kernbegriffe sind gegen die Genre-Konvention geprüft
 > (Balatro, Slay the Spire, Hearthstone, Super Auto Pets, TFT, klassische Stichspiele) — die
 > Begründung je Begriff steht in `genre-terminologie.md`. Kurz: `cycle` und `trick` sind die
 > etablierten Fachbegriffe, nicht Übersetzungen; die Raritätsleiter endet auf `Epic` statt
 > `Legendary`, weil „legendär" bei uns eine eigene Achse ist; unsere eigenwilligen Wörter
 > (Weißglut, Firn, Grenzbonus) bleiben distinktiv, weil genau das die Genre-Norm ist.
->
-> **Einzige offene Frage:** `Aufstellungsphase`. Der Vorschlag `layout phase` hat nach der
-> Recherche keinen Rückhalt — umgestellt wird die **Ziehreihenfolge**, kein Raum. Kandidaten:
-> **`order phase`** (passend zu `draw order`) oder `arrangement phase`. Siehe
-> `genre-terminologie.md` §8.
+
 
 ### 3.1 Grundbegriffe
 
@@ -136,8 +141,8 @@ deutsche Vokabel muss durchgängig auf genau eine englische abgebildet werden.**
 | Segment (5 Positionen) | **segment** |
 | Segmentgrenze | segment boundary |
 | Position | position |
-| Aufstellungsphase | **layout phase** |
-| Formations-Energie | **layout energy** |
+| Aufstellungsphase | **order phase** |
+| Formations-Energie | **order energy** |
 | Tausch | swap |
 | Chronik | **chronicle** (Kartenübersicht) |
 
@@ -234,7 +239,7 @@ deutsche Vokabel muss durchgängig auf genau eine englische abgebildet werden.**
 |---|---|
 | Perk | **perk** |
 | Familie / Stufe I–IV | **family / tier I–IV** |
-| Rarität: Normal · Selten · Sehr selten · Rar | **Common · Uncommon · Rare · Epic** |
+| Rarität: Normal · Selten · Sehr selten · Episch | **Common · Uncommon · Rare · Epic** |
 | Regelersetzung / Kumulativ / Rolle | replacement / cumulative / role |
 | Kategorien A–E (Deck · Stich · Rolle · Score · Form) | Deck · Trick · Role · Score · Form |
 | Präzision | Precision |
@@ -270,12 +275,12 @@ steigernd** sein — Wirkung vor Wörtlichkeit:
 
 | DE | Vorschlag EN |
 |---|---|
-| Stark | STRONG |
+| Stark | **FIERCE** |
 | Brutal | BRUTAL |
 | Irre | INSANE |
 | Gottgleich | **GODLIKE** |
 | Lawine | AVALANCHE |
-| Gönn dir | TREAT YOURSELF |
+| Gönn dir | **LET’S GO!** |
 | Kritisch! | CRITICAL! |
 | Voll geladen | FULLY CHARGED |
 

@@ -100,7 +100,7 @@ export default {
   "options.perfHud.desc": "Shows FPS · p95 · jank in the top right and records performance data (⧉ report → console + clipboard). Test branch only. Off = no display and no measurement.",
 
   "options.float.title": "Show floating text",
-  "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (STRONG/BRUTAL/INSANE/GODLIKE) always stay visible.",
+  "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (FIERCE/BRUTAL/INSANE/GODLIKE) always stay visible.",
   "options.float.score.title": "↳ Score",
   "options.float.score.desc": "Rising score numbers on tricks you win.",
   "options.float.mult.title": "↳ Multiplier",

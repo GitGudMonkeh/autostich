@@ -14,6 +14,8 @@
    Profil-Shape: { stichPoints, stichSpent, nodes: { [nodeId]: 1 } }  (Level 1 = gekauft).
    ============================================================ */
 
+import { TIER_META } from "./rarity.js"; // Raritäts-Namen: EINE Quelle (rarity.js ist ein Blatt → kein Zyklus)
+
 // SIM-/Balance-Haken wie in constants.js: per ENV übersteuerbar, Default = aktueller Wert → in der App
 // (kein `process`) immer der Default. Erlaubt reproduzierbares Tuning ohne Code-Edit.
 const envNum = (name, def) => {
@@ -80,9 +82,10 @@ export const NODES = [
   // Formations-Energie 3 → 5.
   { id: "energy1", branch: "gen", label: "Energie I",  detail: "Formations-Energie 3 → 4", cost: 2, prereq: null,      energy: 1 },
   { id: "energy2", branch: "gen", label: "Energie II", detail: "Formations-Energie 4 → 5", cost: 4, prereq: "energy1", energy: 1 },
-  // Rarität-Rahmen: Sehr selten (Tier III) → Rar (Tier IV) → Legendär-Schicht.
-  { id: "tier3",    branch: "gen", label: "Sehr selten", detail: "Rarität Sehr selten (blau) freischalten", cost: 2, prereq: null,     maxTier: 3 },
-  { id: "tier4",    branch: "gen", label: "Rar",         detail: "Rarität Rar (lila) freischalten",         cost: 3, prereq: "tier3",  maxTier: 4 },
+  // Rarität-Rahmen: Stufe III → Stufe IV → Legendär-Schicht. Namen aus TIER_META (EINE Quelle) —
+  // vorher standen sie hier abgetippt und wären beim Umbenennen „Rar" → „Episch" auseinandergelaufen.
+  { id: "tier3",    branch: "gen", label: TIER_META[3].label, detail: `Rarität ${TIER_META[3].label} (blau) freischalten`, cost: 2, prereq: null,     maxTier: 3 },
+  { id: "tier4",    branch: "gen", label: TIER_META[4].label, detail: `Rarität ${TIER_META[4].label} (lila) freischalten`, cost: 3, prereq: "tier3",  maxTier: 4 },
   { id: "legLayer", branch: "gen", label: "Legendär",    detail: "Legendär-Perk-Schicht (gold) an",         cost: 4, prereq: "tier4",  legLayer: true },
   // Drop-Raten — nach „Legendär", dann sequenziell.
   { id: "drop1", branch: "gen", label: "Drop-Rate I",   detail: "hochwertigere Perks & Gebäude", cost: 5,  prereq: "legLayer", shift: 1 },

@@ -135,6 +135,13 @@ describe("i18n · Terminologie", () => {
     { de: /\bWerkstatt\b/i,   ok: /\bworkshop\b/i,   never: null,                     name: "Werkstatt → workshop" },
     { de: /\bFormation/i,     ok: /\bformation/i,    never: null,                     name: "Formation → formation" },
     { de: /\bMultiplikator\b/i, ok: /\bmultiplier\b/i, never: null,                   name: "Multiplikator → multiplier" },
+    // Freigabe 15.08.2026: die drei entschiedenen Klangfragen + die deutsche Umbenennung.
+    { de: /Aufstellungsphase/i, ok: /\border phase\b/i, never: /\blayout\b/i,          name: "Aufstellungsphase → order phase (nie „layout“)" },
+    { de: /Formations-Energie/i, ok: /\border energy\b/i, never: /\blayout\b/i,        name: "Formations-Energie → order energy" },
+    { de: /\bZiehreihenfolge\b/i, ok: /\bdraw order\b/i, never: null,                  name: "Ziehreihenfolge → draw order" },
+    { de: /\bEpisch\b/,        ok: /\bepic\b/i,       never: /\blegendary\b/i,        name: "Episch → Epic (nie „legendary“ — das ist eine eigene Achse)" },
+    { de: /Deck-Werkstatt/i,   ok: /deck workshop/i,  never: null,                     name: "Deck-Werkstatt → deck workshop" },
+    { de: /Stichpunkte?\b/i,   ok: /\bTrick Points?\b|\bTP\b/,  never: /\bSP\b/,        name: "Stichpunkte → Trick Points (TP, nie SP)" },
   ];
 
   it("kanonische Begriffe werden durchgängig verwendet", () => {
@@ -152,6 +159,29 @@ describe("i18n · Terminologie", () => {
   it("Stichpunkte heißen im Englischen TP (Trick Points), nicht SP", () => {
     expect(de["common.cur.sp"]).toBe("SP");
     expect(en["common.cur.sp"]).toBe("TP");
+  });
+
+  /* Die Score-Ansagen sind eingefroren (Übersetzerpaket §3.6, Freigabe 15.08.2026). Sie stehen
+     heute noch als BIG_SCORE_TIERS in Battlefield.jsx und wandern bei deren Migration in den
+     Katalog — dieser Test hält die Zuordnung fest, damit sie den Umzug unverändert übersteht.
+     „STRONG" ist bewusst NICHT die unterste Stufe: die Kette muss hörbar steigern. */
+  it("die Score-Ansagen halten die freigegebene Eskalationskette", () => {
+    const CHAIN = [["Stark", "FIERCE"], ["Brutal", "BRUTAL"], ["Irre", "INSANE"], ["Gottgleich", "GODLIKE"],
+      ["Lawine", "AVALANCHE"], ["Gönn dir", "LET’S GO!"]];
+    // Geprüft werden nur Texte, die ÜBER die Ansagen reden — erkennbar daran, dass sie mindestens
+    // eine Stufe in Versalien nennen. Ohne diese Einschränkung schlüge das Adverb „stark" in
+    // beliebigen Sätzen an („entlastet schwache Geräte stark").
+    const isAbout = (s) => CHAIN.some(([, enWord]) => s.includes(enWord.replace("!", "")));
+    const bad = [];
+    for (const k of KEYS_DE) {
+      if (!(k in en) || !isAbout(en[k])) continue;
+      for (const [deWord, enWord] of CHAIN) {
+        if (!new RegExp(`\\b${deWord}\\b`).test(de[k])) continue;   // case-sensitiv: die Ansage ist ein Name
+        if (!en[k].includes(enWord)) bad.push(`${k}: „${deWord}" → muss „${enWord}" sein\n     en: ${en[k]}`);
+      }
+    }
+    expect(bad, `Score-Ansage weicht von der Freigabe ab:\n  ${bad.join("\n  ")}`).toEqual([]);
+    expect(CHAIN.map((c) => c[1])).not.toContain("STRONG");
   });
 });
 

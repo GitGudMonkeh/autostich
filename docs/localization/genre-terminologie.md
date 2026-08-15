@@ -78,11 +78,12 @@ Damit scheiden Balatro und Hearthstone als Vorbild aus: Beide enden auf „Legen
 „Epic" ist als lila Stufe branchenweit verstanden (die Farbcodierung grau→grün→blau→lila ist
 genreübergreifend stabil).
 
-> **Nebenbefund fürs Deutsche:** Unsere Leiter heißt Normal · Selten · **Sehr selten** · **Rar**.
-> „Rar" *über* „Sehr selten" ist im Deutschen unlogisch — „rar" und „selten" sind Synonyme, die
-> Steigerung läuft rückwärts. Das ist kein Übersetzungsproblem, sondern ein deutsches Textproblem,
-> und es fällt erst beim Übersetzen auf. Vorschlag: die vierte Stufe umbenennen (z. B. **„Episch"**,
-> analog zur englischen Leiter). Eigene Entscheidung, eigener Commit.
+> **Nebenbefund fürs Deutsche — umgesetzt.** Die Leiter hieß Normal · Selten · **Sehr selten** ·
+> **Rar**. „Rar" *über* „Sehr selten" steigerte rückwärts — beides sind Synonyme. Kein
+> Übersetzungsproblem, sondern ein deutsches, das erst beim Übersetzen auffiel.
+> Stufe IV heißt jetzt **„Episch"** (`TIER_META` in `rarity.js`, eine Quelle), passend zur
+> englischen Leiter. Der Upgrade-Baum zieht seine Knotennamen seitdem aus `TIER_META`, statt sie
+> abzutippen.
 
 ## 4. „Perk" → **perk** ✅ bestätigt
 
@@ -112,15 +113,20 @@ seit #229 weg) und nicht positioniert, sondern es werden Polyominos auf ein Bauf
 „The Architect" als benannte Phase folgt dem Genre-Muster benannter Momente (Boss Blind, Neow's
 Blessing) — benannte Phasen bleiben Spielern im Gedächtnis, generische nicht.
 
-## 7. Die Score-Ansagen → **STRONG · BRUTAL · INSANE · GODLIKE** ✅ bestätigt
+## 7. Die Score-Ansagen → **FIERCE · BRUTAL · INSANE · GODLIKE** ✅ bestätigt
 
 Eskalierende Sieg-Ausrufe sind eine eigene Tradition mit klarer Herkunft: die Arena-Shooter-Kette
 (Quake/Unreal Tournament) — *Double Kill · Multi Kill · Ultra Kill · **Godlike** · Wicked Sick*.
 **„Godlike" ist dort wörtlich die Spitzenstufe.** Unser „Gottgleich" darauf abzubilden ist keine
 Übersetzung, sondern das Zitat der Vorlage — genau das, was die Stufe erkennbar macht.
 
-Für „Gönn dir" gibt es kein Äquivalent (die Wendung ist deutsches Netz-Idiom). **TREAT YOURSELF**
-trägt die Bedeutung, verliert aber den Ton. Kandidat für die Muttersprachler-Runde (§9).
+**Freigabe-Korrektur:** Die unterste Stufe heißt **FIERCE**, nicht STRONG. „Strong" ist ein
+Allerweltswort und trägt keine Eskalation; FIERCE › BRUTAL › INSANE › GODLIKE steigert hörbar und
+bleibt gleich kurz.
+
+Für „Gönn dir" gibt es kein Äquivalent (die Wendung ist deutsches Netz-Idiom). Freigegeben ist
+**LET’S GO!** — behält die Ausrufhaftigkeit und die Kürze, statt sie wie „TREAT YOURSELF" gegen
+Wörtlichkeit einzutauschen.
 
 ## 8. Ein Begriff, den ich nach der Recherche **anders** empfehle
 
@@ -131,18 +137,16 @@ Die Recherche liefert dafür keinen Rückhalt: TFT nennt das Umstellen **positio
 umgestellt, sondern die **Ziehreihenfolge** der 40 Karten (`draw order`, §3.2). „Layout" suggeriert
 ein Layout im Raum, das es nicht gibt.
 
-→ Vorschlag: **`order phase`**, passend zu `draw order`, und `Formations-Energie` → `order energy`.
-Alternative, falls „order" zu blass wirkt: **`arrangement phase`**.
-**Nicht** einseitig geändert — steht als einzige offene Frage in der Begriffstabelle (§9).
+→ **Freigegeben: `order phase`**, passend zu `draw order`, und `Formations-Energie` → **`order energy`**.
 
-## 9. Was Muttersprachler entscheiden sollten, nicht ich
+## 9. Stand der Freigabe
 
-Alles oben ist **prüfbar** (Fachbegriff, Marktkonvention, Kollisionsfreiheit). Drei Dinge sind es nicht:
+Alles oben ist **prüfbar** (Fachbegriff, Marktkonvention, Kollisionsfreiheit) und seit dem
+**15.08.2026 freigegeben**. Die drei Klangfragen sind entschieden: `order phase` (§8),
+`LET’S GO!` und `FIERCE` (§7).
 
-1. **`order phase` vs. `layout phase` vs. `arrangement phase`** (§8) — Klang, nicht Korrektheit.
-2. **„Gönn dir" → TREAT YOURSELF** (§7) — Idiom ohne Entsprechung.
-3. **Kosmetik-/Skin-Namen und die Tagline** — reine Flavour-Texte, bei denen Wirkung über
-   Wörtlichkeit geht.
+Offen bleibt genau eine Klasse: **Kosmetik-/Skin-Namen und Flavour-Texte**. Dafür entsteht beim
+Übersetzen eine eigene Unsicherheitsliste, die zur Abstimmung geht — nicht die ganze Tabelle.
 
 ---
 
