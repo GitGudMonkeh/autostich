@@ -166,7 +166,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
             #UI-Redesign: entschlackt — Δ steht jetzt im Hero-Wert, der Fortfahren-Untertitel entfällt (Energie/Formationen
             stehen oben in der Leiste). */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2" data-tut="form-energy"
              style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
@@ -195,7 +195,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
-          <div className="md:w-1/2 md:shrink-0">
+          <div className="md:w-1/2 md:shrink-0" data-tut="form-board">
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
             {hasArch && (
               <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
@@ -225,11 +225,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
               plantPfahl={hasPfahlwurzel(state.skills || [])} />
             {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
-            <FormCollapse label={t("form.legend")} chipWord={t("form.legend.chip")} color="#5ab87a"
-              open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
-              {/* #UI: geteilte Legende (ArchPanels) — dieselbe Erklärung in Aufstellphase & Chronik. */}
-              <FormationLegend state={state} />
-            </FormCollapse>
+            {/* Wrapper trägt den Tutorial-Anker: FormCollapse reicht keine Fremd-Props durch. */}
+            <div data-tut="form-legend">
+              <FormCollapse label={t("form.legend")} chipWord={t("form.legend.chip")} color="#5ab87a"
+                open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
+                {/* #UI: geteilte Legende (ArchPanels) — dieselbe Erklärung in Aufstellphase & Chronik. */}
+                <FormationLegend state={state} />
+              </FormCollapse>
+            </div>
 
             {/* #UI-Redesign: Gebäude · Perks · Eis-Effekte einklappbar — default zu; nur zeigen, wenn es überhaupt Inhalt gibt. */}
             {(hasArch || (state.perks || []).length > 0 || iceFormSkills.length > 0) && (

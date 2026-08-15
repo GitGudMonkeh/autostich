@@ -162,7 +162,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots })}</div>
+          <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots })}</div>
           <h2 className="text-xl font-bold mt-1">{t("skill.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
@@ -188,7 +188,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           {/* Archetyp-Navi (Indikator): aktueller Typ mittig (mit i-Chip → passender Leitfaden), Nachbarn links/rechts
               im Endlos-Ring, Punkte für die Position (#12/#UI). */}
           {nPages > 0 && curG && (
-            <div className="mt-2">
+            <div className="mt-2" data-tut="skill-offer">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(-1)}

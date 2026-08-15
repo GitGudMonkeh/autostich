@@ -82,7 +82,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {state.devMode ? (
           <DevPerkCatalog offer={offer} onPick={onPick} onDecline={onDecline} />
         ) : (
-        <div className="grid sm:grid-cols-3 gap-2.5 mt-4">
+        <div className="grid sm:grid-cols-3 gap-2.5 mt-4" data-tut="perk-offer">
           {offer.map((entry) => {
             const v = offerView(entry, state.familyTiers);
             const cat = v.cat;
@@ -143,7 +143,9 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
             Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}
         {/* Reihenfolge: Deck-Stärke oben, dann Formationen, „Dein Build" ganz unten — alle als klappbare Felder. */}
-        <div className="mt-4">
+        {/* data-tut: Der Build-Coach-Mark zeigt HIER hin, nicht auf das BuildPanel unter dem Brett — das läge
+            hinter diesem Vollbild-Overlay und wäre nie zu sehen. */}
+        <div className="mt-4" data-tut="perk-build">
           <CollapsibleField title={tr("perk.deckStrength")}>
             <DeckStrength deck={deck} />
           </CollapsibleField>
