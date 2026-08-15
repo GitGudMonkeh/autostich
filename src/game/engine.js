@@ -831,16 +831,22 @@ export function resolveTrick(state, rng) {
     // Richtfest). Ein Vielfaches der eigenen Eröffnung wächst mit der Ökonomie mit und bleibt „Verstärker, kein
     // Motor": ein starker Build bekommt mehr, aber verhältnismäßig dasselbe.
     //
-    // LAUF-DECKEL (vabanquePaid < VABANQUE_MAX_PAYOUTS): `playerOrder` ist persistent + in der Formationsphase spieler-
-    // arrangierbar → ohne Deckel ließe sich die Eröffnung durch Vorne-Legen der stärksten Karten JEDEN Durchlauf
-    // abgreifen (~24–60×/Lauf → Runaway, gemessen +8,4M/Lauf). Der Deckel begrenzt den Exploit auf MAX_PAYOUTS
-    // Auszahlungen; ein Greedy-Spieler trifft die Eröffnung natürlich ~2×/Lauf, ein Front-Loader erreicht den Deckel.
-    // Er wirkt jetzt doppelt: die Auszahlung ist an die FRÜHEN (noch kleinen) Durchläufe gebunden, in denen der
-    // Deckel zuerst greift — der Front-Load-Exploit skaliert dadurch NICHT mit dem späten Score mit.
+    // KEIN LAUF-DECKEL (mehr): die Wette zahlt JEDE gefegte Eröffnung. Der frühere VABANQUE_MAX_PAYOUTS-Deckel (3)
+    // stammt aus #203 und stützte sich auf die Annahme, ein Greedy-Spieler treffe die Eröffnung nur ~2×/Lauf, ein
+    // Front-Loader dagegen 24–60×. Nachgemessen (sim, 2026-08-15) stimmt beides nicht mehr: normal werden median
+    // 16 von 50 Eröffnungen gefegt, der Deckel band also in 90 % der Läufe — der Spieler sah 13 erfüllte
+    // Bedingungen ohne Wirkung. Und weil die Sweeps SPÄT liegen (Durchlauf 31–50: 686 von 940 beobachteten),
+    // griffen die 3 Auszahlungen ausgerechnet die frühesten und kleinsten ab: der Perk starb, bevor er etwas wert war.
+    //
+    // Der Front-Load-Missbrauch trägt sich im heutigen Build selbst nicht mehr: mit dem Front-Load-Gegner
+    // (sim/formation.js frontLoadFormationStep) steigen die Sweeps zwar auf 38/50, der Median-Score FÄLLT dabei
+    // aber von 38,2M auf 25,2M — das Sortieren der Eröffnung nach Kartenwert zerlegt die Formationen im ersten
+    // Segment. Wer die Eröffnung erzwingt, zahlt mehr, als die Wette einbringt. Deshalb braucht es keinen Deckel;
+    // die Selbstskalierung (× Eröffnungs-Score) hält den Beitrag ohnehin proportional.
     if (pos < C.VABANQUE_TRICKS) cycleOpenScore += gainedPreBet; // Eröffnungs-Score dieses Durchlaufs (ohne die Wette selbst)
     let perkDirect = 0;
-    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
-      perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1;
+    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS) {
+      perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1; // vabanquePaid nur noch Telemetrie (kein Gate)
     }
     gained = gainedPreBet + perkDirect;
     score += gained;

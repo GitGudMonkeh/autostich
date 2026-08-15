@@ -56,24 +56,31 @@ export const LEGENDARY_IDS = PERK_LIST.filter((p) => isLegendary(p.id)).map((p) 
 //  seed0/exploreRuns  Explore-Phase (Referenzbuild). exploreRuns 0 → kein Explore, reiner Legendär-Vorrang.
 //  runs               gepaarte Eval-Läufe je Perk, auf FRISCHEN, zu Explore disjunkten Seeds.
 //  only               optionale id-Teilmenge (Default: alle Legendären).
-export function computePerkImpact({ seed0 = 1, runs = 80, exploreRuns = 300, c = 1.4, env = {}, only = null } = {}) {
+//  pickFrom           optionaler Pick-Zeitpunkt: die gemessenen Perks sind erst ab diesem Durchlauf wählbar
+//                     (früh vs. spät erworben). Gilt in BEIDEN Armen → die Ablation bleibt gepaart und fair.
+export function computePerkImpact({ seed0 = 1, runs = 80, exploreRuns = 300, c = 1.4, env = {}, only = null, pickFrom = 0 } = {}) {
   const ids = only && only.length ? LEGENDARY_IDS.filter((id) => only.includes(id)) : LEGENDARY_IDS;
 
   // 1) Referenzbuild aus dem Explore (dieselbe Quelle wie `--mode eval` → kein Drift der Vergleichsbasis).
+  //    Das Explore läuft OHNE gate (es soll den Referenzbuild finden, nicht den Zeitpunkt testen).
   const { priority: explored } = exploreRuns > 0 ? explorePriority({ seed0, exploreRuns, c, env }) : { priority: [] };
   // Legendäre GANZ nach vorn: sie sind der Messgegenstand und sollen immer gewählt werden, wenn angeboten.
   const tail = explored.filter((id) => !LEGENDARY_IDS.includes(id));
   const priority = [...LEGENDARY_IDS, ...tail];
 
-  // 2) Referenz-Arm EINMAL (s. Methodik oben: höchstens ein Legendäres je Angebot → für alle Perks gültig).
+  // 2) Referenz-Arm. Ohne pickFrom EINMAL für alle Perks (s. Methodik oben: höchstens ein Legendäres je Angebot).
+  //    MIT pickFrom hängt der full-Arm am gegateten Perk → je Perk ein eigener Referenz-Arm (Kosten 2n × runs).
   const evalSeed0 = seed0 + exploreRuns;
-  const full = fixedPolicy(priority, { ...env });
-  const fullScores = [];
-  for (let i = 0; i < runs; i++) fullScores.push(runOne(evalSeed0 + i, full).score);
+  const gateFor = (id) => (pickFrom > 0 ? { id, fromCycle: pickFrom } : null);
+  const scoresFor = (pol) => { const out = []; for (let i = 0; i < runs; i++) out.push(runOne(evalSeed0 + i, pol).score); return out; };
+  const sharedFull = pickFrom > 0 ? null : scoresFor(fixedPolicy(priority, { ...env }));
 
   // 3) Je Perk der drop-Arm auf denselben Seeds.
+  let lastFull = sharedFull;
   const perks = ids.map((id) => {
-    const abl = fixedPolicy(priority, { ...env, drop: id });
+    const fullScores = sharedFull ?? scoresFor(fixedPolicy(priority, { ...env, gate: gateFor(id) }));
+    lastFull = fullScores;
+    const abl = fixedPolicy(priority, { ...env, drop: id, gate: gateFor(id) });
     const deltas = [], ratios = [];
     for (let i = 0; i < runs; i++) {
       const dScore = runOne(evalSeed0 + i, abl).score;
@@ -93,11 +100,14 @@ export function computePerkImpact({ seed0 = 1, runs = 80, exploreRuns = 300, c =
   });
   perks.sort((a, b) => b.ratio - a.ratio);
 
-  const sorted = [...fullScores].sort((a, b) => a - b);
+  // Score-Verteilung des Referenz-Arms. Mit pickFrom gibt es je Perk einen eigenen — dann ist es der des zuletzt
+  // gemessenen (bei --only die einzig relevante Zahl; bei mehreren Perks nur grobe Diagnose, daher so markiert).
+  const sorted = [...(lastFull || [])].sort((a, b) => a - b);
   const p = (q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.round((sorted.length - 1) * q))] : 0);
   return {
     legendaryChance: C.PERK_LEGENDARY_BASE,
-    seed0, exploreRuns, runs, evalSeed0, c,
+    seed0, exploreRuns, runs, evalSeed0, c, pickFrom,
+    fullScoreShared: !pickFrom, // false = fullScore stammt vom zuletzt gemessenen Perk, nicht von allen
     fullScore: { n: sorted.length, mean: sorted.reduce((t, v) => t + v, 0) / (sorted.length || 1), p50: p(0.5), p90: p(0.9) },
     priorityTail: tail.slice(0, 10), // Referenzbuild ohne die vorangestellten Legendären (Diagnose)
     perks,
@@ -115,13 +125,16 @@ if (IS_CLI) {
     runs: Number(arg("--runs", 80)),
     exploreRuns: Number(arg("--explore", 300)),
     c: Number(arg("--c", 1.4)),
-    env: { solveFormations: arg("--formations", "0") === "1" },
+    env: { solveFormations: arg("--formations", "0") === "1", frontLoad: arg("--frontload", "0") === "1" },
     only: only ? only.split(",").map((s) => s.trim()).filter(Boolean) : null,
+    pickFrom: Number(arg("--pickfrom", 0)),
   });
 
   const f = (x) => Math.round(x).toLocaleString("en-US");
   console.log(`sim 'perk-impact': Legendär-Chance ${res.legendaryChance} · explore ${res.exploreRuns} (seeds ${res.seed0}..${res.seed0 + res.exploreRuns - 1}) · eval ${res.runs} (seeds ${res.evalSeed0}..${res.evalSeed0 + res.runs - 1})`);
-  console.log(`  Referenz-Arm full-score: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);
+  const ctx = [arg("--frontload", "0") === "1" && "FRONT-LOAD-Gegner", arg("--formations", "0") === "1" && "Formations-Solver", res.pickFrom > 0 && `Pick erst ab Durchlauf ${res.pickFrom}`].filter(Boolean).join(" · ");
+  if (ctx) console.log(`  Kontext: ${ctx}`);
+  console.log(`  Referenz-Arm full-score${res.fullScoreShared ? "" : " (zuletzt gemessener Perk)"}: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);
   console.log(`  Referenzbuild (Top 10 nach explore-mean, ohne Legendäre): ${res.priorityTail.join(", ") || "—"}`);
   console.log(`  Ziel-Band ${band[0]}–${band[1]}× (constants.js:165). Sortiert nach typ.× :`);
   console.log(`    ${"id".padEnd(9)} ${"Perk".padEnd(16)} ${"typ.×".padStart(7)}  ${"Median-Δ".padStart(12)}  ${"win%".padStart(5)}  ${"anwendb.".padStart(8)}  ${"n".padStart(4)}   Verdikt`);

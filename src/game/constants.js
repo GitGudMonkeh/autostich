@@ -179,20 +179,31 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 // Baseline-Max): ×-Cluster (Brennpunkt/Henker/Sammler) CLEAN (0,51–1,12× — feste ×-Multiplikatoren gedeckelt). Winrate-
 // Hebel Patt/Unaufhaltsam/Umverteilung tragen erwartete Fat-Tails (Serien-Snowball, von STREAK_STAT_CAP gebändigt, abs. in
 // der Elementar-Chase-Decke ~73M, Max-Ratio < Elementar-Max-Spread 7,47×). Straffungs-Knöpfe: PATT_MARGIN, UNAUFHALTSAM_VALUE.
-// VABANQUE: `playerOrder` ist persistent+arrangierbar → ohne Deckel per-Durchlauf-Exploit (~24×/Lauf, +8,4M). VABANQUE_MAX_
-// PAYOUTS deckelt hart: Front-Load max 3 Auszahlungen, Greedy natürlich ~2 → Exploit erschlagen.
 //
-// v0.2 (2026-08-15, `npm run impact`): VABANQUE_SCORE (flach) → VABANQUE_MULT (selbstskalierend). Der flache Betrag war
-// auf 1,03× abgesunken — post-stack am ganzen Multiplikator-Stapel vorbei, während die Läufe auf 100–200M gewachsen sind.
-// Ein fester Betrag KANN das Band nicht über die Run-Spanne halten (18M sind auf 45M +40 %, auf 150M +12 %), darum ein
-// Vielfaches der eigenen Eröffnung. Messreihe (--only L_VAB --runs 150 --explore 400): MULT 10 → 1,17× · 20 → 1,36× ·
-// 25 → 1,41× · 30 → 1,63×. Gewählt: 25 (Bandmitte). Gegenprobe mit aktivem Formations-Solver (--formations 1): 1,37× —
-// Formationsspiel treibt es also nicht aus dem Band. (Ein expliziter FRONT-LOAD-Gegner fehlt der Sim weiterhin; der
-// Solver optimiert Formationen, nicht „stärkste Karten nach vorn". Worst Case bleibt insoweit ungetestet.) Der Deckel
-// wirkt jetzt doppelt, weil die Auszahlung an die frühen, noch kleinen Durchläufe gebunden ist — sie skaliert NICHT
-// mit dem späten Score mit.
-// ACHTUNG bei den übrigen Flat-Perks: ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×) haben denselben Defekt, sind
-// aber bewusst NICHT mitgeändert (eigene Entscheidung, eigener Mess-Pass).
+// VABANQUE v0.2 (2026-08-15, `npm run impact`) — zwei Defekte, beide gemessen statt geschätzt:
+//  1) FLACH → SELBSTSKALIEREND. VABANQUE_SCORE lief post-stack am ganzen Multiplikator-Stapel vorbei und war auf
+//     1,03× abgesunken, während die Läufe auf 100–200M gewachsen sind. Ein fester Betrag KANN das Band über die
+//     Run-Spanne nicht halten (18M sind auf 45M +40 %, auf 150M +12 %) → VABANQUE_MULT × eigener Eröffnungs-Score.
+//  2) DECKEL RAUS. VABANQUE_MAX_PAYOUTS (3) band in 90 % der Läufe: gefegt werden median 16 von 50 Eröffnungen, und
+//     die Sweeps liegen SPÄT (Durchlauf 31–50: 686 von 940 beobachteten). Die 3 Auszahlungen griffen also die
+//     frühesten und kleinsten ab, danach war der Perk tot — bei 13 weiter sichtbar erfüllten Bedingungen. Genau das
+//     „triggert selten, fühlt sich danach nutzlos an". Der Front-Load-Missbrauch, gegen den der Deckel stand, trägt
+//     sich heute selbst nicht mehr: mit frontLoadFormationStep steigen die Sweeps auf 38/50, der Median-Score fällt
+//     dabei aber von 38,2M auf 25,2M (Sortieren nach Kartenwert zerlegt die Formationen im ersten Segment).
+// Messreihen (--only L_VAB --runs 150 --explore 400), alle mit `npm run impact`:
+//   MIT Deckel:   MULT 10 → 1,17× · 20 → 1,36× · 25 → 1,41× · 30 → 1,63×  (Formations-Solver bei 25: 1,37×)
+//   OHNE Deckel:  MULT 0,4/0,8 → ~1,03× (Rauschen) · 3 → 1,32× · 4 → 1,36× · 6 → 1,49×  → gewählt: 4
+//   Front-Load-Gegner bei MULT 3: 1,55× — höher (mehr Sweeps), aber im Band, und der Front-Loader bezahlt es mit
+//     ~34 % Gesamt-Score. Kein Exploit, kein Deckel nötig.
+//   PICK-ZEITPUNKT (--pickfrom): früh 1,36× · ab Durchlauf 30 1,23× · ab 40 1,19× (anwendbar 86 %→75 %→58 %).
+//     Monoton fallend = gesund: je früher erworben, desto mehr Eröffnungen bleiben. Unter dem alten Deckel war das
+//     GENAU UMGEKEHRT (die 3 Auszahlungen griffen die frühesten, kleinsten Sweeps ab, ein später Pick bekam die
+//     großen) — nicht nachgemessen, aber die direkte Folge aus Deckel + später Sweep-Verteilung.
+// ACHTUNG Wechselwirkung: die Auszahlung geht über `gained` in cycleBestTrick ein, also multipliziert ECHO (×1,6 am
+// Durchlauf-Ende) sie mit. Bei MULT 6 zeigte sich das im Schwanz (p90 des Referenz-Arms 100M → 299M); bei 4 liegt der
+// p90 wieder bei 114M (Median 45M) = Baseline-Niveau. Wer MULT anhebt, muss den p90 mitlesen.
+// ACHTUNG bei den übrigen Flat-Perks: ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×) haben Defekt 1 ebenfalls,
+// sind aber bewusst NICHT mitgeändert (eigene Entscheidung, eigener Mess-Pass).
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
@@ -214,9 +225,11 @@ export const ZINS_RATE_MAX       = envNum("SIM_ZINS_RATE_MAX", 0.40);     // …
 export const ZINS_HURDLE_RATE    = envNum("SIM_ZINS_HURDLE_RATE", 0.65);  // … nötiger Sieg-Anteil eines Durchlaufs für die Auszahlung (× Durchlauf-Länge, aufgerundet)
 export const ZINS_CRASH_KEEP     = envNum("SIM_ZINS_CRASH_KEEP", 0.75);   // … Crash (Hürde verfehlt): so viel Kapital bleibt
 export const ZINS_CRASH_STEPS    = envNum("SIM_ZINS_CRASH_STEPS", 1);     // … Crash: um so viele Stufen fällt der Zinssatz (min. Startwert)
-export const VABANQUE_MULT       = envNum("SIM_VABANQUE_MULT", 25);       // Vabanque (Eröffnung): erste N Stiche in Folge → Auszahlung = MULT × Score dieser Eröffnung [flach 400.000 → selbstskalierend; 25 = Bandmitte, s. Messreihe unten]
+export const VABANQUE_MULT       = envNum("SIM_VABANQUE_MULT", 4);        // Vabanque (Eröffnung): JEDE gefegte Eröffnung zahlt MULT × ihren eigenen Score [4 = 1,36×, s. Messreihe oben; nach dem Deckel-Wegfall neu kalibriert]
 export const VABANQUE_TRICKS     = envNum("SIM_VABANQUE_TRICKS", 5);      // …          … so viele Eröffnungs-Stiche
-export const VABANQUE_MAX_PAYOUTS = envNum("SIM_VABANQUE_MAX_PAYOUTS", 3); // … Lauf-Deckel: so oft zahlt Vabanque max je Lauf (Anti-Front-Load-Exploit; s. engine.js)
+// (entfernt: VABANQUE_MAX_PAYOUTS — der Lauf-Deckel band in 90 % der Läufe und tötete den Perk nach 3 der median 16
+// gefegten Eröffnungen. Der Front-Load-Missbrauch, den er abwehren sollte, kostet im heutigen Build mehr Score als er
+// einbringt (38,2M → 25,2M Median bei 16 → 38 Sweeps). Belegt mit sim/formation.js frontLoadFormationStep.)
 export const HENKER_MULT         = envNum("SIM_HENKER_MULT", 2.0);        // Henker (Segment-Finale): Score × in der End-Zone + garantierter Crit
 export const HENKER_ZONE_START   = 35;                                    // … ab Deck-Position 36 (Index 35) = letztes Segment 36–40
 export const SAMMLER_STEP        = envNum("SIM_SAMMLER_STEP", 0.15);      // Sammler (Formationsvielfalt): +Formations-Mult je distinct Formationsart im Durchlauf
