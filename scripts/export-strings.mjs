@@ -16,7 +16,6 @@ import { dirname, resolve, relative, join } from "node:path";
 
 import { ARCHETYPE_META } from "../src/game/skills.js";   // nur noch für die Leitfaden-Kontextspalte
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
-import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES, TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../src/game/glossary.js";
 import { TIER_META } from "../src/game/rarity.js";
@@ -64,27 +63,11 @@ const push = (id, category, de, context, limit = "", note = "") => {
 /* ============ 1 · Skills + Archetypen ============
    (Migriert — beide kommen unten aus dem i18n-Katalog, samt englischer Spalte.) */
 
-/* ============ 2 · Perks (flache Legendäre) ============ */
-for (const p of Object.values(PERK_DEFS)) {
-  if (p.offerable === false) continue;
-  const cat = PERK_CATS[p.cat] || { name: p.cat };
-  push(`item.perk.${p.id}.label`, "item", p.label, `Legendärer Perk — Name (Kategorie ${cat.name}) — Perk-Auswahl/Build`);
-  push(`item.perk.${p.id}.desc`, "item", p.desc, `Legendärer Perk — Beschreibung (Kategorie ${cat.name})`);
-}
-for (const c of Object.values(PERK_CATS)) {
-  push(`ui.perkcat.${c.key}.name`, "ui", c.name, "Perk-Kategorie — Kurzname auf dem Angebots-Chip", "10");
-  push(`ui.perkcat.${c.key}.desc`, "ui", c.desc, "Perk-Kategorie — Untertitel");
-}
+/* ============ 2 · Perks + Perk-Kategorien ============
+   (Migriert — beide kommen unten aus dem i18n-Katalog, samt englischer Spalte.) */
 
-/* ============ 3 · Perk-Familien (4 Stufen) ============ */
-for (const f of FAMILY_LIST) {
-  const cat = PERK_CATS[f.cat] || { name: f.cat };
-  push(`item.family.${f.id}.name`, "item", f.name, `Perk-Familie — Name (Kategorie ${cat.name})`);
-  for (let t = 1; t <= 4; t++) {
-    const d = f.tiers?.[t]?.desc;
-    if (d) push(`item.family.${f.id}.tier${t}.desc`, "item", d, `Perk-Familie „${f.name}" — Beschreibung Stufe ${ROMAN[t]}`);
-  }
-}
+/* ============ 3 · Perk-Familien ============
+   (Migriert — Namen und alle vier Stufentexte kommen unten aus dem i18n-Katalog.) */
 
 /* ============ 4 · Architekt-Gebäude ============ */
 // Gebaeude-Effekttexte kommen aus der geteilten Quelle in src/game/architect.js (Sprachpruefung A13):

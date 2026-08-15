@@ -70,6 +70,16 @@ describe("i18n · Katalog-Parität", () => {
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A
+    "perkcat.A.name",         // „Deck" ist in beiden Sprachen dasselbe Wort
+    "perkcat.D.name",         // „Score" bleibt Score (§3.1)
+    "perkcat.D.desc",         // dito
+    "perkcat.E.name",         // „Form" — Chip-Kurzform, in beiden Sprachen identisch
+    "perk.L_ECHO.label",      // „Echo" ist in beiden Sprachen dasselbe Wort
+    // Familiennamen, die als Fremdwort schon englisch sind:
+    "family.B_MOMENTUM.name",   // Momentum
+    "family.B_INITIATIVE.name", // Initiative
+    "family.C_TRIUMPH.name",    // Triumph
+    "family.C_FINISHER.name",   // Finisher
   ]);
 
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
@@ -173,7 +183,9 @@ describe("i18n · Terminologie", () => {
     { de: /\bRangliste\b/i,   ok: /rank(ed|ing)\b/i, never: null,                     name: "Rangliste → ranked/ranking" },
     { de: /\bBestenliste\b/i, ok: /\bleaderboard\b/i, never: null,                    name: "Bestenliste → leaderboard" },
     { de: /\bWerkstatt\b/i,   ok: /\bworkshop\b/i,   never: null,                     name: "Werkstatt → workshop" },
-    { de: /\bFormation/i,     ok: /\bformation/i,    never: null,                     name: "Formation → formation" },
+    // „Formationsphase"/„Formations-Energie" bilden auf „order phase"/„order energy" ab (Freigabe §3.2)
+    // und dürfen deshalb NICHT „formation" verlangen — die eigenen Regeln dafür stehen darüber.
+    { de: /\bFormation(?!sphase|s-Energie|senergie)/i, ok: /\bformation/i, never: null,      name: "Formation → formation" },
     { de: /\bMultiplikator\b/i, ok: /\bmultiplier\b/i, never: null,                   name: "Multiplikator → multiplier" },
     // Freigabe 15.08.2026: die drei entschiedenen Klangfragen + die deutsche Umbenennung.
     { de: /Aufstellungsphase/i, ok: /\border phase\b/i, never: /\blayout\b/i,          name: "Aufstellungsphase → order phase (nie „layout“)" },

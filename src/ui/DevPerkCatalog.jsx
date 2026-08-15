@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { CATEGORIES, PERK_DEFS } from "../game/perks.js";
-import { familyDef } from "../game/families.js";
+
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { rarityLabel } from "../i18n/labels.js"; // #sprache
+import { familyDef, rarityLabel } from "../i18n/labels.js"; // #sprache
 
 /* Dev-Run-Perk-Katalog (Test-Layout, nur Preview): statt des Zufallsangebots der KOMPLETTE Perk-Katalog,
    nach Kategorie (A–E + Legendär) aufklappbar. Klick auf eine Familie → Stufe I–IV wählen → onPick({familyId,tier}).

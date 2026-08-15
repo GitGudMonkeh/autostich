@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
-import { familyDef } from "../game/families.js";
+import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
+
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, archetypeOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { GLOSSARY, glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor, suitName } from "../game/constants.js";
-import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
@@ -52,7 +52,7 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
   // Kombinierte Einträge je Kategorie: flache Perks + gehaltene Familien (Rang > 0).
   const heldFams = Object.entries(familyTiers).filter(([, t]) => t > 0);
   const byCat = {};
-  for (const id of perks) (byCat[PERK_DEFS[id].cat] ||= []).push({ kind: "perk", id });
+  for (const id of perks) (byCat[perkDef(id).cat] ||= []).push({ kind: "perk", id });
   for (const [fid, tier] of heldFams) { const f = familyDef(fid); if (f) (byCat[f.cat] ||= []).push({ kind: "family", id: fid, tier }); }
   const total = perks.length + heldFams.length;
   if (total === 0) return <div className="text-sm opacity-40">{empty}</div>;
@@ -60,12 +60,12 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
   // Detail-Panel des aufgeklappten Eintrags (Perk oder Familien-Stufe).
   let detail = null;
   if (open && open.kind === "perk" && perks.includes(open.id)) {
-    const p = PERK_DEFS[open.id]; const c = CATEGORIES[p.cat].color;
-    detail = { c, cat: CATEGORIES[p.cat].name, name: p.label, desc: p.desc };
+    const p = perkDef(open.id); const c = perkCat(p.cat).color;
+    detail = { c, cat: perkCat(p.cat).name, name: p.label, desc: p.desc };
   } else if (open && open.kind === "family") {
     const f = familyDef(open.id); const tier = familyTiers[open.id];
-    if (f && tier) { const c = (tierMeta(tier) || {}).color || CATEGORIES[f.cat].color;
-      detail = { c, cat: CATEGORIES[f.cat].name, name: `${f.name} ${romanOf(tier)}`, desc: (f.tiers[tier] || {}).desc || "" }; }
+    if (f && tier) { const c = (tierMeta(tier) || {}).color || perkCat(f.cat).color;
+      detail = { c, cat: perkCat(f.cat).name, name: `${f.name} ${romanOf(tier)}`, desc: (f.tiers[tier] || {}).desc || "" }; }
   }
 
   return (
@@ -74,12 +74,12 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
         {Object.keys(CATEGORIES).filter((c) => byCat[c]).map((c) => (
           <div key={c} className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
-              style={{ background: `${CATEGORIES[c].color}22`, color: CATEGORIES[c].color }}>{CATEGORIES[c].name}</span>
+              style={{ background: `${perkCat(c).color}22`, color: perkCat(c).color }}>{perkCat(c).name}</span>
             {byCat[c].map((it) => {
               const active = isOpen(it.kind, it.id);
               if (it.kind === "family") {
                 // Familie: Stufenfarbe (grau/grün/blau/lila) + „Name II".
-                const f = familyDef(it.id); const col = (tierMeta(it.tier) || {}).color || CATEGORIES[c].color;
+                const f = familyDef(it.id); const col = (tierMeta(it.tier) || {}).color || perkCat(c).color;
                 return (
                   <button key={`fam:${it.id}`} type="button" onClick={() => toggle("family", it.id)}
                     className="text-xs px-2 py-0.5 rounded transition-all"
@@ -95,10 +95,10 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
               return (
                 <button key={`perk:${it.id}`} type="button" onClick={() => toggle("perk", it.id)}
                   className="text-xs px-2 py-0.5 rounded transition-all"
-                  style={{ background: active ? `${CATEGORIES[c].color}33` : "#22222b",
+                  style={{ background: active ? `${perkCat(c).color}33` : "#22222b",
                            color: special ? rm.color : undefined,
-                           outline: active ? `1px solid ${CATEGORIES[c].color}` : (special ? `1px solid ${rm.color}88` : "none") }}>
-                  {rm.mark ? `${rm.mark} ` : ""}{PERK_DEFS[it.id].label}
+                           outline: active ? `1px solid ${perkCat(c).color}` : (special ? `1px solid ${rm.color}88` : "none") }}>
+                  {rm.mark ? `${rm.mark} ` : ""}{perkDef(it.id).label}
                 </button>
               );
             })}
@@ -113,7 +113,7 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
             <span className="font-bold" style={{ color: detail.c }}>{detail.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{detail.desc}</div>
-          {open && open.kind === "perk" && PERK_DEFS[open.id]?.zinseszins && <ZinsReadout zins={zins} color={detail.c} />}
+          {open && open.kind === "perk" && perkDef(open.id)?.zinseszins && <ZinsReadout zins={zins} color={detail.c} />}
         </div>
       )}
     </div>

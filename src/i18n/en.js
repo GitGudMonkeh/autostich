@@ -8,9 +8,13 @@
    ============================================================ */
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
 import enSkills from "./enSkills.js";   // 84 skills + archetype names — own file, it is long
+import enPerks from "./enPerks.js";     // legendary perks + perk categories
+import enFamilies from "./enFamilies.js"; // 73 perk families × name + tier descriptions
 
 export default {
   ...enSkills,
+  ...enPerks,
+  ...enFamilies,
 
   /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
      Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,

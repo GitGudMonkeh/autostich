@@ -1,8 +1,8 @@
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
-import { familyDef, hasCritFamily } from "../game/families.js";
+import { hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsname zur Anzeigezeit
+import { familyDef, perkCat, perkDef, rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsname zur Anzeigezeit
 import { PerkList, DeckStrength } from "./BuildSummary.jsx";
 import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog statt Zufallsangebot
 import { FormationPanel } from "./FormationPanel.jsx";
@@ -24,16 +24,16 @@ function offerView(entry, familyTiers = {}) {
     const tm = tierMeta(t) || { color: "#8a8a95" };
     const held = familyTierOf(familyTiers, entry.familyId); // 0 = neu, sonst gehaltener Rang
     return {
-      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: CATEGORIES[fam.cat],
+      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: perkCat(fam.cat),
       accent: tm.color, tierLabel: rarityLabel(t), tier: t, held, upgrade: held > 0,
       name: `${fam.name} ${romanOf(t)}`, desc: (fam.tiers[t] || {}).desc || "",
       glow: t >= 3, // Selten/Rar erhalten einen dezenten Farbschein
     };
   }
-  const p = PERK_DEFS[entry];
+  const p = perkDef(entry);
   const rar = rarityOf(entry);
   const rm = RARITY_META[rar];
-  return { key: entry, entry, isFamily: false, cat: CATEGORIES[p.cat], accent: rm.color, rar, rm,
+  return { key: entry, entry, isFamily: false, cat: perkCat(p.cat), accent: rm.color, rar, rm,
            leg: rar === "legendary", name: p.label, desc: p.desc };
 }
 

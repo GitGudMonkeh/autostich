@@ -125,8 +125,12 @@ Autostich ist zweisprachig (DE/EN). **Jeder neue spieler-sichtbare Text gehört 
 - **Zahlen in übersetzten Registertexten**: EN tippt sie NICHT ab, sondern benutzt dieselben Konstanten-Ausdrücke
   wie DE (`${C.X}`, `${pct(C.Y)}`). Wächter „beide Sprachen nennen dieselben Zahlen" sichert die Naht ab.
 - Migriert: `OptionsModal.jsx`, `StartScreen.jsx`, `UsernameModal.jsx`, Rarität, Formationstypen (Namen + Badges),
-  **Skills (84) + Archetyp-Namen** (`src/i18n/enSkills.js`, Leser `skillDef`/`archMeta` in `src/i18n/labels.js`).
-  Offen: Perks, Familien, Gebäude, Glossar, Upgrade-Knoten, Wochen-Mods, Kosmetik.
+  **Skills (84)**, **Archetyp-Namen**, **legendäre Perks (14) + Kategorien**, **Perk-Familien (73 + 292 Stufen)**
+  (`src/i18n/enSkills.js` · `enPerks.js` · `enFamilies.js`; Leser `skillDef`/`archMeta`/`perkDef`/`perkCat`/
+  `familyDef` in `src/i18n/labels.js`). Offen: Architekt-Gebäude, Glossar, Upgrade-Knoten, Wochen-Mods, Kosmetik.
+- Beim Übersetzen eines Registers die **Struktur** mitnehmen, nicht die Ausgabe: `families.js` erzeugt 292
+  Stufentexte aus ~120 Quellen (`MUSTER_DESC`-Templates + indizierte Präzisions-Konstanten) — `enFamilies.js`
+  spiegelt beide Sparmechanismen, sonst hätte EN 292 Pflegestellen statt 120.
 
 ### Sonstiges
 - Bash-cwd persistiert zwischen Calls; nach `cd` in node_modules zurück nach `/home/user/autostich`.

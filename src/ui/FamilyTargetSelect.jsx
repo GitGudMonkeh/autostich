@@ -1,15 +1,14 @@
 import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
 import { PANEL_BG, ActionBar, ActionButton } from "./modalStyle.jsx";
-import { familyDef, allianceGroups } from "../game/families.js";
+import { allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { rarityLabel, formationName } from "../i18n/labels.js"; // #sprache
-import { CATEGORIES } from "../game/perks.js";
+import { familyDef, formationName, perkCat, rarityLabel } from "../i18n/labels.js"; // #sprache
+
 import { FORMATION_TYPES, computeFormations } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
-
 
 /* Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — öffnet nach dem Pick einer Stufe mit `pickTarget`.
    Zwei Modi (state.familyTarget.kind):
@@ -21,7 +20,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const ft = state.familyTarget || {};
   const fam = familyDef(ft.familyId) || {};
   const tierDef = (fam.tiers && fam.tiers[ft.tier]) || {};
-  const cat = CATEGORIES[fam.cat] || { name: "", color: "#8a8a95" };
+  const cat = perkCat(fam.cat) || { name: "", color: "#8a8a95" };
   const tm = tierMeta(ft.tier) || { color: "#8a8a95" };
   const need = ft.need || 0;
   const isCards = ft.kind === "cards";

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
+import { rarityOf, RARITY_META } from "../game/perks.js";
 
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
-import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { archMeta, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -111,7 +111,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const toggle = (kind, id) => setSel((s) => (s && s.kind === kind && s.id === id ? null : { kind, id }));
   const selDetail = !sel ? null
     : sel.kind === "perk"
-      ? (PERK_DEFS[sel.id] ? { title: PERK_DEFS[sel.id].label, desc: PERK_DEFS[sel.id].desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
+      ? (perkDef(sel.id) ? { title: perkDef(sel.id).label, desc: perkDef(sel.id).desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
       : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
   const hasChips = (perks && perks.length > 0) || (skills && skills.length > 0);
@@ -136,9 +136,9 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
           {perks && perks.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
               {perks.map((id) => {
-                const def = PERK_DEFS[id];
+                const def = perkDef(id);
                 if (!def) return null;
-                const cc = CATEGORIES[def.cat]?.color || "#8a8a95";
+                const cc = perkCat(def.cat)?.color || "#8a8a95";
                 const rar = rarityOf(id);
                 const rm = RARITY_META[rar];
                 const on = sel && sel.kind === "perk" && sel.id === id;

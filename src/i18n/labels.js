@@ -10,11 +10,14 @@
    (de.js → rarity.js → i18n/index.js → de.js). Die Register bleiben deshalb Blätter; alles, was
    übersetzt, liegt eine Schicht darüber.
 
-   Migrationsstand: Rarität + Formationstypen. Skills, Perks, Familien, Gebäude und Glossar
-   folgen — solange sie fehlen, zeigen sie in beiden Sprachen Deutsch (sichtbar, nicht still).
+   Migrationsstand: Rarität · Formationstypen · Skills + Archetypen · Perks + Perk-Kategorien ·
+   Perk-Familien. Architekt-Gebäude und Glossar folgen — solange sie fehlen, zeigen sie in beiden
+   Sprachen Deutsch (sichtbar, nicht still).
    ============================================================ */
 import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
+import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
+import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 
 /* ---- Rarität (TIER_META) ---- */
 // Sichtbarer Name einer Raritätsstufe: „Sehr selten" / „Rare".
@@ -56,3 +59,34 @@ export function archMeta(key) {
   return { ...m, label: t(`archetype.${key}.label`) };
 }
 export const archetypeLabel = (key) => t(`archetype.${key}.label`);
+
+/* ---- Perks + Perk-Kategorien (PERK_DEFS / CATEGORIES) ----
+   Gleiches Muster wie skillDef: Register-Eintrag mit übersetztem Label/Text, alle übrigen
+   Felder (cat, rarity, Hook-Funktionen, Marker wie `zinseszins`) bleiben unverändert. */
+export function perkDef(id) {
+  const d = PERK_DEFS[id];
+  if (!d) return null;
+  return { ...d, label: t(`perk.${id}.label`), desc: t(`perk.${id}.desc`) };
+}
+
+export function perkCat(key) {
+  const c = PERK_CATS[key];
+  if (!c) return null;
+  return { ...c, name: t(`perkcat.${key}.name`), desc: t(`perkcat.${key}.desc`) };
+}
+
+/* ---- Perk-Familien (FAMILY_DEFS) ----
+   Die Stufen-Texte hängen in `tiers[1..4].desc`. Übersetzt wird der ganze Baum auf einmal, damit
+   `fam.tiers[t].desc` an den Aufrufstellen unverändert funktioniert. */
+export function familyDef(id) {
+  const f = rawFamilyDef(id);
+  if (!f) return null;
+  const tiers = {};
+  for (const [tr, def] of Object.entries(f.tiers || {})) {
+    tiers[tr] = def && def.desc != null ? { ...def, desc: t(`family.${f.id}.tier${tr}.desc`) } : def;
+  }
+  return { ...f, name: t(`family.${f.id}.name`), tiers };
+}
+
+// Aufstellphasen-Familien (LayoutPerks) — dieselbe Übersetzung, gleiche Reihenfolge.
+export const layoutFamilies = (...args) => rawLayoutFamilies(...args).map((f) => familyDef(f.id) || f);

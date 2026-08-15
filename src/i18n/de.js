@@ -11,6 +11,8 @@
 import { LEG_PHASE_CYCLE, FORMATION_LABELS } from "../game/constants.js";
 import { TIER_META } from "../game/rarity.js";
 import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
+import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
+import { FAMILY_LIST } from "../game/families.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -30,6 +32,23 @@ for (const sk of SKILL_LIST) {
   fromRegistries[`ability.${sk.id}.desc`] = sk.desc;
 }
 for (const m of Object.values(ARCHETYPE_META)) fromRegistries[`archetype.${m.key}.label`] = m.label;
+for (const c of Object.values(PERK_CATS)) {
+  fromRegistries[`perkcat.${c.key}.name`] = c.name;
+  fromRegistries[`perkcat.${c.key}.desc`] = c.desc;
+}
+for (const f of FAMILY_LIST) {
+  fromRegistries[`family.${f.id}.name`] = f.name;
+  for (let tr = 1; tr <= 4; tr++) {
+    const d = f.tiers?.[tr]?.desc;
+    if (d) fromRegistries[`family.${f.id}.tier${tr}.desc`] = d;
+  }
+}
+// Nur anbietbare Perks — `offerable: false` sind Alt-Einträge, die kein Spieler je sieht.
+for (const pk of Object.values(PERK_DEFS)) {
+  if (pk.offerable === false) continue;
+  fromRegistries[`perk.${pk.id}.label`] = pk.label;
+  fromRegistries[`perk.${pk.id}.desc`] = pk.desc;
+}
 
 export default {
   ...fromRegistries,

@@ -3,10 +3,11 @@ import { suitName, suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_P
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { PERK_DEFS } from "../game/perks.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { familyDef } from "../game/families.js";
+
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 import { formationBorder } from "./formationStyle.js"; // Rahmenfarbe = Anzahl Formationen (grau/grün/blau/lila/gold), wie die Kacheln
+import { familyDef, perkDef } from "../i18n/labels.js"; // #sprache: Perks zur Anzeigezeit
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 // #UI: Wachstum/Überlauf sind durch das Skill-Gating gebrochen (z. B. 4,333…) → auf EINE Nachkommastelle runden.
@@ -34,7 +35,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
     .map(([pid]) => {
       const fam = familyDef(pid);
       const famDesc = fam ? (fam.tiers[familyTiers[pid] || 1]?.desc || "") : "";
-      return { pid, label: PERK_DEFS[pid]?.label || fam?.name || pid, desc: PERK_DEFS[pid]?.desc || famDesc };
+      return { pid, label: perkDef(pid)?.label || fam?.name || pid, desc: perkDef(pid)?.desc || famDesc };
     });
 
   const Chip = ({ children, c }) => (

@@ -926,7 +926,9 @@ const MUSTER_DESC = {
   D_RHYTHM: { tpl: "Im Takt: jeder $0. Sieg gibt +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
   D_OVERPOWER: { tpl: "Sieg mit ≥$0 Wertvorsprung: +$1 Score.", vals: [["10","300"],["8","400"],["6","550"],["4","750"]] },
   D_CRIT_HARVEST: { tpl: "Crit in ≥1 aktiver Formation: +$0 Score.", vals: [["175"],["300"],["475"],["750"]] },
-  E_TUNING: { tpl: "$0: +$1 Energie.", vals: [["Jede zweite Formationsphase","1"],["Jede Formationsphase","1"],["Jede Formationsphase","2"],["Jede Formationsphase","3"]] },
+  // Sprachprüfung: „Aufstellungsphase" ist der EINE Name der Phase (so auch im Glossar) — „Formationsphase"
+  // war hier das einzige Vorkommen in einem Spielertext und wurde vom Glossar deshalb nicht mal gefettet.
+  E_TUNING: { tpl: "$0: +$1 Energie.", vals: [["Jede zweite Aufstellungsphase","1"],["Jede Aufstellungsphase","1"],["Jede Aufstellungsphase","2"],["Jede Aufstellungsphase","3"]] },
 };
 const applyMusterDescs = (defs) => {
   for (const [id, m] of Object.entries(MUSTER_DESC)) {

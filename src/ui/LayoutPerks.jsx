@@ -1,6 +1,7 @@
-import { PERK_DEFS, layoutPerks, rarityMeta } from "../game/perks.js";
-import { layoutFamilies } from "../game/families.js";
+import { layoutPerks, rarityMeta } from "../game/perks.js";
+
 import { tierColor, romanOf } from "../game/rarity.js";
+import { layoutFamilies, perkDef } from "../i18n/labels.js"; // #sprache: Perks zur Anzeigezeit
 
 /* Aufstellungshilfe (Issue #95 / #166): listet die gehaltenen Perks UND Familien, deren Wirkung von Position/
    Reihenfolge/Nachbarschaft oder Formations-Zugehörigkeit abhängt — damit man beim Aufstellen weiß, worauf es
@@ -22,8 +23,8 @@ export function LayoutPerks({ perks, familyTiers = {} }) {
         ))}
         {ids.map((id) => (
           <div key={id} className="text-[11px] leading-snug">
-            <span className="font-bold" style={{ color: rarityMeta(id).color }}>{PERK_DEFS[id].label}</span>
-            <span className="opacity-55"> — {PERK_DEFS[id].desc}</span>
+            <span className="font-bold" style={{ color: rarityMeta(id).color }}>{perkDef(id).label}</span>
+            <span className="opacity-55"> — {perkDef(id).desc}</span>
           </div>
         ))}
       </div>
