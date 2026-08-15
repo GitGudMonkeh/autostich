@@ -14,6 +14,8 @@ import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { FAMILY_LIST } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
+import { NODES, BRANCHES } from "../game/progression.js";
+import { WEEK_MODS } from "../game/weekMods.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -43,6 +45,21 @@ for (const f of FAMILY_LIST) {
     const d = f.tiers?.[tr]?.desc;
     if (d) fromRegistries[`family.${f.id}.tier${tr}.desc`] = d;
   }
+}
+for (const n of NODES) {
+  fromRegistries[`node.${n.id}.label`] = n.label;
+  if (n.detail) fromRegistries[`node.${n.id}.detail`] = n.detail;
+}
+for (const b of BRANCHES) {
+  fromRegistries[`branch.${b.key}.name`] = b.name;
+  fromRegistries[`branch.${b.key}.desc`] = b.desc;
+}
+/* Wochen-Mods: `desc` ist eine Funktion der Stärke (v). Ruft man sie MIT DEM PLATZHALTER auf,
+   liefert sie genau die Vorlage zurück — so wandert der Satz ins Katalog-Format, ohne ihn
+   abzutippen und ohne die Funktion zweimal zu pflegen. */
+for (const m of WEEK_MODS) {
+  fromRegistries[`weekmod.${m.id}.name`] = m.name;
+  fromRegistries[`weekmod.${m.id}.desc`] = typeof m.desc === "function" ? m.desc("{v}") : String(m.desc || "");
 }
 // Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
 for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;

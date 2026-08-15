@@ -25,8 +25,6 @@ import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
 import CAT_DE from "../src/i18n/de.js";
 import CAT_EN from "../src/i18n/en.js";
 import { GLOBAL_FX, THEME_DEFS } from "../src/game/themes.js";
-import { WEEK_MODS } from "../src/game/weekMods.js";
-import { NODES, BRANCHES } from "../src/game/progression.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
 import { unlockProgress, MONO_CHALLENGE_N } from "../src/game/cosmetics.js";
 import { GUIDES } from "../src/ui/guides.js";
@@ -140,22 +138,11 @@ for (const p of Object.values(THEME_DEFS)) {
   if (p.hint) push(`item.pack.${p.id}.hint`, "item", p.hint, `Kosmetik-Paket „${p.name}" — Freischalt-Hinweis`);
 }
 
-/* ============ 9 · Wochen-Modifikatoren ============ */
-for (const m of WEEK_MODS) {
-  push(`item.weekmod.${m.id}.name`, "item", m.name, `Wochen-Modifikator — Name (${m.sign === "pos" ? "positiv" : "negativ"})`, "26");
-  const d = typeof m.desc === "function" ? m.desc(m.range ? `{n}` : undefined) : m.desc;
-  push(`item.weekmod.${m.id}.desc`, "item", d, `Wochen-Modifikator „${m.name}" — Wirkung${m.range ? ` · Var.: {n} = Stärke ${m.range[0]}–${m.range[1]}` : ""}`);
-}
+/* ============ 9 · Wochen-Modifikatoren ============
+   (Migriert — Namen und {v}-Beschreibungen kommen unten aus dem i18n-Katalog.) */
 
-/* ============ 10 · Fortschrittsbaum (Upgrades) ============ */
-for (const b of BRANCHES) {
-  push(`achievement.branch.${b.key}.name`, "achievement", b.name, "Upgrade-Baum — Reiter/Astname", "12");
-  push(`achievement.branch.${b.key}.desc`, "achievement", b.desc, `Upgrade-Ast „${b.name}" — Untertitel`);
-}
-for (const n of NODES) {
-  push(`achievement.node.${n.id}.label`, "achievement", n.label, `Upgrade-Knoten — Name (Ast ${n.branch})`, "20");
-  push(`achievement.node.${n.id}.detail`, "achievement", n.detail, `Upgrade-Knoten „${n.label}" — Wirkung (Tooltip/Detail)`);
-}
+/* ============ 10 · Fortschrittsbaum (Upgrades) ============
+   (Migriert — Knoten- und Zweig-Texte kommen unten aus dem i18n-Katalog.) */
 
 /* ============ 11 · Freischalt-Bedingungen (Kosmetik) ============ */
 for (const [key, def] of Object.entries(UNLOCK_SAMPLES)) {

@@ -7,8 +7,8 @@ import { GUIDES } from "./guides.js";
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
 import { deckAssets } from "./cosmeticAssets.js";
-import { NODES, owns } from "../game/progression.js";
-import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { owns } from "../game/progression.js";
+import { skillDef, archMeta , nodeList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 
 /* ============================================================
    DECK-DETAILANSICHT (#369, Ebene 2) — VOLLSTÄNDIG DATENGETRIEBEN.
@@ -52,8 +52,8 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const p = profile || {};
 
   // Datengetriebene Ableitungen — alles live aus den Single-Source-Modulen.
-  const deckNode = NODES.find((n) => n.arch === archetype && n.deckUnlock); // ice/plant; fire/lightning = frei
-  const legNodes = NODES.filter((n) => n.arch === archetype && n.legLevel).sort((a, b) => a.legLevel - b.legLevel);
+  const deckNode = nodeList().find((n) => n.arch === archetype && n.deckUnlock); // ice/plant; fire/lightning = frei
+  const legNodes = nodeList().filter((n) => n.arch === archetype && n.legLevel).sort((a, b) => a.legLevel - b.legLevel);
   const deckOwned = deckNode ? owns(p, deckNode.id) : true;
   const skills = SKILL_LIST.filter((s) => s.archetype === archetype);
   const normalSkills = skills.filter((s) => !s.legendary);

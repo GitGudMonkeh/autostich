@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { WEEK_MODS } from "../game/weekMods.js";
+import { weekModList } from "../i18n/labels.js"; // #sprache: Wochen-Mods zur Anzeigezeit
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-Rahmen (wie BuildPanel)
 
 /* #381/#385 Gemeinsame Wochen-Modifikatoren-Anzeige (Ranked-Screen UND Battlefield-Panel).
@@ -10,7 +10,7 @@ export const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
 
 // Katalog (Regeln-Reiter) als Anzeige-Mods: text aus desc(min) + Range-/Paar-Hinweis.
 export function catalogDisplayMods() {
-  return WEEK_MODS.map((m) => ({
+  return weekModList().map((m) => ({
     id: m.id, sign: m.sign, name: m.name, effect: m.effect, pair: !!m.pair,
     text: m.desc(m.range ? m.range[0] : undefined) + (m.range ? ` (${m.range[0]}–${m.range[1]})` : ""),
   }));

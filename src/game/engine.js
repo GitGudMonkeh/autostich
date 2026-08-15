@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
-import { weekModMag, hasWeekMod } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
+import { weekModMag, hasWeekMod, BOOST_FACTOR } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
@@ -671,9 +671,9 @@ export function resolveTrick(state, rng) {
     // #370 Bau-Boost (Wochen-Mod, nur Ranked): Architekt-Gebäude-Boni verdoppeln — Flat + Serien-Flat additiv, der
     // Mult-Überschuss über 1 verdoppelt (neutrale Gebäude ohne Wirkung bleiben unberührt).
     if (hasWeekMod(state.weekMods, "buildBoost")) {
-      architectScoreRes.flat *= 2;
-      architectScoreRes.streakFlat = (architectScoreRes.streakFlat || 0) * 2;
-      architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * 2;
+      architectScoreRes.flat *= BOOST_FACTOR;
+      architectScoreRes.streakFlat = (architectScoreRes.streakFlat || 0) * BOOST_FACTOR;
+      architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * BOOST_FACTOR;
     }
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;
@@ -723,7 +723,7 @@ export function resolveTrick(state, rng) {
     let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
-    if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * 2;
+    if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;

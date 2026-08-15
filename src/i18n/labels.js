@@ -11,14 +11,16 @@
    übersetzt, liegt eine Schicht darüber.
 
    Migrationsstand: Rarität · Formationstypen · Skills + Archetypen · Perks + Perk-Kategorien ·
-   Perk-Familien · Architekt-Gebäude. Das Glossar folgt — solange es fehlt, zeigt es in beiden
-   Sprachen Deutsch (sichtbar, nicht still).
+   Perk-Familien · Architekt-Gebäude · Upgrade-Knoten · Wochen-Mods. Das Glossar folgt — solange
+   es fehlt, zeigt es in beiden Sprachen Deutsch (sichtbar, nicht still).
    ============================================================ */
 import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
+import { NODES, BRANCHES } from "../game/progression.js";
+import { WEEK_MODS } from "../game/weekMods.js";
 
 /* ---- Rarität (TIER_META) ---- */
 // Sichtbarer Name einer Raritätsstufe: „Sehr selten" / „Rare".
@@ -99,3 +101,23 @@ export function archFamily(id) {
   if (!f) return null;
   return { ...f, name: t(`building.${id}.name`) };
 }
+
+/* ---- Upgrade-Baum (NODES / BRANCHES) ---- */
+export const nodeList = () => NODES.map((n) => ({
+  ...n, label: t(`node.${n.id}.label`), detail: n.detail ? t(`node.${n.id}.detail`) : n.detail,
+}));
+export const nodeDef = (id) => {
+  const n = NODES.find((x) => x.id === id);
+  if (!n) return null;
+  return { ...n, label: t(`node.${id}.label`), detail: n.detail ? t(`node.${id}.detail`) : n.detail };
+};
+export const branchList = () => BRANCHES.map((b) => ({
+  ...b, name: t(`branch.${b.key}.name`), desc: t(`branch.${b.key}.desc`),
+}));
+
+/* ---- Wochen-Modifikatoren (WEEK_MODS) ----
+   `desc` bleibt eine FUNKTION der gewürfelten Stärke — der Katalog trägt sie als {v}-Vorlage. */
+export const weekModList = () => WEEK_MODS.map((m) => ({
+  ...m, name: t(`weekmod.${m.id}.name`), desc: (v) => t(`weekmod.${m.id}.desc`, { v }),
+}));
+export const weekModDef = (id) => weekModList().find((m) => m.id === id) || null;

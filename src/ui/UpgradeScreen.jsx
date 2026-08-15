@@ -6,9 +6,10 @@ import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
 import { tierColor } from "../game/rarity.js";
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
-  NODES, NODE_BY_ID, TOTAL_NODES,
+  TOTAL_NODES,
   emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete, owns,
 } from "../game/progression.js";
+import { nodeDef, nodeList } from "../i18n/labels.js"; // #sprache: Knotentexte zur Anzeigezeit
 
 /* Upgrade-Screen (#369 KOMPLETT-REWORK) — hängt am ECHTEN Profil (progression.js + storage). Zwei Reiter:
    „Decks" (je Archetyp die Kette Deck › Leg I › Leg II, tippbar → Deck-Detailansicht) und „Allgemein"
@@ -81,7 +82,7 @@ function nodeStatusText(node, st) {
   if (st === "owned") return "✓ Gekauft";
   if (st === "placeholder") return "Bald verfügbar";
   if (st === "lock-sp") return `Zu wenig SP — kostet ${node.cost} SP`;
-  if (st === "lock-prev") { const pr = NODE_BY_ID[node.prereq]; return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
+  if (st === "lock-prev") { const pr = nodeDef(node.prereq); return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
   if (st === "lock-gate") return node.gate?.type === "anyLeg" ? "Braucht eine freigeschaltete Legendär-Stufe" : "Noch gesperrt";
   return "Kaufbar";
 }
@@ -197,7 +198,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {ARCHETYPE_ORDER.map((arch) => {
               const meta = ARCHETYPE_META[arch];
               const accent = FACTION_GLOW[arch] || VI;
-              const chain = NODES.filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
+              const chain = nodeList().filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
               const hasDeckNode = chain.some((n) => n.deckUnlock);
               const lead = hasDeckNode ? null : { label: "Deck", color: accent }; // Feuer/Blitz: Deck von Beginn an frei
               return (
@@ -229,7 +230,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{lane.name}</span>
                   {lane.note && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{lane.note}</span>}
                 </div>
-                <Lane nodes={lane.ids.map((id) => NODE_BY_ID[id])} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
+                <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>
             ))}
           </div>

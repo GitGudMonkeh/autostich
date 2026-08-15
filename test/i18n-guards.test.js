@@ -81,6 +81,7 @@ describe("i18n · Katalog-Parität", () => {
     "family.C_TRIUMPH.name",    // Triumph
     "family.C_FINISHER.name",   // Finisher
     "building.kick.active",     // reine Struktur: „{base} · {kick}" — kein übersetzbarer Text
+    "branch.deck.name",         // „Decks" ist in beiden Sprachen dasselbe Wort
   ]);
 
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
@@ -257,6 +258,16 @@ describe("i18n · Längenschranken", () => {
   it("die englische Raritätsleiter endet auf Epic, nicht Legendary", () => {
     expect([1, 2, 3, 4].map((n) => en[`rarity.tier${n}.label`]))
       .toEqual(["Common", "Uncommon", "Rare", "Epic"]);
+  });
+
+  /* enMeta.js hält „Rare"/„Epic" als eigene Konstanten (en.js importiert die Datei → kein Zugriff
+     auf die Leiter). Dieser Test ist die Naht: benennt jemand die Leiter um, fliegt es hier auf. */
+  it("Texte, die Raritätsnamen einsetzen, benutzen dieselben Wörter wie die Leiter", () => {
+    for (const k of ["weekmod.perkCap.desc", "weekmod.perkBlessing.desc", "node.tier3.detail", "node.tier4.detail"]) {
+      const tier = /tier3/.test(k) ? 3 : /tier4/.test(k) ? 4 : null;
+      const need = tier ? [en[`rarity.tier${tier}.label`]] : [en["rarity.tier3.label"], en["rarity.tier4.label"]];
+      for (const w of need) expect(en[k], `${k} muss „${w}" nennen`).toContain(w);
+    }
   });
 });
 
