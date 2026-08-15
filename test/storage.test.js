@@ -293,6 +293,24 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(loadProfile().welcomeSpPaid).toBe(false);
   });
 
+  /* ---- Tutorial-Angebot (hadCompletedRun) ---- */
+
+  it("hadCompletedRun kippt beim ersten ABGESCHLOSSENEN Lauf und bleibt danach stehen", () => {
+    expect(loadProfile().hadCompletedRun).toBe(false);
+    // Ein Abbruch zählt nicht: wer nach zwei Stichen rausgeht, hat die Schleife nicht gesehen.
+    expect(recordRun(runRec({ ts: 1, score: 0, completed: false })).profile.hadCompletedRun).toBe(false);
+    expect(recordRun(runRec({ ts: 2, score: 0 })).profile.hadCompletedRun).toBe(true);
+    // Sticky — ein späterer Abbruch nimmt die Flagge nicht wieder weg.
+    expect(recordRun(runRec({ ts: 3, score: 0, completed: false })).profile.hadCompletedRun).toBe(true);
+  });
+
+  it("Migration v8→v9: Alt-Profile mit Spielhistorie gelten als „hat schon gespielt“", () => {
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 3, welcomeSpPaid: true }));
+    expect(loadProfile().hadCompletedRun).toBe(true);
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 0, welcomeSpPaid: false }));
+    expect(loadProfile().hadCompletedRun).toBe(false);
+  });
+
   it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
     const saved = saveProfile({ stichPoints: 20, nodes: { A1: 1 }, onboarding: 6 });
     expect(saved.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);

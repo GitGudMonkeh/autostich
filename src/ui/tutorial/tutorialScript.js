@@ -47,7 +47,7 @@ export const TUTORIAL_STEPS = [
     match: { atStart: true },
     titleKey: "tutorial.intro.title",
     bodyKey: "tutorial.intro.body",
-    vars: { cycles: C.MAX_CYCLES },
+    vars: { cycles: C.MAX_CYCLES, cards: C.TRICKS_PER_CYCLE },
     coachmarks: [],
   },
   {
@@ -57,9 +57,11 @@ export const TUTORIAL_STEPS = [
     bodyKey: "tutorial.play.body",
     vars: { win: C.SCORE_PER_WIN, cards: C.TRICKS_PER_CYCLE },
     coachmarks: [
-      { anchor: "bf-board",  key: "tutorial.play.mark.board" },
-      { anchor: "bf-status", key: "tutorial.play.mark.status" },
-      { anchor: "bf-rail",   key: "tutorial.play.mark.rail" },
+      { anchor: "bf-board",     key: "tutorial.play.mark.board" },
+      { anchor: "bf-status",    key: "tutorial.play.mark.status" },
+      { anchor: "bf-bars",      key: "tutorial.play.mark.bars" },
+      { anchor: "bf-milestone", key: "tutorial.play.mark.milestone" },
+      { anchor: "bf-rail",      key: "tutorial.play.mark.rail" },
     ],
   },
   {

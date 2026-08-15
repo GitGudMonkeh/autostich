@@ -92,7 +92,7 @@ export function loadRunHistory() {
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
-export const PROFILE_SCHEMA_VERSION = 8;
+export const PROFILE_SCHEMA_VERSION = 9;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -114,6 +114,12 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // Willkommensbonus (WELCOME_SP): sticky, damit er genau einmal fällt — nach dem ersten
   // abgeschlossenen Lauf. Frisches Profil = noch nicht ausgezahlt.
   welcomeSpPaid: false,
+  /* „Mindestens ein Lauf ist ABGESCHLOSSEN" — sticky. Steuert, ob das Tutorial noch angeboten wird:
+     wer einen Lauf durchgespielt hat, kennt die Schleife und braucht den Einstieg nicht mehr im Menü
+     stehen zu haben. Bewusst NICHT `games > 0`: das zählt auch Abbrüche, und wer nach zwei Stichen
+     rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
+     abgeschlossene Lauf zählt. */
+  hadCompletedRun: false,
   // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
@@ -195,6 +201,13 @@ export function migrateProfile(p) {
     // bleiben auf `false` und holen den Bonus regulär mit ihrem ersten abgeschlossenen Lauf.
     if (typeof out.welcomeSpPaid !== "boolean") out.welcomeSpPaid = (Number(out.games) || 0) > 0;
     v = 8;
+  }
+  if (v < 9) {
+    // v8 → v9: `hadCompletedRun` ist neu. Für Alt-Profile aus `games` ableiten — genauer geht es
+    // rückwirkend nicht (ob die Läufe abgeschlossen waren, steht nirgends), und die Richtung stimmt:
+    // wer schon gespielt hat, braucht das Tutorial-Angebot nicht mehr im Menü.
+    if (typeof out.hadCompletedRun !== "boolean") out.hadCompletedRun = (Number(out.games) || 0) > 0;
+    v = 9;
   }
   out.schemaVersion = v;
   return out;
@@ -398,6 +411,7 @@ export function recordRun(record) {
     stichPoints: spBalance - spSweep,
     // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
     welcomeSpPaid: !!p.welcomeSpPaid || welcomeSp > 0,
+    hadCompletedRun: !!p.hadCompletedRun || record.completed === true,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.

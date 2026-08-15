@@ -989,7 +989,11 @@ export function Autostich() {
           <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
-              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && <ScoreMilestoneBar score={state.score} />}
+              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && (
+                <div data-tut="bf-milestone">{/* Tutorial-Anker (Plan §5 nennt den Meilensteinbalken ausdrücklich) */}
+                  <ScoreMilestoneBar score={state.score} />
+                </div>
+              )}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={bfPe}
                 heat={state.heat} lightning={state.lightning} score={state.score || 0}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
@@ -1002,6 +1006,9 @@ export function Autostich() {
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
+              {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
+                  Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}
+              <div data-tut="bf-bars" className="grid gap-4">
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
                 critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={manyFac} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
@@ -1023,6 +1030,7 @@ export function Autostich() {
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
                 grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={manyFac} />
+              </div>
             </div>
             {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
             <div className="order-2 lg:col-start-2 lg:row-start-1">

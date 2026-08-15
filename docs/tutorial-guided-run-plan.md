@@ -357,7 +357,55 @@ Rolle; erst W3 (Inhalte) hängt daran.
 
 ---
 
-## 15. Aufwand & Risiko
+## 15. Playtest-Rückmeldung (2026-08-15, iPhone) — was daraufhin geändert wurde
+
+Der erste Durchlauf auf einem echten Gerät hat drei Klassen von Mängeln gezeigt: Platzierung,
+Beweglichkeit und fehlender Inhalt. Alle drei sind behoben; die Entscheidungen hier, weil sie
+Annahmen aus §7/§10 korrigieren.
+
+1. **Zwei Platzierungen statt einer.** §10 wollte auf Mobil ein Bottom-Sheet. Gebaut ist jetzt eine
+   Unterscheidung nach Art des Schrittes: das **Phasen-Pop-up** ist ein echtes zentriertes Fenster
+   (wie der Namens-Dialog, `grid place-items-center` — waagerecht UND senkrecht), der **Coach-Mark**
+   hängt am Spotlight, bevorzugt **darunter**. Am Bildschirmrand verdeckte die Karte regelmäßig genau
+   das Panel, das sie erklärte.
+2. **Der Bildschirm friert ein.** Vorher ließ sich das erklärte Panel wegscrollen — der Spotlight
+   stand dann auf leerer Fläche. Die Sperre hängt an `wheel`/`touchmove` (capture), **nicht** an
+   `body { overflow:hidden }`: das Spiel scrollt in INNEREN Containern (Auswahl-Overlays,
+   Architekt-Panel), die eine Body-Sperre gar nicht erreicht. Die Tutorial-Karte selbst bleibt
+   scrollbar, sonst kommt man bei langem Text nicht an die Knöpfe.
+3. **Immer hinscrollen, nicht nur wenn nötig.** `useAnchorRect` ruft jetzt bei JEDEM Coach-Mark
+   `scrollIntoView({ block: "center" })` und misst über zwei Frames nach. Vorher stand das erklärte
+   Panel auf dem Handy oft halb unter dem Rand.
+4. **Zwei neue Anker** (§5 nannte sie, gebaut waren sie nicht): `bf-milestone` (Meilensteinbalken)
+   und `bf-bars` (die vier Fraktions-Leisten). Achtung: `bf-bars` darf **nicht** `display:contents`
+   tragen — ein solches Element hat kein Rechteck, `getBoundingClientRect()` liefert Nullen und der
+   Spotlight bliebe unsichtbar.
+5. **Fehlender Inhalt nachgetragen**, ausdrücklich verlangt: das Intro erklärt jetzt Autobattler,
+   Aufbau eines Durchlaufs und Ziel (§4 Zeile 0 war deutlich reichhaltiger als der gebaute Satz);
+   die Aufstellung nennt die **Segmentregel** („eine Formation zählt nur innerhalb eines Segments");
+   der Architekt nennt die **Sieg-Bedingung** („ein Gebäude zahlt seinen Score-Bonus nur, wenn die
+   Karte darunter ihren Stich gewinnt" — im Code: `architectScore` steht im `if (won)`-Zweig) sowie
+   Strukturen und Distrikte; das Outro erklärt **SP und DP** und zeigt auf das **ⓘ**. Damit weicht
+   das Outro bewusst von §12 ab (Meta-Ebene „nicht erklären") — der erste Kontakt endet sonst ohne
+   jede Antwort auf „und was mache ich mit den Punkten?".
+6. **Die acht Formationsarten stehen nicht im Katalog**, sondern kommen als Platzhalter aus dem
+   Register (`src/ui/tutorial/tutorialVars.js` → `FORMATION_LABELS`/`formationName`). Abgetippt wären
+   sie eine zweite Wahrheit; in `tutorialScript.js` geholt würde ein `import { t }` die Sprache beim
+   Laden einfrieren. Der Platzhalter-Wächter in `test/tutorial.test.js` kennt diese Liste und prüft
+   zusätzlich, dass der Lieferant sie wirklich füllt.
+7. **Der Einstieg verschwindet nach dem ersten abgeschlossenen Lauf** — egal ob es der geführte war.
+   Dafür gibt es die eigene Profil-Flagge `hadCompletedRun` (Schema v9) statt `games > 0`: `games`
+   zählt auch Abbrüche. Bewusst NICHT an `welcomeSpPaid` gehängt, obwohl beide dieselbe Bedingung
+   haben — eine spätere Balancing-Änderung am Bonus dürfte die UI-Gatung nicht mitreißen.
+   Die Kategorienamen im Architekt-Coach-Mark waren zudem falsch: der Spieler sieht
+   **Wert · Score · Formation** (`ARCH_CAT`), nicht die internen Begriffe Tragwerk/Handelsbau/Sakralbau.
+
+**Offen:** Der Bogen ist damit auf dem Handy geprüft, aber nicht auf schmalen Landscape-Layouts;
+`cardBox()` fällt dort auf „über dem Spotlight" zurück und könnte bei sehr hohen Panels eng werden.
+
+---
+
+## 16. Aufwand & Risiko
 
 - **Umfang:** mittel-groß, vier Wellen. **Kein Spiellogik-Risiko** (UI-only, `game/` unangetastet,
   Sim- und Determinismustests unberührt).

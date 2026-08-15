@@ -1,32 +1,41 @@
 /* TUTORIAL-OVERLAY — Erklär-Pop-up + Coach-Mark-Spotlight (Plan §7/§10).
 
-   Zwei Erklär-Ebenen, dieselbe Karte:
-     1. Phasen-Pop-up — „was mache ich hier", beim ersten Betreten jeder Phasenart.
-     2. Coach-Mark    — ein Satz zu einem Panel, mit Spotlight auf dem echten Element.
+   Zwei Erklär-Ebenen, zwei BEWUSST VERSCHIEDENE Platzierungen (Playtest-Feedback):
+
+     1. Phasen-Pop-up — „was mache ich hier". Zentriertes Fenster wie der Namens-Dialog. Es erklärt
+        den ganzen Bildschirm, hat also keinen Punkt, auf den es zeigen müsste; mittig gelesen wirkt
+        es wie eine Ansage und nicht wie eine Randnotiz.
+     2. Coach-Mark — ein Satz zu EINEM Panel. Die Karte hängt am Spotlight (bevorzugt darunter),
+        nicht am Bildschirmrand: am Rand verdeckte sie regelmäßig genau das Element, das sie erklärt.
+
+   Beides friert den Bildschirm ein: solange ein Schritt offen ist, lässt sich weder die Seite noch
+   ein innerer Container scrollen. Vorher konnte man das erklärte Panel wegscrollen und stand vor
+   einem Spotlight auf leerer Fläche.
 
    Der Text kommt ausschließlich aus dem Katalog (useT), die Zahlen als Platzhalter aus den
    Konstanten (tutorialScript.js `vars`) — abgetippte Zahlen driften beim nächsten Balancing.
 
-   Mobil ist die Karte ein Bottom-Sheet, am Desktop ein zentriertes Fenster. Der Spotlight richtet
-   sich nach der Effekt-Stufe des Spielers (useFxLevel), nicht nur nach prefers-reduced-motion —
-   sonst animiert das Tutorial munter weiter, während alles andere abgeschaltet ist. */
-import { useEffect, useLayoutEffect, useState } from "react";
+   Der Spotlight richtet sich nach der Effekt-Stufe des Spielers (useFxLevel), nicht nur nach
+   prefers-reduced-motion — sonst animiert das Tutorial munter weiter, während alles andere aus ist. */
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MODAL_CARD, TopHairline, ActionButton } from "../modalStyle.jsx";
 import { useT } from "../../i18n/useLocale.js";
+import { displayVars } from "./tutorialVars.js";
 import { useFxLevel } from "../useReducedFx.js";
 
-/* Rand um das hervorgehobene Panel, damit der Spotlight nicht auf der Kante klebt. */
-const SPOT_PAD = 8;
+const SPOT_PAD = 8;      // Rand um das hervorgehobene Panel, damit der Spotlight nicht auf der Kante klebt
+const CARD_GAP = 12;     // Abstand zwischen Spotlight und Karte
+const CARD_MIN = 150;    // darunter lohnt sich die Seite nicht mehr — dann auf die andere wechseln
 
-/* Ankerrechteck suchen: das Panel trägt data-tut="<anchor>". Fehlt es (Panel in dieser Phase nicht
-   gerendert, Layout noch nicht fertig), gibt es kein Rechteck — die Karte zeigt dann nur den Satz,
-   ohne Spotlight. Lieber ein Satz ohne Rahmen als ein Rahmen um nichts. */
+/* Ankerrechteck suchen und das Element SICHTBAR machen. Das Panel trägt data-tut="<anchor>".
+   Fehlt es (in dieser Phase nicht gerendert, Layout noch nicht fertig), gibt es kein Rechteck — die
+   Karte zeigt dann nur den Satz, ohne Spotlight. Lieber ein Satz ohne Rahmen als ein Rahmen um nichts. */
 function useAnchorRect(anchor) {
   const [rect, setRect] = useState(null);
   useLayoutEffect(() => {
     if (!anchor) { setRect(null); return undefined; }
-    let raf = 0;
+    let raf1 = 0, raf2 = 0;
     const measure = () => {
       const el = document.querySelector(`[data-tut="${anchor}"]`);
       if (!el) { setRect(null); return; }
@@ -34,28 +43,46 @@ function useAnchorRect(anchor) {
       if (r.width <= 0 || r.height <= 0) { setRect(null); return; }
       setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
     };
-    /* Liegt das Panel außerhalb des Sichtfelds — die Auswahl-Overlays scrollen intern, und auf dem
-       Handy passt ohnehin wenig auf den Schirm —, erst hinscrollen, dann messen. Ohne das zeigt der
-       Spotlight korrekt auf ein Element, das der Spieler gar nicht sieht. */
+    /* IMMER hinscrollen, nicht nur wenn das Element ganz außerhalb liegt: die Auswahl-Overlays
+       scrollen intern, und auf dem Handy stand das erklärte Panel regelmäßig halb unter dem
+       Bildschirmrand. `center` bringt es in die Mitte, damit darüber UND darunter Platz für die
+       Karte bleibt. scrollIntoView löst auch verschachtelte Scroll-Container mit auf. */
     const el0 = document.querySelector(`[data-tut="${anchor}"]`);
-    if (el0) {
-      const r0 = el0.getBoundingClientRect();
-      const offScreen = r0.bottom < 0 || r0.top > window.innerHeight;
-      if (offScreen) el0.scrollIntoView({ block: "center", behavior: "auto" });
-    }
+    if (el0 && el0.scrollIntoView) el0.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
     measure();
-    // Das Panel kann in einem Scroll-Container liegen oder erst nach einem Frame stehen — deshalb
-    // einmal nachmessen und auf Scroll/Resize hören (capture: auch innere Scroll-Container).
-    raf = requestAnimationFrame(measure);
+    // Zweimal nachmessen: das Scrollen und ein etwaiger Layout-Nachlauf brauchen je einen Frame.
+    raf1 = requestAnimationFrame(() => { measure(); raf2 = requestAnimationFrame(measure); });
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(raf1); cancelAnimationFrame(raf2);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
   }, [anchor]);
   return rect;
+}
+
+/* Scroll-Sperre, solange ein Tutorial-Schritt offen ist. Bewusst über die Events statt über
+   `body { overflow: hidden }`: das Spiel scrollt in INNEREN Containern (Auswahl-Overlays,
+   Architekt-Panel), die eine Body-Sperre gar nicht erreicht. Die Tutorial-Karte selbst bleibt
+   scrollbar — sonst käme man bei langem Text nicht mehr an die Knöpfe. */
+function useScrollLock(activeEl) {
+  useEffect(() => {
+    if (!activeEl) return undefined;
+    const inCard = (target) => {
+      const card = document.querySelector("[data-tut-card]");
+      return !!(card && target && card.contains(target));
+    };
+    const block = (e) => { if (!inCard(e.target)) e.preventDefault(); };
+    const opts = { passive: false, capture: true };
+    document.addEventListener("wheel", block, opts);
+    document.addEventListener("touchmove", block, opts);
+    return () => {
+      document.removeEventListener("wheel", block, opts);
+      document.removeEventListener("touchmove", block, opts);
+    };
+  }, [activeEl]);
 }
 
 /* Spotlight: vier abdunkelnde Flächen um das Panel herum statt eines Lochs im Overlay. So bleibt das
@@ -82,12 +109,34 @@ function Spotlight({ rect, animate }) {
   );
 }
 
+/* Wohin die Coach-Mark-Karte? Bevorzugt UNTER den Spotlight (man liest von oben nach unten und die
+   Erklärung folgt dem Erklärten), sonst darüber. Ohne Rechteck bleibt sie mittig. */
+function cardBox(rect, viewH) {
+  if (!rect) return { center: true };
+  const below = viewH - (rect.top + rect.height + SPOT_PAD);
+  const above = rect.top - SPOT_PAD;
+  if (below >= CARD_MIN || below >= above) {
+    return { top: Math.round(rect.top + rect.height + SPOT_PAD + CARD_GAP), maxH: Math.max(CARD_MIN, below - CARD_GAP * 2) };
+  }
+  return { bottom: Math.round(viewH - rect.top + SPOT_PAD + CARD_GAP - SPOT_PAD), maxH: Math.max(CARD_MIN, above - CARD_GAP * 2) };
+}
+
 export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const t = useT();
   const fx = useFxLevel(reducedFx);   // Effekt-Stufe des Spielers, nicht nur prefers-reduced-motion
   const animate = fx === "full";
   const { step, mark, isOutro, stepNo, stepTotal, next, skipStep, end } = tut;
   const rect = useAnchorRect(mark ? mark.anchor : null);
+  const [viewH, setViewH] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
+  const cardRef = useRef(null);
+
+  useScrollLock(step ? (mark ? mark.anchor : step.id) : null);
+
+  useEffect(() => {
+    const onResize = () => setViewH(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Eingabe an der Tastatur: Enter/Leertaste = weiter. Escape beendet NICHT den Lauf, sondern nur
   // den laufenden Schritt — „Tutorial beenden" ist bewusst ein eigener, benannter Knopf.
@@ -104,13 +153,47 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   if (!step) return null;
 
   const showMark = !!mark;
-  const title = showMark ? null : t(step.titleKey, step.vars);
-  const body = showMark ? t(mark.key, step.vars) : t(step.bodyKey, step.vars);
+  const vars = { ...step.vars, ...displayVars() };
+  const title = showMark ? null : t(step.titleKey, vars);
+  const body = showMark ? t(mark.key, vars) : t(step.bodyKey, vars);
+  const box = showMark ? cardBox(rect, viewH) : { center: true };
 
-  /* Karte unten (Bottom-Sheet) — am Desktop mittig, mobil am unteren Rand. Beim Coach-Mark rückt sie
-     an den GEGENÜBERLIEGENDEN Rand des Panels, damit sie das Erklärte nicht selbst verdeckt. */
-  const anchorLow = rect ? rect.top + rect.height / 2 > window.innerHeight / 2 : false;
-  const cardPos = showMark && anchorLow ? "top" : "bottom";
+  const card = (
+    <div ref={cardRef} data-tut-card
+      className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel overlay-card overflow-y-auto"
+      style={{ ...MODAL_CARD, maxHeight: box.center ? "80dvh" : box.maxH }}>
+      <TopHairline />
+
+      <div className="flex items-baseline gap-2 mb-1.5">
+        <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "#9b82f0" }}>
+          {t("tutorial.eyebrow")}
+        </span>
+        {/* Nummer NUR im erklärten Bogen — die bedingten Phasen tragen keine (stepNo 0). */}
+        {stepNo > 0 && !showMark && (
+          <span className="text-[10px] tabular-nums ml-auto" style={{ color: "#8a8a95" }}>
+            {t("tutorial.progress", { n: stepNo, total: stepTotal })}
+          </span>
+        )}
+      </div>
+
+      {title && <h2 className="text-[17px] font-extrabold mb-1.5 leading-tight">{title}</h2>}
+      <p className="text-[13px] leading-snug whitespace-pre-line" style={{ color: "#c9c6dd" }}>{body}</p>
+
+      <div className="flex items-stretch gap-2 mt-4">
+        <ActionButton kind="primary" flex onClick={next}>
+          {isOutro ? t("tutorial.btn.finish") : t("tutorial.btn.next")}
+        </ActionButton>
+        {!isOutro && (
+          <ActionButton kind="decline" onClick={skipStep}>{t("tutorial.btn.skipStep")}</ActionButton>
+        )}
+      </div>
+      {!isOutro && (
+        <button onClick={end} className="mt-2 w-full text-[11px] opacity-55 hover:opacity-90 transition-opacity">
+          {t("tutorial.btn.end")}
+        </button>
+      )}
+    </div>
+  );
 
   return createPortal(
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={t("tutorial.aria.dialog")}>
@@ -118,43 +201,16 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
         ? <Spotlight rect={rect} animate={animate} />
         : <div className="absolute inset-0" style={{ background: "#0b0b10d0" }} aria-hidden="true" />}
 
-      <div className={`absolute inset-x-0 flex justify-center p-3 sm:p-6 pointer-events-none ${cardPos === "top" ? "top-0" : "bottom-0"}`}>
-        {/* max-h + Scroll: auf einem kleinen Handy-Schirm quer darf ein Drei-Satz-Text die Knöpfe nicht
-            aus dem Bild schieben — sonst gäbe es kein „Verstanden" mehr und der Lauf bliebe eingefroren. */}
-        <div className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel overlay-card max-h-[80dvh] overflow-y-auto"
-          style={MODAL_CARD}>
-          <TopHairline />
-
-          <div className="flex items-baseline gap-2 mb-1.5">
-            <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "#9b82f0" }}>
-              {t("tutorial.eyebrow")}
-            </span>
-            {/* Nummer NUR im erklärten Bogen — die bedingten Phasen tragen keine (stepNo 0). */}
-            {stepNo > 0 && !showMark && (
-              <span className="text-[10px] tabular-nums ml-auto" style={{ color: "#8a8a95" }}>
-                {t("tutorial.progress", { n: stepNo, total: stepTotal })}
-              </span>
-            )}
-          </div>
-
-          {title && <h2 className="text-[17px] font-extrabold mb-1.5 leading-tight">{title}</h2>}
-          <p className="text-[13px] leading-snug" style={{ color: "#c9c6dd" }}>{body}</p>
-
-          <div className="flex items-stretch gap-2 mt-4">
-            <ActionButton kind="primary" flex onClick={next}>
-              {isOutro ? t("tutorial.btn.finish") : t("tutorial.btn.next")}
-            </ActionButton>
-            {!isOutro && (
-              <ActionButton kind="decline" onClick={skipStep}>{t("tutorial.btn.skipStep")}</ActionButton>
-            )}
-          </div>
-          {!isOutro && (
-            <button onClick={end} className="mt-2 w-full text-[11px] opacity-55 hover:opacity-90 transition-opacity">
-              {t("tutorial.btn.end")}
-            </button>
-          )}
+      {box.center ? (
+        /* Phasen-Pop-up: echtes zentriertes Fenster (wie der Namens-Dialog) — inset-0 + place-items,
+           damit es in BEIDEN Achsen mittig sitzt und nicht nur waagerecht. */
+        <div className="absolute inset-0 grid place-items-center p-3 sm:p-6 pointer-events-none">{card}</div>
+      ) : (
+        <div className="absolute inset-x-0 flex justify-center px-3 sm:px-6 pointer-events-none"
+          style={box.top != null ? { top: box.top } : { bottom: box.bottom }}>
+          {card}
         </div>
-      </div>
+      )}
     </div>,
     document.body,
   );

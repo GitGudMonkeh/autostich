@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_TOTAL, TUTORIAL_MAIN_STEPS, stepMatches } from "../src/ui/tutorial/tutorialScript.js";
+import { DISPLAY_VAR_KEYS, displayVars } from "../src/ui/tutorial/tutorialVars.js";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 
@@ -112,7 +113,9 @@ describe("Tutorial · Texte", () => {
 
   it("jeder Platzhalter im Text wird vom Schritt auch geliefert (beide Sprachen)", () => {
     const check = (step) => {
-      const vars = Object.keys(step.vars || {});
+      // Neben den Zahlen aus `vars` sind die Anzeigezeit-Platzhalter erlaubt (tutorialVars.js) —
+      // übersetzte Registernamen, die es in einem puren Skript-Modul nicht geben kann.
+      const vars = [...Object.keys(step.vars || {}), ...DISPLAY_VAR_KEYS];
       for (const k of keysOf(step)) {
         for (const cat of [de, en]) {
           for (const m of String(cat[k] || "").matchAll(/\{(\w+)\}/g)) {
@@ -123,6 +126,15 @@ describe("Tutorial · Texte", () => {
     };
     TUTORIAL_STEPS.forEach(check);
     check(TUTORIAL_OUTRO);
+  });
+
+  /* Die Liste der Anzeigezeit-Platzhalter ist die Ausnahme im Test darüber — sie darf nicht still
+     von dem abweichen, was der Lieferant wirklich füllt, sonst ließe sie einen toten Platzhalter
+     durch („{formTypes}" bliebe als Text stehen). */
+  it("die Anzeigezeit-Platzhalter werden auch wirklich geliefert", () => {
+    const got = displayVars();
+    expect(Object.keys(got).sort()).toEqual([...DISPLAY_VAR_KEYS].sort());
+    for (const k of DISPLAY_VAR_KEYS) expect(String(got[k]).length, `${k} ist leer`).toBeGreaterThan(0);
   });
 });
 
