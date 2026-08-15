@@ -60,6 +60,8 @@ function prefetchFxChunks() {
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 import { deckDef, battlefieldDef, themeDef, globalFxList, globalFxDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
+import { t } from "../i18n/index.js";
+import { unlockLabel } from "../i18n/unlockText.js"; // #sprache: Freischalt-Bedingung zur Anzeigezeit
 
 // #327 Standard-Backdrop für ALLE Effekt-Showcases: das Genesis-Battlefield (Default-Standard-BG, Single Source of Truth
 // = THEME_DEFS.genesis.bfId). Im Standard-Modus zeigt jeder Showcase Genesis; nur der Deckfarbe-Modus zeigt den Pack-BG.
@@ -133,30 +135,35 @@ function orderPacks(list, deckId) {
 /* Synthetische „Standard"-Kachel: der GRATIS-Standard-Sieg-Finisher (kein Kauf, Default-Auswahl). Schlicht — die
    Verliererkarte fliegt nach dem Stich einfach zur Seite weg (wie die eigene Karte bei einer Niederlage), der Flip-
    Sound wird beim Sieg dezent angehoben. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
-const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", preview: "standard", alwaysOwned: true,
-  desc: "Der schlichte Grund-Finisher (immer verfügbar, Standard-Auswahl): Die geschlagene Gegnerkarte fliegt nach dem Stich einfach zur Seite weg — genau wie deine eigene Karte bei einer Niederlage. Beim Sieg wird der Aufdeck-Sound leicht höher gestimmt. Kein Schnitt, kein Prunk." };
+const FIN_STANDARD = { key: "standard", group: "finisher", preview: "standard", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.standard.name"); }, get desc() { return t("fxsyn.standard.desc"); } };
 
 /* Synthetische „Klinge"-Kachel: ein KAUFBARER Sieg-Finisher (10 DP, grüne Rarity) mit eigenem Besitz-Schlüssel
    fx:klinge — vorschaubar wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" (Gratis) geführt. */
-const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
-  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. In kühlem Stahlweiß oder in der Deckfarbe." };
+const KLINGE = { key: "klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.klinge.name"); }, get desc() { return t("fxsyn.klinge.desc"); } };
 
 /* #319 Synthetische „Scorch"-Kachel: kaufbarer Sieg-Finisher (20 DP, blaue Rarity, ownKey fx:scorch). Ein Laser
    schießt einmalig aus zufälliger Richtung, danach verglüht die Gegnerkarte organisch (Rausch-Burn) mit Glut/Asche/Funken. */
-const SCORCH = { key: "scorch", name: "Laser", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
-  desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
+const SCORCH = { key: "scorch", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.scorch.name"); }, get desc() { return t("fxsyn.scorch.desc"); } };
 
 /* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (#353: 30 DP, lila/Rar, ownKey fx:hologridSlice). Eine Laserlinie
    fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
    dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
-const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 30,
-  desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe." };
+const HOLOGRID_SLICE = { key: "hologridSlice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 30,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.hologridSlice.name"); }, get desc() { return t("fxsyn.hologridSlice.desc"); } };
 
 /* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (#353: 40 DP, gold/Legendär, ownKey fx:blackhole). Ein
    PERSISTENTES Serien-Loch — jeder Sieg füttert es (es wächst + saugt die Gegnerkarte ein), eine Niederlage lässt es
    schrumpfen; kollabiert es bei genug Masse, folgt eine Supernova. Standard blau/pink oder in der Deckfarbe. */
-const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
-  desc: "Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe." };
+const BLACKHOLE = { key: "blackhole", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.blackhole.name"); }, get desc() { return t("fxsyn.blackhole.desc"); } };
 
 // Alle KAUFBAREN Sieg-Finisher (ownKey-tragend). Quelle für die Voll-Freischaltung: der Drift-Guard-Test hält diese
 // Liste mit themes.BUYABLE_FINISHER_FX synchron, damit „unlock" nie einen neuen Finisher übersieht.
@@ -164,14 +171,16 @@ export const BUYABLE_FINISHER_OWNKEYS = [KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHO
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
-const GOTT_STANDARD = { key: "gottStandard", name: "Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
-  desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
+const GOTT_STANDARD = { key: "gottStandard", group: "gott", alwaysOwned: true, preview: "gottStandard",
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.gottStandard.name"); }, get desc() { return t("fxsyn.gottStandard.desc"); } };
 
 /* #spezial/#328 Skill-Effekt (Archetyp-Effekte Feuer/Blitz/Eis/Pflanze): IMMER aktiv, kein Kauf, kein An/Aus — es gibt
    nur die Farbwahl Standard ↔ Deckfarbe (options.archColor). EINE synthetische Kachel; der Standard/Deckfarbe-Umschalter
    sitzt als Segmented-Control unter dem Showcase (gleiche UI wie die anderen Effekte, schreibt weiter archColor). */
-const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", alwaysOwned: true, preview: "spezial",
-  desc: "Die vier Archetyp-Effekte (Feuer · Blitz · Eis · Pflanze) — immer aktiv. Wähle die Farbe: feste Neon-Standardfarbe oder die Farbe deines aktiven Decks." };
+const SPEZIAL = { key: "spezial", group: "spezial", alwaysOwned: true, preview: "spezial",
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.spezial.name"); }, get desc() { return t("fxsyn.spezial.desc"); } };
 
 // #331 Effekt-Reiter des „Effekte"-Tabs — auf 4 Reiter reduziert (Reihenfolge = Anzeige links→rechts):
 //   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahmen:
@@ -181,20 +190,24 @@ const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", always
 //   Leuchten separat frei) | "gott" (Score). Die alten Gruppen (anim/bgfx/bgglow/bgfin/finisher/gott) bleiben als
 //   DATEN-Gruppe (globalFxList().group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
 const FX_GROUPS = [
-  { key: "karten",      title: "Karten",      hint: "Skill immer an · eine Animation", mode: "cardanim" },
-  { key: "stich",       title: "Stich",       hint: "nur einer aktiv",                 mode: "finisher" },
-  { key: "hintergrund", title: "Hintergrund", hint: "einer aktiv · Leuchten frei",     mode: "bg" },
-  { key: "score",       title: "Score",       hint: "nur einer aktiv",                 mode: "gott" },
-];
+  { key: "karten",      mode: "cardanim" },
+  { key: "stich",       mode: "finisher" },
+  { key: "hintergrund", mode: "bg" },
+  { key: "score",       mode: "gott" },
+].map((g) => ({ ...g,
+  // #sprache: Reiter-Titel/Hinweis zur Anzeigezeit — Getter, damit ein Sprachwechsel greift.
+  get title() { return t(`fxgroup.${g.key}.title`); }, get hint() { return t(`fxgroup.${g.key}.hint`); } }));
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
-const FIELD_NONE = { key: "none", name: "Kein Effekt", group: "field", preview: "none", alwaysOwned: true,
-  desc: "Kein Hintergrund-Effekt — nur das Battlefield-Bild (immer verfügbar). Leuchten kann zusätzlich aktiv bleiben." };
+const FIELD_NONE = { key: "none", group: "field", preview: "none", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.fieldNone.name"); }, get desc() { return t("fxsyn.fieldNone.desc"); } };
 /* #318 Synthetische „Keine Animation"-Kachel (grau, immer verfügbar, kein Kauf): der Aus-Zustand der frei
    kombinierbaren Karten-Animationen. Anwählen schaltet ALLE Karten-Animationen ab (wie „Kein Feld-Effekt" beim
    Ambiente, nur dass die anim-Gruppe eine Mehrfachauswahl ist). preview „none" → schlichte Karte ohne Overlay. */
-const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview: "none", alwaysOwned: true,
-  desc: "Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar)." };
+const ANIM_NONE = { key: "none", group: "anim", preview: "none", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.animNone.name"); }, get desc() { return t("fxsyn.animNone.desc"); } };
 // Items einer Gruppe (in Detail-Reihenfolge): globalFxList() der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
 const fxByGroup = (g) => globalFxList().filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
@@ -906,7 +919,7 @@ function BfPreview({ bfId, className = "", showVersion = false }) {
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
       {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">Kein Battlefield</div>}
+          : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">{t("shop.noBattlefield")}</div>}
       {showVersion && bf && (
         <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
@@ -973,7 +986,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h2 className="text-lg font-bold whitespace-nowrap">Deck-Werkstatt</h2>
+            <h2 className="text-lg font-bold whitespace-nowrap">{t("shop.title")}</h2>
             <div className="flex items-center gap-2.5 shrink-0 ml-auto">
               {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
                   Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
@@ -981,7 +994,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
                 <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
               </span>
-              <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+              <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>{t("common.close")}</button>
             </div>
           </div>
           {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
@@ -1057,7 +1070,7 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
           const sub = active ? ["aktiv", "#54e08a"]
             : s === "own" ? ["tippen → Details", "#9a97ab"]
             : s === "buy" ? ["kaufbar", "#f2c14a"]
-            : [packUnlock(p, pack).label, "#6d6a80"];
+            : [unlockLabel(packUnlock(p, pack)), "#6d6a80"];
           return (
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
@@ -1076,13 +1089,13 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
       </div>
 
       {shown.length === 0 && (
-        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>Nichts in dieser Ansicht.</div>
+        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>{t("shop.emptyView")}</div>
       )}
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
         {challenge
-          ? <>Ein <b>Challenge-Deck</b> wird über eine Herausforderung <b>freigeschaltet</b> (kein Kauf). Tippe es an → Vorschau + Freischalt-Bedingung; sobald erfüllt, aktivierst du es direkt.</>
-          : <>Ein <b>Pack</b> bündelt Karte (Front + Back) und Battlefield. Tippe ein Pack an → Detail-Ansicht mit Vorschau; <b>Kaufen aktiviert das Pack direkt</b>.</>}
+          ? t("shop.hint.challenge")
+          : t("shop.hint.pack")}
       </p>
     </>
   );
@@ -1112,7 +1125,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[15px] font-extrabold truncate">{pack.name}</span>
-            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
+            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>{t("common.close")}</button>
           </div>
 
           {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
@@ -1140,20 +1153,20 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
 
           {/* Aktion */}
           {active ? (
-            <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>Aktiv ✓</div>
+            <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
             <button onClick={() => { onActivate(pack); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
-              style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>Aktivieren</button>
+              style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
               className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
               style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114",
                 boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-              Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
+              {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
             </button>
           ) : (
             <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
-              🔒 Freischalten: {unlock.label}
+              {t("shop.unlock", { cond: unlockLabel(unlock) })}
               {unlock.target > 1 && <span className="opacity-70"> · {unlock.cur} / {unlock.target}</span>}
             </div>
           )}
@@ -1173,30 +1186,15 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
 const TAB_LABEL = { karten: "Karten", stich: "Stich", hintergrund: "Hintergrund", score: "Score" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
-const FX_SHORT = {
-  edgeglow: "Dauerhafter Neon-Rand in der Deckfarbe.",
-  holo: "Prismatisches Lichtband, tilt-reaktiv.",
-  glitch: "Cyberpunk-Glitch mit gelegentlichen Bursts.",
-  aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
-  neonsurf: "Plasma-See am unteren Rand — starke Ansagen drücken das Wasser mittig ein, es steigt an den Rändern hoch.",
-  deckglow: "Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.",
-  cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
-  starfield: "Sternschnuppe je Stich — größer mit dem Score.",
-  klinge: "Klingenschnitt — skaliert mit der Siegesserie.",
-  scorch: "Laser + organischer Burn; Tempo mit dem Turbo.",
-  blackhole: "Schwarzes Loch saugt die Gegnerkarte ein.",
-  sonnenPuls: "Outrun-Sonne — feuert beim gottgleichen Sieg.",
-  laserFaecher: "Laser fächern auf — gottgleicher Sieg.",
-  prismaKaskade: "Prismatische Schockwellen — gottgleicher Sieg.",
-  holoCube: "Holowürfel zerspringt — gottgleicher Sieg.",
-  supernova: "Kollaps → Detonation → Tunnel — gottgleicher Sieg.",
-};
+// #sprache: die Kurztexte stehen als `fx.<key>.short` im Katalog (siehe shortDesc unten).
 function shortDesc(fx, group) {
-  if (fx.key === "none") return group.mode === "cardanim" ? "Alle Karten-Animationen aus." : "Kein Hintergrund-Effekt (Leuchten bleibt möglich).";
-  if (fx.group === "spezial") return "Feuer · Blitz · Eis · Pflanze — immer aktiv, nur Farbwahl (Standard/Deckfarbe)."; // #328 ein Tile
-  if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
-  if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
-  return FX_SHORT[fx.key] || fx.desc;
+  if (fx.key === "none") return t(group.mode === "cardanim" ? "fx.short.noAnim" : "fx.short.noBg");
+  if (fx.group === "spezial") return t("fx.short.spezial"); // #328 ein Tile
+  if (fx.key === "standard") return t("fx.short.standard");
+  if (fx.key === "gottStandard") return t("fx.short.gottStandard");
+  const key = `fx.${fx.key}.short`;
+  const short = t(key);
+  return short === key ? fx.desc : short;   // unbekannter Effekt → Langtext (wie vorher)
 }
 
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
@@ -1284,7 +1282,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       </div>
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Kategorie oben wählen, Effekt tippen → er läuft in der Bühne; dort <b>kaufen</b> bzw. <b>wählen / an-aus</b>. <b>Doppeltippen</b> in der Liste schaltet direkt um.
+        {t("shop.fx.hint")}
       </p>
     </>
   );
@@ -1315,17 +1313,17 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
 
   let action;
   if (fx.standard) {
-    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>Standard — immer aktiv, kein Kauf nötig</div>;
+    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>{t("shop.standardFree")}</div>;
   } else if (!owned) {
     action = (
       <button onClick={() => { if (canBuy) onBuyFx(fx); }} disabled={!canBuy}
         className={`${actBtn} transition-opacity`}
         style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114", boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-        Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
+        {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
       </button>
     );
   } else if (group.mode === "finisher") {
-    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
+    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseFinisher")}</button>;
     // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). #320 Schwarzes Loch: Standard blau/pink ↔
     // Deckfarbe. Andere Finisher (Standard/Klinge) haben keinen Farbmodus.
     const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
@@ -1335,7 +1333,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       <div className="flex flex-col gap-2">
         {chooseBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = finDeckOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1346,21 +1344,21 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (fx.key === "deckglow") {
     // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set). #336: KEINE Farbauswahl mehr — Glow ist immer
     //   Deckfarbe. Nur noch An/Aus.
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   } else if (group.mode === "bg") {
     // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
     // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;
     // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen. Leuchten (deckglow) läuft NICHT hier durch (eigener Toggle-Zweig oben).
     if (fx.key === "none") {
-      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — kein Hintergrund" : "Kein Hintergrund"}</button>;
+      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.bg.noneActive" : "shop.bg.none")}</button>;
     } else {
-      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund wählen"}</button>;
+      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseBg")}</button>;
       const wireOn = !!options?.fxCubeMatrixWire;
       action = !deckOpt ? chooseBtn : (
         <div className="flex flex-col gap-2">
           {chooseBtn}
           <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-            {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
               const on = deckTintOn === o.v;
               return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
                 style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1370,7 +1368,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             <div className="flex flex-wrap gap-2 justify-center">
               {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-                {[{ v: false, l: "Gefüllt" }, { v: true, l: "◇ Nur Rahmen" }].map((o) => {
+                {[{ v: false, l: t("shop.cube.filled") }, { v: true, l: t("shop.cube.wire") }].map((o) => {
                   const on = wireOn === o.v;
                   return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
                     style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1384,12 +1382,12 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (group.mode === "gott") {
     // #322–#326 Gottgleich-Prunk (einfach-exklusiv): „Als Prunk wählen" schreibt gottFlags (genau einer an, gottStandard
     // = kein Prunk). Jeder Prunk-Effekt bietet zusätzlich Standard/Deckfarbe (deckOpt); „Gottgleich · Standard" nicht.
-    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "gottStandard" ? "Als Standard wählen (kein Prunk)" : "Als Prunk wählen")}</button>;
+    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? t("shop.selected") : t(fx.key === "gottStandard" ? "shop.chooseGottStandard" : "shop.chooseGott")}</button>;
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1402,7 +1400,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     action = (
       <div className="flex justify-center">
         <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-          {[{ v: "standard", l: "Standard" }, { v: "deck", l: "Deckfarbe" }].map((o) => {
+          {[{ v: "standard", l: t("shop.color.standard") }, { v: "deck", l: t("shop.color.deck") }].map((o) => {
             const on = spezialSel === o.v;
             return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1412,13 +1410,13 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     );
   } else if (group.mode === "cardanim" && fx.key === "none") {
     // #318/#331 „Keine Animation" (Aus-Zustand der einfach-exklusiven Karten-Animationen): schaltet alle ab.
-    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
+    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.anim.noneActive" : "shop.anim.none")}</button>;
   } else if (group.mode === "cardanim") {
     // #331 Karten-Animation ist jetzt EINFACH-EXKLUSIV (genau eine): „Als Animation wählen". Läuft immer in der
     //   Deckfarbe (kein Standard/Deckfarbe-Farbmodus). Abwählen über „Keine Animation" bzw. Doppeltippen in der Liste.
-    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Animation wählen"}</button>;
+    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseAnim")}</button>;
   } else {
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   }
 
   return (
@@ -1443,10 +1441,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·
             BL: leer — reservierter Ausnahme-Slot (aktuell nur Deck-Glow zeichnet dort „mit/ohne" im PanelChip-Design). */}
         <PanelChip corner="tl">{fx.name}</PanelChip>
-        {active
-          ? <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</PanelChip>
-          : !owned ? <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip> : null}
-        {hasColorMode && <PanelChip corner="br">{deckTintOn ? "Deckfarbe" : "Standard"}</PanelChip>}
+        {/* (Der Zustand wird vorab bestimmt, statt zwei Ternäre über die JSX zu ziehen — sonst liest der
+            i18n-Textgreifer das „> … <" zwischen den Zweigen als Anzeigetext.) */}
+        {active && <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeChip")}</PanelChip>}
+        {!active && !owned && <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip>}
+        {hasColorMode && <PanelChip corner="br">{t(deckTintOn ? "shop.color.deck" : "shop.color.standard")}</PanelChip>}
       </div>
       {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
       <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
@@ -1468,9 +1467,9 @@ const rarityTint = (fx) => RARITY_COLOR[globalFxPrice(fx)] || RARITY_COLOR.defau
    Tippen wählt den Effekt in die Bühne (onPick), Doppeltippen schaltet direkt um (onToggle). */
 function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
   const tint = rarityTint(fx); // #farbsystem: Rarity-Farbe nach Preis-Stufe (grau/grün/blau/lila/gelb)
-  const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
+  const status = active ? { c: "#54e08a", label: t("shop.status.active"), dot: "#54e08a" }
     : !owned ? { c: tint, label: `${globalFxPrice(fx)} DP`, dot: tint } // Preis in der Rarity-Farbe
-    : { c: "#6d6a80", label: "im Besitz", dot: null };
+    : { c: "#6d6a80", label: t("shop.status.owned"), dot: null };
   // Doppel-TIPP/-Klick SCHALTET UM (Touch-sicher über eigene Zeitmessung: zwei Taps < 320 ms). Einzeltipp wählt.
   const lastTap = useRef(0);
   const handleTap = () => {
@@ -1480,7 +1479,7 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
     else lastTap.current = now;
   };
   return (
-    <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : owned ? "Doppeltippen: auswählen" : undefined}
+    <button type="button" onClick={handleTap} title={active ? t("shop.dblTap.off") : owned ? t("shop.dblTap.on") : undefined}
       className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
       style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
         border: `1px solid ${selected ? "#9b82f0" : tint + "55"}`,

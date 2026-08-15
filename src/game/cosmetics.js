@@ -115,10 +115,9 @@ export const BATTLEFIELD_DEFS = {
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
-const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
-const ARCHS = Object.keys(ARCH_LABEL);
+// Die vier Archetyp-Schlüssel (Namen kommen aus dem Archetyp-Register, nicht von hier).
+const ARCHS = ["fire", "lightning", "ice", "plant"];
 // #310: robuster Mono-Lauf-Zähler je Fraktion. Toleriert Alt-Werte (Boolean true → 1) und fehlende Map.
 const monoCount = (p, a) => {
   const m = p && p.monoArchetypeRuns;
@@ -149,70 +148,74 @@ export function isUnlocked(def, profile) {
   }
 }
 
-// Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
-//   { done, cur, target, label } — label = Klartext-Bedingung; cur/target = Fortschritt.
-// Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+/* Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
+   { done, cur, target, kind, vars } — cur/target = Fortschritt, kind + vars beschreiben die Bedingung.
+   Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+
+   #sprache: Der KLARTEXT steht nicht mehr hier, sondern im Katalog (`unlock.<kind>`), aufgelöst über
+   `unlockLabel` in src/i18n/unlockText.js — genau wie die Architekt-Effekttexte. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus (cosmetics.js → i18n/index.js → de.js → cosmetics.js), und mit
+   dem eingebauten deutschen Text hier hätte die englische Fassung eine zweite Pflegestelle. */
 export function unlockProgress(def, profile) {
   const u = def && def.unlock;
-  if (!u) return { done: true, cur: 1, target: 1, label: "Immer verfügbar" };
+  if (!u) return { done: true, cur: 1, target: 1, kind: "none", vars: {} };
   const p = profile || {};
   switch (u.kind) {
     case "games": {
       const have = p.games || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Spiele ${u.n} Läufe` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "streak": {
       const have = p.bestStreak || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche eine Serie von ${u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "score": {
       const have = p.bestScore || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Score ${grp(u.n)}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "monoArchetypeRun": {
       const need = u.n || 1;
       const have = monoCount(p, u.archetype);
       return { done: have >= need, cur: Math.min(have, need), target: need,
-        label: `Schließe ${need} Läufe nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+        kind: u.kind, vars: { n: need, archetype: u.archetype } };
     }
     case "allMonoArchetypes": {
       const need = u.n || 1;
       const have = ARCHS.reduce((acc, a) => acc + (monoCount(p, a) >= need ? 1 : 0), 0);
-      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length,
-        label: `Schalte alle vier Element-Decks frei (je ${need} Mono-Läufe)` };
+      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length, kind: u.kind, vars: { n: need } };
     }
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "gottgleichRun": {
       const done = !!p.hadGottgleichRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Löse zum ersten Mal einen „Gottgleich“-Stich aus" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "meisterNoReroll": {
       const done = !!p.hadMeisterNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Ranglisten-Wochenlauf ohne einen einzigen Reroll ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "championWeek": {
       const done = !!p.hadChampionWeek;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Beende eine Wochen-Rangliste auf Platz 1 (Challenger-Archiv)" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
-      // Der Preis steht auf der Pack-Kachel (je Pack verschieden, themes.js `price`) — hier nur die WÄHRUNG nennen.
-      // Kein Import von themes.js: das gäbe einen Zyklus (themes.js → cosmetics.js).
-      return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt mit Deckpunkten (DP) kaufen" };
+      // Der Preis steht auf der Pack-Kachel (je Pack verschieden, themes.js `price`) — der Text nennt
+      // nur die WÄHRUNG. Kein Import von themes.js: das gäbe einen Zyklus (themes.js → cosmetics.js).
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "onboardingDone": {
       const done = onboardingDone(p);
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe das Onboarding ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     default:
-      return { done: true, cur: 1, target: 1, label: "" };
+      return { done: true, cur: 1, target: 1, kind: "unknown", vars: {} };
   }
 }
 

@@ -3,8 +3,10 @@
    Drei Quellen:
      1) DATENTEXTE — die echten Register aus src/game/* werden importiert und die RESOLVETEN Endtexte
         rausgeschrieben (kein Abtippen, keine Text↔Code-Drift).
-     2) UI-TEXTE — heuristisch aus src/App.jsx + src/ui/*.jsx gezogen (JSX-Textknoten, Text-Props,
-        String-Literale). Kandidatenliste, danach kuratiert. Schrumpft mit jeder migrierten Datei.
+     2) MUSIKTITEL — src/ui/music.js. Eigennamen (und bereits englisch): sie werden nicht übersetzt
+        und stehen mit status „n/a" in der CSV. Die frühere HEURISTIK über src/App.jsx + src/ui/*.jsx
+        ist entfallen: seit alle UI-Dateien migriert sind, fand sie nur noch Katalog-SCHLÜSSEL und
+        Code-Reste. Was neu in die JSX rutscht, fängt jetzt die Ratsche im Guard-Test ab.
      3) I18N-KATALOG (#sprache) — src/i18n/de.js + en.js. Diese Zeilen bringen die englische Spalte
         bereits mit (status „done"). Das ist die Zielform: die CSV ist eine ERZEUGTE ANSICHT des
         Katalogs, kein zweiter handgepflegter Textbestand. Quelle bleibt IMMER der Code.
@@ -23,25 +25,7 @@ import { TIER_META } from "../src/game/rarity.js";
 import CAT_DE from "../src/i18n/de.js";
 import CAT_EN from "../src/i18n/en.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
-import { unlockProgress, MONO_CHALLENGE_N } from "../src/game/cosmetics.js";
-import { ARCH_CAT } from "../src/ui/indicators/vocab.js";
 
-// Freischalt-Bedingungen: je `kind` EIN Muster-Def, damit unlockProgress seinen Klartext-Label liefert.
-const UNLOCK_SAMPLES = {
-  none:               { unlock: null },
-  games:              { unlock: { kind: "games", n: 10 } },
-  streak:             { unlock: { kind: "streak", n: 300 } },
-  score:              { unlock: { kind: "score", n: 1000000 } },
-  noRerollRun:        { unlock: { kind: "noRerollRun" } },
-  monoArchetypeRun:   { unlock: { kind: "monoArchetypeRun", archetype: "fire", n: MONO_CHALLENGE_N } },
-  allMonoArchetypes:  { unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
-  allArchetypesRun:   { unlock: { kind: "allArchetypesRun" } },
-  gottgleichRun:      { unlock: { kind: "gottgleichRun" } },
-  meisterNoReroll:    { unlock: { kind: "meisterNoReroll" } },
-  championWeek:       { unlock: { kind: "championWeek" } },
-  buy:                { unlock: { kind: "buy", ownKey: "pack:x" } },
-  onboardingDone:     { unlock: { kind: "onboardingDone" } },
-};
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dir, "..");
@@ -119,23 +103,17 @@ for (const s of SUIT_ORDER) push(`ui.suit.${s}.name`, "ui", suitName(s), "Karten
 /* ============ 10 · Fortschrittsbaum (Upgrades) ============
    (Migriert — Knoten- und Zweig-Texte kommen unten aus dem i18n-Katalog.) */
 
-/* ============ 11 · Freischalt-Bedingungen (Kosmetik) ============ */
-for (const [key, def] of Object.entries(UNLOCK_SAMPLES)) {
-  const l = unlockProgress(def, {}).label;
-  push(`item.unlock.${key}.label`, "item", l, `Freischalt-Bedingung (Kosmetik) — Kind „${key}"`, "", def.note || "");
-}
+/* ============ 11 · Freischalt-Bedingungen (Kosmetik) ============
+   (Migriert — `unlockProgress` liefert nur noch kind/vars, der Satz steht als `unlock.*` im Katalog.) */
 
 /* ============ 12 · Archetyp-Leitfäden ============
    (Migriert — alle vier Leitfäden kommen unten aus dem i18n-Katalog. Die Schlüssel entstehen aus
    EINEM Baum-Durchlauf über GUIDES, siehe src/i18n/guideWalk.js.) */
 
 /* ============ 13 · Bau-Kategorien ============
-   (Formationsnamen + Kürzel sind migriert und kommen unten aus dem i18n-Katalog.) */
-for (const [k, v] of Object.entries(ARCH_CAT)) {
-  push(`ui.archcat.${k}.label`, "ui", v.label, "Architekt — Bau-Kategorie (Chip)", "10");
-}
+   (Formationsnamen, Kürzel UND Bau-Kategorien sind migriert — sie kommen unten aus dem Katalog.) */
 
-/* ============ 14 · Kuratierte UI-Texte ============
+/* ============ 14 · Musiktitel ============
    `music.js` liefert ausschließlich MUSIKTITEL. Die sind Eigennamen (und bereits englisch) —
    sie werden nicht übersetzt und sollen die Restliste nicht aufblähen. Deshalb markiert, nicht
    migriert: status „n/a" heißt „bewusst einsprachig", nicht „noch offen". */
@@ -182,60 +160,8 @@ console.error(`DATA: ${rows.length} Zeilen → docs/localization/strings_de_pixi
    Heuristik + Filterlisten. Ergibt die `ui.*`/`store.*`/`system.*`-Zeilen der CSV. Bewusst KEIN
    Loc-System im Code (alle Strings inline) — dieser Export ist die Zusammenführung. */
 function uiRows() {
+  // Nur noch die Musiktitel: alle JSX-Dateien sind migriert und kommen über den Katalog (Quelle 3).
   const SRC = [
-    ["src/App.jsx", "ui", "Rahmen · Header · Pause-/Neustart-Dialoge"],
-    ["src/ui/ArchPanels.jsx", "store", "Architekt — Gebäude-/Legenden-Panels"],
-    ["src/ui/ArchitectScreen.jsx", "store", "Der Architekt (Bauphase)"],
-    ["src/ui/Battlefield.jsx", "ui", "Spielfeld — Stich-Ausgang, Ansagen"],
-    ["src/ui/BuildPanel.jsx", "ui", "Build-Panel"],
-    ["src/ui/BuildSummary.jsx", "ui", "Build-Zusammenfassung"],
-    ["src/ui/Card.jsx", "ui", "Karte"],
-    ["src/ui/CardDetail.jsx", "ui", "Kartendetail"],
-    ["src/ui/CardGrid.jsx", "ui", "Kartenraster / Brett"],
-    ["src/ui/ChargeBar.jsx", "ui", "Blitz-HUD (Ladung/Ionisierung)"],
-    ["src/ui/ChronikOverview.jsx", "ui", "Chronik (Kartenübersicht)"],
-    ["src/ui/Controls.jsx", "ui", "Steuerleiste"],
-    ["src/ui/CustomizeScreen.jsx", "ui", "Deck-Werkstatt (Kosmetik)"],
-    ["src/ui/DeckDetail.jsx", "ui", "Deck-Detailansicht"],
-    ["src/ui/FamilyTargetSelect.jsx", "ui", "Ziel-Auswahl (Familien-Perks)"],
-    ["src/ui/FormationPanel.jsx", "ui", "Formations-Panel"],
-    ["src/ui/FormationPhase.jsx", "ui", "Aufstellungsphase"],
-    ["src/ui/GameOver.jsx", "achievement", "Endbildschirm"],
-    ["src/ui/GlacierBar.jsx", "ui", "Eis-HUD (Gletscher)"],
-    ["src/ui/GlacierFormLegend.jsx", "ui", "Legende Gletscher-Formationen"],
-    ["src/ui/GlacierPick.jsx", "ui", "Gletscher-Auswahl"],
-    ["src/ui/GlobalLeaderboard.jsx", "achievement", "Globale Bestenliste"],
-    ["src/ui/Glossary.jsx", "tutorial", "Glossar-Overlay (Rahmen)"],
-    ["src/ui/GuideOverlay.jsx", "tutorial", "Leitfaden-Overlay (Rahmen)"],
-    ["src/ui/HeatBar.jsx", "ui", "Feuer-HUD (Hitze/Asche)"],
-    ["src/ui/LayoutPerks.jsx", "ui", "Aufstellungshilfe"],
-    ["src/ui/LeaderboardScreen.jsx", "achievement", "Bestenliste / Wochen-Rangliste"],
-    ["src/ui/LegendarySelect.jsx", "ui", "Legendär-Phase (Runde 29)"],
-    ["src/ui/MusicBar.jsx", "ui", "Musikleiste"],
-    ["src/ui/MuteButton.jsx", "ui", "Ton-Schalter"],
-    ["src/ui/OptionsModal.jsx", "ui", "Optionen"],
-    ["src/ui/PerkSelect.jsx", "ui", "Perk-Auswahl"],
-    ["src/ui/PlantBar.jsx", "ui", "Pflanze-HUD (Wachstum)"],
-    ["src/ui/PwaInstall.jsx", "system", "App-Installation"],
-    ["src/ui/RoundScoreBadge.jsx", "ui", "Durchlauf-Score-Badge"],
-    ["src/ui/RunDetail.jsx", "achievement", "Lauf-Detailansicht"],
-    ["src/ui/RunGraphs.jsx", "achievement", "Lauf-Diagramme"],
-    ["src/ui/RunLoader.jsx", "system", "Ladeanzeige"],
-    ["src/ui/RunStats.jsx", "achievement", "Lauf-Kennzahlen"],
-    ["src/ui/ScoreMilestoneBar.jsx", "achievement", "Score-Meilensteine"],
-    ["src/ui/SeedChip.jsx", "system", "Seed-Chip (teilen/nachspielen)"],
-    ["src/ui/SkillSelect.jsx", "ui", "Skill-Auswahl"],
-    ["src/ui/Sparkline.jsx", "ui", "Verlaufs-Miniatur"],
-    ["src/ui/StartScreen.jsx", "ui", "Startbildschirm"],
-    ["src/ui/StatsScreen.jsx", "achievement", "Statistik-Hub"],
-    ["src/ui/StatusBar.jsx", "ui", "Statusleiste (HUD)"],
-    ["src/ui/StatusRail.jsx", "ui", "Status-Schiene (Seiten-HUD)"],
-    ["src/ui/TargetSelect.jsx", "ui", "Karten-Zielauswahl"],
-    ["src/ui/UpgradeScreen.jsx", "achievement", "Upgrade-Baum"],
-    ["src/ui/UsernameModal.jsx", "system", "Namenswahl"],
-    ["src/ui/WeekMods.jsx", "ui", "Wochen-Modifikatoren (Anzeige)"],
-    ["src/ui/archEffects.js", "store", "Architekt — Effekt-Bausteine (Kartendetail)"],
-    ["src/ui/format.js", "ui", "Zahlformat (Kurz-Einheiten)"],
     ["src/ui/music.js", "ui", "Musiktitel"],
   ];
   const GERMAN = /[A-ZÄÖÜ][a-zäöüß]{2,}|[a-zäöüß]{3,}\s|ä|ö|ü|ß/;

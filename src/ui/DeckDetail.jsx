@@ -9,6 +9,7 @@ import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
 import { deckAssets } from "./cosmeticAssets.js";
 import { owns } from "../game/progression.js";
 import { skillDef, archMeta , nodeList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* ============================================================
    DECK-DETAILANSICHT (#369, Ebene 2) — VOLLSTÄNDIG DATENGETRIEBEN.
@@ -63,9 +64,9 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const packs = PACKS.filter((pk) => packCond(pk)?.archetype === archetype);
 
   const TABS = [
-    { key: "passives", label: "Skills" },
-    { key: "leitfaden", label: "Leitfaden" },
-    { key: "challenges", label: "Challenges" },
+    { key: "passives", label: t("deckdetail.tab.skills") },
+    { key: "leitfaden", label: t("guide.title") },
+    { key: "challenges", label: t("deckdetail.tab.challenges") },
   ];
 
   return (
@@ -78,18 +79,18 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="flex items-center gap-2.5">
-            <button onClick={onBack} title="Zurück" aria-label="Zurück"
+            <button onClick={onBack} title={t("deckdetail.back.title")} aria-label={t("deckdetail.back.title")}
               className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>‹ Zurück</button>
+              style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>{t("deckdetail.back")}</button>
             <FactionIcon type={archetype} size={26} />
             <div className="min-w-0">
               <h2 className="text-lg font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
               {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-snug" style={{ color: "#a6a6b0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{guide.subtitle}</div>}
             </div>
-            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>Schließen</ActionButton>
+            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2.5">
-            <StatusPill label="Deck" on={deckOwned} color={color} />
+            <StatusPill label={t("deckdetail.deck")} on={deckOwned} color={color} />
             {legNodes.map((n, i) => <StatusPill key={n.id} label={`Leg ${["I", "II"][i] || n.legLevel}`} on={owns(p, n.id)} color={color} />)}
           </div>
           {/* Reiter */}
@@ -118,8 +119,8 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
                 {String(guide.kernidee).replace(/\*\*/g, "")}
               </div>
             )}
-            <SkillGroup title="Skills" skills={normalSkills} color={color} />
-            {legendarySkills.length > 0 && <SkillGroup title="Legendäre" skills={legendarySkills} color={GOLD} legendary />}
+            <SkillGroup title={t("deckdetail.tab.skills")} skills={normalSkills} color={color} />
+            {legendarySkills.length > 0 && <SkillGroup title={t("deckdetail.legendaries")} skills={legendarySkills} color={GOLD} legendary />}
           </div>
         )}
 
@@ -134,7 +135,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
         {tab === "challenges" && (
           <div className="mt-4 grid gap-3">
             {packs.length === 0 && (
-              <div className="text-[12px] text-center py-6" style={{ color: "#a6a6b0" }}>Keine deck-gebundenen Freischaltungen.</div>
+              <div className="text-[12px] text-center py-6" style={{ color: "#a6a6b0" }}>{t("deckdetail.noUnlocks")}</div>
             )}
             {packs.map((pk) => {
               const prog = packUnlock(p, pk);          // { done, cur, target, label }
@@ -206,11 +207,11 @@ function SkillGroup({ title, skills, color, legendary = false }) {
               )}
               {(s.heatConsumer || s.onFullCharge) && (
                 <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
-                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>Konsument</span>
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.consumer")}</span>
               )}
               {s.trimGrowth && (
                 <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
-                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>trimmbar</span>
+                  style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.trimmable")}</span>
               )}
             </div>
             <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{s.desc}</div>

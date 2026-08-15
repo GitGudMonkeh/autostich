@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { glossaryCategories, glossaryGroups, glossaryEntries, tokenizeGlossary } from "../i18n/glossaryText.js";
 import { useLocale } from "../i18n/useLocale.js"; // #sprache: Neuaufbau bei Sprachwechsel
+import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
@@ -32,13 +33,13 @@ export function GlossaryText({ text, className }) {
 }
 
 // Der ⓘ-Kreis. `onClick` öffnet das Overlay. Position/Größe kommen von className/style des Aufrufers.
-export function GlossaryButton({ onClick, className = "", style, title = "Glossar" }) {
+export function GlossaryButton({ onClick, className = "", style, title = null }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title={title}
-      aria-label="Glossar öffnen"
+      title={title ?? t("glossary.title")}
+      aria-label={t("glossary.open")}
       className={"gloss-i-btn " + className}
       style={style}
     >
@@ -92,7 +93,7 @@ export function GlossaryOverlay({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Glossar">
+    <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("glossary.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel relative"
@@ -103,18 +104,18 @@ export function GlossaryOverlay({ onClose }) {
           <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2c2a3a", background: STICKY_HEAD_BG }}>
             <div className="flex items-center gap-2.5">
               <span className="gloss-i-mark">i</span>
-              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Glossar</h2>
-              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>Schließen</ActionButton>
+              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("glossary.title")}</h2>
+              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
             <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>Begriffe &amp; Sonderregeln — keine einzelnen Perks/Skills</div>
             <div className="relative mt-2.5">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#5c5c68" }}>⌕</span>
               <input value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false}
-                placeholder="Suchen … z. B. Nachhall, Schichten, Hitze"
+                placeholder={t("glossary.search")}
                 className="w-full py-2 pl-8 pr-8 rounded-lg text-sm gloss-search"
                 style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea" }} />
               {q && (
-                <button type="button" onClick={() => setQ("")} aria-label="Suche löschen"
+                <button type="button" onClick={() => setQ("")} aria-label={t("glossary.clear")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1" style={{ color: "#71717c" }}>✕</button>
               )}
             </div>
@@ -122,7 +123,7 @@ export function GlossaryOverlay({ onClose }) {
 
           {/* Kategorie-Chips (Sprungnavigation) */}
           <div className="flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible gloss-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
-            <Chip label="Alle" active={activeCat === "all"} onClick={() => jump("all")} />
+            <Chip label={t("glossary.all")} active={activeCat === "all"} onClick={() => jump("all")} />
             {glossaryCategories().map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />
             ))}
@@ -132,7 +133,7 @@ export function GlossaryOverlay({ onClose }) {
           <div ref={bodyRef} className="flex-1 overflow-y-auto overlay-card pb-8" style={{ overscrollBehavior: "contain" }}>
             {sections.length === 0 && (
               <div className="px-5 py-9 text-center text-sm" style={{ color: "#71717c" }}>
-                Kein Begriff zu <b style={{ color: "#c9c2ea" }}>„{q.trim()}“</b>.<br />Andere Schreibweise probieren?
+                {t("glossary.noHit.pre")} <b style={{ color: "#c9c2ea" }}>„{q.trim()}“</b>.<br />{t("glossary.noHit.post")}
               </div>
             )}
             {sections.map(({ cat, items, groups }) => (

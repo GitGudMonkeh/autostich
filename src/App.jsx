@@ -13,7 +13,7 @@ import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardi
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
-import { setLocale } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
+import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -859,7 +859,7 @@ export function Autostich() {
                     "radial-gradient(58% 62% at 30% 50%, rgba(38,198,230,.20), transparent 60%)," +
                     "radial-gradient(60% 64% at 52% 46%, rgba(155,130,240,.22), transparent 60%)," +
                     "radial-gradient(58% 62% at 74% 50%, rgba(242,168,58,.16), transparent 60%)" }} />
-                <img src={logo} alt="AUTOSTICH" draggable="false" className="h-14 w-auto select-none block" />
+                <img src={logo} alt={t("start.logo.alt")} draggable="false" className="h-14 w-auto select-none block" />
               </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
@@ -1027,18 +1027,18 @@ export function Autostich() {
           <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
-            <div className="text-base font-bold">Lauf pausieren oder beenden?</div>
+            <div className="text-base font-bold">{t("app.abort.title")}</div>
             {/* #362 Aktionsleiste OBEN: primär (Beenden & speichern) obenauf, darunter Weiterspielen/Beenden. */}
             <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
               <div className="flex flex-col gap-2 w-full">
                 <ActionButton kind="primary" onClick={suspendRun}>Beenden &amp; speichern</ActionButton>
                 <div className="flex gap-2">
-                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>Weiterspielen</ActionButton>
-                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>Beenden</ActionButton>
+                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>{t("app.keepPlaying")}</ActionButton>
+                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>{t("app.end")}</ActionButton>
                 </div>
               </div>
             </ActionBar>
-            <div className="text-sm opacity-70"><b>Beenden &amp; speichern</b> merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. <b>Beenden</b> wertet ihn und zeigt den Endscreen.</div>
+            <div className="text-sm opacity-70">{t("app.abort.help")}</div>
             </div>
           </div>
         </div>
@@ -1051,13 +1051,13 @@ export function Autostich() {
           <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
-            <div className="text-base font-bold">Wirklich neustarten?</div>
+            <div className="text-base font-bold">{t("app.restart.title")}</div>
             {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
             <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
-              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>Weiterspielen</ActionButton>
-              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>Neustarten</ActionButton>
+              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>{t("app.keepPlaying")}</ActionButton>
+              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>{t("app.restart")}</ActionButton>
             </ActionBar>
-            <div className="text-sm opacity-70">Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.</div>
+            <div className="text-sm opacity-70">{t("app.restart.help")}</div>
             </div>
           </div>
         </div>

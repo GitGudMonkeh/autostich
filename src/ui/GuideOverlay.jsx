@@ -5,6 +5,7 @@ import { guideDef } from "../i18n/guideText.js"; // #sprache: Leitfaden zur Anze
 import { useEscape } from "./useEscape.js";
 import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* ============================================================
    LEITFADEN-UI — das „Wie spiele ich das"-Overlay je Archetyp (Datenquelle: guides.js).
@@ -108,10 +109,10 @@ function Bar({ b }) {
 
 export function GuideButton({ onClick, className = "", style }) {
   return (
-    <button type="button" onClick={onClick} aria-label="Leitfaden öffnen" title="Leitfaden"
+    <button type="button" onClick={onClick} aria-label={t("guide.open")} title={t("guide.title")}
       className={"inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full " + className}
       style={{ background: "#20202a", border: "1px solid #3a3a4a", color: "#cfcad8", ...style }}>
-      <span aria-hidden="true">📖</span> Leitfaden
+      <span aria-hidden="true">📖</span> {t("guide.title")}
     </button>
   );
 }
@@ -138,7 +139,7 @@ export function GuideBody({ archetype, showTitle = true }) {
         <p className="text-[13.5px] pt-1 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
       )}
 
-      <SecLabel color={color}>Kernidee</SecLabel>
+      <SecLabel color={color}>{t("guide.core")}</SecLabel>
       <p className="text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
 
       <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
@@ -158,7 +159,7 @@ export function GuideBody({ archetype, showTitle = true }) {
         ))}
       </div>
 
-      <SecLabel color={color}>Der Kreislauf</SecLabel>
+      <SecLabel color={color}>{t("guide.loop")}</SecLabel>
       <div className="grid gap-4 items-center sm:grid-cols-[190px_1fr]">
         <div className="mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
         <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
@@ -181,7 +182,7 @@ export function GuideBody({ archetype, showTitle = true }) {
         {g.status.bars.map((b, i) => <Bar key={i} b={b} />)}
       </div>
 
-      <SecLabel color={color}>Spielprinzip</SecLabel>
+      <SecLabel color={color}>{t("guide.principles")}</SecLabel>
       <ul className="grid gap-2.5 list-none p-0 m-0">
         {g.principle.map((p, i) => (
           <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
@@ -207,7 +208,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
   useEscape(onClose);
 
   return (
-    <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label="Leitfaden">
+    <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("guide.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         {/* #369: Werkstatt-Schale (MODAL_CARD + Tri-Color-Hairline) statt der alten Sonderschale. */}
@@ -219,10 +220,10 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
           <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
             <div className="flex items-center gap-2.5">
               <span aria-hidden="true">📖</span>
-              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>Leitfaden</h2>
-              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>Schließen</ActionButton>
+              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
+              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
-            <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>So spielst du jeden Archetyp — durchklicken</div>
+            <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("guide.subtitle")}</div>
           </div>
 
           {/* Archetyp-Reiter */}

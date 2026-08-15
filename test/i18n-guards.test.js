@@ -108,6 +108,18 @@ describe("i18n · Katalog-Parität", () => {
     "perk.start",             // „Start" — in beiden Sprachen gleich
     "perk.stat.crit",         // „Crit" (§3.1)
     "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
+    // Menü-/Werkstatt-Bildschirme: Fremdwörter und Eigennamen, die im Englischen genauso lauten.
+    "upgrades.title",         // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "upgrades.respec",        // „Respec" — Genre-Fachwort, im Deutschen unübersetzt
+    "upgrades.details",       // „Details ›"
+    "deckdetail.deck",        // „Deck" ist in beiden Sprachen dasselbe Wort
+    "deckdetail.tab.skills",  // „Skills" (§3.1)
+    "deckdetail.tab.challenges", // „Challenges" — im Deutschen etabliert
+    "shop.color.standard",    // „Standard"
+    "fxgroup.score.title",    // Score bleibt Score (§3.1)
+    "fxsyn.standard.name", "fxsyn.gottStandard.name", // „Standard"
+    "fxsyn.scorch.name",      // „Laser"
+    "dev.run.title",          // „DEV RUN" — Entwickler-Kennzeichnung, bewusst englisch
     // Architekt: Kategorienamen und reine Struktur-Zeilen.
     "archcat.score.label",    // Score bleibt Score (§3.1)
     "archcat.formation.label", // „Formation" — beide Sprachen gleich
@@ -207,6 +219,7 @@ describe("i18n · Zahl- und Satzformate", () => {
     // Dieselbe Stelle noch zweimal im Ranglisten-Bildschirm — gleiche Begründung.
     ["board.rules.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
     ["board.champions.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
+    ["unlock.championWeek", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
   ]);
 
   it("beide Sprachen nennen dieselben Zahlen", () => {
@@ -435,7 +448,12 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Nach dem Lauf: Statistik, Chronik, Bestenliste und ihre Bausteine.
     "src/ui/StatsScreen.jsx", "src/ui/RunStats.jsx", "src/ui/RunDetail.jsx", "src/ui/RunGraphs.jsx",
     "src/ui/ChronikOverview.jsx", "src/ui/LeaderboardScreen.jsx", "src/ui/GlobalLeaderboard.jsx",
-    "src/ui/SeedChip.jsx", "src/ui/Sparkline.jsx", "src/ui/WeekMods.jsx"];
+    "src/ui/SeedChip.jsx", "src/ui/Sparkline.jsx", "src/ui/WeekMods.jsx",
+    // Menü, Werkstatt und die restlichen Bausteine — damit ist die UI vollständig migriert.
+    "src/App.jsx", "src/ui/CustomizeScreen.jsx", "src/ui/UpgradeScreen.jsx", "src/ui/DeckDetail.jsx",
+    "src/ui/Glossary.jsx", "src/ui/GuideOverlay.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
+    "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
+    "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
@@ -467,7 +485,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
   it("die Ratschen-Liste zeigt nur auf existierende, i18n-nutzende Dateien", () => {
     for (const file of MIGRATED) {
       const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-      expect(src, `${file} steht in MIGRATED, importiert aber kein i18n`).toMatch(/from "\.\.\/i18n\//);
+      // App.jsx liegt eine Ebene höher (./i18n/), alles unter src/ui/ zwei (../i18n/).
+      expect(src, `${file} steht in MIGRATED, importiert aber kein i18n`).toMatch(/from "\.{1,2}\/i18n\//);
     }
   });
 });

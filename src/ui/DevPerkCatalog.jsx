@@ -3,6 +3,7 @@ import { CATEGORIES, PERK_DEFS } from "../game/perks.js";
 
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { familyDef, rarityLabel } from "../i18n/labels.js"; // #sprache
+import { t } from "../i18n/index.js"; // #sprache
 
 /* Dev-Run-Perk-Katalog (Test-Layout, nur Preview): statt des Zufallsangebots der KOMPLETTE Perk-Katalog,
    nach Kategorie (A–E + Legendär) aufklappbar. Klick auf eine Familie → Stufe I–IV wählen → onPick({familyId,tier}).
@@ -92,7 +93,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
       {hasLegs && (
         <div className="flex flex-col gap-1.5">
           <Header open={openCat === "L"} onClick={() => setOpenCat(openCat === "L" ? null : "L")}
-            color={LEG_GOLD} label="★ Legendär" count={legs.length} />
+            color={LEG_GOLD} label={t("dev.legendary")} count={legs.length} />
           {openCat === "L" && (
             <div className="grid sm:grid-cols-2 gap-2 pl-1">
               {legs.map((id) => {
@@ -114,7 +115,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
       {onDecline && (
         <button onClick={onDecline} className="self-center mt-2 text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
           style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
-          Runde überspringen
+          {t("skill.skipCycle")}
         </button>
       )}
     </div>
