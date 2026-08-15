@@ -7,7 +7,8 @@
 // Sprachprüfung A13: Die Formations-Rollen (Joker/Bindeglied/Anker/…) kommen jetzt aus `familyEffectText`
 // (src/game/architect.js) — derselbe Wortlaut wie im Architekt-Bildschirm und in der Core-DB. Vorher stand hier
 // eine dritte, abweichende Fassung, u. a. mit dem Entwickler-Kürzel „(±Span)" im Spielertext.
-import { architectValueBonus, familyEffectText } from "../game/architect.js";
+import { architectValueBonus } from "../game/architect.js";
+import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: EIN Generator, beide Sprachen
 import { suitName } from "../game/constants.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -34,7 +35,7 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1, all
   }
   // Formations-Gebäude: die Rolle in der Formationserkennung im Wortlaut der geteilten Quelle.
   if (fam && fam.category === "formation") {
-    const s = familyEffectText(fam, fam.legendary ? "legendary" : tier);
+    const s = buildingEffect(fam, fam.legendary ? "legendary" : tier);
     if (s) out.push(s);
   }
   const rf = pre && pre.relayFlat && pre.relayFlat[pos]; // #Pool Batch 3: eingestaffelter Score (Laufgang von links)

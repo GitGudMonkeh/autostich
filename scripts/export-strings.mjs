@@ -16,7 +16,9 @@ import { dirname, resolve, relative, join } from "node:path";
 
 import { ARCHETYPE_META } from "../src/game/skills.js";   // nur noch für die Leitfaden-Kontextspalte
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
-import { ARCHITECT_FAMILIES, TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
+import { ARCHITECT_FAMILIES, TIER_INERT_KINDS } from "../src/game/architect.js";
+import { buildingEffect } from "../src/i18n/buildingText.js";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../src/game/glossary.js";
 import { TIER_META } from "../src/game/rarity.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
@@ -69,29 +71,36 @@ const push = (id, category, de, context, limit = "", note = "") => {
 /* ============ 3 · Perk-Familien ============
    (Migriert — Namen und alle vier Stufentexte kommen unten aus dem i18n-Katalog.) */
 
-/* ============ 4 · Architekt-Gebäude ============ */
-// Gebaeude-Effekttexte kommen aus der geteilten Quelle in src/game/architect.js (Sprachpruefung A13):
-// dieselbe Funktion bedient Spiel, Kartendetail und Core-DB -> die CSV bildet garantiert den In-Game-Wortlaut ab.
-const archEff = (fam, tier) => familyEffectText(fam, tier);
+/* ============ 4 · Architekt-Gebäude ============
+   Die NAMEN kommen aus dem i18n-Katalog (unten). Die EFFEKTTEXTE werden erzeugt
+   (src/i18n/buildingText.js) — 41 Familien × bis zu 4 Stufen wären als Katalogeinträge über 100
+   fast identische Sätze. Hier werden sie deshalb in BEIDEN Sprachen gerendert und als fertige
+   Zeilen ausgegeben: der Übersetzer sieht den echten In-Game-Wortlaut, ohne dass daraus ein
+   zweiter Pflegeort wird. */
+const effIn = (loc, fam, tier) => { setLocale(loc); return buildingEffect(fam, tier); };
+const pushEff = (id, deText, enText, context) => {
+  if (!deText) return;
+  rows.push({ id, category: "building", de: deText, en: enText, context, limit: "", status: "done", note: "erzeugt aus src/i18n/buildingText.js" });
+};
 
-const ARCH_CAT_LABEL = { value: "Wert", score: "Score", formation: "Formation" };
 for (const fam of Object.values(ARCHITECT_FAMILIES)) {
-  const cat = ARCH_CAT_LABEL[fam.category] || fam.category;
-  push(`item.building.${fam.id}.name`, "item", fam.name, `Architekt-Gebäude — Name (${cat}${fam.legendary ? ", legendär" : ""})`);
   if (fam.legendary) {
-    push(`item.building.${fam.id}.legendary.eff`, "item", archEff(fam, "legendary"), `Architekt-Gebäude „${fam.name}" — Effekt (legendär)`);
+    pushEff(`building.${fam.id}.legendary.eff`, effIn("de", fam, "legendary"), effIn("en", fam, "legendary"),
+      `Architekt-Gebäude „${fam.name}" — Effekt (legendär)`);
   } else {
     const inert = TIER_INERT_KINDS.has(fam.base && fam.base.kind);
     const maxTier = inert ? (fam.tierKick ? fam.tierKick.at : 1) : 4;
     const seen = new Set();
     for (let t = 1; t <= maxTier; t++) {
-      const s = archEff(fam, t);
-      if (!s || seen.has(s)) continue;
-      seen.add(s);
-      push(`item.building.${fam.id}.tier${t}.eff`, "item", s, `Architekt-Gebäude „${fam.name}" — Effekt Stufe ${ROMAN[t]}`);
+      const deText = effIn("de", fam, t);
+      if (!deText || seen.has(deText)) continue;
+      seen.add(deText);
+      pushEff(`building.${fam.id}.tier${t}.eff`, deText, effIn("en", fam, t),
+        `Architekt-Gebäude „${fam.name}" — Effekt Stufe ${ROMAN[t]}`);
     }
   }
 }
+setLocale(SOURCE_LOCALE); // für alles Weitere wieder Deutsch
 
 /* ============ 5 · Glossar ============ */
 for (const c of GLOSSARY_CATEGORIES) push(`tutorial.glossary.cat.${c.id}`, "tutorial", c.label, "Glossar — Kategorieüberschrift", "22");

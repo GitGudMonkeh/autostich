@@ -2,12 +2,17 @@
 // Gebäude-Effekte an einer Position im Kartendetail. Geometrie (archFrameLines) rein/unit-getestet; CardGrid- und
 // CardDetail-Render als Smoke via renderToStaticMarkup (node-env, kein DOM → useLayoutEffect/Messung läuft nicht,
 // daher keine SVG-Linien im SSR — die testen wir direkt über archFrameLines).
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { CardGrid, archFrameLines } from "../src/ui/CardGrid.jsx";
 import { architectEffectStrings } from "../src/ui/archEffects.js";
 import { CardDetail } from "../src/ui/CardDetail.jsx";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+
+// #sprache: Gebäude-Effekttexte lösen zur Anzeigezeit auf. Der Test prüft den DEUTSCHEN
+// Wortlaut, also wird die Sprache gesetzt — sonst liefe er gegen die Auslieferungssprache.
+beforeEach(() => setLocale(SOURCE_LOCALE));
 
 const card = (id, value) => ({ id, suit: "R", value });
 const covCell = (bid) => ({ cat: "score", color: "#5ab87a", icon: "", boost: 0, legendary: false, name: "Bau", bid });

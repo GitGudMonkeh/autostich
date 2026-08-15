@@ -5,9 +5,9 @@ import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
-import { familyDef as archFamily } from "../game/architect.js"; // Gebäude-Liste (Name/Form/Stufe) in den Lauf-Details
 import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
+import { archFamily } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
    denselben Statblock wie der eigene Victory-Screen (RunStats). Escape/Klick-außen schließt. `entry` ist bereits

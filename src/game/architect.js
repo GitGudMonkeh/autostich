@@ -13,7 +13,7 @@
    - formation: biegt computeFormations für abgedeckte Positionen (Sakralbau).
    Legendäre kommen fertig (keine Stufen). Alle Zahlen sind Platzhalter → per Sim tunen (TUNING-Block unten).
    ============================================================ */
-import { ARCH_STREAK_CAP, formationLabel } from "./constants.js";
+import { ARCH_STREAK_CAP } from "./constants.js";
 import { tierWeightsForShift } from "./rarity.js";
 import { colorMatches, colorsAllied } from "./color.js"; // #289: Farb-Match zentral (grün + Farballianz)
 
@@ -91,55 +91,10 @@ const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) -
    Enum-Schlüssel im Spielertext („Formations-Joker (wiederholung/farbblock)").
    Zahlformat folgt dem Style-Guide: Dezimal-KOMMA, Malzeichen ×, echtes Minus −.
    ============================================================ */
-const fmtFactor = (x) => x.toFixed(2).replace(".", ",");
-// Joker-Typen als AUSGESCHRIEBENE Namen (nie die rohen Schlüssel), inkl. des per tierKick dazukommenden Typs.
-function jokerTypeNames(fam, tier) {
-  const types = [...((fam.base && fam.base.types) || [])];
-  const k = fam.tierKick;
-  if (k && k.addType && (tier === "legendary" || (typeof tier === "number" && tier >= k.at))) types.push(k.addType);
-  return types.map(formationLabel).join("/");
-}
-export function familyEffectText(fam, tier = 1) {
-  if (!fam || !fam.base) return "";
-  const base = fam.base, t = tier, nz = (v) => tierNum(v, t);
-  let s;
-  switch (base.kind) {
-    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
-    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
-    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
-    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
-    case "streak":     s = `Sieg +${nz(base.score)} Score je Serienpunkt (max ${ARCH_STREAK_CAP})`; break;
-    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone": { const every = (fam.tierKick && fam.tierKick.every && typeof t === "number" && t >= fam.tierKick.at) ? fam.tierKick.every : base.every;
-                        s = `jeder ${every}. Sieg auf diesem Gebäude +${nz(base.score)} Score`; break; }
-    case "mult":       s = `Siege hier ×${fmtFactor(base.factor)} Score`; break;
-    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
-    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
-    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
-    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
-    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty} Score`; break;
-    case "joker":      s = `Formations-Joker (${jokerTypeNames(fam, t)})`; break;
-    case "transparentFarb": s = "Farbblock-Transparenz"; break;
-    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
-    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
-    case "anker":      s = `jede Zelle zählt als Anker (×${fmtFactor(tierFactor(base.factor, t))})`; break;
-    case "formMult":   s = `Formationen hier ×${fmtFactor(base.factor)}`; break;
-    default:           s = ""; break;
-  }
-  // tierKick: ab Stufe `at` zündet ein QUALITATIVER Zusatz (nicht nur die skalierte Zahl) → sonst als Vorschau markiert.
-  if (fam.tierKick && s) {
-    const k = fam.tierKick, on = tier === "legendary" || (typeof t === "number" && t >= k.at);
-    let kick = "";
-    if (k.mult) kick = `zusätzlich ×${fmtFactor(k.mult)} Score`;
-    else if (k.critFlatMult) kick = `bei Crit ×${k.critFlatMult} Direkt-Score`;
-    else if (k.streakDoubleFrom) kick = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.addType) kick = `zweiter Joker-Typ: ${formationLabel(k.addType)}`;
-    else if (k.ankerValue) kick = `+${k.ankerValue} Stichwert je Ankerzelle`;
-    if (kick && !(k.addType && on)) s += on ? ` · ${kick}` : ` (Stufe ${ROMAN_TIER[k.at] || k.at}: ${kick})`;
-  }
-  return s;
-}
-const ROMAN_TIER = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+/* #sprache: `familyEffectText` ist nach src/i18n/buildingText.js gewandert (`buildingEffect`).
+   Der Wortlaut ist Anzeigetext und lebt jetzt als Satzbausteine im Katalog; die Zahlen-Helfer
+   (tierNum/tierFactor/bindSpanFor) bleiben hier, weil sie zur Mechanik gehören. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus: architect.js → i18n → de.js → families.js → architect.js. */
 
 /* ============================================================
    FORMEN (Polyominoes) — Zellenmengen [dr,dc] relativ zu einem Anker (0,0). Rotation in 4 Lagen (außer `zeile`,

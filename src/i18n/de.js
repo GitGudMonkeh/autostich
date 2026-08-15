@@ -13,6 +13,7 @@ import { TIER_META } from "../game/rarity.js";
 import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { FAMILY_LIST } from "../game/families.js";
+import { ARCHITECT_FAMILIES } from "../game/architect.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -43,6 +44,8 @@ for (const f of FAMILY_LIST) {
     if (d) fromRegistries[`family.${f.id}.tier${tr}.desc`] = d;
   }
 }
+// Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
+for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;
 // Nur anbietbare Perks — `offerable: false` sind Alt-Einträge, die kein Spieler je sieht.
 for (const pk of Object.values(PERK_DEFS)) {
   if (pk.offerable === false) continue;
@@ -52,6 +55,49 @@ for (const pk of Object.values(PERK_DEFS)) {
 
 export default {
   ...fromRegistries,
+
+  /* ---- Architekt-Gebäude · Satzbausteine (#sprache) ----
+     Der Effekttext wird ERZEUGT (src/i18n/buildingText.js), nicht je Gebäude/Stufe gepflegt: 41 Familien
+     × bis zu 4 Stufen ergäben sonst über 100 fast gleiche Sätze. Hier stehen nur die Bausteine.
+     Vorher lagen die deutschen Fassungen in architect.js — Satzvorlagen sind Anzeigetext und gehören
+     in den Katalog; die reinen Zahlen-Helfer (tierNum/tierFactor/bindSpanFor) bleiben im Spiel-Layer. */
+  "building.eff.flat.value": "alle Abgedeckten +{n} Stichwert",
+  "building.eff.flat.score": "Sieg +{n} Score",
+  "building.eff.lowValue": "niedrige Karten +{n} Stichwert",
+  "building.eff.color.value": "passende Farbe +{n} Stichwert",
+  "building.eff.color.score": "passende Farbe +{n} Score",
+  "building.eff.target.highest": "höchste",
+  "building.eff.target.lowest": "niedrigste",
+  "building.eff.target.value": "{which} Karte +{n} Stichwert",
+  "building.eff.target.score": "{which} Karte +{n} Score",
+  "building.eff.streak": "Sieg +{n} Score je Serienpunkt (max {cap})",
+  "building.eff.crit": "Crit-Sieg +{n} Score",
+  "building.eff.milestone": "jeder {every}. Sieg auf diesem Gebäude +{n} Score",
+  "building.eff.mult": "Siege hier ×{f} Score",
+  "building.eff.neighbor.value": "+{n} Stichwert je Nachbargebäude (max {cap})",
+  "building.eff.neighbor.score": "Sieg +{n} Score je Nachbargebäude (max {cap})",
+  "building.eff.compound": "Sieg +{n} Score je vollendeter Struktur",
+  "building.eff.segment.early": "frühe",
+  "building.eff.segment.late": "späte",
+  "building.eff.segment.value": "{half} Segmente +{n} Stichwert",
+  "building.eff.segment.score": "{half} Segmente +{n} Score",
+  "building.eff.relay.both": "strahlt +{n} Score in beide Nachbarfelder",
+  "building.eff.relay.right": "reicht +{n} Score ans Feld rechts weiter",
+  "building.eff.gamble": "Crit-Sieg +{n} Score · Sieg ohne Crit −{penalty} Score",
+  "building.eff.joker": "Formations-Joker ({types})",
+  "building.eff.transparentFarb": "Farbblock-Transparenz",
+  "building.eff.bind": "Treppen-Bindeglied: Karte darf im Wert um ±{span} abweichen",
+  "building.eff.crossSeg": "öffnet die Segmentgrenze",
+  "building.eff.anker": "jede Zelle zählt als Anker (×{f})",
+  "building.eff.formMult": "Formationen hier ×{f}",
+  // Stufen-Kicker: ein QUALITATIVER Zusatz ab einer Stufe — aktiv angehängt oder als Vorschau markiert.
+  "building.kick.mult": "zusätzlich ×{f} Score",
+  "building.kick.critFlatMult": "bei Crit ×{n} Direkt-Score",
+  "building.kick.streakDoubleFrom": "ab Serie {n} doppelt",
+  "building.kick.addType": "zweiter Joker-Typ: {type}",
+  "building.kick.ankerValue": "+{n} Stichwert je Ankerzelle",
+  "building.kick.active": "{base} · {kick}",
+  "building.kick.preview": "{base} (Stufe {tier}: {kick})",
 
   /* ---- Allgemein ---- */
   "common.close": "Schließen",

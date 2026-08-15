@@ -11,7 +11,8 @@ import { SKILL_LIST, ARCHETYPE_META } from "../src/game/skills.js";
 import { PERK_DEFS, CATEGORIES, RARITY_META, rarityOf } from "../src/game/perks.js";
 import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES } from "../src/game/architect.js";
-import { TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
+import { TIER_INERT_KINDS } from "../src/game/architect.js";
+import { buildingEffect } from "../src/i18n/buildingText.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = process.env.DB_OUT_DIR || resolve(__dir, "../dist/db");
@@ -37,7 +38,7 @@ function tierRanges(textFor, maxTier = 4) {
 // Architekt-Effekt je Stufe - kommt seit der Sprachpruefung (A13) aus der geteilten Quelle in
 // src/game/architect.js (familyEffectText). Vorher stand hier eine eigene Kopie, deren Wortlaut vom
 // Spiel abgewichen ist (Punkte statt Score, rohe Joker-Schluessel, Dezimalpunkt).
-const archEff = (fam, tier) => familyEffectText(fam, tier);
+const archEff = (fam, tier) => buildingEffect(fam, tier);
 
 const entries = [];
 

@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo, familyEffectText,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
@@ -20,6 +20,7 @@ import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Ma
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { useEscape } from "./useEscape.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -1200,7 +1201,7 @@ function Stat({ k, v, hero = false }) {
 // Spielersicht-Kurzbeschreibung eines Bauplans/Gebäudes. Der Wortlaut liegt seit der Sprachprüfung (A13)
 // in src/game/architect.js — dieselbe Quelle bedienen auch die Kartendetail-Anzeige (ui/archEffects.js)
 // und der Core-DB-Generator (scripts/gen-db.mjs). Vorher waren es drei auseinandergelaufene Fassungen.
-const famEff = (fam, b) => familyEffectText(fam, b?.tier ?? 1);
+const famEff = (fam, b) => buildingEffect(fam, b?.tier ?? 1);
 
 /* Dev-Run-Bauplan-Katalog (nur Preview): statt der 3er-Auswahl ALLE Baupläne, nach Kategorie (Wert/Score/
    Formation) aufklappbar → Familie (mit Effekt-Beschreibung) → Stufe. Klick auf eine Stufe baut sofort (chooseOffer,

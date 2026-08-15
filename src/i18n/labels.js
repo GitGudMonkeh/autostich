@@ -11,13 +11,14 @@
    übersetzt, liegt eine Schicht darüber.
 
    Migrationsstand: Rarität · Formationstypen · Skills + Archetypen · Perks + Perk-Kategorien ·
-   Perk-Familien. Architekt-Gebäude und Glossar folgen — solange sie fehlen, zeigen sie in beiden
+   Perk-Familien · Architekt-Gebäude. Das Glossar folgt — solange es fehlt, zeigt es in beiden
    Sprachen Deutsch (sichtbar, nicht still).
    ============================================================ */
 import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
+import { ARCHITECT_FAMILIES } from "../game/architect.js";
 
 /* ---- Rarität (TIER_META) ---- */
 // Sichtbarer Name einer Raritätsstufe: „Sehr selten" / „Rare".
@@ -90,3 +91,11 @@ export function familyDef(id) {
 
 // Aufstellphasen-Familien (LayoutPerks) — dieselbe Übersetzung, gleiche Reihenfolge.
 export const layoutFamilies = (...args) => rawLayoutFamilies(...args).map((f) => familyDef(f.id) || f);
+
+/* ---- Architekt-Gebäude (ARCHITECT_FAMILIES) ----
+   Nur der NAME kommt aus dem Katalog; der Effekttext wird erzeugt (src/i18n/buildingText.js). */
+export function archFamily(id) {
+  const f = ARCHITECT_FAMILIES[id];
+  if (!f) return null;
+  return { ...f, name: t(`building.${id}.name`) };
+}

@@ -6,12 +6,12 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
-import { formationName } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
+import { archFamily, formationName } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckStrength } from "./BuildSummary.jsx";
-import { occupiedCells as archOccupied, familyDef as archFamily } from "../game/architect.js";
+import { occupiedCells as archOccupied } from "../game/architect.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 // #UI: geteilte Architekt-/Formations-Bausteine (eine Quelle mit der Aufstellphase → keine getrennte Pflege).
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";

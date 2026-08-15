@@ -80,6 +80,7 @@ describe("i18n · Katalog-Parität", () => {
     "family.B_INITIATIVE.name", // Initiative
     "family.C_TRIUMPH.name",    // Triumph
     "family.C_FINISHER.name",   // Finisher
+    "building.kick.active",     // reine Struktur: „{base} · {kick}" — kein übersetzbarer Text
   ]);
 
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
