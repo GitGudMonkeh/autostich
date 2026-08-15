@@ -874,7 +874,7 @@ export default {
   "tutorial.intro.body": "Dein Ziel ist ein möglichst hoher Score über {cycles} Durchläufe. Verlieren kannst du nicht — es gibt nur mehr oder weniger Score. Die Stiche spielt der Autobattler selbst; du entscheidest zwischen den Durchläufen.",
 
   "tutorial.play.title": "Das Stichspiel",
-  "tutorial.play.body": "Beide Decks spielen ihre 40 Karten Stich für Stich gegeneinander aus. Die höhere Karte gewinnt, ein Gleichstand zählt nicht. Jeder Sieg bringt {win} Basispunkte — Serie, Crits und Formationen vervielfachen sie.",
+  "tutorial.play.body": "Beide Decks spielen ihre {cards} Karten Stich für Stich gegeneinander aus. Die höhere Karte gewinnt, ein Gleichstand zählt nicht. Jeder Sieg bringt {win} Basispunkte — Serie, Crits und Formationen vervielfachen sie.",
   "tutorial.play.mark.board": "Hier laufen die Stiche: links deine Karte, rechts die des Gegners.",
   "tutorial.play.mark.status": "Die Leiste zeigt Score, Serie und Durchlauf — und hält den Lauf an oder ändert das Tempo.",
   "tutorial.play.mark.rail": "Die Seitenpanels verraten, woher dein Score kommt und was dein Build gerade kann.",
@@ -890,8 +890,8 @@ export default {
   "tutorial.perk.mark.build": "Dein Build wächst mit jeder Wahl — hier siehst du, was schon zusammenspielt.",
 
   "tutorial.formation.title": "Aufstellungsphase",
-  "tutorial.formation.body": "Hier legst du die Ziehreihenfolge deiner 40 Karten neu. Jeder Tausch kostet Formations-Energie, und du hast {energy} je Aufstellungsphase. Karten, die ein Muster bilden, ergeben eine Formation und vervielfachen deinen Score.",
-  "tutorial.formation.mark.board": "Die 40 Positionen stehen in acht Segmenten zu je {segment}.",
+  "tutorial.formation.body": "Hier legst du die Ziehreihenfolge deiner {cards} Karten neu. Jeder Tausch kostet Formations-Energie, und du hast {energy} je Aufstellungsphase. Karten, die ein Muster bilden, ergeben eine Formation und vervielfachen deinen Score.",
+  "tutorial.formation.mark.board": "Die {cards} Positionen stehen in {segments} Segmenten zu je {segment}.",
   "tutorial.formation.mark.energy": "Die Energieanzeige sagt dir, wie viele Tausche dir noch bleiben.",
   "tutorial.formation.mark.legend": "Die Legende zeigt, welche Formationen deine aktuelle Reihenfolge schon trifft.",
 

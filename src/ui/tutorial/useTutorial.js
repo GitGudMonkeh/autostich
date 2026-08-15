@@ -18,12 +18,14 @@ const VIEW_POPUP = "popup";  // Erklär-Pop-up der Phase
 const VIEW_MARK  = "mark";   // Spotlight auf ein Panel
 const VIEW_OUTRO = "outro";  // einmaliger Abschluss-Hinweis
 
-export function useTutorial({ active, phase, state, onDone }) {
+export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
   const seen = useRef(new Set());
   const [cur, setCur] = useState(null);        // { stepId, view, markIndex }
   const outroPending = useRef(false);
 
-  // Ein frisch gestartetes Tutorial fängt wieder bei null an — sonst bliebe der zweite Durchgang stumm.
+  /* Ein frisch gestartetes Tutorial fängt wieder bei null an — sonst bliebe der zweite Durchgang stumm.
+     `runKey` zählt jeden Start eines geführten Laufs mit: Bei einem NEUSTART bleibt `active` durchgehend
+     true, ohne diesen Schlüssel liefe die Wiederholung also ohne ein einziges Pop-up ab. */
   useEffect(() => {
     if (active) {
       seen.current = new Set();
@@ -33,7 +35,7 @@ export function useTutorial({ active, phase, state, onDone }) {
     } else {
       setCur(null);
     }
-  }, [active]);
+  }, [active, runKey]);
 
   // Fälligen Schritt suchen: erste Phasenart, die noch nicht dran war. Läuft NICHT, solange schon
   // etwas offen ist — sonst überschriebe eine Phase, die hinter dem Pop-up weiterläuft, den Text.

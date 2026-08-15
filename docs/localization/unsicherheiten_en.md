@@ -76,6 +76,26 @@ Sag Bescheid, wenn dir die Ziffer lieber ist — dann fällt die Ausnahme weg.
 - **Die Glossar-Wortformen.** Sie sind kein Anzeigetext (sie steuern nur die Fettung) und werden
   von zwei Tests gemessen, nicht nach Gefühl beurteilt.
 
+
+---
+
+## 5. Tutorial (geführter Lauf) — vier Klangfragen, Stand 2026-08-15
+
+Der Tutorial-Text ist der erste Inhalt, der von der ersten Zeile an zweisprachig entstanden ist.
+Die Mechanik-Wörter kamen alle aus der eingefrorenen Tabelle (cycle · trick · streak · order phase ·
+order energy · build space · structure · blueprint) und stehen deshalb **nicht** hier. Offen ist nur
+der Ton an vier Stellen:
+
+| Deutsch | Mein Vorschlag | Warum unsicher |
+|---|---|---|
+| **Ausbau** (Perk-Kategorie „S": Slots & Ökonomie) | **Kit** | Neue Kategorie aus der v0.3-Erweiterung. Die Geschwister sind ein Wort lang (Deck · Trick · Role · Score · Form · Precision), „Kit" fügt sich ein und trifft „der Bausatz des Laufs". Alternativen: **Setup** (klarer, aber blasser) · **Expansion** (wörtlicher, aber zu lang für den Chip). |
+| **Weiterspielen** (Knopf am Abschluss-Hinweis) | **Keep playing** | Naheliegend wäre „Let's go" — das ist aber in §3.6 fest an die Score-Ansage „Gönn dir" vergeben. Eine deutsche Vokabel → genau eine englische, also darf „Let's go" hier nicht zweitverwendet werden. |
+| **Verstanden** (Weiter-Knopf) | **Got it** | Locker und kurz. Alternativen: **Understood** (steifer) · **Next** (sagt nur die Richtung, nicht das Verstehen). |
+| **Du hast alles gesehen** (Titel des Abschlusses) | **That is the whole loop** | Das Deutsche ist eine Feststellung über den Spieler, das Englische eine über das Spiel — wörtlich („You have seen everything") klingt im EN nach Prahlerei. Alternative: **You have seen the loop**. |
+
+Alles andere im Tutorial ist beschreibend und damit prüfbar; die Zahlen darin sind ohnehin
+Platzhalter aus `constants.js` und in beiden Sprachen dieselben (der Wächter misst das).
+
 ---
 
 ## Wie du antwortest

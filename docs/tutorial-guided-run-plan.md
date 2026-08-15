@@ -1,6 +1,7 @@
 # Autostich — Tutorial / Guided Run (Durchplanung)
 
-> **Status:** Durchplanung, kein Code.
+> **Status:** GEBAUT (Wellen W0–W4, 2026-08-15). Die Durchplanung unten steht weiter; was beim Bauen
+> anders entschieden wurde, steht in §13.9 mit Begründung.
 > **Stand:** 2026-08-15 — auf den aktuellen Mechanikstand gezogen (Branch `Autostich/pixi`).
 > **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Lauf**, der einem alles erklärt.
 > **Vor jeder Phase** erscheint ein Erklär-Pop-up, das sagt, was man in der Phase macht, und kurz die Panels erklärt.
@@ -294,6 +295,37 @@ Mit Empfehlung. Die alte Frage „Tutorial vs. `AnleitungModal`" ist durch deren
 8. **NEU — was passiert beim Abbruch mitten im Tutorial?**
    → **`as_tutorial_done` NICHT setzen.** Wer abbricht, hat es nicht gesehen; der nächste Start bietet
    es erneut an. Nur „Tutorial beenden" und das Durchlaufen bis zum Abschluss-Hinweis setzen die Flagge.
+
+9. **NEU (beim Bauen) — Abweichungen von dieser Planung.** Jede hier, mit Grund:
+
+   a) **Die Legendär-Phase ist eine eigene Reducer-Phase.** §4 führte sie als `levelup` +
+      `legendaryOffer`. Im Code ist sie `phase === "legendary"` mit eigenem Angebots-Feld. Der
+      Tutorial-Schritt matcht deshalb auf die Phase, nicht auf ein Feld. Nur `levelup` trägt zwei
+      Auswahlarten (Skill über `skillOffer`, Perk über `offer`) — dort ist die Feld-Unterscheidung
+      nötig und gebaut.
+
+   b) **Der feste Seed garantiert keinen frühen Crit** (§3 nahm das an). Gemessen über 2000 Seeds:
+      Die Crit-Chance hängt an der Skill-/Perk-Wahl, und die Entscheidung für Durchlauf 1 fällt VOR
+      dessen Stichen. Über acht verschiedene Spielweisen geprüft, liegt der Crit-Boden bei JEDEM
+      Kandidaten-Seed bei 0. Ein Tutorial-Text, der einen Crit ankündigt, würde also regelmäßig
+      lügen — die Texte bleiben deshalb bei „Crits vervielfachen den Score", ohne einen zu versprechen.
+
+   c) **Die Formations-Sorge aus §3 ist gegenstandslos.** „Ohne festen Seed kann das Skript nicht
+      garantieren, dass in der ersten Aufstellungsphase überhaupt eine Formation sichtbar ist" —
+      gemessen zeigen **2000 von 2000** Seeds mindestens eine, im Schnitt rund ein Dutzend. Der feste
+      Seed bleibt trotzdem (Reproduzierbarkeit, gleiche Erfahrung für alle, gleiche Grundlage für
+      Support-Fragen), aber er trägt diese Begründung nicht mehr.
+
+   d) **Der Fortschritt zählt nur den erklärten Bogen.** §10 wollte „Schritt 3/8" aus der
+      Skriptlänge. Die bedingten Phasen (Gletscher, Ziel, Familien-Ziel, Legendär) kommen aber
+      unregelmäßig und teils VOR dem Bogen — eine Familien-Ziel-Wahl kann schon in Durchlauf 2
+      auftauchen. Sie tragen deshalb gar keine Nummer, statt den Nenner unehrlich zu machen.
+
+   e) **Der Build-Coach-Mark zeigt in das Perk-Overlay**, nicht auf das `BuildPanel` unter dem Brett
+      (§5 nannte `BuildPanel`). Das Auswahl-Overlay ist Vollbild — das Panel darunter wäre verdeckt.
+
+   f) **`as_seen_guide` wurde ersetzt statt stehengelassen** (§9 ließ beides offen). Nichts las den
+      Schlüssel mehr; `as_tutorial_done` nimmt seinen Platz in `RESET_KEYS` ein.
 
 ---
 

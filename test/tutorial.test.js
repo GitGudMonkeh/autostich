@@ -95,6 +95,21 @@ describe("Tutorial · Texte", () => {
     }
   });
 
+  /* Der eigentliche Drift-Schutz. Beim Gegenlesen standen „40 Karten" und „acht Segmente" als
+     ausgeschriebene Zahlen im Text — beide wären beim ersten Deck-Umbau still falsch geworden, und
+     der Paritäts-Wächter hätte nichts gemerkt: BEIDE Sprachen hätten dieselbe falsche Zahl genannt.
+     Deshalb hier hart: im Tutorial steht keine nackte Zahl, nur Platzhalter. */
+  it("kein Tutorial-Text nennt eine Zahl direkt — nur Platzhalter", () => {
+    const bad = [];
+    for (const [lang, cat] of [["de", de], ["en", en]]) {
+      for (const k of ALL_KEYS) {
+        const ohnePlatzhalter = String(cat[k] || "").replace(/\{\w+\}/g, "");
+        if (/\d/.test(ohnePlatzhalter)) bad.push(`${lang} ${k}: „${cat[k]}"`);
+      }
+    }
+    expect(bad, `Zahl im Text statt aus den Konstanten:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
   it("jeder Platzhalter im Text wird vom Schritt auch geliefert (beide Sprachen)", () => {
     const check = (step) => {
       const vars = Object.keys(step.vars || {});

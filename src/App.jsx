@@ -184,6 +184,9 @@ export function Autostich() {
   // Tutorial: läuft gerade ein geführter Lauf? Und hat der Spieler das Tutorial schon einmal gesehen?
   // `tutorialDone` steuert nur das laute Erstkontakt-Angebot im Hub — der Chip bleibt immer sichtbar.
   const [tutorialActive, setTutorialActive] = useState(false);
+  // Zählt jeden Start eines geführten Laufs. Ein Neustart lässt `tutorialActive` auf true stehen —
+  // ohne diesen Wechsel bliebe der Merker „schon gezeigt" stehen und der zweite Anlauf liefe stumm.
+  const [tutorialRun, setTutorialRun] = useState(0);
   const [tutorialDone, setTutorialDone] = useState(() => loadTutorialDone());
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
@@ -252,6 +255,7 @@ export function Autostich() {
      liefen im Stichspiel die Stiche hinter dem Pop-up weiter, während der Spieler liest (Plan §10). */
   const tut = useTutorial({
     active: tutorialActive && inRun,
+    runKey: tutorialRun,
     phase: state.phase,
     state,
     onDone: () => { saveTutorialDone(true); setTutorialDone(true); },
@@ -761,7 +765,7 @@ export function Autostich() {
      wie der Seed-Chip — nur eben mit festem Seed, damit das Skript garantieren kann, dass früh etwas
      Sehenswertes passiert. Er zählt deshalb auch ganz normal für Statistik und Bestenliste (Plan §13.7).
      `mode` ist bewusst NICHT "ranked": die Wochen-Modifikatoren würden die erklärten Regeln verbiegen. */
-  function startTutorialRun() { setTutorialActive(true); launchRun({ seed: TUTORIAL_SEED }); }
+  function startTutorialRun() { setTutorialActive(true); setTutorialRun((n) => n + 1); launchRun({ seed: TUTORIAL_SEED }); }
   // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
   // Upgrades + SP-Polster (Profil-Update, kein Reload). `onboarding` = nur Onboarding überspringen (6/6) +
   // 10 SP / 50 DP. `reset` = ganzes Profil wipen → Reload gibt den sauberen Erstbesuch-Zustand.
@@ -771,13 +775,14 @@ export function Autostich() {
     if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
   }
   // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
-  function startRankedRun() { launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
+  function startRankedRun() { setTutorialActive(false); launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
   // Neustart behält die Lauf-Art UND einen GEWÄHLTEN Seed: Ranked → gleicher Modus + aktueller Wochen-Seed; ein
   // Challenge-/Seed-Lauf (#205 „Nachspielen"/Einfügen) → GENAU derselbe Seed, sonst bekäme man beim Neustart ein
   // anderes Brett als das, das man gerade übt. Casual (Seed nur gewürfelt) → wie gehabt frisches Brett.
   function restartRun() {
     const seed = state.ranked ? currentWeek(new Date()).seed
       : (seedWasChosen.current ? (state.seed ?? null) : null);
+    if (tutorialActive) setTutorialRun((n) => n + 1); // geführter Lauf startet neu → auch die Führung
     launchRun({ ranked: state.ranked || null, seed });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.

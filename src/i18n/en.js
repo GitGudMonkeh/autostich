@@ -863,7 +863,7 @@ export default {
   "tutorial.intro.body": "Your goal is the highest score you can reach over {cycles} cycles. You cannot lose — there is only more or less score. The autobattler plays the tricks itself; you decide between cycles.",
 
   "tutorial.play.title": "The trick play",
-  "tutorial.play.body": "Both decks play their 40 cards against each other, trick by trick. The higher card wins; a tie counts for nothing. Every win pays {win} base points — streak, crits and formations multiply them.",
+  "tutorial.play.body": "Both decks play their {cards} cards against each other, trick by trick. The higher card wins; a tie counts for nothing. Every win pays {win} base points — streak, crits and formations multiply them.",
   "tutorial.play.mark.board": "The tricks run here: your card on the left, your opponent's on the right.",
   "tutorial.play.mark.status": "The bar shows score, streak and cycle — and holds the run or changes its speed.",
   "tutorial.play.mark.rail": "The side panels show where your score comes from and what your build can do.",
@@ -879,8 +879,8 @@ export default {
   "tutorial.perk.mark.build": "Your build grows with every pick — here you see what already works together.",
 
   "tutorial.formation.title": "The order phase",
-  "tutorial.formation.body": "Here you rearrange the draw order of your 40 cards. Every swap costs order energy, and you have {energy} per order phase. Cards that form a pattern make a formation and multiply your score.",
-  "tutorial.formation.mark.board": "The 40 positions sit in eight segments of {segment}.",
+  "tutorial.formation.body": "Here you rearrange the draw order of your {cards} cards. Every swap costs order energy, and you have {energy} per order phase. Cards that form a pattern make a formation and multiply your score.",
+  "tutorial.formation.mark.board": "The {cards} positions sit in {segments} segments of {segment}.",
   "tutorial.formation.mark.energy": "The energy readout tells you how many swaps you have left.",
   "tutorial.formation.mark.legend": "The legend shows which formations your current order already hits.",
 

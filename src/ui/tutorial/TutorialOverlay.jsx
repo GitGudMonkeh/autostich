@@ -34,6 +34,15 @@ function useAnchorRect(anchor) {
       if (r.width <= 0 || r.height <= 0) { setRect(null); return; }
       setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
     };
+    /* Liegt das Panel außerhalb des Sichtfelds — die Auswahl-Overlays scrollen intern, und auf dem
+       Handy passt ohnehin wenig auf den Schirm —, erst hinscrollen, dann messen. Ohne das zeigt der
+       Spotlight korrekt auf ein Element, das der Spieler gar nicht sieht. */
+    const el0 = document.querySelector(`[data-tut="${anchor}"]`);
+    if (el0) {
+      const r0 = el0.getBoundingClientRect();
+      const offScreen = r0.bottom < 0 || r0.top > window.innerHeight;
+      if (offScreen) el0.scrollIntoView({ block: "center", behavior: "auto" });
+    }
     measure();
     // Das Panel kann in einem Scroll-Container liegen oder erst nach einem Frame stehen — deshalb
     // einmal nachmessen und auf Scroll/Resize hören (capture: auch innere Scroll-Container).
@@ -110,7 +119,9 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
         : <div className="absolute inset-0" style={{ background: "#0b0b10d0" }} aria-hidden="true" />}
 
       <div className={`absolute inset-x-0 flex justify-center p-3 sm:p-6 pointer-events-none ${cardPos === "top" ? "top-0" : "bottom-0"}`}>
-        <div className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel"
+        {/* max-h + Scroll: auf einem kleinen Handy-Schirm quer darf ein Drei-Satz-Text die Knöpfe nicht
+            aus dem Bild schieben — sonst gäbe es kein „Verstanden" mehr und der Lauf bliebe eingefroren. */}
+        <div className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel overlay-card max-h-[80dvh] overflow-y-auto"
           style={MODAL_CARD}>
           <TopHairline />
 

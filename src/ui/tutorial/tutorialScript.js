@@ -52,7 +52,7 @@ export const TUTORIAL_STEPS = [
     match: { phase: "play" },
     titleKey: "tutorial.play.title",
     bodyKey: "tutorial.play.body",
-    vars: { win: C.SCORE_PER_WIN },
+    vars: { win: C.SCORE_PER_WIN, cards: C.TRICKS_PER_CYCLE },
     coachmarks: [
       { anchor: "bf-board",  key: "tutorial.play.mark.board" },
       { anchor: "bf-status", key: "tutorial.play.mark.status" },
@@ -86,7 +86,10 @@ export const TUTORIAL_STEPS = [
     match: { phase: "formation" },
     titleKey: "tutorial.formation.title",
     bodyKey: "tutorial.formation.body",
-    vars: { energy: C.FORMATION_ENERGY, segment: SEGMENT_SIZE },
+    // `segments` ist abgeleitet (Deckgröße ÷ Segmentlänge) — die „acht" stand vorher im Text und wäre
+    // beim ersten Deck-Umbau still falsch geworden.
+    vars: { energy: C.FORMATION_ENERGY, segment: SEGMENT_SIZE, cards: C.TRICKS_PER_CYCLE,
+            segments: Math.floor(C.TRICKS_PER_CYCLE / SEGMENT_SIZE) },
     coachmarks: [
       { anchor: "form-board",  key: "tutorial.formation.mark.board" },
       { anchor: "form-energy", key: "tutorial.formation.mark.energy" },
