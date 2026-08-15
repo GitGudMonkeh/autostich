@@ -920,7 +920,7 @@ export default {
   "shop.tile.sub.detailsTier": "Tier {roman} · tap → details",
   "shop.tile.sub.buyable": "available",
   // #393 Random deck per run (packs tab).
-  "shop.randomDeck.title": "🎲 Random deck per run",
+  "shop.randomDeck.title": "Random deck per run",
   "shop.randomDeck.desc": "Every run starts with a random one of your decks; all active effects in that deck's color.",
   "shop.randomDeck.aria": "Random deck per run",
   "shop.noBattlefield": "No battlefield",

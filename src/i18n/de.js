@@ -931,7 +931,7 @@ export default {
   "shop.tile.sub.detailsTier": "Stufe {roman} · tippen → Details",
   "shop.tile.sub.buyable": "kaufbar",
   // #393 Zufalls-Deck je Lauf (Packs-Reiter).
-  "shop.randomDeck.title": "🎲 Zufalls-Deck je Lauf",
+  "shop.randomDeck.title": "Zufalls-Deck je Lauf",
   "shop.randomDeck.desc": "Jeder Lauf startet mit einem zufälligen deiner Decks; alle aktiven Effekte in Deckfarbe.",
   "shop.randomDeck.aria": "Zufalls-Deck je Lauf",
   "shop.noBattlefield": "Kein Battlefield",
