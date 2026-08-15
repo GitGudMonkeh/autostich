@@ -474,3 +474,30 @@ describe("RESTORE_RUN (Resume)", () => {
     expect(reducer(cur, { type: "RESTORE_RUN" })).toBe(cur);
   });
 });
+
+describe("PICK_LEGENDARY — #370 Doppel-Legendär (doubleLeg, nur Ranked)", () => {
+  const base = (weekMods, offer = ["SK_LIGHTNING_L01", "SK_FIRE_L01"]) =>
+    ({ ...initialState(makeRng(1)), phase: "legendary", legendaryOffer: offer, skills: [], weekMods });
+  it("ohne Mod: 1 Wahl → sofort play", () => {
+    const s = reducer(base([]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.skills).toContain("SK_LIGHTNING_L01");
+    expect(s.legendaryOffer).toBe(null);
+  });
+  it("doubleLeg: nach 1. Wahl bleibt Phase legendary (Rest-Angebot ohne die genommene); 2. Wahl → play", () => {
+    let s = reducer(base([{ effect: "doubleLeg" }]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("legendary");
+    expect(s.legendaryOffer).toEqual(["SK_FIRE_L01"]);
+    expect(s.legPicksMade).toBe(1);
+    s = reducer(s, { type: "PICK_LEGENDARY", legendaryId: "SK_FIRE_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.skills).toEqual(expect.arrayContaining(["SK_LIGHTNING_L01", "SK_FIRE_L01"]));
+    expect(s.legPicksMade).toBe(0);
+  });
+  it("doubleLeg mit nur 1 Angebot: 1 Wahl → play (kein Hängenbleiben)", () => {
+    const s = reducer(base([{ effect: "doubleLeg" }], ["SK_LIGHTNING_L01"]),
+      { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.legPicksMade).toBe(0);
+  });
+});

@@ -681,7 +681,15 @@ export function reducer(state, action) {
       // Eis-Neudesign: der legendäre Eis-Skill fügt nur seine Rolle hinzu (kein Einfrieren) → glacierRoles nachziehen.
       const activeArchetypes = (state.activeArchetypes || []).includes(arch) ? state.activeArchetypes : [...(state.activeArchetypes || []), arch];
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, formations, glacierRoles: glacierRolesOf(skills), phase: "play", legendaryOffer: null };
+      const common = { ...state, skills, activeArchetypes, lightning, heat, deck, formations, glacierRoles: glacierRolesOf(skills) };
+      // #370 Doppel-Legendär (nur Ranked): 2 Legendäre je Phase wählbar. Nach der 1. Wahl in der Phase bleiben (Angebot
+      // ohne die genommene Karte), sofern noch etwas übrig ist — sonst normal weiterspielen. legPicksMade zählt in der Phase.
+      const picksAllowed = hasWeekMod(state.weekMods, "doubleLeg") ? 2 : 1;
+      const picksMade = (state.legPicksMade || 0) + 1;
+      const remainingOffer = state.legendaryOffer.filter((id) => id !== legendaryId && !skills.includes(id));
+      if (picksMade < picksAllowed && remainingOffer.length > 0)
+        return { ...common, phase: "legendary", legendaryOffer: remainingOffer, legPicksMade: picksMade };
+      return { ...common, phase: "play", legendaryOffer: null, legPicksMade: 0 };
     }
 
     // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
@@ -689,8 +697,8 @@ export function reducer(state, action) {
       if (state.phase !== "legendary" || !state.legendaryOffer) return state;
       const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
       return off.length > 0
-        ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0 } // → normale Skill-Auswahl
-        : { ...state, legendaryOffer: null, phase: "play" };                                     // Skill-Pool leer → weiterspielen
+        ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0, legPicksMade: 0 } // → normale Skill-Auswahl
+        : { ...state, legendaryOffer: null, phase: "play", legPicksMade: 0 };                                     // Skill-Pool leer → weiterspielen
     }
 
     // M1 (legSlotReroll): das R29-Legendär-Angebot einmal neu würfeln — dedizierter Token (rerollsLeg), getrennt
