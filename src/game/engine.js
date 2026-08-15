@@ -115,7 +115,8 @@ export function resolveTrick(state, rng) {
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsCapital = 0, zinsRate = C.ZINS_RATE_START, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
-    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
+    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: Auszahlung des letzten Durchlaufs (reine Telemetrie, kein Stapel mehr)
+    cycleScoreSum = 0,  // Summe der Stich-Erträge DIESES Durchlaufs — Bezugsgröße der Richtfest-Dividende
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore = 0, // bester Stich + bester Gletscher-Stich (Bruch getrennt geführt)
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
@@ -992,6 +993,7 @@ export function resolveTrick(state, rng) {
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
     cycleBestTrick = Math.max(cycleBestTrick, gained); // Echo (#203): bester Stich DIESES Durchlaufs (am Durchlauf-Ende nochmal)
+    cycleScoreSum += gained;                          // Richtfest: Ertrag DIESES Durchlaufs (Bezugsgröße der Struktur-Dividende)
     // Sammler (#203): die diesen Stich GEWONNENEN Basis-Formationsarten (factor > 1) in den Durchlauf-Satz aufnehmen —
     // sie heben den formMult erst der FOLGENDEN Siege dieses Durchlaufs (sammlerMult liest den Stand VOR dem Sieg).
     if (ownsFlag(perks, "sammler"))
@@ -1230,14 +1232,22 @@ export function resolveTrick(state, rng) {
       }
     }
     if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
-    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur diesen Durchlauf +Schritt auf den Dauer-Bonus, dann auszahlen.
-    if (ownsFlag(perks, "richtfest") && archPreNow) { richtfestBonus += C.RICHTFEST_STEP * (archPreNow.structureCount || 0); cycleEndScore += richtfestBonus; }
+    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur eine Dividende auf den Ertrag DIESES Durchlaufs.
+    // SELBSTSKALIEREND wie Vabanque (v0.2): der frühere flache Schritt (250 Score je Struktur, aufgestapelt) war gegen
+    // die heutige Score-Höhe bedeutungslos — gemessen 1,08× auch mit korrekt bauendem Architekten (median 10 Strukturen).
+    // Bezugsgröße ist die Summe der STICH-Erträge des Durchlaufs (cycleScoreSum), NICHT cycleEndScore: sonst würden
+    // Zinseszins/Echo/Richtfest übereinander multiplizieren (die Vabanque×Echo-Lehre — Perk-auf-Perk-Kaskaden reißen
+    // den Schwanz auf). Der „stapelnde" Charakter bleibt: structureCount wächst über den Lauf, während gebaut wird.
+    if (ownsFlag(perks, "richtfest") && archPreNow) {
+      richtfestBonus = cycleScoreSum * C.RICHTFEST_STEP * (archPreNow.structureCount || 0); // Telemetrie: Auszahlung dieses Durchlaufs
+      cycleEndScore += richtfestBonus;
+    }
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
     // oben schon gebaut; Mutation einer const-Objekt-Property ist erlaubt.
     if (cycleEndScore) { lastTrick.gained += cycleEndScore; lastTrick.scoreGain += cycleEndScore; }
-    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; // Pro-Durchlauf-States zurücksetzen (#203)
+    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
     // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
     prevCycleScore = lastCycleScore;
@@ -1456,7 +1466,7 @@ export function resolveTrick(state, rng) {
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
-    richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
+    richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)

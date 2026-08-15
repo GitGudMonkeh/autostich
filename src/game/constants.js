@@ -240,7 +240,17 @@ export const PATT_MARGIN         = envNum("SIM_PATT_MARGIN", 2);          // Pat
 export const ECHO_FACTOR         = envNum("SIM_ECHO_FACTOR", 1.6);        // Echo (bester Stich): am Durchlauf-Ende den höchsten Stich × diesem Faktor nochmal gutschreiben [1,0→1,6]
 export const MONOCHROM_STEP      = envNum("SIM_MONOCHROM_STEP", 0.15);    // Monochrom (Farbserie): +Score-Mult je Folgesieg derselben Farbe (Zusatzfaktor, multiplikativ)
 export const MONOCHROM_CAP       = envNum("SIM_MONOCHROM_CAP", 1.5);      // … Deckel des Zusatz-Mults (+150 % → Peak ×2,5 bei Farbserie 11); Farbwechsel/Niederlage setzt zurück
-export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 250);     // Richtfest (Gebäude-Struktur): +dauerhafter Score je vollendeter Struktur/Durchlauf (stapelt, Auszahlung je Durchlauf-Ende, kein Mult)
+export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 0.05);    // Richtfest (Gebäude-Struktur): Anteil des Durchlauf-Ertrags je vollendeter Struktur [flach 250 → selbstskalierend, s. u.]
+// RICHTFEST v0.2 (2026-08-15): derselbe Flat-Defekt wie Vabanque — 250 Score je Struktur waren gegen Läufe um 78M
+// bedeutungslos (1,08× auch mit korrekt bauendem Architekten und median 10 Strukturen). Jetzt ein ANTEIL am
+// Stich-Ertrag des Durchlaufs. Bezugsgröße bewusst cycleScoreSum und NICHT cycleEndScore, damit Zinseszins/Echo/
+// Richtfest nicht übereinander multiplizieren (s. die Vabanque×Echo-Kaskade beim MULT-Knopf oben).
+// Der frühere 1,00×-Messwert war zusätzlich durch zwei Sim-Bugs verfälscht (Zufallsbau + ignorierter Baufeld-Deckel);
+// die sind separat gefixt. Bauhütte brauchte danach GAR KEINE Änderung mehr (1,00× → 1,32×, im Band).
+// Messreihe (--only L_RICHT --runs 150 --explore 400): STEP 0,03 → 1,20× · 0,05 → 1,27×. Gewählt 0,05 — bewusst in
+// der unteren Bandhälfte (Bandmitte läge bei ~0,07): die Dividende wächst LINEAR mit structureCount, und den heben
+// sowohl Bauhütte (+8 Zellen ⇒ 6→10 Strukturen) als auch der Fortschrittsbaum (treeCover). Wer STEP anhebt, sollte
+// gegen einen Bauhütte-Build gegenmessen, nicht nur gegen den Referenzbuild.
 export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bauhütte (Gebäude-Baufeld): hebt beim Pick den Baufeld-Deckel (maxCover) dauerhaft um so viele Zellen
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
