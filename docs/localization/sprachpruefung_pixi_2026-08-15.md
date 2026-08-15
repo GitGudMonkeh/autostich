@@ -53,6 +53,7 @@ hießen je nach Bildschirm anders, **(c)** der Architekt-Screen formatierte Zahl
 | **G** | Vorlagen- und Namens-Inkonsistenzen | 6 | ✔ erledigt |
 | **H** | Kleinere Beobachtungen | 4 | ✔ erledigt |
 | **L** | Leitfäden, Deck-Ansicht, Skill-Katalog (Nachprüfung) | 9 | ✔ erledigt |
+| **M** | Zustand des Glossars (Messung) | 5 | ✔ erledigt |
 
 Zusätzlich nachgezogen: `docs/text-style-guide.md` (neu strukturiert, §1 Begriffstabelle erweitert,
 §1e „Wörter, die nicht mehrfach belegt werden dürfen") und `README.md` (A14).
@@ -723,6 +724,73 @@ Sechs Pflanzen-Skills schrieben es, die drei aus Blitz und Feuer nicht.
 
 ### L9 — Blitzfänger nannte sich im eigenen Beschreibungstext
 **Stand:** ✔ umformuliert (gleiche Klasse wie F7).
+
+---
+
+## M · Zustand des Glossars (Messung nach der Bereinigung)
+
+Das Glossar (`src/game/glossary.js`) ist die einzige Quelle der Begriffs-Erklärungen und steuert
+zusätzlich die **Auto-Fettung**: `tokenizeGlossary` markiert in jeder Beschreibung die Wortformen aus
+`match` und macht sie antippbar. Es ist damit doppelt kritisch — als Nachschlagewerk und als Renderer.
+
+### Kennzahlen
+
+| Maß | Wert |
+|---|---|
+| Einträge | **109** in 8 Kategorien |
+| Verteilung | Archetypen 33 · Architekt 16 · Formationen 15 · Grundbegriffe 14 · Meta 11 · Perks 8 · Deck 7 · Präzision 6 |
+| **Match-Kollisionen** (eine Wortform in zwei Einträgen) | **0** |
+| Tokenizer-Roundtrip (Text bleibt unverändert) | verlustfrei über alle 2 265 Strings |
+| Erklärtext-Länge | Ø 154 Zeichen · Median 129 · längster 429 (Firn-Boden) |
+| Texte über 300 Zeichen | 6 (Firn-Boden, Bersten, Struktur, Trimmen, Stapel, Gletscher-Formationen) |
+| Skill-/Perk-/Gebäude-Texte **ohne** einen erklärten Begriff | 135 von 611 (**22 %**) |
+
+### Gefundene und behobene Mängel
+
+1. **Toter Eintrag `breakdown` („Score-Aufschlüsselung").** Beschrieb die Faktorenkette
+   „Basis × Serie × Perk-Mult × Formation × Crit — jeder Faktor wird einzeln ausgewiesen".
+   Dieses UI ist entfernt (`Battlefield.jsx:964`: *„Die Ergebnis-Aufschlüsselung … wurde ENTFERNT"*).
+   → gelöscht, gleiche Klasse wie die Meisterrang-Einträge (A6).
+2. **Fehlender Kernbegriff „Wertvorsprung".** Steht in **10** Regeltexten und ist Feuers Währung,
+   war aber nur inline im Hitze-Eintrag erklärt. → eigener Eintrag.
+3. **Match-Lücke bei „Bersten".** Die Liste kannte `bricht`/`brechen`, aber **nicht `Bruch`/`Brüche`** —
+   ausgerechnet die häufigste Form (17 Anzeigetexte, u. a. Zermalmen, Rissbildung, Kettenbruch,
+   Große Lawine, der ganze Eis-Leitfaden). → ergänzt.
+4. **Benennungs-Split „Eis-Formation" vs. „Gletscher-Formation".** Die UI sagt an zwei Stellen
+   Gletscher-Formation (`GlacierFormLegend`, Karten-Badge), das Glossar sagte Eis-Formation.
+   → Eintrag auf **Gletscher-Formationen** umbenannt, beide Formen in `match`.
+5. **Sieben fehlende Flexionen**, bei denen die Fettung heute nicht greift: `Durchlaufs`,
+   `Durchläufen`, `Segments`, `Farbblocks`, `Wiederholungen`, `Archetyps`, `Legendärer`/`legendären`,
+   `Rerolls`. → ergänzt.
+
+### Bewertung
+
+**Strukturell gesund.** Keine Kollisionen, keine rohen Templates, keine `undefined` (der Bestandstest
+`glossary.test.js` prüft beides), verlustfreier Tokenizer, konsistente Kategorien.
+
+**Inhaltlich vollständig für die Regelbegriffe.** Die 12 Einträge, deren Wortform im übrigen
+Spielertext nie vorkommt (Kampfwert, Ziehreihenfolge, Überlappung, Skill-Durchlauf, Aufwertungs-Typen,
+Kategorien A–E, Polyomino, Bau-Kategorien, Lage, Stufen-Kicker, Versetzen, Kosmetik), sind **kein
+Mangel**: Das sind Dinge, die man *sieht* und dann nachschlägt, nicht Wörter, die im Text stehen.
+Sie gehören ins Glossar, gerade weil sie sonst nirgends erklärt werden.
+
+**Die 22 % Beschreibungen ohne erklärten Begriff** sind ebenfalls unauffällig — es sind die rein
+generischen Muster-Sätze („Sieg mit Kartenwert ≥9: +100 Score"), die keinen Sonderbegriff enthalten.
+
+**Bewusst nicht aufgenommen** bleiben die generischen Wörter mit den höchsten Frequenzen
+(Score 211×, Sieg 163×, Karte/Karten 280×, Wert 34×). Sie zu fetten würde die Beschreibungen
+unlesbar machen — das ist die dokumentierte Linie des Glossars („Generische Tokens haben bewusst
+keinen Eintrag").
+
+### Offen
+
+- **„Battlefield" (29 Anzeigetexte)** steht englisch neben dem deutschen „Spielfeld" — überwiegend als
+  Suffix in Skin-Namen („Beryll · Battlefield"), aber auch als UI-Wort („Kein Battlefield", „Konturen
+  des Battlefields"). Das ist eine **Produkt-/Marken-Entscheidung**, keine Glossar-Frage: entweder das
+  Wort wird als Eigenname geführt (dann Glossareintrag + `note` in der CSV) oder es wird zu „Spielfeld".
+- Eine Handvoll UI-Texte fällt weiterhin durch das Heuristik-Raster des Exports, wenn sie ein
+  Gleichheitszeichen als Prosa enthalten (z. B. die Überlappungs-Zeile der Formations-Legende:
+  „mehr Formationen = mehr Multiplikator"). Betrifft die CSV, nicht das Spiel.
 
 ---
 

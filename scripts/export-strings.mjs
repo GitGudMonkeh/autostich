@@ -288,7 +288,15 @@ function uiRows() {
   ];
   const GERMAN = /[A-ZÄÖÜ][a-zäöüß]{2,}|[a-zäöüß]{3,}\s|ä|ö|ü|ß/;
   const CSSY = /\b(text|font|rounded|w|h|p[xytblr]?|m[xytblr]?|gap|flex|grid|bg|border|top|left|right|bottom|z|min|max|inline|block|leading|tracking|uppercase|shrink|truncate|tabular|overflow|sticky|absolute|relative|order|col|row|as|sm|md|lg|opacity|hover|transition|cursor|select|pointer|space|items|justify|self|ring|shadow|backdrop)-/;
-  const FRAGMENT = /[{}();=<>|&]|\?\s|\s\?|^[·,.:]|^\d+\s*[?:]|^\)|^\(/;
+  // Code-Reste aussortieren. WICHTIG: runde Klammern NICHT pauschal verwerfen — deutsche UI-Texte benutzen sie
+  // ständig („Grün (reif)", „Gletscher-Formationen (2D)"). Verworfen wird nur, was nach Code aussieht:
+  // Aufruf-Muster `name(`, unbalancierte Klammern, Zuweisungen/Operatoren.
+  const FRAGMENT = /[{};=<>|&]|=>|\?\s|\s\?|^[·,.:]|^\d+\s*[?:]|[A-Za-z_$]\(/;
+  const unbalanced = (t) => {
+    let d = 0;
+    for (const ch of t) { if (ch === "(") d++; else if (ch === ")") d--; if (d < 0) return true; }
+    return d !== 0;
+  };
   const DROP = new Set([
     "Helvetica Neue", "Georgia, serif", "MacIntel", "ArrowLeft", "ArrowRight", "Escape", "ActionBar",
     "RunStats", "fx:hologridSlice", "perk2Leg", "perk2Reroll",
@@ -319,7 +327,7 @@ function uiRows() {
         if (/\b(catch|const|return|else|of|current|null|undefined|typeof)\b/.test(s)) continue;  // Code-Reste
         if (/^[)(\[\],.:|&?]+$|^[)(]|[)(]$/.test(s)) continue;
         if (!GERMAN.test(s) && !/^[A-Z]/.test(s)) continue;   // Musiktitel sind englisch, aber Großbuchstabe am Anfang
-        if (CSSY.test(s) || FRAGMENT.test(s)) continue;
+        if (CSSY.test(s) || FRAGMENT.test(s) || unbalanced(s)) continue;
         if (!/\s/.test(s) && /^[a-z][A-Za-z0-9_]*$/.test(s)) continue;  // camelCase-/Enum-Bezeichner
         if (/^L\d+$/.test(s)) continue;
         if (/#[0-9a-fA-F]{3,8}\b|\b(solid|dashed|dotted|inset|ease-out|ease-in|linear)\b/.test(s)) continue; // CSS-Werte
