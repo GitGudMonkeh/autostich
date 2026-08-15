@@ -135,6 +135,11 @@ export function Autostich() {
     const el = document.documentElement;
     if (fxLevel !== "full") el.dataset.reducedFx = "1"; else delete el.dataset.reducedFx;
   }, [fxLevel]);
+  // Zahlengröße: skaliert Kartenzahlen + Score-Floats (.card-num) global über eine CSS-Variable. Auf 0,75–1,25 geklemmt.
+  useEffect(() => {
+    const s = Math.min(1.25, Math.max(0.75, Number(options.numScale) || 1));
+    document.documentElement.style.setProperty("--num-scale", String(s));
+  }, [options.numScale]);
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)

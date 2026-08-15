@@ -157,6 +157,13 @@ export function OptionsModal({ options, onChange, onClose }) {
               <Toggle on={!options.hideFloatWinLose} onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
             </Row>
           </div>
+          {/* Zahlengröße — skaliert Kartenzahlen + aufsteigende Score-Zahlen (Orbitron) gemeinsam. 1 = Standard. */}
+          <Row title="Zahlengröße" desc={`Größe der Kartenzahlen und aufsteigenden Score-Zahlen. ${Math.round((Number(options.numScale) || 1) * 100)} %`}>
+            <input type="range" min="0.75" max="1.25" step="0.05" value={options.numScale ?? 1}
+              onChange={(e) => onChange({ numScale: Number(e.target.value) })}
+              aria-label="Zahlengröße"
+              style={{ width: 120, accentColor: "#d4a63a", cursor: "pointer" }} />
+          </Row>
         </div>
 
         <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>

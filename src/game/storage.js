@@ -410,6 +410,8 @@ const DEFAULT_OPTIONS = {
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  // Zahlengröße (Kartenzahlen + Score-Floats): Skalierungsfaktor 0,75–1,25 (1 = Standard). Reine UI-Pref (überlebt Reset).
+  numScale: 1,
   // #393 Zufalls-Deck je Lauf: jeder neue Lauf startet mit einem zufälligen besessenen (farbigen) Deck-Pack + alle aktiven
   //   Effekte in Deckfarbe. Reine UI-Pref (überlebt Reset, wie haptics) → NICHT in COSMETIC_OPTION_KEYS.
   randomDeckEachRun: false,
