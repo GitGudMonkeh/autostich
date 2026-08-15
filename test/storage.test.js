@@ -184,13 +184,13 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   });
 
   it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
-    // 1. Lauf: +1 Grundstock + 5 Meilenstein-SP (100 Mio) = 6.
+    // 1. Lauf: +1 Grundstock + 6 Meilenstein-SP (100 Mio: 1+1+1+1+2) = 7.
     let p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
-    expect(p.stichPoints).toBe(6);
+    expect(p.stichPoints).toBe(7);
     expect(p.spRuns).toBe(1);
     // Nächster, kleiner Lauf: nur +1.
     p = recordRun(runRec({ ts: 2, score: 10_000 })).profile;
-    expect(p.stichPoints).toBe(7);
+    expect(p.stichPoints).toBe(8);
     expect(p.spRuns).toBe(2);
   });
 
@@ -217,8 +217,8 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     let p = loadProfile();
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(50 + 2 + 5); // 55 Mio → +2 DP (Meilensteine 25M+50M) + #382 Abschluss-Bonus 5
-    expect(p.stichPoints).toBe(1 + 2);     // +1 Grundstock + 2 Meilensteine (25M+50M)
+    expect(p.deckPoints).toBe(50 + 3 + 5); // 55 Mio → +3 DP (Meilensteine 10M+25M+50M) + #382 Abschluss-Bonus 5
+    expect(p.stichPoints).toBe(1 + 3);     // +1 Grundstock + 3 Meilensteine (10M+25M+50M)
   });
 
   it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
@@ -233,7 +233,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
-    expect(p.deckPoints).toBe(100 + 5 + 1 + 5); // gefegte 100 SP + 5 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
+    expect(p.deckPoints).toBe(100 + 6 + 1 + 5); // gefegte 100 SP + 6 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {

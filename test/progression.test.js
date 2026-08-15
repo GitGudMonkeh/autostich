@@ -243,25 +243,27 @@ describe("Onboarding-Fortschritt (inert bei Start 6/6)", () => {
 
 describe("SP-Meilensteine (kumulativ)", () => {
   it("jede überschrittene Schwelle addiert ihre SP", () => {
-    expect(spMilestones(24_999_999)).toBe(0);
-    expect(spMilestones(25_000_000)).toBe(1);
-    expect(spMilestones(50_000_000)).toBe(2);
-    expect(spMilestones(100_000_000)).toBe(5); // 1+1+1+2
-    expect(spMilestones(500_000_000)).toBe(5);
+    expect(spMilestones(9_999_999)).toBe(0);
+    expect(spMilestones(10_000_000)).toBe(1);
+    expect(spMilestones(24_999_999)).toBe(1);
+    expect(spMilestones(25_000_000)).toBe(2);
+    expect(spMilestones(50_000_000)).toBe(3);
+    expect(spMilestones(100_000_000)).toBe(6); // 1+1+1+1+2
+    expect(spMilestones(500_000_000)).toBe(6);
   });
 });
 
 describe("milestoneBarState", () => {
   it("erreichte Meilensteine, nicht-lineare Füllung, nächstes Ziel", () => {
     const s0 = milestoneBarState(0);
-    expect(s0.reached).toBe(0); expect(s0.fill).toBe(0); expect(s0.next.at).toBe(25_000_000);
-    expect(milestoneBarState(12_500_000).fill).toBeCloseTo(0.125, 5);
+    expect(s0.reached).toBe(0); expect(s0.fill).toBe(0); expect(s0.next.at).toBe(10_000_000);
+    expect(milestoneBarState(17_500_000).fill).toBeCloseTo(0.3, 5); // ≥10M (1 erreicht), halb bis 25M → (1+0.5)/5
     const s1 = milestoneBarState(25_000_000);
-    expect(s1.reached).toBe(1); expect(s1.fill).toBeCloseTo(0.25, 5); expect(s1.spSoFar).toBe(1);
+    expect(s1.reached).toBe(2); expect(s1.fill).toBeCloseTo(0.4, 5); expect(s1.spSoFar).toBe(2);
   });
   it("bei/über 100 Mio: Maximum", () => {
     const m = milestoneBarState(250_000_000);
-    expect(m.atMax).toBe(true); expect(m.fill).toBe(1); expect(m.spSoFar).toBe(5); expect(m.next).toBe(null);
+    expect(m.atMax).toBe(true); expect(m.fill).toBe(1); expect(m.spSoFar).toBe(6); expect(m.next).toBe(null);
   });
 });
 
@@ -270,17 +272,17 @@ describe("SP-Ernte pro Lauf — nach Onboarding (Start 6/6)", () => {
     expect(isSpRun({ completed: true }, 6)).toBe(true);
     expect(isSpRun({ completed: false }, 6)).toBe(false);
     expect(spForRun({ completed: true, score: 0 }, 6, 0)).toBe(SP_PER_RUN);
-    expect(spForRun({ completed: true, score: 100_000_000 }, 6, 0)).toBe(SP_PER_RUN + 5);
+    expect(spForRun({ completed: true, score: 100_000_000 }, 6, 0)).toBe(SP_PER_RUN + 6);
     expect(spForRun({ completed: true, score: 0 }, 6, SP_LOYALTY_EVERY - 1)).toBe(SP_PER_RUN + SP_LOYALTY_SP);
   });
 });
 
 describe("DP-Ökonomie — Score-DP folgt den SP-Meilensteinen", () => {
   it("dpForRun = spMilestones(score); bei vollem Baum + restliche SP-Ökonomie; spCreditForRun 0 bei vollem Baum", () => {
-    expect(dpForRun({ completed: true, score: 55_000_000 }, 6, false, 0)).toBe(2);   // 25M+50M → 1+1
-    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(5);  // alle Meilensteine (1+1+1+2)
+    expect(dpForRun({ completed: true, score: 55_000_000 }, 6, false, 0)).toBe(3);   // 10M+25M+50M → 1+1+1
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, false, 0)).toBe(6);  // alle Meilensteine (1+1+1+1+2)
     // Voller Baum: + restliche SP-Ökonomie (Grundstock; Treue 0 im 1. Lauf) obendrauf, Meilensteine nicht doppelt.
-    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(5 + SP_PER_RUN);
+    expect(dpForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(6 + SP_PER_RUN);
     expect(spCreditForRun({ completed: true, score: 100_000_000 }, 6, true, 0)).toBe(0);
   });
 });

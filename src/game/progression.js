@@ -283,6 +283,7 @@ export const ONBOARDING_RARITY_UNLOCK = { 3: 3, 5: 4 };
 // Treue-Drip je N SP-Läufe. Defaults = docs §6: +1/Lauf; +1/+1/+1/+2 bei 25/50/75/100 Mio; +5 je 10.
 export const SP_PER_RUN = envNum("PROG_SP_PER_RUN", 1);
 export const SP_MILESTONES = [
+  { at: envNum("PROG_SP_MS0_AT", 10_000_000),  sp: envNum("PROG_SP_MS0_SP", 1) },
   { at: envNum("PROG_SP_MS1_AT", 25_000_000),  sp: envNum("PROG_SP_MS1_SP", 1) },
   { at: envNum("PROG_SP_MS2_AT", 50_000_000),  sp: envNum("PROG_SP_MS2_SP", 1) },
   { at: envNum("PROG_SP_MS3_AT", 75_000_000),  sp: envNum("PROG_SP_MS3_SP", 1) },
@@ -301,7 +302,7 @@ export function onboardingAfter(current, record) {
 }
 
 // Kumulative Score-Meilenstein-SP eines Laufs (jede überschrittene Schwelle addiert ihre SP;
-// 100 Mio → 1+1+1+2 = 5, 60 Mio → 1+1 = 2, < 25 Mio → 0).
+// 100 Mio → 1+1+1+1+2 = 6, 60 Mio → 1+1+1 = 3 (10/25/50), < 10 Mio → 0).
 export function spMilestones(score) {
   const s = num0(score);
   return SP_MILESTONES.reduce((sum, m) => (s >= m.at ? sum + m.sp : sum), 0);
