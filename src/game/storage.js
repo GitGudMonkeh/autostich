@@ -197,6 +197,9 @@ export function loadProfile() {
         return { ...DEFAULT_PROFILE, ...p,
           archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
           monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {},
+          // Gleiche Map-Form wie die Geschwister oben — fehlte hier, obwohl recordRun sie spreadet und die
+          // Ranked-Freischaltung (progression.rankedUnlocked) daran hängt.
+          archetypeRunsCompleted: (p.archetypeRunsCompleted && typeof p.archetypeRunsCompleted === "object") ? p.archetypeRunsCompleted : {},
           ownedCosmetics: (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {},
           nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {} };
       }
@@ -204,7 +207,7 @@ export function loadProfile() {
   } catch (e) {}
   // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map + Baum-nodes, damit der Leer-/Korrupt-Pfad
   // NICHT die mutablen Referenzen aus DEFAULT_PROFILE teilt (ein späterer push/Zuweisung würde sonst den Modul-Default vergiften).
-  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {}, nodes: {} };
+  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {}, archetypeRunsCompleted: {}, nodes: {} };
 }
 
 // Profil-Blob persistieren (mit aktueller Schema-Version gestempelt). Für die Baum-Kauf-/Respec-Flows

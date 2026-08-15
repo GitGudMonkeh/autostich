@@ -1,14 +1,14 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
-import { familyDef, applyFamilyPick, formationEnergyBonus } from "./families.js";
+import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
   hasSetzlingsbeet, buildSkillOffer, buildLegendaryOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · M1: R29-Reroll
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
-import { resolveTrick } from "./engine.js";
+import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
 import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
@@ -173,6 +173,20 @@ export function initialState(rng = Math.random, seed = null) {
     lastTrick: null,
   };
 }
+/* Eis-Neudesign: Gibt es überhaupt noch eine Zelle, die GLACIER_LOCK annehmen würde? Die Phase „glacier-target"
+   ist Pflicht und hat keinen Ausgang (GlacierPick kennt nur Bestätigen) — wer sie ohne gültiges Ziel betritt,
+   sitzt fest, weil GLACIER_LOCK jede Eingabe zurückweist. Die Prüfung muss deshalb DIESELBEN Bedingungen
+   spiegeln wie GLACIER_LOCK: weder bereits gefroren NOCH über challengeBlockForm gesperrt. (Vorher prüfte nur
+   DECLINE_SKILL, und dort auch nur auf `glacierLocked` — der Eis-Pick in PICK_SKILL prüfte gar nicht.) */
+function hasFreeGlacierField(locked, blockForm, n) {
+  for (let i = 0; i < n; i++) {
+    if (locked && locked[i]) continue;
+    if (blockForm && blockForm.includes(i)) continue;
+    return true;
+  }
+  return false;
+}
+
 // #301 K verschiedene Positionen aus [0..n) deterministisch ziehen (Fisher-Yates mit einem rng-Strom).
 function pickCells(rng, n, k) {
   const idx = Array.from({ length: n }, (_, i) => i);
@@ -635,8 +649,10 @@ export function reducer(state, action) {
                glacierRoles, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
-               // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter.
-               phase: arch === "ice" ? "glacier-target" : "play", skillOffer: null };
+               // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
+               // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.
+               phase: (arch === "ice" && hasFreeGlacierField(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length))
+                 ? "glacier-target" : "play", skillOffer: null };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -649,7 +665,7 @@ export function reducer(state, action) {
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
       // (GLACIER_LOCK) wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
-      const hasFreeField = (state.playerOrder || []).some((_, i) => !(state.glacierLocked && state.glacierLocked[i]));
+      const hasFreeField = hasFreeGlacierField(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length);
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && hasFreeField) {
         return { ...state, skillOffer: null, phase: "glacier-target", pendingPerkOffer: off.length > 0 ? off : null };
       }
@@ -805,8 +821,9 @@ export function reducer(state, action) {
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
-               formationEnergy: (state.formationEnergyBase ?? C.FORMATION_ENERGY) + (state.perks || []).reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
-                 + formationEnergyBonus(state.familyTiers, state.cycle), // #179 Feinjustierung (Perk-Familie E_TUNING) · #369 Energie-Boden aus dem Baum
+               // Gemeinsamer Helfer mit dem Phasen-Eintritt in der Engine (#179 E_TUNING · #369 Energie-Boden aus dem
+               // Baum · Dev-Run-Energie) — vorher stand die Formel hier dupliziert und ohne `devEnergy`.
+               formationEnergy: formationEnergyFor(state),
                formationSwaps: [] };
     }
     // Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.

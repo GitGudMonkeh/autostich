@@ -309,10 +309,30 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
     }
 
     // Erststart leicht verzögert, damit das Layout (und das Karten-Bild) steht.
-    const kick = () => { if (!measure()) { setTimeout(kick, 30); return; } fire(); last = performance.now(); raf = requestAnimationFrame(frame); };
+    // measure() scheitert, solange Panel/Karte noch kein Layout haben — ODER schon wieder weg sind. Deshalb drei
+    // Abbruchbedingungen, die vorher fehlten: das disposed-Flag prüfen (das Cleanup cancelte nur den rAF, nicht den
+    // Timeout), das Handle im Cleanup clearen, und nach KICK_TRIES aufgeben. Ohne das lief die 30-ms-Kette nach dem
+    // Unmount unbegrenzt weiter — und weil der Effekt an `trigger` hängt (neuer Aufbau je Sieg), hinterließ jeder
+    // unaufgelöste kick eine eigene Endlosschleife, die bei spätem Erfolg sogar auf der abgeräumten Bühne feuerte.
+    const KICK_TRIES = 100; // ~3 s bei 30 ms — danach kommt kein Layout mehr, das den Effekt noch sinnvoll macht
+    let kickTimer = 0, kickTries = 0;
+    const kick = () => {
+      if (disposed) return;
+      if (!measure()) {
+        if (++kickTries > KICK_TRIES) return;
+        kickTimer = setTimeout(kick, 30);
+        return;
+      }
+      fire(); last = performance.now(); raf = requestAnimationFrame(frame);
+    };
     kick();
 
-    return () => { disposed = true; if (raf) cancelAnimationFrame(raf); try { host.removeChild(canvas); } catch { /* ignore */ } };
+    return () => {
+      disposed = true;
+      if (kickTimer) clearTimeout(kickTimer);
+      if (raf) cancelAnimationFrame(raf);
+      try { host.removeChild(canvas); } catch { /* ignore */ }
+    };
     // trigger als Dep → jeder neue Sieg baut die Bühne neu. (p/imgRef sind Refs → stabil, nicht als Dep nötig.)
   }, [trigger, panelRef, cardRef]);
 

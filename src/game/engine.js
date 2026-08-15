@@ -29,6 +29,17 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 
+/* Energie-Budget einer Formationsphase — EINE Quelle für den Phasen-Eintritt (unten, Durchlauf-Ende) UND für
+   RESET_FORMATION im Reducer. Die Formel stand vorher zweimal da, und die Reducer-Kopie hatte `state.devEnergy`
+   vergessen: im Dev-Run setzt START_RUN nur devEnergy und lässt formationEnergyBase undefiniert, sodass
+   „Zurücksetzen" auf C.FORMATION_ENERGY durchfiel statt auf den eingestellten Wert. Die Duplikation war die
+   eigentliche Ursache — deshalb der gemeinsame Helfer statt eines zweiten Patches an derselben Formel. */
+export function formationEnergyFor(state) {
+  const base = state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY;
+  const perkSwaps = (state.perks || []).reduce((t, id) => t + ((PERK_DEFS[id] && PERK_DEFS[id].extraSwap) || 0), 0);
+  return base + perkSwaps + formationEnergyBonus(state.familyTiers, state.cycle); // #179 E_TUNING „Feinjustierung"
+}
+
 // ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
 // COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
 const commitScale = (count) => Math.pow(Math.min(1, count / C.SKILL_SLOTS), C.COMMIT_EXP);
@@ -670,9 +681,14 @@ export function resolveTrick(state, rng) {
       : { flat: 0, mult: 1, bump: null };
     // #370 Bau-Boost (Wochen-Mod, nur Ranked): Architekt-Gebäude-Boni verdoppeln — Flat + Serien-Flat additiv, der
     // Mult-Überschuss über 1 verdoppelt (neutrale Gebäude ohne Wirkung bleiben unberührt).
+    // [FIX] Nur den GEWINN-Anteil skalieren. Das gamble-Gebäude (Crit-Wette) schreibt bei ausbleibendem Crit einen
+    //   NEGATIVEN Flat (`flat += ctx.isCrit ? e.crit : -e.penalty`, architect.js) — pauschales ×2 verdoppelte damit
+    //   ausgerechnet die Strafe, ein positiver Mod verschlechterte also gezielt Risiko-Bauten. Die Behandlung ist
+    //   jetzt symmetrisch zum Multiplikator, der schon immer nur den Überschuss über 1 verdoppelt hat.
     if (hasWeekMod(state.weekMods, "buildBoost")) {
-      architectScoreRes.flat *= 2;
-      architectScoreRes.streakFlat = (architectScoreRes.streakFlat || 0) * 2;
+      if (architectScoreRes.flat > 0) architectScoreRes.flat *= 2;
+      const sf = architectScoreRes.streakFlat || 0;
+      architectScoreRes.streakFlat = sf > 0 ? sf * 2 : sf;
       architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * 2;
     }
     architectBump = architectScoreRes.bump;
@@ -1354,8 +1370,8 @@ export function resolveTrick(state, rng) {
           playerOrder = shuffleFreePositions(playerOrder, pinned, rngAtOr(cycle, "deckShuffle"));
         }
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
-        newFormationEnergy = (state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
-          + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
+        // `cycle` ist hier bereits erhöht (neuer Durchlauf) → explizit durchreichen, nicht state.cycle nehmen.
+        newFormationEnergy = formationEnergyFor({ ...state, perks, familyTiers, cycle });
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.

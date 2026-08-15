@@ -172,6 +172,11 @@ export function Autostich() {
   const runStartRecordTraj = useRef([]); // Rekord gegen den DIESER Lauf antritt — Snapshot vor saveRun (#35)
   const runId       = useRef(Date.now());
   const recorded    = useRef(false);
+  // #205: Wurde der Seed dieses Laufs vom Spieler GEWÄHLT (Challenge/Nachspielen/Einfügen) oder gewürfelt?
+  // Jeder Lauf bekommt einen Seed (beginRun), also reicht `state.seed != null` als Unterscheidung nicht —
+  // „Neustart" muss aber nur den gewählten wiederverwenden und darf casual ein frisches Brett geben.
+  // Läuft über die Resume-Meta mit, damit die Unterscheidung ein Fortsetzen überlebt.
+  const seedWasChosen = useRef(false);
   // RESUME (Auto-Save) — gespeicherter laufender Run (überlebt Wegtabben/Schließen des Browsers, v. a. Mobile).
   // `resumable` speist den „Fortsetzen"-Knopf im Menü; `stateRef` hält den AKTUELLEN State, damit die
   // Lifecycle-Handler (visibilitychange/pagehide) ohne ständiges Re-Registrieren snapshotten können.
@@ -322,7 +327,7 @@ export function Autostich() {
     const s = stateRef.current;
     if (!s || s.phase === "menu" || s.phase === "gameover") return;
     const tb = timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0);
-    saveActiveRun(s, { timeBase: tb, runId: runId.current, currentTraj: currentTraj.current });
+    saveActiveRun(s, { timeBase: tb, runId: runId.current, currentTraj: currentTraj.current, seedWasChosen: seedWasChosen.current });
   };
   // Mobile-zuverlässige Speicherpunkte: Tab in den Hintergrund (visibilitychange→hidden) ODER Seite entladen
   // (pagehide) → sofortiger Snapshot. beforeunload feuert auf Mobile NICHT verlässlich → DAS hier ist der eigentliche Fix.
@@ -617,6 +622,7 @@ export function Autostich() {
     // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
     // den Lauf reproduzierbar & teilbar; jeder Lauf bekommt einen, auch der normale „Neuer Run".
     const seed = pendingSeed.current != null ? (pendingSeed.current >>> 0) : randomSeed();
+    seedWasChosen.current = pendingSeed.current != null; // #205: gewählt (Challenge/Ranked) vs. gewürfelt (casual)
     pendingSeed.current = null;
     currentTraj.current = [];
     runStartRecordTraj.current = recordTraj.current.slice(); // Rekord dieses Laufs festhalten, bevor saveRun ihn überschreibt (#35)
@@ -673,8 +679,14 @@ export function Autostich() {
   }
   // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
   function startRankedRun() { launchRun({ ranked: "ranked", seed: currentWeek(new Date()).seed }); }
-  // Neustart behält die Lauf-Art (Ranked → gleicher Modus + Wochen-Seed; sonst normal).
-  function restartRun() { launchRun({ ranked: state.ranked || null, seed: state.ranked ? currentWeek(new Date()).seed : null }); }
+  // Neustart behält die Lauf-Art UND einen GEWÄHLTEN Seed: Ranked → gleicher Modus + aktueller Wochen-Seed; ein
+  // Challenge-/Seed-Lauf (#205 „Nachspielen"/Einfügen) → GENAU derselbe Seed, sonst bekäme man beim Neustart ein
+  // anderes Brett als das, das man gerade übt. Casual (Seed nur gewürfelt) → wie gehabt frisches Brett.
+  function restartRun() {
+    const seed = state.ranked ? currentWeek(new Date()).seed
+      : (seedWasChosen.current ? (state.seed ?? null) : null);
+    launchRun({ ranked: state.ranked || null, seed });
+  }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }
   const toMenu = () => { saveRun(); clearActiveRun(); setResumable(null); dispatch({ type: "TO_MENU" }); }; // Lauf verlassen (#5)
@@ -688,6 +700,7 @@ export function Autostich() {
     segStart.current = Date.now();
     runId.current = m.runId || Date.now();
     currentTraj.current = Array.isArray(m.currentTraj) ? m.currentTraj.slice() : [];
+    seedWasChosen.current = !!m.seedWasChosen; // #205: Challenge-Seed-Eigenschaft übersteht das Fortsetzen (→ Neustart)
     runStartRecordTraj.current = recordTraj.current.slice();
     recorded.current = false;
     setPaused(false); setIsRecord(false); setNewUnlocks([]);
