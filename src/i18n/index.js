@@ -26,7 +26,15 @@ export const LOCALES = [
   { id: "en", label: "English",  short: "EN" },
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
-export const DEFAULT_LOCALE = "de";
+
+/* ZWEI verschiedene „Standards" — bewusst getrennt, sie werden gern verwechselt:
+   - SOURCE_LOCALE = die Sprache, in der die Texte GESCHRIEBEN werden. Ihr Katalog ist immer
+     vollständig, deshalb ist sie der Rückfall für einen fehlenden Schlüssel.
+   - DEFAULT_LOCALE = die Sprache, die ein NEUER Spieler bekommt, solange er nichts gewählt hat.
+   Die Browsersprache wird bewusst NICHT befragt: Englisch ist gesetzt (Produktentscheidung),
+   und beim ersten Start wählt der Spieler ohnehin selbst (Namens-Dialog). */
+export const SOURCE_LOCALE = "de";
+export const DEFAULT_LOCALE = "en";
 
 const CATALOGS = { de, en };
 
@@ -50,19 +58,6 @@ export function setLocale(id) {
 export function subscribeLocale(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
-}
-
-/* Sprache aus dem Browser raten (nur als Default, bevor die Optionen geladen sind).
-   Alles außer explizit unterstützten Sprachen fällt auf Deutsch zurück. */
-export function detectLocale() {
-  try {
-    const langs = (typeof navigator !== "undefined" && (navigator.languages || [navigator.language])) || [];
-    for (const raw of langs) {
-      const base = String(raw || "").toLowerCase().split("-")[0];
-      if (LOCALE_IDS.includes(base)) return base;
-    }
-  } catch (e) {}
-  return DEFAULT_LOCALE;
 }
 
 /* ---- Auflösung ---------------------------------------------- */
@@ -99,11 +94,11 @@ function resolveKey(cat, key, vars) {
    `locale`-Override nur für Tests/Export; die App ruft immer ohne. */
 export function t(key, vars, locale) {
   const loc = locale || current;
-  const cat = CATALOGS[loc] || CATALOGS[DEFAULT_LOCALE];
+  const cat = CATALOGS[loc] || CATALOGS[SOURCE_LOCALE];
   let raw = resolveKey(cat, key, vars);
   if (raw == null) {
     missing(key, loc);
-    raw = resolveKey(CATALOGS[DEFAULT_LOCALE], key, vars);
+    raw = resolveKey(CATALOGS[SOURCE_LOCALE], key, vars);   // Quellsprache ist immer vollständig
   }
   if (raw == null) return key;              // letzter Rückfall: der Schlüssel selbst, nie „undefined"
   return interpolate(raw, vars);
@@ -128,7 +123,7 @@ const SEP = {
 };
 
 export function fmtNum(x, locale) {
-  const s = SEP[locale || current] || SEP.de;
+  const s = SEP[locale || current] || SEP[SOURCE_LOCALE];
   const [int, frac] = String(x).split(".");
   const grouped = int.replace("-", "").replace(/\B(?=(\d{3})+(?!\d))/g, s.grp);
   const sign = int.startsWith("-") ? "-" : "";

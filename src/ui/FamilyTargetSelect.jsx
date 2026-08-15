@@ -2,8 +2,9 @@ import { suitColor, suitName, SUIT_ORDER } from "../game/constants.js";
 import { PANEL_BG, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { familyDef, allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
+import { rarityLabel, formationName } from "../i18n/labels.js"; // #sprache
 import { CATEGORIES } from "../game/perks.js";
-import { FORMATION_TYPES, FORMATION_TYPE_LABELS, computeFormations } from "../game/formations.js";
+import { FORMATION_TYPES, computeFormations } from "../game/formations.js";
 import { DeckHistogram } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
@@ -21,7 +22,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const fam = familyDef(ft.familyId) || {};
   const tierDef = (fam.tiers && fam.tiers[ft.tier]) || {};
   const cat = CATEGORIES[fam.cat] || { name: "", color: "#8a8a95" };
-  const tm = tierMeta(ft.tier) || { color: "#8a8a95", label: "" };
+  const tm = tierMeta(ft.tier) || { color: "#8a8a95" };
   const need = ft.need || 0;
   const isCards = ft.kind === "cards";
   const isType = ft.kind === "formationType"; // #179 Formationskern (E_CORE): einen der vier Basistypen wählen
@@ -49,7 +50,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: PANEL_BG, border: `1px solid ${tm.color}55` }}>
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: tm.color }}>{cat.name} · {tm.label}</div>
+          <div className="text-xs uppercase tracking-widest" style={{ color: tm.color }}>{cat.name} · {rarityLabel(ft.tier)}</div>
           <h2 className="text-xl font-bold mt-1">{fam.name} {romanOf(ft.tier)}</h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{tierDef.desc}</p>
         </div>
@@ -79,7 +80,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
                   <button key={t} onClick={() => onFormationType(t)}
                     className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
                     style={{ background: on ? tm.color : "#20202a", color: on ? "#141419" : "#c8c8d0", border: `2px solid ${on ? tm.color : "#3a3a44"}` }}>
-                    {FORMATION_TYPE_LABELS[t] || t}
+                    {formationName(t)}
                   </button>
                 );
               })}

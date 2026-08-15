@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { TIER_META } from "./game/rarity.js"; // Raritäts-Namen: EINE Quelle (Sprachprüfung C1)
+import { rarityLabel } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
@@ -13,7 +13,7 @@ import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardi
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
-import { setLocale, detectLocale } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
+import { setLocale } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -106,12 +106,13 @@ function OverlayFallback() {
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
-  // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang Deutsch auf.
-  // Deshalb direkt im Initializer (idempotent, StrictMode-doppelaufruf-fest) statt in einem Effekt.
-  // `lang: null` = noch nie gewählt → Browsersprache; sobald der Spieler wählt, gilt nur noch seine Wahl.
+  // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang die
+  // falsche Sprache auf. Deshalb direkt im Initializer (idempotent, StrictMode-fest) statt im Effekt.
+  // `lang: null` = noch nie gewählt → DEFAULT_LOCALE (Englisch). Beim ersten Start wählt der Spieler
+  // im Namens-Dialog selbst; danach in den Optionen. Die Browsersprache wird bewusst nicht befragt.
   const [options, setOptions] = useState(() => {
     const o = loadOptions();
-    setLocale(o.lang || detectLocale());
+    setLocale(o.lang || undefined);
     return o;
   });   // Optionen (#41): u. a. CRT-Skin
   // Perf: reducedFx auflösen (Mobile/schwaches Gerät/System-Wunsch) und als data-Attribut ans Root hängen.
@@ -255,7 +256,7 @@ export function Autostich() {
   // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
   // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
   useEffect(() => {
-    const loc = setLocale(options.lang || detectLocale());
+    const loc = setLocale(options.lang || undefined);
     try { document.documentElement.lang = loc; } catch (e) {}
   }, [options.lang]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
@@ -479,7 +480,7 @@ export function Autostich() {
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
     // Sprachprüfung C1: EIN Vokabular für die Raritätsstufen — die Namen kommen aus rarity.js (TIER_META),
 // nicht aus einer zweiten, hier gepflegten Liste („Seltenheit III (Blau)" u. Ä.).
-  const RAR_DE = { 3: `Rarität: ${TIER_META[3].label}`, 4: `Rarität: ${TIER_META[4].label}` };
+  const RAR_DE = { 3: `Rarität: ${rarityLabel(3)}`, 4: `Rarität: ${rarityLabel(4)}` };
     const rewardLabel = (r) => r == null ? null
       : r.type === "onboardingDone" ? "Genesis-Pack · Werkstatt · Upgrades"
       : r.type === "archetype" ? `Archetyp: ${ARCH_DE[r.key] || r.key}`
@@ -487,7 +488,7 @@ export function Autostich() {
     setProgressUnlocks((metaUnlocks || []).map((u) => {
       if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
       if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null, guide: u.key, guideName: ARCH_DE[u.key] || u.key }; // #: guide → Leitfaden-Button im Onboarding-Banner (öffnet die Fraktions-Seite)
-      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: `Neue Rarität freigeschaltet: ${TIER_META[u.tier]?.label || ""}`.trim(), target: null };
+      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: `Neue Rarität freigeschaltet: ${rarityLabel(u.tier)}`.trim(), target: null };
       return { id: `u-${u.link}`, label: "Freischaltung", target: null };
     }));
     // #: Onboarding-Fortschritt fürs Victory-Banner — damit NACH JEDEM Onboarding-Lauf sichtbar ist, wo man steht und was
@@ -1016,6 +1017,7 @@ export function Autostich() {
 
       {showUsername && (
         <UsernameModal initial={username} firstTime={!username}
+          onLang={(id) => changeOptions({ lang: id })}
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
       {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}

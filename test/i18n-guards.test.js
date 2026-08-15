@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
-import { t, fmtNum, fmtPct, LOCALE_IDS, setLocale, getLocale, interpolate } from "../src/i18n/index.js";
+import { t, fmtNum, fmtPct, LOCALE_IDS, setLocale, getLocale, interpolate,
+  SOURCE_LOCALE, DEFAULT_LOCALE } from "../src/i18n/index.js";
 
 /* ============================================================
    I18N-GUARDS — dieselbe Idee wie registry-guards.test.js: Meta-Tests, die AUTOMATISCH
@@ -67,6 +68,8 @@ describe("i18n · Katalog-Parität", () => {
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
+    "formation.anker.abbr",   // Anker/Anchor  → beide A
   ]);
 
   it("englische Texte unterscheiden sich vom deutschen Original", () => {
@@ -185,6 +188,28 @@ describe("i18n · Terminologie", () => {
   });
 });
 
+describe("i18n · Längenschranken", () => {
+  /* Die Formations-Badges sitzen als EIN Zeichen auf der Karte. Zwei Zeichen sprengen das Layout,
+     zwei gleiche Zeichen machen zwei Formationen ununterscheidbar. Gilt in JEDER Sprache. */
+  it("Formations-Kürzel sind je genau ein Zeichen und paarweise verschieden", () => {
+    for (const [name, cat] of [["de", de], ["en", en]]) {
+      const abbrs = Object.entries(cat).filter(([k]) => /^formation\..+\.abbr$/.test(k));
+      expect(abbrs.length, `${name}: keine Kürzel im Katalog`).toBeGreaterThan(0);
+      const bad = abbrs.filter(([, v]) => [...v].length !== 1);
+      expect(bad, `${name}: Kürzel mit ≠1 Zeichen → ${bad.map(([k, v]) => `${k}="${v}"`).join(", ")}`).toEqual([]);
+      const vals = abbrs.map(([, v]) => v);
+      expect(new Set(vals).size, `${name}: Kürzel kollidieren → ${vals.join(" ")}`).toBe(vals.length);
+    }
+  });
+
+  /* Die Raritätsleiter darf im Englischen NICHT auf „Legendary" enden: legendär ist bei uns eine
+     eigene Achse (Übersetzerpaket §3.5, genre-terminologie.md §3). */
+  it("die englische Raritätsleiter endet auf Epic, nicht Legendary", () => {
+    expect([1, 2, 3, 4].map((n) => en[`rarity.tier${n}.label`]))
+      .toEqual(["Common", "Uncommon", "Rare", "Epic"]);
+  });
+});
+
 describe("i18n · Auflösung", () => {
   it("t() interpoliert, respektiert die Sprache und fällt nie auf „undefined“ zurück", () => {
     expect(t("start.resume.sub", { cycle: 3, total: 50, score: "1.000" }, "de")).toBe("Durchlauf 3/50 · Score 1.000");
@@ -202,10 +227,21 @@ describe("i18n · Auflösung", () => {
 
   it("setLocale akzeptiert nur bekannte Sprachen", () => {
     const before = getLocale();
-    expect(setLocale("en")).toBe("en");
-    expect(setLocale("klingonisch")).toBe("de");   // Rückfall statt kaputter UI
+    expect(setLocale("de")).toBe("de");
+    expect(setLocale("klingonisch")).toBe(DEFAULT_LOCALE);   // Rückfall statt kaputter UI
     setLocale(before);
     expect(LOCALE_IDS).toEqual(["de", "en"]);
+  });
+
+  /* Zwei Standards, die gern verwechselt werden — der Test hält sie auseinander:
+     Geschrieben wird auf Deutsch (Quellsprache, immer vollständig → Rückfall bei fehlendem
+     Schlüssel), ausgeliefert wird an neue Spieler auf Englisch (Produktentscheidung). */
+  it("Quellsprache ist Deutsch, Auslieferungs-Standard ist Englisch", () => {
+    expect(SOURCE_LOCALE).toBe("de");
+    expect(DEFAULT_LOCALE).toBe("en");
+    // Ein Schlüssel, den es nur auf Deutsch gäbe, fiele auf Deutsch zurück — nie auf den Schlüssel.
+    expect(t("common.close", null, "de")).toBe("Schließen");
+    expect(t("common.close", null, "en")).toBe("Close");
   });
 });
 
@@ -214,7 +250,7 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migrierten Datei und schrumpft nie — so kann eine schon zweisprachige Ansicht nicht durch
      einen schnellen Zugang wieder einsprachig werden. Neue Dateien hier eintragen, sobald sie
      migriert sind. */
-  const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx"];
+  const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
@@ -254,7 +290,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
 describe("i18n · Abdeckung wächst mit", () => {
   it("jeder Katalog-Schlüssel wird auch irgendwo benutzt", () => {
     // Quelltext einmal einlesen (App + alle UI-Dateien + i18n-Konsumenten in src/game).
-    const roots = ["src", "src/ui", "src/game"];
+    // src/i18n gehört dazu: labels.js baut die Register-Schlüssel dynamisch zusammen.
+    const roots = ["src", "src/ui", "src/game", "src/i18n"];
     let src = "";
     for (const dir of roots) {
       for (const f of readdirSync(new URL(`../${dir}`, import.meta.url), { withFileTypes: true })) {
@@ -265,9 +302,14 @@ describe("i18n · Abdeckung wächst mit", () => {
     const unused = KEYS_DE.filter((k) => {
       const base = k.replace(/_(one|other)$/, "");
       if (src.includes(`"${base}"`) || src.includes(`'${base}'`)) return false;
-      // Dynamisch zusammengesetzte Schlüssel (`options.rfx.${v}`) über ihr Präfix erkennen.
-      const prefix = base.slice(0, base.lastIndexOf(".") + 1);
-      return !src.includes("`" + prefix);
+      /* Dynamisch zusammengesetzte Schlüssel erkennen. Die Einsetzstelle kann auf JEDER Ebene
+         liegen: `options.rfx.${v}` (hinten) genauso wie `formation.${type}.label` (in der Mitte).
+         Deshalb jedes Präfix von links prüfen, nicht nur das längste. */
+      const parts = base.split(".");
+      for (let i = 1; i <= parts.length; i++) {
+        if (src.includes("`" + parts.slice(0, i).join(".") + ".")) return false;
+      }
+      return true;
     });
     expect(unused, `Toter Katalog-Eintrag (nirgends per t() gerufen):\n  ${unused.join("\n  ")}`).toEqual([]);
   });

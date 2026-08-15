@@ -5,7 +5,8 @@ import { glacierGridProps } from "./glacierBoard.js";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
-import { FORMATION_TYPE_LABELS, openSegmentInfo, summarizeFormations } from "../game/formations.js";
+import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
+import { formationName } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
@@ -150,7 +151,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(formByType).sort((a, b) => b[1] - a[1]).map(([type, fac]) => (
                   <span key={type} className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: "#5ab87a22", color: "#8be0a8" }}>
-                    {FORMATION_TYPE_LABELS[type] || type} ×{fmtX(fac)}
+                    {formationName(type)} ×{fmtX(fac)}
                   </span>
                 ))}
               </div>

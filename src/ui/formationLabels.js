@@ -1,24 +1,18 @@
-// #147 / Sprachprüfung A12: EINE Quelle für die Anzeigenamen der Formationstypen.
-// Die NAMEN liegen jetzt im game-Layer (`constants.js` → FORMATION_LABELS), damit Engine, Architekt und UI
-// denselben Text benutzen — der Architekt gab vorher die rohen Schlüssel aus („Formations-Joker (farbblock)").
-// Hier bleiben nur die UI-Zutaten: die Einzelbuchstaben-Kürzel für die Karten-Badges.
-//   label = ausgeschriebener Name (Battlefield nutzt ihn in Großbuchstaben, CardDetail direkt)
-//   abbr  = Einzelbuchstabe für die Karten-Badges (CardGrid); Buchstaben paarweise verschieden.
-//           HARTE Längenschranke: genau 1 Zeichen (auch in Übersetzungen).
-import { FORMATION_LABELS, formationLabel as gameFormationLabel } from "../game/constants.js";
-
-const ABBR = {
-  wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z",
-  anker: "A", nachhall: "N", formationskern: "K",
-  grenzbonus: "G", // #179 E_SEGMENT IV: segmentüberschreitende Formation
-};
+// #147 / Sprachprüfung A12 / #sprache: EINE Quelle für die Anzeigenamen der Formationstypen.
+// Die deutschen NAMEN liegen im game-Layer (`constants.js` → FORMATION_LABELS); der Katalog erzeugt
+// daraus seine deutschen Einträge und trägt die englischen. Aufgelöst wird zur ANZEIGEZEIT, damit
+// ein Sprachwechsel greift — deshalb leitet dieses Modul nur noch auf src/i18n/labels.js weiter.
+//   label = ausgeschriebener Name (Battlefield zeigt ihn per CSS in Großbuchstaben, CardDetail direkt)
+//   abbr  = Einzelbuchstabe für die Karten-Badges (CardGrid); paarweise verschieden.
+//           HARTE Längenschranke: genau 1 Zeichen, auch in Übersetzungen (Guard prüft das).
+import { FORMATION_LABELS } from "../game/constants.js";
+import { formationName, formationAbbr as i18nAbbr } from "../i18n/labels.js";
 
 // Anzeige-Register (Name + Kürzel) — für Legenden, die beides in einer Schleife brauchen.
-export const FORMATION_TYPES = Object.fromEntries(
-  Object.entries(FORMATION_LABELS).map(([k, label]) => [k, { label, abbr: ABBR[k] || "" }]),
+// Als Funktion, nicht als Konstante: ein Modul-Level-Objekt fröre die Sprache beim Laden ein.
+export const formationTypes = () => Object.fromEntries(
+  Object.keys(FORMATION_LABELS).map((k) => [k, { label: formationName(k), abbr: i18nAbbr(k) }]),
 );
 
-// Ausgeschriebener Name (Fallback: der rohe Typ, falls je ein neuer Typ ohne Eintrag auftaucht).
-export const formationLabel = gameFormationLabel;
-// Badge-Kürzel (Fallback: leer statt „undefined" im UI).
-export const formationAbbr = (type) => ABBR[type] ?? "";
+export const formationLabel = formationName;
+export const formationAbbr = i18nAbbr;

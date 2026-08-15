@@ -116,7 +116,14 @@ Autostich ist zweisprachig (DE/EN). **Jeder neue spieler-sichtbare Text gehört 
   in migrierten Dateien (`MIGRATED`-Liste) darf kein Text mehr fest verdrahtet sein. Migrierte Datei → dort eintragen.
 - `docs/localization/*.csv` ist **erzeugt** (`npm run loc:export`), niemals von Hand pflegen. Volle Begründung und
   Migrationsstand: `docs/localization/i18n.md`.
-- Migriert: `OptionsModal.jsx`, `StartScreen.jsx`. Register (Skills/Perks/Familien/Gebäude/Glossar/Rarität) noch offen.
+- **Sprachwahl:** Erstwahl im Namens-Dialog (unter dem Feld, wirkt sofort), danach Optionen → Sprache/Language.
+  `SOURCE_LOCALE="de"` (Schreibsprache, Rückfall) ≠ `DEFAULT_LOCALE="en"` (was neue Spieler bekommen).
+  Browsersprache wird bewusst NICHT befragt. Gespeichert in `options.lang` (`null` = nie gewählt).
+- **Register-Muster** (an Rarität + Formationen erprobt): Register bleibt deutsche Quelle → `de.js` ERZEUGT seine
+  Einträge daraus (nie abtippen) → `en.js` übersetzt → Auflösung zur Anzeigezeit über `src/i18n/labels.js`.
+  Kein `import { t }` in einem Register (Zyklus über `de.js`).
+- Migriert: `OptionsModal.jsx`, `StartScreen.jsx`, `UsernameModal.jsx`, Rarität, Formationstypen (Namen + Badges).
+  Offen: Skills, Perks, Familien, Gebäude, Glossar, Upgrade-Knoten, Wochen-Mods, Kosmetik.
 
 ### Sonstiges
 - Bash-cwd persistiert zwischen Calls; nach `cd` in node_modules zurück nach `/home/user/autostich`.

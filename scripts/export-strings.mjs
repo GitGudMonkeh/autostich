@@ -26,11 +26,9 @@ import CAT_EN from "../src/i18n/en.js";
 import { GLOBAL_FX, THEME_DEFS } from "../src/game/themes.js";
 import { WEEK_MODS } from "../src/game/weekMods.js";
 import { NODES, BRANCHES } from "../src/game/progression.js";
-import { FORMATION_TYPE_LABELS } from "../src/game/formations.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
 import { unlockProgress, MONO_CHALLENGE_N } from "../src/game/cosmetics.js";
 import { GUIDES } from "../src/ui/guides.js";
-import { FORMATION_TYPES as UI_FORMATION_TYPES } from "../src/ui/formationLabels.js";
 import { ARCH_CAT } from "../src/ui/indicators/vocab.js";
 
 // Freischalt-Bedingungen: je `kind` EIN Muster-Def, damit unlockProgress seinen Klartext-Label liefert.
@@ -132,13 +130,11 @@ for (const [id, e] of Object.entries(GLOSSARY)) {
   }
 }
 
-/* ============ 6 · Rarität / Stufen ============ */
-for (const t of Object.values(TIER_META)) {
-  push(`ui.rarity.tier${t.tier}.label`, "ui", t.label, `Raritätsstufe ${ROMAN[t.tier]} — Chip auf Angebotskarten`, "12");
-}
+/* ============ 6 · Rarität / Stufen ============
+   (Migriert — die Namen kommen unten aus dem i18n-Katalog, samt englischer Spalte.) */
 
-/* ============ 7 · Formationen & Farben ============ */
-for (const [k, v] of Object.entries(FORMATION_TYPE_LABELS)) push(`ui.formation.${k}.label`, "ui", v, "Formationstyp — Name", "14");
+/* ============ 7 · Farben ============
+   (Formationsnamen sind migriert und kommen unten aus dem i18n-Katalog.) */
 for (const s of SUIT_ORDER) push(`ui.suit.${s}.name`, "ui", suitName(s), "Kartenfarbe", "6");
 
 /* ============ 8 · Kosmetik (Decks / Spielfelder / FX / Packs) ============ */
@@ -211,11 +207,8 @@ for (const [arch, g] of Object.entries(GUIDES)) {
   });
 }
 
-/* ============ 13 · Formations-Labels + Kürzel, Bau-Kategorien ============ */
-for (const [k, v] of Object.entries(UI_FORMATION_TYPES)) {
-  push(`ui.formationlabel.${k}.label`, "ui", v.label, "Formationstyp — Anzeigename (Battlefield/Kartendetail)", "14");
-  push(`ui.formationlabel.${k}.abbr`, "ui", v.abbr, `Formationstyp „${v.label}" — EIN Zeichen fürs Karten-Badge`, "1", "harte Längenschranke: genau 1 Zeichen, paarweise verschieden");
-}
+/* ============ 13 · Bau-Kategorien ============
+   (Formationsnamen + Kürzel sind migriert und kommen unten aus dem i18n-Katalog.) */
 for (const [k, v] of Object.entries(ARCH_CAT)) {
   push(`ui.archcat.${k}.label`, "ui", v.label, "Architekt — Bau-Kategorie (Chip)", "10");
 }

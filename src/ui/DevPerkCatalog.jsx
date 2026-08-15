@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CATEGORIES, PERK_DEFS } from "../game/perks.js";
 import { familyDef } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
+import { rarityLabel } from "../i18n/labels.js"; // #sprache
 
 /* Dev-Run-Perk-Katalog (Test-Layout, nur Preview): statt des Zufallsangebots der KOMPLETTE Perk-Katalog,
    nach Kategorie (A–E + Legendär) aufklappbar. Klick auf eine Familie → Stufe I–IV wählen → onPick({familyId,tier}).
@@ -68,13 +69,13 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
                     {open && (
                       <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
                         {tiers.map((t) => {
-                          const tm = tierMeta(t) || { color: "#8a8a95", label: "" };
+                          const tm = tierMeta(t) || { color: "#8a8a95" };
                           return (
                             <button key={t} onClick={() => onPick({ familyId: fid, tier: t })}
                               title={(fam.tiers[t] || {}).desc || ""}
                               className="px-2.5 py-1 rounded text-xs font-bold transition-all hover:-translate-y-0.5"
                               style={{ background: `${tm.color}1f`, color: tm.color, border: `1px solid ${tm.color}88` }}>
-                              {romanOf(t)} · {tm.label}
+                              {romanOf(t)} · {rarityLabel(t)}
                             </button>
                           );
                         })}

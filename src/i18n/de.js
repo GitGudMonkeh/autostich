@@ -8,9 +8,26 @@
    - Tuning-Zahlen aus den Konstanten interpolieren (Template-Literal), nicht abtippen.
    - Plural: Schlüsselpaare `…_one` / `…_other`, ausgewählt über die Variable `count`.
    ============================================================ */
-import { LEG_PHASE_CYCLE } from "../game/constants.js";
+import { LEG_PHASE_CYCLE, FORMATION_LABELS } from "../game/constants.js";
+import { TIER_META } from "../game/rarity.js";
+
+/* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
+   weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
+   Damit kann die deutsche Seite gar nicht vom Register wegdriften — nur die englische muss
+   gepflegt werden, und dafür sorgt die Schlüssel-Parität im Guard-Test. */
+const fromRegistries = {};
+for (const m of Object.values(TIER_META)) fromRegistries[`rarity.tier${m.tier}.label`] = m.label;
+// Badge-Kürzel der Formationen: genau EIN Zeichen, paarweise verschieden (harte UI-Schranke).
+const ABBR_DE = { wiederholung: "W", farbblock: "F", treppe: "T", wechsel: "Z",
+  anker: "A", nachhall: "N", formationskern: "K", grenzbonus: "G" };
+for (const [type, label] of Object.entries(FORMATION_LABELS)) {
+  fromRegistries[`formation.${type}.label`] = label;
+  fromRegistries[`formation.${type}.abbr`] = ABBR_DE[type] || "";
+}
 
 export default {
+  ...fromRegistries,
+
   /* ---- Allgemein ---- */
   "common.close": "Schließen",
   // Währungs-Kürzel. Stichpunkte heißen im Englischen „Trick Points" → TP, nicht SP.
@@ -72,6 +89,19 @@ export default {
   "start.name.change": "Name ändern",
   "start.name.signedIn": "Angemeldet als",
   "start.version.title": "Version · Umgebung · Commit",
+
+  /* ---- Namens-Dialog (#14) ---- */
+  "name.eyebrow.first": "Willkommen",
+  "name.eyebrow.change": "Name ändern",
+  "name.title.first": "Wähle deinen Namen",
+  "name.title.change": "Dein Name",
+  "name.placeholder": "Dein Name",
+  "name.hint": "1–{max} Zeichen · erscheint im globalen Highscore. Jederzeit im Menü änderbar.",
+  "name.cancel": "Abbrechen",
+  "name.save": "Speichern",
+  "name.lang.label": "Sprache",
+  "name.preview.label": "Vorschau · Bestenliste",
+  "name.preview.you": "du",
 
   /* ---- Optionen ---- */
   "options.eyebrow": "Optionen",

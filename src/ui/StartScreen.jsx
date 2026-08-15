@@ -4,7 +4,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, owns, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
-import { TIER_META } from "../game/rarity.js";        // Raritäts-Namen: EINE Quelle (Sprachprüfung C1)
+import { rarityLabel } from "../i18n/labels.js";      // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { LEG_PHASE_CYCLE } from "../game/constants.js"; // Legendär-Phase: Durchlauf-Nr. aus dem Plan (Sprachprüfung E3)
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
@@ -31,11 +31,10 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
 // Sprachprüfung C1/E3: Raritäts-Namen aus TIER_META (kein „Blau"/„Violett"), Legendär-Phase mit ausgeschriebenem
 // Durchlauf statt der Chiffre „R29" — die Zahl kommt aus dem Entscheidungsplan (constants.js).
-// #sprache: als Funktion, damit der Sprachwechsel greift. Der Raritäts-Name kommt weiterhin aus TIER_META
-// (noch nicht übersetzt — Register-Migration steht aus, siehe docs/localization/i18n.md).
+// #sprache: als Funktion, damit der Sprachwechsel greift — Name UND Raritätsstufe lösen zur Anzeigezeit auf.
 const onbRewards = (t) => [
-  t("start.onb.reroll"), t("start.onb.plant"), t("start.onb.rarity", { tier: TIER_META[3].label }),
-  t("start.onb.ice"), t("start.onb.rarity", { tier: TIER_META[4].label }), t("start.onb.legendary"),
+  t("start.onb.reroll"), t("start.onb.plant"), t("start.onb.rarity", { tier: rarityLabel(3) }),
+  t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {

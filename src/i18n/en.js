@@ -9,6 +9,26 @@
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
 
 export default {
+  /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
+     Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,
+     skills and buildings, plus their own phase), so a ladder ending in Legendary would collide. */
+  "rarity.tier1.label": "Common",
+  "rarity.tier2.label": "Uncommon",
+  "rarity.tier3.label": "Rare",
+  "rarity.tier4.label": "Epic",
+
+  /* ---- Formation types (§3.3) ----
+     The abbreviations are card badges with a HARD one-character limit and must stay pairwise
+     distinct. B = block (S is taken by stair), X = crossover (C is taken by core). */
+  "formation.wiederholung.label": "Repeat",       "formation.wiederholung.abbr": "R",
+  "formation.farbblock.label": "Suit block",      "formation.farbblock.abbr": "B",
+  "formation.treppe.label": "Stair",              "formation.treppe.abbr": "S",
+  "formation.wechsel.label": "Zigzag",            "formation.wechsel.abbr": "Z",
+  "formation.anker.label": "Anchor",              "formation.anker.abbr": "A",
+  "formation.nachhall.label": "Echo",             "formation.nachhall.abbr": "E",
+  "formation.formationskern.label": "Core",       "formation.formationskern.abbr": "C",
+  "formation.grenzbonus.label": "Crossover bonus", "formation.grenzbonus.abbr": "X",
+
   /* ---- Common ---- */
   "common.close": "Close",
   "common.cur.sp": "TP",
@@ -67,6 +87,19 @@ export default {
   "start.name.change": "change name",
   "start.name.signedIn": "Signed in as",
   "start.version.title": "Version · environment · commit",
+
+  /* ---- Name dialog ---- */
+  "name.eyebrow.first": "Welcome",
+  "name.eyebrow.change": "Change name",
+  "name.title.first": "Choose your name",
+  "name.title.change": "Your name",
+  "name.placeholder": "Your name",
+  "name.hint": "1–{max} characters · shown on the global leaderboard. Changeable from the menu at any time.",
+  "name.cancel": "Cancel",
+  "name.save": "Save",
+  "name.lang.label": "Language",
+  "name.preview.label": "Preview · leaderboard",
+  "name.preview.you": "you",
 
   /* ---- Options ---- */
   "options.eyebrow": "Options",
