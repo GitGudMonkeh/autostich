@@ -1296,6 +1296,9 @@ export function resolveTrick(state, rng) {
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
+        // #370 Deck-Shuffle (nur Ranked): vor der Aufstellphase die Karten-Anordnung frisch mischen → die letzte
+        // Aufstellung ist zunichte und muss neu gebaut werden. Deterministisch je Durchlauf; sonst playerOrder unverändert.
+        if (hasWeekMod(state.weekMods, "deckShuffle")) playerOrder = shuffledOrder(playerOrder.length, rngAtOr(cycle, "deckShuffle"));
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
         newFormationEnergy = (state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
           + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe

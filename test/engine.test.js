@@ -803,3 +803,21 @@ describe("#370 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
     expect(s.phase === "levelup" && hasLeg(s.offer)).toBe(false);
   });
 });
+
+describe("#370 Wochen-Mods: Deck-Shuffle (deckShuffle, nur Ranked)", () => {
+  const sorted = (a) => [...a].sort((x, y) => x - y);
+  it("mischt vor der Aufstellphase die Karten-Anordnung neu (gleiche Menge, andere Reihenfolge)", () => {
+    // cycle 1 + pos 39 → cycle 2; Plan[2] = "formation".
+    const before = scenario(12, 0, { pos: 39, cycle: 1, weekMods: [{ effect: "deckShuffle" }] });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).not.toEqual(before.playerOrder);
+    expect(sorted(s.playerOrder)).toEqual(sorted(before.playerOrder)); // echte Permutation, keine Karte verloren
+  });
+  it("ohne Mod bleibt die Anordnung persistent", () => {
+    const before = scenario(12, 0, { pos: 39, cycle: 1 });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).toEqual(before.playerOrder);
+  });
+});
