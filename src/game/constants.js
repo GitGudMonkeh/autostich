@@ -256,18 +256,41 @@ export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bau
 /* ============================================================
    LEGENDÄR-ERWEITERUNG v0.3 (2026-08-15): 7 neue Legendäre gegen die gemessenen Lücken im Pool.
    Vorher: Präzision 0 Legendäre · Skill-/Angebots-Ökonomie unbesetzt · KEIN einziger Perk mit Nachteil,
-   obwohl #33 sie als „mächtig, aber mit Nachteil" definiert. Alle Startwerte sind Schätzungen —
-   nachmessen mit `npm run impact -- --only <id>`, Ziel-Band 1,2–1,7×.
+   obwohl #33 sie als „mächtig, aber mit Nachteil" definiert. Ziel-Band 1,2–1,7×.
+
+   KALIBRIERT (2026-08-15, `npm run impact --runs 150 --explore 400`, Ziel Bandmitte):
+     Hochseil   ×1,2  → 1,08×  ·  ×1,45 → 1,41×
+     Fundament  +0,25 → 1,09×  ·  +0,5  → 1,36×
+     Taktschlag ×2,0  → 1,10×  ·  ×3,5  → 1,35×
+     Schmiede   +1    → 1,05×  ·  +2 → 1,12×  ·  +3 → 1,39×  ·  +4 → 1,65×
+     Opfergang  −2/×1,8 → 0,92× (NEGATIV) · −1/×1,8 → 1,31×
+     Ballast    unverändert 2/×1,5 → 1,28×
+   Der Kostenpunkt bei Opfergang war der Fehler, nicht die Gegenleistung: −2 auf JEDE Karte senkt die Winrate,
+   und die treibt Serien, Formationen und Crits gleichzeitig — der Nachteil wirkt dreifach, der Mult nur einmal.
+
+   ACHTUNG Verdünnung: mit 21 statt 14 Legendären im Pool fiel die Anwendbarkeit je Perk von ~85 % auf ~50 %
+   (n ~130 → ~75). Die v0.3-Zahlen sind daher gröber als die der 14 Bestands-Perks und mit ihnen nur bedingt
+   vergleichbar — für ein schärferes Urteil --runs erhöhen.
    ============================================================ */
 export const MEISTERHAND_SLOTS   = envNum("SIM_MEISTERHAND_SLOTS", 1);    // Meisterhand (Ausbau): +Skill-Slots, dauerhaft ab Pick (SKILL_SLOTS 6 → 7)
-export const SCHMIEDE_STEP       = envNum("SIM_SCHMIEDE_STEP", 1);        // Schmiede (Deck): +Kartenwert auf die SCHWÄCHSTE Deckkarte je Durchlauf-Ende. BEWUSST OHNE DECKEL (Entscheidung 2026-08-15) — über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220
-export const HOCHSEIL_MULT       = envNum("SIM_HOCHSEIL_MULT", 1.2);      // Hochseil (Score): Sieg-× solange der Durchlauf OHNE Niederlage ist. Spätspiel-Perk: Anteil niederlagenfreier Durchläufe steigt 0 % (1–10) → 70 % (41–50), greift also genau in der Score-Explosion → niedrig ansetzen
-export const OPFERGANG_VALUE     = envNum("SIM_OPFERGANG_VALUE", 2);      // Opfergang (Deck, NACHTEIL): so viel Kartenwert verlieren ALLE Karten dauerhaft beim Pick (Klemmung bei 1 — #34 hat die 0 bewusst entfernt)
+// ⚠ MEISTERHAND MISST SICH NEGATIV UND DER KNOPF HILFT NICHT: 1 Slot → 0,96× · 2 Slots → 0,94× (schlechter!) ·
+// im reinen Blitz-Build (--faction lightning) → 0,98×. Es ist also KEIN Policy-Artefakt, sondern mechanisch:
+//   (a) commitScale ist bei SKILL_SLOTS Skills schon gedeckelt (min(1, count/6)) → ein 7. Skill der Hauptfraktion
+//       bringt nur noch seinen Eigeneffekt, keine zusätzliche Bekenntnis-Skalierung;
+//   (b) der marginale Skill ist definitionsgemäß der SCHWÄCHSTE noch verfügbare;
+//   (c) in breiten Builds zieht der Extra-Slot einen DRITTEN Archetyp herein (gemessen 2 → 3), was commitScale
+//       aller beteiligten Fraktionen senkt — deshalb ist 2 Slots schlechter als 1.
+// Die Ablation vergleicht gegen „stattdessen die nächstbeste Familie nehmen"; ein Grenz-Skill schlägt eine
+// Familienstufe schlicht nicht. Ohne Umbau (z. B. commitScale-Deckel für den Perk-Halter aufheben) bleibt der
+// Perk eine Falle für den Spieler. Offene Entscheidung.
+export const SCHMIEDE_STEP       = envNum("SIM_SCHMIEDE_STEP", 3);        // Schmiede (Deck): +Kartenwert auf die SCHWÄCHSTE Deckkarte je Durchlauf-Ende. BEWUSST OHNE DECKEL (Entscheidung 2026-08-15) — über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220
+export const HOCHSEIL_MULT       = envNum("SIM_HOCHSEIL_MULT", 1.45);      // Hochseil (Score): Sieg-× solange der Durchlauf OHNE Niederlage ist. Spätspiel-Perk: Anteil niederlagenfreier Durchläufe steigt 0 % (1–10) → 70 % (41–50), greift also genau in der Score-Explosion → niedrig ansetzen
+export const OPFERGANG_VALUE     = envNum("SIM_OPFERGANG_VALUE", 1);      // Opfergang (Deck, NACHTEIL): so viel Kartenwert verlieren ALLE Karten dauerhaft beim Pick (Klemmung bei 1 — #34 hat die 0 bewusst entfernt)
 export const OPFERGANG_MULT      = envNum("SIM_OPFERGANG_MULT", 1.8);     // … dafür dieser dauerhafte Sieg-Score-× (scoreMult-Hook, läuft automatisch über prodHook)
-export const TAKTSCHLAG_MULT     = envNum("SIM_TAKTSCHLAG_MULT", 2.0);    // Taktschlag (Segment): Score-× auf den ABSCHLUSS-Stich eines komplett gewonnenen Segments (5/5). 8 Chancen je Durchlauf — Vabanques Idee eine Skalenebene tiefer
+export const TAKTSCHLAG_MULT     = envNum("SIM_TAKTSCHLAG_MULT", 3.5);    // Taktschlag (Segment): Score-× auf den ABSCHLUSS-Stich eines komplett gewonnenen Segments (5/5). 8 Chancen je Durchlauf — Vabanques Idee eine Skalenebene tiefer
 export const BALLAST_ENERGY      = envNum("SIM_BALLAST_ENERGY", 2);       // Ballast (Form, NACHTEIL): so viel Formationsenergie WENIGER je Aufstellphase (von FORMATION_ENERGY 4)
 export const BALLAST_FORM_MULT   = envNum("SIM_BALLAST_FORM_MULT", 1.5);  // … dafür dieser × auf den Formations-Multiplikator
-export const FUNDAMENT_BONUS     = envNum("SIM_FUNDAMENT_BONUS", 0.25);   // Fundament (Gebäude): additiv auf JEDEN Strukturfaktor (Zeile 1,35 · Spalte 1,75 · Diagonale 1,62). ACHTUNG: die Faktoren multiplizieren sich je Position übereinander → Ausreißer-Potenzial, p90 beim Messen mitlesen
+export const FUNDAMENT_BONUS     = envNum("SIM_FUNDAMENT_BONUS", 0.5);   // Fundament (Gebäude): additiv auf JEDEN Strukturfaktor (Zeile 1,35 · Spalte 1,75 · Diagonale 1,62). ACHTUNG: die Faktoren multiplizieren sich je Position übereinander → Ausreißer-Potenzial, p90 beim Messen mitlesen
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]

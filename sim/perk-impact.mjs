@@ -45,6 +45,7 @@ const { mkdirSync, writeFileSync } = await import("node:fs");
 const { dirname } = await import("node:path");
 const { runOne } = await import("./run.js");
 const { fixedPolicy } = await import("./policies/fixed.js");
+const { factionPolicy } = await import("./policies/faction.js");
 const { explorePriority, robustDelta } = await import("./eval.js");
 const { PERK_LIST, isLegendary, PERK_DEFS } = await import("../src/game/perks.js");
 const C = await import("../src/game/constants.js");
@@ -73,14 +74,20 @@ export function computePerkImpact({ seed0 = 1, runs = 80, exploreRuns = 300, c =
   const evalSeed0 = seed0 + exploreRuns;
   const gateFor = (id) => (pickFrom > 0 ? { id, fromCycle: pickFrom } : null);
   const scoresFor = (pol) => { const out = []; for (let i = 0; i < runs; i++) out.push(runOne(evalSeed0 + i, pol).score); return out; };
-  const sharedFull = pickFrom > 0 ? null : scoresFor(fixedPolicy(priority, { ...env }));
+  // env.faction: im FRAKTIONS-Kontext messen (committeter Mono-/Kombi-Build) statt mit dem breiten Explore-Build.
+  // Der full-Arm bevorzugt dann den gemessenen Perk explizit → je Perk ein eigener Referenz-Arm (wie bei pickFrom).
+  const armFor = (id, dropped) => (env.faction
+    ? factionPolicy(env.faction, { architectGreedy: env.architectGreedy !== false, drop: dropped ? id : null, prefer: id })
+    : fixedPolicy(priority, { ...env, drop: dropped ? id : null, gate: gateFor(id) }));
+  const perArm = pickFrom > 0 || !!env.faction;
+  const sharedFull = perArm ? null : scoresFor(fixedPolicy(priority, { ...env }));
 
   // 3) Je Perk der drop-Arm auf denselben Seeds.
   let lastFull = sharedFull;
   const perks = ids.map((id) => {
-    const fullScores = sharedFull ?? scoresFor(fixedPolicy(priority, { ...env, gate: gateFor(id) }));
+    const fullScores = sharedFull ?? scoresFor(armFor(id, false));
     lastFull = fullScores;
-    const abl = fixedPolicy(priority, { ...env, drop: id, gate: gateFor(id) });
+    const abl = armFor(id, true);
     const deltas = [], ratios = [];
     for (let i = 0; i < runs; i++) {
       const dScore = runOne(evalSeed0 + i, abl).score;
@@ -107,7 +114,8 @@ export function computePerkImpact({ seed0 = 1, runs = 80, exploreRuns = 300, c =
   return {
     legendaryChance: C.PERK_LEGENDARY_BASE,
     seed0, exploreRuns, runs, evalSeed0, c, pickFrom,
-    fullScoreShared: !pickFrom, // false = fullScore stammt vom zuletzt gemessenen Perk, nicht von allen
+    faction: env.faction || null,
+    fullScoreShared: !perArm, // false = fullScore stammt vom zuletzt gemessenen Perk, nicht von allen
     fullScore: { n: sorted.length, mean: sorted.reduce((t, v) => t + v, 0) / (sorted.length || 1), p50: p(0.5), p90: p(0.9) },
     priorityTail: tail.slice(0, 10), // Referenzbuild ohne die vorangestellten Legendären (Diagnose)
     perks,
@@ -128,14 +136,15 @@ if (IS_CLI) {
     // architectGreedy default AN: mit Zufallsbau schließt der Architekt median 1 statt 6 Strukturen, womit sich
     // JEDER Gebäude-Perk gegen ein kaputtes Brett misst (Richtfest/Bauhütte lasen sich deshalb als 1,00×).
     // Der Baufeld-Deckel wird in beiden Modi voll ausgereizt (24/24) — es ist die PLANUNG, die fehlt, nicht die Fläche.
-    env: { solveFormations: arg("--formations", "0") === "1", frontLoad: arg("--frontload", "0") === "1", architectGreedy: arg("--greedyarch", "1") !== "0" },
+    env: { solveFormations: arg("--formations", "0") === "1", frontLoad: arg("--frontload", "0") === "1", architectGreedy: arg("--greedyarch", "1") !== "0",
+           faction: arg("--faction", null) },
     only: only ? only.split(",").map((s) => s.trim()).filter(Boolean) : null,
     pickFrom: Number(arg("--pickfrom", 0)),
   });
 
   const f = (x) => Math.round(x).toLocaleString("en-US");
   console.log(`sim 'perk-impact': Legendär-Chance ${res.legendaryChance} · explore ${res.exploreRuns} (seeds ${res.seed0}..${res.seed0 + res.exploreRuns - 1}) · eval ${res.runs} (seeds ${res.evalSeed0}..${res.evalSeed0 + res.runs - 1})`);
-  const ctx = [arg("--frontload", "0") === "1" && "FRONT-LOAD-Gegner", arg("--formations", "0") === "1" && "Formations-Solver", res.pickFrom > 0 && `Pick erst ab Durchlauf ${res.pickFrom}`].filter(Boolean).join(" · ");
+  const ctx = [arg("--frontload", "0") === "1" && "FRONT-LOAD-Gegner", arg("--formations", "0") === "1" && "Formations-Solver", res.pickFrom > 0 && `Pick erst ab Durchlauf ${res.pickFrom}`, res.faction && `Fraktions-Build ${res.faction}`].filter(Boolean).join(" · ");
   if (ctx) console.log(`  Kontext: ${ctx}`);
   console.log(`  Referenz-Arm full-score${res.fullScoreShared ? "" : " (zuletzt gemessener Perk)"}: median ${f(res.fullScore.p50)}  mean ${f(res.fullScore.mean)}  p90 ${f(res.fullScore.p90)}`);
   console.log(`  Referenzbuild (Top 10 nach explore-mean, ohne Legendäre): ${res.priorityTail.join(", ") || "—"}`);

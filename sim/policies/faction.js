@@ -10,7 +10,7 @@
 import { archetypeOf, isLegendarySkill } from "../../src/game/skills.js";
 import { randomPolicy, canAddSkill } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
-import { isFamilyOffer, perkActionFor } from "../families-policy.js";
+import { isFamilyOffer, perkOptionId, perkActionFor } from "../families-policy.js";
 
 // #267: Crit lebt jetzt in der Perk-FAMILIE „Präzision" (Kat. P) statt in der entfernten Stat-Phase. Angebotseinträge
 // dieser Familien haben die Form { familyId, tier } mit familyId-Präfix "P_" (P_SHARPNESS/P_FORCE/P_AIM/P_LENS/P_COLORFOCUS).
@@ -19,11 +19,16 @@ const isPrecisionOffer = (e) => isFamilyOffer(e) && String(e.familyId).startsWit
 // #267: die Architekt-Phase ist jetzt 12 von 45 Runden (großes Gewicht) — eine committete Fraktion baut ihre Gebäude
 // GREEDY (Struktur-orientiert), nicht zufällig. Default architectGreedy:true bildet einen kompetenten Spieler ab;
 // `factionPolicy(target, { architectGreedy:false })` fällt auf random-Platzierung zurück (greedy-vs-random-Vergleich).
-export function factionPolicy(target, { architectGreedy = true } = {}) {
+// drop/prefer (v0.3): gepaarte Ablation IM Fraktionskontext. Nötig, weil manche Perks nur in einem committeten
+// Build Sinn ergeben — „Meisterhand" (+1 Skill-Slot) misst sich mit der breit wählenden fixedPolicy negativ, weil
+// die den Extra-Slot in einen DRITTEN Archetyp steckt und commitScale genau das bestraft. Ein Fraktionsspieler
+// vertieft stattdessen. Ohne beide Optionen bleibt das Perk-Verhalten unverändert (Bestandsmessungen unberührt).
+export function factionPolicy(target, { architectGreedy = true, drop = null, prefer = null } = {}) {
   const targets = Array.isArray(target) ? target : [target];
   const base = randomPolicy({ architectGreedy });
+  const ablating = !!(drop || prefer);
   return {
-    name: `faction:${targets.join("+")}${architectGreedy ? "+arch" : ""}`,
+    name: `faction:${targets.join("+")}${architectGreedy ? "+arch" : ""}${drop ? `(drop=${drop})` : prefer ? `(prefer=${prefer})` : ""}`,
     act(s, rng, mem) {
       if (s.phase === "levelup" && s.skillOffer) {
         // Nur Ziel-Archetyp-Skills, die in einen freien Slot passen (NIE einen Fremd-Archetyp aufnehmen).
@@ -53,6 +58,15 @@ export function factionPolicy(target, { architectGreedy = true } = {}) {
       // der Reducer wechselt dann in die "family-target"-Phase, die die Random-Baseline unten deterministisch füllt
       // (familyTargetStep: FAMILY_TARGET_SUIT je Farbe, dann FAMILY_TARGET_CONFIRM). Sonst normales Baseline-Perk-Verhalten.
       if (s.phase === "levelup" && s.offer) {
+        // Ablations-Modus: DETERMINISTISCH wählen, damit zwei Arme auf demselben Seed nur an der ablatierten
+        // Stelle divergieren (der Zufallsgriff unten würde schon durch das gefilterte Angebot anders ziehen).
+        if (ablating) {
+          const ids = s.offer.map(perkOptionId);
+          const pickId = (prefer && ids.includes(prefer) && prefer !== drop)
+            ? prefer
+            : (ids.find((id) => id !== drop) ?? ids[0]);
+          return perkActionFor(s.offer[ids.indexOf(pickId)], rng);
+        }
         const prec = s.offer.filter(isPrecisionOffer);
         if (prec.length) return perkActionFor(prec[Math.floor(rng() * prec.length)], rng);
       }
