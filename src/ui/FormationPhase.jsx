@@ -14,7 +14,7 @@ import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { skillDef, archCatList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
@@ -204,7 +204,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                                   : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
                   {t(showArch ? "form.arch.on" : "form.arch.off")}
                 </button>
-                {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                {showArch && archCatList().map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
                     <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
                   </span>

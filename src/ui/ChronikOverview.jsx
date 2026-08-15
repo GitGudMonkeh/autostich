@@ -6,7 +6,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
-import { archFamily, formationName } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
+import { archFamily, formationName, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
@@ -87,7 +87,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                                   : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
                   🏗 Gebäude {showArch ? "an" : "aus"}
                 </button>
-                {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                {showArch && archCatList().map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
                     <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
                   </span>
@@ -171,7 +171,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(archByCat).map(([cat, n]) => {
-                  const meta = ARCH_CAT?.[cat] || {};
+                  const meta = archCatDef(cat) || {};
                   return (
                     <span key={cat} className="px-1.5 py-0.5 rounded text-[11px]"
                       style={{ background: (meta.color || "#8a8a92") + "22", color: meta.color || "#c8c8ce" }}>

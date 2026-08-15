@@ -108,6 +108,11 @@ describe("i18n · Katalog-Parität", () => {
     "perk.start",             // „Start" — in beiden Sprachen gleich
     "perk.stat.crit",         // „Crit" (§3.1)
     "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
+    // Architekt: Kategorienamen und reine Struktur-Zeilen.
+    "archcat.score.label",    // Score bleibt Score (§3.1)
+    "archcat.formation.label", // „Formation" — beide Sprachen gleich
+    "arch.cell.building",     // reine Struktur: „{name} ({tier})"
+    "arch.cell.pos",          // „Pos {pos}" — Kürzel, in beiden Sprachen gleich
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -410,7 +415,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/SkillSelect.jsx", "src/ui/PerkSelect.jsx", "src/ui/LegendarySelect.jsx", "src/ui/GlacierPick.jsx",
     "src/ui/TargetSelect.jsx", "src/ui/FamilyTargetSelect.jsx", "src/ui/RoundScoreBadge.jsx",
     "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",
-    "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx"];
+    "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx",
+    // Der Architekt — der größte Einzelbildschirm des Spiels.
+    "src/ui/ArchitectScreen.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

@@ -2,7 +2,7 @@ import { ARCH_CAT } from "./indicators/vocab.js";
 import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import FormIcon from "./FormIcon.jsx";
 import { formationLabel, formationAbbr } from "./formationLabels.js"; // Namen/Kuerzel: EINE Quelle (Sprachpruefung A12)
-import { archFamily } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
 // #UI: Geteilte Bausteine für Aufstellphase UND Chronik (eine Quelle → keine getrennte Pflege).
@@ -35,7 +35,7 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
           const fam = archFamily(b.familyId); if (!fam) return null;
           const anchor = Math.min(...b.footprint);
           const eff = cover?.[anchor]?.effects?.join(" · ") || "";
-          const meta = ARCH_CAT[fam.category] || {};
+          const meta = archCatDef(fam.category) || {};
           const on = inspectBid === b.id;
           return (
             <button key={b.id} id={`arch-bld-${b.id}`} onClick={() => onInspect?.(on ? null : b.id)}

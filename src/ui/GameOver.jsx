@@ -14,7 +14,7 @@ import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
 import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
-import { archFamily } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { archFamily, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t } from "../i18n/index.js"; // #sprache
 
 // #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
@@ -339,7 +339,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                                     : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
                     🏗 Gebäude {showArch ? "an" : "aus"}
                   </button>
-                  {showArch && Object.entries(ARCH_CAT).map(([k, v]) => (
+                  {showArch && archCatList().map(([k, v]) => (
                     <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
                       <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
                     </span>
@@ -361,7 +361,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       const fam = archFamily(b.familyId); if (!fam) return null;
                       const anchor = Math.min(...b.footprint);
                       const eff = architectCover?.[anchor]?.effects?.join(" · ") || "";
-                      const meta = ARCH_CAT?.[fam.category] || {};
+                      const meta = archCatDef(fam.category) || {};
                       const on = inspectBid === b.id;
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}

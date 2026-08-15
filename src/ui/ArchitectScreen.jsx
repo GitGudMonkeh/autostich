@@ -12,7 +12,7 @@ import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import FormIcon from "./FormIcon.jsx";
 import { formationBorder } from "./formationStyle.js";
-import { formationAbbr } from "./formationLabels.js";
+import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
 import { GlossaryPanel } from "./Glossary.jsx";
@@ -21,6 +21,8 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
 import { useEscape } from "./useEscape.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
+import { t, fmtNum } from "../i18n/index.js";
+import { archCatList, archCatDef, suitLabel } from "../i18n/labels.js";
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -37,10 +39,18 @@ import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-
    ============================================================ */
 
 const SUIT_COLOR = { R: "#d9553f", B: "#4f82d6", G: "#3f9d63", Y: "#c79a2e" };
+// Warum ein Gebäude nicht aufwertbar ist → Katalog-Schlüssel (der Reducer liefert nur den Grund-Code).
+const UPGRADE_REASON = {
+  inert: "arch.upgrade.reason.inert",
+  legendary: "arch.upgrade.reason.legendary",
+  max: "arch.upgrade.reason.max",
+  acted: "arch.upgrade.reason.acted",
+};
+
 const GOLD = "#c8962f"; // Legendär
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 const tierLabel = (t) => (t === "legendary" ? "★" : ROMAN[t] || "");
-const fmt = (x) => x.toFixed(2).replace(".", ",");
+const fmt = (x) => fmtNum(x.toFixed(2));
 const PENDING_ID = "__pending__"; // synthetische id des noch-nicht-gebauten Vorschau-Gebäudes
 
 // #UI: einklappbarer Hinweis/Info-Block im Architekten — Kopf (immer sichtbar, klickbar) + „mehr/weniger"-Affordanz;
@@ -53,7 +63,7 @@ function ArchCollapse({ head, children, defaultOpen = false, className = "", sty
         className="w-full flex items-center gap-2 text-left">
         <span className="min-w-0">{head}</span>
         <span className="flex-1" />
-        <span className="text-[10px] opacity-60 shrink-0 whitespace-nowrap">{open ? "▾ weniger" : "▸ mehr"}</span>
+        <span className="text-[10px] opacity-60 shrink-0 whitespace-nowrap">{t(open ? "arch.collapse.less" : "arch.collapse.more")}</span>
       </button>
       {open && <div className="mt-1.5">{children}</div>}
     </div>
@@ -393,7 +403,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const fam = b ? familyDef(b.familyId) : null;
     const info = upgradeInfo(fam, b?.tier);
     if (!b || !fam || !info.can || architect.actedMain) {                       // No-op-Bedingungen des Reducers spiegeln → kein Scheinerfolg
-      setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: architect.actedMain ? "acted" : info.reason });
+      setUpgradeMsg({ name: fam ? fam.name : t("arch.buildingFallback"), reason: architect.actedMain ? "acted" : info.reason });
       setPendingUpgrade(null);
       return;
     }
@@ -406,7 +416,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const tapCell = (pos) => {
     if (chLockSet.has(pos)) return; // #301 C2: gesperrte Zelle — keine Interaktion
     if (removeFor) { const cb = committedAt(pos); if (cb) setDemolishIds((cur) => cur.includes(cb.id) ? cur.filter((x) => x !== cb.id) : [...cur, cb.id]); return; } // #235/#281: markieren statt sofort abreißen; beliebiges Gebäude (de)markieren — Mehrfach-Abriss für große Legendäre
-    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : "Gebäude", reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
+    if (phase === "upgrade") { const cb = committedAt(pos); if (cb) { const fam = familyDef(cb.familyId); const info = upgradeInfo(fam, cb.tier); if (info.can) { setPendingUpgrade(cb.id); setUpgradeMsg(null); } else { setUpgradeMsg({ name: fam ? fam.name : t("arch.buildingFallback"), reason: info.reason }); setPendingUpgrade(null); } } return; } // #237: markieren + Jetzt/Danach zeigen, Aufwertung erst über den Bestätigen-Knopf
     if (phase === "place") { const b = buildingAt(pos); if (b && b.id === PENDING_ID) setSelId(PENDING_ID); return; }
     if (phase === "move") { const b = buildingAt(pos); if (b) setSelId(b.id); return; }
     if (phase === "choose") { const cb = committedAt(pos); if (cb) setInspectId((cur) => (cur === cb.id ? null : cb.id)); return; } // Brett-Tap → Beschreibung leuchtet (Liste ↔ Brett)
@@ -533,7 +543,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       else onMove?.({ buildingId: b.id, footprint: best });
       return;
     }
-    setRotateMsg("Kein Platz zum Drehen — zieh das Gebäude erst an eine freiere Stelle.");
+    setRotateMsg(t("arch.rotate.noRoom"));
   };
 
   // Live-Delta beim Ziehen (Vorschau-Position).
@@ -566,8 +576,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // #UI-Redesign: Durchlauf-Score + %-Differenz zur Vorrunde für die Hero-Leiste (dieselbe Logik wie RoundScoreBadge).
   const scoreHasDiff = state.prevCycleScore != null && state.prevCycleScore !== 0;
   const scorePctDiff = scoreHasDiff ? Math.round(((state.lastCycleScore - state.prevCycleScore) / state.prevCycleScore) * 100) : 0;
-  const scoreDiffColor = scorePctDiff > 0 ? "#5ab87a" : scorePctDiff < 0 ? "#e0605a" : "#8a8a92";
-  const scoreDiffStr = `${scorePctDiff > 0 ? "+" : scorePctDiff < 0 ? "−" : "±"}${Math.abs(scorePctDiff)} %`;
+  // (Nulllage zuerst — hält die Zeile frei von der Folge „> … <", die der i18n-Textgreifer sonst greift.)
+  const scoreDiffColor = scorePctDiff === 0 ? "#8a8a92" : (scorePctDiff > 0 ? "#5ab87a" : "#e0605a");
+  const scoreDiffSign = scorePctDiff === 0 ? "±" : (scorePctDiff > 0 ? "+" : "−");
+  const scoreDiffStr = t("arch.scoreDiff", { sign: scoreDiffSign, pct: Math.abs(scorePctDiff) });
+  // Farbton + Pfeil des Boost-Δ-Chips beim Ziehen — gleiche Nulllage-zuerst-Form.
+  const boostTone = !dragDelta ? null
+    : dragDelta.dBoost === 0 ? { fg: "#8a97a5", bg: "#ffffff0c", br: "#2b3e4d", arrow: "±" }
+    : dragDelta.dBoost > 0 ? { fg: "#5fce86", bg: "#155e3126", br: "#2f9d5566", arrow: "▲ +" }
+    : { fg: "#e0705a", bg: "#8a1e1e26", br: "#d1462f66", arrow: "▼ " };
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
@@ -579,8 +596,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>Architekt · Bauphase · Durchlauf {round}</div>
-            <h2 className="text-xl font-bold mt-0.5">Der Architekt</h2>
+            <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>{t("arch.eyebrow", { cycle: round })}</div>
+            <h2 className="text-xl font-bold mt-0.5">{t("arch.title")}</h2>
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
@@ -589,18 +606,18 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             Hero-Leiste der Aufstellphase. */}
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
-            title="Score-Boost durch die Gebäude: Struktur-Kombis (volle Zeile/Spalte/Diagonale) + Distrikt (gleiche Kategorie aneinander) + neu gegründete Formationen. Aktualisiert live beim Bauen/Verschieben.">
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Gebäude-Boost</span>
+            title={t("arch.boost.title")}>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Baufeld</span>
+            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
             <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
-            <span className="text-[9px] font-mono opacity-45">{coverCount} belegt · {Math.round(coverCount / maxCover * 100)}%</span>
+            <span className="text-[9px] font-mono opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
           </div>
           {state.lastCycleScore != null && (
             <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
-              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>Durchlauf-Score</span>
+              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
               <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
               {scoreHasDiff && <span className="text-[10px] font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
             </div>
@@ -615,7 +632,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
             {selBuilding && phase === "move" && familyDef(selBuilding.familyId)?.colorLocked && (
               <div ref={colorBarRef} className="mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ background: "#141f29", border: "1px solid #d97a3a66", boxShadow: "0 0 10px #d97a3a1f", scrollMarginTop: "12px" }}>
-                <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>🎨 Bufft Farbe</span>
+                <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
                 <div className="flex gap-2.5">
                   {SUIT_ORDER.map((s) => (
                     <button key={s} onClick={() => onRecolor?.({ buildingId: selBuilding.id, colorChoice: s })}
@@ -632,20 +649,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {dragDelta && (
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
                   style={{ fontVariantNumeric: "tabular-nums", minWidth: 92,
-                           color: dragDelta.dBoost > 0 ? "#5fce86" : dragDelta.dBoost < 0 ? "#e0705a" : "#8a97a5",
-                           background: dragDelta.dBoost > 0 ? "#155e3126" : dragDelta.dBoost < 0 ? "#8a1e1e26" : "#ffffff0c",
-                           border: `1px solid ${dragDelta.dBoost > 0 ? "#2f9d5566" : dragDelta.dBoost < 0 ? "#d1462f66" : "#2b3e4d"}` }}
-                  title="Änderung des Gebäude-Boosts an dieser Vorschau-Position">
-                  Boost {dragDelta.dBoost > 0 ? "▲ +" : dragDelta.dBoost < 0 ? "▼ " : "±"}{dragDelta.dBoost} %
+                           color: boostTone.fg, background: boostTone.bg,
+                           border: `1px solid ${boostTone.br}` }}
+                  title={t("arch.boostDelta.title")}>
+                  {t("arch.boostDelta", { arrow: boostTone.arrow, pct: dragDelta.dBoost })}
                 </span>
               )}
               <div className="flex items-center gap-1.5 ml-auto">
                 <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
-                  title="Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe">{showCombos ? "◉" : "○"} Kombis</button>
+                  title={t("arch.combos.title")}>{showCombos ? "◉" : "○"} {t("arch.combos")}</button>
                 <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
                   style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
-                  title="Formationsrahmen (Ring + Label) am Brett ein-/ausblenden">{showForms ? "◉" : "○"} Formationen</button>
+                  title={t("arch.forms.title")}>{showForms ? "◉" : "○"} {t("arch.forms")}</button>
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
             </div>
@@ -712,9 +728,17 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 // #UI: beim Ziehen belegte Fremdfläche → ausgrauen (kein Ablegen möglich), außer sie ist gerade Drag-Vorschau.
                 const isBlocked = !!blocked && blocked.has(pos) && !(dragCells && dragCells.has(pos));
                 const chLocked = chLockSet.has(pos); // #301 C2: dauerhaft gesperrte Bau-Zelle (rot/ausgegraut)
+                // Zell-Tooltip aus Bausteinen: Gebäude (+ Vorschau/Aufwertung) bzw. nur die Position, jeweils
+                // ergänzt um Formations- und Struktur-Faktor.
+                const formPart = inForm ? t("arch.cell.formation", { f: fmt(pf.mult) }) : "";
+                const structPart = sFac > 1 ? t("arch.cell.struct", { f: fmt(sFac) }) : "";
                 const title = b
-                  ? `${fam.name} (${tierLabel(b.tier)})${isPending ? " · Vorschau" : ""} — ${famEff(fam, b)}${upCan ? ` → Stufe ${tierLabel(b.tier + 1)}: ${famEff(fam, { tier: b.tier + 1 })}` : ""}${inForm ? ` · Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`
-                  : `Pos ${pos + 1}${inForm ? ` — Formation ×${fmt(pf.mult)}` : ""}${sFac > 1 ? ` · Struktur ×${fmt(sFac)}` : ""}`;
+                  ? t("arch.cell.building", { name: fam.name, tier: tierLabel(b.tier) })
+                    + (isPending ? t("arch.cell.preview") : "") + " — " + famEff(fam, b)
+                    + (upCan ? t("arch.cell.upgrade", { tier: tierLabel(b.tier + 1), eff: famEff(fam, { tier: b.tier + 1 }) }) : "")
+                    + formPart + structPart
+                  : t("arch.cell.pos", { pos: pos + 1 })
+                    + (inForm ? t("arch.cell.formationOnly", { f: fmt(pf.mult) }) : "") + structPart;
                 const inDragPrev = dragCells ? dragCells.has(pos) : false;
                 const dragValid = dragPrev && dragPrev.valid;
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
@@ -777,7 +801,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${fMass} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
@@ -791,7 +815,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {b && !isDragOrig && pos === Math.max(...b.footprint) && (
                       <span className="absolute bottom-[1px] right-[3px] text-[9px] font-extrabold leading-none"
                         style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
-                        title={fam.legendary ? "legendär" : `Stufe ${ROMAN[b.tier]}`}>
+                        title={fam.legendary ? t("arch.legendary") : t("arch.tier", { tier: ROMAN[b.tier] })}>
                         {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
@@ -801,7 +825,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       </span>
                     )}
                     {b && pos === anchorCell && b.colorChoice && (
-                      <span className="absolute bottom-[2px] right-[3px] w-[8px] h-[8px] rounded-full" title={`bufft Farbe ${b.colorChoice}`}
+                      <span className="absolute bottom-[2px] right-[3px] w-[8px] h-[8px] rounded-full" title={t("arch.buffsSuit", { suit: suitLabel(b.colorChoice) })}
                         style={{ background: SUIT_COLOR[b.colorChoice], boxShadow: "0 0 0 1.5px rgba(255,255,255,0.9)" }} />
                     )}
                   </button>
@@ -810,22 +834,24 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             </div>
             {/* Legende */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
-              <span className="opacity-70">Rahmen = Typ:</span>
+              <span className="opacity-70">{t("arch.legend.frame")}</span>
               {Object.entries(CAT).map(([k, v]) => (
                 <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${v.color}` }} />{v.label}</span>
               ))}
             </div>
             {/* Stufe/Rarität = die Zahl (I–IV / ★) in der ECKE des Gebäudes; der Rahmen zeigt den Typ. */}
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] font-mono opacity-70">
-              <span className="opacity-70">Stufe (Ecke):</span>
+              <span className="opacity-70">{t("arch.legend.tier")}</span>
               {[1, 2, 3, 4].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1"><b className="tabular-nums" style={{ color: tierColor(t) }}>{ROMAN[t]}</b></span>
               ))}
-              <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> legendär</span>
+              <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> {t("arch.legendary")}</span>
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
-              <span>Ring = aktive Formation (×mult)</span>
-              <span><b>W</b> Wiederholung</span><span><b>F</b> Farbblock</span><span><b>T</b> Treppe</span><span><b>Z</b> Wechsel</span><span><b>A</b> Anker</span>
+              <span>{t("arch.legend.ring")}</span>
+              {["wiederholung", "farbblock", "treppe", "wechsel", "anker"].map((ft) => (
+                <span key={ft}><b>{formationAbbr(ft)}</b> {formationLabel(ft)}</span>
+              ))}
             </div>
           </section>
 
@@ -838,15 +864,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
               <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
-                head={<span className="uppercase tracking-wide opacity-55">Struktur & Distrikt · ×Score je Durchlauf</span>}>
+                head={<span className="uppercase tracking-wide opacity-55">{t("arch.struct.head")}</span>}>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                  <span>volle <b>Zeile</b> ×{fmt(HAEUSERZEILE_FACTOR)}</span>
-                  <span>volle <b>Spalte</b> ×{fmt(SPALTE_FACTOR)}</span>
-                  <span><b>Diagonale</b> ×{fmt(DIAGONALE_FACTOR)}</span>
-                  <span><b>Distrikt</b> +{Math.round(DISTRICT_BONUS * 100)} %/Nachbar</span>
+                  <span>{t("arch.struct.row", { f: fmt(HAEUSERZEILE_FACTOR) })}</span>
+                  <span>{t("arch.struct.col", { f: fmt(SPALTE_FACTOR) })}</span>
+                  <span>{t("arch.struct.diag", { f: fmt(DIAGONALE_FACTOR) })}</span>
+                  <span>{t("arch.struct.district", { pct: Math.round(DISTRICT_BONUS * 100) })}</span>
                 </div>
-                <div className="opacity-60 mt-1">Jede Karte auf einer vollständigen Zeile/Spalte/Diagonale macht bei einem Sieg entsprechend mehr <b>Score</b>. Faktoren stapeln multiplikativ.</div>
-                <div className="opacity-60 mt-1"><b>Distrikt:</b> Gebäude <b>gleicher Farbe</b> (Kategorie) direkt aneinander geben je Nachbar +{Math.round(DISTRICT_BONUS * 100)} % Score auf ihre Felder (bis {DISTRICT_CAP} Nachbarn). Gleichartig zusammenbauen lohnt sich.</div>
+                <div className="opacity-60 mt-1">{t("arch.struct.note")}</div>
+                <div className="opacity-60 mt-1">{t("arch.struct.districtNote", { pct: Math.round(DISTRICT_BONUS * 100), cap: DISTRICT_CAP })}</div>
               </ArchCollapse>
 
               {/* removeFor: kein Platz → Gebäude entfernen anbieten. #235: zweistufig (erst markieren, dann bestätigen).
@@ -857,12 +883,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 return (
                   <div>
                     <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
-                      <b>Kein Platz</b> für „{pendingFamName(removeFor)}“.{" "}
+                      {t("arch.noRoom", { name: pendingFamName(removeFor) })}{" "}
                       {n === 0
-                        ? "Markiere ein Gebäude zum Abriss (am Brett oder unten) — bei einem großen Bauplan evtl. mehrere. Abgerissen wird erst nach Bestätigen."
+                        ? t("arch.noRoom.mark")
                         : enough
-                          ? `Abriss von ${n} Gebäude${n > 1 ? "n" : ""} schafft Platz. Bestätigen zum Bauen.`
-                          : "Abriss reicht noch nicht — markiere ein weiteres Gebäude."}
+                          ? t("arch.noRoom.enough", { count: n })
+                          : t("arch.noRoom.more")}
                     </div>
                     {/* #281: alle Gebäude als Umschalter — markieren/entmarkieren; „reicht allein" = ein Abriss würde genügen. */}
                     <div className="flex flex-col gap-1 mb-2">
@@ -878,21 +904,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
                               <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
                               <b>{bf.name}</b>
-                              <span className="opacity-55">{bf.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
-                              {marked ? <span style={{ color: "#ff8a6d" }}>· markiert ✓</span> : (soloOk && <span className="opacity-45">· reicht allein</span>)}
+                              <span className="opacity-55">{bf.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(b.tier) })}</span>
+                              {marked ? <span style={{ color: "#ff8a6d" }}>{t("arch.marked")}</span> : (soloOk && <span className="opacity-45">{t("arch.soloEnough")}</span>)}
                             </span>
                             <span className="opacity-75"> — {famEff(bf, b)}</span>
                           </button>
                         );
                       })}
                     </div>
-                    {n > 0 && <div className="text-[10px] opacity-55 mb-2">Markierte Gebäude gehen beim Abriss verloren.</div>}
+                    {n > 0 && <div className="text-[10px] opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
                     <div className="flex gap-2">
-                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
                       <button onClick={confirmDemolish} disabled={!enough}
                         className="flex-1 rounded-lg py-1.5 text-xs font-bold"
                         style={{ background: enough ? "#d1462f" : "#2a1c1c", color: enough ? "#fff" : "#7a5a55", opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
-                        Abreißen{n > 0 ? ` (${n})` : ""} ✓
+                        {n > 0 ? t("arch.demolish.n", { n }) : t("arch.demolish")}
                       </button>
                     </div>
                   </div>
@@ -905,7 +931,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   es bliebe sonst nur ein totes Auswahlfenster (Bauen/Aufwerten sind dann ohnehin gesperrt). */}
               {!removeFor && phase === "choose" && !architect.actedMain && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">Was baust du diese Phase?</div>
+                  <div className="text-sm font-semibold mb-2">{t("arch.choose.head")}</div>
                   {state.devMode ? (
                     <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
                       onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
@@ -932,8 +958,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
                           <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch).">⟳ nicht drehbar</span>}
-                          {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>kein Platz → ersetzen</span>}
+                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
+                          {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
                         </button>
                       );
                     })}
@@ -942,8 +968,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-lg leading-none">⬆</div>
-                      <div className="text-[13px] font-bold leading-tight">Aufwerten</div>
-                      <div className="text-[10px] font-mono opacity-60 leading-snug">ein Gebäude +1 Stufe{canUpgradeAny ? "" : " · nichts aufwertbar"}</div>
+                      <div className="text-[13px] font-bold leading-tight">{t("arch.upgrade")}</div>
+                      <div className="text-[10px] font-mono opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
                     </button>
                   </div>
                   )}
@@ -951,7 +977,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   {!state.devMode && onReroll && (state.rerollsArch || 0) > 0 && (
                     <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
-                      🎲 Baupläne neu würfeln · {state.rerollsArch} übrig
+                      {t("arch.reroll", { n: state.rerollsArch })}
                     </button>
                   )}
                 </div>
@@ -969,27 +995,27 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         <div className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
                           <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
                           {uf.name}
-                          <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(up.tier)} → {tierLabel(up.tier + 1)}</span>
+                          <span className="font-mono" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
                         </div>
                         <div className="mt-1.5 grid gap-1 text-[11px] font-mono leading-snug">
                           <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
-                            <span className="opacity-55">Jetzt:</span> {famEff(uf, up)}
+                            <span className="opacity-55">{t("arch.now")}</span> {famEff(uf, up)}
                           </div>
                           <div className="rounded px-2 py-1" style={{ background: "#15291a", border: "1px solid #2f6d3a" }}>
-                            <span className="opacity-55">Danach:</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
+                            <span className="opacity-55">{t("arch.after")}</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
                           </div>
                         </div>
-                        <div className="text-[11px] opacity-60 mt-1.5">Unten bestätigen, dann wird aufgewertet.</div>
+                        <div className="text-[11px] opacity-60 mt-1.5">{t("arch.upgrade.confirmHint")}</div>
                       </div>
                     ) : (
                       <>
                         <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
-                          head={<b>Aufwerten</b>}>
-                          <div className="opacity-85 leading-snug">wähle unten ein Gebäude (oder tippe es am Brett an) — es wird gold markiert, du siehst aktuellen und nächsten Effekt und bestätigst unten. Nicht aufwertbare (Legendär/No-op-Effekt/max) sind ausgegraut.</div>
+                          head={<b>{t("arch.upgrade")}</b>}>
+                          <div className="opacity-85 leading-snug">{t("arch.upgrade.help")}</div>
                         </ArchCollapse>
                         {upgradeMsg && (
                           <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
-                            <b>„{upgradeMsg.name}"</b> — {upgradeMsg.reason === "inert" ? "keine Aufwertung, der Effekt hat keine Stufen" : upgradeMsg.reason === "legendary" ? "Legendäre sind nicht aufwertbar" : upgradeMsg.reason === "max" ? "bereits auf höchster Stufe" : upgradeMsg.reason === "acted" ? "in dieser Bauphase ist die Hauptaktion (Bauen ODER Aufwerten) schon verbraucht" : "nicht aufwertbar"}.
+                            <b>„{upgradeMsg.name}"</b> — {t(UPGRADE_REASON[upgradeMsg.reason] || "arch.upgrade.reason.generic")}.
                           </div>
                         )}
                         {/* #232/#261: Liste ALLER aufwertbaren Gebäude — KLICKBAR (wie Skill-/Ersetzen-Menü). Ein Klick
@@ -1026,14 +1052,14 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
                   {upgradeDone && (
                     <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
-                      <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> aufgewertet:
-                      <span className="font-mono" style={{ color: "#f0b429" }}>Stufe {tierLabel(upgradeDone.from)} → {tierLabel(upgradeDone.to)}</span>
+                      <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> {t("arch.upgraded")}
+                      <span className="font-mono" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
                     </div>
                   )}
                   {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
                   <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
-                    head={<b>Platzieren & Verschieben</b>}>
-                    <div className="opacity-85 leading-snug">zieh Gebäude am Brett an ihren Platz (Griff überall, <b>⟳ Drehen</b> oben) — beliebig oft. Unten <b>Bestätigen</b> startet den Durchlauf.</div>
+                    head={<b>{t("arch.place.head")}</b>}>
+                    <div className="opacity-85 leading-snug">{t("arch.place.help")}</div>
                   </ArchCollapse>
                 </div>
               )}
@@ -1046,12 +1072,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
                   „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
               {showRotate && phase !== "move" && (selRotatable ? (
-                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
               ) : (
                 <button type="button" disabled aria-disabled="true"
-                  title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
+                  title={t("arch.noRotate.title")}
                   className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
-                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ Nicht drehbar</button>
+                  style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate.big")}</button>
               ))}
               {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
               {showRotate && rotateMsg && (
@@ -1065,41 +1091,41 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {!removeFor && (phase === "choose" || phase === "move") && (
                 <div className="flex gap-2 mb-2">
                   <button onClick={doArchUndo} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>↶ Rückgängig</button>
+                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
                   <button onClick={doArchReset} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
-                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>Zurücksetzen</button>
+                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
                 </div>
               )}
               {removeFor ? (
-                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Anderer Bauplan</button>
+                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.otherPlan")}</button>
               ) : phase === "choose" ? (
                 // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
                 // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
                 committed.length > 0 ? (
                   <div className="flex gap-2">
-                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>↔ Gebäude umstellen</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                   </div>
                 ) : (
-                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Nichts bauen · Fortfahren →</button>
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                 )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">
-                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>Abbrechen</button>
-                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#f0b429", color: "#141419" }}>⬆ Aufwerten bestätigen</button>
+                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.cancel")}</button>
+                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#f0b429", color: "#141419" }}>{t("arch.upgrade.confirm")}</button>
                 </div>
               ) : phase === "upgrade" ? (
-                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>← Zurück</button>
+                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
               ) : phase === "move" ? (
                 <div className="flex flex-wrap gap-2">
                   {/* Drehen kompakt (nur wenn ein Gebäude gewählt ist); Bestätigen bleibt der prominente Knopf. */}
                   {showRotate && (selRotatable ? (
-                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>⟳ Drehen</button>
+                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
                   ) : (
-                    <button type="button" disabled aria-disabled="true" title="Diese Form lässt sich nicht drehen (belegt eine ganze Segment-Zeile bzw. ist symmetrisch)."
-                      className="shrink-0 px-3 rounded-lg py-2 text-sm font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>⟳ nicht drehbar</button>
+                    <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
+                      className="shrink-0 px-3 rounded-lg py-2 text-sm font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
                   ))}
-                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>✓ Bestätigen · Durchlauf starten</button>
+                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}</button>
                 </div>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
@@ -1114,7 +1140,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <span className="inline-flex items-center gap-1.5 align-middle">
                       <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
                       <b>{efam.name}</b>
-                      <span className="opacity-55">{efam.legendary ? "Legendär" : `Stufe ${tierLabel(eb.tier)}`}</span>
+                      <span className="opacity-55">{efam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(eb.tier) })}</span>
                     </span>
                     <span className="opacity-80"> — {famEff(efam, eb)}</span>
                   </div>
@@ -1126,8 +1152,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Antippen (Liste ODER Brett) lässt Gebäude + Beschreibung gemeinsam cyan leuchten. Steht direkt unter „Nichts bauen". */}
             {!removeFor && phase === "choose" && committed.length > 0 && (
               <div className="order-1 rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-                <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-0.5">Deine Gebäude ({committed.length})</div>
-                <div className="text-[10px] opacity-45 mb-2">Antippen zeigt am Brett, wo es liegt — und umgekehrt.</div>
+                <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-0.5">{t("arch.yourBuildings", { n: committed.length })}</div>
+                <div className="text-[10px] opacity-45 mb-2">{t("archpanels.tapHint")}</div>
                 <div className="flex flex-col gap-1">
                   {committed.map((b) => {
                     const f = familyDef(b.familyId); if (!f) return null;
@@ -1139,7 +1165,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         <span className="inline-flex items-center gap-1.5 flex-wrap">
                           <span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: f.legendary ? GOLD : CAT[f.category].color }} />
                           <b>{f.name}</b>
-                          <span className="opacity-55">{f.legendary ? "Legendär" : `Stufe ${tierLabel(b.tier)}`}</span>
+                          <span className="opacity-55">{f.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(b.tier) })}</span>
                         </span>
                         <span className="opacity-75">{famEff(f, b)}</span>
                       </button>
@@ -1151,28 +1177,28 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
             <div className="rounded-xl p-3 order-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-              <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-2">Vorschau & Brett-Status</div>
+              <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-2">{t("arch.preview.head")}</div>
               {dragPrev && (() => {
                 const ok = dragPrev.valid && dragPrev.footprint.length > 0;
                 return (
                   <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex items-center gap-3 flex-wrap"
                     style={{ background: ok ? "#15351f" : "#3a1518", border: `1px solid ${ok ? "#2f9d55" : "#d1462f"}` }}>
-                    <span className="font-bold" style={{ color: ok ? "#5fce86" : "#e0705a" }}>{ok ? "Vorschau" : "passt hier nicht"}</span>
+                    <span className="font-bold" style={{ color: ok ? "#5fce86" : "#e0705a" }}>{t(ok ? "arch.preview.ok" : "arch.preview.bad")}</span>
                     {ok && dragDelta && <>
-                      <span>Σ Wert <b style={{ color: dragDelta.dVal >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dVal >= 0 ? "+" : ""}{dragDelta.dVal}</b></span>
-                      <span>Formationen <b style={{ color: dragDelta.dForm >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dForm >= 0 ? "+" : ""}{dragDelta.dForm}</b></span>
+                      <span>{t("arch.sumValue")} <b style={{ color: dragDelta.dVal >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dVal >= 0 ? "+" : ""}{dragDelta.dVal}</b></span>
+                      <span>{t("arch.forms")} <b style={{ color: dragDelta.dForm >= 0 ? "#5fce86" : "#e0705a" }}>{dragDelta.dForm >= 0 ? "+" : ""}{dragDelta.dForm}</b></span>
                     </>}
                   </div>
                 );
               })()}
               <div className="grid grid-cols-2 gap-2">
-                <Stat k="Struktur-Bonus" v={`+${structBonusPct} %`} hero />
-                <Stat k="Σ Kartenwert" v={sumValue} hero />
-                <Stat k="Baufeld belegt" v={`${Math.round(coverCount / maxCover * 100)}%`} />
-                <Stat k="Häuserzeilen" v={houseRows} />
+                <Stat k={t("arch.stat.struct")} v={t("arch.pct", { pct: structBonusPct })} hero />
+                <Stat k={t("arch.stat.sumValue")} v={sumValue} hero />
+                <Stat k={t("arch.stat.plotUsed")} v={`${Math.round(coverCount / maxCover * 100)}%`} />
+                <Stat k={t("arch.stat.rows")} v={houseRows} />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] font-mono opacity-80">
-                <span>{committed.length} Gebäude</span>
+                <span>{t("arch.buildingCount", { n: committed.length })}</span>
                 {Object.entries(CAT).map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[9px] h-[9px] rounded-full" style={{ background: v.color }} />{v.label} <b>{catCount[k]}</b></span>
                 ))}
@@ -1186,7 +1212,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 }
 
 // Name eines Bauplan-Angebots (für die „kein Platz"-Meldung).
-function pendingFamName(o) { const f = familyDef(o.familyId); return f ? f.name : "Bauplan"; }
+function pendingFamName(o) { const f = familyDef(o.familyId); return f ? f.name : t("arch.planFallback"); }
 
 // Kleine Stat-Kachel.
 function Stat({ k, v, hero = false }) {
@@ -1219,7 +1245,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
   const tval = (t) => (t === "legendary" ? 99 : t);
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-[11px] opacity-55">Voll-Katalog (Dev): Kategorie → Familie → Stufe. Ein Bau pro Phase (danach Verschieben/Bestätigen).</div>
+      <div className="text-[11px] opacity-55">{t("arch.dev.catalog")}</div>
       {ARCH_CAT_ORDER.filter((c) => byCat[c]).map((c) => {
         const meta = CAT[c] || { label: c, color: "#8a97a5" };
         const fids = Object.keys(byCat[c]);
@@ -1247,7 +1273,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
                           <span className="font-semibold text-sm" style={{ color: meta.color }}>{fam.name}</span>
                           {repDesc && <span className="text-[11px] font-mono opacity-60 leading-snug">{repDesc}</span>}
                         </span>
-                        <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲ Stufe" : "▼ Stufe"}</span>
+                        <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲" : "▼"} {t("arch.tierWord")}</span>
                       </button>
                       {fo && (
                         <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
@@ -1275,7 +1301,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
       <button onClick={onUpgrade} disabled={!canUpgradeAny}
         className="self-start mt-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
         style={{ background: "#13202b", border: `1px dashed ${CAT.value.color}66`, color: CAT.value.color, opacity: canUpgradeAny ? 1 : 0.4 }}>
-        ⬆ Aufwerten{canUpgradeAny ? "" : " · nichts aufwertbar"}
+        {t("arch.upgrade.big")}{canUpgradeAny ? "" : t("arch.upgrade.none")}
       </button>
     </div>
   );

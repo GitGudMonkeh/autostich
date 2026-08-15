@@ -19,6 +19,7 @@ import { t } from "./index.js";
 import { SKILL_DEFS, SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { SUITS } from "../game/constants.js";
 import { GLACIER_FORM_LABEL } from "../game/glacier.js";
+import { ARCH_CAT } from "../ui/indicators/vocab.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
@@ -34,6 +35,12 @@ export const rarityLabel = (tier) => t(`rarity.tier${tier}.label`);
 /* ---- Kartenfarben (SUITS) ---- */
 // Angezeigter Farbname. Unbekannt/leer → derselbe Gedankenstrich wie `suitName` im Register.
 export const suitLabel = (s) => (s && SUITS[s] ? t(`suit.${s}.name`) : "—");
+
+/* ---- Architekt-Kategorien (ARCH_CAT) ----
+   Liegt als einziges Register in der UI-Schicht (ui/indicators/vocab.js) — es ist reines
+   Anzeige-Vokabular. Der Leser gibt den Eintrag mit übersetztem Label zurück. */
+export const archCatList = () => Object.entries(ARCH_CAT).map(([k, c]) => [k, { ...c, label: t(`archcat.${k}.label`) }]);
+export const archCatDef = (k) => (ARCH_CAT[k] ? { ...ARCH_CAT[k], label: t(`archcat.${k}.label`) } : null);
 
 /* ---- 2D-Gletscher-Formationen (GLACIER_FORM_LABEL) ---- */
 export const glacierFormName = (k) => (GLACIER_FORM_LABEL[k] ? t(`glacierform.${k}.name`) : k);
