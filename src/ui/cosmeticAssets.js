@@ -29,8 +29,10 @@ import gottgleichFront from "../assets/cards/decks_player/deck_gottgleich/front.
 import gottgleichBack  from "../assets/cards/decks_player/deck_gottgleich/back.webp";
 import serie300Front   from "../assets/cards/decks_player/deck_serie300/front.webp";   // Serie 300
 import serie300Back    from "../assets/cards/decks_player/deck_serie300/back.webp";
-import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.webp";   // Serie 600
+import serie600Front   from "../assets/cards/decks_player/deck_serie600/front.webp";   // Peacock (Serie 600)
 import serie600Back    from "../assets/cards/decks_player/deck_serie600/back.webp";
+import serie1500Front  from "../assets/cards/decks_player/deck_serie1500/front.webp"; // Königspfau (Serie 1500)
+import serie1500Back   from "../assets/cards/decks_player/deck_serie1500/back.webp";
 import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.webp";  // Sparfuchs
 import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.webp";
 import meisterFront    from "../assets/cards/decks_player/deck_meister/front.webp";    // Meister
@@ -67,6 +69,8 @@ import bfSerie300Desktop   from "../assets/battlefields/bf_serie300/desktop.jpg"
 import bfSerie300Mobile    from "../assets/battlefields/bf_serie300/mobile.jpg";
 import bfSerie600Desktop   from "../assets/battlefields/bf_serie600/desktop.jpg";
 import bfSerie600Mobile    from "../assets/battlefields/bf_serie600/mobile.jpg";
+import bfSerie1500Desktop  from "../assets/battlefields/bf_serie1500/desktop.jpg";
+import bfSerie1500Mobile   from "../assets/battlefields/bf_serie1500/mobile.jpg";
 import bfSparfuchsDesktop  from "../assets/battlefields/bf_sparfuchs/desktop.jpg";
 import bfSparfuchsMobile   from "../assets/battlefields/bf_sparfuchs/mobile.jpg";
 import bfMeisterDesktop    from "../assets/battlefields/bf_meister/desktop.jpg";
@@ -88,7 +92,7 @@ import kosmosFront    from "../assets/cards/decks_player/deck_kosmos/front.webp"
 import kosmosBack     from "../assets/cards/decks_player/deck_kosmos/back.webp";
 import oniFront       from "../assets/cards/decks_player/deck_oni/front.webp";          // Roter Oni (Kauf · 20 DP)
 import oniBack        from "../assets/cards/decks_player/deck_oni/back.webp";
-import geoFront       from "../assets/cards/decks_player/deck_geometrie/front.webp";    // Metatron (Kauf · 5 DP)
+import geoFront       from "../assets/cards/decks_player/deck_geometrie/front.webp";    // Seraph (ehem. Metatron · 5 DP)
 import geoBack        from "../assets/cards/decks_player/deck_geometrie/back.webp";
 import bfFeuerDesktop     from "../assets/battlefields/bf_feuer/desktop.jpg";
 import bfFeuerMobile      from "../assets/battlefields/bf_feuer/mobile.jpg";
@@ -120,7 +124,7 @@ import bfDracheMobile   from "../assets/battlefields/bf_drache/mobile.jpg";
 // #312 drei DP-Kauf-Packs (je 10 DP): Arcade + Polarlicht + Seedrache.
 import arcadeFront     from "../assets/cards/decks_player/deck_arcade/front.webp";     // Beryll (ehem. Arcade)
 import arcadeBack      from "../assets/cards/decks_player/deck_arcade/back.webp";
-import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.webp"; // Polarlicht
+import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.webp"; // Scarab (ehem. Polarlicht)
 import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";
 import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Eldritch (ehem. Seedrache)
 import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
@@ -148,6 +152,7 @@ export const DECK_ASSETS = {
   deck_gottgleich: { front: gottgleichFront, back: gottgleichBack },
   deck_serie300:   { front: serie300Front,   back: serie300Back },
   deck_serie600:   { front: serie600Front,   back: serie600Back },
+  deck_serie1500:  { front: serie1500Front,  back: serie1500Back },
   deck_sparfuchs:  { front: sparfuchsFront,   back: sparfuchsBack },
   deck_meister:    { front: meisterFront,     back: meisterBack },
   // #310 Element-Challenge-Decks + Prisma (Multi) + DP-Kauf-Packs:
@@ -187,6 +192,7 @@ export const BATTLEFIELD_ASSETS = {
   bf_gottgleich: { desktop: bfGottgleichDesktop, mobile: bfGottgleichMobile },
   bf_serie300:   { desktop: bfSerie300Desktop,   mobile: bfSerie300Mobile },
   bf_serie600:   { desktop: bfSerie600Desktop,   mobile: bfSerie600Mobile },
+  bf_serie1500:  { desktop: bfSerie1500Desktop,  mobile: bfSerie1500Mobile },
   bf_sparfuchs:  { desktop: bfSparfuchsDesktop,  mobile: bfSparfuchsMobile },
   bf_meister:    { desktop: bfMeisterDesktop,    mobile: bfMeisterMobile },
   // #310 Element-Challenge-Battlefields + Prisma + DP-Kauf-Packs:

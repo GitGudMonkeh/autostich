@@ -47,7 +47,8 @@ export const DECK_DEFS = {
   // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
   deck_gottgleich: { id: "deck_gottgleich", name: "Ascension", unlock: { kind: "gottgleichRun" } },
   deck_serie300:   { id: "deck_serie300",   name: "Flamingo",   unlock: { kind: "streak", n: 300 } },
-  deck_serie600:   { id: "deck_serie600",   name: "Serie 600",  unlock: { kind: "streak", n: 600 } },
+  deck_serie600:   { id: "deck_serie600",   name: "Peacock",    unlock: { kind: "streak", n: 600 } },
+  deck_serie1500:  { id: "deck_serie1500",  name: "Königspfau", unlock: { kind: "streak", n: 1500 } },
   deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
   deck_meister:    { id: "deck_meister",    name: "Meister",    unlock: { kind: "championWeek" } },
   // #310 Element-Challenge-Decks (Freischalt via N Mono-Läufe je Fraktion):
@@ -61,13 +62,13 @@ export const DECK_DEFS = {
   deck_ronin:     { id: "deck_ronin",     name: "Ronin",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
   deck_kosmos:    { id: "deck_kosmos",    name: "Schwarzes Loch", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
-  deck_geometrie: { id: "deck_geometrie", name: "Metatron",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  deck_geometrie: { id: "deck_geometrie", name: "Seraph",         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_sonne:  { id: "deck_sonne",  name: "Kolossus",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
   deck_drache: { id: "deck_drache", name: "Laternenfest",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
-  deck_polarlicht: { id: "deck_polarlicht", name: "Polarlicht", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  deck_polarlicht: { id: "deck_polarlicht", name: "Scarab",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 
@@ -88,7 +89,8 @@ export const BATTLEFIELD_DEFS = {
   // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
   bf_gottgleich: { id: "bf_gottgleich", name: "Ascension · Battlefield", unlock: { kind: "gottgleichRun" } },
   bf_serie300:   { id: "bf_serie300",   name: "Flamingo · Battlefield",  unlock: { kind: "streak", n: 300 } },
-  bf_serie600:   { id: "bf_serie600",   name: "Serie 600 · Battlefield",  unlock: { kind: "streak", n: 600 } },
+  bf_serie600:   { id: "bf_serie600",   name: "Peacock · Battlefield",    unlock: { kind: "streak", n: 600 } },
+  bf_serie1500:  { id: "bf_serie1500",  name: "Königspfau · Battlefield", unlock: { kind: "streak", n: 1500 } },
   bf_sparfuchs:  { id: "bf_sparfuchs",  name: "Sparfuchs · Battlefield",  unlock: { kind: "meisterNoReroll" } },
   bf_meister:    { id: "bf_meister",    name: "Meister · Battlefield",    unlock: { kind: "championWeek" } },
   // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
@@ -100,13 +102,13 @@ export const BATTLEFIELD_DEFS = {
   bf_ronin:     { id: "bf_ronin",     name: "Ronin · Battlefield",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
   bf_kosmos:    { id: "bf_kosmos",    name: "Schwarzes Loch · Battlefield", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
   bf_oni:       { id: "bf_oni",       name: "Roter Oni · Battlefield",      unlock: { kind: "buy", ownKey: "pack:oni" } },
-  bf_geometrie: { id: "bf_geometrie", name: "Metatron · Battlefield",       unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  bf_geometrie: { id: "bf_geometrie", name: "Seraph · Battlefield",         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
   // #311 DP-Kauf-Packs:
   bf_sonne:  { id: "bf_sonne",  name: "Kolossus · Battlefield",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
   bf_drache: { id: "bf_drache", name: "Laternenfest · Battlefield",     unlock: { kind: "buy", ownKey: "pack:drache" } },
   // #312 DP-Kauf-Packs:
   bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
-  bf_polarlicht: { id: "bf_polarlicht", name: "Polarlicht · Battlefield", unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  bf_polarlicht: { id: "bf_polarlicht", name: "Scarab · Battlefield",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
 };
 

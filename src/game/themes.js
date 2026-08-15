@@ -166,8 +166,10 @@ export const THEME_DEFS = {
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
   serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
     deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
-  serie600:   { id: "serie600",   name: "Serie 600",  emblem: "☄️", kind: "cond", a1: "#ff3a12", a2: "#ff9a3f",
+  serie600:   { id: "serie600",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
     deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
+  serie1500:  { id: "serie1500",  name: "Königspfau", emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
+    deckId: "deck_serie1500",  bfId: "bf_serie1500",  els: ["deck", "bf"] },
   sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
   meister:    { id: "meister",    name: "Meister",    emblem: "🏆", kind: "cond", a1: "#d4a63a", a2: "#cfd3e0",
@@ -193,7 +195,7 @@ export const THEME_DEFS = {
     deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
   oni:       { id: "oni",       name: "Roter Oni",      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
     deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
-  geometrie: { id: "geometrie", name: "Metatron",       emblem: "✴️", kind: "buy", price: 5,  a1: "#b48bff", a2: "#ffce5a",
+  geometrie: { id: "geometrie", name: "Seraph",         emblem: "😇", kind: "buy", price: 5,  a1: "#ffe08a", a2: "#fff2c0",
     deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
 
   // ---- #311 DP-Kauf-Packs (je 10 DP) ----
@@ -205,7 +207,7 @@ export const THEME_DEFS = {
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
   arcade:     { id: "arcade",     name: "Beryll",     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
-  polarlicht: { id: "polarlicht", name: "Polarlicht", emblem: "🌌", kind: "buy", price: 10, a1: "#7cc6ff", a2: "#4fe6b0",
+  polarlicht: { id: "polarlicht", name: "Scarab",     emblem: "🪲", kind: "buy", price: 10, a1: "#2ee0c0", a2: "#ffcf3a",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
   seedrache:  { id: "seedrache",  name: "Eldritch",   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },

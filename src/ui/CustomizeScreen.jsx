@@ -674,7 +674,7 @@ const DECKGLOW_BGS = [
   { bf: "bf_ronin", a1: "#ff2f4f", name: "Ronin" },
   { bf: "bf_kosmos", a1: "#ff4dcb", name: "Schwarzes Loch" },
   { bf: "bf_drache", a1: "#ffcf5a", name: "Laternenfest" },
-  { bf: "bf_polarlicht", a1: "#7cc6ff", name: "Polarlicht" },
+  { bf: "bf_polarlicht", a1: "#2ee0c0", name: "Scarab" },
 ];
 function DeckGlowScene() { // #336: kein Farbmodus mehr — Glow ist immer Deckfarbe (Tint); die Vorschau tönt je BG in dessen Akzent
   const [idx, setIdx] = useState(0);
