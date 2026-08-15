@@ -269,12 +269,13 @@ export function reducer(state, action) {
       const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
       const effRareCap = wm.perkCap ? 2 : rareCap;                                   // Perk-Deckel → max Selten (kein Sehr selten/Rar)
       const effRareFloor = wm.perkBlessing ? 3 : 1;                                  // Perk-Segen → Boden Sehr selten (nur Stufe III/IV)
+      const effSkillSlots = C.SKILL_SLOTS + (wm.skillSlots?.mag || 0);               // Skill-Fülle → +mag Skillslots (Halten mehr Skills)
       const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? formationEnergyBase * 2 : formationEnergyBase;
       const effCover = wm.tightBuild ? 12 : wm.noBuildLimit ? N_POS : (coverBase + treeCover); // Enge Aufstellung / Kein Gebäudelimit
       const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
       const sBase = { ...s, architect: { ...architectStart, maxCover: effCover }, architectEnabled, treeRareShift, treeLegMult, treeLegForce2,
         rerollsLeg: noReroll ? 0 : treeLegSlotReroll, rerollsPerk2: noReroll ? 0 : rerollPerk2,
-        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, rareFloor: effRareFloor, legPhaseEnabled, ranked,
+        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, legPhaseEnabled, ranked,
         weekMods: weekModsState,
         challengeMods: chMods.map((c) => c.id),
         challengeBlockArch: [...new Set([...chBlockArch, ...wmBlockArch])],
@@ -581,7 +582,7 @@ export function reducer(state, action) {
         // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
         if (isTrimmableSkill(replaceId)) trimmed = true; // #288 Trimmen: Wachstums-Skill rausgetauscht
-      } else if (normalCount < C.SKILL_SLOTS) {
+      } else if (normalCount < (state.skillSlots || C.SKILL_SLOTS)) { // #370 Skill-Fülle hebt das Slot-Limit (sonst Basis)
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
         return state;                                              // volle Slots ohne gültiges Ersetzungsziel

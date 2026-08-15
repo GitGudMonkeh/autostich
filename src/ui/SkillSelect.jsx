@@ -75,7 +75,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
-  const full = skills.length >= SKILL_SLOTS;
+  const slots = state.skillSlots || SKILL_SLOTS; // #370 Skill-Fülle: erhöhtes Slot-Limit (sonst Basis)
+  const full = skills.length >= slots;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
@@ -156,7 +157,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{SKILL_SLOTS} Slots</div>
+          <div className="text-xs uppercase tracking-widest" style={{ color: LIGHT }}>Skill · Durchlauf {(state.cycle || 0) + 1} · {skills.length}/{slots} Slots</div>
           <h2 className="text-xl font-bold mt-1">Wähle einen Skill</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
@@ -242,7 +243,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* Bei vollen Slots: Hinweis, dass beim Wählen ein Ersetzen-Fenster erscheint (#234). */}
         {full && !pending && (
           <div className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
-            Alle {SKILL_SLOTS} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.
+            Alle {slots} Slots belegt. Wähle einen neuen Skill — ein Fenster fragt dann, welchen du ersetzt.
           </div>
         )}
 
@@ -365,7 +366,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              Deine Skills — {held.length}/{SKILL_SLOTS} · bereits gehalten
+              Deine Skills — {held.length}/{slots} · bereits gehalten
             </div>
             {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
                 Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
