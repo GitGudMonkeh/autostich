@@ -494,6 +494,12 @@ button { font-family: inherit; }
   src: url("./assets/fonts/VT323-Regular.ttf") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
 }
+/* Orbitron (variabel 400–900) — Floating-Scores & Kartenzahlen: geometrisch-technisch, passt zum Neon-Look. */
+@font-face {
+  font-family: "Orbitron";
+  src: url("./assets/fonts/Orbitron.woff2") format("woff2");
+  font-weight: 400 900; font-style: normal; font-display: swap;
+}
 
 /* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
    Selektiv angewandt (Titel/Kartenzahlen/Ueberschriften bzw. dichte Zahlen-Labels). */
@@ -535,10 +541,10 @@ button { font-family: inherit; }
   text-shadow: none;
 }
 
-/* Kartenzahl: Press Start 2P ist breit -> kleiner als das text-5xl-Original. */
+/* Kartenzahl: Orbitron (geometrisch, klar lesbar bei 1–10). Normal breit → größer als die alte Press-Start-2P-Fassung. */
 [data-skin="crt"] .card-num {
-  font-family: "Press Start 2P", ui-monospace, monospace;
-  font-size: 1.9rem; line-height: 1;
+  font-family: "Orbitron", ui-monospace, monospace;
+  font-size: 2.4rem; line-height: 1;
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
 }
 

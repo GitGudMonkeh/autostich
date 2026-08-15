@@ -249,7 +249,7 @@ const FLOAT_LANES = [0, -30, 30, -58, 58];
 const SHOW_HIT_ICONS = false;
 // #: Gemeinsamer „Kartennummern"-Stil für ALLE Score-/Juice-Floats (durchsichtige Füllung + farbige Kontur + Glow) —
 // gilt für Score, Formation & Krit; die großen Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich/Lawine) bleiben ausgenommen.
-const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900,
+const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900,
   WebkitTextFillColor: "transparent", WebkitTextStroke: `${stroke}px ${color}`, textShadow: `0 0 7px ${color}aa` });
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
