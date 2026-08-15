@@ -288,8 +288,12 @@ export const MEISTERHAND_SLOTS   = envNum("SIM_MEISTERHAND_SLOTS", 1);    // Mei
 //   (c) in breiten Builds zieht der Extra-Slot einen DRITTEN Archetyp herein (gemessen 2 → 3), was commitScale
 //       aller beteiligten Fraktionen senkt — deshalb ist 2 Slots schlechter als 1.
 // Die Ablation vergleicht gegen „stattdessen die nächstbeste Familie nehmen"; ein Grenz-Skill schlägt eine
-// Familienstufe schlicht nicht. Ohne Umbau (z. B. commitScale-Deckel für den Perk-Halter aufheben) bleibt der
-// Perk eine Falle für den Spieler. Offene Entscheidung.
+// Familienstufe schlicht nicht.
+// ENTSCHEIDUNG (2026-08-15): Perk bleibt UNVERÄNDERT im Pool. Bewusst gegen die Sim-Zahl — echte Spieldaten sollen
+// entscheiden. Ein Mensch wählt seinen 7. Skill anders als jede Policy hier (er kennt seinen Plan), und die
+// Ablation misst nur den Tausch gegen die nächstbeste Familie, nicht den Wert von Flexibilität an sich.
+// Also NICHT „reparieren", ohne vorher Spieldaten gesehen zu haben. Falls die den Befund bestätigen, ist der
+// naheliegende Umbau: commitScale-Deckel für den Perk-Halter aufheben (belohnt Vertiefen statt Verbreitern).
 export const SCHMIEDE_STEP       = envNum("SIM_SCHMIEDE_STEP", 3);        // Schmiede (Deck): +Kartenwert auf die SCHWÄCHSTE Deckkarte je Durchlauf-Ende. BEWUSST OHNE DECKEL (Entscheidung 2026-08-15) — über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220
 export const HOCHSEIL_MULT       = envNum("SIM_HOCHSEIL_MULT", 1.45);      // Hochseil (Score): Sieg-× solange der Durchlauf OHNE Niederlage ist. Spätspiel-Perk: Anteil niederlagenfreier Durchläufe steigt 0 % (1–10) → 70 % (41–50), greift also genau in der Score-Explosion → niedrig ansetzen
 export const OPFERGANG_VALUE     = envNum("SIM_OPFERGANG_VALUE", 1);      // Opfergang (Deck, NACHTEIL): so viel Kartenwert verlieren ALLE Karten dauerhaft beim Pick (Klemmung bei 1 — #34 hat die 0 bewusst entfernt)
