@@ -1,0 +1,115 @@
+/* ============================================================
+   KATALOG DEUTSCH — Ausgangssprache. Jeder Schlüssel MUSS auch in en.js stehen
+   (test/i18n-guards.test.js erzwingt das), samt identischer Platzhalter-Menge.
+
+   Konventionen (docs/text-style-guide.md):
+   - Schlüssel: <bereich>.<block>.<sache>, klein, Punkt-getrennt. Keine Sätze als Schlüssel.
+   - Platzhalter: {name} — NIE Zahlen direkt einbauen, wenn sie zur Laufzeit kommen.
+   - Tuning-Zahlen aus den Konstanten interpolieren (Template-Literal), nicht abtippen.
+   - Plural: Schlüsselpaare `…_one` / `…_other`, ausgewählt über die Variable `count`.
+   ============================================================ */
+import { LEG_PHASE_CYCLE } from "../game/constants.js";
+
+export default {
+  /* ---- Allgemein ---- */
+  "common.close": "Schließen",
+  // Währungs-Kürzel. Stichpunkte heißen im Englischen „Trick Points" → TP, nicht SP.
+  "common.cur.sp": "SP",
+  "common.cur.dp": "DP",
+
+  /* ---- Startbildschirm ---- */
+  "start.tagline": "Roguelite-Autobattler-Stechspiel · Prototyp",
+  "start.logo.alt": "AUTOSTICH",
+
+  "start.progress.onboarding": "🎓 Onboarding",
+  "start.progress.bonus": "💠 Bonus-{cur} · nächste +5",
+  "start.progress.runs": "{done} / {total} Läufe",
+  "start.progress.links": "{done} / {total}",
+  "start.progress.next": "Nächste Freischaltung:",
+
+  // Belohnungen der Onboarding-Kette. Die Legendär-Phase nennt den Durchlauf aus dem
+  // Entscheidungsplan (constants.js) — kein abgetipptes „R29" mehr.
+  "start.onb.reroll": "Reroll +1",
+  "start.onb.plant": "Pflanze frei",
+  "start.onb.ice": "Eis frei",
+  "start.onb.rarity": "Rarität: {tier}",
+  "start.onb.legendary": `Legendär ⭐ (Durchlauf ${LEG_PHASE_CYCLE})`,
+
+  "start.resume": "▶ Lauf fortsetzen",
+  "start.resume.sub": "Durchlauf {cycle}/{total} · Score {score}",
+  "start.normal": "Normaler Lauf",
+
+  "start.seed.placeholder": "Seed einfügen",
+  "start.seed.aria": "Seed einfügen und spielen",
+  "start.seed.play": "↻ Spielen",
+  "start.seed.error": "Kein gültiger Seed — prüf den Code und versuch es erneut.",
+  "start.secret.unlock": "🔓 Alles freigeschaltet.",
+  "start.secret.onboarding": "⏭️ Onboarding übersprungen · +10 SP · +50 DP",
+  "start.secret.reset": "🔄 Profil wird zurückgesetzt …",
+
+  "start.ranked": "Rangliste",
+  "start.ranked.badge": "Woche",
+  "start.ranked.badge.aria": "Wochen-Challenge",
+  "start.ranked.open": "Wochen-Rangliste öffnen",
+  "start.ranked.locked": "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde",
+
+  "start.tile.workshop": "Deck-Werkstatt",
+  "start.tile.workshop.locked": "Die Deck-Werkstatt wird nach Abschluss des Onboardings frei",
+  "start.tile.upgrades": "Upgrades",
+  "start.tile.upgrades.title": "Upgrade-Baum",
+  "start.tile.upgrades.locked": "Frei nach Abschluss des Onboardings",
+  "start.tile.upgrades.buyable": "{n} kaufbar",
+  "start.tile.upgrades.complete": "✓ komplett",
+  "start.tile.leaderboard": "Bestenliste",
+  "start.tile.leaderboard.sub": "Globale Highscores",
+  "start.tile.stats": "Statistiken",
+  "start.tile.stats.sub": "Läufe & Rekorde",
+  "start.tile.lock_one": "🔒 noch {count} Lauf",
+  "start.tile.lock_other": "🔒 noch {count} Läufe",
+
+  "start.options": "Optionen",
+  "start.name.set": "Namen festlegen für den globalen Highscore",
+  "start.name.change": "Name ändern",
+  "start.name.signedIn": "Angemeldet als",
+  "start.version.title": "Version · Umgebung · Commit",
+
+  /* ---- Optionen ---- */
+  "options.eyebrow": "Optionen",
+  "options.title": "Einstellungen",
+  "options.footer": "Weitere Optionen (Tempo-Default …) folgen hier.",
+
+  "options.language.title": "Sprache",
+  "options.language.desc": "Sprache der Spieltexte.",
+
+  "options.mute.title": "Ton stumm",
+  "options.mute.desc": "Schaltet alle Klick- und Spiel-Sounds ab.",
+  "options.sfx.title": "Effekt-Lautstärke",
+  "options.sfx.desc": "Lautstärke der Klick-/Spiel-Sounds (SFX).",
+  "options.sfx.aria": "SFX-Lautstärke",
+  "options.music.title": "Musik-Lautstärke",
+  "options.music.desc": "Lautstärke der Hintergrundmusik.",
+  "options.music.aria": "Musik-Lautstärke",
+
+  "options.rfx.title": "Effekte reduziert",
+  "options.rfx.aus": "Aus",
+  "options.rfx.mobile": "Mobile",
+  "options.rfx.an": "An",
+  "options.rfx.desc.aus": "Volle Effekte.",
+  "options.rfx.desc.mobile": "Ausgewogen: Karten-Flip, Hintergrund, Glow & Finisher bleiben; Screen-Shake, Funken-Fontänen, Blur & Sweeps aus. Schont schwächere Geräte.",
+  "options.rfx.desc.an": "Alle Effekte minimal — maximal ruhig, entlastet schwache Geräte stark.",
+
+  "options.haptics.title": "Haptik (Vibration)",
+  "options.haptics.desc": "Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.",
+
+  "options.perfHud.title": "FPS-Zähler & Report",
+  "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",
+
+  "options.float.title": "Floating-Text anzeigen",
+  "options.float.desc": "Aufsteigende Zahlen/Texte über dem Feld. Master-Schalter für alle drei unten. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich) bleiben immer sichtbar.",
+  "options.float.score.title": "↳ Score",
+  "options.float.score.desc": "Aufsteigende Punktzahlen bei gewonnenen Stichen.",
+  "options.float.mult.title": "↳ Multiplikator",
+  "options.float.mult.desc": "„Kritisch!“- und Formations-Text (Multiplikator-Boni).",
+  "options.float.winlose.title": "↳ Sieg / Niederlage",
+  "options.float.winlose.desc": "Gewonnen/Verloren-Text am Stich-Ausgang.",
+};

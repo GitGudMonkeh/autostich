@@ -13,6 +13,7 @@ import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardi
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { fmtDuration } from "./game/deck.js";
+import { setLocale, detectLocale } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
@@ -105,7 +106,14 @@ function OverlayFallback() {
 export function Autostich() {
   const [state, dispatch] = useReducer(reducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
-  const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
+  // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang Deutsch auf.
+  // Deshalb direkt im Initializer (idempotent, StrictMode-doppelaufruf-fest) statt in einem Effekt.
+  // `lang: null` = noch nie gewählt → Browsersprache; sobald der Spieler wählt, gilt nur noch seine Wahl.
+  const [options, setOptions] = useState(() => {
+    const o = loadOptions();
+    setLocale(o.lang || detectLocale());
+    return o;
+  });   // Optionen (#41): u. a. CRT-Skin
   // Perf: reducedFx auflösen (Mobile/schwaches Gerät/System-Wunsch) und als data-Attribut ans Root hängen.
   // Eine zentrale CSS-Regel (index.css) schaltet damit den teuren Overlay-Blur (backdrop-filter) ab —
   // der wird hinter Gameplay-Overlays sonst pro Frame neu berechnet (laufende Puls-/Glow-Animationen).
@@ -244,6 +252,12 @@ export function Autostich() {
   // Optionen → Audio-Manager spiegeln (Mute/Lautstärke). #207: Haptik-Toggle spiegeln (Default an; wirkt nur auf Mobile).
   useEffect(() => { audio.setMuted(!!options.muted); audio.setVolume(options.sfxVol ?? 0.4); }, [options.muted, options.sfxVol]);
   useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
+  // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
+  // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
+  useEffect(() => {
+    const loc = setLocale(options.lang || detectLocale());
+    try { document.documentElement.lang = loc; } catch (e) {}
+  }, [options.lang]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.
   const prevBuys = useRef(0);

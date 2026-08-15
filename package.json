@@ -14,6 +14,7 @@
     "sim": "node sim/batch.js",
     "probe": "node sim/probe.js",
     "gen:db": "node scripts/gen-db.mjs",
+    "loc:export": "node scripts/export-strings.mjs",
     "compress:music": "node scripts/compress-music.mjs",
     "music:overview": "node maintenance/music-overview.mjs"
   },

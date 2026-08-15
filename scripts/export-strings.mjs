@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /* Loc-Export: sammelt ALLE spieler-sichtbaren Texte in eine CSV (Schema wie docs/localization/strings_de.csv).
-   Zwei Quellen:
+   Drei Quellen:
      1) DATENTEXTE — die echten Register aus src/game/* werden importiert und die RESOLVETEN Endtexte
         rausgeschrieben (kein Abtippen, keine Text↔Code-Drift).
      2) UI-TEXTE — heuristisch aus src/App.jsx + src/ui/*.jsx gezogen (JSX-Textknoten, Text-Props,
-        String-Literale). Kandidatenliste, danach kuratiert.
+        String-Literale). Kandidatenliste, danach kuratiert. Schrumpft mit jeder migrierten Datei.
+     3) I18N-KATALOG (#sprache) — src/i18n/de.js + en.js. Diese Zeilen bringen die englische Spalte
+        bereits mit (status „done"). Das ist die Zielform: die CSV ist eine ERZEUGTE ANSICHT des
+        Katalogs, kein zweiter handgepflegter Textbestand. Quelle bleibt IMMER der Code.
    Aufruf: node scripts/export-strings.mjs [--ui-candidates]
    Rein lesend. */
 import { writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -18,6 +21,8 @@ import { ARCHITECT_FAMILIES, TIER_INERT_KINDS, familyEffectText } from "../src/g
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../src/game/glossary.js";
 import { TIER_META } from "../src/game/rarity.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
+import CAT_DE from "../src/i18n/de.js";
+import CAT_EN from "../src/i18n/en.js";
 import { GLOBAL_FX, THEME_DEFS } from "../src/game/themes.js";
 import { WEEK_MODS } from "../src/game/weekMods.js";
 import { NODES, BRANCHES } from "../src/game/progression.js";
@@ -218,7 +223,28 @@ for (const [k, v] of Object.entries(ARCH_CAT)) {
 /* ============ 14 · Kuratierte UI-Texte ============ */
 for (const r of uiRows()) push(r.id, r.category, r.de, r.context, r.limit, r.note);
 
+/* ============ 15 · i18n-Katalog (#sprache) ============
+   Migrierte Texte kommen NICHT mehr aus der Heuristik, sondern direkt aus src/i18n/. Sie bringen
+   ihre englische Spalte schon mit (status „done") — die CSV ist damit das, was sie sein soll:
+   eine ERZEUGTE Ansicht des Katalogs, kein zweiter, handgepflegter Textbestand.
+   Sobald eine Datei migriert ist, wandern ihre Zeilen automatisch von „new" nach „done". */
+for (const key of Object.keys(CAT_DE)) {
+  const deText = String(CAT_DE[key] ?? "").trim();
+  if (!deText) continue;
+  rows.push({
+    id: key, category: "i18n", de: deText, en: String(CAT_EN[key] ?? "").trim(),
+    context: "i18n-Katalog (src/i18n) — über t() aufgelöst",
+    limit: "", status: CAT_EN[key] ? "done" : "new", note: "",
+  });
+}
+
 /* ============ CSV schreiben ============ */
+/* Doppelte austreiben: was schon im Katalog steht, darf nicht zusätzlich als heuristisch
+   gefischte `ui.*`-Zeile auftauchen — sonst übersetzt jemand denselben Satz zweimal. */
+const CATALOG_TEXTS = new Set(Object.values(CAT_DE).map((s) => String(s).trim()));
+const deduped = rows.filter((r) => r.category === "i18n" || !CATALOG_TEXTS.has(r.de));
+rows.length = 0; rows.push(...deduped);
+
 const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
 rows.sort((a, b) => (a.category + a.id).localeCompare(b.category + b.id, "de"));
 const head = ["id", "category", "de", "en", "context", "limit", "status", "note"];
