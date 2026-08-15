@@ -2,22 +2,11 @@ import { useState } from "react";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-Rahmen (wie BuildPanel)
 
-/* #381 Gemeinsame Wochen-Modifikatoren-Anzeige (Ranked-Screen UND Battlefield-Panel).
-   Anklickbare Chips mit Effekt-Icon + Vorzeichen-Farbe; Klick klappt die Beschreibung (m.text) auf.
+/* #381/#385 Gemeinsame Wochen-Modifikatoren-Anzeige (Ranked-Screen UND Battlefield-Panel).
+   Anklickbare Chips (nur Name, in Vorzeichen-Farbe; #385 ohne Icon); Klick klappt die Beschreibung (m.text) auf.
    Datenmodell: { id, sign, name, effect, text } — aus pickWeekMods (Lauf) bzw. dem Katalog (Regeln). */
 
 export const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
-
-// Icon je Effekt — reine Präsentation (UI-seitig, nicht im puren weekMods-Datenmodell). Fallback = Vorzeichen-Pfeil.
-const EFFECT_ICON = {
-  // negativ
-  blockForm: "⛔", blockArch: "🚧", enemyValue: "⚔️", deckShuffle: "🔀", energyEbb: "🪫",
-  tightBuild: "🗜️", scarceSkills: "✂️", scarcePerks: "🃏", noReroll: "🚫", perkCap: "⬇️",
-  // positiv
-  cardValue: "💪", legTakt: "⭐", skillSlots: "➕", doubleLeg: "✨", noBuildLimit: "♾️",
-  perkBlessing: "🎁", energyFlood: "🔋", buildBoost: "🏛️", formBoost: "✳️",
-};
-export const effectIcon = (effect, sign) => EFFECT_ICON[effect] || (sign === "pos" ? "▲" : "▼");
 
 // Katalog (Regeln-Reiter) als Anzeige-Mods: text aus desc(min) + Range-/Paar-Hinweis.
 export function catalogDisplayMods() {
@@ -40,9 +29,9 @@ export function WeekModChips({ mods, size = "md" }) {
     const active = open === m.id;
     return (
       <button key={m.id} type="button" onClick={() => setOpen(active ? null : m.id)}
-        className={`inline-flex items-center gap-1.5 rounded-full font-semibold transition-all hover:-translate-y-0.5 ${pad}`}
+        className={`inline-flex items-center rounded-full font-semibold transition-all hover:-translate-y-0.5 ${pad}`}
         style={{ background: active ? `${c}33` : "#1a1922", color: c, outline: active ? `1px solid ${c}` : `1px solid ${c}66` }}>
-        <span aria-hidden="true">{effectIcon(m.effect, m.sign)}</span>{m.name}
+        {m.name}
       </button>
     );
   };
@@ -54,7 +43,7 @@ export function WeekModChips({ mods, size = "md" }) {
       {openMod && (
         <div className="mt-2 rounded-lg p-2.5 text-[12px] leading-snug"
           style={{ background: "#17161f", border: `1px solid ${(openMod.sign === "pos" ? MOD_POS : MOD_NEG)}44` }}>
-          <b style={{ color: openMod.sign === "pos" ? MOD_POS : MOD_NEG }}>{effectIcon(openMod.effect, openMod.sign)} {openMod.name}</b>
+          <b style={{ color: openMod.sign === "pos" ? MOD_POS : MOD_NEG }}>{openMod.name}</b>
           <span className="opacity-80"> — {openMod.text}</span>
         </div>
       )}
