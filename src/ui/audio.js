@@ -151,7 +151,7 @@ export const audio = {
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
-  play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0 } = {}) {
+  play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0, delay = 0 } = {}) {
     if (muted || volume <= 0 || bgSuspended) return; // #: Hintergrund → keine neuen One-Shots (weckt sonst den Context)
     if (fxSuspended && isFxSound(name)) return; // #329: Effektsounds außerhalb Spiel/Werkstatt aus (UI-Sounds bleiben)
     loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
@@ -182,11 +182,14 @@ export const audio = {
       // #: Hüllkurve — kurzer Attack (weiche Transiente statt harter Einsatz) + Release (sanftes Ausklingen statt hartem
       // Abriss, z. B. im Turbo). Ohne attack/release identisch zum bisherigen Verhalten (Sofort-Pegel).
       const dur = (buffers[name].duration || 0) / Math.max(0.01, rate);
-      if (attack > 0) { g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(peak, now + Math.min(attack, dur * 0.5)); }
-      else g.gain.setValueAtTime(peak, now);
+      // #: `delay` (s) → Start via Web-Audio-Scheduling in die Zukunft legen (z. B. Supernova-Swell zeitgleich zum
+      // visuellen Puls). Die Hüllkurve wird relativ zum geplanten Start t0 gesetzt.
+      const t0 = now + Math.max(0, delay);
+      if (attack > 0) { g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + Math.min(attack, dur * 0.5)); }
+      else g.gain.setValueAtTime(peak, t0);
       // #: Release-Ausklang auf höchstens ~65 % der (raten-abhängigen) Dauer begrenzen — sonst würde bei hoher playbackRate
       // (kurze dur im Turbo) die ganze Stimme von Beginn an wegfaden (zu leise) statt nur am Ende sanft auszuklingen.
-      if (release > 0 && dur > 0) { const rel = Math.min(release, dur * 0.65); const rs = Math.max(now + attack, now + dur - rel); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, now + dur); }
+      if (release > 0 && dur > 0) { const rel = Math.min(release, dur * 0.65); const rs = Math.max(t0 + attack, t0 + dur - rel); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, t0 + dur); }
       node.connect(g).connect(masterComp || c.destination);
       // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
       const v = { src, g, name, t: now };
@@ -198,7 +201,7 @@ export const audio = {
         if (old === v) break; // nie die gerade gestartete Stimme stehlen
         try { old.g.gain.cancelScheduledValues(now); old.g.gain.setTargetAtTime(0.0001, now, 0.01); old.src.stop(now + 0.05); } catch (e) {}
       }
-      src.start();
+      src.start(t0);
     } catch (e) { /* Audio nie den Spielfluss stören */ }
   },
   /* #296 Persistenter Loop-SFX (Bett für persistente Finisher wie „Schwarzes Loch"). Gibt ein Handle zurück; via

@@ -1106,7 +1106,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
     if (toShow.epic) {
       audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      audio.play("fx_supernova", { gain: 1.0 });        // Swell darüber
+      audio.play("fx_supernova", { gain: 1.0, delay: 0.85 }); // Swell darüber — ~0,85 s verzögert, damit der große Impuls zeitgleich mit dem visuellen Supernova-Puls (Detonation) kommt
     }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
