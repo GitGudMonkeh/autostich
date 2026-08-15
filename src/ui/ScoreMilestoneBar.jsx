@@ -3,6 +3,7 @@
 // (25/50/75/100 Mio) und WECHSELT AN JEDEM MEILENSTEIN DIE FARBE (kühl → warm/gold). Nicht-lineare Skalierung:
 // jeder Meilenstein = ein Viertel der Leiste. Bewusst grob (Balatro-Geist) — rein informativ, keine Engine-Kopplung.
 import { milestoneBarState } from "../game/progression.js";
+import { DECK_BORDER } from "./modalStyle.jsx"; // #: deck-getönter Rahmen wie die übrigen Panels (BuildPanel/MusicBar)
 
 // Aufsteigende Neon-Palette (Logo-Verlauf): Farbe je erreichter Stufe 0..4 — Cyan → Grün → Blau → Violett → Gold.
 const TIER = ["#26c6e6", "#4ade80", "#5a8ade", "#9b82f0", "#f2a83a"];
@@ -15,18 +16,17 @@ export function ScoreMilestoneBar({ score = 0 }) {
   const accHi = TIER_HI[Math.min(reached, TIER_HI.length - 1)];
   const pct = Math.round(fill * 100);
 
-  // Panel-Rahmen: NUR ein crisper Rahmen in der STUFENFARBE (acc) auf flachem Grund — kein Glow, kein Tint (clean).
-  // Wächst mit dem Fortschritt mit (Cyan→Grün→Blau→Violett→Gold, wie Balken & Zahl); Farbwechsel sanft überblendet.
+  // Panel-Rahmen: deck-getönt wie die übrigen Panels (as-panel-deck + DECK_BORDER) — konsistente Optik.
+  //   Der Stufen-Farbverlauf (acc/accHi, Cyan→Grün→Blau→Violett→Gold) bleibt für Balken & Label (Fortschritts-Akzent).
   const frame = {
-    background: "#141019",
-    border: `1px solid ${acc}66`,
-    transition: "border-color .5s ease",
+    background: "linear-gradient(180deg,#1b1a24,#141019)",
+    border: `1px solid ${DECK_BORDER}`,
   };
 
   return (
-    <div className="rounded-xl px-3 py-2" style={frame}
+    <div className="rounded-xl px-3 py-1.5 as-panel as-panel-deck" style={frame}
       title={atMax ? "Alle Score-Meilensteine erreicht" : `Nächster Meilenstein: ${mio(next.at)} (+${next.sp} SP)`}>
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-1">
         <span className="text-[11px] font-semibold tracking-wide" style={{ color: accHi }}>
           💠 Meilensteine {reached}/{total}{spSoFar > 0 ? ` · +${spSoFar} SP` : ""}
         </span>
