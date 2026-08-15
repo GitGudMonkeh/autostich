@@ -857,7 +857,7 @@ const P_FAMILIES = {
   },
   P_FORCE: {
     id: "P_FORCE", cat: "P", name: "Wucht", upgradeType: REPLACEMENT,
-    // Crit-Schaden (Mult-Stat-Ersatz): +Crit-Multiplikator auf Basis 1,5.
+    // Mult-Stat-Ersatz: +Crit-Multiplikator auf Basis 1,5.
     tiers: {
       1: { desc: `+${deP(C.PRECISION_FORCE_MULT[0])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[0]) },
       2: { desc: `+${deP(C.PRECISION_FORCE_MULT[1])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[1]) },

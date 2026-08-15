@@ -141,7 +141,7 @@ export const PRECISION_CHANCE_SCALE = envNum("SIM_PRECISION_CHANCE_SCALE", 1); /
 export const PRECISION_MULT_SCALE   = envNum("SIM_PRECISION_MULT_SCALE", 1);   // skaliert alle Präzision-Crit-MULT-Boni
 // Schärfe (flat +Crit-Chance auf alle Karten) — Grund-Crit-Motor (Stat-Ersatz). pp je Stufe I/II/III/IV.
 export const PRECISION_SHARP_PP   = [0.06, 0.09, 0.12, 0.15];
-// Wucht (+Crit-Multiplikator auf Basis 1,5) — Crit-Schaden (Mult-Stat-Ersatz). ×-Bonus je Stufe.
+// Wucht (+Crit-Multiplikator auf Basis 1,5) — der Mult-Stat-Ersatz. ×-Bonus je Stufe.
 export const PRECISION_FORCE_MULT = [0.25, 0.40, 0.60, 0.90];
 // Zielsicherheit (+Crit-Chance auf HOHE Karten; Schwelle weitet sich) — Hochwert-/Überlegenheits-Builds (Feuer-Marge).
 export const PRECISION_AIM_THRESH = [9, 8, 7, 6];   // Karten ≥ Schwelle je Stufe

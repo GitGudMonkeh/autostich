@@ -48,7 +48,7 @@ export const CATEGORIES = {
   C: { key: "C", name: "Rolle",  desc: "Kartenrollen",             color: "#5ab87a" },
   D: { key: "D", name: "Score",  desc: "Score",                   color: "#d4a63a" },
   E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
-  P: { key: "P", name: "Präzision", desc: "Crit-Chance & Crit-Schaden", color: "#e08a3a" }, // #267: Crit-Perk-Kategorie
+  P: { key: "P", name: "Präzision", desc: "Crit-Chance & Crit-Multiplikator", color: "#e08a3a" }, // #267: Crit-Perk-Kategorie
 };
 
 export const PERK_DEFS = {
@@ -83,7 +83,7 @@ export const PERK_DEFS = {
         desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Stichwert (bis eine Niederlage eintritt).`,
         cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
-        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} % Crit-Chance. Über 100 % Gesamt-Crit wird der Überschuss zu Crit-Schaden (max +100 %).`,
+        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} pp Crit-Chance. Übersteigt deine Gesamt-Crit-Chance 100 %, hebt der Überschuss zusätzlich den Crit-Multiplikator — je 100 Prozentpunkte +1,00×, höchstens +1,00×.`,
         critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
@@ -273,8 +273,9 @@ export function totalCritChanceRaw(state = {}) {
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist
 // weg → die Präzision-Familie „Wucht" (familyCritMult) UND Blitz addiert die Engine SEPARAT (nicht hier). Signatur
-// (perks, ctx) bleibt für die Aufrufer stabil. #115: L6 „Raserei" wandelt Crit-Überschuss >100 % in Crit-Schaden
-// (erwartet `rawCrit` im ctx).
+// (perks, ctx) bleibt für die Aufrufer stabil. #115: L6 „Raserei" hebt aus dem Crit-Überschuss >100 % den Crit-
+// MULTIPLIKATOR (erwartet `rawCrit` im ctx), gedeckelt auf +1,00× — der zweite Verwerter desselben Überschusses
+// neben Überschlag (der ihn in Ladung wandelt). Beide sind gedeckelt bzw. selbstlimitierend (Crit-Bändigung).
 export function critMultiplierFor(perks, ctx = {}) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }

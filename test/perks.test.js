@@ -57,7 +57,7 @@ describe("Legendäre Perks — Hooks (Legendär-Perks-Rework #203)", () => {
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(UNAUFHALTSAM_VALUE);
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 9 })).toBe(UNAUFHALTSAM_VALUE); // flach, kein Snowball
   });
-  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Schaden (kein cardBonus) (#115)", () => {
+  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Multiplikator (kein cardBonus) (#115)", () => {
     expect(PERK_DEFS.L6.cardBonus).toBeUndefined();
     expect(PERK_DEFS.L6.critChance({ winStreak: 5 })).toBeCloseTo(0.25);
     expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5);
