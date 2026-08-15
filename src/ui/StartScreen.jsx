@@ -48,16 +48,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
   const progDp = Math.max(0, Math.floor(Number(prof.deckPoints) || 0)); // #299/#301: Deck-Punkte-Guthaben (Werkstatt-Währung)
   const progOwned = ownedCount(prof);
-  /* Erstkontakt: noch kein Lauf beendet UND das Tutorial nie gesehen. Nur dann darf der Einstieg laut sein
-     (Plan §13.4) — danach bleibt er der ruhige Chip unten. Seit dem Onboarding-Rückbau (#316) ist das
-     Tutorial die EINZIGE Führung für neue Spieler; ohne dieses Angebot fände es kaum jemand. */
-  /* Der Tutorial-Einstieg (lautes Angebot UND ruhiger Chip) verschwindet, sobald EIN Lauf
-     abgeschlossen ist — egal ob es der geführte war. Wer die Schleife einmal ganz gesehen hat,
-     braucht den Einstieg nicht dauerhaft im Menü; wiederholen lässt er sich weiterhin über einen
-     Profil-Reset. Vorher hing das Angebot an `games === 0` (zählte auch Abbrüche) und der Chip
-     blieb für immer stehen. */
-  const tutorialOffered = !!onTutorial && !prof.hadCompletedRun;
-  const firstContact = tutorialOffered && !tutorialDone && (Number(prof.games) || 0) === 0;
+  /* #tutorial-sichtbarkeit: Nur das LAUTE Angebot über „Normaler Lauf" verschwindet, sobald der Spieler seinen
+     ersten (Best-)Lauf ABGESCHLOSSEN hat (hadCompletedRun kippt genau beim ersten completed-Lauf, nicht bei
+     Abbrüchen) oder das Tutorial gesehen wurde — danach braucht der Einstieg keinen prominenten Platz mehr.
+     Der ruhige Tutorial-CHIP unten neben „Optionen" BLEIBT dagegen dauerhaft (jederzeit wiederholbar), solange
+     ein Tutorial-Handler existiert. Seit dem Onboarding-Rückbau (#316) ist das Tutorial die EINZIGE Führung. */
+  const canTutorial = !!onTutorial;                                            // Chip unten: immer verfügbar
+  const firstContact = canTutorial && !prof.hadCompletedRun && !tutorialDone;  // lautes Angebot: bis zum ersten abgeschlossenen Lauf
   const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
   const progLigaFree = treeComplete(prof);
   const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
@@ -339,7 +336,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {onOptions && (
             <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
           )}
-          {tutorialOffered && (
+          {canTutorial && (
             <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
           )}
         </div>
