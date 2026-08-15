@@ -137,3 +137,14 @@ export function fmtPct(x, locale) {
   const n = Math.round(x * 100);
   return loc === "de" ? `${n} %` : `${n}%`;
 }
+
+/* Kurzes Tagesdatum (Tag.Monat) — die Reihenfolge unterscheidet sich: de „24.12." · en „12/24".
+   Bewusst NICHT über `toLocaleDateString`: dessen Ausgabe hängt an der Browser-Sprache, nicht an
+   der im Spiel gewählten. Nur diese beiden Sprachen, deshalb reicht die kleine Fallunterscheidung. */
+export function fmtDayMonth(ts, locale) {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return (locale || current) === "de" ? `${dd}.${mm}.` : `${mm}/${dd}`;
+}

@@ -36,6 +36,15 @@ export const rarityLabel = (tier) => t(`rarity.tier${tier}.label`);
 // Angezeigter Farbname. Unbekannt/leer → derselbe Gedankenstrich wie `suitName` im Register.
 export const suitLabel = (s) => (s && SUITS[s] ? t(`suit.${s}.name`) : "—");
 
+/* ---- Anker-Typen ----
+   Standen als ANCHOR_LABEL-Objekt doppelt in CardGrid.jsx UND ChronikOverview.jsx. Jetzt eine
+   Quelle im Katalog; unbekannter Typ fällt auf den rohen Schlüssel zurück (wie vorher). */
+export const anchorLabel = (type) => {
+  const key = `anchor.${type}.label`;
+  const s = t(key);
+  return s === key ? type : s;
+};
+
 /* ---- Architekt-Kategorien (ARCH_CAT) ----
    Liegt als einziges Register in der UI-Schicht (ui/indicators/vocab.js) — es ist reines
    Anzeige-Vokabular. Der Leser gibt den Eintrag mit übersetztem Label zurück. */

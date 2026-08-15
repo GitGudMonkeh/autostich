@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { weekModList } from "../i18n/labels.js"; // #sprache: Wochen-Mods zur Anzeigezeit
+import { t } from "../i18n/index.js";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-Rahmen (wie BuildPanel)
 
 /* #381/#385 Gemeinsame Wochen-Modifikatoren-Anzeige (Ranked-Screen UND Battlefield-Panel).
@@ -12,7 +13,7 @@ export const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
 export function catalogDisplayMods() {
   return weekModList().map((m) => ({
     id: m.id, sign: m.sign, name: m.name, effect: m.effect, pair: !!m.pair,
-    text: m.desc(m.range ? m.range[0] : undefined) + (m.range ? ` (${m.range[0]}–${m.range[1]})` : ""),
+    text: m.desc(m.range ? m.range[0] : undefined) + (m.range ? t("weekmods.range", { from: m.range[0], to: m.range[1] }) : ""),
   }));
 }
 
@@ -57,7 +58,7 @@ export function WeekModPanel({ mods, className = "" }) {
   return (
     <div className={`rounded-xl p-4 as-panel as-panel-deck ${className}`}
       style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Wochen-Modifikatoren</div>
+      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("weekmods.title")}</div>
       <WeekModChips mods={mods} />
     </div>
   );

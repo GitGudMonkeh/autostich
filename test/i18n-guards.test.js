@@ -113,6 +113,17 @@ describe("i18n · Katalog-Parität", () => {
     "archcat.formation.label", // „Formation" — beide Sprachen gleich
     "arch.cell.building",     // reine Struktur: „{name} ({tier})"
     "arch.cell.pos",          // „Pos {pos}" — Kürzel, in beiden Sprachen gleich
+    // Meta-Bildschirme: Fachwörter, Eigennamen und reine Zahlen-/Strukturzeilen.
+    "stats.seed",             // „Seed {code}" — Seed bleibt Seed (§3.1)
+    "graphs.src.formation",   // „Formation"
+    "graphs.src.crit",        // „Crit" (§3.1)
+    "chronik.anchor.row",     // reine Struktur: „⚓ Pos {pos} · {type}"
+    "anchor.score.label",     // Score bleibt Score (§3.1)
+    "anchor.crit.label",      // „Crit" (§3.1)
+    "anchor.formation.label", // „Formation"
+    "board.tab.challenger",   // „Challenger" ist der Name des Modus
+    "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
+    "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"
   ]);
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
@@ -193,6 +204,9 @@ describe("i18n · Zahl- und Satzformate", () => {
   const NUM_OK = new Map([
     ["ability.SK_FIRE_L02.desc", "de „1×/Durchlauf“ → en „once per cycle“; „1× per cycle“ wäre steifes Englisch"],
     ["glossary.rankedrun.text", "de „Platz 1“ → en „first place“; „place 1“ liest sich im Englischen falsch"],
+    // Dieselbe Stelle noch zweimal im Ranglisten-Bildschirm — gleiche Begründung.
+    ["board.rules.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
+    ["board.champions.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
   ]);
 
   it("beide Sprachen nennen dieselben Zahlen", () => {
@@ -417,7 +431,11 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",
     "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx",
     // Der Architekt — der größte Einzelbildschirm des Spiels.
-    "src/ui/ArchitectScreen.jsx"];
+    "src/ui/ArchitectScreen.jsx",
+    // Nach dem Lauf: Statistik, Chronik, Bestenliste und ihre Bausteine.
+    "src/ui/StatsScreen.jsx", "src/ui/RunStats.jsx", "src/ui/RunDetail.jsx", "src/ui/RunGraphs.jsx",
+    "src/ui/ChronikOverview.jsx", "src/ui/LeaderboardScreen.jsx", "src/ui/GlobalLeaderboard.jsx",
+    "src/ui/SeedChip.jsx", "src/ui/Sparkline.jsx", "src/ui/WeekMods.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

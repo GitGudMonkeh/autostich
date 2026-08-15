@@ -6,6 +6,7 @@ import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
@@ -83,9 +84,9 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       {error ? (
         <div className="text-xs opacity-40 text-center py-3">{boardLabel} nicht verfügbar.</div>
       ) : rows === null ? (
-        <div className="text-xs opacity-40 text-center py-3">Lädt Bestenliste …</div>
+        <div className="text-xs opacity-40 text-center py-3">{t("board.loading")}</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">Noch keine Einträge — mach den Anfang.</div>
+        <div className="text-xs opacity-40 text-center py-3">{t("board.empty")}</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {
@@ -94,7 +95,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null; // Medaillen für die Top 3
             return (
               // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
-              <button key={r.id ?? `${r.name}:${r.score}:${r.tricks}:${r.cycles}`} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title="Details anzeigen"
+              <button key={r.id ?? `${r.name}:${r.score}:${r.tricks}:${r.cycles}`} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title={t("stats.showDetails")}
                 className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
                   border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>

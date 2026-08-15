@@ -4,7 +4,7 @@ import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartex
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
-import { t, t as tr } from "../i18n/index.js"; // #sprache (tr = Alias, wo `t` lokal die Schwelle ist)
+import { t, t as tr, fmtNum } from "../i18n/index.js"; // #sprache (tr = Alias, wo `t` lokal die Schwelle ist)
 import { archetypeLabel } from "../i18n/labels.js"; // Fraktionsname aus dem Archetyp-Register
 
 const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
@@ -38,7 +38,7 @@ function AnvilIcon() {
   );
 }
 
-const grp = (n) => Math.round(n).toLocaleString("de-DE");
+const grp = (n) => fmtNum(Math.round(n));
 
 export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0, options = {}, onOption, manyActive = false }) {
   if (!heat || !heat.active) return null;

@@ -15,7 +15,7 @@ import FormIcon from "./FormIcon.jsx";
 import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 import { archFamily, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
-import { t } from "../i18n/index.js"; // #sprache
+import { t, fmtNum } from "../i18n/index.js"; // #sprache
 
 // #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -287,7 +287,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   {motor.map((m) => (
                     <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}` }}>
                       <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
-                      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={m.value.toLocaleString("de-DE")} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
+                      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
                     </div>
                   ))}
                 </div>

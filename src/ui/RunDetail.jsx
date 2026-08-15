@@ -8,6 +8,7 @@ import { fmtScore } from "./format.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
 import { archFamily, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
    denselben Statblock wie der eigene Victory-Screen (RunStats). Escape/Klick-außen schließt. `entry` ist bereits
@@ -40,11 +41,11 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}
           </div>
-          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
+          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
         <div className="text-center my-3">
           <div className="text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
-          <div className="text-xs opacity-50 mt-0.5">Score</div>
+          <div className="text-xs opacity-50 mt-0.5">{t("hud.score")}</div>
           {/* #205: Seed dieses Laufs — kopieren & (optional) nachspielen. Alt-Läufe ohne Seed zeigen nichts. */}
           {entry.seedCode && (
             <div className="flex justify-center mt-2">
@@ -57,7 +58,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}
         {!anonymized && entry.deckSnapshot?.cards?.length > 0 && (
           <details className="mt-4 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">Finale Aufstellung ansehen</summary>
+            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie im Victory-Screen. */}
               {hasArch && (
@@ -82,7 +83,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
               {hasArch && (
                 <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
                   <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Gebäude ({archBuildings.length})</div>
-                  <div className="text-[10px] opacity-45 mb-1.5">Antippen zeigt am Brett, wo es liegt.</div>
+                  <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
                     {archBuildings.map((b) => {
                       const fam = archFamily(b.familyId); if (!fam) return null;

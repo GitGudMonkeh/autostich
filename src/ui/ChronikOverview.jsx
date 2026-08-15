@@ -6,7 +6,8 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
-import { archFamily, formationName, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Formationsname zur Anzeigezeit
+import { archFamily, formationName, archCatList, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
+import { t, fmtNum } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
@@ -23,7 +24,6 @@ const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (
 /* Chronik-Kartenübersicht (§22.11): alle 40 Karten in aktueller Reihenfolge — nur Anzeige,
    mit Formations- und Rollen-Markern. Klick auf eine Karte zeigt Rolle & Modifikatoren (#95.5).
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 // #127: Preisstufen-Label/Farbe (wie ShopScreen) für die Kauf-Übersicht.
 // #127: kompakte Ziel-Beschriftung eines Kauf-Log-Eintrags (Position/Segment/Farbpaar/Grenze/Typ/Kategorie/Karten).
 
@@ -70,10 +70,10 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
         <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-4 flex items-center justify-between relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div>
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Chronik</div>
-            <h2 className="text-xl font-bold">Kartenübersicht</h2>
+            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("chronik.eyebrow")}</div>
+            <h2 className="text-xl font-bold">{t("chronik.title")}</h2>
           </div>
-          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>Schließen</ActionButton>
+          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
 
         <div className="md:flex md:gap-4 md:items-start">
@@ -122,10 +122,10 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
               <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-                <div className="uppercase tracking-wide opacity-50 mb-1">Anker</div>
+                <div className="uppercase tracking-wide opacity-50 mb-1">{t("chronik.anchors")}</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {anchors.map((a, i) => (
-                    <span key={i} style={{ color: "#5a8ade" }}>⚓ Pos {a.position + 1} · {ANCHOR_LABEL[a.type] || a.type}</span>
+                    <span key={i} style={{ color: "#5a8ade" }}>{t("chronik.anchor.row", { pos: a.position + 1, type: anchorLabel(a.type) })}</span>
                   ))}
                 </div>
               </div>
@@ -135,7 +135,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
         </div>
 
         {/* #UI: Deck-Stärke „hoch" — eigenes klappbares Feld über der Formations-/Architekt-Übersicht (wie Perk-Auswahl). */}
-        <CollapsibleField title="Deck-Stärke je Farbe" className="mt-4">
+        <CollapsibleField title={t("perk.deckStrength")} className="mt-4">
           <DeckStrength deck={deck} />
         </CollapsibleField>
 
@@ -144,8 +144,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
           {/* Aktuelle Formationen — kompakt (aktive Typen + Höchst-Multiplikator), ohne zweites Karten-Grid. */}
           <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase tracking-wide opacity-50">Aktuelle Formationen</span>
-              <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{formCount} · max ×{fmtX(formMaxMult)}</span>
+              <span className="text-[11px] uppercase tracking-wide opacity-50">{t("chronik.formations")}</span>
+              <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{t("formpanel.count", { n: formCount, max: fmtX(formMaxMult) })}</span>
             </div>
             {Object.keys(formByType).length ? (
               <div className="flex flex-wrap gap-1.5">
@@ -156,7 +156,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 ))}
               </div>
             ) : (
-              <div className="text-[11px] opacity-40">Keine aktiven Formationen mit Multiplikator.</div>
+              <div className="text-[11px] opacity-40">{t("chronik.noFormations")}</div>
             )}
           </div>
 
@@ -164,9 +164,9 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
           {archBuildings.length > 0 && (
             <div className="rounded-lg p-3 sm:col-span-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wide opacity-50">🏗 Architektenphase</span>
+                <span className="text-[11px] uppercase tracking-wide opacity-50">{t("chronik.archPhase")}</span>
                 <span className="text-[11px] font-bold" style={{ color: ARCH_CAT?.value?.color || "#8a7de0" }}>
-                  {archBuildings.length} Gebäude · {archOcc}/{archMax} Zellen
+                  {t("chronik.archCount", { n: archBuildings.length, used: archOcc, max: archMax })}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -185,7 +185,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
         </div>
 
         {/* #UI: Referenz-Legende ganz nach unten, als klappbares Feld (default zu) — verstellt die Übersicht nicht mehr. */}
-        <CollapsibleField title="Formationen & Rahmenfarben" defaultOpen={false} className="mt-3">
+        <CollapsibleField title={t("form.legend")} defaultOpen={false} className="mt-3">
           <FormationLegend state={state} />
         </CollapsibleField>
       </div>

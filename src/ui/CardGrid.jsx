@@ -9,7 +9,7 @@ import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { glacierFormations } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
-import { familyDef, perkDef } from "../i18n/labels.js"; // #sprache: Perks zur Anzeigezeit
+import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
 // #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
@@ -17,7 +17,6 @@ import { t } from "../i18n/index.js";
 const EMPTY_ROLES = [];
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
-const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // #UI: Architekt-Overlay als EIN durchgezogener Rahmen in GEBÄUDE-FORM (statt Kästen um jede Karte). Aus den gemessenen
@@ -109,7 +108,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
     : "#20202a";
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
-      title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
+      title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
       className={`as-tile relative rounded-lg flex flex-col items-center justify-center transition-all${structLit ? " arch-struct-lit" : ""}`}
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher

@@ -3,6 +3,7 @@
 // liefert eine kompakte Zähler-Zelle für Sekundär-Akkus (Asche/Schmieden; später Blitz/Eis/Pflanze).
 
 import { PANEL_CARD } from "../modalStyle.jsx";
+import { fmtNum } from "../../i18n/index.js"; // #sprache: Trennzeichen folgen der Sprache
 
 // Alle Fraktions-/Indikator-Panels teilen die gemeinsame In-Run-Schale (Verlaufsfläche + Rahmen).
 export const PANEL_STYLE = PANEL_CARD;
@@ -54,7 +55,7 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
 // „Auf einen Blick, wie mein Motor läuft": ein gestapelter Anteils-Balken zeigt, WELCHE Fantasie gerade trägt, die
 // Summe die Größenordnung. NUR aktive Kanäle (value > 0) erscheinen — leere Fantasien bleiben aus (kein überfülltes
 // Panel). Gibt null zurück, solange der Archetyp noch nichts eingespielt hat. `channels`: [{ label, value, color }].
-const nfmt = (n) => Math.round(n).toLocaleString("de-DE");
+const nfmt = (n) => fmtNum(Math.round(n));
 export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
   const active = channels.filter((c) => c.value > 0);
   const total = active.reduce((t, c) => t + c.value, 0);

@@ -61,6 +61,8 @@ bewusst, weil die Ziffer im Englischen steif klingt — beide stehen mit Begrün
 
 - **Phönixfeuer**: de „entzündet sich 1×/Durchlauf neu" → en „reignites once per cycle".
 - **Ranglisten-Lauf**: de „wandert Platz 1 ins Archiv" → en „first place moves into the archive".
+  Dieselbe Formulierung steht inzwischen an drei Stellen (Glossar, Regeln-Reiter, Challenger-Archiv)
+  und trägt überall dieselbe Ausnahme — sie steht oder fällt gemeinsam.
 
 Sag Bescheid, wenn dir die Ziffer lieber ist — dann fällt die Ausnahme weg.
 
