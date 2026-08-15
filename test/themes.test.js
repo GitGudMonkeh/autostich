@@ -56,28 +56,28 @@ describe("packs — Zustände & Besitz", () => {
     const t = THEME_DEFS.sunset;
     expect(packState(prof(), t)).toBe("buy");
     expect(packOwned(prof(), t)).toBe(false);
-    expect(packPrice(t)).toBe(10);   // #307: Sunset Rider = 10 DP (je Pack eigener Preis)
+    expect(packPrice(t)).toBe(20);   // #307: Sunset Rider = 20 DP (je Pack eigener Preis)
   });
   it("#307: jedes Kauf-Pack trägt seinen DP-Preis (packPrice = pack.price)", () => {
-    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, wale: 15 };
+    const want = { lofi: 10, cat: 10, spacedog: 10, beach: 20, sunset: 20, wale: 30 };
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {
-    expect(packPrice(THEME_DEFS.ronin)).toBe(15);
-    expect(packPrice(THEME_DEFS.kosmos)).toBe(10);
+    expect(packPrice(THEME_DEFS.ronin)).toBe(30);
+    expect(packPrice(THEME_DEFS.kosmos)).toBe(20);
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
-    expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
+    expect(packPrice(THEME_DEFS.geometrie)).toBe(10);
   });
-  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 10 DP", () => {
+  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 20 DP", () => {
     for (const id of ["sonne", "drache"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(isBuyPack(t)).toBe(true);
       expect(t.els).toEqual(["deck", "bf"]);
-      expect(packPrice(t)).toBe(10);
+      expect(packPrice(t)).toBe(20);
     }
-    expect(canBuyPack(prof({ deckPoints: 9 }), THEME_DEFS.sonne)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), THEME_DEFS.drache)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 19 }), THEME_DEFS.sonne)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), THEME_DEFS.drache)).toBe(true);
   });
   it("#310: canBuyPack/buyPack rechnen mit dem Pack-Preis (Roter Oni = 20 DP)", () => {
     const oni = THEME_DEFS.oni;
@@ -203,21 +203,21 @@ describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", (
 
 describe("packs — Kauf-Ökonomie (#299: DP)", () => {
   it("canBuyPack: nur Kauf-Pack, genug DP (Pack-Preis), noch nicht im Besitz", () => {
-    const t = THEME_DEFS.sunset; // 10 DP
-    expect(canBuyPack(prof({ deckPoints: 9 }), t)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), t)).toBe(true);
-    expect(canBuyPack(prof({ deckPoints: 10, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+    const t = THEME_DEFS.sunset; // 20 DP
+    expect(canBuyPack(prof({ deckPoints: 19 }), t)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), t)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 20, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
     // SP allein reichen nicht (Pack läuft über DP)
     expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
     // Nicht-Kauf-Pack (synthetisch) ist niemals kaufbar
     expect(canBuyPack(prof({ deckPoints: 99 }), { kind: "cond", deckId: "x" })).toBe(false);
   });
   it("buyPack zieht den Pack-Preis in DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
-    const t = THEME_DEFS.lofi; // 5 DP
-    const p0 = prof({ deckPoints: 5 + 2, deckSpent: 2 });
+    const t = THEME_DEFS.lofi; // 10 DP
+    const p0 = prof({ deckPoints: 10 + 2, deckSpent: 2 });
     const p1 = buyPack(p0, t);
     expect(p1.deckPoints).toBe(2);
-    expect(p1.deckSpent).toBe(2 + 5);
+    expect(p1.deckSpent).toBe(2 + 10);
     expect(p1.stichPoints).toBe(p0.stichPoints); // SP unberührt
     expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
     expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert

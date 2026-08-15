@@ -146,20 +146,20 @@ const packName = (deckId) => (DECK_DEFS[deckId] || {}).name || deckId;
 
 export const THEME_DEFS = {
   // ---- Kaufbare Packs (1 Kauf = Deck + Battlefield) — #307 je Pack ein eigener DP-Preis ----
-  sunset: { id: "sunset", name: packName("deck_sunset"), emblem: "🏍️", kind: "buy", price: 10, a1: "#ff5a4d", a2: "#ffab3a",
+  sunset: { id: "sunset", name: packName("deck_sunset"), emblem: "🏍️", kind: "buy", price: 20, a1: "#ff5a4d", a2: "#ffab3a",
     deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf"] },
-  lofi:   { id: "lofi",   name: packName("deck_lofi"),      emblem: "🦊", kind: "buy", price: 5, a1: "#bcd8ff", a2: "#7fb0ff",
+  lofi:   { id: "lofi",   name: packName("deck_lofi"),      emblem: "🦊", kind: "buy", price: 10, a1: "#bcd8ff", a2: "#7fb0ff",
     deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf"] },
   // #IP: „Neon Kaiju" / „Super Aura" / „Mecha Ronin" wegen IP-Bedenken entfernt.
 
   // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield) ----
-  beach:    { id: "beach",    name: packName("deck_beach"),     emblem: "🌴", kind: "buy", price: 10, a1: "#ff5aa0", a2: "#35d0e0",
+  beach:    { id: "beach",    name: packName("deck_beach"),     emblem: "🌴", kind: "buy", price: 20, a1: "#ff5aa0", a2: "#35d0e0",
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
-  cat:      { id: "cat",      name: packName("deck_cat"),        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
+  cat:      { id: "cat",      name: packName("deck_cat"),        emblem: "🌿", kind: "buy", price: 10, a1: "#54e08a", a2: "#35e0c8",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
-  spacedog: { id: "spacedog", name: packName("deck_spacedog"),   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
+  spacedog: { id: "spacedog", name: packName("deck_spacedog"),   emblem: "🐆", kind: "buy", price: 10, a1: "#9b6cff", a2: "#ff4dcb",
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
-  wale:     { id: "wale",     name: packName("deck_wale"),       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
+  wale:     { id: "wale",     name: packName("deck_wale"),       emblem: "🐋", kind: "buy", price: 30, a1: "#35d0ff", a2: "#7fdcff",
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
   // Genesis = Onboarding-Starter → Bedingungs-Pack (kind "cond"): NICHT kaufbar, frei nach abgeschlossenem
   // Onboarding (6/6). Bedingung kommt via packCond aus deck_onboarding.unlock ({ kind: "onboardingDone" }).
@@ -221,30 +221,30 @@ export const THEME_DEFS = {
     deckId: "deck_elementar", bfId: "bf_elementar", els: ["deck", "bf"] },
 
   // ---- #310 DP-Kauf-Packs (kind "buy", eigener Preis via price) ----
-  ronin:     { id: "ronin",     name: packName("deck_ronin"),          emblem: "⚔️", kind: "buy", price: 15, a1: "#ff2f4f", a2: "#4aa8ff",
+  ronin:     { id: "ronin",     name: packName("deck_ronin"),          emblem: "⚔️", kind: "buy", price: 30, a1: "#ff2f4f", a2: "#4aa8ff",
     deckId: "deck_ronin",     bfId: "bf_ronin",     els: ["deck", "bf"] },
-  kosmos:    { id: "kosmos",    name: packName("deck_kosmos"), emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
+  kosmos:    { id: "kosmos",    name: packName("deck_kosmos"), emblem: "🕳️", kind: "buy", price: 20, a1: "#ff4dcb", a2: "#7b5cff",
     deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
   oni:       { id: "oni",       name: packName("deck_oni"),      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
     deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
-  geometrie: { id: "geometrie", name: packName("deck_geometrie"),         emblem: "😇", kind: "buy", price: 5,  a1: "#ffe08a", a2: "#fff2c0",
+  geometrie: { id: "geometrie", name: packName("deck_geometrie"),         emblem: "😇", kind: "buy", price: 10,  a1: "#ffe08a", a2: "#fff2c0",
     deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
 
   // ---- #311 DP-Kauf-Packs (je 10 DP) ----
-  sonne:  { id: "sonne",  name: packName("deck_sonne"),         emblem: "🐉", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
+  sonne:  { id: "sonne",  name: packName("deck_sonne"),         emblem: "🐉", kind: "buy", price: 20, a1: "#ffb02a", a2: "#ff6a2a",
     deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
-  drache: { id: "drache", name: packName("deck_drache"),     emblem: "🏮", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
+  drache: { id: "drache", name: packName("deck_drache"),     emblem: "🏮", kind: "buy", price: 20, a1: "#ffcf5a", a2: "#ff5a2a",
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
-  arcade:     { id: "arcade",     name: packName("deck_arcade"),     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
+  arcade:     { id: "arcade",     name: packName("deck_arcade"),     emblem: "💎", kind: "buy", price: 20, a1: "#39e64d", a2: "#38c6e0",
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
-  polarlicht: { id: "polarlicht", name: packName("deck_polarlicht"),     emblem: "🪲", kind: "buy", price: 10, a1: "#2ee0c0", a2: "#ffcf3a",
+  polarlicht: { id: "polarlicht", name: packName("deck_polarlicht"),     emblem: "🪲", kind: "buy", price: 20, a1: "#2ee0c0", a2: "#ffcf3a",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
-  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
+  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 20, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
   // Obsidian — monochromes Kristall-Monolith-Pack (schwarz mit weiß glühenden Rissen).
-  obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 15, a1: "#e8edf5", a2: "#9aa6bd",
+  obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 30, a1: "#e8edf5", a2: "#9aa6bd",
     deckId: "deck_obsidian",   bfId: "bf_obsidian",   els: ["deck", "bf"] },
 
   // ---- #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Elementar-Kreaturen ----
