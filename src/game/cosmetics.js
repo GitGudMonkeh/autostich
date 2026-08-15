@@ -40,7 +40,6 @@ export const DECK_DEFS = {
   // v0.4 Kauf-Packs:
   deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   deck_cat:        { id: "deck_cat",        name: "Biolumen", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  deck_ramen:      { id: "deck_ramen",      name: "Slurp City",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   deck_spacedog:   { id: "deck_spacedog",   name: "Kosmospanther",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
@@ -82,7 +81,6 @@ export const BATTLEFIELD_DEFS = {
   // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
   bf_beach:      { id: "bf_beach",      name: "Malibu Wave · Battlefield",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   bf_cat:        { id: "bf_cat",        name: "Biolumen · Battlefield", unlock: { kind: "buy", ownKey: "pack:cat" } },
-  bf_ramen:      { id: "bf_ramen",      name: "Slurp City · Battlefield",      unlock: { kind: "buy", ownKey: "pack:ramen" } },
   bf_spacedog:   { id: "bf_spacedog",   name: "Kosmospanther · Battlefield",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
   bf_wale:       { id: "bf_wale",       name: "Moonwhale · Battlefield",       unlock: { kind: "buy", ownKey: "pack:wale" } },
   bf_onboarding: { id: "bf_onboarding", name: "Genesis · Battlefield",         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei

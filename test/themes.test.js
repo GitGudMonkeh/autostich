@@ -15,7 +15,7 @@ const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSp
 
 describe("packs — Registry", () => {
   it("Kauf-Packs (Deck + Battlefield) als EIN Kauf — inkl. v0.4-Packs", () => {
-    for (const id of ["sunset", "lofi", "beach", "cat", "ramen", "spacedog", "wale"]) {
+    for (const id of ["sunset", "lofi", "beach", "cat", "spacedog", "wale"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(t.els).toEqual(["deck", "bf"]);
@@ -53,7 +53,7 @@ describe("packs — Zustände & Besitz", () => {
     expect(packPrice(t)).toBe(10);   // #307: Sunset Rider = 10 DP (je Pack eigener Preis)
   });
   it("#307: jedes Kauf-Pack trägt seinen DP-Preis (packPrice = pack.price)", () => {
-    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, ramen: 10, wale: 15 };
+    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, wale: 15 };
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {

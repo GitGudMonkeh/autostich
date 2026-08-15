@@ -148,8 +148,6 @@ export const THEME_DEFS = {
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
   cat:      { id: "cat",      name: "Biolumen",        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
-  ramen:    { id: "ramen",    name: "Slurp City",      emblem: "🍜", kind: "buy", price: 10, a1: "#ff5a7a", a2: "#ffab3a",
-    deckId: "deck_ramen",      bfId: "bf_ramen",      els: ["deck", "bf"] },
   spacedog: { id: "spacedog", name: "Kosmospanther",   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
   wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",

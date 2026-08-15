@@ -16,8 +16,6 @@ import beachFront    from "../assets/cards/decks_player/deck_beach/front.webp"; 
 import beachBack     from "../assets/cards/decks_player/deck_beach/back.webp";
 import catFront      from "../assets/cards/decks_player/deck_cat/front.webp";        // Biolumen (ehem. Aurora Whiskers)
 import catBack       from "../assets/cards/decks_player/deck_cat/back.webp";
-import ramenFront    from "../assets/cards/decks_player/deck_ramen/front.webp";      // Slurp City
-import ramenBack     from "../assets/cards/decks_player/deck_ramen/back.webp";
 import spacedogFront from "../assets/cards/decks_player/deck_spacedog/front.webp";   // Kosmospanther (ehem. Star Pup)
 import spacedogBack  from "../assets/cards/decks_player/deck_spacedog/back.webp";
 import waleFront     from "../assets/cards/decks_player/deck_wale/front.webp";       // Moonwhale
@@ -54,8 +52,6 @@ import bfBeachDesktop    from "../assets/battlefields/bf_beach/desktop.jpg";
 import bfBeachMobile     from "../assets/battlefields/bf_beach/mobile.jpg";
 import bfCatDesktop      from "../assets/battlefields/bf_cat/desktop.jpg";
 import bfCatMobile       from "../assets/battlefields/bf_cat/mobile.jpg";
-import bfRamenDesktop    from "../assets/battlefields/bf_ramen/desktop.jpg";
-import bfRamenMobile     from "../assets/battlefields/bf_ramen/mobile.jpg";
 import bfSpacedogDesktop from "../assets/battlefields/bf_spacedog/desktop.jpg";
 import bfSpacedogMobile  from "../assets/battlefields/bf_spacedog/mobile.jpg";
 import bfWaleDesktop     from "../assets/battlefields/bf_wale/desktop.jpg";
@@ -144,7 +140,6 @@ export const DECK_ASSETS = {
   // v0.4 Kauf-Packs:
   deck_beach:      { front: beachFront,    back: beachBack },
   deck_cat:        { front: catFront,      back: catBack },
-  deck_ramen:      { front: ramenFront,    back: ramenBack },
   deck_spacedog:   { front: spacedogFront, back: spacedogBack },
   deck_wale:       { front: waleFront,     back: waleBack },
   deck_onboarding: { front: genesisFront,  back: genesisBack },
@@ -184,7 +179,6 @@ export const BATTLEFIELD_ASSETS = {
   // v0.4 Kauf-Packs:
   bf_beach:      { desktop: bfBeachDesktop,    mobile: bfBeachMobile },
   bf_cat:        { desktop: bfCatDesktop,      mobile: bfCatMobile },
-  bf_ramen:      { desktop: bfRamenDesktop,    mobile: bfRamenMobile },
   bf_spacedog:   { desktop: bfSpacedogDesktop, mobile: bfSpacedogMobile },
   bf_wale:       { desktop: bfWaleDesktop,     mobile: bfWaleMobile },
   bf_onboarding: { desktop: bfGenesisDesktop,  mobile: bfGenesisMobile },

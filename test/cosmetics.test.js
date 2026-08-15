@@ -22,7 +22,7 @@ describe("cosmetics — Katalog", () => {
     expect(unlockProgress(def, prof({ games: 4 })).cur).toBe(4);
   });
   it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
-    for (const id of ["deck_beach", "deck_cat", "deck_ramen", "deck_spacedog", "deck_wale"]) {
+    for (const id of ["deck_beach", "deck_cat", "deck_spacedog", "deck_wale"]) {
       const d = DECK_DEFS[id];
       expect(d).toBeTruthy();
       expect(d.unlock.kind).toBe("buy");
