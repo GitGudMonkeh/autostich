@@ -125,7 +125,10 @@ if (IS_CLI) {
     runs: Number(arg("--runs", 80)),
     exploreRuns: Number(arg("--explore", 300)),
     c: Number(arg("--c", 1.4)),
-    env: { solveFormations: arg("--formations", "0") === "1", frontLoad: arg("--frontload", "0") === "1" },
+    // architectGreedy default AN: mit Zufallsbau schließt der Architekt median 1 statt 6 Strukturen, womit sich
+    // JEDER Gebäude-Perk gegen ein kaputtes Brett misst (Richtfest/Bauhütte lasen sich deshalb als 1,00×).
+    // Der Baufeld-Deckel wird in beiden Modi voll ausgereizt (24/24) — es ist die PLANUNG, die fehlt, nicht die Fläche.
+    env: { solveFormations: arg("--formations", "0") === "1", frontLoad: arg("--frontload", "0") === "1", architectGreedy: arg("--greedyarch", "1") !== "0" },
     only: only ? only.split(",").map((s) => s.trim()).filter(Boolean) : null,
     pickFrom: Number(arg("--pickfrom", 0)),
   });

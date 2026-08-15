@@ -19,8 +19,11 @@ import { VABANQUE_TRICKS } from "../../src/game/constants.js";
 // gate { id, fromCycle }: `id` ist vor Durchlauf `fromCycle` nicht wählbar. Damit lässt sich der EINFLUSS DES
 //   PICK-ZEITPUNKTS messen (früh vs. spät erworben) — bei gedeckelten oder früh-lastigen Perks ist das ein
 //   eigener Balance-Hebel und nicht aus dem Gesamt-Marginalwert ablesbar.
-export function fixedPolicy(priority, { drop = null, solveFormations = false, frontLoad = false, gate = null } = {}) {
-  const base = randomPolicy();
+// architectGreedy: die Architekt-Phase mit der planenden Greedy-Policy statt zufällig bauen. Default AUS (Bestand),
+//   ABER für alles Gebäude-Bezogene Pflicht: mit Zufallsbau werden Strukturen kaum geschlossen und der Baufeld-Deckel
+//   nie erreicht → Gebäude-Perks (Richtfest/Bauhütte, Familien mit needsArchitect) messen sich systematisch auf 0.
+export function fixedPolicy(priority, { drop = null, solveFormations = false, frontLoad = false, gate = null, architectGreedy = false } = {}) {
+  const base = randomPolicy({ architectGreedy });
   const rank = new Map(priority.map((id, i) => [id, i]));
   const openTricks = typeof frontLoad === "number" ? frontLoad : VABANQUE_TRICKS;
   // Gesperrt = ablatiert (drop) ODER durch das Pick-Zeitfenster (gate) noch nicht freigegeben.
