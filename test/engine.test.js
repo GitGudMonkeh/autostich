@@ -790,17 +790,23 @@ describe("#370 Wochen-Mods: Bau-Boost (Architekt-Gebäude, nur Ranked)", () => {
   });
 });
 
-describe("#370 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
-  const hasLeg = (offer) => Array.isArray(offer) && offer.some((e) => typeof e === "string" && isLegendary(e));
-  it("Kadenz-Runde (cycle % mag === 0) erzwingt eine Legendär-Perk-Phase mit ≥1 Legendär", () => {
-    // cycle 2 + pos 39 → nach cycle+=1 = 3; mag 3 → 3 % 3 === 0 → erzwungene Legendär-Perk-Phase.
-    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+describe("#381 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
+  const legCount = (offer) => (Array.isArray(offer) ? offer.filter((e) => typeof e === "string" && isLegendary(e)).length : 0);
+  it("jede mag-te PERK-PHASE bietet 3 legendäre Perks", () => {
+    // Perk-Phasen liegen bei cycle 1,5,9 (perkPhaseAt = 1,2,3). mag 3 → pp 3 (cycle 9) ist Takt-Phase.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 8, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
     expect(s.phase).toBe("levelup");
-    expect(hasLeg(s.offer)).toBe(true);
+    expect(legCount(s.offer)).toBe(3); // alle 3 Angebots-Slots legendär
   });
-  it("gleiche Runde ohne Wochen-Mods folgt dem Plan (Plan[3] = shop, kein erzwungener Legendär)", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng);
-    expect(s.phase === "levelup" && hasLeg(s.offer)).toBe(false);
+  it("Nicht-Takt-Perk-Phase bleibt normal (< 3 Legendäre)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng); // cycle 1 = perkPhaseAt 1
+    expect(s.phase).toBe("levelup");
+    expect(legCount(s.offer)).toBeLessThan(3);
+  });
+  it("wandelt keine Nicht-Perk-Runde mehr um (Plan[3] = shop bleibt shop, keine Perk-Phase)", () => {
+    // cycle 2 + pos 39 → cycle 3 = shop (perkPhaseAt 0). Früher machte legTakt daraus eine Perk-Runde — jetzt nicht mehr.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).not.toBe("levelup");
   });
 });
 

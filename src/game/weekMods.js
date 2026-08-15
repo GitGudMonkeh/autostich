@@ -33,7 +33,7 @@ export const WEEK_MODS = [
   { id: "perkCap",      sign: "neg", pair: "perk",   effect: "perkCap",                       name: "Perk-Deckel",              desc: () => "Keine sehr seltenen/raren Perks" },
   // ---- Positiv-Pool (9) ----
   { id: "strongCards",  sign: "pos", pair: "cards",  effect: "cardValue",    range: [1, 3],   name: "Starke Karten",            desc: (v) => `Spielerkarten +${v} Wert` },
-  { id: "legTakt",      sign: "pos",                 effect: "legTakt",      range: [3, 5],   name: "Legendär-Takt",            desc: (v) => `Jede ${v}. Runde = Legendär-Perk-Phase` },
+  { id: "legTakt",      sign: "pos",                 effect: "legTakt",      range: [3, 5],   name: "Legendär-Takt",            desc: (v) => `Jede ${v}. Perk-Phase: 3 Legendär-Perks` },
   { id: "skillFull",    sign: "pos",                 effect: "skillSlots",   range: [1, 3],   name: "Skill-Fülle",              desc: (v) => `+${v} Skillslots` },
   { id: "doubleLeg",    sign: "pos",                 effect: "doubleLeg",                     name: "Doppel-Legendär",          desc: () => "2 legendäre Slots — in der Legendär-Phase 2 wählbar" },
   { id: "noBuildLimit", sign: "pos", pair: "build",  effect: "noBuildLimit",                  name: "Kein Gebäudelimit",        desc: () => "Unbegrenzt bauen" },

@@ -735,10 +735,11 @@ export function reducer(state, action) {
       const tokens = usePerk2 ? perk2 : (state.rerollsPerk || 0);     // #263: eigener Perk-Pool (+ #369 Phasen-Token)
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      // #370 Legendär-Takt: ist diese Runde eine Kadenz-Runde, behält der Reroll die Legendär-Garantie (≥1), wie die Engine.
+      // #381 Legendär-Takt: ist diese Perk-Phase eine Takt-Phase (jede mag-te), behält der Reroll die 3-Legendär-Garantie.
       const legTaktMag = weekModMag(state.weekMods, "legTakt");
-      const onLegTakt = legTaktMag > 0 && state.cycle > 0 && state.cycle % legTaktMag === 0;
-      const legForce = Math.max(inLegPerkPhase ? (state.treeLegForce2 || 0) : 0, onLegTakt ? 1 : 0);
+      const legTaktPP = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle);
+      const onLegTakt = legTaktMag > 0 && legTaktPP > 0 && legTaktPP % legTaktMag === 0;
+      const legForce = onLegTakt ? PERKS_OFFERED : (inLegPerkPhase ? (state.treeLegForce2 || 0) : 0);
       const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, legForce, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden · Legendär-Takt
       return { ...state, offer, offerRerolls: idx, ...(usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
