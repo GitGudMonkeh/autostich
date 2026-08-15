@@ -524,7 +524,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   // kein Schlucken durch den Cooldown und keine Drossel mehr nötig.
   const fire = () => {
     pop();
-    audio.play("fx_godlike", { gain: 0.55 });           // gemeinsamer Gott-Punch (wie in-game), je Loop hörbar
+    audio.play("fx_godlike", { gain: 0.9 });            // gemeinsamer Gott-Punch (wie in-game), je Loop — deutlich hörbar (0.55→0.9), damit auch die Prunks ohne eigenen Swell klar klingen
     if (sfx) audio.play(sfx, { gain: 0.9 });             // effekt-spezifischer Swell (Supernova) — voll je Loop, synchron
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
