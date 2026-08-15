@@ -54,6 +54,34 @@ describe("#370 weekMods — Auswahl-Invarianten (über viele Seeds)", () => {
       expect(new Set(pairs).size).toBe(pairs.length); // jedes Paar höchstens einmal vertreten
     }
   });
+
+  /* REGRESSION: Die Vorgängerfassung füllte auf `count` in EINER Schleife `[...POS, ...NEG]` auf. Weil immer genug
+     eligible Positive übrig waren, kam die Negativ-Hälfte nie dran — jede Woche hatte genau EINEN Negativen und die
+     vier GEPAARTEN Negativen waren über 200k Seeds unerreichbar (21 % des Katalogs tot). Die Invarianten-Tests oben
+     prüfen nur untere Schranken (≥2 pos / ≥1 neg) und blieben deshalb grün. Diese beiden Tests schließen die Lücke. */
+  const WIDE_SEEDS = Array.from({ length: 4000 }, (_, i) => i + 1);
+
+  it("jeder Mod im Katalog ist erreichbar (kein toter Eintrag)", () => {
+    const seen = new Set();
+    for (const seed of WIDE_SEEDS) for (const m of pickWeekMods(seed)) seen.add(m.id);
+    const missing = WEEK_MODS.map((m) => m.id).filter((id) => !seen.has(id));
+    expect(missing).toEqual([]);
+  });
+
+  it("die Negativ-Quote variiert und ist nach oben durch die Positiv-Quote begrenzt", () => {
+    const negCounts = new Set();
+    for (const seed of WIDE_SEEDS) {
+      const mods = pickWeekMods(seed);
+      const neg = mods.filter((m) => m.sign === "neg").length;
+      const pos = mods.length - neg;
+      expect(pos).toBeGreaterThanOrEqual(2);   // Untergrenze Positive (§5)
+      expect(neg).toBeGreaterThanOrEqual(1);   // Untergrenze Negative (§5)
+      expect(neg).toBeLessThanOrEqual(mods.length - 2); // Obergrenze folgt aus der Positiv-Quote
+      negCounts.add(neg);
+    }
+    // Nicht mehr konstant 1: bei 5 Mods sind 1–3 Negative möglich, bei 4 Mods 1–2.
+    expect([...negCounts].sort()).toEqual([1, 2, 3]);
+  });
 });
 
 describe("#370 weekMods — deterministisch & für alle gleich", () => {
