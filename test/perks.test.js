@@ -34,9 +34,10 @@ describe("Legendäre Perks — Hooks (Legendär-Perks-Rework #203)", () => {
   const KEPT = ["L2", "L4", "L6"];                                                   // behalten (Serie/Crit-Favoriten)
   const NEU  = ["L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT"]; // 8 neue generische (#203)
   const POOL = ["L_MONO", "L_RICHT", "L_BAUH"];                                      // Pool-Erweiterung: Farb- + Gebäude-Legendäre
+  const V03  = ["L_MEIS", "L_SCHM", "L_HOCH", "L_OPFER", "L_TAKT", "L_BALL", "L_FUND"]; // v0.3: Pool-Lücken (Ausbau/Deck/Segment/Nachteil)
 
-  it("die 14 Legendären sind legendär; die Erstgen (L1/L3/L5/L7–L11) ist entfernt", () => {
-    for (const id of [...KEPT, ...NEU, ...POOL]) expect(isLegendary(id)).toBe(true);
+  it("die 21 Legendären sind legendär; die Erstgen (L1/L3/L5/L7–L11) ist entfernt", () => {
+    for (const id of [...KEPT, ...NEU, ...POOL, ...V03]) expect(isLegendary(id)).toBe(true);
     for (const id of ["L1", "L3", "L5", "L7", "L8", "L9", "L10", "L11"]) expect(PERK_DEFS[id]).toBeUndefined();
     expect(isLegendary("E10")).toBe(false);
   });
@@ -135,8 +136,9 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
     expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie (#164)
   });
-  it("V2 §22.4 / #203 + Pool: genau die 14 Legendären sind legendär, alles andere normal", () => {
-    const LEGENDARY = new Set(["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO", "L_RICHT", "L_BAUH"]);
+  it("V2 §22.4 / #203 + Pool + v0.3: genau die 21 Legendären sind legendär, alles andere normal", () => {
+    const LEGENDARY = new Set(["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO", "L_RICHT", "L_BAUH",
+      "L_MEIS", "L_SCHM", "L_HOCH", "L_OPFER", "L_TAKT", "L_BALL", "L_FUND"]);
     for (const p of PERK_LIST) {
       if (LEGENDARY.has(p.id)) expect(p.rarity).toBe("legendary");
       else expect(p.rarity || "common").toBe("common");

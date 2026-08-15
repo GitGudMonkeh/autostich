@@ -6,6 +6,7 @@ import {
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
+import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
 import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
@@ -150,8 +151,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const committedCover = useMemo(() => occupiedCells(committed).size, [committed]);
 
   const effArch = useMemo(() => ({ ...architect, buildings }), [architect, buildings]);
-  const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck) : null), [effArch, order, deck, cards.length]);
-  const structF = useMemo(() => boardFactorMap(buildings), [buildings]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
+  // v0.3 „Fundament": Strukturfaktor-Bonus des Builds muss in JEDE Anzeige-Quelle, sonst zeigt der Bau-Screen
+  // andere Faktoren, als die Engine verrechnet (boardFactorMap ist bewusst die eine gemeinsame Quelle).
+  const fundBonus = useMemo(() => fundamentBonus(state.perks), [state.perks]);
+  const pre = useMemo(() => (cards.length ? precomputeArchitect(effArch, order, deck, fundBonus) : null), [effArch, order, deck, cards.length, fundBonus]);
+  const structF = useMemo(() => boardFactorMap(buildings, fundBonus), [buildings, fundBonus]); // #283: Struktur × Distrikt (gleiche Quelle wie die Engine)
   // #UI: Kombi-Anzeige getrennt — Struktur (volle Zeile/Spalte/Diagonale) → rote Fläche · Distrikt (gleiche Kategorie
   // aneinander) → Typ-Farb-Glow. Gleiche Quellen wie die Engine, nur einzeln statt kombiniert.
   const comboF    = useMemo(() => structureFactorMap(occupiedCells(buildings)), [buildings]);
@@ -540,7 +544,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     if (!dragPrev || !dragPrev.footprint.length) return null;
     const previewBuildings = buildings.map((x) => (x.id === dragPrev.id ? { ...x, footprint: [...dragPrev.footprint].sort((m, n) => m - n) } : x));
     const previewArch = { ...architect, buildings: previewBuildings };
-    const p2 = precomputeArchitect(previewArch, order, deck);
+    const p2 = precomputeArchitect(previewArch, order, deck, fundBonus);
     const val2 = cards.reduce((t, c, p) => t + c.value + (architectValueBonus(p2, p, c, alliance) || 0), 0);
     const previewForms = computeFormations(order, deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, previewArch);
     const form2 = summarizeFormations(previewForms).count;

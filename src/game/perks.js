@@ -1,6 +1,7 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw, familyCritMult } from "./families.js";
 import { TIERS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
+import { SEGMENT_SIZE } from "./formations.js";
 import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js";
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
@@ -49,6 +50,11 @@ export const CATEGORIES = {
   D: { key: "D", name: "Score",  desc: "Score",                   color: "#d4a63a" },
   E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
   P: { key: "P", name: "Präzision", desc: "Crit-Chance & Crit-Multiplikator", color: "#e08a3a" }, // #267: Crit-Perk-Kategorie
+  // v0.3: eigene Lane für Perks, die weder Brett noch Score anfassen, sondern den BAUSATZ des Laufs (Slots,
+  // Angebote, Ökonomie). CATEGORIES wird nur für Farbe/Label/Gruppierung gelesen (BuildSummary, StatsScreen);
+  // ein neuer Schlüssel ist für Legendäre gefahrlos, weil isMigratedPerk bei rarity "legendary" nie greift und
+  // das Familien-Angebot nur MIGRATED_CATS durchläuft.
+  S: { key: "S", name: "Ausbau", desc: "Slots & Ökonomie", color: "#5ec8c0" },
 };
 
 export const PERK_DEFS = {
@@ -117,9 +123,31 @@ export const PERK_DEFS = {
         desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) zusätzlich ${pct(C.RICHTFEST_STEP)} % des in diesem Durchlauf erspielten Scores.` },
   L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
         desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
+  // --- v0.3-Erweiterung (2026-08-15): 7 neue gegen die Pool-Lücken. Zwei davon (Opfergang, Ballast) haben als ERSTE
+  //     einen echten NACHTEIL — die #33-Definition „mächtig, aber mit Nachteil" hatte bis hier kein einziger Perk erfüllt. ---
+  L_MEIS: { id: "L_MEIS", cat: "S", rarity: "legendary", label: "Meisterhand", skillSlotBonus: C.MEISTERHAND_SLOTS,
+        desc: `Sofort: du hältst dauerhaft ${C.MEISTERHAND_SLOTS === 1 ? "einen Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr (${C.SKILL_SLOTS} → ${C.SKILL_SLOTS + C.MEISTERHAND_SLOTS}).` },
+  L_SCHM: { id: "L_SCHM", cat: "A", rarity: "legendary", label: "Schmiede", schmiede: C.SCHMIEDE_STEP,
+        desc: `Am Ende jedes Durchlaufs erhält die schwächste Karte deines Decks dauerhaft +${C.SCHMIEDE_STEP} Kartenwert.` },
+  L_HOCH: { id: "L_HOCH", cat: "D", rarity: "legendary", label: "Hochseil", hochseil: true,
+        desc: `Solange du in diesem Durchlauf noch keine Niederlage kassiert hast, zählt jeder Sieg ${de(C.HOCHSEIL_MULT)}-fach. Die erste Niederlage schaltet es bis zum nächsten Durchlauf ab.` },
+  L_OPFER: { id: "L_OPFER", cat: "A", rarity: "legendary", label: "Opfergang", opfergang: C.OPFERGANG_VALUE,
+        desc: `Sofort: alle Karten verlieren dauerhaft ${C.OPFERGANG_VALUE} Kartenwert (mindestens 1). Dafür zählt jeder Sieg ${de(C.OPFERGANG_MULT)}-fach.`,
+        scoreMult: () => C.OPFERGANG_MULT },
+  L_TAKT: { id: "L_TAKT", cat: "B", rarity: "legendary", label: "Taktschlag", taktschlag: true,
+        desc: `Gewinnst du alle ${SEGMENT_SIZE} Stiche eines Segments, zählt der abschließende Stich ${de(C.TAKTSCHLAG_MULT)}-fach.` },
+  L_BALL: { id: "L_BALL", cat: "E", rarity: "legendary", label: "Ballast", ballast: true, extraSwap: -C.BALLAST_ENERGY,
+        desc: `Jede Formationsphase hat ${C.BALLAST_ENERGY} Energie weniger. Dafür zählt jeder Formations-Multiplikator ${de(C.BALLAST_FORM_MULT)}-fach.` },
+  L_FUND: { id: "L_FUND", cat: "E", rarity: "legendary", label: "Fundament", fundament: C.FUNDAMENT_BONUS, needsArchitect: true,
+        desc: `Jede vollendete Struktur wirkt stärker: Zeile, Spalte und Diagonale geben je +${de(C.FUNDAMENT_BONUS)} auf ihren Faktor.` },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
+
+// Strukturfaktor-Bonus des Builds (v0.3 „Fundament"). Geteilte Quelle für Engine UND UI: boardFactorMap ist bewusst
+// die EINE Stelle, an der Brett-Faktoren entstehen — würde die Anzeige den Bonus nicht mitreichen, zeigte sie andere
+// Faktoren, als die Engine verrechnet.
+export const fundamentBonus = (perks = []) => perks.reduce((t, id) => t + (PERK_DEFS[id]?.fundament || 0), 0);
 
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";

@@ -198,7 +198,10 @@ export function resolveTrick(state, rng) {
   let archPreNow = architectPre;
   if (pos === 0) {
     formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
-    archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck) : null;
+    // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
+    // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
+    // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
+    archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck, flagValue(perks, "fundament")) : null;
   }
   // Eis-Neudesign (docs §2.4): Snapshot am Durchlauf-Start — der ganze Bruch wird auf dem statischen Brett vorab gerechnet
   // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
@@ -722,7 +725,17 @@ export function resolveTrick(state, rng) {
     // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
     // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
     const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
-    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx) * henkerMult; // globale Perk-/Familien-Multiplikatoren + Henker (#203)
+    // Hochseil (L_HOCH, v0.3): × solange der laufende Durchlauf OHNE Niederlage ist. cycleLosses zählt die Niederlagen
+    // DIESES Durchlaufs (Reset am Durchlauf-Ende) — bei einer Niederlage ist der Perk bis zum nächsten Durchlauf aus.
+    // Das ist bewusst ein SPÄTSPIEL-Perk: gemessen sind 0 % der Durchläufe 1–10 niederlagenfrei, aber 70 % der
+    // Durchläufe 41–50. Er greift also genau dort, wo der Score exponentiell läuft → MULT niedrig halten.
+    const hochseilMult = (ownsFlag(perks, "hochseil") && cycleLosses === 0) ? C.HOCHSEIL_MULT : 1;
+    // Taktschlag (L_TAKT, v0.3): der ABSCHLIESSENDE Stich eines komplett gewonnenen Segments zählt ×. segmentWins
+    // enthält diesen Sieg bereits (Zähler oben, vor dem Scoring) ⇒ volles Segment ⟺ segmentWins === SEGMENT_SIZE.
+    const taktschlagMult = (ownsFlag(perks, "taktschlag") && actualPos % SEGMENT_SIZE === SEGMENT_SIZE - 1
+      && segmentWins === SEGMENT_SIZE) ? C.TAKTSCHLAG_MULT : 1;
+    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx)
+      * henkerMult * hochseilMult * taktschlagMult; // globale Perk-/Familien-Multiplikatoren + Henker (#203) + Hochseil/Taktschlag (v0.3)
     // Formation (§22.7) in drei benannte Faktoren (§13): Basis-Formationen×Formations-Stat, dann die Shop-Meta-Faktoren
     // Nachhall (F6) und Formationskern (F-L1) je eigen. Produkt = formationMult × Stat (unverändert; Aufspaltung ist rein
     // für die Ergebnis-Aufschlüsselung — Multiplikation ist kommutativ).
@@ -738,7 +751,11 @@ export function resolveTrick(state, rng) {
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
     // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
     const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
-    let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    // Ballast (L_BALL, v0.3, NACHTEIL): × auf den Formations-Multiplikator; der Preis (BALLAST_ENERGY weniger
+    // Formationsenergie je Aufstellphase) hängt als negativer extraSwap am Perk und läuft über die bestehende
+    // Energie-Summe (reducer.js CONFIRM_FORMATION / engine.js Aufstell-Phase) — kein eigener Hook nötig.
+    const ballastMult = ownsFlag(perks, "ballast") ? C.BALLAST_FORM_MULT : 1;
+    let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult * ballastMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203) + Ballast (v0.3)
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * 2;
@@ -1241,6 +1258,15 @@ export function resolveTrick(state, rng) {
     if (ownsFlag(perks, "richtfest") && archPreNow) {
       richtfestBonus = cycleScoreSum * C.RICHTFEST_STEP * (archPreNow.structureCount || 0); // Telemetrie: Auszahlung dieses Durchlaufs
       cycleEndScore += richtfestBonus;
+    }
+    // Schmiede (L_SCHM, v0.3): die schwächste Deckkarte wird dauerhaft aufgewertet. Deterministisch: bei Gleichstand
+    // die Karte mit der kleinsten id, sonst hinge das Ergebnis an der Deck-Reihenfolge (Determinismus-Invariante §9).
+    // BEWUSST OHNE DECKEL (Entscheidung 2026-08-15): über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220.
+    const schmiedeStep = flagValue(perks, "schmiede");
+    if (schmiedeStep) {
+      let weakest = null;
+      for (const c of deck) if (!weakest || c.value < weakest.value || (c.value === weakest.value && c.id < weakest.id)) weakest = c;
+      if (weakest) deck = deck.map((c) => (c.id === weakest.id ? { ...c, value: c.value + schmiedeStep } : c));
     }
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die

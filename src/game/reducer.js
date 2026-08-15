@@ -446,16 +446,29 @@ export function reducer(state, action) {
         const avg = Math.round(state.deck.reduce((s, c) => s + c.value, 0) / Math.max(1, state.deck.length));
         deck = state.deck.map((c) => ({ ...c, value: avg }));
       }
+      // Opfergang (L_OPFER, v0.3, NACHTEIL): alle Karten verlieren sofort dauerhaft OPFERGANG_VALUE Kartenwert;
+      // die Gegenleistung (OPFERGANG_MULT) hängt als scoreMult am Perk und läuft automatisch über prodHook.
+      // KLEMMUNG bei 1: #34 hat die schwache 0 bewusst aus RANKS entfernt, also darf hier keine 0/negativ entstehen.
+      // Nebenwirkung der Klemmung (bewusst): in schwachen Decks sitzen viele Karten schon auf 1 → der Nachteil ist
+      // dort milder, in Hochwert-Decks voll wirksam. Der effektive Preis schwankt damit stark mit dem Build.
+      if (def.opfergang) deck = deck.map((c) => ({ ...c, value: Math.max(1, c.value - def.opfergang) }));
+      // Meisterhand (L_MEIS, v0.3): hebt den Skill-Slot-Deckel dauerhaft — dieselbe Naht wie die Wochen-Mod
+      // „Skill-Fülle" (#370). PICK_SKILL (unten) und SkillSelect lesen beide state.skillSlots || C.SKILL_SLOTS.
+      // commitScale behält bewusst C.SKILL_SLOTS als Nenner (#370-Entscheidung) → der Extra-Slot verwässert das
+      // Fraktions-Bekenntnis nicht.
+      const skillSlots = def.skillSlotBonus
+        ? (state.skillSlots || C.SKILL_SLOTS) + def.skillSlotBonus
+        : state.skillSlots;
       // Bauhütte (L_BAUH, Gebäude-Legendäres): hebt sofort dauerhaft den Baufeld-Deckel (maxCover) → mehr Bauplatz.
       const architect = def.bauhuette && state.architect
         ? { ...state.architect, maxCover: (state.architect.maxCover ?? ARCH_MAX_COVER) + C.BAUHUETTE_COVER }
         : state.architect;
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
-      const formations = def.redistribute
+      const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers)
         : state.formations;
-      return { ...state, perks, deck, architect, offer: null, formations,
+      return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
                phase: goTarget ? "target" : "play",
                targetPerk: goTarget ? perkId : null };
     }

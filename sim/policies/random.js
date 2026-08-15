@@ -19,7 +19,10 @@ const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 // Kann dieser Skill in einen freien Slot? Spiegelt die Free-Slot-Bedingungen von PICK_SKILL.
 export function canAddSkill(s, id) {
   if (s.skills.includes(id)) return false;
-  if (s.skills.filter((sid) => !isLegendarySkill(sid)).length >= SKILL_SLOTS) return false; // #272: der 7. Legendär-Slot zählt nicht gegen SKILL_SLOTS
+  // Slot-Deckel vom STATE lesen, nicht die Konstante: das Legendäre „Meisterhand" (v0.3) und die Wochen-Mod
+  // „Skill-Fülle" (#370) heben ihn zur Laufzeit. Mit der Konstante würde die Policy den Extra-Slot nie füllen und
+  // der Perk misst sich auf 1,00× — genau der Fehler, der bei Bauhütte/maxCover schon einmal passiert ist.
+  if (s.skills.filter((sid) => !isLegendarySkill(sid)).length >= (s.skillSlots || SKILL_SLOTS)) return false; // #272: der 7. Legendär-Slot zählt nicht gegen SKILL_SLOTS
   const a = archetypeOf(id);
   const active = s.activeArchetypes || [];
   if (a && !active.includes(a) && active.length >= MAX_ARCHETYPES) return false;

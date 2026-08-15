@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
-import { hasCritPerk, totalCritChanceRaw, totalCritMult } from "../game/perks.js";
+import { hasCritPerk, totalCritChanceRaw, totalCritMult, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
 import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
@@ -69,7 +69,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     const architect = state.architect;
     if (!(state.architectEnabled && architect && (architect.buildings || []).length)) return 0;
     const order = state.playerOrder || [], deck = state.deck || [];
-    const pre = precomputeArchitect(architect, order, deck);
+    const pre = precomputeArchitect(architect, order, deck, fundamentBonus(state.perks));
     const alliance = allianceGroups(state.familyTiers, state.roles); // #289
     let boost = 0, base = 0, multSum = 0;
     for (let p = 0; p < order.length; p++) {
@@ -83,7 +83,8 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     return Math.round((valueFrac + multSum) * 100);
     // state.roles/familyTiers gehören dazu: allianceGroups liest roles.E_COLOR_ALLIANCE → ein Farballianz-Pick ändert
     // den Gebäude-Wert-Bonus, ohne die anderen Deps zu berühren (sonst zeigte der HUD-Prozentwert veraltet).
-  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers]);
+    // state.perks gehört ebenfalls dazu: „Fundament" (v0.3) hebt die Strukturfaktoren → Gebäude-Bonus ändert sich.
+  }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers, state.perks]);
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}

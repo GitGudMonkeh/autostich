@@ -1,3 +1,4 @@
+import { fundamentBonus } from "../game/perks.js";
 /* #202/#UI: Architekt-Gebäude-Overlay je Deck-Position für das CardGrid — geteilt von den Ziel-Auswahlen
    (FamilyTargetSelect/TargetSelect/ShopTargetSelect), damit man beim Wählen von Farben/Formationen/Karten das
    Deck MIT aktuellen Gebäuden sieht (informierte Wahl). Output IDENTISCH zur Inline-Variante in FormationPhase/
@@ -23,7 +24,7 @@ export function architectCoverFor(state) {
   if (!buildings.length) return null;
   const deck = state.deck || [];
   const order = state.playerOrder || [];
-  const pre = precomputeArchitect(architect, order, deck);
+  const pre = precomputeArchitect(architect, order, deck, fundamentBonus(state.perks));
   const alliance = allianceGroups(state.familyTiers, state.roles); // #289
   const cover = {};
   for (const b of buildings) {

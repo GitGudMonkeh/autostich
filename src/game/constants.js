@@ -253,6 +253,22 @@ export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 0.05);    // Ric
 // gegen einen Bauhütte-Build gegenmessen, nicht nur gegen den Referenzbuild.
 export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bauhütte (Gebäude-Baufeld): hebt beim Pick den Baufeld-Deckel (maxCover) dauerhaft um so viele Zellen
 
+/* ============================================================
+   LEGENDÄR-ERWEITERUNG v0.3 (2026-08-15): 7 neue Legendäre gegen die gemessenen Lücken im Pool.
+   Vorher: Präzision 0 Legendäre · Skill-/Angebots-Ökonomie unbesetzt · KEIN einziger Perk mit Nachteil,
+   obwohl #33 sie als „mächtig, aber mit Nachteil" definiert. Alle Startwerte sind Schätzungen —
+   nachmessen mit `npm run impact -- --only <id>`, Ziel-Band 1,2–1,7×.
+   ============================================================ */
+export const MEISTERHAND_SLOTS   = envNum("SIM_MEISTERHAND_SLOTS", 1);    // Meisterhand (Ausbau): +Skill-Slots, dauerhaft ab Pick (SKILL_SLOTS 6 → 7)
+export const SCHMIEDE_STEP       = envNum("SIM_SCHMIEDE_STEP", 1);        // Schmiede (Deck): +Kartenwert auf die SCHWÄCHSTE Deckkarte je Durchlauf-Ende. BEWUSST OHNE DECKEL (Entscheidung 2026-08-15) — über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220
+export const HOCHSEIL_MULT       = envNum("SIM_HOCHSEIL_MULT", 1.2);      // Hochseil (Score): Sieg-× solange der Durchlauf OHNE Niederlage ist. Spätspiel-Perk: Anteil niederlagenfreier Durchläufe steigt 0 % (1–10) → 70 % (41–50), greift also genau in der Score-Explosion → niedrig ansetzen
+export const OPFERGANG_VALUE     = envNum("SIM_OPFERGANG_VALUE", 2);      // Opfergang (Deck, NACHTEIL): so viel Kartenwert verlieren ALLE Karten dauerhaft beim Pick (Klemmung bei 1 — #34 hat die 0 bewusst entfernt)
+export const OPFERGANG_MULT      = envNum("SIM_OPFERGANG_MULT", 1.8);     // … dafür dieser dauerhafte Sieg-Score-× (scoreMult-Hook, läuft automatisch über prodHook)
+export const TAKTSCHLAG_MULT     = envNum("SIM_TAKTSCHLAG_MULT", 2.0);    // Taktschlag (Segment): Score-× auf den ABSCHLUSS-Stich eines komplett gewonnenen Segments (5/5). 8 Chancen je Durchlauf — Vabanques Idee eine Skalenebene tiefer
+export const BALLAST_ENERGY      = envNum("SIM_BALLAST_ENERGY", 2);       // Ballast (Form, NACHTEIL): so viel Formationsenergie WENIGER je Aufstellphase (von FORMATION_ENERGY 4)
+export const BALLAST_FORM_MULT   = envNum("SIM_BALLAST_FORM_MULT", 1.5);  // … dafür dieser × auf den Formations-Multiplikator
+export const FUNDAMENT_BONUS     = envNum("SIM_FUNDAMENT_BONUS", 0.25);   // Fundament (Gebäude): additiv auf JEDEN Strukturfaktor (Zeile 1,35 · Spalte 1,75 · Diagonale 1,62). ACHTUNG: die Faktoren multiplizieren sich je Position übereinander → Ausreißer-Potenzial, p90 beim Messen mitlesen
+
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]
 export const SKILLS_OFFERED     = envNum("SIM_SKILLS_OFFERED", 12);   // Skills je Skill-Runde [Default 12 = 3+3+3+3 (je 3 pro Fraktion, alle 4 im Angebot); ENV-Sweep-Haken, z. B. =6 für den alten 2+2+2-Stand]
