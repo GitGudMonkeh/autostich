@@ -1,4 +1,4 @@
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
+import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { familyDef, hasCritFamily } from "../game/families.js";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
@@ -151,7 +151,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           </div>
           <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
             return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()} defaultOpen={false}>
-            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
+            <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty="Noch keine Perks gewählt." />
           </CollapsibleField>
         </div>
         </div>

@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { baseScoreMultFor, totalCritChanceRaw, totalCritMult } from "./game/perks.js";
+import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
@@ -912,7 +912,7 @@ export function Autostich() {
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
-              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} />
+              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} />
             </div>
             {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
             {state.weekMods?.length > 0 && (

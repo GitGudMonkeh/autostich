@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { weekModMag, hasWeekMod } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
-import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult } from "./perks.js";
+import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
@@ -102,7 +102,7 @@ export function resolveTrick(state, rng) {
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
-    zinsBonus = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Legendär-Perks-Rework (#203): Zinseszins-Dauerdividende / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    zinsCapital = 0, zinsRate = C.ZINS_RATE_START, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore = 0, // bester Stich + bester Gletscher-Stich (Bruch getrennt geführt)
@@ -1092,6 +1092,11 @@ export function resolveTrick(state, rng) {
   // Gletscher-Stich braucht darum seine eigene Bestmarke — hier, wo `gained` bereits den Bruch enthält.
   if (glacierDirect > 0) bestGlacierTrickScore = Math.max(bestGlacierTrickScore, gained);
 
+  // Zinseszins-Bank: EINLAGE. Jeder gewonnene Stich legt einen Anteil seines Scores aufs Kapital. Bewusst HIER, ganz
+  // am Ende der Stich-Wertung — `gained` trägt an dieser Stelle alle Nachträge (Konsum, Gletscher-Bruch/Erstarrung).
+  // Das Kapital ist KEIN Score; es zahlt erst am Durchlauf-Ende über den Zinssatz aus (s. u.).
+  if (won && ownsFlag(perks, "zinseszins")) zinsCapital += gained * C.ZINS_DEPOSIT;
+
   // #71 Volles Haus: Ergebnis-Fenster fortschreiben (letzte 4 Ergebnisse für den nächsten Stich).
   recentResults = [...recentResults, lastResult].slice(-4);
 
@@ -1162,11 +1167,23 @@ export function resolveTrick(state, rng) {
       newFirnStack = ez.mass; newGlacierLocked = ez.locked;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
-    //      attribuiert). Zinseszins — positive Durchlauf-Bilanz (mehr Siege als Niederlagen) stapelt eine FLACHE Dauer-
-    //      Dividende (kein Mult), die jeden Durchlauf ausgezahlt wird (compoundet über den Lauf). Echo — der beste Stich
-    //      dieses Durchlaufs wird ein zweites Mal gutgeschrieben (× ECHO_FACTOR).
+    //      attribuiert). Zinseszins — ABRECHNUNG der Bank (s. u.). Echo — der beste Stich dieses Durchlaufs wird ein
+    //      zweites Mal gutgeschrieben (× ECHO_FACTOR).
     let cycleEndScore = 0;
-    if (ownsFlag(perks, "zinseszins")) { if (cycleWins > cycleLosses) zinsBonus += C.ZINSESZINS_STEP; cycleEndScore += zinsBonus; }
+    // Zinseszins-Bank: ABRECHNUNG. Hürde genommen (Sieg-Anteil ≥ ZINS_HURDLE_RATE der Durchlauf-Länge) → die Bank zahlt
+    // Kapital × Zinssatz aus und der Satz steigt eine Stufe (Deckel ZINS_RATE_MAX); das Kapital bleibt liegen und
+    // wächst weiter mit dem Score. Verfehlt → CRASH: ein Teil des Kapitals ist weg, der Satz fällt zurück.
+    // Die Auszahlung selbst zahlt NICHT wieder ein (sie läuft nicht über die Einlage oben) → kein Selbst-Compounding.
+    if (ownsFlag(perks, "zinseszins")) {
+      const hurdle = zinsHurdle(cycleLen);
+      if (cycleWins >= hurdle) {
+        cycleEndScore += zinsCapital * zinsRate;
+        zinsRate = Math.min(zinsRate + C.ZINS_RATE_STEP, C.ZINS_RATE_MAX);
+      } else {
+        zinsCapital *= C.ZINS_CRASH_KEEP;
+        zinsRate = Math.max(C.ZINS_RATE_START, zinsRate - C.ZINS_CRASH_STEPS * C.ZINS_RATE_STEP);
+      }
+    }
     if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
     // Richtfest (Gebäude-Legendäres): je vollendeter Struktur diesen Durchlauf +Schritt auf den Dauer-Bonus, dann auszahlen.
     if (ownsFlag(perks, "richtfest") && archPreNow) { richtfestBonus += C.RICHTFEST_STEP * (archPreNow.structureCount || 0); cycleEndScore += richtfestBonus; }
@@ -1384,7 +1401,7 @@ export function resolveTrick(state, rng) {
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsBonus, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203)
+    zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
