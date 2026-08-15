@@ -3,14 +3,17 @@
 // an dieser Position wirken: Wert-Boost (value-Gebäude), Score-Effekt (score-Gebäude) und den Struktur-Faktor
 // (Häuserzeile/Spalte/Diagonale). Nutzt die ECHTE Engine-Rechnung (precomputeArchitect + architectValueBonus),
 // gespiegelt wie das Overlay → kein Drift. Reine Formatierung; die Zahlen kommen aus dem Precompute.
-import { architectValueBonus, tierFactor } from "../game/architect.js";
+//
+// Sprachprüfung A13: Die Formations-Rollen (Joker/Bindeglied/Anker/…) kommen jetzt aus `familyEffectText`
+// (src/game/architect.js) — derselbe Wortlaut wie im Architekt-Bildschirm und in der Core-DB. Vorher stand hier
+// eine dritte, abweichende Fassung, u. a. mit dem Entwickler-Kürzel „(±Span)" im Spielertext.
+import { architectValueBonus, familyEffectText } from "../game/architect.js";
 import { suitName } from "../game/constants.js";
 
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // `fam`/`tier` optional (für Formations-Gebäude, die NICHT über pre.value/score laufen, sondern über die
-// Formationserkennung architectFormSpec). Wortlaut der Formations-Rollen gespiegelt aus ArchitectScreen.famEff
-// (driftsicher aus architect.js), damit Detail-Anzeige und Bauplan-Tooltip dieselbe Sprache sprechen.
+// Formationserkennung architectFormSpec).
 export function architectEffectStrings(pre, pos, card, fam = null, tier = 1, alliance = []) {
   const out = [];
   const vb = card ? architectValueBonus(pre, pos, card, alliance) : 0; // #289: Wert-Boost grün-/allianz-bewusst (wie Engine)
@@ -25,27 +28,14 @@ export function architectEffectStrings(pre, pos, card, fam = null, tier = 1, all
       case "color":     out.push(`+${sc.amount} Score bei ${suitName(sc.colorChoice)}`); break;
       case "milestone": out.push(`+${sc.amount} Score alle ${sc.every} Siege`); break;
       case "target":    out.push(`+${sc.amount} Score`); break;
-      case "gamble":    out.push(`+${sc.crit} Score bei Crit, sonst −${sc.penalty}`); break; // #Pool Batch 4: Crit-Wette
-
+      case "gamble":    out.push(`+${sc.crit} Score bei Crit, sonst −${sc.penalty} Score`); break; // #Pool Batch 4: Crit-Wette
       default: break;
     }
   }
-  // Formations-Gebäude: Rolle in der Formationserkennung ausformulieren (kein pre-Wert/-Score).
-  if (fam && fam.category === "formation" && fam.base) {
-    const base = fam.base;
-    switch (base.kind) {
-      case "joker": {         // #Pool tierKick: Klammer III fügt einen zweiten Joker-Typ hinzu (ab Stufe `at`).
-        const types = [...(base.types || [])];
-        if (fam.tierKick && fam.tierKick.addType && tier >= fam.tierKick.at) types.push(fam.tierKick.addType);
-        out.push(`Formations-Joker (${types.join("/")})`); break;
-      }
-      case "transparentFarb": out.push("Farbblock-Transparenz"); break;
-      case "bind":            out.push("Treppen-Bindeglied (±Span)"); break;
-      case "crossSeg":        out.push("öffnet die Segmentgrenze"); break;
-      case "anker":           out.push(`jede Zelle = Anker ×${fmt(tierFactor(base.factor, tier))}`); break;
-      case "formMult":        out.push(`Formationen hier ×${fmt(base.factor)}`); break;
-      default: break;
-    }
+  // Formations-Gebäude: die Rolle in der Formationserkennung im Wortlaut der geteilten Quelle.
+  if (fam && fam.category === "formation") {
+    const s = familyEffectText(fam, fam.legendary ? "legendary" : tier);
+    if (s) out.push(s);
   }
   const rf = pre && pre.relayFlat && pre.relayFlat[pos]; // #Pool Batch 3: eingestaffelter Score (Laufgang von links)
   if (rf > 0) out.push(`+${rf} Score (Staffel)`);

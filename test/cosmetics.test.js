@@ -107,7 +107,9 @@ describe("cosmetics — isUnlocked", () => {
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).done).toBe(false);
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true })).done).toBe(true);
     expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).label).toMatch(/Gottgleich/i);
-    expect(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()).label).toMatch(/Meisterrang.*Reroll/i);
+    // Sprachprüfung A10: der Modus heißt „Ranglisten-Lauf" (früher „Meisterrang") — storage.js führt den alten
+    // record-Key `ranked === "meister"` nur noch aus Kompatibilität.
+    expect(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()).label).toMatch(/Ranglisten.*Reroll/i);
   });
 });
 

@@ -11,7 +11,7 @@ import { SKILL_LIST, ARCHETYPE_META } from "../src/game/skills.js";
 import { PERK_DEFS, CATEGORIES, RARITY_META, rarityOf } from "../src/game/perks.js";
 import { FAMILY_LIST } from "../src/game/families.js";
 import { ARCHITECT_FAMILIES } from "../src/game/architect.js";
-import { tierNum, tierFactor, bindSpanFor, TIER_INERT_KINDS } from "../src/game/architect.js";
+import { TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = process.env.DB_OUT_DIR || resolve(__dir, "../dist/db");
@@ -34,47 +34,10 @@ function tierRanges(textFor, maxTier = 4) {
   }));
 }
 
-// Architekt-Effekt je Stufe — 1:1 gespiegelt aus ArchitectScreen.famEff (inkl. neuer Distrikt-/Lage-/Risiko-Kinds
-// und dem qualitativen tierKick-Zusatz), driftsicher über die architect.js-Stufen-Helfer.
-function archEff(fam, tier) {
-  const base = fam.base, t = tier, nz = (v) => tierNum(v, t);
-  let s;
-  switch (base.kind) {
-    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
-    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
-    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
-    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Punkte"}`; break;
-    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
-    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone":  s = `jeder ${base.every}. Sieg +${nz(base.score)} Score`; break;
-    case "mult":       s = `Siege hier ×${base.factor}`; break;
-    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
-    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
-    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
-    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
-    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty}`; break;
-    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
-    case "transparentFarb": s = "Farbblock-Transparenz"; break;
-    case "bind":       s = `Treppen-Bindeglied: Wert darf um ±${bindSpanFor(t)} abweichen`; break;
-    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
-    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
-    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
-    default:           s = ""; break;
-  }
-  // tierKick: ab Stufe `at` zündet ein QUALITATIVER Zusatz (nicht nur die skalierte Zahl) → sonst als Vorschau markiert.
-  if (fam.tierKick && s) {
-    const k = fam.tierKick, on = typeof t === "number" && t >= k.at;
-    let kick = "";
-    if (k.mult) kick = `zusätzlich ×${k.mult} Score`;
-    else if (k.critFlatMult) kick = `bei Crit ×${k.critFlatMult} Flat`;
-    else if (k.streakDoubleFrom) kick = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.every) kick = `jeder ${k.every}. statt ${base.every}. Sieg`;
-    else if (k.addType) kick = `+Joker ${k.addType}`;
-    else if (k.ankerValue) kick = `+${k.ankerValue} Stichwert je Zelle`;
-    if (kick) s += on ? ` · ${kick}` : ` (Stufe ${k.at}: ${kick})`;
-  }
-  return s;
-}
+// Architekt-Effekt je Stufe - kommt seit der Sprachpruefung (A13) aus der geteilten Quelle in
+// src/game/architect.js (familyEffectText). Vorher stand hier eine eigene Kopie, deren Wortlaut vom
+// Spiel abgewichen ist (Punkte statt Score, rohe Joker-Schluessel, Dezimalpunkt).
+const archEff = (fam, tier) => familyEffectText(fam, tier);
 
 const entries = [];
 

@@ -230,7 +230,7 @@ const dp = (profile) => Math.max(0, Math.floor(Number(profile && profile.deckPoi
 // Besitz-Schlüssel eines Kauf-Packs.
 export const packOwnKey = (pack) => `pack:${pack.id}`;
 
-// Ist das Pack ein Kauf-Pack? (→ SP-kaufbar.)
+// Ist das Pack ein Kauf-Pack? (→ DP-kaufbar.)
 export const isBuyPack = (pack) => pack.kind === "buy";
 export const hasBattlefield = (pack) => pack.els.includes("bf");
 
@@ -247,7 +247,7 @@ export function packOwned(profile, pack) {
   return isUnlocked({ unlock: packCond(pack) }, profile);
 }
 
-// Pack-Zustand fürs Badge: "own" | "buy" (SP-kaufbar) | "lock" (Bedingung offen).
+// Pack-Zustand fürs Badge: "own" | "buy" (DP-kaufbar) | "lock" (Bedingung offen).
 export function packState(profile, pack) {
   if (packOwned(profile, pack)) return "own";
   return pack.kind === "buy" ? "buy" : "lock";

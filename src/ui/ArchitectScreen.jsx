@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, tierNum, tierFactor, upgradeInfo, bindSpanFor,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo, familyEffectText,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { computeFormations, summarizeFormations } from "../game/formations.js";
@@ -776,7 +776,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${fMass} (füllt einen Gletscher hier zum Rundenstart)`}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${fMass} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
@@ -1197,50 +1197,10 @@ function Stat({ k, v, hero = false }) {
   );
 }
 
-// Spielersicht-Kurzbeschreibung eines Bauplans/Gebäudes (stufen-aufgelöst, driftsicher aus architect.js).
-function famEff(fam, b) {
-  const t = b?.tier ?? 1;
-  const base = fam.base;
-  const nz = (v) => tierNum(v, t);
-  let s;
-  switch (base.kind) {
-    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
-    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
-    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
-    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
-    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
-    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone": { const every = (base.kind === "milestone" && fam.tierKick && fam.tierKick.every && t >= fam.tierKick.at) ? fam.tierKick.every : base.every; s = `jeder ${every}. Sieg auf diesem Gebäude +${nz(base.score)} Score`; break; }
-    case "mult":       s = `Siege hier ×${base.factor}`; break;
-    // #Pool: Distrikt-Effekte — hängen vom Brett ab (Nachbarschaft / vollendete Strukturen).
-    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
-    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
-    // #Pool Batch 3: Lage/Staffel — hängen von der Position ab.
-    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
-    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
-    // #Pool Batch 4: Risiko — Crit-Wette.
-    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty} Score`; break;
-    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
-    case "transparentFarb": s = "Farbblock-Transparenz"; break;
-    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
-    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
-    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
-    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
-    default:           s = ""; break;
-  }
-  // #Pool tierKick: qualitativer Zusatz ab Stufe `at` sichtbar machen (aktiv ab dieser Stufe, sonst als Vorschau markiert).
-  if (fam.tierKick && s) {
-    const k = fam.tierKick, on = t >= k.at;
-    let kickTxt = "";
-    if (k.mult) kickTxt = `zusätzlich ×${k.mult} Score`;
-    else if (k.critFlatMult) kickTxt = `bei Crit ×${k.critFlatMult} Direkt-Score`;
-    else if (k.streakDoubleFrom) kickTxt = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.addType) kickTxt = `zweiter Joker-Typ: ${k.addType}`;
-    else if (k.ankerValue) kickTxt = `+${k.ankerValue} Stichwert je Ankerzelle`;
-    if (kickTxt) s += on ? ` · ${kickTxt}` : ` (Stufe ${k.at}: ${kickTxt})`;
-  }
-  return s;
-}
+// Spielersicht-Kurzbeschreibung eines Bauplans/Gebäudes. Der Wortlaut liegt seit der Sprachprüfung (A13)
+// in src/game/architect.js — dieselbe Quelle bedienen auch die Kartendetail-Anzeige (ui/archEffects.js)
+// und der Core-DB-Generator (scripts/gen-db.mjs). Vorher waren es drei auseinandergelaufene Fassungen.
+const famEff = (fam, b) => familyEffectText(fam, b?.tier ?? 1);
 
 /* Dev-Run-Bauplan-Katalog (nur Preview): statt der 3er-Auswahl ALLE Baupläne, nach Kategorie (Wert/Score/
    Formation) aufklappbar → Familie (mit Effekt-Beschreibung) → Stufe. Klick auf eine Stufe baut sofort (chooseOffer,

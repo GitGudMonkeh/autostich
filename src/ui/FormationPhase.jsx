@@ -176,7 +176,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           <button onClick={onConfirm} className="w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
             style={{ background: GOLD, color: "#141419" }}>
             <span className="text-sm">Fortfahren</span>
-            <span className="text-[11px] mt-0.5" title="Formations-Differenz seit Durchlaufbeginn · verbleibende Tausch-Energie">
+            <span className="text-[11px] mt-0.5" title="Formations-Differenz seit Durchlaufbeginn · verbleibende Formations-Energie">
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
               <span style={{ opacity: 0.55 }}> · noch {formationEnergy} Energie</span>
             </span>

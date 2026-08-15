@@ -186,7 +186,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           </div>
           <div className="h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${VI}, ${CY}, ${AM})`, opacity: .7 }} />
           <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
-            <b className="text-[#e8e8ea]">{owned}</b> / {TOTAL_NODES} Knoten · Meister-Liga {treeComplete(p) ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}
+            <b className="text-[#e8e8ea]">{owned}</b> / {TOTAL_NODES} Knoten · Ranglisten-Lauf {treeComplete(p) ? <b style={{ color: AM }}>frei</b> : `bei ${TOTAL_NODES}/${TOTAL_NODES}`}
           </div>
           <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>Knoten antippen zeigt, was er bewirkt.</div>
         </div>

@@ -40,7 +40,7 @@ export const SKILL_DEFS = {
     desc: `Nach jedem vollen Ladungsverbrauch bleiben ${C.REST_CHARGE_FLOOR} Ladungen erhalten (statt 0).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeFloor: () => C.REST_CHARGE_FLOOR },
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"],
-    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.STORM_CRIT_STEP)} pp Crit-Chance (bis +${pct(C.STORM_CRIT_CAP)} pp). Der Überschuss über 100 % fließt über Überschlag zurück in Ladung.`,
+    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.STORM_CRIT_STEP)} % Crit-Chance (bis +${pct(C.STORM_CRIT_CAP)} %). Der Überschuss über 100 % fließt über Überschlag zurück in Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, storm: true },
   SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"],
     desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${de(C.ENTLADUNG_MULT_STEP)}× Crit-Multiplikator (bis +${de(C.ENTLADUNG_MULT_CAP)}×).`,
@@ -50,12 +50,12 @@ export const SKILL_DEFS = {
     desc: `Bei voller Ladung: ${C.ION_BASE_COUNT} ungespielte Karten ionisieren (+${C.ION_SPEED_PER_SKILL} je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS}), dann Ladung leeren.
 
 ▸ Sieg mit ionisierter Karte: +${C.ION_SCORE_PER_STACK} Score je Stapel.
-▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} pp Crit-Chance für alle Karten (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} pp).
+▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} % Crit-Chance für alle Karten (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %).
 ▸ Sind ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten ionisiert: alle Karten +${C.ION_SATURATION_VALUE} Wert.
 ▸ Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % voll ionisiert: Überschlag holt doppelt so viel Ladung aus überschüssiger Crit-Chance.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
-    desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} pp Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} pp). Verbraucht keine Ladung.`,
+    desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} % Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} %). Verbraucht keine Ladung.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, seriesCrit: true },
   // Linie 3 — Ionisierung (Breite · Tiefe · Überlauf · Konsum)
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
@@ -72,7 +72,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, kurzschluss: true },
   // Linie 4 — Crit-Maschine (Chance & Mult erzeugen — Blitz-exklusiv)
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"],
-    desc: `Jeder Sieg ohne Crit gibt +${pct(C.SPANNUNGSSTAU_STEP)} pp Crit-Chance für den nächsten Sieg (bis +${pct(C.SPANNUNGSSTAU_CAP)} pp); ein Crit entlädt den Stau und setzt ihn zurück.`,
+    desc: `Jeder Sieg ohne Crit gibt +${pct(C.SPANNUNGSSTAU_STEP)} % Crit-Chance für den nächsten Sieg (bis +${pct(C.SPANNUNGSSTAU_CAP)} %); ein Crit entlädt den Stau und setzt ihn zurück.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, spannungsstau: true },
   SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit", "charge"],
     desc: `Crit-Chance über 100 % verfällt nicht — sie wird bei jedem Sieg in Ladung umgewandelt: je ${C.UEBERSCHLAG_PP_PER_CHARGE} Prozentpunkte über 100 % gibt es +1 Ladung. Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % der Karten voll ionisiert (Voll-Tiefe), reichen ${C.UEBERSCHLAG_DEPTH_PP_PER_CHARGE} Prozentpunkte je Ladung.`,
@@ -86,7 +86,7 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
   // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
-    desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Verbrauch gibt zudem dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} pp Crit-Chance (bis +${pct(C.DAUERSTROM_CRIT_CAP)} pp).`,
+    desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Verbrauch gibt zudem dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} % Crit-Chance (bis +${pct(C.DAUERSTROM_CRIT_CAP)} %).`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"],
     desc: `Verlierst du einen Stich, während du mindestens die halbe Ladung (${pct(C.SERIENSCHUTZ_COST_FRAC)} %) hast, bricht deine Serie nicht — dafür wird diese Ladung verbraucht.`,
@@ -133,7 +133,7 @@ export const SKILL_DEFS = {
     desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Wertvorsprung legt seinen Feuer-Score in einen Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet den Speicher aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
   // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze verbrennt der nächste Sieg deine ganze Hitze für +${C.CONFLAG_PER_HEAT} Score je Hitzepunkt (voll ≈ +${C.CONFLAG_PER_HEAT * C.HEAT_MAX}).`, heatConsumer: "conflagration" },
+    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze verbrennt der nächste Sieg deine ganze Hitze für +${C.CONFLAG_PER_HEAT} Score je Hitzepunkt (voll ≈ +${grp(C.CONFLAG_PER_HEAT * C.HEAT_MAX)}).`, heatConsumer: "conflagration" },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
     desc: `Vor jedem Stich −${C.MELT_COST} % Hitze; bei Sieg +${C.MELT_COST * C.MELT_PER_HEAT} Score.`, heatConsumer: "melt" },
   // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
@@ -142,11 +142,11 @@ export const SKILL_DEFS = {
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand", "ash"],
     desc: `Brände greifen auf eine Nachbarkarte über (−${C.BRAND_VALUE} Wert) und geben +${C.BRAND_ASH} Asche.`, enabler: "SK_FIRE_13", lauffeuer: true },
   SK_FIRE_15: { id: "SK_FIRE_15", name: "Ascheschmiede", archetype: "fire", keywords: ["heat", "forge", "ash"],
-    desc: `Am Ende jedes Durchlaufs: solange du ≥${C.FORGE_COST} Asche hast, erhält jeweils deine niedrigste Karte dauerhaft +${C.FORGE_VALUE} Kartenwert. Ist die Schmiede voll, verglüht weitere Asche als Weißglut zu +${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche. (Schmelzofen senkt die Asche-Kosten ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze.)`, ascheschmiede: true },
+    desc: `Am Ende jedes Durchlaufs: solange du ≥${C.FORGE_COST} Asche hast, erhält jeweils deine niedrigste Karte dauerhaft +${C.FORGE_VALUE} Kartenwert. Ist die Schmiede voll, verglüht weitere Asche als Ascheglut zu +${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche. (Schmelzofen senkt die Asche-Kosten ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze.)`, ascheschmiede: true },
   SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"],
     desc: `Geschmiedete Karten geben bei Sieg +${C.GLUTSTAHL_PER_VALUE} Score je geschmiedetem Wert.`, enabler: "SK_FIRE_15", glutstahl: true },
   SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge", "ash"],
-    desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze brennen Brände stärker (−${C.SCHMELZOFEN_BRAND_BONUS} Wert, +${C.SCHMELZOFEN_BRAND_BONUS} Asche) und Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
+    desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze brennen Brände zusätzlich −${C.SCHMELZOFEN_BRAND_BONUS} Wert und geben +${C.SCHMELZOFEN_BRAND_BONUS} Asche extra; Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
   // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
@@ -166,20 +166,20 @@ export const SKILL_DEFS = {
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier"], role: "G_SCHNEETREIBEN",
     desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Firn in die Boden-Reserve eines angrenzenden offenen Feldes — zusätzlich, ohne eigene Masse abzugeben; nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Nur offener Boden (nie unter einen Gletscher), nur die 4 direkten Nachbarn, Eisbrücke zählt hier nicht.` },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier"], role: "G_DAUERFROST",
-    desc: `Jede Runde frostet offener Boden zu: ungefrorene Felder sammeln Firn in ihrer Boden-Reserve nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer. Die Reserve füllt einen später hier gefrorenen Gletscher zum Rundenstart wieder auf.` },
+    desc: `Jeden Durchlauf frostet offener Boden zu: ungefrorene Felder sammeln Firn in ihrer Boden-Reserve nach Abstand zum nächsten Gletscher — +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer. Die Reserve füllt einen später hier gefrorenen Gletscher zum Durchlauf-Beginn wieder auf.` },
   SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG",
     desc: `Erhöht ein Gebäude die Kartenstärke einer Gletscher-Karte, wird dieser Wert-Bonus nicht ausgespielt (die Karte kämpft ohne ihn), sondern in Masse getankt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
   // Linie 2 — Eisschild (Cluster/Dichte)
   SK_ICE_05: { id: "SK_ICE_05", name: "Verschmelzen", archetype: "ice", keywords: ["glacier"], role: "G_VERSCHMELZEN",
     desc: "Zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Masse-Durchschnitt ihres Clusters — nur anhebend, nie fallend." },
   SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS",
-    desc: `Jede Runde gewinnt ein Gletscher +${de(G_PACKEIS_PER)} Masse je Gletscher-Nachbar.` },
+    desc: `Jeden Durchlauf gewinnt ein Gletscher +${de(G_PACKEIS_PER)} Masse je Gletscher-Nachbar.` },
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE",
     desc: "Zählt auch die vier Diagonalen als angrenzend (8-Nachbarschaft) — verbindet zersplitterte Felder zu einem Cluster (wirkt auf Bruch, Kollision und Cluster-Größe)." },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL",
     desc: `Eine komplett gefrorene Reihe oder Spalte (die Linien-Formation) verstärkt das Bersten aller ihrer Gletscher: ×${de(G_EISWALL_LINIE)} statt ×${de(G_GEO_LINIE)}.` },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG",
-    desc: `Jede Runde gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
+    desc: `Jeden Durchlauf gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
     desc: `Höhere Stufen bersten steiler: Stufen-Wucht ×${de(G_ABBRUCH_TIER[2])} / ×${de(G_ABBRUCH_TIER[3])} auf Stufe 2 / 3 (statt ×${de(G_TIER_MULT[2])} / ×${de(G_TIER_MULT[3])}).` },
@@ -200,7 +200,7 @@ export const SKILL_DEFS = {
     desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht — und füttert stattdessen +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_EISZEIT",
-    desc: `Jede Runde: +${de(G_EISZEIT_FLOOD)} Firn in die Boden-Reserve jedes ungefrorenen Felds, dann friert das reservestärkste davon zum Gletscher ein (startet leer, füllt sich aus seiner Reserve nach) — bis zu ${G_EISZEIT_MAX} Gletscher.` },
+    desc: `Jeden Durchlauf: +${de(G_EISZEIT_FLOOD)} Firn in die Boden-Reserve jedes ungefrorenen Felds, dann friert das reservestärkste davon zum Gletscher ein (startet leer, füllt sich aus seiner Reserve nach) — bis zu ${G_EISZEIT_MAX} Gletscher.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Das ganze Feld wird zu EINEM Übergletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch und bekommen +${G_SCHILD_BONUS} Masse obendrauf (nie fallend). Beim Bruch gilt jeder Gletscher als Nachbar aller anderen — volle Kaskade und Kollision, egal wo sie liegen. Anordnung wird bedeutungslos, nur die stärkste Masse zählt.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
@@ -267,6 +267,9 @@ export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
 export const glacierRolesOf = (skills = []) => (skills || []).map((id) => SKILL_DEFS[id]?.role).filter(Boolean);
 // #288 „Trimmen": ist der Skill wachstums-stützend? (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm + Ausläufer/Rhizom) — Ersetzen zählt als Trimmung.
 export const isTrimmableSkill = (id) => !!SKILL_DEFS[id]?.trimGrowth;
+// Die Namen der trimmbaren Skills als Aufzählung — EINE Quelle für alle Spielertexte, die sie auflisten
+// (Glossar „Trimmen", PlantBar-Tooltip). Vorher zweimal von Hand gepflegt und beide Male unvollständig.
+export const trimmableSkillNames = (sep = ", ") => SKILL_LIST.filter((s) => s.trimGrowth).map((s) => s.name).join(sep);
 
 /* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
    Alle drei Archetypen (Blitz/Feuer/Eis) sind vollständig ausgespielt (F0/F1/F3 abgeschlossen). */

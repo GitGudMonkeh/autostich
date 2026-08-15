@@ -137,7 +137,7 @@ export function isUnlocked(def, profile) {
     case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
     case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
     case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
-    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit SP gekauft (im Besitz)
+    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit DP gekauft (im Besitz)
     case "onboardingDone": return onboardingDone(p);                                             // #: Genesis — Onboarding abgeschlossen (6/6)
     default:            return true;
   }
@@ -189,7 +189,7 @@ export function unlockProgress(def, profile) {
     }
     case "meisterNoReroll": {
       const done = !!p.hadMeisterNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Meisterrang-Wochenlauf ohne einen einzigen Reroll ab" };
+      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Ranglisten-Wochenlauf ohne einen einzigen Reroll ab" };
     }
     case "championWeek": {
       const done = !!p.hadChampionWeek;
@@ -197,7 +197,9 @@ export function unlockProgress(def, profile) {
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
-      return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt kaufen (1 SP)" };
+      // Der Preis steht auf der Pack-Kachel (je Pack verschieden, themes.js `price`) — hier nur die WÄHRUNG nennen.
+      // Kein Import von themes.js: das gäbe einen Zyklus (themes.js → cosmetics.js).
+      return { done, cur: done ? 1 : 0, target: 1, label: "In der Deck-Werkstatt mit Deckpunkten (DP) kaufen" };
     }
     case "onboardingDone": {
       const done = onboardingDone(p);

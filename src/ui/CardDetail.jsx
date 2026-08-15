@@ -87,7 +87,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
           <span className="opacity-45">Ionisierung:</span>
           <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
           {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
-          <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} pp Feld-Crit</Chip>
+          <Chip c="#8a7de0">+{Math.round(ion * ION_CRIT_PP_PER_STACK * 100)} % Feld-Crit</Chip>
         </div>
       )}
       {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score

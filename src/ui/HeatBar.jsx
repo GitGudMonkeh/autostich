@@ -1,5 +1,5 @@
 import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
-import { GLOWING_T1_HEAT, GLOWING_T2_HEAT } from "../game/constants.js";
+import { GLOWING_T1_HEAT, GLOWING_T2_HEAT, WHITEHEAT_PER_POINT } from "../game/constants.js";
 import { GLOSSARY } from "../game/glossary.js";
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -86,11 +86,13 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   return (
     <FactionShell icon={<FactionIcon type="fire" size={15} />} name="Feuer" color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
-      {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Weißglut) + verbrannte Asche (Lauf-Zähler). */}
+      {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Überlauf) + verbrannte Asche (Lauf-Zähler).
+          Der Überlauf-Kanal summiert BEIDE Überlauf-Pfade — Weißglut (Hitze über 100 %) und Ascheglut (Asche über die
+          Schmiede-Kapazität); deshalb heißt er neutral „Überlauf" und nicht nach einem der beiden (Sprachprüfung B1). */}
       <div className="mb-2">
         <YieldMeter title="Feuer-Ertrag" accent={HOT} channels={[
           { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
-          { label: "Weißglut", value: fireWhite, color: WHITE_HEAT },
+          { label: "Überlauf", value: fireWhite, color: WHITE_HEAT, hint: "Weißglut (Hitze über 100 %) + Ascheglut (Asche über die Schmiede-Kapazität)" },
         ]} />
         {ashBurned > 0 && (
           <div className="text-[10px] opacity-55 mt-1">Asche verbrannt <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">über den Lauf</span></div>
@@ -122,7 +124,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
                          background: `linear-gradient(90deg, transparent, ${WHITE_HEAT})`,
                          opacity: atMax ? 1 : 0.45,
                          boxShadow: atMax ? `0 0 9px ${WHITE_HEAT}, 0 0 4px #ffffff` : undefined }}
-                title="Weißglut: bei voller Hitze wird jeder Überschuss zu +10 Score je überlaufendem Hitzepunkt" />
+                title={`Weißglut: bei voller Hitze wird jeder Überschuss zu +${WHITEHEAT_PER_POINT} Score je überlaufendem Hitzepunkt`} />
             )}
           </div>
           {badges.length > 0 && (

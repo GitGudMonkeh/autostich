@@ -11,6 +11,7 @@ import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
 import { rankedUnlocked } from "../game/progression.js";
+import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
 import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
 import { WeekModChips, catalogDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
@@ -45,7 +46,7 @@ function RegelnPanel() {
   const head = "text-[10px] font-bold uppercase tracking-wider";
   return (
     <div className="text-[12px] leading-relaxed">
-      <p className="opacity-75 mb-3">Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat <b>keine</b> Wirkung (2 Rerolls je Phase, Raritäten bis Rar, Legendär ab R29). Jede Woche verändern <b>3–5 zufällige Modifikatoren</b> (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.</p>
+      <p className="opacity-75 mb-3">Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat <b>keine</b> Wirkung ({BASE_REROLLS} Rerolls je Phase, alle Raritäten, Legendär-Phase in Durchlauf {LEG_PHASE_CYCLE}). Jede Woche verändern <b>3–5 zufällige Modifikatoren</b> (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.</p>
       <div className={`${head} mb-1.5`} style={{ color: MOD_POS }}>Positive Modifikatoren</div>
       <div className="grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
       <div className={`${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>Negative Modifikatoren</div>

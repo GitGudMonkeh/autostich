@@ -35,7 +35,7 @@ export const GUIDES = {
         `Jeder Verbrauch gibt **dauerhaftes Momentum**: mehr Crit-Chance und -Multiplikator, den ganzen Lauf.`,
         `Das ionisierte Feld hebt deine Crit-Chance → du crittest öfter → mehr Ladung → mehr Ionisierung → …`,
       ],
-      valve: `Fällt mehr Crit-Chance an, als ein Sieg überhaupt braucht, geht der Überschuss **nicht verloren**: Überschlag wandelt ihn in **Ladung** um — je 10 Prozentpunkte über 100 % eine Ladung, ab voller Sturmintensität schon je 5. Der Sturm lädt sich also aus seinem eigenen Übermaß nach.`,
+      valve: `Fällt mehr Crit-Chance an, als ein Sieg überhaupt braucht, geht der Überschuss **nicht verloren**: Überschlag wandelt ihn in **Ladung** um — je ein paar Prozentpunkte über 100 % eine Ladung, bei voller Sturmintensität doppelt so ergiebig. Der Sturm lädt sich also aus seinem eigenen Übermaß nach.`,
     },
     status: {
       label: `Wie weit ist dein Sturm?`,

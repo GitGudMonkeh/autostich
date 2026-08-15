@@ -6,6 +6,8 @@ import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js"
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
+// Tausendertrenner (400000 → „400.000") — Style-Guide §2: der einzige zulässige Punkt in Zahlen.
+const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // Zinseszins-Bank: nötige Siege eines Durchlaufs für die Auszahlung. GETEILTE QUELLE für Engine (Abrechnung)
 // und UI (Fortschritts-Readout) → kein Drift zwischen Regel und Anzeige.
 export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen * C.ZINS_HURDLE_RATE);
@@ -83,7 +85,7 @@ export const PERK_DEFS = {
         desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Stichwert (bis eine Niederlage eintritt).`,
         cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
-        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} pp Crit-Chance. Übersteigt deine Gesamt-Crit-Chance 100 %, hebt der Überschuss zusätzlich den Crit-Multiplikator — je 100 Prozentpunkte +1,00×, höchstens +1,00×.`,
+        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} % Crit-Chance. Übersteigt deine Gesamt-Crit-Chance 100 %, hebt der Überschuss zusätzlich den Crit-Multiplikator: +0,01× je Prozentpunkt darüber, höchstens +1,00×.`,
         critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
@@ -94,7 +96,7 @@ export const PERK_DEFS = {
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
         desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Punkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt eine Stufe.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
+        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${grp(C.VABANQUE_SCORE)} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
         desc: `Im letzten Segment (Positionen ${C.HENKER_ZONE_START + 1}–40) zählt jeder Sieg ${de(C.HENKER_MULT)}-fach und ist garantiert ein Crit.` },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,

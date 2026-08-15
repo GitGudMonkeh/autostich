@@ -134,7 +134,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
           {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">G</span>}
           {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
-          {ripe && <span title="Grün (reif) — zählt fürs Farbblock"><FactionIcon type="plant" size={9} /></span>}
+          {ripe && <span title="Grün (reif) — zählt für den Farbblock"><FactionIcon type="plant" size={9} /></span>}
         </span>
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
@@ -150,14 +150,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Rundenstart auf 12)` : ""}`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Durchlauf-Beginn auf 12)` : ""}`}>
           <FactionIcon type="ice" size={11} />
           {Math.round(glacierMass)}
         </span>
       )}
       {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Rundenstart)`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
           <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
         </span>
       )}

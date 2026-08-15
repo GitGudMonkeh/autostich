@@ -63,8 +63,8 @@ export function StatusBar({
               : { background: "#8a7de022", color: "#8a7de0", border: "1px solid #8a7de066" }}>
             {paused ? "▶" : "⏸"}
           </button>
-          <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">X2</Pill>
-          <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">X4</Pill>
+          <Pill active={speedMult === 2} onClick={() => onSpeed(2)} title="Tempo ×2">×2</Pill>
+          <Pill active={speedMult === 4} onClick={() => onSpeed(4)} title="Tempo ×4">×4</Pill>
           <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title="Tempo maximal">MAX</Pill>
           {onChronik && (
             <button type="button" onClick={onChronik} title="Kartenübersicht öffnen"
@@ -78,7 +78,7 @@ export function StatusBar({
           )}
           {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
           <div className="ml-auto flex items-stretch">
-            <MiniCell label="Runde"><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
+            <MiniCell label="Durchl."><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
             <MiniCell label="Zeit" className="border-l border-[color:var(--deck-border)]">
               {/* #perf A1: selbst-tickender Timer-Leaf statt App-weitem 250-ms-Tick; Fallback = statischer timeStr. */}
               {getElapsed

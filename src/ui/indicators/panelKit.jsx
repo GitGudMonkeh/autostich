@@ -76,7 +76,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
         return (
           <div className="flex w-full rounded-sm overflow-hidden" style={{ height: 10, background: "#26262e" }}>
             {active.map((c) => (
-              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)`}
+              <div key={c.label} title={`${c.label}: ${nfmt(c.value)} (${Math.round((100 * c.value) / total)} %)${c.hint ? ` — ${c.hint}` : ""}`}
                 style={{ width: `${pctOf(c)}%`, background: c.color }} />
             ))}
           </div>
@@ -85,7 +85,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
       {/* Legende: nur aktive Kanäle, Punkt + Name + Zahl. */}
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
         {active.map((c) => (
-          <span key={c.label} className="inline-flex items-center gap-1">
+          <span key={c.label} className="inline-flex items-center gap-1" title={c.hint || undefined}>
             <span className="w-[8px] h-[8px] rounded-[2px] shrink-0" style={{ background: c.color }} />
             <span className="opacity-65">{c.label}</span>
             <b className="tabular-nums" style={{ color: c.color }}>{nfmt(c.value)}</b>

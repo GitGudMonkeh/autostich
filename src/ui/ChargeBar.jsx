@@ -130,7 +130,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         <div className="grid gap-1.5">
           <div className="text-xs opacity-60">🌐 Sturm-Sättigung</div>
           <SatRow label="Sturmgröße" cur={ionN} max={breadthThresh} on={breadthOn} payoff={`+${ION_SATURATION_VALUE} Wert / Karte`} />
-          <SatRow label="Sturmintensität" cur={ionFull} max={depthThresh} on={depthOn} payoff={`Überschlag: ${UEBERSCHLAG_DEPTH_PP_PER_CHARGE} pp → 1 Ladung`} />
+          <SatRow label="Sturmintensität" cur={ionFull} max={depthThresh} on={depthOn} payoff={`Überschlag: ${UEBERSCHLAG_DEPTH_PP_PER_CHARGE} Prozentpunkte → 1 Ladung`} />
         </div>
       )}
 
@@ -158,7 +158,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[11px]">
           <span className="opacity-60" title="Volle Ladungsverbräuche diesen Lauf — der Kern-Rhythmus des Sturms.">Entladungen <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
-          {stormPp > 0 && <span className="opacity-60" title={`Gewitterfront: Crit-Chance-Momentum je Entladung (bis +${Math.round(STORM_CRIT_CAP * 100)} pp).`}>Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} pp</b><span className="opacity-45"> / {Math.round(STORM_CRIT_CAP * 100)}</span></span>}
+          {stormPp > 0 && <span className="opacity-60" title={`Gewitterfront: Crit-Chance-Momentum je Entladung (bis +${Math.round(STORM_CRIT_CAP * 100)} %).`}>Gewitterfront <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} %</b><span className="opacity-45"> / {Math.round(STORM_CRIT_CAP * 100)}</span></span>}
           {entMult > 0 && <span className="opacity-60" title="Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.">Entladung <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
         </div>
       )}

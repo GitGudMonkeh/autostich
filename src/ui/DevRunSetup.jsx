@@ -93,7 +93,7 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* Rundenzahl */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Runden</span>
+            <span className="text-sm font-semibold">Durchläufe</span>
             <input type="number" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds}
               onChange={(e) => changeRounds(e.target.value)}
               className="w-16 text-right px-2 py-1 rounded text-sm font-pixel-dense"
@@ -131,7 +131,7 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* Pro-Runde-Plan (aufklappbar) */}
         <div className="rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <button onClick={() => setShowPlan((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold">
-            <span>Plan pro Runde</span>
+            <span>Plan je Durchlauf</span>
             <span className="opacity-60">{showPlan ? "▲ einklappen" : "▼ aufklappen"}</span>
           </button>
           {showPlan && (

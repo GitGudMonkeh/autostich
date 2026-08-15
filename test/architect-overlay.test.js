@@ -117,7 +117,9 @@ describe("architectEffectStrings — Gebäude-Effekte an einer Position (CardDet
   it("Formations-Gebäude: Rolle wird ausformuliert (Joker / Formations-Multiplikator)", () => {
     const preEmpty = { value: [null], score: [null], segFactor: [1] };
     const joker = { category: "formation", base: { kind: "joker", types: ["farbblock", "wiederholung"] } };
-    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (farbblock/wiederholung)"]);
+    // Sprachprüfung E1: die Joker-Typen erscheinen als AUSGESCHRIEBENE Namen (formationLabel), nicht als rohe
+    // Enum-Schlüssel — dieselbe Quelle wie im Architekt-Bildschirm und in der Core-DB (familyEffectText).
+    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (Farbblock/Wiederholung)"]);
     const kathedrale = { category: "formation", base: { kind: "formMult", factor: 1.4 } };
     expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, kathedrale)).toEqual(["Formationen hier ×1,40"]);
   });

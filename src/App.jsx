@@ -1,6 +1,7 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
+import { TIER_META } from "./game/rarity.js"; // Raritäts-Namen: EINE Quelle (Sprachprüfung C1)
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
@@ -462,15 +463,17 @@ export function Autostich() {
     setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
-    const RAR_DE = { 3: "Seltenheit III (Blau)", 4: "Seltenheit IV (Lila)" };
+    // Sprachprüfung C1: EIN Vokabular für die Raritätsstufen — die Namen kommen aus rarity.js (TIER_META),
+// nicht aus einer zweiten, hier gepflegten Liste („Seltenheit III (Blau)" u. Ä.).
+  const RAR_DE = { 3: `Rarität: ${TIER_META[3].label}`, 4: `Rarität: ${TIER_META[4].label}` };
     const rewardLabel = (r) => r == null ? null
       : r.type === "onboardingDone" ? "Genesis-Pack · Werkstatt · Upgrades"
       : r.type === "archetype" ? `Archetyp: ${ARCH_DE[r.key] || r.key}`
-      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Seltenheitsstufe") : "Freischaltung";
+      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Raritätsstufe") : "Freischaltung";
     setProgressUnlocks((metaUnlocks || []).map((u) => {
       if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
       if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null, guide: u.key, guideName: ARCH_DE[u.key] || u.key }; // #: guide → Leitfaden-Button im Onboarding-Banner (öffnet die Fraktions-Seite)
-      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: "Neue Seltenheitsstufe freigeschaltet", target: null };
+      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: `Neue Rarität freigeschaltet: ${TIER_META[u.tier]?.label || ""}`.trim(), target: null };
       return { id: `u-${u.link}`, label: "Freischaltung", target: null };
     }));
     // #: Onboarding-Fortschritt fürs Victory-Banner — damit NACH JEDEM Onboarding-Lauf sichtbar ist, wo man steht und was

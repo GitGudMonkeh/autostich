@@ -4,6 +4,8 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, owns, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
+import { TIER_META } from "../game/rarity.js";        // Raritäts-Namen: EINE Quelle (Sprachprüfung C1)
+import { LEG_PHASE_CYCLE } from "../game/constants.js"; // Legendär-Phase: Durchlauf-Nr. aus dem Plan (Sprachprüfung E3)
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 
@@ -25,7 +27,10 @@ const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
 // Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
-const ONB_REWARDS = ["Reroll +1", "Pflanze frei", "Rarität: Blau", "Eis frei", "Rarität: Violett", "Legendär ⭐ (R29)"];
+// Sprachprüfung C1/E3: Raritäts-Namen aus TIER_META (kein „Blau"/„Violett"), Legendär-Phase mit ausgeschriebenem
+// Durchlauf statt der Chiffre „R29" — die Zahl kommt aus dem Entscheidungsplan (constants.js).
+const ONB_REWARDS = ["Reroll +1", "Pflanze frei", `Rarität: ${TIER_META[3].label}`, "Eis frei", `Rarität: ${TIER_META[4].label}`,
+  `Legendär ⭐ (Durchlauf ${LEG_PHASE_CYCLE})`];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");

@@ -21,13 +21,13 @@ import { rngAt } from "./rng.js";
 //   desc(mag) baut den Anzeigetext (mag ist der gerollte Wert bzw. undefined ohne range).
 export const WEEK_MODS = [
   // ---- Negativ-Pool (10) ----
-  { id: "blockForm",    sign: "neg",                 effect: "blockForm",    range: [10, 15], name: "Gesperrte Aufstell-Felder", desc: (v) => `${v} Aufstell-Felder blockiert` },
-  { id: "blockArch",    sign: "neg",                 effect: "blockArch",    range: [10, 15], name: "Gesperrte Bau-Felder",      desc: (v) => `${v} Bau-Felder blockiert` },
+  { id: "blockForm",    sign: "neg",                 effect: "blockForm",    range: [10, 15], name: "Gesperrte Aufstell-Felder", desc: (v) => `${v} Positionen der Aufstellung blockiert` },
+  { id: "blockArch",    sign: "neg",                 effect: "blockArch",    range: [10, 15], name: "Gesperrte Baufeld-Zellen",  desc: (v) => `${v} Baufeld-Zellen blockiert` },
   { id: "strongEnemies", sign: "neg", pair: "cards",  effect: "enemyValue",   range: [1, 3],   name: "Stärkere Gegner",          desc: (v) => `Gegnerkarten +${v} Wert` },
-  { id: "deckShuffle",  sign: "neg",                 effect: "deckShuffle",                   name: "Deck-Shuffle",             desc: () => "Deck wird vor jeder Aufstellphase neu gemischt" },
-  { id: "energyEbb",    sign: "neg", pair: "energy", effect: "energyEbb",                     name: "Energie-Ebbe",             desc: () => "Start mit 0 Aufstell-Energie" },
-  { id: "tightBuild",   sign: "neg", pair: "build",  effect: "tightBuild",                    name: "Enge Aufstellung",         desc: () => "Nur 12 Bauplätze" },
-  { id: "scarceSkills", sign: "neg",                 effect: "scarceSkills",                  name: "Skill-Verknappung",        desc: () => "Nur 1 Skill je Fraktion" },
+  { id: "deckShuffle",  sign: "neg",                 effect: "deckShuffle",                   name: "Deck-Shuffle",             desc: () => "Deck wird vor jeder Aufstellungsphase neu gemischt" },
+  { id: "energyEbb",    sign: "neg", pair: "energy", effect: "energyEbb",                     name: "Energie-Ebbe",             desc: () => "Start mit 0 Formations-Energie" },
+  { id: "tightBuild",   sign: "neg", pair: "build",  effect: "tightBuild",                    name: "Enge Aufstellung",         desc: () => "Nur 12 Baufeld-Zellen" },
+  { id: "scarceSkills", sign: "neg",                 effect: "scarceSkills",                  name: "Skill-Verknappung",        desc: () => "Nur 1 Skill je Archetyp" },
   { id: "scarcePerks",  sign: "neg",                 effect: "scarcePerks",                   name: "Perk-Verknappung",         desc: () => "Nur 1 Perk je Auswahl" },
   { id: "noReroll",     sign: "neg",                 effect: "noReroll",                      name: "Kein Reroll",              desc: () => "0 Rerolls (alle Pools)" },
   { id: "perkCap",      sign: "neg", pair: "perk",   effect: "perkCap",                       name: "Perk-Deckel",              desc: () => "Keine sehr seltenen/raren Perks" },
@@ -38,7 +38,7 @@ export const WEEK_MODS = [
   { id: "doubleLeg",    sign: "pos",                 effect: "doubleLeg",                     name: "Doppel-Legendär",          desc: () => "2 legendäre Slots — in der Legendär-Phase 2 wählbar" },
   { id: "noBuildLimit", sign: "pos", pair: "build",  effect: "noBuildLimit",                  name: "Kein Gebäudelimit",        desc: () => "Unbegrenzt bauen" },
   { id: "perkBlessing", sign: "pos", pair: "perk",   effect: "perkBlessing",                  name: "Perk-Segen",               desc: () => "Perks droppen nur sehr selten/rar" },
-  { id: "energyFlood",  sign: "pos", pair: "energy", effect: "energyFlood",                   name: "Energie-Flut",             desc: () => "Doppelte Aufstell-Energie" },
+  { id: "energyFlood",  sign: "pos", pair: "energy", effect: "energyFlood",                   name: "Energie-Flut",             desc: () => "Doppelte Formations-Energie" },
   { id: "buildBoost",   sign: "pos",                 effect: "buildBoost",                    name: "Bau-Boost",                desc: () => "Gebäude-Boni ×2" },
   { id: "formBoost",    sign: "pos",                 effect: "formBoost",                     name: "Formations-Boost",         desc: () => "Formations-Boni ×2" },
 ];

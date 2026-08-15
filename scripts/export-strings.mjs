@@ -14,7 +14,7 @@ import { dirname, resolve, relative, join } from "node:path";
 import { SKILL_LIST, ARCHETYPE_META } from "../src/game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../src/game/perks.js";
 import { FAMILY_LIST } from "../src/game/families.js";
-import { ARCHITECT_FAMILIES, tierNum, tierFactor, bindSpanFor, TIER_INERT_KINDS } from "../src/game/architect.js";
+import { ARCHITECT_FAMILIES, TIER_INERT_KINDS, familyEffectText } from "../src/game/architect.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../src/game/glossary.js";
 import { TIER_META } from "../src/game/rarity.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../src/game/cosmetics.js";
@@ -92,46 +92,10 @@ for (const f of FAMILY_LIST) {
 }
 
 /* ============ 4 · Architekt-Gebäude ============ */
-// 1:1 gespiegelt aus ArchitectScreen.famEff (IN-GAME-Wortlaut — nicht die abweichende Kopie in
-// scripts/gen-db.mjs; die Divergenz ist im Sprachprüfungs-Report vermerkt).
-function archEff(fam, tier) {
-  const base = fam.base, t = tier, nz = (v) => tierNum(v, t);
-  let s;
-  switch (base.kind) {
-    case "flat":       s = fam.category === "value" ? `alle Abgedeckten +${nz(base.value)} Stichwert` : `Sieg +${nz(base.score)} Score`; break;
-    case "lowValue":   s = `niedrige Karten +${nz(base.value)} Stichwert`; break;
-    case "color":      s = fam.category === "value" ? `passende Farbe +${nz(base.value)} Stichwert` : `passende Farbe +${nz(base.score)} Score`; break;
-    case "target":     s = `${fam.target === "highest" ? "höchste" : "niedrigste"} Karte +${nz(fam.category === "value" ? base.value : base.score)} ${fam.category === "value" ? "Stichwert" : "Score"}`; break;
-    case "streak":     s = `Sieg +${nz(base.score)} Score × Serie`; break;
-    case "crit":       s = `Crit-Sieg +${nz(base.score)} Score`; break;
-    case "milestone": { const every = (fam.tierKick && fam.tierKick.every && typeof t === "number" && t >= fam.tierKick.at) ? fam.tierKick.every : base.every;
-                        s = `jeder ${every}. Sieg auf diesem Gebäude +${nz(base.score)} Score`; break; }
-    case "mult":       s = `Siege hier ×${base.factor}`; break;
-    case "neighbor":   s = fam.category === "value" ? `+${nz(base.value)} Stichwert je Nachbargebäude (max ${base.cap})` : `Sieg +${nz(base.score)} Score je Nachbargebäude (max ${base.cap})`; break;
-    case "compound":   s = `Sieg +${nz(base.score)} Score je vollendeter Struktur`; break;
-    case "segment":    s = `${base.half === "early" ? "frühe" : "späte"} Segmente ${fam.category === "value" ? `+${nz(base.value)} Stichwert` : `+${nz(base.score)} Score`}`; break;
-    case "relay":      s = base.both ? `strahlt +${nz(base.score)} Score in beide Nachbarfelder` : `reicht +${nz(base.score)} Score ans Feld rechts weiter`; break;
-    case "gamble":     s = `Crit-Sieg +${nz(base.score)} Score · Sieg ohne Crit −${base.penalty} Score`; break;
-    case "joker":      s = `Formations-Joker (${base.types.join("/")})`; break;
-    case "transparentFarb": s = "Farbblock-Transparenz"; break;
-    case "bind":       s = `Treppen-Bindeglied: Karte darf im Wert um ±${bindSpanFor(t)} abweichen`; break;
-    case "crossSeg":   s = "öffnet die Segmentgrenze"; break;
-    case "anker":      s = `jede Zelle = Anker ×${tierFactor(base.factor, t).toFixed(2)}`; break;
-    case "formMult":   s = `Formationen hier ×${base.factor}`; break;
-    default:           s = ""; break;
-  }
-  if (fam.tierKick && s) {
-    const k = fam.tierKick, on = typeof t === "number" && t >= k.at;
-    let kick = "";
-    if (k.mult) kick = `zusätzlich ×${k.mult} Score`;
-    else if (k.critFlatMult) kick = `bei Crit ×${k.critFlatMult} Direkt-Score`;
-    else if (k.streakDoubleFrom) kick = `ab Serie ${k.streakDoubleFrom} doppelt`;
-    else if (k.addType) kick = `zweiter Joker-Typ: ${k.addType}`;
-    else if (k.ankerValue) kick = `+${k.ankerValue} Stichwert je Ankerzelle`;
-    if (kick) s += on ? ` · ${kick}` : ` (Stufe ${k.at}: ${kick})`;
-  }
-  return s;
-}
+// Gebaeude-Effekttexte kommen aus der geteilten Quelle in src/game/architect.js (Sprachpruefung A13):
+// dieselbe Funktion bedient Spiel, Kartendetail und Core-DB -> die CSV bildet garantiert den In-Game-Wortlaut ab.
+const archEff = (fam, tier) => familyEffectText(fam, tier);
+
 const ARCH_CAT_LABEL = { value: "Wert", score: "Score", formation: "Formation" };
 for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   const cat = ARCH_CAT_LABEL[fam.category] || fam.category;
@@ -344,9 +308,16 @@ function uiRows() {
       const cands = [];
       for (const m of line.matchAll(/"([^"\\\n]{2,})"|'([^'\\\n]{2,})'|`([^`\\\n]{2,})`/g)) cands.push(m[1] ?? m[2] ?? m[3]);
       for (const m of line.matchAll(/>\s*([^<>{}\n][^<>{}\n]{1,})\s*</g)) cands.push(m[1]);
+      // Label-Fragmente, die DIREKT an einer Interpolation kleben — „Stich {pos} / {len}", „Knoten · {x}".
+      // Ohne diese Muster fehlten ~50 sichtbare Texte im Export (u. a. der Stich-Zähler auf dem Spielfeld).
+      for (const m of line.matchAll(/>\s*([^<>{}\n]{2,}?)\s*\{|\}\s*([^<>{}\n]{2,}?)\s*<|\}\s*([^<>{}\n]{2,}?)\s*\{/g)) {
+        cands.push(m[1] ?? m[2] ?? m[3]);
+      }
       for (const c of cands) {
-        const s = c.trim();
+        const s = (c || "").trim();
         if (s.length < 2 || seen.has(s) || DROP.has(s)) continue;
+        if (/\b(catch|const|return|else|of|current|null|undefined|typeof)\b/.test(s)) continue;  // Code-Reste
+        if (/^[)(\[\],.:|&?]+$|^[)(]|[)(]$/.test(s)) continue;
         if (!GERMAN.test(s) && !/^[A-Z]/.test(s)) continue;   // Musiktitel sind englisch, aber Großbuchstabe am Anfang
         if (CSSY.test(s) || FRAGMENT.test(s)) continue;
         if (!/\s/.test(s) && /^[a-z][A-Za-z0-9_]*$/.test(s)) continue;  // camelCase-/Enum-Bezeichner
