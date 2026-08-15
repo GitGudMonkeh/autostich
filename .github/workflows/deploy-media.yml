@@ -18,6 +18,13 @@ permissions:
   contents: write
 
 # Gleiche Gruppe wie die App-Deploys → serialisiert die gh-pages-Pushes (kein Race beim Publizieren).
+#
+# ACHTUNG, bekannter Nebeneffekt: GitHub hält pro Gruppe nur EINEN wartenden Lauf. Läuft gerade ein App-Deploy und
+# wartet ein zweiter, verdrängt dieser Media-Lauf den wartenden — der App-Deploy wird als „cancelled" beendet.
+# Genau das ist beim ersten Einsatz passiert (Pixi-Deploy e7101b07, 13:37:50 → 7 s später gecancelt).
+# Das trifft nur Pushes, die media/** ändern, also praktisch nur beim Hinzufügen/Entfernen von Tracks.
+# WENN es passiert: den betroffenen App-Deploy einmal manuell neu anstoßen (Actions → Workflow → Re-run).
+# Die Alternative (eigene Gruppe) wäre schlechter — dann könnten zwei Jobs gleichzeitig auf gh-pages pushen.
 concurrency:
   group: gh-pages-publish
   cancel-in-progress: false
