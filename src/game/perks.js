@@ -6,7 +6,15 @@ import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js"
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Tausendertrenner (1600 → „1.600")
+// Zinseszins-Bank: nötige Siege eines Durchlaufs für die Auszahlung. GETEILTE QUELLE für Engine (Abrechnung)
+// und UI (Fortschritts-Readout) → kein Drift zwischen Regel und Anzeige.
+export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen * C.ZINS_HURDLE_RATE);
+// Kontostand für die Anzeige (BuildSummary): null, solange der Perk nicht im Build ist.
+export function zinsReadout(state) {
+  if (!state || !(state.perks || []).some((id) => PERK_DEFS[id]?.zinseszins)) return null;
+  return { capital: state.zinsCapital || 0, rate: state.zinsRate ?? C.ZINS_RATE_START,
+           wins: state.cycleWins || 0, hurdle: zinsHurdle() };
+}
 
 /* ============================================================
    PERK-REGISTRY  — datengetrieben (wie clauses.js in TrickLadder).
@@ -84,7 +92,7 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Jeder Durchlauf mit positiver Bilanz (mehr Siege als Niederlagen) hebt einen Dauer-Bonus um +${grp(C.ZINSESZINS_STEP)} Score; der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Punkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt eine Stufe.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
         desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,

@@ -175,7 +175,24 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
-export const ZINSESZINS_STEP     = envNum("SIM_ZINSESZINS_STEP", 1600);   // Zinseszins (Durchlauf-Bilanz): +flacher Dauer-Score je positivem Durchlauf (stapelt, KEIN Mult) [900→1600]
+// ---- Zinseszins-Rework (2026-08-15): „die Bank" statt flacher Dauerdividende. -------------------------------------
+// Befund der Sonde (sim/zins-probe.mjs, 150 UCB-Runs à 50 Durchläufe): der ALTE flache Bonus (+1600 je positiver
+// Bilanz) hob den BODEN und verschwand bei starken Builds — schwache Runs 1,49× / starke Runs 1,17×. Für einen
+// Legendär exakt verkehrt herum, weil eine flache Konstante gegen eine multiplikative Score-Kurve nicht skaliert.
+// Neues Modell: Kapital (= Anteil des Stich-Scores, skaliert also MIT dem Build) × Zinssatz (= steigt mit Beständigkeit).
+// Kalibrierung: Auszahlung ≈ Einlagesatz × Ø-Zinssatz × Σ(kumulativer Score-Anteil ≈ 14,5) × Endscore.
+// Gemessener Satz D: alle 1,25× · schwache Runs 1,06× · starke Runs 1,42× → Defekt umgedreht. Siege je Durchlauf
+// liegen bei p50 24/40 (60 %); die Hürde 65 % wird selbst in der zweiten Run-Hälfte noch in ~37 % der Durchläufe
+// VERFEHLT → der Perk bleibt bis zum Schluss eine Anspannung statt eines Zählers.
+// WICHTIG: Auszahlungen zahlen NICHT wieder ein (kein Selbst-Compounding) → kein Runaway, das Wachstum kommt
+// ausschließlich aus dem mitwachsenden Score und dem steigenden Satz.
+export const ZINS_DEPOSIT        = envNum("SIM_ZINS_DEPOSIT", 0.12);      // Zinseszins: Anteil des Stich-Scores, der bei Sieg aufs Kapital wandert
+export const ZINS_RATE_START     = envNum("SIM_ZINS_RATE_START", 0.12);   // … Start-Zinssatz
+export const ZINS_RATE_STEP      = envNum("SIM_ZINS_RATE_STEP", 0.04);    // … Anstieg je Durchlauf, der die Hürde nimmt
+export const ZINS_RATE_MAX       = envNum("SIM_ZINS_RATE_MAX", 0.40);     // … Deckel des Zinssatzes
+export const ZINS_HURDLE_RATE    = envNum("SIM_ZINS_HURDLE_RATE", 0.65);  // … nötiger Sieg-Anteil eines Durchlaufs für die Auszahlung (× Durchlauf-Länge, aufgerundet)
+export const ZINS_CRASH_KEEP     = envNum("SIM_ZINS_CRASH_KEEP", 0.75);   // … Crash (Hürde verfehlt): so viel Kapital bleibt
+export const ZINS_CRASH_STEPS    = envNum("SIM_ZINS_CRASH_STEPS", 1);     // … Crash: um so viele Stufen fällt der Zinssatz (min. Startwert)
 export const VABANQUE_SCORE      = envNum("SIM_VABANQUE_SCORE", 400000);  // Vabanque (Eröffnung): erste N Stiche eines Durchlaufs in Folge → +Score [3000→400000: per Durchlauf, s. engine.js]
 export const VABANQUE_TRICKS     = envNum("SIM_VABANQUE_TRICKS", 5);      // …          … so viele Eröffnungs-Stiche
 export const VABANQUE_MAX_PAYOUTS = envNum("SIM_VABANQUE_MAX_PAYOUTS", 3); // … Lauf-Deckel: so oft zahlt Vabanque max je Lauf (Anti-Front-Load-Exploit; s. engine.js)

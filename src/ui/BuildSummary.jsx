@@ -14,7 +14,37 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "�
 
 /* Aktive Perks & Familien je Kategorie, anklickbar → Beschreibung (#1). Klick löst keine Auswahl aus.
    Rarität #167: `familyTiers` mischt gehaltene Familien (Name + römische Stufe, Stufenfarbe) unter die flachen Perks. */
-export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.", zinsBonus }) {
+/* #240: Zinseszins-Bank — Kontostand im laufenden Lauf (nur mit Perk im Build; außerhalb eines Laufs `zins` = null).
+   Zeigt die drei Größen, die die Entscheidung tragen: was auf dem Konto liegt, zu welchem Satz es arbeitet und wie
+   weit der laufende Durchlauf von der Hürde entfernt ist (darunter = Crash). Eigene Komponente, damit der Readout
+   ohne Klick-Interaktion des Detail-Panels renderbar/prüfbar ist. */
+export function ZinsReadout({ zins, color = "#5ab87a" }) {
+  if (!zins) return null;
+  const genommen = zins.wins >= zins.hurdle;
+  return (
+    <div className="mt-2 pt-2 text-xs font-mono grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
+      <div className="flex items-center gap-1.5">
+        <span className="opacity-55">Kapital:</span>
+        <b style={{ color }}>{Math.round(zins.capital).toLocaleString("de-DE")}</b>
+        <span className="opacity-55">· Zinssatz</span>
+        <b style={{ color }}>{Math.round(zins.rate * 100)} %</b>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="opacity-55">Auszahlung bei Erfolg:</span>
+        <b style={{ color }}>+{Math.round(zins.capital * zins.rate).toLocaleString("de-DE")}</b>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="opacity-55">Siege dieser Durchlauf:</span>
+        <b style={{ color: genommen ? "#4ade80" : "#e0605a" }}>{zins.wins} / {zins.hurdle}</b>
+        <span className="opacity-55">{genommen ? "· Hürde genommen" : "· sonst Crash"}</span>
+      </div>
+    </div>
+  );
+}
+
+// `zins` (optional, nur im laufenden Lauf): Kontostand der Zinseszins-Bank { capital, rate, wins, hurdle } — von
+// zinsReadout(state) gebaut, damit Panel und Perk-Auswahl dieselbe Quelle nutzen.
+export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.", zins }) {
   const [open, setOpen] = useState(null); // { kind: "perk"|"family", id }
   const isOpen = (kind, id) => open && open.kind === kind && open.id === id;
   const toggle = (kind, id) => setOpen(isOpen(kind, id) ? null : { kind, id });
@@ -82,14 +112,7 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
             <span className="font-bold" style={{ color: detail.c }}>{detail.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{detail.desc}</div>
-          {/* #240: Zinseszins — aktueller aufgestapelter Bonus im laufenden Lauf (nur wenn der Perk offen ist und ein Lauf läuft). */}
-          {open && open.kind === "perk" && PERK_DEFS[open.id]?.zinseszins && zinsBonus != null && (
-            <div className="mt-2 pt-2 text-xs font-mono flex items-center gap-1.5" style={{ borderTop: `1px solid ${detail.c}33` }}>
-              <span className="opacity-55">Aktueller Bonus:</span>
-              <b style={{ color: detail.c }}>+{zinsBonus.toLocaleString("de-DE")}</b>
-              <span className="opacity-55">Score je Durchlauf-Ende</span>
-            </div>
-          )}
+          {open && open.kind === "perk" && PERK_DEFS[open.id]?.zinseszins && <ZinsReadout zins={zins} color={detail.c} />}
         </div>
       )}
     </div>

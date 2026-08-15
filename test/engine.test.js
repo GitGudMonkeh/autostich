@@ -4,11 +4,12 @@ import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
-import { streakBaseMult } from "../src/game/perks.js";
+import { streakBaseMult, zinsHurdle } from "../src/game/perks.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 // Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
@@ -406,16 +407,39 @@ describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
 });
 
 describe("Legendär-Perks Durchlauf-Ende & Formationsvielfalt (Legendär-Perks-Rework #203)", () => {
-  it("L_ZINS Zinseszins: positive Durchlauf-Bilanz stapelt eine flache Dauer-Dividende (am Durchlauf-Ende)", () => {
-    // 40. Stich (pos 39) als Sieg, Bilanz positiv (mehr Siege als Niederlagen) → zinsBonus += Step, dem Schlussstich gutgeschrieben.
-    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 25, cycleLosses: 10, zinsBonus: 0 }), rng);
-    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
-    expect(s.zinsBonus).toBe(ZINSESZINS_STEP);                // eine Stufe gestapelt
-    expect(s.cycleWins).toBe(0);                              // Bilanz für den nächsten Durchlauf zurückgesetzt
-    expect(s.lastTrick.gained).toBeGreaterThan(B);           // Stich-Score + Dividende (Score-Rekonziliation)
-    // Negative Bilanz → keine neue Stufe (der bestehende Bonus wird aber weiter ausgezahlt).
-    const neg = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, cycleLosses: 20, zinsBonus: ZINSESZINS_STEP }), rng);
-    expect(neg.zinsBonus).toBe(ZINSESZINS_STEP);             // NICHT weiter gestapelt
+  it("L_ZINS Bank: jeder Sieg zahlt einen Anteil des Stich-Scores aufs Kapital ein (Kapital ist KEIN Score)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 5, zinsCapital: 0 }), rng);
+    expect(s.zinsCapital).toBeCloseTo(s.lastTrick.gained * ZINS_DEPOSIT); // Einlage = Anteil des VOLLEN Stich-Scores
+    expect(s.score).toBeCloseTo(s.lastTrick.gained);                      // … und schlägt selbst nicht auf den Score durch
+    // Niederlage zahlt nicht ein.
+    const loss = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 5, zinsCapital: 500 }), rng);
+    expect(loss.zinsCapital).toBe(500);
+  });
+  it("L_ZINS Bank: Hürde genommen → Kapital × Zinssatz ausgezahlt, Satz steigt eine Stufe (Deckel greift)", () => {
+    const hurdle = zinsHurdle(); // 65 % von 40 Stichen = 26 Siege
+    // Schlussstich (pos 39) als Sieg; cycleWins zählt diesen Sieg mit → hurdle−1 vorher reicht exakt.
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: hurdle - 1, zinsCapital: 100000, zinsRate: ZINS_RATE_START, score: 0 }), rng);
+    expect(s.cycle).toBe(1);                                            // Durchlauf-Ende
+    // lastTrick.scoreGain trägt am Durchlauf-Ende bereits die Auszahlung (Ledger-Rekonziliation) → den reinen
+    // Stich-Score aus dem Kapital zurückrechnen: Kapital = Vorher + Stich-Score × Einlagesatz.
+    const trickScore = (s.zinsCapital - 100000) / ZINS_DEPOSIT;
+    expect(s.zinsCapital).toBeCloseTo(100000 + trickScore * ZINS_DEPOSIT); // Kapital bleibt liegen (nur die Zinsen fließen ab)
+    expect(s.score).toBeCloseTo(trickScore + s.zinsCapital * ZINS_RATE_START); // Stich + Zinsen
+    expect(s.zinsRate).toBeCloseTo(ZINS_RATE_START + ZINS_RATE_STEP);   // Satz eine Stufe hoch
+    expect(s.cycleWins).toBe(0);                                        // Bilanz für den nächsten Durchlauf zurückgesetzt
+    // Deckel: ein Satz am Maximum steigt nicht weiter.
+    const capped = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: hurdle - 1, zinsCapital: 1000, zinsRate: ZINS_RATE_MAX }), rng);
+    expect(capped.zinsRate).toBeCloseTo(ZINS_RATE_MAX);
+  });
+  it("L_ZINS Bank: Hürde verfehlt → Crash (Kapital schrumpft, Satz fällt eine Stufe, keine Auszahlung)", () => {
+    const s = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, zinsCapital: 100000, zinsRate: ZINS_RATE_START + 3 * ZINS_RATE_STEP, score: 0 }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.score).toBe(0);                                            // keine Auszahlung
+    expect(s.zinsCapital).toBeCloseTo(100000 * ZINS_CRASH_KEEP);        // Kapital gecrasht
+    expect(s.zinsRate).toBeCloseTo(ZINS_RATE_START + 2 * ZINS_RATE_STEP); // Satz eine Stufe zurück
+    // Der Satz fällt nie unter den Startwert.
+    const floor = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, zinsRate: ZINS_RATE_START }), rng);
+    expect(floor.zinsRate).toBeCloseTo(ZINS_RATE_START);
   });
   it("L_ECHO Echo: am Durchlauf-Ende wird der beste Stich des Durchlaufs nochmal gutgeschrieben (auch bei Schluss-Niederlage)", () => {
     const s = resolveTrick(scenario(0, 12, { perks: ["L_ECHO"], pos: 39, cycleBestTrick: 5000, score: 100000 }), rng); // Schlussstich Niederlage
