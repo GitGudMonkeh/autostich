@@ -503,6 +503,10 @@ function BlackholeScene({ deckTint = false }) {
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
 function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
+  // Board-weite Bühne (panelRef) + unsichtbarer Karten-Anker (cardRef) im Zentrum — der Prunk-Fx zeichnet darüber.
+  //   (#379-Regression-Fix: beim Loop-Umbau versehentlich entfernt → GottScene crashte mit „panelRef is not defined".)
+  const panelRef = useRef(null);
+  const cardRef = useRef(null);
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-Backdrop (look.bf)
   //   + die Pack-Deckfarbe (look.a1/a2). Vorher zeigte der Prunk-Showcase den Pack-BG auch im Standard (Inkonsistenz).
   const bf = battlefieldAssets(deckTint ? (look?.bf || SHOWCASE_BF) : SHOWCASE_BF);
