@@ -212,6 +212,9 @@ export const THEME_DEFS = {
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
   seedrache:  { id: "seedrache",  name: "Eldritch",   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
+  // Obsidian — monochromes Kristall-Monolith-Pack (schwarz mit weiß glühenden Rissen).
+  obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 15, a1: "#e8edf5", a2: "#9aa6bd",
+    deckId: "deck_obsidian",   bfId: "bf_obsidian",   els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

@@ -120,12 +120,16 @@ import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.
 import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";
 import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Eldritch (ehem. Seedrache)
 import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
+import obsidianFront   from "../assets/cards/decks_player/deck_obsidian/front.webp";   // Obsidian
+import obsidianBack    from "../assets/cards/decks_player/deck_obsidian/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
 import bfPolarlichtMobile  from "../assets/battlefields/bf_polarlicht/mobile.jpg";
 import bfSeedracheDesktop  from "../assets/battlefields/bf_seedrache/desktop.jpg";
 import bfSeedracheMobile   from "../assets/battlefields/bf_seedrache/mobile.jpg";
+import bfObsidianDesktop   from "../assets/battlefields/bf_obsidian/desktop.jpg";
+import bfObsidianMobile    from "../assets/battlefields/bf_obsidian/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -162,6 +166,7 @@ export const DECK_ASSETS = {
   deck_arcade:     { front: arcadeFront,     back: arcadeBack },
   deck_polarlicht: { front: polarlichtFront, back: polarlichtBack },
   deck_seedrache:  { front: seedracheFront,  back: seedracheBack },
+  deck_obsidian:   { front: obsidianFront,   back: obsidianBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -200,6 +205,7 @@ export const BATTLEFIELD_ASSETS = {
   bf_arcade:     { desktop: bfArcadeDesktop,     mobile: bfArcadeMobile },
   bf_polarlicht: { desktop: bfPolarlichtDesktop, mobile: bfPolarlichtMobile },
   bf_seedrache:  { desktop: bfSeedracheDesktop,  mobile: bfSeedracheMobile },
+  bf_obsidian:   { desktop: bfObsidianDesktop,   mobile: bfObsidianMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

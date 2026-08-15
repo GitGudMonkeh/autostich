@@ -68,6 +68,7 @@ export const DECK_DEFS = {
   deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   deck_polarlicht: { id: "deck_polarlicht", name: "Scarab",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  deck_obsidian:   { id: "deck_obsidian",   name: "Obsidian",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
 };
 
 export const BATTLEFIELD_DEFS = {
@@ -106,6 +107,7 @@ export const BATTLEFIELD_DEFS = {
   bf_arcade:     { id: "bf_arcade",     name: "Beryll · Battlefield",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   bf_polarlicht: { id: "bf_polarlicht", name: "Scarab · Battlefield",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
   bf_seedrache:  { id: "bf_seedrache",  name: "Eldritch · Battlefield",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  bf_obsidian:   { id: "bf_obsidian",   name: "Obsidian · Battlefield",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
