@@ -71,15 +71,15 @@ function buildCardCanvas(w, h, opts) {
 }
 
 export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, frontImage = null, value = null, suit = "#e0605a",
-  deckColor = STD_A, deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1, onDone = null }) {
+  deckColor = STD_A, deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1, onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const startRef = useRef(null);
   const recolorRef = useRef(null); // #359: Live-Umfärben der Kachel-Rahmen bei Farbmodus-Wechsel (kein Remount → build() läuft nicht neu)
   const firstRef = useRef(true);
   const imgRef = useRef(null);
-  const p = useRef({ frontImage, value, suit, deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone });
-  p.current = { frontImage, value, suit, deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone };
+  const p = useRef({ frontImage, value, suit, deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
+  p.current = { frontImage, value, suit, deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
 
   // Deck-Skin vorladen (im Spiel meist schon im Cache, da die Karte im DOM liegt).
   useEffect(() => { if (!frontImage) { imgRef.current = null; return; } const img = new Image(); img.src = frontImage; imgRef.current = img; }, [frontImage]);
@@ -283,6 +283,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
 
     function restart() {
       play.t = 0; play.on = true;
+      p.current.onFire && p.current.onFire();   // #378 Showcase-Sound (fx_lasergrid) am Loop-Neustart → synchron zum Slice (kein Drift)
       for (const tl of tiles) { tl.released = false; tl.dead = false; tl._sparked = false; tl.life = 0; tl.x = tl.homeX; tl.y = tl.homeY; tl.vx = tl.vy = tl.ang = tl.spin = 0; tl.cont.visible = true; tl.cont.position.set(tl.homeX, tl.homeY); tl.cont.rotation = 0; tl.cont.scale.set(1, 1); tl.fill.alpha = 1; tl.frame.alpha = 0; }
       pix = [];
     }
@@ -292,6 +293,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
       clearScene();
       if (!build()) return;
       play.on = true; play.t = 0;
+      p.current.onFire && p.current.onFire();   // #378 Sound (fx_lasergrid) am Slice-Start — auch beim ersten Abspielen im Showcase
       if (document.visibilityState !== "hidden") app.ticker.start();
     }
     startRef.current = startPlay;

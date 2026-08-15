@@ -425,7 +425,8 @@ function HologridScene({ deckTint = false, look = null }) {
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       <Suspense fallback={null}>
         <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
-          value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1} />
+          value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1}
+          onFire={() => audio.play("fx_lasergrid", { rate: 1.1, gain: 1.0 })} /* #378 Sound auch im Shop, getimt (rate = Showcase-Speed), gleicher Key wie in-game (#374) */ />
       </Suspense>
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
