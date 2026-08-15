@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDeck, makeRng, shuffle, shuffledOrder, clamp, fmtDuration } from "../src/game/deck.js";
+import { buildDeck, makeRng, shuffle, shuffledOrder, shuffleFreePositions, clamp, fmtDuration } from "../src/game/deck.js";
 
 describe("Deck", () => {
   it("baut 40 Karten: 4 Farben × Werte 1..10, value = baseRank (#34)", () => {
@@ -53,5 +53,38 @@ describe("clamp & fmtDuration (#158)", () => {
     expect(fmtDuration(65000)).toBe("1:05");
     expect(fmtDuration(600000)).toBe("10:00");
     expect(fmtDuration(-1000)).toBe("0:00");
+  });
+});
+
+/* #370 Deck-Shuffle (Wochen-Mod) — die Mischung darf fixierte Brett-Positionen nicht anfassen.
+   Regression: eine Vollmischung ließ gefrorene Gletscher/gesperrte Zellen an Ort und Stelle, schob aber eine
+   beliebige andere Karte darunter — und weil diese Zellen tauschgesperrt sind, war das nicht korrigierbar. */
+describe("shuffleFreePositions (#370)", () => {
+  const order = Array.from({ length: 12 }, (_, i) => i * 10);
+
+  it("fixierte Positionen behalten ihren Eintrag, freie werden permutiert", () => {
+    const pinnedSet = new Set([0, 3, 7, 11]);
+    const out = shuffleFreePositions(order, (i) => pinnedSet.has(i), makeRng(42));
+    for (const i of pinnedSet) expect(out[i]).toBe(order[i]);
+    // Kein Eintrag geht verloren oder doppelt sich (Permutation bleibt gültig).
+    expect([...out].sort((a, b) => a - b)).toEqual([...order].sort((a, b) => a - b));
+    // Die freien Positionen wurden tatsächlich umgestellt (nicht zufällig die Identität).
+    const free = order.map((_, i) => i).filter((i) => !pinnedSet.has(i));
+    expect(free.some((i) => out[i] !== order[i])).toBe(true);
+  });
+
+  it("ohne fixierte Positionen ist es eine normale Vollmischung", () => {
+    const out = shuffleFreePositions(order, () => false, makeRng(7));
+    expect([...out].sort((a, b) => a - b)).toEqual([...order].sort((a, b) => a - b));
+    expect(out).not.toEqual(order);
+  });
+
+  it("alles fixiert → Reihenfolge unverändert", () => {
+    expect(shuffleFreePositions(order, () => true, makeRng(1))).toEqual(order);
+  });
+
+  it("ist deterministisch (gleicher Seed → gleiche Anordnung)", () => {
+    const p = (i) => i === 2;
+    expect(shuffleFreePositions(order, p, makeRng(99))).toEqual(shuffleFreePositions(order, p, makeRng(99)));
   });
 });

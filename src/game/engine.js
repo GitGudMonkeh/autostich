@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { shuffledOrder } from "./deck.js";
+import { shuffledOrder, shuffleFreePositions } from "./deck.js"; // #370 Deck-Shuffle: fixierte Positionen bleiben stehen
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { weekModMag, hasWeekMod } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
@@ -1343,7 +1343,16 @@ export function resolveTrick(state, rng) {
         phase = "formation";
         // #370 Deck-Shuffle (nur Ranked): vor der Aufstellphase die Karten-Anordnung frisch mischen → die letzte
         // Aufstellung ist zunichte und muss neu gebaut werden. Deterministisch je Durchlauf; sonst playerOrder unverändert.
-        if (hasWeekMod(state.weekMods, "deckShuffle")) playerOrder = shuffledOrder(playerOrder.length, rngAtOr(cycle, "deckShuffle"));
+        // [FIX] Nur die FREIEN Positionen mischen. glacierLocked und challengeBlockForm sind POSITIONS-indiziert:
+        //   eine Vollmischung ließ sie an ihrer Zelle stehen und schob eine beliebige andere Karte darunter — und weil
+        //   genau diese Zellen in SWAP_CARDS tauschgesperrt sind, konnte der Spieler das nicht korrigieren. Damit war
+        //   die Eis-Kernentscheidung („Position gegen Wert", docs §2.1) unter diesem Mod ausgehebelt statt erschwert.
+        if (hasWeekMod(state.weekMods, "deckShuffle")) {
+          const lockedNow = newGlacierLocked || [];
+          const blockedNow = challengeBlockForm || [];
+          const pinned = (i) => !!lockedNow[i] || blockedNow.includes(i);
+          playerOrder = shuffleFreePositions(playerOrder, pinned, rngAtOr(cycle, "deckShuffle"));
+        }
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
         newFormationEnergy = (state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
           + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
