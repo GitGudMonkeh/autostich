@@ -37,7 +37,7 @@ const onbRewards = (t) => [
   t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -49,6 +49,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
   const progDp = Math.max(0, Math.floor(Number(prof.deckPoints) || 0)); // #299/#301: Deck-Punkte-Guthaben (Werkstatt-Währung)
   const progOwned = ownedCount(prof);
+  /* Erstkontakt: noch kein Lauf beendet UND das Tutorial nie gesehen. Nur dann darf der Einstieg laut sein
+     (Plan §13.4) — danach bleibt er der ruhige Chip unten. Seit dem Onboarding-Rückbau (#316) ist das
+     Tutorial die EINZIGE Führung für neue Spieler; ohne dieses Angebot fände es kaum jemand. */
+  const firstContact = !!onTutorial && !tutorialDone && (Number(prof.games) || 0) === 0;
   const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
   const progLigaFree = treeComplete(prof);
   const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
@@ -156,6 +160,20 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </div>
         )}
       </div>
+
+      {/* Erstkontakt-Angebot: einmalig laut, solange kein Lauf beendet und das Tutorial nie gesehen wurde.
+          Bewusst KEIN dritter Dauer-CTA — es verschwindet nach dem ersten beendeten Lauf bzw. sobald das
+          Tutorial gesehen ist, und lebt danach nur noch als Chip neben „Optionen" (Plan §13.4). */}
+      {firstContact && (
+        <div className="w-full max-w-sm">
+          <button onClick={onTutorial}
+            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
+            style={{ background: "#1a1330", border: `1px solid ${VI}aa`, color: "#d9ccff", boxShadow: `0 0 20px -8px ${VI}` }}>
+            <span className="text-[17px]">{t("start.tutorial.offer")}</span>
+            <span className="text-[11px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
+          </button>
+        </div>
+      )}
 
       {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
@@ -307,10 +325,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </>); })()}
       </div>
 
-      {/* Optionen — bleibt als einzelner ruhiger Chip unter dem Grid (kein eigener Grid-Platz nötig). */}
-      {onOptions && (
-        <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
-      )}
+      {/* Optionen + Tutorial — zwei ruhige Chips unter dem Grid (kein eigener Grid-Platz nötig). Das Tutorial
+          steht bewusst hier und nicht als fünfte Kachel: es ist jederzeit wiederholbar, aber kein Dauerziel. */}
+      <div className="flex items-center gap-2">
+        {onOptions && (
+          <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
+        )}
+        {onTutorial && (
+          <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
+        )}
+      </div>
 
       {/* Lokaler Nickname (#14). */}
       {onEditName && (

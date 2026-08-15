@@ -841,6 +841,70 @@ export default {
   /* ---- Deck workshop (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Unlock: {cond}",
   "shop.title": "Deck workshop",
+  /* ===================== TUTORIAL (guided run) =====================
+     Flow and anchors live in src/ui/tutorial/tutorialScript.js, the language lives here. Every number
+     is a placeholder fed from constants.js. Terminology per §3: cycle · trick · streak · order phase ·
+     order energy · build space · structure · blueprint. Tone: second person, present tense,
+     condition → effect; at most three sentences per pop-up, exactly one per coach mark. */
+  // Hub entries: the quiet chip (always) + the loud first-contact offer (only before the first finished run).
+  "start.tutorial": "Tutorial",
+  "start.tutorial.offer": "Start the tutorial",
+  "start.tutorial.offer.sub": "A guided run walks you through everything, step by step",
+
+  "tutorial.eyebrow": "Tutorial",
+  "tutorial.progress": "Step {n}/{total}",
+  "tutorial.aria.dialog": "Tutorial hint",
+  "tutorial.btn.next": "Got it",
+  "tutorial.btn.finish": "Keep playing",
+  "tutorial.btn.skipStep": "Skip",
+  "tutorial.btn.end": "End tutorial",
+
+  "tutorial.intro.title": "A guided run",
+  "tutorial.intro.body": "Your goal is the highest score you can reach over {cycles} cycles. You cannot lose — there is only more or less score. The autobattler plays the tricks itself; you decide between cycles.",
+
+  "tutorial.play.title": "The trick play",
+  "tutorial.play.body": "Both decks play their 40 cards against each other, trick by trick. The higher card wins; a tie counts for nothing. Every win pays {win} base points — streak, crits and formations multiply them.",
+  "tutorial.play.mark.board": "The tricks run here: your card on the left, your opponent's on the right.",
+  "tutorial.play.mark.status": "The bar shows score, streak and cycle — and holds the run or changes its speed.",
+  "tutorial.play.mark.rail": "The side panels show where your score comes from and what your build can do.",
+
+  "tutorial.skill.title": "Picking skills",
+  "tutorial.skill.body": "Four archetypes are on offer: Lightning, Fire, Ice and Plant. Your first skill of an archetype activates it and brings up its resource bar. You never hold more than {slots} skills at once.",
+  "tutorial.skill.mark.offer": "The offer is grouped by archetype — an amplifier only works with the skill it asks for.",
+  "tutorial.skill.mark.slots": "Once every slot is taken you swap: tap the skill that should go.",
+
+  "tutorial.perk.title": "Picking perks",
+  "tutorial.perk.body": "Three perks are up for choice, each from a category and with its own rarity. A perk lasts for the rest of the run. If none of them fits, decline — that costs you nothing.",
+  "tutorial.perk.mark.offer": "The coloured chip names the category, the border names the rarity.",
+  "tutorial.perk.mark.build": "Your build grows with every pick — here you see what already works together.",
+
+  "tutorial.formation.title": "The order phase",
+  "tutorial.formation.body": "Here you rearrange the draw order of your 40 cards. Every swap costs order energy, and you have {energy} per order phase. Cards that form a pattern make a formation and multiply your score.",
+  "tutorial.formation.mark.board": "The 40 positions sit in eight segments of {segment}.",
+  "tutorial.formation.mark.energy": "The energy readout tells you how many swaps you have left.",
+  "tutorial.formation.mark.legend": "The legend shows which formations your current order already hits.",
+
+  "tutorial.architect.title": "The Architect",
+  "tutorial.architect.body": "You place buildings as polyomino shapes on your build space. A building works as long as it lies there; full rows, columns and diagonals add a factor on top. You may upgrade, move and demolish at any time.",
+  "tutorial.architect.mark.board": "The build space is your room — the fuller it gets, the more structures you close.",
+  "tutorial.architect.mark.offers": "Blueprints come from three categories: structural, commercial and sacral.",
+  "tutorial.architect.mark.done": "When you are happy, you finish the build phase and the next cycle begins.",
+
+  "tutorial.glacier.title": "Glacier pick",
+  "tutorial.glacier.body": "After every Ice skill you pick exactly one card for the glacier — this step is mandatory.",
+
+  "tutorial.target.title": "Target pick",
+  "tutorial.target.body": "Some perks need cards: tap as many as the perk asks for.",
+
+  "tutorial.familyTarget.title": "Family target",
+  "tutorial.familyTarget.body": "This perk family needs a target — pick the suit, card or formation type it should work on.",
+
+  "tutorial.legendary.title": "The legendary phase",
+  "tutorial.legendary.body": "In cycle {cycle} you pick a legendary skill from your active archetypes. It takes a slot of its own and cannot be swapped later.",
+
+  "tutorial.outro.title": "That is the whole loop",
+  "tutorial.outro.body": "From here the run simply carries on and counts towards your stats and the leaderboard. You can look terms up in the glossary at any time; the guides explain how to play each archetype.",
+
   // #tiered tiered decks (I/II/III): {roman} is the Roman tier numeral — identical in both languages.
   "shop.tier.active": "Tier {roman} active ✓",
   "shop.tier.activate": "Activate tier {roman}",

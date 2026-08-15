@@ -69,6 +69,8 @@ describe("i18n · Katalog-Parität", () => {
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "tutorial.eyebrow",      // dito (Kopfzeile des Tutorial-Fensters)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A
     "perkcat.A.name",         // „Deck" ist in beiden Sprachen dasselbe Wort
@@ -454,7 +456,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/App.jsx", "src/ui/CustomizeScreen.jsx", "src/ui/UpgradeScreen.jsx", "src/ui/DeckDetail.jsx",
     "src/ui/Glossary.jsx", "src/ui/GuideOverlay.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
     "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
-    "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx"];
+    "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx",
+    // Tutorial (geführter Lauf) — von der ersten Zeile an zweisprachig gebaut.
+    "src/ui/tutorial/TutorialOverlay.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
@@ -487,7 +491,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     for (const file of MIGRATED) {
       const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
       // App.jsx liegt eine Ebene höher (./i18n/), alles unter src/ui/ zwei (../i18n/).
-      expect(src, `${file} steht in MIGRATED, importiert aber kein i18n`).toMatch(/from "\.{1,2}\/i18n\//);
+      // Beliebige Tiefe: `./i18n/`, `../i18n/` — und `../../i18n/`, seit das Tutorial in src/ui/tutorial/ liegt.
+      expect(src, `${file} steht in MIGRATED, importiert aber kein i18n`).toMatch(/from "(?:\.\.\/)*\.{1,2}\/i18n\//);
     }
   });
 });

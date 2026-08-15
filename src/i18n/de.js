@@ -852,6 +852,70 @@ export default {
   /* ---- Deck-Werkstatt (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Freischalten: {cond}",
   "shop.title": "Deck-Werkstatt",
+  /* ===================== TUTORIAL (geführter Lauf) =====================
+     Ablauf und Anker stehen in src/ui/tutorial/tutorialScript.js, die Sprache hier. Alle Zahlen sind
+     Platzhalter und kommen aus constants.js — ein abgetipptes „50 Durchläufe" wäre beim nächsten
+     Balancing falsch. Tonfall nach docs/text-style-guide.md: zweite Person, Präsens,
+     Bedingung → Wirkung; höchstens drei Sätze je Pop-up, genau einer je Coach-Mark. */
+  // Hub-Einstiege: ruhiger Chip (immer) + lautes Erstkontakt-Angebot (nur vor dem ersten beendeten Lauf).
+  "start.tutorial": "Tutorial",
+  "start.tutorial.offer": "Tutorial starten",
+  "start.tutorial.offer.sub": "Ein geführter Lauf erklärt dir alles Schritt für Schritt",
+
+  "tutorial.eyebrow": "Tutorial",
+  "tutorial.progress": "Schritt {n}/{total}",
+  "tutorial.aria.dialog": "Tutorial-Hinweis",
+  "tutorial.btn.next": "Verstanden",
+  "tutorial.btn.finish": "Weiterspielen",
+  "tutorial.btn.skipStep": "Überspringen",
+  "tutorial.btn.end": "Tutorial beenden",
+
+  "tutorial.intro.title": "Ein geführter Lauf",
+  "tutorial.intro.body": "Dein Ziel ist ein möglichst hoher Score über {cycles} Durchläufe. Verlieren kannst du nicht — es gibt nur mehr oder weniger Score. Die Stiche spielt der Autobattler selbst; du entscheidest zwischen den Durchläufen.",
+
+  "tutorial.play.title": "Das Stichspiel",
+  "tutorial.play.body": "Beide Decks spielen ihre 40 Karten Stich für Stich gegeneinander aus. Die höhere Karte gewinnt, ein Gleichstand zählt nicht. Jeder Sieg bringt {win} Basispunkte — Serie, Crits und Formationen vervielfachen sie.",
+  "tutorial.play.mark.board": "Hier laufen die Stiche: links deine Karte, rechts die des Gegners.",
+  "tutorial.play.mark.status": "Die Leiste zeigt Score, Serie und Durchlauf — und hält den Lauf an oder ändert das Tempo.",
+  "tutorial.play.mark.rail": "Die Seitenpanels verraten, woher dein Score kommt und was dein Build gerade kann.",
+
+  "tutorial.skill.title": "Skills wählen",
+  "tutorial.skill.body": "Vier Archetypen treten an: Blitz, Feuer, Eis und Pflanze. Dein erster Skill eines Archetyps macht ihn aktiv und blendet seine Ressourcenleiste ein. Mehr als {slots} Skills hältst du nicht gleichzeitig.",
+  "tutorial.skill.mark.offer": "Das Angebot ist nach Archetyp gruppiert — ein Verstärker wirkt erst mit dem Skill, den er verlangt.",
+  "tutorial.skill.mark.slots": "Sind alle Slots belegt, tauschst du: tippe den Skill, der weichen soll.",
+
+  "tutorial.perk.title": "Perks wählen",
+  "tutorial.perk.body": "Drei Perks stehen zur Wahl, jeder aus einer Kategorie und mit eigener Rarität. Ein Perk wirkt für den Rest des Laufs. Passt keiner, lehnst du ab — das kostet dich nichts.",
+  "tutorial.perk.mark.offer": "Der Farbchip nennt die Kategorie, der Rand die Rarität.",
+  "tutorial.perk.mark.build": "Dein Build wächst mit jeder Wahl — hier siehst du, was schon zusammenspielt.",
+
+  "tutorial.formation.title": "Aufstellungsphase",
+  "tutorial.formation.body": "Hier legst du die Ziehreihenfolge deiner 40 Karten neu. Jeder Tausch kostet Formations-Energie, und du hast {energy} je Aufstellungsphase. Karten, die ein Muster bilden, ergeben eine Formation und vervielfachen deinen Score.",
+  "tutorial.formation.mark.board": "Die 40 Positionen stehen in acht Segmenten zu je {segment}.",
+  "tutorial.formation.mark.energy": "Die Energieanzeige sagt dir, wie viele Tausche dir noch bleiben.",
+  "tutorial.formation.mark.legend": "Die Legende zeigt, welche Formationen deine aktuelle Reihenfolge schon trifft.",
+
+  "tutorial.architect.title": "Der Architekt",
+  "tutorial.architect.body": "Du legst Gebäude als Polyomino-Formen auf dein Baufeld. Ein Gebäude wirkt, solange es liegt; volle Zeilen, Spalten und Diagonalen geben zusätzlich einen Faktor. Aufwerten, versetzen und abreißen darfst du jederzeit.",
+  "tutorial.architect.mark.board": "Das Baufeld ist dein Platz — je voller es wird, desto mehr Strukturen schließt du.",
+  "tutorial.architect.mark.offers": "Die Baupläne kommen aus drei Kategorien: Tragwerk, Handelsbau und Sakralbau.",
+  "tutorial.architect.mark.done": "Bist du zufrieden, schließt du die Bauphase ab und der nächste Durchlauf beginnt.",
+
+  "tutorial.glacier.title": "Gletscher-Wahl",
+  "tutorial.glacier.body": "Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht.",
+
+  "tutorial.target.title": "Ziel-Auswahl",
+  "tutorial.target.body": "Manche Perks brauchen Karten: tippe so viele an, wie der Perk verlangt.",
+
+  "tutorial.familyTarget.title": "Familien-Ziel",
+  "tutorial.familyTarget.body": "Diese Perk-Familie braucht ein Ziel — wähle die Farbe, Karte oder Formationsart, auf die sie wirken soll.",
+
+  "tutorial.legendary.title": "Legendär-Phase",
+  "tutorial.legendary.body": "In Durchlauf {cycle} wählst du einen legendären Skill aus deinen aktiven Archetypen. Er belegt einen eigenen Slot und lässt sich später nicht tauschen.",
+
+  "tutorial.outro.title": "Du hast alles gesehen",
+  "tutorial.outro.body": "Ab hier läuft der Lauf ganz normal weiter und zählt für Statistik und Bestenliste. Begriffe schlägst du jederzeit im Glossar nach; wie ein Archetyp gespielt wird, steht im Leitfaden.",
+
   // #tiered Stufen-Decks (I/II/III): {roman} ist die römische Stufenziffer — sie bleibt in beiden Sprachen gleich.
   "shop.tier.active": "Stufe {roman} aktiv ✓",
   "shop.tier.activate": "Stufe {roman} aktivieren",

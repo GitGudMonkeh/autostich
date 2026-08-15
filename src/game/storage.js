@@ -223,7 +223,7 @@ export function saveProfile(profile) {
 // Onboarding startet neu. Betroffen: Profil (Progression/Stats/Freischalt-Flags), Highscores, Geist-Rekord,
 // Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen" — PLUS die Kosmetik-AUSWAHL (Deck/Battlefield/Effekte) wird
 // deselektiert (auf Default). Übrige Präferenzen (Ton/Lautstärke/UI/Name) bleiben. Nur im Preview-Build aufrufbar.
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_seen_guide"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -505,13 +505,20 @@ export function saveOptions(opts) {
   return opts;
 }
 
-/* Anleitung-einmal-gesehen (#12) — hier zentral, damit der Preview-Namespace (P) auch
-   diesen Key trennt und der Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt. */
-export function loadSeenGuide() {
-  try { return !!localStorage.getItem(k("as_seen_guide")); } catch (e) { return false; }
+/* TUTORIAL-EINMAL-GESEHEN — hier zentral, damit der Preview-Namespace (P) auch diesen Key trennt
+   und der Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt.
+
+   Ersetzt `as_seen_guide` (#12): dessen AnleitungModal existiert nicht mehr, gelesen hat den Schlüssel
+   zuletzt niemand. Gesetzt wird die Flagge NUR beim Durchlaufen bis zum Abschluss-Hinweis oder bei
+   „Tutorial beenden" — ein Abbruch mittendrin gilt als nicht gesehen (Plan §13.8). */
+export function loadTutorialDone() {
+  try { return !!localStorage.getItem(k("as_tutorial_done")); } catch (e) { return false; }
 }
-export function saveSeenGuide() {
-  try { localStorage.setItem(k("as_seen_guide"), "1"); } catch (e) {}
+export function saveTutorialDone(done = true) {
+  try {
+    if (done) localStorage.setItem(k("as_tutorial_done"), "1");
+    else localStorage.removeItem(k("as_tutorial_done"));
+  } catch (e) {}
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen
