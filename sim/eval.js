@@ -38,7 +38,7 @@ function meanStd(xs) {
 //  - median: Median-Δ unter den applicable Läufen (robuster Effekt, wenn im Spiel)
 //  - pctEffect: exp(median(log(full/dropped))) − 1 über applicable = typischer MULTIPLIKATIVER Effekt
 //  - mean/ci95: über ALLE Läufe, nur zum Vergleich (das rausch-anfällige alte Maß)
-function robustDelta(deltas, ratios) {
+export function robustDelta(deltas, ratios) {
   const n = deltas.length;
   const wins = deltas.filter((d) => d > 0).length;
   const losses = deltas.filter((d) => d < 0).length;
@@ -56,10 +56,10 @@ function robustDelta(deltas, ratios) {
   };
 }
 
-// Rein: liefert Priority-Build + Full-Score-Verteilung + Marginalwerte. Deterministisch (Seed-Sequenz).
-// env = { solveFormations, buyShop } geht identisch in full UND ablatierte Policy (faire gepaarte Umgebung).
-export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, topK = 6, c = 1.4, env = {} } = {}) {
-  // 1) EXPLORE → Priority-Build (bestes mean je id über die Buckets, nur ausreichend gesampelt).
+// EXPLORE-Schritt (S2) als eigene Einheit: spielt `exploreRuns` UCB-Läufe und leitet daraus die nach Stärke
+// geordnete Options-Rangliste ab. Geteilt von computeEval (S3) und perk-impact.mjs (Legendär-Messung) → EINE
+// Quelle für „was ist ein realistischer Referenz-Build", kein Drift zwischen den beiden Werkzeugen.
+export function explorePriority({ seed0 = 1, exploreRuns = 1500, c = 1.4, env = {} } = {}) {
   const mem = newMemory();
   // Explore optimiert die Aufstellung mit, wenn env.solveFormations (faire Bewertung von Eis & Co.).
   const explorePol = ucbPolicy({ c, solveFormations: !!env.solveFormations });
@@ -77,7 +77,14 @@ export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, top
     }
   }
   const ranked = [...byId.values()].filter((x) => x.n >= MIN_N).sort((a, b) => b.mean - a.mean);
-  const priority = ranked.map((x) => x.id);
+  return { ranked, priority: ranked.map((x) => x.id) };
+}
+
+// Rein: liefert Priority-Build + Full-Score-Verteilung + Marginalwerte. Deterministisch (Seed-Sequenz).
+// env = { solveFormations, buyShop } geht identisch in full UND ablatierte Policy (faire gepaarte Umgebung).
+export function computeEval({ seed0 = 1, exploreRuns = 1500, evalRuns = 300, topK = 6, c = 1.4, env = {} } = {}) {
+  // 1) EXPLORE → Priority-Build (bestes mean je id über die Buckets, nur ausreichend gesampelt).
+  const { ranked, priority } = explorePriority({ seed0, exploreRuns, c, env });
 
   // 2) EVAL auf frischen, disjunkten Seeds. full einmal, dann je Top-K-Option gepaart ablatieren.
   const evalSeed0 = seed0 + exploreRuns;

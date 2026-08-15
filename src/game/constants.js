@@ -169,6 +169,9 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
    LEGENDÄR-PERKS-REWORK (#203, 2026-07-30): 11 generische Legendäre (nach Hook, kein Archetyp).
    3 behalten (Unaufhaltsam/Raserei/Kritische Masse), 8 neu. Alle Knöpfe ENV-tunebar (Default = v0-Startwert).
    ============================================================ */
+// NACHMESSEN: `npm run impact` (sim/perk-impact.mjs — hebt SIM_PERK_LEGENDARY_BASE auf 0,7, sonst sind Legendäre
+// im Angebot zu selten für ein Urteil). Spalte „typ.×" ist die Band-Zahl unten. Bei jeder Änderung an einem der
+// folgenden Knöpfe erneut laufen lassen.
 // v0.1-Balance (2026-07-30, perk-impact.mjs @ SIM_PERK_LEGENDARY_BASE=0.7, je nativem Skill-Lean): Ziel-Band ~1,2–1,7×
 // Grenzbeitrag = Median(mit Perk) ÷ Median(gleicher Lean ohne Legendäre). Erreicht: Krit.Masse 1,51 · Unaufhaltsam 1,49 ·
 // Sammler 1,31 · Vabanque 1,31 (nativ=Front-Load, s. u.) · Brennpunkt 1,28 · Henker 1,26 · Umverteilung 1,25 · Echo 1,22 ·
