@@ -94,7 +94,7 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Punkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt eine Stufe.` },
+        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Prozentpunkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt um ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} Prozentpunkte zurück.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
         desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${grp(C.VABANQUE_SCORE)} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
@@ -116,7 +116,7 @@ export const PERK_DEFS = {
   // --- Gebäude-Legendäre (Architekt-Lane, needsArchitect → nur bei aktivem Architekten im Angebot). Flag-verdrahtet
   //     wie die #203-Legendären: `richtfest` am Durchlauf-Ende (engine.js), `bauhuette` beim Pick (reducer.js). ---
   L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
-        desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird am Ende jedes Durchlaufs flach ausgezahlt — ohne Multiplikator.` },
   L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
         desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
 };

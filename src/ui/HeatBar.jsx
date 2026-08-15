@@ -148,7 +148,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
             {showForge && (
               <CounterCell icon={<AnvilIcon />} value={`+${totalForged}`} label="Schmiedungen" color={FORGE}
                 glow={totalForged > 0} dim={totalForged === 0}
-                title="Geschmiedeter Dauerwert — Summe der ⚒-Aufwertungen über alle Karten." />
+                title="Geschmiedeter Kartenwert — Summe der ⚒-Aufwertungen über alle Karten." />
             )}
           </div>
         )}

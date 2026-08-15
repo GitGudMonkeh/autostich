@@ -132,7 +132,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       )}
       {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
-          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">G</span>}
+          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">❄</span>}
           {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
           {ripe && <span title="Grün (reif) — zählt für den Farbblock"><FactionIcon type="plant" size={9} /></span>}
         </span>

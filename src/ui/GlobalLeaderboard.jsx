@@ -84,7 +84,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       ) : rows === null ? (
         <div className="text-xs opacity-40 text-center py-3">Lädt Bestenliste …</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">Noch keine Einträge — sei die/der Erste.</div>
+        <div className="text-xs opacity-40 text-center py-3">Noch keine Einträge — mach den Anfang.</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {

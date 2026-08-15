@@ -20,9 +20,9 @@ const ac = (id) => ARCHETYPE_META[archetypeOf(id)] || { label: "Skill", icon: "�
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
 const ARCH_LOSS = {
-  plant:     { text: "alle grünen Karten & das Wachstum gehen verloren", baked: true },
-  ice:       { text: "alle Gletscher tauen auf, die angesammelte Masse geht verloren", baked: false },
-  fire:      { text: "Hitze & Asche gehen verloren", baked: true },
+  plant:     { text: "alle grünen Karten, das Wachstum und die Kolonisierungen gehen verloren", baked: true },
+  ice:       { text: "alle Gletscher tauen auf; Masse und Firn-Reserve gehen verloren", baked: false },
+  fire:      { text: "Hitze, Asche und der Schmiede-Zähler gehen verloren", baked: true },
   lightning: { text: "die Ladung geht verloren", baked: false },
 };
 

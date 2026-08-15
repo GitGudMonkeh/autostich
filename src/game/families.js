@@ -68,7 +68,7 @@ const D_FAMILIES = {
     },
   },
   D_TENTH_WIN: {
-    id: "D_TENTH_WIN", cat: "D", name: "Zehnter Sieg", upgradeType: REPLACEMENT,
+    id: "D_TENTH_WIN", cat: "D", name: "Beutezug", upgradeType: REPLACEMENT,   // (Sprachprüfung G1) hieß „Zehnter Sieg" — kein Stufenwert lag bei 10
     tiers: {
       1: { scoreFlat: (c) => (c.wins % 12 === 0 ? 600 : 0) },
       2: { scoreFlat: (c) => (c.wins % 10 === 0 ? 800 : 0) },
@@ -194,7 +194,7 @@ const D_FAMILIES = {
       1: { desc: "Siege in Folge derselben Farbe: je +75 mehr Score (max +300).",  scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 75), 300) },
       2: { desc: "Siege in Folge derselben Farbe: je +100 mehr Score (max +500).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 100), 500) },
       3: { desc: "Siege in Folge derselben Farbe: je +150 mehr Score (max +750).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 150), 750) },
-      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Stufe statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitHalveOnSwitch: true },
+      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Farbserie, statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitHalveOnSwitch: true },
     },
   },
   D_FULL_HOUSE: {
@@ -287,7 +287,7 @@ const B_FAMILIES = {
     },
   },
   B_TENTH_STRIKE: {
-    id: "B_TENTH_STRIKE", cat: "B", name: "Zehnter Schlag", upgradeType: REPLACEMENT,
+    id: "B_TENTH_STRIKE", cat: "B", name: "Markstein", upgradeType: REPLACEMENT, // (Sprachprüfung G1) hieß „Zehnter Schlag" — wirkt auf POSITIONEN, nicht auf Siege
     // posInCycle ist 0-basiert → Position n = posInCycle n-1; „(pos+1) % k === 0" trifft jede k-te Position.
     tiers: {
       1: { desc: "Karten auf Position 20 und 40: +6 Stichwert.",               cardBonus: (c) => ((c.posInCycle + 1) % 20 === 0 ? 6 : 0) },
@@ -340,7 +340,7 @@ const B_FAMILIES = {
   B_PERFECT: {
     id: "B_PERFECT", cat: "B", name: "Perfekte Folge", upgradeType: REPLACEMENT,
     tiers: {
-      1: { desc: "Treppenkarten: ab der dritten +1, danach +2 Stichwert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
+      1: { desc: "Treppenkarten: +0/+0/+1, danach +2 Stichwert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
       2: { desc: "Treppenkarten: +1/+2/+3, danach +4 Stichwert.",                cardBonus: (c) => stairBonus(c, [1, 2, 3], 4) },
       3: { desc: "Treppenkarten: +2/+3/+4, danach +5 Stichwert.",                cardBonus: (c) => stairBonus(c, [2, 3, 4], 5) },
       4: { desc: "Treppenkarten: +3/+4/+5, danach +6 Stichwert.",                cardBonus: (c) => stairBonus(c, [3, 4, 5], 6) },
@@ -421,7 +421,7 @@ const A_FAMILIES = {
       1: { desc: "Vier zufällige gerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 0, 4, 1, rng) },
       2: { desc: "Alle ursprünglichen 2er und 8er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 2 || c.baseRank === 8, 1) },
       3: { desc: "Alle ursprünglichen 4er und 6er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4 || c.baseRank === 6, 1) },
-      4: { desc: "Alle geraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
+      4: { desc: "Alle geraden Karten: dauerhaft +1 Kartenwert (zusätzlich zu den Stufen davor).", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
     },
   },
   A_ODD: {
@@ -430,7 +430,7 @@ const A_FAMILIES = {
       1: { desc: "Vier zufällige ungerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 1, 4, 1, rng) },
       2: { desc: "Alle ursprünglichen 3er und 7er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3 || c.baseRank === 7, 1) },
       3: { desc: "Alle ursprünglichen 1er und 9er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 1 || c.baseRank === 9, 1) },
-      4: { desc: "Alle ungeraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
+      4: { desc: "Alle ungeraden Karten: dauerhaft +1 Kartenwert (zusätzlich zu den Stufen davor).", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
     },
   },
   A_SUIT_BOOST: {
@@ -920,10 +920,10 @@ const MUSTER_DESC = {
   D_STREAK: { tpl: "Jeder Sieg: +$0 Score je Serienpunkt (max +$1).", vals: [["15","150"],["25","250"],["35","420"],["50","750"]] },
   D_HIGH: { tpl: "Sieg mit Kartenwert ≥$0: +$1 Score.", vals: [["9","100"],["8","150"],["7","225"],["6","350"]] },
   D_UNDERDOG: { tpl: "Sieg mit Kartenwert ≤$0: +$1 Score.", vals: [["2","250"],["3","350"],["4","500"],["5","750"]] },
-  D_TENTH_WIN: { tpl: "Jeder $0. gewonnene Stich: +$1 Score.", vals: [["12","600"],["10","800"],["8","900"],["5","1.000"]] },
+  D_TENTH_WIN: { tpl: "Jeder $0. Sieg des Laufs: +$1 Score.", vals: [["12","600"],["10","800"],["8","900"],["5","1.000"]] },
   D_CRIT_SCORE: { tpl: "Jeder Crit: +$0 Score.", vals: [["100"],["175"],["275"],["450"]] },
   D_SHARP_EYE: { tpl: "Crit mit Kartenwert ≥$0: +$1 Score.", vals: [["9","225"],["8","350"],["7","500"],["6","750"]] },
-  D_RHYTHM: { tpl: "Jeder $0. gewonnene Stich: +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
+  D_RHYTHM: { tpl: "Im Takt: jeder $0. Sieg gibt +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
   D_OVERPOWER: { tpl: "Sieg mit ≥$0 Wertvorsprung: +$1 Score.", vals: [["10","300"],["8","400"],["6","550"],["4","750"]] },
   D_CRIT_HARVEST: { tpl: "Crit in ≥1 aktiver Formation: +$0 Score.", vals: [["175"],["300"],["475"],["750"]] },
   E_TUNING: { tpl: "$0: +$1 Energie.", vals: [["Jede zweite Formationsphase","1"],["Jede Formationsphase","1"],["Jede Formationsphase","2"],["Jede Formationsphase","3"]] },

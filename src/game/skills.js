@@ -182,7 +182,7 @@ export const SKILL_DEFS = {
     desc: `Jeden Durchlauf gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
-    desc: `Höhere Stufen bersten steiler: Stufen-Wucht ×${de(G_ABBRUCH_TIER[2])} / ×${de(G_ABBRUCH_TIER[3])} auf Stufe 2 / 3 (statt ×${de(G_TIER_MULT[2])} / ×${de(G_TIER_MULT[3])}).` },
+    desc: `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(G_ABBRUCH_TIER[2])} / ×${de(G_ABBRUCH_TIER[3])} an der 2. / 3. Schwelle (statt ×${de(G_TIER_MULT[2])} / ×${de(G_TIER_MULT[3])}).` },
   SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
     desc: "Bricht ein Gletscher, zwingt er angrenzende Gletscher, sofort mitzubrechen — auch wenn sie die Schwelle nicht erreicht hätten." },
   SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier"], role: "G_ZERMALMEN",
@@ -204,7 +204,7 @@ export const SKILL_DEFS = {
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Das ganze Feld wird zu EINEM Übergletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch und bekommen +${G_SCHILD_BONUS} Masse obendrauf (nie fallend). Beim Bruch gilt jeder Gletscher als Nachbar aller anderen — volle Kaskade und Kollision, egal wo sie liegen. Anordnung wird bedeutungslos, nur die stärkste Masse zählt.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: "Im letzten Durchlauf brechen ALLE deine Gletscher auf einen Schlag — auch die noch nicht vollen —, jeder auf höchster Stufe und massiv verstärkt. Bis dahin lohnt sich Horten: mehr Gletscher, mehr Masse = ein umso gewaltigerer Schlag." },
+    desc: "Im letzten Durchlauf brechen ALLE deine Gletscher auf einen Schlag — auch die noch nicht vollen —, jeder mit der Wucht der höchsten Schwelle und massiv verstärkt. Bis dahin lohnt sich Horten: mehr Gletscher, mehr Masse = ein umso gewaltigerer Schlag." },
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
     desc: `Der Gegner erstarrt: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich, und der Bruch greift über die vier Nachbarn hinaus weiter ins Gegnerfeld. Dazu zählt jeder Bruch ×${de(1 + G_ERSTARRUNG_FRAC)} Score.` },
 
@@ -215,7 +215,7 @@ export const SKILL_DEFS = {
   SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
     desc: `Jeder Sieg einer grünen Karte gibt +${C.WURZELTIEFE_SCORE} Wurzel-Score, dazu einen Bonus, der mit dem Gesamtwachstum des Feldes steigt (max. +${C.WURZELTIEFE_FIELD_CAP} bei ~${grp(Math.round((C.WURZELTIEFE_FIELD_CAP / C.WURZELTIEFE_FIELD_K) ** 2 / 1000) * 1000)} Wachstum).`, wurzeltiefe: true },
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
-    desc: `Verstärker: die Wurzel-Basis (${C.WURZELTIEFE_SCORE}) ×${C.PFAHLWURZEL_MULT}, wenn die grüne Karte in einer Formation gewinnt (Jahresringe/Feldtiefe bleiben unberührt).`, enabler: "SK_PLANT_02", pfahlwurzel: true },
+    desc: `Verstärker: die Wurzel-Basis (${C.WURZELTIEFE_SCORE}) ×${C.PFAHLWURZEL_MULT}, wenn die grüne Karte in einer Formation gewinnt (Jahresringe und der Feld-Bonus bleiben unberührt).`, enabler: "SK_PLANT_02", pfahlwurzel: true },
   SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
     desc: `Verstärker: Je volle ${C.JAHRESRINGE_PER_GROWTH} eigenes Wachstum gibt eine grüne Karte bei ihrem Sieg +${C.JAHRESRINGE_SCORE} Wurzel-Score extra.`, enabler: "SK_PLANT_02", jahresringe: true },
   // Linie 2 — Aussaat (Breite: Wachstum verbreiten)

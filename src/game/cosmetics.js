@@ -185,7 +185,7 @@ export function unlockProgress(def, profile) {
     }
     case "gottgleichRun": {
       const done = !!p.hadGottgleichRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Triggere zum ersten Mal einen „Gottgleich“-Stich" };
+      return { done, cur: done ? 1 : 0, target: 1, label: "Löse zum ersten Mal einen „Gottgleich“-Stich aus" };
     }
     case "meisterNoReroll": {
       const done = !!p.hadMeisterNoRerollRun;
@@ -193,7 +193,7 @@ export function unlockProgress(def, profile) {
     }
     case "championWeek": {
       const done = !!p.hadChampionWeek;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Beende eine Wochen-Rangliste auf Platz 1 (Champion-Board)" };
+      return { done, cur: done ? 1 : 0, target: 1, label: "Beende eine Wochen-Rangliste auf Platz 1 (Challenger-Archiv)" };
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);

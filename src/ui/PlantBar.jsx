@@ -13,7 +13,7 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
          WURZELSCHLAG_PER_GROWTH, SKILL_SLOTS, MUTTERBAUM_DIRECT, MUTTERBAUM_OVERFLOW_CAP, WELTENBAUM_DIRECT, WELTENBAUM_OVERFLOW_CAP } from "../game/constants.js";
-import { hasUeberwucherung, hasEwigerFruehling, hasMutterbaum, hasWeltenbaum, plantSkillCount } from "../game/skills.js";
+import { hasUeberwucherung, hasEwigerFruehling, hasMutterbaum, hasWeltenbaum, plantSkillCount, trimmableSkillNames } from "../game/skills.js";
 
 const SEED = "#9aa4a0"; // grauer Setzling (wachsend, noch nicht reif)
 const grp = (n) => Math.round(n).toLocaleString("de-DE");
@@ -103,7 +103,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
         )}
         {/* #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator. */}
         {trimCount > 0 && (
-          <div className="text-[10px] opacity-70 mt-1" title="Trimmen (#288): jeder ersetzte Wachstums-Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm) hebt dauerhaft den Wurzel- & Blüten-Score.">
+          <div className="text-[10px] opacity-70 mt-1" title={`Trimmen: jeder ersetzte Wachstums-Skill (${trimmableSkillNames(" / ")}) hebt dauerhaft den Wurzel- & Blüten-Score.`}>
             ✂ Getrimmt <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">· Wurzel/Blüte</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{trimMult.toFixed(2).replace(".", ",")}</b>
           </div>
         )}
