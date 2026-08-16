@@ -160,7 +160,8 @@ export function Autostich() {
     const el = document.documentElement;
     if (fxLevel !== "full") el.dataset.reducedFx = "1"; else delete el.dataset.reducedFx;
   }, [fxLevel]);
-  // Zahlengröße: skaliert Kartenzahlen + Score-Floats (.card-num) global über eine CSS-Variable. Auf 0,75–1,25 geklemmt.
+  // Zahlengröße: skaliert NUR die floating Score-Zahlen (.card-num-Floats) über eine CSS-Variable. Auf 0,75–1,25
+  // geklemmt. Die echten Kartenzahlen sind FEST auf 120% (Card.jsx, inline-fontSize überschreibt die CSS-Variable).
   useEffect(() => {
     const s = Math.min(1.25, Math.max(0.75, Number(options.numScale) || 1));
     document.documentElement.style.setProperty("--num-scale", String(s));

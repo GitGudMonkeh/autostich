@@ -1210,7 +1210,7 @@ export default {
   // #394 Number size: {pct} arrives pre-formatted (fmtPct) — English sets the percent sign tight,
   // German with a thin space, so the sign never lives in the template.
   "options.numScale.title": "Number size",
-  "options.numScale.desc": "Size of the card numbers and the rising score numbers. {pct}",
+  "options.numScale.desc": "Size of the rising score numbers. {pct}",
   "options.numScale.aria": "Number size",
 
   "options.rfx.title": "Reduced effects",

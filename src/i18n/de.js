@@ -1229,7 +1229,7 @@ export default {
   // #394 Zahlengröße: {pct} kommt als fertig formatierter Prozentwert (fmtPct) — das Prozentzeichen sitzt
   // im Deutschen mit schmalem Abstand, im Englischen ohne, deshalb steht es NICHT in der Vorlage.
   "options.numScale.title": "Zahlengröße",
-  "options.numScale.desc": "Größe der Kartenzahlen und aufsteigenden Score-Zahlen. {pct}",
+  "options.numScale.desc": "Größe der aufsteigenden Score-Zahlen. {pct}",
   "options.numScale.aria": "Zahlengröße",
 
   "options.rfx.title": "Effekte reduziert",

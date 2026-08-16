@@ -100,7 +100,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         </div>
       )}
       {/* Zahl (z-2). */}
-      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * var(--num-scale, 1))", lineHeight: 1 }}>{effective}</div>
+      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
