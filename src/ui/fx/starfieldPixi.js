@@ -63,6 +63,7 @@ const TUNE = {
   IMP_FLASH_SZ: 60 * COMET_SIZE_MUL,   // #341: +20 % (Basis 60; war 110)
   IMP_FLASH_DUR: 0.26,       // kürzer (war 0.4) → knackiger Pop
   IMP_SPARKS: 90,            // mehr Funken (war 66) → dichter Spray
+  LITE_SPARK: 60 / (90 * 5),  // #perf-mobile: Funken-Anteil auf lite — so gesetzt, dass Gottgleich (TIER_IMP 5) auf 60 landet
   IMP_SPARK_SPD: 360,        // schneller rausgeschleudert (war 305)
   IMP_SPARK_LIFE: 1.1,       // etwas länger, damit man das Bouncen sieht (war 0.9)
   IMP_SPARK_SZ: 1.05 * COMET_SIZE_MUL, // #341: +20 % (Basis 1.05; war 1.4)
@@ -224,11 +225,13 @@ export function createStarfield(app) {
     const f = grabFlash();
     f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
     f.sz0 = TUNE.IMP_FLASH_SZ * sc * (0.7 + 0.3 * imp); f.tint = headInt;
-    // #perf-mobile: Einschlag-Funken auf lite auf EIN DRITTEL (vorher die Hälfte). Der Spray ist der teuerste Posten
-    // des Meteors — jede Funke ist ein eigenes Partikel mit Motion-Streak (rotation + vertex dynamisch). Bei der
-    // Gottgleich-Stufe (imp bis 5) sind das voll bis 450 Funken auf einmal; ein Drittel hält den Spray sichtbar,
-    // nimmt aber die Spitze aus der Fill-Rate.
-    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? 1 / 3 : 1));
+    /* #perf-mobile: Einschlag-Funken auf lite. Der Spray ist der teuerste Posten des Meteors — jede Funke ist ein
+       eigenes Partikel mit Motion-Streak (rotation + vertex dynamisch), und die Spitze liegt bei Gottgleich, wo
+       TIER_IMP auf 5 springt (mehr als das Doppelte der Stufe darunter). Der Faktor ist deshalb vom ZIELWERT DORT
+       her gesetzt: 90 × 5 × LITE_SPARK = 60 Funken bei Gottgleich (vorher 225 bei Faktor 0,5).
+       Die kleineren Stufen fallen proportional mit — bewusst, statt nur die Spitze zu deckeln: sie tragen dieselben
+       Partikel und derselbe Spray wirkt bei ihnen bereits bei weniger Funken dicht genug. */
+    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? TUNE.LITE_SPARK : 1));
     for (let i = 0; i < n; i++) {
       const s = grabSpark();
       const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);
