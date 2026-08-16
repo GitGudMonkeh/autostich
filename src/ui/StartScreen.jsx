@@ -92,6 +92,27 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   };
 
 
+  /* #trichter (Variante D): Breite IST die Rangordnung. Vorher lief jeder Block randlos von Kante zu Kante —
+     damit war Breite als Signal verbraucht: nichts konnte wichtiger aussehen, weil alles schon das Maximum hatte.
+     Jetzt drei Stufen, von oben nach unten enger. Das Auge läuft den Trichter von selbst nach unten, und es
+     braucht dafür keine zusätzliche Farbe.
+
+       lead  100 %  Bonus-Leiste · Tutorial-Angebot · Start-Knopf   — das Ziel, breiteste Stufe
+       mid    94 %  Rangliste                                       — Angebot, aber nicht der Standardweg
+       tail   88 %  Verwaltungs-Kacheln                             — nachschlagen, nicht spielen
+
+     Die Chips und der Fuß darunter sind ohnehin inhaltsbreit und setzen den Trichter von selbst fort.
+
+     Warum die Leiter bei 88 % endet und nicht tiefer: Die Kacheln sind zweispaltig, jede Stufe halbiert sich
+     also im Text. Gemessen auf 375 px (iPhone SE) bricht ab 86 % die ÜBERSCHRIFT „Deck workshop" um — eine
+     umbrechende Kachel-Überschrift liest sich als Fehler, nicht als Gestaltung, und kostete zusätzlich 22 px
+     Höhe. 88 % ist die letzte Stufe, auf der beide Viewports sauber bleiben (390 px ganz, 375 px bis auf die
+     zweizeilige Unterzeile „Global high scores", +3 px). Wer die Stufe vertiefen will, muss vorher an den
+     Kacheltexten oder ihrem Innenabstand arbeiten — nicht an der Prozentzahl. */
+  const LANE_LEAD = "w-full max-w-sm";
+  const LANE_MID  = "w-[94%] max-w-sm";
+  const LANE_TAIL = "w-[88%] max-w-sm";
+
   // Sekundär-Navigation als ruhige Chip-Reihe — kompakter Pillen-Stil (dunkel, sekundär), einheitlich.
   const chipCls = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5";
   const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
@@ -158,7 +179,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
           harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
-      <div className="w-full max-w-sm rounded-xl px-4 py-2.5 flex flex-col gap-1.5"
+      <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 flex flex-col gap-1.5`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
@@ -189,7 +210,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Bewusst KEIN dritter Dauer-CTA — es verschwindet nach dem ersten beendeten Lauf bzw. sobald das
           Tutorial gesehen ist, und lebt danach nur noch als Chip neben „Optionen" (Plan §13.4). */}
       {firstContact && (
-        <div className="w-full max-w-sm">
+        <div className={LANE_LEAD}>
           <button onClick={onTutorial}
             className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
             style={{ background: "#1a1330", border: `1px solid ${VI}aa`, color: "#d9ccff", boxShadow: `0 0 20px -8px ${VI}` }}>
@@ -201,7 +222,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
-      <div className="w-full max-w-sm flex flex-col gap-2.5">
+      <div className={`${LANE_LEAD} flex flex-col gap-2.5`}>
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
@@ -272,7 +293,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           im Reiter „Diese Woche" (▶ Spielen, gegated). Der Einstieg ist IMMER offen (ansehen jederzeit); das Schloss
           signalisiert nur, dass Spielen noch gesperrt ist. */}
       {onRankedBoard && (
-        <div className="w-full max-w-sm flex flex-col gap-2.5">
+        <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
             className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}
@@ -290,7 +311,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Lesereihenfolge (TL→TR→BL→BR) dem Logo-Verlauf CY → BLUE → VI → AM. Keine Icons — nur Titel, Stripe
           und (wo vorhanden) Kennzahl. Währungs-Zahlen (DP/SP) bleiben im Gold der Währung, unabhängig vom
           dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge statt Kennzahl. */}
-      <div className="w-full max-w-sm grid grid-cols-2 gap-2.5">
+      <div className={`${LANE_TAIL} grid grid-cols-2 gap-2.5`}>
         {/* Kachel-Basis: gleiche Höhe (justify-between), Stripe links absolut, keine Icons. */}
         {(() => { const tileCls = "relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5";
           const tileSty = { background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" };
