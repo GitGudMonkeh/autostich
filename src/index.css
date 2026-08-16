@@ -564,14 +564,43 @@ button { font-family: inherit; }
 [data-skin="crt"] .card-num {
   font-family: "Orbitron", ui-monospace, monospace;
   font-size: calc(2rem * var(--num-scale, 1)); line-height: 1;
-  text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
 }
 
-/* Touch/Handy: WebKit (iOS Safari) zieht den Halo am breitesten → dort den weichen Außen-Blur kappen,
-   damit die kleine Pixelschrift auch auf dem iPhone lesbar bleibt. Kern-Glow bleibt, nur die 8/9px-Schicht fällt weg. */
+/* #ios-glow: Neon-Glow für HOHL gesetzte Zahlen/Labels (`-webkit-text-fill-color: transparent` +
+   `-webkit-text-stroke`) — Kartenzahlen (.card-num) und die Score-/Krit-/Formations-Floats (.neon-num).
+   WARUM drop-shadow statt text-shadow:
+     `text-shadow` leitet sich laut Spec aus der GLYPHEN-GEOMETRIE ab, nicht aus den tatsächlich gemalten
+     Pixeln. Bei transparenter Füllung malt WebKit (iOS Safari) deshalb den Schatten der VOLLEN Ziffer:
+     drei 0-Versatz-Schichten füllen die Punze komplett und ersäufen die 2px-Kontur → genau der weiche,
+     überbelichtete Leucht-Klumpen, den das iPhone zeigt. Blink (Chrome/Android) schattiert nur die
+     gezeichnete Kontur → scharfe Röhre. Ergebnis: zwei völlig verschiedene Looks aus derselben Regel.
+     `filter: drop-shadow()` arbeitet in BEIDEN Engines auf dem gerenderten Alpha (= die Kontur) → gleicher
+     Look auf iPhone und Android/Desktop. Dieselbe Begründung steht schon an `chromeFilter` (Battlefield.jsx).
+   WARUM Custom Properties: die Radien müssen vom Mobil-Deckel unten erreichbar bleiben. Bis hierher stand
+   der Glow INLINE in Card.jsx/Battlefield.jsx — Inline-Styles schlagen jede Stylesheet-Regel, der
+   `pointer: coarse`-Deckel war damit für die Zahlen wirkungslos (die Karte behielt ihren 40px-Halo).
+   Die Aufrufer setzen jetzt nur noch Farbe (`--num-glow-c`/`-c2`) und Stärke (`--num-glow-s`). */
+[data-skin="crt"] .card-num,
+[data-skin="crt"] .neon-num {
+  --num-glow-near: 2px;   /* enger Kern — hält die Kontur scharf */
+  --num-glow-far: 7px;    /* weicher Halo — trägt die Röhren-Optik */
+  text-shadow: none;
+  filter:
+    drop-shadow(0 0 calc(var(--num-glow-near) * var(--num-glow-s, 1)) var(--num-glow-c, currentColor))
+    drop-shadow(0 0 calc(var(--num-glow-far)  * var(--num-glow-s, 1)) var(--num-glow-c2, var(--num-glow-c, currentColor)));
+}
+
+/* Touch/Handy: WebKit (iOS Safari) zieht den Blur am breitesten → dort den weichen Außen-Halo kappen,
+   damit die kleine Pixelschrift auch auf dem iPhone lesbar bleibt. Kern-Glow bleibt, nur die weite Schicht schrumpft. */
 @media (pointer: coarse) {
   [data-skin="crt"] .font-pixel { text-shadow: 0 0 1px currentColor, 0 0 3px currentColor; }
-  [data-skin="crt"] .card-num   { text-shadow: 0 0 1px currentColor, 0 0 4px currentColor; }
+  [data-skin="crt"] .card-num,
+  [data-skin="crt"] .neon-num   { --num-glow-near: 1.5px; --num-glow-far: 5px; }
+}
+/* Reduzierte Effekte: nur noch der enge Kern — eine Blur-Schicht weniger pro Zahl/Float. */
+:root[data-reduced-fx="1"][data-skin="crt"] .card-num,
+:root[data-reduced-fx="1"][data-skin="crt"] .neon-num {
+  filter: drop-shadow(0 0 calc(var(--num-glow-near) * var(--num-glow-s, 1)) var(--num-glow-c, currentColor));
 }
 
 /* Q2/Loc: Ergebnis-Banner-Großschrift zentral über CSS statt im String (Battlefield <span class="as-banner">).
