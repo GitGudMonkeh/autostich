@@ -717,11 +717,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const fxLevel = useFxLevel(reducedFx);
   const reduced = fxLevel === "minimal";
   const lite    = fxLevel !== "full";
-  // Pixi-Umbau A/B-Umschalter: NUR im Preview/Dev (env-Gate) + „pixi"-Schalter — nur noch für Aurora relevant (die als
-  // EINZIGE eine DOM-Fassung in FieldFxLayer hat, gegen die man A/B messen kann). Wenn aktiv, rendert die DOM-Fassung
-  // keine Aurora-Nodes (suppressField) → sie zieht komplett auf die WebGL-Canvas.
-  const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
-  const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi) — bleibt Preview/Dev (hat DOM-Fallback)
+  // Aurora läuft als eigene raw-WebGL-Canvas (nicht über Pixi). Sie rendert jetzt AUCH in echter Produktion — wie
+  // Neon-Brandung (#345) und Komet/Sternenfeld (#346): der DOM-Fallback („Glow von oben") entsprach nicht dem
+  // Showcase, sichtbar sobald der Renderer auf DOM stand (= Prod). Opt-in (nur wenn als bgFx gewählt) + mobil bereits
+  // gedrosselt (3 Vorhänge/30fps in AuroraFieldGL). Im Preview/Dev bleibt der A/B-Schalter erhalten: FX:dom zeigt weiter
+  // die DOM-Fassung (auroraGL=false → FieldFxLayer rendert), FX:pixi die WebGL-Canvas. In Prod immer WebGL.
+  const auroraGL = bgFx === "aurora" && !!deckA1
+    && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
   // #346 Prod-Renderpfad: Komet/Sternenfeld (Pixi), Leuchten & Würfel-Matrix (WebGL/Canvas) laufen — wie neonsurf — bewusst
   // AUCH in echter Produktion. Grund: für diese drei gibt es KEINE DOM-Fassung mehr (FieldFxLayer kennt nur „aurora") →
   // sonst wäre der gekaufte Effekt auf der Hauptseite kaufbar-aber-unsichtbar. Opt-in (nur wenn gewählt) + intern

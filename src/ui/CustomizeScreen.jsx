@@ -786,7 +786,10 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
 // Hit-Tier-Leiter für die Feld-Finisher-Eskalations-Vorschau (Pixi, Komet/Sternenfeld): Schwach → Gottgleich.
 const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 // Der GPU-Emitter zeigt den Feld-Finisher als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
-const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
+// Aurora rendert im Showcase jetzt AUCH in Prod als WebGL (spiegelt den In-Game-Pfad, siehe Battlefield): der DOM-Fallback
+// entsprach nicht der echten Aurora. Preview/Dev behält den A/B-Schalter (FX:dom → DOM-Fassung, FX:pixi → WebGL); Prod immer WebGL.
+const auroraGLActive = (effect) => effect === "aurora"
+  && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
 function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-BG (look.bf).
@@ -801,7 +804,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const [neonAnn, setNeonAnn] = useState(null);     // #383 Ansage-Pop zum Impact { id, label, color }
   const neonRef = useRef(0);                         // rotiert die Impact-Stufe (Stark/Brutal/Irre)
   const pixiField = PIXI_FIELD_KEYS.includes(effect); // #346: Sternenfeld/Komet → Pixi-Bühne im Showcase, AUCH in Prod (lazy PixiStage) — spiegelt den In-Game-Renderpfad
-  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas (bleibt Preview/Dev; in Prod DOM-Fallback via FieldFxLayer)
+  const auroraGL = auroraGLActive(effect);                                // Aurora → eigene WebGL-Canvas (auch in Prod; Preview behält den DOM-A/B-Schalter)
   const neonsurfGL = effect === "neonsurf";                                // #345 Neon-Brandung → eigene WebGL-Canvas (auch in Prod, kein Pixi-Gate)
   useEffect(() => {
     if (effect === "none") return undefined;

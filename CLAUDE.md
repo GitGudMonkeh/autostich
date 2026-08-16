@@ -41,9 +41,16 @@ Deutschsprachiger Code/Kommentare beibehalten.
   `PIXI_FIELD_KEYS=["embers"]`. Klinge/gottStandard sind **synthetisch** in `CustomizeScreen.jsx` (NICHT in GLOBAL_FX).
 
 ### Rendering-Fakten (wichtig!)
-- **Produktion = DOM** (`FX_RENDERER`/`pixiEnabled` sind an `VITE_PREVIEW/DEV` gegated). Pixi/WebGL-Emitter laufen nur
-  im Preview/Dev. In-Game + Showcase nutzen in Prod die DOM-`FieldFxLayer`. Die DOM-Fassung kennt **kein `deckTint`** →
-  Standard/Deckfarbe muss über die `color`-Wahl im Aufrufer geschaltet werden (siehe Showcase-Fix in CustomizeScreen).
+- **Produktion = DOM** (`FX_RENDERER`/`pixiEnabled` sind an `VITE_PREVIEW/DEV` gegated). Pixi-Emitter laufen nur
+  im Preview/Dev. In-Game + Showcase nutzen in Prod für die verbliebenen DOM-Effekte die DOM-`FieldFxLayer`. Die
+  DOM-Fassung kennt **kein `deckTint`** → Standard/Deckfarbe muss über die `color`-Wahl im Aufrufer geschaltet werden
+  (siehe Showcase-Fix in CustomizeScreen).
+- **Aurora läuft jetzt AUCH in Produktion als raw-WebGL** (`AuroraFieldGL`, wie Neon-Brandung/#345 & Komet/#346) — der
+  DOM-Fallback („Glow von oben") entsprach nicht dem Showcase. `auroraGL` (Battlefield.jsx + `auroraGLActive` in
+  CustomizeScreen) = `bgFx==="aurora" && deckA1 && (Preview/Dev ? FX_RENDERER==="pixi" : true)`. Heißt: in Prod IMMER
+  WebGL; im Preview/Dev bleibt der A/B-Schalter (FX:dom → DOM-`FieldFxLayer`, FX:pixi → WebGL). `AuroraFieldGL` ist ein
+  kleiner statischer Import (kein Pixi), mobil bereits gedrosselt (3 Vorhänge/30fps/DPR1.4). Die DOM-Aurora in
+  `FieldFxLayer` bleibt als reiner Preview-A/B-Fallback bestehen.
 - **AUSNAHME #318 Karten-Animationen** (Edge-Glow/Holo/Glitch/Materialize, CardFxStage): das sind KAUFBARE Shop-Effekte
   und laufen daher **auch in Produktion** (`CARD_FX_ENABLED=true` in Battlefield.jsx, ersetzt das Preview/Dev-Gate der
   CardFxStage + `matActive`). Pixi lädt nur lazy, wenn der Spieler eine Animation besitzt UND aktiviert hat (sonst
