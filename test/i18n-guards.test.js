@@ -81,6 +81,9 @@ describe("i18n · Katalog-Parität", () => {
     "perkcat.D.name",         // „Score" bleibt Score (§3.1)
     "perkcat.D.desc",         // dito
     "perkcat.E.name",         // „Form" — Chip-Kurzform, in beiden Sprachen identisch
+    "bf.bd.perks",            // Stich-Aufschlüsselung: „Perks" ist im Deutschen der etablierte Begriff (§3.5)
+    "bf.bd.form",             // dito „Form" — dieselbe Chip-Kurzform wie perkcat.E.name
+    "bf.bd.crit",             // dito „Crit" — steht so auch in rail.critChance/rail.critMult
     "perk.L_ECHO.label",      // „Echo" ist in beiden Sprachen dasselbe Wort
     "perk.L_BALL.label",      // „Ballast" ebenso — dasselbe Wort, dieselbe Bedeutung
     // Familiennamen, die als Fremdwort schon englisch sind:
@@ -462,6 +465,7 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Die Entscheidungen eines Durchlaufs — Angebote, Ziel-Auswahlen und die Panels, die sie begleiten.
     "src/ui/SkillSelect.jsx", "src/ui/PerkSelect.jsx", "src/ui/LegendarySelect.jsx", "src/ui/GlacierPick.jsx",
     "src/ui/TargetSelect.jsx", "src/ui/FamilyTargetSelect.jsx", "src/ui/RoundScoreBadge.jsx",
+    "src/ui/TrickBreakdown.jsx",
     "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",
     "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx",
     // Der Architekt — der größte Einzelbildschirm des Spiels.
