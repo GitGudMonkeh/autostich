@@ -124,24 +124,30 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
-      <div className="relative inline-block mt-1">
+      <div className="inline-block mt-1">
         <img src={logo} alt={t("start.logo.alt")} draggable="false"
           className="w-full max-w-[288px] h-auto select-none" />
-        {/* Versions-Banner unten rechts an der Marke — Gold/Amber aus dem Logo. */}
-        <span
-          className="absolute -bottom-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-pixel tracking-wide"
-          style={{ background: AM, color: "#141419", boxShadow: "0 0 8px rgba(242,168,58,.6)", pointerEvents: "none" }}
-          aria-hidden="true"
-        >
-          v{APP_VERSION}
-        </span>
       </div>
       {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
           den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
           Spiel ohnehin schon offen hat, und der Stempel war unter Nickname, PWA-Link und Datenschutz-Zeile
           faktisch unsichtbar. Genau ihn braucht man aber am häufigsten: nach jedem Push die Frage „ist mein
-          Stand drauf?". Direkt unter der Marke ist er ohne Scrollen lesbar. */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
+          Stand drauf?". Direkt unter der Marke ist er ohne Scrollen lesbar.
+
+          Das goldene v-Banner saß bis hierher als absolutes Overlay unten rechts AN der Wortmarke und hing
+          über deren Unterkante hinaus — der Kopf musste diesen Überhang mittragen. Jetzt steht es in DERSELBEN
+          Zeile wie der Stempel: eine Reihe statt Marke-plus-Überhang-plus-Zeile, und die beiden Versionsangaben
+          stehen endlich beieinander statt übereinander. */}
+      <div className="flex items-center justify-center gap-2 -mt-1">
+        <span
+          className="px-1.5 py-0.5 rounded text-[10px] font-bold font-pixel tracking-wide shrink-0"
+          style={{ background: AM, color: "#141419", boxShadow: "0 0 8px rgba(242,168,58,.6)", pointerEvents: "none" }}
+          aria-hidden="true"
+        >
+          v{APP_VERSION}
+        </span>
+        <span className="text-[10px] font-mono opacity-40 tracking-wide select-text" title={t("start.version.title")}>{VERSION_FULL}</span>
+      </div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
