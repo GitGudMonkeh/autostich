@@ -1152,6 +1152,9 @@ export default {
   "start.resume.sub": "Durchlauf {cycle}/{total} · Score {score}",
   "start.normal": "Normaler Lauf",
 
+  /* #knopf-satellit: Beschriftung des ↻-Nebenknopfes neben „Normaler Lauf". Der Knopf zeigt nur ein Zeichen,
+     also trägt er die ganze Bedeutung im aria-label/title — sonst hört ein Screenreader nur „Pfeil im Kreis". */
+  "start.seed.toggle": "Mit eigenem Seed spielen",
   "start.seed.placeholder": "Seed einfügen",
   "start.seed.aria": "Seed einfügen und spielen",
   "start.seed.play": "↻ Spielen",

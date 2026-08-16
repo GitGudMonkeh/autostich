@@ -45,6 +45,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
+  /* #knopf-satellit (C): Das Seed-Feld lag dauerhaft unter dem CTA und kostete eine ganze Zeile für etwas, das
+     die meisten Läufe nie brauchen. Jetzt hängt es an einem runden Nebenknopf neben dem CTA — der begrenzt den
+     Hauptknopf optisch (er wirkt dadurch als Objekt statt als Fläche) und gibt zugleich Höhe zurück.
+     Einmal geöffnet bleibt es offen: Fehler- und Testcode-Meldungen stehen darin und dürfen nicht wegklappen. */
+  const [seedOpen, setSeedOpen] = useState(false);
   const t = useT();
   const ONB_REWARDS = onbRewards(t);
 
@@ -96,7 +101,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const hasResume = !!(onResume && resume);
   // Cyan-Primär-Optik (hell, mit kräftigem Cyan-Glow) — geteilte Quelle für „Lauf fortsetzen" UND „Normaler Lauf",
   // wenn dieser (ohne laufenden Run) selbst die Primär-Aktion ist → beide glühen identisch (#).
-  const cyanPrimary = { background: "#5fe0f7", color: "#052730", boxShadow: "0 0 20px rgba(95,224,247,.65)" };
+  /* #knopf-relief (F): war eine flache Fläche (#5fe0f7 + Glow). „Zu breit" war in Wahrheit „zu flach" — ein
+     358 px breites Rechteck stört, eine 358 px breite TASTE nicht. Deshalb Licht von oben: Verlauf hell→dunkel,
+     eine helle Kante an der Oberseite und ein dunkler Fuß unten. Maße bleiben unangetastet, nur die Form entsteht. */
+  const cyanPrimary = {
+    background: "linear-gradient(180deg,#7ceafb 0%,#5fe0f7 42%,#3fc9e3 100%)",
+    color: "#052730",
+    boxShadow: "0 0 20px rgba(95,224,247,.5), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(3,42,52,.35)",
+  };
   // Läuft ein Run, tritt „Normaler Lauf" hinter das helle „Fortsetzen" zurück → ruhiger Cyan/Blau-Outline (unverändert).
   const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
   const normalStyle = hasResume ? normalGhost : cyanPrimary;
@@ -193,7 +205,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
+            className="w-full px-5 py-3 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
             style={cyanPrimary}>
             <span className="text-[19px]">{t("start.resume")}</span>
             <span className="text-[11px] font-mono font-semibold opacity-80">
@@ -206,17 +218,35 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         )}
 
-        {/* #382 „Normaler Lauf" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline. */}
-        <button onClick={onStart}
-          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
-          style={normalStyle}>
-          {t("start.normal")}
-        </button>
-        {/* #382 Seed-Chip dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad tryPlaySeed). */}
-        {onPlaySeed && (
-          <div>
+        {/* #382 „Normaler Lauf" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline.
+            #knopf-satellit (C): Der CTA teilt sich die Zeile jetzt mit dem Seed-Knopf. Beide tragen denselben Radius —
+            zwei ungleich große Geschwister mit gleicher Ecken-Sprache lesen sich als EINE Werkzeug-Gruppe, und der
+            Hauptknopf hört auf, wie eine randlose Fläche zu wirken, weil rechts etwas steht, das ihn begrenzt.
+            52 px Höhe auf beiden Seiten (py-3.5 + 16px-Zeile) → die Reihe schließt bündig ab. */}
+        <div className="flex items-stretch gap-2.5">
+          <button onClick={onStart}
+            className="flex-1 min-w-0 px-5 py-3.5 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
+            style={normalStyle}>
+            {t("start.normal")}
+          </button>
+          {onPlaySeed && (
+            <button type="button" onClick={() => setSeedOpen((o) => !o)}
+              aria-expanded={seedOpen} aria-controls="seed-panel"
+              aria-label={t("start.seed.toggle")} title={t("start.seed.toggle")}
+              className="shrink-0 w-[52px] rounded-2xl text-lg transition-all hover:-translate-y-0.5 flex items-center justify-center"
+              style={{ background: seedOpen ? "#2a2a38" : "#20202a", color: "#e8e8ea", border: `1px solid ${seedOpen ? "#4a4a5e" : "#30303a"}` }}>
+              ↻
+            </button>
+          )}
+        </div>
+        {/* #382 Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad tryPlaySeed) — seit #knopf-satellit hinter dem
+            ↻-Knoten daneben statt dauerhaft sichtbar. Kostet für Challenger-Seeds einen Tap, spart im Normalfall
+            eine Zeile; die Rangliste bringt ihren Wochen-Seed ohnehin im eigenen Reiter mit. */}
+        {onPlaySeed && seedOpen && (
+          <div id="seed-panel">
             <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
               <input
+                autoFocus
                 value={seedInput}
                 onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
                 placeholder={t("start.seed.placeholder")}
