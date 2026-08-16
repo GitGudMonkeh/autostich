@@ -859,6 +859,7 @@ export default {
   "deckdetail.noUnlocks": "Keine deck-gebundenen Freischaltungen.",
   "deckdetail.consumer": "Konsument",
   "deckdetail.trimmable": "trimmbar",
+  "deckdetail.needs": "braucht {name}",
 
   /* ---- Deck-Werkstatt (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Freischalten: {cond}",
@@ -970,6 +971,9 @@ export default {
   "shop.turnOn": "Einschalten",
   "shop.bg.noneActive": "✓ Aktiv — kein Hintergrund",
   "shop.bg.none": "Kein Hintergrund",
+  "shop.packSel.back": "Karte hinten",
+  "shop.packSel.front": "Karte vorne",
+  "shop.packSel.bg": "Hintergrund",
   "shop.anim.noneActive": "✓ Aktiv — keine Animation",
   "shop.anim.none": "Alle Animationen aus",
   "shop.color.standard": "Standard",

@@ -64,7 +64,10 @@ function prefetchFxChunks() {
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
-import { globalFxList, globalFxDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
+import { globalFxList, globalFxDef, themeDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
+// #sprache: Pack-/Deck-Name zur Anzeigezeit auflösen (roh trägt DE-Namen wie „Feuer"/„Eis"). Objekt bleibt
+// unangetastet (STD_PACK.kind etc.) — nur der ANGEZEIGTE Name kommt aus dem i18n-Katalog.
+const packLabel = (pk) => (pk ? (themeDef(pk.id)?.name ?? pk.name) : "");
 import { t, fmtNum } from "../i18n/index.js";
 import { unlockLabel } from "../i18n/unlockText.js"; // #sprache: Freischalt-Bedingung zur Anzeigezeit
 
@@ -567,7 +570,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
           rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
       {/* #335: Wortmarke folgt dem Prunk-Farbmodus — Deckfarbe-Modus → Deck-Zweiton (deckColor→deckColor2), sonst
           Chrome-Zweiton. Vorschau = In-Game (Battlefield tönt „Gottgleich" analog über gottDeck/deckA1/deckA2). */}
-      <GottChromeWord key={annKey} text="Gottgleich" color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
+      <GottChromeWord key={annKey} text={t("bf.big.godlike")} color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
         gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
         style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
@@ -1132,7 +1135,7 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
                 )}
               </div>
               <div className="px-2 py-1.5">
-                <span className="text-[12px] font-extrabold truncate block">{pack.name}</span>
+                <span className="text-[12px] font-extrabold truncate block">{packLabel(pack)}</span>
                 <span className="text-[10px] truncate block" style={{ color: sub[1] }}>{sub[0]}</span>
               </div>
             </button>
@@ -1178,8 +1181,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   const viewPack = tiered ? tierAsPack(pack, selTier) : pack;
 
   const hasBf = hasBattlefield(pack);
-  const segs = hasBf ? [["back", "Karte hinten"], ["front", "Karte vorne"], ["bg", "Hintergrund"]]
-                     : [["back", "Karte hinten"], ["front", "Karte vorne"]];
+  const segs = hasBf ? [["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")], ["bg", t("shop.packSel.bg")]]
+                     : [["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]];
   const activeSel = (sel === "bg" && !hasBf) ? "back" : sel;
 
   const s = pack.kind === "std" ? "own" : packState(p, pack);
@@ -1200,7 +1203,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] font-extrabold truncate">{pack.name}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            <span className="text-[15px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>{t("common.close")}</button>
           </div>
 
@@ -1292,7 +1295,6 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 // #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
-const TAB_LABEL = { karten: "Karten", stich: "Stich", hintergrund: "Hintergrund", score: "Score" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
 // #sprache: die Kurztexte stehen als `fx.<key>.short` im Katalog (siehe shortDesc unten).
@@ -1363,7 +1365,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
               <button key={g.key} onClick={() => pickCat(g.key)}
                 className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-lg text-[11px] font-extrabold transition-colors"
                 style={{ background: on ? "#241f38" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`, color: on ? "#e9e4ff" : "#9a97ab", boxShadow: on ? "0 0 0 1px #9b82f0" : undefined }}>
-                {TAB_LABEL[g.key]}
+                {t(`fxgroup.${g.key}.title`)}
               </button>
             );
           })}

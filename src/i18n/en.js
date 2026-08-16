@@ -848,6 +848,7 @@ export default {
   "deckdetail.noUnlocks": "No deck-bound unlocks.",
   "deckdetail.consumer": "Consumer",
   "deckdetail.trimmable": "prunable",
+  "deckdetail.needs": "needs {name}",
 
   /* ---- Deck workshop (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Unlock: {cond}",
@@ -959,6 +960,9 @@ export default {
   "shop.turnOn": "Switch on",
   "shop.bg.noneActive": "✓ Active — no background",
   "shop.bg.none": "No background",
+  "shop.packSel.back": "Card back",
+  "shop.packSel.front": "Card front",
+  "shop.packSel.bg": "Background",
   "shop.anim.noneActive": "✓ Active — no animation",
   "shop.anim.none": "All animations off",
   "shop.color.standard": "Standard",

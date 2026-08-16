@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Archetyp-Wechsel per horizontalem Swipe
 // #sprache: Archetyp-Meta und Skill-Definitionen kommen zur Anzeigezeit aus labels.js (archMeta/skillDef) —
-// aus dem Register brauchen wir hier nur noch die Liste.
-import { SKILL_LIST } from "../game/skills.js";
-import { GUIDES } from "./guides.js";
+// aus dem Register brauchen wir hier nur noch die Liste + die Reihenfolge fürs Swipen.
+import { SKILL_LIST, ARCHETYPE_ORDER } from "../game/skills.js";
+import { guideDef } from "../i18n/guideText.js"; // #sprache: Leitfaden lokalisiert (Untertitel/Kernidee) statt roher GUIDES
 import { GuideBody } from "./GuideOverlay.jsx";
 import { PACKS, packCond, packState, packUnlock } from "../game/themes.js";
 import { deckAssets } from "./cosmeticAssets.js";
@@ -47,7 +48,10 @@ function StatusPill({ label, on, color }) {
   );
 }
 
-export function DeckDetail({ archetype, profile, onBack, onClose }) {
+export function DeckDetail({ archetype: initialArch, profile, onBack, onClose }) {
+  // Der Screen remountet bei jedem Öffnen (UpgradeScreen rendert bedingt) → Prop seedet den Zustand sauber neu.
+  const [archetype, setArchetype] = useState(initialArch);
+  const archSwipe = useTabSwipe(ARCHETYPE_ORDER, archetype, setArchetype); // Swipe ←/→ = voriger/nächster Archetyp (geklemmt)
   const [tab, setTab] = useState("passives");
   useEscape(onBack);
   const meta = archMeta(archetype);
@@ -61,7 +65,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
   const skills = SKILL_LIST.filter((s) => s.archetype === archetype);
   const normalSkills = skills.filter((s) => !s.legendary);
   const legendarySkills = skills.filter((s) => s.legendary);
-  const guide = GUIDES[archetype];
+  const guide = guideDef(archetype);
   // Archetyp-gebundene Kosmetik-Packs (themes.js) — die Element-Challenge-Decks (monoArchetypeRun).
   const packs = PACKS.filter((pk) => packCond(pk)?.archetype === archetype);
 
@@ -75,7 +79,7 @@ export function DeckDetail({ archetype, profile, onBack, onClose }) {
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel relative"
-        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...archSwipe}>
 
         {/* Sticky-Kopf: Zurück + Fraktions-Icon + Name + Status-Pills + Schließen. */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
@@ -198,13 +202,13 @@ function SkillGroup({ title, skills, color, legendary = false }) {
               : { background: `linear-gradient(180deg, ${color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}` }}>
             <div className="flex items-center gap-1.5 flex-wrap">
               {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
-              <span className="text-[13px] font-bold" style={{ color }}>{s.name}</span>
+              <span className="text-[13px] font-bold" style={{ color }}>{skillDef(s.id)?.name || s.name}</span>
               {/* Voraussetzung sichtbar machen: Verstärker-Skills tun ohne ihren Basis-Skill NICHTS. Im Angebot
                   sind sie dadurch gegatet (skills.js `enabler`), im Katalog stand die Abhängigkeit bisher nirgends. */}
               {s.enabler && skillDef(s.enabler) && (
                 <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>
-                  braucht {skillDef(s.enabler).name}
+                  {t("deckdetail.needs", { name: skillDef(s.enabler).name })}
                 </span>
               )}
               {(s.heatConsumer || s.onFullCharge) && (
@@ -216,7 +220,7 @@ function SkillGroup({ title, skills, color, legendary = false }) {
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.trimmable")}</span>
               )}
             </div>
-            <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{s.desc}</div>
+            <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{skillDef(s.id)?.desc || s.desc}</div>
           </div>
         ))}
       </div>
