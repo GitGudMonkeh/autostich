@@ -206,13 +206,9 @@ export function FeedbackModal({ onClose }) {
               {tooShort && (
                 <div className="text-[11px] text-center opacity-55">{t("feedback.tooShort", { n: MIN_LEN })}</div>
               )}
-
-              {/* Zweitweg für alle, die ohnehin einen GitHub-Account haben. Bewusst klein und unten:
-                  als Hauptweg wäre ein Account für Playtester zu viel Reibung. */}
-              <a href="https://github.com/GitGudMonkeh/autostich/issues/new" target="_blank" rel="noreferrer"
-                className="text-[11px] text-center opacity-45 hover:opacity-80 transition-opacity">
-                {t("feedback.github")}
-              </a>
+              {/* Kein GitHub-Zweitweg mehr (#397): Meldungen laufen ausschließlich über diesen Melder.
+                  EIN Weg heißt EIN Posteingang — sonst liegt die Hälfte der Rückmeldungen in den Issues
+                  und die andere in der Tabelle, und der Discord-Ping zeigt nur noch die halbe Wahrheit. */}
             </div>
           )}
         </div>

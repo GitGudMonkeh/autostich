@@ -1108,7 +1108,6 @@ export default {
   "feedback.sending": "Sending …",
   "feedback.thanks": "Thanks — it arrived.",
   "feedback.tooShort": "At least {n} more characters.",
-  "feedback.github": "Prefer a GitHub issue? →",
   "feedback.draftSent": "Your last stuck report has now gone out.",
   "feedback.err.send": "Could not be sent. Your text is saved (and in the clipboard) and goes out automatically next time you open this.",
   "feedback.err.tooSoon": "Hold on — {s} seconds until the next report.",
