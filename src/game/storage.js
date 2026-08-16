@@ -516,6 +516,9 @@ const DEFAULT_OPTIONS = {
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  // Stich-Aufschlüsselung (§17) unter dem Feld — Default SICHTBAR (false), wie die Floating-Text-Schalter.
+  // Reine UI-Pref → NICHT in COSMETIC_OPTION_KEYS (überlebt den Reset).
+  hideBreakdown: false,
   // Zahlengröße (Kartenzahlen + Score-Floats): Skalierungsfaktor 0,75–1,25. Default = KLEINSTE Stufe (0,75),
   // die Zahlen sind sonst vielen zu groß. Reine UI-Pref (überlebt Reset).
   numScale: 0.75,

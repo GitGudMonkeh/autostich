@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS = {
   telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  hideBreakdown: false, // Stich-Aufschlüsselung (§17) unter dem Feld — Default sichtbar
   numScale: 0.75,
   randomDeckEachRun: false,
   tierSel: {},
