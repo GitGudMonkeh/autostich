@@ -12,10 +12,11 @@ if (typeof window !== "undefined") {
   // geschriebener Report einen Absturz aus dem Lauf überhaupt noch belegen kann.
   installErrorBuffer(window);
 
-  // #reset: EINMALIGER Voll-Reset für den Test-Rollout. Nur im Preview-/Test-Namensraum (VITE_PREVIEW=1 → test+pixi
-  // teilen sich `preview_`), damit die echte Hauptseite (main) NICHT betroffen ist. Läuft VOR dem React-Mount, sodass
-  // die App gleich das frische Profil liest. Der Epoch-Stempel sorgt dafür, dass es je Spieler nur genau EINMAL passiert.
-  maybeResetForEpoch(import.meta.env.VITE_PREVIEW === "1");
+  // #reset: EINMALIGER Voll-Reset zum v0.4-Rollout — jetzt in ALLEN deployten Builds (main + test + pixi), aber NICHT
+  // im Dev-Server (`import.meta.env.PROD` grenzt das ab). Der Epoch-Stempel wird PRO NAMENSRAUM geführt (main: kein
+  // Präfix · test/pixi: `preview_`), sodass jeder Spieler nur genau EINMAL zurückgesetzt wird — bereits zurückgesetzte
+  // Test-/Pixi-Spieler bleiben unberührt. Läuft VOR dem React-Mount, damit die App gleich das frische Profil liest.
+  maybeResetForEpoch(import.meta.env.PROD);
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();

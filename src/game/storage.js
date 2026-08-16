@@ -290,9 +290,12 @@ export function wipeProfileStorage() {
 /* #reset: EINMALIGER Voll-Reset je Rollout. Solange der gespeicherte Stempel (`as_reset_epoch`) nicht RESET_EPOCH
    entspricht, wird GENAU EINMAL wipeProfileStorage() ausgeführt (Fortschritt · Highscores · Geist · Lauf-Historie ·
    angefangener Lauf · Username · Tutorial-Status zurück auf Null, gesperrte Kosmetik-Auswahl auf Default). Optionen
-   wie Sprache/Lautstärke/Effekt-Stufe bleiben erhalten. `gate` grenzt den Reset ein (Aufrufer übergibt „nur Preview/
-   Test"), damit die echte Hauptseite nie betroffen ist. RESET_EPOCH ändern = erneuter Einmal-Reset bei allen Spielern
-   des Namensraums. Gibt true zurück, wenn tatsächlich zurückgesetzt wurde. */
+   wie Sprache/Lautstärke/Effekt-Stufe bleiben erhalten. `gate` grenzt den Reset ein (Aufrufer: alle deployten Builds,
+   nicht der Dev-Server). Der Stempel wird PRO NAMENSRAUM geführt (k()-Präfix) → main und preview_ setzen unabhängig
+   je genau EINMAL zurück. RESET_EPOCH ändern = erneuter Einmal-Reset bei allen Spielern JEDES Namensraums. Gibt true
+   zurück, wenn tatsächlich zurückgesetzt wurde. */
+// Name historisch („test") — der Stempel gilt inzwischen für ALLE Namensräume; NICHT ändern, sonst re-triggert er
+// bereits zurückgesetzte Test-/Pixi-Spieler. Für einen KÜNFTIGEN Reset einen NEUEN Wert setzen.
 export const RESET_EPOCH = "2026-08-16-test-neustart";
 export function maybeResetForEpoch(gate) {
   if (!gate) return false;
