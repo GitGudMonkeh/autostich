@@ -543,7 +543,7 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1, sfxDelay = 0 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1, sfxDelay = 0, loopGap = 0 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo · loopGap = Pause zwischen Loops (langer Swell)
   // Board-weite Bühne (panelRef) + unsichtbarer Karten-Anker (cardRef) im Zentrum — der Prunk-Fx zeichnet darüber.
   //   (#379-Regression-Fix: beim Loop-Umbau versehentlich entfernt → GottScene crashte mit „panelRef is not defined".)
   const panelRef = useRef(null);
@@ -585,7 +585,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
       <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
       {Fx && (
         <Suspense fallback={null}>
-          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} speed={speed} onFire={fire} />
+          <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} speed={speed} loopGap={loopGap} onFire={fire} />
         </Suspense>
       )}
       {/* #gott: dieselbe Synthwave-Chrome-GOTTGLEICH-Ansage wie In-Game — mittig, etwas kleiner, poppt je Fire synchron
@@ -790,7 +790,9 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} speed={0.45} />; // Basis 1,15 s → ~2,6 s
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} sfx="fx_laserfan" speed={0.48} />; // Basis 1,2 s → ~2,5 s · eigener Swell
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} sfx="fx_prisma" speed={0.85} />; // Basis 2,11 s → ~2,5 s · eigener Swell
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} sfx="fx_holocube" speed={0.72} />; // Basis 1,8 s → ~2,5 s · eigener Swell
+  // #: loopGap 5,5 s → Periode ~8 s: der ~11-s-Swell (fx_holocube) läuft weitgehend durch, bevor die nächste Animation
+  //    startet — ohne Gap schluckte der 3-s-Cooldown jeden zweiten Ton. [TUNING: höher = kein Überlappen, niedriger = flotter]
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} sfx="fx_holocube" speed={0.72} loopGap={5.5} />; // Basis 1,8 s → ~2,5 s · eigener Swell
   if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
