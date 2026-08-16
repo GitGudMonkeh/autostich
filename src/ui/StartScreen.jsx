@@ -101,8 +101,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
   const normalStyle = hasResume ? normalGhost : cyanPrimary;
 
+  /* #kopf-kompakt (16.08.2026): gap 3.5→2 und pt/pb 5→2/3. Der Startbildschirm brauchte auf einem
+     iPhone 14 Pro 865 px bei 664 px Sichtfläche — man musste scrollen, um „Normaler Lauf" überhaupt zu
+     sehen. Der Abstand lag über NEUN Lücken verteilt, jede für sich unauffällig; erst die Summe tat weh.
+     Gemessen mit Playwright gegen den Preview-Build, nicht geschätzt. */
   return (
-    <div className="relative isolate flex flex-col items-center gap-3.5 pt-5 pb-5">
+    <div className="relative isolate flex flex-col items-center gap-2 pt-2 pb-3">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] -z-10"
@@ -124,9 +128,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
-      <div className="inline-block mt-1">
+      <div className="inline-block">
         <img src={logo} alt={t("start.logo.alt")} draggable="false"
-          className="w-full max-w-[288px] h-auto select-none" />
+          className="w-full max-w-[248px] h-auto select-none" />
       </div>
       {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
           den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
@@ -137,7 +141,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Das goldene v-Banner an der Wortmarke ist ersatzlos weg. Es saß als absolutes Overlay über der
           Unterkante der Marke, kostete den Kopf diesen Überhang — und nannte mit „v0.4" ohnehin nur den
           Anfang dessen, was der Stempel daneben vollständig trägt. Eine Zeile, eine Versionsangabe. */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-3" title={t("start.version.title")}>{VERSION_FULL}</div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
@@ -363,27 +367,28 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       </div>
 
-      {/* Lokaler Nickname (#14). */}
-      {onEditName && (
-        <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1">
-          {username
-            ? <>{t("start.name.signedIn")} <b style={{ color: CY }}>{username}</b> · {t("start.name.change")}</>
-            : <>{t("start.name.set")}</>}
-        </button>
-      )}
-
-      {/* PWA · „Zum Startbildschirm hinzufügen" — kleiner Link zwischen Nickname und Versionsstempel (nur wenn relevant). */}
-      <PwaInstall />
-
-      {/* #datenschutz — der DAUERHAFTE Einstieg zum Hinweis. Bewusst hier im Fuß und nicht als Chip neben
-          Feedback/Discord: die beiden dort sind Angebote („mach mit"), das hier ist Nachschlagewerk. Wer
-          es sucht, sucht ganz unten. Die anderen beiden Einstiege sitzen dort, wo entschieden wird —
-          in der Telemetrie-Zeile der Optionen und im Namens-Dialog beim Erststart. */}
-      {onPrivacy && (
-        <button onClick={onPrivacy} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1 underline underline-offset-2">
-          {t("privacy.link")}
-        </button>
-      )}
+      {/* #kopf-kompakt: Nickname, PWA-Link und Datenschutz standen als DREI eigene Zeilen untereinander —
+          drei Textzeilen plus zwei Lücken für zusammen ein paar Wörter. Jetzt eine umbrechende Reihe.
+          Inhaltlich ändert sich nichts: Es sind weiter dieselben ruhigen Fuß-Links, nur nebeneinander.
+          (#14 Nickname · PWA „Zum Startbildschirm" · #datenschutz — der dauerhafte Einstieg zum Hinweis,
+          bewusst im Fuß und nicht als Chip neben Feedback/Discord: die dort sind Angebote, das hier ist
+          Nachschlagewerk. Die anderen beiden Einstiege sitzen dort, wo entschieden wird — Telemetrie-Zeile
+          der Optionen und Namens-Dialog beim Erststart.) */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+        {onEditName && (
+          <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity">
+            {username
+              ? <>{t("start.name.signedIn")} <b style={{ color: CY }}>{username}</b> · {t("start.name.change")}</>
+              : <>{t("start.name.set")}</>}
+          </button>
+        )}
+        <PwaInstall />
+        {onPrivacy && (
+          <button onClick={onPrivacy} className="text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2">
+            {t("privacy.link")}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
