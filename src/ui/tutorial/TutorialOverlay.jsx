@@ -128,8 +128,13 @@ function Spotlight({ rect, animate }) {
    Spotlight. Vorher erzwang ein `Math.max(CARD_MIN, …)` eine Mindesthöhe, die größer als der Platz
    sein konnte — die Karte lief dann unten aus dem Bild und die Knöpfe waren nicht erreichbar.
    Lieber ein teilweise verdecktes Panel als eine abgeschnittene Erklärung. */
-export function cardBox(rect, viewH) {
+export function cardBox(rect, viewH, contentH = 0) {
   if (!rect) return { center: true };
+  /* Die Karte darf nur in die Lücke über/unter dem Spotlight, wenn sie dort GANZ hineinpasst
+     (gemessene Inhaltshöhe + ein Abstand). Sonst wurde sie in eine zu kleine Lücke gequetscht,
+     auf maxH gedeckelt und scrollbar — die Knöpfe fielen unten raus. Vor der ersten Messung
+     (contentH 0) gilt weiter die alte Mindesthöhe CARD_MIN (Geometrie-Tests bleiben unberührt). */
+  const need = contentH > 0 ? contentH + CARD_GAP : CARD_MIN;
   /* Gerechnet wird mit dem SICHTBAREN Ausschnitt des Spotlights, nicht mit dem rohen Rechteck: ein
      Panel kann teilweise über dem oberen Rand liegen (negatives `top`), während der Nachlauf-Frame
      noch misst. Ungeklemmt kam dabei eine Karte mit negativem `top` heraus. */
@@ -137,8 +142,8 @@ export function cardBox(rect, viewH) {
   const spotBot = Math.min(viewH, Math.max(0, rect.top + rect.height + SPOT_PAD));
   const above = spotTop - CARD_GAP;
   const below = viewH - spotBot - CARD_GAP;
-  if (above >= CARD_MIN) return { bottom: Math.round(viewH - spotTop + CARD_GAP), maxH: above - CARD_GAP };
-  if (below >= CARD_MIN) return { top: Math.round(spotBot + CARD_GAP), maxH: below - CARD_GAP };
+  if (above >= need) return { bottom: Math.round(viewH - spotTop + CARD_GAP), maxH: above - CARD_GAP };
+  if (below >= need) return { top: Math.round(spotBot + CARD_GAP), maxH: below - CARD_GAP };
   /* Bildschirmfüllendes Panel (Aufstellbrett, Baufeld): oben wie unten kein Platz. Die Karte wird oben
      angeheftet und `fill` erlaubt ihr die VOLLE Resthöhe (zwischen den Safe-Areas, im Render als calc) —
      so ist der Tutorial-Text samt Knöpfen IMMER ganz sichtbar statt gedeckelt-und-scrollbar; das Brett
@@ -154,8 +159,18 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const rect = useAnchorRect(mark ? mark.anchor : null);
   const [viewH, setViewH] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
   const cardRef = useRef(null);
+  // Gemessene Inhaltshöhe der Karte (scrollHeight = volle Höhe TROTZ maxHeight-Deckel). Damit entscheidet
+  // cardBox, ob die Karte in die Lücke über/unter dem Spotlight passt oder oben mit voller Höhe anheftet.
+  const [contentH, setContentH] = useState(0);
 
   useScrollLock(step ? (mark ? mark.anchor : step.id) : null);
+
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const h = el.scrollHeight;
+    setContentH((prev) => (Math.abs(prev - h) > 1 ? h : prev));
+  }, [step, mark, viewH]);
 
   useEffect(() => {
     const onResize = () => setViewH(window.innerHeight);
@@ -181,7 +196,7 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const vars = { ...step.vars, ...displayVars() };
   const title = showMark ? null : t(step.titleKey, vars);
   const body = showMark ? t(mark.key, vars) : t(step.bodyKey, vars);
-  const box = showMark ? cardBox(rect, viewH) : { center: true };
+  const box = showMark ? cardBox(rect, viewH, contentH) : { center: true };
 
   /* Höhe der Karte: zentriert 80dvh; bildschirmfüllendes Panel (`fill`) = ganze Resthöhe zwischen den
      Safe-Areas minus dem Kopf-Abstand (dann passt der Text samt Knöpfen immer rein, ohne Scroll-Deckel);

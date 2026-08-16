@@ -186,6 +186,22 @@ describe("Tutorial · Karten-Platzierung", () => {
       }
     }
   });
+
+  // #tutorial: Die Karte darf nur in die Lücke über/unter dem Spotlight, wenn sie GANZ hineinpasst.
+  // Reicht die Lücke für die gemessene Inhaltshöhe nicht, heftet sie oben an (fill) statt zu deckeln+scrollen.
+  it("passt kurzer Inhalt in die Lücke über dem Spotlight", () => {
+    const box = cardBox({ top: 250, left: 0, width: 300, height: 400 }, VIEW, 150);
+    expect(box.bottom).toBeGreaterThan(0);  // über dem Spotlight verankert
+    expect(box.top).toBeUndefined();
+    expect(box.maxH).toBeGreaterThanOrEqual(150);
+  });
+
+  it("langer Inhalt in derselben Lücke füllt oben (nicht deckeln/scrollen)", () => {
+    // Dieselbe Lücke (~230px über dem Spotlight), aber Inhalt 300px → passt nicht → fill.
+    const box = cardBox({ top: 250, left: 0, width: 300, height: 400 }, VIEW, 300);
+    expect(box.fill).toBe(true);
+    expect(box.top).toBeLessThan(50);
+  });
 });
 
 /* Warum die Schrittnummer in useTutorial.js beim AUFTRETEN vergeben wird und nicht aus der
