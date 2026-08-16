@@ -20,7 +20,7 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
    damit Layout/Feel im echten Build sichtbar sind. Nur auf Autostich_Test. */
 
 // Discord-Einladung (Community). Als Konstante — kein Anzeigetext, gehört nicht in den i18n-Katalog.
-const DISCORD_URL = "https://discord.gg/3zrtPcU7t4";
+const DISCORD_URL = "https://discord.gg/xMJtFPrbWg";
 const DISCORD_BLURPLE = "#5865F2"; // Discord-Markenfarbe fürs Icon
 
 // Logo-Farben (aus dem Wortmarken-Verlauf gesampelt) — Rollen folgen dem Logo-Verlauf links→rechts:
