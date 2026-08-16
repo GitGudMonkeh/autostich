@@ -12,6 +12,7 @@ import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadO
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
+import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
 import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
@@ -592,7 +593,12 @@ export function Autostich() {
       //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
       ...(state.ranked ? { board: "meister" } : {}) };
     setMyEntry(gEntry);
-    if (leaderboardConfigured && name) {
+    // #174 Zweite Verteidigungslinie: das Modal blockt unsaubere Namen schon bei der Eingabe,
+    // aber ein VOR dem Filter gespeicherter Altname liegt weiter im localStorage und käme
+    // hier ungeprüft aufs globale Board. Lokal bleibt der Lauf sichtbar (myEntry oben) —
+    // nur veröffentlicht wird er nicht.
+    const nameOk = isAllowedUsername(name).ok;
+    if (leaderboardConfigured && name && nameOk) {
       publishRun(gEntry).then((saved) => {
         // #229 N2: die vom Board vergebene id nachtragen → GlobalLeaderboard markiert die Eigen-Zeile eindeutig.
         if (saved && saved.id != null) setMyEntry((e) => (e ? { ...e, id: saved.id } : e));

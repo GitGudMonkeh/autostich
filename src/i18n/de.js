@@ -1200,6 +1200,10 @@ export default {
   "name.lang.label": "Sprache",
   "name.preview.label": "Vorschau · Bestenliste",
   "name.preview.you": "du",
+  /* #174 Der Text nennt bewusst NICHT das getroffene Wort — sonst stünde die Beleidigung
+     doch wieder auf dem Bildschirm, und die Meldung würde zur Rateanleitung. */
+  "name.err.profanity": "Dieser Name enthält ein gesperrtes Wort. Bitte wähle einen anderen.",
+  "name.err.length": "Höchstens {max} Zeichen.",
 
   /* ---- Optionen ---- */
   /* ---- Optionen: Sektionen (#395). Kopf = klebende Überschrift, Chip = kurze Sprungmarke. ---- */

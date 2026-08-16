@@ -1181,6 +1181,8 @@ export default {
   "name.lang.label": "Language",
   "name.preview.label": "Preview · leaderboard",
   "name.preview.you": "you",
+  "name.err.profanity": "This name contains a blocked word. Please pick a different one.",
+  "name.err.length": "{max} characters at most.",
 
   /* ---- Options ---- */
   /* ---- Options: sections (#395). Header = sticky heading, chip = short jump label. ---- */

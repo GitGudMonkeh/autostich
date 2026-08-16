@@ -3,10 +3,13 @@ import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
 import { LOCALES, fmtNum } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: Erstwahl der Sprache lebt hier
+import { isAllowedUsername } from "../game/profanity.js"; // #174 Profanity-Filter (rein, testbar)
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
-   späteren Ändern. Minimal validiert — nur Trim + Länge 1–20; keine Eindeutigkeit,
-   kein Filter. Der Name erscheint an den globalen Highscore-Einträgen.
+   späteren Ändern. Validiert Trim + Länge 1–20 und seit #174 zusätzlich gegen die
+   kuratierte Wortliste — der Name erscheint an den GLOBALEN Highscore-Einträgen und
+   ist damit für alle Spieler sichtbar. Durchgesetzt wird der Filter in der Datenbank
+   (docs/username-profanity-guard.sql); hier geht es um sofortiges, klares Feedback.
    Optik an den aktuellen Hub-Stil angeglichen: Gradient-Wortmarke im Kopf (Logo-Verlauf
    Cyan→Violett→Amber), Cyan-Glührahmen ums Eingabefeld (wie „Lauf fortsetzen") und eine
    Live-Vorschau der eigenen Highscore-Zeile.
@@ -18,13 +21,20 @@ import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: Erstwahl de
    in ihrer EIGENEN Sprache („Deutsch"/„English") — wer die aktuelle nicht lesen kann, findet seine. */
 const MAX = 20;
 const CY = "#26c6e6", VI = "#9b82f0", AM = "#f2a83a"; // Logo-Verlauf (links→mitte→rechts)
+const ER = "#e2685f"; // #174 Fehlerfarbe — der Glührahmen wechselt mit, nicht nur der Text
 
 export function UsernameModal({ initial = "", firstTime = false, onLang = null, onSave, onClose }) {
   const [name, setName] = useState(initial);
   const t = useT();
   const [locale, setLocaleId] = useLocale();
   const trimmed = name.trim();
-  const submit = () => { if (trimmed) onSave(trimmed.slice(0, MAX)); };
+  /* #174 Live geprüft, nicht erst beim Klick: der Speichern-Knopf geht aus UND darunter
+     steht warum. Ein Knopf, der ohne Begründung tot ist, liest sich wie ein Bug. */
+  const check = isAllowedUsername(trimmed.slice(0, MAX));
+  const canSave = check.ok;
+  const errKey = check.ok || check.reason === "empty" ? null // leer = noch nichts getippt, keine Meldung
+    : check.reason === "profanity" ? "name.err.profanity" : "name.err.length";
+  const submit = () => { if (canSave) onSave(trimmed.slice(0, MAX)); };
   useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
   return (
@@ -38,7 +48,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         <ActionBar pad={6} bg={STICKY_HEAD_BG}>
           {!firstTime && <ActionButton kind="secondary" onClick={onClose}>{t("name.cancel")}</ActionButton>}
           <span className="flex-1" />
-          <ActionButton kind="primary" disabled={!trimmed} onClick={submit}>{t("name.save")}</ActionButton>
+          <ActionButton kind="primary" disabled={!canSave} onClick={submit}>{t("name.save")}</ActionButton>
         </ActionBar>
         <div className="text-center mb-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: CY }}>
@@ -59,12 +69,21 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
             placeholder={t("name.placeholder")}
+            aria-invalid={!!errKey}
             className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-center font-semibold tracking-wide"
-            style={{ background: "#0e1b22", border: `1px solid ${CY}`, color: "#a8ecf7" }} />
+            style={{ background: errKey ? "#221114" : "#0e1b22", border: `1px solid ${errKey ? ER : CY}`,
+                     color: errKey ? "#f0bdb8" : "#a8ecf7" }} />
         </div>
         <div className="text-[11px] opacity-45 mt-2 leading-snug">
           {t("name.hint", { max: MAX })}
         </div>
+        {/* #174 Begründung zum toten Speichern-Knopf. role=alert, damit Screenreader sie
+            beim Tippen ansagen — sonst bleibt der Knopf für sie grundlos unbenutzbar. */}
+        {errKey && (
+          <div role="alert" className="text-[11px] mt-1.5 leading-snug font-semibold" style={{ color: ER }}>
+            {t(errKey, { max: MAX })}
+          </div>
+        )}
 
         {/* #sprache — nur beim Erststart. Zwei gleich breite Knöpfe, damit keine der beiden Sprachen
             wie die „richtige" aussieht. Die Umschaltung wirkt SOFORT (der Dialog selbst wechselt mit),
