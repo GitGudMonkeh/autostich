@@ -16,7 +16,8 @@
      { kind: "allArchetypesRun" }               → profile.hadAllArchetypesRun === true (EIN Lauf mit allen vier Fraktionen, #215)
      { kind: "gottgleichRun" }  → profile.hadGottgleichRun === true       (#303: erstmals einen GOTTGLEICH-Stich getriggert)
      { kind: "meisterNoReroll" }→ profile.hadMeisterNoRerollRun === true  (#303 Sparfuchs: Meisterrang-Wochenlauf komplett ohne Reroll)
-     { kind: "championWeek" }   → profile.hadChampionWeek === true        (#303 Meister: Platz 1 einer Wochen-Rangliste — Champion-Board)
+     { kind: "championWeek", n } → profile.championWeeks >= n (Default 1) (#303 Meister: n× Platz 1 einer Wochen-Rangliste — Champion-Board;
+                                   das alte Boolean `hadChampionWeek` zählt weiterhin als 1)
      { kind: "onboardingDone" } → onboarding >= 6 (Genesis — Onboarding-Starter, frei nach abgeschlossenem Onboarding)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
@@ -151,6 +152,14 @@ const monoCount = (p, a) => {
   const v = m ? Number(m[a]) : 0;
   return Number.isFinite(v) && v > 0 ? v : 0;
 };
+/* Gewonnene Wochen-Ranglisten (Platz 1 im Meister-Wochen-Board) — Basis der gestuften Ranglisten-Decks.
+   Toleriert das ALTE Boolean-Feld `hadChampionWeek` (true → 1), damit Profile ohne den Zähler nicht
+   ihre bereits verdiente erste Stufe verlieren. */
+const championWeeks = (p) => {
+  const v = Number(p && p.championWeeks);
+  if (Number.isFinite(v) && v > 0) return v;
+  return p && p.hadChampionWeek ? 1 : 0;
+};
 
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
@@ -168,7 +177,7 @@ export function isUnlocked(def, profile) {
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
     case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
     case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
-    case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
+    case "championWeek":    return championWeeks(p) >= (u.n || 1); // #303 Meister: n× Platz 1 einer Wochen-Rangliste (Champion-Board)
     case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit DP gekauft (im Besitz)
     case "onboardingDone": return onboardingDone(p);                                             // #: Genesis — Onboarding abgeschlossen (6/6)
     default:            return true;
@@ -228,8 +237,11 @@ export function unlockProgress(def, profile) {
       return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "championWeek": {
-      const done = !!p.hadChampionWeek;
-      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
+      // Eine Woche → der bestehende Einzahl-Satz; mehrere → eigener Katalog-Schlüssel mit Zahl.
+      const need = u.n || 1;
+      const have = championWeeks(p);
+      return { done: have >= need, cur: Math.min(have, need), target: need,
+        kind: need > 1 ? "championWeekN" : u.kind, vars: need > 1 ? { n: need } : {} };
     }
     case "buy": {
       const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
