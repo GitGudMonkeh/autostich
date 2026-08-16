@@ -1160,8 +1160,12 @@ export default {
   "start.secret.reset": "🔄 Profil wird zurückgesetzt …",
 
   "start.ranked": "Rangliste",
-  "start.ranked.badge": "Woche",
-  "start.ranked.badge.aria": "Wochen-Challenge",
+  "start.ranked.badge": "Woche {n}",
+  "start.ranked.badge.aria": "Wochen-Challenge, Woche {n}",
+  /* #370 Wochenbonus: die erste abgeschlossene Ranked-Runde je Woche zahlt ihn aus. Die Anzeige verschwindet,
+     sobald er geholt ist — es gibt also nie „1/1" zu sehen, {have} steht immer auf 0. Der Platzhalter bleibt
+     trotzdem, damit die Zeile nicht lügt, falls der Bonus später mehrfach vergeben wird. */
+  "start.ranked.bonus": "Bonus {have}/{max}",
   "start.ranked.open": "Wochen-Rangliste öffnen",
   "start.ranked.locked": "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde",
 

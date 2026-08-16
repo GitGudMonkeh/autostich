@@ -1141,8 +1141,9 @@ export default {
   "start.secret.reset": "🔄 Resetting profile …",
 
   "start.ranked": "Ranked",
-  "start.ranked.badge": "Week",
-  "start.ranked.badge.aria": "Weekly challenge",
+  "start.ranked.badge": "Week {n}",
+  "start.ranked.badge.aria": "Weekly challenge, week {n}",
+  "start.ranked.bonus": "Bonus {have}/{max}",
   "start.ranked.open": "Open the weekly ranking",
   "start.ranked.locked": "View the weekly ranking — playing unlocks once every deck is unlocked and you have finished at least 1 run with each",
 

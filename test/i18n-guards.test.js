@@ -148,6 +148,7 @@ describe("i18n · Katalog-Parität", () => {
     "anchor.score.label",     // Score bleibt Score (§3.1)
     "anchor.crit.label",      // „Crit" (§3.1)
     "anchor.formation.label", // „Formation"
+    "start.ranked.bonus",     // „Bonus {have}/{max}" — „Bonus" ist in beiden Sprachen dasselbe Wort
     "board.tab.challenger",   // „Challenger" ist der Name des Modus
     "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
     "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"

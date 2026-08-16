@@ -69,3 +69,42 @@ describe("#394 — Mainscreen: Rangliste-Schloss verschwindet bei Freischaltung"
     expect(rankedUnlocked(unlockAllProfile(emptyProfile(0)))).toBe(true);
   });
 });
+
+/* ============================================================
+   #370 — Wochen-Ecke an der Ranglisten-Kachel: Wochennummer + offener Wochenbonus.
+
+   Die Anzeige hat bewusst KEINEN eigenen Zähler. Sie leitet „Bonus noch offen?" aus genau der Größe ab,
+   die auch die Auszahlung entscheidet: `lastRankedWeekSeed` im Profil gegen den Seed der laufenden Woche
+   (storage.js `recordRun` → `firstRankedThisWeek`). Genau deshalb kann die Anzeige nicht behaupten, es gäbe
+   noch etwas zu holen, wenn die Bank schon gezahlt hat.
+
+   Das ist eine Naht zwischen UI und Spiellogik, und Nähte reißen still: benennt jemand das Profilfeld um
+   oder wechselt die Bonus-Regel auf einen anderen Anker, kompiliert beides weiter und die Anzeige lügt nur.
+   ============================================================ */
+describe("#370 — Wochenbonus-Anzeige hängt an derselben Größe wie die Auszahlung", () => {
+  const start = ui("StartScreen.jsx");
+  const storage = readFileSync(new URL("../src/game/storage.js", import.meta.url), "utf8");
+
+  it("beide Seiten entscheiden über `lastRankedWeekSeed`", () => {
+    expect(start, "StartScreen liest das Profilfeld nicht mehr").toContain("lastRankedWeekSeed");
+    expect(storage, "storage.js schreibt das Profilfeld nicht mehr").toContain("lastRankedWeekSeed");
+  });
+
+  it("die Anzeige vergleicht gegen den Seed der LAUFENDEN Woche", () => {
+    // Ohne currentWeek() wäre der Vergleich gegen irgendeinen Seed — und der Bonus verschwände nie wieder.
+    expect(start).toMatch(/from "\.\.\/game\/weeklySeed\.js"/);
+    expect(start).toMatch(/currentWeek\(new Date\(\)\)/);
+    expect(start).toMatch(/weekBonusOpen\s*=\s*\(prof\.lastRankedWeekSeed \?\? null\) !== week\.seed/);
+  });
+
+  it("die Bonus-Zeile wird an weekBonusOpen gehängt, nicht dauerhaft gerendert", () => {
+    expect(start).toMatch(/\{weekBonusOpen && \(/);
+    expect(start).toContain('t("start.ranked.bonus"');
+  });
+
+  it("die Wochennummer steht im Badge, der CRT-Glow ist dort abgeschaltet", () => {
+    // Press Start 2P + Glow überstrahlt die Ziffern; das Badge hebt den text-shadow lokal auf.
+    expect(start).toMatch(/t\("start\.ranked\.badge", \{ n: week\.week \}\)/);
+    expect(start).toMatch(/textShadow: "none"/);
+  });
+});

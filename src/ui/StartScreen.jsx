@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
+import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
@@ -66,6 +67,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const onbDone = onbStep >= ONBOARDING_LINKS;
   // #299/#369 Hub-Gates: Werkstatt/Upgrades ab 6/6. #370 Rangliste frei, sobald alle Decks freigeschaltet + je ≥1 Lauf beendet.
   const rankedFree = rankedUnlocked(prof);
+  /* #370 Wochen-Anzeige an der Ranglisten-Kachel: Nummer der laufenden Woche + ob der Wochenbonus noch offen ist.
+     Die Bonus-Regel steht in storage.js (recordRun): die ERSTE abgeschlossene Ranked-Runde je Woche zahlt
+     +5 SP & +5 DP (bei vollem Baum +10 DP) und schreibt den Wochen-Seed nach `lastRankedWeekSeed`. Genau dieser
+     Vergleich ist deshalb die ganze Wahrheit über „schon geholt oder nicht" — die Anzeige leitet sich davon ab
+     und hat KEINEN eigenen Zähler, der auseinanderlaufen könnte.
+     Ranked-Läufe starten auf dem Wochen-Seed (App.jsx startRankedRun), darum ist der Vergleich mit currentWeek()
+     exakt und nicht nur ungefähr. Bewusst ohne useMemo: currentWeek() ist ein paar Rechenschritte, und so ist die
+     Nummer über einen Wochenwechsel hinweg in einer langen Sitzung immer aktuell. */
+  const week = currentWeek(new Date());
+  const weekBonusOpen = (prof.lastRankedWeekSeed ?? null) !== week.seed;
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
   const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
   const tryPlaySeed = () => {
@@ -291,8 +302,28 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
-            <span className="absolute top-1.5 right-2 px-1 rounded text-[9px] font-bold font-pixel leading-tight"
-              style={{ background: "#241d3a", color: VI }} aria-label={t("start.ranked.badge.aria")}>{t("start.ranked.badge")}</span>
+            {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
+                - `inset-y-0 justify-center` statt `top-1.5`: der Block ist jetzt zweizeilig und soll mittig zum
+                  Knopf-Label stehen. Absolut positioniert → er kann den Knopf nicht höher machen.
+                - `textShadow: none` hebt den CRT-Glow der .font-pixel-Regel (index.css) für DIESE Stelle auf.
+                  Der Glow überstrahlt die dünnen Press-Start-2P-Striche; bei „Woche" allein ging das gerade noch,
+                  mit einer Zahl dahinter wurde es unlesbar. Der Glow bleibt überall sonst unangetastet.
+                - Die Bonus-Zeile läuft in der System-Mono, nicht im Pixel-Font: Press Start 2P ist rund doppelt so
+                  breit und würde in die Knopf-Mitte hineinragen.
+                - Ist der Bonus geholt, verschwindet die Zeile ersatzlos (kein „1/1"): eine Belohnung, die es diese
+                  Woche nicht mehr gibt, soll nicht weiter Platz und Aufmerksamkeit binden. */}
+            <span className="absolute inset-y-0 right-2 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
+              aria-label={t("start.ranked.badge.aria", { n: week.week })}>
+              <span className="px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+                style={{ background: "#241d3a", color: VI, textShadow: "none" }}>
+                {t("start.ranked.badge", { n: week.week })}
+              </span>
+              {weekBonusOpen && (
+                <span className="text-[9px] font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
+                  {t("start.ranked.bonus", { have: 0, max: 1 })}
+                </span>
+              )}
+            </span>
           </button>
         </div>
       )}
