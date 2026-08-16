@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { Autostich } from "./App.jsx";
 import { install as installErrorBuffer } from "./ui/errorBuffer.js"; // #396 Fehler-Ring-Puffer für den Melder
+import { maybeResetForEpoch } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
 import "./index.css";
 
 // PWA: Das Install-Prompt-Event (`beforeinstallprompt`) kann VOR dem React-Mount feuern → früh einfangen und global
@@ -10,6 +11,11 @@ if (typeof window !== "undefined") {
   // auftreten (Chunk-Ladefehler, Skript-Parse-Probleme). Er ist der Grund, warum ein im Menü
   // geschriebener Report einen Absturz aus dem Lauf überhaupt noch belegen kann.
   installErrorBuffer(window);
+
+  // #reset: EINMALIGER Voll-Reset für den Test-Rollout. Nur im Preview-/Test-Namensraum (VITE_PREVIEW=1 → test+pixi
+  // teilen sich `preview_`), damit die echte Hauptseite (main) NICHT betroffen ist. Läuft VOR dem React-Mount, sodass
+  // die App gleich das frische Profil liest. Der Epoch-Stempel sorgt dafür, dass es je Spieler nur genau EINMAL passiert.
+  maybeResetForEpoch(import.meta.env.VITE_PREVIEW === "1");
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
