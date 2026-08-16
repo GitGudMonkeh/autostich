@@ -783,7 +783,7 @@ export default {
   "board.weekSeed": "Seed of the week",
   "board.weekLabel": "Week {week} · {year}",
   "board.play": "▶ Play",
-  "board.locked": "🔒 Unlocks once all decks are unlocked + ≥1 run finished in each · viewing is always open",
+  "board.locked": "🔒 Unlocks once every deck is unlocked and each of the four archetypes has been part of a run you played to the end — one skill from it is enough, and several archetypes count in the same run. Abandoned runs don't count.",
   "board.weekMods": "This week’s modifiers",
   "board.unavailable": "The leaderboard is unavailable.",
   "board.loading": "Loading leaderboard …",
@@ -1149,7 +1149,7 @@ export default {
   "start.ranked.badge.aria": "Weekly challenge, week {n}",
   "start.ranked.bonus": "Bonus {have}/{max}",
   "start.ranked.open": "Open the weekly ranking",
-  "start.ranked.locked": "View the weekly ranking — playing unlocks once every deck is unlocked and you have finished at least 1 run with each",
+  "start.ranked.locked": "View the weekly ranking — playing unlocks once every deck is unlocked and each of the four archetypes has been part of a run you played to the end (one skill from it is enough)",
 
   "start.tile.workshop": "Deck workshop",
   "start.tile.workshop.locked": "The deck workshop unlocks when onboarding is complete",

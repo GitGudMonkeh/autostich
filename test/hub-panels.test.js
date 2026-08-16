@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { NODES, RANKED_ARCHETYPES, rankedUnlocked, emptyProfile, unlockAllProfile } from "../src/game/progression.js";
+import de from "../src/i18n/de.js";
+import en from "../src/i18n/en.js";
 
 /* ============================================================
    #394 — zwei Hub-Details, als Quell-/Logik-Guards festgenagelt:
@@ -106,5 +108,33 @@ describe("#370 — Wochenbonus-Anzeige hängt an derselben Größe wie die Ausza
     // Press Start 2P + Glow überstrahlt die Ziffern; das Badge hebt den text-shadow lokal auf.
     expect(start).toMatch(/t\("start\.ranked\.badge", \{ n: week\.week \}\)/);
     expect(start).toMatch(/textShadow: "none"/);
+  });
+});
+
+/* ============================================================
+   #370 — die Freischalt-BESCHREIBUNG muss zur Freischalt-REGEL passen.
+
+   Die alte Kurzfassung („je ≥1 Lauf beendet") legte einen Mono-Lauf je Archetyp nahe. Tatsächlich zählt
+   recordRun jeden Archetyp, von dem der Spieler mindestens einen Skill hält — alle vier können in einem
+   einzigen Lauf zusammenkommen. Solche Texte veralten still: die Regel ändert sich, der Satz bleibt.
+   ============================================================ */
+describe("#370 — Freischalt-Text und Freischalt-Regel bleiben synchron", () => {
+  it("es sind genau vier Archetypen — der Text nennt die Zahl ausgeschrieben", () => {
+    // Kommt ein fünfter dazu, ist „der vier Archetypen" falsch und dieser Test der Anlass, ihn zu ändern.
+    expect(RANKED_ARCHETYPES.length).toBe(4);
+  });
+
+  it("kein Text behauptet mehr einen Mono-Lauf je Archetyp", () => {
+    for (const key of ["board.locked", "start.ranked.locked"]) {
+      expect(de[key], `${key} nennt die Bedingung nicht mehr`).toMatch(/Archetypen/);
+      expect(de[key], `${key} verspricht wieder „je ≥1 Lauf"`).not.toMatch(/je ≥1 Lauf/);
+      expect(en[key]).toMatch(/archetypes/i);
+    }
+  });
+
+  it("der Bestenlisten-Hinweis sagt, dass abgebrochene Läufe nicht zählen", () => {
+    // `completed` ist state.cycle >= totalCycles — ein Abbruch schreibt den Zähler NICHT hoch.
+    expect(de["board.locked"]).toMatch(/Abgebrochene Läufe zählen nicht/);
+    expect(en["board.locked"]).toMatch(/Abandoned runs/i);
   });
 });

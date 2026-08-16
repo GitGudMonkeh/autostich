@@ -6,7 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_TOTAL, TUTORIAL_MAIN_STEPS, stepMatches } from "../src/ui/tutorial/tutorialScript.js";
+import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_TOTAL, TUTORIAL_MAIN_STEPS, stepMatches, samePhaseStepIds } from "../src/ui/tutorial/tutorialScript.js";
 import { DISPLAY_VAR_KEYS, displayVars } from "../src/ui/tutorial/tutorialVars.js";
 import { cardBox } from "../src/ui/tutorial/TutorialOverlay.jsx";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
@@ -234,5 +234,55 @@ describe("Tutorial · Anker", () => {
     const used = new Set(TUTORIAL_STEPS.flatMap((s) => (s.coachmarks || []).map((c) => c.anchor)));
     const orphan = [...ANCHORS_IN_CODE].filter((a) => !used.has(a));
     expect(orphan, `verwaister Anker (niemand zeigt darauf):\n  ${orphan.join("\n  ")}`).toEqual([]);
+  });
+});
+
+/* „Überspringen" räumt die ganze Spielphase ab, nicht nur das sichtbare Fenster.
+
+   Der Fall, der es nötig macht: `levelup` trägt ZWEI Schritte (Skill- und Perk-Wahl, getrennt nur über
+   `match.field`). Wer die Skill-Erklärung wegklickt, stand vorher kurz darauf vor der Perk-Erklärung —
+   für den Spieler dieselbe Situation, also der Eindruck, der Knopf habe nicht gewirkt. */
+describe("Tutorial · Überspringen gilt für die ganze Phase", () => {
+  it("Skill und Perk gehören zusammen — sie teilen sich die levelup-Phase", () => {
+    expect(samePhaseStepIds("skill").sort()).toEqual(["perk", "skill"]);
+    expect(samePhaseStepIds("perk").sort()).toEqual(["perk", "skill"]);
+  });
+
+  it("Schritte mit eigener Phase stehen für sich", () => {
+    for (const id of ["play", "formation", "architect", "glacier", "target", "familyTarget", "legendary"]) {
+      expect(samePhaseStepIds(id), `${id} zieht fremde Schritte mit`).toEqual([id]);
+    }
+  });
+
+  it("das Intro hängt an atStart und zieht nichts mit", () => {
+    expect(samePhaseStepIds("intro")).toEqual(["intro"]);
+  });
+
+  it("unbekannte IDs liefern eine leere Liste (kein Crash im Skip-Pfad)", () => {
+    expect(samePhaseStepIds("gibtsnicht")).toEqual([]);
+    expect(samePhaseStepIds(undefined)).toEqual([]);
+  });
+
+  it("die Gruppierung deckt jeden Schritt ab und erfindet keine Phase dazu", () => {
+    // Gegenprobe über das ganze Skript: jede Gruppe enthält den Schritt selbst und ausschließlich
+    // Schritte derselben Phase. Kommt ein dritter Schritt in einer geteilten Phase dazu, greift die
+    // Regel automatisch mit — und dieser Test bemerkt, wenn sie es nicht täte.
+    for (const s of TUTORIAL_STEPS) {
+      const group = samePhaseStepIds(s.id);
+      expect(group).toContain(s.id);
+      for (const id of group) {
+        const other = TUTORIAL_STEPS.find((x) => x.id === id);
+        if (s.match && s.match.phase) expect(other.match.phase).toBe(s.match.phase);
+      }
+    }
+  });
+
+  it("der Skip-Pfad prüft closing über ALLE abgeräumten Schritte", () => {
+    // Sonst könnte ein Skip den Abschluss-Hinweis verschlucken, sobald der Bogen-Abschluss einmal
+    // in einer geteilten Phase liegt. Heute ist „architect" allein — die Absicherung gilt trotzdem.
+    const src = readFileSync(new URL("../src/ui/tutorial/useTutorial.js", import.meta.url), "utf8");
+    expect(src).toContain("samePhaseStepIds(c.stepId)");
+    expect(src).toMatch(/ids\.some\(\(id\) => \(TUTORIAL_STEPS\.find\(\(x\) => x\.id === id\) \|\| \{\}\)\.closing\)/);
+    expect(src).toMatch(/for \(const id of ids\) seen\.current\.add\(id\)/);
   });
 });

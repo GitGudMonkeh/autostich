@@ -11,7 +11,7 @@
    wieder ganz sehen. Über den Lauf hinaus persistiert einzig „schon mal gesehen"
    (as_tutorial_done, storage.js) — und das auch nur bei Abschluss oder „Tutorial beenden". */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_MAIN_STEPS, TUTORIAL_TOTAL, stepMatches } from "./tutorialScript.js";
+import { TUTORIAL_STEPS, TUTORIAL_OUTRO, TUTORIAL_MAIN_STEPS, TUTORIAL_TOTAL, stepMatches, samePhaseStepIds } from "./tutorialScript.js";
 
 /* Was gerade auf dem Schirm steht. `null` = nichts, der Lauf läuft normal weiter. */
 const VIEW_POPUP = "popup";  // Erklär-Pop-up der Phase
@@ -94,13 +94,25 @@ export function useTutorial({ active, phase, state, runKey = 0, onDone }) {
     });
   }, [onDone]);
 
-  /* „Überspringen" gilt für den laufenden Schritt — der nächste kommt trotzdem. Beendet der
-     übersprungene Schritt den Bogen, wird der Abschluss-Hinweis NICHT verschluckt. */
+  /* „Überspringen" räumt die ganze PHASE ab — das Pop-up, seine restlichen Coach-Marks UND die
+     Geschwister-Schritte derselben Spielphase. Der Unterschied ist an genau einer Stelle sichtbar:
+     `levelup` trägt zwei Schritte (Skill- und Perk-Wahl, getrennt nur über `match.field`). Vorher stand
+     man kurz nach dem Wegklicken der Skill-Erklärung vor der Perk-Erklärung — derselbe Phasenname, für
+     den Spieler dieselbe Situation, und der Eindruck: „Überspringen hat nicht gewirkt."
+     Nachfolgende ANDERE Phasen werden weiterhin erklärt; dafür ist das hier nicht gedacht.
+
+     Beendet einer der übersprungenen Schritte den Bogen (`closing`), wird der Abschluss-Hinweis NICHT
+     verschluckt — sonst könnte ein Skip das Tutorial lautlos ohne Abschluss enden lassen. Deshalb wird
+     `closing` über ALLE abgeräumten Schritte geprüft, nicht nur über den sichtbaren. */
   const skipStep = useCallback(() => {
     setCur((c) => {
       if (!c || c.view === VIEW_OUTRO) { onDone && onDone(); return null; }
-      const s = TUTORIAL_STEPS.find((x) => x.id === c.stepId);
-      if (s && s.closing && !outroPending.current) {
+      const ids = samePhaseStepIds(c.stepId);
+      // `seen` mitpflegen, damit die Phasen-Erkennung die Geschwister nicht gleich wieder aufmacht.
+      // Idempotent (Set.add), also auch unter StrictMode-Doppelaufruf stabil — wie oben im Phasen-Effekt.
+      for (const id of ids) seen.current.add(id);
+      const closing = ids.some((id) => (TUTORIAL_STEPS.find((x) => x.id === id) || {}).closing);
+      if (closing && !outroPending.current) {
         outroPending.current = true;
         return { stepId: TUTORIAL_OUTRO.id, view: VIEW_OUTRO, markIndex: 0 };
       }

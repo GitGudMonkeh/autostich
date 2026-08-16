@@ -794,7 +794,15 @@ export default {
   "board.weekSeed": "Seed der Woche",
   "board.weekLabel": "Woche {week} · {year}",
   "board.play": "▶ Spielen",
-  "board.locked": "🔒 Frei, sobald alle Decks freigeschaltet sind + je ≥1 Lauf beendet · ansehen jederzeit",
+  /* #370 Freischalt-Bedingung — WORTGENAU an progression.rankedUnlocked + storage.recordRun:
+       · alle Deck-Freischalt-Knoten gekauft,
+       · und für jeden der vier RANKED_ARCHETYPES ein Lauf mit `completed === true`.
+     Zwei Dinge, die die alte Kurzfassung („je ≥1 Lauf beendet") falsch nahelegte: Es braucht KEINEN
+     Mono-Lauf je Archetyp — gezählt wird jeder Archetyp, von dem man mindestens EINEN Skill hält
+     (App.jsx `archetypesUsed`), alle vier können also in einem einzigen Lauf zusammenkommen. Und
+     „beendet" heißt bis zum letzten Durchlauf gespielt (`state.cycle >= totalCycles`); ein Abbruch
+     zählt nicht. */
+  "board.locked": "🔒 Frei, sobald alle Decks freigeschaltet sind und jeder der vier Archetypen einmal in einem bis zum Ende gespielten Lauf dabei war — ein Skill daraus genügt, und mehrere Archetypen zählen im selben Lauf. Abgebrochene Läufe zählen nicht.",
   "board.weekMods": "Modifikatoren dieser Woche",
   "board.unavailable": "Bestenliste ist nicht verfügbar.",
   "board.loading": "Lädt Bestenliste …",
@@ -1171,7 +1179,7 @@ export default {
      trotzdem, damit die Zeile nicht lügt, falls der Bonus später mehrfach vergeben wird. */
   "start.ranked.bonus": "Bonus {have}/{max}",
   "start.ranked.open": "Wochen-Rangliste öffnen",
-  "start.ranked.locked": "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und mit jedem ≥1 Lauf beendet wurde",
+  "start.ranked.locked": "Wochen-Rangliste ansehen — Spielen wird frei, sobald alle Decks freigeschaltet sind und jeder der vier Archetypen einmal in einem bis zum Ende gespielten Lauf dabei war (ein Skill daraus genügt)",
 
   "start.tile.workshop": "Deck-Werkstatt",
   "start.tile.workshop.locked": "Die Deck-Werkstatt wird nach Abschluss des Onboardings frei",

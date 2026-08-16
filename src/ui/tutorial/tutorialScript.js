@@ -181,3 +181,24 @@ export function stepMatches(step, phase, state) {
   if (m.field) return !!(state && state[m.field]);
   return true;
 }
+
+/* Welche Schritte erklären DIESELBE Spielphase wie `stepId`? (Der Schritt selbst ist immer dabei.)
+
+   Hintergrund: Die Phase allein identifiziert einen Schritt nicht eindeutig — `levelup` trägt ZWEI
+   Schritte, die Skill- und die Perk-Wahl, unterschieden nur über `match.field`. „Überspringen" soll
+   die ganze Phase abräumen und nicht nur die Hälfte davon, sonst steht der Spieler kurz darauf wieder
+   vor einem Fenster derselben Phase, obwohl er sie gerade weggeklickt hat.
+
+   Schritte ohne Phase (das Intro hängt an `atStart`) stehen für sich allein.
+
+   Bewusst hier und nicht in useTutorial.js: eine reine Funktion über dem Skript ist ohne React testbar —
+   und dieser Zusammenhang („welche Schritte gehören zusammen") ist eine Eigenschaft des SKRIPTS, nicht
+   der Zustandsmaschine. Kommt später ein dritter Schritt in einer geteilten Phase dazu, greift die
+   Regel automatisch mit. */
+export function samePhaseStepIds(stepId) {
+  const self = TUTORIAL_STEPS.find((x) => x.id === stepId);
+  if (!self) return [];
+  const phase = self.match && self.match.phase;
+  if (!phase) return [self.id];
+  return TUTORIAL_STEPS.filter((x) => x.match && x.match.phase === phase).map((x) => x.id);
+}
