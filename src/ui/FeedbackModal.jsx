@@ -120,9 +120,16 @@ export function FeedbackModal({ onClose }) {
           </div>
 
           {state === "done" ? (
-            <div className="rounded-xl px-4 py-8 text-center" style={{ background: "#123a25", border: "1px solid #2f7a4f" }}>
-              <div className="text-2xl mb-1" aria-hidden="true">✓</div>
-              <div className="font-bold" style={{ color: "#54e08a" }}>{t("feedback.thanks")}</div>
+            /* Dieselbe Hinweisbox wie „Entwurf nachgesendet"/Fehler/Offline weiter unten — gleiche
+               Maße, gleiches Grün. Vorher stand hier ein Kasten mit doppelter Polsterung und
+               Riesen-Haken; auf dem Handy füllte er fast das ganze Fenster, obwohl er nur vier
+               Wörter trägt. Ein Erfolg braucht keinen mehr Platz als ein Fehler. role="status",
+               damit Screenreader die Bestätigung ansagen — der Dialog schließt gleich von selbst. */
+            <div role="status"
+              className="rounded-lg px-3 py-2 text-[12px] leading-snug font-semibold flex items-center justify-center gap-2"
+              style={{ background: "#123a25", border: "1px solid #2f7a4f", color: "#9fe0b8" }}>
+              <span aria-hidden="true" style={{ color: "#54e08a" }}>✓</span>
+              {t("feedback.thanks")}
             </div>
           ) : (
             <div className="grid gap-3">
