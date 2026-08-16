@@ -33,8 +33,6 @@ import serie1500Front  from "../assets/cards/decks_player/deck_serie1500/front.w
 import serie1500Back   from "../assets/cards/decks_player/deck_serie1500/back.webp";
 import sparfuchsFront  from "../assets/cards/decks_player/deck_sparfuchs/front.webp";  // Sparfuchs
 import sparfuchsBack   from "../assets/cards/decks_player/deck_sparfuchs/back.webp";
-import meisterFront    from "../assets/cards/decks_player/deck_meister/front.webp";    // Meister
-import meisterBack     from "../assets/cards/decks_player/deck_meister/back.webp";
 // #299: alte Progressions-Battlefields (bf_1–4) entfernt.
 // Deck-Werkstatt Starter-Themes (kaufbar, je Element 1 SP): jedes Theme = Deck-Paar + Battlefield.
 import sunsetFront from "../assets/cards/decks_player/deck_sunset/front.webp"; // Sunset Rider
@@ -69,8 +67,6 @@ import bfSerie1500Desktop  from "../assets/battlefields/bf_serie1500/desktop.jpg
 import bfSerie1500Mobile   from "../assets/battlefields/bf_serie1500/mobile.jpg";
 import bfSparfuchsDesktop  from "../assets/battlefields/bf_sparfuchs/desktop.jpg";
 import bfSparfuchsMobile   from "../assets/battlefields/bf_sparfuchs/mobile.jpg";
-import bfMeisterDesktop    from "../assets/battlefields/bf_meister/desktop.jpg";
-import bfMeisterMobile     from "../assets/battlefields/bf_meister/mobile.jpg";
 // #310 Element-Challenge-Decks (Feuer/Eis/Blitz/Pflanze · Mono-Läufe) + Prisma (Element-Bund) + 4 DP-Kauf-Packs.
 import feuerFront     from "../assets/cards/decks_player/deck_feuer/front.webp";        // Feuer (Challenge · fire)
 import feuerBack      from "../assets/cards/decks_player/deck_feuer/back.webp";
@@ -124,12 +120,58 @@ import polarlichtFront from "../assets/cards/decks_player/deck_polarlicht/front.
 import polarlichtBack  from "../assets/cards/decks_player/deck_polarlicht/back.webp";
 import seedracheFront  from "../assets/cards/decks_player/deck_seedrache/front.webp";  // Eldritch (ehem. Seedrache)
 import seedracheBack   from "../assets/cards/decks_player/deck_seedrache/back.webp";
+import obsidianFront   from "../assets/cards/decks_player/deck_obsidian/front.webp";   // Obsidian
+import obsidianBack    from "../assets/cards/decks_player/deck_obsidian/back.webp";
+// #tiered Titan (I/II/III) + Hirsch (I/II/III) — Stufen-Decks
+import titan1Front from "../assets/cards/decks_player/deck_titan1/front.webp";
+import titan1Back  from "../assets/cards/decks_player/deck_titan1/back.webp";
+import titan2Front from "../assets/cards/decks_player/deck_titan2/front.webp";
+import titan2Back  from "../assets/cards/decks_player/deck_titan2/back.webp";
+import titan3Front from "../assets/cards/decks_player/deck_titan3/front.webp";
+import titan3Back  from "../assets/cards/decks_player/deck_titan3/back.webp";
+import hirsch1Front from "../assets/cards/decks_player/deck_hirsch1/front.webp";
+import hirsch1Back  from "../assets/cards/decks_player/deck_hirsch1/back.webp";
+import hirsch2Front from "../assets/cards/decks_player/deck_hirsch2/front.webp";
+import hirsch2Back  from "../assets/cards/decks_player/deck_hirsch2/back.webp";
+import hirsch3Front from "../assets/cards/decks_player/deck_hirsch3/front.webp";
+import hirsch3Back  from "../assets/cards/decks_player/deck_hirsch3/back.webp";
+// #deck40 Gaia · Glazius · Voltaris · Pyrros (je 40 DP)
+import gaiaFront     from "../assets/cards/decks_player/deck_gaia/front.webp";
+import gaiaBack      from "../assets/cards/decks_player/deck_gaia/back.webp";
+import glaziusFront  from "../assets/cards/decks_player/deck_glazius/front.webp";
+import glaziusBack   from "../assets/cards/decks_player/deck_glazius/back.webp";
+import voltarisFront from "../assets/cards/decks_player/deck_voltaris/front.webp";
+import voltarisBack  from "../assets/cards/decks_player/deck_voltaris/back.webp";
+import pyrrosFront   from "../assets/cards/decks_player/deck_pyrros/front.webp";
+import pyrrosBack    from "../assets/cards/decks_player/deck_pyrros/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
 import bfPolarlichtMobile  from "../assets/battlefields/bf_polarlicht/mobile.jpg";
 import bfSeedracheDesktop  from "../assets/battlefields/bf_seedrache/desktop.jpg";
 import bfSeedracheMobile   from "../assets/battlefields/bf_seedrache/mobile.jpg";
+import bfObsidianDesktop   from "../assets/battlefields/bf_obsidian/desktop.jpg";
+import bfObsidianMobile    from "../assets/battlefields/bf_obsidian/mobile.jpg";
+import bfTitan1Desktop from "../assets/battlefields/bf_titan1/desktop.jpg";
+import bfTitan1Mobile  from "../assets/battlefields/bf_titan1/mobile.jpg";
+import bfTitan2Desktop from "../assets/battlefields/bf_titan2/desktop.jpg";
+import bfTitan2Mobile  from "../assets/battlefields/bf_titan2/mobile.jpg";
+import bfTitan3Desktop from "../assets/battlefields/bf_titan3/desktop.jpg";
+import bfTitan3Mobile  from "../assets/battlefields/bf_titan3/mobile.jpg";
+import bfHirsch1Desktop from "../assets/battlefields/bf_hirsch1/desktop.jpg";
+import bfHirsch1Mobile  from "../assets/battlefields/bf_hirsch1/mobile.jpg";
+import bfHirsch2Desktop from "../assets/battlefields/bf_hirsch2/desktop.jpg";
+import bfHirsch2Mobile  from "../assets/battlefields/bf_hirsch2/mobile.jpg";
+import bfHirsch3Desktop from "../assets/battlefields/bf_hirsch3/desktop.jpg";
+import bfHirsch3Mobile  from "../assets/battlefields/bf_hirsch3/mobile.jpg";
+import bfGaiaDesktop     from "../assets/battlefields/bf_gaia/desktop.jpg";
+import bfGaiaMobile      from "../assets/battlefields/bf_gaia/mobile.jpg";
+import bfGlaziusDesktop  from "../assets/battlefields/bf_glazius/desktop.jpg";
+import bfGlaziusMobile   from "../assets/battlefields/bf_glazius/mobile.jpg";
+import bfVoltarisDesktop from "../assets/battlefields/bf_voltaris/desktop.jpg";
+import bfVoltarisMobile  from "../assets/battlefields/bf_voltaris/mobile.jpg";
+import bfPyrrosDesktop   from "../assets/battlefields/bf_pyrros/desktop.jpg";
+import bfPyrrosMobile    from "../assets/battlefields/bf_pyrros/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -149,7 +191,6 @@ export const DECK_ASSETS = {
   deck_serie600:   { front: serie600Front,   back: serie600Back },
   deck_serie1500:  { front: serie1500Front,  back: serie1500Back },
   deck_sparfuchs:  { front: sparfuchsFront,   back: sparfuchsBack },
-  deck_meister:    { front: meisterFront,     back: meisterBack },
   // #310 Element-Challenge-Decks + Prisma (Multi) + DP-Kauf-Packs:
   deck_feuer:     { front: feuerFront,     back: feuerBack },
   deck_eis:       { front: eisFront,       back: eisBack },
@@ -167,6 +208,17 @@ export const DECK_ASSETS = {
   deck_arcade:     { front: arcadeFront,     back: arcadeBack },
   deck_polarlicht: { front: polarlichtFront, back: polarlichtBack },
   deck_seedrache:  { front: seedracheFront,  back: seedracheBack },
+  deck_obsidian:   { front: obsidianFront,   back: obsidianBack },
+  deck_titan1:  { front: titan1Front,  back: titan1Back },
+  deck_titan2:  { front: titan2Front,  back: titan2Back },
+  deck_titan3:  { front: titan3Front,  back: titan3Back },
+  deck_hirsch1: { front: hirsch1Front, back: hirsch1Back },
+  deck_hirsch2: { front: hirsch2Front, back: hirsch2Back },
+  deck_hirsch3: { front: hirsch3Front, back: hirsch3Back },
+  deck_gaia:     { front: gaiaFront,     back: gaiaBack },
+  deck_glazius:  { front: glaziusFront,  back: glaziusBack },
+  deck_voltaris: { front: voltarisFront, back: voltarisBack },
+  deck_pyrros:   { front: pyrrosFront,   back: pyrrosBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -188,7 +240,6 @@ export const BATTLEFIELD_ASSETS = {
   bf_serie600:   { desktop: bfSerie600Desktop,   mobile: bfSerie600Mobile },
   bf_serie1500:  { desktop: bfSerie1500Desktop,  mobile: bfSerie1500Mobile },
   bf_sparfuchs:  { desktop: bfSparfuchsDesktop,  mobile: bfSparfuchsMobile },
-  bf_meister:    { desktop: bfMeisterDesktop,    mobile: bfMeisterMobile },
   // #310 Element-Challenge-Battlefields + Prisma + DP-Kauf-Packs:
   bf_feuer:     { desktop: bfFeuerDesktop,     mobile: bfFeuerMobile },
   bf_eis:       { desktop: bfEisDesktop,       mobile: bfEisMobile },
@@ -206,6 +257,17 @@ export const BATTLEFIELD_ASSETS = {
   bf_arcade:     { desktop: bfArcadeDesktop,     mobile: bfArcadeMobile },
   bf_polarlicht: { desktop: bfPolarlichtDesktop, mobile: bfPolarlichtMobile },
   bf_seedrache:  { desktop: bfSeedracheDesktop,  mobile: bfSeedracheMobile },
+  bf_obsidian:   { desktop: bfObsidianDesktop,   mobile: bfObsidianMobile },
+  bf_titan1:  { desktop: bfTitan1Desktop,  mobile: bfTitan1Mobile },
+  bf_titan2:  { desktop: bfTitan2Desktop,  mobile: bfTitan2Mobile },
+  bf_titan3:  { desktop: bfTitan3Desktop,  mobile: bfTitan3Mobile },
+  bf_hirsch1: { desktop: bfHirsch1Desktop, mobile: bfHirsch1Mobile },
+  bf_hirsch2: { desktop: bfHirsch2Desktop, mobile: bfHirsch2Mobile },
+  bf_hirsch3: { desktop: bfHirsch3Desktop, mobile: bfHirsch3Mobile },
+  bf_gaia:     { desktop: bfGaiaDesktop,     mobile: bfGaiaMobile },
+  bf_glazius:  { desktop: bfGlaziusDesktop,  mobile: bfGlaziusMobile },
+  bf_voltaris: { desktop: bfVoltarisDesktop, mobile: bfVoltarisMobile },
+  bf_pyrros:   { desktop: bfPyrrosDesktop,   mobile: bfPyrrosMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

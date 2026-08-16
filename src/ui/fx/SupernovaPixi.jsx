@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture, Container, ParticleContainer, Particle } from "pixi.js";
+import { SUPERNOVA_LIFE, SUPERNOVA_CHARGE, SUPERNOVA_TAIL } from "./supernovaTiming.js";
 
 /* #326 Gottgleich-Prunk „Supernova" (Legendär) — PIXI, der Showstopper. Mehrphasig: Kollaps (Sterne + Ring in den Kern
    gesogen) → Detonation (Weiß-Flash mit chromatischer Spaltung, Zoom-Punch) → Boom-Schockwelle + chromatische Ringe +
@@ -12,7 +13,8 @@ import { Application, Graphics, Sprite, Texture, Container, ParticleContainer, P
    Zoom/Flash gedämpft, Sternenzahl runter. Werte 1:1 aus #326. */
 
 const TUNE = {
-  LIFE: 1.9, CHARGE: 0.16, FLASH: 2.7,
+  // Zeitachse aus supernovaTiming.js — dieselben Werte rechnen den Sound-Vorlauf (Pixi-frei importierbar).
+  LIFE: SUPERNOVA_LIFE, CHARGE: SUPERNOVA_CHARGE, FLASH: 2.7,
   ZOOM: 0.5, BOOM: 1.75, STREAK: 1.7,
   CORE_R: 0.6, CORE_GLOW: 2.8, POS_Y: 0.5,
   RINGS: 6, RING_R: 2, CHROMA: 12, RING_SEP: 0.05, RING_THICK: 0.5,
@@ -20,7 +22,7 @@ const TUNE = {
   STARS: 240, STAR_SPEED: 1.55, STAR_SIZE: 2.6, STAR_TRAIL: 4, GRAVITY: 0,
   TUNNEL: 1.2, T_RINGS: 14, T_SPOKES: 24, T_SPEED: 3.4, T_GAMMA: 3.3, T_HOLE: 0.06, T_SPIN: -1,
   BRIGHT: 1.1, SCAN: 0,
-  TAIL: 0.15,
+  TAIL: SUPERNOVA_TAIL,
 };
 const STD_A = "#ffd24a", STD_B = "#ff2d9b";
 

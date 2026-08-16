@@ -112,37 +112,76 @@ create index if not exists autostich_telemetry_build_idx   on public.autostich_t
 create index if not exists autostich_telemetry_install_idx on public.autostich_telemetry (install_id, created_at desc);
 create index if not exists autostich_telemetry_outcome_idx on public.autostich_telemetry (outcome);
 
+
 -- ============================================================================
--- DISCORD-BENACHRICHTIGUNG (Supabase → privater Dev-Channel)
+-- DISCORD-BENACHRICHTIGUNG (Supabase → privater Dev-Kanal)
 --
 -- Der Spiel-Client redet NIE direkt mit Discord — sonst stünde die Webhook-URL im JS-Bundle und jeder
--- könnte den Channel zuspammen. Stattdessen: Trigger in der Datenbank, Webhook-URL liegt serverseitig.
+-- könnte den Kanal zuspammen. Stattdessen: Trigger in der Datenbank.
 --
--- Gedrosselt: höchstens eine Nachricht je `discord_min_interval_sec`. Die Nachricht meldet dann, wie
--- viele Läufe seit der letzten Meldung eingegangen sind — ohne Drossel wäre bei 50 Testern der Channel
--- unbrauchbar. 0 = jede Zeile meldet.
+-- BEWUSST DIESELBE BAUART WIE docs/autostich-reports-discord.sql (#396): pg_net + Vault, SECURITY
+-- DEFINER mit gepinntem search_path, alles in einem EXCEPTION-Block. Zwei Muster für dieselbe Aufgabe
+-- driften auseinander; eines reicht. INHALTLICH bleiben die beiden getrennt — der Feedback-Melder
+-- transportiert, was Spieler uns melden, hier fließen Balancing-Daten für uns. Eigene Tabelle, eigener
+-- Trigger, eigenes Vault-Secret (also auch ein eigener Kanal, wenn gewünscht).
+--
+-- UNTERSCHIED zum Melder: hier wird GEDROSSELT. Ein Report kommt selten und ist einzeln interessant;
+-- Läufe kommen im Dutzend und sind es nicht. Höchstens eine Nachricht je `discord_min_interval_sec`,
+-- die dann meldet, wie viele Läufe seit der letzten Meldung eingegangen sind. 0 = jede Zeile meldet.
 -- ============================================================================
 
-create extension if not exists pg_net with schema extensions;
+-- §1 — WEBHOOK-URL IN DEN VAULT (einmalig, von Hand)
+--
+-- In Discord: Kanal → Bearbeiten → Integrationen → Webhooks → Neuer Webhook → URL kopieren.
+-- Die URL gehört NICHT ins Repo und NICHT in eine Klartext-Tabelle: wer sie hat, kann in den Kanal posten.
+--
+--   select vault.create_secret(
+--     'https://discord.com/api/webhooks/DEINE/URL',
+--     'discord_telemetry_webhook',
+--     'Autostich Telemetrie — Ziel des Lauf-Pings');
+--
+-- Später ändern (NICHT noch einmal create_secret — das legt einen zweiten Eintrag an):
+--   select vault.update_secret(
+--     (select id from vault.secrets where name = 'discord_telemetry_webhook'),
+--     'https://discord.com/api/webhooks/NEUE/URL');
+--
+-- Ping abschalten, ohne etwas anderes zu löschen:
+--   delete from vault.secrets where name = 'discord_telemetry_webhook';
+-- Der Trigger findet dann kein Ziel und lässt die Zeile einfach in Ruhe.
 
--- Konfiguration. RLS AN und BEWUSST OHNE POLICY → anon kommt nicht heran (weder lesend noch schreibend);
--- die SECURITY-DEFINER-Funktion unten und der service_role-Key lesen trotzdem.
+create extension if not exists pg_net;
+
+-- §2 — DROSSEL-ZUSTAND
+--
+-- Hier steht KEIN Geheimnis mehr (die URL liegt im Vault), nur Betriebszustand: Mindestabstand und
+-- Zeitpunkt der letzten Meldung. RLS an und bewusst OHNE Policy → `anon` kommt nicht heran; die
+-- SECURITY-DEFINER-Funktion unten und der service_role-Key lesen trotzdem.
 create table if not exists public.autostich_telemetry_config (
   key   text primary key,
   value text
 );
 alter table public.autostich_telemetry_config enable row level security;
 
-insert into public.autostich_telemetry_config (key, value) values
-  ('discord_webhook', ''),              -- ← HIER die Webhook-URL des privaten Dev-Channels eintragen
-  ('discord_min_interval_sec', '900')   -- Drossel: max. 1 Meldung / 15 min
+insert into public.autostich_telemetry_config (key, value)
+values ('discord_min_interval_sec', '900')          -- max. 1 Meldung / 15 min
 on conflict (key) do nothing;
 
-create or replace function public.autostich_notify_discord()
+-- Migration von der früheren Fassung: die Webhook-URL lag hier im Klartext. Sie gehört in den Vault
+-- (§1) — diese Zeile entfernt den Klartext-Rest. Vorher §1 ausführen, sonst ist der Ping stumm.
+delete from public.autostich_telemetry_config where key = 'discord_webhook';
+
+-- §3 — TRIGGER-FUNKTION
+--
+-- SECURITY DEFINER, weil der Aufrufer `anon` ist: der darf den Vault nicht lesen (und soll es nie
+-- dürfen). Gepinnter search_path ist bei SECURITY DEFINER Pflicht. Der EXCEPTION-Block ist der
+-- wichtigste Teil: eine Ausnahme im After-Insert-Trigger würde den INSERT mitrollen — ein kaputter
+-- Webhook oder ein Discord-Ausfall darf NIE einen Lauf verschlucken. Der Ping ist Bequemlichkeit,
+-- die Tabelle ist die Wahrheit.
+create or replace function public.autostich_telemetry_ping()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, extensions
+set search_path = public, net, vault, pg_temp
 as $$
 declare
   hook     text;
@@ -151,49 +190,47 @@ declare
   backlog  bigint;
   msg      text;
 begin
-  -- Der GESAMTE Rumpf ist gegen Fehler abgeschirmt: eine kaputte/fehlende Webhook-Konfiguration oder ein
-  -- nicht installiertes pg_net darf NIEMALS den Insert des Spielers scheitern lassen. Telemetrie ist
-  -- Beiwerk — der Datenempfang hat Vorrang vor der Benachrichtigung.
-  begin
-    select value into hook from autostich_telemetry_config where key = 'discord_webhook';
-    if hook is null or hook = '' then return null; end if;
+  select decrypted_secret into hook
+    from vault.decrypted_secrets
+   where name = 'discord_telemetry_webhook'
+   limit 1;
+  if hook is null or btrim(hook) = '' then return null; end if;   -- kein Ziel → Ping ist schlicht aus
 
-    select coalesce(value::integer, 900) into min_gap
-      from autostich_telemetry_config where key = 'discord_min_interval_sec';
-    min_gap := coalesce(min_gap, 900);
+  select coalesce(value::integer, 900) into min_gap
+    from autostich_telemetry_config where key = 'discord_min_interval_sec';
+  min_gap := coalesce(min_gap, 900);
 
-    select coalesce(value::timestamptz, 'epoch'::timestamptz) into last_at
-      from autostich_telemetry_config where key = 'discord_last_notify';
-    last_at := coalesce(last_at, 'epoch'::timestamptz);
+  select coalesce(value::timestamptz, 'epoch'::timestamptz) into last_at
+    from autostich_telemetry_config where key = 'discord_last_notify';
+  last_at := coalesce(last_at, 'epoch'::timestamptz);
 
-    if now() - last_at < make_interval(secs => min_gap) then return null; end if;
+  if now() - last_at < make_interval(secs => min_gap) then return null; end if;
 
-    select count(*) into backlog from autostich_telemetry where created_at > last_at;
+  select count(*) into backlog from autostich_telemetry where created_at > last_at;
 
-    msg := format(
-      '📊 **%s neue Läufe** (Build `%s` / `%s`)%s— zuletzt: Score **%s**, Runde %s, %s, Fraktionen: %s',
-      backlog,
-      coalesce(NEW.app_version, '?'), coalesce(NEW.git_sha, '?'),
-      chr(10),
-      coalesce(NEW.score::text, '–'),
-      coalesce(NEW.cycles::text, '–'),
-      case NEW.outcome when 'completed' then 'durchgespielt'
-                       when 'abandoned' then 'abgebrochen (Tab zu)'
-                       else 'vorzeitig beendet' end,
-      coalesce(nullif(array_to_string(array(select jsonb_array_elements_text(NEW.archetypes)), ', '), ''), '–')
-    );
+  msg := format(
+    '📊 **%s neue Läufe** (Build `%s` · `%s`)%s— zuletzt: Score **%s**, Runde %s, %s, Fraktionen: %s',
+    backlog,
+    coalesce(new.app_version, '?'), coalesce(new.build_env, '?'),
+    chr(10),
+    coalesce(new.score::text, '–'),
+    coalesce(new.cycles::text, '–'),
+    case new.outcome when 'completed' then 'durchgespielt'
+                     when 'abandoned' then 'abgebrochen (Tab zu)'
+                     else 'vorzeitig beendet' end,
+    coalesce(nullif(array_to_string(array(select jsonb_array_elements_text(new.archetypes)), ', '), ''), '–')
+  );
 
-    perform net.http_post(
-      url     := hook,
-      headers := jsonb_build_object('Content-Type', 'application/json'),
-      body    := jsonb_build_object('content', msg)
-    );
+  perform net.http_post(
+    url     := hook,
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body    := jsonb_build_object('content', msg)
+  );
 
-    insert into autostich_telemetry_config (key, value) values ('discord_last_notify', now()::text)
-      on conflict (key) do update set value = excluded.value;
-  exception when others then
-    return null;
-  end;
+  insert into autostich_telemetry_config (key, value) values ('discord_last_notify', now()::text)
+    on conflict (key) do update set value = excluded.value;
+  return null;
+exception when others then
   return null;
 end;
 $$;
@@ -201,4 +238,7 @@ $$;
 drop trigger if exists autostich_telemetry_discord on public.autostich_telemetry;
 create trigger autostich_telemetry_discord
   after insert on public.autostich_telemetry
-  for each row execute function public.autostich_notify_discord();
+  for each row execute function public.autostich_telemetry_ping();
+
+-- Aufräumen der früheren Fassung (hieß anders und las die URL aus der Klartext-Tabelle).
+drop function if exists public.autostich_notify_discord() cascade;

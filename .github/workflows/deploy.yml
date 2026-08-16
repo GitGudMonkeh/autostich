@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # QA-Gate: --max-warnings=0 — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
+      - run: npm run lint -- --max-warnings=0
       # #250: Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
       - name: Build-Metadaten
         run: |
@@ -40,6 +42,35 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
-          # Root der Pages-Seite. keep_files: den Unterordner test/ (Preview) NICHT mitlöschen.
+          # Root der Pages-Seite. keep_files MUSS hier true bleiben: ohne destination_dir würde false die
+          # Unterordner test/, pixi/, balancing/ UND media/ mitlöschen. Das Prunen übernimmt der Schritt unten.
           keep_files: true
           commit_message: "deploy(main): ${{ github.sha }}"
+
+      # #F-01: Weil der Root-Slot keep_files braucht, sammelten sich hier alle je gebauten gehashten Assets an.
+      # Dieser Schritt räumt sie auf — NACH dem Publish, damit es zu keinem Zeitpunkt ein Ausfallfenster gibt:
+      # entfernt wird ausschließlich, was im gerade veröffentlichten Build NICHT mehr vorkommt.
+      # Die Slot-Ordner und /media/ werden nicht angefasst (nur assets/ wird betrachtet).
+      - name: Verwaiste Root-Assets prunen
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages --depth=1
+          git worktree add -B gh-pages-prune /tmp/ghp origin/gh-pages
+          if [ -d /tmp/ghp/assets ]; then
+            removed=0
+            for f in /tmp/ghp/assets/*; do
+              [ -e "$f" ] || continue
+              if [ ! -e "$GITHUB_WORKSPACE/dist/assets/$(basename "$f")" ]; then rm -rf "$f"; removed=$((removed+1)); fi
+            done
+            echo "Verwaiste Root-Assets entfernt: $removed"
+          fi
+          cd /tmp/ghp
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nichts zu prunen."
+          else
+            git commit -m "chore(pages): verwaiste Root-Assets nach deploy(main) entfernt"
+            git push origin HEAD:gh-pages
+          fi

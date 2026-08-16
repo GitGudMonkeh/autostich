@@ -6,8 +6,14 @@ import {
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
   auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
+  isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
 import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
+import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
+import { BOARD_POSITIONS } from "../src/game/constants.js";
+import { N_POS } from "../src/game/architect.js";
+import { buildDeck, makeRng } from "../src/game/deck.js";
+import { initialState } from "../src/game/reducer.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
 const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
@@ -50,28 +56,28 @@ describe("packs — Zustände & Besitz", () => {
     const t = THEME_DEFS.sunset;
     expect(packState(prof(), t)).toBe("buy");
     expect(packOwned(prof(), t)).toBe(false);
-    expect(packPrice(t)).toBe(10);   // #307: Sunset Rider = 10 DP (je Pack eigener Preis)
+    expect(packPrice(t)).toBe(20);   // #307: Sunset Rider = 20 DP (je Pack eigener Preis)
   });
   it("#307: jedes Kauf-Pack trägt seinen DP-Preis (packPrice = pack.price)", () => {
-    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, wale: 15 };
+    const want = { lofi: 10, cat: 10, spacedog: 10, beach: 20, sunset: 20, wale: 30 };
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {
-    expect(packPrice(THEME_DEFS.ronin)).toBe(15);
-    expect(packPrice(THEME_DEFS.kosmos)).toBe(10);
+    expect(packPrice(THEME_DEFS.ronin)).toBe(30);
+    expect(packPrice(THEME_DEFS.kosmos)).toBe(20);
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
-    expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
+    expect(packPrice(THEME_DEFS.geometrie)).toBe(10);
   });
-  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 10 DP", () => {
+  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 20 DP", () => {
     for (const id of ["sonne", "drache"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(isBuyPack(t)).toBe(true);
       expect(t.els).toEqual(["deck", "bf"]);
-      expect(packPrice(t)).toBe(10);
+      expect(packPrice(t)).toBe(20);
     }
-    expect(canBuyPack(prof({ deckPoints: 9 }), THEME_DEFS.sonne)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), THEME_DEFS.drache)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 19 }), THEME_DEFS.sonne)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), THEME_DEFS.drache)).toBe(true);
   });
   it("#310: canBuyPack/buyPack rechnen mit dem Pack-Preis (Roter Oni = 20 DP)", () => {
     const oni = THEME_DEFS.oni;
@@ -102,7 +108,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "serie300", "serie600", "serie1500", "sparfuchs", "meister",
+    const challenge = ["gottgleich", "peacock", "titan", "hirsch", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
     for (const id of challenge) {
@@ -119,23 +125,99 @@ describe("packs — Zustände & Besitz", () => {
   });
 });
 
+describe("#tiered — Stufen-Deck Peacock (serie300/600/1500 zusammengefasst)", () => {
+  const PEACOCK = THEME_DEFS.peacock;
+  it("die drei Einzel-Challenges sind aus der Registry entfernt; Peacock ist EIN Stufen-Pack", () => {
+    for (const id of ["serie300", "serie600", "serie1500"]) expect(THEME_DEFS[id]).toBeUndefined();
+    expect(PEACOCK).toBeDefined();
+    expect(isTieredPack(PEACOCK)).toBe(true);
+    expect(PEACOCK.tiers.map((t) => t.deckId)).toEqual(["deck_serie300", "deck_serie600", "deck_serie1500"]);
+    expect(PEACOCK.tiers.map((t) => t.roman)).toEqual(["I", "II", "III"]);
+    expect(isTieredPack(THEME_DEFS.gottgleich)).toBe(false);
+  });
+  it("Stufen schalten einzeln an ihren Streak-Schwellen frei (300/600/1500)", () => {
+    expect(unlockedTiers(prof({ bestStreak: 0 }), PEACOCK)).toEqual([]);
+    expect(unlockedTiers(prof({ bestStreak: 300 }), PEACOCK).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestStreak: 600 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(unlockedTiers(prof({ bestStreak: 1500 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II", "III"]);
+  });
+  it("highestUnlockedTier / coverTier: Cover = höchste freie Stufe (gesperrt → Stufe I)", () => {
+    expect(highestUnlockedTier(prof({ bestStreak: 0 }), PEACOCK)).toBe(null);
+    expect(coverTier(prof({ bestStreak: 0 }), PEACOCK).roman).toBe("I");         // gesperrt zeigt Stufe I
+    expect(coverTier(prof({ bestStreak: 600 }), PEACOCK).roman).toBe("II");
+    expect(coverTier(prof({ bestStreak: 1500 }), PEACOCK).roman).toBe("III");
+    expect(highestUnlockedTier(prof({ bestStreak: 1500 }), PEACOCK).deckId).toBe("deck_serie1500");
+  });
+  it("packOwned = Stufe I frei; packState/packUnlock hängen an Stufe I (Streak 300)", () => {
+    expect(packOwned(prof({ bestStreak: 299 }), PEACOCK)).toBe(false);
+    expect(packOwned(prof({ bestStreak: 300 }), PEACOCK)).toBe(true);
+    expect(packState(prof({ bestStreak: 0 }), PEACOCK)).toBe("lock");
+    expect(packState(prof({ bestStreak: 300 }), PEACOCK)).toBe("own");
+    expect(packUnlock(prof(), PEACOCK)).toMatchObject({ target: 300 });
+    expect(packPrice(PEACOCK)).toBe(null);
+  });
+  it("tierByDeckId / packHasTierDeck / tierAsPack", () => {
+    expect(tierByDeckId(PEACOCK, "deck_serie600").roman).toBe("II");
+    expect(tierByDeckId(PEACOCK, "deck_nope")).toBe(null);
+    expect(packHasTierDeck(PEACOCK, "deck_serie1500")).toBe(true);
+    expect(packHasTierDeck(PEACOCK, "deck_obsidian")).toBe(false);
+    const view = tierAsPack(PEACOCK, PEACOCK.tiers[1]);
+    expect(view.deckId).toBe("deck_serie600");
+    expect(view.bfId).toBe("bf_serie600");
+    expect(view.a1).toBe("#7b3ff0");
+  });
+  it("resolvePackByDeckId: jede Stufe → Peacock + Stufen-eigene Farben", () => {
+    expect(resolvePackByDeckId("deck_serie300")).toMatchObject({ a1: "#ff2d9b" });
+    expect(resolvePackByDeckId("deck_serie600")).toMatchObject({ a1: "#7b3ff0" });
+    expect(resolvePackByDeckId("deck_serie1500")).toMatchObject({ a1: "#8a4dff" });
+    expect(resolvePackByDeckId("deck_serie600").pack.id).toBe("peacock");
+    expect(resolvePackByDeckId("deck_obsidian").pack.id).toBe("obsidian"); // Nicht-Stufen-Pack unverändert
+    expect(resolvePackByDeckId("default")).toBe(null);                    // Standard-Deck → kein Pack, keine Deckfarbe
+  });
+});
+
+describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", () => {
+  it("Titan: drei Score-Stufen, Cover = höchste freie Stufe", () => {
+    const T = THEME_DEFS.titan;
+    expect(isTieredPack(T)).toBe(true);
+    expect(T.tiers.map((t) => t.deckId)).toEqual(["deck_titan1", "deck_titan2", "deck_titan3"]);
+    expect(unlockedTiers(prof({ bestScore: 24999999 }), T)).toEqual([]);
+    expect(unlockedTiers(prof({ bestScore: 25000000 }), T).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestScore: 50000000 }), T).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ bestScore: 100000000 }), T).roman).toBe("III");
+    expect(packUnlock(prof(), T)).toMatchObject({ target: 25000000 });
+    expect(resolvePackByDeckId("deck_titan2").a1).toBe("#9b3fff");
+  });
+  it("Hirsch: drei Läufe-Stufen, Cover = höchste freie Stufe", () => {
+    const H = THEME_DEFS.hirsch;
+    expect(isTieredPack(H)).toBe(true);
+    expect(H.tiers.map((t) => t.deckId)).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(unlockedTiers(prof({ games: 9 }), H)).toEqual([]);
+    expect(unlockedTiers(prof({ games: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ games: 30 }), H).roman).toBe("III");
+    expect(packOwned(prof({ games: 10 }), H)).toBe(true);
+    expect(packOwned(prof({ games: 9 }), H)).toBe(false);
+    expect(resolvePackByDeckId("deck_hirsch3").pack.id).toBe("hirsch");
+  });
+});
+
 describe("packs — Kauf-Ökonomie (#299: DP)", () => {
   it("canBuyPack: nur Kauf-Pack, genug DP (Pack-Preis), noch nicht im Besitz", () => {
-    const t = THEME_DEFS.sunset; // 10 DP
-    expect(canBuyPack(prof({ deckPoints: 9 }), t)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), t)).toBe(true);
-    expect(canBuyPack(prof({ deckPoints: 10, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+    const t = THEME_DEFS.sunset; // 20 DP
+    expect(canBuyPack(prof({ deckPoints: 19 }), t)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), t)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 20, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
     // SP allein reichen nicht (Pack läuft über DP)
     expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
     // Nicht-Kauf-Pack (synthetisch) ist niemals kaufbar
     expect(canBuyPack(prof({ deckPoints: 99 }), { kind: "cond", deckId: "x" })).toBe(false);
   });
   it("buyPack zieht den Pack-Preis in DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
-    const t = THEME_DEFS.lofi; // 5 DP
-    const p0 = prof({ deckPoints: 5 + 2, deckSpent: 2 });
+    const t = THEME_DEFS.lofi; // 10 DP
+    const p0 = prof({ deckPoints: 10 + 2, deckSpent: 2 });
     const p1 = buyPack(p0, t);
     expect(p1.deckPoints).toBe(2);
-    expect(p1.deckSpent).toBe(2 + 5);
+    expect(p1.deckSpent).toBe(2 + 10);
     expect(p1.stichPoints).toBe(p0.stichPoints); // SP unberührt
     expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
     expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert
@@ -294,5 +376,47 @@ describe("gottgleich-prunk (#322-#326) — group gott, einfach-exklusiv (PIXI)",
     expect(activeGottFx(prof(), { fxLaserFaecher: true })).toBe(null);            // an, aber nicht gekauft
     const owned = prof({ ownedCosmetics: { "fx:laserFaecher": true } });
     expect(activeGottFx(owned, { fxLaserFaecher: true })).toBe("laserFaecher");
+  });
+});
+
+/* #331 Hintergrund = EIN einfach-exklusiver Slot über zwei Kategorien (bgfx + bgfin).
+   Die Exklusivität wird in storage.normalizeFxOptions über BG_EXCL_OPTS durchgesetzt, die Kategorien stehen aber
+   in themes.js (BG_FX_KEYS/BG_FIN_KEYS). Zwei getrennte Listen, die zusammenpassen MÜSSEN — wer hier einen Effekt
+   ergänzt und den Eintrag in BG_EXCL_OPTS vergisst, bricht die Exklusivität still. Dieser Test bindet sie aneinander. */
+describe("#331 Hintergrund-Exklusivität deckt alle Hintergrund-Effekte ab", () => {
+  const optionOf = (key) => GLOBAL_FX_BY_KEY[key].option;
+
+  it("jeder bgfx- UND bgfin-Effekt steht in der Exklusiv-Gruppe", () => {
+    const shouldBeExclusive = [...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf);
+    for (const opt of shouldBeExclusive) expect(BG_EXCL_OPTS).toContain(opt);
+  });
+
+  it("die Exklusiv-Gruppe enthält nichts Fremdes (kein Karten-/Gott-/Leuchten-Effekt)", () => {
+    const allowed = new Set([...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf));
+    for (const opt of BG_EXCL_OPTS) expect(allowed).toContain(opt);
+  });
+
+  it("normalizeFxOptions lässt genau EINEN Hintergrund-Effekt stehen (Priorität = Listenreihenfolge)", () => {
+    const o = {};
+    for (const opt of BG_EXCL_OPTS) o[opt] = true;
+    normalizeFxOptions(o);
+    expect(BG_EXCL_OPTS.filter((opt) => o[opt])).toEqual([BG_EXCL_OPTS[0]]);
+  });
+});
+
+/* Brettgröße: positions-indizierte Zustände hängen an BOARD_POSITIONS. Früher stand die 40 als Literal im
+   Reducer, während N_POS (Gebäude-Overlay) und die Deckgröße dieselbe Zahl anders schrieben. */
+describe("Brettgröße hat eine Quelle", () => {
+  it("BOARD_POSITIONS == Deckgröße == Gebäude-Overlay-Positionen", () => {
+    expect(BOARD_POSITIONS).toBe(buildDeck().length);
+    expect(BOARD_POSITIONS).toBe(N_POS);
+  });
+
+  it("initialState legt die Gletscher-Arrays in Brettgröße an", () => {
+    const s = initialState(makeRng(1));
+    expect(s.glacierMass).toHaveLength(BOARD_POSITIONS);
+    expect(s.firnStack).toHaveLength(BOARD_POSITIONS);
+    expect(s.glacierLocked).toHaveLength(BOARD_POSITIONS);
+    expect(s.playerOrder).toHaveLength(BOARD_POSITIONS);
   });
 });

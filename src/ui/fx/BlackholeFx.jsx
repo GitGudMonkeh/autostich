@@ -26,6 +26,9 @@ const TUNE = {
   // #338-4: Bahn enger an R (war 1.45 → bei großem Loch zu weit) + Deckel gleichzeitiger Flyer → smooth bei Max.
   ORBIT_TIGHT: 1.15, MAX_FLYERS: 6,
   NOVA_THRESH: 0.18, NOVA_R: 0.58, NOVA_DUR: 1.20, IMPLODE_SPD: 0.07,
+  // #: Der (kleine) Implosions-Sound spielt nur, wenn das Loch VOR dem Kollaps mind. so viele Level erreicht hatte —
+  //   nicht bei jedem Level-1/2-Rückfall nach nur einem Sieg. [TUNING]
+  IMPLODE_SND_MIN_LEVEL: 3,
   // #338-1: Kollaps-Puls, wenn das Loch MAX_HOLD_S Sekunden (Echtzeit) auf Maximum stand → Implosionsbombe (big-Nova).
   MAX_HOLD_S: 120,
   // #kollaps: die letzten SHUDDER_S Sekunden am Max fängt das Loch an zu ZUCKEN (subtil, zunehmend). Beim Kollaps zieht
@@ -51,7 +54,7 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 // Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null }) {
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null, onShudder = null }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
   const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
@@ -62,8 +65,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
   // #375/#380 SFX-Callbacks im ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps-START (Zusammenzieh-
-  //   Sound), onSize(level, maxLevel) bei Größenänderung, onNova(big) am FLASH-Moment (nach dem Zusammenziehen → fx_supernova).
-  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; ctrlRef.current.onNova = onNova; }, [onImplode, onSize, onNova]);
+  //   Sound), onSize(level, maxLevel) bei Größenänderung, onNova(big) am FLASH-Moment (nach dem Zusammenziehen → fx_supernova),
+  //   onShudder(0..1) während des Vorbebens (Bett steigt mit dem Zucken).
+  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; ctrlRef.current.onNova = onNova; ctrlRef.current.onShudder = onShudder; }, [onImplode, onSize, onNova, onShudder]);
   useEffect(() => {
     const st = backRef.current;
     if (!backSrc) { st.src = null; st.ready = false; st.canvas = null; return undefined; }
@@ -129,7 +133,7 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       return out;
     })();
 
-    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0, collapseArm: 0, fastCollapse: false, novaArm: false });
+    const sim = (simRef.current = { dormant: true, R: 0, level: 0, peakR: 0, peakLevel: 0, flyers: [], sparks: [], nova: null, pulseId: null, clock: 0, maxSince: 0, collapseArm: 0, fastCollapse: false, novaArm: false });
     // #perf: Halo-Gradient cachen — createRadialGradient ist pro Frame teuer (+ GC). Nur neu bauen, wenn sich R spürbar
     //   (>1px), die Position (Resize) oder die Farbe (Standard↔Deckfarbe-Toggle) ändert; sonst settled → Cache-Treffer.
     let haloCache = { grad: null, r: -1, cx: -1, cy: -1, col: "" };
@@ -145,11 +149,14 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       // #380 Choreografie: der GROSSE Kollaps zieht sich erst schnell zusammen (fastCollapse); der weiße Flash/Nova +
       //   fx_supernova kommen DANACH (novaArm → beim Erreichen von R≈0). Der kleine/normale Kollaps blitzt sofort (nur
       //   bei ausreichend großem Peak) — ohne Supernova.
+      // #: „grew" = das Loch war vor dem Kollaps ausreichend gewachsen (Peak-Level ≥ Schwelle) → nur dann spielt der
+      //   kleine Implosions-Sound (Battlefield gated). Vor dem Reset lesen. Der große Kollaps (big) ist immer „grew".
+      const grew = sim.peakLevel >= TUNE.IMPLODE_SND_MIN_LEVEL;
       if (big) { sim.fastCollapse = true; sim.novaArm = true; }
       else { if (sim.peakR >= TUNE.NOVA_THRESH * D) sim.nova = { t: 0, big: false }; sim.fastCollapse = false; }
-      sim.level = 0; sim.peakR = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0;
+      sim.level = 0; sim.peakR = 0; sim.peakLevel = 0; sim.dormant = true; sim.maxSince = 0; sim.collapseArm = 0;
       // #375 Zusammenzieh-Sound (Impact) am Kollaps-START — Turbo-Faktor (1/scale) mitgeben, damit er bei schnellen Kollapsen mitzieht.
-      const c = ctrlRef.current; c.onImplode && c.onImplode(!!big, 1 / clamp(c.scale || 1, 0.45, 1));
+      const c = ctrlRef.current; c.onImplode && c.onImplode(!!big, 1 / clamp(c.scale || 1, 0.45, 1), grew);
     };
 
     const roundRect = (x, y, w, h, r) => roundRectPath(ctx, x, y, w, h, r);
@@ -192,8 +199,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
           //   zieht es sich zusammen + Nova. In-game kommt der big-Kollaps aus dem 2-Min-am-Max-Timer (mit echtem 30-s-Zucken).
           if (!sim.dormant && sim.collapseArm <= 0) sim.collapseArm = TUNE.COLLAPSE_ARM_MS;
         } else { // Sieg
-          if (sim.dormant) { sim.dormant = false; sim.level = 0; sim.peakR = 0; }
+          if (sim.dormant) { sim.dormant = false; sim.level = 0; sim.peakR = 0; sim.peakLevel = 0; }
           sim.level = Math.min(maxLevel(), sim.level + 1);
+          sim.peakLevel = Math.max(sim.peakLevel, sim.level); // #: Peak-Level für den Implosions-Sound-Gate (grew)
           // #: Auf hohem Turbo (schneller Takt) würden zu viele Karten gleichzeitig fliegen → unruhig/unlesbar. Trick:
           //   den gleichzeitigen Flyer-Deckel dynamisch senken; überzählige Siege spawnen dann KEINE Karte (übersprungen).
           //   Das Loch wächst trotzdem regulär (level bereits erhöht) — nur die Einflug-Karte entfällt.
@@ -229,6 +237,12 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         shudder = Math.max(shudder, clamp(1 - sim.collapseArm / TUNE.COLLAPSE_ARM_MS, 0, 1));
         if (sim.collapseArm <= 0) { sim.collapseArm = 0; implode(true); }
       }
+      /* Vorbeben hörbar machen: gestuft gemeldet (0,05er-Schritte), sonst feuerte der Callback in JEDEM
+         Frame. Der Aufrufer hebt Pegel und Tonhöhe des Loop-Betts damit leicht an — dieselbe Rampe, die
+         man gleichzeitig sieht. */
+      const shStep = Math.round(shudder * 20) / 20;
+      if (shStep !== sim._emitShudder) { sim._emitShudder = shStep; ctrl.onShudder && ctrl.onShudder(shStep); }
+
       // Vorbeben: das Loch zuckt subtil (Render-Radius), zunehmend schneller — „nicht zu krass" (max ~6 %).
       let R = sim.R;
       if (shudder > 0) {

@@ -8,24 +8,34 @@ Upgrade-Baum aus, welche Decks werden gekauft, und wo hören Leute auf.
 
 1. **Schema anlegen:** `docs/telemetry-schema.sql` im Supabase-SQL-Editor ausführen
    (Dashboard → SQL Editor → New query → einfügen → Run). Idempotent, mehrfaches Ausführen ist gefahrlos.
-2. **Discord-Webhook eintragen:** im privaten Dev-Channel → Kanaleinstellungen → Integrationen → Webhook
-   erstellen → URL kopieren. Dann in Supabase:
+2. **Discord-Webhook in den Vault legen:** im privaten Dev-Kanal → Kanaleinstellungen → Integrationen →
+   Webhook erstellen → URL kopieren. Dann in Supabase:
 
    ```sql
-   update public.autostich_telemetry_config
-      set value = 'https://discord.com/api/webhooks/…'
-    where key = 'discord_webhook';
+   select vault.create_secret(
+     'https://discord.com/api/webhooks/DEINE/URL',
+     'discord_telemetry_webhook',
+     'Autostich Telemetrie — Ziel des Lauf-Pings');
    ```
 
-   Die URL liegt damit **serverseitig** — sie steht bewusst *nicht* im Spiel-Bundle, sonst könnte jeder
-   den Channel zuspammen. Drossel anpassen (Default: max. 1 Meldung / 15 min):
+   Gleiche Bauart wie der Feedback-Melder (`docs/autostich-reports-discord.sql`, #396) — die URL gehört
+   weder ins Repo noch in eine Klartext-Tabelle, denn wer sie hat, kann in den Kanal posten. Eigenes
+   Secret heißt: gern auch ein eigener Kanal, getrennt von den Spieler-Reports. Drossel anpassen
+   (Default: max. 1 Meldung / 15 min):
 
    ```sql
    update public.autostich_telemetry_config set value = '300' where key = 'discord_min_interval_sec';
    ```
 
-3. **Fertig.** Der Client nutzt dieselbe Supabase-URL und denselben publishable Key wie das Leaderboard
-   (`VITE_SUPABASE_URL` / `VITE_SUPABASE_KEY`) — keine neuen Env-Variablen, kein neues Projekt.
+3. **Fertig.** Der Client nutzt dieselbe Supabase-URL und denselben publishable Key wie Leaderboard und
+   Feedback-Melder (`VITE_SUPABASE_URL` / `VITE_SUPABASE_KEY`) — keine neuen Env-Variablen, kein neues Projekt.
+
+### Abgrenzung zum Feedback-Melder (#396)
+
+Zwei verschiedene Dinge, die sich nur die Bauart teilen: der **Melder** transportiert, was Spieler uns
+aktiv mitteilen (Bugs, Wünsche) — jeder Report ist einzeln interessant, deshalb pingt er ungedrosselt.
+Die **Telemetrie** sammelt Balancing-Daten, die niemand tippt und die einzeln nichts aussagen — deshalb
+gedrosselt und in einer eigenen Tabelle. Getrennte Tabellen, getrennte Trigger, getrennte Vault-Secrets.
 
 Der Testbranch-Build (`VITE_PREVIEW=1`) schreibt in `autostich_telemetry_dev`, damit unser eigenes Testen
 den Beta-Datensatz nicht verseucht.

@@ -91,6 +91,9 @@ export const LEG_OFFER_PER_ARCH_BONUS = envNum("PROG_LEG_OFFER_PER_ARCH_BONUS", 
 // Erste Skill-Runde (1-indexierter Durchlauf), driftfest aus dem festen Plan abgeleitet — für UI-Texte, die dem
 // Spieler sagen, ab wann Skills wählbar sind. Ändert sich der Plan, wandert die Zahl automatisch mit.
 export const FIRST_SKILL_CYCLE = DECISION_SCHEDULE.indexOf("skill") + 1;
+// Legendär-Phase (1-indexierter Durchlauf), ebenfalls aus dem Plan abgeleitet — für UI-/Glossartexte, die sie
+// benennen. Verschiebt sich die Phase im Plan, wandert die Zahl automatisch mit (kein „R29" im Text hartkodiert).
+export const LEG_PHASE_CYCLE = DECISION_SCHEDULE.indexOf("legendary") + 1;
 
 // (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
 // Anzeige-Labels der (ex-Shop-)Kategorien — von der Chronik-Ziel-Beschriftung noch referenziert.
@@ -169,6 +172,9 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
    LEGENDÄR-PERKS-REWORK (#203, 2026-07-30): 11 generische Legendäre (nach Hook, kein Archetyp).
    3 behalten (Unaufhaltsam/Raserei/Kritische Masse), 8 neu. Alle Knöpfe ENV-tunebar (Default = v0-Startwert).
    ============================================================ */
+// NACHMESSEN: `npm run impact` (sim/perk-impact.mjs — hebt SIM_PERK_LEGENDARY_BASE auf 0,7, sonst sind Legendäre
+// im Angebot zu selten für ein Urteil). Spalte „typ.×" ist die Band-Zahl unten. Bei jeder Änderung an einem der
+// folgenden Knöpfe erneut laufen lassen.
 // v0.1-Balance (2026-07-30, perk-impact.mjs @ SIM_PERK_LEGENDARY_BASE=0.7, je nativem Skill-Lean): Ziel-Band ~1,2–1,7×
 // Grenzbeitrag = Median(mit Perk) ÷ Median(gleicher Lean ohne Legendäre). Erreicht: Krit.Masse 1,51 · Unaufhaltsam 1,49 ·
 // Sammler 1,31 · Vabanque 1,31 (nativ=Front-Load, s. u.) · Brennpunkt 1,28 · Henker 1,26 · Umverteilung 1,25 · Echo 1,22 ·
@@ -176,9 +182,33 @@ export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P
 // Baseline-Max): ×-Cluster (Brennpunkt/Henker/Sammler) CLEAN (0,51–1,12× — feste ×-Multiplikatoren gedeckelt). Winrate-
 // Hebel Patt/Unaufhaltsam/Umverteilung tragen erwartete Fat-Tails (Serien-Snowball, von STREAK_STAT_CAP gebändigt, abs. in
 // der Elementar-Chase-Decke ~73M, Max-Ratio < Elementar-Max-Spread 7,47×). Straffungs-Knöpfe: PATT_MARGIN, UNAUFHALTSAM_VALUE.
-// VABANQUE: nativer Kontext ist FRONT-LOAD (stärkste Karten nach vorn → Eröffnung sichern); ohne Aufstellung ~1,11× (falscher
-// Kontext). `playerOrder` ist persistent+arrangierbar → ohne Deckel per-Durchlauf-Exploit (~24×/Lauf, +8,4M). VABANQUE_MAX_
-// PAYOUTS deckelt hart: Front-Load max 3× (1,31×), Greedy natürlich ~2× → Exploit erschlagen, Front-Load kaum voraus.
+//
+// VABANQUE v0.2 (2026-08-15, `npm run impact`) — zwei Defekte, beide gemessen statt geschätzt:
+//  1) FLACH → SELBSTSKALIEREND. VABANQUE_SCORE lief post-stack am ganzen Multiplikator-Stapel vorbei und war auf
+//     1,03× abgesunken, während die Läufe auf 100–200M gewachsen sind. Ein fester Betrag KANN das Band über die
+//     Run-Spanne nicht halten (18M sind auf 45M +40 %, auf 150M +12 %) → VABANQUE_MULT × eigener Eröffnungs-Score.
+//  2) DECKEL RAUS. VABANQUE_MAX_PAYOUTS (3) band in 90 % der Läufe: gefegt werden median 16 von 50 Eröffnungen, und
+//     die Sweeps liegen SPÄT (Durchlauf 31–50: 686 von 940 beobachteten). Die 3 Auszahlungen griffen also die
+//     frühesten und kleinsten ab, danach war der Perk tot — bei 13 weiter sichtbar erfüllten Bedingungen. Genau das
+//     „triggert selten, fühlt sich danach nutzlos an". Der Front-Load-Missbrauch, gegen den der Deckel stand, trägt
+//     sich heute selbst nicht mehr: mit frontLoadFormationStep steigen die Sweeps auf 38/50, der Median-Score fällt
+//     dabei aber von 38,2M auf 25,2M (Sortieren nach Kartenwert zerlegt die Formationen im ersten Segment).
+// Messreihen (--only L_VAB --runs 150 --explore 400), alle mit `npm run impact`:
+//   MIT Deckel:   MULT 10 → 1,17× · 20 → 1,36× · 25 → 1,41× · 30 → 1,63×  (Formations-Solver bei 25: 1,37×)
+//   OHNE Deckel:  MULT 0,4/0,8 → ~1,03× (Rauschen) · 3 → 1,32× · 4 → 1,36× · 6 → 1,49×  → gewählt: 4
+//   Front-Load-Gegner bei MULT 3: 1,55× — höher (mehr Sweeps), aber im Band, und der Front-Loader bezahlt es mit
+//     ~34 % Gesamt-Score. Kein Exploit, kein Deckel nötig.
+//   PICK-ZEITPUNKT (--pickfrom): früh 1,36× · ab Durchlauf 30 1,23× · ab 40 1,19× (anwendbar 86 %→75 %→58 %).
+//     Monoton fallend = gesund: je früher erworben, desto mehr Eröffnungen bleiben. Unter dem alten Deckel war das
+//     GENAU UMGEKEHRT (die 3 Auszahlungen griffen die frühesten, kleinsten Sweeps ab, ein später Pick bekam die
+//     großen) — nicht nachgemessen, aber die direkte Folge aus Deckel + später Sweep-Verteilung.
+// ACHTUNG Wechselwirkung: die Auszahlung geht über `gained` in cycleBestTrick ein, also multipliziert ECHO (×1,6 am
+// Durchlauf-Ende) sie mit. Bei MULT 6 zeigte sich das im Schwanz (p90 des Referenz-Arms 100M → 299M); bei 4 liegt der
+// p90 wieder bei 114M (Median 45M) = Baseline-Niveau. Wer MULT anhebt, muss den p90 mitlesen.
+// Derselbe Flat-Defekt traf ZINSESZINS_STEP (1,02×) und RICHTFEST_STEP (1,00×). Beide sind inzwischen weg:
+// Richtfest siehe unten (Anteil am Durchlauf-Ertrag), Zinseszins wurde parallel zur „Bank" umgebaut (Kapital ×
+// Zinssatz, Block oben) — dieselbe Diagnose, unabhängig gefunden. Damit ist im Legendär-Pool kein flacher,
+// post-stack laufender Score-Betrag mehr übrig.
 export const UNAUFHALTSAM_VALUE  = envNum("SIM_UNAUFHALTSAM_VALUE", 3);   // Unaufhaltsam (Serie): nächste Karte +Wert solange Serie läuft [4→3: war 2,03× überzogen]
 export const KRITMASSE_VALUE     = envNum("SIM_KRITMASSE_VALUE", 3);      // Kritische Masse (Crit): Dauerwert je Crit, Deckel [4→3: war 1,74×]
 export const RASEREI_CRIT_STEP   = envNum("SIM_RASEREI_CRIT_STEP", 0.05); // Raserei (Serie): +Crit-Chance je Sieg-Folge [Favorit, unverändert]
@@ -200,9 +230,11 @@ export const ZINS_RATE_MAX       = envNum("SIM_ZINS_RATE_MAX", 0.40);     // …
 export const ZINS_HURDLE_RATE    = envNum("SIM_ZINS_HURDLE_RATE", 0.65);  // … nötiger Sieg-Anteil eines Durchlaufs für die Auszahlung (× Durchlauf-Länge, aufgerundet)
 export const ZINS_CRASH_KEEP     = envNum("SIM_ZINS_CRASH_KEEP", 0.75);   // … Crash (Hürde verfehlt): so viel Kapital bleibt
 export const ZINS_CRASH_STEPS    = envNum("SIM_ZINS_CRASH_STEPS", 1);     // … Crash: um so viele Stufen fällt der Zinssatz (min. Startwert)
-export const VABANQUE_SCORE      = envNum("SIM_VABANQUE_SCORE", 400000);  // Vabanque (Eröffnung): erste N Stiche eines Durchlaufs in Folge → +Score [3000→400000: per Durchlauf, s. engine.js]
+export const VABANQUE_MULT       = envNum("SIM_VABANQUE_MULT", 4);        // Vabanque (Eröffnung): JEDE gefegte Eröffnung zahlt MULT × ihren eigenen Score [4 = 1,36×, s. Messreihe oben; nach dem Deckel-Wegfall neu kalibriert]
 export const VABANQUE_TRICKS     = envNum("SIM_VABANQUE_TRICKS", 5);      // …          … so viele Eröffnungs-Stiche
-export const VABANQUE_MAX_PAYOUTS = envNum("SIM_VABANQUE_MAX_PAYOUTS", 3); // … Lauf-Deckel: so oft zahlt Vabanque max je Lauf (Anti-Front-Load-Exploit; s. engine.js)
+// (entfernt: VABANQUE_MAX_PAYOUTS — der Lauf-Deckel band in 90 % der Läufe und tötete den Perk nach 3 der median 16
+// gefegten Eröffnungen. Der Front-Load-Missbrauch, den er abwehren sollte, kostet im heutigen Build mehr Score als er
+// einbringt (38,2M → 25,2M Median bei 16 → 38 Sweeps). Belegt mit sim/formation.js frontLoadFormationStep.)
 export const HENKER_MULT         = envNum("SIM_HENKER_MULT", 2.0);        // Henker (Segment-Finale): Score × in der End-Zone + garantierter Crit
 export const HENKER_ZONE_START   = 35;                                    // … ab Deck-Position 36 (Index 35) = letztes Segment 36–40
 export const SAMMLER_STEP        = envNum("SIM_SAMMLER_STEP", 0.15);      // Sammler (Formationsvielfalt): +Formations-Mult je distinct Formationsart im Durchlauf
@@ -213,8 +245,66 @@ export const PATT_MARGIN         = envNum("SIM_PATT_MARGIN", 2);          // Pat
 export const ECHO_FACTOR         = envNum("SIM_ECHO_FACTOR", 1.6);        // Echo (bester Stich): am Durchlauf-Ende den höchsten Stich × diesem Faktor nochmal gutschreiben [1,0→1,6]
 export const MONOCHROM_STEP      = envNum("SIM_MONOCHROM_STEP", 0.15);    // Monochrom (Farbserie): +Score-Mult je Folgesieg derselben Farbe (Zusatzfaktor, multiplikativ)
 export const MONOCHROM_CAP       = envNum("SIM_MONOCHROM_CAP", 1.5);      // … Deckel des Zusatz-Mults (+150 % → Peak ×2,5 bei Farbserie 11); Farbwechsel/Niederlage setzt zurück
-export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 250);     // Richtfest (Gebäude-Struktur): +dauerhafter Score je vollendeter Struktur/Durchlauf (stapelt, Auszahlung je Durchlauf-Ende, kein Mult)
+export const RICHTFEST_STEP      = envNum("SIM_RICHTFEST_STEP", 0.05);    // Richtfest (Gebäude-Struktur): Anteil des Durchlauf-Ertrags je vollendeter Struktur [flach 250 → selbstskalierend, s. u.]
+// RICHTFEST v0.2 (2026-08-15): derselbe Flat-Defekt wie Vabanque — 250 Score je Struktur waren gegen Läufe um 78M
+// bedeutungslos (1,08× auch mit korrekt bauendem Architekten und median 10 Strukturen). Jetzt ein ANTEIL am
+// Stich-Ertrag des Durchlaufs. Bezugsgröße bewusst cycleScoreSum und NICHT cycleEndScore, damit Zinseszins/Echo/
+// Richtfest nicht übereinander multiplizieren (s. die Vabanque×Echo-Kaskade beim MULT-Knopf oben).
+// Der frühere 1,00×-Messwert war zusätzlich durch zwei Sim-Bugs verfälscht (Zufallsbau + ignorierter Baufeld-Deckel);
+// die sind separat gefixt. Bauhütte brauchte danach GAR KEINE Änderung mehr (1,00× → 1,32×, im Band).
+// Messreihe (--only L_RICHT --runs 150 --explore 400): STEP 0,03 → 1,20× · 0,05 → 1,27×. Gewählt 0,05 — bewusst in
+// der unteren Bandhälfte (Bandmitte läge bei ~0,07): die Dividende wächst LINEAR mit structureCount, und den heben
+// sowohl Bauhütte (+8 Zellen ⇒ 6→10 Strukturen) als auch der Fortschrittsbaum (treeCover). Wer STEP anhebt, sollte
+// gegen einen Bauhütte-Build gegenmessen, nicht nur gegen den Referenzbuild.
 export const BAUHUETTE_COVER     = envNum("SIM_BAUHUETTE_COVER", 8);      // Bauhütte (Gebäude-Baufeld): hebt beim Pick den Baufeld-Deckel (maxCover) dauerhaft um so viele Zellen
+
+/* ============================================================
+   LEGENDÄR-ERWEITERUNG v0.3 (2026-08-15): 7 neue Legendäre gegen die gemessenen Lücken im Pool.
+   Vorher: Präzision 0 Legendäre · Skill-/Angebots-Ökonomie unbesetzt · KEIN einziger Perk mit Nachteil,
+   obwohl #33 sie als „mächtig, aber mit Nachteil" definiert. Ziel-Band 1,2–1,7×.
+
+   KALIBRIERT (2026-08-15, `npm run impact --runs 150 --explore 400`, Ziel Bandmitte):
+     Hochseil   ×1,2  → 1,08×  ·  ×1,45 → 1,41×
+     Fundament  +0,25 → 1,09×  ·  +0,5  → 1,36×  ·  +0,75 → 1,59×  [GESETZT: +0,75, Design-Entscheidung]
+     Taktschlag ×2,0  → 1,10×  ·  ×2,5  → 1,19×  ·  ×3,5 → 1,35×   [GESETZT: ×2,5, Design-Entscheidung]
+     Schmiede   +1    → 1,05×  ·  +2 → 1,12×  ·  +3 → 1,39×  ·  +4 → 1,65×
+     Opfergang  −2/×1,8 → 0,92× (NEGATIV) · −1/×1,8 → 1,31×
+     Ballast    unverändert 2/×1,5 → 1,28×
+   Der Kostenpunkt bei Opfergang war der Fehler, nicht die Gegenleistung: −2 auf JEDE Karte senkt die Winrate,
+   und die treibt Serien, Formationen und Crits gleichzeitig — der Nachteil wirkt dreifach, der Mult nur einmal.
+
+   Taktschlag liegt mit ×2,5 bei 1,19× einen Hundertstel unter dem Bandboden — bei n≈83 und ~55 % Anwendbarkeit
+   ist das von 1,20× nicht unterscheidbar, also kein echter Ausreißer, sondern die untere Bandkante. Fundament
+   liegt mit +0,75 in der oberen Bandhälfte; die Strukturfaktoren multiplizieren sich je Position übereinander,
+   deshalb beim weiteren Anheben den p90 des Referenz-Arms mitlesen.
+
+   ACHTUNG Verdünnung: mit 21 statt 14 Legendären im Pool fiel die Anwendbarkeit je Perk von ~85 % auf ~50 %
+   (n ~130 → ~75). Die v0.3-Zahlen sind daher gröber als die der 14 Bestands-Perks und mit ihnen nur bedingt
+   vergleichbar — für ein schärferes Urteil --runs erhöhen.
+   ============================================================ */
+export const MEISTERHAND_SLOTS   = envNum("SIM_MEISTERHAND_SLOTS", 1);    // Meisterhand (Ausbau): +Skill-Slots, dauerhaft ab Pick (SKILL_SLOTS 6 → 7)
+// ⚠ MEISTERHAND MISST SICH NEGATIV UND DER KNOPF HILFT NICHT: 1 Slot → 0,96× · 2 Slots → 0,94× (schlechter!) ·
+// im reinen Blitz-Build (--faction lightning) → 0,98×. Es ist also KEIN Policy-Artefakt, sondern mechanisch:
+//   (a) commitScale ist bei SKILL_SLOTS Skills schon gedeckelt (min(1, count/6)) → ein 7. Skill der Hauptfraktion
+//       bringt nur noch seinen Eigeneffekt, keine zusätzliche Bekenntnis-Skalierung;
+//   (b) der marginale Skill ist definitionsgemäß der SCHWÄCHSTE noch verfügbare;
+//   (c) in breiten Builds zieht der Extra-Slot einen DRITTEN Archetyp herein (gemessen 2 → 3), was commitScale
+//       aller beteiligten Fraktionen senkt — deshalb ist 2 Slots schlechter als 1.
+// Die Ablation vergleicht gegen „stattdessen die nächstbeste Familie nehmen"; ein Grenz-Skill schlägt eine
+// Familienstufe schlicht nicht.
+// ENTSCHEIDUNG (2026-08-15): Perk bleibt UNVERÄNDERT im Pool. Bewusst gegen die Sim-Zahl — echte Spieldaten sollen
+// entscheiden. Ein Mensch wählt seinen 7. Skill anders als jede Policy hier (er kennt seinen Plan), und die
+// Ablation misst nur den Tausch gegen die nächstbeste Familie, nicht den Wert von Flexibilität an sich.
+// Also NICHT „reparieren", ohne vorher Spieldaten gesehen zu haben. Falls die den Befund bestätigen, ist der
+// naheliegende Umbau: commitScale-Deckel für den Perk-Halter aufheben (belohnt Vertiefen statt Verbreitern).
+export const SCHMIEDE_STEP       = envNum("SIM_SCHMIEDE_STEP", 3);        // Schmiede (Deck): +Kartenwert auf die SCHWÄCHSTE Deckkarte je Durchlauf-Ende. BEWUSST OHNE DECKEL (Entscheidung 2026-08-15) — über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220
+export const HOCHSEIL_MULT       = envNum("SIM_HOCHSEIL_MULT", 1.45);      // Hochseil (Score): Sieg-× solange der Durchlauf OHNE Niederlage ist. Spätspiel-Perk: Anteil niederlagenfreier Durchläufe steigt 0 % (1–10) → 70 % (41–50), greift also genau in der Score-Explosion → niedrig ansetzen
+export const OPFERGANG_VALUE     = envNum("SIM_OPFERGANG_VALUE", 1);      // Opfergang (Deck, NACHTEIL): so viel Kartenwert verlieren ALLE Karten dauerhaft beim Pick (Klemmung bei 1 — #34 hat die 0 bewusst entfernt)
+export const OPFERGANG_MULT      = envNum("SIM_OPFERGANG_MULT", 1.8);     // … dafür dieser dauerhafte Sieg-Score-× (scoreMult-Hook, läuft automatisch über prodHook)
+export const TAKTSCHLAG_MULT     = envNum("SIM_TAKTSCHLAG_MULT", 2.5);    // Taktschlag (Segment): Score-× auf den ABSCHLUSS-Stich eines komplett gewonnenen Segments (5/5). 8 Chancen je Durchlauf — Vabanques Idee eine Skalenebene tiefer
+export const BALLAST_ENERGY      = envNum("SIM_BALLAST_ENERGY", 2);       // Ballast (Form, NACHTEIL): so viel Formationsenergie WENIGER je Aufstellphase (von FORMATION_ENERGY 4)
+export const BALLAST_FORM_MULT   = envNum("SIM_BALLAST_FORM_MULT", 1.5);  // … dafür dieser × auf den Formations-Multiplikator
+export const FUNDAMENT_BONUS     = envNum("SIM_FUNDAMENT_BONUS", 0.75);   // Fundament (Gebäude): additiv auf JEDEN Strukturfaktor (Zeile 1,35 · Spalte 1,75 · Diagonale 1,62). ACHTUNG: die Faktoren multiplizieren sich je Position übereinander → Ausreißer-Potenzial, p90 beim Messen mitlesen
 
 // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md) [TUNING]
 export const SKILL_SLOTS       = envNum("SIM_SKILL_SLOTS", 6);    // max gleichzeitig gehaltene Skills [Default 6 = echtes Spiel (Autostich_Test); ENV-Sweep-Haken SIM_SKILL_SLOTS z. B. =4 für den alten main-Stand]
@@ -505,6 +595,31 @@ export const SUIT_ORDER = ["R", "B", "G", "Y"];
 export const RANKS = Array.from({ length: 10 }, (_, i) => i + 1); // 1..10 (#34: 40 Karten, keine schwache 0)
 // Stiche je Deck-Durchlauf = Deckgröße (4 Farben × 10 Werte = 40). Abgeleitet → folgt RANKS automatisch (#34).
 export const TRICKS_PER_CYCLE = SUIT_ORDER.length * RANKS.length;
+/* Brett-Positionen eines Durchlaufs — dieselbe Zahl, aber ein anderer Begriff: positions-indizierte Zustände
+   (Gletscher-Masse, Firn-Reserve, Gletscher-Lock, gesperrte Zellen) meinen eine BRETTGRÖSSE, keine Stichzahl.
+   Eigener Name statt `new Array(40)` an vier Stellen im Reducer; abgeleitet → kein Drift, wenn das Deck wächst.
+   Deckungsgleich mit architect.N_POS (ROWS × COLS) — das Gebäude-Overlay liegt über genau diesen Positionen. */
+export const BOARD_POSITIONS = TRICKS_PER_CYCLE;
 
 export const suitName  = (s) => (s ? SUITS[s].name : "—");
 export const suitColor = (s) => (s ? SUITS[s].color : "#888");
+
+/* ============================================================
+   FORMATIONS-ANZEIGENAMEN — EINE Quelle für alle Spielertexte (Sprachprüfung A12/E1).
+   Liegt hier im Blatt-Modul, weil sowohl formations.js als auch architect.js sie brauchen und
+   formations.js bereits architect.js importiert (ein Import in die Gegenrichtung wäre ein Zyklus).
+   Vorher: die Basistypen standen in formations.js, alle acht (+ Kürzel) noch einmal in ui/formationLabels.js,
+   und der Architekt gab die ROHEN Schlüssel aus („Formations-Joker (wiederholung/farbblock)").
+   ============================================================ */
+export const FORMATION_LABELS = {
+  wiederholung:   "Wiederholung",
+  farbblock:      "Farbblock",
+  treppe:         "Treppe",
+  wechsel:        "Wechsel",
+  anker:          "Anker",
+  nachhall:       "Nachhall",
+  formationskern: "Kern",
+  grenzbonus:     "Grenzbonus",
+};
+// Anzeigename eines Formationstyps (Fallback: der rohe Typ, falls je ein neuer ohne Eintrag auftaucht).
+export const formationLabel = (type) => FORMATION_LABELS[type] ?? type;

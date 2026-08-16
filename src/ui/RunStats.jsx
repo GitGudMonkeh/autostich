@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
-import { SKILL_DEFS, ARCHETYPE_META } from "../game/skills.js";
+import { rarityOf, RARITY_META } from "../game/perks.js";
+
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
+import { archMeta, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -62,17 +64,17 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
     <>
       {/* Kern-Kennzahlen (schlank, wie Mockup A): Winrate · Beste Serie · Bester Stich · Crit-Quote. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <StatCard label="Winrate" value={winrate} title="Anteil gewonnener Stiche" color="#5cc88a" />
-        <StatCard label="Beste Serie" value={bestStreak == null ? null : `${bestStreak}×`} title="Längste Siegesserie" />
-        <StatCard label="Bester Stich" value={shortOrNull(bestTrickScore)} title={fullTitle("Höchster Score aus einem Stich", bestTrickScore)} color="#d4a63a" />
-        <StatCard label="Crit-Quote" value={critQuote} title="Anteil Stiche mit kritischem Treffer" color="#e879f9" />
+        <StatCard label={t("runstats.winrate")} value={winrate} title={t("runstats.winrate.title")} color="#5cc88a" />
+        <StatCard label={t("runstats.bestStreak")} value={bestStreak == null ? null : `${bestStreak}×`} title={t("runstats.bestStreak.title")} />
+        <StatCard label={t("runstats.bestTrick")} value={shortOrNull(bestTrickScore)} title={fullTitle(t("runstats.bestTrick.title"), bestTrickScore)} color="#d4a63a" />
+        <StatCard label={t("runstats.critRate")} value={critQuote} title={t("runstats.critRate.title")} color="#e879f9" />
       </div>
 
       {/* #UI: Gletscher-Stich hat seine EIGENE Bestmarke (der Bruch-Score fließt nicht in „Bester Stich"). Nur zeigen,
           wenn im Lauf überhaupt ein Gletscher brach (> 0) → bei Nicht-Eis-Läufen bleibt die Kachel aus. */}
       {bestGlacierTrickScore != null && bestGlacierTrickScore > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <StatCard label="Bester Gletscherstich" value={shortOrNull(bestGlacierTrickScore)}
+          <StatCard label={t("runstats.bestGlacier")} value={shortOrNull(bestGlacierTrickScore)}
             title={fullTitle("Höchster Score aus einem Gletscher-Stich (Bruch)", bestGlacierTrickScore)} color="#5ec8f0" />
         </div>
       )}
@@ -80,10 +82,10 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
       {/* Score-Anteil-Kacheln — nur in der Detailansicht (im Victory-Screen deckt die Score-Herkunft das ab). */}
       {sourceCells && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-          <StatCard label="Formationen" value={maxFormations} title="Maximal gleichzeitig aktive Formationen" color="#5ab87a" />
-          <StatCard label="Form.-Score" value={shortOrNull(formationScore)} title={fullTitle("Score-Anteil aus Formations-Multiplikatoren", formationScore)} color="#5ab87a" />
-          <StatCard label="Geb.-Score" value={shortOrNull(buildingScore)} title={fullTitle("Score-Anteil aus Architekt-Gebäuden", buildingScore)} color="#5a8ade" />
-          <StatCard label="Crit-Bonus" value={shortOrNull(critBonusScore)} title={fullTitle("Score-Anteil aus kritischen Treffern", critBonusScore)} color="#e879f9" />
+          <StatCard label={t("runstats.formations")} value={maxFormations} title={t("runstats.formations.title")} color="#5ab87a" />
+          <StatCard label={t("runstats.formScore")} value={shortOrNull(formationScore)} title={fullTitle(t("runstats.formScore.title"), formationScore)} color="#5ab87a" />
+          <StatCard label={t("runstats.buildScore")} value={shortOrNull(buildingScore)} title={fullTitle(t("runstats.buildScore.title"), buildingScore)} color="#5a8ade" />
+          <StatCard label={t("runstats.critBonus")} value={shortOrNull(critBonusScore)} title={fullTitle(t("runstats.critBonus.title"), critBonusScore)} color="#e879f9" />
         </div>
       )}
     </>
@@ -101,8 +103,8 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const archCounts = [];
   if (skills && skills.length) {
     const by = {};
-    for (const id of skills) { const a = SKILL_DEFS[id]?.archetype; if (a) by[a] = (by[a] || 0) + 1; }
-    for (const a of Object.keys(by)) { const m = ARCHETYPE_META[a]; if (m) archCounts.push({ ...m, n: by[a] }); }
+    for (const id of skills) { const a = skillDef(id)?.archetype; if (a) by[a] = (by[a] || 0) + 1; }
+    for (const a of Object.keys(by)) { const m = archMeta(a); if (m) archCounts.push({ ...m, n: by[a] }); }
     archCounts.sort((x, y) => y.n - x.n);
   }
 
@@ -110,8 +112,8 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const toggle = (kind, id) => setSel((s) => (s && s.kind === kind && s.id === id ? null : { kind, id }));
   const selDetail = !sel ? null
     : sel.kind === "perk"
-      ? (PERK_DEFS[sel.id] ? { title: PERK_DEFS[sel.id].label, desc: PERK_DEFS[sel.id].desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
-      : (SKILL_DEFS[sel.id] ? { title: SKILL_DEFS[sel.id].name, desc: SKILL_DEFS[sel.id].desc, color: (ARCHETYPE_META[SKILL_DEFS[sel.id].archetype] || {}).color || "#8a8a95" } : null);
+      ? (perkDef(sel.id) ? { title: perkDef(sel.id).label, desc: perkDef(sel.id).desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
+      : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
   const hasChips = (perks && perks.length > 0) || (skills && skills.length > 0);
   if (!archCounts.length && !(!anonymized && hasChips)) return null;
@@ -135,14 +137,14 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
           {perks && perks.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center">
               {perks.map((id) => {
-                const def = PERK_DEFS[id];
+                const def = perkDef(id);
                 if (!def) return null;
-                const cc = CATEGORIES[def.cat]?.color || "#8a8a95";
+                const cc = perkCat(def.cat)?.color || "#8a8a95";
                 const rar = rarityOf(id);
                 const rm = RARITY_META[rar];
                 const on = sel && sel.kind === "perk" && sel.id === id;
                 return (
-                  <button key={id} onClick={() => toggle("perk", id)} title="Beschreibung anzeigen"
+                  <button key={id} onClick={() => toggle("perk", id)} title={t("runstats.showDesc")}
                     className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
                     style={{ background: `${cc}22`, color: cc, border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
                     {rm.mark ? `${rm.mark} ` : ""}{def.label}
@@ -154,12 +156,12 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
           {skills && skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
               {skills.map((id) => {
-                const d = SKILL_DEFS[id];
+                const d = skillDef(id);
                 if (!d) return null;
-                const am = ARCHETYPE_META[d.archetype] || { color: "#8a8a95", icon: "" };
+                const am = archMeta(d.archetype) || { color: "#8a8a95", icon: "" };
                 const on = sel && sel.kind === "skill" && sel.id === id;
                 return (
-                  <button key={id} onClick={() => toggle("skill", id)} title="Beschreibung anzeigen"
+                  <button key={id} onClick={() => toggle("skill", id)} title={t("runstats.showDesc")}
                     className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
                     style={{ background: `${am.color}22`, color: am.color, border: `1px solid ${on ? am.color : d.legendary ? "#d4a63a" : "transparent"}` }}>
                     <ArchIcon meta={am} size={13} /> {d.legendary ? "★ " : ""}{d.name}

@@ -94,9 +94,14 @@ export const globalFxActive = (profile, options, key) => {
   const fx = GLOBAL_FX_BY_KEY[key];
   return !!fx && globalFxOwned(profile, fx) && !!(options && options[fx.option]);
 };
-// #306/#kategorien: zwei UNABHÄNGIGE Feld-Slots — reiner Hintergrund-Effekt (kein Stich-Bezug) und Hintergrund-
-// Finisher (Stich-Interaktion). Beide können GLEICHZEITIG aktiv sein → activeBgFx + activeBgFinisher liefern je
-// einen Key. Nach dem #cleanup gibt es je Slot nur noch einen Effekt (Aurora bzw. Glutfunken).
+/* #306/#kategorien → #331: EIN Hintergrund-Slot, zwei KATEGORIEN. Ursprünglich waren „reiner Hintergrund" (kein
+   Stich-Bezug) und „Hintergrund-Finisher" (Stich-Interaktion) zwei unabhängige Slots, die gleichzeitig aktiv sein
+   durften. #331 hat sie zu EINEM einfach-exklusiven Set verschmolzen: genau ein Hintergrund-Effekt ist aktiv, oder
+   keiner. Durchgesetzt wird das an zwei Stellen — `BG_EXCL_OPTS` in storage.normalizeFxOptions (Migration/Laden,
+   listet BG_FX_KEYS + BG_FIN_KEYS gemeinsam) und in der Auswahl-UI (CustomizeScreen, Gruppe „hintergrund").
+   Die beiden Auflöser unten bleiben nach KATEGORIE getrennt, weil Battlefield sie unterschiedlich rendert
+   (Dauer-Effekt vs. Stich-Eruption) — aber es liefert per Konstruktion IMMER höchstens einer von beiden einen Key.
+   Wer hier einen Effekt ergänzt, muss ihn auch in BG_EXCL_OPTS eintragen, sonst bricht die Exklusivität. */
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
 // #deckglow: Deck-Glow ist eine UNABHÄNGIGE Ebene (kein exklusiver Slot) → gekauft UND per Option an = aktiv,
 // unabhängig davon, welcher bgfx/bgfin-Effekt gewählt ist. So kombiniert es mit allen anderen Effekten.
@@ -135,80 +140,122 @@ export function activeGottFx(profile, options) {
               (DECK_DEFS[deckId].unlock) — das Deck ist das definierende Element des Packs.
    a1 = Hauptfarbe (u. a. Hologrid-Gitterlinien/Frame-Glow), a2 = Sekundärfarbe (Akzente/Beams).
    els = welche Slots das Pack anbietet: ["deck","bf"] (Deck + Battlefield) oder ["deck"] (nur Deck). */
+/* Sprachprüfung: Ein Paket IST das Kosmetik-Set seines Decks — der Name war hier ein drittes Mal
+   abgetippt (Deck · Spielfeld · Paket). Jetzt aus dem Deck gezogen; `deckId` steht ohnehin daneben. */
+const packName = (deckId) => (DECK_DEFS[deckId] || {}).name || deckId;
+
 export const THEME_DEFS = {
   // ---- Kaufbare Packs (1 Kauf = Deck + Battlefield) — #307 je Pack ein eigener DP-Preis ----
-  sunset: { id: "sunset", name: "Sunset Rider", emblem: "🏍️", kind: "buy", price: 10, a1: "#ff5a4d", a2: "#ffab3a",
+  sunset: { id: "sunset", name: packName("deck_sunset"), emblem: "🏍️", kind: "buy", price: 20, a1: "#ff5a4d", a2: "#ffab3a",
     deckId: "deck_sunset", bfId: "bf_sunset", els: ["deck", "bf"] },
-  lofi:   { id: "lofi",   name: "Kitsune",      emblem: "🦊", kind: "buy", price: 5, a1: "#bcd8ff", a2: "#7fb0ff",
+  lofi:   { id: "lofi",   name: packName("deck_lofi"),      emblem: "🦊", kind: "buy", price: 10, a1: "#bcd8ff", a2: "#7fb0ff",
     deckId: "deck_lofi",  bfId: "bf_lofi",  els: ["deck", "bf"] },
   // #IP: „Neon Kaiju" / „Super Aura" / „Mecha Ronin" wegen IP-Bedenken entfernt.
 
   // ---- v0.4 Kauf-Packs (1 Kauf = Deck + Battlefield) ----
-  beach:    { id: "beach",    name: "Malibu Wave",     emblem: "🌴", kind: "buy", price: 10, a1: "#ff5aa0", a2: "#35d0e0",
+  beach:    { id: "beach",    name: packName("deck_beach"),     emblem: "🌴", kind: "buy", price: 20, a1: "#ff5aa0", a2: "#35d0e0",
     deckId: "deck_beach",      bfId: "bf_beach",      els: ["deck", "bf"] },
-  cat:      { id: "cat",      name: "Biolumen",        emblem: "🌿", kind: "buy", price: 5, a1: "#54e08a", a2: "#35e0c8",
+  cat:      { id: "cat",      name: packName("deck_cat"),        emblem: "🌿", kind: "buy", price: 10, a1: "#54e08a", a2: "#35e0c8",
     deckId: "deck_cat",        bfId: "bf_cat",        els: ["deck", "bf"] },
-  spacedog: { id: "spacedog", name: "Kosmospanther",   emblem: "🐆", kind: "buy", price: 5, a1: "#9b6cff", a2: "#ff4dcb",
+  spacedog: { id: "spacedog", name: packName("deck_spacedog"),   emblem: "🐆", kind: "buy", price: 10, a1: "#9b6cff", a2: "#ff4dcb",
     deckId: "deck_spacedog",   bfId: "bf_spacedog",   els: ["deck", "bf"] },
-  wale:     { id: "wale",     name: "Moonwhale",       emblem: "🐋", kind: "buy", price: 15, a1: "#35d0ff", a2: "#7fdcff",
+  wale:     { id: "wale",     name: packName("deck_wale"),       emblem: "🐋", kind: "buy", price: 30, a1: "#35d0ff", a2: "#7fdcff",
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
   // Genesis = Onboarding-Starter → Bedingungs-Pack (kind "cond"): NICHT kaufbar, frei nach abgeschlossenem
   // Onboarding (6/6). Bedingung kommt via packCond aus deck_onboarding.unlock ({ kind: "onboardingDone" }).
-  genesis:  { id: "genesis",  name: "Genesis",         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
+  genesis:  { id: "genesis",  name: packName("deck_onboarding"),         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
   // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
 
   // ---- #303 Challenge-Decks (kind:"cond") — NICHT kaufbar; über eine Challenge freigeschaltet (Bedingung aus DECK_DEFS). ----
-  gottgleich: { id: "gottgleich", name: "Ascension", emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
+  gottgleich: { id: "gottgleich", name: packName("deck_gottgleich"), emblem: "✨", kind: "cond", a1: "#e6b93a", a2: "#fff2c0",
     deckId: "deck_gottgleich", bfId: "bf_gottgleich", els: ["deck", "bf"] },
-  serie300:   { id: "serie300",   name: "Flamingo",   emblem: "🦩", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
-    deckId: "deck_serie300",   bfId: "bf_serie300",   els: ["deck", "bf"] },
-  serie600:   { id: "serie600",   name: "Peacock",    emblem: "🦚", kind: "cond", a1: "#7b3ff0", a2: "#ffcf3a",
-    deckId: "deck_serie600",   bfId: "bf_serie600",   els: ["deck", "bf"] },
-  serie1500:  { id: "serie1500",  name: "Königspfau", emblem: "🦚", kind: "cond", a1: "#8a4dff", a2: "#ffd84a",
-    deckId: "deck_serie1500",  bfId: "bf_serie1500",  els: ["deck", "bf"] },
-  sparfuchs:  { id: "sparfuchs",  name: "Sparfuchs",  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
+  // #tiered Stufen-Deck „Peacock" — EIN Challenge-Eintrag mit drei je eigen freigeschalteten Stufen (I/II/III).
+  // Die Stufen zeigen auf die realen Skins deck_serie300/600/1500 (Streak 300/600/1500, Bedingung aus DECK_DEFS).
+  // Cover = höchste freigeschaltete Stufe (UI via coverTier); Top-Level-Felder spiegeln Stufe I als Fallback für
+  // generischen Pack-Code (packCond/packOwned lesen deckId=deck_serie300 → „im Besitz", sobald Stufe I frei ist).
+  // Sprachprüfung: kein Stufenname wird abgetippt — jede Stufe zieht ihren Namen aus IHREM Deck (packName), und
+  // `nameDeckId` sagt, welchem Deck das Paket selbst seinen Namen verdankt (Stufe II, nicht der Fallback-deckId).
+  // Übersetzt wird zur Anzeigezeit in labels.js `themeDef`; hier steht nur die deutsche Quelle.
+  peacock: { id: "peacock", name: packName("deck_serie600"), nameDeckId: "deck_serie600",
+    emblem: "🦚", kind: "cond", a1: "#ff2d9b", a2: "#ff6ac0",
+    deckId: "deck_serie300", bfId: "bf_serie300", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: packName("deck_serie300"),  deckId: "deck_serie300",  bfId: "bf_serie300",  a1: "#ff2d9b", a2: "#ff6ac0" },
+      { roman: "II",  name: packName("deck_serie600"),  deckId: "deck_serie600",  bfId: "bf_serie600",  a1: "#7b3ff0", a2: "#ffcf3a" },
+      { roman: "III", name: packName("deck_serie1500"), deckId: "deck_serie1500", bfId: "bf_serie1500", a1: "#8a4dff", a2: "#ffd84a" },
+    ] },
+  // #tiered Titan — Stufen-Deck über Score (25/50/100 Mio). Lila Steingigant, der über die Stufen erwacht/aufsteigt.
+  // Pack-Name = Kategorie „Titan" (kein einzelnes Stufen-Deck heißt so); die Stufennamen sind die kurzen Stufenwörter
+  // (Header zeigt „Titan · Erwachen" …). Deutsche Quelle; Übersetzung erfolgt zur Anzeigezeit.
+  titan: { id: "titan", name: "Titan", emblem: "⛰️", kind: "cond", a1: "#7a3fd0", a2: "#b98bff",
+    deckId: "deck_titan1", bfId: "bf_titan1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Erwachen",   deckId: "deck_titan1", bfId: "bf_titan1", a1: "#7a3fd0", a2: "#b98bff" },
+      { roman: "II",  name: "Aufstieg",   deckId: "deck_titan2", bfId: "bf_titan2", a1: "#9b3fff", a2: "#c88bff" },
+      { roman: "III", name: "Entfesselt", deckId: "deck_titan3", bfId: "bf_titan3", a1: "#b455ff", a2: "#e0b0ff" },
+    ] },
+  // #tiered Hirsch — Stufen-Deck über abgeschlossene Läufe (10/20/30). Blaues Sternbild-Reh, das über die Stufen erstrahlt.
+  hirsch: { id: "hirsch", name: "Hirsch", emblem: "🦌", kind: "cond", a1: "#5b7cff", a2: "#b8c8ff",
+    deckId: "deck_hirsch1", bfId: "bf_hirsch1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Sternbild",  deckId: "deck_hirsch1", bfId: "bf_hirsch1", a1: "#5b7cff", a2: "#b8c8ff" },
+      { roman: "II",  name: "Erwacht",    deckId: "deck_hirsch2", bfId: "bf_hirsch2", a1: "#6f8cff", a2: "#c4d4ff" },
+      { roman: "III", name: "Sternenlauf", deckId: "deck_hirsch3", bfId: "bf_hirsch3", a1: "#89a4ff", a2: "#dbe6ff" },
+    ] },
+  sparfuchs:  { id: "sparfuchs",  name: packName("deck_sparfuchs"),  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
-  meister:    { id: "meister",    name: "Meister",    emblem: "🏆", kind: "cond", a1: "#d4a63a", a2: "#cfd3e0",
-    deckId: "deck_meister",    bfId: "bf_meister",    els: ["deck", "bf"] },
 
   // ---- #310 Element-Challenge-Packs (kind "cond": kein Kauf; frei über N Mono-Läufe je Fraktion; Bedingung aus DECK_DEFS) ----
-  feuer:   { id: "feuer",   name: "Feuer",   emblem: "🔥", kind: "cond", a1: "#ff5a2a", a2: "#ffb03a",
+  feuer:   { id: "feuer",   name: packName("deck_feuer"),   emblem: "🔥", kind: "cond", a1: "#ff5a2a", a2: "#ffb03a",
     deckId: "deck_feuer",   bfId: "bf_feuer",   els: ["deck", "bf"] },
-  eis:     { id: "eis",     name: "Eis",     emblem: "❄️", kind: "cond", a1: "#46c6ff", a2: "#9fe8ff",
+  eis:     { id: "eis",     name: packName("deck_eis"),     emblem: "❄️", kind: "cond", a1: "#46c6ff", a2: "#9fe8ff",
     deckId: "deck_eis",     bfId: "bf_eis",     els: ["deck", "bf"] },
-  blitz:   { id: "blitz",   name: "Blitz",   emblem: "⚡", kind: "cond", a1: "#9b6cff", a2: "#c77bff",
+  blitz:   { id: "blitz",   name: packName("deck_blitz"),   emblem: "⚡", kind: "cond", a1: "#9b6cff", a2: "#c77bff",
     deckId: "deck_blitz",   bfId: "bf_blitz",   els: ["deck", "bf"] },
-  pflanze: { id: "pflanze", name: "Pflanze", emblem: "🌿", kind: "cond", a1: "#57e08a", a2: "#b6ff3a",
+  pflanze: { id: "pflanze", name: packName("deck_pflanze"), emblem: "🌿", kind: "cond", a1: "#57e08a", a2: "#b6ff3a",
     deckId: "deck_pflanze", bfId: "bf_pflanze", els: ["deck", "bf"] },
   // Prisma (Element-Bund): frei, sobald alle vier Element-Decks frei sind.
-  elementar: { id: "elementar", name: "Prisma", emblem: "🌈", kind: "cond", a1: "#6cf0ff", a2: "#ff6ac0",
+  elementar: { id: "elementar", name: packName("deck_elementar"), emblem: "🌈", kind: "cond", a1: "#6cf0ff", a2: "#ff6ac0",
     deckId: "deck_elementar", bfId: "bf_elementar", els: ["deck", "bf"] },
 
   // ---- #310 DP-Kauf-Packs (kind "buy", eigener Preis via price) ----
-  ronin:     { id: "ronin",     name: "Ronin",          emblem: "⚔️", kind: "buy", price: 15, a1: "#ff2f4f", a2: "#4aa8ff",
+  ronin:     { id: "ronin",     name: packName("deck_ronin"),          emblem: "⚔️", kind: "buy", price: 30, a1: "#ff2f4f", a2: "#4aa8ff",
     deckId: "deck_ronin",     bfId: "bf_ronin",     els: ["deck", "bf"] },
-  kosmos:    { id: "kosmos",    name: "Schwarzes Loch", emblem: "🕳️", kind: "buy", price: 10, a1: "#ff4dcb", a2: "#7b5cff",
+  kosmos:    { id: "kosmos",    name: packName("deck_kosmos"), emblem: "🕳️", kind: "buy", price: 20, a1: "#ff4dcb", a2: "#7b5cff",
     deckId: "deck_kosmos",    bfId: "bf_kosmos",    els: ["deck", "bf"] },
-  oni:       { id: "oni",       name: "Roter Oni",      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
+  oni:       { id: "oni",       name: packName("deck_oni"),      emblem: "👹", kind: "buy", price: 20, a1: "#ff2e3e", a2: "#ff7a3a",
     deckId: "deck_oni",       bfId: "bf_oni",       els: ["deck", "bf"] },
-  geometrie: { id: "geometrie", name: "Seraph",         emblem: "😇", kind: "buy", price: 5,  a1: "#ffe08a", a2: "#fff2c0",
+  geometrie: { id: "geometrie", name: packName("deck_geometrie"),         emblem: "😇", kind: "buy", price: 10,  a1: "#ffe08a", a2: "#fff2c0",
     deckId: "deck_geometrie", bfId: "bf_geometrie", els: ["deck", "bf"] },
 
   // ---- #311 DP-Kauf-Packs (je 10 DP) ----
-  sonne:  { id: "sonne",  name: "Kolossus",         emblem: "🐉", kind: "buy", price: 10, a1: "#ffb02a", a2: "#ff6a2a",
+  sonne:  { id: "sonne",  name: packName("deck_sonne"),         emblem: "🐉", kind: "buy", price: 20, a1: "#ffb02a", a2: "#ff6a2a",
     deckId: "deck_sonne",  bfId: "bf_sonne",  els: ["deck", "bf"] },
-  drache: { id: "drache", name: "Laternenfest",     emblem: "🏮", kind: "buy", price: 10, a1: "#ffcf5a", a2: "#ff5a2a",
+  drache: { id: "drache", name: packName("deck_drache"),     emblem: "🏮", kind: "buy", price: 20, a1: "#ffcf5a", a2: "#ff5a2a",
     deckId: "deck_drache", bfId: "bf_drache", els: ["deck", "bf"] },
 
   // ---- #312 DP-Kauf-Packs (je 10 DP): Arcade · Polarlicht · Seedrache ----
-  arcade:     { id: "arcade",     name: "Beryll",     emblem: "💎", kind: "buy", price: 10, a1: "#39e64d", a2: "#38c6e0",
+  arcade:     { id: "arcade",     name: packName("deck_arcade"),     emblem: "💎", kind: "buy", price: 20, a1: "#39e64d", a2: "#38c6e0",
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
-  polarlicht: { id: "polarlicht", name: "Scarab",     emblem: "🪲", kind: "buy", price: 10, a1: "#2ee0c0", a2: "#ffcf3a",
+  polarlicht: { id: "polarlicht", name: packName("deck_polarlicht"),     emblem: "🪲", kind: "buy", price: 20, a1: "#2ee0c0", a2: "#ffcf3a",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
-  seedrache:  { id: "seedrache",  name: "Eldritch",   emblem: "🐙", kind: "buy", price: 10, a1: "#38b0ff", a2: "#8a6cff",
+  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 20, a1: "#38b0ff", a2: "#8a6cff",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
+  // Obsidian — monochromes Kristall-Monolith-Pack (schwarz mit weiß glühenden Rissen).
+  obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 30, a1: "#e8edf5", a2: "#9aa6bd",
+    deckId: "deck_obsidian",   bfId: "bf_obsidian",   els: ["deck", "bf"] },
+
+  // ---- #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Elementar-Kreaturen ----
+  gaia:     { id: "gaia",     name: packName("deck_gaia"),     emblem: "🐢", kind: "buy", price: 40, a1: "#35e06a", a2: "#a6ff8f",
+    deckId: "deck_gaia",     bfId: "bf_gaia",     els: ["deck", "bf"] },
+  glazius:  { id: "glazius",  name: packName("deck_glazius"),  emblem: "🦣", kind: "buy", price: 40, a1: "#4db3ff", a2: "#a8e6ff",
+    deckId: "deck_glazius",  bfId: "bf_glazius",  els: ["deck", "bf"] },
+  voltaris: { id: "voltaris", name: packName("deck_voltaris"), emblem: "🦂", kind: "buy", price: 40, a1: "#9b5cff", a2: "#c9a0ff",
+    deckId: "deck_voltaris", bfId: "bf_voltaris", els: ["deck", "bf"] },
+  pyrros:   { id: "pyrros",   name: packName("deck_pyrros"),   emblem: "🐼", kind: "buy", price: 40, a1: "#ff5a2a", a2: "#ffb347",
+    deckId: "deck_pyrros",   bfId: "bf_pyrros",   els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
@@ -226,13 +273,27 @@ export function showcaseLook(packId, override = {}) {
 }
 export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
+// Pack + passende Akzentfarben zu einer equippten deckId — löst bei Stufen-Decks die konkrete Stufe (eigene a1/a2) auf.
+// null, wenn keine Zuordnung (z. B. Genesis/Standard). Nutzt die Battlefield-/Deck-Farb-Ableitung in-game (App.jsx).
+export function resolvePackByDeckId(deckId) {
+  for (const t of THEMES) {
+    if (isTieredPack(t)) {
+      const tier = tierByDeckId(t, deckId);
+      if (tier) return { pack: t, a1: tier.a1, a2: tier.a2 };
+    } else if (t.deckId === deckId) {
+      return { pack: t, a1: t.a1, a2: t.a2 };
+    }
+  }
+  return null;
+}
+
 // DP-Guthaben (Deckpunkte) robust lesen — Währung der Werkstatt-Packs (#299).
 const dp = (profile) => Math.max(0, Math.floor(Number(profile && profile.deckPoints) || 0));
 
 // Besitz-Schlüssel eines Kauf-Packs.
 export const packOwnKey = (pack) => `pack:${pack.id}`;
 
-// Ist das Pack ein Kauf-Pack? (→ SP-kaufbar.)
+// Ist das Pack ein Kauf-Pack? (→ DP-kaufbar.)
 export const isBuyPack = (pack) => pack.kind === "buy";
 export const hasBattlefield = (pack) => pack.els.includes("bf");
 
@@ -249,7 +310,7 @@ export function packOwned(profile, pack) {
   return isUnlocked({ unlock: packCond(pack) }, profile);
 }
 
-// Pack-Zustand fürs Badge: "own" | "buy" (SP-kaufbar) | "lock" (Bedingung offen).
+// Pack-Zustand fürs Badge: "own" | "buy" (DP-kaufbar) | "lock" (Bedingung offen).
 export function packState(profile, pack) {
   if (packOwned(profile, pack)) return "own";
   return pack.kind === "buy" ? "buy" : "lock";
@@ -257,6 +318,35 @@ export function packState(profile, pack) {
 
 // Preis eines Packs in DP (nur Kauf-Packs; sonst null — Bedingungs-Packs sind gratis freischaltbar). #307: je Pack ein eigener Preis.
 export const packPrice = (pack) => (isBuyPack(pack) ? Math.max(0, Math.floor(Number(pack && pack.price) || 0)) : null);
+
+/* ---- #tiered: Stufen-Decks (EIN Challenge-Eintrag, mehrere je eigen freigeschaltete Stufen I/II/III) ----
+   Ein Stufen-Deck trägt `tiers: [{ roman, name, deckId, bfId, a1, a2 }, …]` (aufsteigend). Jede Stufe ist ein realer
+   Skin mit eigener Freischalt-Bedingung (aus DECK_DEFS[tier.deckId].unlock). Cover/Preview/Aktivierung lösen die
+   passende Stufe über diese Helfer auf; der übrige Pack-Code arbeitet mit den Top-Level-Feldern (= Stufe I) weiter. */
+export const isTieredPack = (pack) => Array.isArray(pack && pack.tiers) && pack.tiers.length > 0;
+// Freigeschaltete Stufen (in Reihenfolge I→…). Nicht-Stufen-Pack → [].
+export function unlockedTiers(profile, pack) {
+  if (!isTieredPack(pack)) return [];
+  return pack.tiers.filter((t) => isUnlocked(DECK_DEFS[t.deckId], profile));
+}
+// Höchste freigeschaltete Stufe (oder null).
+export function highestUnlockedTier(profile, pack) {
+  const u = unlockedTiers(profile, pack);
+  return u.length ? u[u.length - 1] : null;
+}
+// Cover-/Anzeige-Stufe: höchste freigeschaltete, sonst Stufe I (für die gesperrte Kachel).
+export function coverTier(profile, pack) {
+  return highestUnlockedTier(profile, pack) || (isTieredPack(pack) ? pack.tiers[0] : null);
+}
+// Stufe per deckId finden (oder null).
+export const tierByDeckId = (pack, deckId) => (isTieredPack(pack) ? pack.tiers.find((t) => t.deckId === deckId) : null) || null;
+// Ist diese deckId (irgend)eine Stufe dieses Packs?
+export const packHasTierDeck = (pack, deckId) => !!tierByDeckId(pack, deckId);
+// „Pack-Sicht" einer Stufe: pack-artiges Objekt mit den Feldern der Stufe (für Preview/Aktivierung/Farbe).
+export function tierAsPack(pack, tier) {
+  if (!tier) return pack;
+  return { ...pack, deckId: tier.deckId, bfId: tier.bfId, a1: tier.a1, a2: tier.a2, tierName: tier.name, tierRoman: tier.roman };
+}
 
 // Klartext-Freischaltung eines (Bedingungs-)Packs — Label + Fortschritt (für die Sperr-Anzeige).
 export const packUnlock = (profile, pack) => unlockProgress({ unlock: packCond(pack) }, profile);

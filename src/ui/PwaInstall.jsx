@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "../i18n/index.js"; // #sprache
 
 // Kleiner „Installieren"-Link (PWA · Zum Startbildschirm). Android/Desktop: löst das native Install-Prompt aus
 // (nur sichtbar, wenn der Browser die App als installierbar meldet). iOS: zeigt eine Kurzanleitung (Apple erlaubt
@@ -53,12 +54,12 @@ export function PwaInstall() {
   return (
     <div className="text-xs text-center">
       <button onClick={onClick} className="opacity-70 hover:opacity-100 transition-opacity px-1 inline-flex items-center gap-1 font-medium"
-        style={{ color: AM }} title="Als App zum Startbildschirm hinzufügen">
-        <span aria-hidden>📲</span> Installieren
+        style={{ color: AM }} title={t("pwa.title")}>
+        <span aria-hidden>📲</span> {t("pwa.install")}
       </button>
       {iosHint && (
         <div className="mt-1 text-[11px] opacity-60 leading-snug max-w-xs mx-auto">
-          Über das Teilen-Symbol → „Zum Home-Bildschirm".
+          {t("pwa.ios")}
         </div>
       )}
     </div>

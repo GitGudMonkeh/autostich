@@ -8,6 +8,7 @@ import {
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
 import { ARCH_STREAK_CAP } from "../src/game/constants.js";
+import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -117,6 +118,19 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(o1).toEqual(o2);
     expect(o1.length).toBe(ARCHITECT_OFFER);
     expect(new Set(o1.map((o) => o.familyId)).size).toBe(o1.length);
+  });
+
+  // #regression 1fa6778: ArchitectScreen löst jeden Bauplan über den i18n-Resolver (archFamily) auf und
+  // `return null`t bei fehlender Familie → wird der FALSCHE Resolver benutzt (labels.familyDef = Perk-Familien),
+  // ist jede Karte null und das Bauplan-Grid komplett leer. Wächter: archFamily MUSS jedes Angebot auflösen.
+  it("#regression: der i18n-Anzeige-Resolver löst JEDES Angebot auf (sonst leeres Bauplan-Grid)", () => {
+    for (let s = 0; s < 120; s++) {
+      for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
+        const fam = archFamily(o.familyId);
+        expect(fam, `archFamily(${o.familyId}) darf nicht null sein`).toBeTruthy();
+        expect(fam.name, `${o.familyId} braucht einen Namen`).toBeTruthy();
+      }
+    }
   });
 
   it("höchstens EIN legendäres Angebot", () => {

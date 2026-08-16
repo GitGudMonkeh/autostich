@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
+import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
@@ -87,6 +89,7 @@ import oppSkillFront     from "../assets/cards/decks_opponent/deck_opp_skill/fro
 import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/back.webp";
 import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.webp"; // 💎 Legendär    → legendary
 import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.webp";
+import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Stich)
 
 // Auswahl-Typ (DECISION_SCHEDULE) → Gegner-Deck-Skin (Cover/Front). Eigene, phasen-farbcodierte v0.4-Decks.
 // Fällt auf „stat" zurück = Skill/purple (die erste Runde ist immer Skill).
@@ -104,10 +107,10 @@ export const OPP_SKIN_URLS = [...new Set(Object.values(OPP_DECK_SKINS).flatMap((
 
 // Ergebnis-Banner-Farben (Design-Sweep: frischer/kräftiger, an die neue Palette angeglichen — Grün/Rot/Violett/Neutral).
 const BANNER = {
-  win:     { text: "Gewonnen",            color: "#5fce86" },
-  win_tie: { text: "Gleichstand → Sieg",  color: "#a89bf5" },
-  loss:    { text: "Verloren",            color: "#ef6f68" },
-  tie:     { text: "Gleichstand",         color: "#a6a6b0" },
+  win:     { key: "bf.banner.win",     color: "#5fce86" },
+  win_tie: { key: "bf.banner.winTie",  color: "#a89bf5" },
+  loss:    { key: "bf.banner.loss",    color: "#ef6f68" },
+  tie:     { key: "bf.banner.tie",     color: "#a6a6b0" },
 };
 const CRIT_COLOR = "#e879f9";
 // Archetyp-„Treffer-Identitäten" des Score-Floats (engine liefert lastTrick.hitTypes[]): EIN Sieg kann mehrere zugleich
@@ -144,13 +147,29 @@ const FLOAT_ZONES = {
 // #344: Stark/Brutal/Irre = Neon-Synthwave-CHROME (Light-Variante) — metallischer Verlauf in die Glyphen geclippt, Glow
 //   via drop-shadow. „Light" = viel Weiß/Silber mit Farbbändern je Stufe; jede Stufe eine Spur „cooler". KEIN Sweep
 //   (Verlauf steht still), reiner Text. Gottgleich (epic) bleibt UNVERÄNDERT (solides Weiß + Bloom, SVG).
+/* #322 Gottgleich-Schwelle — EINE Quelle für Ansage UND Prunk-Effekt. Sie stand vorher zweimal als
+   Literal 500000 im File (hier und weiter unten), und die beiden Stellen sind auseinandergelaufen:
+   die Ansage prüfte den Stich-Score NACH dem Krit, der Effekt den Wert DAVOR. Ein Sieg, der die
+   Schwelle erst durch den Krit-Multiplikator reißt, zeigte deshalb „GOTTGLEICH" ohne jeden Effekt. */
+const GOTT_FX_MIN = 500000;
+// Gottgleich-Swell je Prunk-Effekt: der epische Punch (fx_godlike) bleibt gemeinsam, der darübergelegte Swell trägt
+// jetzt den Klang des GEWÄHLTEN Prunks. Ohne eigenen Sound (sonnenPuls/gottStandard) bleibt es beim generischen
+// Supernova-Swell (Alt-Verhalten). delay = Versatz nach dem Punch (Supernova/Holo-Würfel bauen langsam auf → 0,85 s
+// wie bisher; die kürzeren laufen sofort mit). [TUNING]
+const GOTT_SWELL = {
+  supernova:     { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }, // abgeleitetes Timing (in-game = 0)
+  holoCube:      { snd: "fx_holocube",  gain: 1.0, delay: 0 },
+  laserFaecher:  { snd: "fx_laserfan",  gain: 1.0, delay: 0 },
+  prismaKaskade: { snd: "fx_prisma",    gain: 1.0, delay: 0 },
+};
+const GOTT_SWELL_DEFAULT = { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }; // sonnenPuls / gottStandard: generischer Swell
 const BIG_SCORE_TIERS = [
-  { min: 500000, text: "Gottgleich", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
-  { min: 150000, text: "Irre",   size: 90, rank: 3, cool: 3600,
+  { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
+  { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#ffe4f5,#ff7ed4,#e2a9ff,#ff7ed4,#ffe4f5,#ffffff)", glow: "#ff2d95", aura: "#b14bff" } },
-  { min: 50000,  text: "Brutal", size: 78, rank: 2, cool: 4600,
+  { min: 50000,  key: "bf.big.brutal", size: 78, rank: 2, cool: 4600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#efe4ff,#b98bff,#7a5cff,#b98bff,#efe4ff,#ffffff)", glow: "#8b5cff", aura: "#12d6ff" } },
-  { min: 10000,  text: "Stark",  size: 68, rank: 1, cool: 5600,
+  { min: 10000,  key: "bf.big.fierce", size: 68, rank: 1, cool: 5600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#eafcff,#7fe6ff,#ffffff,#7fe6ff,#eafcff,#ffffff)", glow: "#12d6ff" } },
 ];
 const BIG_DOMINANCE_MS = 2000; // #315/#344: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
@@ -162,14 +181,17 @@ const chromeFilter = (c, gBig, gMid) => {
   parts.push("drop-shadow(0 2px 3px #000a)");
   return parts.join(" ");
 };
-const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+// Exportiert für test/battlefield-gottgleich.test.js: dort wird geprüft, dass Ansage und Effekt
+// über den GESAMTEN Wertebereich dieselbe Antwort geben.
+export const bigScoreTier = (g) => { for (const s of BIG_SCORE_TIERS) if (g > s.min) return s; return null; };
+export { GOTT_FX_MIN };
 // Große Lawine (Legendär): der Finisher-Bruch zeigt statt der Score-Stufe („Gottgleich" …) das Wort „Lawine".
 // #: Lawine bekommt EXAKT den Gottgleich-Schrifteffekt (kein fester Farbton mehr) → Synthwave-Chrome-Zweiton bzw. im
 //   Prunk-Deckfarbe-Modus die Deckfarbe (wie Gottgleich). Zusätzlich löst Lawine denselben Gottgleich-Prunk aus (s. u.).
-const LAWINE_TIER = { text: "Lawine", size: 104, epic: true };
+const LAWINE_TIER = { key: "bf.big.avalanche", size: 104, epic: true };
 // Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
 const STREAK_GOENN = 200;
-const GOENNDIR_TIER = { text: "Gönn dir", size: 104, epic: true, color: "#ffd24a" };
+const GOENNDIR_TIER = { key: "bf.big.letsgo", size: 104, epic: true, color: "#ffd24a" };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -179,13 +201,16 @@ const BIG_ANNOUNCE_MS = 1900;       // feste Lebensdauer der Groß-Ansage — tu
 // BIG_SCORE_TIERS → Slice/Explosion + Groß-Ansage eskalieren gemeinsam. Rückgabe:
 //   p    = weicher Anteil 0..1 (0 = heutiger Look/Floor bei ≤ STARK-Schwelle 10k, 1 = GOTTGLEICH 500k) — log-skaliert
 //   tier = harte Stufe 0..4 (0 Base · 1 STARK · 2 BRUTAL · 3 IRRE · 4 GOTTGLEICH) für Unlock-Flourishes
-const FX_TIER_MINS = [10000, 50000, 150000, 500000]; // STARK · BRUTAL · IRRE · GOTTGLEICH (aus BIG_SCORE_TIERS)
-// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe (≥500k, dieselbe wie die epische Ansage). Feuert bei jedem Sieg,
-// dessen Wert VOR dem Krit-Multiplikator (scoreBeforeCrit bei Krit, sonst gained) die Schwelle erreicht — auch bei Krit.
-const GOTT_FX_MIN = 500000;
+// STARK · BRUTAL · IRRE · GOTTGLEICH — AUS BIG_SCORE_TIERS abgeleitet statt abgetippt (dort absteigend,
+// hier aufsteigend). Vorher stand dieselbe Leiter ein zweites Mal als Literal-Array da; genau solche
+// Doppelungen haben Ansage und Prunk-Effekt auseinanderlaufen lassen.
+const FX_TIER_MINS = BIG_SCORE_TIERS.map((s) => s.min).slice().reverse();
+// #322 Gottgleich-Prunk: Schwelle = GOTTGLEICH-Stufe, dieselbe wie die epische Ansage (GOTT_FX_MIN, oben
+// definiert und von BIG_SCORE_TIERS mitbenutzt). Wer die Ansage sieht, sieht auch den Effekt.
 // #322 Cooldown: der volle Prunk höchstens alle 30 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
 // (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt.
 const GOTT_FX_COOLDOWN_MS = 30000;
+
 function fxIntensity(gained) {
   const g = gained > 0 ? gained : 0;
   let tier = 0;
@@ -249,7 +274,7 @@ const FLOAT_LANES = [0, -30, 30, -58, 58];
 const SHOW_HIT_ICONS = false;
 // #: Gemeinsamer „Kartennummern"-Stil für ALLE Score-/Juice-Floats (durchsichtige Füllung + farbige Kontur + Glow) —
 // gilt für Score, Formation & Krit; die großen Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich/Lawine) bleiben ausgenommen.
-const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: 900,
+const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900,
   WebkitTextFillColor: "transparent", WebkitTextStroke: `${stroke}px ${color}`, textShadow: `0 0 7px ${color}aa` });
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
@@ -343,7 +368,7 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
         {children}
         {overlay}
       </div>
-      <div className="text-[11px] opacity-55">Deck: {position} / {deckLen}</div>
+      <div className="text-[11px] opacity-55">{tr("bf.trickCount", { n: position, total: deckLen })}</div>
     </div>
   );
 }
@@ -706,11 +731,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const fxLevel = useFxLevel(reducedFx);
   const reduced = fxLevel === "minimal";
   const lite    = fxLevel !== "full";
-  // Pixi-Umbau A/B-Umschalter: NUR im Preview/Dev (env-Gate) + „pixi"-Schalter — nur noch für Aurora relevant (die als
-  // EINZIGE eine DOM-Fassung in FieldFxLayer hat, gegen die man A/B messen kann). Wenn aktiv, rendert die DOM-Fassung
-  // keine Aurora-Nodes (suppressField) → sie zieht komplett auf die WebGL-Canvas.
-  const pixiEnabled = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi" && !!deckA1;
-  const auroraGL = pixiEnabled && bgFx === "aurora";          // Aurora läuft als eigene WebGL-Canvas (nicht Pixi) — bleibt Preview/Dev (hat DOM-Fallback)
+  // Aurora läuft als eigene raw-WebGL-Canvas (nicht über Pixi). Sie rendert jetzt AUCH in echter Produktion — wie
+  // Neon-Brandung (#345) und Komet/Sternenfeld (#346): der DOM-Fallback („Glow von oben") entsprach nicht dem
+  // Showcase, sichtbar sobald der Renderer auf DOM stand (= Prod). Opt-in (nur wenn als bgFx gewählt) + mobil bereits
+  // gedrosselt (3 Vorhänge/30fps in AuroraFieldGL). Im Preview/Dev bleibt der A/B-Schalter erhalten: FX:dom zeigt weiter
+  // die DOM-Fassung (auroraGL=false → FieldFxLayer rendert), FX:pixi die WebGL-Canvas. In Prod immer WebGL.
+  const auroraGL = bgFx === "aurora" && !!deckA1
+    && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
   // #346 Prod-Renderpfad: Komet/Sternenfeld (Pixi), Leuchten & Würfel-Matrix (WebGL/Canvas) laufen — wie neonsurf — bewusst
   // AUCH in echter Produktion. Grund: für diese drei gibt es KEINE DOM-Fassung mehr (FieldFxLayer kennt nur „aurora") →
   // sonst wäre der gekaufte Effekt auf der Hauptseite kaufbar-aber-unsichtbar. Opt-in (nur wenn gewählt) + intern
@@ -755,7 +782,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const isCrit = !!(t && t.isCrit);
   const critColor = CRIT_COLOR;
   const banner = t
-    ? (isCrit ? { text: "Gewonnen · Kritisch", color: CRIT_COLOR } : BANNER[t.result])
+    ? (isCrit ? { key: "bf.banner.winCrit", color: CRIT_COLOR } : BANNER[t.result])
     : null;
 
   // Effektdauern an den Flip-Takt koppeln; unter reduzierter Bewegung Animationen weglassen
@@ -831,17 +858,28 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
   const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
   const [holePulse, setHolePulse] = useState(null);           // #320 Puls-Kanal ans persistente Loch (win → wachsen+saugen · loss → schrumpfen)
-  // #375/#380 Schwarzes-Loch Loop-Bett (Sog/Drone): läuft DURCHGEHEND, solange der Finisher gewählt ist (blackhole,
-  //   nicht reduced) — NICHT mehr an den pro-Stich-`holeActive` gekoppelt (das stoppte/startete es je Stich neu → nie
-  //   hörbar aufgebaut, #380). Nahtloser Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der
-  //   32,6-s-Aufnahme). Gain/Rate wachsen über onSize mit der Lochgröße mit. Gating (Pause/Overlay/Victory) über die
-  //   bestehende Loop-Suspend-Logik; sanfter Ausklang (fade 0.3) beim Verschwinden.
+  const [holeGrown, setHoleGrown] = useState(false);          // #: Loch nach einem Sieg tatsächlich aktiv/gewachsen → steuert das Loop-Bett (false vor dem 1. Sieg UND nach dem Kollaps auf 0)
+  // #375/#380 Schwarzes-Loch Loop-Bett (Sog/Drone): läuft NUR, wenn das Loch nach einem Sieg aktiv ist (holeGrown) —
+  //   nicht schon vor dem ersten Sieg und nicht mehr nach dem Kollaps. Nicht an den pro-Stich-`holeActive` gekoppelt
+  //   (das stoppte/startete es je Stich neu → nie hörbar aufgebaut, #380), sondern an den Sieg/Kollaps-Zustand. Nahtloser
+  //   Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der 32,6-s-Aufnahme). Gain/Rate wachsen
+  //   über onSize mit der Lochgröße mit; sanfter Ausklang (fade 0.3) beim Kollaps/Verschwinden.
   const holeSndRef = useRef(null);
+  // Zwei unabhängige Eingänge des Betts (Lochgröße + Vorbeben) — getrennt gemerkt, gemeinsam angewandt.
+  const holeFillRef = useRef(0);
+  const holeShudRef = useRef(0);
+  const applyHoleSnd = useCallback(() => {
+    const h = holeSndRef.current;
+    if (!h) return;
+    const { gain, rate } = holeSound(holeFillRef.current, holeShudRef.current);
+    audio.setLoopGain(h, gain); audio.setLoopRate(h, rate);
+  }, []);
   useEffect(() => {
-    if (reduced || !blackhole) return undefined;
-    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 }); // Start = onSize(level 0)-Pegel
+    if (reduced || !blackhole || !holeGrown) return undefined;
+    holeFillRef.current = 0; holeShudRef.current = 0;   // neuer Loop startet auf dem Grundpegel
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
-  }, [blackhole, reduced]);
+  }, [blackhole, reduced, holeGrown]);
   const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
   const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
   const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
@@ -1011,18 +1049,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
       //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
       //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
-      if (holeFinish) setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) });
+      if (holeFinish) { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); } // #: Sieg → Loch aktiv → Loop-Bett an
       else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
     }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
     // synchronen Hits vertonen, und der Sound sitzt auf dem sichtbaren Schnitt (delay = rest) statt schon beim cardflip.
     // Treffer-Identitäten (Feuer/Pflanze/Eis/Blitz, mehrere zugleich möglich) → alle Icons + Score-Farbe.
-    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst Gold. Icons bleiben immer.
+    // Farbe: Krit-Lila zuerst, sonst die erste zutreffende Identität nach HIT_COLOR_ORDER, sonst DECKFARBE (#390; Gold nur
+    // noch als Rückfall, wenn kein Deck gewählt ist → deckA1 null, z. B. Standard-/Genesis-Deck). Icons bleiben immer.
     const hits = t.hitTypes || [];
     const hitIcons = HIT_ICON_ORDER.filter((k) => hits.includes(k)); // Icon-KEYS (Eis rendert als Bild, Rest als Emoji)
     const hitColorKey = HIT_COLOR_ORDER.find((k) => hits.includes(k));
-    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : "#d4a63a");
+    const critC = t.isCrit ? CRIT_COLOR : (hitColorKey ? HIT_STYLE[hitColorKey].color : (deckA1 || "#d4a63a"));
     const entries = [];
     // V2: nur noch der Score-Gewinn floatet (Leben/Schaden entfernt).
     if (w && t.gained > 0) {
@@ -1095,8 +1134,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (toShow.rank) {
       const nowMs = Date.now();
       if (toShow.rank < (bigCoolRef.current._rank || 0) && nowMs - (bigCoolRef.current._at || 0) < BIG_DOMINANCE_MS) return;
-      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.text] || 0) < toShow.cool) return;
-      bigCoolRef.current[toShow.text] = nowMs;
+      if (toShow.cool > 0 && nowMs - (bigCoolRef.current[toShow.key] || 0) < toShow.cool) return;
+      bigCoolRef.current[toShow.key] = nowMs;
       bigCoolRef.current._rank = toShow.rank;
       bigCoolRef.current._at = nowMs;
     }
@@ -1106,7 +1145,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
     if (toShow.epic) {
       audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      audio.play("fx_supernova", { gain: 1.0, delay: 0.85 }); // Swell darüber — ~0,85 s verzögert, damit der große Impuls zeitgleich mit dem visuellen Supernova-Puls (Detonation) kommt
+      // Swell darüber — je gewähltem Prunk-Effekt (eigener Klang für Laser-Fächer/Holo-Würfel/Prisma-Kaskade),
+      // sonst der generische Supernova-Swell. Für Supernova das abgeleitete Timing (supernovaTiming.js, EINE Quelle
+      // mit dem Showcase), damit der Impuls auf dem Detonationsblitz sitzt; die übrigen laufen mit ihrem festen Versatz.
+      const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
+      audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
+
     }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
@@ -1141,11 +1185,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const gottLastAt = useRef(0);
   useEffect(() => {
     if (!t) { gottLastAt.current = 0; return; }
-    // Vor-Krit-Wert: bei Krit ist gained = scoreBeforeCrit × critMultiplier → wir prüfen scoreBeforeCrit; ohne Krit = gained.
-    const gottBase = isCrit ? (t.scoreBeforeCrit || 0) : (t.gained || 0);
+    /* Derselbe Wert wie die Ansage: `t.gained`, also der Stich-Score NACH dem Krit-Multiplikator.
+       Vorher stand hier bei Krit `scoreBeforeCrit` — ein Stich, der die 500k erst DURCH den Krit
+       erreicht (z. B. 250k × 2,4), fiel damit durch dieses Gatter, während die Ansage längst
+       „GOTTGLEICH" rief. Genau das war im Playtest zu sehen: Wort ja, Effekt nie.
+       Die Häufigkeit bremst weiterhin der 30-s-Cooldown unten, nicht ein zweiter Schwellenwert. */
+    const gottBase = t.gained || 0;
     // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
     //   ist der One-Shot-Finisher-Bruch). Gleicher 30-s-Cooldown/reduced-Gate wie Gottgleich.
-    const gottWin = win && (gottBase >= GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
+    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
     if (!gottWin) return;
     const now = Date.now();
     if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
@@ -1298,7 +1346,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div ref={panelRef} className="rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
+    <div ref={panelRef} data-tut="bf-board" className="rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
       style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
                // #296: eigener Stacking-Context → die Panel-Overlays (Schwarzes Loch/BounceBurst/PrunkFx mit hohem
                // zIndex) bleiben INNERHALB des Battlefields und liegen nie über anderen Screens (z. B. Perk-Auswahl).
@@ -1444,11 +1492,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
           scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced}
           /* #375 Zusammenzieh-Impact am Kollaps-Start: große Nova wuchtiger (gain+bass); rate an den Turbo-Kollaps gekoppelt (spd), bei 2× gedeckelt. */
-          onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
+          onImplode={(big, spd, grew) => { setHoleGrown(false); if (big || grew) audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) }); }} /* #: Kollaps auf 0 → Loop-Bett aus; Implosions-Sound nur bei großem Kollaps (big) oder wenn das Loch vorher ausreichend gewachsen war (grew) */
           /* #380 Nova-Flash NACH dem Zusammenziehen (nur großer Kollaps): der Supernova-Puls (Pegel wie im Gott-Showcase). */
           onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
-          /* #375 Bett wächst mit der Lochgröße: Gain 0.6→~0.95, Rate 0.96→~1.06 (dezent). setLoopGain/Rate rampen sanft. */
-          onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
+          /* #375 Bett wächst mit der Lochgröße UND mit dem Vorbeben (holeSound, EINE Quelle mit der
+             Werkstatt-Vorschau). Beide Signale laufen unabhängig — deshalb liegen sie in Refs und der
+             Pegel wird aus BEIDEN gerechnet; würde jeder Callback direkt setLoopGain rufen, überschriebe
+             der eine den anderen. */
+          onSize={(level, maxL) => { holeFillRef.current = maxL > 0 ? level / maxL : 0; applyHoleSnd(); }}
+          onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich
@@ -1533,13 +1585,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           </div>
         )}
 
-        <Side label="Du" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef} baseCard
+        <Side label={tr("bf.side.you")} remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="left" backImage={deckBack} slotRef={deckSlotRef} baseCard
               overlay={playerGhosts.length ? <SlashGhostLayer ghosts={playerGhosts} /> : null}>{playerCard}</Side>
 
         {/* #214: „vs"-Schwerter-Icon (#42) entfernt — die beiden Seiten stehen sich jetzt ohne Trenn-Icon gegenüber. */}
 
         <div ref={oppSlotRef} className="flex">
-          <Side label="Gegner" remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg} slotRef={oppDeckSlotRef}
+          <Side label={tr("bf.side.opponent")} remaining={remaining} position={deckPos} deckLen={deckLen} dealFrom="right" backImage={oppBackImg} slotRef={oppDeckSlotRef}
                 overlay={oppGhosts.length ? <SlashGhostLayer ghosts={oppGhosts} panelRef={panelRef} /> : null}>{oppCard}</Side>
         </div>
 
@@ -1606,7 +1658,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
           return b.tier.epic ? (
             // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
-            <GottChromeWord key={b.id} text={b.tier.text}
+            <GottChromeWord key={b.id} text={tr(b.tier.key)}
               /* #335: „Gottgleich" UND „Lawine" (ohne feste tier.color) folgen dem Prunk-Farbmodus → im Deckfarbe-Modus in
                  der Deckfarbe (Zweiton deckA1→deckA2), sonst Chrome-Zweiton. Nur „Gönn dir" behält seine feste tier.color (Gold). */
               color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
@@ -1631,10 +1683,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                 fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px` }; // höhere Stufe = luftiger
               return (<>
                 <span style={{ ...ws, position: "absolute", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
-                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{b.tier.text}</span>
+                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{tr(b.tier.key)}</span>
                 <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
                   WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
-                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{b.tier.text}</span>
+                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
               </>);
             })()}
           </div>
@@ -1648,9 +1700,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
             kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
         {banner && hideFloatWinLose ? null : banner ? (
-          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{banner.text}</span>
+          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{tr(banner.key)}</span>
         ) : (
-          <span className="opacity-40 text-sm">Bereit — starte den Autobattler</span>
+          <span className="opacity-40 text-sm">{tr("bf.ready")}</span>
         )}
       </div>
     </div>

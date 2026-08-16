@@ -1,13 +1,18 @@
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
   THEMES, THEME_DEFS, showcaseLook,
   packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
-  GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
+  isTieredPack, coverTier, highestUnlockedTier, tierByDeckId, tierAsPack, packHasTierDeck,
+  globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
 } from "../game/themes.js";
+// #tiered: Stufen-Freischaltung je Stufe. Die Bedingung kommt als `kind`/`vars` und wird erst in
+// unlockText.js zum Satz — Zahlen darin über fmtNum, nicht über einen eigenen Tausenderpunkt-Helfer.
+import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
 import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
@@ -59,6 +64,18 @@ function prefetchFxChunks() {
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
+import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit dem Spiel
+import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Spiel (Pixi-frei)
+
+// Showcase-Tempo des Supernova-Prunks: gestreckt, damit der ~11-s-Swell in EINEN Loop passt (#379).
+// Als Konstante, weil derselbe Wert den Sound-Vorlauf rechnet — zwei Literale liefen sonst auseinander.
+const SUPERNOVA_SHOWCASE_SPEED = 0.18;
+import { globalFxList, globalFxDef, themeDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
+// #sprache: Pack-/Deck-Name zur Anzeigezeit auflösen (roh trägt DE-Namen wie „Feuer"/„Eis"). Objekt bleibt
+// unangetastet (STD_PACK.kind etc.) — nur der ANGEZEIGTE Name kommt aus dem i18n-Katalog.
+const packLabel = (pk) => (pk ? (themeDef(pk.id)?.name ?? pk.name) : "");
+import { t, fmtNum } from "../i18n/index.js";
+import { unlockLabel } from "../i18n/unlockText.js"; // #sprache: Freischalt-Bedingung zur Anzeigezeit
 
 // #327 Standard-Backdrop für ALLE Effekt-Showcases: das Genesis-Battlefield (Default-Standard-BG, Single Source of Truth
 // = THEME_DEFS.genesis.bfId). Im Standard-Modus zeigt jeder Showcase Genesis; nur der Deckfarbe-Modus zeigt den Pack-BG.
@@ -121,7 +138,7 @@ const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genes
 // #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
 // vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
 function orderPacks(list, deckId) {
-  const active = list.find((pk) => pk.kind !== "std" && pk.deckId === deckId);
+  const active = list.find((pk) => pk.kind !== "std" && (pk.deckId === deckId || packHasTierDeck(pk, deckId)));
   if (!active) return list;
   const rest = list.filter((pk) => pk !== active);
   const stdFirst = rest[0] && rest[0].kind === "std";
@@ -132,30 +149,35 @@ function orderPacks(list, deckId) {
 /* Synthetische „Standard"-Kachel: der GRATIS-Standard-Sieg-Finisher (kein Kauf, Default-Auswahl). Schlicht — die
    Verliererkarte fliegt nach dem Stich einfach zur Seite weg (wie die eigene Karte bei einer Niederlage), der Flip-
    Sound wird beim Sieg dezent angehoben. Wird der Sieg-Finisher-Gruppe vorangestellt (analog „Gottgleich · Standard"). */
-const FIN_STANDARD = { key: "standard", name: "Standard", group: "finisher", preview: "standard", alwaysOwned: true,
-  desc: "Der schlichte Grund-Finisher (immer verfügbar, Standard-Auswahl): Die geschlagene Gegnerkarte fliegt nach dem Stich einfach zur Seite weg — genau wie deine eigene Karte bei einer Niederlage. Beim Sieg wird der Aufdeck-Sound leicht höher gestimmt. Kein Schnitt, kein Prunk." };
+const FIN_STANDARD = { key: "standard", group: "finisher", preview: "standard", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.standard.name"); }, get desc() { return t("fxsyn.standard.desc"); } };
 
 /* Synthetische „Klinge"-Kachel: ein KAUFBARER Sieg-Finisher (10 DP, grüne Rarity) mit eigenem Besitz-Schlüssel
    fx:klinge — vorschaubar wie die anderen Finisher. Wird in der Sieg-Finisher-Gruppe hinter „Standard" (Gratis) geführt. */
-const KLINGE = { key: "klinge", name: "Klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
-  desc: "Eine choreografierte Klinge zerteilt die Gegnerkarte. Grundzug ist ein Schnitt von links; je höher dein Siegesserie-Multiplikator, desto mehr Richtungen fahren nacheinander ein (ab ×1,25 links/rechts im Wechsel, ab ×1,5 zusätzlich von oben, ab ×2,0 alle vier inkl. Z-Schnitt) — und die Klinge schneidet härter. Eine Niederlage setzt die Serie zurück. In kühlem Stahlweiß oder in der Deckfarbe." };
+const KLINGE = { key: "klinge", group: "finisher", preview: "klinge", ownKey: "fx:klinge", price: 10,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.klinge.name"); }, get desc() { return t("fxsyn.klinge.desc"); } };
 
 /* #319 Synthetische „Scorch"-Kachel: kaufbarer Sieg-Finisher (20 DP, blaue Rarity, ownKey fx:scorch). Ein Laser
    schießt einmalig aus zufälliger Richtung, danach verglüht die Gegnerkarte organisch (Rausch-Burn) mit Glut/Asche/Funken. */
-const SCORCH = { key: "scorch", name: "Laser", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
-  desc: "Ein Laser schießt einmalig aus zufälliger Richtung in die Gegnerkarte — dann verglüht sie organisch: eine zerklüftete Brennkante frisst sich mit glühendem Rand über die Karte, während weiche Glut aufsteigt, Asche fällt und Funken sprühen. In Standard-Feuer oder in der Deckfarbe." };
+const SCORCH = { key: "scorch", group: "finisher", preview: "scorch", ownKey: "fx:scorch", price: 20,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.scorch.name"); }, get desc() { return t("fxsyn.scorch.desc"); } };
 
 /* #321 Synthetische „Hologrid-Slice"-Kachel: kaufbarer Sieg-Finisher (#353: 30 DP, lila/Rar, ownKey fx:hologridSlice). Eine Laserlinie
    fährt achsen-parallel über die Gegnerkarte und deckt ein Nahtraster auf; danach zerfällt die Karte in ein Kachelgitter,
    dessen Stücke wegfliegen & vom Boden abprallen, während die Füllung früh zu einem reinen Hologrid-Rahmen verblasst. */
-const HOLOGRID_SLICE = { key: "hologridSlice", name: "Hologrid-Laser", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 30,
-  desc: "Eine Laserlinie fährt achsen-parallel über die geschlagene Gegnerkarte und deckt dabei ein Nahtraster auf. Danach zerfällt die Karte in ein Kachelgitter: die Stücke fliegen mit Rotation weg und prallen vom Boden ab, während das Kartenbild früh verblasst, sodass nur noch der leuchtende Hologrid-Rahmen bleibt. In Standard-Cyan/Magenta oder in der Deckfarbe." };
+const HOLOGRID_SLICE = { key: "hologridSlice", group: "finisher", preview: "hologrid", ownKey: "fx:hologridSlice", price: 30,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.hologridSlice.name"); }, get desc() { return t("fxsyn.hologridSlice.desc"); } };
 
 /* #320 Synthetische „Schwarzes Loch"-Kachel: kaufbarer Sieg-Finisher (#353: 40 DP, gold/Legendär, ownKey fx:blackhole). Ein
    PERSISTENTES Serien-Loch — jeder Sieg füttert es (es wächst + saugt die Gegnerkarte ein), eine Niederlage lässt es
    schrumpfen; kollabiert es bei genug Masse, folgt eine Supernova. Standard blau/pink oder in der Deckfarbe. */
-const BLACKHOLE = { key: "blackhole", name: "Schwarzes Loch", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
-  desc: "Ein persistentes Schwarzes Loch mitten im Feld, das über deine Siegesserie wächst: Jeder Sieg zieht die geschlagene Gegnerkarte spiralförmig in den Ereignishorizont und speist die rotierende Akkretionsscheibe, eine Niederlage lässt das Loch schrumpfen. Ist es groß genug gewachsen und kollabiert, zerreißt eine Supernova das Feld. In Standard blau/pink oder in der Deckfarbe." };
+const BLACKHOLE = { key: "blackhole", group: "finisher", preview: "blackhole", ownKey: "fx:blackhole", price: 40,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.blackhole.name"); }, get desc() { return t("fxsyn.blackhole.desc"); } };
 
 // Alle KAUFBAREN Sieg-Finisher (ownKey-tragend). Quelle für die Voll-Freischaltung: der Drift-Guard-Test hält diese
 // Liste mit themes.BUYABLE_FINISHER_FX synchron, damit „unlock" nie einen neuen Finisher übersieht.
@@ -163,14 +185,16 @@ export const BUYABLE_FINISHER_OWNKEYS = [KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHO
 
 /* Synthetische „Gottgleich · Standard"-Kachel (kein Kauf, immer aktiv) — nur zum Vergleichen des Gottgleich-
    Siegs OHNE Prunk. Wird in der Gottgleich-Gruppe als reine Vorschau-Zeile geführt. */
-const GOTT_STANDARD = { key: "gottStandard", name: "Standard", group: "gott", alwaysOwned: true, preview: "gottStandard",
-  desc: "Gottgleicher Sieg OHNE Prunk-Effekt — die Basis zum Vergleichen (Standard-Auswahl, kein Kauf)." };
+const GOTT_STANDARD = { key: "gottStandard", group: "gott", alwaysOwned: true, preview: "gottStandard",
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.gottStandard.name"); }, get desc() { return t("fxsyn.gottStandard.desc"); } };
 
 /* #spezial/#328 Skill-Effekt (Archetyp-Effekte Feuer/Blitz/Eis/Pflanze): IMMER aktiv, kein Kauf, kein An/Aus — es gibt
    nur die Farbwahl Standard ↔ Deckfarbe (options.archColor). EINE synthetische Kachel; der Standard/Deckfarbe-Umschalter
    sitzt als Segmented-Control unter dem Showcase (gleiche UI wie die anderen Effekte, schreibt weiter archColor). */
-const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", alwaysOwned: true, preview: "spezial",
-  desc: "Die vier Archetyp-Effekte (Feuer · Blitz · Eis · Pflanze) — immer aktiv. Wähle die Farbe: feste Neon-Standardfarbe oder die Farbe deines aktiven Decks." };
+const SPEZIAL = { key: "spezial", group: "spezial", alwaysOwned: true, preview: "spezial",
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.spezial.name"); }, get desc() { return t("fxsyn.spezial.desc"); } };
 
 // #331 Effekt-Reiter des „Effekte"-Tabs — auf 4 Reiter reduziert (Reihenfolge = Anzeige links→rechts):
 //   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahmen:
@@ -178,26 +202,30 @@ const SPEZIAL = { key: "spezial", name: "Skill-Effekt", group: "spezial", always
 //   • Skill-Effekt (Archetyp, group "spezial") — immer aktiv, nur Farbwahl (zählt nicht in die Einfachauswahl).
 // mode: "cardanim" (Karten-Animationen einfach-exklusiv) | "finisher" (Stich) | "bg" (Hintergrund-Set einfach-exklusiv,
 //   Leuchten separat frei) | "gott" (Score). Die alten Gruppen (anim/bgfx/bgglow/bgfin/finisher/gott) bleiben als
-//   DATEN-Gruppe (GLOBAL_FX.group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
+//   DATEN-Gruppe (globalFxList().group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
 const FX_GROUPS = [
-  { key: "karten",      title: "Karten",      hint: "Skill immer an · eine Animation", mode: "cardanim" },
-  { key: "stich",       title: "Stich",       hint: "nur einer aktiv",                 mode: "finisher" },
-  { key: "hintergrund", title: "Hintergrund", hint: "einer aktiv · Leuchten frei",     mode: "bg" },
-  { key: "score",       title: "Score",       hint: "nur einer aktiv",                 mode: "gott" },
-];
+  { key: "karten",      mode: "cardanim" },
+  { key: "stich",       mode: "finisher" },
+  { key: "hintergrund", mode: "bg" },
+  { key: "score",       mode: "gott" },
+].map((g) => ({ ...g,
+  // #sprache: Reiter-Titel/Hinweis zur Anzeigezeit — Getter, damit ein Sprachwechsel greift.
+  get title() { return t(`fxgroup.${g.key}.title`); }, get hint() { return t(`fxgroup.${g.key}.hint`); } }));
 /* #306 Synthetische „Kein Feld-Effekt"-Kachel (immer verfügbar, kein Kauf): der Aus-Zustand der einfach-exklusiven
    Battlefield-Ambiente-Gruppe — wählbar wie „Klinge" beim Finisher. */
-const FIELD_NONE = { key: "none", name: "Kein Effekt", group: "field", preview: "none", alwaysOwned: true,
-  desc: "Kein Hintergrund-Effekt — nur das Battlefield-Bild (immer verfügbar). Leuchten kann zusätzlich aktiv bleiben." };
+const FIELD_NONE = { key: "none", group: "field", preview: "none", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.fieldNone.name"); }, get desc() { return t("fxsyn.fieldNone.desc"); } };
 /* #318 Synthetische „Keine Animation"-Kachel (grau, immer verfügbar, kein Kauf): der Aus-Zustand der frei
    kombinierbaren Karten-Animationen. Anwählen schaltet ALLE Karten-Animationen ab (wie „Kein Feld-Effekt" beim
    Ambiente, nur dass die anim-Gruppe eine Mehrfachauswahl ist). preview „none" → schlichte Karte ohne Overlay. */
-const ANIM_NONE = { key: "none", name: "Keine Animation", group: "anim", preview: "none", alwaysOwned: true,
-  desc: "Keine Karten-Animation — die Karten bleiben schlicht. Anwählen schaltet alle Karten-Animationen ab (immer verfügbar)." };
-// Items einer Gruppe (in Detail-Reihenfolge): GLOBAL_FX der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
+const ANIM_NONE = { key: "none", group: "anim", preview: "none", alwaysOwned: true,
+  // #sprache: Name/Text zur Anzeigezeit — als Getter, weil sich die Sprache ändern kann.
+  get name() { return t("fxsyn.animNone.name"); }, get desc() { return t("fxsyn.animNone.desc"); } };
+// Items einer Gruppe (in Detail-Reihenfolge): globalFxList() der Gruppe nach DP-Preis aufsteigend (billig oben, teuer unten);
 // der synthetische „Standard"/„Kein …"/„Klinge"-Default wird vorangestellt (Gratis-Aus-Zustand).
-const fxByGroup = (g) => GLOBAL_FX.filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
-const fxKey = (k) => GLOBAL_FX_BY_KEY[k]; // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
+const fxByGroup = (g) => globalFxList().filter((f) => f.group === g && !f.hidden).slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)); // #: `hidden` blendet Effekte im Shop aus (bleiben funktional)
+const fxKey = (k) => globalFxDef(k); // Kurzzugriff für die feste Reihenfolge im Hintergrund-Reiter
 const byFxPrice = (a, b) => globalFxPrice(a) - globalFxPrice(b); // #353 Seltenheit = Preis (aufsteigend)
 // #353 Basis-Reihenfolge je Reiter: die festen Führungs-Kacheln (Standard/„Kein …"/Leuchten/Skill) voran, der REST nach
 // Seltenheit (= Preis) sortiert. (Vorher stand der Hintergrund-Vierer in fixer Reihenfolge — jetzt ebenfalls nach Preis.)
@@ -266,7 +294,7 @@ const finisherSelOf = (options, profile) => {
    true, „none" = alle false). „Leuchten" (deckglow) bleibt ein UNABHÄNGIGER freier Toggle (fxDeckGlow) außerhalb dieses
    Sets. bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
 const BG_EXCL_KEYS = ["aurora", "cubematrix", "neonsurf", "starfield"]; // feste Priorität (Aurora zuerst) — #glutfunken-raus: embers entfernt · #345 neonsurf
-const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => GLOBAL_FX_BY_KEY[k]).filter(Boolean);
+const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => globalFxDef(k)).filter(Boolean);
 const bgFlags = (key) => Object.fromEntries(BG_EXCL_FX.map((f) => [f.option, f.key === key]));
 const bgSelOf = (options, profile) => {
   for (const f of BG_EXCL_FX) if (options?.[f.option]) { if (profile && !globalFxOwned(profile, f)) continue; return f.key; }
@@ -274,14 +302,14 @@ const bgSelOf = (options, profile) => {
 };
 /* Gottgleich-Prunk einfach-exklusiv (genau EINER aktiv, oder „gottStandard" = kein Prunk). Datengetrieben aus der
    „gott"-Gruppe: gottFlags(key) schreibt alle Prunk-Optionen in einem Rutsch (genau eine true, „gottStandard" = alle false). */
-const GOTT_FX = GLOBAL_FX.filter((f) => f.group === "gott");
+const GOTT_FX = globalFxList().filter((f) => f.group === "gott");
 const gottFlags = (key) => Object.fromEntries(GOTT_FX.map((f) => [f.option, f.key === key]));
 const gottSelOf = (options) => { for (const f of GOTT_FX) if (options?.[f.option]) return f.key; return "gottStandard"; };
 /* #331 Karten-Animationen (mode "cardanim") sind jetzt EINFACH-EXKLUSIV (früher frei kombinierbar): genau EINE
    Animation aktiv, oder keine (= „Keine Animation"). cardAnimFlags(key) schreibt {fxEdgeGlow,fxHolo,fxGlitch} in einem
    Rutsch (genau eine true, „none" = alle false); animNoneFlags = alle aus (für die „Keine"-Kachel). cardAnimSelOf
    gated auf Besitz (ungekaufte Auswahl zählt nicht). Der Skill-Effekt (Archetyp) läuft getrennt (immer aktiv). */
-const ANIM_FX = GLOBAL_FX.filter((f) => f.group === "anim");
+const ANIM_FX = globalFxList().filter((f) => f.group === "anim");
 const cardAnimFlags = (key) => Object.fromEntries(ANIM_FX.map((f) => [f.option, f.key === key]));
 const animNoneFlags = () => Object.fromEntries(ANIM_FX.map((f) => [f.option, false]));
 const cardAnimSelOf = (options, profile) => {
@@ -476,8 +504,18 @@ function BlackholeScene({ deckTint = false }) {
   // #380 Loop-Bett (Sog/Drone) wie in-game: läuft durchgehend über die ganze Vorschau-Choreografie, Gain/Rate wachsen
   //   via onSize mit der Lochgröße → der Aufbau ist hörbar, nicht nur der Kollaps.
   const holeSndRef = useRef(null);
+  // Wie im Spiel: Lochgröße und Vorbeben getrennt merken, Pegel aus beiden rechnen (holeSound).
+  const holeFillRef = useRef(0);
+  const holeShudRef = useRef(0);
+  const applyHoleSnd = () => {
+    const h = holeSndRef.current;
+    if (!h) return;
+    const { gain, rate } = holeSound(holeFillRef.current, holeShudRef.current);
+    audio.setLoopGain(h, gain); audio.setLoopRate(h, rate);
+  };
   useEffect(() => {
-    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 });
+    holeFillRef.current = 0; holeShudRef.current = 0;
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
   }, []);
   const look = PREVIEW_LOOK.blackhole;
@@ -492,7 +530,8 @@ function BlackholeScene({ deckTint = false }) {
         /* #380 Sound wie in-game: Zusammenzieh-Impact · Nova-Flash → fx_supernova (nur großer Kollaps) · Bett-Pegel via onSize. */
         onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
         onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
-        onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} />
+        onSize={(level, maxL) => { holeFillRef.current = maxL > 0 ? level / maxL : 0; applyHoleSnd(); }}
+        onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
@@ -504,7 +543,7 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1, sfxDelay = 0 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
   // Board-weite Bühne (panelRef) + unsichtbarer Karten-Anker (cardRef) im Zentrum — der Prunk-Fx zeichnet darüber.
   //   (#379-Regression-Fix: beim Loop-Umbau versehentlich entfernt → GottScene crashte mit „panelRef is not defined".)
   const panelRef = useRef(null);
@@ -524,8 +563,13 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   // kein Schlucken durch den Cooldown und keine Drossel mehr nötig.
   const fire = () => {
     pop();
-    audio.play("fx_godlike", { gain: 0.55 });           // gemeinsamer Gott-Punch (wie in-game), je Loop hörbar
-    if (sfx) audio.play(sfx, { gain: 0.9 });             // effekt-spezifischer Swell (Supernova) — voll je Loop, synchron
+    audio.play("fx_godlike", { gain: 0.9 });            // gemeinsamer Gott-Punch (wie in-game), je Loop — deutlich hörbar (0.55→0.9), damit auch die Prunks ohne eigenen Swell klar klingen
+    /* Effekt-spezifischer Swell (Supernova) — voll je Loop. `sfxDelay` legt seinen Impuls auf den
+       Detonationsblitz: `onFire` feuert beim Effekt-START, der Blitz kommt erst nach LIFE·CHARGE, und
+       im Showcase ist der Effekt zusätzlich gestreckt (speed 0,18 → ~1,7 s statt 0,3 s). Ohne diesen
+       Vorlauf lag der Impuls im Showcase weit VOR dem Blitz — und ein Nachtunen der In-Game-Zahl
+       änderte hier gar nichts. */
+    if (sfx) audio.play(sfx, { gain: 0.9, delay: sfxDelay });
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
   useEffect(() => {
@@ -548,7 +592,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
           rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
       {/* #335: Wortmarke folgt dem Prunk-Farbmodus — Deckfarbe-Modus → Deck-Zweiton (deckColor→deckColor2), sonst
           Chrome-Zweiton. Vorschau = In-Game (Battlefield tönt „Gottgleich" analog über gottDeck/deckA1/deckA2). */}
-      <GottChromeWord key={annKey} text="Gottgleich" color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
+      <GottChromeWord key={annKey} text={t("bf.big.godlike")} color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
         gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
         style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
@@ -744,10 +788,10 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // #379 Showcase-Loop verlangsamen (speed<1), damit die Loop-Periode ≥ Soundlänge ist → Ton bei JEDEM Loop synchron.
   //   Periode = Basis-Loop-Länge (LIFE/TOTAL + TAIL) / speed. Ziel: ≥ ~2,4 s (fx_godlike 1,8 s); Supernova ≈ Swell (~11 s).
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} speed={0.45} />; // Basis 1,15 s → ~2,6 s
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} speed={0.48} />; // Basis 1,2 s → ~2,5 s
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} speed={0.85} />; // Basis 2,11 s → ~2,5 s
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} speed={0.72} />; // Basis 1,8 s → ~2,5 s
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={0.18} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} sfx="fx_laserfan" speed={0.48} />; // Basis 1,2 s → ~2,5 s · eigener Swell
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} sfx="fx_prisma" speed={0.85} />; // Basis 2,11 s → ~2,5 s · eigener Swell
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} sfx="fx_holocube" speed={0.72} />; // Basis 1,8 s → ~2,5 s · eigener Swell
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -764,7 +808,10 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
 // Hit-Tier-Leiter für die Feld-Finisher-Eskalations-Vorschau (Pixi, Komet/Sternenfeld): Schwach → Gottgleich.
 const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 // Der GPU-Emitter zeigt den Feld-Finisher als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
-const EMBER_PIXI_PREVIEW = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) && FX_RENDERER === "pixi";
+// Aurora rendert im Showcase jetzt AUCH in Prod als WebGL (spiegelt den In-Game-Pfad, siehe Battlefield): der DOM-Fallback
+// entsprach nicht der echten Aurora. Preview/Dev behält den A/B-Schalter (FX:dom → DOM-Fassung, FX:pixi → WebGL); Prod immer WebGL.
+const auroraGLActive = (effect) => effect === "aurora"
+  && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
 function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-BG (look.bf).
@@ -779,7 +826,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
   const [neonAnn, setNeonAnn] = useState(null);     // #383 Ansage-Pop zum Impact { id, label, color }
   const neonRef = useRef(0);                         // rotiert die Impact-Stufe (Stark/Brutal/Irre)
   const pixiField = PIXI_FIELD_KEYS.includes(effect); // #346: Sternenfeld/Komet → Pixi-Bühne im Showcase, AUCH in Prod (lazy PixiStage) — spiegelt den In-Game-Renderpfad
-  const auroraGL = EMBER_PIXI_PREVIEW && effect === "aurora";              // Aurora → eigene WebGL-Canvas (bleibt Preview/Dev; in Prod DOM-Fallback via FieldFxLayer)
+  const auroraGL = auroraGLActive(effect);                                // Aurora → eigene WebGL-Canvas (auch in Prod; Preview behält den DOM-A/B-Schalter)
   const neonsurfGL = effect === "neonsurf";                                // #345 Neon-Brandung → eigene WebGL-Canvas (auch in Prod, kein Pixi-Gate)
   useEffect(() => {
     if (effect === "none") return undefined;
@@ -905,7 +952,7 @@ function BfPreview({ bfId, className = "", showVersion = false }) {
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
       {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">Kein Battlefield</div>}
+          : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">{t("shop.noBattlefield")}</div>}
       {showVersion && bf && (
         <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
@@ -955,55 +1002,67 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
+  // #tiered: eine bestimmte Stufe aktivieren + als zuletzt gewählte Stufe merken (tierSel[packId]=deckId → Zufalls-Modus).
+  const activateTier = (pack, tier) => onChoose({ deckId: tier.deckId, battlefieldId: tier.bfId,
+    tierSel: { ...((options && options.tierSel) || {}), [pack.id]: tier.deckId } });
 
   const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("back"); };
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
   const anyOverlay = !!packOv;
+  // Horizontaler Swipe → Reiterwechsel. Solange das Pack-Detail offen ist (eigene ‹ ›/Swipe-Geste), unterdrückt.
+  const tabSwipe = useTabSwipe(["packs", "challenges", "fx"], tab, setTab, { guard: () => anyOverlay });
 
   return (
-    <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}
+    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
-      <div className="w-full max-w-xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
-        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
-        {/* Sticky Kopf */}
-        <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
-          <TopHairline />
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h2 className="text-lg font-bold whitespace-nowrap">Deck-Werkstatt</h2>
-            <div className="flex items-center gap-2.5 shrink-0 ml-auto">
-              {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
-                  Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
-              <span className="flex items-baseline gap-1 whitespace-nowrap">
-                <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
-              </span>
-              <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+      {/* #394 FESTE Kartenhöhe (wie Bestenliste #385) → das Fenster bleibt über ALLE Reiter (Packs/Challenges/Effekte)
+          UND alle Filter gleich groß; auch eine leere Ansicht („Nichts in dieser Ansicht") lässt es nicht schrumpfen.
+          Gescrollt wird nur noch der Inhaltsbereich darunter — der Sticky-Kopf lebt weiter IN diesem Scroll-Container,
+          damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
+      <div className="w-full max-w-xl rounded-2xl my-auto as-panel flex flex-col overflow-hidden"
+        style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
+        <div className={`overlay-card flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
+          {/* Sticky Kopf */}
+          <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
+            <TopHairline />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2 className="text-lg font-bold whitespace-nowrap">{t("shop.title")}</h2>
+              <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+                {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
+                    Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
+                <span className="flex items-baseline gap-1 whitespace-nowrap">
+                  <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                  <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+                </span>
+                <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>{t("common.close")}</button>
+              </div>
+            </div>
+            {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
+                Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
+            <div className="flex gap-1.5 mt-3">
+              {[["packs", "shop.tab.packs", "#9b82f0"], ["challenges", "shop.tab.challenges", "#e05555"], ["fx", "shop.tab.fx", "#d4a63a"]].map(([m, label, col]) => {
+                const on = tab === m;
+                return (
+                  <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
+                    className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
+                    style={on
+                      ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
+                      : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                    {t(label)}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
-              Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
-          <div className="flex gap-1.5 mt-3">
-            {[["packs", "Packs", "#9b82f0"], ["challenges", "Challenges", "#e05555"], ["fx", "Effekte", "#d4a63a"]].map(([m, label, col]) => {
-              const on = tab === m;
-              return (
-                <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
-                  style={on
-                    ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
-                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} />
-          : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
-          : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+          {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} />
+            : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
+            : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+        </div>
       </div>
 
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
@@ -1011,7 +1070,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       {packOv && createPortal(
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
-          onActivate={activate} onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
+          options={options} onActivate={activate} onActivateTier={activateTier}
+          onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
         document.body)}
     </div>
   );
@@ -1020,10 +1080,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* ============================ Packs- / Challenges-Tab ============================ */
 // #Shop-Reorg: geteilte Ansicht für „Packs" (Kauf-Packs, nach DP-Preis sortiert) und „Challenges" (freischaltbare
 // cond-Packs). `list` kommt vorsortiert rein; die Reihenfolge bleibt (kein erneutes Sortieren) → billig oben, teuer unten.
-function PacksView({ p, deckId, list, cat, onOpen }) {
+function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null }) {
   const challenge = cat === "challenges";
   const [filter, setFilter] = useState("alle");
-  const chips = challenge ? [["alle", "Alle"], ["besitz", "Frei"], ["gesperrt", "Gesperrt"]] : [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
+  const chips = challenge ? [["alle", "shop.filter.all"], ["besitz", "shop.filter.free"], ["gesperrt", "shop.filter.locked"]] : [["alle", "shop.filter.all"], ["besitz", "shop.filter.owned"], ["kaufbar", "shop.filter.buyable"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
   const shown = list.filter((pack) => {
     const s = stateOf(pack);
@@ -1032,13 +1092,32 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
     if (filter === "gesperrt") return s === "lock";
     return true;
   });
+  // #393 Zufalls-Deck je Lauf (nur Packs-Tab): togglebar; jeder neue Lauf startet mit einem zufälligen deiner besessenen
+  //   (farbigen) Decks und rendert alle aktiven Effekte in dessen Deckfarbe. Reine UI-Pref (überlebt Reset).
+  const randomOn = !!(options && options.randomDeckEachRun);
 
   return (
     <>
+      {!challenge && options && onOption && (
+        <div className="mt-3 rounded-xl p-3 flex items-center gap-3"
+          style={{ background: randomOn ? "#1a1330" : "#14131c", border: `1px solid ${randomOn ? "#9b82f0aa" : "#2a2836"}` }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-extrabold">{t("shop.randomDeck.title")}</div>
+            <div className="text-[11px] leading-snug" style={{ color: "#9a97ab" }}>{t("shop.randomDeck.desc")}</div>
+          </div>
+          <button type="button" role="switch" aria-checked={randomOn} aria-label={t("shop.randomDeck.aria")}
+            onClick={() => onOption({ randomDeckEachRun: !randomOn })}
+            className="relative shrink-0 rounded-full transition-colors"
+            style={{ width: 46, height: 26, background: randomOn ? "#9b82f0" : "#2a2836", border: `1px solid ${randomOn ? "#b9a6ff" : "#3a3a44"}` }}>
+            <span className="absolute top-1/2 rounded-full transition-all"
+              style={{ width: 20, height: 20, background: "#fff", transform: "translateY(-50%)", left: randomOn ? 23 : 3 }} />
+          </button>
+        </div>
+      )}
       <div className="flex gap-1.5 mt-3 flex-wrap">
         {chips.map(([k, label]) => (
           <button key={k} onClick={() => setFilter(k)} className="px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-colors"
-            style={{ background: filter === k ? "#26c6e6" : "#14131c", color: filter === k ? "#08181c" : "#9a97ab", border: `1px solid ${filter === k ? "#26c6e6" : "#2a2836"}` }}>{label}</button>
+            style={{ background: filter === k ? "#26c6e6" : "#14131c", color: filter === k ? "#08181c" : "#9a97ab", border: `1px solid ${filter === k ? "#26c6e6" : "#2a2836"}` }}>{t(label)}</button>
         ))}
       </div>
 
@@ -1046,27 +1125,42 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
         {shown.map((pack) => {
           const gi = list.indexOf(pack);
           const s = stateOf(pack);
-          const active = deckId === pack.deckId;
+          // #tiered: Cover = höchste freigeschaltete Stufe (sonst Stufe I); aktiv, wenn irgendeine Stufe equippt ist.
+          const tiered = isTieredPack(pack);
+          const cover = tiered ? coverTier(p, pack) : null;
+          const coverDeckId = cover ? cover.deckId : pack.deckId;
+          const active = tiered ? packHasTierDeck(pack, deckId) : deckId === pack.deckId;
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
-          const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
+          const badge = active ? [t("shop.activeChip"), "#123a25", "#54e08a", "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
-          const sub = active ? ["aktiv", "#54e08a"]
-            : s === "own" ? ["tippen → Details", "#9a97ab"]
-            : s === "buy" ? ["kaufbar", "#f2c14a"]
-            : [packUnlock(p, pack).label, "#6d6a80"];
+          const sub = active ? [t("shop.tile.sub.active"), "#54e08a"]
+            : s === "own" ? [tiered ? t("shop.tile.sub.detailsTier", { roman: cover?.roman || "I" }) : t("shop.tile.sub.details"), "#9a97ab"]
+            : s === "buy" ? [t("shop.tile.sub.buyable"), "#f2c14a"]
+            : [unlockLabel(packUnlock(p, pack)), "#6d6a80"];
           return (
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
               className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
               style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55" : undefined }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
-                <DeckThumb deckId={pack.deckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
+                <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
+                {/* #tiered: Mehrstufen-Markierung — Stufen-Pills (I/II/III), freigeschaltete hell, gesperrte gedimmt. Signalisiert „Deck mit mehreren Stufen". */}
+                {tiered && (
+                  <span className="absolute bottom-1 left-1 flex gap-0.5">
+                    {/* `ti` statt `t`: `t` ist in dieser Datei der Übersetzer — eine Stufe darf ihn nicht verdecken. */}
+                    {pack.tiers.map((ti) => {
+                      const free = isUnlocked(DECK_DEFS[ti.deckId], p);
+                      return <span key={ti.deckId} className="text-[8px] font-extrabold leading-none px-1 py-[3px] rounded"
+                        style={{ background: free ? "#1a1330e6" : "#0a0a12e6", color: free ? "#c9b6ff" : "#6a6780", border: `1px solid ${free ? "#6a4fb0" : "#33313f"}` }}>{ti.roman}</span>;
+                    })}
+                  </span>
+                )}
               </div>
               <div className="px-2 py-1.5">
-                <span className="text-[12px] font-extrabold truncate block">{pack.name}</span>
+                <span className="text-[12px] font-extrabold truncate block">{packLabel(pack)}</span>
                 <span className="text-[10px] truncate block" style={{ color: sub[1] }}>{sub[0]}</span>
               </div>
             </button>
@@ -1075,28 +1169,52 @@ function PacksView({ p, deckId, list, cat, onOpen }) {
       </div>
 
       {shown.length === 0 && (
-        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>Nichts in dieser Ansicht.</div>
+        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>{t("shop.emptyView")}</div>
       )}
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
         {challenge
-          ? <>Ein <b>Challenge-Deck</b> wird über eine Herausforderung <b>freigeschaltet</b> (kein Kauf). Tippe es an → Vorschau + Freischalt-Bedingung; sobald erfüllt, aktivierst du es direkt.</>
-          : <>Ein <b>Pack</b> bündelt Karte (Front + Back) und Battlefield. Tippe ein Pack an → Detail-Ansicht mit Vorschau; <b>Kaufen aktiviert das Pack direkt</b>.</>}
+          ? t("shop.hint.challenge")
+          : t("shop.hint.pack")}
       </p>
     </>
   );
 }
 
-/* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren. */
-function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, onActivate, onBuy }) {
+/* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren.
+   #tiered: Bei Stufen-Decks steht über der Aktion ein I/II/III-Wähler (nur freigeschaltete Stufen wählbar); Vorschau,
+   Farbe und Aktivierung folgen der gewählten Stufe. Ohne tiers verhält sich alles unverändert. */
+function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, options = null, onActivate, onActivateTier, onBuy }) {
   const touch = useRef(0);
+  const tiered = isTieredPack(pack);
+  const tiers = tiered ? pack.tiers : [];
+  const equippedTier = tiered ? tierByDeckId(pack, deckId) : null;
+  const tierUnlocked = (t) => isUnlocked(DECK_DEFS[t.deckId], p);
+  // Default-Stufe: equippte → gemerkte (tierSel) falls frei → höchste freie → Stufe I. Bei Pack-Wechsel (‹ ›) neu setzen.
+  const defaultTierDeck = (pk) => {
+    const eq = tierByDeckId(pk, deckId);
+    if (eq) return eq.deckId;
+    const remembered = tierByDeckId(pk, options && options.tierSel ? options.tierSel[pk.id] : null);
+    if (remembered && isUnlocked(DECK_DEFS[remembered.deckId], p)) return remembered.deckId;
+    const hi = highestUnlockedTier(p, pk);
+    return (hi || pk.tiers[0]).deckId;
+  };
+  const [selDeck, setSelDeck] = useState(() => (tiered ? defaultTierDeck(pack) : null));
+  useEffect(() => { if (isTieredPack(pack)) setSelDeck(defaultTierDeck(pack)); }, [pack.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const selTier = tiered ? (tierByDeckId(pack, selDeck) || tiers[0]) : null;
+  // „Ansichts-Pack" = Stufen-Sicht (eigene deckId/bfId/a1) oder das Pack selbst.
+  const viewPack = tiered ? tierAsPack(pack, selTier) : pack;
+
   const hasBf = hasBattlefield(pack);
-  const segs = hasBf ? [["back", "Karte hinten"], ["front", "Karte vorne"], ["bg", "Hintergrund"]]
-                     : [["back", "Karte hinten"], ["front", "Karte vorne"]];
+  const segs = hasBf ? [["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")], ["bg", t("shop.packSel.bg")]]
+                     : [["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]];
   const activeSel = (sel === "bg" && !hasBf) ? "back" : sel;
 
   const s = pack.kind === "std" ? "own" : packState(p, pack);
-  const active = deckId === pack.deckId;
+  // #tiered: „aktiv" bezieht sich auf die GEWÄHLTE Stufe (nicht nur irgendeine equippte).
+  const active = tiered ? (!!equippedTier && equippedTier.deckId === selTier.deckId) : deckId === pack.deckId;
+  const selTierUnlocked = tiered ? tierUnlocked(selTier) : false;
+  const selTierLock = tiered && !selTierUnlocked ? unlockProgress(DECK_DEFS[selTier.deckId], p) : null;
   const price = packPrice(pack);
   const canBuy = pack.kind === "buy" && canBuyPack(p, pack);
   const unlock = pack.kind === "cond" ? packUnlock(p, pack) : null;
@@ -1110,8 +1228,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] font-extrabold truncate">{pack.name}</span>
-            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>Schließen</button>
+            <span className="text-[15px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>{t("common.close")}</button>
           </div>
 
           {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
@@ -1119,8 +1237,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
             <div className="flex-1 min-w-0 h-full flex items-center justify-center">
               {activeSel === "bg"
-                ? <BfPreview bfId={pack.bfId} a1={pack.a1} className="w-full" showVersion />
-                : <CardPreview deckId={pack.deckId} a1={pack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
+                ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
+                : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
             </div>
             <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
           </div>
@@ -1133,27 +1251,60 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             ))}
           </div>
 
+          {/* #tiered: Stufen-Wähler I / II / III — ALLE Stufen anklickbar (auch gesperrte = Vorschau); gesperrte tragen 🔒
+              und zeigen unten die Freischalt-Bedingung. Nur der Aktivieren-Button hängt an der Freischaltung. */}
+          {tiered && (
+            <div className="flex gap-1.5 justify-center mt-2.5">
+              {/* `ti` statt `t`: siehe oben — `t` ist der Übersetzer. */}
+              {tiers.map((ti) => {
+                const on = ti.deckId === selTier.deckId;
+                const free = tierUnlocked(ti);
+                const isEq = equippedTier && equippedTier.deckId === ti.deckId;
+                return (
+                  <button key={ti.deckId} onClick={() => setSelDeck(ti.deckId)}
+                    className="flex-1 max-w-[96px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                    style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`,
+                      color: on ? "#e8e6ff" : (free ? "#c9c6dd" : "#8b88a0") }}>
+                    {free ? "" : "🔒 "}{ti.roman}{isEq ? " ✓" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex gap-1.5 justify-center my-2.5">
             {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
           </div>
 
           {/* Aktion */}
-          {active ? (
-            <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>Aktiv ✓</div>
+          {tiered ? (
+            active ? (
+              <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
+            ) : selTierUnlocked ? (
+              <button onClick={() => { onActivateTier(pack, selTier); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
+                style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
+            ) : (
+              <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+                {t("shop.unlock", { cond: unlockLabel(selTierLock) })}
+                {selTierLock.target > 1 && <span className="opacity-70"> · {fmtNum(selTierLock.cur)} / {fmtNum(selTierLock.target)}</span>}
+              </div>
+            )
+          ) : active ? (
+            <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
             <button onClick={() => { onActivate(pack); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
-              style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>Aktivieren</button>
+              style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
               className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
               style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114",
                 boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-              Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
+              {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
             </button>
           ) : (
             <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
-              🔒 Freischalten: {unlock.label}
-              {unlock.target > 1 && <span className="opacity-70"> · {unlock.cur} / {unlock.target}</span>}
+              {t("shop.unlock", { cond: unlockLabel(unlock) })}
+              {unlock.target > 1 && <span className="opacity-70"> · {fmtNum(unlock.cur)} / {fmtNum(unlock.target)}</span>}
             </div>
           )}
         </div>
@@ -1169,33 +1320,17 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
    Status-Marker). Tippen wählt den Effekt → der Floater zeigt ihn groß und bietet die passende Aktion (Kaufen /
    An-Aus / Als Finisher·Ambiente wählen). Kein separates Kauffenster mehr — der Floater IST Vorschau und Kauf. */
 // #shopB (Variante B) Kategorie-Tabs statt fünf Wisch-Reihen. Kurzlabel je Slot (Daumen-freundlich).
-const TAB_LABEL = { karten: "Karten", stich: "Stich", hintergrund: "Hintergrund", score: "Score" };
 // #shopB Kurzbeschreibung je Effekt: NUR der funktionale Bezug (was er im Spiel tut / worauf er reagiert — z. B. Klinge
 // skaliert mit der Serie), nicht die Marketing-Langfassung. „none"/„standard" hängen an der Kategorie → über shortDesc().
-const FX_SHORT = {
-  edgeglow: "Dauerhafter Neon-Rand in der Deckfarbe.",
-  holo: "Prismatisches Lichtband, tilt-reaktiv.",
-  glitch: "Cyberpunk-Glitch mit gelegentlichen Bursts.",
-  aurora: "Weiche Schleier; je Stich ein Bloom-Puls.",
-  neonsurf: "Plasma-See am unteren Rand — starke Ansagen drücken das Wasser mittig ein, es steigt an den Rändern hoch.",
-  deckglow: "Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.",
-  cubematrix: "Neon-Würfelfeld — reagiert auf die Musik.",
-  starfield: "Sternschnuppe je Stich — größer mit dem Score.",
-  klinge: "Klingenschnitt — skaliert mit der Siegesserie.",
-  scorch: "Laser + organischer Burn; Tempo mit dem Turbo.",
-  blackhole: "Schwarzes Loch saugt die Gegnerkarte ein.",
-  sonnenPuls: "Outrun-Sonne — feuert beim gottgleichen Sieg.",
-  laserFaecher: "Laser fächern auf — gottgleicher Sieg.",
-  prismaKaskade: "Prismatische Schockwellen — gottgleicher Sieg.",
-  holoCube: "Holowürfel zerspringt — gottgleicher Sieg.",
-  supernova: "Kollaps → Detonation → Tunnel — gottgleicher Sieg.",
-};
+// #sprache: die Kurztexte stehen als `fx.<key>.short` im Katalog (siehe shortDesc unten).
 function shortDesc(fx, group) {
-  if (fx.key === "none") return group.mode === "cardanim" ? "Alle Karten-Animationen aus." : "Kein Hintergrund-Effekt (Leuchten bleibt möglich).";
-  if (fx.group === "spezial") return "Feuer · Blitz · Eis · Pflanze — immer aktiv, nur Farbwahl (Standard/Deckfarbe)."; // #328 ein Tile
-  if (fx.key === "standard") return "Verliererkarte fliegt einfach zur Seite weg.";
-  if (fx.key === "gottStandard") return "Gottgleicher Sieg ohne Prunk-Effekt.";
-  return FX_SHORT[fx.key] || fx.desc;
+  if (fx.key === "none") return t(group.mode === "cardanim" ? "fx.short.noAnim" : "fx.short.noBg");
+  if (fx.group === "spezial") return t("fx.short.spezial"); // #328 ein Tile
+  if (fx.key === "standard") return t("fx.short.standard");
+  if (fx.key === "gottStandard") return t("fx.short.gottStandard");
+  const key = `fx.${fx.key}.short`;
+  const short = t(key);
+  return short === key ? fx.desc : short;   // unbekannter Effekt → Langtext (wie vorher)
 }
 
 function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
@@ -1255,7 +1390,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
               <button key={g.key} onClick={() => pickCat(g.key)}
                 className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-lg text-[11px] font-extrabold transition-colors"
                 style={{ background: on ? "#241f38" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`, color: on ? "#e9e4ff" : "#9a97ab", boxShadow: on ? "0 0 0 1px #9b82f0" : undefined }}>
-                {TAB_LABEL[g.key]}
+                {t(`fxgroup.${g.key}.title`)}
               </button>
             );
           })}
@@ -1283,7 +1418,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
       </div>
 
       <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        Effekte sind <b>global</b> — einmal gekauft, für alle Packs. Kategorie oben wählen, Effekt tippen → er läuft in der Bühne; dort <b>kaufen</b> bzw. <b>wählen / an-aus</b>. <b>Doppeltippen</b> in der Liste schaltet direkt um.
+        {t("shop.fx.hint")}
       </p>
     </>
   );
@@ -1314,17 +1449,17 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
 
   let action;
   if (fx.standard) {
-    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>Standard — immer aktiv, kein Kauf nötig</div>;
+    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>{t("shop.standardFree")}</div>;
   } else if (!owned) {
     action = (
       <button onClick={() => { if (canBuy) onBuyFx(fx); }} disabled={!canBuy}
         className={`${actBtn} transition-opacity`}
         style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114", boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
-        Kaufen · {price} DP{!canBuy && dpBal < price ? " (zu wenig DP)" : ""}
+        {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
       </button>
     );
   } else if (group.mode === "finisher") {
-    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Finisher wählen"}</button>;
+    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseFinisher")}</button>;
     // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). #320 Schwarzes Loch: Standard blau/pink ↔
     // Deckfarbe. Andere Finisher (Standard/Klinge) haben keinen Farbmodus.
     const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
@@ -1334,7 +1469,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       <div className="flex flex-col gap-2">
         {chooseBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = finDeckOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1345,21 +1480,21 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (fx.key === "deckglow") {
     // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set). #336: KEINE Farbauswahl mehr — Glow ist immer
     //   Deckfarbe. Nur noch An/Aus.
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   } else if (group.mode === "bg") {
     // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
     // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;
     // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen. Leuchten (deckglow) läuft NICHT hier durch (eigener Toggle-Zweig oben).
     if (fx.key === "none") {
-      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — kein Hintergrund" : "Kein Hintergrund"}</button>;
+      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.bg.noneActive" : "shop.bg.none")}</button>;
     } else {
-      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Hintergrund wählen"}</button>;
+      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseBg")}</button>;
       const wireOn = !!options?.fxCubeMatrixWire;
       action = !deckOpt ? chooseBtn : (
         <div className="flex flex-col gap-2">
           {chooseBtn}
           <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-            {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+            {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
               const on = deckTintOn === o.v;
               return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
                 style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1369,7 +1504,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             <div className="flex flex-wrap gap-2 justify-center">
               {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-                {[{ v: false, l: "Gefüllt" }, { v: true, l: "◇ Nur Rahmen" }].map((o) => {
+                {[{ v: false, l: t("shop.cube.filled") }, { v: true, l: t("shop.cube.wire") }].map((o) => {
                   const on = wireOn === o.v;
                   return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
                     style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1383,12 +1518,12 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (group.mode === "gott") {
     // #322–#326 Gottgleich-Prunk (einfach-exklusiv): „Als Prunk wählen" schreibt gottFlags (genau einer an, gottStandard
     // = kein Prunk). Jeder Prunk-Effekt bietet zusätzlich Standard/Deckfarbe (deckOpt); „Gottgleich · Standard" nicht.
-    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : (fx.key === "gottStandard" ? "Als Standard wählen (kein Prunk)" : "Als Prunk wählen")}</button>;
+    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? t("shop.selected") : t(fx.key === "gottStandard" ? "shop.chooseGottStandard" : "shop.chooseGott")}</button>;
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
-          {[{ v: false, l: "Standard" }, { v: true, l: "Deckfarbe" }].map((o) => {
+          {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1401,7 +1536,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     action = (
       <div className="flex justify-center">
         <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
-          {[{ v: "standard", l: "Standard" }, { v: "deck", l: "Deckfarbe" }].map((o) => {
+          {[{ v: "standard", l: t("shop.color.standard") }, { v: "deck", l: t("shop.color.deck") }].map((o) => {
             const on = spezialSel === o.v;
             return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-[11px] font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
@@ -1411,13 +1546,13 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     );
   } else if (group.mode === "cardanim" && fx.key === "none") {
     // #318/#331 „Keine Animation" (Aus-Zustand der einfach-exklusiven Karten-Animationen): schaltet alle ab.
-    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Aktiv — keine Animation" : "Alle Animationen aus"}</button>;
+    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.anim.noneActive" : "shop.anim.none")}</button>;
   } else if (group.mode === "cardanim") {
     // #331 Karten-Animation ist jetzt EINFACH-EXKLUSIV (genau eine): „Als Animation wählen". Läuft immer in der
     //   Deckfarbe (kein Standard/Deckfarbe-Farbmodus). Abwählen über „Keine Animation" bzw. Doppeltippen in der Liste.
-    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ Ausgewählt" : "Als Animation wählen"}</button>;
+    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseAnim")}</button>;
   } else {
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{active ? "✓ An — tippen zum Ausschalten" : "Einschalten"}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   }
 
   return (
@@ -1442,10 +1577,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·
             BL: leer — reservierter Ausnahme-Slot (aktuell nur Deck-Glow zeichnet dort „mit/ohne" im PanelChip-Design). */}
         <PanelChip corner="tl">{fx.name}</PanelChip>
-        {active
-          ? <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>AKTIV</PanelChip>
-          : !owned ? <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip> : null}
-        {hasColorMode && <PanelChip corner="br">{deckTintOn ? "Deckfarbe" : "Standard"}</PanelChip>}
+        {/* (Der Zustand wird vorab bestimmt, statt zwei Ternäre über die JSX zu ziehen — sonst liest der
+            i18n-Textgreifer das „> … <" zwischen den Zweigen als Anzeigetext.) */}
+        {active && <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeChip")}</PanelChip>}
+        {!active && !owned && <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip>}
+        {hasColorMode && <PanelChip corner="br">{t(deckTintOn ? "shop.color.deck" : "shop.color.standard")}</PanelChip>}
       </div>
       {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
       <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
@@ -1467,9 +1603,9 @@ const rarityTint = (fx) => RARITY_COLOR[globalFxPrice(fx)] || RARITY_COLOR.defau
    Tippen wählt den Effekt in die Bühne (onPick), Doppeltippen schaltet direkt um (onToggle). */
 function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
   const tint = rarityTint(fx); // #farbsystem: Rarity-Farbe nach Preis-Stufe (grau/grün/blau/lila/gelb)
-  const status = active ? { c: "#54e08a", label: "aktiv", dot: "#54e08a" }
+  const status = active ? { c: "#54e08a", label: t("shop.status.active"), dot: "#54e08a" }
     : !owned ? { c: tint, label: `${globalFxPrice(fx)} DP`, dot: tint } // Preis in der Rarity-Farbe
-    : { c: "#6d6a80", label: "im Besitz", dot: null };
+    : { c: "#6d6a80", label: t("shop.status.owned"), dot: null };
   // Doppel-TIPP/-Klick SCHALTET UM (Touch-sicher über eigene Zeitmessung: zwei Taps < 320 ms). Einzeltipp wählt.
   const lastTap = useRef(0);
   const handleTap = () => {
@@ -1479,7 +1615,7 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
     else lastTap.current = now;
   };
   return (
-    <button type="button" onClick={handleTap} title={active ? "Doppeltippen: abwählen" : owned ? "Doppeltippen: auswählen" : undefined}
+    <button type="button" onClick={handleTap} title={active ? t("shop.dblTap.off") : owned ? t("shop.dblTap.on") : undefined}
       className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
       style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
         border: `1px solid ${selected ? "#9b82f0" : tint + "55"}`,

@@ -468,6 +468,25 @@ button { font-family: inherit; }
 }
 .arch-district-flash { animation: arch-place-flash 0.85s ease-out forwards; }
 
+/* Aufstellungsphase: eine Karte, deren Formations-Faktor durch den letzten Tausch GESTIEGEN ist,
+   blitzt kurz in ihrer Formationsfarbe auf (Farbe kommt per --form-flash aus der Kachel). Bewusst je
+   Karte, nicht als Rahmen um die Gruppe: die Formation ist eine Eigenschaft jeder beteiligten Karte,
+   ein Sammelrahmen behauptete dagegen einen Block, den es im Layout nicht gibt.
+   Wie beim Architekten (arch-place-flash) endet der Keyframe bei opacity 0 — unter reduced-motion
+   bleibt also nichts stehen. */
+@keyframes form-gain-flash {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.form-gain-flash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--form-flash, #5ab87a),
+              inset 0 0 14px color-mix(in srgb, var(--form-flash, #5ab87a) 55%, transparent),
+              0 0 12px color-mix(in srgb, var(--form-flash, #5ab87a) 60%, transparent);
+  animation: form-gain-flash 0.75s ease-out forwards;
+}
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -493,6 +512,12 @@ button { font-family: inherit; }
   font-family: "VT323";
   src: url("./assets/fonts/VT323-Regular.ttf") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
+}
+/* Orbitron (variabel 400–900) — Floating-Scores & Kartenzahlen: geometrisch-technisch, passt zum Neon-Look. */
+@font-face {
+  font-family: "Orbitron";
+  src: url("./assets/fonts/Orbitron.woff2") format("woff2");
+  font-weight: 400 900; font-style: normal; font-display: swap;
 }
 
 /* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
@@ -535,10 +560,10 @@ button { font-family: inherit; }
   text-shadow: none;
 }
 
-/* Kartenzahl: Press Start 2P ist breit -> kleiner als das text-5xl-Original. */
+/* Kartenzahl: Orbitron (geometrisch, klar lesbar bei 1–10). Cap-Height größer als Press Start 2P → etwas kleiner setzen. */
 [data-skin="crt"] .card-num {
-  font-family: "Press Start 2P", ui-monospace, monospace;
-  font-size: 1.9rem; line-height: 1;
+  font-family: "Orbitron", ui-monospace, monospace;
+  font-size: calc(2rem * var(--num-scale, 1)); line-height: 1;
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
 }
 
@@ -688,12 +713,14 @@ button { font-family: inherit; }
 }
 .gloss-search::placeholder { color: #5c5c68; }
 .gloss-search:focus { outline: none; border-color: #8a7de0; box-shadow: 0 0 0 3px #8a7de022; }
-.gloss-chiprow { scrollbar-width: none; }
-.gloss-chiprow::-webkit-scrollbar { display: none; }
-.gloss-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
-.gloss-chip:hover { color: #e8e8ea; border-color: #4a4258; }
-.gloss-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
-.gloss-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+/* Sprung-Chip-Reihe. Ursprünglich nur fürs Glossar (`gloss-*`); seit dem Optionen-Umbau (#395)
+   benutzen beide Overlays dieselbe Reihe, deshalb der neutrale Name. */
+.as-chiprow { scrollbar-width: none; }
+.as-chiprow::-webkit-scrollbar { display: none; }
+.as-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+.as-chip:hover { color: #e8e8ea; border-color: #4a4258; }
+.as-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
+.as-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
 .gloss-term-row:hover { background: #1a1a22; }
 
 /* ❄ Gletscher-Bruch (GlacierBar): der Zahltag als Moment — Ertrags-Zahl steigt auf und verblasst,

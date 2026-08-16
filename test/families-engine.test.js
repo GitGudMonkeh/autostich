@@ -280,17 +280,20 @@ describe("Gebäude-Legendäre — Richtfest (Durchlauf-Ende) + Bauhütte (Pick)"
     const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
     expect(precomputeArchitect(arch, identity(), constDeck(12)).structureCount).toBe(1);
   });
-  it("L_RICHT (Richtfest): Struktur-Dividende stapelt je Durchlauf-Ende (+Schritt × Strukturen)", () => {
+  it("L_RICHT (Richtfest): Struktur-Dividende = Anteil am Durchlauf-Ertrag (× Strukturen)", () => {
     const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
     const pre = precomputeArchitect(arch, identity(), constDeck(12));
-    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: 0 }), rng);
-    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
-    expect(s.richtfestBonus).toBe(RICHTFEST_STEP);            // 1 Struktur → +Schritt
-    // Folgedurchlauf mit demselben Bau: stapelt weiter.
-    const s2 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: RICHTFEST_STEP }), rng);
-    expect(s2.richtfestBonus).toBe(2 * RICHTFEST_STEP);
-    // ohne vollendete Struktur (kein Bau) → kein Zuwachs.
-    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, richtfestBonus: 0 }), rng);
+    // cycleScoreSum = Ertrag der Vorstiche dieses Durchlaufs; der Schluss-Stich kommt noch dazu (Zuwachs = gained).
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, cycleScoreSum: 100_000 }), rng);
+    expect(s.cycle).toBe(1);                                             // Durchlauf-Ende
+    // lastTrick.scoreGain enthält die Durchlauf-Ende-Payoffs bereits (Ledger-Zuschlag) → für die Bezugsgröße abziehen.
+    const trickGain = s.lastTrick.scoreGain - s.richtfestBonus;
+    expect(s.richtfestBonus).toBeCloseTo((100_000 + trickGain) * RICHTFEST_STEP * 1, 6); // 1 Struktur
+    // SELBSTSKALIEREND: doppelter Durchlauf-Ertrag → doppelte Dividende (ein flacher Schritt täte das nicht).
+    const rich = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, cycleScoreSum: 200_000 }), rng);
+    expect(rich.richtfestBonus - s.richtfestBonus).toBeCloseTo(100_000 * RICHTFEST_STEP, 6);
+    // ohne vollendete Struktur (kein Bau) → keine Dividende.
+    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, cycleScoreSum: 100_000 }), rng);
     expect(s0.richtfestBonus).toBe(0);
   });
   it("L_BAUH (Bauhütte): PICK_PERK hebt den Baufeld-Deckel (maxCover) dauerhaft", () => {

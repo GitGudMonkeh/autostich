@@ -14,6 +14,8 @@
    Profil-Shape: { stichPoints, stichSpent, nodes: { [nodeId]: 1 } }  (Level 1 = gekauft).
    ============================================================ */
 
+import { TIER_META } from "./rarity.js"; // Raritäts-Namen: EINE Quelle (rarity.js ist ein Blatt → kein Zyklus)
+
 // SIM-/Balance-Haken wie in constants.js: per ENV übersteuerbar, Default = aktueller Wert → in der App
 // (kein `process`) immer der Default. Erlaubt reproduzierbares Tuning ohne Code-Edit.
 const envNum = (name, def) => {
@@ -80,9 +82,10 @@ export const NODES = [
   // Formations-Energie 3 → 5.
   { id: "energy1", branch: "gen", label: "Energie I",  detail: "Formations-Energie 3 → 4", cost: 2, prereq: null,      energy: 1 },
   { id: "energy2", branch: "gen", label: "Energie II", detail: "Formations-Energie 4 → 5", cost: 4, prereq: "energy1", energy: 1 },
-  // Rarität-Rahmen: Sehr selten (Tier III) → Rar (Tier IV) → Legendär-Schicht.
-  { id: "tier3",    branch: "gen", label: "Sehr selten", detail: "Rarität Sehr selten (blau) freischalten", cost: 2, prereq: null,     maxTier: 3 },
-  { id: "tier4",    branch: "gen", label: "Rar",         detail: "Rarität Rar (lila) freischalten",         cost: 3, prereq: "tier3",  maxTier: 4 },
+  // Rarität-Rahmen: Stufe III → Stufe IV → Legendär-Schicht. Namen aus TIER_META (EINE Quelle) —
+  // vorher standen sie hier abgetippt und wären beim Umbenennen „Rar" → „Episch" auseinandergelaufen.
+  { id: "tier3",    branch: "gen", label: TIER_META[3].label, detail: `Rarität ${TIER_META[3].label} (blau) freischalten`, cost: 2, prereq: null,     maxTier: 3 },
+  { id: "tier4",    branch: "gen", label: TIER_META[4].label, detail: `Rarität ${TIER_META[4].label} (lila) freischalten`, cost: 3, prereq: "tier3",  maxTier: 4 },
   { id: "legLayer", branch: "gen", label: "Legendär",    detail: "Legendär-Perk-Schicht (gold) an",         cost: 4, prereq: "tier4",  legLayer: true },
   // Drop-Raten — nach „Legendär", dann sequenziell.
   { id: "drop1", branch: "gen", label: "Drop-Rate I",   detail: "hochwertigere Perks & Gebäude", cost: 5,  prereq: "legLayer", shift: 1 },
@@ -92,6 +95,10 @@ export const NODES = [
   // 2. Perk-Phase → generelle Legendär-Phase, + eigener Reroll.
   { id: "perk2Leg",    branch: "gen", label: "2. Perk → Legendär", detail: "2. Perk-Phase wird generelle Legendär-Phase", cost: 10, prereq: "legLayer",  flag: "perk2Leg" },
   { id: "perk2Reroll", branch: "gen", label: "Reroll · 2. Perk-Phase", detail: "+1 Reroll in der generellen Legendär-Phase", cost: 6, prereq: "perk2Leg", flag: "perk2Reroll" },
+  /* Reroll-Basis 1 → 3. Wirkt auf ALLE DREI Angebots-Pools zugleich (Perk · Gebäude · Skill) — deshalb
+     bewusst teurer als die phasenspezifischen Rerolls darüber, die nur EINE Phase betreffen. */
+  { id: "reroll1", branch: "gen", label: "Reroll I",  detail: "+1 Reroll je Angebot (Perk · Gebäude · Skill)", cost: 4, prereq: null,      reroll: 1 },
+  { id: "reroll2", branch: "gen", label: "Reroll II", detail: "+1 Reroll je Angebot (Perk · Gebäude · Skill)", cost: 8, prereq: "reroll1", reroll: 1 },
 ];
 
 // Zweig-Metadaten (Reihenfolge + Anzeige). Farben/Icons leben in der UI; hier nur strukturelle Namen.
@@ -160,6 +167,7 @@ export const prereqMet = (profile, node) => !node.prereq || owns(profile, node.p
 export function nodeEffects(profile) {
   let treeCoverBonus = 0;     // +Baufeld-Zellen (0..4)
   let treeEnergyBonus = 0;    // +Formations-Energie (0..2)
+  let treeRerollBonus = 0;    // +Rerolls je Angebots-Pool (0..2, Perk/Gebäude/Skill gemeinsam)
   let treeRareShift = 0;      // Drop-Raten-Stufe (0..4)
   let maxTier = RARITY_TIER_BASE; // anbietbare Max-Rarität (2..4)
   let legendaryLayer = false; // Legendär-Perk-Schicht an?
@@ -170,6 +178,7 @@ export function nodeEffects(profile) {
     if (n.placeholder || !owns(profile, n.id)) continue;
     if (n.cover) treeCoverBonus += n.cover;
     if (n.energy) treeEnergyBonus += n.energy;
+    if (n.reroll) treeRerollBonus += n.reroll;
     if (n.shift) treeRareShift = Math.max(treeRareShift, n.shift);
     if (n.maxTier) maxTier = Math.max(maxTier, n.maxTier);
     if (n.legLayer) legendaryLayer = true;
@@ -181,7 +190,7 @@ export function nodeEffects(profile) {
   const legMult = legendaryLayer ? 1 + treeRareShift * LEG_MULT_PER_SHIFT : 0;
   const archLegPhaseOn = Object.values(legCountByArch).some((c) => c > 0);
   return {
-    treeCoverBonus, treeEnergyBonus, treeRareShift, maxTier, legendaryLayer, legMult,
+    treeCoverBonus, treeEnergyBonus, treeRerollBonus, treeRareShift, maxTier, legendaryLayer, legMult,
     unlockedArchetypes: [...unlockedSet], legCountByArch, archLegPhaseOn,
     legPerkPhaseOn: flags.perk2Leg, rerollDeckLeg: flags.deckReroll ? 1 : 0, rerollPerk2: flags.perk2Reroll ? 1 : 0,
   };
@@ -201,9 +210,11 @@ export const treeCoverBonus = (profile) => nodeEffects(profile).treeCoverBonus;
 export const treeEnergyBonus = (profile) => nodeEffects(profile).treeEnergyBonus;
 export const treeRareShift = (profile) => nodeEffects(profile).treeRareShift;
 
-// Reroll-Basis je Pool (#369 §6): fest 1 im Normal-/Meister-Lauf mit Profil. Der alte „Auftakt"-Ast entfällt;
-// die beiden Legendär-Phasen-Rerolls sind phasenspezifisch (rerollDeckLeg/rerollPerk2), nicht die Basis.
-export const rerollBase = (_profile) => REROLL_BASE;
+/* Reroll-Basis je Pool (#369 §6): 1 im Normal-Lauf mit Profil, + je 1 aus den beiden Baum-Knoten
+   (reroll1/reroll2) → max 3. Die beiden Legendär-Phasen-Rerolls bleiben phasenspezifisch
+   (rerollDeckLeg/rerollPerk2) und zählen hier NICHT mit.
+   Ranked bleibt unberührt: dort ist effProfile null, der Reducer nimmt dann C.BASE_REROLLS. */
+export const rerollBase = (profile) => REROLL_BASE + nodeEffects(profile).treeRerollBonus;
 
 // Erzwungene Legendär-Perks in der generellen Legendär-Phase (2. Perk-Phase). Nimmt das nodeEffects-Objekt (kann null).
 export const legPerk2Force = (eff) => (eff && eff.legPerkPhaseOn ? LEG_PERK2_FORCE : 0);
@@ -289,6 +300,17 @@ export const SP_MILESTONES = [
   { at: envNum("PROG_SP_MS3_AT", 75_000_000),  sp: envNum("PROG_SP_MS3_SP", 1) },
   { at: envNum("PROG_SP_MS4_AT", 100_000_000), sp: envNum("PROG_SP_MS4_SP", 2) },
 ];
+/* Willkommensbonus: EINMALIG nach dem ersten ABGESCHLOSSENEN Lauf. Ein frisches Profil startet mit
+   0 SP (#316) — die ersten Baum-Knoten wären damit weit weg, obwohl der Baum das ist, was einen
+   zweiten Lauf attraktiv macht.
+   Bewusst an „abgeschlossen" gekoppelt, nicht an „gestartet" — sonst holt man ihn mit Abbrechen ab.
+
+   Ausgezahlt wird in DECKPUNKTEN, nicht in Stichpunkten. Grund: ein frisches Profil startet schon mit
+   START_DECK_POINTS (50) DP, der Bonus verdoppelt also eine Währung, mit der der Spieler sofort etwas
+   anfangen kann (ein Pack in der Werkstatt) — während 50 SP den Upgrade-Baum auf einen Schlag halb
+   durchgekauft hätten und der ersten Stunde ihre Progression genommen hätten. */
+export const WELCOME_DP = envNum("PROG_WELCOME_DP", 50);
+
 export const SP_LOYALTY_EVERY = envNum("PROG_SP_LOYALTY_EVERY", 10);
 export const SP_LOYALTY_SP    = envNum("PROG_SP_LOYALTY_SP", 5);
 

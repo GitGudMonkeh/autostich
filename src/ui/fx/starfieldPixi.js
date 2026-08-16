@@ -285,9 +285,20 @@ export function createStarfield(app) {
       nb.spr.tint = nebInt;
       nb.spr.alpha = 0.11 * TUNE.NEBULA * (params.reduced ? 1 : 0.7 + 0.3 * tw);
     }
+    // #perf-mobile: dito für die Nebel-Blobs — die zweite Hälfte bleibt auf `lite` unsichtbar.
+    if (params.lite) for (let ni = Math.ceil(nebSpr.length / 2); ni < nebSpr.length; ni++) nebSpr[ni].spr.alpha = 0;
 
-    // Ambiente-Sterne (3 Ebenen): Drift (nur !reduced) + Twinkle (nur !reduced), nah größer/heller.
-    for (const a of amb) {
+    /* Ambiente-Sterne (3 Ebenen): Drift (nur !reduced) + Twinkle (nur !reduced), nah größer/heller.
+       #perf-mobile: auf `lite` läuft nur die HALBE Streuung. Bewusst als Sichtbarkeits-Grenze im
+       Update und nicht als kleinerer Pool beim Bauen: `lite` kommt erst über setParams an (nach
+       createStarfield) und kann sich im Lauf ändern, wenn der Spieler die Effektstufe umstellt —
+       ein halber Pool müsste dafür den ganzen Emitter neu aufbauen.
+       Die Sterne sind über `amb` zufällig gestreut, die erste Hälfte ist also keine Bildhälfte,
+       sondern eine gleichmäßig dünnere Streuung über das ganze Feld. */
+    const ambN = params.lite ? Math.ceil(amb.length / 2) : amb.length;
+    for (let ai = 0; ai < amb.length; ai++) {
+      const a = amb[ai];
+      if (ai >= ambN) { a.p.alpha = 0; continue; }
       const sizeF = a.layer === 0 ? 0.62 : a.layer === 1 ? 1.0 : 1.5 * TUNE.NEAR_BOOST;
       const baseA = a.layer === 0 ? 0.36 : a.layer === 1 ? 0.6 : 0.9;
       const drift = TUNE.AMB_DRIFT * TUNE.AMB_DRIFT_SPD * (0.5 + a.layer * 0.55);

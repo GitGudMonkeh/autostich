@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { reducer, initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { ROLES, WIN_MASS, EWIGER_FROST, DAUERFROST_FAR, TOP } from "../src/game/glacier.js";
+import { ROLES, DAUERFROST_FAR, TOP } from "../src/game/glacier.js";
 
 // #386 Firn-Boden-Reserve — glacierMass (Gletscher-Eigenmasse) und firnStack (Boden-Reserve) sind getrennt: ein gefrorener
 // Gletscher zieht zum Rundenstart aus seiner Reserve wieder auf die volle Masse (TOP=12) auf, nur die Differenz. Die Reserve

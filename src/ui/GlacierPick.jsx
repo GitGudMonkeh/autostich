@@ -4,6 +4,7 @@ import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { t } from "../i18n/index.js"; // #sprache
 
 const ICE = "#7fd4f0";
 
@@ -29,18 +30,17 @@ export function GlacierPick({ state, onConfirm }) {
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.ice)}>
         <PhaseHairline />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> Gletscher</div>
-          <h2 className="text-xl font-bold mt-1">Wähle eine Karte als Gletscher</h2>
+          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> {t("glacierpick.eyebrow")}</div>
+          <h2 className="text-xl font-bold mt-1">{t("glacierpick.title")}</h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">
-            Sie friert auf ihrer Zelle fest — ab dann <b>starr</b> (nicht mehr verschiebbar) und sammelt Masse, bis sie bricht.
-            Entscheide zwischen Position und Wert.
+            {t("glacierpick.intro.a")} <b>{t("glacierpick.intro.rigid")}</b> {t("glacierpick.intro.b")}
           </p>
         </div>
 
         <ActionBar pad={5}>
-          <span className="text-xs opacity-60 tabular-nums self-center">{sel != null ? "1" : "0"} / 1 gewählt</span>
+          <span className="text-xs opacity-60 tabular-nums self-center">{t("glacierpick.chosen", { n: sel != null ? 1 : 0 })}</span>
           <span className="flex-1" />
-          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>Bestätigen</ActionButton>
+          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>{t("common.confirm")}</ActionButton>
         </ActionBar>
 
         <div className="mt-4">

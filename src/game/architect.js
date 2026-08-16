@@ -84,6 +84,19 @@ export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1)
 const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
 /* ============================================================
+   SPIELER-BESCHREIBUNG eines Bauplans/Gebäudes (Sprachprüfung A13) — die EINE Quelle.
+   Vorher stand dieselbe Logik dreimal, mit auseinandergelaufenem Wortlaut: ArchitectScreen.famEff (im Spiel),
+   scripts/gen-db.mjs (öffentliche Core-DB-Seite) und ui/archEffects.js (Kartendetail). Ergebnis waren drei
+   Fassungen desselben Satzes („+160 Score" / „+160 Punkte"), zwei Zahlformate (×1,10 vs. ×1.10) und rohe
+   Enum-Schlüssel im Spielertext („Formations-Joker (wiederholung/farbblock)").
+   Zahlformat folgt dem Style-Guide: Dezimal-KOMMA, Malzeichen ×, echtes Minus −.
+   ============================================================ */
+/* #sprache: `familyEffectText` ist nach src/i18n/buildingText.js gewandert (`buildingEffect`).
+   Der Wortlaut ist Anzeigetext und lebt jetzt als Satzbausteine im Katalog; die Zahlen-Helfer
+   (tierNum/tierFactor/bindSpanFor) bleiben hier, weil sie zur Mechanik gehören. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus: architect.js → i18n → de.js → families.js → architect.js. */
+
+/* ============================================================
    FORMEN (Polyominoes) — Zellenmengen [dr,dc] relativ zu einem Anker (0,0). Rotation in 4 Lagen (außer `zeile`,
    die immer eine ganze Segment-Zeile ist). `line4` (Tetromino I) deckt rotiert auch die vertikale Linie ab
    (Pfeiler „über Segmente"). `block_2x3` und `zeile` sind die großen Legendär-Formen.
@@ -380,23 +393,27 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, 
    Faktoren stapeln multiplikativ (eine Position kann in Zeile UND Spalte UND Viertel liegen). Kompoundiert, weil
    der Faktor pro Durchlauf gilt: früh geschlossen → über mehr Durchläufe wirksam.
    ============================================================ */
-export function structureFactorMap(coverSet) {
+// structBonus (v0.3, Legendäres „Fundament"): additiv auf JEDEN Strukturfaktor. Default 0 ⇒ unverändert.
+// Achtung beim Tunen: die Faktoren multiplizieren sich je Position übereinander (eine Zelle kann in Zeile,
+// Spalte UND Diagonale liegen) — der Bonus wirkt dort potenziert.
+export function structureFactorMap(coverSet, structBonus = 0) {
   const sf = new Array(N_POS).fill(1);
+  const fRow = HAEUSERZEILE_FACTOR + structBonus, fCol = SPALTE_FACTOR + structBonus, fDiag = DIAGONALE_FACTOR + structBonus;
   for (let r = 0; r < ROWS; r++) {                     // volle Segment-Zeile (5) — braucht Ausrichtung über die Spalten
     let full = true;
     for (let c = 0; c < COLS; c++) if (!coverSet.has(posOf(r, c))) { full = false; break; }
-    if (full) for (let c = 0; c < COLS; c++) sf[posOf(r, c)] *= HAEUSERZEILE_FACTOR;
+    if (full) for (let c = 0; c < COLS; c++) sf[posOf(r, c)] *= fRow;
   }
   for (let c = 0; c < COLS; c++) {                     // volle Spalte über alle 8 Segmente (8) — braucht vertikale Ausrichtung
     let full = true;
     for (let r = 0; r < ROWS; r++) if (!coverSet.has(posOf(r, c))) { full = false; break; }
-    if (full) for (let r = 0; r < ROWS; r++) sf[posOf(r, c)] *= SPALTE_FACTOR;
+    if (full) for (let r = 0; r < ROWS; r++) sf[posOf(r, c)] *= fCol;
   }
   for (let r0 = 0; r0 <= ROWS - COLS; r0++) {           // Diagonalen (5 Zellen, je 1 pro Segment UND Spalte) — Haupt & Gegen
     const main = [], anti = [];
     for (let i = 0; i < COLS; i++) { main.push(posOf(r0 + i, i)); anti.push(posOf(r0 + i, COLS - 1 - i)); }
-    if (main.every((p) => coverSet.has(p))) for (const p of main) sf[p] *= DIAGONALE_FACTOR;
-    if (anti.every((p) => coverSet.has(p))) for (const p of anti) sf[p] *= DIAGONALE_FACTOR;
+    if (main.every((p) => coverSet.has(p))) for (const p of main) sf[p] *= fDiag;
+    if (anti.every((p) => coverSet.has(p))) for (const p of anti) sf[p] *= fDiag;
   }
   // Kein 2×2-Viertel-Bonus: den holt jeder dichte Klumpen (auch naiv) → hebt den Boden statt Können auszudrücken.
   // Zeile/Spalte/Diagonale verlangen bewusste Ausrichtung, die ein Zufallsspieler kaum trifft → dort lebt der Skill-Gap.
@@ -428,8 +445,8 @@ export function districtFactorMap(buildings = []) {
 }
 // Kombinierter Brett-Faktor je Position = Struktur (Zeile/Spalte/Diagonale) × Distrikt (gleiche Kategorie aneinander).
 // EINE Quelle für Engine (precompute→segFactor) UND UI-Anzeige, damit gezeigte und verrechnete Faktoren nie driften.
-export function boardFactorMap(buildings = []) {
-  const sf = structureFactorMap(occupiedCells(buildings));
+export function boardFactorMap(buildings = [], structBonus = 0) {
+  const sf = structureFactorMap(occupiedCells(buildings), structBonus);
   const df = districtFactorMap(buildings);
   for (let p = 0; p < N_POS; p++) sf[p] *= df[p];
   return sf;
@@ -455,7 +472,7 @@ export function completedStructures(coverSet) {
    (target highest/lowest hier EINMAL bestimmt) + Häuserzeile-Faktor je Position. Gebäude überlappen nie →
    je Position höchstens EIN value- und EIN score-Gebäude.
    ============================================================ */
-export function precomputeArchitect(architect, order, deck) {
+export function precomputeArchitect(architect, order, deck, structBonus = 0) {
   const value = Array.from({ length: N_POS }, () => null);
   const score = Array.from({ length: N_POS }, () => null);
   const segFactor = new Array(N_POS).fill(1);
@@ -499,7 +516,7 @@ export function precomputeArchitect(architect, order, deck) {
   }
   // Struktur-Boni (Zeile/Spalte/Diagonale) × Distrikt (#283, gleiche Kategorie aneinander) — multiplikativ je Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
-  const sf = boardFactorMap(buildings);
+  const sf = boardFactorMap(buildings, structBonus);
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
   // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
   // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.

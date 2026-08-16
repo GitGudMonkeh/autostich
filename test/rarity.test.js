@@ -12,9 +12,11 @@ describe("Stufen-Metadaten (Spec §1)", () => {
     expect(TIERS).toEqual([1, 2, 3, 4]);
     expect([1, 2, 3, 4].map(priceOfTier)).toEqual([8, 12, 18, 30]);
   });
-  it("interne Rarität normal/uncommon/rare/epic; sichtbares Etikett Stufe IV = Rar", () => {
+  // Sprachprüfung: Stufe IV heißt sichtbar „Episch" (vorher „Rar" — steigerte gegen „Sehr selten"
+  // rückwärts, beides Synonyme). Die INTERNE Kennung bleibt "epic" und darf sich nicht mitändern.
+  it("interne Rarität normal/uncommon/rare/epic; sichtbare Leiter steigert Normal→Episch", () => {
     expect([1, 2, 3, 4].map((t) => TIER_META[t].rarity)).toEqual(["normal", "uncommon", "rare", "epic"]);
-    expect(TIER_META[4].label).toBe("Rar");
+    expect([1, 2, 3, 4].map((t) => TIER_META[t].label)).toEqual(["Normal", "Selten", "Sehr selten", "Episch"]);
   });
   it("Farbskala Grau/Grün/Blau/Lila", () => {
     expect([1, 2, 3, 4].map(tierColor)).toEqual(["#8a8a95", "#4ade80", "#5a8ade", "#a855f7"]);

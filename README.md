@@ -4,11 +4,13 @@
 > Eigenes Repo `GitGudMonkeh/autostich`, Deploy auf GitHub Pages unter `/autostich/`.
 > UI-Text **Deutsch**, Code-Identifier **Englisch**.
 >
-> Stand: **v0.3** — 4 Elementar-Fraktionen (Feuer/Blitz/Eis/Pflanze), **Architekt** (ersetzt den alten
-> Shop/die Münzökonomie), Meisterränge (laufübergreifend), Challenger-Seeds, Chronik. Darauf aufbauend die
-> V2-Systeme (Runden/Stats/Skills/Formationen) + 4-Stufen-Raritätsfamilien. Einzelne Detail-Abschnitte unten
-> tragen noch V2-Begriffe (z. B. „(Shop)"-Herkunftslabels an Formations-Perks) — im Zweifel gilt der Code.
-> **680+ Vitest-Fälle** (37 Dateien), CI grün (Tests → Build → Pages).
+> Stand: **v0.3** — 4 Elementar-**Archetypen** (Feuer/Blitz/Eis/Pflanze), **Architekt** (ersetzt den alten
+> Shop/die Münzökonomie), **Upgrade-Baum** (laufübergreifend, SP/DP — ersetzt die früheren Meisterränge),
+> **Ranglisten-Wochenmodus** mit Wochen-Modifikatoren, Challenger-Seeds, Chronik, 4-Stufen-Raritätsfamilien.
+> Die frühere **Stat-Phase ist entfernt** (#267) — Crit-Chance/-Multiplikator kommen aus den
+> Präzision-Familien bzw. aus Blitz.
+> **1015 Vitest-Fälle** (64 Dateien), CI grün (Tests → Build → Pages).
+> Spielertexte folgen `docs/text-style-guide.md`; `node scripts/export-strings.mjs` zieht sie alle in eine CSV.
 > Diese Übersicht ist **aus dem Code abgeleitet** — die Quelle der Wahrheit bleibt der Code
 > (`src/game/*`). Bei Unstimmigkeit gilt der Code, nicht dieses Dokument.
 
@@ -37,12 +39,12 @@ Karte du spielst — du baust **zwischen** den Durchläufen einen Build, der dei
 dauerhaft stärker macht.
 
 ```
-Stiche auto-auflösen → Durchlauf-Ende → eine Entscheidung (Stat · Perk · Skill · Formation · Architekt)
-→ Build/Aufstellung werden stärker → nächster Durchlauf … über genau MAX_CYCLES Runden → Ende.
+Stiche auto-auflösen → Durchlauf-Ende → eine Entscheidung (Skill · Perk · Aufstellung · Architekt)
+→ Build/Aufstellung werden stärker → nächster Durchlauf … über genau MAX_CYCLES Durchläufe → Ende.
 ```
 
 **Ziel:** möglichst hoher **Score** über den festen Lauf. **Kein Leben, kein Tod durch Schaden** —
-der Lauf hat eine feste Länge (`MAX_CYCLES = 60` Deck-Durchläufe), danach Game Over. Der Reiz liegt im
+der Lauf hat eine feste Länge (`MAX_CYCLES = 50` Deck-Durchläufe), danach Game Over. Der Reiz liegt im
 *Bauen während des Laufs* — Deckwerte, Kartenrollen, Formationsaufstellung, Archetyp-Skills und Architekt-Gebäude.
 
 **Design-Pointe:** Kartenwerte dürfen **über 10 hinaus** wachsen (`VALUE_CAP = null`) — ab Wert 11
@@ -69,23 +71,26 @@ kosmetisch, wird aber über **Formationen** (Farbblock), Farb-Perks und Archetyp
 
 Ein **reiner Reducer** (`src/game/reducer.js`) treibt `state.phase`; die Stich-Auflösung liegt in
 `engine.js` (`resolveTrick`, pure). Nach jedem Durchlauf steht **genau eine Entscheidung** an, deren Typ
-der feste **Entscheidungsplan** `DECISION_SCHEDULE` (60 Einträge) vorgibt.
+der feste **Entscheidungsplan** `DECISION_SCHEDULE` (50 Einträge) vorgibt.
 
 | Phase | Bedeutung |
 |---|---|
 | `menu` | Startbildschirm (`StartScreen`): „Neuer Run", lokale + globale Bestenliste. |
 | `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet. |
-| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`), **Stat** (`StatSelect`) oder **Skill** (`SkillSelect`); pausiert. |
+| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`) oder **Skill** (`SkillSelect`); pausiert. In Durchlauf 29 die **Legendär-Phase** (`LegendarySelect`, fixer 7. Slot). |
+| `glacier-target` | Eis: nach jedem Eis-Skill-Pick genau eine Karte als **Gletscher** festfrieren (Pflicht). |
 | `formation` | **Formationsphase** (`FormationPhase`, §22.8): Karten der Aufstellung tauschen. |
 | `shop` | **Architekt** (`ArchitectScreen`, #202 · Shop-Ersatz): Gebäude auf dem 8×5-Baufeld platzieren/aufwerten (keine Münzen). Der Aktionsschlüssel heißt intern noch `shop`. |
 | `gameover` | Nach `MAX_CYCLES` Durchläufen: Endbildschirm (`GameOver`) mit Score, Statistik, Bestenliste. |
 
-**Entscheidungsplan** (`DECISION_SCHEDULE`): fester 60-Einträge-Plan statt eines Zyklus —
-Verteilung **13 Stat · 13 Perk · 12 Formation · 12 Architekt (`shop`) · 10 Skill**. Ziel-Flows (Karten/
-Positionen/Farben wählen) laufen als Unter-Overlays der Perk-Auswahl (`CONFIRM_TARGET`, `FAMILY_TARGET_*`).
+**Entscheidungsplan** (`DECISION_SCHEDULE`): fester 50-Einträge-Plan statt eines Zyklus —
+Verteilung **10 Skill · 13 Perk · 13 Formation · 13 Architekt (`shop`) · 1 Legendär**. Die erste
+Entscheidung (Durchlauf 1) ist bewusst ein Skill-Blind-Commit; die Legendär-Phase liegt in Durchlauf 29
+(`LEG_PHASE_CYCLE`, aus dem Plan abgeleitet). Ziel-Flows (Karten/Positionen/Farben wählen) laufen als
+Unter-Overlays der Perk-Auswahl (`CONFIRM_TARGET`, `FAMILY_TARGET_*`).
 
 **Actions (Auszug):** `START_RUN`/`RESET`, `TO_MENU`, `END_RUN`, `RESOLVE_TRICK` (ein Stich; `action.rng`
-wird an `resolveTrick` gereicht), `PICK_PERK`/`PICK_FAMILY`, `PICK_STAT`, `PICK_SKILL`/`DECLINE_SKILL`,
+wird an `resolveTrick` gereicht), `PICK_PERK`/`PICK_FAMILY`, `PICK_SKILL`/`DECLINE_SKILL`, `GLACIER_LOCK`,
 `REROLL_PERK`/`REROLL_SKILL`, `SWAP_CARDS`/`UNDO_SWAP`/`RESET_FORMATION`/`CONFIRM_FORMATION`, `BUY_ITEM`,
 `LEAVE_SHOP`.
 
@@ -110,17 +115,21 @@ Stich-Index des Durchlaufs, `actualPos` die zugehörige **Deckposition** — unt
 **Score bei Sieg** (fraktional, zur Anzeige gerundet):
 
 ```
-scoreVorCrit = SCORE_PER_WIN
-             × streakBaseMult(Serie) × statStreakFactor(Serien-Stat, Serie)   ← Serie (Basis + Stat, gedeckelt)
+scoreVorCrit = SCORE_PER_WIN (400)
+             × streakBaseMult(Serie)          ← Basis-Serien-Multiplikator (gedeckelt)
              × Π Perk-scoreMult
-             × formationMult × statFormFactor(Form-Stat, hatFormation)         ← Formation (Layout + Stat)
-             + Σ Flats (Anker · Feuer-Score · Ionisierung · Perk-scoreFlat)
+             × formationMult                  ← Formations-Faktor der Position (inkl. Überlappung)
+             × Architekt-Faktoren              ← Struktur (Zeile/Spalte/Diagonale) + Distrikt
+             + Σ Flats (Anker · Feuer-Score · Ionisierung · Perk-scoreFlat · Gebäude-Flat)
 score       = scoreVorCrit × (Crit ? critMultiplier : 1)
+            + Direkt-Score                    ← Glutdividende, Wurzel/Blüte, Berst-Score … am Stack vorbei
 ```
 
-**Crit:** nur bei Sieg. Crit-Chance kommt aus dem **Crit-Chance-Stat** + **Blitz-Skills** (+ Anker/Perks),
-auf 100 % gedeckelt; Überschuss > 100 % speist Sonderregeln (Überschusskrit, Kettenreaktion). Crit-Faktor =
-`CRIT_BASE_MULT (1,5)` + Crit-Mult-Stat + Legendär-Boni. Über den injizierten `rng` gewürfelt → deterministisch.
+**Crit:** nur bei Sieg. Der **Basis-Crit ist 0** — Crit-Chance kommt aus den **Präzision-Familien**
+(`families.js` Kat. P) und aus **Blitz-Skills**, auf 100 % gedeckelt; Überschuss > 100 % speist
+Sonderregeln (Überschusskrit, Überschlag, Raserei). Crit-Faktor = `CRIT_BASE_MULT (2,25)` +
+Präzision-Wucht + Blitz (+`LIGHTNING_CRIT_MULT_PER_SKILL` je Skill) + Legendär-Boni.
+Über den injizierten `rng` gewürfelt → deterministisch.
 
 > **`initiative`** wird geführt/angezeigt, hat aber aktuell **keinen** mechanischen Effekt (Reserve).
 
@@ -131,26 +140,28 @@ auf 100 % gedeckelt; Überschuss > 100 % speist Sonderregeln (Überschusskrit, K
 - Nach **40 Stichen** ist ein Durchlauf voll: `cycle += 1`, Rundenscore-Tracking (`lastCycleScore`), dann
   die anstehende **Entscheidung** (`DECISION_SCHEDULE[cycle]`). Neu gemischt wird das **Gegnerdeck** beim
   Übergang in den nächsten `play`.
-- **Basis-Siegesserie (#39):** jede Serie hebt den Score-Mult um `STREAK_BASE_STEP (+2 %)`/Stufe, gedeckelt
-  bei `STREAK_BASE_CAP (+150 %)`. Der **Serien-Stat** (`statStreakMult`, +2 %/Serienpunkt je Pick) legt
-  darauf, **gedeckelt bei `STREAK_STAT_CAP (+300 %)`** (Balance-Pass gegen Runaway).
+- **Basis-Siegesserie (#39):** jeder Serienpunkt hebt den Score-Mult um `STREAK_BASE_STEP (+2 %)`,
+  gedeckelt bei `STREAK_BASE_CAP (+150 %)`. Der frühere Serien-**Stat** ist mit der Stat-Phase entfallen
+  (#267); Serien-Score kommt jetzt aus Familien (Siegesserie) und Skills.
 - Der Lauf endet nach `MAX_CYCLES` Durchläufen — **nicht** durch Verluste.
 
 ---
 
-## 6. Stats (V2 §22.3) — `stats.js`
+## 6. Präzision — Crit als Perk-Kategorie (`families.js` Kat. P)
 
-Bei einer **Stat-Runde** werden **immer alle** angeboten; du wählst einen. Additiv, keine Caps
-(außer dem Serien-Faktor-Deckel oben), beliebig oft wählbar. Beschreibungen ziehen ihre Zahlen aus den
-Konstanten (kein Text↔Code-Drift, `docs/desc-check.md`).
+**Die Stat-Phase ist entfernt** (#267): Crit-Chance/-Multiplikator/Formations-/Serien-Mult waren als
+Stat eine „gelöste" Entscheidung. Formation und Serie behalten ihre Basis-Systeme; der Crit-Anteil
+wandert in fünf RNG-gegatete **Präzision-Familien** (kein Legendäres). Basis-Crit = 0.
 
-| Stat | Feld | Schritt/Pick |
-|---|---|---|
-| Crit-Chance | `statCritChance` | `STAT_CRIT_CHANCE_STEP` (+7 pp) |
-| Crit-Multiplikator | `statCritMult` | `STAT_CRIT_MULT_STEP` (+0,25× auf Basis 1,5×) |
-| Formations-Multiplikator | `statFormMult` | `STAT_FORM_MULT_STEP` (+5 % bei aktiver Formation, max 1×/Stich) |
-| Serien-Multiplikator | `statStreakMult` | `STAT_STREAK_MULT_STEP` (+2 % je Serienpunkt) |
-| Einkommen | `economyStatLevel` | `STAT_ECONOMY_STEP` (+1 Level → +`SHOP_INCOME_PER_LEVEL` Münzen/Shop) |
+| Familie | Wirkung (Stufen I–IV) |
+|---|---|
+| **Schärfe** | flat +Crit-Chance auf alle Karten (`PRECISION_SHARP_PP`) |
+| **Wucht** | +Crit-Multiplikator auf Basis `CRIT_BASE_MULT` (`PRECISION_FORCE_MULT`) |
+| **Zielsicherheit** | +Crit-Chance auf hohe Karten; die Wertschwelle weitet sich je Stufe |
+| **Brennglas** | +Crit-Chance je gleichzeitiger Formation ab der zweiten (gedeckelt) |
+| **Farbfokus** | +Crit-Chance auf eine gewählte Farbe; Stufe IV eine zweite Farbe |
+
+**Blitz** bleibt der verlässliche, selbst-erzeugende Crit-Archetyp; Präzision ist additiv obendrauf.
 
 ---
 
@@ -162,16 +173,17 @@ Segmentgrenze (Rollen/Werkzeuge/Shop können Grenzen öffnen).
 
 - **Wiederholung** (≥2 gleiche Werte): 2.→×1,25, 3.→×1,50, 4.→×1,80, danach je +0,40 (kein Cap).
 - **Farbblock** (≥3 gleiche Farbe): ab der 3. ×1,35, je weitere +0,20.
-- **Treppe** (≥3 streng steigend, Schritt ≤3): ab der 3. ×1,35, je weitere +0,20.
-- **Wechsel** (≥3 Zick-Zack, Nachbardiff ≥5): ab der 3. ×1,40, je weitere +0,20.
-- **Anker**: einzelne Position zählt als Formation ×1,25 (Familien-Anker E_LOSS/E_QUICKSHOT, Eisanker,
-  Shop-Formationsanker).
+- **Treppe** (≥3 streng steigend, Schritt ≤4): ab der 3. ×1,35, je weitere +0,20.
+- **Wechsel** (≥3 Zick-Zack, Nachbardifferenz ≥4 · `WECHSEL_MIN_DIFF`): ab der 3. ×1,40, je weitere +0,20.
+- **Anker**: einzelne Position zählt als Formation — der Faktor kommt **je Quelle** (Familien-Anker
+  Kontrollverlust/Schnellschuss ×1,25…1,35, Architekt-Grundstein ×1,10…1,49, Eisanker). Höchstens ein Anker je Position.
 - **Überlappung** (`OVERLAP_BONUS`): steckt eine Karte in mehreren Formationen, multipliziert der Bonus
   das Faktor-Produkt zusätzlich — **2 → ×1,5 · 3 → ×2 · 4 → ×3**.
 - **Meta-Faktoren** (nach der Überlappung): **Nachhall** (Shop) trägt den stärksten Endfaktor auf die
   Folgekarte(n); **Formationskern** (Shop) hebt einen gewählten Typ zusätzlich (`FORMATION_CORE_FACTOR`).
 
-**Formationsphase (§22.8, `FormationPhase`):** pausiert den Lauf; je Phase `FORMATION_ENERGY = 4` Energie;
+**Aufstellungsphase (§22.8, `FormationPhase`):** pausiert den Lauf; je Phase `FORMATION_ENERGY = 4`
+Formations-Energie (Normal-Lauf: `ENERGY_FLOOR = 3` + Upgrade-Baum, max 5);
 ein beliebiger Tausch zweier Karten kostet 1 (Eis-Frosttausch ggf. gratis). Formationen werden nach jedem
 Tausch live neu berechnet; Undo/Reset erstatten Energie.
 
@@ -201,9 +213,11 @@ L11 Zeitraffer (mächtig, teils mit Nachteil; kein Leben mehr → reine Wert-/Sc
 
 ## 9. Skills & Archetypen (#93/#165) — `skills.js`
 
-Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 6`** Skills (2+2+2 über alle drei Archetypen,
-`MAX_ARCHETYPES = 3`), bis zu **`SKILL_SLOTS = 4`** gleichzeitig. Ein expliziter Legendär-Wurf
-(`SKILL_LEGENDARY_BASE`, 3 % je Archetyp × Meisterrang-Mult) kann legendäre Skills einsetzen.
+Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 12`** Skills (3+3+3+3 über alle vier Archetypen,
+`MAX_ARCHETYPES = 4`), bis zu **`SKILL_SLOTS = 6`** gleichzeitig. **Legendäre Skills kommen ausschließlich
+aus der Legendär-Phase** in Durchlauf `LEG_PHASE_CYCLE = 29` und belegen einen fixen 7. Slot (kein Tausch);
+welche Archetypen dort antreten, entscheidet der Upgrade-Baum. **Verstärker-Skills** (`enabler`) werden nur
+angeboten, wenn ihr Basis-Skill gehalten wird.
 
 - **⚡ Blitz** — Ladung/Ionisierung/Crit: Ladung sammeln (`LIGHTNING_MAX_CHARGE`), Karten ionisieren
   (`ION_*` → +Score je Stapel), Gewitterfront/Reaktoren, Legendäre (Donnergott u. a.). Positionsgebundene
@@ -211,9 +225,14 @@ Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 6`** Skills (2+2+2 über
 - **🔥 Feuer** — Hitzeleiste 0–`HEAT_MAX`: belohnt totale Überlegenheit mit Feuer-Flat-Score
   (`FIRE_SCORE_*`); Konsumenten (Flächenbrand/Schmelzpunkt) tauschen Hitze gegen große Boni; Legendäre
   (Phönixfeuer/Sonnenkern).
-- **❄ Eis** — Kontroll-/Aufstellungs-Archetyp: eigene Karten **einfrieren** (`ICE_BASE_FREEZE`), Eisanker,
-  Formations-Wildcards (Eisschritt/Kristallform/Frostbrücke), Permafrost (+Dauerwert & Joker); kein
-  verbrauchbarer Ressourcen-Balken.
+- **❄ Eis** — Gletscher-Archetyp (`glacier.js`): jeder Eis-Skill friert eine Karte auf ihrem Brettfeld
+  fest. Ein **Gletscher** ist ab dann starr, sammelt aber jeden Durchlauf **Masse** und **birst** an der
+  obersten Schwelle über seine Nachbarn (Kaskade/Kollision). **Firn** liegt als Reserve auf offenem Boden
+  und füllt einen Gletscher nach jedem Bruch wieder auf. **Eis-Formationen** (Block/Kreuz/Linie/Fläche)
+  verstärken das Bersten.
+- **🌿 Pflanze** — Wachstums-Archetyp: Siege lassen Karten **wachsen**, ab `PLANT_GREEN_THRESHOLD` werden
+  sie dauerhaft **grün** und bilden einen gemeinsamen Farbblock. Payoffs: **Wurzeln** (nur Mono-Pflanze
+  → Kartenwert), **Blüte**, **Überwucherung**; **Trimmen** ist der Wendepunkt vom Wachsen zum Ernten.
 
 ---
 
@@ -221,7 +240,8 @@ Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 6`** Skills (2+2+2 über
 
 Der alte **Shop mit Münzökonomie ist entfernt** (#229). An der `shop`-Entscheidung öffnet stattdessen der
 **Architekt**: ein **8×5-Baufeld**, auf dem du **Gebäude** aus einem Bauplan-Angebot platzierst. Keine
-Münzen, keine Preise — die Begrenzung ist der **Bauplatz** (`MAX_COVER`, per Meisterrang +2/Grad ab II).
+Münzen, keine Preise — die Begrenzung ist das **Baufeld** (Normal-Lauf: `COVER_FLOOR = 20` Zellen +
+0…4 aus dem Upgrade-Baum → max `MAX_COVER = 24`).
 
 - **Angebot:** `ARCHITECT_OFFER = 3` Baupläne je Phase + „Aufwerten", höchstens **eine** legendäre Familie
   (`ARCHITECT_LEGENDARY_CHANCE`), Kategorie-gewichtet (`ARCHITECT_CAT_WEIGHT`). Deterministisch über den
@@ -233,8 +253,9 @@ Münzen, keine Preise — die Begrenzung ist der **Bauplatz** (`MAX_COVER`, per 
   Boosts), **Score** (Flat/Serie/Crit/Meilenstein) und **Formation** (Anker/Joker/Formations-Mult/Segment
   öffnen). Struktur-Kombis (volle Zeile/Spalte/Diagonale) stapeln multiplikativ; colorLocked-Gebäude buffen
   eine wählbare Farbe.
-- **Reroll-Ökonomie (#263):** drei getrennte Pools je Lauf à `BASE_REROLLS` (2) — **Perks · Gebäude · Skills**,
-  nicht untereinander teilbar, kein Nachschub. Meisterrang zieht die Pools stattdessen aus `masteryRerollBonus`.
+- **Reroll-Ökonomie (#263):** drei getrennte Pools je Lauf — **Perks · Gebäude · Skills**, nicht
+  untereinander teilbar, kein Nachschub. Normal-Lauf mit Profil: `REROLL_BASE = 1` je Pool (+ Baum-Knoten);
+  Ranglisten-Lauf und Sim: fest `BASE_REROLLS = 2`.
 
 > Die **Positionsanker**/das **Zeitsegment** aus dem alten Shop leben als inerter Substate in `shop.js` weiter
 > (`initialShop`), sind aber im Architekt-Spiel ohne Funktion.
@@ -244,15 +265,18 @@ Münzen, keine Preise — die Begrenzung ist der **Bauplatz** (`MAX_COVER`, per 
 ## 11. Rarität (Epic #167) — `rarity.js`
 
 Familien werten über **vier Stufen (I–IV)** auf; nur Stufen **echt über** dem aktuellen Rang werden
-angeboten, IV schließt ab (Karten-Familien bleiben nachkaufbar). `TIER_META` liefert Preis/Farbe/Label je
-Stufe; `TIER_WEIGHTS` die Angebots-Gewichtung. Flache Legendäre laufen weiter über `RARITY_WEIGHTS`
+angeboten, IV schließt ab (Karten-Familien bleiben nachkaufbar). `TIER_META` liefert Farbe/Label je Stufe —
+**Normal · Selten · Sehr selten · Rar** (die einzige gültige Benennung, siehe `docs/text-style-guide.md`);
+`TIER_WEIGHTS` die Angebots-Gewichtung. Welche Stufen überhaupt droppen, deckelt der Upgrade-Baum
+(`RARITY_TIER_BASE = 2` → Knoten `tier3`/`tier4`). Flache Legendäre laufen weiter über `RARITY_WEIGHTS`
 (`{ common: 100, rare: 25, legendary: 9 }`).
 
 ---
 
 ## 12. Score, Bestenliste & Geist — `storage.js` · `leaderboard.js`
 
-- **Score** ist die einzige Ziel-Metrik; er wächst nur durch Siege.
+- **Score** ist die einzige Ziel-Metrik; er wächst nur durch Siege. Laufübergreifend fallen **SP**
+  (Upgrade-Baum) und **DP** (Deck-Werkstatt, rein kosmetisch) an — siehe `progression.js`/`storage.js`.
 - **Lokale Bestenliste** (`localStorage["as_highscores"]`, **Top 5**): `{ score, level, tricks, cycles, ts }`,
   Sortierung Score↓ → mehr Stiche → jünger. Weitere Keys: `as_ghost`, `as_options` (Default-Merge),
   `as_username`, `as_seen_guide`. Ein `VITE_PREVIEW`-Präfix (`preview_`) trennt den Testbranch-Namespace.
@@ -261,6 +285,16 @@ Stufe; `TIER_WEIGHTS` die Angebots-Gewichtung. Flache Legendäre laufen weiter �
 - **Globale Bestenliste** (`leaderboard.js`, Supabase Data API, dependency-frei per `fetch`): Top-N lesen +
   Lauf veröffentlichen. Robust gegen eine noch nicht migrierte `archetypes`-Spalte (bei 400 Rückfall auf
   Basis-Spalten); der Preview-Build schreibt nie in die echte Tabelle.
+- **Feedback-Melder** (#396, `reports.js` + `FeedbackModal.jsx`): Chip „🐞 Feedback" im Hauptmenü, Insert in
+  `autostich_reports` (Schema: `docs/autostich-reports-schema.sql`, einmal im Dashboard ausführen). RLS
+  erlaubt anon **nur insert, kein select** — der öffentliche Schlüssel taugt damit zum Melden, nicht zum
+  Mitlesen. Der Discord-Ping hängt serverseitig an der Tabelle; der Client weiß davon nichts.
+  **Umgekehrt zum Leaderboard:** der Melder schreibt in JEDER Umgebung (die Preview-Builds *sind* die
+  Playtest-Builds), unterschieden wird über die Spalte `build_env`. Mitgeschickt wird ohne Zutun der
+  Kontext des zuletzt gespielten Laufs (Seed/Durchlauf/Score), Version, Gerät und ein Ring-Puffer der
+  letzten JS-Fehler (`errorBuffer.js`) — der überbrückt, dass der Absturz im Lauf passiert, gemeldet aber
+  danach im Menü wird. Fehlgeschlagene Sendungen parken in `as_feedback_draft` und gehen beim nächsten
+  Öffnen still raus.
 
 ---
 
@@ -298,14 +332,22 @@ src/game/
   engine.js        resolveTrick — Stich-Auflösung (pure, rng injiziert)
   reducer.js       initialState/menuState + reducer (Zustandsmaschine)
   formations.js    computeFormations + Segment-/Überlappungslogik
-  stats.js         STAT_DEFS + statStreakFactor/statFormFactor
   perks.js         PERK_DEFS (Legendäre) + buildPerkOffer + Crit-Helfer
-  families.js      FAMILY_DEFS (A–E, 4 Stufen) — regulärer Perk-Pool
-  skills.js        SKILL_DEFS (Blitz/Feuer/Eis) + Archetyp-Helfer
-  shop.js          Shop-State/Angebot/Reroll + Positionsanker + Zeitsegment
-  shopFamilies.js  SHOP_FAMILY_DEFS (cards/anchors/formations/planning, 4 Stufen)
-  rarity.js        Stufen-Meta (TIER_META/TIER_WEIGHTS), Preise
-  storage.js       localStorage: Geist + Top-5 + Optionen + Flags
+  families.js      FAMILY_DEFS (A–E + P Präzision, 4 Stufen) — regulärer Perk-Pool
+  skills.js        SKILL_DEFS (Blitz/Feuer/Eis/Pflanze) + Archetyp-Helfer
+  glacier.js       Eis: Masse/Firn/Bersten/Kaskade + Eis-Formationen (Single Source der Zahlen)
+  architect.js     ARCHITECT_FAMILIES, Brett/Formen/Platzierung, Struktur- & Distrikt-Faktoren,
+                   familyEffectText (der EINE Gebäude-Beschreibungstext)
+  glossary.js      GLOSSARY — die einzige Quelle der Begriffs-Erklärungen (+ Auto-Fettung)
+  progression.js   Upgrade-Baum: NODES/BRANCHES, SP/DP-Ableitungen, Freischaltungen
+  weekMods.js      WEEK_MODS + pickWeekMods (Ranglisten-Wochenmodifikatoren)
+  weeklySeed.js    Wochen-Seed (currentWeek/pastWeeks)
+  cosmetics.js     DECK_DEFS/BATTLEFIELD_DEFS + Freischalt-Logik (rein kosmetisch)
+  themes.js        PACKS/GLOBAL_FX — Deck-Werkstatt (DP-Kauf)
+  color.js         effColor/colorMatches — grün- und allianz-bewusstes Farb-Matching
+  shop.js          inerter Rest-Substate des alten Shops (Positionsanker/Zeitsegment)
+  rarity.js        Stufen-Meta (TIER_META/TIER_WEIGHTS)
+  storage.js       localStorage: Profil + Geist + Top-5 + Optionen + Flags
   leaderboard.js   globale Bestenliste (Supabase, fetch)
 src/ui/            React-Komponenten (s. o.)
 src/App.jsx        useReducer-State + Seiteneffekte (Auto-Play-Takt, Timer, Geist, Highscore, Audio)
@@ -320,33 +362,35 @@ src/App.jsx        useReducer-State + Seiteneffekte (Auto-Play-Takt, Timer, Geis
 
 | Konstante | Wert | Bedeutung |
 |---|---|---|
-| `MAX_CYCLES` | 60 | Feste Lauflänge in Deck-Durchläufen (danach Ende). |
+| `MAX_CYCLES` | 50 | Feste Lauflänge in Deck-Durchläufen (danach Ende). |
 | `TRICKS_PER_CYCLE` | 40 | Stiche je Durchlauf (aus Deckgröße abgeleitet). |
-| `SCORE_PER_WIN` | 100 | Basispunkte je Sieg. |
-| `CRIT_BASE_MULT` | 1,5 | Basis-Crit-Faktor (Crit-Mult-Stat baut darauf auf). |
-| `STREAK_BASE_STEP` / `STREAK_BASE_CAP` | 0,02 / 1,50 | Basis-Serien-Mult (+2 %/Stufe, Deckel +150 %). |
-| `STREAK_STAT_CAP` | 3,00 | Deckel des Serien-**Stat**-Beitrags (Runaway-Schutz). |
-| `STAT_*_STEP` | 0,07 / 0,25 / 0,05 / 0,02 / 1 | Crit-Chance / Crit-Mult / Form / Serie / Einkommen je Pick. |
-| `FORMATION_ENERGY` | 4 | Tausch-Energie je Formationsphase. |
+| `SCORE_PER_WIN` | 400 | Basispunkte je Sieg. |
+| `CRIT_BASE_MULT` | 2,25 | Basis-Crit-Faktor (Präzision-Wucht und Blitz bauen darauf auf). |
+| `STREAK_BASE_STEP` / `STREAK_BASE_CAP` | 0,02 / 1,50 | Basis-Serien-Mult (+2 %/Serienpunkt, Deckel +150 %). |
+| `FORMATION_ENERGY` | 4 | Formations-Energie je Aufstellungsphase (Sim/Standard). |
+| `ENERGY_FLOOR` / `COVER_FLOOR` *(progression.js)* | 3 / 20 | Normal-Lauf-Basis: Energie bzw. Baufeld-Zellen (+ Baum). |
 | `SEGMENT_SIZE` *(formations.js)* | 5 | Formations-Segmentgröße (Arena-Grenzen). |
+| `WECHSEL_MIN_DIFF` *(formations.js)* | 4 | Mindest-Nachbardifferenz für den Wechsel. |
 | `OVERLAP_BONUS` *(formations.js)* | {2:1,5 · 3:2 · 4:3} | Überlappungs-Multiplikator je Anzahl Formationen. |
-| `PERKS_OFFERED` / `SKILLS_OFFERED` / `SKILL_SLOTS` | 3 / 6 / 4 | Angebotsgrößen. |
-| `BASE_REROLLS` | 2 | Reroll-Pool je Kategorie/Lauf (#263: getrennt Perks · Gebäude · Skills). |
-| `ARCHITECT_OFFER` / `MAX_COVER` | 3 / 24 | Baupläne je Architekt-Angebot / Baufeld-Kapazität (Rang +2/Grad ab II). |
-| `SKILL_LEGENDARY_BASE` / `PERK_LEGENDARY_BASE` | 0,03 / 0,03 | Basis-Legendär-Chance je Skill-Archetyp / Perk-Angebot. |
+| `PERKS_OFFERED` / `SKILLS_OFFERED` / `SKILL_SLOTS` | 3 / 12 / 6 | Angebotsgrößen (+ fixer 7. Legendär-Slot). |
+| `MAX_ARCHETYPES` | 4 | Gleichzeitig aktive Archetypen. |
+| `FIRST_SKILL_CYCLE` / `LEG_PHASE_CYCLE` | 1 / 29 | Erste Skill-Runde bzw. Legendär-Phase (aus dem Plan abgeleitet). |
+| `BASE_REROLLS` / `REROLL_BASE` *(progression.js)* | 2 / 1 | Reroll-Pool je Kategorie: Ranglisten-/Sim-Lauf bzw. Normal-Lauf. |
+| `ARCHITECT_OFFER` / `MAX_COVER` | 3 / 24 | Baupläne je Architekt-Angebot / Baufeld-Obergrenze. |
+| `RARITY_TIER_BASE` *(progression.js)* | 2 | Startbare Max-Rarität (Normal + Selten), Baum hebt auf 4. |
 | `RARITY_WEIGHTS` | {100/25/9} | Gewicht flacher Perks (common/rare/legendary). |
 | `BASE_FLIP_MS` | 1750 | ms je Stich (Speed 1×; score-neutral). |
 | `GHOST_STEP` | 13 | Geist-Score-Stützstelle alle N Stiche. |
-| `VALUE_CAP` | `null` | Kein Kartenwert-Cap (bewusst). |
+| `VALUE_CAP` | `null` | Kein Kartenwert-Cap (bewusst). `PLANT_VALUE_CAP = 11` deckelt nur grüne Karten. |
 
-Archetyp- und Shop-Familien-Feintuning stehen ebenfalls im Tuning-Block (`LIGHTNING_*`, `HEAT_*`/`FIRE_*`,
-`ICE_*`/`FROST*`, `ANCHOR_*`, `FORMATION_CORE_FACTOR` …).
+Archetyp-Feintuning steht ebenfalls im Tuning-Block (`LIGHTNING_*`, `HEAT_*`/`FIRE_*`, `PRECISION_*`,
+`ANCHOR_*`, `FORMATION_CORE_FACTOR` …); die Eis-Zahlen liegen gesammelt in `glacier.js`.
 
 ---
 
 ## 17. Tests & Deployment
 
-- **Tests:** Vitest, nur der `game/`-Layer — **680+ Fälle** in 37 Dateien (`vite.config.js` → `environment: "node"`).
+- **Tests:** Vitest, nur der `game/`-Layer — **1015 Fälle** in 64 Dateien (`vite.config.js` → `environment: "node"`).
   `npm test` / `npm run test:watch`.
 - **Deployment:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → Pages.
   `vite.config.js`: `base = "/autostich/"` beim Build (Testbranch überschreibt via `DEPLOY_BASE`), `"/"` im Dev.

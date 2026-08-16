@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  NODES, NODE_BY_ID, NODE_IDS, BUYABLE_IDS, DECK_IDS, GEN_IDS,
+  NODES, NODE_BY_ID, BUYABLE_IDS, DECK_IDS, GEN_IDS,
   TOTAL_COST, TOTAL_NODES, LEG_NODES_BY_ARCH,
-  emptyProfile, owns, rankedUnlocked, anyLegOwned, gateMet, prereqMet,
+  emptyProfile, owns, rankedUnlocked, anyLegOwned, prereqMet,
   nodeEffects, treeCoverBonus, treeEnergyBonus, treeRareShift,
   unlockedArchetypes, maxRarityTier, legendaryPhaseUnlocked, legCountByArch, rerollBase, legPerk2Force,
   nodeState, canBuy, buyNode, respec, treeComplete, ownedCount,
@@ -27,15 +27,15 @@ const build = (ids, sp = 1000) => {
 const RARE = ["tier3", "tier4", "legLayer"];
 
 describe("Baum-Struktur — #369 Deck- + Allgemein-Zweig", () => {
-  it("25 kaufbare Knoten, Σ 137 SP (Deck 45 / Allgemein 92) + Platzhalter", () => {
-    expect(TOTAL_NODES).toBe(25);
-    expect(TOTAL_COST).toBe(137);
+  it("27 kaufbare Knoten, Σ 149 SP (Deck 45 / Allgemein 104) + Platzhalter", () => {
+    expect(TOTAL_NODES).toBe(27);
+    expect(TOTAL_COST).toBe(149);
     expect(DECK_IDS.length).toBe(11);
-    expect(GEN_IDS.length).toBe(14);
+    expect(GEN_IDS.length).toBe(16);
     const deckCost = NODES.filter((n) => n.branch === "deck" && !n.placeholder).reduce((s, n) => s + n.cost, 0);
     const genCost = NODES.filter((n) => n.branch === "gen").reduce((s, n) => s + n.cost, 0);
     expect(deckCost).toBe(45);
-    expect(genCost).toBe(92);
+    expect(genCost).toBe(104);
     // Platzhalter „Synergie-Legendäre" zählt NICHT zu den kaufbaren Knoten.
     expect(BUYABLE_IDS).not.toContain("synLeg");
     expect(NODE_BY_ID.synLeg.placeholder).toBe(true);
@@ -110,7 +110,7 @@ describe("SP-Deckung & Immutabilität", () => {
 describe("nodeEffects — Ableitungen bei mehreren Ständen", () => {
   it("frisches Profil = beweisbares No-op", () => {
     expect(nodeEffects(emptyProfile(0))).toEqual({
-      treeCoverBonus: 0, treeEnergyBonus: 0, treeRareShift: 0, maxTier: 2, legendaryLayer: false, legMult: 0,
+      treeCoverBonus: 0, treeEnergyBonus: 0, treeRerollBonus: 0, treeRareShift: 0, maxTier: 2, legendaryLayer: false, legMult: 0,
       unlockedArchetypes: ["lightning", "fire"], legCountByArch: {}, archLegPhaseOn: false,
       legPerkPhaseOn: false, rerollDeckLeg: 0, rerollPerk2: 0,
     });
@@ -193,7 +193,7 @@ describe("treeComplete + #299 letzter Knoten → DP", () => {
     expect(treeComplete(emptyProfile(0))).toBe(false);
     const full = build(BUYABLE_IDS, TOTAL_COST);
     expect(treeComplete(full)).toBe(true);
-    expect(ownedCount(full)).toBe(25);
+    expect(ownedCount(full)).toBe(27);
   });
   it("mit dem LETZTEN Knoten werden Rest-SP zu DP", () => {
     const nodes = Object.fromEntries(BUYABLE_IDS.filter((id) => id !== "drop4").map((id) => [id, 1]));
@@ -306,7 +306,7 @@ describe("Test-Codes", () => {
   });
   it("unlockAllProfile: alle kaufbaren Knoten, stichSpent = TOTAL_COST, SP-Polster, voller Effekt", () => {
     const p = unlockAllProfile(emptyProfile(0));
-    expect(ownedCount(p)).toBe(25);
+    expect(ownedCount(p)).toBe(27);
     expect(treeComplete(p)).toBe(true);
     expect(p.stichSpent).toBe(TOTAL_COST);
     expect(p.stichPoints).toBe(UNLOCK_SP_CUSHION);

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { WEEK_MODS } from "../game/weekMods.js";
+import { weekModList } from "../i18n/labels.js"; // #sprache: Wochen-Mods zur Anzeigezeit
+import { t } from "../i18n/index.js";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-Rahmen (wie BuildPanel)
 
 /* #381/#385 Gemeinsame Wochen-Modifikatoren-Anzeige (Ranked-Screen UND Battlefield-Panel).
@@ -8,11 +9,23 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-
 
 export const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
 
+// Gerollte Lauf-Mods (aus pickWeekMods, ROHE deutsche name/text) → i18n-Anzeige über die id. Der rohe
+// Mod trägt den seed-gerollten Wert `mag`; der wird in die übersetzte Beschreibung eingesetzt. Ohne das
+// zeigten Rangliste/Battlefield-Panel die deutschen Namen/Texte, auch wenn die App auf EN steht.
+export function pickedDisplayMods(picked) {
+  const cat = Object.fromEntries(weekModList().map((m) => [m.id, m]));
+  return (picked || []).map((p) => {
+    const w = cat[p.id];
+    return { id: p.id, sign: p.sign, effect: p.effect, pair: p.pair,
+             name: w ? w.name : p.name, text: w ? w.desc(p.mag) : p.text };
+  });
+}
+
 // Katalog (Regeln-Reiter) als Anzeige-Mods: text aus desc(min) + Range-/Paar-Hinweis.
 export function catalogDisplayMods() {
-  return WEEK_MODS.map((m) => ({
+  return weekModList().map((m) => ({
     id: m.id, sign: m.sign, name: m.name, effect: m.effect, pair: !!m.pair,
-    text: m.desc(m.range ? m.range[0] : undefined) + (m.range ? ` (${m.range[0]}–${m.range[1]})` : ""),
+    text: m.desc(m.range ? m.range[0] : undefined) + (m.range ? t("weekmods.range", { from: m.range[0], to: m.range[1] }) : ""),
   }));
 }
 
@@ -57,7 +70,7 @@ export function WeekModPanel({ mods, className = "" }) {
   return (
     <div className={`rounded-xl p-4 as-panel as-panel-deck ${className}`}
       style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Wochen-Modifikatoren</div>
+      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("weekmods.title")}</div>
       <WeekModChips mods={mods} />
     </div>
   );

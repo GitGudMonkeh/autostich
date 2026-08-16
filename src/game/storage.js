@@ -1,5 +1,5 @@
 import { GHOST_STEP } from "./constants.js";
-import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS } from "./progression.js";
+import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboardingUnlocks, ONBOARDING_LINKS, WELCOME_DP } from "./progression.js";
 
 // #382 Abschluss-Bonus: jeder abgeschlossene NORMALE (Nicht-Ranked) Lauf gibt +N DP — Ausgleich für die entfernte
 //   Challenge-DP-Quelle (#301). Ranked hat seinen eigenen Wochenbonus (rankedDpBonus).
@@ -95,7 +95,7 @@ export function loadRunHistory() {
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
-export const PROFILE_SCHEMA_VERSION = 7;
+export const PROFILE_SCHEMA_VERSION = 10;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -114,6 +114,15 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // #316: onboarding startet direkt bei ONBOARDING_LINKS (6/6, „fertig") → keine Onboarding-Phase mehr, alle
   // Post-Onboarding-Unlocks (Archetypen/Rarität/Legendär/Genesis) sofort frei. stichPoints = 0 (SP werden im Spiel verdient).
   stichPoints: 0, stichSpent: 0, nodes: {}, onboarding: ONBOARDING_LINKS, spRuns: 0,
+  // Willkommensbonus (WELCOME_DP): sticky, damit er genau einmal fällt — nach dem ersten
+  // abgeschlossenen Lauf. Frisches Profil = noch nicht ausgezahlt.
+  welcomeBonusPaid: false,
+  /* „Mindestens ein Lauf ist ABGESCHLOSSEN" — sticky. Steuert, ob das Tutorial noch angeboten wird:
+     wer einen Lauf durchgespielt hat, kennt die Schleife und braucht den Einstieg nicht mehr im Menü
+     stehen zu haben. Bewusst NICHT `games > 0`: das zählt auch Abbrüche, und wer nach zwei Stichen
+     rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
+     abgeschlossene Lauf zählt. */
+  hadCompletedRun: false,
   // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
@@ -187,6 +196,38 @@ export function migrateProfile(p) {
     }
     v = 7;
   }
+  if (v < 8) {
+    // v7 → v8 (Willkommensbonus): das Flag ist neu. Wer schon gespielt hat, ist am Willkommens-Moment
+    // vorbei → als ausgezahlt markieren, OHNE den Bonus nachzureichen. Das folgt der Linie von v5→v6:
+    // Migrationen schenken keine Währung, sonst bekämen alle Bestandsspieler rückwirkend ein Guthaben,
+    // das die Ökonomie nie eingeplant hat. Frische Profile (games 0) bleiben auf `false` und holen den
+    // Bonus regulär mit ihrem ersten abgeschlossenen Lauf.
+    // (In v10 heißt das Flag `welcomeBonusPaid`; hier steht bewusst noch der alte Name, damit ein
+    //  Profil, das von v7 kommt, dieselbe Kette durchläuft wie eines, das schon auf v8 lag.)
+    if (typeof out.welcomeSpPaid !== "boolean") out.welcomeSpPaid = (Number(out.games) || 0) > 0;
+    v = 8;
+  }
+  if (v < 9) {
+    // v8 → v9: `hadCompletedRun` ist neu. Für Alt-Profile aus `games` ableiten — genauer geht es
+    // rückwirkend nicht (ob die Läufe abgeschlossen waren, steht nirgends), und die Richtung stimmt:
+    // wer schon gespielt hat, braucht das Tutorial-Angebot nicht mehr im Menü.
+    if (typeof out.hadCompletedRun !== "boolean") out.hadCompletedRun = (Number(out.games) || 0) > 0;
+    v = 9;
+  }
+  if (v < 10) {
+    /* v9 → v10: Der Willkommensbonus wird in DECKPUNKTEN ausgezahlt statt in Stichpunkten, das Flag
+       heißt deshalb `welcomeBonusPaid` statt `welcomeSpPaid` (der alte Name hätte gelogen).
+       Der Wert wird ÜBERNOMMEN, nicht neu abgeleitet: Wer den Bonus in SP schon bekommen hat, bekommt
+       ihn nicht ein zweites Mal in DP — und die SP von damals werden auch nicht zurückgeholt. Beides
+       wäre schlechter als die kleine Ungleichheit zwischen früher und später gestarteten Profilen. */
+    if (typeof out.welcomeBonusPaid !== "boolean") {
+      out.welcomeBonusPaid = typeof out.welcomeSpPaid === "boolean"
+        ? out.welcomeSpPaid
+        : (Number(out.games) || 0) > 0;
+    }
+    delete out.welcomeSpPaid;
+    v = 10;
+  }
   out.schemaVersion = v;
   return out;
 }
@@ -200,6 +241,9 @@ export function loadProfile() {
         return { ...DEFAULT_PROFILE, ...p,
           archetypesEver: Array.isArray(p.archetypesEver) ? p.archetypesEver : [],
           monoArchetypeRuns: (p.monoArchetypeRuns && typeof p.monoArchetypeRuns === "object") ? p.monoArchetypeRuns : {},
+          // Gleiche Map-Form wie die Geschwister oben — fehlte hier, obwohl recordRun sie spreadet und die
+          // Ranked-Freischaltung (progression.rankedUnlocked) daran hängt.
+          archetypeRunsCompleted: (p.archetypeRunsCompleted && typeof p.archetypeRunsCompleted === "object") ? p.archetypeRunsCompleted : {},
           ownedCosmetics: (p.ownedCosmetics && typeof p.ownedCosmetics === "object") ? p.ownedCosmetics : {},
           nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {} };
       }
@@ -207,7 +251,7 @@ export function loadProfile() {
   } catch (e) {}
   // #195: frisches archetypesEver-Array + #215 frische monoArchetypeRuns-Map + Baum-nodes, damit der Leer-/Korrupt-Pfad
   // NICHT die mutablen Referenzen aus DEFAULT_PROFILE teilt (ein späterer push/Zuweisung würde sonst den Modul-Default vergiften).
-  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {}, nodes: {} };
+  return { ...DEFAULT_PROFILE, archetypesEver: [], monoArchetypeRuns: {}, archetypeRunsCompleted: {}, nodes: {} };
 }
 
 // Profil-Blob persistieren (mit aktueller Schema-Version gestempelt). Für die Baum-Kauf-/Respec-Flows
@@ -223,7 +267,13 @@ export function saveProfile(profile) {
 // Onboarding startet neu. Betroffen: Profil (Progression/Stats/Freischalt-Flags), Highscores, Geist-Rekord,
 // Lauf-Verlauf, aktiver Lauf und „Anleitung gesehen" — PLUS die Kosmetik-AUSWAHL (Deck/Battlefield/Effekte) wird
 // deselektiert (auf Default). Übrige Präferenzen (Ton/Lautstärke/UI/Name) bleiben. Nur im Preview-Build aufrufbar.
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_seen_guide"];
+/* Was der Test-Code `reset` löscht. `as_username` gehört bewusst DAZU: „reset" soll den Erstbesuch
+   herstellen, und der beginnt mit der Namenseingabe (die zeigt sich genau dann, wenn kein Name
+   gespeichert ist). Ohne den Schlüssel landete man nach dem Wipe im Hub — mit fremdem Fortschritt,
+   aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
+   weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
+   direkt wieder wählen. */
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -337,6 +387,9 @@ export function recordRun(record) {
   const firstRankedThisWeek = rankedSeed != null && rankedSeed !== (p.lastRankedWeekSeed ?? null);
   const rankedSpBonus = firstRankedThisWeek && !treeDone ? 5 : 0;
   const rankedDpBonus = firstRankedThisWeek ? (treeDone ? 10 : 5) : 0;
+  // Willkommensbonus: einmalig nach dem ERSTEN abgeschlossenen Lauf, in DECKPUNKTEN (s. progression.js).
+  // Er hängt deshalb NICHT am SP-Guthaben und wird vom spSweep unten nicht angefasst.
+  const welcomeDp = record.completed === true && !p.welcomeBonusPaid ? WELCOME_DP : 0;
   // #299: bei komplettem Baum sind SP nutzlos → das übrige SP-Guthaben wird zu DP „gefegt" (idempotent: danach 0).
   const spBalance = n0(p.stichPoints) + gainedSp + rankedSpBonus;
   const spSweep = treeDone ? spBalance : 0;
@@ -374,11 +427,14 @@ export function recordRun(record) {
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
     // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
     stichPoints: spBalance - spSweep,
+    // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
+    welcomeBonusPaid: !!p.welcomeBonusPaid || welcomeDp > 0,
+    hadCompletedRun: !!p.hadCompletedRun || record.completed === true,
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
     // #382: + Abschluss-Bonus (completionDp) für abgeschlossene Nicht-Ranked-Läufe.
-    deckPoints: n0(p.deckPoints) + runDp + completionDp + spSweep + rankedDpBonus,
+    deckPoints: n0(p.deckPoints) + runDp + completionDp + spSweep + rankedDpBonus + welcomeDp,
     deckSpent: n0(p.deckSpent),
     onboarding: onbAfter,
     spRuns: n0(p.spRuns) + (isSpRun(record, onboardingBefore) ? 1 : 0),
@@ -388,7 +444,7 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep };
+  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
 }
@@ -404,15 +460,30 @@ export function recordRun(record) {
 // + #252 StatusRail-Panels default eingeklappt · #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge) · #322
 // Sonnen-Puls = freier Default (aktiv, kein Kauf). #347: ALLE Effekt-Toggles + Farbmodus-Flags explizit gelistet (Default
 // aus, außer fxSonnenPuls/fxCubeMatrixSun) — vorher liefen die fehlenden über undefined-als-falsy (inkonsistent/fragil).
+// #sprache `lang`: gewählte Anzeigesprache ("de"|"en"). Default `null` = „noch nicht gewählt" → loadOptions
+// setzt beim ersten Start die Browsersprache ein. Sobald der Spieler in den Optionen wählt, steht hier ein
+// fester Wert und die Browsersprache wird nie wieder befragt.
 const DEFAULT_OPTIONS = {
+  lang: null,
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  // Ruhiger Modus (Default aus): kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks. Reine UI-Pref (überlebt Reset).
+  calmMusic: false,
   // #telemetrie: anonyme Lauf-Daten senden (Default AN, in den Optionen abschaltbar). Reine Pref → NICHT in
   // COSMETIC_OPTION_KEYS (überlebt den Dev-Reset, wie Ton/Haptik).
   telemetry: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  // Zahlengröße (Kartenzahlen + Score-Floats): Skalierungsfaktor 0,75–1,25. Default = KLEINSTE Stufe (0,75),
+  // die Zahlen sind sonst vielen zu groß. Reine UI-Pref (überlebt Reset).
+  numScale: 0.75,
+  // #393 Zufalls-Deck je Lauf: jeder neue Lauf startet mit einem zufälligen besessenen (farbigen) Deck-Pack + alle aktiven
+  //   Effekte in Deckfarbe. Reine UI-Pref (überlebt Reset, wie haptics) → NICHT in COSMETIC_OPTION_KEYS.
+  randomDeckEachRun: false,
+  // #tiered zuletzt gewählte Stufe je Stufen-Deck: { <packId>: <deckId> } — merkt sich die I/II/III-Wahl, damit
+  //   der Zufalls-Modus dieselbe Stufe zieht. Kosmetik-Auswahl → in COSMETIC_OPTION_KEYS (Reset setzt zurück).
+  tierSel: {},
   // Effekt-Toggles (Ein/Aus). fxSonnenPuls = freier Default an; alles andere aus.
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
@@ -431,7 +502,7 @@ const DEFAULT_OPTIONS = {
 // #347: alle Kosmetik-Auswahlfelder (equipped Deck/Battlefield + ALLE Effekt-Toggles + Farbmodus-Flags + Cube-Optik) →
 //   der Profil-Wipe setzt sie sauber auf DEFAULT_OPTIONS zurück. Nicht-Kosmetik-Prefs (Ton/Lautstärke/UI/Haptik) bleiben.
 export const COSMETIC_OPTION_KEYS = [
-  "deckId", "battlefieldId", "finisher", "archColor",
+  "deckId", "battlefieldId", "finisher", "archColor", "tierSel",
   "fxAurora", "fxNeonsurf", "fxStarfield", "fxCubeMatrix", "fxDeckGlow", "fxEdgeGlow", "fxHolo", "fxGlitch",
   "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova",
   "fxCubeMatrixSun", "fxCubeMatrixWire",
@@ -442,7 +513,9 @@ export const COSMETIC_OPTION_KEYS = [
    Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
    denen mehrere gleichzeitig an waren (z. B. Aurora + Glutfunken), werden auf GENAU EINEN reduziert (feste Priorität =
    Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) ist frei kombinierbar → unberührt. Besitz (ownedCosmetics) unberührt. */
-const BG_EXCL_OPTS   = ["fxAurora", "fxCubeMatrix", "fxNeonsurf", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt · #345 neonsurf
+// Exportiert, damit ein Test sie gegen themes.BG_FX_KEYS + BG_FIN_KEYS binden kann: die Kategorien stehen dort,
+// die Exklusivität wird hier durchgesetzt — wer einen Effekt ergänzt und diesen Eintrag vergisst, bräche sie still.
+export const BG_EXCL_OPTS = ["fxAurora", "fxCubeMatrix", "fxNeonsurf", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt · #345 neonsurf
 const CARD_ANIM_OPTS = ["fxEdgeGlow", "fxHolo", "fxGlitch"];                    // Priorität: Neonrahmen zuerst
 function reduceExclusive(o, keys) {
   let kept = false;
@@ -494,13 +567,20 @@ export function saveOptions(opts) {
   return opts;
 }
 
-/* Anleitung-einmal-gesehen (#12) — hier zentral, damit der Preview-Namespace (P) auch
-   diesen Key trennt und der Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt. */
-export function loadSeenGuide() {
-  try { return !!localStorage.getItem(k("as_seen_guide")); } catch (e) { return false; }
+/* TUTORIAL-EINMAL-GESEHEN — hier zentral, damit der Preview-Namespace (P) auch diesen Key trennt
+   und der Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt.
+
+   Ersetzt `as_seen_guide` (#12): dessen AnleitungModal existiert nicht mehr, gelesen hat den Schlüssel
+   zuletzt niemand. Gesetzt wird die Flagge NUR beim Durchlaufen bis zum Abschluss-Hinweis oder bei
+   „Tutorial beenden" — ein Abbruch mittendrin gilt als nicht gesehen (Plan §13.8). */
+export function loadTutorialDone() {
+  try { return !!localStorage.getItem(k("as_tutorial_done")); } catch (e) { return false; }
 }
-export function saveSeenGuide() {
-  try { localStorage.setItem(k("as_seen_guide"), "1"); } catch (e) {}
+export function saveTutorialDone(done = true) {
+  try {
+    if (done) localStorage.setItem(k("as_tutorial_done"), "1");
+    else localStorage.removeItem(k("as_tutorial_done"));
+  } catch (e) {}
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen
@@ -513,7 +593,10 @@ export function saveSeenGuide() {
 //   Pflichtfeld, geänderte Semantik) hochzählen → Alt-Snapshots werden verworfen. Als zweite Absicherung gegen ein
 //   vergessenes Bump prüft isResumableRunState() zusätzlich die Kern-Pflichtfelder tief: fehlt/verrutscht eines, wird
 //   der Snapshot sauber verworfen (null) statt in den neuen Reducer geladen zu werden (Mid-Run-Crash/Korruption).
-export const ACTIVE_RUN_SCHEMA = 1;
+// v2 (#369/#370/#382): Der State hat seit v1 mehrere Pflichtfelder dazubekommen (weekMods, rareFloor, skillSlots,
+//   legPicksMade, challengeBlockArch/Form) bzw. umgewidmet — der Stempel blieb dabei versehentlich auf 1, sodass
+//   Alt-Snapshots über einen Deploy hinweg weitergeladen wurden. Bump verwirft sie einmalig (gewollt).
+export const ACTIVE_RUN_SCHEMA = 2;
 function isResumableRunState(s) {
   if (!s || typeof s !== "object") return false;
   if (typeof s.phase !== "string" || s.phase === "menu" || s.phase === "gameover") return false;
@@ -525,6 +608,11 @@ function isResumableRunState(s) {
   for (const key of ["pos", "cycle", "trickNo", "score"]) {
     if (typeof s[key] !== "number" || !Number.isFinite(s[key])) return false;
   }
+  // #370: Ein RANKED-Snapshot ohne `weekMods` ist nicht fortsetzbar — hasWeekMod läse überall false, alle
+  //   Wochen-Modifikatoren wären still aus, und der Lauf ginge trotzdem mit board/Wochen-Seed auf die Rangliste
+  //   (Eintrag unter anderen Regeln als der Rest der Woche). Lieber sauber verwerfen. Zweite Absicherung gegen
+  //   ein vergessenes ACTIVE_RUN_SCHEMA-Bump — genau der Fall, der v1→v2 nötig gemacht hat.
+  if (s.ranked && !Array.isArray(s.weekMods)) return false;
   return true;
 }
 export function saveActiveRun(state, meta = {}) {
@@ -547,3 +635,61 @@ export function loadActiveRun() {
 export function clearActiveRun() {
   try { localStorage.removeItem(k("as_activerun")); } catch (e) {}
 }
+
+/* ============================================================
+   FEEDBACK-MELDER (#396) — Entwurf parken + Bremse
+
+   Zwei kleine Schlüssel, beide in RESET_KEYS:
+     as_feedback_draft — ein Report, dessen Versand fehlschlug. Geht beim nächsten Menü-Besuch
+                         still noch einmal raus. Ohne das wäre ein Report bei Funkloch verloren,
+                         und genau dann tippt jemand am ausführlichsten.
+     as_feedback_sent  — Zeitstempel der letzten Sendungen für die clientseitige Bremse.
+   ============================================================ */
+const FEEDBACK_MIN_GAP_MS = 30_000;   // frühestens 30 s nach dem letzten Report
+const FEEDBACK_MAX_PER_DAY = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function loadFeedbackDraft() {
+  try {
+    const raw = localStorage.getItem(k("as_feedback_draft"));
+    if (raw) { const d = JSON.parse(raw); if (d && typeof d === "object") return d; }
+  } catch (e) {}
+  return null;
+}
+export function saveFeedbackDraft(entry) {
+  try { localStorage.setItem(k("as_feedback_draft"), JSON.stringify(entry)); } catch (e) {}
+}
+export function clearFeedbackDraft() {
+  try { localStorage.removeItem(k("as_feedback_draft")); } catch (e) {}
+}
+
+const loadSentStamps = () => {
+  try {
+    const raw = localStorage.getItem(k("as_feedback_sent"));
+    if (raw) { const l = JSON.parse(raw); if (Array.isArray(l)) return l.filter((n) => typeof n === "number"); }
+  } catch (e) {}
+  return [];
+};
+
+/* Darf JETZT gesendet werden? Gibt `{ ok }` bzw. `{ ok:false, reason, waitMs }` zurück — der
+   Aufrufer zeigt daraus einen sichtbaren Hinweis. Bewusst KEIN stilles Verweigern: wer nicht
+   erfährt, warum nichts passiert, meldet kein zweites Mal.
+   `now` ist Parameter (nicht `Date.now()` innen), damit der Test die Uhr stellen kann. */
+export function feedbackRateCheck(now = Date.now()) {
+  const stamps = loadSentStamps().filter((t) => now - t < DAY_MS);
+  const last = stamps.length ? Math.max(...stamps) : 0;
+  if (last && now - last < FEEDBACK_MIN_GAP_MS) {
+    return { ok: false, reason: "tooSoon", waitMs: FEEDBACK_MIN_GAP_MS - (now - last) };
+  }
+  if (stamps.length >= FEEDBACK_MAX_PER_DAY) return { ok: false, reason: "dailyCap", waitMs: 0 };
+  return { ok: true };
+}
+
+// Eine erfolgreiche Sendung vermerken (hält nur das Tagesfenster vor).
+export function noteFeedbackSent(now = Date.now()) {
+  const stamps = loadSentStamps().filter((t) => now - t < DAY_MS);
+  stamps.push(now);
+  try { localStorage.setItem(k("as_feedback_sent"), JSON.stringify(stamps)); } catch (e) {}
+}
+
+export { FEEDBACK_MIN_GAP_MS, FEEDBACK_MAX_PER_DAY };
