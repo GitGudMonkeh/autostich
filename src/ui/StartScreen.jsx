@@ -45,11 +45,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
-  /* #knopf-satellit (C): Das Seed-Feld lag dauerhaft unter dem CTA und kostete eine ganze Zeile für etwas, das
-     die meisten Läufe nie brauchen. Jetzt hängt es an einem runden Nebenknopf neben dem CTA — der begrenzt den
-     Hauptknopf optisch (er wirkt dadurch als Objekt statt als Fläche) und gibt zugleich Höhe zurück.
-     Einmal geöffnet bleibt es offen: Fehler- und Testcode-Meldungen stehen darin und dürfen nicht wegklappen. */
-  const [seedOpen, setSeedOpen] = useState(false);
   const t = useT();
   const ONB_REWARDS = onbRewards(t);
 
@@ -139,7 +134,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      sehen. Der Abstand lag über NEUN Lücken verteilt, jede für sich unauffällig; erst die Summe tat weh.
      Gemessen mit Playwright gegen den Preview-Build, nicht geschätzt. */
   return (
-    <div className="relative isolate flex flex-col items-center gap-2 pt-2 pb-3">
+    <div className="relative isolate flex flex-col items-center gap-2.5 pt-2 pb-3">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] -z-10"
@@ -240,43 +235,31 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
 
         {/* #382 „Normaler Lauf" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline.
-            #knopf-satellit (C): Der CTA teilt sich die Zeile jetzt mit dem Seed-Knopf. Beide tragen denselben Radius —
-            zwei ungleich große Geschwister mit gleicher Ecken-Sprache lesen sich als EINE Werkzeug-Gruppe, und der
-            Hauptknopf hört auf, wie eine randlose Fläche zu wirken, weil rechts etwas steht, das ihn begrenzt.
-            52 px Höhe auf beiden Seiten (py-3.5 + 16px-Zeile) → die Reihe schließt bündig ab. */}
-        <div className="flex items-stretch gap-2.5">
-          <button onClick={onStart}
-            className="flex-1 min-w-0 px-5 py-3.5 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
-            style={normalStyle}>
-            {t("start.normal")}
-          </button>
-          {onPlaySeed && (
-            <button type="button" onClick={() => setSeedOpen((o) => !o)}
-              aria-expanded={seedOpen} aria-controls="seed-panel"
-              aria-label={t("start.seed.toggle")} title={t("start.seed.toggle")}
-              className="shrink-0 w-[52px] rounded-2xl text-lg transition-all hover:-translate-y-0.5 flex items-center justify-center"
-              style={{ background: seedOpen ? "#2a2a38" : "#20202a", color: "#e8e8ea", border: `1px solid ${seedOpen ? "#4a4a5e" : "#30303a"}` }}>
-              ↻
-            </button>
-          )}
-        </div>
-        {/* #382 Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad tryPlaySeed) — seit #knopf-satellit hinter dem
-            ↻-Knoten daneben statt dauerhaft sichtbar. Kostet für Challenger-Seeds einen Tap, spart im Normalfall
-            eine Zeile; die Rangliste bringt ihren Wochen-Seed ohnehin im eigenen Reiter mit. */}
-        {onPlaySeed && seedOpen && (
-          <div id="seed-panel">
+            Volle Breite: der Knopf ist die oberste Stufe des Breiten-Trichters (LANE_LEAD, s. o.) — die Rangordnung
+            trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
+            Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
+        <button onClick={onStart}
+          className="w-full px-5 py-3.5 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
+          style={normalStyle}>
+          {t("start.normal")}
+        </button>
+        {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
+            tryPlaySeed). Zwischenzeitlich hing sie an einem Satelliten-Knopf neben dem CTA — zurückgebaut: der
+            Seed gehört unter den Knopf, zu dem er die Variante ist, nicht daneben. Radius eine Stufe unter dem
+            CTA (xl statt 2xl), damit die Zeile sichtbar zweite Geige spielt. */}
+        {onPlaySeed && (
+          <div>
             <form onSubmit={(e) => { e.preventDefault(); tryPlaySeed(); }} className="flex items-center gap-2">
               <input
-                autoFocus
                 value={seedInput}
                 onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
                 placeholder={t("start.seed.placeholder")}
                 aria-label={t("start.seed.aria")}
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono tracking-wide"
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl text-sm font-mono tracking-wide"
                 style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
               />
               <button type="submit" disabled={!seedInput.trim()}
-                className="shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40"
+                className="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
                 style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
                 {t("start.seed.play")}
               </button>
