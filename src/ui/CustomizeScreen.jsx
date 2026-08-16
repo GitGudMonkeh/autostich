@@ -65,6 +65,11 @@ function prefetchFxChunks() {
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit dem Spiel
+import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Spiel (Pixi-frei)
+
+// Showcase-Tempo des Supernova-Prunks: gestreckt, damit der ~11-s-Swell in EINEN Loop passt (#379).
+// Als Konstante, weil derselbe Wert den Sound-Vorlauf rechnet — zwei Literale liefen sonst auseinander.
+const SUPERNOVA_SHOWCASE_SPEED = 0.18;
 import { globalFxList, globalFxDef, themeDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
 // #sprache: Pack-/Deck-Name zur Anzeigezeit auflösen (roh trägt DE-Namen wie „Feuer"/„Eis"). Objekt bleibt
 // unangetastet (STD_PACK.kind etc.) — nur der ANGEZEIGTE Name kommt aus dem i18n-Katalog.
@@ -538,7 +543,7 @@ function BlackholeScene({ deckTint = false }) {
    Die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop (onFire des Prunks → key-Wechsel → Pop neu),
    zentriert, wie in-game (großer Stich → Ansage + Prunk gemeinsam). Fx=null („Gottgleich · Standard") → NUR die Ansage
    (kein Prunk), per Timer geloopt — mehr Animation hat der Standard bewusst nicht. */
-function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
+function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, sfx = null, speed = 1, sfxDelay = 0 }) { // #330 label/tint entfallen (Chrome zentral in FxStage) · #379 speed = Showcase-Loop-Tempo
   // Board-weite Bühne (panelRef) + unsichtbarer Karten-Anker (cardRef) im Zentrum — der Prunk-Fx zeichnet darüber.
   //   (#379-Regression-Fix: beim Loop-Umbau versehentlich entfernt → GottScene crashte mit „panelRef is not defined".)
   const panelRef = useRef(null);
@@ -559,7 +564,12 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   const fire = () => {
     pop();
     audio.play("fx_godlike", { gain: 0.9 });            // gemeinsamer Gott-Punch (wie in-game), je Loop — deutlich hörbar (0.55→0.9), damit auch die Prunks ohne eigenen Swell klar klingen
-    if (sfx) audio.play(sfx, { gain: 0.9 });             // effekt-spezifischer Swell (Supernova) — voll je Loop, synchron
+    /* Effekt-spezifischer Swell (Supernova) — voll je Loop. `sfxDelay` legt seinen Impuls auf den
+       Detonationsblitz: `onFire` feuert beim Effekt-START, der Blitz kommt erst nach LIFE·CHARGE, und
+       im Showcase ist der Effekt zusätzlich gestreckt (speed 0,18 → ~1,7 s statt 0,3 s). Ohne diesen
+       Vorlauf lag der Impuls im Showcase weit VOR dem Blitz — und ein Nachtunen der In-Game-Zahl
+       änderte hier gar nichts. */
+    if (sfx) audio.play(sfx, { gain: 0.9, delay: sfxDelay });
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
   useEffect(() => {
@@ -781,7 +791,7 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} speed={0.48} />; // Basis 1,2 s → ~2,5 s
   if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} speed={0.85} />; // Basis 2,11 s → ~2,5 s
   if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} speed={0.72} />; // Basis 1,8 s → ~2,5 s
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={0.18} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (

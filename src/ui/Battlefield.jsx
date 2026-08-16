@@ -5,6 +5,7 @@ import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_M
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
+import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
@@ -198,11 +199,7 @@ const FX_TIER_MINS = BIG_SCORE_TIERS.map((s) => s.min).slice().reverse();
 // #322 Cooldown: der volle Prunk höchstens alle 30 s (Echtzeit, ref-basiert). Während des Cooldowns läuft nur die
 // (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt.
 const GOTT_FX_COOLDOWN_MS = 30000;
-/* Vorlauf des Supernova-Swells (s), bis sein großer Impuls kommt. Nach Gehör getunt: der Ton hat
-   einen langen Aufbau, sein Einschlag sitzt tief in der Datei. 0,85 s und 1,85 s waren beide zu früh
-   (Impuls hörbar VOR dem Blitz der Detonation) — die Verzögerung schiebt ihn auf denselben Moment.
-   Hier nachdrehen, wenn der Ton getauscht wird; die Zahl gehört zur DATEI, nicht zum Effekt. */
-const SUPERNOVA_SWELL_DELAY = 2.85;
+
 function fxIntensity(gained) {
   const g = gained > 0 ? gained : 0;
   let tier = 0;
@@ -1137,7 +1134,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
     if (toShow.epic) {
       audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      audio.play("fx_supernova", { gain: 1.0, delay: SUPERNOVA_SWELL_DELAY }); // Swell darüber, verzögert bis auf den visuellen Puls (s. Konstante)
+      // Swell darüber, so verzögert, dass sein Impuls auf dem Detonationsblitz des Supernova-Prunks
+      // sitzt (Tempo 1 → ~0,3 s). Abgeleitet statt getunt: supernovaTiming.js ist die eine Quelle,
+      // die auch der Werkstatt-Showcase benutzt — vorher liefen die beiden Stellen auseinander.
+      audio.play("fx_supernova", { gain: 1.0, delay: supernovaSwellDelay(1) });
     }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
