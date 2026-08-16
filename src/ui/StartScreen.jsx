@@ -136,7 +136,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           v{APP_VERSION}
         </span>
       </div>
-      <p className="text-xs opacity-45 -mt-1">{t("start.tagline")}</p>
+      {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
+          den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
+          Spiel ohnehin schon offen hat, und der Stempel war unter Nickname, PWA-Link und Datenschutz-Zeile
+          faktisch unsichtbar. Genau ihn braucht man aber am häufigsten: nach jedem Push die Frage „ist mein
+          Stand drauf?". Direkt unter der Marke ist er ohne Scrollen lesbar. */}
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
@@ -383,9 +388,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {t("privacy.link")}
         </button>
       )}
-
-      {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title={t("start.version.title")}>{VERSION_FULL}</div>
     </div>
   );
 }

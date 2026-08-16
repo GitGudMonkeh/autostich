@@ -1115,7 +1115,6 @@ export default {
   "feedback.err.offline": "The reporter is not configured in this build — your text is not going anywhere right now.",
 
   /* ---- Start screen ---- */
-  "start.tagline": "Roguelite autobattler trick-taking game · prototype",
   "start.logo.alt": "AUTOSTICH",
 
   "start.progress.onboarding": "🎓 Onboarding",

@@ -1132,7 +1132,6 @@ export default {
   "feedback.err.offline": "Der Melder ist in diesem Build nicht konfiguriert — dein Text geht hier gerade nirgendwohin.",
 
   /* ---- Startbildschirm ---- */
-  "start.tagline": "Roguelite-Autobattler-Stechspiel · Prototyp",
   "start.logo.alt": "AUTOSTICH",
 
   "start.progress.onboarding": "🎓 Onboarding",
