@@ -45,15 +45,17 @@ function makeRadial(stops) {
 
 export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#35e0ff", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null, onFire = null }) {
+  loopGap = 0, onDone = null, onFire = null }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const nodesRef = useRef(null);   // { g: Graphics, core: Sprite }
-  const playRef = useRef({ playing: false, bt: 0, blocks: [] });
+  const playRef = useRef({ playing: false, bt: 0, blocks: [], gapping: false, gapT: 0 });
   const startRef = useRef(null);
   const firstRef = useRef(true);
-  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
+  // loopGap (nur Vorschau, s): Pause in ECHTZEIT zwischen zwei Loop-Durchläufen — der ~11-s-Swell (fx_holocube) soll
+  // durchlaufen können, bevor die nächste Animation (und ihr Ton) startet. In-Game läuft der Effekt mit loop=false → 0.
+  const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, loopGap, onDone, onFire });
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, loopGap, onDone, onFire };
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -86,6 +88,12 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
 
     function tick(ticker) {
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
+      // Loop-Pause (Vorschau): leere Bühne, Echtzeit zählen; erst nach Ablauf neu bauen + Ton neu auslösen.
+      if (pl.gapping) {
+        pl.gapT += ticker.deltaMS / 1000;
+        if (pl.gapT >= pl.gapDur) { pl.gapping = false; buildBlocks(); pl.bt = 0; st.current.onFire && st.current.onFire(); }
+        return;
+      }
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
       const geo = place(); if (!geo) return;
       const { cx, cy, FOV, camZ, W, H } = geo;
@@ -141,13 +149,17 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       core.position.set(cx, cy); core.width = core.height = fr; core.tint = intOf(mix([255, 255, 255], mix(ca, cb, 0.5), 0.5)); core.alpha = clamp(coreFlash * 0.85 * A + coreFlash * 0.15, 0, 1);
 
       if (pl.bt > TUNE.LIFE + TUNE.TAIL) {
-        if (s.loop) { buildBlocks(); pl.bt = 0; s.onFire && s.onFire(); }
+        if (s.loop) {
+          const gap = Math.max(0, Number(s.loopGap) || 0);
+          if (gap > 0) { pl.gapping = true; pl.gapT = 0; pl.gapDur = gap; g.clear(); core.alpha = 0; } // Pause, dann Neustart im Gap-Zweig
+          else { buildBlocks(); pl.bt = 0; s.onFire && s.onFire(); }
+        }
         else { pl.playing = false; g.clear(); core.alpha = 0; stopIdle(); s.onDone && s.onDone(); }
       }
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; pl.gapping = false; pl.gapT = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
