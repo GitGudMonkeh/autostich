@@ -8,17 +8,19 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierNeighborFn, glacierFormations, GLACIER_FORM_LABEL, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierNeighborFn, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
 import glacierIcon from "./assets/glacier.webp"; // #308b: das detaillierte Gletscher-Bild NUR für das wachsende Panel-Hero-Visual behalten
+import { t } from "../i18n/index.js"; // #sprache
+import { archetypeLabel, glacierFormName } from "../i18n/labels.js"; // Fraktions-/Formationsname aus den Registern
 
 const FROST = "#5ec8f0", FROST_BRIGHT = "#8be6ff";
 const dfmt = (x) => String(x).replace(".", ","); // Dezimal-Komma (1.5 → 1,5)
 const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kurz vor Stufe 3 / Bruch bei 12)
 
-// Ein Gletscher-Chip: Icon (Größe = Stufe) + Masse + drei diskrete Stufen-Segmente.
-function Glacier({ mass }) {
+// Ein Gletscher-Chip: Positionsnummer (#Spielreihenfolge) + Kartenwert · Icon (Größe = Stufe) + Masse + Stufen-Segmente.
+function Glacier({ mass, order = null, value = null }) {
   const [T1, T2, T3] = THRESHOLDS;
   const scale = 0.5 + 0.5 * Math.min(1, mass / T3);
   const bricht = mass >= T3;                  // Bruch-bereit: höchste Stufe (12) erreicht → bricht
@@ -41,12 +43,20 @@ function Glacier({ mass }) {
       position: "relative", background: "#20202a", border: `1px solid ${alert ? FROST : "#2a2a34"}`,
       borderRadius: 8, padding: "5px 4px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 46,
       boxShadow: bricht ? `0 0 16px ${FROST}77, inset 0 0 16px ${FROST}18` : krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
-    }} className={alert ? "as-glacier-shiver" : undefined} title={`Gletscher · Masse ${mass} · Stufe ${mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0}${bricht ? " · BRICHT" : ""}`}>
+    }} className={alert ? "as-glacier-shiver" : undefined} title={t(bricht ? "bar.ice.chip.title.burst" : "bar.ice.chip.title",
+      { mass, tier: mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0 })}>
       {alert && <span style={{
         position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)",
         fontSize: 7.5, letterSpacing: ".04em", textTransform: "uppercase", color: "#071016", background: bricht ? "#eafaff" : FROST_BRIGHT, borderRadius: 4, padding: "0 3px", whiteSpace: "nowrap",
         fontWeight: bricht ? 700 : 400, boxShadow: bricht ? `0 0 8px ${FROST}` : undefined,
-      }}>{bricht ? "Bricht" : "kritisch"}</span>}
+      }}>{t(bricht ? "bar.ice.bursting" : "bar.ice.critical")}</span>}
+      {/* #384 Positionsnummer (Spielreihenfolge, 1-basiert) links · Kartenwert rechts — „welche Karte kommt wann". */}
+      {(order != null || value != null) && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", width: "100%", padding: "0 1px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+          <span title={t("bar.ice.playOrder")} style={{ fontSize: 8.5, color: "#7f95a5", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)" }}>#{order}</span>
+          {value != null && <span title={t("bar.ice.cardValue")} style={{ fontSize: 11, fontWeight: 700, color: "#cfe4ef", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)" }}>{value}</span>}
+        </div>
+      )}
       <div style={{ height: 34, display: "grid", placeItems: "end center", width: "100%" }}>
         <div style={{
           height: "100%", aspectRatio: "1", backgroundImage: `url(${glacierIcon})`, backgroundSize: "contain",
@@ -60,18 +70,28 @@ function Glacier({ mass }) {
   );
 }
 
-export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
+export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
+                            deck = [], playerOrder = [],
                             frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
                             options = {}, onOption, manyActive = false }) {
   // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
+  // #384: je Gletscher Position (i, = Spielreihenfolge i+1) + Kartenwert (deck[playerOrder[i]].value); nach POSITION sortiert
+  //   (Deck-/Spielreihenfolge) statt nach Masse. Die „kritisch/Bricht"-Optik bleibt masse-basiert (im Chip).
   const glaciers = [];
-  for (let i = 0; i < glacierLocked.length; i++) if (glacierLocked[i]) glaciers.push(Math.round(glacierMass[i] || 0));
-  glaciers.sort((a, b) => b - a); // die vollsten zuerst — der nächste Bruch steht vorn
+  for (let i = 0; i < glacierLocked.length; i++) if (glacierLocked[i]) {
+    const card = deck[playerOrder[i]];
+    glaciers.push({ pos: i, order: i + 1, value: card ? card.value : null, mass: Math.round(glacierMass[i] || 0) });
+  }
+  glaciers.sort((a, b) => a.pos - b.pos); // Deck-/Spielreihenfolge statt Masse
 
   const cascade = glacierPre?.breaks?.length || 0;                        // Brüche in diesem Durchlauf
   const clusters = glacierClusters(glacierLocked, glacierNeighborFn(glacierRoles));
   const biggest = clusters.reduce((m, c) => Math.max(m, c.length), 0);    // größtes zusammenhängendes Cluster
-  let firn = 0; for (let i = 0; i < glacierMass.length; i++) if (!glacierLocked[i] && (glacierMass[i] || 0) > 0) firn++;
+  // #386 Firn-Boden-Reserve: offener Boden mit Reserve (firnStack) = „lädt"; gefrorene Gletscher halten ihre Restreserve
+  // (füllt sie zum Rundenstart wieder auf 12 nach). Getrennt von glacierMass (Gletscher-Eigenmasse).
+  let firn = 0; for (let i = 0; i < firnStack.length; i++) if (!glacierLocked[i] && (firnStack[i] || 0) > 0) firn++;
+  let reserve = 0; for (let i = 0; i < firnStack.length; i++) if (glacierLocked[i]) reserve += (firnStack[i] || 0);
+  reserve = Math.round(reserve);
   const frozenOpp = new Set([...Object.keys(frozenOppActive || {}), ...Object.keys(frozenOppPending || {})]).size;
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
@@ -123,13 +143,13 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
   if (!active) return null; // Ausstieg NACH den Hooks (rules-of-hooks): sonst wechselt die Hook-Zahl je Render.
 
   // Phase-3-Headline: „gleich knallt's"-Zustand (ein Gletscher an der Bruch-Schwelle) für die einklappbare Fraktions-Zeile.
-  const readyBreak = glaciers.some((m) => m >= THRESHOLDS[2]);
+  const readyBreak = glaciers.some((g) => g.mass >= THRESHOLDS[2]);
   const collapsed = options.collapseFacIce ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacIce: !collapsed });
-  const stateText = readyBreak ? "Bruch bereit" : `${glaciers.length} Gletscher`;
+  const stateText = readyBreak ? t("bar.ice.state.ready") : t("bar.ice.state.count", { n: glaciers.length });
 
   return (
-    <FactionShell className="relative" icon={<FactionIcon type="ice" size={15} />} name="Eis" color={FROST_BRIGHT}
+    <FactionShell className="relative" icon={<FactionIcon type="ice" size={15} />} name={archetypeLabel("ice")} color={FROST_BRIGHT}
       stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}>
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
       {burst && burst.gain > 0 && (
@@ -140,33 +160,34 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], glaci
         </div>
       )}
       <div style={{ display: "flex", gap: 6 }}>
-        {stat("Gletscher-Ertrag", fmtScoreShort(glacierYield), true, fmtScore(glacierYield))}
-        {stat("Kaskade", <span>{cascade} <span style={{ fontSize: 10, color: "#6a7a86" }}>brechen</span></span>)}
-        {stat("Größtes Cluster", biggest)}
+        {stat(t("bar.ice.yield"), fmtScoreShort(glacierYield), true, fmtScore(glacierYield))}
+        {stat(t("bar.ice.cascade"), <span>{cascade} <span style={{ fontSize: 10, color: "#6a7a86" }}>{t("bar.ice.cascade.unit")}</span></span>)}
+        {stat(t("bar.ice.biggest"), biggest)}
       </div>
 
       {glaciers.length > 0 ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-          {glaciers.map((m, i) => <Glacier key={i} mass={m} />)}
+          {glaciers.map((g) => <Glacier key={g.pos} mass={g.mass} order={g.order} value={g.value} />)}
         </div>
       ) : (
         <div style={{ fontSize: 11.5, color: "#6a7a86", textAlign: "center", padding: "6px 0" }}>
-          Noch keine Gletscher — friere in der Aufstellung Karten fest.
+          {t("bar.ice.empty")}
         </div>
       )}
 
       {activeForms.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, justifyContent: "center" }}>
-          {activeForms.map(([t, f]) => chip(GLACIER_FORM_LABEL[t] || t, "×" + dfmt(f), FROST))}
+          {activeForms.map(([k, f]) => chip(glacierFormName(k), "×" + dfmt(f), FROST))}
         </div>
       )}
 
-      {(firn > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
+      {(firn > 0 || reserve > 0 || frozenOpp > 0 || duo > 0 || hasLawine) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-          {firn > 0 && chip("Firn-Boden lädt", firn, FROST)}
-          {frozenOpp > 0 && chip("Gegner eingefroren", frozenOpp, "#7ea6ff")}
-          {duo > 0 && chip("Duo-Buff", duo, "#d4a63a")}
-          {hasLawine && chip(grosseLawineFired ? "Große Lawine · verbraucht" : "Große Lawine · bereit", null, "#d4a63a", grosseLawineFired)}
+          {firn > 0 && chip(t("bar.ice.firnGround"), firn, FROST)}
+          {reserve > 0 && chip(t("bar.ice.firnReserve"), reserve, FROST)}
+          {frozenOpp > 0 && chip(t("bar.ice.frozenOpp"), frozenOpp, "#7ea6ff")}
+          {duo > 0 && chip(t("bar.ice.duoBuff"), duo, "#d4a63a")}
+          {hasLawine && chip(t(grosseLawineFired ? "bar.ice.avalanche.used" : "bar.ice.avalanche.ready"), null, "#d4a63a", grosseLawineFired)}
         </div>
       )}
     </FactionShell>

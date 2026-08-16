@@ -2,12 +2,17 @@
 // Gebäude-Effekte an einer Position im Kartendetail. Geometrie (archFrameLines) rein/unit-getestet; CardGrid- und
 // CardDetail-Render als Smoke via renderToStaticMarkup (node-env, kein DOM → useLayoutEffect/Messung läuft nicht,
 // daher keine SVG-Linien im SSR — die testen wir direkt über archFrameLines).
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { CardGrid, archFrameLines } from "../src/ui/CardGrid.jsx";
 import { architectEffectStrings } from "../src/ui/archEffects.js";
 import { CardDetail } from "../src/ui/CardDetail.jsx";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+
+// #sprache: Gebäude-Effekttexte lösen zur Anzeigezeit auf. Der Test prüft den DEUTSCHEN
+// Wortlaut, also wird die Sprache gesetzt — sonst liefe er gegen die Auslieferungssprache.
+beforeEach(() => setLocale(SOURCE_LOCALE));
 
 const card = (id, value) => ({ id, suit: "R", value });
 const covCell = (bid) => ({ cat: "score", color: "#5ab87a", icon: "", boost: 0, legendary: false, name: "Bau", bid });
@@ -117,7 +122,9 @@ describe("architectEffectStrings — Gebäude-Effekte an einer Position (CardDet
   it("Formations-Gebäude: Rolle wird ausformuliert (Joker / Formations-Multiplikator)", () => {
     const preEmpty = { value: [null], score: [null], segFactor: [1] };
     const joker = { category: "formation", base: { kind: "joker", types: ["farbblock", "wiederholung"] } };
-    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (farbblock/wiederholung)"]);
+    // Sprachprüfung E1: die Joker-Typen erscheinen als AUSGESCHRIEBENE Namen (formationLabel), nicht als rohe
+    // Enum-Schlüssel — dieselbe Quelle wie im Architekt-Bildschirm und in der Core-DB (familyEffectText).
+    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (Farbblock/Wiederholung)"]);
     const kathedrale = { category: "formation", base: { kind: "formMult", factor: 1.4 } };
     expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, kathedrale)).toEqual(["Formationen hier ×1,40"]);
   });

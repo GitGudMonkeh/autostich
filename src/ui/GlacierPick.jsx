@@ -1,18 +1,18 @@
 import { useState } from "react";
-import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { t } from "../i18n/index.js"; // #sprache
 
-const GOLD = "#d4a63a"; // einheitliche Bestätigen-Farbe (wie TargetSelect)
 const ICE = "#7fd4f0";
 
 /* Eis-Neudesign (docs §2.1): Gletscher-Wahl nach jedem Eis-Skill-Pick. Genau EINE Karte antippen, dann bestätigen —
    sie friert auf ihrer Zelle fest (starr) und sammelt Masse. Analog zu TargetSelect (Perk-Kartenziel), aber Einzelwahl
    per Brett-Position; bestätigen dispatcht GLACIER_LOCK. Bereits gefrorene Felder sind gesperrt. */
 export function GlacierPick({ state, onConfirm }) {
-  const { deck = [], playerOrder = [], formations = [], roles = {}, glacierLocked = [], glacierMass = [], challengeBlockForm = [] } = state;
+  const { deck = [], playerOrder = [], formations = [], roles = {}, glacierLocked = [], glacierMass = [], firnStack = [], challengeBlockForm = [] } = state;
   const [sel, setSel] = useState(null); // gewählte Brett-Position (pos) oder null
 
   const cards = playerOrder.map((di) => deck[di]);
@@ -30,31 +30,28 @@ export function GlacierPick({ state, onConfirm }) {
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.ice)}>
         <PhaseHairline />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> Gletscher</div>
-          <h2 className="text-xl font-bold mt-1">Wähle eine Karte als Gletscher</h2>
+          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> {t("glacierpick.eyebrow")}</div>
+          <h2 className="text-xl font-bold mt-1">{t("glacierpick.title")}</h2>
           <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">
-            Sie friert auf ihrer Zelle fest — ab dann <b>starr</b> (nicht mehr verschiebbar) und sammelt Masse, bis sie bricht.
-            Entscheide zwischen Position und Wert.
+            {t("glacierpick.intro.a")} <b>{t("glacierpick.intro.rigid")}</b> {t("glacierpick.intro.b")}
           </p>
         </div>
+
+        <ActionBar pad={5}>
+          <span className="text-xs opacity-60 tabular-nums self-center">{t("glacierpick.chosen", { n: sel != null ? 1 : 0 })}</span>
+          <span className="flex-1" />
+          <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>{t("common.confirm")}</ActionButton>
+        </ActionBar>
 
         <div className="mt-4">
           <CardGrid cards={cards} formations={formations} roles={roles}
             anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
             architectCover={architectCover}
             pickedIds={sel != null && cards[sel] ? [cards[sel].id] : []} disabledPos={disabledPos} lockedPos={chLock}
-            glacierPos={glacierPos} glacierMassByPos={glacierMass}
+            glacierPos={glacierPos} glacierMassByPos={glacierMass} firnStackByPos={firnStack}
             onTilePick={(pos) => pick(pos)} />
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs opacity-60 tabular-nums">{sel != null ? "1" : "0"} / 1 gewählt</span>
-          <button onClick={() => ready && onConfirm(sel)} disabled={!ready}
-            className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
-            style={{ background: ready ? GOLD : "#2a2a33", color: ready ? "#141419" : "#8a8a92", cursor: ready ? "pointer" : "default" }}>
-            Bestätigen
-          </button>
-        </div>
       </div>
     </div>
   );

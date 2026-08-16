@@ -4,13 +4,14 @@ import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
   STORM_CRIT_CAP, DAUERSTROM_CRIT_CAP, CRIT_MULT_CAP,
   SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
   REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
-import { streakBaseMult, zinsHurdle } from "../src/game/perks.js";
+import { streakBaseMult, isLegendary, zinsHurdle } from "../src/game/perks.js";
+import { precomputeArchitect } from "../src/game/architect.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 // Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
@@ -241,17 +242,26 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     const noPatt = resolveTrick(scenario(12 - PATT_MARGIN, 12, {}), rng);              // ohne Patt → Niederlage
     expect(noPatt.lastTrick.result).toBe("loss");
   });
-  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, je Lauf gedeckelt (#203)", () => {
+  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → VABANQUE_MULT × Eröffnungs-Score, JEDES Mal (#203)", () => {
     // TRICKS-ter Stich (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS) → Payout + Zähler hoch.
     const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0 }), rng);
-    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);
+    const bdPaid = paid.lastTrick.breakdown;
+    // Bezugsgröße ist der Eröffnungs-Score OHNE die Wette selbst (hier nur dieser eine Stich, cycleOpenScore startet 0).
+    expect(bdPaid.perkDirect).toBeCloseTo((bdPaid.total - bdPaid.perkDirect) * VABANQUE_MULT, 6);
+    expect(bdPaid.perkDirect).toBeGreaterThan(0);
     expect(paid.vabanquePaid).toBe(1);
+    // SELBSTSKALIEREND: mit bereits gesammelter Eröffnung wächst die Auszahlung mit — ein flacher Betrag täte das nicht.
+    const rich = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0, cycleOpenScore: 10_000 }), rng);
+    const bdRich = rich.lastTrick.breakdown;
+    expect(bdRich.perkDirect).toBeCloseTo(bdPaid.perkDirect + 10_000 * VABANQUE_MULT, 6);
     // Serie vorher gerissen (cycleWins < TRICKS am TRICKS-ten Stich) → kein Payout.
     const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2, vabanquePaid: 0 }), rng);
     expect(voided.lastTrick.breakdown.perkDirect).toBe(0);
-    // Lauf-Deckel erreicht → kein weiterer Payout trotz erfüllter Eröffnung (Anti-Front-Load-Exploit).
-    const capped = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: VABANQUE_MAX_PAYOUTS }), rng);
-    expect(capped.lastTrick.breakdown.perkDirect).toBe(0);
+    // KEIN Lauf-Deckel mehr: auch die 20. gefegte Eröffnung zahlt voll (der alte MAX_PAYOUTS-Deckel band in 90 %
+    // der Läufe und machte den Perk nach 3 von median 16 Auslösern wirkungslos). vabanquePaid zählt nur noch mit.
+    const late = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 20 }), rng);
+    expect(late.lastTrick.breakdown.perkDirect).toBeCloseTo(bdPaid.perkDirect, 6);
+    expect(late.vabanquePaid).toBe(21);
   });
 });
 
@@ -757,5 +767,117 @@ describe("resolveTrick — Nicht-play früher Rückgabezweig (#158)", () => {
     expect(resolveTrick(menu, rng)).toBe(menu);
     const over = { ...scenario(12, 0), phase: "gameover" };
     expect(resolveTrick(over, rng)).toBe(over);
+  });
+});
+
+describe("#370 Wochen-Mods: Karten-Wert (nur im Ranked-Lauf gesetzt)", () => {
+  it("Starke Karten (+mag Spielerwert) dreht einen knappen Stich zum Sieg", () => {
+    expect(resolveTrick(scenario(5, 7), rng).lastResult).toBe("loss");
+    expect(resolveTrick(scenario(5, 7, { weekMods: [{ effect: "cardValue", mag: 3 }] }), rng).lastResult).toBe("win");
+  });
+  it("Stärkere Gegner (+mag Gegnerwert) dreht einen knappen Sieg zur Niederlage", () => {
+    expect(resolveTrick(scenario(9, 7), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(9, 7, { weekMods: [{ effect: "enemyValue", mag: 3 }] }), rng).lastResult).toBe("loss");
+  });
+  it("ohne Wochen-Mods (Normal-/Sim-Lauf) unverändert", () => {
+    expect(resolveTrick(scenario(8, 7, { weekMods: [] }), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(8, 7), rng).lastResult).toBe("win");
+  });
+});
+
+describe("#370 Wochen-Mods: Angebots-Umfang (Perk-/Skill-Verknappung, nur Ranked)", () => {
+  // Treibt einen frischen Lauf durch die Zyklen und fängt das ERSTE Perk- und Skill-Angebot der Engine ab.
+  function firstOffers(weekMods) {
+    let s = { ...initialState(makeRng(7)), weekMods };
+    let perkOffer = null, skillOffer = null;
+    for (let i = 0; i < 1500 && s.phase !== "gameover" && (!perkOffer || !skillOffer); i++) {
+      if (s.phase === "levelup") {
+        if (s.offer && !perkOffer) perkOffer = s.offer;
+        if (s.skillOffer && !skillOffer) skillOffer = s.skillOffer;
+        s = { ...s, phase: "play", offer: null, skillOffer: null, legendaryOffer: null, statOffer: null };
+        continue;
+      }
+      if (s.phase === "formation" || s.phase === "architect" || s.phase === "legendary") { s = { ...s, phase: "play" }; continue; }
+      s = resolveTrick(s, makeRng(100 + i));
+    }
+    return { perkOffer, skillOffer };
+  }
+  it("ohne Mods volles Angebot; mit Verknappung Perk=1 und Skill ≤4 (1/Fraktion)", () => {
+    const base = firstOffers([]);
+    expect(base.perkOffer && base.perkOffer.length).toBeGreaterThan(1);   // Default 3
+    expect(base.skillOffer && base.skillOffer.length).toBeGreaterThan(4); // Default 12 (3/Fraktion)
+    const scarce = firstOffers([{ effect: "scarcePerks" }, { effect: "scarceSkills" }]);
+    expect(scarce.perkOffer.length).toBe(1);
+    expect(scarce.skillOffer.length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe("#370 Wochen-Mods: Formations-Boost (nur Ranked)", () => {
+  // gained bei Sieg an pos 5, nur die Formation an pos 5 variiert → alle übrigen Score-Faktoren konstant (K).
+  const g = (formations, wm = []) => resolveTrick(scenario(12, 0, { pos: 5, formations, weekMods: wm }), rng).lastTrick.gained;
+  const neutralForms = () => identity().map(() => ({ mult: 1, baseMult: 1, formations: [] }));
+  it("verdoppelt den Formations-BONUS (Überschuss über 1); neutraler Sieg unberührt", () => {
+    const forms = neutralForms();
+    forms[5] = { mult: 2, baseMult: 2, formations: [{ type: "treppe", factor: 2 }] }; // formMult 2 → Bonus = K
+    const neutral = g(neutralForms());                       // formMult 1 → gained = K
+    const withForm = g(forms);                               // formMult 2 → gained = 2K
+    const boosted  = g(forms, [{ effect: "formBoost" }]);    // formMult 1+(2-1)*2 = 3 → gained = 3K
+    expect(withForm).toBeGreaterThan(neutral);
+    expect(boosted - neutral).toBeCloseTo((withForm - neutral) * 2); // Bonus exakt verdoppelt
+    expect(g(neutralForms(), [{ effect: "formBoost" }])).toBeCloseTo(neutral); // formMult 1 → kein Bonus, unberührt
+  });
+});
+
+describe("#370 Wochen-Mods: Bau-Boost (Architekt-Gebäude, nur Ranked)", () => {
+  it("verdoppelt den Gebäude-Bonus (Flat + Mult); ohne Gebäude ohne Wirkung", () => {
+    // Zollhaus (Flat auf Sieg) + Schatzkammer (×Mult) decken pos 5 → beide Kanäle aktiv.
+    const pre = precomputeArchitect({ buildings: [
+      { id: 1, familyId: "A_ZOLLHAUS", tier: 3, footprint: [4, 5], colorChoice: null },
+      { id: 2, familyId: "A_SCHATZ", tier: "legendary", footprint: [4, 5, 6, 7], colorChoice: null },
+    ] }, identity(), constDeck(12));
+    const withArch = (wm) => resolveTrick(scenario(12, 0, { pos: 5, architectEnabled: true, architect: { winCounters: {}, buildings: [] }, architectPre: pre, weekMods: wm }), rng).lastTrick.gained;
+    expect(withArch([{ effect: "buildBoost" }])).toBeGreaterThan(withArch([])); // Gebäude-Bonus verdoppelt
+    // Ohne Architekt: Bau-Boost darf nichts ändern (flat 0, mult 1 bleiben nach Verdopplung 0/1).
+    const noArchBase    = resolveTrick(scenario(12, 0, { pos: 5 }), rng).lastTrick.gained;
+    const noArchBoosted = resolveTrick(scenario(12, 0, { pos: 5, weekMods: [{ effect: "buildBoost" }] }), rng).lastTrick.gained;
+    expect(noArchBoosted).toBe(noArchBase);
+  });
+});
+
+describe("#381 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
+  const legCount = (offer) => (Array.isArray(offer) ? offer.filter((e) => typeof e === "string" && isLegendary(e)).length : 0);
+  it("jede mag-te PERK-PHASE bietet 3 legendäre Perks", () => {
+    // Perk-Phasen liegen bei cycle 1,5,9 (perkPhaseAt = 1,2,3). mag 3 → pp 3 (cycle 9) ist Takt-Phase.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 8, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).toBe("levelup");
+    expect(legCount(s.offer)).toBe(3); // alle 3 Angebots-Slots legendär
+  });
+  it("Nicht-Takt-Perk-Phase bleibt normal (< 3 Legendäre)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng); // cycle 1 = perkPhaseAt 1
+    expect(s.phase).toBe("levelup");
+    expect(legCount(s.offer)).toBeLessThan(3);
+  });
+  it("wandelt keine Nicht-Perk-Runde mehr um (Plan[3] = shop bleibt shop, keine Perk-Phase)", () => {
+    // cycle 2 + pos 39 → cycle 3 = shop (perkPhaseAt 0). Früher machte legTakt daraus eine Perk-Runde — jetzt nicht mehr.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).not.toBe("levelup");
+  });
+});
+
+describe("#370 Wochen-Mods: Deck-Shuffle (deckShuffle, nur Ranked)", () => {
+  const sorted = (a) => [...a].sort((x, y) => x - y);
+  it("mischt vor der Aufstellphase die Karten-Anordnung neu (gleiche Menge, andere Reihenfolge)", () => {
+    // cycle 1 + pos 39 → cycle 2; Plan[2] = "formation".
+    const before = scenario(12, 0, { pos: 39, cycle: 1, weekMods: [{ effect: "deckShuffle" }] });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).not.toEqual(before.playerOrder);
+    expect(sorted(s.playerOrder)).toEqual(sorted(before.playerOrder)); // echte Permutation, keine Karte verloren
+  });
+  it("ohne Mod bleibt die Anordnung persistent", () => {
+    const before = scenario(12, 0, { pos: 39, cycle: 1 });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).toEqual(before.playerOrder);
   });
 });

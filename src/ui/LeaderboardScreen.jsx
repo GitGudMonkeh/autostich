@@ -1,40 +1,67 @@
-// 🏆 Bestenliste — vier Reiter:
-//  · Meine Runs — lokale Läufe (klickbar → RunDetail).
-//  · Standard   — globale ALLZEIT-Highscores (zufällige Seeds, Spaß-Modus). board=standard, ungefiltert.
-//  · Meister    — WOCHEN-Challenge: alle spielen den Seed der Woche; das Board zeigt die aktuelle Woche
-//                 (board=meister + seed=Wochen-Seed). Teilnahme frei bei 13/13 Upgrades, ansehen jederzeit.
-//  · Champions  — Hall of Champions: Platz 1 jeder abgelaufenen Meister-Woche (1 pro Woche).
+// 🏆 Bestenliste — drei Reiter (#385: „Meine Runs" raus, die eigenen Läufe stehen in der Statistik):
+//  · Diese Woche — WOCHEN-Ranked: alle spielen den Seed der Woche; das Board zeigt die aktuelle Woche
+//                  (board=meister + seed=Wochen-Seed). Teilnahme frei bei allen Decks + je ≥1 Lauf, ansehen jederzeit.
+//  · Challenger  — Hall of Champions: Platz 1 jeder abgelaufenen Woche (1 pro Woche).
+//  · Regeln      — Modus-Baseline + voller Modifikator-Katalog + Ausschluss-Paare.
 import { useState, useMemo, useEffect } from "react";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
-import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
-import { loadRunHistory } from "../game/storage.js";
 import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
-import { treeComplete } from "../game/progression.js";
-import { MODAL_CARD, ModalHairline } from "./modalStyle.jsx";
+import { rankedUnlocked } from "../game/progression.js";
+import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
+import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
+import { WeekModChips, catalogDisplayMods, pickedDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
+import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
+import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Reiter)
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
 const GOLD = "#d4a63a";
-const LILA = "#8a7de0";
-const CY = "#26c6e6";   // Standard-Akzent (Spaß-Modus)
-const AM = "#f2a83a";   // Meister-Akzent (Wochen-Challenge)
-// Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs.
+const CY = "#26c6e6";   // Regeln-Akzent
+const AM = "#f2a83a";   // Wochen-Akzent (Diese Woche)
+// Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs. #385: „Meine Runs" entfernt
+//   (steht in der Statistik) → 3 Reiter, gleich breit. Board-String bleibt intern "meister" (Wochen-Board + Champions).
 const TABS = [
-  { id: "mine",       label: "Meine Runs", accent: LILA },
-  { id: "standard",   label: "Standard",   accent: CY },
-  { id: "meister",    label: "Meister",    accent: AM },
-  { id: "champions",  label: "🏆 Champions", accent: GOLD },
+  { id: "meister",    labelKey: "board.tab.week",       accent: AM },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: GOLD },
+  { id: "regeln",     labelKey: "board.tab.rules",      accent: CY },
 ];
-
-const fmtDate = (ts) => {
-  if (!ts) return "";
-  try { return new Date(ts).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "2-digit" }); }
-  catch (e) { return ""; }
-};
+// #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
+//   positiv/negativ; darunter die Ausschluss-Paare.
+function ModBox({ m }) {
+  const c = m.sign === "pos" ? MOD_POS : MOD_NEG;
+  return (
+    <div className="rounded-lg px-3 py-2" style={{ background: "#17161f", border: `1px solid ${c}44` }}>
+      <div className="text-[12.5px] font-bold" style={{ color: c }}>{m.name}</div>
+      <div className="text-[11.5px] opacity-80 leading-snug mt-0.5">{m.text}</div>
+    </div>
+  );
+}
+function RegelnPanel() {
+  const catalog = catalogDisplayMods();
+  const pos = catalog.filter((m) => m.sign === "pos");
+  const neg = catalog.filter((m) => m.sign === "neg");
+  const head = "text-[10px] font-bold uppercase tracking-wider";
+  return (
+    <div className="text-[12px] leading-relaxed">
+      <p className="opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
+      <div className={`${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
+      <div className="grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
+      <div className={`${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>
+      <div className="grid gap-1.5">{neg.map((m) => <ModBox key={m.id} m={m} />)}</div>
+      <div className={`${head} mt-3 mb-1.5 opacity-60`}>{tr("board.rules.pairs")}</div>
+      <div className="grid gap-1 text-[11.5px] opacity-75">
+        {WEEK_MOD_PAIRS.map((p) => (
+          <div key={p.key}><b style={{ color: MOD_POS }}>{WEEK_MOD_BY_ID[p.pos].name}</b> ↔ <b style={{ color: MOD_NEG }}>{WEEK_MOD_BY_ID[p.neg].name}</b></div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Restzeit bis zum Wochen-Reset kompakt: „3t 5h 12m 40s".
 function fmtCountdown(ms) {
@@ -42,29 +69,11 @@ function fmtCountdown(ms) {
   const d = Math.floor(s / 86400); s -= d * 86400;
   const h = Math.floor(s / 3600); s -= h * 3600;
   const m = Math.floor(s / 60); s -= m * 60;
-  return `${d}t ${h}h ${m}m ${s}s`;
+  return tr("board.countdown", { d, h, m, s });
 }
 
 // Seed-Code hübsch mit Trenner (4-3): „A7F39K2" → „A7F3-9K2".
 const prettySeed = (seed) => { const c = formatSeed(seed); return `${c.slice(0, 4)}-${c.slice(4)}`; };
-
-// Eine Liste lokaler Läufe (bereits sortiert + gedeckelt). Klickbar → RunDetail (nicht anonymisiert, es sind eigene Läufe).
-function LocalRunList({ runs, empty, onPick }) {
-  if (!runs.length) return <div className="text-sm opacity-40 text-center py-6">{empty}</div>;
-  return (
-    <div className="grid gap-1">
-      {runs.map((r, i) => (
-        <button key={r.ts ?? i} onClick={() => onPick({ entry: r, rank: i + 1 })} title="Details anzeigen"
-          className="flex items-center gap-2.5 text-sm px-2.5 py-1.5 rounded-lg text-left transition-all hover:brightness-125"
-          style={{ background: "#20202a" }}>
-          <span className="opacity-50 w-6 shrink-0 tabular-nums">#{i + 1}</span>
-          <span className="flex-1 min-w-0 truncate opacity-60 text-xs">{fmtDate(r.ts)}</span>
-          <span className="font-bold shrink-0 tabular-nums" style={{ color: GOLD }}>{fmtScore(r.score)}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // Hall of Champions — je abgelaufener Woche der Platz 1 des Meister-Wochen-Seeds (client-seitig aus dem Board berechnet).
 function ChampionsList({ reloadToken }) {
@@ -83,16 +92,16 @@ function ChampionsList({ reloadToken }) {
     return () => { alive = false; };
   }, [reloadToken]);
 
-  if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">Champions sind nicht verfügbar.</div>;
+  if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">{tr("board.champions.unavailable")}</div>;
   return (
     <>
       <div className="text-[11px] opacity-55 leading-relaxed mb-3">
-        Platz 1 jeder abgelaufenen <b style={{ color: AM }}>Meister</b>-Woche landet hier — <b>eine Person pro Woche</b>.
+        {tr("board.champions.intro")}
       </div>
       {champs === null ? (
-        <div className="text-xs opacity-40 text-center py-3">Lädt Champions …</div>
+        <div className="text-xs opacity-40 text-center py-3">{tr("board.champions.loading")}</div>
       ) : champs.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-6">Noch keine Wochensieger — die erste Meister-Woche muss erst abgeschlossen sein.</div>
+        <div className="text-xs opacity-40 text-center py-6">{tr("board.champions.empty")}</div>
       ) : (
         <div className="grid gap-1">
           {champs.map((c) => (
@@ -111,10 +120,11 @@ function ChampionsList({ reloadToken }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highscores = [], best = 0, onPlaySeed = null, onPlayMeister = null, profile = null }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister" }) {
   useEscape(onClose);
-  const [tab, setTab] = useState("mine");
-  const [detail, setDetail] = useState(null); // gewählter lokaler Lauf → RunDetail-Overlay
+  // #385 Default-Reiter „Diese Woche" (meister); „Meine Runs" ist entfernt (steht in der Statistik).
+  const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "meister");
+  const tabSwipe = useTabSwipe(TABS.map((t) => t.id), tab, setTab); // horizontaler Swipe → Reiterwechsel
   const [now, setNow] = useState(() => Date.now()); // Live-Ticker für den Wochen-Countdown
 
   // Sekundentakt nur, solange der Meister-Reiter offen ist (Countdown live).
@@ -125,113 +135,78 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, highs
   }, [tab]);
 
   const week = useMemo(() => currentWeek(new Date(now)), [now]);
-  const canPlayMeister = treeComplete(profile || {}); // Teilnahme frei bei 13/13 Upgrades
-
-  // Alle eigenen Läufe: Run-Historie (bis 30, mit Deck-Snapshot) + Top-5-Highscores, per Zeitstempel dedupliziert
-  // (Historie zuerst → die reichere Version gewinnt), nach Score sortiert.
-  const allRuns = useMemo(() => {
-    const seen = new Set();
-    const merged = [];
-    for (const r of [...loadRunHistory(), ...(highscores || [])]) {
-      const key = r.ts ?? `${r.score}:${r.tricks}:${r.cycles}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      merged.push(r);
-    }
-    return merged.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.ts || 0) - (a.ts || 0));
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
-  }, [highscores, reloadToken]);
-
-  const myTop = useMemo(() => allRuns.slice(0, TOP_N), [allRuns]);
+  const weekMods = useMemo(() => pickWeekMods(week.seed), [week.seed]); // #370 Wochen-Modifikatoren (seed-deterministisch)
+  const canPlayRanked = rankedUnlocked(profile || {}); // #370: frei bei allen Decks + je ≥1 abgeschlossenem Lauf
 
   return (
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      {/* Feste Kartenhöhe → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher Stelle; nur die Liste scrollt intern. */}
+      {/* #385 FESTE Kartenhöhe (nicht nur maxHeight) → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher
+          Stelle; nur die innere Liste scrollt. */}
       <div className="w-full max-w-lg rounded-2xl overlay-card as-panel flex flex-col overflow-hidden"
-        style={{ ...MODAL_CARD, maxHeight: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
         <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">🏆 Bestenliste</h2>
-            <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>Schließen</button>
+            <h2 className="text-lg font-extrabold flex items-center gap-2">{tr("board.title")}</h2>
+            <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{tr("common.close")}</ActionButton>
           </div>
 
-          {/* Reiter — eine Zeile (bei Bedarf horizontal scrollbar), aktiver Reiter in seiner Akzentfarbe. */}
-          <div className="flex gap-1.5 mb-4 shrink-0 overflow-x-auto -mx-1 px-1" role="tablist" style={{ scrollbarWidth: "none" }}>
-            {TABS.map(({ id, label, accent }) => {
+          {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
+          <div className="flex gap-1.5 mb-4 shrink-0" role="tablist">
+            {TABS.map(({ id, labelKey, accent }) => {
               const on = tab === id;
               return (
                 <button key={id} role="tab" aria-selected={on} onClick={() => setTab(id)}
-                  className="shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all"
+                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-all"
                   style={on
-                    ? { background: accent, color: "#141419", boxShadow: `0 0 12px ${accent}44` }
-                    : { background: "#1c1c23", color: "#c8c8d0", border: "1px solid #2c2c36" }}>
-                  {label}
+                    ? { color: accent, background: "#131318", border: `1px solid ${accent}55`, boxShadow: `0 0 16px -9px ${accent}` }
+                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                  {tr(labelKey)}
                 </button>
               );
             })}
           </div>
 
           <div className="rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
-            {tab === "mine" && (
-              <>
-                <div className="flex items-baseline justify-between gap-2 mb-3">
-                  <span className="text-[13px] font-extrabold" style={{ color: LILA }}>Meine Runs</span>
-                  <span className="text-[12px] opacity-70">Rekord <b style={{ color: GOLD }}>{fmtScore(best)}</b></span>
-                </div>
-                <LocalRunList runs={myTop} empty="Noch keine Läufe — leg los." onPick={setDetail} />
-              </>
-            )}
-
-            {tab === "standard" && (
-              leaderboardConfigured ? (
-                <>
-                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                    <span className="text-[13px] font-extrabold" style={{ color: CY }}>Standard</span>
-                    <span className="text-[11px] opacity-50">Allzeit · Top {TOP_N}</span>
-                  </div>
-                  <div className="text-[11.5px] opacity-55 leading-relaxed mb-3">Zufällige Seeds, Upgrades ignoriert — für alle gleich. Just for fun.</div>
-                  <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="standard" onPlaySeed={onPlaySeed} hideHeader />
-                </>
-              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
-            )}
-
             {tab === "meister" && (
               leaderboardConfigured ? (
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="flex items-baseline justify-between gap-2 mb-2.5">
-                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{week.label}</span>
-                    <span className="text-[11px] opacity-60 tabular-nums">Reset in {fmtCountdown(msUntilWeekEnd(new Date(now)))}</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
+                    <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#221b0f,#1b1610)", border: `1px solid ${AM}44` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">Seed der Woche</span>
+                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
                       <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
                     </div>
-                    {canPlayMeister && (
-                      <button onClick={onPlayMeister || undefined}
+                    {canPlayRanked && (
+                      <button onClick={onPlayRanked || undefined}
                         className="w-full mt-3 border-none rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5"
-                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>▶ Spielen</button>
+                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>{tr("board.play")}</button>
                     )}
-                    {!canPlayMeister && (
+                    {!canPlayRanked && (
                       <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
-                        🔒 Teilnahme frei bei 13/13 Upgrades · ansehen jederzeit
+                        {tr("board.locked")}
                       </div>
                     )}
                   </div>
+                  {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
+                  <div className="mb-3"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
-              ) : <div className="text-sm opacity-40 text-center py-8">Bestenliste ist nicht verfügbar.</div>
+              ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
             {tab === "champions" && <ChampionsList reloadToken={reloadToken} />}
+
+            {tab === "regeln" && <RegelnPanel />}
           </div>
         </div>
-
-        {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
       </div>
     </div>
   );

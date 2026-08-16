@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { startPerf, stopPerf, resetPerf, getLive, getReport, formatReport } from "./perfRecorder.js";
+import { t } from "../i18n/index.js"; // #sprache
 
 /* Perf-HUD + Report-Steuerung — NUR im Preview-Build (Gate in App.jsx: VITE_PREVIEW === "1").
    Landet NICHT im echten Spiel. Startet den Hintergrund-Recorder (perfRecorder.js), zeigt live:
@@ -44,9 +45,9 @@ export function PerfOverlay() {
 
   const doReport = () => {
     const r = getReport();
-    // eslint-disable-next-line no-console
+     
     console.log("%c" + formatReport(r), "font-family:monospace");
-    // eslint-disable-next-line no-console
+     
     console.log("PERF_JSON", r);
     try {
       navigator.clipboard?.writeText(JSON.stringify(r, null, 2));
@@ -69,8 +70,8 @@ export function PerfOverlay() {
     >
       <span style={{ color: col }}>{live.fps} FPS</span>
       <span style={{ color: "#8a8a92" }}>· p95 {live.p95}ms · jank {live.jank}</span>
-      <button style={btn} onClick={doReport} title="Report → Konsole + Zwischenablage">{copied ? "✓" : "⧉"}</button>
-      <button style={btn} onClick={resetPerf} title="Messung zurücksetzen">↺</button>
+      <button style={btn} onClick={doReport} title={t("perf.report")}>{copied ? "✓" : "⧉"}</button>
+      <button style={btn} onClick={resetPerf} title={t("perf.reset")}>↺</button>
       <button style={{ ...btn, color: fxCol, borderColor: `${fxCol}66` }} onClick={toggleFxMode}
         title="Feld-Effekt-Renderer umschalten (GPU-Emitter ↔ DOM) + neu laden">FX:{fxMode === "pixi" ? "PIXI" : "DOM"}</button>
     </div>

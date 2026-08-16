@@ -1,6 +1,6 @@
 /* Eis-Neudesign — Fundament ("Gletscher, Brechen & Kaskade"). Reine, deterministische Kern-Logik.
    NEU-Design, isoliert vom bestehenden Eis-Archetyp (skills.js/engine.js Ice-Block) — gegatet später über
-   activeArchetypes "glacier". Design-Referenz: docs/eis-rework.md.
+   activeArchetypes "ice". Design-Referenz: docs/eis-rework.md.
 
    Mentalmodell (docs §2): Masse liegt auf dem BRETTFELD (Firn-Boden), nicht auf der Karte. Ein Gletscher ist ein
    festgefrorenes Feld. Zum Durchlauf-Anfang wird der ganze Bruch auf dem statischen Brett vorab gerechnet
@@ -48,6 +48,11 @@ export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (Überla
 export const BURST_AT = TOP;                    // natürliche Berst-Schwelle = höchste Stufe (12)
 export const RESET_TO = 0;                      // nach dem Bruch abgekalbt → baut wieder von unten auf
 export const RISSBILDUNG_BURST = 6;            // Rissbildung: bricht schon bei niedriger Masse (Tempo-Gegenpol, kleine häufige Brüche)
+// #386 Firn-Boden-Reserve: der auf offenem Boden angesammelte Firn (firnStack) ist die RESERVE eines Feldes. Wird ein Feld
+// gefroren, startet der Gletscher LEER (Masse 0) und zieht zum Rundenstart aus seiner Reserve wieder auf FIRN_REFILL_TARGET
+// (=TOP, volle Masse) auf — nur die Differenz zur selbst-erzeugten Masse. Die Reserve ist ungedeckelt und leert sich Runde
+// für Runde, bis sie leer ist. Trennung von glacierMass (Gletscher-Eigenmasse) und firnStack (Boden-Reserve).
+export const FIRN_REFILL_TARGET = TOP;          // Runden-Start-Nachschub-Ziel: volle Masse (12)
 
 /* ---- Geometrie: 4 orthogonale Nachbarn (links/rechts/oben/unten) auf dem 8×5-Brett ---------------- */
 export function neighbors4(p) {
@@ -199,6 +204,9 @@ export function uebergletscherPool(mass, locked) {
 // Eiszeit (Legendär, docs §7): Dauerfrost im Overdrive — am Durchlauf-Ende flutet das GANZE Brett (alle ungefrorenen
 // Felder, flach, ohne Nachbar-Dämpfung), und das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach
 // und nach über die Restrunden). Gibt { mass, locked } zurück. ⚠ Flutrate Platzhalter.
+// #386: `mass` ist die Firn-Boden-RESERVE (firnStack) — die Flut füllt die Reserve offener Felder, die Auto-Freeze-Wahl
+// liest die höchste Reserve. Der neu gefrorene Gletscher startet mit Masse 0 (in glacierMass, hier nicht berührt) und
+// zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
 export const EISZEIT_FLOOD = 3;
 export const EISZEIT_MAX_GLACIERS = 16; // Runaway-Deckel: Eiszeit friert nur bis zu dieser Gesamt-Gletscherzahl ein (sonst füllte sie das Brett → 2×-Ausreißer). Die Flut läuft weiter.
 export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EISZEIT_MAX_GLACIERS, blocked = []) {
@@ -293,8 +301,8 @@ export const ROLES = {
   ZERMALMEN: "G_ZERMALMEN",       // Kollision (Treffer auf Gletscher-Nachbarn) → Krit
   ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
   ANFRIEREN: "G_ANFRIEREN",       // Firn: Sieg → +Masse extra; Formations-Sieg → doppelt
-  SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Masse aufs Nachbarfeld (Boden säen, nah)
-  DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Boden-Frost (fern)
+  SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Firn in die Boden-Reserve des Nachbarfelds (#386: nur offener Boden, nie unter einen Gletscher)
+  DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (fern; #386 firnStack)
   EISPANZER: "G_EISPANZER",       // Frostgriff: Niederlage neben Gletscher folgenlos + füttert Masse (der Gletscher frisst, was zerbricht)
   PACKEIS: "G_PACKEIS",           // Eisschild: Gletscher mit vielen Gletscher-Nachbarn → Bonus-Masse (belohnt die Mitte)
   VERSCHMELZEN: "G_VERSCHMELZEN", // Eisschild: angrenzende Gletscher poolen → jeder auf den Cluster-Durchschnitt (nie fallend)
@@ -350,19 +358,19 @@ export const DAUERFROST_NEAR = 1;      // Dauerfrost: Feld mit Abstand 2 zum nä
 export const DAUERFROST_FAR = 2;       // Dauerfrost: Feld mit Abstand ≥3 (oder kein Gletscher) → +Masse/Durchlauf
 export const EISPANZER_MASS = 1;       // Eispanzer: abgeschirmte Nachbar-Niederlage → +Masse je angrenzendem Gletscher
 
-// Schneetreiben (Verwehung, docs §4): Zielfeld für die Verwehung — bevorzugt ein NICHT-Gletscher-Nachbarfeld (Boden säen),
-// sonst irgendein Nachbar. Deterministisch (niedrigster Index in der neighbors4-Reihenfolge). null, wenn keine Nachbarn.
+// Schneetreiben (Verwehung, docs §4): Zielfeld für die Verwehung — ein NICHT-Gletscher-Nachbarfeld (offener Boden, wo Firn
+// als Reserve gesät wird). Deterministisch (niedrigster Index in der neighbors4-Reihenfolge). null, wenn keine Nachbarn ODER
+// alle Nachbarn Gletscher sind. #386: Firn wird NIE unter einen Gletscher gesät → kein Gletscher-Fallback mehr.
 export function driftTarget(pos, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
-  const nb = neighbors4(pos);
-  const open = nb.filter((p) => !isG(p));
-  if (open.length) return open[0];
-  return nb.length ? nb[0] : null;
+  const open = neighbors4(pos).filter((p) => !isG(p));
+  return open.length ? open[0] : null;
 }
 
 // Dauerfrost (docs §4 Firn): am Durchlauf-ENDE frosten UNGEFRORENE Felder nach ABSTAND zum nächsten Gletscher
 // (King-Move/Chebyshev, weil „die 8 direkt um einen Gletscher"): Abstand 1 (der 8er-Ring) → 0, Abstand 2 → NEAR,
-// Abstand ≥3 (oder gar kein Gletscher) → FAR. Bewusst einfache Bänder statt Bruch-Skalierung. Nur Firn-Boden.
+// Abstand ≥3 (oder gar kein Gletscher) → FAR. Bewusst einfache Bänder statt Bruch-Skalierung. #386: schreibt in die
+// Firn-Boden-RESERVE (firnStack), nie unter einen Gletscher — die Engine reicht das firnStack-Array herein.
 export function dauerfrostTick(mass, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const glaciers = [];

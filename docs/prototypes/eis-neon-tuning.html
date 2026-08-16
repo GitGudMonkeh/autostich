@@ -1,0 +1,481 @@
+<title>Eis · Neon-Kristall-Frost · Synthwave</title>
+<style>
+  :root{
+    --bg:#070a16; --bg2:#04060f; --panel:#0d1430; --panel2:#111a3e; --line:#243056;
+    --ink:#e8f0ff; --dim:#9db0dd; --dimmer:#63739e;
+    --acc:#5ec8f0; --acc-dim:#2a5a8a; --hot:#d6ecff; --z:#a13cff;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1200px 720px at 78% -12%, #14204a 0%, transparent 55%),
+      radial-gradient(900px 600px at -6% 112%, #2a1150 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:80ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0c1c,#050409); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#080b1c); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--acc)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .panel{background:linear-gradient(180deg,var(--panel),#080b1c); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #5ec8f022, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #5ec8f022}
+  input#mass{height:6px}
+  .config{max-width:1180px; margin:20px auto 0}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  textarea{width:100%; min-height:200px; background:#070d1e; color:#bfe0ff; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Eis · Neon-Kristall-Frost</h1>
+  <div class="sub">Neon-Synthwave-<b>Frost</b> wächst von <b>unten &amp; den beiden Seiten</b> nach innen/oben — <b>kantige Kristall-Facetten</b> mit glühenden Wireframe-Kanten plus <b>Vektor-Dendriten</b> (elektrische Tracer-Linien), die aus dem Rahmen hochkriechen. Die <b>Mitte bleibt frei</b>, damit die <b>Zahl</b> lesbar bleibt. Zwei gegenüberliegende <b>Neon-Bühnenlichter</b> (Cyan↔Violett) strahlen alles an: Kanten-Säume, Bloom-Aura, satter Punch. Der Regler ist die <b>Gletscher-Masse 0–12</b> aus <code>glacier.js</code> — die Vereisung <b>rastet diskret</b> an den Schwellen <b>4 / 8 / 12</b> ein (Stufe 1/2/3); Masse &gt; 0 = schon angefroren (<code>BASE_FREEZE</code>). (Prototyp Canvas-2D; In-Game → Pixi.)</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Kristall <b>Facetten</b></span>
+    <span class="chip"><span class="dot" style="color:var(--acc)"></span> Wuchs <b>unten+Seiten → innen</b></span>
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Neon <b>Licht A</b></span>
+    <span class="chip"><span class="dot" style="color:#a13cff"></span> Neon <b>Licht B</b></span>
+    <span class="chip"><span class="dot" style="color:#bfeaff"></span> Schwellen <b>4 / 8 / 12</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud">Gletscher · <b id="hudLvl">Stufe 3</b></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="lvl">
+      <div class="lab"><label for="mass">❄️ Gletscher-Masse 0–12 (Zustand · kein TUNE-Wert)</label><span class="val" id="v_mass">Masse 12/12 · Stufe 3</span></div>
+      <input type="range" id="mass" min="0" max="12" step="1" value="12">
+      <div style="font-size:11px;color:var(--dimmer);margin-top:3px">Schwellen <b>4 / 8 / 12</b> = Stufe 1 / 2 / 3 (<code>THRESHOLDS</code>). Masse &gt; 0 = angefroren (Sockel <code>BASE_FREEZE</code>).</div>
+    </div>
+    <div class="transport">
+      <button id="btnAuto">Auto-Frost: aus</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="1.8" step="0.05" value="1.3" style="width:110px"><span class="val" id="v_zoom" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="bar"><h2>Eis-TUNE-Werte · für <code>src/ui/fx/FrostIce.jsx</code></h2>
+    <div style="display:flex;gap:10px;align-items:center"><span class="copied" id="copied">kopiert ✓</span><button id="btnCopy">Werte kopieren</button><button id="btnDefault">Auf Standard</button></div>
+  </div>
+  <textarea id="cfg" readonly spellcheck="false"></textarea>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var TAU=Math.PI*2;
+  var THRESHOLDS=[4,8,12];                 // glacier.js — Berst-Schwellen → Stufe = #Schwellen ≤ Masse (0..3)
+  var MASS_MAX=12;
+  var DEFAULTS = {
+    ICE_DARK:"#141d47", ICE_MID:"#4f78c8", ICE_EDGE:"#cfeeff",
+    NEON_A:"#22e0ff", NEON_B:"#a13cff", NEON_ANGLE:90, NEON_RIM:0.16, NEON_TIP:0.58, NEON_PUNCH:0.2, NEON_BLOOM:0.36, NEON_BASE:0,
+    COVER:0.47, SIDE_BAND:0.44, BOTTOM_BIAS:0.58, RAGGED:1, DENSITY:0.44, CLUMP:0.64, BASE_FREEZE:0.06,
+    SHARD_LEN:17, SHARD_WIDTH:0.76, FACET:0.64, HEX:0, GLAZE:1,
+    DENDRITE:0, DEND_LEN:0.3, DEND_BRANCH:0,
+    RIME:0.5, SPARKLE:0.4, SHIMMER:0.5
+  };
+  var T = Object.assign({}, DEFAULTS);
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";};
+  var GROUPS = [
+    { title:"Farben (Kristall)", note:"Basis/Schatten, Facetten-Fläche und helle Kristall-Kante. Neon liegt darüber.", rows:[
+      ["ICE_DARK","Basis / Schatten",0,0,0,null,"color"],["ICE_MID","Facetten-Fläche",0,0,0,null,"color"],["ICE_EDGE","Kristall-Kante",0,0,0,null,"color"]
+    ]},
+    { title:"Neon-Synthwave-Licht", note:"Zwei gegenüberliegende Bühnenlichter (A/B) strahlen den Frost an — Kanten fangen Neon ein, weiche Bloom-Aura (bleibt auf der Karte), Punch macht's übersättigt/emissiv.", rows:[
+      ["NEON_A","Licht A",0,0,0,null,"color"],
+      ["NEON_B","Licht B",0,0,0,null,"color"],
+      ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,"Richtung der A↔B-Achse (90° = A oben / B unten → Cyan-Spitzen, Violett-Basis)."],
+      ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,"Wie stark die Neonfarben den ganzen Frost einfärben."],
+      ["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,"Helle additive Neon-Säume an Kristall-Kanten & Spitzen."],
+      ["NEON_PUNCH","Punch (Sättigung/Emission)",0,1.5,0.02,xFmt,"Macht die Neon-Kanten übersättigt & selbstleuchtend (punchy) statt nur getönt."],
+      ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,"Weiches Neon-Leuchten um die Kristall-Silhouette (bleibt auf der Karte)."],
+      ["NEON_BASE","Basis mitfärben",0,1,1,onOff,"Toggle: Neon zieht auch in Facetten-Fläche & Glasur — alles getönt, nicht nur die Kanten."]
+    ]},
+    { title:"Wuchs & Form", note:"Frost klettert von unten & den Seiten nach innen/oben. COVER deckelt die Reichweite → Mitte frei.", rows:[
+      ["COVER","Max-Vereisung (Mitte frei)",0.15,0.9,0.02,xFmt,"Wie weit der Frost bei Stufe 3 nach innen reicht — kleiner = mehr freie Mitte für die Zahl."],
+      ["SIDE_BAND","Seiten-Reichweite",0,1,0.02,xFmt,"Wie breit die seitlichen Frost-Bänder nach innen wachsen."],
+      ["BOTTOM_BIAS","Boden-Höhe",0,1,0.02,xFmt,"Wie hoch der Frost vom unteren Rand hochkriecht."],
+      ["RAGGED","Kanten-Zerklüftung",0,1,0.02,xFmt,"Fransige, natürliche Frostkante statt glatter Linie."],
+      ["DENSITY","Kristall-Dichte",0.3,1,0.02,xFmt,"Mehr Kristalle pro Fläche."],
+      ["CLUMP","Größen-Streuung",0,1,0.02,xFmt,"Variiert Kristall-Größen (unregelmäßiger)."],
+      ["BASE_FREEZE","Sockel (Masse&gt;0)",0,0.5,0.02,xFmt,"Grund-Vereisung, sobald die Karte Gletscher ist (Masse 1–3, unter Stufe 1)."]
+    ]},
+    { title:"Kristall / Facetten", note:"Kantige Scherben mit glühenden Wireframe-Kanten + optionales Honigwaben-Gitter (aus dem Referenzbild) + milchige Glasur.", rows:[
+      ["SHARD_LEN","Scherben-Länge",4,22,0.5,pxFmt,"Länge der Kristall-Scherben."],
+      ["SHARD_WIDTH","Scherben-Breite",0.2,1,0.02,xFmt,"Schlank (Nadeln) bis breit (Platten)."],
+      ["FACET","Facetten-Kontrast",0,1,0.02,xFmt,"Stärke der zwei Facetten-Flächen (3D-Schliff)."],
+      ["HEX","Honigwaben-Gitter",0,1,0.02,xFmt,"Neon-Hex-Gitter im Frostband (Referenzbild-Look)."],
+      ["GLAZE","Milchige Glasur",0,1,0.02,xFmt,"Weiche gefrorene Glasfläche zwischen den Kristallen."]
+    ]},
+    { title:"Vektor-Dendriten", note:"Elektrische Tracer-Linien (Frost-Farne), die aus dem Rahmen nach innen/oben verästeln.", rows:[
+      ["DENDRITE","Menge",0,1,0.02,xFmt,"Wie viele Dendriten-Äste vom Frostrand ausgehen."],
+      ["DEND_LEN","Länge / Reichweite",0.3,1.6,0.02,xFmt,"Wie weit die Tracer nach innen kriechen."],
+      ["DEND_BRANCH","Verästelung",0,1,0.02,xFmt,"Wie stark sich die Äste aufspalten."]
+    ]},
+    { title:"Details", note:"Feinheiten: Rime-Körnung, Funkeln, Puls bei voller Stufe.", rows:[
+      ["RIME","Rime-Körnung",0,1,0.02,xFmt,"Feine Frost-Kristall-Körnung am Rand."],
+      ["SPARKLE","Funkeln",0,1,0.02,xFmt,"Vereinzelte, langsam funkelnde Eis-Glitzer."],
+      ["SHIMMER","Puls (Stufe 3)",0,1,0.02,xFmt,"Atmendes Glühen bei voller Masse (bereit zu brechen)."]
+    ]}
+  ];
+  var INT={NEON_BASE:1};
+  var LAYOUT={COVER:1,SIDE_BAND:1,BOTTOM_BIAS:1,RAGGED:1,DENSITY:1,CLUMP:1,SHARD_LEN:1,SHARD_WIDTH:1,DENDRITE:1,DEND_LEN:1,DEND_BRANCH:1}; // ändert Feld-Aufbau/Struktur → Bitmap neu
+  var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
+  var $=function(id){return document.getElementById(id);};
+
+  (function build(){ var host=$("panels"), html="";
+    GROUPS.forEach(function(g){ html+='<div class="panel"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+      g.rows.forEach(function(r){ var key=r[0], lab=r[1], mn=r[2], mx=r[3], st=r[4], hint=r[6];
+        if(r[6]==="color") html+='<div class="row color"><div class="lab"><label for="'+key+'">'+lab+'</label><input type="color" id="'+key+'"></div></div>';
+        else html+='<div class="row"><div class="lab"><label for="'+key+'">'+lab+'</label><span class="val" id="v_'+key+'"></span></div><input type="range" id="'+key+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+      });
+      html+='</fieldset></div>';
+    });
+    host.innerHTML=html;
+    GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+      if(r[6]==="color"){ el.addEventListener("input",function(){ T[key]=el.value; markDirty(false); writeConfig(); }); return; }
+      el.addEventListener("input",function(){ var v=parseFloat(el.value); if(INT[key]) v=Math.round(v); T[key]=v; $("v_"+key).textContent=(FMT[key]||String)(T[key]); markDirty(!!LAYOUT[key]); writeConfig(); });
+    });});
+  })();
+  function syncInputs(){ GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+    if(r[6]==="color"){ el.value=T[key]; return; } el.value=T[key]; $("v_"+key).textContent=(FMT[key]||String)(T[key]); });}); writeConfig(); }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  function writeConfig(){ var o=T;
+    $("cfg").value="const TUNE = {\n"
+      + "  ICE_DARK: \""+o.ICE_DARK+"\", ICE_MID: \""+o.ICE_MID+"\", ICE_EDGE: \""+o.ICE_EDGE+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  COVER: "+numStr(o.COVER)+", SIDE_BAND: "+numStr(o.SIDE_BAND)+", BOTTOM_BIAS: "+numStr(o.BOTTOM_BIAS)+", RAGGED: "+numStr(o.RAGGED)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", BASE_FREEZE: "+numStr(o.BASE_FREEZE)+",\n\n"
+      + "  SHARD_LEN: "+numStr(o.SHARD_LEN)+", SHARD_WIDTH: "+numStr(o.SHARD_WIDTH)+", FACET: "+numStr(o.FACET)+", HEX: "+numStr(o.HEX)+", GLAZE: "+numStr(o.GLAZE)+",\n\n"
+      + "  DENDRITE: "+numStr(o.DENDRITE)+", DEND_LEN: "+numStr(o.DEND_LEN)+", DEND_BRANCH: "+numStr(o.DEND_BRANCH)+",\n\n"
+      + "  RIME: "+numStr(o.RIME)+", SPARKLE: "+numStr(o.SPARKLE)+", SHIMMER: "+numStr(o.SHIMMER)+",\n};";
+  }
+
+  // ── Utils ──
+  function hexRGB(h){ h=String(h||"#4f78c8").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function clampRGB(c){ return {r:Math.max(0,Math.min(255,c.r)), g:Math.max(0,Math.min(255,c.g)), b:Math.max(0,Math.min(255,c.b))}; }
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  function satBoost(c,s){ var L=0.30*c.r+0.59*c.g+0.11*c.b; return clampRGB({r:L+(c.r-L)*(1+s), g:L+(c.g-L)*(1+s), b:L+(c.b-L)*(1+s)}); }
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function roundRectPath(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function vhash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+  function fbm(x,y){ return vhash(x*0.05,y*0.05)*0.6 + vhash(x*0.13,y*0.13)*0.28 + vhash(x*0.31,y*0.31)*0.12; }
+
+  // ── Renderer / Setup ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var frost=document.createElement("canvas"), fx=frost.getContext("2d");   // Frost-Bitmap (gecacht)
+  var glow=document.createElement("canvas"), gx=glow.getContext("2d");     // Neon-Bloom-Aura (gecacht)
+  var base=document.createElement("canvas"), bx=base.getContext("2d");     // Karten-Grund + Zahl (gecacht je Box)
+  var neonTips=[];                                                          // gesammelte Neon-Kanten für Bloom
+  var _axc=0,_axs=1,_cNA={r:34,g:224,b:255},_cNB={r:161,g:60,b:255};        // Licht-Achse + A/B-Farben
+  var M=20;                                                                 // Rand ums Bitmap
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
+  window.addEventListener("resize", doResize);
+
+  var autoGrow=false, autoAcc=0, zoom=1.3, mass=MASS_MAX, last=0, fpsT=0, fpsN=0, clockT=0;
+  var fieldDirty=true, renderDirty=true, renderedF=-1, boxKey="";
+  var field=[], sparks=[], CW=0, CH=0;
+
+  function markDirty(rebuild){ if(rebuild) fieldDirty=true; renderDirty=true; }
+  function box(){ var ch=Math.round(300*zoom), cw=Math.round(ch*104/144), ox=Math.round((CSSW-cw)/2), oy=Math.round((CSSH-ch)/2), cr=Math.round(15*zoom); return {ox:ox,oy:oy,CW:cw,CH:ch,cr:cr}; }
+
+  // Masse → Frost-Front (0..1). Diskrete Rastung an den Schwellen; Sockel BASE_FREEZE ab Masse>0.
+  function stageOf(m){ var s=0; for(var i=0;i<THRESHOLDS.length;i++) if(m>=THRESHOLDS[i]) s++; return s; }
+  function frontOf(m){
+    if(m<=0) return 0;
+    var s=stageOf(m);
+    if(s===0) return T.COVER*T.BASE_FREEZE;                 // Gletscher, aber unter Stufe 1
+    return T.COVER*(THRESHOLDS[s-1]/MASS_MAX);              // 4/12, 8/12, 12/12 × COVER
+  }
+
+  // Frost-Feld: Kristalle auf jittered Grid; birthF = Distanz zur nächsten QUELLE (unten/links/rechts, NICHT oben)
+  function buildField(b){
+    CW=b.CW; CH=b.CH;
+    frost.width=Math.round((CW+2*M)*dpr); frost.height=Math.round((CH+2*M)*dpr);
+    glow.width=frost.width; glow.height=frost.height;
+    field=[]; sparks=[];
+    var step = 9 + (1-T.DENSITY)*9;
+    var maxUp = CH*(0.22 + 0.72*T.BOTTOM_BIAS);             // Kletterhöhe vom Boden
+    var maxIn = CW*(0.14 + 0.52*T.SIDE_BAND);               // Reichweite von den Seiten
+    var rng = mulberry32(20250812);
+    var id=0;
+    for(var gy=step*0.5; gy<CH; gy+=step){
+      for(var gx=step*0.5; gx<CW; gx+=step){
+        var x=gx + (rng()-0.5)*step*0.9, y=gy + (rng()-0.5)*step*0.9;
+        if(x<0||x>CW||y<0||y>CH) continue;
+        var dBot=CH-y, dL=x, dR=CW-x;
+        var bi = Math.min(dBot/maxUp, dL/maxIn, dR/maxIn);  // 0 an den Quellen, wächst nach innen/oben
+        bi += T.RAGGED*(fbm(x,y)-0.5)*0.55;                 // fransige Frostkante
+        var birthF = clamp01(bi);
+        if(birthF>0.999) continue;
+        // Wuchsrichtung: nach innen/oben (weg von der nächsten Quelle)
+        var wBot=1/(dBot+8), wL=1/(dL+8), wR=1/(dR+8);
+        var gdx = (wL - wR)*CW*0.5;
+        var gdy = -wBot*CH*0.9;
+        var gl=Math.hypot(gdx,gdy)||1; gdx/=gl; gdy/=gl;
+        var size = 0.6 + rng()*0.7 + T.CLUMP*(rng()*rng())*1.7;
+        var hue = rng();
+        var edgeProx = clamp01(1 - birthF/0.18);            // ganz am Rand → Rime/Dendriten-Start
+        field.push({x:x,y:y,birthF:birthF,gdx:gdx,gdy:gdy,size:size,hue:hue,edgeProx:edgeProx,seed:(id++*2654435761)>>>0});
+        if(T.SPARKLE>0 && rng()<0.10) sparks.push({x:x,y:y,birthF:birthF,ph:rng()*TAU});
+      }
+    }
+    fieldDirty=false;
+  }
+
+  // ── ein Kristall (Facetten-Scherbe + Neon-Wireframe) ──
+  function drawShard(g, t, mat, cDark, cMid, cEdge){
+    var rng=mulberry32(t.seed);
+    var tAxis=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+    var neon=clampRGB(mix(_cNA,_cNB,tAxis));
+    var neonP=satBoost(neon, 0.45+0.9*T.NEON_PUNCH);
+    var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.4+0.3*clamp01(T.NEON_PUNCH)));
+    var k=(t.hue-0.5);
+    var len=T.SHARD_LEN*(0.45+0.75*t.size)*(0.4+0.6*mat);
+    var wid=len*T.SHARD_WIDTH*(0.42+0.5*rng());
+    var ja=(rng()-0.5)*1.5;                                 // pro Scherbe fächern → Kristall-Cluster statt Kamm
+    var ca=Math.cos(ja), sa=Math.sin(ja);
+    var dx=t.gdx*ca - t.gdy*sa, dy=t.gdx*sa + t.gdy*ca, px=-dy, py=dx; // Richtung (gefächert) + Normale
+    var tipx=t.x+dx*len, tipy=t.y+dy*len;
+    var bx0=t.x-dx*len*0.32, by0=t.y-dy*len*0.32;
+    var lx=t.x+px*wid, ly=t.y+py*wid, rx=t.x-px*wid, ry=t.y-py*wid;
+    // Grundfläche: Farbverlauf Basis → Kante, optional neon-gewascht
+    var bodyBase=clampRGB(mix(cDark, cMid, 0.35+0.4*mat));
+    var bodyTip =clampRGB(mix(cMid, cEdge, 0.4+0.5*mat));
+    var washV = T.NEON_BASE>=0.5 ? T.NEON_RIM*0.55 : T.NEON_RIM*0.16;
+    bodyBase=clampRGB(mix(bodyBase, neonP, washV));
+    bodyTip =clampRGB(mix(bodyTip,  neonP, washV*0.7));
+    var grd=g.createLinearGradient(bx0,by0,tipx,tipy);
+    grd.addColorStop(0, rgba(bodyBase, 0.80*mat)); grd.addColorStop(1, rgba(bodyTip, 0.9*mat));
+    g.fillStyle=grd;
+    g.beginPath(); g.moveTo(bx0,by0); g.lineTo(lx,ly); g.lineTo(tipx,tipy); g.lineTo(rx,ry); g.closePath(); g.fill();
+    // Facetten-Schliff: dunklere/hellere Hälfte an der Mittelrippe
+    if(T.FACET>0){
+      g.fillStyle=rgba(clampRGB(mix(bodyBase,{r:0,g:0,b:0},0.35*T.FACET)), 0.5*mat*T.FACET);
+      g.beginPath(); g.moveTo(bx0,by0); g.lineTo(lx,ly); g.lineTo(tipx,tipy); g.closePath(); g.fill();
+      g.fillStyle=rgba(clampRGB(mix(bodyTip,{r:255,g:255,b:255},0.30*T.FACET)), 0.35*mat*T.FACET);
+      g.beginPath(); g.moveTo(bx0,by0); g.lineTo(rx,ry); g.lineTo(tipx,tipy); g.closePath(); g.fill();
+    }
+    // Neon-Wireframe-Kanten (additiv, EMISSIV, heller zur Spitze)
+    if(T.NEON_TIP>0){
+      var rimI=clamp01(T.NEON_TIP*(0.4+0.6*mat)*(0.6+0.5*t.size));
+      g.globalCompositeOperation="lighter";
+      g.lineJoin="round"; g.lineCap="round";
+      g.strokeStyle=rgba(neonP, rimI*(0.5+0.4*T.NEON_PUNCH)); g.lineWidth=1.0+1.4*T.NEON_PUNCH;
+      g.beginPath(); g.moveTo(lx,ly); g.lineTo(tipx,tipy); g.lineTo(rx,ry); g.stroke();
+      // Mittelrippe zur Spitze
+      g.strokeStyle=rgba(neonHot, rimI*0.6); g.lineWidth=0.8+0.8*T.NEON_PUNCH;
+      g.beginPath(); g.moveTo(bx0,by0); g.lineTo(tipx,tipy); g.stroke();
+      // heißer Spitzen-Punkt
+      var pr=1.2+2.6*T.NEON_PUNCH;
+      g.fillStyle=rgba(neonP, rimI*0.30); g.beginPath(); g.arc(tipx,tipy,pr,0,TAU); g.fill();
+      g.fillStyle=rgba(neonHot, rimI*0.85); g.beginPath(); g.arc(tipx,tipy,pr*0.45,0,TAU); g.fill();
+      g.globalCompositeOperation="source-over";
+      if(neonTips.length<360 && rng()<0.7) neonTips.push({x:tipx,y:tipy,c:neonP,i:rimI});
+    }
+  }
+
+  // ── Dendrit (rekursiver Vektor-Tracer) ──
+  function drawDendrite(g, x, y, ang, len, depth, col, alpha){
+    if(depth<=0 || len<3 || alpha<0.04) return;
+    var ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len;
+    var mx=(x+ex)/2 + Math.cos(ang+Math.PI/2)*(len*0.12);
+    var my=(y+ey)/2 + Math.sin(ang+Math.PI/2)*(len*0.12);
+    g.globalCompositeOperation="lighter";
+    g.strokeStyle=rgba(col, alpha); g.lineWidth=0.6+depth*0.35; g.lineCap="round";
+    g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(mx,my, ex,ey); g.stroke();
+    g.globalCompositeOperation="source-over";
+    if(neonTips.length<360) neonTips.push({x:ex,y:ey,c:col,i:alpha*0.8});
+    var spread=0.5+0.6*T.DEND_BRANCH;
+    var nl=len*(0.62+0.12*T.DEND_BRANCH);
+    drawDendrite(g, ex,ey, ang - spread*(0.5+0.5*T.DEND_BRANCH), nl, depth-1, col, alpha*0.82);
+    if(T.DEND_BRANCH>0.12)
+      drawDendrite(g, ex,ey, ang + spread*(0.5+0.5*T.DEND_BRANCH), nl, depth-1, col, alpha*0.72);
+  }
+
+  // ── Honigwaben-Gitter im Frostband ──
+  function drawHex(g, front, cDark, cEdge){
+    if(T.HEX<=0) return;
+    var R=8.5, hw=R*Math.sqrt(3), vh=R*1.5;
+    var maxUp = CH*(0.22 + 0.72*T.BOTTOM_BIAS), maxIn = CW*(0.14 + 0.52*T.SIDE_BAND);
+    g.globalCompositeOperation="lighter"; g.lineWidth=0.7;
+    var row=0;
+    for(var cy=vh*0.5; cy<CH+R; cy+=vh){
+      var xoff=(row&1)?hw*0.5:0;
+      for(var cx=xoff+hw*0.5; cx<CW+R; cx+=hw){
+        var dBot=CH-cy, dL=cx, dR=CW-cx;
+        var bi=Math.min(dBot/maxUp, dL/maxIn, dR/maxIn);
+        var cov=clamp01((front - clamp01(bi))/0.16);
+        if(cov<=0.02) continue;
+        var tAxis=clamp01(0.5 + ((cx-CW/2)*_axc + (cy-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+        var neon=satBoost(clampRGB(mix(_cNA,_cNB,tAxis)), 0.3+0.6*T.NEON_PUNCH);
+        g.strokeStyle=rgba(neon, T.HEX*cov*0.34);
+        g.beginPath();
+        for(var s=0;s<6;s++){ var a=Math.PI/6 + s*Math.PI/3, hx=cx+Math.cos(a)*R, hy=cy+Math.sin(a)*R; if(s===0)g.moveTo(hx,hy); else g.lineTo(hx,hy); }
+        g.closePath(); g.stroke();
+      }
+      row++;
+    }
+    g.globalCompositeOperation="source-over";
+  }
+
+  function renderFrost(front){
+    if(fieldDirty) buildField(box());
+    fx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr);
+    fx.clearRect(-M,-M,CW+2*M,CH+2*M);
+    neonTips=[];
+    var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+    _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+    var cDark=hexRGB(T.ICE_DARK), cMid=hexRGB(T.ICE_MID), cEdge=hexRGB(T.ICE_EDGE);
+    var i,t,mat;
+    // Pass 0: milchige Glasur (weiche gefrorene Fläche im Band)
+    if(T.GLAZE>0){ for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0) continue;
+      var tAxis=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+      var gcol=clampRGB(mix(clampRGB(mix(cDark,cMid,0.5)), clampRGB(mix(_cNA,_cNB,tAxis)), T.NEON_BASE>=0.5?0.4*T.NEON_RIM:0.12*T.NEON_RIM));
+      var rad=t.size*7*(0.6+0.6*mat);
+      var rg=fx.createRadialGradient(t.x,t.y,0,t.x,t.y,rad);
+      rg.addColorStop(0, rgba(gcol, 0.22*T.GLAZE*mat)); rg.addColorStop(1, rgba(gcol,0));
+      fx.fillStyle=rg; fx.beginPath(); fx.arc(t.x,t.y,rad,0,TAU); fx.fill();
+    }}
+    // Pass 1: Honigwaben-Gitter
+    drawHex(fx, front, cDark, cEdge);
+    // Pass 2: Kristall-Scherben
+    for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0) continue; drawShard(fx,t,mat,cDark,cMid,cEdge); }
+    // Pass 3: Dendriten (nur von Rand-nahen, gereiften Kristallen)
+    if(T.DENDRITE>0){ var dr=mulberry32(777);
+      for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14);
+        if(mat<0.6 || t.edgeProx<0.25) continue;
+        if(dr()>T.DENDRITE*0.5) continue;
+        var ang=Math.atan2(t.gdy,t.gdx) + (dr()-0.5)*0.5;
+        var dlen=T.SHARD_LEN*1.1*T.DEND_LEN*(0.7+0.6*dr());
+        var tAxis=clamp01(0.5 + ((t.x-CW/2)*_axc + (t.y-CH/2)*_axs)/(Math.max(CW,CH)*0.62));
+        var dcol=clampRGB(mix(satBoost(clampRGB(mix(_cNA,_cNB,tAxis)),0.5),{r:220,g:250,b:255},0.25));
+        drawDendrite(fx, t.x,t.y, ang, dlen, 3, dcol, 0.5*T.DENDRITE*mat);
+      }
+    }
+    // Pass 4: Rime-Körnung am Rand
+    if(T.RIME>0){ var rr=mulberry32(9182);
+      for(i=0;i<field.length;i++){ t=field[i]; mat=clamp01((front-t.birthF)/0.14); if(mat<=0||t.edgeProx<0.15) continue;
+        var np=Math.round(T.RIME*3*t.edgeProx); for(var q=0;q<np;q++){ var rx=t.x+(rr()-0.5)*t.size*5, ry=t.y+(rr()-0.5)*t.size*5;
+          fx.fillStyle=rgba(cEdge, 0.5*T.RIME*mat*t.edgeProx*rr()); fx.fillRect(rx,ry,1,1); } }
+    }
+    // Bloom-Aura in glow-Bitmap
+    gx.setTransform(dpr,0,0,dpr, M*dpr, M*dpr); gx.clearRect(-M,-M,CW+2*M,CH+2*M);
+    if(T.NEON_BLOOM>0 && neonTips.length){ gx.globalCompositeOperation="lighter";
+      var gr=Math.max(7, T.SHARD_LEN*1.6);
+      for(i=0;i<neonTips.length;i++){ var np2=neonTips[i], rad2=gr*(0.6+0.9*np2.i);
+        var rgd=gx.createRadialGradient(np2.x,np2.y,0, np2.x,np2.y,rad2);
+        rgd.addColorStop(0, rgba(np2.c, 0.5*np2.i)); rgd.addColorStop(0.5, rgba(np2.c, 0.16*np2.i)); rgd.addColorStop(1, rgba(np2.c,0));
+        gx.fillStyle=rgd; gx.beginPath(); gx.arc(np2.x,np2.y,rad2,0,TAU); gx.fill();
+      }
+      gx.globalCompositeOperation="source-over";
+    }
+    renderDirty=false; renderedF=front;
+  }
+
+  // Karten-Grund (Gradient + Muster + Rand + große Zahl) — gecacht je Box
+  function renderBase(b){
+    base.width=Math.round(CSSW*dpr); base.height=Math.round(CSSH*dpr);
+    bx.setTransform(dpr,0,0,dpr,0,0); bx.clearRect(0,0,CSSW,CSSH);
+    var g0=bx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#0e1636"); g0.addColorStop(1,"#0a0e22");
+    roundRectPath(bx,b.ox,b.oy,b.CW,b.CH,b.cr); bx.fillStyle=g0; bx.fill();
+    bx.save(); roundRectPath(bx,b.ox,b.oy,b.CW,b.CH,b.cr); bx.clip();
+    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=9) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=9){ bx.fillStyle="rgba(150,190,255,0.04)"; bx.fillRect(xx,yy,1.3,1.3); }
+    // große Karten-Zahl (Test: bleibt sie lesbar?)
+    bx.fillStyle="rgba(224,240,255,0.92)"; bx.textAlign="center"; bx.textBaseline="middle";
+    bx.font="800 "+Math.round(b.CH*0.34)+"px "+"system-ui,sans-serif";
+    bx.fillText("7", b.ox+b.CW/2, b.oy+b.CH*0.46);
+    bx.font="700 "+Math.round(b.CH*0.10)+"px system-ui,sans-serif"; bx.fillStyle="rgba(94,200,240,0.9)";
+    bx.textAlign="left";  bx.fillText("❄", b.ox+b.CW*0.10, b.oy+b.CH*0.12);
+    bx.restore();
+    bx.lineWidth=1.5; bx.strokeStyle="rgba(94,200,240,0.45)"; roundRectPath(bx,b.ox,b.oy,b.CW,b.CH,b.cr); bx.stroke();
+    boxKey=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+  }
+
+  function frame(ts){
+    if(!last) last=ts; var dt=Math.min(50, ts-last); last=ts; clockT+=dt;
+    fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>=520){ autoAcc=0; mass=Math.min(MASS_MAX, mass+1); $("mass").value=mass; updLvl(); markDirty(false); if(mass>=MASS_MAX){ autoGrow=false; $("btnAuto").textContent="Auto-Frost: aus"; $("btnAuto").classList.remove("on"); } } }
+    var front=frontOf(mass);
+    var b=box();
+    var bk=b.ox+"_"+b.oy+"_"+b.CW+"_"+b.CH;
+    if(bk!==boxKey) renderBase(b);
+    if(fieldDirty || renderDirty || Math.abs(front-renderedF)>0.003) renderFrost(front);
+
+    ctx.clearRect(0,0,CSSW,CSSH);
+    ctx.drawImage(base, 0,0,base.width,base.height, 0,0,CSSW,CSSH);
+
+    // Frost + Bloom auf die Karte geclippt (leicht erweitert für Überstand)
+    var grow=M*0.5;
+    ctx.save(); roundRectPath(ctx, b.ox-grow, b.oy-grow, b.CW+2*grow, b.CH+2*grow, b.cr+grow); ctx.clip();
+    ctx.drawImage(frost, 0,0,frost.width,frost.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+    // Bloom (Stufe-3-Puls über SHIMMER)
+    var pulse=1; if(T.SHIMMER>0 && stageOf(mass)>=3) pulse=1 + T.SHIMMER*0.35*Math.sin(clockT*0.004);
+    if(T.NEON_BLOOM>0){ ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=clamp01(T.NEON_BLOOM*pulse);
+      ctx.drawImage(glow, 0,0,glow.width,glow.height, b.ox-M, b.oy-M, b.CW+2*M, b.CH+2*M);
+      ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=1; }
+    // Funkeln (live)
+    if(T.SPARKLE>0){ ctx.globalCompositeOperation="lighter"; var front2=front;
+      for(var s=0;s<sparks.length;s++){ var sp=sparks[s]; if(front2<=sp.birthF) continue;
+        var tw=0.35+0.65*(0.5+0.5*Math.sin(clockT*0.005+sp.ph));
+        ctx.fillStyle=rgba({r:210,g:240,b:255}, 0.6*T.SPARKLE*tw); ctx.beginPath(); ctx.arc(b.ox+sp.x, b.oy+sp.y, 0.9+0.7*tw, 0, TAU); ctx.fill(); }
+      ctx.globalCompositeOperation="source-over"; }
+    ctx.restore();
+
+    requestAnimationFrame(frame);
+  }
+  function updLvl(){ var s=stageOf(mass);
+    var nm = mass<=0 ? "kein Gletscher" : s===0 ? "angefroren (Sockel)" : "Stufe "+s;
+    $("v_mass").textContent="Masse "+mass+"/"+MASS_MAX+" · "+(s>0?"Stufe "+s:(mass>0?"Sockel":"leer"));
+    $("hudLvl").textContent=(mass<=0?"Leer":s>=3?"Stufe 3 · voll":s===0?"Sockel":"Stufe "+s); }
+
+  $("mass").addEventListener("input",function(){ mass=parseInt(this.value,10)||0; autoGrow=false; $("btnAuto").textContent="Auto-Frost: aus"; $("btnAuto").classList.remove("on"); markDirty(false); updLvl(); });
+  $("btnAuto").addEventListener("click",function(){ autoGrow=!autoGrow; autoAcc=0; if(autoGrow&&mass>=MASS_MAX){ mass=0; $("mass").value=0; updLvl(); markDirty(false); } this.textContent="Auto-Frost: "+(autoGrow?"an":"aus"); this.classList.toggle("on",autoGrow); });
+  $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; markDirty(true); });
+  $("btnCopy").addEventListener("click",function(){ var ta=$("cfg"); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); });
+  $("btnDefault").addEventListener("click",function(){ T=Object.assign({},DEFAULTS); syncInputs(); markDirty(true); });
+
+  $("v_zoom").textContent=zoom.toFixed(2)+"×"; updLvl(); syncInputs(); doResize(); requestAnimationFrame(frame);
+})();
+</script>

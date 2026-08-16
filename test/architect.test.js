@@ -8,6 +8,7 @@ import {
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
 import { ARCH_STREAK_CAP } from "../src/game/constants.js";
+import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -117,6 +118,19 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(o1).toEqual(o2);
     expect(o1.length).toBe(ARCHITECT_OFFER);
     expect(new Set(o1.map((o) => o.familyId)).size).toBe(o1.length);
+  });
+
+  // #regression 1fa6778: ArchitectScreen löst jeden Bauplan über den i18n-Resolver (archFamily) auf und
+  // `return null`t bei fehlender Familie → wird der FALSCHE Resolver benutzt (labels.familyDef = Perk-Familien),
+  // ist jede Karte null und das Bauplan-Grid komplett leer. Wächter: archFamily MUSS jedes Angebot auflösen.
+  it("#regression: der i18n-Anzeige-Resolver löst JEDES Angebot auf (sonst leeres Bauplan-Grid)", () => {
+    for (let s = 0; s < 120; s++) {
+      for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
+        const fam = archFamily(o.familyId);
+        expect(fam, `archFamily(${o.familyId}) darf nicht null sein`).toBeTruthy();
+        expect(fam.name, `${o.familyId} braucht einen Namen`).toBeTruthy();
+      }
+    }
   });
 
   it("höchstens EIN legendäres Angebot", () => {
@@ -351,6 +365,63 @@ describe("Architekt — Reducer-Aktionen", () => {
     const demo = reducer(moved2, { type: "ARCHITECT_DEMOLISH", buildingId: id });
     expect(demo.architect.buildings.length).toBe(0);
     expect(reducer(demo, { type: "ARCHITECT_DONE" }).phase).toBe("play");
+  });
+
+  // #361 (+ Folge) „↶ Rückgängig" / „Zurücksetzen": NUR Verschiebungen sind umkehrbar; ein gebautes Gebäude bleibt.
+  it("UNDO nimmt NUR die letzte Verschiebung zurück; ein gebautes Gebäude bleibt liegen", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    expect(built.architect.buildings.length).toBe(1);
+    expect((built.architect.phaseHistory || []).length).toBe(0);             // Bau erzeugt KEINEN Undo-Schritt
+    expect(reducer(built, { type: "ARCHITECT_UNDO" })).toBe(built);          // ohne Verschiebung → No-Op (Gebäude bleibt)
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    expect(moved.architect.buildings[0].footprint).toEqual([10, 11]);
+    expect(moved.architect.phaseHistory.length).toBe(1);
+    const undone = reducer(moved, { type: "ARCHITECT_UNDO" });
+    expect(undone.architect.buildings.length).toBe(1);                       // Gebäude bleibt
+    expect(undone.architect.buildings[0].footprint).toEqual([0, 1]);         // nur der Fußabdruck geht zurück
+    expect(undone.architect.actedMain).toBe(true);                           // Hauptaktion bleibt verbraucht
+    expect(reducer(undone, { type: "ARCHITECT_UNDO" })).toBe(undone);        // leerer Stapel → No-Op
+  });
+
+  it("UNDO geht Verschiebung für Verschiebung zurück; das Gebäude bleibt durchweg bestehen", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const m1 = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    const m2 = reducer(m1, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] });
+    expect(m2.architect.buildings[0].footprint).toEqual([20, 21]);
+    const u1 = reducer(m2, { type: "ARCHITECT_UNDO" });
+    expect(u1.architect.buildings[0].footprint).toEqual([10, 11]);
+    expect(u1.architect.buildings.length).toBe(1);
+    const u2 = reducer(u1, { type: "ARCHITECT_UNDO" });
+    expect(u2.architect.buildings[0].footprint).toEqual([0, 1]);
+    expect(u2.architect.buildings.length).toBe(1);
+  });
+
+  it("RESET setzt alle Verschiebungen auf die Ausgangslage zurück; die Gebäude bleiben (kein Abriss)", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] });
+    const reset = reducer(moved, { type: "ARCHITECT_RESET" });
+    expect(reset.architect.buildings.length).toBe(1);                        // Gebäude bleibt
+    expect(reset.architect.buildings[0].footprint).toEqual([0, 1]);          // zurück auf die Anker-/Bau-Lage
+    expect(reset.architect.actedMain).toBe(true);                            // Hauptaktion bleibt verbraucht
+    expect(reset.architect.phaseHistory.length).toBe(0);
+  });
+
+  it("Eine Verschiebung legt einen Undo-Schritt an; DONE verwirft die transienten Undo-Daten", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    expect(moved.architect.phaseHistory.length).toBe(1);
+    const done = reducer(moved, { type: "ARCHITECT_DONE" });
+    expect(done.phase).toBe("play");
+    expect(done.architect.phaseHistory).toEqual([]);
+    expect(done.architect.phaseAnchor).toBe(null);
   });
 });
 

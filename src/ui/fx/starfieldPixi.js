@@ -1,0 +1,403 @@
+import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
+import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
+import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: Standard-Farbe = Feuer-Archetyp (FireHead)
+
+/* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
+   einer Zickzack-Sternschnuppe liefert dieser Emitter:
+     1) ein DICHTES Parallax-Ambiente über 3 Tiefen-Ebenen (fern klein/dunkel/viele → nah groß/hell/wenige) mit
+        eigenem Drift + Twinkle je Ebene und einem dezenten, additiven Nebel-Backdrop,
+     2) eine Sternschnuppe je GEWONNENEM Stich (#357-Folge: bei Niederlage kein Komet), Größe stufenweise mit dem Hit-Tier (TIER_SIZE),
+     3) einen Impact (Blitz + Funken-Burst) am Kopf — NUR ab Tier ≥ 1 (TIER_IMP[0] = 0 → „Schwach" bleibt impact-frei),
+     4) einen Deck-Dual: Standard (Weiß-Blau-Sternenlicht) vs. Deck (getönter Kopf + Deck→deck2-Schweif).
+
+   Muster & Constraints exakt wie embersPixi.js: gepoolte `Particle` in additiven `ParticleContainer`n, pro Partikel
+   getönt, Radial-Textur aus Canvas-Gradient, `dt = min(0.05, deltaMS/1000)`, Screen-Skalierung `sc = H / HREF`
+   (HREF = 360). Das Modul lebt nur im lazy Pixi-Chunk (Produktion = DOM lädt es nie). Emitter-Contract wie die
+   Registry erwartet: { setParams, erupt, destroy }.
+
+   Die Werte im TUNE-Block + TIER-Arrays sind am interaktiven Tuning-Board abgestimmt; die Darstellung (gerader,
+   glatt verjüngender Streak — KEIN Zickzack) ist 1:1 mit der Tuning-Konsole. Die K_*-Konstanten mappen die abstrakten
+   Board-Größen auf On-Screen-Pixel; für Feinjustage bewusst gebündelt. */
+
+// ── deterministische Helfer ──────────────────────────────────────────────────
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// #341/#357: alle Kometen-Größen (Kopf/Schweif/Impact) über EINEN globalen Faktor — die Tier-Relationen (TIER_SIZE)
+//   bleiben unangetastet, nur die absolute Größe wächst. Ambiente-Sterne (K_AMB) sind KEINE Kometen → unverändert.
+//   #357: von 1.2 (#341: +20 %) auf 1.4 (+40 %) angehoben — Meteor deutlich größer. [TUNING]
+const COMET_SIZE_MUL = 1.4;
+// #341: die Komet-Einschlagfläche (PLANE_*) ans gemeinsame fixe Effekt-Boden-Feld (effectZones.js) koppeln → Kometen
+//   schlagen auf DERSELBEN Bodenfläche ein wie alle anderen Boden-Effekte (Desktop-Zone als geteilte Referenz).
+const _FLOOR = EFFECT_ZONES.desktop;
+
+// ── TUNE (aus der Tuning-Konsole abgestimmt) ─────────────────────────────────
+const TUNE = {
+  // Ambiente
+  AMB_COUNT: 33,
+  AMB_SIZE: 0.14,
+  NEAR_BOOST: 1.4,
+  AMB_GLOW: 3.9,
+  AMB_TWINKLE: 0.28,
+  AMB_TWK_SPD: 0.18,
+  AMB_DRIFT: 0.035,
+  AMB_DRIFT_SPD: 0.12,
+  NEBULA: 1.95,
+  // Schnuppe
+  SHOOT_DUR: 1,
+  HEAD_SIZE: 3.2,      // #meteor: dickerer Feuerball-Kopf (war 2.5) → Meteor statt zarter Sternschnuppe
+  HEAD_TINT: 0.61,
+  HEAD_BOOST: 1.7,     // #meteor: hellerer, glühender Kopf (war 1.35)
+  TRAIL_LEN: 206,
+  TRAIL_SAMPLES: 96,
+  TAIL_WIDTH: 1.22,    // #meteor: breiterer Brennschweif am Kopf (war 1.05)
+  TAPER: 0.66,         // #meteor: stärkere Verjüngung zum Schweifende (war 0.56) → fetter Kopf, dünner Auslauf
+  TAIL_FADE: 1,
+  TRAIL_ALPHA: 0.83,
+  TRAIL_FLICK: 0,
+  COL_MID: 0.23,
+  SHOOT_GLOW: 1.7,
+  PATH_JITTER: 2.5,
+  // Impact — #: mehr Partikel-Explosion statt „Ball": kleinerer/kürzerer Blitz, mehr & schnellere scharfe Funken mit
+  // Schwerkraft, die am Rahmen UND Boden abprallen.
+  IMP_AT: 0.9,
+  IMP_FLASH_SZ: 60 * COMET_SIZE_MUL,   // #341: +20 % (Basis 60; war 110)
+  IMP_FLASH_DUR: 0.26,       // kürzer (war 0.4) → knackiger Pop
+  IMP_SPARKS: 90,            // mehr Funken (war 66) → dichter Spray
+  IMP_SPARK_SPD: 360,        // schneller rausgeschleudert (war 305)
+  IMP_SPARK_LIFE: 1.1,       // etwas länger, damit man das Bouncen sieht (war 0.9)
+  IMP_SPARK_SZ: 1.05 * COMET_SIZE_MUL, // #341: +20 % (Basis 1.05; war 1.4)
+  IMP_GRAV: 1250,            // Schwerkraft (war 0) → ballistische Bögen statt Kugel
+  IMP_DRAG: 0.35,            // seitliche Dämpfung (war fest 0.9) → Funken fliegen weiter
+  IMP_BOUNCE: 0.52,          // Restitution am Rahmen/Boden
+  IMP_BOUNCE_FRIC: 0.82,     // seitliche Reibung beim Boden-Bounce
+  // #341: perspektivische Einschlag-FLÄCHE (Trapez) = das gemeinsame fixe Effekt-Boden-Feld (effectZones.js).
+  //   d = 0 (fern/hinten, obere Boden-Kante) .. 1 (nah/vorn, vordere Boden-Kante). Vorn volle Breite (HALF 0.5), hinten
+  //   um den Perspektiv-Einzug (_FLOOR.persp) verjüngt → deckungsgleich mit Glutfunken/Cube-Matrix & künftigen Boden-FX.
+  PLANE_FAR_Y: _FLOOR.y / 100, PLANE_NEAR_Y: FLOOR_FRONT_AT_BOTTOM,
+  PLANE_FAR_HALF: 0.5 - _FLOOR.persp / 100, PLANE_NEAR_HALF: 0.5, PLANE_DEPTH_MIN: 0.70,
+};
+const TIER_SIZE = [0.5, 1.2, 1.5, 2, 3]; // Schnuppen-Größen-× je Hit-Tier
+const TIER_IMP  = [0, 1, 1.5, 2.1, 5];   // Impact-Stärke je Tier (0 = aus → „Schwach" impact-frei)
+
+// px-Mapping der abstrakten Board-Größen (aus der Tuning-Konsole; leicht justierbar)
+const K_AMB = 6.0;     // Ambiente-Stern-Basisdurchmesser (× AMB_SIZE × Ebenen-Faktor × sc)
+const K_HEAD = 4.2 * COMET_SIZE_MUL;    // #341: Schnuppen-Kopf-Durchmesser +20 % (Basis 4.2)
+const K_TAIL = 6.8 * COMET_SIZE_MUL;    // #341: Schweif-Sample-Durchmesser +20 % (Basis 6.8)
+const K_SPARK = 2.8;   // Funken-Durchmesser (× IMP_SPARK_SZ × sc)
+
+const HREF = 360;      // Referenz-Panelhöhe (Geschwindigkeiten/Größen skalieren mit H/HREF)
+const TX = 64;         // Kantenlänge der Radial-Textur
+
+// Pools: Ambiente = AMB_COUNT; Schnuppen (überlappende Stiche) MAXCOMET × (TRAIL_SAMPLES+1); Funken für die große
+// Gottgleich-Explosion (IMP_SPARKS × max(TIER_IMP) = 90 × 5 = 450) + Reserve.
+// #357: von 4 auf 5 angehoben — bei Max-Turbo (Stich alle ~350 ms, Flug SHOOT_DUR 1 s) überlappen bis zu ~4 Kometen;
+//   mit Cap 5 (und lite 4, s. erupt) passt die maximale Überlappung hinein → kein Komet wird mehr MID-FLIGHT weggecullt
+//   (Bogen/Einschlag spielen vollständig aus). Der Schweif-Pool ist auf MAXCOMET dimensioniert (exakt 5 × 97 Slots).
+const MAXCOMET = 5;
+const TRAIL_POOL = MAXCOMET * (TUNE.TRAIL_SAMPLES + 1); // ~388
+const SPARK_POOL = 512;
+const NEB_BLOBS = 4;
+
+// ── Standard-Palette ─ #357: Standard = FEUER-ARCHETYP (FireHead-Neon-Palette, geteilt über firePalette.js) statt der
+//   alten warmen Gold/Orange-Glut. Schweif-Rampe: weiß-heißer Kopf → ROT (heiß hinter dem Kopf) → MAGENTA (Mitte) →
+//   BLAU (Ausklang). Deckfarbe-Modus (deckTint) bleibt unberührt (nutzt deck/deck2).
+const WHITE    = [255, 255, 255]; // weiß-heißer Kopf-Kern
+const KERN     = FIRE_NEON_TOP;   // #ff4a2a rot glühend — direkt hinter dem Kopf (FireHead-Spitze)
+const MITTE    = FIRE_NEON_MID;   // #ff2ea0 magenta — Schweif-Mitte (FireHead-Mitte)
+const AUSKLANG = FIRE_NEON_BOT;   // #2f6bff blau — Schweif-Ende (FireHead-Basis)
+const AMB_COL  = [255, 234, 208]; // warm-weiße Ambiente-Sterne (Standard) — neutraler Hintergrund, unverändert
+const FIRE_SPARK = FIRE_NEON_TOP;  // #357: Einschlag-Funken in der Feuer-Palette (rot glühend) statt warmem Orange
+const FIRE_NEB   = FIRE_NEON_MID;  // #357: Nebel-Backdrop magenta (Feuer-Palette) statt warmem Orange
+
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const rgbInt = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
+function hexToRGB(hex) {
+  const h = (hex || "#7fb4ff").replace("#", "");
+  const full = h.length === 3 ? h.replace(/(.)/g, "$1$1") : h;
+  const n = parseInt(full, 16);
+  return Number.isFinite(n) ? [n >> 16 & 255, n >> 8 & 255, n & 255] : [...MITTE];
+}
+// Farbe entlang gestufter Stops interpolieren (0..1) → [r,g,b].
+function interpStops(stops, f) {
+  if (f <= stops[0][0]) return stops[0][1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (f <= stops[i + 1][0]) { const t = (f - stops[i][0]) / (stops[i + 1][0] - stops[i][0]); return mix(stops[i][1], stops[i + 1][1], t); }
+  }
+  return stops[stops.length - 1][1];
+}
+
+// Modus per Dev-Schalter testbar (?starfield=deck|std bzw. localStorage as_starfield_deck="1"); die Shop-Auswahl
+// setzt denselben Modus über setParams({ deckTint }). Default = Standard (Weiß-Blau, deck-unabhängig).
+function readDeckDefault() {
+  try {
+    const u = new URLSearchParams(window.location.search).get("starfield");
+    if (u === "deck") return true;
+    if (u === "std" || u === "standard") return false;
+    return window.localStorage.getItem("as_starfield_deck") === "1";
+  } catch { return false; }
+}
+
+// Weiche, weiße Radial-Textur (Kern + Halo) — zur Laufzeit pro Partikel getönt.
+function makeRadial(stops) {
+  const c = document.createElement("canvas"); c.width = c.height = TX;
+  const cx = c.getContext("2d");
+  const g = cx.createRadialGradient(TX / 2, TX / 2, 0, TX / 2, TX / 2, TX / 2);
+  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
+  cx.fillStyle = g; cx.fillRect(0, 0, TX, TX);
+  return Texture.from(c);
+}
+
+export function createStarfield(app) {
+  const starTex = makeRadial([[0, 1], [0.38, 1], [0.6, 0.2], [1, 0]]);  // Stern/Kopf/Schweif: solider Kern + Halo
+  const sparkTex = makeRadial([[0, 1], [0.5, 1], [0.66, 0.1], [1, 0]]); // #impact: Funken SCHÄRFER (großer Kern, kurzer Halo) → Partikel statt Ball
+  const nebTex  = makeRadial([[0, 0.5], [0.5, 0.22], [1, 0]]);          // Nebel: sehr weich, mittenschwach
+
+  // Schichten (Zeichenreihenfolge): Nebel (hinten) → Ambiente-Sterne → Schweif+Kopf → Funken → Blitz (vorn).
+  const nebulaC = new Container();
+  const ambPC   = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); ambPC.blendMode = "add";
+  const trailPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: false, uvs: false } }); trailPC.blendMode = "add";
+  const sparkPC = new ParticleContainer({ dynamicProperties: { position: true, vertex: true, color: true, rotation: true, uvs: false } }); sparkPC.blendMode = "add"; // #meteor: rotation dynamisch → Funken als Motion-Streak entlang der Flugrichtung dehnbar (Verschweif)
+  const flashC  = new Container();
+  app.stage.addChild(nebulaC, ambPC, trailPC, sparkPC, flashC);
+
+  // Nebel-Blobs (feste normierte Positionen, sehr niedrige Alpha, langsames Twinkle).
+  const nebSpr = [];
+  for (let i = 0; i < NEB_BLOBS; i++) {
+    const s = new Sprite(nebTex); s.anchor.set(0.5); s.alpha = 0; s.blendMode = "add"; nebulaC.addChild(s);
+    nebSpr.push({ spr: s, nx: 0.12 + Math.random() * 0.76, ny: 0.10 + Math.random() * 0.55, r: 0.34 + Math.random() * 0.30, ph: Math.random() * 6.28 });
+  }
+
+  // Ambiente-Sterne über 3 Tiefen-Ebenen (einmal prozedural gestreut; Positionen normiert, driften/twinkeln je Ebene).
+  const amb = [];
+  for (let i = 0; i < TUNE.AMB_COUNT; i++) {
+    const r = Math.random();
+    const layer = r < 0.5 ? 0 : r < 0.83 ? 1 : 2;                 // fern (viel) · mittel · nah (wenig)
+    const p = new Particle({ texture: starTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 });
+    ambPC.addParticle(p);
+    amb.push({ p, layer, nx: Math.random(), ny: Math.random(), ph: Math.random() * 6.28 });
+  }
+
+  // Schweif-/Kopf-Partikel-Pool (jede Frame frisch belegt — Schweif wird analytisch aus der Kometenbahn gezeichnet).
+  const trail = [];
+  for (let i = 0; i < TRAIL_POOL; i++) { const p = new Particle({ texture: starTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); trailPC.addParticle(p); trail.push(p); }
+
+  // Funken-Pool (physikalisch simuliert, wie embers' Glut).
+  const sparks = [];
+  for (let i = 0; i < SPARK_POOL; i++) { const p = new Particle({ texture: sparkTex, anchorX: 0.5, anchorY: 0.5, alpha: 0 }); sparkPC.addParticle(p); sparks.push({ p, alive: false }); }
+  let spHead = 0;
+
+  // Blitz-Sprites (wenige gleichzeitig, expandieren + faden).
+  const flashes = [];
+  for (let i = 0; i < MAXCOMET + 2; i++) { const s = new Sprite(starTex); s.anchor.set(0.5); s.alpha = 0; s.blendMode = "add"; flashC.addChild(s); flashes.push({ spr: s, alive: false, age: 0, life: 0, x: 0, y: 0, sz0: 0, tint: 0xffffff }); }
+
+  let params = { effect: null, deck: [...MITTE], deck2: [...AUSKLANG], reduced: false, lite: false, deckTint: readDeckDefault() };
+  const comets = [];
+
+  function reset() {
+    comets.length = 0;
+    for (const s of sparks) { s.alive = false; s.p.alpha = 0; }
+    for (const t of trail) t.alpha = 0;
+    for (const f of flashes) { f.alive = false; f.spr.alpha = 0; }
+  }
+
+  function setParams(next) {
+    params = { ...params, ...next,
+      deck:  next.color  != null ? hexToRGB(next.color)  : params.deck,
+      deck2: next.color2 != null ? hexToRGB(next.color2) : params.deck2,
+      deckTint: next.deckTint != null ? next.deckTint : params.deckTint };
+    if (params.effect !== "starfield") reset();
+  }
+
+  // Aktuelle Schweif-Farbrampe je Modus (0 = Kopf … 1 = Ausklang).
+  function trailStops(deckTint, deck, deck2) {
+    if (!deckTint) return [[0, WHITE], [0.14, KERN], [TUNE.COL_MID, MITTE], [1, AUSKLANG]];
+    const head = mix(WHITE, deck, TUNE.HEAD_TINT); // getönter Kopf: hell mit Deck-Anflug
+    return [[0, head], [TUNE.COL_MID, deck], [1, deck2]];
+  }
+
+  function grabSpark() { const s = sparks[spHead]; spHead = (spHead + 1) % SPARK_POOL; s.alive = true; return s; }
+  function grabFlash() { for (const f of flashes) if (!f.alive) return f; return flashes[0]; }
+
+  // ── Impact (Blitz + Funken) — nur ab Tier ≥ 1 ──────────────────────────────
+  function impact(x, y, sc, imp, headInt, sparkTint) {
+    if (imp <= 0) return;
+    const f = grabFlash();
+    f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
+    f.sz0 = TUNE.IMP_FLASH_SZ * sc * (0.7 + 0.3 * imp); f.tint = headInt;
+    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Impact-Funken auf lite
+    for (let i = 0; i < n; i++) {
+      const s = grabSpark();
+      const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);
+      s.x = x; s.y = y; s.vx = Math.cos(ang) * sp; s.vy = Math.sin(ang) * sp;
+      s.age = 0; s.life = TUNE.IMP_SPARK_LIFE * (0.6 + Math.random() * 0.5);
+      s.sz = TUNE.IMP_SPARK_SZ * (0.7 + Math.random() * 0.7); s.seed = Math.random() * 6.28; s.tint = sparkTint;
+    }
+  }
+
+  // ── Schnuppe je Stich ──────────────────────────────────────────────────────
+  function erupt({ sweepId, win, tier = 0 }) {
+    // #357-Folge: Komet feuert NUR bei einem GEWONNENEN Stich (Niederlage → kein Komet). Der Showcase ruft mit win=true.
+    if (params.effect !== "starfield" || params.reduced || !win || !(sweepId > 0)) return;
+    const t = clamp(tier | 0, 0, 4);
+    // #317-artig: ZUFÄLLIGER Einschlagpunkt auf einer perspektivischen Fläche (Trapez): d=0 fern (hinten, hoch, schmal,
+    // klein) .. d=1 nah (vorn, tief, breit, groß). Kopf/Schweif/Impact skalieren mit der Tiefe → 3D-Streuung übers Feld.
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const d = Math.random();
+    const tyN = lerp(TUNE.PLANE_FAR_Y, TUNE.PLANE_NEAR_Y, d);
+    const halfW = lerp(TUNE.PLANE_FAR_HALF, TUNE.PLANE_NEAR_HALF, d);
+    const txN = clamp(0.5 + (Math.random() * 2 - 1) * halfW, 0.03, 0.97);
+    const ds = lerp(TUNE.PLANE_DEPTH_MIN, 1, d);                // Tiefen-Skala (fern kleiner)
+    // Start oben, seitlich vom Ziel versetzt → diagonaler Einflug (mal von links, mal von rechts).
+    const sideN = (Math.random() * 2 - 1) * 0.4;
+    comets.push({
+      nx0: clamp(txN - sideN, 0.02, 0.98), ny0: 0.02 + Math.random() * 0.12,
+      txN, tyN, ds,                                            // Zielpunkt (normiert) + Tiefen-Skala
+      age: 0, life: TUNE.SHOOT_DUR, tier: t, size: TIER_SIZE[t] * ds,
+      imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
+    });
+    // #357: Cap so gewählt, dass die maximale Turbo-Überlappung (~4) hineinpasst → der Splice greift NICHT mehr
+    //   mid-flight (jeder Komet spielt Flug + Impact voll aus). lite 4 (mobil tragbar: halbe Schweif-Samples je Komet),
+    //   Desktop MAXCOMET(5). Bleibt als reine Pool-Sicherung, falls doch mehr anfällt → dann der älteste (fast fertige).
+    const maxC = params.lite ? 4 : MAXCOMET; // #perf-mobile: etwas niedrigerer Cap auf lite
+    if (comets.length > maxC) comets.splice(0, comets.length - maxC);
+  }
+
+  // ── Ticker ─────────────────────────────────────────────────────────────────
+  let clock = 0;
+  function update(ticker) {
+    const dt = Math.min(0.05, ticker.deltaMS / 1000);
+    clock += dt;
+    if (params.effect !== "starfield") return;
+    const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / HREF);
+    const deckTint = params.deckTint, deck = params.deck, deck2 = params.deck2;
+    const stops = trailStops(deckTint, deck, deck2);
+    const headInt = rgbInt(stops[0][1]);
+    // #meteor: Einschlag-Funken im Standard warm (Feuerkomet); im Deckfarbe-Modus wie bisher der getönte Kopf.
+    const sparkInt = deckTint ? headInt : rgbInt(FIRE_SPARK);
+    const ambInt = rgbInt(deckTint ? mix(AMB_COL, deck, 0.35) : AMB_COL);
+    const nebInt = rgbInt(deckTint ? deck : FIRE_NEB);
+
+    // Nebel-Backdrop (sehr niedrige Alpha, langsames Twinkle).
+    for (const nb of nebSpr) {
+      const tw = 0.5 + 0.5 * Math.sin(clock * 0.35 + nb.ph);
+      const d = Math.min(W, H) * nb.r * 2;
+      nb.spr.x = nb.nx * W; nb.spr.y = nb.ny * H; nb.spr.width = d; nb.spr.height = d;
+      nb.spr.tint = nebInt;
+      nb.spr.alpha = 0.11 * TUNE.NEBULA * (params.reduced ? 1 : 0.7 + 0.3 * tw);
+    }
+    // #perf-mobile: dito für die Nebel-Blobs — die zweite Hälfte bleibt auf `lite` unsichtbar.
+    if (params.lite) for (let ni = Math.ceil(nebSpr.length / 2); ni < nebSpr.length; ni++) nebSpr[ni].spr.alpha = 0;
+
+    /* Ambiente-Sterne (3 Ebenen): Drift (nur !reduced) + Twinkle (nur !reduced), nah größer/heller.
+       #perf-mobile: auf `lite` läuft nur die HALBE Streuung. Bewusst als Sichtbarkeits-Grenze im
+       Update und nicht als kleinerer Pool beim Bauen: `lite` kommt erst über setParams an (nach
+       createStarfield) und kann sich im Lauf ändern, wenn der Spieler die Effektstufe umstellt —
+       ein halber Pool müsste dafür den ganzen Emitter neu aufbauen.
+       Die Sterne sind über `amb` zufällig gestreut, die erste Hälfte ist also keine Bildhälfte,
+       sondern eine gleichmäßig dünnere Streuung über das ganze Feld. */
+    const ambN = params.lite ? Math.ceil(amb.length / 2) : amb.length;
+    for (let ai = 0; ai < amb.length; ai++) {
+      const a = amb[ai];
+      if (ai >= ambN) { a.p.alpha = 0; continue; }
+      const sizeF = a.layer === 0 ? 0.62 : a.layer === 1 ? 1.0 : 1.5 * TUNE.NEAR_BOOST;
+      const baseA = a.layer === 0 ? 0.36 : a.layer === 1 ? 0.6 : 0.9;
+      const drift = TUNE.AMB_DRIFT * TUNE.AMB_DRIFT_SPD * (0.5 + a.layer * 0.55);
+      if (!params.reduced) { a.ny += drift * dt; if (a.ny > 1) a.ny -= 1; }
+      const tw = params.reduced ? 1 : (0.5 + 0.5 * Math.sin(clock * (1 + TUNE.AMB_TWK_SPD * 4) + a.ph));
+      const alpha = baseA * (1 - TUNE.AMB_TWINKLE * (1 - tw));
+      const foot = TUNE.AMB_SIZE * sizeF * sc * K_AMB * (0.7 + 0.3 * TUNE.AMB_GLOW);
+      const p = a.p; p.x = a.nx * W; p.y = a.ny * H; p.scaleX = p.scaleY = foot / TX; p.tint = ambInt; p.alpha = clamp(alpha, 0, 1);
+    }
+
+    // Schnuppen: Kopf entlang der Bahn, Schweif als glatter, getaperter Sample-Streak dahinter (GERADE, kein Zickzack);
+    // Impact am Bahnende (ab Tier ≥ 1).
+    let ti = 0; // laufender Index in den Schweif-Pool
+    const glow = 0.7 + 0.3 * TUNE.SHOOT_GLOW; // Halo-Verbreiterung des Streaks
+    for (let ci = comets.length - 1; ci >= 0; ci--) {
+      const c = comets[ci];
+      c.age += dt;
+      if (c.age >= c.life) { comets.splice(ci, 1); continue; }
+      const prog = c.age / c.life;                                   // 0..1 entlang der Bahn
+      const env = Math.min(1, prog / 0.08) * Math.min(1, (1 - prog) / 0.08); // Ein-/Ausblenden; Kopf bei IMP_AT noch voll hell
+      // #317-artig: Bahn vom Startpunkt (oben) zum ZUFÄLLIGEN Flächen-Zielpunkt (txN/tyN). Kopf erreicht das Ziel bei
+      // prog = IMP_AT (danach läuft er noch etwas weiter/fadet). Tiefen-Skala c.ds steckt schon in c.size + im Impact.
+      const startX = c.nx0 * W, startY = c.ny0 * H, endX = c.txN * W, endY = c.tyN * H;
+      const dpx = endX - startX, dpy = endY - startY, dlen = Math.hypot(dpx, dpy) || 1;
+      const dxu = dpx / dlen, dyu = dpy / dlen;                    // Einheitsrichtung (Schweif-Orientierung)
+      const k = prog / TUNE.IMP_AT;
+      const hx = startX + dpx * k, hy = startY + dpy * k;
+      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp, headInt, sparkInt); }
+      const trailLen = TUNE.TRAIL_LEN * c.size * sc;
+      const headFoot = TUNE.HEAD_SIZE * c.size * sc * K_HEAD;
+      const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;
+      // PATH_JITTER = Bahn-Streuung: KONSTANTER seitlicher Versatz je Komet (kein Wackeln) → Streak bleibt gerade.
+      const off = TUNE.PATH_JITTER * c.jit * sc, oxH = -dyu * off, oyH = dxu * off;
+      const N = Math.round(TUNE.TRAIL_SAMPLES * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Schweif-Samples auf lite (größter Hotspot: verschachtelte Schleife + interpStops)
+      // Schweif-Samples N..1: hinter dem Kopf, Breite verjüngt (TAPER), Alpha fällt (TAIL_FADE), Farbe Kopf→Ausklang.
+      for (let i = N; i >= 1; i--) {
+        if (ti >= TRAIL_POOL) break;
+        const f = i / N;
+        const sx = hx - dxu * trailLen * f + oxH, sy = hy - dyu * trailLen * f + oyH;
+        const w = TUNE.TAIL_WIDTH * c.size * sc * K_TAIL * (1 - TUNE.TAPER * f) * glow;
+        const a = TUNE.TRAIL_ALPHA * (1 - TUNE.TAIL_FADE * f) * env * flick;
+        const p = trail[ti++]; p.x = sx; p.y = sy; p.scaleX = p.scaleY = Math.max(0, w) / TX;
+        p.tint = rgbInt(interpStops(stops, f)); p.alpha = clamp(a, 0, 1);
+      }
+      // Kopf (oben): hell, HEAD_BOOST.
+      if (ti < TRAIL_POOL) {
+        const p = trail[ti++]; p.x = hx + oxH; p.y = hy + oyH; p.scaleX = p.scaleY = headFoot / TX;
+        p.tint = headInt; p.alpha = clamp(TUNE.TRAIL_ALPHA * TUNE.HEAD_BOOST * env * flick, 0, 1);
+      }
+    }
+    // ungenutzte Schweif-Slots ausblenden
+    for (; ti < TRAIL_POOL; ti++) trail[ti].alpha = 0;
+
+    // Funken (Impact): additiv, ballistisch (Schwerkraft), prallen am RAHMEN (alle 4 Kanten) UND am Boden (untere
+    // Kante) mit Restitution ab → Partikel-Explosion mit Bouncen statt expandierender Kugel.
+    const rest = TUNE.IMP_BOUNCE, fric = TUNE.IMP_BOUNCE_FRIC;
+    for (let i = 0; i < SPARK_POOL; i++) {
+      const s = sparks[i]; if (!s.alive) continue;
+      s.age += dt;
+      if (s.age >= s.life) { s.alive = false; s.p.alpha = 0; continue; }
+      s.vy += TUNE.IMP_GRAV * sc * dt; s.vx -= s.vx * TUNE.IMP_DRAG * dt;
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      const r = s.sz * sc * 0.5;
+      if (s.x < r) { s.x = r; s.vx = -s.vx * rest; }
+      else if (s.x > W - r) { s.x = W - r; s.vx = -s.vx * rest; }
+      if (s.y < r) { s.y = r; s.vy = -s.vy * rest; }
+      else if (s.y > H - r) { s.y = H - r; s.vy = -s.vy * rest; s.vx *= fric; }   // Boden: prallt hoch + seitliche Reibung
+      const lifeF = 1 - s.age / s.life;
+      const foot = s.sz * sc * K_SPARK * (0.6 + 0.4 * lifeF);
+      const flick = 0.8 + 0.2 * Math.sin(clock * 34 + s.seed);
+      const p = s.p; p.x = s.x; p.y = s.y; p.tint = s.tint; p.alpha = clamp(lifeF * flick, 0, 1);
+      // #meteor: Verschweif — die wegfliegende Funke entlang ihrer Flugrichtung dehnen (Motion-Streak). Länger je schneller;
+      //   klingt beim Abbremsen/Ausleben auf rund aus. Radial-Textur → gestreckt ergibt ein weiches, verjüngtes Schweifchen.
+      const speed = Math.hypot(s.vx, s.vy);
+      const stretch = clamp(1 + speed * 0.006, 1, 3.6);
+      const base = foot / TX;
+      p.rotation = Math.atan2(s.vy, s.vx);
+      p.scaleX = base * stretch; p.scaleY = base * 0.9;
+    }
+
+    // Blitz (Impact): expandiert + fadet.
+    for (const f of flashes) {
+      if (!f.alive) { f.spr.alpha = 0; continue; }
+      f.age += dt;
+      if (f.age >= f.life) { f.alive = false; f.spr.alpha = 0; continue; }
+      const lf = f.age / f.life, d = f.sz0 * (0.6 + 1.0 * lf);
+      f.spr.x = f.x; f.spr.y = f.y; f.spr.width = d; f.spr.height = d; f.spr.tint = f.tint; f.spr.alpha = (1 - lf) * 0.9;
+    }
+  }
+
+  app.ticker.add(update);
+
+  return {
+    setParams,
+    erupt,
+    destroy() {
+      try { app.ticker.remove(update); } catch { /* ignore */ }
+      for (const c of [nebulaC, ambPC, trailPC, sparkPC, flashC]) { try { c.destroy({ children: true }); } catch { /* ignore */ } }
+      for (const t of [starTex, sparkTex, nebTex]) { try { t.destroy(true); } catch { /* ignore */ } }
+    },
+  };
+}

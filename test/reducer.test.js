@@ -474,3 +474,48 @@ describe("RESTORE_RUN (Resume)", () => {
     expect(reducer(cur, { type: "RESTORE_RUN" })).toBe(cur);
   });
 });
+
+describe("PICK_LEGENDARY — #370 Doppel-Legendär (doubleLeg, nur Ranked)", () => {
+  const base = (weekMods, offer = ["SK_LIGHTNING_L01", "SK_FIRE_L01"]) =>
+    ({ ...initialState(makeRng(1)), phase: "legendary", legendaryOffer: offer, skills: [], weekMods });
+  it("ohne Mod: 1 Wahl → sofort play", () => {
+    const s = reducer(base([]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.skills).toContain("SK_LIGHTNING_L01");
+    expect(s.legendaryOffer).toBe(null);
+  });
+  it("doubleLeg: nach 1. Wahl bleibt Phase legendary (Rest-Angebot ohne die genommene); 2. Wahl → play", () => {
+    let s = reducer(base([{ effect: "doubleLeg" }]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("legendary");
+    expect(s.legendaryOffer).toEqual(["SK_FIRE_L01"]);
+    expect(s.legPicksMade).toBe(1);
+    s = reducer(s, { type: "PICK_LEGENDARY", legendaryId: "SK_FIRE_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.skills).toEqual(expect.arrayContaining(["SK_LIGHTNING_L01", "SK_FIRE_L01"]));
+    expect(s.legPicksMade).toBe(0);
+  });
+  it("doubleLeg mit nur 1 Angebot: 1 Wahl → play (kein Hängenbleiben)", () => {
+    const s = reducer(base([{ effect: "doubleLeg" }], ["SK_LIGHTNING_L01"]),
+      { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+    expect(s.phase).toBe("play");
+    expect(s.legPicksMade).toBe(0);
+  });
+});
+
+describe("PICK_SKILL — #370 Skill-Fülle (skillSlots, nur Ranked)", () => {
+  const sixFire = ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06"];
+  const base = (skillSlots) => ({
+    ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_FIRE_07"],
+    skills: sixFire, activeArchetypes: ["fire"], ...(skillSlots ? { skillSlots } : {}),
+  });
+  it("Basis 6 Slots: 7. Skill ohne Ersetzung abgelehnt (No-Op)", () => {
+    const s = reducer(base(null), { type: "PICK_SKILL", skillId: "SK_FIRE_07", rng: makeRng(1) });
+    expect(s.skills).toHaveLength(6);
+    expect(s.skills).not.toContain("SK_FIRE_07");
+  });
+  it("skillSlots 8 (Skill-Fülle +2): 7. Skill wird angenommen", () => {
+    const s = reducer(base(8), { type: "PICK_SKILL", skillId: "SK_FIRE_07", rng: makeRng(1) });
+    expect(s.skills).toContain("SK_FIRE_07");
+    expect(s.skills).toHaveLength(7);
+  });
+});

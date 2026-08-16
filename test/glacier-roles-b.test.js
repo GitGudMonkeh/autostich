@@ -38,34 +38,34 @@ describe("Anfrieren — Sieg → +Masse extra", () => {
   });
 });
 
-describe("Schneetreiben — additive Verwehung aufs Nachbarfeld", () => {
-  it("leerer Gletscher (0 Masse) gibt seine Sieg-Masse ab (Transfer, netto 0)", () => {
+describe("Schneetreiben — additive Verwehung in die Boden-Reserve (#386 firnStack)", () => {
+  it("leerer Gletscher (0 Masse) gibt seine Sieg-Masse in die Nachbar-Reserve ab (Transfer, netto 0)", () => {
     const glacierLocked = falses(); glacierLocked[0] = true; // Nachbarn von pos0: pos5 (unten), pos1 (rechts) — beide frei
     const s = resolveTrick(scen({ glacierLocked, glacierRoles: [ROLES.SCHNEETREIBEN] }), noCrit);
-    expect(s.glacierMass[5] + s.glacierMass[1]).toBe(WIN_MASS); // Sieg-Masse wandert aufs Nachbarfeld
-    expect(s.glacierMass[0]).toBe(0);                          // Gletscher netto 0
+    expect(s.firnStack[5] + s.firnStack[1]).toBe(WIN_MASS); // Sieg-Masse wandert in die Boden-Reserve des Nachbarfelds
+    expect(s.glacierMass[0]).toBe(0);                        // Gletscher netto 0
   });
-  it("Gletscher mit Masse sät ADDITIV +SEED und behält seine Sieg-Masse", () => {
+  it("Gletscher mit Masse sät ADDITIV +SEED in die Nachbar-Reserve und behält seine Sieg-Masse", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const gm = zeros(); gm[0] = 5;
     const s = resolveTrick(scen({ glacierMass: gm, glacierLocked, glacierRoles: [ROLES.SCHNEETREIBEN] }), noCrit);
-    expect(s.glacierMass[0]).toBe(5 + WIN_MASS);              // Gletscher behält seinen Sieg
-    expect(s.glacierMass[5] + s.glacierMass[1]).toBe(SCHNEETREIBEN_SEED); // Nachbar zusätzlich +2
+    expect(s.glacierMass[0]).toBe(5 + WIN_MASS);            // Gletscher behält seinen Sieg (Eigenmasse)
+    expect(s.firnStack[5] + s.firnStack[1]).toBe(SCHNEETREIBEN_SEED); // Nachbar-Reserve zusätzlich +2
   });
 });
 
-describe("Dauerfrost — Firn-Boden nach Abstand zum Gletscher", () => {
+describe("Dauerfrost — Boden-Reserve nach Abstand zum Gletscher (#386 firnStack)", () => {
   it("Abstand ≥3 → FAR, Abstand 2 → NEAR, 8er-Ring → 0; Gletscher lädt über Ewiger Frost", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;            // ein Gletscher an pos0 (0,0)
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] })); // alles verlieren → nur Boden-Frost
-    expect(s.glacierMass[39]).toBe(DAUERFROST_FAR);                    // pos39 (7,4), Abstand 7 → +2
-    expect(s.glacierMass[2]).toBe(DAUERFROST_NEAR);                    // pos2 (0,2), Abstand 2 → +1
-    expect(s.glacierMass[1]).toBe(0);                                  // pos1 (0,1), Abstand 1 (8er-Ring) → 0
+    expect(s.firnStack[39]).toBe(DAUERFROST_FAR);                     // pos39 (7,4), Abstand 7 → +2 in die Reserve
+    expect(s.firnStack[2]).toBe(DAUERFROST_NEAR);                     // pos2 (0,2), Abstand 2 → +1 in die Reserve
+    expect(s.firnStack[1]).toBe(0);                                   // pos1 (0,1), Abstand 1 (8er-Ring) → 0
     expect(s.glacierMass[0]).toBe(EWIGER_FROST);                       // der Gletscher selbst lädt über Ewiger Frost, nicht Dauerfrost
   });
-  it("ohne Dauerfrost bleiben ungefrorene Felder leer", () => {
+  it("ohne Dauerfrost bleiben ungefrorene Felder (Reserve) leer", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked }));
-    expect(s.glacierMass[39]).toBe(0);
+    expect(s.firnStack[39]).toBe(0);
   });
 });

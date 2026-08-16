@@ -1,6 +1,7 @@
 import * as C from "./constants.js";
-import { shuffledOrder } from "./deck.js";
+import { shuffledOrder, shuffleFreePositions } from "./deck.js"; // #370 Deck-Shuffle: fixierte Positionen bleiben stehen
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
+import { weekModMag, hasWeekMod, BOOST_FACTOR } from "./weekMods.js"; // #370 Wochen-Modifikatoren (nur Ranked)
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
@@ -24,9 +25,20 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
-  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "glacier")
-import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Angebot)
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC,
+  FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
+
+/* Energie-Budget einer Formationsphase — EINE Quelle für den Phasen-Eintritt (unten, Durchlauf-Ende) UND für
+   RESET_FORMATION im Reducer. Die Formel stand vorher zweimal da, und die Reducer-Kopie hatte `state.devEnergy`
+   vergessen: im Dev-Run setzt START_RUN nur devEnergy und lässt formationEnergyBase undefiniert, sodass
+   „Zurücksetzen" auf C.FORMATION_ENERGY durchfiel statt auf den eingestellten Wert. Die Duplikation war die
+   eigentliche Ursache — deshalb der gemeinsame Helfer statt eines zweiten Patches an derselben Formel. */
+export function formationEnergyFor(state) {
+  const base = state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY;
+  const perkSwaps = (state.perks || []).reduce((t, id) => t + ((PERK_DEFS[id] && PERK_DEFS[id].extraSwap) || 0), 0);
+  return base + perkSwaps + formationEnergyBonus(state.familyTiers, state.cycle); // #179 E_TUNING „Feinjustierung"
+}
 
 // ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
 // COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
@@ -101,8 +113,10 @@ export function resolveTrick(state, rng) {
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
-    zinsCapital = 0, zinsRate = C.ZINS_RATE_START, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
-    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: aufgestapelte Struktur-Dauerdividende (Auszahlung je Durchlauf-Ende)
+    zinsCapital = 0, zinsRate = C.ZINS_RATE_START, zinsPaidTotal = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz/kumulierte Auszahlung) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
+    richtfestBonus = 0, // Gebäude-Legendäres Richtfest: Auszahlung des letzten Durchlaufs (reine Telemetrie, kein Stapel mehr)
+    cycleScoreSum = 0,  // Summe der Stich-Erträge DIESES Durchlaufs — Bezugsgröße der Richtfest-Dividende
     vabanquePaid = 0, // Vabanque (#203): Zahl der Eröffnungs-Wetten, die dieser Lauf schon ausgezahlt hat (Lauf-Deckel gegen Front-Load-Exploit)
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore = 0, // bester Stich + bester Gletscher-Stich (Bruch getrennt geführt)
     maxFormations = 0, formationScore = 0, buildingScore = 0, streakScore = 0, // #161 FB-2 + #251: Score-Anteile (Formation / Architekt-Gebäude / Serie)
@@ -125,7 +139,9 @@ export function resolveTrick(state, rng) {
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
-    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
+    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
+    firnStack = [], // #386 Firn-Boden-Reserve: pro Feld die Boden-Reserve (getrennt von glacierMass) — füllt Gletscher zum Rundenstart auf 12 nach
+
     challengeBlockForm = [], // #301 C3: gesperrte Aufstell-Zellen (nie als Gletscher einfrierbar, auch nicht per Eiszeit-Auto-Freeze)
     grosseLawineFired = false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher — feuert genau einmal, danach inert
     frozenOppPending = {}, frozenOppActive = {}, // Eis-Neudesign (Einfrieren): Gegnerkarten, die im nächsten Durchlauf ihren Stich garantiert verlieren (je oppCard.id)
@@ -182,22 +198,37 @@ export function resolveTrick(state, rng) {
   let archPreNow = architectPre;
   if (pos === 0) {
     formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
-    archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck) : null;
+    // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
+    // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
+    // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
+    archPreNow = archState ? precomputeArchitect(archState, playerOrder, deck, flagValue(perks, "fundament")) : null;
   }
   // Eis-Neudesign (docs §2.4): Snapshot am Durchlauf-Start — der ganze Bruch wird auf dem statischen Brett vorab gerechnet
   // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
-  // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "glacier".
+  // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "ice".
   const glacierActive = activeArchetypes.includes("ice"); // Eis-Neudesign: der Eis-Archetyp IST der Gletscher
   const glacierNF = glacierActive ? glacierNeighborFn(glacierRoles) : null; // Eisbrücke → 8-Nachbarschaft, sonst 4
   let glacierPreNow = glacierPre;
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
+  let newFirnStack = Array.isArray(firnStack) ? firnStack.slice() : []; // #386 Firn-Boden-Reserve: Arbeitskopie (nur ice-gegated beschrieben → Nicht-Eis-Läufe byte-identisch)
   let newGlacierLocked = glacierLocked; // wird nur von Eiszeit (Auto-Lock) verändert; sonst durchgereicht
   let newGrosseLawineFired = grosseLawineFired; // Große Lawine: nach dem ersten aktiven Durchlauf verbraucht
   if (glacierActive && pos === 0) {
+    // #386 Firn-Boden-Reserve: Runden-Start-Nachschub — VOR dem Bruch-Snapshot zieht jeder gefrorene Gletscher aus seiner
+    // Boden-Reserve (firnStack) wieder auf die volle Masse (FIRN_REFILL_TARGET=12) auf. Selbst-erzeugte Masse aus der Vorrunde
+    // senkt (12−Masse) automatisch → nur die Differenz wird gezogen; nie über 12 (Clamp); die Reserve leert sich Runde für Runde.
+    // Die nachgefüllte Masse ist das, was im Snapshot birst → deshalb VOR precomputeGlacier.
+    for (let p = 0; p < newGlacierMass.length; p++) {
+      if (!glacierLocked[p]) continue;
+      const draw = Math.max(0, Math.min(GLACIER_FIRN_REFILL_TARGET - (newGlacierMass[p] || 0), newFirnStack[p] || 0));
+      if (draw > 0) { newGlacierMass[p] = (newGlacierMass[p] || 0) + draw; newFirnStack[p] = (newFirnStack[p] || 0) - draw; }
+    }
     // Pooling vor dem Bruch: Ewiges Schild (Legendär) poolt das GANZE Feld, sonst Verschmelzen den Cluster (nie fallend).
-    const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(glacierMass, glacierLocked)
-      : glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(glacierMass, glacierLocked, glacierNF)
-      : glacierMass;
+    // Basis ist die BEREITS nachgefüllte Masse (newGlacierMass), nicht das rohe glacierMass.
+    const refilledMass = newGlacierMass;
+    const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
+      : glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(refilledMass, glacierLocked, glacierNF)
+      : refilledMass;
     // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
     const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
     const glacierO = glacierOpts(glacierRoles);
@@ -333,11 +364,14 @@ export function resolveTrick(state, rng) {
   // (unten im Auszahlungs-Block). Hier: im Kampf unterdrücken, damit er nicht doppelt (Wert + Masse) zählt.
   const verdichtung = glacierActive && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG) && !!glacierLocked[actualPos];
   const architectValueEff = verdichtung ? 0 : architectValue;
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff;
+  // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
+  const wmCardBonus = weekModMag(state.weekMods, "cardValue");
+  const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + iceValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + satValueBonus + glacierBuff + wmCardBonus;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
-  const oppValueMod = difficulty ? (difficulty.oppValue || 0) + rampMod : 0;
+  const oppValueMod = (difficulty ? (difficulty.oppValue || 0) + rampMod : 0) + wmEnemyBonus;
   // Brand (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −Wert (nie < 0); sonst neutral (§12).
   const oValue = Math.max(0, oCard.value + oppValueMod - (brandActive[oCard.id] || 0)); // Brand (Feuer)
   // Der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht (Blitzfänger).
@@ -391,16 +425,18 @@ export function resolveTrick(state, rng) {
       // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
       if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += GLACIER_ANFRIEREN_WIN + (hasFormation ? GLACIER_ANFRIEREN_FORM : 0);
       newGlacierMass[actualPos] = preMass + add;
-      // Schneetreiben (Verwehung): ADDITIV +SEED aufs Nachbarfeld (der Gletscher behält seine volle Sieg-Masse). Hatte er
-      // vor dem Sieg 0 Masse, gibt er stattdessen seine Sieg-Masse ab (Transfer). Deterministisch, bevorzugt offenen Boden, 4-Nb.
+      // Schneetreiben (Verwehung): ADDITIV +SEED in die Boden-RESERVE (firnStack) des Nachbarfelds (der Gletscher behält
+      // seine volle Sieg-Masse). Hatte er vor dem Sieg 0 Masse, gibt er stattdessen seine Sieg-Masse in die Reserve ab
+      // (Transfer). Deterministisch, offener Boden, 4-Nb. #386: Firn nur auf offenen Boden säen, NIE unter einen Gletscher
+      // (driftTarget liefert nur offene Felder; zusätzlich `!glacierLocked[tgt]`-Guard).
       if (glacierRoles.includes(GLACIER_ROLES.SCHNEETREIBEN)) {
         const tgt = glacierDriftTarget(actualPos, glacierLocked);
-        if (tgt != null) {
+        if (tgt != null && !glacierLocked[tgt]) {
           if (preMass > 0) {
-            newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + GLACIER_SCHNEETREIBEN_SEED;
+            newFirnStack[tgt] = (newFirnStack[tgt] || 0) + GLACIER_SCHNEETREIBEN_SEED;
           } else {
             const give = Math.min(GLACIER_WIN_MASS, newGlacierMass[actualPos] || 0);
-            newGlacierMass[actualPos] -= give; newGlacierMass[tgt] = (newGlacierMass[tgt] || 0) + give;
+            newGlacierMass[actualPos] -= give; newFirnStack[tgt] = (newFirnStack[tgt] || 0) + give;
           }
         }
       }
@@ -648,6 +684,18 @@ export function resolveTrick(state, rng) {
     const architectScoreRes = archPreNow
       ? architectScore(archPreNow, actualPos, { isCrit, serieStreak, suit: pCard.green ? "G" : pCard.suit }, (architect && architect.winCounters) || {}, alliance) // #289: grün → „G" + Farballianz (Zunfthaus)
       : { flat: 0, mult: 1, bump: null };
+    // #370 Bau-Boost (Wochen-Mod, nur Ranked): Architekt-Gebäude-Boni verdoppeln — Flat + Serien-Flat additiv, der
+    // Mult-Überschuss über 1 verdoppelt (neutrale Gebäude ohne Wirkung bleiben unberührt).
+    // [FIX] Nur den GEWINN-Anteil skalieren. Das gamble-Gebäude (Crit-Wette) schreibt bei ausbleibendem Crit einen
+    //   NEGATIVEN Flat (`flat += ctx.isCrit ? e.crit : -e.penalty`, architect.js) — pauschales ×2 verdoppelte damit
+    //   ausgerechnet die Strafe, ein positiver Mod verschlechterte also gezielt Risiko-Bauten. Die Behandlung ist
+    //   jetzt symmetrisch zum Multiplikator, der schon immer nur den Überschuss über 1 verdoppelt hat.
+    if (hasWeekMod(state.weekMods, "buildBoost")) {
+      if (architectScoreRes.flat > 0) architectScoreRes.flat *= BOOST_FACTOR;
+      const sf = architectScoreRes.streakFlat || 0;
+      architectScoreRes.streakFlat = sf > 0 ? sf * BOOST_FACTOR : sf;
+      architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * BOOST_FACTOR;
+    }
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;
     // Serien-Flat (Reihenhaus): läuft am globalen Serien-Mult VORBEI (kein Doppel-Dip — die Serie skaliert diesen Flat
@@ -677,7 +725,17 @@ export function resolveTrick(state, rng) {
     // Legendär-Perks-Rework (#203) — der ×-Multiplikator-Raum ist die family-free Legendär-Lane. Henker (Score, Kat. D)
     // faltet in perkMult; Brennpunkt/Sammler (Formation, Kat. E) falten unten in formMult → §17-Breakdown bleibt exakt.
     const henkerMult = (ownsFlag(perks, "henker") && actualPos >= C.HENKER_ZONE_START) ? C.HENKER_MULT : 1; // Segment-Finale ×
-    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx) * henkerMult; // globale Perk-/Familien-Multiplikatoren + Henker (#203)
+    // Hochseil (L_HOCH, v0.3): × solange der laufende Durchlauf OHNE Niederlage ist. cycleLosses zählt die Niederlagen
+    // DIESES Durchlaufs (Reset am Durchlauf-Ende) — bei einer Niederlage ist der Perk bis zum nächsten Durchlauf aus.
+    // Das ist bewusst ein SPÄTSPIEL-Perk: gemessen sind 0 % der Durchläufe 1–10 niederlagenfrei, aber 70 % der
+    // Durchläufe 41–50. Er greift also genau dort, wo der Score exponentiell läuft → MULT niedrig halten.
+    const hochseilMult = (ownsFlag(perks, "hochseil") && cycleLosses === 0) ? C.HOCHSEIL_MULT : 1;
+    // Taktschlag (L_TAKT, v0.3): der ABSCHLIESSENDE Stich eines komplett gewonnenen Segments zählt ×. segmentWins
+    // enthält diesen Sieg bereits (Zähler oben, vor dem Scoring) ⇒ volles Segment ⟺ segmentWins === SEGMENT_SIZE.
+    const taktschlagMult = (ownsFlag(perks, "taktschlag") && actualPos % SEGMENT_SIZE === SEGMENT_SIZE - 1
+      && segmentWins === SEGMENT_SIZE) ? C.TAKTSCHLAG_MULT : 1;
+    const perkMult = prodHook(perks, "scoreMult", wctx) * familyProdHook(familyTiers, "scoreMult", wctx)
+      * henkerMult * hochseilMult * taktschlagMult; // globale Perk-/Familien-Multiplikatoren + Henker (#203) + Hochseil/Taktschlag (v0.3)
     // Formation (§22.7) in drei benannte Faktoren (§13): Basis-Formationen×Formations-Stat, dann die Shop-Meta-Faktoren
     // Nachhall (F6) und Formationskern (F-L1) je eigen. Produkt = formationMult × Stat (unverändert; Aufspaltung ist rein
     // für die Ergebnis-Aufschlüsselung — Multiplikation ist kommutativ).
@@ -693,7 +751,14 @@ export function resolveTrick(state, rng) {
     // Sammler (#203, Formationsvielfalt): +SAMMLER_STEP je distinct Formationsart, die diesen Durchlauf SCHON gesammelt
     // wurde (Stand VOR diesem Sieg → wächst über den Durchlauf; „für den restlichen Durchlauf"), max SAMMLER_MAX.
     const sammlerMult = ownsFlag(perks, "sammler") ? 1 + C.SAMMLER_STEP * Math.min(sammlerTypes.length, C.SAMMLER_MAX) : 1;
-    const formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203)
+    // Ballast (L_BALL, v0.3, NACHTEIL): × auf den Formations-Multiplikator; der Preis (BALLAST_ENERGY weniger
+    // Formationsenergie je Aufstellphase) hängt als negativer extraSwap am Perk und läuft über die bestehende
+    // Energie-Summe (reducer.js CONFIRM_FORMATION / engine.js Aufstell-Phase) — kein eigener Hook nötig.
+    const ballastMult = ownsFlag(perks, "ballast") ? C.BALLAST_FORM_MULT : 1;
+    let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult * ballastMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203) + Ballast (v0.3)
+    // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
+    // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
+    if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
     const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
@@ -764,24 +829,44 @@ export function resolveTrick(state, rng) {
     // Kurzschluss (Rework): eine VOLLE (5) Siegkarte „kurzschließt" bei JEDEM Sieg → Direkt-Score-Burst (post-stack),
     // OHNE die Stapel zu opfern. Wiederkehrender Payoff fürs Maxen (Stapel bleiben → weiter Flat-Score + Feld-Crit #271).
     if (hasKurzschluss(skills) && (pCard.ionStacks || 0) >= C.ION_MAX_STACKS) lightDirect += C.KURZSCHLUSS_SCORE;
-    // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
-    // +VABANQUE_SCORE DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
-    // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
-    // LAUF-DECKEL (vabanquePaid < VABANQUE_MAX_PAYOUTS): `playerOrder` ist persistent + in der Formationsphase spieler-
-    // arrangierbar → ohne Deckel ließe sich die Eröffnung durch Vorne-Legen der stärksten Karten JEDEN Durchlauf
-    // abgreifen (~24–60×/Lauf → Runaway, gemessen +8,4M/Lauf). Der Deckel begrenzt den Exploit auf MAX_PAYOUTS×SCORE;
-    // ein Greedy-Spieler trifft die Eröffnung natürlich ~2×/Lauf, ein Front-Loader erreicht nur den Deckel.
-    let perkDirect = 0;
-    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS && vabanquePaid < C.VABANQUE_MAX_PAYOUTS) {
-      perkDirect = C.VABANQUE_SCORE; vabanquePaid += 1;
-    }
     // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
     // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     const fireDirectApplied = fireDirect * fireStructMult;
-    gained += fireDirectApplied + lightDirect + plantDirect + perkDirect;
+    // Voller Stich-Ertrag OHNE die Vabanque-Auszahlung — Bezugsgröße der Wette (s. u.) und Basis für `gained`.
+    const gainedPreBet = gained + fireDirectApplied + lightDirect + plantDirect;
+    // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
+    // Auszahlung DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
+    // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
+    //
+    // SELBSTSKALIEREND (Ablösung des flachen VABANQUE_SCORE): die Wette zahlt VABANQUE_MULT × den Score der
+    // EIGENEN Eröffnung (Summe der VABANQUE_TRICKS Eröffnungsstiche dieses Durchlaufs, `cycleOpenScore`), nicht
+    // mehr einen festen Betrag. Grund: perkDirect läuft post-stack an allen Multiplikatoren vorbei, ein fester
+    // Betrag verliert also mit jedem Score-Inflationsschritt an Wirkung — gemessen (sim/perk-impact.mjs) war der
+    // flache Wert auf 1,03× abgesunken, praktisch wirkungslos, genau wie die anderen Flat-Perks (Zinseszins/
+    // Richtfest). Ein Vielfaches der eigenen Eröffnung wächst mit der Ökonomie mit und bleibt „Verstärker, kein
+    // Motor": ein starker Build bekommt mehr, aber verhältnismäßig dasselbe.
+    //
+    // KEIN LAUF-DECKEL (mehr): die Wette zahlt JEDE gefegte Eröffnung. Der frühere VABANQUE_MAX_PAYOUTS-Deckel (3)
+    // stammt aus #203 und stützte sich auf die Annahme, ein Greedy-Spieler treffe die Eröffnung nur ~2×/Lauf, ein
+    // Front-Loader dagegen 24–60×. Nachgemessen (sim, 2026-08-15) stimmt beides nicht mehr: normal werden median
+    // 16 von 50 Eröffnungen gefegt, der Deckel band also in 90 % der Läufe — der Spieler sah 13 erfüllte
+    // Bedingungen ohne Wirkung. Und weil die Sweeps SPÄT liegen (Durchlauf 31–50: 686 von 940 beobachteten),
+    // griffen die 3 Auszahlungen ausgerechnet die frühesten und kleinsten ab: der Perk starb, bevor er etwas wert war.
+    //
+    // Der Front-Load-Missbrauch trägt sich im heutigen Build selbst nicht mehr: mit dem Front-Load-Gegner
+    // (sim/formation.js frontLoadFormationStep) steigen die Sweeps zwar auf 38/50, der Median-Score FÄLLT dabei
+    // aber von 38,2M auf 25,2M — das Sortieren der Eröffnung nach Kartenwert zerlegt die Formationen im ersten
+    // Segment. Wer die Eröffnung erzwingt, zahlt mehr, als die Wette einbringt. Deshalb braucht es keinen Deckel;
+    // die Selbstskalierung (× Eröffnungs-Score) hält den Beitrag ohnehin proportional.
+    if (pos < C.VABANQUE_TRICKS) cycleOpenScore += gainedPreBet; // Eröffnungs-Score dieses Durchlaufs (ohne die Wette selbst)
+    let perkDirect = 0;
+    if (ownsFlag(perks, "vabanque") && pos === C.VABANQUE_TRICKS - 1 && cycleWins === C.VABANQUE_TRICKS) {
+      perkDirect = cycleOpenScore * C.VABANQUE_MULT; vabanquePaid += 1; // vabanquePaid nur noch Telemetrie (kein Gate)
+    }
+    gained = gainedPreBet + perkDirect;
     score += gained;
     // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
     // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
@@ -925,6 +1010,7 @@ export function resolveTrick(state, rng) {
     }
     bestTrickScore = Math.max(bestTrickScore, gained);
     cycleBestTrick = Math.max(cycleBestTrick, gained); // Echo (#203): bester Stich DIESES Durchlaufs (am Durchlauf-Ende nochmal)
+    cycleScoreSum += gained;                          // Richtfest: Ertrag DIESES Durchlaufs (Bezugsgröße der Struktur-Dividende)
     // Sammler (#203): die diesen Stich GEWONNENEN Basis-Formationsarten (factor > 1) in den Durchlauf-Satz aufnehmen —
     // sie heben den formMult erst der FOLGENDEN Siege dieses Durchlaufs (sammlerMult liest den Stand VOR dem Sieg).
     if (ownsFlag(perks, "sammler"))
@@ -1107,6 +1193,11 @@ export function resolveTrick(state, rng) {
     winStreak, // aktuelle Siegesserie NACH diesem Stich (0 bei Niederlage) — Battlefield feiert Meilensteine (Serie 200 → „Gönn dir")
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
+    // #eis PER-KARTE: Frost-Anzeige gehört NUR auf die tatsächlich gefrorene Gletscher-Karte dieses Stichs (NICHT als
+    //   globaler Basis-Frost auf jede gespielte Karte). pGlacier = die gespielte Karte sitzt auf einem gefrorenen
+    //   Gletscher-Feld; pGlacierMass = dessen aktuelle Firn-Masse (0..12). Battlefield frostet damit exakt diese Karte.
+    pGlacier: !!(glacierActive && glacierLocked[actualPos]),
+    pGlacierMass: (glacierActive && glacierLocked[actualPos]) ? (newGlacierMass[actualPos] || 0) : 0,
   };
 
   // Durchlauf-Ende: Score-Effekte am Durchlauf-Ende, dann NUR das Gegnerdeck NEU MISCHEN (Spieler-Reihenfolge
@@ -1127,15 +1218,17 @@ export function resolveTrick(state, rng) {
     cycle += 1;
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
-    // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Masse-Frost auf ungefrorene Felder.
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newGlacierMass = dauerfrostTick(newGlacierMass, glacierLocked);
+    // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (#386 firnStack).
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newFirnStack = dauerfrostTick(newFirnStack, glacierLocked);
     // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF);
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF);
-    // Eiszeit (Legendär): brettweite Flut + das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach und nach).
+    // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack) + das höchste ungefrorene Feld (nach Reserve)
+    // friert zum Gletscher ein (Karten frieren nach und nach). Der neu gefrorene Gletscher startet mit Masse 0 (glacierMass
+    // bleibt unberührt) und zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
-      const ez = eiszeitTick(newGlacierMass, newGlacierLocked, undefined, undefined, challengeBlockForm);
-      newGlacierMass = ez.mass; newGlacierLocked = ez.locked;
+      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, undefined, challengeBlockForm);
+      newFirnStack = ez.mass; newGlacierLocked = ez.locked;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — ABRECHNUNG der Bank (s. u.). Echo — der beste Stich dieses Durchlaufs wird ein
@@ -1148,7 +1241,9 @@ export function resolveTrick(state, rng) {
     if (ownsFlag(perks, "zinseszins")) {
       const hurdle = zinsHurdle(cycleLen);
       if (cycleWins >= hurdle) {
-        cycleEndScore += zinsCapital * zinsRate;
+        const zinsPayout = zinsCapital * zinsRate;
+        cycleEndScore += zinsPayout;
+        zinsPaidTotal += zinsPayout;                 // #zins: kumulierte Auszahlung über den Lauf (nur Anzeige, fließt nicht ins Scoring zurück)
         zinsRate = Math.min(zinsRate + C.ZINS_RATE_STEP, C.ZINS_RATE_MAX);
       } else {
         zinsCapital *= C.ZINS_CRASH_KEEP;
@@ -1156,14 +1251,31 @@ export function resolveTrick(state, rng) {
       }
     }
     if (ownsFlag(perks, "echo")) cycleEndScore += cycleBestTrick * C.ECHO_FACTOR;
-    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur diesen Durchlauf +Schritt auf den Dauer-Bonus, dann auszahlen.
-    if (ownsFlag(perks, "richtfest") && archPreNow) { richtfestBonus += C.RICHTFEST_STEP * (archPreNow.structureCount || 0); cycleEndScore += richtfestBonus; }
+    // Richtfest (Gebäude-Legendäres): je vollendeter Struktur eine Dividende auf den Ertrag DIESES Durchlaufs.
+    // SELBSTSKALIEREND wie Vabanque (v0.2): der frühere flache Schritt (250 Score je Struktur, aufgestapelt) war gegen
+    // die heutige Score-Höhe bedeutungslos — gemessen 1,08× auch mit korrekt bauendem Architekten (median 10 Strukturen).
+    // Bezugsgröße ist die Summe der STICH-Erträge des Durchlaufs (cycleScoreSum), NICHT cycleEndScore: sonst würden
+    // Zinseszins/Echo/Richtfest übereinander multiplizieren (die Vabanque×Echo-Lehre — Perk-auf-Perk-Kaskaden reißen
+    // den Schwanz auf). Der „stapelnde" Charakter bleibt: structureCount wächst über den Lauf, während gebaut wird.
+    if (ownsFlag(perks, "richtfest") && archPreNow) {
+      richtfestBonus = cycleScoreSum * C.RICHTFEST_STEP * (archPreNow.structureCount || 0); // Telemetrie: Auszahlung dieses Durchlaufs
+      cycleEndScore += richtfestBonus;
+    }
+    // Schmiede (L_SCHM, v0.3): die schwächste Deckkarte wird dauerhaft aufgewertet. Deterministisch: bei Gleichstand
+    // die Karte mit der kleinsten id, sonst hinge das Ergebnis an der Deck-Reihenfolge (Determinismus-Invariante §9).
+    // BEWUSST OHNE DECKEL (Entscheidung 2026-08-15): über 50 Durchläufe bis zu +50 auf ein Deck mit Gesamtwert ~220.
+    const schmiedeStep = flagValue(perks, "schmiede");
+    if (schmiedeStep) {
+      let weakest = null;
+      for (const c of deck) if (!weakest || c.value < weakest.value || (c.value === weakest.value && c.id < weakest.id)) weakest = c;
+      if (weakest) deck = deck.map((c) => (c.id === weakest.id ? { ...c, value: c.value + schmiedeStep } : c));
+    }
     score += cycleEndScore;
     // Per-Karte-Ledger (Sim S1): die Durchlauf-Ende-Payoffs dem gerade gespielten Schluss-Stich gutschreiben, damit die
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
     // oben schon gebaut; Mutation einer const-Objekt-Property ist erlaubt.
     if (cycleEndScore) { lastTrick.gained += cycleEndScore; lastTrick.scoreGain += cycleEndScore; }
-    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; // Pro-Durchlauf-States zurücksetzen (#203)
+    cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
     // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
     prevCycleScore = lastCycleScore;
@@ -1262,25 +1374,40 @@ export function resolveTrick(state, rng) {
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
       // Dev-Run (Test-Layout): state.devSchedule überschreibt den globalen Plan pro Lauf; null → Bestand.
       const decision = (state.devSchedule || C.DECISION_SCHEDULE)[cycle];
+      // #370/#381 Legendär-Takt (nur Ranked): jede mag-te PERK-PHASE (nicht jede Runde) bietet 3 legendäre statt normale
+      // Perks. Ordnungszahl der Perk-Phase über perkPhaseAt (0 = keine Perk-Phase) → betrifft NUR bestehende Perk-Phasen,
+      // wandelt keine Nicht-Perk-Runde um. mag 0 (Nicht-Ranked) → No-op (byte-identisch).
+      const legTaktMag = weekModMag(state.weekMods, "legTakt");
+      const legTaktPP = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle);
+      const onLegTakt = legTaktMag > 0 && legTaktPP > 0 && legTaktPP % legTaktMag === 0;
       // Reward-Ableitungen aus dem Progressions-Baum (Normal-/Meister-Lauf; Standard/Sim = neutral: Shift 0, Mult ×1).
       const rareShift = state.treeRareShift || 0;
-      const legMult = state.treeLegMult || 1;   // M3: Legendär-Drop ×2 (Baum)
-      const rareCapEff = state.rareCap || 4;    // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
+      // #369 §4: Legendär-Chance (Perks UND Gebäude) — 0 ohne „Legendär"-Knoten (?? bewahrt die 0), sonst ×(1 + Drop·Schritt).
+      // Sim/Standard/Dev → 1 (byte-identisch). Die Tier-I..IV-Deckelung der Gebäude läuft separat über rareCapEff.
+      const legMultPerk = state.treeLegMult ?? 1;
+      const legMultArch = state.treeLegMult ?? 1;
+      const rareCapEff = state.rareCap || 4;    // Rarität-Deckel aus dem Baum (4 = kein Deckel)
+      const rareFloorEff = state.rareFloor || 1; // #370 Perk-Segen: Rarität-Boden (1 = kein Boden)
+      // #370 Wochen-Mods (nur Ranked): Perk-Verknappung → nur 1 Perk je Auswahl · Skill-Verknappung → 1 Skill je Fraktion
+      //   (Default 12 = 3/Fraktion → 4 = 1/Fraktion). Sonst die Konstanten (Normal-/Sim-Lauf byte-identisch).
+      const perksOffered = hasWeekMod(state.weekMods, "scarcePerks") ? 1 : C.PERKS_OFFERED;
+      const skillsOffered = hasWeekMod(state.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
       if (decision === "skill") {
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, 0, rareCapEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · §4c Rarität-Deckel
+        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
-        const legForce2 = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
-        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, legForce2, rareCapEff); // M3: Perk-Legendär ×2 · M4/M5: 2. Perk-Phase · §4c Rarität-Deckel
+        const legForce2Base = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
+        const legForce2 = onLegTakt ? C.PERKS_OFFERED : legForce2Base; // #381 Legendär-Takt: alle 3 Angebots-Slots legendär
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff, rareFloorEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die
         // Pro-Phase-Flags (Hauptaktion/versetzen) zurücksetzen. #217: rareShift durchreichen. Dev-Run → voller Katalog.
         phase = "architect";
-        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), rareShift, legMult, rareCapEff); // M3: Gebäude-Legendär ×2 (Baum) · §4c Rarität-Deckel
+        const archOffers = state.devMode ? fullArchitectOffer() : buildArchitectOffer(newArchitect || architect, rngAtOr(cycle, "arch"), rareShift, legMultArch, rareCapEff); // Gebäude-Legendär (Drop-skaliert) · Rarität-Deckel
         newArchitect = { ...(newArchitect || architect), offers: archOffers, actedMain: false, moved: false };
       } else if (decision === "shop") {
         // #229: Shop entfernt — ohne aktiven Architekten (Sim-Baseline / architect:false) ist die 'shop'-Entscheidung
@@ -1289,9 +1416,21 @@ export function resolveTrick(state, rng) {
       } else if (decision === "formation") {
         // Formationsphase (§22.8): Deck-Aufstellung öffnen, frische Energie (+ Shop-Feinjustierung), Vorschau berechnen.
         phase = "formation";
+        // #370 Deck-Shuffle (nur Ranked): vor der Aufstellphase die Karten-Anordnung frisch mischen → die letzte
+        // Aufstellung ist zunichte und muss neu gebaut werden. Deterministisch je Durchlauf; sonst playerOrder unverändert.
+        // [FIX] Nur die FREIEN Positionen mischen. glacierLocked und challengeBlockForm sind POSITIONS-indiziert:
+        //   eine Vollmischung ließ sie an ihrer Zelle stehen und schob eine beliebige andere Karte darunter — und weil
+        //   genau diese Zellen in SWAP_CARDS tauschgesperrt sind, konnte der Spieler das nicht korrigieren. Damit war
+        //   die Eis-Kernentscheidung („Position gegen Wert", docs §2.1) unter diesem Mod ausgehebelt statt erschwert.
+        if (hasWeekMod(state.weekMods, "deckShuffle")) {
+          const lockedNow = newGlacierLocked || [];
+          const blockedNow = challengeBlockForm || [];
+          const pinned = (i) => !!lockedNow[i] || blockedNow.includes(i);
+          playerOrder = shuffleFreePositions(playerOrder, pinned, rngAtOr(cycle, "deckShuffle"));
+        }
         // Dev-Run (Test-Layout): state.devEnergy setzt die Formations-Energie-Basis pro Lauf frei; null → C.FORMATION_ENERGY.
-        newFormationEnergy = (state.devEnergy ?? C.FORMATION_ENERGY) + perks.reduce((t, id) => t + (PERK_DEFS[id].extraSwap || 0), 0)
-          + formationEnergyBonus(familyTiers, cycle); // #179 Feinjustierung (jetzt Perk-Familie E_TUNING): +Energie je Stufe
+        // `cycle` ist hier bereits erhöht (neuer Durchlauf) → explizit durchreichen, nicht state.cycle nehmen.
+        newFormationEnergy = formationEnergyFor({ ...state, perks, familyTiers, cycle });
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
@@ -1305,15 +1444,15 @@ export function resolveTrick(state, rng) {
           // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
           // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
           // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, state.legOfferBonus || 0); // M2: +Kandidaten je Archetyp
+          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, 0, state.legCountByArch || null); // #369 §5a: Pool = alle freigeschalteten Archetypen (Zähl-Map); Sim/Standard → null = Bestand
           if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
           else {
-            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
             if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
           }
         } else {
           // Capstone noch gesperrt (Onboarding < 6): Runde 29 = normale Perk-Phase (identisch zum "perk"-Zweig, legForce 0).
-          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), C.PERKS_OFFERED, perkLegendaryChance(shop) * legMult, rareShift, architectEnabled, 0, rareCapEff);
+          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff);
           if (off.length > 0) { phase = "levelup"; newOffer = off; }
         }
       }
@@ -1346,7 +1485,7 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
-    glacierMass: newGlacierMass, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Firn-Boden-Masse / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
+    glacierMass: newGlacierMass, firnStack: newFirnStack, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
     frozenOppPending: newFrozenOppPending, frozenOppActive: newFrozenOppActive, // Eis-Neudesign (Einfrieren): Gegner-Marken (verlieren nächsten Stich)
     glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
 
@@ -1354,8 +1493,8 @@ export function resolveTrick(state, rng) {
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
-    richtfestBonus, // Gebäude-Legendäres Richtfest (Struktur-Dauerdividende)
+    zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
+    richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)

@@ -1,11 +1,13 @@
 import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw, familyCritMult } from "./families.js";
 import { TIERS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
+import { SEGMENT_SIZE } from "./formations.js";
 import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js";
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
+// Tausendertrenner (400000 → „400.000") — Style-Guide §2: der einzige zulässige Punkt in Zahlen.
 // Zinseszins-Bank: nötige Siege eines Durchlaufs für die Auszahlung. GETEILTE QUELLE für Engine (Abrechnung)
 // und UI (Fortschritts-Readout) → kein Drift zwischen Regel und Anzeige.
 export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen * C.ZINS_HURDLE_RATE);
@@ -13,7 +15,7 @@ export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen 
 export function zinsReadout(state) {
   if (!state || !(state.perks || []).some((id) => PERK_DEFS[id]?.zinseszins)) return null;
   return { capital: state.zinsCapital || 0, rate: state.zinsRate ?? C.ZINS_RATE_START,
-           wins: state.cycleWins || 0, hurdle: zinsHurdle() };
+           paidTotal: state.zinsPaidTotal || 0, wins: state.cycleWins || 0, hurdle: zinsHurdle() };
 }
 
 /* ============================================================
@@ -49,6 +51,11 @@ export const CATEGORIES = {
   D: { key: "D", name: "Score",  desc: "Score",                   color: "#d4a63a" },
   E: { key: "E", name: "Form",   desc: "Formationswerkzeuge",      color: "#5a8ade" },
   P: { key: "P", name: "Präzision", desc: "Crit-Chance & Crit-Multiplikator", color: "#e08a3a" }, // #267: Crit-Perk-Kategorie
+  // v0.3: eigene Lane für Perks, die weder Brett noch Score anfassen, sondern den BAUSATZ des Laufs (Slots,
+  // Angebote, Ökonomie). CATEGORIES wird nur für Farbe/Label/Gruppierung gelesen (BuildSummary, StatsScreen);
+  // ein neuer Schlüssel ist für Legendäre gefahrlos, weil isMigratedPerk bei rarity "legendary" nie greift und
+  // das Familien-Angebot nur MIGRATED_CATS durchläuft.
+  S: { key: "S", name: "Ausbau", desc: "Slots & Ökonomie", color: "#5ec8c0" },
 };
 
 export const PERK_DEFS = {
@@ -83,7 +90,7 @@ export const PERK_DEFS = {
         desc: `Solange du siegst, erhält die nächste Karte +${C.UNAUFHALTSAM_VALUE} Stichwert (bis eine Niederlage eintritt).`,
         cardBonus: (ctx) => (ctx.winStreak > 0 ? C.UNAUFHALTSAM_VALUE : 0) }, // Serie-Hook (Favorit, behalten)
   L6: { id: "L6", cat: "D", rarity: "legendary", label: "Raserei",
-        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} pp Crit-Chance. Übersteigt deine Gesamt-Crit-Chance 100 %, hebt der Überschuss zusätzlich den Crit-Multiplikator — je 100 Prozentpunkte +1,00×, höchstens +1,00×.`,
+        desc: `Jeder Sieg in Folge gibt +${pct(C.RASEREI_CRIT_STEP)} % Crit-Chance. Übersteigt deine Gesamt-Crit-Chance 100 %, hebt der Überschuss zusätzlich den Crit-Multiplikator: +0,01× je Prozentpunkt darüber, höchstens +1,00×.`,
         critChance: (ctx) => C.RASEREI_CRIT_STEP * (ctx.winStreak || 0),
         critMultBonus: (ctx) => Math.min(Math.max(0, (ctx.rawCrit || 0) - 1), 1) }, // Serie→Crit-Hook (Favorit, behalten)
   L4: { id: "L4", cat: "D", rarity: "legendary", label: "Kritische Masse", critValueGain: C.KRITMASSE_VALUE,
@@ -92,9 +99,9 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Punkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt eine Stufe.` },
+        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Prozentpunkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt um ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} Prozentpunkte zurück.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
-        desc: `Eröffnungs-Wette: Gewinnst du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge, gibt es +${C.VABANQUE_SCORE} Score (bis zu ${C.VABANQUE_MAX_PAYOUTS} Mal pro Lauf).` },
+        desc: `Eröffnungs-Wette: Jedes Mal, wenn du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge gewinnst, zahlen sie zusätzlich das ${de(C.VABANQUE_MULT)}-fache ihres Scores aus.` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
         desc: `Im letzten Segment (Positionen ${C.HENKER_ZONE_START + 1}–40) zählt jeder Sieg ${de(C.HENKER_MULT)}-fach und ist garantiert ein Crit.` },
   L_ECHO: { id: "L_ECHO", cat: "C", rarity: "legendary", label: "Echo", echo: true,
@@ -114,15 +121,41 @@ export const PERK_DEFS = {
   // --- Gebäude-Legendäre (Architekt-Lane, needsArchitect → nur bei aktivem Architekten im Angebot). Flag-verdrahtet
   //     wie die #203-Legendären: `richtfest` am Durchlauf-Ende (engine.js), `bauhuette` beim Pick (reducer.js). ---
   L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
-        desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) +${C.RICHTFEST_STEP} dauerhafter Score. Der aufgestapelte Bonus wird am Ende jedes Durchlaufs ausgezahlt (flach, kein Multiplikator).` },
+        desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) zusätzlich ${pct(C.RICHTFEST_STEP)} % des in diesem Durchlauf erspielten Scores.` },
   L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
         desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
+  // --- v0.3-Erweiterung (2026-08-15): 7 neue gegen die Pool-Lücken. Zwei davon (Opfergang, Ballast) haben als ERSTE
+  //     einen echten NACHTEIL — die #33-Definition „mächtig, aber mit Nachteil" hatte bis hier kein einziger Perk erfüllt. ---
+  L_MEIS: { id: "L_MEIS", cat: "S", rarity: "legendary", label: "Meisterhand", skillSlotBonus: C.MEISTERHAND_SLOTS,
+        desc: `Sofort: du hältst dauerhaft ${C.MEISTERHAND_SLOTS === 1 ? "einen Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr (${C.SKILL_SLOTS} → ${C.SKILL_SLOTS + C.MEISTERHAND_SLOTS}).` },
+  L_SCHM: { id: "L_SCHM", cat: "A", rarity: "legendary", label: "Schmiede", schmiede: C.SCHMIEDE_STEP,
+        desc: `Am Ende jedes Durchlaufs erhält die schwächste Karte deines Decks dauerhaft +${C.SCHMIEDE_STEP} Kartenwert.` },
+  L_HOCH: { id: "L_HOCH", cat: "D", rarity: "legendary", label: "Hochseil", hochseil: true,
+        desc: `Solange du in diesem Durchlauf noch keine Niederlage kassiert hast, zählt jeder Sieg ${de(C.HOCHSEIL_MULT)}-fach. Die erste Niederlage schaltet es bis zum nächsten Durchlauf ab.` },
+  L_OPFER: { id: "L_OPFER", cat: "A", rarity: "legendary", label: "Opfergang", opfergang: C.OPFERGANG_VALUE,
+        desc: `Sofort: alle Karten verlieren dauerhaft ${C.OPFERGANG_VALUE} Kartenwert (mindestens 1). Dafür zählt jeder Sieg ${de(C.OPFERGANG_MULT)}-fach.`,
+        scoreMult: () => C.OPFERGANG_MULT },
+  L_TAKT: { id: "L_TAKT", cat: "B", rarity: "legendary", label: "Taktschlag", taktschlag: true,
+        desc: `Gewinnst du alle ${SEGMENT_SIZE} Stiche eines Segments, zählt der abschließende Stich ${de(C.TAKTSCHLAG_MULT)}-fach.` },
+  L_BALL: { id: "L_BALL", cat: "E", rarity: "legendary", label: "Ballast", ballast: true, extraSwap: -C.BALLAST_ENERGY,
+        desc: `Jede Formationsphase hat ${C.BALLAST_ENERGY} Energie weniger. Dafür zählt jeder Formations-Multiplikator ${de(C.BALLAST_FORM_MULT)}-fach.` },
+  L_FUND: { id: "L_FUND", cat: "E", rarity: "legendary", label: "Fundament", fundament: C.FUNDAMENT_BONUS, needsArchitect: true,
+        desc: `Jede vollendete Struktur wirkt stärker: Zeile, Spalte und Diagonale geben je +${de(C.FUNDAMENT_BONUS)} auf ihren Faktor.` },
 };
 
 export const PERK_LIST = Object.values(PERK_DEFS);
 
+// Strukturfaktor-Bonus des Builds (v0.3 „Fundament"). Geteilte Quelle für Engine UND UI: boardFactorMap ist bewusst
+// die EINE Stelle, an der Brett-Faktoren entstehen — würde die Anzeige den Bonus nicht mitreichen, zeigte sie andere
+// Faktoren, als die Engine verrechnet.
+export const fundamentBonus = (perks = []) => perks.reduce((t, id) => t + (PERK_DEFS[id]?.fundament || 0), 0);
+
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";
+// #370 Perk-Segen: flache Perk-Rarität → grobe Stufe (I..IV) für den Rarität-Boden. Flache Nicht-Legendäre sind
+// „common" (I); die 4-Stufen-Namen decken potenzielle künftige flache Perks mit ab. Legendär wird separat behandelt.
+const RARITY_TIER_APPROX = { common: 1, normal: 1, uncommon: 2, rare: 3, epic: 4 };
+export const rarityTierApprox = (rarity) => RARITY_TIER_APPROX[rarity || "common"] || 1;
 
 // UI-Metadaten je Seltenheit (#71): grau / grün / gold — geteilte Quelle für PerkSelect,
 // BuildSummary und GameOver (analog zu CATEGORIES.color). `badge` leer = keine Marke (Normal).
@@ -162,15 +195,19 @@ export function isMigratedPerk(p) {
    (Familie auf einer anbietbaren Zielstufe). Familien-Stufen sind nach TIER_WEIGHTS gewichtet, flache Perks nach
    RARITY_WEIGHTS; der explizite Legendär-Wurf (P5) bleibt wie in buildOffer. Deterministisch über den injizierten
    rng. `owned` = flache Perk-ids; `familyTiers` = aktueller Rang je Familie. */
-export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false, legForce = 0, maxTier = 4) {
+export function buildPerkOffer(owned = [], familyTiers = {}, rng = Math.random, count = C.PERKS_OFFERED, legendaryChance = 0, rareShift = 0, architectEnabled = false, legForce = 0, maxTier = 4, minTier = 1) {
   // #217 Meistergrade: Rarität-Shift (0 = Basis) verschiebt die Familien-Stufengewichte zu Selten/Rar. rareShift 0
   // liefert die Basistabelle → byte-identisch zum bisherigen Verhalten (Grad-0 / Sim / Bestandstests unberührt).
   // (Schritt 4c) maxTier = Onboarding-Rarität-Deckel: Stufen darüber fallen auf Gewicht 0 (nicht anbietbar). 4 = kein Deckel.
-  const tierWeights = tierWeightsForShift(rareShift, maxTier);
+  // #370 minTier = Wochen-Mod „Perk-Segen": Rarität-BODEN — Stufen darunter fallen weg (nur ≥ minTier). 1 = kein Boden.
+  const tierWeights = tierWeightsForShift(rareShift, maxTier, minTier);
   // Flacher Legacy-Pool: nicht besessen, offerable, NICHT migriert (reguläre D-Perks raus; Legendäre bleiben).
   // Gebäude-Legendäre (needsArchitect) nur mit aktivem Architekten — sonst inert (kein Gebäude-Overlay).
   let flat = PERK_LIST.filter((p) => !owned.includes(p.id) && p.offerable !== false && !isMigratedPerk(p)
     && !(p.needsArchitect && !architectEnabled));
+  // #370 Perk-Segen (minTier > 1): flache Perks unter dem Boden fallen weg — Legendäre (eigener Layer) bleiben immer.
+  //   Flache Nicht-Legendäre sind rarität-„normal" (Stufe 1) → bei Boden ≥ 3 bleibt das Angebot rein aus Familien-III/IV.
+  if (minTier > 1) flat = flat.filter((p) => p.rarity === "legendary" || rarityTierApprox(p.rarity) >= minTier);
   // Legendäre Perks sind an die Rarität gekoppelt: sie schalten ZUSAMMEN MIT „lila" (Stufe IV) frei. Solange der
   // Onboarding-Deckel die IV noch nicht erlaubt (maxTier < 4), werden sie GAR NICHT angeboten — sonst leckten sie
   // (bei legendaryChance 0) über den gewichteten Pool ins Angebot. Default maxTier 4 (Sim/Standard/Dev/Post-Onboarding)

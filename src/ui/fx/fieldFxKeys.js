@@ -2,4 +2,4 @@
    ohne pixi.js in den main-Bundle zu ziehen (Battlefield lebt im Haupt-Chunk!). Wächst mit jedem portierten
    Effekt und muss zur Factory-Registry in PixiStage.jsx passen. */
 // #: Aurora läuft NICHT über Pixi (Custom-Shader rendert auf Mobile nicht) → eigene WebGL-Canvas (AuroraFieldGL).
-export const PIXI_FIELD_KEYS = ["embers"];
+export const PIXI_FIELD_KEYS = ["starfield"]; // #glutfunken-raus: embers entfernt

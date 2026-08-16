@@ -1,7 +1,6 @@
 import { memo, useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
-import { PERK_DEFS } from "../game/perks.js";
-import { familyDef } from "../game/families.js";
+
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
@@ -9,9 +8,14 @@ import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { glacierFormations } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
+import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
+import { t } from "../i18n/index.js";
+
+// #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
+//   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
+const EMPTY_ROLES = [];
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
-const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // #UI: Architekt-Overlay als EIN durchgezogener Rahmen in GEBÄUDE-FORM (statt Kästen um jede Karte). Aus den gemessenen
@@ -66,8 +70,8 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
-                   glacier = false, glacierMass = 0, glacierForm = false, locked = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
+                   glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -78,14 +82,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
-  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Masse (noch kein Gletscher). Dezent (nur leichter
-  // Blau-Schimmer + ❄-Marker), damit man es klar von einem echten Gletscher (Cyan-Rahmen/Glow/Icon) unterscheidet.
-  const firn = !glacier && glacierMass >= 0.5;
+  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Boden-Reserve (#386 firnStack, noch kein Gletscher).
+  // Dezent (nur leichter Blau-Schimmer + ❄-Marker), klar abgesetzt vom echten Gletscher (Cyan-Rahmen/Glow/Icon).
+  const firn = !glacier && firnMass >= 0.5;
   // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Gletscher-Cyan vor Formations-/Farbrand.
   const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : glacier ? "#5ec8f0" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
   // Rollen-Label: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Rarität #167 Kat. C) → sonst die rohe id.
-  const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || familyDef(p)?.name || p).join(", ") : undefined;
+  const roleTitle = roleIds.length ? roleIds.map((p) => perkDef(p)?.label || familyDef(p)?.name || p).join(", ") : undefined;
   // #119: belegte Position (Shop-Anker) → dicker silberner AUSSENring via Outline+Offset — separat vom
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben.
   // #182: `ring` markiert Positionen ohne Anker mit demselben Silberring (z. B. die von Zeitraffer/L11 gekoppelten 20 & 40).
@@ -103,7 +107,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
     : "#20202a";
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
-      title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
+      title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
       className={`as-tile relative rounded-lg flex flex-col items-center justify-center transition-all${structLit ? " arch-struct-lit" : ""}`}
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
                // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher
@@ -128,14 +132,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       )}
       {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
-          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">G</span>}
+          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">❄</span>}
           {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
-          {ripe && <span title="Grün (reif) — zählt fürs Farbblock"><FactionIcon type="plant" size={9} /></span>}
+          {ripe && <span title="Grün (reif) — zählt für den Farbblock"><FactionIcon type="plant" size={9} /></span>}
         </span>
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
           damit die Zahl auf der dunklen Kachel unabhängig von der Farbe klar liest. Reife behält ihren grünen Glow. */}
-      <span className="text-xl sm:text-2xl font-bold font-pixel-dense" style={{ color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
+      <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: '"Orbitron", ui-monospace, monospace', color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
       {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {/* #112: Auswahl-Marker — Farbpfeil „→X" (Shop-Farbwechsel) bzw. ✓ (gold) für gewählte Karten/Position. */}
       {(arrow || picked) && (
@@ -143,18 +147,21 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           {arrow ? `→${arrow}` : "✓"}
         </span>
       )}
+      {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
+          die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
+      {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Durchlauf-Beginn auf 12)` : ""}`}>
           <FactionIcon type="ice" size={11} />
           {Math.round(glacierMass)}
         </span>
       )}
-      {/* Firn-Boden-Marker: dezenter ❄ + Masse (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
+      {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · gespeicherte Masse ${Math.round(glacierMass)}`}>
-          <FactionIcon type="ice" size={8} glow={false} />{Math.round(glacierMass)}
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
+          <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
         </span>
       )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
@@ -182,7 +189,7 @@ function SegmentBridge({ segA, segB }) {
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
         <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide px-1.5 py-[1px] rounded-full whitespace-nowrap"
-          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>⇕ Grenze offen</span>
+          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>{t("cardgrid.openBoundary")}</span>
         <div className="h-px flex-1" style={line} />
       </div>
     </div>
@@ -192,8 +199,8 @@ function SegmentBridge({ segA, segB }) {
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
-                          segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null,
-                          glacierPos = null, glacierMassByPos = null, lockedPos = [] }) {
+                          segStrength = [], segDelta = [], flashPos = null, flashKey = 0, architectCover = null, structPos = null, distrPos = null, glowBid = null,
+                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
@@ -270,14 +277,19 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
         const segS = segStrength[s];
         const segD = segDelta[s] ?? 0;
-        const segTint = segD > 0.001 ? "#5ab87a" : segD < -0.001 ? "#e0605a" : "#8a8a92";
+        // (Nulllage zuerst — hält die Zeile frei von der Folge „> … <", die der i18n-Textgreifer sonst greift.)
+        const segTint = Math.abs(segD) <= 0.001 ? "#8a8a92" : (segD > 0.001 ? "#5ab87a" : "#e0605a");
         const row = (
           <div key={`seg${s}`} className="flex items-center gap-2">
-            <div className="w-9 shrink-0 text-right leading-tight">
-              <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+            {/* Segment-Spalte (Bereich + Stärke). Etwas größer als früher (w-9 / 10px / 9px): auf dem
+                Handy war die Prozentzahl kaum lesbar. Die Breite wächst erst ab `sm` mit — auf
+                schmalen Geräten kostet jeder Pixel hier direkt Kartenbreite (die Karten teilen sich
+                den Rest über flex-1). */}
+            <div className="w-10 sm:w-12 shrink-0 text-right leading-tight">
+              <div className="text-[11px] opacity-45 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
               {segS != null && (
-                <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
-                  title="Formations-Bonus dieses Segments in % (grün = seit Durchlaufbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
+                <div className="text-[10px] sm:text-[11px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
+                  title={t("form.seg.strength.title")}>{t("form.seg.strength", { pct: Math.round(segS * 100) })}</div>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">
@@ -285,14 +297,16 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 const pos = s * SEGMENT_SIZE + k;
                 const ally = linkedPartnerOf(pe, c.suit);
                 const disabled = disabledSet.has(pos);
-                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
+                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
                   anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
+                  formFlash={flashPos && flashPos.has(pos) ? flashKey : false}
                   glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
+                  firnMass={firnStackByPos ? (firnStackByPos[pos] || 0) : 0}
                   glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}
                   locked={lockedSet.has(pos)}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;

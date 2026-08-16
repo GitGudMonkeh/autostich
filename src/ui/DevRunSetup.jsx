@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { N_POS, MAX_COVER } from "../game/architect.js";
 import { FORMATION_ENERGY } from "../game/constants.js";
+import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
+import { ActionButton } from "./modalStyle.jsx";
+import { t } from "../i18n/index.js"; // #sprache
 
 /* Dev-Run-Setup (Test-Layout, nur Preview-Build) — ein frei konfigurierbarer Lauf zum Testen.
    Phase 1: Rundenzahl (20–100), Master-Auswahl der Angebotstypen, Gleichverteilung, Pro-Runde-Plan (aufklappbar),
-   Baupunkte (Baufeld/maxCover) und Formations-Energie. Die freie Perk-/Skill-/Bau-Auswahl im Lauf folgt in Phase 2.
+   Baupunkte (Baufeld/maxCover) und {t("dev.run.energy")}. Die freie Perk-/Skill-/Bau-Auswahl im Lauf folgt in Phase 2.
    Rein UI: baut eine dev-Config { rounds, schedule, cover, energy } und reicht sie via onStart nach oben. */
 
 // Die vier Entscheidungstypen (#267: „Stat" entfernt). `token` = interner Plan-Wert (Engine/Reducer), `label` = Anzeige.
@@ -28,6 +31,7 @@ function distribute(n, enabledTokens) {
 }
 
 export function DevRunSetup({ onStart, onClose }) {
+  useEscape(onClose); // #350: Escape schließt das Fenster
   const [rounds, setRounds] = useState(40);
   const [enabled, setEnabled] = useState(["skill", "perk", "formation", "shop"]); // Stats default aus (Test-Layout)
   const [schedule, setSchedule] = useState(() => distribute(40, ["skill", "perk", "formation", "shop"]));
@@ -81,28 +85,28 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: "#17171c" }}>
           <div>
-            <h2 className="text-lg font-bold font-pixel" style={{ color: "#d4a63a" }}>DEV RUN</h2>
-            <p className="text-xs opacity-55">Frei konfigurierbarer Testlauf — nur für Devs.</p>
+            <h2 className="text-lg font-bold font-pixel" style={{ color: "#d4a63a" }}>{t("dev.run.title")}</h2>
+            <p className="text-xs opacity-55">{t("dev.run.sub")}</p>
           </div>
-          <button onClick={onClose} className="px-2.5 py-1 rounded-lg text-sm" style={{ background: "#1c1c22", border: "1px solid #30303a" }}>✕</button>
+          <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
 
         {/* Rundenzahl */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Runden</span>
+            <span className="text-sm font-semibold">{t("dev.run.cycles")}</span>
             <input type="number" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds}
               onChange={(e) => changeRounds(e.target.value)}
               className="w-16 text-right px-2 py-1 rounded text-sm font-pixel-dense"
               style={{ background: "#0f0f13", border: "1px solid #30303a", color: "#e8e8ea" }} />
           </div>
           <input type="range" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds} onChange={(e) => changeRounds(e.target.value)} className="w-full" />
-          <div className="text-[11px] opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} Durchläufe</div>
+          <div className="text-[11px] opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} {t("dev.run.cycles")}</div>
         </div>
 
         {/* Master-Auswahl der Typen */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
-          <span className="text-sm font-semibold">Angebotstypen im Plan</span>
+          <span className="text-sm font-semibold">{t("dev.run.offerTypes")}</span>
           <div className="flex flex-wrap gap-2">
             {TYPES.map((t) => (
               <button key={t.token} onClick={() => toggleType(t.token)}
@@ -115,7 +119,7 @@ export function DevRunSetup({ onStart, onClose }) {
           <button onClick={evenDistribute}
             className="mt-1 self-start px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-0.5"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-            ⇄ Gleichmäßig verteilen
+            {t("dev.run.distribute")}
           </button>
           {/* Verteilungs-Zusammenfassung */}
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] mt-0.5">
@@ -128,7 +132,7 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* Pro-Runde-Plan (aufklappbar) */}
         <div className="rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <button onClick={() => setShowPlan((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold">
-            <span>Plan pro Runde</span>
+            <span>{t("dev.run.plan")}</span>
             <span className="opacity-60">{showPlan ? "▲ einklappen" : "▼ aufklappen"}</span>
           </button>
           {showPlan && (
@@ -162,7 +166,7 @@ export function DevRunSetup({ onStart, onClose }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold">Formations-Energie</span>
+              <span className="font-semibold">{t("dev.run.energy")}</span>
               <span className="font-pixel-dense" style={{ color: "#5a8ade" }}>{energy}</span>
             </div>
             <input type="range" min={0} max={N_POS} value={energy} onChange={(e) => setEnergy(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />

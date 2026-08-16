@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
-  loadOptions, loadUsername, saveUsername, loadSeenGuide, saveSeenGuide,
+  loadOptions, loadUsername, saveUsername, loadTutorialDone, saveTutorialDone,
   recordRun, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
-  saveProfile, wipeProfileStorage, saveOptions } from "../src/game/storage.js";
+  saveProfile, wipeProfileStorage, saveOptions,
+  migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
-import { ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
+import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -20,7 +21,25 @@ function mockLS() {
     clear: () => m.clear(),
   };
 }
-const DEFAULT_OPTIONS = { skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "default", battlefieldId: "default", reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true, collapseScoreSource: true, collapseScoreTrend: true, fxAurora: false, fxEmbers: false };
+const DEFAULT_OPTIONS = {
+  lang: null, // #sprache: noch nicht gewählt → die UI nimmt beim ersten Start die Browsersprache
+  skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
+  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  calmMusic: false,
+  telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
+  collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
+  hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
+  numScale: 0.75,
+  randomDeckEachRun: false,
+  tierSel: {},
+  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
+  fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
+  fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
+  fxCubeMatrixSun: true, fxCubeMatrixWire: false,
+  fxAuroraDeck: false, fxNeonsurfDeck: false, fxStarfieldDeck: false, fxCubeMatrixDeck: false,
+  fxScorchDeck: false, fxBlackholeDeck: false, fxKlingeDeck: false, fxHologridDeck: false,
+  fxSonnenPulsDeck: false, fxLaserFaecherDeck: false, fxPrismaKaskadeDeck: false, fxHoloCubeDeck: false, fxSupernovaDeck: false,
+};
 
 describe("rankHighscores", () => {
   it("sortiert nach Score↓ und behält die Top 20", () => {
@@ -133,20 +152,21 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(m.deckSpent).toBe(0);
   });
 
-  it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map", () => {
+  it("Migration v2 → v3 ergänzt die Kosmetik-Besitz-Map; v7 leert den Alt-Baum", () => {
     const m = migrateProfile({ schemaVersion: 2, stichPoints: 7, nodes: { B1: 1 } });
     expect(m.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
-    expect(m.stichPoints).toBe(7);        // Altfeld erhalten
-    expect(m.nodes).toEqual({ B1: 1 });
+    expect(m.stichPoints).toBe(7);        // Altfeld erhalten (kein stichSpent → keine Rückbuchung)
+    expect(m.nodes).toEqual({});          // #369 v7: Alt-Baum-Knoten (tote IDs) geleert
     expect(m.ownedCosmetics).toEqual({});
   });
 
-  it("gespeicherte SP-/Baum-/Onboarding-Werte überleben migrateProfile (nicht überschrieben)", () => {
+  it("v7 (#369): Alt-Baum wird geleert, investierte SP (stichSpent) fließen zurück aufs Guthaben", () => {
     const v2 = { schemaVersion: 2, stichPoints: 12, stichSpent: 5, nodes: { B1: 1 }, onboarding: 6, spRuns: 3 };
     const m = migrateProfile(v2);
-    expect(m.stichPoints).toBe(12);
-    expect(m.nodes).toEqual({ B1: 1 });
-    expect(m.onboarding).toBe(6);
+    expect(m.stichPoints).toBe(17);       // 12 + 5 (gratis Respec beim Umstieg, kein SP-Verlust)
+    expect(m.stichSpent).toBe(0);
+    expect(m.nodes).toEqual({});          // Alt-Knoten geleert
+    expect(m.onboarding).toBe(6);         // übrige Felder unberührt
     expect(m.spRuns).toBe(3);
   });
 
@@ -169,18 +189,26 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(q.games).toBe(3); // games zählt jeden Lauf
   });
 
+  /* Die SP-Tests unten messen den LAUF-Ertrag. Der einmalige Willkommensbonus (WELCOME_DP, fällt nach
+     dem ersten abgeschlossenen Lauf) würde jede dieser Zahlen um 50 verschieben und die eigentliche
+     Aussage verdecken — deshalb wird er hier vorweg als „schon ausgezahlt" markiert. Der Bonus selbst
+     hat einen eigenen Test weiter unten. */
+  const veteran = (extra = {}) => saveProfile({ ...loadProfile(), welcomeBonusPaid: true, ...extra });
+
   it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
-    // 1. Lauf: +1 Grundstock + 5 Meilenstein-SP (100 Mio) = 6.
+    veteran();
+    // 1. Lauf: +1 Grundstock + 6 Meilenstein-SP (100 Mio: 1+1+1+1+2) = 7.
     let p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
-    expect(p.stichPoints).toBe(6);
+    expect(p.stichPoints).toBe(7);
     expect(p.spRuns).toBe(1);
     // Nächster, kleiner Lauf: nur +1.
     p = recordRun(runRec({ ts: 2, score: 10_000 })).profile;
-    expect(p.stichPoints).toBe(7);
+    expect(p.stichPoints).toBe(8);
     expect(p.spRuns).toBe(2);
   });
 
   it("Treue-Drip: der 10. SP-Lauf gibt +5 extra", () => {
+    veteran();
     let p;
     // 9 SP-Läufe à +1 → 9 SP (kein Onboarding-Vorlauf mehr — jeder abgeschlossene Lauf ist ein SP-Lauf).
     for (let i = 0; i < 9; i++) p = recordRun(runRec({ ts: 100 + i })).profile;
@@ -199,29 +227,109 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(res.unlocks).toEqual([]); // keine Onboarding-Glied-Unlocks mehr (Startprofil ist schon fertig)
   });
 
-  it("#316 DP: native DP = floor(score/10M) ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
+  it("DP: Score-DP = SP-Meilensteine ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
+    veteran();
     let p = loadProfile();
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(50 + 5);     // 55 Mio → +5 DP native (auf den Startbonus)
-    expect(p.stichPoints).toBe(1 + 2);     // +1 Grundstock + 2 Meilensteine (25M+50M)
+    expect(p.deckPoints).toBe(50 + 3 + 5); // 55 Mio → +3 DP (Meilensteine 10M+25M+50M) + #382 Abschluss-Bonus 5
+    expect(p.stichPoints).toBe(1 + 3);     // +1 Grundstock + 3 Meilensteine (10M+25M+50M)
+  });
+
+  it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
+    veteran();   // ohne das läge der einmalige Willkommensbonus (DP) mit im Delta
+    const done = recordRun(runRec({ ts: 1, score: 0 })).profile;                        // Startbonus 50 + Abschluss 5
+    expect(done.deckPoints).toBe(50 + 5);
+    const aborted = recordRun(runRec({ ts: 2, score: 0, completed: false })).profile;   // Abbruch → kein Bonus
+    expect(aborted.deckPoints).toBe(50 + 5);                                            // unverändert
   });
 
   it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
     const allNodes = Object.fromEntries(NODE_IDS.map((id) => [id, 1]));
-    saveProfile({ ...loadProfile(), onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
+    veteran({ onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
-    expect(p.deckPoints).toBe(100 + 10 + 6); // gefegte 100 SP + native 10 + SP-Ökonomie (1+5) als DP
+    expect(p.deckPoints).toBe(100 + 6 + 1 + 5); // gefegte 100 SP + 6 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
     // Profil mit einem gekauften Knoten + Onboarding fertig vorbereiten.
-    saveProfile({ ...loadProfile(), onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
+    veteran({ onboarding: 6, stichPoints: 3, stichSpent: 2, nodes: { B1: 1 } });
     const p = recordRun(runRec({ ts: 1, score: 0 })).profile;
     expect(p.nodes).toEqual({ B1: 1 }); // Knoten bleiben
     expect(p.stichSpent).toBe(2);        // ausgegeben bleibt
     expect(p.stichPoints).toBe(4);       // +1 Grundstock (Onboarding war fertig)
+  });
+
+  /* ---- Willkommensbonus (WELCOME_DP) ---- */
+
+  it("Willkommensbonus: einmalig DECKPUNKTE nach dem ERSTEN abgeschlossenen Lauf, danach nie wieder", () => {
+    const dp0 = loadProfile().deckPoints;                 // Fresh-Start-Guthaben (START_DECK_POINTS)
+    expect(loadProfile().welcomeBonusPaid).toBe(false);   // frisches Profil hat ihn noch offen
+    // Erster abgeschlossener Lauf: Bonus auf die DP, SP bekommen nur ihren Grundstock (+1).
+    const first = recordRun(runRec({ ts: 1, score: 0 }));
+    expect(first.earn.welcomeDp).toBe(WELCOME_DP);
+    expect(first.profile.stichPoints).toBe(1);            // der Bonus liegt NICHT mehr auf den SP
+    expect(first.profile.welcomeBonusPaid).toBe(true);
+    // Zweiter Lauf: kein Bonus mehr. Gemessen wird die DIFFERENZ der beiden Läufe — beide tragen den
+    // #382-Abschluss-Bonus, der Unterschied ist also genau der Willkommensbonus.
+    const second = recordRun(runRec({ ts: 2, score: 0 }));
+    expect(second.earn.welcomeDp).toBe(0);
+    const d1 = first.profile.deckPoints - dp0;
+    const d2 = second.profile.deckPoints - first.profile.deckPoints;
+    expect(d1 - d2).toBe(WELCOME_DP);
+    expect(second.profile.stichPoints).toBe(2);
+  });
+
+  it("Willkommensbonus hängt an ABGESCHLOSSEN — ein Abbruch löst ihn nicht aus", () => {
+    const aborted = recordRun(runRec({ ts: 1, score: 0, completed: false }));
+    expect(aborted.earn.welcomeDp).toBe(0);
+    expect(aborted.profile.welcomeBonusPaid).toBe(false);  // bleibt offen
+    // Der nächste ABGESCHLOSSENE Lauf holt ihn dann nach.
+    const done = recordRun(runRec({ ts: 2, score: 0 }));
+    expect(done.earn.welcomeDp).toBe(WELCOME_DP);
+  });
+
+  it("Migration v7→v8: wer schon gespielt hat, gilt als ausgezahlt — ohne Nachschlag", () => {
+    // Alt-Profil ohne das Flag, aber mit Spielhistorie.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 12, stichPoints: 30 }));
+    const p = loadProfile();
+    expect(p.welcomeBonusPaid).toBe(true);
+    expect(p.stichPoints).toBe(30);        // KEIN rückwirkender Grant (wie v5→v6)
+    // Ein Alt-Profil, das noch nie einen Lauf beendet hat, bekommt den Bonus dagegen regulär.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 7, games: 0, stichPoints: 0 }));
+    expect(loadProfile().welcomeBonusPaid).toBe(false);
+  });
+
+  it("Migration v9→v10: das Flag wird ÜBERNOMMEN, der Bonus nicht ein zweites Mal ausgezahlt", () => {
+    // Wer den Bonus damals in SP bekam, bekommt ihn nicht noch einmal in DP — und die SP bleiben liegen.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 9, games: 3, welcomeSpPaid: true, stichPoints: 55, deckPoints: 0 }));
+    const p = loadProfile();
+    expect(p.welcomeBonusPaid).toBe(true);
+    expect(p.welcomeSpPaid).toBeUndefined();   // der irreführende Name ist weg
+    expect(p.stichPoints).toBe(55);            // nichts zurückgeholt
+    expect(p.deckPoints).toBe(0);              // nichts nachgereicht
+    // Wer ihn noch offen hatte, behält ihn offen und bekommt ihn beim nächsten Lauf in DP.
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 9, games: 0, welcomeSpPaid: false }));
+    expect(loadProfile().welcomeBonusPaid).toBe(false);
+  });
+
+  /* ---- Tutorial-Angebot (hadCompletedRun) ---- */
+
+  it("hadCompletedRun kippt beim ersten ABGESCHLOSSENEN Lauf und bleibt danach stehen", () => {
+    expect(loadProfile().hadCompletedRun).toBe(false);
+    // Ein Abbruch zählt nicht: wer nach zwei Stichen rausgeht, hat die Schleife nicht gesehen.
+    expect(recordRun(runRec({ ts: 1, score: 0, completed: false })).profile.hadCompletedRun).toBe(false);
+    expect(recordRun(runRec({ ts: 2, score: 0 })).profile.hadCompletedRun).toBe(true);
+    // Sticky — ein späterer Abbruch nimmt die Flagge nicht wieder weg.
+    expect(recordRun(runRec({ ts: 3, score: 0, completed: false })).profile.hadCompletedRun).toBe(true);
+  });
+
+  it("Migration v8→v9: Alt-Profile mit Spielhistorie gelten als „hat schon gespielt“", () => {
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 3, welcomeBonusPaid: true }));
+    expect(loadProfile().hadCompletedRun).toBe(true);
+    global.localStorage.setItem("as_profile", JSON.stringify({ schemaVersion: 8, games: 0, welcomeBonusPaid: false }));
+    expect(loadProfile().hadCompletedRun).toBe(false);
   });
 
   it("saveProfile rundet durch localStorage und stempelt die Schema-Version", () => {
@@ -233,12 +341,12 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.onboarding).toBe(6);
   });
 
-  it("wipeProfileStorage (Test-Code `reset`): löscht Fortschritt → Erstbesuch, behält Präferenzen", () => {
+  it("wipeProfileStorage (Test-Code `reset`): löscht Fortschritt UND Namen → echte Erstbesuch-Maske", () => {
     // Fortschritt + Präferenzen anlegen.
     saveProfile({ stichPoints: 50, nodes: { B1: 1 }, onboarding: 6 });
     recordHighscore({ score: 500, level: 1, tricks: 9, cycles: 0, ts: 1 });
     saveGhost([10, 20], 200);
-    saveSeenGuide();
+    saveTutorialDone();
     saveOptions({ ...DEFAULT_OPTIONS, musicVol: 0.9 });
     saveUsername("Bruder");
 
@@ -251,10 +359,13 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(loadProfile().nodes).toEqual({});
     expect(loadHighscores()).toEqual([]);
     expect(loadGhost().total).toBe(0);
-    expect(loadSeenGuide()).toBe(false); // Anleitung erscheint wieder
-    // Präferenzen bleiben bewusst erhalten.
+    expect(loadTutorialDone()).toBe(false); // das Tutorial wird wieder angeboten
+    // Der Name geht MIT: „reset" soll den Erstbesuch herstellen, und der beginnt bei der
+    // Namenseingabe — die zeigt sich genau dann, wenn kein Name gespeichert ist.
+    expect(loadUsername()).toBe("");
+    // Die übrigen Präferenzen (Lautstärke, Haptik, Sprache) bleiben bewusst erhalten: sie hängen
+    // nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog direkt wieder wählen.
     expect(loadOptions().musicVol).toBe(0.9);
-    expect(loadUsername()).toBe("Bruder");
   });
 });
 
@@ -276,6 +387,28 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     global.localStorage.setItem("as_options", "nope");
     expect(loadOptions()).toEqual(DEFAULT_OPTIONS);
   });
+  // #363: „Effekte reduziert" auf 3 Zustände (aus|mobile|an); auto/ausgewogen werden migriert.
+  it("migrateReducedFx: gültige Zustände bleiben, ausgewogen→mobile, auto/ungültig→Gerätedefault", () => {
+    const dev = deviceDefaultReducedFx();
+    expect(["aus", "mobile"]).toContain(dev);      // Node/jsdom: kein coarse pointer → „aus"
+    expect(migrateReducedFx("aus")).toBe("aus");
+    expect(migrateReducedFx("mobile")).toBe("mobile");
+    expect(migrateReducedFx("an")).toBe("an");
+    expect(migrateReducedFx("ausgewogen")).toBe("mobile");
+    expect(migrateReducedFx("auto")).toBe(dev);    // kein „auto" mehr
+    expect(migrateReducedFx(undefined)).toBe(dev); // fehlender Schlüssel → Gerätedefault
+    expect(migrateReducedFx("quatsch")).toBe(dev);
+  });
+  it("loadOptions migriert reducedFx und schreibt den Alt-Wert einmalig zurück (kein auto/ausgewogen im Profil)", () => {
+    global.localStorage.setItem("as_options", JSON.stringify({ reducedFx: "ausgewogen" }));
+    expect(loadOptions().reducedFx).toBe("mobile");
+    expect(JSON.parse(global.localStorage.getItem("as_options")).reducedFx).toBe("mobile"); // persistiert
+    global.localStorage.setItem("as_options", JSON.stringify({ reducedFx: "auto" }));
+    const r = loadOptions().reducedFx;
+    expect(r).not.toBe("auto");
+    expect(["aus", "mobile"]).toContain(r);
+    expect(JSON.parse(global.localStorage.getItem("as_options")).reducedFx).not.toBe("auto");
+  });
   it("recordHighscore persistiert; loadHighscores liest zurück, Nicht-Array → []", () => {
     recordHighscore({ score: 100, level: 1, tricks: 5, cycles: 0, ts: 1 });
     recordHighscore({ score: 200, level: 1, tricks: 5, cycles: 0, ts: 2 });
@@ -283,13 +416,15 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     global.localStorage.setItem("as_highscores", JSON.stringify({ not: "an array" }));
     expect(loadHighscores()).toEqual([]);
   });
-  it("Username & SeenGuide runden durch localStorage", () => {
+  it("Username & Tutorial-Flagge runden durch localStorage", () => {
     expect(loadUsername()).toBe("");
     saveUsername("Tester");
     expect(loadUsername()).toBe("Tester");
-    expect(loadSeenGuide()).toBe(false);
-    saveSeenGuide();
-    expect(loadSeenGuide()).toBe(true);
+    expect(loadTutorialDone()).toBe(false);
+    saveTutorialDone();
+    expect(loadTutorialDone()).toBe(true);
+    saveTutorialDone(false);           // „nie gesehen" ist wiederherstellbar (Wiederholbarkeit, Plan §9)
+    expect(loadTutorialDone()).toBe(false);
   });
   it("ohne localStorage fallen alle Leser sauber auf Defaults zurück (node-Default)", () => {
     delete global.localStorage;
@@ -297,7 +432,7 @@ describe("Optionen-Merge, Highscores & Flags (#152)", () => {
     expect(loadOptions()).toEqual(DEFAULT_OPTIONS);
     expect(loadHighscores()).toEqual([]);
     expect(loadUsername()).toBe("");
-    expect(loadSeenGuide()).toBe(false);
+    expect(loadTutorialDone()).toBe(false);
   });
 });
 
@@ -395,6 +530,33 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(profile.hadChampionWeek).toBe(false);
     });
 
+    it("#370 Ranked-Wochenbonus + Freischalt-Tracker (erste abgeschlossene Ranked-Runde/Woche gibt +5 DP)", () => {
+      saveProfile({ ...loadProfile(), welcomeBonusPaid: true }); // sonst liegt der einmalige Willkommensbonus im Delta
+      const p0 = loadProfile();
+      // Erste Ranked-Runde der Woche (Seed 111): Bonus + Tracker. score 0 → native DP 0, sauberes Bonus-Delta.
+      const a = recordRun({ score: 0, ts: 1, completed: true, ranked: "ranked", seed: 111, archetypes: ["fire", "ice"] });
+      expect(a.profile.lastRankedWeekSeed).toBe(111);
+      expect(a.profile.archetypeRunsCompleted).toEqual({ fire: 1, ice: 1 });
+      const dA = a.profile.deckPoints - p0.deckPoints;
+      // Zweite Ranked-Runde DERSELBEN Woche (gleicher Seed) → kein Bonus mehr, Tracker zählt weiter.
+      const b = recordRun({ score: 0, ts: 2, completed: true, ranked: "ranked", seed: 111, archetypes: ["fire"] });
+      expect(b.profile.lastRankedWeekSeed).toBe(111);
+      expect(b.profile.archetypeRunsCompleted.fire).toBe(2);
+      const dB = b.profile.deckPoints - a.profile.deckPoints;
+      expect(dA - dB).toBe(5); // +5 DP nur beim ersten Lauf der Woche
+      // Neue Woche (anderer Seed) → wieder Bonus.
+      const c = recordRun({ score: 0, ts: 3, completed: true, ranked: "ranked", seed: 222, archetypes: ["fire"] });
+      expect(c.profile.lastRankedWeekSeed).toBe(222);
+      expect((c.profile.deckPoints - b.profile.deckPoints) - dB).toBe(5);
+      // Nicht-Ranked completed Lauf zählt für den Tracker, setzt aber KEINE Wochen-Marke.
+      const d = recordRun({ score: 0, ts: 4, completed: true, archetypes: ["plant"] });
+      expect(d.profile.archetypeRunsCompleted.plant).toBe(1);
+      expect(d.profile.lastRankedWeekSeed).toBe(222);
+      // Unvollständiger Lauf zählt NICHT für den Tracker.
+      const e = recordRun({ score: 0, ts: 5, completed: false, archetypes: ["lightning"] });
+      expect(e.profile.archetypeRunsCompleted.lightning).toBeUndefined();
+    });
+
     it("#214: noReroll-Lauf setzt hadNoRerollRun (persistiert), ein Reroll-Lauf nicht", () => {
       const { profile } = recordRun({ score: 100, ts: 1, completed: true, rerollsUsed: 0, statPicks: [] });
       expect(profile.hadNoRerollRun).toBe(true);
@@ -425,11 +587,74 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
   });
 });
 
+describe("#349 Datenintegrität (storage)", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  it("recordRun übernimmt ALLE Profilfelder via Spread (kein Feld-Drift)", () => {
+    const base = loadProfile();                 // frisches Profil = {...DEFAULT_PROFILE, ...}
+    saveProfile({ ...base, zukunftsFeld: 42 });  // ein künftig ergänztes Feld simulieren
+    const { profile } = recordRun({ score: 1000, ts: 1, completed: true });
+    for (const key of Object.keys(base)) expect(profile, `Feld ${key} bleibt erhalten`).toHaveProperty(key);
+    expect(profile.zukunftsFeld, "künftiges Profilfeld überlebt den Laufabschluss").toBe(42);
+  });
+
+  it("migrateProfile lässt ein Profil aus neuerem Build (schemaVersion > aktuell) unangetastet", () => {
+    const future = { schemaVersion: PROFILE_SCHEMA_VERSION + 1, deckPoints: 999, zukunft: "x" };
+    const out = migrateProfile(future);
+    expect(out.schemaVersion, "nicht heruntergestuft").toBe(PROFILE_SCHEMA_VERSION + 1);
+    expect(out.zukunft).toBe("x");
+  });
+
+  it("recordRun beschneidet die Historie bei QuotaExceeded (älteste deckSnapshots weg, jüngste bleiben) + signalisiert", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const many = Array.from({ length: 12 }, (_, i) => ({ score: i, ts: i, deckSnapshot: { cards: [1, 2, 3] } }));
+    global.localStorage.setItem("as_runhistory", JSON.stringify(many));
+    const real = global.localStorage;
+    let threw = false;
+    global.localStorage = {
+      getItem: (kk) => real.getItem(kk), removeItem: (kk) => real.removeItem(kk), clear: () => real.clear(),
+      setItem: (kk, v) => { if (kk === "as_runhistory" && !threw) { threw = true; const e = new Error("voll"); e.name = "QuotaExceededError"; throw e; } return real.setItem(kk, v); },
+    };
+    recordRun({ score: 999, ts: 999, completed: true, deckSnapshot: { cards: [9] } });
+    const saved = JSON.parse(global.localStorage.getItem("as_runhistory"));
+    expect(saved[0].deckSnapshot, "jüngster Lauf behält den Snapshot").toBeTruthy();
+    expect(saved[saved.length - 1].deckSnapshot, "ältester Lauf wird beschnitten").toBeUndefined();
+    expect(warn, "Quota-Fehler wird signalisiert (nicht stumm)").toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
 describe("Aktiver Lauf (Resume / Auto-Save)", () => {
   beforeEach(() => { global.localStorage = mockLS(); });
   afterEach(() => { delete global.localStorage; });
 
-  const runState = (over = {}) => ({ phase: "play", deck: [{ id: "R1", value: 3 }], cycle: 4, score: 1234, ...over });
+  // #349 B: vollständiger Kern-Shape (Pflichtfelder, die isResumableRunState prüft).
+  const runState = (over = {}) => ({ phase: "play", deck: [{ id: "R1", value: 3 }], oppDeck: [{ id: "O1", value: 2 }],
+    perks: [], skills: [], pos: 0, cycle: 4, trickNo: 0, score: 1234, ...over });
+
+  // #349 B: Alt-/inkompatibler Snapshot (Kern-Pflichtfeld fehlt/verrutscht) → sauber verwerfen statt in den Reducer laden.
+  it("verwirft Snapshot mit kaputtem State-Shape (Pflichtfeld fehlt) → null", () => {
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ deck: "nope" }) }));
+    expect(loadActiveRun()).toBeNull(); // deck kein Array
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ score: undefined }) }));
+    expect(loadActiveRun()).toBeNull(); // Pflicht-Zahl fehlt (undefined wird von JSON verworfen)
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ skills: null }) }));
+    expect(loadActiveRun()).toBeNull(); // skills kein Array
+  });
+
+  // #370/v2: Ein Ranked-Snapshot ohne weekMods lief bis v1 durch — alle Wochen-Modifikatoren wären still aus
+  // gewesen, der Lauf aber trotzdem mit Wochen-Seed auf die Rangliste gegangen. Jetzt verworfen.
+  it("verwirft Ranked-Snapshot ohne weekMods, behält ihn mit weekMods", () => {
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState({ ranked: "ranked" }) }));
+    expect(loadActiveRun()).toBeNull();
+    const ok = runState({ ranked: "ranked", weekMods: [{ id: "noReroll", effect: "noReroll", sign: "neg", mag: null }] });
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: ok }));
+    expect(loadActiveRun().state).toEqual(ok);
+    // Nicht-Ranked bleibt ohne weekMods fortsetzbar (Casual/Challenge kennt keine Wochen-Mods).
+    global.localStorage.setItem("as_activerun", JSON.stringify({ schema: ACTIVE_RUN_SCHEMA, state: runState() }));
+    expect(loadActiveRun()).not.toBeNull();
+  });
 
   it("saveActiveRun → loadActiveRun rundet State + meta zurück", () => {
     const s = runState();

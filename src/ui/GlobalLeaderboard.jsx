@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { leaderboardConfigured, fetchGlobalTop, fetchBoardTop } from "../game/leaderboard.js";
-import { ARCHETYPE_META, decodeArchetypes } from "../game/skills.js";
+import { decodeArchetypes } from "../game/skills.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
 import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
+import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 // Gespeicherte Archetyp-Kodierung ("fire,ice") → Icon-Meta in fester Reihenfolge Blitz→Feuer→Eis (#139).
 // Alt-Einträge ohne Wert ergeben einfach keine Icons.
-const archetypeIcons = (value) => decodeArchetypes(value).map((a) => ARCHETYPE_META[a]);
+const archetypeIcons = (value) => decodeArchetypes(value).map((a) => archMeta(a));
 
 // #169 FB-8: DB-Zeile (snake_case; perks/skills als kompakte ID-Liste) → normalisierter RunStats-Eintrag.
 // Alt-/pre-Migration-Zeilen liefern die Zusatzfelder nicht → RunStats zeigt „–" bzw. blendet leere Blöcke aus.
@@ -54,12 +56,12 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       .then((data) => { if (alive) setRows(Array.isArray(data) ? data : []); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
+   
   }, [limit, reloadToken, board, seed]);
 
   if (!leaderboardConfigured) return null; // ohne Config: Block entfällt komplett
 
-  const boardLabel = board === "standard" ? "Standard" : board === "meister" ? "Meister" : "Global";
+  const boardLabel = board === "standard" ? "Standard" : board === "meister" ? "Rangliste" : "Global"; // #370: Wochen-Ranked (Board-String bleibt "meister")
 
   // Eigenen Lauf genau einmal hervorheben (erste Übereinstimmung).
   // #229 N2: bevorzugt per eindeutiger id (das Board vergibt sie, publishRun reicht sie in myEntry nach) → trifft
@@ -82,9 +84,9 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       {error ? (
         <div className="text-xs opacity-40 text-center py-3">{boardLabel} nicht verfügbar.</div>
       ) : rows === null ? (
-        <div className="text-xs opacity-40 text-center py-3">Lädt Bestenliste …</div>
+        <div className="text-xs opacity-40 text-center py-3">{t("board.loading")}</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">Noch keine Einträge — sei die/der Erste.</div>
+        <div className="text-xs opacity-40 text-center py-3">{t("board.empty")}</div>
       ) : (
         <div className="grid gap-1">
           {rows.map((r, i) => {
@@ -93,7 +95,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null; // Medaillen für die Top 3
             return (
               // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
-              <button key={i} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title="Details anzeigen"
+              <button key={r.id ?? `${r.name}:${r.score}:${r.tricks}:${r.cycles}`} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title={t("stats.showDetails")}
                 className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
                 style={{ background: mineRow ? "#5ab87a22" : "#20202a",
                   border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>

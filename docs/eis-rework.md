@@ -37,9 +37,9 @@ Was ein Gletscher **ohne Skills** tut — die 17 Rollen sind nur Modifikatoren d
 - **Eis-Formationen** werden dadurch zum *Umbauen um die fixen Anker herum* (Andockpunkt für die späteren 2D-Formationen).
 
 ### 2.2 · Masse liegt auf dem Feld (Firn-Boden)
-- **Masse lebt auf der Brett-Zelle, nicht auf der Karte.** Ein **Gletscher ist ein festgefrorenes Feld**; ein ungefrorenes Feld kann ebenfalls Masse tragen (**Firn-Boden**).
-- Pickst du später einen Gletscher auf ein aufgeladenes Feld, **erbt er die dort angesammelte Masse** (startet nicht bei 0). → macht „das Brett vorbereiten" mechanisch real.
-- Masse ist **nur steigend**. Baseline-Quelle: **Sieg eines Gletschers → +Masse** auf sein Feld.
+- **Firn lebt als Reserve auf der Brett-Zelle, nicht auf der Karte.** Ein **Gletscher ist ein festgefrorenes Feld** mit **eigener Masse**; ein ungefrorenes Feld sammelt separat eine **Firn-Boden-Reserve** (`firnStack`, getrennt von der Gletschermasse). *(#386)*
+- Pickst du später einen Gletscher auf ein aufgeladenes Feld, wird der dort angesammelte Firn zu seiner **Reserve**. Der Gletscher **startet leer** und zieht **zum Rundenstart wieder auf volle 12 Masse** nach — nur die **Differenz** zur selbst-erzeugten Masse, nie darüber, bis die Reserve leer ist. → macht „das Brett vorbereiten" mechanisch real und **nachhaltig** (Nachschub über mehrere Runden). *(#386)*
+- Masse ist **nur steigend**. Baseline-Quelle: **Sieg eines Gletschers → +Masse** auf sein Feld. Firn wird **nie unter einen Gletscher** gesät.
 
 ### 2.3 · Schwellen-Stufen & Brechen
 - **Berst-Schwellen in Stufen: 4 / 8 / 12 / …** Ein Gletscher **bricht**, wenn er eine Stufe erreicht hat — Stufe 1 (≥4) klein, Stufe 2 (≥8) deutlich stärker, Stufe 3 (≥12) noch stärker. Die Stufen sind **überlinear**, damit sich **Anhäufen lohnt**.
@@ -96,8 +96,8 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 
 ### Linie 1 · Firn — Masse-Motor
 - **Anfrieren** — Sieg → **mehr Masse** auf dem Feld; Formations-Sieg → **extra**. *(der Grundmotor — aktiv & sofort, Aufbau über Siege UND Formationen)*
-- **Schneetreiben (Verwehung)** — gewinnt ein Gletscher, **verweht** er einen Teil Masse auf ein **angrenzendes Feld** (Firn-Boden). *(lokal & gerichtet: baut den Boden **neben** Gletschern → Dichte; erreicht ferne Zellen nicht)*
-- **Dauerfrost** — ab dem Pick friert der Boden weiter zu: **ungefrorene Felder sammeln passiv Masse**, aber **offener Boden friert am tiefsten** — Felder mit wenigen/keinen Gletscher-Nachbarn laden schneller, Felder direkt neben Gletschern kaum. *(brettweit & passiv: lädt die **fernen** Zellen → erlaubt Platzierung außerhalb der Nachbarschaft; mechanischer Gegenpol zu Schneetreiben. Nur ungefrorene Felder.)*
+- **Schneetreiben (Verwehung)** — gewinnt ein Gletscher, **verweht** er Firn in die **Boden-Reserve** eines **angrenzenden offenen Felds** (#386, nie unter einen Gletscher). *(lokal & gerichtet: baut den Boden **neben** Gletschern → Dichte; erreicht ferne Zellen nicht)*
+- **Dauerfrost** — ab dem Pick friert der Boden weiter zu: **ungefrorene Felder sammeln passiv Firn in ihrer Boden-Reserve** (#386), aber **offener Boden friert am tiefsten** — Felder mit wenigen/keinen Gletscher-Nachbarn laden schneller, Felder direkt neben Gletschern kaum. *(brettweit & passiv: lädt die **fernen** Zellen → erlaubt Platzierung außerhalb der Nachbarschaft; mechanischer Gegenpol zu Schneetreiben. Nur ungefrorene Felder; die Reserve füllt einen später hier gefrorenen Gletscher jede Runde nach.)*
 - **Verdichtung** — der **Gebäude-Bonusanteil** auf einem Gletscher (Karten-/Stichwert) wird **nicht als Score ausgezahlt, sondern in Masse getankt**. *(dritte Masse-Quelle — siegunabhängig, koppelt Architekt an Eis; die Karte spielt ihren Stich normal, nur der Gebäude-Bonus kippt in Masse. Motor des „alles auf Gletscher stapeln"-Builds)*
 
 > Die drei Boden-Motoren decken **verschiedene Zonen**: Anfrieren (Sieg, sofort) · Schneetreiben (nah/dicht, gerichtet) · Dauerfrost (fern/offen, passiv). Verdichtung als vierte, siegunabhängige Quelle über den Architekten.
@@ -125,7 +125,7 @@ Regel = **Bedingung → Effekt**. 12 Kern-Rollen + 5 Auffüller = **17 normale R
 
 ## 5 · Synergien
 
-- **Firn füttert alles** — ohne Masse kein Bruch. Vier Quellen in verschiedenen Zonen: Sieg (Anfrieren), nah (Schneetreiben), fern (Dauerfrost), Architektur (Verdichtung, siegunabhängig).
+- **Firn füttert alles** — ohne Masse kein Bruch. Vier Quellen in verschiedenen Zonen: Sieg (Anfrieren), nah (Schneetreiben), fern (Dauerfrost), Architektur (Verdichtung, siegunabhängig). Schneetreiben/Dauerfrost speisen die **Firn-Boden-Reserve** offener Felder (#386) — die einen dort gefrorenen Gletscher dann jede Runde wieder auf 12 auffüllt.
 - **Stufen belohnen Anhäufen** — Anfrieren/Packeis/Dauerfrost bestimmen die **Klettergeschwindigkeit** zurück auf hohe Stufen nach dem „−1 Stufe"; Fütter-Motoren und Payoff greifen direkt ineinander.
 - **Eisschild = Multiplikator-Linie:** Verschmelzen/Packeis/Eisbrücke/Verzahnung bauen große, dichte Cluster → davon leben **Kaskade (Kettenbruch/Gletschersturz)** und **Krit (Zermalmen)**. **Eiswall** zahlt geplante Vollreihen aus. Herz des „Breite"-Builds.
 - **Abbruchkante = Gegenpol:** wenige **Riesen** auf hohen Stufen statt breitem Feld. Zusammen mit **Verdichtung** (Bauwert → Masse) der **Architekt-Eis-Build**: dickste Gebäude auf wenige Gletscher, steil als Bruch ausgezahlt. **Rissbildung** dreht dieselbe Achse aufs Tempo.

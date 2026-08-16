@@ -2,7 +2,7 @@
  *
  * Normalisiert Audiodateien auf −14 LUFS (EBU R128, Zwei-Pass-loudnorm) und encodiert
  * sie zu AAC 128 kb/s · 48 kHz · Stereo (.m4a) — exakt passend zum Bestand in
- * src/assets/music/*.m4a (#171 Normalisierung, #276 AAC-Kompression). Eingebettete
+ * media/music/*.m4a (#171 Normalisierung, #276 AAC-Kompression). Eingebettete
  * Cover-/Video-Streams (z. B. aus Suno-Exports) werden entfernt (-map 0:a:0).
  *
  * Nutzung:

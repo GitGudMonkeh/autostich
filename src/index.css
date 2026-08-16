@@ -4,6 +4,10 @@
 /* #314: iOS Safari vergrößert Text in manchen Layouts automatisch („text inflation") → Elemente wirken auf dem
    iPhone zu groß. text-size-adjust: 100% pinnt die vom Layout gesetzte Größe (kein Effekt auf Desktop/Android). */
 html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* #356: deck-getönter Rahmen der NEUTRALEN Struktur-Panels. --deck-a1 setzt App.jsx am Run-Container (aktive Deckfarbe);
+   fehlt sie (Menü/deckloser Fallback), greift der neutrale Grauton #2c2a3a. Der Deck-Anteil (45 %) ist hier tunebar.
+   Lazy substituiert → pro Element mit der dort kaskadierten --deck-a1 aufgelöst (in-Run getönt, außerhalb neutral). */
+:root { --deck-border: color-mix(in srgb, var(--deck-a1, #2c2a3a) 45%, #17171c); }
 * { box-sizing: border-box; }
 button { font-family: inherit; }
 ::-webkit-scrollbar { height:8px; width:8px; }
@@ -212,6 +216,20 @@ button { font-family: inherit; }
   55%  { transform: rotate(var(--cut-rot, -24deg)) translateX(0) scaleX(1); opacity: 1; }
   100% { transform: rotate(var(--cut-rot, -24deg)) translateX(var(--cut-swing, 0px)) scaleX(1); opacity: 0; }
 }
+/* #klinge-laser/#360: NACHHALL der Laserklinge — die glühende Spur wächst mit dem Schnitt heraus (bis ~26 %, wenn die
+   Klinge voll durch ist), bleibt dann am Einschlag STEHEN (kein Nachschwung) und glüht über den Rest der (deutlich
+   längeren, × 3.2) Dauer aus. #360: Spitze länger gehalten (bis ~60 %) und der Abfall in zwei Stufen langgezogen/weich
+   (60→84→100) → glühender Laserklingen-Nachhall statt schnellem Abriss. */
+@keyframes as-blade-hall {
+  0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
+  10%  { opacity: 0.95; }
+  20%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
+  40%  { opacity: 1; }     /* #klinge: Spitze halten, dann LANG + sanft ausfaden (Abfall über 60 % der Dauer) */
+  60%  { opacity: 0.62; }  /* langgezogener, gleichmäßiger Transparenz-Abfall … */
+  80%  { opacity: 0.32; }
+  92%  { opacity: 0.13; }  /* … in feinen Stufen, damit die haarfeine Glut sichtbar langsam verschwindet … */
+  100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig transparent */
+}
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge
    rendert ALLE Stücke (2 Hälften bzw. 4 Z-Ecken) einheitlich über as-boom-shard (--sx/--sy/--sr), je Einfahrrichtung. */
 /* Start bei opacity 0 (+ schneller Einblend), damit die Funken bei einem animation-delay (Ghost: erst floaten,
@@ -392,6 +410,9 @@ button { font-family: inherit; }
 .as-field-spark { animation: as-field-spark 700ms ease-out forwards; }
 /* Eigene Verlierer-Karte fliegt einfach weg (kein Klingenschnitt mehr) — driftet nach unten-außen, kippt & fadet. */
 @keyframes as-flyaway { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12%, 68%) rotate(-16deg); opacity: 0; } }
+/* #finisher-standard: gespiegelter Wegflug für die GEGNERkarte (rechte Feldseite) beim Standard-Finisher — schräg
+   nach unten-RECHTS raus, spiegelbildlich zum eigenen Wegflug (as-flyaway), damit beide Seiten nach außen wegfliegen. */
+@keyframes as-flyaway-r { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(12%, 68%) rotate(16deg); opacity: 0; } }
 
 /* #296 Sieg-Finisher „Schwarzes Loch": das persistente, mit der Serie wachsende Loch (Sog, Orbs, Kollaps) läuft jetzt
    im Panel-<canvas> (BlackholeFieldFx in Battlefield.jsx) — keine CSS-Keyframes mehr nötig. */
@@ -429,12 +450,41 @@ button { font-family: inherit; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(ellipse at center,
-    rgba(209,70,47,0.18) 0%,
-    rgba(209,70,47,0.34) 42%,
-    rgba(209,70,47,0.14) 66%,
-    rgba(209,70,47,0) 82%);
+  /* #358: Vollflächen-Rot über die GANZE Zelle (statt der zentrierten Ellipse/„Kreis"). Ambient-Puls bleibt. */
+  background: rgba(209,70,47,0.26);
   animation: arch-struct-glow 1.7s ease-in-out infinite;
+}
+
+/* #358 Platzier-Flash: beim Setzen eines Baus, der einen Bonus AUSLÖST, blitzt der Bonus kurz hell auf und klingt
+   dann zum Ambient-Zustand zurück (Struktur-Rotfläche / Distrikt-Rahmen bleiben danach persistent bestehen). Beide
+   Flash-Keyframes ENDEN bei opacity 0 → unter reduced-motion (Regel unten, praktisch instant) hinterlassen sie nichts,
+   nur der persistente Glow/Rot bleibt (der Flash wird zusätzlich in JS bei reduzierter Bewegung gar nicht erst gesetzt). */
+@keyframes arch-place-flash { 0% { opacity: 0.95; } 100% { opacity: 0; } }
+.arch-struct-flash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: rgba(255,120,90,0.55);
+  box-shadow: inset 0 0 12px rgba(255,95,60,0.8);
+  animation: arch-place-flash 0.85s ease-out forwards;
+}
+.arch-district-flash { animation: arch-place-flash 0.85s ease-out forwards; }
+
+/* Aufstellungsphase: eine Karte, deren Formations-Faktor durch den letzten Tausch GESTIEGEN ist,
+   blitzt kurz in ihrer Formationsfarbe auf (Farbe kommt per --form-flash aus der Kachel). Bewusst je
+   Karte, nicht als Rahmen um die Gruppe: die Formation ist eine Eigenschaft jeder beteiligten Karte,
+   ein Sammelrahmen behauptete dagegen einen Block, den es im Layout nicht gibt.
+   Wie beim Architekten (arch-place-flash) endet der Keyframe bei opacity 0 — unter reduced-motion
+   bleibt also nichts stehen. */
+@keyframes form-gain-flash {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.form-gain-flash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--form-flash, #5ab87a),
+              inset 0 0 14px color-mix(in srgb, var(--form-flash, #5ab87a) 55%, transparent),
+              0 0 12px color-mix(in srgb, var(--form-flash, #5ab87a) 60%, transparent);
+  animation: form-gain-flash 0.75s ease-out forwards;
 }
 
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
@@ -462,6 +512,12 @@ button { font-family: inherit; }
   font-family: "VT323";
   src: url("./assets/fonts/VT323-Regular.ttf") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
+}
+/* Orbitron (variabel 400–900) — Floating-Scores & Kartenzahlen: geometrisch-technisch, passt zum Neon-Look. */
+@font-face {
+  font-family: "Orbitron";
+  src: url("./assets/fonts/Orbitron.woff2") format("woff2");
+  font-weight: 400 900; font-style: normal; font-display: swap;
 }
 
 /* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
@@ -504,10 +560,10 @@ button { font-family: inherit; }
   text-shadow: none;
 }
 
-/* Kartenzahl: Press Start 2P ist breit -> kleiner als das text-5xl-Original. */
+/* Kartenzahl: Orbitron (geometrisch, klar lesbar bei 1–10). Cap-Height größer als Press Start 2P → etwas kleiner setzen. */
 [data-skin="crt"] .card-num {
-  font-family: "Press Start 2P", ui-monospace, monospace;
-  font-size: 1.9rem; line-height: 1;
+  font-family: "Orbitron", ui-monospace, monospace;
+  font-size: calc(2rem * var(--num-scale, 1)); line-height: 1;
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 9px currentColor; /* enger Kern hält die Zahl scharf (WebKit-Blur) */
 }
 
@@ -564,6 +620,27 @@ button { font-family: inherit; }
   background-size: auto, 200% auto !important;
   animation: as-panel-sweep 7s linear infinite;
   box-shadow: 0 0 14px rgba(138,125,224,0.12);
+}
+/* #365: Deck-aware Variante — die vier NEUTRALEN In-Run-Panels (StatusBar/StatusRail/BuildPanel/Battlefield, Opt-in-Klasse
+   `as-panel-deck`) speisen den animierten Rahmen-Verlauf aus der aktiven Deckfarbe (--deck-a1/--deck-a2, in App.jsx nur
+   während des Laufs am .app-root gesetzt) statt aus dem fixen Violett. Höhere Spezifität (.as-panel.as-panel-deck) →
+   überschreibt NUR das background-image der CRT-Regel oben; Rahmen-Transparenz/Origin/Clip/Size/Sweep bleiben. Ohne
+   gesetzte --deck-a1 (Menü/Options/kein Lauf) → Violett-Fallback = Original-Look. Semantik-Panels (Meilensteine,
+   Archetyp-Leisten) tragen die Opt-in-Klasse NICHT und behalten ihren bisherigen Rahmen. */
+[data-skin="crt"] .as-panel.as-panel-deck {
+  background-image:
+    linear-gradient(#17171c, #17171c),
+    linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent);
+}
+/* #365-Folge: Archetyp-Leisten (FactionShell, Opt-in `as-panel-fac` + --fac = Fraktionsfarbe) tragen den Rahmen-Verlauf
+   in ihrer FRAKTIONSFARBE statt Violett (Feuer warm / Blitz lila / Eis kalt / Pflanze grün) — Bedeutungs-Kodierung auch
+   unter CRT sichtbar. Mittiger Highlight = heller Fraktions-Ton (color-mix mit Weiß). Ohne --fac → Violett-Fallback. */
+[data-skin="crt"] .as-panel.as-panel-fac {
+  background-image:
+    linear-gradient(#17171c, #17171c),
+    linear-gradient(90deg, #3a3a48 0%, var(--fac, #8a7de0) 25%, color-mix(in srgb, var(--fac, #8a7de0) 55%, #ffffff) 50%, var(--fac, #8a7de0) 75%, #3a3a48 100%) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--fac, #8a7de0) 22%, transparent);
 }
 @keyframes as-panel-sweep {
   from { background-position: 0% center, 0% center; }
@@ -636,12 +713,14 @@ button { font-family: inherit; }
 }
 .gloss-search::placeholder { color: #5c5c68; }
 .gloss-search:focus { outline: none; border-color: #8a7de0; box-shadow: 0 0 0 3px #8a7de022; }
-.gloss-chiprow { scrollbar-width: none; }
-.gloss-chiprow::-webkit-scrollbar { display: none; }
-.gloss-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
-.gloss-chip:hover { color: #e8e8ea; border-color: #4a4258; }
-.gloss-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
-.gloss-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
+/* Sprung-Chip-Reihe. Ursprünglich nur fürs Glossar (`gloss-*`); seit dem Optionen-Umbau (#395)
+   benutzen beide Overlays dieselbe Reihe, deshalb der neutrale Name. */
+.as-chiprow { scrollbar-width: none; }
+.as-chiprow::-webkit-scrollbar { display: none; }
+.as-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+.as-chip:hover { color: #e8e8ea; border-color: #4a4258; }
+.as-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
+.as-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
 .gloss-term-row:hover { background: #1a1a22; }
 
 /* ❄ Gletscher-Bruch (GlacierBar): der Zahltag als Moment — Ertrags-Zahl steigt auf und verblasst,
@@ -675,4 +754,12 @@ button { font-family: inherit; }
 :root[data-reduced-fx="1"][data-skin="crt"] .as-panel-arch,
 :root[data-reduced-fx="1"][data-skin="crt"] .crt-title {
   animation: none !important;
+}
+/* AUSNAHME (auf Wunsch): die WENIGEN In-Run-Identitäts-Panels (Deckfarbe `as-panel-deck`, Fraktionsfarbe
+   `as-panel-fac`) behalten ihren leicht wandernden Rahmen-Verlauf AUCH auf Mobile/reduced-fx — höhere Spezifität
+   (2 Panel-Klassen) sticht die Freeze-Regel oben. Menü-/Indikator-Panels (nur `.as-panel`) bleiben eingefroren, der
+   große Perf-Anteil des Dauer-Sweeps bleibt also gespart; nur diese paar Spielfeld-Rahmen animieren wieder. */
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-deck,
+:root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-fac {
+  animation: as-panel-sweep 7s linear infinite !important;
 }

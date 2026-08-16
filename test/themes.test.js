@@ -2,10 +2,18 @@ import { describe, it, expect } from "vitest";
 import {
   THEME_DEFS, THEMES, PACKS,
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
-  canBuyPack, buyPack, unlockAllCosmetics,
+  canBuyPack, buyPack, unlockAllCosmetics, BUYABLE_FINISHER_FX,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  auroraActive, embersActive, activeBgFx, activeBgFinisher,
+  auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
+  GOTT_FX_KEYS, gottFxOwned, activeGottFx,
+  isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
+import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
+import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
+import { BOARD_POSITIONS } from "../src/game/constants.js";
+import { N_POS } from "../src/game/architect.js";
+import { buildDeck, makeRng } from "../src/game/deck.js";
+import { initialState } from "../src/game/reducer.js";
 
 // Minimal-Profil (nur was die Logik liest): SP-Guthaben, Besitz-Map, Freischalt-Flags/Zähler.
 const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSpent: 0, ownedCosmetics: {}, games: 0, bestStreak: 0, bestScore: 0,
@@ -13,7 +21,7 @@ const prof = (o = {}) => ({ stichPoints: 0, stichSpent: 0, deckPoints: 0, deckSp
 
 describe("packs — Registry", () => {
   it("Kauf-Packs (Deck + Battlefield) als EIN Kauf — inkl. v0.4-Packs", () => {
-    for (const id of ["sunset", "lofi", "beach", "cat", "ramen", "spacedog", "wale"]) {
+    for (const id of ["sunset", "lofi", "beach", "cat", "spacedog", "wale"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(t.els).toEqual(["deck", "bf"]);
@@ -48,28 +56,28 @@ describe("packs — Zustände & Besitz", () => {
     const t = THEME_DEFS.sunset;
     expect(packState(prof(), t)).toBe("buy");
     expect(packOwned(prof(), t)).toBe(false);
-    expect(packPrice(t)).toBe(10);   // #307: Sunset Rider = 10 DP (je Pack eigener Preis)
+    expect(packPrice(t)).toBe(20);   // #307: Sunset Rider = 20 DP (je Pack eigener Preis)
   });
   it("#307: jedes Kauf-Pack trägt seinen DP-Preis (packPrice = pack.price)", () => {
-    const want = { lofi: 5, cat: 5, spacedog: 5, beach: 10, sunset: 10, ramen: 10, wale: 15 };
+    const want = { lofi: 10, cat: 10, spacedog: 10, beach: 20, sunset: 20, wale: 30 };
     for (const [id, dp] of Object.entries(want)) expect(packPrice(THEME_DEFS[id])).toBe(dp);
   });
   it("#310: die vier DP-Kauf-Packs tragen ihre Einzelpreise", () => {
-    expect(packPrice(THEME_DEFS.samurai)).toBe(15);
-    expect(packPrice(THEME_DEFS.kosmos)).toBe(10);
+    expect(packPrice(THEME_DEFS.ronin)).toBe(30);
+    expect(packPrice(THEME_DEFS.kosmos)).toBe(20);
     expect(packPrice(THEME_DEFS.oni)).toBe(20);
-    expect(packPrice(THEME_DEFS.geometrie)).toBe(5);
+    expect(packPrice(THEME_DEFS.geometrie)).toBe(10);
   });
-  it("#311: Sonnenfinsternis + Goldener Drache sind Kauf-Packs à 10 DP", () => {
+  it("#311: Kolossus + Laternenfest (sonne/drache) sind Kauf-Packs à 20 DP", () => {
     for (const id of ["sonne", "drache"]) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("buy");
       expect(isBuyPack(t)).toBe(true);
       expect(t.els).toEqual(["deck", "bf"]);
-      expect(packPrice(t)).toBe(10);
+      expect(packPrice(t)).toBe(20);
     }
-    expect(canBuyPack(prof({ deckPoints: 9 }), THEME_DEFS.sonne)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), THEME_DEFS.drache)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 19 }), THEME_DEFS.sonne)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), THEME_DEFS.drache)).toBe(true);
   });
   it("#310: canBuyPack/buyPack rechnen mit dem Pack-Preis (Roter Oni = 20 DP)", () => {
     const oni = THEME_DEFS.oni;
@@ -100,7 +108,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "serie300", "serie600", "sparfuchs", "meister",
+    const challenge = ["gottgleich", "peacock", "titan", "hirsch", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
     for (const id of challenge) {
@@ -117,23 +125,99 @@ describe("packs — Zustände & Besitz", () => {
   });
 });
 
+describe("#tiered — Stufen-Deck Peacock (serie300/600/1500 zusammengefasst)", () => {
+  const PEACOCK = THEME_DEFS.peacock;
+  it("die drei Einzel-Challenges sind aus der Registry entfernt; Peacock ist EIN Stufen-Pack", () => {
+    for (const id of ["serie300", "serie600", "serie1500"]) expect(THEME_DEFS[id]).toBeUndefined();
+    expect(PEACOCK).toBeDefined();
+    expect(isTieredPack(PEACOCK)).toBe(true);
+    expect(PEACOCK.tiers.map((t) => t.deckId)).toEqual(["deck_serie300", "deck_serie600", "deck_serie1500"]);
+    expect(PEACOCK.tiers.map((t) => t.roman)).toEqual(["I", "II", "III"]);
+    expect(isTieredPack(THEME_DEFS.gottgleich)).toBe(false);
+  });
+  it("Stufen schalten einzeln an ihren Streak-Schwellen frei (300/600/1500)", () => {
+    expect(unlockedTiers(prof({ bestStreak: 0 }), PEACOCK)).toEqual([]);
+    expect(unlockedTiers(prof({ bestStreak: 300 }), PEACOCK).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestStreak: 600 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(unlockedTiers(prof({ bestStreak: 1500 }), PEACOCK).map((t) => t.roman)).toEqual(["I", "II", "III"]);
+  });
+  it("highestUnlockedTier / coverTier: Cover = höchste freie Stufe (gesperrt → Stufe I)", () => {
+    expect(highestUnlockedTier(prof({ bestStreak: 0 }), PEACOCK)).toBe(null);
+    expect(coverTier(prof({ bestStreak: 0 }), PEACOCK).roman).toBe("I");         // gesperrt zeigt Stufe I
+    expect(coverTier(prof({ bestStreak: 600 }), PEACOCK).roman).toBe("II");
+    expect(coverTier(prof({ bestStreak: 1500 }), PEACOCK).roman).toBe("III");
+    expect(highestUnlockedTier(prof({ bestStreak: 1500 }), PEACOCK).deckId).toBe("deck_serie1500");
+  });
+  it("packOwned = Stufe I frei; packState/packUnlock hängen an Stufe I (Streak 300)", () => {
+    expect(packOwned(prof({ bestStreak: 299 }), PEACOCK)).toBe(false);
+    expect(packOwned(prof({ bestStreak: 300 }), PEACOCK)).toBe(true);
+    expect(packState(prof({ bestStreak: 0 }), PEACOCK)).toBe("lock");
+    expect(packState(prof({ bestStreak: 300 }), PEACOCK)).toBe("own");
+    expect(packUnlock(prof(), PEACOCK)).toMatchObject({ target: 300 });
+    expect(packPrice(PEACOCK)).toBe(null);
+  });
+  it("tierByDeckId / packHasTierDeck / tierAsPack", () => {
+    expect(tierByDeckId(PEACOCK, "deck_serie600").roman).toBe("II");
+    expect(tierByDeckId(PEACOCK, "deck_nope")).toBe(null);
+    expect(packHasTierDeck(PEACOCK, "deck_serie1500")).toBe(true);
+    expect(packHasTierDeck(PEACOCK, "deck_obsidian")).toBe(false);
+    const view = tierAsPack(PEACOCK, PEACOCK.tiers[1]);
+    expect(view.deckId).toBe("deck_serie600");
+    expect(view.bfId).toBe("bf_serie600");
+    expect(view.a1).toBe("#7b3ff0");
+  });
+  it("resolvePackByDeckId: jede Stufe → Peacock + Stufen-eigene Farben", () => {
+    expect(resolvePackByDeckId("deck_serie300")).toMatchObject({ a1: "#ff2d9b" });
+    expect(resolvePackByDeckId("deck_serie600")).toMatchObject({ a1: "#7b3ff0" });
+    expect(resolvePackByDeckId("deck_serie1500")).toMatchObject({ a1: "#8a4dff" });
+    expect(resolvePackByDeckId("deck_serie600").pack.id).toBe("peacock");
+    expect(resolvePackByDeckId("deck_obsidian").pack.id).toBe("obsidian"); // Nicht-Stufen-Pack unverändert
+    expect(resolvePackByDeckId("default")).toBe(null);                    // Standard-Deck → kein Pack, keine Deckfarbe
+  });
+});
+
+describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", () => {
+  it("Titan: drei Score-Stufen, Cover = höchste freie Stufe", () => {
+    const T = THEME_DEFS.titan;
+    expect(isTieredPack(T)).toBe(true);
+    expect(T.tiers.map((t) => t.deckId)).toEqual(["deck_titan1", "deck_titan2", "deck_titan3"]);
+    expect(unlockedTiers(prof({ bestScore: 24999999 }), T)).toEqual([]);
+    expect(unlockedTiers(prof({ bestScore: 25000000 }), T).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestScore: 50000000 }), T).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ bestScore: 100000000 }), T).roman).toBe("III");
+    expect(packUnlock(prof(), T)).toMatchObject({ target: 25000000 });
+    expect(resolvePackByDeckId("deck_titan2").a1).toBe("#9b3fff");
+  });
+  it("Hirsch: drei Läufe-Stufen, Cover = höchste freie Stufe", () => {
+    const H = THEME_DEFS.hirsch;
+    expect(isTieredPack(H)).toBe(true);
+    expect(H.tiers.map((t) => t.deckId)).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(unlockedTiers(prof({ games: 9 }), H)).toEqual([]);
+    expect(unlockedTiers(prof({ games: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ games: 30 }), H).roman).toBe("III");
+    expect(packOwned(prof({ games: 10 }), H)).toBe(true);
+    expect(packOwned(prof({ games: 9 }), H)).toBe(false);
+    expect(resolvePackByDeckId("deck_hirsch3").pack.id).toBe("hirsch");
+  });
+});
+
 describe("packs — Kauf-Ökonomie (#299: DP)", () => {
   it("canBuyPack: nur Kauf-Pack, genug DP (Pack-Preis), noch nicht im Besitz", () => {
-    const t = THEME_DEFS.sunset; // 10 DP
-    expect(canBuyPack(prof({ deckPoints: 9 }), t)).toBe(false);
-    expect(canBuyPack(prof({ deckPoints: 10 }), t)).toBe(true);
-    expect(canBuyPack(prof({ deckPoints: 10, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
+    const t = THEME_DEFS.sunset; // 20 DP
+    expect(canBuyPack(prof({ deckPoints: 19 }), t)).toBe(false);
+    expect(canBuyPack(prof({ deckPoints: 20 }), t)).toBe(true);
+    expect(canBuyPack(prof({ deckPoints: 20, ownedCosmetics: { "pack:sunset": true } }), t)).toBe(false);
     // SP allein reichen nicht (Pack läuft über DP)
     expect(canBuyPack(prof({ stichPoints: 99, deckPoints: 0 }), t)).toBe(false);
     // Nicht-Kauf-Pack (synthetisch) ist niemals kaufbar
     expect(canBuyPack(prof({ deckPoints: 99 }), { kind: "cond", deckId: "x" })).toBe(false);
   });
   it("buyPack zieht den Pack-Preis in DP ab, bucht deckSpent, setzt Besitz (rein)", () => {
-    const t = THEME_DEFS.lofi; // 5 DP
-    const p0 = prof({ deckPoints: 5 + 2, deckSpent: 2 });
+    const t = THEME_DEFS.lofi; // 10 DP
+    const p0 = prof({ deckPoints: 10 + 2, deckSpent: 2 });
     const p1 = buyPack(p0, t);
     expect(p1.deckPoints).toBe(2);
-    expect(p1.deckSpent).toBe(2 + 5);
+    expect(p1.deckSpent).toBe(2 + 10);
     expect(p1.stichPoints).toBe(p0.stichPoints); // SP unberührt
     expect(p1.ownedCosmetics["pack:lofi"]).toBe(true);
     expect(p0.ownedCosmetics["pack:lofi"]).toBeUndefined(); // Eingabe unverändert
@@ -142,30 +226,63 @@ describe("packs — Kauf-Ökonomie (#299: DP)", () => {
     const p0 = prof({ deckPoints: 0 });
     expect(buyPack(p0, THEME_DEFS.sunset)).toBe(p0);
   });
-  it("unlockAllCosmetics schaltet ALLE Kauf-Packs + globalen Effekte frei (additiv)", () => {
+  it("unlockAllCosmetics schaltet ALLE Kauf-Packs + globalen Effekte + Finisher frei (additiv)", () => {
     const p = unlockAllCosmetics(prof({ ownedCosmetics: { existing: true } }));
     expect(p.ownedCosmetics.existing).toBe(true); // Bestand bleibt
     for (const pack of THEMES) if (isBuyPack(pack)) expect(p.ownedCosmetics[packOwnKey(pack)]).toBe(true);
     for (const fx of GLOBAL_FX) expect(p.ownedCosmetics[fx.ownKey]).toBe(true);
+    for (const key of BUYABLE_FINISHER_FX) expect(p.ownedCosmetics[key]).toBe(true); // synthetische Sieg-Finisher
+  });
+  it("Drift-Guard: BUYABLE_FINISHER_FX deckt exakt die kaufbaren Finisher-Kacheln (CustomizeScreen)", () => {
+    expect([...BUYABLE_FINISHER_FX].sort()).toEqual([...BUYABLE_FINISHER_OWNKEYS].sort());
   });
 });
 
 describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
-  // #cleanup: Es bleiben genau: Hintergrund-Effekt „Aurora" (bgfx) und Hintergrund-Finisher „Glutfunken" (bgfin).
-  // Klinge ist der einzige Sieg-Finisher (synthetisch, NICHT in GLOBAL_FX). Die Gottgleich-Kategorie bleibt im Shop
-  // (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge mehr (Prunk entfernt).
-  it("GLOBAL_FX führt NUR noch aurora und embers", () => {
-    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(["aurora", "embers"].sort());
+  // #cleanup: Es bleiben: Hintergrund-Effekt „Aurora" (bgfx) und die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
+  // (bgfin; #311 überarbeitet wieder eingeführt). Klinge ist ein synthetischer Sieg-Finisher (NICHT in GLOBAL_FX). Die
+  // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
+  it("GLOBAL_FX führt aurora, neonsurf, cubematrix, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326) — #glutfunken-raus: embers entfernt · #345 neonsurf", () => {
+    expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
+      ["aurora", "neonsurf", "cubematrix", "deckglow", "starfield", "edgeglow", "holo", "glitch",
+       "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
+  });
+  it("#deckglow: Deck-Glow liegt in der eigenen bgglow-Gruppe (frei kombinierbar), 5 DP, korrekte Naht", () => {
+    const fx = GLOBAL_FX_BY_KEY.deckglow;
+    expect(fx.group).toBe("bgglow");
+    expect(fx.ownKey).toBe("fx:deckglow");
+    expect(fx.option).toBe("fxDeckGlow");
+    expect(globalFxPrice(fx)).toBe(5);
+    // Eigene Ebene → NICHT in den exklusiven Slots (kombiniert mit allem).
+    expect(BG_FX_KEYS.includes("deckglow")).toBe(false);
+    expect(BG_FIN_KEYS.includes("deckglow")).toBe(false);
+    // Aktiv = gekauft UND Option an — unabhängig davon, welcher bgfx-Effekt gewählt ist (kombinierbar).
+    const owned = { ...prof(), ownedCosmetics: { "fx:deckglow": true } };
+    expect(deckGlowActive(owned, { fxDeckGlow: true })).toBe(true);
+    expect(deckGlowActive(owned, { fxDeckGlow: true, fxAurora: true })).toBe(true); // parallel zu Aurora
+    expect(deckGlowActive(owned, { fxDeckGlow: false })).toBe(false);
+    expect(deckGlowActive(prof(), { fxDeckGlow: true })).toBe(false); // nicht gekauft → nicht aktiv
+  });
+  it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
+    for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("anim");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.option).toBe(option);
+      expect(fx.preview).toBe(key);
+    }
   });
   it("entfernte Effekte sind vollständig aus der Registry", () => {
-    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "glitch", "hologrid", "starfield", "scanline", "vignette",
+    // #311: starfield ist wieder da → NICHT mehr in dieser Entfernt-Liste. #318: glitch ist als Karten-Animation neu (raus).
+    for (const k of ["frameGlow", "holoSwipe", "auroraVeil", "hologrid", "scanline", "vignette",
                      "laserSlice", "blackhole", "lasergrid", "burnBeam", "overload", "disperse", "klinge",
                      "fireworks", "goldRain", "prismaWave", "gottStandard"]) {
       expect(GLOBAL_FX_BY_KEY[k]).toBeUndefined();
     }
   });
-  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), embers in bgfin (Hintergrund-Finisher)", () => {
-    const GROUP = { aurora: "bgfx", embers: "bgfin" };
+  it("#kategorien: aurora liegt in bgfx (reiner Hintergrund), starfield in bgfin (Hintergrund-Finisher)", () => {
+    const GROUP = { aurora: "bgfx", cubematrix: "bgfx", starfield: "bgfin" };
     for (const [key, group] of Object.entries(GROUP)) {
       const fx = GLOBAL_FX_BY_KEY[key];
       expect(fx).toBeTruthy();
@@ -179,19 +296,17 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     expect(activeBgFinisher(prof(), {})).toBe(null);
     // Option an, aber nicht gekauft → nicht aktiv.
     expect(activeBgFx(prof(), { fxAurora: true })).toBe(null);
-    const owned = prof({ ownedCosmetics: { "fx:aurora": true, "fx:embers": true } });
+    const owned = prof({ ownedCosmetics: { "fx:aurora": true, "fx:starfield": true } });
     expect(auroraActive(owned, { fxAurora: true })).toBe(true);
-    expect(embersActive(owned, { fxEmbers: true })).toBe(true);
     expect(activeBgFx(owned, { fxAurora: true })).toBe("aurora");
-    expect(activeBgFinisher(owned, { fxEmbers: true })).toBe("embers");
+    expect(activeBgFinisher(owned, { fxStarfield: true })).toBe("starfield");
     // Beide Slots UNABHÄNGIG → können gleichzeitig aktiv sein.
-    expect(activeBgFx(owned, { fxAurora: true, fxEmbers: true })).toBe("aurora");
-    expect(activeBgFinisher(owned, { fxAurora: true, fxEmbers: true })).toBe("embers");
+    expect(activeBgFx(owned, { fxAurora: true, fxStarfield: true })).toBe("aurora");
+    expect(activeBgFinisher(owned, { fxAurora: true, fxStarfield: true })).toBe("starfield");
   });
   it("*Active-Helfer: nur gekauft UND per Option an", () => {
     const cases = [
       ["aurora", auroraActive, "fxAurora"],
-      ["embers", embersActive, "fxEmbers"],
     ];
     for (const [key, activeFn, opt] of cases) {
       const owned = prof({ ownedCosmetics: { [`fx:${key}`]: true } });
@@ -201,16 +316,16 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
     }
   });
   it("#307: kaufen zieht DP ab, bucht deckSpent, setzt globalen Besitz (SP unberührt)", () => {
-    const embers = GLOBAL_FX_BY_KEY.embers; // 8 DP
-    const price = globalFxPrice(embers);
+    const starfield = GLOBAL_FX_BY_KEY.starfield;
+    const price = globalFxPrice(starfield);
     const p0 = prof({ deckPoints: price + 1, deckSpent: 1, stichPoints: 9 });
-    expect(canBuyGlobalFx(p0, embers)).toBe(true);
-    const p1 = buyGlobalFx(p0, embers);
+    expect(canBuyGlobalFx(p0, starfield)).toBe(true);
+    const p1 = buyGlobalFx(p0, starfield);
     expect(p1.deckPoints).toBe(1);
     expect(p1.deckSpent).toBe(1 + price);
     expect(p1.stichPoints).toBe(9); // SP unberührt
-    expect(globalFxOwned(p1, embers)).toBe(true);
-    expect(canBuyGlobalFx(p1, embers)).toBe(false);
+    expect(globalFxOwned(p1, starfield)).toBe(true);
+    expect(canBuyGlobalFx(p1, starfield)).toBe(false);
   });
   it("kaufen bei zu wenig DP = No-op", () => {
     const p0 = prof({ deckPoints: 0, stichPoints: 99 });
@@ -219,10 +334,89 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   it("Käufe sind voneinander getrennt", () => {
     const p1 = buyGlobalFx(prof({ deckPoints: 25 }), GLOBAL_FX_BY_KEY.aurora);
     expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.aurora)).toBe(true);
-    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.embers)).toBe(false);
+    expect(globalFxOwned(p1, GLOBAL_FX_BY_KEY.starfield)).toBe(false);
   });
-  it("#307: jeder verbliebene Effekt trägt seinen DP-Preis (globalFxPrice = fx.price)", () => {
-    const want = { aurora: 10, embers: 8 };
+  it("#353/#farbsystem: jeder verbliebene Effekt trägt seinen DP-Preis nach Rarity-Stufe (grün 10 · blau 20 · lila 30 · gold 40)", () => {
+    const want = { aurora: 10, starfield: 20, glitch: 30, cubematrix: 40 }; // #353: aurora 20→10, cubematrix 30→40, glitch 20→30
     for (const [key, dp] of Object.entries(want)) expect(globalFxPrice(GLOBAL_FX_BY_KEY[key])).toBe(dp);
+  });
+});
+
+describe("gottgleich-prunk (#322-#326) — group gott, einfach-exklusiv (PIXI)", () => {
+  // Alle 5 Prunk-Effekte liegen in group „gott", tragen die korrekte Naht (ownKey/option/preview) und Rarity-Preise.
+  it("Reihenfolge/Naht/Preis je Prunk-Effekt (Standard 0 · Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40)", () => {
+    const want = [
+      ["sonnenPuls", "fxSonnenPuls", 0],
+      ["laserFaecher", "fxLaserFaecher", 10],
+      ["prismaKaskade", "fxPrismaKaskade", 20],
+      ["holoCube", "fxHoloCube", 30],
+      ["supernova", "fxSupernova", 40],
+    ];
+    expect(GOTT_FX_KEYS).toEqual(want.map((w) => w[0]));
+    for (const [key, option, price] of want) {
+      const fx = GLOBAL_FX_BY_KEY[key];
+      expect(fx).toBeTruthy();
+      expect(fx.group).toBe("gott");
+      expect(fx.ownKey).toBe(`fx:${key}`);
+      expect(fx.option).toBe(option);
+      expect(fx.preview).toBe(key);
+      expect(globalFxPrice(fx)).toBe(price);
+    }
+  });
+  it("Sonnen-Puls ist der FREIE Default (alwaysOwned) → ohne Kauf besessen; die anderen erst nach Kauf", () => {
+    const sp = GLOBAL_FX_BY_KEY.sonnenPuls, lf = GLOBAL_FX_BY_KEY.laserFaecher;
+    expect(sp.alwaysOwned).toBe(true);
+    expect(gottFxOwned(prof(), sp)).toBe(true);            // frei, auch ohne ownedCosmetics
+    expect(gottFxOwned(prof(), lf)).toBe(false);           // kaufbar → erst bei Besitz
+    expect(gottFxOwned(prof({ ownedCosmetics: { "fx:laserFaecher": true } }), lf)).toBe(true);
+  });
+  it("activeGottFx: der EINE aktive Prunk (besessen + Option an), sonst null; kaufbar nur bei Besitz", () => {
+    expect(activeGottFx(prof(), {})).toBe(null);                                  // nichts an
+    expect(activeGottFx(prof(), { fxSonnenPuls: true })).toBe("sonnenPuls");      // frei + an
+    expect(activeGottFx(prof(), { fxLaserFaecher: true })).toBe(null);            // an, aber nicht gekauft
+    const owned = prof({ ownedCosmetics: { "fx:laserFaecher": true } });
+    expect(activeGottFx(owned, { fxLaserFaecher: true })).toBe("laserFaecher");
+  });
+});
+
+/* #331 Hintergrund = EIN einfach-exklusiver Slot über zwei Kategorien (bgfx + bgfin).
+   Die Exklusivität wird in storage.normalizeFxOptions über BG_EXCL_OPTS durchgesetzt, die Kategorien stehen aber
+   in themes.js (BG_FX_KEYS/BG_FIN_KEYS). Zwei getrennte Listen, die zusammenpassen MÜSSEN — wer hier einen Effekt
+   ergänzt und den Eintrag in BG_EXCL_OPTS vergisst, bricht die Exklusivität still. Dieser Test bindet sie aneinander. */
+describe("#331 Hintergrund-Exklusivität deckt alle Hintergrund-Effekte ab", () => {
+  const optionOf = (key) => GLOBAL_FX_BY_KEY[key].option;
+
+  it("jeder bgfx- UND bgfin-Effekt steht in der Exklusiv-Gruppe", () => {
+    const shouldBeExclusive = [...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf);
+    for (const opt of shouldBeExclusive) expect(BG_EXCL_OPTS).toContain(opt);
+  });
+
+  it("die Exklusiv-Gruppe enthält nichts Fremdes (kein Karten-/Gott-/Leuchten-Effekt)", () => {
+    const allowed = new Set([...BG_FX_KEYS, ...BG_FIN_KEYS].map(optionOf));
+    for (const opt of BG_EXCL_OPTS) expect(allowed).toContain(opt);
+  });
+
+  it("normalizeFxOptions lässt genau EINEN Hintergrund-Effekt stehen (Priorität = Listenreihenfolge)", () => {
+    const o = {};
+    for (const opt of BG_EXCL_OPTS) o[opt] = true;
+    normalizeFxOptions(o);
+    expect(BG_EXCL_OPTS.filter((opt) => o[opt])).toEqual([BG_EXCL_OPTS[0]]);
+  });
+});
+
+/* Brettgröße: positions-indizierte Zustände hängen an BOARD_POSITIONS. Früher stand die 40 als Literal im
+   Reducer, während N_POS (Gebäude-Overlay) und die Deckgröße dieselbe Zahl anders schrieben. */
+describe("Brettgröße hat eine Quelle", () => {
+  it("BOARD_POSITIONS == Deckgröße == Gebäude-Overlay-Positionen", () => {
+    expect(BOARD_POSITIONS).toBe(buildDeck().length);
+    expect(BOARD_POSITIONS).toBe(N_POS);
+  });
+
+  it("initialState legt die Gletscher-Arrays in Brettgröße an", () => {
+    const s = initialState(makeRng(1));
+    expect(s.glacierMass).toHaveLength(BOARD_POSITIONS);
+    expect(s.firnStack).toHaveLength(BOARD_POSITIONS);
+    expect(s.glacierLocked).toHaveLength(BOARD_POSITIONS);
+    expect(s.playerOrder).toHaveLength(BOARD_POSITIONS);
   });
 });
