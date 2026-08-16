@@ -129,12 +129,21 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
   const normalStyle = hasResume ? normalGhost : cyanPrimary;
 
-  /* #kopf-kompakt (16.08.2026): gap 3.5→2 und pt/pb 5→2/3. Der Startbildschirm brauchte auf einem
-     iPhone 14 Pro 865 px bei 664 px Sichtfläche — man musste scrollen, um „Normaler Lauf" überhaupt zu
-     sehen. Der Abstand lag über NEUN Lücken verteilt, jede für sich unauffällig; erst die Summe tat weh.
-     Gemessen mit Playwright gegen den Preview-Build, nicht geschätzt. */
+  /* #kopf-kompakt (16.08.2026): Der Startbildschirm brauchte auf einem iPhone 14 Pro 865 px bei 664 px
+     Sichtfläche — man musste scrollen, um „Normaler Lauf" überhaupt zu sehen. Der Abstand lag über NEUN
+     Lücken verteilt, jede für sich unauffällig; erst die Summe tat weh. Alles hier ist gemessen (Playwright
+     gegen den Preview-Build), nicht geschätzt.
+
+     Die beiden Schrauben sind bewusst getrennt:
+     - `gap` = Luft ZWISCHEN den Knöpfen. Sie ist Gestaltung und wurde auf Wunsch wieder auf 10 px erhöht.
+     - `pt/pb` = Polster der SEITE zum Rand. Das ist kein Rhythmus, sondern Rest — hier wurde geholt, was
+       zum scrollfreien Bildschirm fehlte (5→2/3→0/1). Wer hier wieder auflockert, verliert genau das.
+
+     Achtung, knappe Kante: mit pt-0/pb-1 landet die Seite auf einem 390×664-Viewport bei GENAU 664 px, also
+     ohne Reserve. Kommt eine Zeile dazu, scrollt sie sofort wieder — dann nicht am Polster drehen (da ist
+     nichts mehr), sondern an einem Baustein. */
   return (
-    <div className="relative isolate flex flex-col items-center gap-2.5 pt-2 pb-3">
+    <div className="relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
           Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] -z-10"
