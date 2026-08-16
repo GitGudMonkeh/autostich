@@ -345,6 +345,7 @@ export default {
 
   /* ---- Battlefield ---- */
   "bf.ready": "Ready — start the autobattler",
+  "bf.trickCount": "Trick {n} / {total}",
   "bf.side.you": "You",
   "bf.side.opponent": "Opponent",
   "bf.banner.win": "Won",

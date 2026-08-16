@@ -354,7 +354,7 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
         {children}
         {overlay}
       </div>
-      <div className="text-[11px] opacity-55">Stich {position} / {deckLen}</div>
+      <div className="text-[11px] opacity-55">{tr("bf.trickCount", { n: position, total: deckLen })}</div>
     </div>
   );
 }

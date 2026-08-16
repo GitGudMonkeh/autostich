@@ -345,6 +345,7 @@ export default {
 
   /* ---- Spielfeld (Battlefield) ---- */
   "bf.ready": "Bereit — starte den Autobattler",
+  "bf.trickCount": "Stich {n} / {total}",
   "bf.side.you": "Du",
   "bf.side.opponent": "Gegner",
   "bf.banner.win": "Gewonnen",
