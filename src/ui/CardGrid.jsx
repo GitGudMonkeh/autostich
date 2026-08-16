@@ -70,7 +70,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false,
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
                    glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
@@ -147,6 +147,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           {arrow ? `→${arrow}` : "✓"}
         </span>
       )}
+      {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
+          die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
+      {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
@@ -196,7 +199,7 @@ function SegmentBridge({ segA, segB }) {
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
-                          segStrength = [], segDelta = [], architectCover = null, structPos = null, distrPos = null, glowBid = null,
+                          segStrength = [], segDelta = [], flashPos = null, flashKey = 0, architectCover = null, structPos = null, distrPos = null, glowBid = null,
                           glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
@@ -301,6 +304,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
+                  formFlash={flashPos && flashPos.has(pos) ? flashKey : false}
                   glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
                   firnMass={firnStackByPos ? (firnStackByPos[pos] || 0) : 0}
                   glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}

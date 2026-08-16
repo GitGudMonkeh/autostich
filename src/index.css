@@ -468,6 +468,25 @@ button { font-family: inherit; }
 }
 .arch-district-flash { animation: arch-place-flash 0.85s ease-out forwards; }
 
+/* Aufstellungsphase: eine Karte, deren Formations-Faktor durch den letzten Tausch GESTIEGEN ist,
+   blitzt kurz in ihrer Formationsfarbe auf (Farbe kommt per --form-flash aus der Kachel). Bewusst je
+   Karte, nicht als Rahmen um die Gruppe: die Formation ist eine Eigenschaft jeder beteiligten Karte,
+   ein Sammelrahmen behauptete dagegen einen Block, den es im Layout nicht gibt.
+   Wie beim Architekten (arch-place-flash) endet der Keyframe bei opacity 0 — unter reduced-motion
+   bleibt also nichts stehen. */
+@keyframes form-gain-flash {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.form-gain-flash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--form-flash, #5ab87a),
+              inset 0 0 14px color-mix(in srgb, var(--form-flash, #5ab87a) 55%, transparent),
+              0 0 12px color-mix(in srgb, var(--form-flash, #5ab87a) 60%, transparent);
+  animation: form-gain-flash 0.75s ease-out forwards;
+}
+
 /* Barrierefreiheit: bei reduzierter Bewegung alle Animationen praktisch abschalten. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

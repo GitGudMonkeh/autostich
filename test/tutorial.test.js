@@ -145,11 +145,9 @@ describe("Tutorial · Texte", () => {
    größer als der vorhandene Platz sein konnte. */
 describe("Tutorial · Karten-Platzierung", () => {
   const VIEW = 800;
-  const fits = (box) => {
-    if (box.center) return true;
-    const top = box.top != null ? box.top : VIEW - box.bottom - box.maxH;
-    return top >= 0 && top + box.maxH <= VIEW;
-  };
+  // Alle Fälle sind von OBEN verankert (kein CSS `bottom` mehr) — sonst mischten sich visueller und
+  // Layout-Viewport, und die Karte saß auf iOS um die Differenz zu hoch.
+  const fits = (box) => box.center || (box.top >= 0 && box.top + box.maxH <= VIEW);
 
   it("ohne Anker bleibt das Fenster mittig", () => {
     expect(cardBox(null, VIEW).center).toBe(true);
@@ -157,8 +155,10 @@ describe("Tutorial · Karten-Platzierung", () => {
 
   it("liegt ÜBER dem Spotlight, wenn dort Platz ist", () => {
     const box = cardBox({ top: 500, left: 0, width: 300, height: 200 }, VIEW);
-    expect(box.bottom).toBeGreaterThan(0);   // von unten verankert = über dem Panel
-    expect(box.top).toBeUndefined();
+    // Der Container reicht von oben bis knapp über den Spotlight, die Karte sitzt an seinem Fuß.
+    expect(box.alignEnd).toBe(true);
+    expect(box.top).toBe(0);
+    expect(box.top + box.maxH).toBeLessThan(500);   // endet vor dem Panel
     expect(fits(box)).toBe(true);
   });
 

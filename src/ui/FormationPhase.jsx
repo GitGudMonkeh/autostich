@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
@@ -41,6 +41,21 @@ function FormCollapse({ label, chipWord, color = "#8a7de0", open, onToggle, chil
       {open && <div className="mt-2 grid gap-3 content-start">{children}</div>}
     </div>
   );
+}
+
+/* Welche Positionen sind durch den letzten Tausch STÄRKER geworden?
+
+   Rein, damit die Regel testbar bleibt — sie ist die ganze Bedingung für das Aufleuchten. Verglichen
+   werden die Faktoren JE POSITION, nicht die Gesamtsumme: nur so leuchten genau die Karten, die
+   wirklich Teil der neuen/stärkeren Formation sind. Eine Karte, die durch den Tausch nur den Platz
+   gewechselt hat, ohne stärker zu werden, bleibt dunkel.
+
+   `eps` fängt Fließkomma-Rauschen ab (Faktoren entstehen aus Produkten, ×1,25 × ×1,2 …). */
+export function gainedPositions(prev, cur, eps = 0.001) {
+  const out = new Set();
+  if (!prev || !cur || prev.length !== cur.length) return out;
+  for (let i = 0; i < cur.length; i++) if (cur[i] > prev[i] + eps) out.add(i);
+  return out;
 }
 
 /* Formationsphase (V2 §22.8): pausiert den Run und öffnet die Deck-Aufstellung.
@@ -109,6 +124,37 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const swappedIds = new Set((state.formationSwaps || []).flatMap((s) => [s.idA, s.idB]).filter(Boolean));
   // #FB Segmentarbeit (E_SEGMENT): welche Segmentgrenzen sind offen? Speist den Verbinder im CardGrid + den Intro-Text.
   const segInfo = openSegmentInfo(state.familyTiers);
+
+  /* Aufleuchten nach einem GEWINNBRINGENDEN Tausch: Positionen, deren Formations-Faktor gegenüber dem
+     Zustand VOR dem Tausch gestiegen ist, blitzen einmal in ihrer Formationsfarbe auf.
+
+     Verglichen wird der Faktor JE POSITION, nicht die Gesamtsumme: nur so leuchten genau die Karten,
+     die wirklich Teil der neuen/stärkeren Formation sind. Eine Position, die durch den Tausch nur
+     ihren Platz gewechselt hat, ohne stärker zu werden, bleibt dunkel.
+
+     `formations` ist eine neue Array-Instanz je Reducer-Schritt; der Vergleich hängt deshalb an den
+     WERTEN (Faktor je Position), nicht an der Referenz. Beim Phasenwechsel (state.cycle) wird der
+     Merker verworfen, sonst leuchtete die erste Ansicht der nächsten Aufstellung fälschlich auf. */
+  const [flash, setFlash] = useState({ key: 0, pos: null });
+  const prevMults = useRef({ cycle: null, mults: null });
+  const multSig = formations.map((pf) => (pf && pf.mult) || 1).join(",");
+  useEffect(() => {
+    const cur = formations.map((pf) => (pf && pf.mult) || 1);
+    const prev = prevMults.current;
+    const same = prev.cycle === state.cycle && prev.mults && prev.mults.length === cur.length;
+    if (same) {
+      const gained = gainedPositions(prev.mults, cur);
+      if (gained.size) setFlash((f) => ({ key: f.key + 1, pos: gained }));
+    }
+    prevMults.current = { cycle: state.cycle, mults: cur };
+  }, [multSig, state.cycle]); // eslint-disable-line react-hooks/exhaustive-deps -- `formations` wechselt die Referenz je Render; die Signatur ist die stabile Dep
+  // Nach dem Blitzen wieder abräumen — sonst bliebe die Klasse hängen und ein späterer Tausch derselben
+  // Karte könnte den Keyframe nicht erneut starten.
+  useEffect(() => {
+    if (!flash.pos) return undefined;
+    const id = setTimeout(() => setFlash((f) => ({ ...f, pos: null })), 800);
+    return () => clearTimeout(id);
+  }, [flash.key, flash.pos]);
 
   // Reaktives Delta (#95.6): Σ Formations-Stärke jetzt vs. Ausgangszustand der Phase, live nach jedem Tausch.
   const curStrength = strengthOf(formations);
@@ -211,7 +257,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 ))}
               </div>
             )}
-            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} firnStackByPos={iceActive ? firnStack : null} />
           </div>
 

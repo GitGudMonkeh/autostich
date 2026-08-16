@@ -28,6 +28,13 @@ const SPOT_PAD = 8;      // Rand um das hervorgehobene Panel, damit der Spotligh
 const CARD_GAP = 12;     // Abstand zwischen Spotlight und Karte
 const CARD_MIN = 150;    // darunter lohnt sich die Seite nicht mehr — dann auf die andere wechseln
 
+/* Sichtbare Viewport-Höhe. `visualViewport` ist auf Mobile das, was der Spieler wirklich sieht —
+   `window.innerHeight` zählt den von der iOS-Adressleiste verdeckten Streifen mit. */
+const viewportH = () => {
+  if (typeof window === "undefined") return 800;
+  return Math.round((window.visualViewport && window.visualViewport.height) || window.innerHeight);
+};
+
 /* Ankerrechteck suchen und das Element SICHTBAR machen. Das Panel trägt data-tut="<anchor>".
    Fehlt es (in dieser Phase nicht gerendert, Layout noch nicht fertig), gibt es kein Rechteck — die
    Karte zeigt dann nur den Satz, ohne Spotlight. Lieber ein Satz ohne Rahmen als ein Rahmen um nichts. */
@@ -155,8 +162,14 @@ export function cardBox(rect, viewH, contentH = 0) {
   const spotBot = Math.min(viewH, Math.max(0, rect.top + rect.height + SPOT_PAD));
   const above = spotTop - CARD_GAP;
   const below = viewH - spotBot - CARD_GAP;
-  if (above >= need) return { bottom: Math.round(viewH - spotTop + CARD_GAP), maxH: above - CARD_GAP };
-  if (below >= need) return { top: Math.round(spotBot + CARD_GAP), maxH: below - CARD_GAP };
+  /* ALLE drei Fälle werden von OBEN verankert — nie über CSS `bottom`.
+     Grund (Playtest „Panel sitzt zu hoch"): `rect.top` kommt aus getBoundingClientRect und zählt im
+     VISUELLEN Viewport, ein `bottom` auf dem fixierten Overlay rechnet gegen den LAYOUT-Viewport. Auf
+     iOS sind die beiden verschieden hoch (Adressleiste) und die Karte rutschte um genau diese
+     Differenz nach oben. `alignEnd` spannt den Container stattdessen von oben bis knapp über den
+     Spotlight und legt die Karte an dessen unteren Rand: gleiche Optik, nur EINE Größenquelle. */
+  if (above >= need) return { top: 0, maxH: Math.round(above), alignEnd: true };
+  if (below >= need) return { top: Math.round(spotBot + CARD_GAP), maxH: Math.round(below - CARD_GAP) };
   /* Bildschirmfüllendes Panel (Aufstellbrett, Baufeld): oben wie unten kein Platz. Die Karte wird oben
      angeheftet und `fill` erlaubt ihr die VOLLE Resthöhe (zwischen den Safe-Areas, im Render als calc) —
      so ist der Tutorial-Text samt Knöpfen IMMER ganz sichtbar statt gedeckelt-und-scrollbar; das Brett
@@ -170,7 +183,7 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const animate = fx === "full";
   const { step, mark, isOutro, next, skipStep, end } = tut;
   const rect = useAnchorRect(mark ? mark.anchor : null);
-  const [viewH, setViewH] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
+  const [viewH, setViewH] = useState(viewportH);
   const cardRef = useRef(null);
   // Gemessene Inhaltshöhe der Karte (scrollHeight = volle Höhe TROTZ maxHeight-Deckel). Damit entscheidet
   // cardBox, ob die Karte in die Lücke über/unter dem Spotlight passt oder oben mit voller Höhe anheftet.
@@ -186,9 +199,16 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   }, [step, mark, viewH]);
 
   useEffect(() => {
-    const onResize = () => setViewH(window.innerHeight);
+    /* Blendet iOS nur die Adressleiste ein/aus, feuert KEIN `resize` auf `window` — nur auf
+       `visualViewport`. Ohne diesen Listener rechnete cardBox mit einer veralteten Höhe weiter. */
+    const onResize = () => setViewH(viewportH());
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const vv = window.visualViewport;
+    if (vv) { vv.addEventListener("resize", onResize); vv.addEventListener("scroll", onResize); }
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (vv) { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); }
+    };
   }, []);
 
   // Eingabe an der Tastatur: Enter/Leertaste = weiter. Escape beendet NICHT den Lauf, sondern nur
@@ -271,9 +291,13 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
            allein ist auf manchen Geräten 0, dann fehlte der Abstand ganz. Lieber verdeckt die Karte
            etwas mehr vom Brett, als dass ihr Kopf fehlt. */
         <div className="absolute inset-x-0 flex justify-center px-3 sm:px-6 pointer-events-none"
-          style={box.top != null
-            ? { top: `calc(max(1.5rem, env(safe-area-inset-top)) + ${box.top}px)` }
-            : { bottom: `calc(max(1.5rem, env(safe-area-inset-bottom)) + ${box.bottom}px)` }}>
+          style={box.alignEnd
+            // Unten am Spotlight ausgerichtet: der Container endet knapp darüber, der Safe-Area-Floor
+            // wird oben von der Höhe abgezogen — die Karte rutscht weder unter die Notch noch tiefer.
+            ? { top: "max(1.5rem, env(safe-area-inset-top))",
+                height: `calc(${box.maxH}px - max(1.5rem, env(safe-area-inset-top)))`,
+                alignItems: "flex-end" }
+            : { top: `calc(max(1.5rem, env(safe-area-inset-top)) + ${box.top}px)` }}>
           {card}
         </div>
       )}
