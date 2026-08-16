@@ -18,7 +18,7 @@ const TUNE = {
   LIFE: SUPERNOVA_LIFE, CHARGE: SUPERNOVA_CHARGE, FLASH: 2.7,
   ZOOM: 0.5, BOOM: 1.75, STREAK: 1.7,
   CORE_R: 0.6, CORE_GLOW: 2.8, POS_Y: 0.5,
-  RINGS: 6, RING_R: 2, CHROMA: 12, RING_SEP: 0.05, RING_THICK: 0.5,
+  RINGS: 6, RING_R: 2, CHROMA: 12, RING_SEP: 0.05, RING_THICK: 0.5, RING_STAGGER: 0.06,
   RAYS: 48, RAY_LEN: 1.1, RAY_SPIN: 0.8,
   STARS: 240, STAR_SPEED: 1.55, STAR_SIZE: 2.6, STAR_TRAIL: 4, GRAVITY: 0,
   TUNNEL: 1.2, T_RINGS: 14, T_SPOKES: 24, T_SPEED: 3.4, T_GAMMA: 3.3, T_HOLE: 0.06, T_SPIN: -1,
@@ -158,7 +158,15 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
         // Chromatische Ringe (gestaffelt).
         const nBands = s.lite ? Math.max(5, Math.round(TUNE.CHROMA * 0.5)) : TUNE.CHROMA;
         const nRings = s.lite ? 4 : TUNE.RINGS; // #perf-mobile: lite 6→4 Ring-Wellen
-        for (let w = 0; w < nRings; w++) { const wt = dp - w * 0.06; if (wt < 0 || wt > 0.9) continue; const wp = wt / 0.9, R = halfDiag * TUNE.RING_R * easeOut(wp), rA = (wp < 0.1 ? wp / 0.1 : Math.pow(1 - (wp - 0.1) / 0.9, 1.2)) * BR;
+        /* #fx-nova-cut: Die Ring-Wellen starten gestaffelt (je Welle +RING_STAGGER), ihre Laufzeit muss also in das
+           verbleibende dp-Fenster passen. Vorher war das Fenster fest 0,9 — die letzte der 6 Wellen hätte damit bis
+           dp = 0,9 + 5·0,06 = 1,20 gebraucht, dp endet aber bei 1,0. Ergebnis: bei voller Qualität wurden VIER der
+           sechs Wellen mitten im Flug abgeschnitten (auf lite zwei von vier), der Effekt brach sichtbar ab.
+           Jetzt wird das Fenster aus der Staffelung ABGELEITET → jede Welle läuft garantiert aus, egal wie viele.
+           Bewusst so und nicht über eine längere LIFE: an LIFE/CHARGE hängt der Detonationszeitpunkt und damit die
+           Ton-Synchronisation (supernovaTiming.js) — die bleibt unangetastet. */
+        const ringWin = Math.max(0.2, 1 - TUNE.RING_STAGGER * (nRings - 1));
+        for (let w = 0; w < nRings; w++) { const wt = dp - w * TUNE.RING_STAGGER; if (wt < 0 || wt > ringWin) continue; const wp = wt / ringWin, R = halfDiag * TUNE.RING_R * easeOut(wp), rA = (wp < 0.1 ? wp / 0.1 : Math.pow(1 - (wp - 0.1) / 0.9, 1.2)) * BR;
           for (let b = 0; b < nBands; b++) { const bu = nBands > 1 ? b / (nBands - 1) : 0.5, rb = R + (bu - 0.5) * TUNE.RING_SEP * nBands * H; if (rb <= 1) continue; const col = s.deckTint ? mix(ca, cb, bu) : hsl2rgb(lerp(0.06, 0.95, bu), 1, 0.6); g.circle(cx, cy, rb).stroke({ width: Math.max(1, TUNE.RING_THICK * H * 0.04), color: intOf(col), alpha: clamp(0.4 * rA, 0, 1) }); } }
         // Dicke weiße Boom-Front.
         if (TUNE.BOOM > 0) { const br = halfDiag * TUNE.RING_R * 0.9 * easeOut(dp), ba = (1 - dp) * (1 - dp) * TUNE.BOOM; g.circle(cx, cy, br).stroke({ width: Math.max(2, diag * 0.02 * (1 - dp)), color: 0xffffff, alpha: clamp(0.5 * ba, 0, 1) }); }

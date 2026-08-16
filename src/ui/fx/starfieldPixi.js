@@ -224,7 +224,11 @@ export function createStarfield(app) {
     const f = grabFlash();
     f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
     f.sz0 = TUNE.IMP_FLASH_SZ * sc * (0.7 + 0.3 * imp); f.tint = headInt;
-    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Impact-Funken auf lite
+    // #perf-mobile: Einschlag-Funken auf lite auf EIN DRITTEL (vorher die Hälfte). Der Spray ist der teuerste Posten
+    // des Meteors — jede Funke ist ein eigenes Partikel mit Motion-Streak (rotation + vertex dynamisch). Bei der
+    // Gottgleich-Stufe (imp bis 5) sind das voll bis 450 Funken auf einmal; ein Drittel hält den Spray sichtbar,
+    // nimmt aber die Spitze aus der Fill-Rate.
+    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? 1 / 3 : 1));
     for (let i = 0; i < n; i++) {
       const s = grabSpark();
       const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);

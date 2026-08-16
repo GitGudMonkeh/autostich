@@ -34,7 +34,11 @@ const TUNE = {
   CARD_W: 210, CARD_H: 300,
   // #perf Medium-Stufe (lite): gröberes Raster (Faktor auf COLS/ROWS) → ~3× weniger Kacheln/Display-Objekte; zusätzlich
   // Mini-Pixel aus + DPR-Deckel 1.25 + 45 fps. Kern (Reveal/Zerfall/Fly/Bounce/Fill-Fade→Rahmen) bleibt identisch.
-  LITE_GRID: 0.45, // #perf-mobile: lite-Raster 0.58→0.45 (12×16 → ~5×7 = 35 statt 63 Kacheln/Texturen)
+  // #perf-mobile: lite-Raster 0.58→0.45→0.28. Jede Kachel ist ein eigener Container samt gebackener Textur, der nach
+  // dem Schnitt einzeln fliegt/rotiert/abprallt — die Kachelzahl ist damit der dominante Kostenposten des Effekts.
+  // 5×7 = 35 → 4×4 = 16 fallende Teile (gut halbiert). Der Zeilen-Boden ist dafür von 5 auf 4 herunter (s. u.);
+  // der Schnitt bleibt lesbar, weil die Karte hochkant ist und 4 Reihen die Bruchkante noch klar zeigen.
+  LITE_GRID: 0.28,
 };
 const STD_A = "#2ff0ff", STD_B = "#ff2d9b"; // COLORS.deck / deck2 (Fallback ohne Deckfarbe)
 
@@ -116,7 +120,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
       const [sweepx, sweepy] = dir;
       // #perf Medium-Stufe (lite): gröberes Raster → deutlich weniger Kacheln (dominanter Kostenposten).
       const cols = s.lite ? Math.max(4, Math.round(TUNE.COLS * TUNE.LITE_GRID)) : TUNE.COLS;
-      const rows = s.lite ? Math.max(5, Math.round(TUNE.ROWS * TUNE.LITE_GRID)) : TUNE.ROWS;
+      const rows = s.lite ? Math.max(4, Math.round(TUNE.ROWS * TUNE.LITE_GRID)) : TUNE.ROWS; // #perf-mobile: Boden 5→4, sonst bremst er die Halbierung aus
 
       // Karten-Textur backen (2× für Schärfe, lite 1,25×), in cols×rows Kacheln zerlegen.
       const RES = s.lite ? 1.25 : 2;
