@@ -899,7 +899,6 @@ export default {
   "tutorial.btn.next": "Got it",
   "tutorial.btn.finish": "Continue",
   "tutorial.btn.skipStep": "Skip",
-  "tutorial.btn.end": "End tutorial",
 
   "tutorial.intro.title": "Welcome to Autostich",
   "tutorial.intro.body": "Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.\n\nA run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.\n\nThis guided run explains every phase once, the first time it comes up.",

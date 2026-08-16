@@ -910,7 +910,6 @@ export default {
   "tutorial.btn.next": "Verstanden",
   "tutorial.btn.finish": "Weiterspielen",
   "tutorial.btn.skipStep": "Überspringen",
-  "tutorial.btn.end": "Tutorial beenden",
 
   "tutorial.intro.title": "Willkommen bei Autostich",
   "tutorial.intro.body": "Autostich ist ein Autobattler: Dein Deck spielt die Stiche von selbst, du triffst die Entscheidungen dazwischen.\n\nEin Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.\n\nDieser geführte Lauf erklärt dir jede Phase einmal, sobald sie zum ersten Mal auftaucht.",

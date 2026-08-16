@@ -181,7 +181,7 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const t = useT();
   const fx = useFxLevel(reducedFx);   // Effekt-Stufe des Spielers, nicht nur prefers-reduced-motion
   const animate = fx === "full";
-  const { step, mark, isOutro, next, skipStep, end } = tut;
+  const { step, mark, isOutro, next, skipStep } = tut;
   const rect = useAnchorRect(mark ? mark.anchor : null);
   const [viewH, setViewH] = useState(viewportH);
   const cardRef = useRef(null);
@@ -211,8 +211,8 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
     };
   }, []);
 
-  // Eingabe an der Tastatur: Enter/Leertaste = weiter. Escape beendet NICHT den Lauf, sondern nur
-  // den laufenden Schritt — „Tutorial beenden" ist bewusst ein eigener, benannter Knopf.
+  // Eingabe an der Tastatur: Enter/Leertaste = weiter. Escape beendet NICHT das Tutorial, sondern
+  // überspringt nur den laufenden Schritt (wie „Überspringen").
   useEffect(() => {
     if (!step) return undefined;
     const onKey = (e) => {
@@ -265,11 +265,6 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
           <ActionButton kind="decline" onClick={skipStep}>{t("tutorial.btn.skipStep")}</ActionButton>
         )}
       </div>
-      {!isOutro && (
-        <button onClick={end} className="mt-2 w-full text-[11px] opacity-55 hover:opacity-90 transition-opacity">
-          {t("tutorial.btn.end")}
-        </button>
-      )}
     </div>
   );
 
