@@ -23,8 +23,14 @@ export const SUPERNOVA_TAIL = 0.15;     // Nachlauf nach LIFE, bevor der Effekt 
 
 /* Wo im Swell sitzt sein großer Impuls? DIE EINE nach Gehör getunte Zahl — sie verschiebt Showcase
    und Spiel gemeinsam. 0 = der Impuls sitzt am Anfang der Datei; ein größerer Wert zieht den Ton
-   FRÜHER los (weil sein Impuls später kommt), ein negativer Wert spielt ihn entsprechend später. */
-export const SUPERNOVA_IMPACT_S = 0;
+   FRÜHER los (weil sein Impuls später kommt), ein negativer Wert spielt ihn entsprechend später.
+
+   Stand: 0,5 (Freigabe im Showcase — dort ist der gestreckte Effekt die verlässliche Referenz).
+   ACHTUNG beim weiteren Nachdrehen: in-game bleiben zwischen Effekt-Start und Blitz nur ~0,3 s. Ab
+   einem Impuls-Offset von 0,3 steht der Vorlauf dort auf 0 (der Ton startet sofort) und weiteres
+   Erhöhen wirkt NUR noch im Showcase. Wer den Ton in-game dann noch früher braucht, muss ihn vor der
+   Ansage auslösen — das wäre eine echte Umstellung, kein Zahlendreh. */
+export const SUPERNOVA_IMPACT_S = 0.5;
 
 // Wann blitzt die Detonation, gerechnet ab Effekt-Start? Tempo < 1 streckt den Effekt (Showcase).
 export const supernovaDetonationS = (speed = 1) =>

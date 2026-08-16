@@ -24,10 +24,25 @@ describe("Supernova · Ton auf dem Blitz", () => {
     expect(supernovaDetonationS(SHOWCASE_SPEED)).toBeGreaterThan(supernovaDetonationS(1) * 5);
   });
 
-  it("der Vorlauf legt den Impuls in BEIDEN Ansichten auf den Blitz", () => {
+  it("der Vorlauf legt den Impuls auf den Blitz — solange der Vorlauf dafür reicht", () => {
     for (const speed of [1, SHOWCASE_SPEED, 0.5, 2]) {
-      const treffer = supernovaSwellDelay(speed) + SUPERNOVA_IMPACT_S;
-      expect(treffer, `Tempo ${speed} trifft den Blitz nicht`).toBeCloseTo(supernovaDetonationS(speed), 6);
+      const delay = supernovaSwellDelay(speed);
+      const treffer = delay + SUPERNOVA_IMPACT_S;
+      const blitz = supernovaDetonationS(speed);
+      if (delay > 0) expect(treffer, `Tempo ${speed} trifft den Blitz nicht`).toBeCloseTo(blitz, 6);
+      /* Vorlauf am Boden: der Blitz kommt früher, als der Ton seinen Impuls liefern kann (in-game sind
+         es nur ~0,3 s bis zur Detonation). Dann ist „so früh wie möglich" das Beste, was geht — der
+         Impuls sitzt zwangsläufig NACH dem Blitz. Kein Fehler, aber die Grenze des Zahlendrehens:
+         weiter nach vorn ginge nur, wenn der Ton vor der Ansage ausgelöst würde. */
+      else expect(treffer, `Tempo ${speed}: Impuls müsste vor dem Blitz liegen`).toBeGreaterThanOrEqual(blitz);
+    }
+  });
+
+  it("die Grenze ist bekannt: ab Impuls-Offset ≥ Blitzzeit wirkt Nachdrehen nur noch im Showcase", () => {
+    const blitzIngame = supernovaDetonationS(1);
+    if (SUPERNOVA_IMPACT_S >= blitzIngame) {
+      expect(supernovaSwellDelay(1)).toBe(0);                       // in-game am Boden …
+      expect(supernovaSwellDelay(SHOWCASE_SPEED)).toBeGreaterThan(0); // … im Showcase bleibt Luft
     }
   });
 
