@@ -139,7 +139,11 @@ export function cardBox(rect, viewH) {
   const below = viewH - spotBot - CARD_GAP;
   if (above >= CARD_MIN) return { bottom: Math.round(viewH - spotTop + CARD_GAP), maxH: above - CARD_GAP };
   if (below >= CARD_MIN) return { top: Math.round(spotBot + CARD_GAP), maxH: below - CARD_GAP };
-  return { top: CARD_GAP, maxH: Math.round(viewH * 0.5) };
+  /* Bildschirmfüllendes Panel (Aufstellbrett, Baufeld): oben wie unten kein Platz. Die Karte wird oben
+     angeheftet und `fill` erlaubt ihr die VOLLE Resthöhe (zwischen den Safe-Areas, im Render als calc) —
+     so ist der Tutorial-Text samt Knöpfen IMMER ganz sichtbar statt gedeckelt-und-scrollbar; das Brett
+     füllt nur den Platz darunter. `maxH` bleibt als Fallback-Zahl erhalten (Geometrie-Test). */
+  return { top: CARD_GAP, maxH: Math.round(viewH * 0.5), fill: true };
 }
 
 export function TutorialOverlay({ tut, reducedFx = "aus" }) {
@@ -179,10 +183,19 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
   const body = showMark ? t(mark.key, vars) : t(step.bodyKey, vars);
   const box = showMark ? cardBox(rect, viewH) : { center: true };
 
+  /* Höhe der Karte: zentriert 80dvh; bildschirmfüllendes Panel (`fill`) = ganze Resthöhe zwischen den
+     Safe-Areas minus dem Kopf-Abstand (dann passt der Text samt Knöpfen immer rein, ohne Scroll-Deckel);
+     sonst der spotlight-relative Platz aus cardBox. */
+  const cardMaxH = box.center
+    ? "80dvh"
+    : box.fill
+      ? `calc(100dvh - max(1.5rem, env(safe-area-inset-top)) - ${box.top}px - max(1rem, env(safe-area-inset-bottom)))`
+      : box.maxH;
+
   const card = (
     <div ref={cardRef} data-tut-card
       className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel overlay-card overflow-y-auto"
-      style={{ ...MODAL_CARD, maxHeight: box.center ? "80dvh" : box.maxH }}>
+      style={{ ...MODAL_CARD, maxHeight: cardMaxH }}>
       <TopHairline />
 
       {/* Kein „Schritt n/m" mehr — bewusst nur die Rubrik. Die Zahl verunsicherte mehr als sie half

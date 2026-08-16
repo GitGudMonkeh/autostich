@@ -168,11 +168,14 @@ describe("Tutorial · Karten-Platzierung", () => {
     expect(fits(box)).toBe(true);
   });
 
-  it("bleibt bei einem bildschirmfüllenden Panel ganz sichtbar (heftet oben an)", () => {
-    // Aufstellungsbrett/Baufeld: oben wie unten zu wenig Platz → überlagern statt abschneiden.
+  it("bleibt bei einem bildschirmfüllenden Panel ganz sichtbar (heftet oben an, füllt Resthöhe)", () => {
+    // Aufstellungsbrett/Baufeld: oben wie unten zu wenig Platz → oben anheften und überlagern.
+    // `fill` gibt der Karte im Render die volle Resthöhe, damit der Text samt Knöpfen nie unten
+    // abgeschnitten (und scrollbar) ist — dafür verdeckt sie mehr vom Brett.
     const box = cardBox({ top: 40, left: 0, width: 300, height: 730 }, VIEW);
     expect(fits(box)).toBe(true);
     expect(box.top).toBeLessThan(50);
+    expect(box.fill).toBe(true);
   });
 
   it("passt in JEDER Anker-Lage vollständig auf den Schirm", () => {
