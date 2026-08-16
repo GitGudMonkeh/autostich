@@ -3,6 +3,7 @@ import { glossaryCategories, glossaryGroups, glossaryEntries, tokenizeGlossary }
 import { useLocale } from "../i18n/useLocale.js"; // #sprache: Neuaufbau bei Sprachwechsel
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Kategorie-Wechsel per Swipe
 import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
 
@@ -93,13 +94,16 @@ export function GlossaryOverlay({ onClose }) {
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: "smooth" });
     else if (bodyRef.current) bodyRef.current.scrollTop = 0;
   };
+  // Kategorie-Reihenfolge (mit „Alle" vorn) für den horizontalen Swipe → nächste/vorige Kategorie (springt + scrollt).
+  const catOrder = ["all", ...glossaryCategories().map((c) => c.id)];
+  const catSwipe = useTabSwipe(catOrder, activeCat, jump);
 
   return (
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("glossary.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel relative"
-          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
+          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...catSwipe}>
           <TopHairline />
 
           {/* Kopf: Titel + Schließen + Suche */}

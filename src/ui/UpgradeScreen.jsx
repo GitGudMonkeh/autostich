@@ -3,15 +3,15 @@ import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
+import { ARCHETYPE_ORDER } from "../game/skills.js";
 import { tierColor } from "../game/rarity.js";
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
-  NODE_BY_ID, TOTAL_NODES,
+  TOTAL_NODES,
   emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
 } from "../game/progression.js";
-import { nodeDef, nodeList } from "../i18n/labels.js"; // #sprache: Knotentexte zur Anzeigezeit
+import { nodeDef, nodeList, archMeta } from "../i18n/labels.js"; // #sprache: Knoten-/Archetyp-Texte zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
 /* Upgrade-Screen (#369 KOMPLETT-REWORK) — hängt am ECHTEN Profil (progression.js + storage). Zwei Reiter:
@@ -26,13 +26,13 @@ const VI = "#9b82f0";     // Rarität-/Legendär-Akzent
 
 // Allgemein-Zweig als Lanes (Reihenfolge = Kette).
 const GEN_LANES = [
-  { name: "Baufeld", accent: CY, ids: ["cover1", "cover2", "cover3"] },
-  { name: "Energie", accent: CY, ids: ["energy1", "energy2"] },
+  { nameKey: "upgrades.lane.cover", accent: CY, ids: ["cover1", "cover2", "cover3"] },
+  { nameKey: "upgrades.lane.energy", accent: CY, ids: ["energy1", "energy2"] },
   // Reroll-Basis 1 → 3: je Knoten +1 Reroll auf ALLE DREI Angebots-Pools (Perk · Gebäude · Skill).
-  { name: "Rerolls", accent: CY, ids: ["reroll1", "reroll2"] },
-  { name: "Rarität", accent: VI, ids: ["tier3", "tier4", "legLayer"] },
-  { name: "Drop-Raten", accent: VI, ids: ["drop1", "drop2", "drop3", "drop4"], note: "öffnet sich nach dem Legendär-Unlock" },
-  { name: "2. Perk-Phase", accent: VI, ids: ["perk2Leg", "perk2Reroll"], note: "öffnet sich nach dem Legendär-Unlock" },
+  { nameKey: "upgrades.lane.rerolls", accent: CY, ids: ["reroll1", "reroll2"] },
+  { nameKey: "upgrades.lane.rarity", accent: VI, ids: ["tier3", "tier4", "legLayer"] },
+  { nameKey: "upgrades.lane.drops", accent: VI, ids: ["drop1", "drop2", "drop3", "drop4"], noteKey: "upgrades.lane.note.afterLeg" },
+  { nameKey: "upgrades.lane.perk2", accent: VI, ids: ["perk2Leg", "perk2Reroll"], noteKey: "upgrades.lane.note.afterLeg" },
 ];
 
 // Akzentfarbe eines Knotens: Rarität-Knoten in Rarität-Farbe, Legendär gold, Deck-Knoten in Fraktions-Farbe.
@@ -62,7 +62,7 @@ function PillBody({ label, mark, titleColor, markColor }) {
 // flex-1 → alle Pillen einer Lane sind gleich breit (saubere Spalten-Ausrichtung, kein Umbruch).
 function NodePill({ node, st, accent, selected, onSelect }) {
   const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
-  const mark = isOwned ? "✓" : isPlaceholder ? "Bald" : (isBuy || st === "lock-sp") ? `${node.cost} SP` : "🔒";
+  const mark = isOwned ? "✓" : isPlaceholder ? t("upgrades.state.soon") : (isBuy || st === "lock-sp") ? `${node.cost} ${t("common.cur.sp")}` : "🔒";
   const base = isOwned
     ? { border: `1px solid ${accent}`, background: `${accent}18` }
     : isBuy
@@ -84,12 +84,12 @@ function NodePill({ node, st, accent, selected, onSelect }) {
 
 // Status-Klartext eines Knotens für die Detailzeile — erklärt bei gesperrten Knoten AUCH warum (Vorgänger/Gate/SP).
 function nodeStatusText(node, st) {
-  if (st === "owned") return "✓ Gekauft";
-  if (st === "placeholder") return "Bald verfügbar";
-  if (st === "lock-sp") return `Zu wenig SP — kostet ${node.cost} SP`;
-  if (st === "lock-prev") { const pr = nodeDef(node.prereq); return pr ? `Erst nach: ${pr.label}` : "Vorgänger nötig"; }
-  if (st === "lock-gate") return node.gate?.type === "anyLeg" ? "Braucht eine freigeschaltete Legendär-Stufe" : "Noch gesperrt";
-  return "Kaufbar";
+  if (st === "owned") return t("upgrades.state.owned");
+  if (st === "placeholder") return t("upgrades.state.soonFull");
+  if (st === "lock-sp") return t("upgrades.state.lockSp", { cost: node.cost });
+  if (st === "lock-prev") { const pr = nodeDef(node.prereq); return pr ? t("upgrades.state.after", { name: pr.label }) : t("upgrades.state.needPrereq"); }
+  if (st === "lock-gate") return node.gate?.type === "anyLeg" ? t("upgrades.state.lockGate") : t("upgrades.state.locked");
+  return t("upgrades.state.buyable");
 }
 
 // Detailzeile (Tipp-zum-Erklären): erscheint unter der Lane des angetippten Knotens. Name + Wirkung (node.detail)
@@ -105,7 +105,7 @@ function NodeDetail({ node, st, accent, onBuy }) {
       {st === "buy" && (
         <button onClick={() => onBuy(node.id)}
           className="shrink-0 px-3 py-2 rounded-lg text-[12px] font-extrabold transition-transform hover:-translate-y-0.5"
-          style={{ background: GOLD, color: "#141419" }}>Kaufen · {node.cost} SP</button>
+          style={{ background: GOLD, color: "#141419" }}>{t("upgrades.buy", { cost: node.cost })}</button>
       )}
     </div>
   );
@@ -116,7 +116,7 @@ function NodeDetail({ node, st, accent, onBuy }) {
 function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) {
   const items = [];
   if (lead) items.push(<span key="lead" className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2" style={{ border: `1px solid ${lead.color}`, background: `${lead.color}18` }}>
-    <PillBody label={lead.label} mark="✓ frei" titleColor="#e8e8ea" markColor={lead.color} />
+    <PillBody label={lead.label} mark={`✓ ${t("upgrades.free")}`} titleColor="#e8e8ea" markColor={lead.color} />
   </span>);
   nodes.forEach((n) => {
     if (items.length) items.push(<span key={`sep${n.id}`} className="flex-none self-center text-[12px]" style={{ color: "#4a4a55" }}>›</span>);
@@ -167,7 +167,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <div className="flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
               <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
-              <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>SP</span>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
             <div className="flex items-center gap-2.5 shrink-0">
               <button onClick={doRespec} disabled={owned === 0}
@@ -178,15 +178,15 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           </div>
           {/* Reiter Decks / Allgemein */}
           <div className="flex gap-1.5 mt-3">
-            {[{ key: "deck", label: "Decks" }, { key: "gen", label: "Allgemein" }].map((t) => {
-              const on = t.key === tab, col = t.key === "deck" ? VI : CY;
+            {[{ key: "deck", labelKey: "upgrades.tab.decks" }, { key: "gen", labelKey: "upgrades.tab.gen" }].map((tb) => {
+              const on = tb.key === tab, col = tb.key === "deck" ? VI : CY;
               return (
-                <button key={t.key} onClick={() => selectTab(t.key)} role="tab" aria-selected={on}
+                <button key={tb.key} onClick={() => selectTab(tb.key)} role="tab" aria-selected={on}
                   className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
                   style={on
                     ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
                     : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
-                  {t.label}
+                  {t(tb.labelKey)}
                 </button>
               );
             })}
@@ -202,7 +202,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         {tab === "deck" && (
           <div className="mt-4 grid gap-2.5">
             {ARCHETYPE_ORDER.map((arch) => {
-              const meta = ARCHETYPE_META[arch];
+              const meta = archMeta(arch);
               const accent = FACTION_GLOW[arch] || VI;
               const chain = nodeList().filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
               const hasDeckNode = chain.some((n) => n.deckUnlock);
@@ -222,7 +222,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {/* Extras: Deck-Reroll + Platzhalter. */}
             <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
               <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>{t("upgrades.legPhase")}</div>
-              <Lane nodes={[NODE_BY_ID.deckReroll, NODE_BY_ID.synLeg]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
+              <Lane nodes={[nodeDef("deckReroll"), nodeDef("synLeg")]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
         )}
@@ -231,10 +231,10 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         {tab === "gen" && (
           <div className="mt-4 grid gap-2.5">
             {GEN_LANES.map((lane) => (
-              <div key={lane.name} className="rounded-2xl p-3" style={panelStyle(lane.accent)}>
+              <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(lane.accent)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
-                  <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{lane.name}</span>
-                  {lane.note && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{lane.note}</span>}
+                  <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{t(lane.nameKey)}</span>
+                  {lane.noteKey && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
                 </div>
                 <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>

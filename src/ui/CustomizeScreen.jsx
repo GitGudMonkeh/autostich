@@ -1019,7 +1019,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
                 Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
             <div className="flex gap-1.5 mt-3">
-              {[["packs", "Packs", "#9b82f0"], ["challenges", "Challenges", "#e05555"], ["fx", "Effekte", "#d4a63a"]].map(([m, label, col]) => {
+              {[["packs", "shop.tab.packs", "#9b82f0"], ["challenges", "shop.tab.challenges", "#e05555"], ["fx", "shop.tab.fx", "#d4a63a"]].map(([m, label, col]) => {
                 const on = tab === m;
                 return (
                   <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
@@ -1027,7 +1027,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                     style={on
                       ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
                       : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
-                    {label}
+                    {t(label)}
                   </button>
                 );
               })}
@@ -1058,7 +1058,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null }) {
   const challenge = cat === "challenges";
   const [filter, setFilter] = useState("alle");
-  const chips = challenge ? [["alle", "Alle"], ["besitz", "Frei"], ["gesperrt", "Gesperrt"]] : [["alle", "Alle"], ["besitz", "Besitz"], ["kaufbar", "Kaufbar"]];
+  const chips = challenge ? [["alle", "shop.filter.all"], ["besitz", "shop.filter.free"], ["gesperrt", "shop.filter.locked"]] : [["alle", "shop.filter.all"], ["besitz", "shop.filter.owned"], ["kaufbar", "shop.filter.buyable"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
   const shown = list.filter((pack) => {
     const s = stateOf(pack);
@@ -1092,7 +1092,7 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
       <div className="flex gap-1.5 mt-3 flex-wrap">
         {chips.map(([k, label]) => (
           <button key={k} onClick={() => setFilter(k)} className="px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-colors"
-            style={{ background: filter === k ? "#26c6e6" : "#14131c", color: filter === k ? "#08181c" : "#9a97ab", border: `1px solid ${filter === k ? "#26c6e6" : "#2a2836"}` }}>{label}</button>
+            style={{ background: filter === k ? "#26c6e6" : "#14131c", color: filter === k ? "#08181c" : "#9a97ab", border: `1px solid ${filter === k ? "#26c6e6" : "#2a2836"}` }}>{t(label)}</button>
         ))}
       </div>
 
@@ -1107,7 +1107,7 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
           const active = tiered ? packHasTierDeck(pack, deckId) : deckId === pack.deckId;
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
-          const badge = active ? ["AKTIV", "#123a25", "#54e08a", "#2f7a4f"]
+          const badge = active ? [t("shop.activeChip"), "#123a25", "#54e08a", "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;

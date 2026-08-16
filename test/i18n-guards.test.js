@@ -70,6 +70,10 @@ describe("i18n · Katalog-Parität", () => {
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
+    "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort
+    "shop.tab.packs",        // „Packs" — dasselbe Wort in beiden Sprachen
+    "shop.tab.challenges",   // „Challenges" — dasselbe Wort in beiden Sprachen
     "tutorial.eyebrow",      // dito (Kopfzeile des Tutorial-Fensters)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A

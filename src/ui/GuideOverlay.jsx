@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ARCHETYPE_ORDER } from "../game/skills.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Archetyp-Wechsel per Swipe
 import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { guideDef } from "../i18n/guideText.js"; // #sprache: Leitfaden zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
@@ -196,7 +197,7 @@ export function GuideBody({ archetype, showTitle = true }) {
 
       {showTitle && (
         <div className="mt-6 pt-3.5 text-[11px] font-mono flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
-          <ArchIcon meta={meta} size={14} /> {meta.label} · Archetyp {ARCHETYPE_ORDER.indexOf(active) + 1} von {ARCHETYPE_ORDER.length}
+          <ArchIcon meta={meta} size={14} /> {meta.label} · {t("guide.archOf", { n: ARCHETYPE_ORDER.indexOf(active) + 1, total: ARCHETYPE_ORDER.length })}
         </div>
       )}
     </>
@@ -205,6 +206,7 @@ export function GuideBody({ archetype, showTitle = true }) {
 
 export function GuideOverlay({ onClose, initial = "lightning" }) {
   const [active, setActive] = useState(ARCHETYPE_ORDER.includes(initial) ? initial : "lightning");
+  const archSwipe = useTabSwipe(ARCHETYPE_ORDER, active, setActive); // Swipe ←/→ = voriger/nächster Archetyp
   useEscape(onClose);
 
   return (
@@ -213,7 +215,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         {/* #369: Werkstatt-Schale (MODAL_CARD + Tri-Color-Hairline) statt der alten Sonderschale. */}
         <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card relative"
-          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
+          style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...archSwipe}>
           <TopHairline />
 
           {/* Kopf */}
