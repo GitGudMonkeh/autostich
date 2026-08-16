@@ -11,7 +11,8 @@ import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
 import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
-import { DeckStrength } from "./BuildSummary.jsx";
+import { DeckStrength, PerkList } from "./BuildSummary.jsx";
+import { zinsReadout } from "../game/perks.js"; // Zinseszins-Readout für die Perk-Liste (wie im Build-Panel)
 import { occupiedCells as archOccupied } from "../game/architect.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 // #UI: geteilte Architekt-/Formations-Bausteine (eine Quelle mit der Aufstellphase → keine getrennte Pflege).
@@ -183,6 +184,12 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             </div>
           )}
         </div>
+
+        {/* Aktuelle Perks (flache Perks + gehaltene Familien) — klappbares Feld unten, default offen, damit der
+            aktuelle Build in der Chronik sofort sichtbar ist (wie im In-Game-Build-Panel). */}
+        <CollapsibleField title={t("perk.build", { count: (state.perks || []).length })} defaultOpen className="mt-4">
+          <PerkList perks={state.perks || []} familyTiers={state.familyTiers || {}} zins={zinsReadout(state)} empty={t("perk.build.empty")} />
+        </CollapsibleField>
 
         {/* #UI: Referenz-Legende ganz nach unten, als klappbares Feld (default zu) — verstellt die Übersicht nicht mehr. */}
         <CollapsibleField title={t("form.legend")} defaultOpen={false} className="mt-3">

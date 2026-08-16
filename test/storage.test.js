@@ -28,7 +28,7 @@ const DEFAULT_OPTIONS = {
   calmMusic: false,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
-  numScale: 1,
+  numScale: 0.75,
   randomDeckEachRun: false,
   tierSel: {},
   fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
