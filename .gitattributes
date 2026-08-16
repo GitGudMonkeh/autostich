@@ -1,0 +1,25 @@
+# Node-Hilfsskripte IMMER mit LF auschecken — auch auf Windows.
+#
+# Warum: Diese Dateien beginnen mit einer Shebang-Zeile (`#!/usr/bin/env node`). Vites/Vitests
+# Transform entfernt die Shebang bis zum `\n` und lässt bei CRLF das `\r` stehen — der Rest der Datei
+# wird dann als Fortsetzung dieser Zeile gelesen und der Import scheitert mit „SyntaxError: Invalid or
+# unexpected token". Auf Linux (CI) tritt das nie auf, weil dort ohnehin LF ausgecheckt wird; auf
+# Windows-Arbeitskopien war dadurch `test/profanity-sql.test.js` dauerhaft rot, während die CI grün
+# blieb. Genau diese Kombination — grüne CI, roter lokaler Lauf — kostet am meisten Zeit, weil man den
+# Fehler zwangsläufig bei der eigenen Änderung sucht.
+#
+# Nachgewiesen durch A/B: Shebang+CRLF scheitert, dieselbe Datei mit LF läuft, dieselbe Datei mit CRLF
+# ohne Shebang läuft ebenfalls. Es ist also die Kombination, nicht eines von beidem.
+#
+# Die Shebang bleibt damit erhalten (auf macOS/Linux sind die Skripte direkt ausführbar), und alle
+# Node-Skripte sind gegen das Problem immunisiert — nicht nur das eine, das gerade auffiel.
+*.mjs text eol=lf
+
+# Generierte bzw. gegen einen Generator geprüfte SQL-Dateien ebenfalls mit LF.
+#
+# Warum: docs/username-profanity-guard.sql wird von scripts/gen-profanity-sql.mjs erzeugt, und
+# test/profanity-sql.test.js vergleicht die eingecheckte Datei BYTE-GENAU mit der Generator-Ausgabe —
+# so fällt Drift zwischen Client-Filter und Server-Guard auf. Der Generator schreibt LF; auf Windows
+# wurde die Datei mit CRLF ausgecheckt, wodurch der Vergleich an einem unsichtbaren `\r` je Zeile
+# scheiterte. Der Byte-Vergleich ist richtig so und bleibt — die Arbeitskopie muss sich anpassen.
+*.sql text eol=lf
