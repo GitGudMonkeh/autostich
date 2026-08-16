@@ -1059,6 +1059,7 @@ export default {
 
   /* ---- Feedback reporter (#396) ---- */
   "start.feedback": "Feedback",
+  "start.discord": "Open Discord",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Send feedback",
   "feedback.kind": "Type",

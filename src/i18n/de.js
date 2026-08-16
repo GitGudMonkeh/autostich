@@ -1076,6 +1076,7 @@ export default {
 
   /* ---- Feedback-Melder (#396) ---- */
   "start.feedback": "Feedback",
+  "start.discord": "Discord öffnen",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Feedback senden",
   "feedback.kind": "Art",
