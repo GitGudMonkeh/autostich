@@ -27,6 +27,8 @@ const VI = "#9b82f0";     // Rarität-/Legendär-Akzent
 const GEN_LANES = [
   { name: "Baufeld", accent: CY, ids: ["cover1", "cover2", "cover3"] },
   { name: "Energie", accent: CY, ids: ["energy1", "energy2"] },
+  // Reroll-Basis 1 → 3: je Knoten +1 Reroll auf ALLE DREI Angebots-Pools (Perk · Gebäude · Skill).
+  { name: "Rerolls", accent: CY, ids: ["reroll1", "reroll2"] },
   { name: "Rarität", accent: VI, ids: ["tier3", "tier4", "legLayer"] },
   { name: "Drop-Raten", accent: VI, ids: ["drop1", "drop2", "drop3", "drop4"], note: "öffnet sich nach dem Legendär-Unlock" },
   { name: "2. Perk-Phase", accent: VI, ids: ["perk2Leg", "perk2Reroll"], note: "öffnet sich nach dem Legendär-Unlock" },
