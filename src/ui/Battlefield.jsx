@@ -1586,14 +1586,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
         {isCrit && !hideFloatMult && (
-          <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10 neon-num"
+          <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
                      fontSize: 26, color: critColor, textTransform: "uppercase", // Loc: Caps via CSS
-                     ...floatNumStyle(critColor, 1.5, 1.4), // #: Kartennummern-Stil (Kontur), stärkerer Krit-Glow
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
-            {reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}
+            {/* #ios-word: Glow bewusst auf einem INNEREN Element — Filter und (skalierende) Animation am selben Knoten
+                lassen WebKit die Filter-Region unvollständig invalidieren (Geister-Kopie, s. GottChromeWord.jsx). */}
+            <span className="neon-num" style={floatNumStyle(critColor, 1.5, 1.4)}>{reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}</span>
           </div>
         )}
 
@@ -1638,20 +1639,22 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             Aus formFloat (stich-entkoppelt): aktiv → as-combo-hold (hält); beim Verlassen → as-combo-out
             (klingt über FORM_LINGER_MS aus) → bleibt so ~1,5 s länger stehen als sein Stich. #389: per hideFloatMult ausblendbar. */}
         {formFloat && !hideFloatMult && (
-          <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10 neon-num"
+          <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(formFloat.key * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(formFloat.key * 4 + 11, JITTER_Y)}px)`,
                      fontSize: formFloat.peak === 2 ? 26 : formFloat.peak === 1 ? 21 : 17,
                      textTransform: "uppercase", // Loc: Formations-Label-Caps via CSS
                      color: formFloat.color,
-                     // #: Kartennummern-Stil (Kontur); Peak-Stufen leuchten stufig stärker (vorher als eigener text-shadow gesetzt)
-                     ...floatNumStyle(formFloat.color, formFloat.peak === 2 ? 1.6 : 1.4,
-                                      formFloat.peak === 2 ? 1.6 : formFloat.peak === 1 ? 1.3 : 1.1,
-                                      formFloat.peak ? "cc" : "88"),
                      animation: fx(formLeaving
                        ? `as-combo-out ${FORM_LINGER_MS}ms ease-out forwards`
                        : `as-combo-hold ${floatDur}ms ease-out forwards`) }}>
-            {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
+            {/* #: Kartennummern-Stil (Kontur); Peak-Stufen leuchten stufig stärker (vorher als eigener text-shadow gesetzt).
+                #ios-word: Glow auf dem INNEREN Element, nicht auf dem animierten (s. Krit-Float oben). */}
+            <span className="neon-num" style={floatNumStyle(formFloat.color, formFloat.peak === 2 ? 1.6 : 1.4,
+                                                            formFloat.peak === 2 ? 1.6 : formFloat.peak === 1 ? 1.3 : 1.1,
+                                                            formFloat.peak ? "cc" : "88")}>
+              {formFloat.peak === 2 && "★ "}{formFloat.label} ×{formFloat.mult}
+            </span>
           </div>
         )}
       </div>
