@@ -23,7 +23,7 @@ const MAX = 20;
 const CY = "#26c6e6", VI = "#9b82f0", AM = "#f2a83a"; // Logo-Verlauf (links→mitte→rechts)
 const ER = "#e2685f"; // #174 Fehlerfarbe — der Glührahmen wechselt mit, nicht nur der Text
 
-export function UsernameModal({ initial = "", firstTime = false, onLang = null, onSave, onClose }) {
+export function UsernameModal({ initial = "", firstTime = false, onLang = null, onPrivacy = null, onSave, onClose }) {
   const [name, setName] = useState(initial);
   const t = useT();
   const [locale, setLocaleId] = useLocale();
@@ -76,6 +76,14 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         </div>
         <div className="text-[11px] opacity-45 mt-2 leading-snug">
           {t("name.hint", { max: MAX })}
+          {/* #datenschutz: Genau HIER wird der Name gewählt, der später an den globalen Highscore-Einträgen
+              hängt — für alle sichtbar. Der Hinweis gehört deshalb an diese Zeile und nicht nur ins Menü:
+              die Entscheidung „welchen Namen gebe ich mir" fällt in diesem Moment, nicht später. */}
+          {onPrivacy && (
+            <button type="button" onClick={onPrivacy}
+              className="underline underline-offset-2 ml-1 font-semibold opacity-80 hover:opacity-100 transition-opacity"
+              style={{ color: VI }}>{t("privacy.link")}</button>
+          )}
         </div>
         {/* #174 Begründung zum toten Speichern-Knopf. role=alert, damit Screenreader sie
             beim Tippen ansagen — sonst bleibt der Knopf für sie grundlos unbenutzbar. */}

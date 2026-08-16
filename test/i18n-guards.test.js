@@ -130,6 +130,7 @@ describe("i18n · Katalog-Parität", () => {
     // Feedback-Melder (#396): Fremdwörter, die im Deutschen genauso benutzt werden.
     "start.feedback",         // „🐞 Feedback" — im Deutschen das etablierte Wort (§3.5)
     "feedback.eyebrow",       // „Playtest"
+    "privacy.eyebrow",        // dito — Kopfzeile des Datenschutz-Hinweises
     "feedback.kind.bug",      // „Bug"
     "feedback.kind.balance",  // „Balance"
     "feedback.name",          // „Name"
@@ -475,7 +476,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Tutorial (geführter Lauf) — von der ersten Zeile an zweisprachig gebaut.
     "src/ui/tutorial/TutorialOverlay.jsx",
     // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
-    "src/ui/ScoreMilestoneBar.jsx"];
+    "src/ui/ScoreMilestoneBar.jsx",
+    // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
+    "src/ui/PrivacyModal.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

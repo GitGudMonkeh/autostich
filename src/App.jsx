@@ -86,6 +86,7 @@ const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
 const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
 const importOptions     = () => import("./ui/OptionsModal.jsx");
 const importFeedback    = () => import("./ui/FeedbackModal.jsx");   // #396 Melder — nur im Menü
+const importPrivacy     = () => import("./ui/PrivacyModal.jsx");    // #datenschutz — selten geöffnet, deshalb lazy
 const ArchitectScreen  = lazy(() => importArchitect().then((m) => ({ default: m.ArchitectScreen })));
 const ChronikOverview  = lazy(() => importChronik().then((m) => ({ default: m.ChronikOverview })));
 const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.StatsScreen })));
@@ -95,6 +96,7 @@ const LeaderboardScreen = lazy(() => importLeaderboard().then((m) => ({ default:
 const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.UpgradeScreen })));
 const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
 const FeedbackModal    = lazy(() => importFeedback().then((m) => ({ default: m.FeedbackModal })));
+const PrivacyModal     = lazy(() => importPrivacy().then((m) => ({ default: m.PrivacyModal })));
 const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importDevSetup, importArchitect];
 
 // #372 Prewarm der In-Game-Archetyp-Karteneffekte: Chunk laden UND den teuren Erst-Bitmap-Aufbau im Leerlauf erledigen,
@@ -189,6 +191,10 @@ export function Autostich() {
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
   const [showFeedback, setShowFeedback] = useState(false);      // #396 Feedback-Melder (nur im Menü, deshalb OHNE Einfrier-Kopplung)
+  /* #datenschutz: Der Hinweis wird aus DREI Stellen geöffnet (Optionen · Startbildschirm · Namens-Dialog)
+     und liegt deshalb hier an der Wurzel statt in einem der drei. Er pausiert bewusst NICHTS: die Optionen,
+     aus denen er meist aufgeht, frieren den Lauf bereits ein — eine zweite Kopplung wäre doppelt gemoppelt. */
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
@@ -389,6 +395,10 @@ export function Autostich() {
   // schließen → im aktiven Lauf Abbruch-Rückfrage öffnen (nicht sofort verlassen) → sonst Standard-Zurück zulassen.
   // Rückgabe true = Geste verbraucht (Guard hält die App), false = normale Navigation (z. B. Menü verlassen).
   const handleBack = () => {
+    // #datenschutz: ganz oben in der Kette — der Hinweis liegt auf z-50 ÜBER allem anderen und wird aus
+    // Optionen/Namens-Dialog heraus geöffnet. Stünde er weiter unten, schlösse die Zurück-Geste das
+    // darunterliegende Overlay und ließe den Hinweis über einem leeren Bildschirm stehen.
+    if (showPrivacy) { setShowPrivacy(false); return true; }
     if (showUsername) { setShowUsername(false); return true; }
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
@@ -992,7 +1002,7 @@ export function Autostich() {
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onTutorial={startTutorialRun} tutorialDone={tutorialDone}
-            onFeedback={() => setShowFeedback(true)}
+            onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)} />
         ) : (<>
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
@@ -1152,7 +1162,8 @@ export function Autostich() {
       {/* #perf B1: gemeinsame Suspense-Grenze für die (sich gegenseitig ausschließenden) Menü-/Settings-Overlays. */}
       <Suspense fallback={<OverlayFallback />}>
         {showOptions && (
-          <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)} />
+          <OptionsModal options={options} onChange={changeOptions} onClose={() => setShowOptions(false)}
+            onPrivacy={() => setShowPrivacy(true)} />
         )}
 
         {showStats && <StatsScreen onClose={() => setShowStats(false)} onPlaySeed={(seed) => { setShowStats(false); startRun(seed); }} />}
@@ -1183,9 +1194,15 @@ export function Autostich() {
         <RunLoader images={pendingRun} onReady={() => { setPendingRun(null); beginRun(); }} />
       )}
 
+      {/* #datenschutz: eigene Suspense-Grenze AUSSERHALB der Menü-Overlay-Grenze — er wird ÜBER den Optionen
+          und über dem Namens-Dialog geöffnet, gehört also nicht in deren „schließen sich gegenseitig aus"-Gruppe. */}
+      <Suspense fallback={null}>
+        {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      </Suspense>
+
       {showUsername && (
         <UsernameModal initial={username} firstTime={!username}
-          onLang={(id) => changeOptions({ lang: id })}
+          onLang={(id) => changeOptions({ lang: id })} onPrivacy={() => setShowPrivacy(true)}
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
       {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}

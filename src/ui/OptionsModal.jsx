@@ -111,7 +111,7 @@ function JumpChip({ label, active, onClick }) {
   );
 }
 
-export function OptionsModal({ options, onChange, onClose }) {
+export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
   useEscape(onClose); // #58: Escape schließt (Backdrop unten)
   const t = useT();
   const [locale, setLocaleId] = useLocale();
@@ -190,8 +190,19 @@ export function OptionsModal({ options, onChange, onClose }) {
             <Toggle on={!!options.calmMusic} onClick={() => onChange({ calmMusic: !options.calmMusic })} />
           </Row>
           {/* #telemetrie: anonyme Lauf-Daten (Beta-Playtest) — Default an, hier abschaltbar. Bewusst mit klarer
-              Ansage, WAS gesendet wird und was nicht, statt einer nichtssagenden „Diagnosedaten"-Formel. */}
-          <Row title={t("options.telemetry.title")} desc={t("options.telemetry.desc")}>
+              Ansage, WAS gesendet wird und was nicht, statt einer nichtssagenden „Diagnosedaten"-Formel.
+              #datenschutz: Der Kurztext kann die vollständige Liste nicht tragen (Gerätekontext, Install-Kennung,
+              Bestenliste) — deshalb der Link zum Hinweis direkt HIER. Das ist der Punkt, an dem entschieden wird;
+              ein Hinweis, den man erst im Menü suchen muss, kommt für diese Entscheidung zu spät. */}
+          <Row title={t("options.telemetry.title")}
+            desc={<>
+              {t("options.telemetry.desc")}
+              {onPrivacy && (
+                <button type="button" onClick={onPrivacy}
+                  className="underline underline-offset-2 ml-1 font-semibold transition-opacity hover:opacity-100"
+                  style={{ color: "#8a7de0" }}>{t("options.telemetry.more")}</button>
+              )}
+            </>}>
             <Toggle on={options.telemetry !== false} onClick={() => onChange({ telemetry: options.telemetry === false })} />
           </Row>
           </Section>

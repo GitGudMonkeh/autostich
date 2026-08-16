@@ -1249,7 +1249,12 @@ export default {
   "options.calm.title": "Ruhiger Modus",
   "options.calm.desc": "Die Musik steigert sich nicht mit dem Punktestand — es laufen nur ruhige und treibende Stücke, keine schnellen oder maximalen.",
   "options.telemetry.title": "Anonyme Spieldaten senden",
-  "options.telemetry.desc": "Sendet nach jedem Lauf Score, gewählte Perks und Skills sowie deinen Fortschritt — anonym, ohne Namen und ohne Konto. Hilft uns beim Ausbalancieren des Spiels. Aus = es wird nichts gesendet.",
+  /* #datenschutz: Der Text nannte bis 16.08.2026 nur Score/Perks/Skills/Fortschritt — gesendet wurde
+     zusätzlich Gerätekontext (Browserkennung, Kerne, Speicher, Fenstergröße, Pixeldichte). Eine
+     Beschreibung, die weniger aufzählt als der Code sendet, ist der eigentliche Fehler. Details stehen
+     im verlinkten Hinweis (PrivacyModal), hier nur die ehrliche Kurzfassung. */
+  "options.telemetry.desc": "Sendet nach jedem Lauf Score, gewählte Perks und Skills, deinen Fortschritt sowie groben Gerätekontext (Browserkennung, Kerne, Fenstergröße) — ohne Namen und ohne Konto. Hilft uns beim Ausbalancieren des Spiels. Aus = es wird nichts gesendet.",
+  "options.telemetry.more": "Was genau gesendet wird",
 
   "options.perfHud.title": "FPS-Zähler & Report",
   "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",
@@ -1262,4 +1267,37 @@ export default {
   "options.float.mult.desc": "„Kritisch!“- und Formations-Text (Multiplikator-Boni).",
   "options.float.winlose.title": "↳ Sieg / Niederlage",
   "options.float.winlose.desc": "Gewonnen/Verloren-Text am Stich-Ausgang.",
+
+  /* ---------------------------------------------------------------------------------------------
+     DATENSCHUTZ-HINWEIS (#datenschutz, PrivacyModal.jsx)
+
+     Aufbau: erst die beiden Sender (Telemetrie · Bestenliste), dann was NICHT rausgeht, dann Empfänger
+     und Kontakt. Die Reihenfolge ist Absicht — wer den Hinweis öffnet, will zuerst wissen, was das Spiel
+     verschickt, nicht wer dahintersteht.
+
+     {ua} kommt aus UA_MAX in game/telemetry.js. Die Zahl wird NICHT abgetippt: sie steht an genau einer
+     Stelle im Code, und der Hinweis liest sie von dort. Sonst behauptet der Text irgendwann etwas
+     anderes, als der Code tut. */
+  "privacy.eyebrow": "Playtest",
+  "privacy.title": "Was Autostich sendet",
+  "privacy.intro": "Autostich läuft im Browser, ohne Konto und ohne Anmeldung. Zwei Dinge verlassen dein Gerät — beide stehen hier vollständig.",
+
+  "privacy.sec.telemetry.title": "Anonyme Spieldaten (abschaltbar)",
+  "privacy.sec.telemetry.body": "Nach jedem Lauf: Score, Durchläufe, Stiche, gewählte Perks, Skills und Gebäude, dein Fortschritt im Upgrade-Baum, gekaufte Kosmetik und der Seed. Dazu grober Gerätekontext: Browserkennung (auf {ua} Zeichen gekürzt), Prozessorkerne, Gerätespeicher, Sprache, Fenstergröße, Pixeldichte und ob das Gerät Touch hat. Plus eine zufällig gewürfelte Install-Kennung, damit mehrere Läufe desselben Geräts zusammengehören. Kein Name, keine E-Mail, keine Anmeldung. Abschalten: Optionen → „Anonyme Spieldaten senden“. Aus heißt wirklich aus — auch was noch in der Warteschlange liegt, wird gelöscht.",
+  "privacy.sec.board.title": "Bestenliste (nur beim Veröffentlichen)",
+  "privacy.sec.board.body": "Wenn du einen Lauf in die Bestenliste stellst: dein selbst gewählter Nickname, Score, Durchläufe, Stiche, Archetypen, Perks, Skills und der Seed. Der Nickname ist für alle Spieler sichtbar — wähle also nichts, worüber man dich findet. Ohne Nickname wird nichts veröffentlicht.",
+  "privacy.sec.local.title": "Was auf deinem Gerät bleibt",
+  "privacy.sec.local.body": "Profil, Lauf-Historie, Optionen und ein angefangener Lauf liegen im Speicher deines Browsers und verlassen das Gerät nicht. Es gibt keine Werbe-Cookies, keine fremden Skripte und keine Verfolgung über andere Seiten hinweg.",
+  "privacy.sec.host.title": "Wohin es geht",
+  "privacy.sec.host.body": "Beides landet in einer Supabase-Datenbank, getrennt in zwei Tabellen — eine volllaufende Telemetrie kann die Bestenliste also nicht beschädigen. Der Zugriff läuft über einen öffentlichen Schlüssel, der ausschließlich Lesen und Anlegen erlaubt.",
+  "privacy.sec.contact.title": "Wer dahintersteht",
+  "privacy.sec.contact.body": "Autostich ist ein privates Hobby-Projekt im offenen Playtest. Fragen, Widerspruch oder die Bitte, deine Daten zu löschen, gehen über den Discord des Projekts.",
+
+  "privacy.installId.label": "Deine Install-Kennung",
+  "privacy.installId.copy": "Kopieren",
+  "privacy.installId.copied": "Kopiert",
+  "privacy.installId.hint": "Nenne sie, wenn du eine Löschung deiner gesendeten Daten möchtest — ohne sie lassen sich deine Zeilen nicht finden. Sie steht nur auf diesem Gerät und sagt nichts darüber, wer du bist.",
+  "privacy.contact.discord": "Discord öffnen",
+  "privacy.updated": "Stand: 2026-08-16 · Beta-Playtest",
+  "privacy.link": "Datenschutz",
 };

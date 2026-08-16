@@ -7,6 +7,7 @@ import { GlossaryPanel } from "./Glossary.jsx";
 import { rarityLabel } from "../i18n/labels.js";      // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL, APP_VERSION } from "./version.js"; // #250: Versions-/Build-Stempel unten
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
+import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
 import { fmtNum } from "../i18n/index.js";
 import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
@@ -20,8 +21,8 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
    damit Layout/Feel im echten Build sichtbar sind. Nur auf Autostich_Test. */
 
 // Discord-Einladung (Community). Als Konstante — kein Anzeigetext, gehört nicht in den i18n-Katalog.
-const DISCORD_URL = "https://discord.gg/xMJtFPrbWg";
-const DISCORD_BLURPLE = "#5865F2"; // Discord-Markenfarbe fürs Icon
+// #datenschutz: liegt seit dem Hinweis-Overlay in ui/links.js, weil der Invite dort ein zweites Mal
+// gebraucht wird (er ist der Kontaktweg). Eine URL an zwei Stellen driftet beim nächsten Wechsel.
 
 // Logo-Farben (aus dem Wortmarken-Verlauf gesampelt) — Rollen folgen dem Logo-Verlauf links→rechts:
 const CY = "#26c6e6";   // Logo links (Cyan) — Start / Normaler Lauf
@@ -40,7 +41,7 @@ const onbRewards = (t) => [
   t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -372,6 +373,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* PWA · „Zum Startbildschirm hinzufügen" — kleiner Link zwischen Nickname und Versionsstempel (nur wenn relevant). */}
       <PwaInstall />
+
+      {/* #datenschutz — der DAUERHAFTE Einstieg zum Hinweis. Bewusst hier im Fuß und nicht als Chip neben
+          Feedback/Discord: die beiden dort sind Angebote („mach mit"), das hier ist Nachschlagewerk. Wer
+          es sucht, sucht ganz unten. Die anderen beiden Einstiege sitzen dort, wo entschieden wird —
+          in der Telemetrie-Zeile der Optionen und im Namens-Dialog beim Erststart. */}
+      {onPrivacy && (
+        <button onClick={onPrivacy} className="text-xs opacity-60 hover:opacity-100 transition-opacity px-1 underline underline-offset-2">
+          {t("privacy.link")}
+        </button>
+      )}
 
       {/* #250 Versions-/Build-Stempel unten — nach jedem Push sichtbar, ob er gelandet ist (+ Umgebung + kurze SHA). */}
       <div className="text-[10px] font-mono opacity-40 tracking-wide select-text" title={t("start.version.title")}>{VERSION_FULL}</div>

@@ -1228,7 +1228,8 @@ export default {
   "options.calm.title": "Calm mode",
   "options.calm.desc": "The music no longer escalates with your score — only calm and driving tracks play, never the fast or maximum ones.",
   "options.telemetry.title": "Send anonymous gameplay data",
-  "options.telemetry.desc": "After each run, sends your score, the perks and skills you picked and your progress — anonymously, without a name and without an account. It helps us balance the game. Off = nothing is sent.",
+  "options.telemetry.desc": "After each run, sends your score, the perks and skills you picked, your progress and rough device context (browser identification, cores, window size) — without a name and without an account. It helps us balance the game. Off = nothing is sent.",
+  "options.telemetry.more": "What exactly gets sent",
 
   "options.perfHud.title": "FPS counter & report",
   "options.perfHud.desc": "Shows FPS · p95 · jank in the top right and records performance data (⧉ report → console + clipboard). Test branch only. Off = no display and no measurement.",
@@ -1241,4 +1242,29 @@ export default {
   "options.float.mult.desc": "“CRITICAL!” and formation text (multiplier bonuses).",
   "options.float.winlose.title": "↳ Win / loss",
   "options.float.winlose.desc": "Won/lost text at the end of a trick.",
+
+  /* Privacy notice (#datenschutz). {ua} comes from UA_MAX in game/telemetry.js — the same expression as
+     the German side, never a typed-in number (guard: “both languages name the same numbers”). */
+  "privacy.eyebrow": "Playtest",
+  "privacy.title": "What Autostich sends",
+  "privacy.intro": "Autostich runs in your browser, with no account and no sign-in. Two things leave your device — both are listed here in full.",
+
+  "privacy.sec.telemetry.title": "Anonymous gameplay data (can be turned off)",
+  "privacy.sec.telemetry.body": "After each run: score, cycles, tricks, the perks, skills and buildings you picked, your progress in the upgrade tree, cosmetics you own and the seed. Plus rough device context: browser identification (trimmed to {ua} characters), processor cores, device memory, language, window size, pixel density and whether the device has touch. And a randomly rolled install ID, so several runs from the same device belong together. No name, no email, no sign-in. To turn it off: Options → “Send anonymous gameplay data”. Off really means off — anything still queued is deleted too.",
+  "privacy.sec.board.title": "Leaderboard (only when you publish)",
+  "privacy.sec.board.body": "When you put a run on the leaderboard: the nickname you chose, score, cycles, tricks, archetypes, perks, skills and the seed. The nickname is visible to every player — so pick something nobody can find you by. Without a nickname nothing is published.",
+  "privacy.sec.local.title": "What stays on your device",
+  "privacy.sec.local.body": "Your profile, run history, options and any run in progress live in your browser's storage and never leave the device. There are no advertising cookies, no third-party scripts and no tracking across other sites.",
+  "privacy.sec.host.title": "Where it goes",
+  "privacy.sec.host.body": "Both end up in a Supabase database, split across two tables — so telemetry filling up can never damage the leaderboard. Access runs through a public key that only allows reading and inserting.",
+  "privacy.sec.contact.title": "Who is behind it",
+  "privacy.sec.contact.body": "Autostich is a private hobby project in open playtest. Questions, objections or a request to delete your data go through the project's Discord.",
+
+  "privacy.installId.label": "Your install ID",
+  "privacy.installId.copy": "Copy",
+  "privacy.installId.copied": "Copied",
+  "privacy.installId.hint": "Quote it if you want the data you sent deleted — without it your rows cannot be found. It exists only on this device and says nothing about who you are.",
+  "privacy.contact.discord": "Open Discord",
+  "privacy.updated": "As of 2026-08-16 · beta playtest",
+  "privacy.link": "Privacy",
 };

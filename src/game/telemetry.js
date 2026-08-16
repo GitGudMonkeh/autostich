@@ -67,12 +67,18 @@ export function installId() {
 const SESSION_ID = uuid();
 
 /* Gerätekontext — grob und zweckgebunden: erklärt Perf-Beschwerden und zeigt den Mobile-Anteil.
-   Der User-Agent wird gekappt; er dient der Bug-Zuordnung, nicht dem Fingerprinting. */
+   Der User-Agent wird gekappt; er dient der Bug-Zuordnung, nicht dem Fingerprinting.
+
+   #datenschutz: UA_MAX ist exportiert, weil der Datenschutz-Hinweis die Zahl NENNT. Stünde sie dort als
+   Text, liefe sie beim nächsten Anfassen dieser Zeile still weg — und ein Datenschutz-Hinweis, der etwas
+   anderes behauptet als der Code tut, ist schlimmer als keiner. Der i18n-Wächter „beide Sprachen nennen
+   dieselben Zahlen" prüft nur DE↔EN, nicht Text↔Code; diese Naht muss der Export halten. */
+export const UA_MAX = 180;
 function clientInfo(options) {
   const info = { fx: (options && options.reducedFx) || null };
   try {
     if (typeof navigator !== "undefined") {
-      info.ua = String(navigator.userAgent || "").slice(0, 180);
+      info.ua = String(navigator.userAgent || "").slice(0, UA_MAX);
       if (navigator.hardwareConcurrency) info.cpu = navigator.hardwareConcurrency;
       if (navigator.deviceMemory) info.mem = navigator.deviceMemory;
       if (navigator.language) info.lang = String(navigator.language).slice(0, 10);
