@@ -204,6 +204,15 @@ export const THEME_DEFS = {
       { roman: "II",  name: "Erwacht",    deckId: "deck_hirsch2", bfId: "bf_hirsch2", a1: "#6f8cff", a2: "#c4d4ff" },
       { roman: "III", name: "Sternenlauf", deckId: "deck_hirsch3", bfId: "bf_hirsch3", a1: "#89a4ff", a2: "#dbe6ff" },
     ] },
+  // #tiered Thron — Ranglisten-Stufen-Deck über gewonnene Wochen (1./2./3. Platz 1 im Meister-Wochen-Board).
+  // Burgunder Neon auf Schwarz; die Stufen werden heller und greller, bis die weiß-heiße Krone übernimmt.
+  thron: { id: "thron", name: "Thron", emblem: "👑", kind: "cond", a1: "#8f0f2a", a2: "#ff3b5c",
+    deckId: "deck_thron1", bfId: "bf_thron1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Anwärter",    deckId: "deck_thron1", bfId: "bf_thron1", a1: "#8f0f2a", a2: "#ff3b5c" },
+      { roman: "II",  name: "Souverän",    deckId: "deck_thron2", bfId: "bf_thron2", a1: "#b0122f", a2: "#ff5f7a" },
+      { roman: "III", name: "Unsterblich", deckId: "deck_thron3", bfId: "bf_thron3", a1: "#d4143a", a2: "#ff9fb0" },
+    ] },
   sparfuchs:  { id: "sparfuchs",  name: packName("deck_sparfuchs"),  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
 

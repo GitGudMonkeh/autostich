@@ -135,6 +135,12 @@ import hirsch2Front from "../assets/cards/decks_player/deck_hirsch2/front.webp";
 import hirsch2Back  from "../assets/cards/decks_player/deck_hirsch2/back.webp";
 import hirsch3Front from "../assets/cards/decks_player/deck_hirsch3/front.webp";
 import hirsch3Back  from "../assets/cards/decks_player/deck_hirsch3/back.webp";
+import thron1Front from "../assets/cards/decks_player/deck_thron1/front.webp"; // #tiered Thron (Ranglisten-Serie)
+import thron1Back  from "../assets/cards/decks_player/deck_thron1/back.webp";
+import thron2Front from "../assets/cards/decks_player/deck_thron2/front.webp";
+import thron2Back  from "../assets/cards/decks_player/deck_thron2/back.webp";
+import thron3Front from "../assets/cards/decks_player/deck_thron3/front.webp";
+import thron3Back  from "../assets/cards/decks_player/deck_thron3/back.webp";
 // #deck40 Gaia · Glazius · Voltaris · Pyrros (je 40 DP)
 import gaiaFront     from "../assets/cards/decks_player/deck_gaia/front.webp";
 import gaiaBack      from "../assets/cards/decks_player/deck_gaia/back.webp";
@@ -164,6 +170,12 @@ import bfHirsch2Desktop from "../assets/battlefields/bf_hirsch2/desktop.jpg";
 import bfHirsch2Mobile  from "../assets/battlefields/bf_hirsch2/mobile.jpg";
 import bfHirsch3Desktop from "../assets/battlefields/bf_hirsch3/desktop.jpg";
 import bfHirsch3Mobile  from "../assets/battlefields/bf_hirsch3/mobile.jpg";
+import bfThron1Desktop from "../assets/battlefields/bf_thron1/desktop.jpg"; // #tiered Thron
+import bfThron1Mobile  from "../assets/battlefields/bf_thron1/mobile.jpg";
+import bfThron2Desktop from "../assets/battlefields/bf_thron2/desktop.jpg";
+import bfThron2Mobile  from "../assets/battlefields/bf_thron2/mobile.jpg";
+import bfThron3Desktop from "../assets/battlefields/bf_thron3/desktop.jpg";
+import bfThron3Mobile  from "../assets/battlefields/bf_thron3/mobile.jpg";
 import bfGaiaDesktop     from "../assets/battlefields/bf_gaia/desktop.jpg";
 import bfGaiaMobile      from "../assets/battlefields/bf_gaia/mobile.jpg";
 import bfGlaziusDesktop  from "../assets/battlefields/bf_glazius/desktop.jpg";
@@ -215,6 +227,9 @@ export const DECK_ASSETS = {
   deck_hirsch1: { front: hirsch1Front, back: hirsch1Back },
   deck_hirsch2: { front: hirsch2Front, back: hirsch2Back },
   deck_hirsch3: { front: hirsch3Front, back: hirsch3Back },
+  deck_thron1: { front: thron1Front, back: thron1Back },
+  deck_thron2: { front: thron2Front, back: thron2Back },
+  deck_thron3: { front: thron3Front, back: thron3Back },
   deck_gaia:     { front: gaiaFront,     back: gaiaBack },
   deck_glazius:  { front: glaziusFront,  back: glaziusBack },
   deck_voltaris: { front: voltarisFront, back: voltarisBack },
@@ -264,6 +279,9 @@ export const BATTLEFIELD_ASSETS = {
   bf_hirsch1: { desktop: bfHirsch1Desktop, mobile: bfHirsch1Mobile },
   bf_hirsch2: { desktop: bfHirsch2Desktop, mobile: bfHirsch2Mobile },
   bf_hirsch3: { desktop: bfHirsch3Desktop, mobile: bfHirsch3Mobile },
+  bf_thron1: { desktop: bfThron1Desktop, mobile: bfThron1Mobile },
+  bf_thron2: { desktop: bfThron2Desktop, mobile: bfThron2Mobile },
+  bf_thron3: { desktop: bfThron3Desktop, mobile: bfThron3Mobile },
   bf_gaia:     { desktop: bfGaiaDesktop,     mobile: bfGaiaMobile },
   bf_glazius:  { desktop: bfGlaziusDesktop,  mobile: bfGlaziusMobile },
   bf_voltaris: { desktop: bfVoltarisDesktop, mobile: bfVoltarisMobile },

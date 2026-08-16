@@ -108,7 +108,7 @@ describe("packs — Zustände & Besitz", () => {
     for (const id of ["neon", "tank", "mega", "mond"]) expect(THEME_DEFS[id]).toBeUndefined();
   });
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
-    const challenge = ["gottgleich", "peacock", "titan", "hirsch", "sparfuchs",
+    const challenge = ["gottgleich", "peacock", "titan", "hirsch", "thron", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
     for (const id of challenge) {

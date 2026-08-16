@@ -53,6 +53,9 @@ export default {
   "cosmetic.deck_hirsch1.name": "Stag · Constellation",
   "cosmetic.deck_hirsch2.name": "Stag · Awakened",
   "cosmetic.deck_hirsch3.name": "Stag · Starfall",
+  "cosmetic.deck_thron1.name": "Throne · Contender",
+  "cosmetic.deck_thron2.name": "Throne · Sovereign",
+  "cosmetic.deck_thron3.name": "Throne · Immortal",
   // #deck40 — Eigennamen, in beiden Sprachen gleich
   "cosmetic.deck_gaia.name": "Gaia",
   "cosmetic.deck_glazius.name": "Glazius",
