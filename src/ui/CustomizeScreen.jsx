@@ -788,9 +788,9 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // #379 Showcase-Loop verlangsamen (speed<1), damit die Loop-Periode ≥ Soundlänge ist → Ton bei JEDEM Loop synchron.
   //   Periode = Basis-Loop-Länge (LIFE/TOTAL + TAIL) / speed. Ziel: ≥ ~2,4 s (fx_godlike 1,8 s); Supernova ≈ Swell (~11 s).
   if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} speed={0.45} />; // Basis 1,15 s → ~2,6 s
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} speed={0.48} />; // Basis 1,2 s → ~2,5 s
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} speed={0.85} />; // Basis 2,11 s → ~2,5 s
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} speed={0.72} />; // Basis 1,8 s → ~2,5 s
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} sfx="fx_laserfan" speed={0.48} />; // Basis 1,2 s → ~2,5 s · eigener Swell
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} sfx="fx_prisma" speed={0.85} />; // Basis 2,11 s → ~2,5 s · eigener Swell
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} sfx="fx_holocube" speed={0.72} />; // Basis 1,8 s → ~2,5 s · eigener Swell
   if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);

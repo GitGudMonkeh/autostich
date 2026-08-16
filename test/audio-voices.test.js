@@ -26,7 +26,8 @@ function stealOrder(voices, fresh, cap) {
 
 describe("audio · Stimmen-Deckel", () => {
   it("der Swell ist in audio.js wirklich geschützt", () => {
-    expect(SRC).toMatch(/SFX_KEEP\s*=\s*new Set\(\["fx_supernova"\]\)/);
+    // fx_supernova MUSS geschützt sein; weitere ~11-s-Swells (z. B. fx_holocube) dürfen dazukommen.
+    expect(SRC).toMatch(/SFX_KEEP\s*=\s*new Set\(\[[^\]]*"fx_supernova"[^\]]*\]\)/);
     // Die Auswahl darf nicht wieder auf „einfach die vorderste" zurückfallen.
     expect(SRC).not.toMatch(/while \(voices\.length > SFX_MAX_VOICES\) \{\s*const old = voices\.shift\(\)/);
   });

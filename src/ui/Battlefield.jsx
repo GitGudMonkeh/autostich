@@ -152,6 +152,17 @@ const FLOAT_ZONES = {
    die Ansage prüfte den Stich-Score NACH dem Krit, der Effekt den Wert DAVOR. Ein Sieg, der die
    Schwelle erst durch den Krit-Multiplikator reißt, zeigte deshalb „GOTTGLEICH" ohne jeden Effekt. */
 const GOTT_FX_MIN = 500000;
+// Gottgleich-Swell je Prunk-Effekt: der epische Punch (fx_godlike) bleibt gemeinsam, der darübergelegte Swell trägt
+// jetzt den Klang des GEWÄHLTEN Prunks. Ohne eigenen Sound (sonnenPuls/gottStandard) bleibt es beim generischen
+// Supernova-Swell (Alt-Verhalten). delay = Versatz nach dem Punch (Supernova/Holo-Würfel bauen langsam auf → 0,85 s
+// wie bisher; die kürzeren laufen sofort mit). [TUNING]
+const GOTT_SWELL = {
+  supernova:     { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }, // abgeleitetes Timing (in-game = 0)
+  holoCube:      { snd: "fx_holocube",  gain: 1.0, delay: 0 },
+  laserFaecher:  { snd: "fx_laserfan",  gain: 1.0, delay: 0 },
+  prismaKaskade: { snd: "fx_prisma",    gain: 1.0, delay: 0 },
+};
+const GOTT_SWELL_DEFAULT = { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }; // sonnenPuls / gottStandard: generischer Swell
 const BIG_SCORE_TIERS = [
   { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
   { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
@@ -1134,10 +1145,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
     if (toShow.epic) {
       audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      // Swell darüber, so verzögert, dass sein Impuls auf dem Detonationsblitz des Supernova-Prunks
-      // sitzt (Tempo 1 → ~0,3 s). Abgeleitet statt getunt: supernovaTiming.js ist die eine Quelle,
-      // die auch der Werkstatt-Showcase benutzt — vorher liefen die beiden Stellen auseinander.
-      audio.play("fx_supernova", { gain: 1.0, delay: supernovaSwellDelay(1) });
+      // Swell darüber — je gewähltem Prunk-Effekt (eigener Klang für Laser-Fächer/Holo-Würfel/Prisma-Kaskade),
+      // sonst der generische Supernova-Swell. Für Supernova das abgeleitete Timing (supernovaTiming.js, EINE Quelle
+      // mit dem Showcase), damit der Impuls auf dem Detonationsblitz sitzt; die übrigen laufen mit ihrem festen Versatz.
+      const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
+      audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
+
     }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
