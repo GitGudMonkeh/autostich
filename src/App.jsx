@@ -1146,7 +1146,7 @@ export function Autostich() {
             {/* #362 Aktionsleiste OBEN: primär (Beenden & speichern) obenauf, darunter Weiterspielen/Beenden. */}
             <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
               <div className="flex flex-col gap-2 w-full">
-                <ActionButton kind="primary" onClick={suspendRun}>Beenden &amp; speichern</ActionButton>
+                <ActionButton kind="primary" onClick={suspendRun}>{t("app.abort.save")}</ActionButton>
                 <div className="flex gap-2">
                   <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>{t("app.keepPlaying")}</ActionButton>
                   <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>{t("app.end")}</ActionButton>

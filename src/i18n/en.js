@@ -152,6 +152,8 @@ export default {
   "gameover.menu": "Menu",
   "gameover.newRun": "New run",
   "gameover.eyebrow": "Run over",
+  "gameover.record.new": "New record",
+  "gameover.record.from": "from record",
   "gameover.perTrick.title": "Average score per trick",
   "gameover.perTrick": "Ø {score}/trick",
   "gameover.cycles_one": "{count} cycle",
@@ -533,6 +535,7 @@ export default {
   "zins.wins": "Wins this cycle:",
   "zins.cleared": "· hurdle cleared",
   "zins.crash": "· otherwise a crash",
+  "zins.paid": "Total paid out:",
 
   /* ---- Card detail (CardDetail) ---- */
   "carddetail.empty": "Tap a card for role & modifiers …",
@@ -773,6 +776,7 @@ export default {
   "board.countdown": "{d}d {h}h {m}m {s}s",
   "board.resetIn": "Reset in {time}",
   "board.weekSeed": "Seed of the week",
+  "board.weekLabel": "Week {week} · {year}",
   "board.play": "▶ Play",
   "board.locked": "🔒 Unlocks once all decks are unlocked + ≥1 run finished in each · viewing is always open",
   "board.weekMods": "This week’s modifiers",
@@ -789,6 +793,7 @@ export default {
   /* ---- Abort / restart a run (App) ---- */
   "app.abort.title": "Pause or end the run?",
   "app.abort.help": "End & save remembers the run — you can continue it later from the menu. End scores it and shows the end screen.",
+  "app.abort.save": "End & save",
   "app.keepPlaying": "Keep playing",
   "app.end": "End",
   "app.restart.title": "Really restart?",

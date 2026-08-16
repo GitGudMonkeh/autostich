@@ -327,17 +327,17 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   <KeywordGlossary tokens={groupKws} />
                 </div>
               )}
-              {/* `gridAutoRows: 1fr` zieht alle Angebots-Karten auf dieselbe Höhe. Vorher hing sie am
-                  Beschreibungstext, und die Liste wirkte zerrissen (Playtest, gleiche Änderung in
-                  LegendarySelect). Content-agnostisch: ein längerer Skilltext hebt die ganze Zeile. */}
-              <div className="grid sm:grid-cols-2 gap-2" style={{ gridAutoRows: "1fr" }}>
+              {/* Karten hängen an ihrer eigenen Inhaltshöhe (`items-start`, kein `gridAutoRows:1fr`/`h-full`).
+                  Vorher zog `1fr` alle Karten auf die Höhe der GRÖSSTEN — kurze Skills bekamen viel Leerraum
+                  darunter (Playtest-Beschwerde). Jetzt sitzt jede Karte eng an ihrem Text. */}
+              <div className="grid sm:grid-cols-2 gap-2 items-start">
                 {curG.ids.map((id) => {
                   const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
                   return (
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      className={`text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ background: sel ? "#2a2740" : "#20202a",
                                border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
                                boxShadow: s.legendary ? undefined : (sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33`) }}>

@@ -130,7 +130,7 @@ export function initialState(rng = Math.random, seed = null) {
     formationEnergy: 0, formationSwaps: [], // Formationsphase (V2 §22.8): Energie + Undo-Historie der aktuellen Phase
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     l4Boost: {}, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsCapital: 0, zinsRate: C.ZINS_RATE_START, cycleWins: 0, cycleLosses: 0, cycleBestTrick: 0, sammlerTypes: [], vabanquePaid: 0, cycleOpenScore: 0, cycleScoreSum: 0, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
+    zinsCapital: 0, zinsRate: C.ZINS_RATE_START, zinsPaidTotal: 0, cycleWins: 0, cycleLosses: 0, cycleBestTrick: 0, sammlerTypes: [], vabanquePaid: 0, cycleOpenScore: 0, cycleScoreSum: 0, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
@@ -751,7 +751,10 @@ export function reducer(state, action) {
       // aus dem „Reroll · 2. Perk-Phase"-Knoten), erst danach der normale Perk-Pool — so bleibt der Zusatz-Reroll auf diese Phase begrenzt.
       const inLegPerkPhase = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE;
       const perk2 = state.rerollsPerk2 || 0;
-      const usePerk2 = inLegPerkPhase && perk2 > 0;
+      // Legendär-Perk-Phase zieht AUSSCHLIESSLICH ihren dedizierten Token (rerollsPerk2, aus dem
+      // „Reroll · 2. Perk-Phase"-Knoten) — KEIN Rückgriff auf den allgemeinen Perk-Pool. Ohne Upgrade
+      // gibt es dort also 0 Rerolls, mit Upgrade genau 1 (statt fälschlich bis zu 3 aus rerollsPerk).
+      const usePerk2 = inLegPerkPhase;
       const tokens = usePerk2 ? perk2 : (state.rerollsPerk || 0);     // #263: eigener Perk-Pool (+ #369 Phasen-Token)
       if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)

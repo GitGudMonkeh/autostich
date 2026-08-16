@@ -1,6 +1,7 @@
 import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { hasCritFamily } from "../game/families.js";
+import { perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../game/constants.js"; // Legendär-Perk-Phase erkennen → eigener Reroll-Pool
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
 import { familyDef, perkCat, perkDef, rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsname zur Anzeigezeit
 import { t as tr, fmtNum } from "../i18n/index.js"; // tr = Alias: `t` ist hier lokal die Stufe
@@ -41,8 +42,10 @@ function offerView(entry, familyTiers = {}) {
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
-  // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
-  const rerollTokens = state.rerollsPerk || 0;
+  // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
+  // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
+  const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
+  const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   const canReroll = !!onReroll && rerollTokens > 0;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;

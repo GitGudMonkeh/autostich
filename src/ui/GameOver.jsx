@@ -137,11 +137,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
               <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "#8a7de0", background: "#8a7de01f", border: "1px solid #8a7de055" }}>
-                ★ Neuer Rekord{deltaPct != null && deltaPct > 0 ? ` · +${deltaPct} %` : ""}
+                ★ {t("gameover.record.new")}{deltaPct != null && deltaPct > 0 ? ` · +${deltaPct} %` : ""}
               </span>
             ) : deltaPct != null ? (
               <span className="text-sm px-2.5 py-0.5 rounded-full" style={{ color: "#9a9aa6", background: "#ffffff0d", border: "1px solid #33333e" }}>
-                {deltaPct >= 0 ? "+" : ""}{deltaPct} % zum Rekord
+                {deltaPct >= 0 ? "+" : ""}{deltaPct} % {t("gameover.record.from")}
               </span>
             ) : null}
           </div>

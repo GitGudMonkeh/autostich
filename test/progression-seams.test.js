@@ -111,19 +111,28 @@ describe("Reroll-Pools (#369 §6)", () => {
     expect(start({ profile: withNodes([...RARE, "perk2Leg", "perk2Reroll"]) }).rerollsPerk2).toBe(1);
     expect(start({ profile: emptyProfile(0) }).rerollsPerk2).toBe(0);
   });
-  it("REROLL_PERK: in der 2. Perk-Phase zieht zuerst rerollsPerk2, danach der Perk-Pool", () => {
+  it("REROLL_PERK: in der 2. Perk-Phase zählt NUR rerollsPerk2 (kein Rückgriff auf den allgemeinen Perk-Pool)", () => {
     // cycle so wählen, dass perkPhaseAt(DECISION_SCHEDULE, cycle) === LEG_PERK2_PHASE.
     const base = start({ profile: withNodes([...RARE, "perk2Leg", "perk2Reroll"]) });
-    // Suche einen cycle mit der 2. Perk-Phase im Standard-Plan.
     let cyc = -1;
     for (let c = 0; c < DECISION_SCHEDULE.length; c++) { if (perkPhaseAt(DECISION_SCHEDULE, c) === LEG_PERK2_PHASE) { cyc = c; break; } }
     expect(cyc).toBeGreaterThanOrEqual(0);
     const s0 = { ...base, phase: "levelup", cycle: cyc, offer: [{ tier: 1, familyId: "X" }], offerRerolls: 0, rerollsUsed: 0, rerollsPerk: 2, rerollsPerk2: 1, seed: 7 };
     const s1 = reducer(s0, { type: "REROLL_PERK", rng: Math.random });
-    expect(s1.rerollsPerk2).toBe(0);   // Phasen-Token zuerst
-    expect(s1.rerollsPerk).toBe(2);    // Perk-Pool unangetastet
+    expect(s1.rerollsPerk2).toBe(0);   // der EINE Phasen-Token wird verbraucht
+    expect(s1.rerollsPerk).toBe(2);    // allgemeiner Perk-Pool bleibt unangetastet
     const s2 = reducer(s1, { type: "REROLL_PERK", rng: Math.random });
-    expect(s2.rerollsPerk).toBe(1);    // jetzt der Perk-Pool
+    expect(s2).toBe(s1);               // kein Token mehr → No-op, KEIN Rückgriff auf rerollsPerk
+    expect(s2.rerollsPerk).toBe(2);
+  });
+  it("REROLL_PERK: 2. Perk-Phase OHNE perk2Reroll-Upgrade = 0 Rerolls (kein Rückgriff auf den Perk-Pool)", () => {
+    const base = start({ profile: withNodes([...RARE, "perk2Leg"]) }); // KEIN perk2Reroll gekauft
+    let cyc = -1;
+    for (let c = 0; c < DECISION_SCHEDULE.length; c++) { if (perkPhaseAt(DECISION_SCHEDULE, c) === LEG_PERK2_PHASE) { cyc = c; break; } }
+    const s0 = { ...base, phase: "levelup", cycle: cyc, offer: [{ tier: 1, familyId: "X" }], offerRerolls: 0, rerollsUsed: 0, rerollsPerk: 2, rerollsPerk2: 0, seed: 7 };
+    const s1 = reducer(s0, { type: "REROLL_PERK", rng: Math.random });
+    expect(s1).toBe(s0);               // No-op: kein Phasen-Token, kein Fallback auf rerollsPerk
+    expect(s1.rerollsPerk).toBe(2);
   });
 });
 

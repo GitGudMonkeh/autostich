@@ -9,6 +9,18 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356 deck-getönter Struktur-
 
 export const MOD_POS = "#5fce86", MOD_NEG = "#ef6f68";
 
+// Gerollte Lauf-Mods (aus pickWeekMods, ROHE deutsche name/text) → i18n-Anzeige über die id. Der rohe
+// Mod trägt den seed-gerollten Wert `mag`; der wird in die übersetzte Beschreibung eingesetzt. Ohne das
+// zeigten Rangliste/Battlefield-Panel die deutschen Namen/Texte, auch wenn die App auf EN steht.
+export function pickedDisplayMods(picked) {
+  const cat = Object.fromEntries(weekModList().map((m) => [m.id, m]));
+  return (picked || []).map((p) => {
+    const w = cat[p.id];
+    return { id: p.id, sign: p.sign, effect: p.effect, pair: p.pair,
+             name: w ? w.name : p.name, text: w ? w.desc(p.mag) : p.text };
+  });
+}
+
 // Katalog (Regeln-Reiter) als Anzeige-Mods: text aus desc(min) + Range-/Paar-Hinweis.
 export function catalogDisplayMods() {
   return weekModList().map((m) => ({

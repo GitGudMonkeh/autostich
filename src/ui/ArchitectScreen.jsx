@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
-  familyDef, shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
+  shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
   rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
+import { familyDef } from "../i18n/labels.js"; // #sprache: Gebäudenamen zur Anzeigezeit (i18n) statt roher DE-Namen
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige

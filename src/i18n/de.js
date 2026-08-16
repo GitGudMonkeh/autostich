@@ -150,6 +150,8 @@ export default {
   "gameover.menu": "Menü",
   "gameover.newRun": "Neuer Lauf",
   "gameover.eyebrow": "Lauf beendet",
+  "gameover.record.new": "Neuer Rekord",
+  "gameover.record.from": "zum Rekord",
   "gameover.perTrick.title": "Durchschnittlicher Score je Stich",
   "gameover.perTrick": "Ø {score}/Stich",
   "gameover.cycles_one": "{count} Durchlauf",
@@ -542,6 +544,7 @@ export default {
   "zins.wins": "Siege dieser Durchlauf:",
   "zins.cleared": "· Hürde genommen",
   "zins.crash": "· sonst Crash",
+  "zins.paid": "Bisher ausgezahlt:",
 
   /* ---- Karten-Detail (CardDetail) ---- */
   "carddetail.empty": "Karte antippen für Rolle & Modifikatoren …",
@@ -784,6 +787,7 @@ export default {
   "board.countdown": "{d}t {h}h {m}m {s}s",
   "board.resetIn": "Reset in {time}",
   "board.weekSeed": "Seed der Woche",
+  "board.weekLabel": "Woche {week} · {year}",
   "board.play": "▶ Spielen",
   "board.locked": "🔒 Frei, sobald alle Decks freigeschaltet sind + je ≥1 Lauf beendet · ansehen jederzeit",
   "board.weekMods": "Modifikatoren dieser Woche",
@@ -800,6 +804,7 @@ export default {
   /* ---- Lauf abbrechen / neustarten (App) ---- */
   "app.abort.title": "Lauf pausieren oder beenden?",
   "app.abort.help": "Beenden & speichern merkt sich den Lauf — du kannst ihn später im Menü fortsetzen. Beenden wertet ihn und zeigt den Endscreen.",
+  "app.abort.save": "Beenden & speichern",
   "app.keepPlaying": "Weiterspielen",
   "app.end": "Beenden",
   "app.restart.title": "Wirklich neustarten?",

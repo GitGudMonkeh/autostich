@@ -113,7 +113,7 @@ export function resolveTrick(state, rng) {
     formationEnergy = 0, formationSwaps = [], // Formationsphase (V2 §22.8)
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
-    zinsCapital = 0, zinsRate = C.ZINS_RATE_START, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
+    zinsCapital = 0, zinsRate = C.ZINS_RATE_START, zinsPaidTotal = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz/kumulierte Auszahlung) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
     cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
     richtfestBonus = 0, // Gebäude-Legendäres Richtfest: Auszahlung des letzten Durchlaufs (reine Telemetrie, kein Stapel mehr)
     cycleScoreSum = 0,  // Summe der Stich-Erträge DIESES Durchlaufs — Bezugsgröße der Richtfest-Dividende
@@ -1241,7 +1241,9 @@ export function resolveTrick(state, rng) {
     if (ownsFlag(perks, "zinseszins")) {
       const hurdle = zinsHurdle(cycleLen);
       if (cycleWins >= hurdle) {
-        cycleEndScore += zinsCapital * zinsRate;
+        const zinsPayout = zinsCapital * zinsRate;
+        cycleEndScore += zinsPayout;
+        zinsPaidTotal += zinsPayout;                 // #zins: kumulierte Auszahlung über den Lauf (nur Anzeige, fließt nicht ins Scoring zurück)
         zinsRate = Math.min(zinsRate + C.ZINS_RATE_STEP, C.ZINS_RATE_MAX);
       } else {
         zinsCapital *= C.ZINS_CRASH_KEEP;
@@ -1491,7 +1493,7 @@ export function resolveTrick(state, rng) {
     formationEnergy: newFormationEnergy, formationSwaps: newFormationSwaps, // Formationsphase (V2 §22.8)
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
-    zinsCapital, zinsRate, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
+    zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase

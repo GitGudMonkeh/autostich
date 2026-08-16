@@ -15,7 +15,7 @@ export const zinsHurdle = (cycleLen = C.TRICKS_PER_CYCLE) => Math.ceil(cycleLen 
 export function zinsReadout(state) {
   if (!state || !(state.perks || []).some((id) => PERK_DEFS[id]?.zinseszins)) return null;
   return { capital: state.zinsCapital || 0, rate: state.zinsRate ?? C.ZINS_RATE_START,
-           wins: state.cycleWins || 0, hurdle: zinsHurdle() };
+           paidTotal: state.zinsPaidTotal || 0, wins: state.cycleWins || 0, hurdle: zinsHurdle() };
 }
 
 /* ============================================================

@@ -37,6 +37,10 @@ export function ZinsReadout({ zins, color = "#5ab87a" }) {
         <b style={{ color }}>+{fmtNum(Math.round(zins.capital * zins.rate))}</b>
       </div>
       <div className="flex items-center gap-1.5">
+        <span className="opacity-55">{t("zins.paid")}</span>
+        <b style={{ color }}>{fmtNum(Math.round(zins.paidTotal || 0))}</b>
+      </div>
+      <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.wins")}</span>
         <b style={{ color: genommen ? "#4ade80" : "#e0605a" }}>{zins.wins} / {zins.hurdle}</b>
         <span className="opacity-55">{t(genommen ? "zins.cleared" : "zins.crash")}</span>

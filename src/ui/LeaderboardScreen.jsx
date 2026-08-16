@@ -14,7 +14,7 @@ import { formatSeed } from "../game/rng.js";
 import { rankedUnlocked } from "../game/progression.js";
 import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
 import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
-import { WeekModChips, catalogDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
+import { WeekModChips, catalogDisplayMods, pickedDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
 import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Reiter)
 
@@ -174,7 +174,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="flex items-baseline justify-between gap-2 mb-2.5">
-                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{week.label}</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
                     <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
@@ -196,7 +196,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   </div>
                   {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
                   <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
-                  <div className="mb-3"><WeekModChips mods={weekMods} /></div>
+                  <div className="mb-3"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
               ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
