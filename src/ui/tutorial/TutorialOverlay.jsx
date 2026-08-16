@@ -55,7 +55,10 @@ function useAnchorRect(anchor) {
        dann sauber in die Lücke oberhalb des Panels (kein Überlappen mehr). */
     const el0 = document.querySelector(`[data-tut="${anchor}"]`);
     if (el0 && el0.scrollIntoView) {
-      const tall = el0.getBoundingClientRect().height > window.innerHeight * 0.45;
+      // Schwelle bewusst NIEDRIG (0,3): schon mittelgroße Panels (Brett ~0,38 · Bauplan-Grid ~0,35) lassen
+      // beim Zentrieren zu wenig Platz für die ~300px-Karte → sie landete im fill-Modus GANZ OBEN und das
+      // Panel dazwischen (Meilensteine/„Was baust du") wurde angeschnitten. Ab 0,3 → reservierter Platz.
+      const tall = el0.getBoundingClientRect().height > window.innerHeight * 0.3;
       if (tall) {
         const reserve = Math.round(Math.max(330, window.innerHeight * 0.46));
         const prevSMT = el0.style.scrollMarginTop;
