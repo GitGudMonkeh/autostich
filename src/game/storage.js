@@ -109,6 +109,9 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   // #303 Challenge-Decks — sticky Freischalt-Flags (einmal true → bleibt): Gottgleich (erstmals GOTTGLEICH-Stich),
   // Sparfuchs (Meisterrang-Wochenlauf ohne Reroll), Meister (Platz 1 einer Wochen-Rangliste — Champion-Board, Trigger folgt).
   hadGottgleichRun: false, hadMeisterNoRerollRun: false, hadChampionWeek: false,
+  // Gewonnene Wochen-Ranglisten (Platz 1 im Meister-Wochen-Board), als ZÄHLER — die Ranglisten-Decks sind
+  // gestuft (1./2./3. Wochensieg). `hadChampionWeek` bleibt als Alt-Flag erhalten und wird mitgeführt.
+  championWeeks: 0,
   // Progression/Upgrades (docs §1/§4/§6): SP-Guthaben + ausgegeben (Respec/Anzeige), gekaufte Baum-Knoten
   // ({[id]: level}), weiteste Onboarding-Stufe (0..6) und Zähler der SP-Läufe (Treue-Drip-Basis).
   // #316: onboarding startet direkt bei ONBOARDING_LINKS (6/6, „fertig") → keine Onboarding-Phase mehr, alle
@@ -174,6 +177,9 @@ export function migrateProfile(p) {
     if (typeof out.hadGottgleichRun !== "boolean") out.hadGottgleichRun = false;
     if (typeof out.hadMeisterNoRerollRun !== "boolean") out.hadMeisterNoRerollRun = false;
     if (typeof out.hadChampionWeek !== "boolean") out.hadChampionWeek = false;
+    // Zähler der Wochensiege aus dem Alt-Flag seeden: ein Profil, das den Champion-Week-Flag trägt, hat
+    // mindestens einen Sieg — sonst verlöre es beim Umstieg auf die gestuften Ranglisten-Decks die 1. Stufe.
+    if (!Number.isFinite(Number(out.championWeeks))) out.championWeeks = out.hadChampionWeek ? 1 : 0;
     v = 5;
   }
   if (v < 6) {
@@ -440,10 +446,12 @@ export function recordRun(record) {
     lastRankedWeekSeed: firstRankedThisWeek ? rankedSeed : (p.lastRankedWeekSeed ?? null),
     hadAllArchetypesRun: !!p.hadAllArchetypesRun || isAllArchetypesRun(record),
     // #303 Challenge-Decks — sticky (einmal true → bleibt). Gottgleich- & Sparfuchs-Flags werden hier gesetzt;
-    // hadChampionWeek bleibt vorerst nur erhalten (der Trigger folgt mit dem Champion-Board, s. #299/#303).
+    // die Wochensiege NICHT: ob eine Woche gewonnen ist, steht erst nach ihrem Ablauf fest und kommt aus dem
+    // Board (recordChampionWeeks, aufgerufen aus dem Champions-Archiv). Hier nur unverändert weitertragen.
     hadGottgleichRun: !!p.hadGottgleichRun || isGottgleichRun(record),
     hadMeisterNoRerollRun: !!p.hadMeisterNoRerollRun || isMeisterNoRerollRun(record),
     hadChampionWeek: !!p.hadChampionWeek,
+    championWeeks: n0(p.championWeeks),
     // Progression/Upgrades: Guthaben wächst um den Lauf-Ertrag; ausgegebene SP + gekaufte Knoten bleiben unverändert.
     // Bei komplettem Baum wird das SP-Guthaben zu DP gefegt (spSweep) → stichPoints 0.
     stichPoints: spBalance - spSweep,
@@ -467,6 +475,19 @@ export function recordRun(record) {
   const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
+}
+
+/* Wochensiege ins Profil schreiben (Trigger der gestuften Ranglisten-Decks, #303).
+   Bewusst NICHT in recordRun: ob eine Woche gewonnen ist, steht erst fest, wenn sie ABGELAUFEN ist —
+   die Zahl kommt darum aus dem Champions-Archiv (Platz 1 je vergangener Woche, LeaderboardScreen) und
+   wird hier nur gespeichert. MONOTON (Math.max): ein kürzeres Archiv-Fenster oder ein fehlgeschlagener
+   Board-Abruf darf einen bereits verdienten Sieg nie wieder wegnehmen.
+   Gibt das (ggf. unveränderte) Profil zurück; schreibt nur, wenn sich etwas erhöht hat. */
+export function recordChampionWeeks(count) {
+  const p = loadProfile();
+  const next = Math.max(n0(p.championWeeks), n0(count));
+  if (next <= n0(p.championWeeks) && (!next || p.hadChampionWeek)) return p; // nichts Neues
+  return saveProfile({ ...p, championWeeks: next, hadChampionWeek: !!next || !!p.hadChampionWeek });
 }
 
 /* OPTIONEN (#41) — bewusst als erweiterbares Objekt (künftig Sound, Tempo-Default …).

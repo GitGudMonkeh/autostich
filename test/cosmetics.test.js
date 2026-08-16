@@ -91,6 +91,24 @@ describe("cosmetics — isUnlocked", () => {
     expect(unlockLabel(unlockProgress(noReroll, prof()))).toBe("Schließe einen Lauf ab, ohne einen Reroll zu benutzen");
   });
 
+  it("championWeek: zählt Wochensiege (gestufte Ranglisten-Decks) und erbt das alte Flag", () => {
+    const t1 = { unlock: { kind: "championWeek", n: 1 } };
+    const t3 = { unlock: { kind: "championWeek", n: 3 } };
+    expect(isUnlocked(t1, prof())).toBe(false);
+    // Alt-Profil ohne Zähler: das Boolean zählt als ein Sieg → Stufe 1 bleibt frei, Stufe 3 nicht.
+    expect(isUnlocked(t1, prof({ hadChampionWeek: true }))).toBe(true);
+    expect(isUnlocked(t3, prof({ hadChampionWeek: true }))).toBe(false);
+    // Zähler gewinnt, sobald er gesetzt ist.
+    expect(isUnlocked(t3, prof({ championWeeks: 2 }))).toBe(false);
+    expect(isUnlocked(t3, prof({ championWeeks: 3 }))).toBe(true);
+    // Fortschritt: Einzahl behält den bestehenden Satz, Mehrzahl bekommt den Zahl-Schlüssel.
+    setLocale(SOURCE_LOCALE);
+    expect(unlockProgress(t3, prof({ championWeeks: 2 }))).toMatchObject({ done: false, cur: 2, target: 3, kind: "championWeekN" });
+    expect(unlockProgress(t1, prof()).kind).toBe("championWeek");
+    expect(unlockLabel(unlockProgress(t3, prof()))).toMatch(/3 Wochen-Ranglisten/);
+    expect(unlockLabel(unlockProgress(t1, prof()))).toMatch(/Platz 1/);
+  });
+
   it("unbekannter kind blockiert nicht (defensiv)", () => {
     expect(isUnlocked({ unlock: { kind: "zukunft", n: 3 } }, prof())).toBe(true);
   });

@@ -1087,6 +1087,7 @@ export default {
   "unlock.gottgleichRun": "Trigger a “GODLIKE” trick for the first time",
   "unlock.meisterNoReroll": "Finish a weekly ranked run without a single reroll",
   "unlock.championWeek": "Finish a weekly ranking in first place (Challenger archive)",
+  "unlock.championWeekN": "Finish {n} weekly rankings in first place (Challenger archive)",
   "unlock.buy": "Buy it in the deck workshop with Deck Points (DP)",
   "unlock.onboardingDone": "Finish the onboarding",
 

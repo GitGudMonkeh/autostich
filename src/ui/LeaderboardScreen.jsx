@@ -76,7 +76,7 @@ function fmtCountdown(ms) {
 const prettySeed = (seed) => { const c = formatSeed(seed); return `${c.slice(0, 4)}-${c.slice(4)}`; };
 
 // Hall of Champions — je abgelaufener Woche der Platz 1 des Meister-Wochen-Seeds (client-seitig aus dem Board berechnet).
-function ChampionsList({ reloadToken }) {
+function ChampionsList({ reloadToken, username, onChampionWeeks }) {
   const [champs, setChamps] = useState(null); // null = lädt · [] = leer · [...] = Daten
 
   useEffect(() => {
@@ -88,9 +88,21 @@ function ChampionsList({ reloadToken }) {
       fetchBoardTop("meister", 1, w.seed)
         .then((rows) => (rows && rows[0] ? { ...w, name: rows[0].name, score: rows[0].score } : null))
         .catch(() => null)
-    )).then((res) => { if (alive) setChamps(res.filter(Boolean)); });
+    )).then((res) => {
+      if (!alive) return;
+      const list = res.filter(Boolean);
+      setChamps(list);
+      /* Freischalt-Trigger der gestuften Ranglisten-Decks: eigene Wochensiege zählen. Grundlage ist
+         GENAU dieselbe Zeile, die das Archiv anzeigt (Platz 1 der abgelaufenen Woche) — der Abgleich
+         läuft über den Anzeigenamen, weil das Board keine Spieler-id kennt. Der Zähler im Profil ist
+         monoton, ein zu kurzes Fenster oder ein fehlgeschlagener Abruf nimmt also nichts weg. */
+      const me = (username || "").trim();
+      if (!me) return;
+      const wins = list.filter((c) => (c.name || "").trim() === me).length;
+      if (wins > 0) onChampionWeeks?.(wins);
+    });
     return () => { alive = false; };
-  }, [reloadToken]);
+  }, [reloadToken, username, onChampionWeeks]);
 
   if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">{tr("board.champions.unavailable")}</div>;
   return (
@@ -120,7 +132,7 @@ function ChampionsList({ reloadToken }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister" }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister", username = "", onChampionWeeks = null }) {
   useEscape(onClose);
   // #385 Default-Reiter „Diese Woche" (meister); „Meine Runs" ist entfernt (steht in der Statistik).
   const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "meister");
@@ -202,7 +214,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
               ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
-            {tab === "champions" && <ChampionsList reloadToken={reloadToken} />}
+            {tab === "champions" && <ChampionsList reloadToken={reloadToken} username={username} onChampionWeeks={onChampionWeeks} />}
 
             {tab === "regeln" && <RegelnPanel />}
           </div>

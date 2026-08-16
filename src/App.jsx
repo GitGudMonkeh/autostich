@@ -8,7 +8,7 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone } from "./game/storage.js";
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -1183,6 +1183,9 @@ export function Autostich() {
         {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
         {showLeaderboard && (
           <LeaderboardScreen mine={myEntry} reloadToken={pubToken} profile={profile}
+            username={username}
+            // Wochensiege aus dem Champions-Archiv ins Profil spiegeln → schaltet die gestuften Ranglisten-Decks frei.
+            onChampionWeeks={(wins) => setProfile((prev) => { const np = recordChampionWeeks(wins); return np || prev; })}
             initialTab={typeof showLeaderboard === "string" ? showLeaderboard : "mine"}
             onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
             onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}

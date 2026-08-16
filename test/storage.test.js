@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadTutorialDone, saveTutorialDone,
-  recordRun, loadProfile, isNoRerollRun,
+  recordRun, recordChampionWeeks, loadProfile, isNoRerollRun,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
@@ -541,7 +541,26 @@ describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
       expect(loadProfile().hadNoRerollRun).toBe(false); // #214
       expect(loadProfile().hadGottgleichRun).toBe(false);       // #303
       expect(loadProfile().hadMeisterNoRerollRun).toBe(false);  // #303
-      expect(loadProfile().hadChampionWeek).toBe(false);        // #303 (Trigger folgt mit dem Champion-Board)
+      expect(loadProfile().hadChampionWeek).toBe(false);        // #303
+      expect(loadProfile().championWeeks).toBe(0);              // #303 Ranglisten-Decks (gestuft)
+    });
+
+    it("#303 Ranglisten-Decks: recordChampionWeeks zählt monoton hoch und überlebt spätere Läufe", () => {
+      expect(recordChampionWeeks(1).championWeeks).toBe(1);
+      expect(loadProfile().hadChampionWeek).toBe(true);        // Alt-Flag bleibt synchron
+      expect(recordChampionWeeks(3).championWeeks).toBe(3);
+      // Monoton: ein kürzeres Archiv-Fenster / fehlgeschlagener Abruf nimmt nichts weg.
+      expect(recordChampionWeeks(1).championWeeks).toBe(3);
+      expect(recordChampionWeeks(0).championWeeks).toBe(3);
+      // Ein normaler Lauf trägt den Zähler unverändert weiter.
+      const { profile } = recordRun({ score: 100, ts: 1, completed: true });
+      expect(profile.championWeeks).toBe(3);
+      expect(loadProfile().championWeeks).toBe(3);
+    });
+
+    it("#303 Ranglisten-Decks: Alt-Profil mit hadChampionWeek erbt einen Sieg (Migration)", () => {
+      expect(migrateProfile({ schemaVersion: 4, hadChampionWeek: true }).championWeeks).toBe(1);
+      expect(migrateProfile({ schemaVersion: 4, hadChampionWeek: false }).championWeeks).toBe(0);
     });
 
     it("#303: Gottgleich-Stich setzt hadGottgleichRun (sticky), auch bei abgebrochenem Lauf", () => {
