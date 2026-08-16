@@ -6,6 +6,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
   saveProfile, wipeProfileStorage, saveOptions,
+  maybeResetForEpoch, RESET_EPOCH,
   migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
 import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
@@ -366,6 +367,43 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     // Die übrigen Präferenzen (Lautstärke, Haptik, Sprache) bleiben bewusst erhalten: sie hängen
     // nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog direkt wieder wählen.
     expect(loadOptions().musicVol).toBe(0.9);
+  });
+});
+
+describe("#reset maybeResetForEpoch — einmaliger Rollout-Reset", () => {
+  beforeEach(() => { global.localStorage = mockLS(); });
+  afterEach(() => { delete global.localStorage; });
+
+  it("gate=false rührt NICHTS an (echte Hauptseite bleibt unberührt)", () => {
+    saveProfile({ stichPoints: 99, onboarding: 6 });
+    expect(maybeResetForEpoch(false)).toBe(false);
+    expect(loadProfile().stichPoints).toBe(99);        // Fortschritt bleibt
+    expect(localStorage.getItem("as_reset_epoch")).toBe(null); // kein Stempel gesetzt
+  });
+
+  it("gate=true setzt genau EINMAL zurück, dann nie wieder (Epoch-Stempel)", () => {
+    saveProfile({ stichPoints: 99, nodes: { B1: 1 } });
+    recordHighscore({ score: 500, level: 1, tricks: 9, cycles: 0, ts: 1 });
+    saveUsername("Bruder");
+
+    expect(maybeResetForEpoch(true)).toBe(true);        // erster Lauf → Reset
+    expect(loadProfile().stichPoints).toBe(0);          // Fortschritt weg
+    expect(loadHighscores()).toEqual([]);
+    expect(loadUsername()).toBe("");
+    expect(localStorage.getItem("as_reset_epoch")).toBe(RESET_EPOCH);
+
+    // Neuer Fortschritt nach dem Reset darf NICHT erneut weggewischt werden.
+    saveProfile({ stichPoints: 7 });
+    expect(maybeResetForEpoch(true)).toBe(false);        // Stempel passt → No-op
+    expect(loadProfile().stichPoints).toBe(7);
+  });
+
+  it("ein GEÄNDERTER RESET_EPOCH löst erneut aus (alter Stempel ≠ neuer)", () => {
+    saveProfile({ stichPoints: 42 });
+    localStorage.setItem("as_reset_epoch", "alt-2000-01-01");
+    expect(maybeResetForEpoch(true)).toBe(true);         // alter Stempel → erneuter Reset
+    expect(loadProfile().stichPoints).toBe(0);
+    expect(localStorage.getItem("as_reset_epoch")).toBe(RESET_EPOCH);
   });
 });
 

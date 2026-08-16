@@ -287,6 +287,23 @@ export function wipeProfileStorage() {
   } catch (e) {}
 }
 
+/* #reset: EINMALIGER Voll-Reset je Rollout. Solange der gespeicherte Stempel (`as_reset_epoch`) nicht RESET_EPOCH
+   entspricht, wird GENAU EINMAL wipeProfileStorage() ausgeführt (Fortschritt · Highscores · Geist · Lauf-Historie ·
+   angefangener Lauf · Username · Tutorial-Status zurück auf Null, gesperrte Kosmetik-Auswahl auf Default). Optionen
+   wie Sprache/Lautstärke/Effekt-Stufe bleiben erhalten. `gate` grenzt den Reset ein (Aufrufer übergibt „nur Preview/
+   Test"), damit die echte Hauptseite nie betroffen ist. RESET_EPOCH ändern = erneuter Einmal-Reset bei allen Spielern
+   des Namensraums. Gibt true zurück, wenn tatsächlich zurückgesetzt wurde. */
+export const RESET_EPOCH = "2026-08-16-test-neustart";
+export function maybeResetForEpoch(gate) {
+  if (!gate) return false;
+  try {
+    if (localStorage.getItem(k("as_reset_epoch")) === RESET_EPOCH) return false;
+    wipeProfileStorage();
+    localStorage.setItem(k("as_reset_epoch"), RESET_EPOCH);
+    return true;
+  } catch (e) { return false; }
+}
+
 const n0 = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
 
 /* #190 Challenge-Erkennung — reine Funktionen, arbeiten NUR auf dem Run-Record (kein localStorage), unit-testbar.
