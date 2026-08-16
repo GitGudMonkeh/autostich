@@ -191,8 +191,11 @@ describe("Tutorial · Karten-Platzierung", () => {
   // Reicht die Lücke für die gemessene Inhaltshöhe nicht, heftet sie oben an (fill) statt zu deckeln+scrollen.
   it("passt kurzer Inhalt in die Lücke über dem Spotlight", () => {
     const box = cardBox({ top: 250, left: 0, width: 300, height: 400 }, VIEW, 150);
-    expect(box.bottom).toBeGreaterThan(0);  // über dem Spotlight verankert
-    expect(box.top).toBeUndefined();
+    // Über dem Spotlight — verankert über einen Container, der dort endet (alignEnd), nicht über CSS
+    // `bottom`: das mischte visuellen und Layout-Viewport und ließ die Karte auf iOS zu hoch sitzen.
+    expect(box.alignEnd).toBe(true);
+    expect(box.top).toBe(0);
+    expect(box.top + box.maxH).toBeLessThan(250);   // endet vor dem Panel
     expect(box.maxH).toBeGreaterThanOrEqual(150);
   });
 
