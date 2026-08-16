@@ -362,6 +362,24 @@ export default {
   "bf.big.godlike": "Gottgleich",
   "bf.big.avalanche": "Lawine",
   "bf.big.letsgo": "Gönn dir",
+  /* Stich-Aufschlüsselung (§17) — die Faktorenkette unter dem Feld. Die Labels sind bewusst kurz:
+     die Zeile muss auf einem Handy in EINE Zeile passen. Die Langfassung steckt jeweils im `…title`
+     (Hover) — dort darf erklärt werden, was hinter dem Glied steckt. */
+  "bf.bd.base": "Basis",
+  "bf.bd.base.title": "Grundwert des Siegs plus alle flachen Boni (Perks, Crit-Flats, Fraktions-Score).",
+  "bf.bd.streak": "Serie",
+  "bf.bd.streak.title": "Multiplikator aus der laufenden Siegesserie.",
+  "bf.bd.perks": "Perks",
+  "bf.bd.perks.title": "Multiplikator aus Perks und Familien, dazu Sonnenzorn und die Score-Gebäude des Architekten.",
+  "bf.bd.form": "Form",
+  "bf.bd.form.title": "Multiplikator der Formationen an dieser Position, samt Nachhall und Formationskern.",
+  "bf.bd.crit": "Crit",
+  "bf.bd.crit.title": "Crit-Multiplikator dieses Stichs.",
+  "bf.bd.direct": "Direkt",
+  "bf.bd.direct.title": "Direkt-Score, der an der Kette vorbeiläuft: Glutdividende, Blitz, Pflanze, Gletscher, Vabanque.",
+  "bf.bd.total": "Summe",
+  "bf.bd.total.title": "Gesamter Score dieses Stichs.",
+  "bf.bd.aria": "Aufschlüsselung des Stich-Scores",
 
   /* ---- Aufstellungsphase (FormationPhase) ---- */
   "form.eyebrow": "Aufstellung · Durchlauf {cycle}",
@@ -1282,6 +1300,8 @@ export default {
   "options.float.mult.desc": "„Kritisch!“- und Formations-Text (Multiplikator-Boni).",
   "options.float.winlose.title": "↳ Sieg / Niederlage",
   "options.float.winlose.desc": "Gewonnen/Verloren-Text am Stich-Ausgang.",
+  "options.breakdown.title": "Stich-Aufschlüsselung anzeigen",
+  "options.breakdown.desc": "Faktorenkette unter dem Feld: Basis × Serie × Perks × Formation × Crit = Summe des laufenden Stichs. Der Platz bleibt reserviert — die Karten stehen so oder so gleich.",
 
   /* ---------------------------------------------------------------------------------------------
      DATENSCHUTZ-HINWEIS (#datenschutz, PrivacyModal.jsx)

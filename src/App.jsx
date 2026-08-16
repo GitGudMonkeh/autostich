@@ -1069,6 +1069,7 @@ export function Autostich() {
                 deckGlow={deckFx.deckGlow}
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
+                hideBreakdown={options.hideBreakdown}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
                   Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}

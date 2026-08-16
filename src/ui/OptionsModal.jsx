@@ -272,6 +272,12 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               <Toggle on={!options.hideFloatWinLose} onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
             </Row>
           </div>
+          {/* Stich-Aufschlüsselung (§17): die Faktorenkette unter dem Feld (Basis × Serie × Perks × Form × Crit
+              (+ Direkt) = Summe). Eigener Schalter, NICHT unter dem Floating-Text-Master — die Zeile steht fest
+              im Layout statt aufzusteigen. „An" = sichtbar (Flag false); der Platz bleibt so oder so reserviert. */}
+          <Row title={t("options.breakdown.title")} desc={t("options.breakdown.desc")}>
+            <Toggle on={!options.hideBreakdown} onClick={() => onChange({ hideBreakdown: !options.hideBreakdown })} />
+          </Row>
           {/* Zahlengröße — skaliert Kartenzahlen + aufsteigende Score-Zahlen (Orbitron) gemeinsam. 1 = Standard. */}
           <Row title={t("options.numScale.title")} desc={t("options.numScale.desc", { pct: fmtPct(Number(options.numScale) || 1) })}>
             <input type="range" min="0.75" max="1.25" step="0.05" value={options.numScale ?? 1}

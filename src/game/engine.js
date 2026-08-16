@@ -872,7 +872,10 @@ export function resolveTrick(state, rng) {
     // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
     // Feuer-Glutdividende → Grund-Kanal; Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht.
     fireBase += fireDirectApplied; lightYield += lightDirect;
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakMult, perkMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect, lightDirect, plantDirect, perkDirect, total: gained };
+    // streakFlat/sunwrathMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
+    // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Sonnenzorn×Architekt) × (Form×Nachhall×Kern) × Crit
+    // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, sunwrathMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
     // Blitz-Rework (v0): Ladungsgewinn — Blitzableiter (Crit +1) · Statische Aufladung (Nicht-Crit-Sieg +1) ·
     // Kaskade Überspannung (Crit auf/neben Ionis.) · Überschlag (Crit-Chance-Überschuss) · Dauerstrom (Serie).
     const ionizedCard = (pCard.ionStacks || 0) > 0;
