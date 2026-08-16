@@ -1112,6 +1112,7 @@ export default {
   "unlock.gottgleichRun": "Löse zum ersten Mal einen „Gottgleich“-Stich aus",
   "unlock.meisterNoReroll": "Schließe einen Ranglisten-Wochenlauf ohne einen einzigen Reroll ab",
   "unlock.championWeek": "Beende eine Wochen-Rangliste auf Platz 1 (Challenger-Archiv)",
+  "unlock.championWeekN": "Beende {n} Wochen-Ranglisten auf Platz 1 (Challenger-Archiv)",
   "unlock.buy": "In der Deck-Werkstatt mit Deckpunkten (DP) kaufen",
   "unlock.onboardingDone": "Schließe das Onboarding ab",
 

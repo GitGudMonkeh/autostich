@@ -240,6 +240,7 @@ describe("i18n · Zahl- und Satzformate", () => {
     ["board.rules.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
     ["board.champions.intro", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
     ["unlock.championWeek", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
+    ["unlock.championWeekN", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
   ]);
 
   it("beide Sprachen nennen dieselben Zahlen", () => {
