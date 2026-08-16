@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { DISCORD_URL } from "./links.js";
 import { installId, telemetryConfigured, UA_MAX } from "../game/telemetry.js";
 import { useT } from "../i18n/useLocale.js";
@@ -65,16 +65,16 @@ export function PrivacyModal({ onClose }) {
         <ModalHairline />
 
         {/* Fixer Kopf wie in den Optionen: bei einem langen Fließtext muss „Schließen" erreichbar
-            bleiben, ohne erst ans Ende zu scrollen. */}
+            bleiben, ohne erst ans Ende zu scrollen. `items-start` + `shrink-0` (NICHT ActionBar mit
+            items-stretch), sonst dehnt sich der Knopf auf die Höhe des zweizeiligen Titelblocks. */}
         <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
-          <ActionBar pad={0} bg={STICKY_HEAD_BG} border={false}>
+          <div className="flex items-start gap-3">
             <div className="min-w-0">
               <div className="text-xs uppercase tracking-widest" style={{ color: ACC }}>{t("privacy.eyebrow")}</div>
               <h2 className="text-xl font-bold mt-1">{t("privacy.title")}</h2>
             </div>
-            <span className="flex-1" />
-            <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
-          </ActionBar>
+            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6" style={{ overscrollBehavior: "contain" }}>
