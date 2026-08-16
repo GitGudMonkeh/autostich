@@ -9,7 +9,7 @@
 > **Ranglisten-Wochenmodus** mit Wochen-Modifikatoren, Challenger-Seeds, Chronik, 4-Stufen-Raritätsfamilien.
 > Die frühere **Stat-Phase ist entfernt** (#267) — Crit-Chance/-Multiplikator kommen aus den
 > Präzision-Familien bzw. aus Blitz.
-> **1015 Vitest-Fälle** (64 Dateien), CI grün (Tests → Build → Pages).
+> **1263 Vitest-Fälle** (84 Dateien), CI grün (Tests → Lint → Build → Pages).
 > Spielertexte folgen `docs/text-style-guide.md`; `node scripts/export-strings.mjs` zieht sie alle in eine CSV.
 > Diese Übersicht ist **aus dem Code abgeleitet** — die Quelle der Wahrheit bleibt der Code
 > (`src/game/*`). Bei Unstimmigkeit gilt der Code, nicht dieses Dokument.
@@ -390,11 +390,29 @@ Archetyp-Feintuning steht ebenfalls im Tuning-Block (`LIGHTNING_*`, `HEAT_*`/`FI
 
 ## 17. Tests & Deployment
 
-- **Tests:** Vitest, nur der `game/`-Layer — **1015 Fälle** in 64 Dateien (`vite.config.js` → `environment: "node"`).
+- **Tests:** Vitest — **1263 Fälle** in 84 Dateien (`vite.config.js` → `environment: "node"`).
   `npm test` / `npm run test:watch`.
-- **Deployment:** GitHub Actions auf Push nach `main` → `npm ci` → `npm test` → `npm run build` → Pages.
-  `vite.config.js`: `base = "/autostich/"` beim Build (Testbranch überschreibt via `DEPLOY_BASE`), `"/"` im Dev.
-- **Befehle:** `npm run dev` · `npm run build` · `npm run preview`.
+- **Wo die Abdeckung liegt — und wo nicht.** Der Schwerpunkt ist der `game/`-Layer: rund neun von zehn
+  Test-Importen zeigen dorthin. Die UI ist dünn abgedeckt, die Effekt-Schicht `src/ui/fx/` praktisch gar
+  nicht (ein einziger Import, und der prüft nur Timing-Konstanten). Wo die UI geprüft wird, geschieht das
+  überwiegend **statisch** — der Test liest die Quelldatei als Text (`registry-guards`, `i18n-guards`,
+  `hub-panels`, `privacy` …) und sichert Nähte ab, nicht Laufzeitverhalten. Das ist Absicht (Node-Umgebung,
+  kein jsdom, kein Browser), hat aber eine Konsequenz, die man kennen muss: **eine grüne Suite ist keine
+  Abnahme der Optik.** GPU-Effekte, Layout und Mobile-Verhalten werden im `/test/`-Slot von Hand geprüft.
+- **Lint:** `npm run lint` (ESLint Flat-Config, `eslint.config.js`). Die CI fährt ihn mit
+  `--max-warnings=0` — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
+- **Deployment:** GitHub Actions → `npm ci` → `npm test` → `npm run lint -- --max-warnings=0` →
+  `npm run build` → `npm run gen:db` → Pages. Vier Slots auf **derselben** Pages-Seite, je Branch einer:
+  `main` → `/autostich/` · `Autostich_Test` → `/test/` · `Autostich/pixi` → `/pixi/` · `balancing` →
+  `/balancing/`. `vite.config.js`: `base = "/autostich/"` beim Build (die Slots überschreiben via
+  `DEPLOY_BASE`), `"/"` im Dev.
+- **Medien** (55 Musikstücke, ~150 MB) liegen bewusst außerhalb von `src/` und `public/` im Ordner
+  `media/` und wandern damit in **keinen** Slot-Build. Veröffentlicht wird einmal zentral nach
+  `/autostich/media/` (`deploy-media.yml`); alle vier Slots referenzieren denselben absoluten Pfad über
+  `VITE_MEDIA_BASE`. Vorher trug jeder Build eine eigene Kopie — die Pages-Seite lag bei 1,7 GB
+  (Limit: 1 GB), `dist/` bei 163 MB statt heute ~21 MB.
+  **Ein geänderter Track braucht einen NEUEN Dateinamen** — ohne Build-Hash gibt es kein Cache-Busting.
+- **Befehle:** `npm run dev` · `npm run build` · `npm run preview` · `npm test` · `npm run lint`.
 
 ---
 
