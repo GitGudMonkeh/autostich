@@ -16,14 +16,25 @@ und die Antwort abwarten, bevor irgendetwas geändert wird.
 - `Autostich/pixi` — Pixi/WebGL-Umbau + laufende Effekt-/Perf-/Cleanup-Arbeit (aktueller Arbeitsbranch; Merge-Ziel: `Autostich_Test`)
 - `Autostich_Test` — Integrations-/Testbranch
 - `main` — stabil
-- `balancing` — Balancing
+- `balancing` — Balancing (eigene Linie, **nicht** in main enthalten — nie mit den dreien zusammenziehen)
 - `claude/neue-deck-archetypen-*` — Deck-Archetypen (enthält eigene Arbeit, **NICHT löschen**)
+
+### Beförderung: stromabwärts NUR per Fast-Forward
+`Autostich/pixi` → `Autostich_Test` → `main`. Test und main sind reine Abbilder — sie bekommen Commits
+ausschließlich per Fast-Forward aus dem Upstream-Branch, nie eigene:
+`git push origin Autostich/pixi:Autostich_Test` bzw. `…:main`.
+**Dieselbe Arbeit NICHT per Cherry-Pick/Rebase separat auf mehrere Branches bringen.** Genau das hatte die
+Historien auseinanderlaufen lassen: derselbe Commit lag zwei- bis dreifach als verschiedene Objekte vor
+(z. B. „Doku: Branch-Wahl…" als `3bbc887a` + `b5edd6f9` + `be4ceee5`), `git rev-list --count` meldete „26 Commits
+voraus" — und die Dateibäume waren dabei die ganze Zeit **byte-identisch**.
+**Zum Vergleichen darum Tree-Hashes nehmen, nicht Commit-Zähler:** `git rev-parse <branch>^{tree}`.
+Gleicher Tree = gleiche Daten, egal was der Zähler sagt.
 
 ## Arbeitsstand `Autostich/pixi` (Session bis 2026-08-11)
 
 Gearbeitet wird ausschließlich auf `Autostich/pixi`. **Vor jedem Arbeitsbeginn UND vor jedem Push**
 `git fetch origin Autostich/pixi && git rebase origin/Autostich/pixi` (Parallel-Sessions committen zeitweise
-denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **981 grün**) müssen vor jedem Push grün sein.
+denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1290 grün**) müssen vor jedem Push grün sein.
 Deutschsprachiger Code/Kommentare beibehalten.
 
 ### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
