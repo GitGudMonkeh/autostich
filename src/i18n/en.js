@@ -360,6 +360,24 @@ export default {
   "bf.big.godlike": "GODLIKE",
   "bf.big.avalanche": "AVALANCHE",
   "bf.big.letsgo": "LET’S GO!",
+  /* Trick breakdown (§17) — the factor chain under the field. Labels stay short so the line fits on a
+     phone in ONE row; the long form lives in each `…title` (hover). Named sources use their established
+     English names: Sun Wrath, Echo (Nachhall), Core (Formationskern), All In (Vabanque). */
+  "bf.bd.base": "Base",
+  "bf.bd.base.title": "Base value of the win plus every flat bonus (perks, crit flats, faction score).",
+  "bf.bd.streak": "Streak",
+  "bf.bd.streak.title": "Multiplier from your running win streak.",
+  "bf.bd.perks": "Perks",
+  "bf.bd.perks.title": "Multiplier from perks and families, plus Sun Wrath and the architect’s score buildings.",
+  "bf.bd.form": "Form",
+  "bf.bd.form.title": "Multiplier of the formations at this position, including Echo and Core.",
+  "bf.bd.crit": "Crit",
+  "bf.bd.crit.title": "Crit multiplier of this trick.",
+  "bf.bd.direct": "Direct",
+  "bf.bd.direct.title": "Direct score that bypasses the chain: ember dividend, lightning, plant, glacier, All In.",
+  "bf.bd.total": "Total",
+  "bf.bd.total.title": "Total score of this trick.",
+  "bf.bd.aria": "Trick score breakdown",
 
   /* ---- Order phase (FormationPhase) ---- */
   "form.eyebrow": "Order phase · cycle {cycle}",
@@ -1246,6 +1264,8 @@ export default {
   "options.float.mult.desc": "“CRITICAL!” and formation text (multiplier bonuses).",
   "options.float.winlose.title": "↳ Win / loss",
   "options.float.winlose.desc": "Won/lost text at the end of a trick.",
+  "options.breakdown.title": "Show trick breakdown",
+  "options.breakdown.desc": "Factor chain under the field: base × streak × perks × formation × crit = total of the current trick. The space stays reserved — the cards sit in the same place either way.",
 
   /* Privacy notice (#datenschutz). {ua} comes from UA_MAX in game/telemetry.js — the same expression as
      the German side, never a typed-in number (guard: “both languages name the same numbers”). */

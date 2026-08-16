@@ -90,6 +90,7 @@ import oppSkillBack      from "../assets/cards/decks_opponent/deck_opp_skill/bac
 import oppLegendaryFront from "../assets/cards/decks_opponent/deck_opp_legendary/front.webp"; // 💎 Legendär    → legendary
 import oppLegendaryBack  from "../assets/cards/decks_opponent/deck_opp_legendary/back.webp";
 import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Stich)
+import { TrickBreakdown } from "./TrickBreakdown.jsx"; // §17 Faktorenkette unter dem Feld
 
 // Auswahl-Typ (DECISION_SCHEDULE) → Gegner-Deck-Skin (Cover/Front). Eigene, phasen-farbcodierte v0.4-Decks.
 // Fällt auf „stat" zurück = Skill/purple (die erste Runde ist immer Skill).
@@ -719,7 +720,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   reducedFx = "aus",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Score/Werte zählen unabhängig weiter — nur die aufsteigenden
   // Popups verschwinden. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich, bigFloats) bleiben IMMER sichtbar.
-  hideFloatScore = false, hideFloatMult = false, hideFloatWinLose = false }) {
+  hideFloatScore = false, hideFloatMult = false, hideFloatWinLose = false,
+  // Stich-Aufschlüsselung (§17) unter dem Feld: Basis × Serie × Perks × Form × Crit (+ Direkt) = Summe.
+  // Default SICHTBAR (false) wie die Floating-Text-Schalter; die Zeile hält ihre Höhe auch ausgeblendet.
+  hideBreakdown = false }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
@@ -998,9 +1002,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Once-Guards, damit ein bereits gezeigter Meilenstein die zugrunde liegende Stufe (Lawine/Gottgleich) nicht verschluckt.
   const goennMilestone = win && t && (t.winStreak || 0) >= STREAK_GOENN;
 
-  // #ui: Die Ergebnis-Aufschlüsselung (Faktorenkette Basis/Flats/Serie/Form/Crit + Summe) wurde ENTFERNT — die
-  // Multiplikatoren sind im Spielfluss ohnehin nicht lesbar. Der gewonnene Score steigt weiter als Float aus der
-  // Karte auf, der Gesamt-Score steht in der StatusBar. Karten + Sieg/Niederlage-Ansage rücken dafür nach unten.
+  // #ui: Die Ergebnis-Aufschlüsselung (Faktorenkette Basis/Serie/Perks/Form/Crit + Summe) war zwischenzeitlich
+  // ENTFERNT („im Spielfluss nicht lesbar") und ist WIEDER DA — als kompakte Zeile unter der Sieg/Niederlage-
+  // Ansage (TrickBreakdown, ganz unten in diesem Render), abschaltbar über `hideBreakdown`. Der gewonnene Score
+  // steigt weiterhin zusätzlich als Float aus der Karte auf, der Gesamt-Score steht in der StatusBar.
 
   // #49: aufsteigende Zahlen (Score-Gewinn & Lebensverlust) ~1 s länger + Überlappen erlaubt.
   // Statt eines je Stich ersetzten Einzel-Elements ein kleiner Pool — jeder Float lebt unabhängig
@@ -1704,6 +1709,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         ) : (
           <span className="opacity-40 text-sm">{tr("bf.ready")}</span>
         )}
+      </div>
+
+      {/* Stich-Aufschlüsselung (§17) — die Faktorenkette des laufenden Stichs, unter der Sieg/Niederlage-Ansage.
+          FESTE Höhe (h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz reserviert,
+          damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog). */}
+      <div className="relative z-10 h-5 mt-1 flex items-center justify-center overflow-hidden">
+        {!hideBreakdown && <TrickBreakdown trick={t} />}
       </div>
     </div>
     {/* #: Krit-Vollbild-Flash/Vignette (CritScreenFx) entfernt — Krit-Finisher-Animationen raus. Der Screen-Shake bleibt
