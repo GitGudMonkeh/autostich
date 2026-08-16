@@ -275,8 +275,15 @@ const FLOAT_LANES = [0, -30, 30, -58, 58];
 const SHOW_HIT_ICONS = false;
 // #: Gemeinsamer „Kartennummern"-Stil für ALLE Score-/Juice-Floats (durchsichtige Füllung + farbige Kontur + Glow) —
 // gilt für Score, Formation & Krit; die großen Stufen-Ansagen (Stark/Brutal/Irre/Gottgleich/Lawine) bleiben ausgenommen.
-const floatNumStyle = (color, stroke = 1.5) => ({ fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900,
-  WebkitTextFillColor: "transparent", WebkitTextStroke: `${stroke}px ${color}`, textShadow: `0 0 7px ${color}aa` });
+// #ios-glow: Der Glow kommt aus der drop-shadow-Kette in index.css (`.card-num`/`.neon-num`), nicht mehr aus einem
+// inline `text-shadow` — Begründung steht dort (WebKit schattiert bei transparenter Füllung die VOLLE Glyphe und
+// überstrahlt die Kontur; außerdem schlug der Inline-Wert den `pointer: coarse`-Deckel). Aufrufer müssen daher die
+// Klasse `card-num` ODER `neon-num` tragen; hier werden nur Farbe und Stärke durchgereicht.
+//   strength  = Faktor auf beide Glow-Radien (1 = Basis der Score-Floats)
+//   haloAlpha = Alpha-Suffix der weiten Schicht
+const floatNumStyle = (color, stroke = 1.5, strength = 1, haloAlpha = "aa") => ({ fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900,
+  WebkitTextFillColor: "transparent", WebkitTextStroke: `${stroke}px ${color}`,
+  "--num-glow-c": color, "--num-glow-c2": `${color}${haloAlpha}`, "--num-glow-s": strength });
 const FORM_LINGER_MS = 1500; // Formations-Float bleibt ~1,5 s länger stehen (über den nächsten Stich hinaus) und klingt dann aus
 // Entzerrung bei Ballung: spät in einem guten Lauf spannen die Stich-Gewinne mehrere Größenordnungen
 // (ein Stich +5 Mio, der nächste +8.000) → die kleinen Score-Floats sind nur Rauschen und überlappen alles.
@@ -1579,11 +1586,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
         {isCrit && !hideFloatMult && (
-          <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+          <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10 neon-num"
             style={{ left: `calc(${FLOAT_ZONES.crit.left} + ${fjitter(t.trickNo * 5 + 2, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.crit.top} + ${fjitter(t.trickNo * 5 + 9, JITTER_Y)}px)`,
                      fontSize: 26, color: critColor, textTransform: "uppercase", // Loc: Caps via CSS
-                     ...floatNumStyle(critColor, 1.5), textShadow: `0 0 12px ${critColor}aa`, // #: Kartennummern-Stil (Kontur), stärkerer Krit-Glow
+                     ...floatNumStyle(critColor, 1.5, 1.4), // #: Kartennummern-Stil (Kontur), stärkerer Krit-Glow
                      transform: reduced ? "translateX(-50%)" : undefined,
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
             {reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}
@@ -1631,14 +1638,16 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             Aus formFloat (stich-entkoppelt): aktiv → as-combo-hold (hält); beim Verlassen → as-combo-out
             (klingt über FORM_LINGER_MS aus) → bleibt so ~1,5 s länger stehen als sein Stich. #389: per hideFloatMult ausblendbar. */}
         {formFloat && !hideFloatMult && (
-          <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
+          <div key={`form${formFloat.key}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10 neon-num"
             style={{ right: `calc(${FLOAT_ZONES.formation.right} + ${fjitter(formFloat.key * 4 + 5, JITTER_X)}px)`,
                      top:  `calc(${FLOAT_ZONES.formation.top} + ${fjitter(formFloat.key * 4 + 11, JITTER_Y)}px)`,
                      fontSize: formFloat.peak === 2 ? 26 : formFloat.peak === 1 ? 21 : 17,
                      textTransform: "uppercase", // Loc: Formations-Label-Caps via CSS
                      color: formFloat.color,
-                     ...floatNumStyle(formFloat.color, formFloat.peak === 2 ? 1.6 : 1.4), // #: Kartennummern-Stil (Kontur)
-                     textShadow: `0 0 ${formFloat.peak === 2 ? 16 : formFloat.peak === 1 ? 12 : 10}px ${formFloat.color}${formFloat.peak ? "cc" : "88"}`,
+                     // #: Kartennummern-Stil (Kontur); Peak-Stufen leuchten stufig stärker (vorher als eigener text-shadow gesetzt)
+                     ...floatNumStyle(formFloat.color, formFloat.peak === 2 ? 1.6 : 1.4,
+                                      formFloat.peak === 2 ? 1.6 : formFloat.peak === 1 ? 1.3 : 1.1,
+                                      formFloat.peak ? "cc" : "88"),
                      animation: fx(formLeaving
                        ? `as-combo-out ${FORM_LINGER_MS}ms ease-out forwards`
                        : `as-combo-hold ${floatDur}ms ease-out forwards`) }}>

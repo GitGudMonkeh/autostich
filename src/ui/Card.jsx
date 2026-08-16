@@ -56,9 +56,12 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const numColor = pt ? pt.color : color;
   // Neon-Tube-Zahl (#UI): mehrschichtiger Neon-Glow in Suit-/Pflanzenfarbe. Die Ziffer selbst ist hohl (transparente
   // Füllung + farbige Kontur, siehe render), der Glow gibt die Leucht-Röhren-Optik. Pflanze moduliert die Stärke über pt.glow.
-  const numShadow = pt
-    ? `0 0 ${Math.round(8 + 10 * pt.glow)}px ${pt.color}, 0 0 ${Math.round(20 + 16 * pt.glow)}px ${pt.color}${pt.ripe ? "aa" : "66"}, 0 0 40px ${pt.color}44`
-    : `0 0 8px ${color}, 0 0 20px ${color}99, 0 0 40px ${color}55`;
+  // #ios-glow: Der Glow steht NICHT mehr inline als `text-shadow`, sondern als drop-shadow-Kette in index.css
+  // (`.card-num`) — Begründung dort. Hier bleiben nur Farbe und Stärke, damit der Mobil-Deckel der CSS-Regel
+  // greifen kann; inline gesetzt hätte er ihn (wie bisher) überstimmt.
+  const numGlow = pt
+    ? { "--num-glow-c": pt.color, "--num-glow-c2": `${pt.color}${pt.ripe ? "aa" : "66"}`, "--num-glow-s": 1 + 0.6 * pt.glow }
+    : { "--num-glow-c": color, "--num-glow-c2": `${color}99`, "--num-glow-s": 1 };
   // Pflanze (#277): ZWEISTUFIGER Wachstumsring — Stufe 1 Setzling→Grün (grau→grün, growth/Schwelle), Stufe 2 Grün→
   // Ausgewachsen (heller, value/Deckel). Bleibt sichtbar, bis die Karte ausgewachsen ist (dann trägt die hellste
   // grüne Zahl das „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie voll auswächst.
@@ -100,7 +103,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         </div>
       )}
       {/* Zahl (z-2). */}
-      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
+      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, ...numGlow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
