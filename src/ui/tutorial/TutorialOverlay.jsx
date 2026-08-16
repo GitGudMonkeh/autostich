@@ -47,14 +47,24 @@ function useAnchorRect(anchor) {
        scrollen intern, und auf dem Handy stand das erklärte Panel regelmäßig halb unter dem
        Bildschirmrand. scrollIntoView löst auch verschachtelte Scroll-Container mit auf.
 
-       Die Ausrichtung hängt an der Größe des Panels: kleine mittig (Platz auf beiden Seiten), GROSSE
-       ans untere Ende. Ein Brett, das den halben Schirm füllt, ließ mittig oben und unten je einen
-       Streifen — zu wenig für die Karte, die dann den Spotlight überlagern musste. Unten ausgerichtet
-       sammelt sich der freie Platz oben, genau dort, wo die Karte hin soll (cardBox). */
+       Kleine Panels mittig (Platz auf beiden Seiten für die Karte). GROSSE Panels: oben Platz für die
+       Coach-Mark-Karte RESERVIEREN und das Panel darUNTER scrollen — `scroll-margin-top` wird von
+       scrollIntoView respektiert, block:"start" richtet dann die Panel-Oberkante an (viewport-Top +
+       Reserve) aus. Vorher ans untere Ende (block:"end") gescrollt → die Panel-Oberkante saß HINTER der
+       Karte und war oben abgeschnitten. Die Reserve fasst die übliche Kartenhöhe; cardBox setzt die Karte
+       dann sauber in die Lücke oberhalb des Panels (kein Überlappen mehr). */
     const el0 = document.querySelector(`[data-tut="${anchor}"]`);
     if (el0 && el0.scrollIntoView) {
       const tall = el0.getBoundingClientRect().height > window.innerHeight * 0.45;
-      el0.scrollIntoView({ block: tall ? "end" : "center", inline: "nearest", behavior: "auto" });
+      if (tall) {
+        const reserve = Math.round(Math.max(330, window.innerHeight * 0.46));
+        const prevSMT = el0.style.scrollMarginTop;
+        el0.style.scrollMarginTop = reserve + "px";                                   // nur für diesen einen Scroll
+        el0.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+        el0.style.scrollMarginTop = prevSMT;
+      } else {
+        el0.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+      }
     }
     measure();
     // Zweimal nachmessen: das Scrollen und ein etwaiger Layout-Nachlauf brauchen je einen Frame.
