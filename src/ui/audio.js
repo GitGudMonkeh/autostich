@@ -54,6 +54,14 @@ const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwa
 //  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
 //  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
 const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
+/* LANGE Swells, die ihre volle Länge brauchen, statt vom Stimmen-Deckel gestohlen zu werden.
+   fx_supernova ist ein ~11-s-Swell und liegt damit zwangsläufig als ÄLTESTE Stimme im Pool, während
+   nebenher Kartendreher, Treffer und Ansagen durchlaufen. Der Deckel warf beim Überlauf immer die
+   älteste weg — also praktisch immer den Swell, oft schon nach ein bis zwei Sekunden. Genau das war
+   im Schwarzloch-Showcase zu hören: der Ton brach mitten im Aufbau ab.
+   Gedeckelt bleibt der Pool trotzdem: geschützte Stimmen können sich nicht stapeln, weil
+   SFX_COOLDOWN.fx_supernova (3 s) ein Nachfeuern bremst. */
+const SFX_KEEP = new Set(["fx_supernova"]);
 const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_scorch: 0.06, fx_comet: 0.11, fx_comet_impact: 0.11, fx_blackhole_implode: 0.5, fx_neonsurf_splash: 0.3, fx_supernova: 3.0 };  // fx_supernova = 11-s-Swell → langer Cooldown gegen Überlappung bei dichten epischen Ansagen  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen; fx_blackhole_implode selten → 0,5 s reicht
 const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
 const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
@@ -192,13 +200,17 @@ export const audio = {
       if (release > 0 && dur > 0) { const rel = Math.min(release, dur * 0.65); const rs = Math.max(t0 + attack, t0 + dur - rel); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, t0 + dur); }
       node.connect(g).connect(masterComp || c.destination);
       // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
-      const v = { src, g, name, t: now };
+      const v = { src, g, name, t: now, keep: SFX_KEEP.has(name) };
       voices.push(v);
       lastPlayAt[name] = now;
       src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
+      /* Beim Überlauf die älteste Stimme opfern — aber die geschützten Swells überspringen (s. SFX_KEEP)
+         und niemals die gerade gestartete. Findet sich keine opferbare Stimme, wird gar nichts gestohlen;
+         der Pool darf dann kurz über den Deckel laufen, statt einen langen Ton zu zerschneiden. */
       while (voices.length > SFX_MAX_VOICES) {
-        const old = voices.shift();
-        if (old === v) break; // nie die gerade gestartete Stimme stehlen
+        const idx = voices.findIndex((x) => x !== v && !x.keep);
+        if (idx < 0) break;
+        const old = voices.splice(idx, 1)[0];
         try { old.g.gain.cancelScheduledValues(now); old.g.gain.setTargetAtTime(0.0001, now, 0.01); old.src.stop(now + 0.05); } catch (e) {}
       }
       src.start(t0);
