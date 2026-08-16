@@ -185,6 +185,10 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
             <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
           </Row>
+          {/* Ruhiger Modus: kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks (Default aus). */}
+          <Row title={t("options.calm.title")} desc={t("options.calm.desc")}>
+            <Toggle on={!!options.calmMusic} onClick={() => onChange({ calmMusic: !options.calmMusic })} />
+          </Row>
           </Section>
           <Section id="graphics" title={t("options.sec.graphics")}
             innerRef={(el) => { secRefs.current.graphics = el; }}>

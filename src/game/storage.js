@@ -464,6 +464,8 @@ const DEFAULT_OPTIONS = {
   lang: null,
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  // Ruhiger Modus (Default aus): kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks. Reine UI-Pref (überlebt Reset).
+  calmMusic: false,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,

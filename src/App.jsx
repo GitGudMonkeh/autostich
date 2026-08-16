@@ -342,6 +342,8 @@ export function Autostich() {
   // Aktueller Score an die Musik: steuert die Intensitäts-Stufe (<1 Mio ruhig → 60 Mio+ Overdrive+).
   useEffect(() => { if (!musicHome) music.setProgress(state.score || 0); }, [state.score, musicHome]);
   useEffect(() => { music.setMuted(!!options.muted); music.setVolume(options.musicVol ?? 0.2); }, [options.muted, options.musicVol]);
+  // Ruhiger Modus (Option): kappt die score-abhängige Musik-Eskalation bei „mid" (nur calm/mid-Tracks). Default aus.
+  useEffect(() => { music.setCalmMode(!!options.calmMusic); }, [options.calmMusic]);
   // #333: In den Auswahl-/Aufbau-Screens im Lauf (alles außer „play") die Musik ~40 % leiser ziehen (sanft), im
   // aktiven Stichspiel wieder voll. Deckt Perk/Skill/Gebäude/Aufstell und konsistent target/family-target/glacier-target/
   // legendary ab. Duck ist KEIN Mute (Nutzer-Lautstärke/Mute bleiben unberührt).

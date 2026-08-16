@@ -1242,6 +1242,8 @@ export default {
 
   "options.haptics.title": "Haptik (Vibration)",
   "options.haptics.desc": "Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.",
+  "options.calm.title": "Ruhiger Modus",
+  "options.calm.desc": "Die Musik steigert sich nicht mit dem Punktestand — es laufen nur ruhige und treibende Stücke, keine schnellen oder maximalen.",
 
   "options.perfHud.title": "FPS-Zähler & Report",
   "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",

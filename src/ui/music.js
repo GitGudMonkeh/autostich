@@ -165,13 +165,23 @@ const POOL = [
    Namen sonst erst als stummer 404 im Browser auffallen (der Bundler kann ihn nicht mehr fangen). */
 export const MUSIC_TRACKS = [MENU_TRACK, ...POOL];
 
+// Ruhiger Modus (Option `calmMusic`): kappt die Stufe bei CALM_CAP — die Musik eskaliert nicht mehr mit dem Score,
+// es laufen nur noch calm/mid-Tracks. Gilt für ALLE Stufenquellen (enterRun/setProgress), weil tierForScore der einzige
+// Nadelöhr ist. Aus = byte-identisches Alt-Verhalten.
+const CALM_CAP = "mid";
+function capForCalm(t) {
+  if (!calmMode) return t;
+  return TIER_ORDER.indexOf(t) > TIER_ORDER.indexOf(CALM_CAP) ? CALM_CAP : t;
+}
 function tierForScore(score) {
   const s = Math.max(0, Number(score) || 0);
-  if (s >= TIER_MIN.overdrive_plus) return "overdrive_plus";
-  if (s >= TIER_MIN.overdrive) return "overdrive";
-  if (s >= TIER_MIN.hot) return "hot";
-  if (s >= TIER_MIN.mid) return "mid";
-  return "calm";
+  let t;
+  if (s >= TIER_MIN.overdrive_plus) t = "overdrive_plus";
+  else if (s >= TIER_MIN.overdrive) t = "overdrive";
+  else if (s >= TIER_MIN.hot) t = "hot";
+  else if (s >= TIER_MIN.mid) t = "mid";
+  else t = "calm";
+  return capForCalm(t);
 }
 
 let el = null;
@@ -187,6 +197,8 @@ let mode = null;      // "menu" | "run"
 let listeners = [];   // Titel-Abonnenten (UI)
 let tier = "calm";    // aktive Intensitäts-Stufe im Run (aus dem Lauf-Fortschritt)
 let fadeTimer = null; // aktiv während eines weichen Stufenwechsels (Fade-Übergang)
+let calmMode = false; // Ruhiger Modus (Option): kappt die Stufe bei CALM_CAP (siehe capForCalm)
+let lastScore = 0;    // zuletzt gesehener Run-Score — damit setCalmMode die Stufe ohne erneuten setProgress neu berechnen kann
 
 function ensureEl() {
   if (el || typeof Audio === "undefined") return el;
@@ -294,19 +306,32 @@ export const music = {
   // #339: Run-/Resume-Start score-abhängig initialisieren — ein fortgesetzter High-Score-Lauf startet SOFORT mit der zur
   //   gespeicherten Score-Schwelle passenden Stufe (frischer Lauf: Score 0 → weiterhin calm). setProgress übernimmt danach
   //   nur die laufenden Stufenwechsel; ohne das lief ein ganzer Calm-Song aus, bevor die Musik hochschaltete.
-  enterRun(score = 0) { mode = "run"; tier = tierForScore(score); playTrack(randomPoolTrack(tier)); },
+  enterRun(score = 0) { mode = "run"; lastScore = Math.max(0, Number(score) || 0); tier = tierForScore(lastScore); playTrack(randomPoolTrack(tier)); },
   next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
   // Aktueller Score (state.score): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
   // angeschnitten — er läuft aus, dann reiht onEnded den neuen-Stufen-Track. Lief er schon länger, wird JETZT weich
   // (Fade) auf einen Track der neuen Stufe gewechselt.
   setProgress(score) {
     if (mode !== "run") return;
-    const next = tierForScore(score);
+    lastScore = Math.max(0, Number(score) || 0);
+    const next = tierForScore(lastScore);
     if (next === tier) return;
     tier = next; // Stufe merken — onEnded reiht am Songende ohnehin aus dieser Stufe
     const played = el ? (el.currentTime || 0) : 0;
     if (!audible() || played < SWITCH_MIN_PLAY) return; // frischer/leiser Song → ausspielen lassen (kein Anschneiden)
     fadeSwitchTo(randomPoolTrack(tier));                // schon länger gelaufen → weich hochschalten
+  },
+  // Ruhiger Modus umschalten. AN mitten in hot/overdrive → sofort weich auf die gekappte Stufe herunter; AUS → wieder auf
+  // die score-gerechte Stufe hoch. Im Menü/Victory ist die Stufe ohnehin calm → nur Flag setzen.
+  setCalmMode(on) {
+    const v = !!on;
+    if (v === calmMode) return;
+    calmMode = v;
+    if (mode !== "run") return;
+    const next = tierForScore(lastScore);
+    if (next === tier) return;
+    tier = next;
+    if (audible()) fadeSwitchTo(randomPoolTrack(tier)); // hörbar → sofort weich wechseln; sonst reiht onEnded aus der neuen Stufe
   },
   setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); stopFade(); syncPlayback(); }, // #264: 0 → Stream stoppt, wieder >0 → lazy laden
   // #333: Auswahlphasen-Ducking (getrennt von der Nutzer-Lautstärke). factor 0,6 = ~40 % leiser; 1 = voll. Sanft auf den

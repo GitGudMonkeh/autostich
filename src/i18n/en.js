@@ -1223,6 +1223,8 @@ export default {
 
   "options.haptics.title": "Haptics (vibration)",
   "options.haptics.desc": "A short vibration on confirmations. Only noticeable on touch devices (phones); the system setting “reduce motion” is respected.",
+  "options.calm.title": "Calm mode",
+  "options.calm.desc": "The music no longer escalates with your score — only calm and driving tracks play, never the fast or maximum ones.",
 
   "options.perfHud.title": "FPS counter & report",
   "options.perfHud.desc": "Shows FPS · p95 · jank in the top right and records performance data (⧉ report → console + clipboard). Test branch only. Off = no display and no measurement.",

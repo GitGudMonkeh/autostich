@@ -25,6 +25,7 @@ const DEFAULT_OPTIONS = {
   lang: null, // #sprache: noch nicht gewählt → die UI nimmt beim ersten Start die Browsersprache
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  calmMusic: false,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   numScale: 1,
