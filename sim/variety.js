@@ -23,6 +23,9 @@ export function runVariety({ arg, seed0 } = {}) {
       return { name: SKILL_DEFS[id].name, held: held.length, lift: held.length ? (held.reduce((t, r) => t + r.score, 0) / held.length) / overall : null };
     }).filter((r) => r.held >= 8).sort((a, b) => b.lift - a.lift);
     const lifts = rows.map((r) => r.lift);
+    // Bei sehr kleinem N (z. B. Smoke-Test --runs 2) erreicht kein Skill den held≥8-Schwellwert → keine Zeilen.
+    // Dann nur die Fraktions-Kennzahl ausgeben statt auf lifts[0] zu crashen.
+    if (!rows.length) { console.log(`\n  ${name} (Ø ${fmt(overall)}, 0 Skills mit ≥8 Runs — zu wenige Runs für Lift-Analyse)`); continue; }
     const med = lifts[Math.floor(lifts.length / 2)];
     console.log(`\n  ${name} (Ø ${fmt(overall)}, ${rows.length} Skills):  Lift top ${lifts[0].toFixed(2)}× · median ${med.toFixed(2)}× · bottom ${lifts[lifts.length - 1].toFixed(2)}×  (top/median ${(lifts[0] / med).toFixed(2)}×)`);
     console.log(`    Muss-Picks (Lift ≥1,10): ${rows.filter((r) => r.lift >= 1.10).map((r) => `${r.name} ${r.lift.toFixed(2)}`).join(" · ") || "keine"}`);

@@ -3,13 +3,15 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, STREAK_STAT_CAP, SCORE_PER_WIN, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL,
-  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_SCORE, VABANQUE_TRICKS, VABANQUE_MAX_PAYOUTS, PATT_MARGIN, ZINSESZINS_STEP, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
-  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT } from "../src/game/constants.js";
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+  HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
+  ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
+  STORM_CRIT_CAP, DAUERSTROM_CRIT_CAP, CRIT_MULT_CAP,
+  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
+  REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
 import { computeFormations } from "../src/game/formations.js";
-import { STAT_IDS, statStreakFactor } from "../src/game/stats.js";
-import { streakBaseMult } from "../src/game/perks.js";
-import { initialShop } from "../src/game/shop.js";
+import { streakBaseMult, isLegendary, zinsHurdle } from "../src/game/perks.js";
+import { precomputeArchitect } from "../src/game/architect.js";
 
 // --- Test-Helfer: konstante Decks, damit Ausgänge deterministisch erzwingbar sind ---
 // Farben zyklisch (R/B/G/Y) → gleicher Wert bildet nur eine Wiederholung (1 Formation), KEINEN Farbblock,
@@ -32,9 +34,12 @@ const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Si
 
 // Formationsneutrales Spielerdeck (Werte 12/11 abwechselnd, Farbe R/B abwechselnd): gewinnt immer gegen
 // Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
-const flatDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 // Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
-const sameSuitDeck = () => Array.from({ length: 40 }, (_, i) => ({ id: `S${i}`, suit: "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
+// #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
+// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt 0,05 (Sockel) + stauBonus zur rawCrit bei — sonst NICHTS
+// (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den alten
+// additiven statCritChance:V (der Kritwurf bleibt rng()<V; makeRng-Wert <1 ⇒ V≥1 crittet garantiert).
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v - 0.05 });
 
 describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
@@ -64,7 +69,7 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   });
 
   it("lastTrick.breakdown: Basis 100 und die Faktoren multiplizieren exakt auf gained (§17)", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng); // erzwungener Crit → critMult > 1
+    const s = resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng); // erzwungener Crit → critMult > 1
     const b = s.lastTrick.breakdown;
     expect(b.base).toBe(B);
     expect(b.critMult).toBeGreaterThan(1);
@@ -74,6 +79,47 @@ describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("lastTrick.breakdown ist null bei Niederlage/Gleichstand", () => {
     expect(resolveTrick(scenario(0, 12), rng).lastTrick.breakdown).toBe(null);
     expect(resolveTrick(scenario(5, 5), rng).lastTrick.breakdown).toBe(null);
+  });
+
+  // Treffer-Identitäten (nur Anzeige): Feuer (100 % Hitze), Pflanze (voll gewachsene grüne Karte), Blitz (5-Stapel-Ion).
+  // Mehrere zugleich möglich → als Liste geführt.
+  describe("lastTrick.hitTypes — Score-Float-Identitäten (mehrfach möglich)", () => {
+    const greenDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `G${i}`, suit: "G", baseRank: v, value: v, green: true }));
+    const ionDeck = (v, stacks) => Array.from({ length: 40 }, (_, i) => ({ id: `I${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v, ionStacks: stacks }));
+    it("Feuer: Sieg bei voller Hitze (100 %)", () => {
+      const s = resolveTrick(scenario(12, 0, { heat: { active: true, value: 100, max: 100 } }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["fire"]);
+    });
+    it("Pflanze: Sieg mit voll ausgewachsener grüner Karte (Wert am Deckel)", () => {
+      const s = resolveTrick(scenario(0, 0, { deck: greenDeck(11), oppDeck: constDeck(0) }), rng);
+      expect(s.lastTrick.result).toMatch(/^win/);
+      expect(s.lastTrick.hitTypes).toEqual(["plant"]);
+    });
+    it("Blitz: Sieg mit voll ionisierter Karte (5 Stapel)", () => {
+      const s = resolveTrick(scenario(0, 0, { deck: ionDeck(12, 5), oppDeck: constDeck(0) }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["lightning"]);
+    });
+    it("Eis: Sieg eines Gletschers (Siegkarte auf festgefrorenem Gletscher-Feld)", () => {
+      const lockedAt0 = Array.from({ length: 40 }, (_, i) => i === 0);
+      const s = resolveTrick(scenario(12, 0, { activeArchetypes: ["ice"], glacierLocked: lockedAt0, glacierMass: Array(40).fill(0), glacierRoles: [] }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["ice"]);
+      // Sieg auf einem NICHT-Gletscher-Feld trägt kein Eis
+      const s2 = resolveTrick(scenario(12, 0, { activeArchetypes: ["ice"], glacierLocked: Array(40).fill(false), glacierMass: Array(40).fill(0), glacierRoles: [] }), rng);
+      expect(s2.lastTrick.hitTypes).toEqual([]);
+    });
+    it("normaler Sieg ohne Auslöser → leer; unter den Schwellen auch leer", () => {
+      expect(resolveTrick(scenario(12, 0), rng).lastTrick.hitTypes).toEqual([]);
+      expect(resolveTrick(scenario(0, 0, { deck: greenDeck(10), oppDeck: constDeck(0) }), rng).lastTrick.hitTypes).toEqual([]); // grün, aber unter dem Deckel (10 < 11)
+      expect(resolveTrick(scenario(0, 0, { deck: ionDeck(12, 4), oppDeck: constDeck(0) }), rng).lastTrick.hitTypes).toEqual([]); // 4 < 5 Stapel
+    });
+    it("Niederlage trägt nie eine Treffer-Identität", () => {
+      expect(resolveTrick(scenario(0, 12, { heat: { active: true, value: 100, max: 100 } }), rng).lastTrick.hitTypes).toEqual([]);
+    });
+    it("mehrere zugleich: voll gewachsene grüne, voll ionisierte Karte bei voller Hitze → alle drei", () => {
+      const deck = Array.from({ length: 40 }, (_, i) => ({ id: `M${i}`, suit: "G", baseRank: 11, value: 11, green: true, ionStacks: 5 }));
+      const s = resolveTrick(scenario(0, 0, { deck, oppDeck: constDeck(0), heat: { active: true, value: 100, max: 100 } }), rng);
+      expect(s.lastTrick.hitTypes).toEqual(["fire", "plant", "lightning"]);
+    });
   });
 
   it("wins + losses + ties == trickNo (nichts geht verloren)", () => {
@@ -107,33 +153,33 @@ describe("resolveTrick — Crit & globale Score-Formel (ohne Tempo)", () => {
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((B + 800) * 1.02);
   });
 
-  it("Crit multipliziert den vollen scoreBeforeCrit mit der Basis 1,5", () => {
-    // statCritChance 1 → garantierter Crit (verbraucht rng). scoreBeforeCrit = Basis×1,02, ×1,5 mit Crit.
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng);
+  it("Crit multipliziert den vollen scoreBeforeCrit mit dem Basis-Crit-Multiplikator", () => {
+    // Crit-Chance 1 (Blitz-Stau) → garantierter Crit (verbraucht rng). scoreBeforeCrit = Basis×1,02, ×CRIT_BASE_MULT mit Crit.
+    const s = resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.5);
-    expect(s.lastTrick.critBonus).toBeCloseTo(B * 1.02 * 0.5);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
+    expect(s.lastTrick.critBonus).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT - 1));
   });
 
   it("Niederlagen und Gleichstände lösen keinen Crit aus", () => {
-    const loss = resolveTrick(scenario(0, 12, { statCritChance: 1 }), rng);
+    const loss = resolveTrick(scenario(0, 12, { lightning: litCrit(1) }), rng);
     expect(loss.lastTrick.isCrit).toBe(false);
     expect(loss.crits).toBe(0);
-    const tie = resolveTrick(scenario(5, 5, { statCritChance: 1 }), rng);
+    const tie = resolveTrick(scenario(5, 5, { lightning: litCrit(1) }), rng);
     expect(tie.lastTrick.isCrit).toBe(false);
   });
 
-  it("statCritChance 1 erzwingt einen Crit bei jedem Sieg; 0 nie", () => {
-    expect(resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng).lastTrick.isCrit).toBe(true);
-    expect(resolveTrick(scenario(12, 0, { statCritChance: 0 }), () => 0.99).lastTrick.isCrit).toBe(false);
+  it("eine Crit-Chance-Quelle (Crit-Chance 1) erzwingt einen Crit bei jedem Sieg; ohne Quelle nie", () => {
+    expect(resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng).lastTrick.isCrit).toBe(true);
+    expect(resolveTrick(scenario(12, 0), () => 0.99).lastTrick.isCrit).toBe(false); // keine Crit-Quelle → rawCrit 0
   });
 
   it("crits, critBonusScore und bestTrickScore werden geführt", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng);
+    const s = resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng);
     expect(s.crits).toBe(1);
-    expect(s.critBonusScore).toBeCloseTo(B * 1.02 * 0.5); // Crit-Bonus = Basis×1,02×0,5
-    expect(s.bestTrickScore).toBeCloseTo(B * 1.02 * 1.5);
+    expect(s.critBonusScore).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT - 1)); // Crit-Bonus = Basis×1,02×0,5
+    expect(s.bestTrickScore).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
   });
 });
 
@@ -149,17 +195,17 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     expect(t(4).critChance).toBeCloseTo(0.25); // Serie 5 (post-win) → 0,25
     expect(t(24).critChance).toBeCloseTo(1);   // Serie 25 → 1,25, geklemmt auf 1
   });
-  it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % wird additiv zu Crit-Schaden (max +100 %, total-aware) (#115)", () => {
+  it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % hebt additiv den Crit-Multiplikator (max +1,00×, total-aware) (#115)", () => {
     const cm = (ws, over = {}) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws, ...over }), rng).lastTrick.critMultiplier;
-    expect(cm(9)).toBeCloseTo(1.5);                          // Serie 10 → rawCrit 0,5 < 1 → nur Basis 1,5
-    expect(cm(29)).toBeCloseTo(2.0);                         // Serie 30 → rawCrit 1,5 → +0,5 → 2,0
-    expect(cm(49)).toBeCloseTo(2.5);                         // Serie 50 → rawCrit 2,5 → +1,0 (Cap) → 2,5
-    expect(cm(6, { statCritChance: 0.7 })).toBeCloseTo(1.55); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
+    expect(cm(9)).toBeCloseTo(CRIT_BASE_MULT);               // Serie 10 → rawCrit 0,5 < 1 → nur Basis
+    expect(cm(29)).toBeCloseTo(CRIT_BASE_MULT + 0.5);        // Serie 30 → rawCrit 1,5 → +0,5
+    expect(cm(49)).toBeCloseTo(CRIT_BASE_MULT + 1.0);        // Serie 50 → rawCrit 2,5 → +1,0 (Cap)
+    expect(cm(6, { lightning: litCrit(0.7) })).toBeCloseTo(CRIT_BASE_MULT + 0.05); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
   });
   it("L4 Kritische Masse: Crit gibt der Karte dauerhaft +1 (max +4)", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 5, value: 5 }];
     const opp = [{ id: "o", suit: "R", baseRank: 0, value: 0 }];
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0], oppOrder: [0], perks: ["L4"], statCritChance: 1 };
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0], oppOrder: [0], perks: ["L4"], lightning: litCrit(1) };
     s = resolveTrick(s, rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.deck[0].value).toBe(6); // 5 +1
@@ -196,17 +242,26 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     const noPatt = resolveTrick(scenario(12 - PATT_MARGIN, 12, {}), rng);              // ohne Patt → Niederlage
     expect(noPatt.lastTrick.result).toBe("loss");
   });
-  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → +VABANQUE_SCORE, je Lauf gedeckelt (#203)", () => {
+  it("L_VAB Vabanque: erste VABANQUE_TRICKS Stiche eines Durchlaufs in Folge → VABANQUE_MULT × Eröffnungs-Score, JEDES Mal (#203)", () => {
     // TRICKS-ter Stich (pos = TRICKS−1) als TRICKS-ter Sieg in Folge (cycleWins TRICKS−1 → TRICKS) → Payout + Zähler hoch.
     const paid = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0 }), rng);
-    expect(paid.lastTrick.breakdown.perkDirect).toBe(VABANQUE_SCORE);
+    const bdPaid = paid.lastTrick.breakdown;
+    // Bezugsgröße ist der Eröffnungs-Score OHNE die Wette selbst (hier nur dieser eine Stich, cycleOpenScore startet 0).
+    expect(bdPaid.perkDirect).toBeCloseTo((bdPaid.total - bdPaid.perkDirect) * VABANQUE_MULT, 6);
+    expect(bdPaid.perkDirect).toBeGreaterThan(0);
     expect(paid.vabanquePaid).toBe(1);
+    // SELBSTSKALIEREND: mit bereits gesammelter Eröffnung wächst die Auszahlung mit — ein flacher Betrag täte das nicht.
+    const rich = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 0, cycleOpenScore: 10_000 }), rng);
+    const bdRich = rich.lastTrick.breakdown;
+    expect(bdRich.perkDirect).toBeCloseTo(bdPaid.perkDirect + 10_000 * VABANQUE_MULT, 6);
     // Serie vorher gerissen (cycleWins < TRICKS am TRICKS-ten Stich) → kein Payout.
     const voided = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 2, vabanquePaid: 0 }), rng);
     expect(voided.lastTrick.breakdown.perkDirect).toBe(0);
-    // Lauf-Deckel erreicht → kein weiterer Payout trotz erfüllter Eröffnung (Anti-Front-Load-Exploit).
-    const capped = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: VABANQUE_MAX_PAYOUTS }), rng);
-    expect(capped.lastTrick.breakdown.perkDirect).toBe(0);
+    // KEIN Lauf-Deckel mehr: auch die 20. gefegte Eröffnung zahlt voll (der alte MAX_PAYOUTS-Deckel band in 90 %
+    // der Läufe und machte den Perk nach 3 von median 16 Auslösern wirkungslos). vabanquePaid zählt nur noch mit.
+    const late = resolveTrick(scenario(12, 0, { perks: ["L_VAB"], pos: VABANQUE_TRICKS - 1, cycleWins: VABANQUE_TRICKS - 1, vabanquePaid: 20 }), rng);
+    expect(late.lastTrick.breakdown.perkDirect).toBeCloseTo(bdPaid.perkDirect, 6);
+    expect(late.vabanquePaid).toBe(21);
   });
 });
 
@@ -287,10 +342,10 @@ describe("resolveTrick — Durchlauf-Ende & persistente Reihenfolge (V2)", () =>
   it("#137: Formationsphasen-Eintritt rechnet mit shop.permanentEffects + anchors (nicht erst nach dem ersten Tausch)", () => {
     // constDeck(5): Wert 5 überall → in jedem Segment eine Wiederholung. Formationsanker (A5) auf Pos 0 +
     // Formationskern (regeländernder Shop-Effekt). Vor dem Fix wurden beide beim Eintritt ignoriert (Default []/{}).
-    expect(DECISION_SCHEDULE[5]).toBe("formation"); // Sanity: cycle 4 → 5 löst die Formationsphase aus (60-Plan)
+    expect(DECISION_SCHEDULE[2]).toBe("formation"); // Sanity: cycle 1 → 2 löst die Formationsphase aus (#267 45-Plan)
     const anchors = [{ type: "formation", position: 0 }];
     const shop = { coins: 0, anchors };
-    const s = resolveTrick(scenario(5, 0, { cycle: 4, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
+    const s = resolveTrick(scenario(5, 0, { cycle: 1, pos: TRICKS_PER_CYCLE - 1, shop }), makeRng(2));
     expect(s.phase).toBe("formation");
     // Beim Eintritt gerenderte Formationen == vollständige Berechnung (mit anchors + familyTiers), NICHT die argument-lose.
     expect(s.formations).toEqual(computeFormations(s.playerOrder, s.deck, s.roles, s.perks, s.skills, anchors, s.familyTiers));
@@ -311,7 +366,7 @@ describe("Crit-Historie-Rares — Engine (#71 Phase 2c)", () => {
   const never = () => 0.99; // Crit-Wurf schlägt nie an → Zustandsübergänge isoliert testbar
 
   it("critFollowArmed: ein Crit rüstet, ein Sieg ohne Crit entrüstet", () => {
-    expect(resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng).critFollowArmed).toBe(true);
+    expect(resolveTrick(scenario(12, 0, { lightning: litCrit(1) }), rng).critFollowArmed).toBe(true);
     expect(resolveTrick(scenario(12, 0, { critFollowArmed: true }), never).critFollowArmed).toBe(false);
   });
   // D14 Crit-Folge / D15 Fehlzündung / D16 Schwachstellenanalyse als Familien (D_CRIT_FOLLOW / D_MISFIRE /
@@ -332,6 +387,18 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
     s = resolveTrick(s, rng); expect(s.winSuitStreak).toBe(1); expect(s.winSuit).toBe("B"); // Farbwechsel
     expect(resolveTrick(scenario(0, 12, { winSuit: "R", winSuitStreak: 3 }), rng).winSuitStreak).toBe(0); // Niederlage bricht
   });
+
+  it("Farbserie + Pflanze-Grün: pflanzen-grüne Karten verschiedener Originalfarben halten die Serie als „G\"", () => {
+    const deck = [
+      { id: "a", suit: "R", baseRank: 12, value: 12, green: true },
+      { id: "b", suit: "B", baseRank: 12, value: 12, green: true }, // andere Originalfarbe, aber grün
+      { id: "c", suit: "Y", baseRank: 12, value: 12 },              // nicht grün → Farbwechsel
+    ];
+    let s = { ...initialState(makeRng(1)), deck, oppDeck: mk([0, 0, 0]), playerOrder: [0, 1, 2], oppOrder: [0, 1, 2] };
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("G"); expect(s.winSuitStreak).toBe(1); // grüne R → „G"
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("G"); expect(s.winSuitStreak).toBe(2); // grüne B → Serie HÄLT (beide „G")
+    s = resolveTrick(s, rng); expect(s.winSuit).toBe("Y"); expect(s.winSuitStreak).toBe(1); // nicht-grüne Y → Farbwechsel
+  });
   // D17 Farbserie / D18 Volles Haus als Familien (D_SUIT_STREAK / D_FULL_HOUSE) — Score-Tests in families-engine.test.js.
   it("Volles-Haus-Fenster: recentResults hält die letzten 4 Ergebnisse", () => {
     expect(resolveTrick(scenario(12, 0, { recentResults: ["loss", "win", "tie", "win"] }), rng).recentResults).toEqual(["win", "tie", "win", "win"]);
@@ -341,26 +408,49 @@ describe("Historie-Rares — Engine (#71 Phase 2f)", () => {
 describe("Serien-/Crit-Rares — Engine (#71 Phase 2e)", () => {
   // B10 Überzahl als Familie B_SUPERIOR (Vergleich Dauerwert vs. Vorgänger) — Tests in families.test.js.
   it("Familie D_OVERCRIT: +Crit-Flat, wenn die Roh-Crit-Chance über 100 % liegt (rawCrit im critCtx)", () => {
-    // D_OVERCRIT III: jeder Überschuss-Crit (rawCrit > 1) gibt +500. statCritChance 1,5 → rawCrit 1,5, Crit garantiert.
-    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, statCritChance: 1.5 }), rng);
+    // D_OVERCRIT III: jeder Überschuss-Crit (rawCrit > 1) gibt +500. Crit-Chance 1,5 (Blitz-Stau) → rawCrit 1,5, Crit garantiert.
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, lightning: litCrit(1.5) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo((B + 500) * 1.02);
     // rawCrit genau 1 (nicht >1) → kein Bonus.
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, statCritChance: 1 }), rng).lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_OVERCRIT: 3 }, lightning: litCrit(1) }), rng).lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
   });
 });
 
 describe("Legendär-Perks Durchlauf-Ende & Formationsvielfalt (Legendär-Perks-Rework #203)", () => {
-  it("L_ZINS Zinseszins: positive Durchlauf-Bilanz stapelt eine flache Dauer-Dividende (am Durchlauf-Ende)", () => {
-    // 40. Stich (pos 39) als Sieg, Bilanz positiv (mehr Siege als Niederlagen) → zinsBonus += Step, dem Schlussstich gutgeschrieben.
-    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 25, cycleLosses: 10, zinsBonus: 0 }), rng);
-    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
-    expect(s.zinsBonus).toBe(ZINSESZINS_STEP);                // eine Stufe gestapelt
-    expect(s.cycleWins).toBe(0);                              // Bilanz für den nächsten Durchlauf zurückgesetzt
-    expect(s.lastTrick.gained).toBeGreaterThan(B);           // Stich-Score + Dividende (Score-Rekonziliation)
-    // Negative Bilanz → keine neue Stufe (der bestehende Bonus wird aber weiter ausgezahlt).
-    const neg = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, cycleLosses: 20, zinsBonus: ZINSESZINS_STEP }), rng);
-    expect(neg.zinsBonus).toBe(ZINSESZINS_STEP);             // NICHT weiter gestapelt
+  it("L_ZINS Bank: jeder Sieg zahlt einen Anteil des Stich-Scores aufs Kapital ein (Kapital ist KEIN Score)", () => {
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 5, zinsCapital: 0 }), rng);
+    expect(s.zinsCapital).toBeCloseTo(s.lastTrick.gained * ZINS_DEPOSIT); // Einlage = Anteil des VOLLEN Stich-Scores
+    expect(s.score).toBeCloseTo(s.lastTrick.gained);                      // … und schlägt selbst nicht auf den Score durch
+    // Niederlage zahlt nicht ein.
+    const loss = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 5, zinsCapital: 500 }), rng);
+    expect(loss.zinsCapital).toBe(500);
+  });
+  it("L_ZINS Bank: Hürde genommen → Kapital × Zinssatz ausgezahlt, Satz steigt eine Stufe (Deckel greift)", () => {
+    const hurdle = zinsHurdle(); // 65 % von 40 Stichen = 26 Siege
+    // Schlussstich (pos 39) als Sieg; cycleWins zählt diesen Sieg mit → hurdle−1 vorher reicht exakt.
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: hurdle - 1, zinsCapital: 100000, zinsRate: ZINS_RATE_START, score: 0 }), rng);
+    expect(s.cycle).toBe(1);                                            // Durchlauf-Ende
+    // lastTrick.scoreGain trägt am Durchlauf-Ende bereits die Auszahlung (Ledger-Rekonziliation) → den reinen
+    // Stich-Score aus dem Kapital zurückrechnen: Kapital = Vorher + Stich-Score × Einlagesatz.
+    const trickScore = (s.zinsCapital - 100000) / ZINS_DEPOSIT;
+    expect(s.zinsCapital).toBeCloseTo(100000 + trickScore * ZINS_DEPOSIT); // Kapital bleibt liegen (nur die Zinsen fließen ab)
+    expect(s.score).toBeCloseTo(trickScore + s.zinsCapital * ZINS_RATE_START); // Stich + Zinsen
+    expect(s.zinsRate).toBeCloseTo(ZINS_RATE_START + ZINS_RATE_STEP);   // Satz eine Stufe hoch
+    expect(s.cycleWins).toBe(0);                                        // Bilanz für den nächsten Durchlauf zurückgesetzt
+    // Deckel: ein Satz am Maximum steigt nicht weiter.
+    const capped = resolveTrick(scenario(12, 0, { perks: ["L_ZINS"], pos: 39, cycleWins: hurdle - 1, zinsCapital: 1000, zinsRate: ZINS_RATE_MAX }), rng);
+    expect(capped.zinsRate).toBeCloseTo(ZINS_RATE_MAX);
+  });
+  it("L_ZINS Bank: Hürde verfehlt → Crash (Kapital schrumpft, Satz fällt eine Stufe, keine Auszahlung)", () => {
+    const s = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, zinsCapital: 100000, zinsRate: ZINS_RATE_START + 3 * ZINS_RATE_STEP, score: 0 }), rng);
+    expect(s.cycle).toBe(1);
+    expect(s.score).toBe(0);                                            // keine Auszahlung
+    expect(s.zinsCapital).toBeCloseTo(100000 * ZINS_CRASH_KEEP);        // Kapital gecrasht
+    expect(s.zinsRate).toBeCloseTo(ZINS_RATE_START + 2 * ZINS_RATE_STEP); // Satz eine Stufe zurück
+    // Der Satz fällt nie unter den Startwert.
+    const floor = resolveTrick(scenario(0, 12, { perks: ["L_ZINS"], pos: 39, cycleWins: 5, zinsRate: ZINS_RATE_START }), rng);
+    expect(floor.zinsRate).toBeCloseTo(ZINS_RATE_START);
   });
   it("L_ECHO Echo: am Durchlauf-Ende wird der beste Stich des Durchlaufs nochmal gutgeschrieben (auch bei Schluss-Niederlage)", () => {
     const s = resolveTrick(scenario(0, 12, { perks: ["L_ECHO"], pos: 39, cycleBestTrick: 5000, score: 100000 }), rng); // Schlussstich Niederlage
@@ -392,12 +482,13 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1), kein Crit-Flat mehr (+50 im Rework gestrippt)", () => {
-    // scoreBase = Basis × streakBaseMult(1)=1,02, ×1,5 (Crit-Basis). Blitzableiter gibt NUR Ladung.
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR], lightning: lit() }), rng);
+    // scoreBase = Basis × streakBaseMult(1)=1,02, ×Crit-Mult. Blitzableiter gibt NUR Ladung;
+    // als 1 gehaltener Blitz-Skill hebt er den Crit-Mult um +LIGHTNING_CRIT_MULT_PER_SKILL.
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0); // Crit aus den Blitz-Skills selbst (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(2);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.5);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT + LIGHTNING_CRIT_MULT_PER_SKILL));
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
@@ -408,96 +499,65 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
   });
 
   it("Ladung deckelt bei maxCharge (10)", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR], lightning: lit({ charge: 9 }) }), rng);
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lightning.charge).toBe(10);
   });
 
   it("inaktiver Archetyp: Crit erzeugt keine Ladung", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1 }), rng); // lightning default inaktiv
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 4 } }), () => 0); // Crit aus Präzision; lightning default inaktiv
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(0); // inaktiv → keine Ladung
   });
 
-  it("Entscheidungszyklus (§22.2): Perk/Formation/Stat/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
-    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_SCHEDULE[C+1] (Shop-Spec §2.2, fester 60-Plan).
+  it("Entscheidungszyklus (§22.2, #267 45-Plan): Perk/Formation/Architekt/Skill je nach Durchlauf; leerer Skill-Pool → Perk", () => {
+    // Nach dem Durchlauf mit cycle C ist die Entscheidung DECISION_SCHEDULE[C+1] (fester 45-Plan, Stat-Phase entfernt).
     const ALL = Object.keys(SKILL_DEFS); // alle Skills (Blitz + Feuer …) → leerer Pool erzwingt den Perk-Fallback
 
     const perkRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0 }), rng); // → cycle 1 = perk
     expect(perkRound.phase).toBe("levelup");
     expect(perkRound.offer).toHaveLength(3);
     expect(perkRound.skillOffer).toBeNull();
-    expect(perkRound.statOffer).toBeNull();
 
-    const statRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 = stat
-    expect(statRound.phase).toBe("levelup");
-    expect(statRound.statOffer).toEqual(STAT_IDS);
-    expect(statRound.offer).toBeNull();
-    expect(statRound.skillOffer).toBeNull();
-
-    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = ex-Shop-Slot; ohne Architekt (Sim-Baseline) → direkt play (#229: Shop entfernt, mit Architekt → "architect")
-    expect(shopRound.phase).toBe("play");
-    expect(shopRound.offer).toBeNull();
-    expect(shopRound.statOffer).toBeNull();
-    expect(shopRound.skillOffer).toBeNull();
-
-    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4 }), rng); // → cycle 5 = formation
+    const formationRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1 }), rng); // → cycle 2 = formation
     expect(formationRound.phase).toBe("formation");
     expect(formationRound.formationEnergy).toBe(FORMATION_ENERGY);
     expect(formationRound.offer).toBeNull();
     expect(formationRound.skillOffer).toBeNull();
-    expect(formationRound.statOffer).toBeNull();
 
-    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 5 }), rng); // → cycle 6 = skill
+    const shopRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2 }), rng); // → cycle 3 = Architekt-Slot; ohne Architekt (Sim-Baseline) → direkt play
+    expect(shopRound.phase).toBe("play");
+    expect(shopRound.offer).toBeNull();
+    expect(shopRound.skillOffer).toBeNull();
+
+    const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3 }), rng); // → cycle 4 = skill
     expect(skillRound.phase).toBe("levelup");
     expect(skillRound.skillOffer).toHaveLength(12); // SKILLS_OFFERED 12 (3+3+3+3 über alle 4 Archetypen)
     expect(skillRound.offer).toBeNull();
-    expect(skillRound.statOffer).toBeNull();
 
     // Skill-Runde mit vollem Skill-Besitz → Fallback auf Perk-Angebot (Runde nicht verschwendet).
-    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 5, skills: ALL }), rng);
+    const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
     expect(owned.offer).toHaveLength(3);
   });
 });
 
-describe("Stat-System — Engine (V2 §22.3)", () => {
-  it("Crit-Chance-Stat: statCritChance hebt die Crit-Chance additiv", () => {
-    // 3 Picks → +6 pp. Ohne Crit-Perk sonst 0 → 6 %.
-    expect(resolveTrick(scenario(12, 0, { statCritChance: 0.06 }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+// #267: die Stat-Phase (Crit-Chance/-Mult/Formations-/Serien-Stat) ist ENTFERNT. Crit-Chance & Crit-Mult kommen jetzt
+// aus der Perk-Familie „Präzision" (P_*) bzw. aus Blitz; die Serien-/Formations-BASIS (streakBaseMult, Formationsfaktoren)
+// bleibt und ist in „Formations-Engine — Integration" bzw. den Serien-Tests abgedeckt. Der reine Stat-BOOSTER ist weg.
+describe("Crit-Chance/-Mult über Blitz & Präzision — Engine (#267, Stat-Ersatz)", () => {
+  it("Crit-Chance additiv: Präzision-Schärfe UND der Blitz-Stau heben die Crit-Chance flach (Basis-Crit 0)", () => {
+    // P_SHARPNESS I → +0,06 pp flat auf ALLE Karten → critChance 0,06 (rng 0,99 → kein realer Crit, nur ablesen).
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 1 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+    // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz: Sockel 0,05 + 0,01 → 0,06.
+    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stauBonus: 0.01 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
   });
-  it("Crit-Mult-Stat: hebt den Crit-Faktor auf 1,5 + Stat", () => {
-    // statCritMult 0,4 → Basis-Crit 1,9; statCritChance 1 garantiert den Crit.
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, statCritMult: 0.4 }), rng);
+  it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf Basis + Bonus (P_FORCE II → Basis + 0,40)", () => {
+    // P_FORCE II → +0,40× auf den Basis-Crit-Mult; Crit über den Blitz-Stau (rawCrit 1) garantiert.
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { P_FORCE: 2 }, lightning: litCrit(1) }), rng);
+    const expected = CRIT_BASE_MULT + 0.40;
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(1.9);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * 1.9); // scoreBeforeCrit Basis×1,02 × 1,9
-  });
-  it("Serien-Stat: statStreakMult pro Serienpunkt multipliziert den Stichscore", () => {
-    // statStreakMult 0,01 × Serie 1 → Faktor 1,01. Basis × 1,02(#39) × 1,01.
-    expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01 }), rng).lastTrick.gained).toBeCloseTo(B * 1.02 * 1.01);
-    // Serie 4 (winStreak 3 → 4): streakBaseMult(4)=1,08 × Faktor (1 + 0,01×4)=1,04.
-    expect(resolveTrick(scenario(12, 0, { statStreakMult: 0.01, winStreak: 3 }), rng).lastTrick.gained)
-      .toBeCloseTo(B * 1.08 * 1.04);
-  });
-  it("Serien-Stat ist bei STREAK_STAT_CAP gedeckelt (#153: Runaway-Schutz greift auch in der Engine)", () => {
-    // Serie 11 (winStreak 10 → 11), großer Serien-Stat: 0,5 × 11 = 5,5 → auf STREAK_STAT_CAP gedeckelt.
-    const serie = 11;
-    const gained = resolveTrick(scenario(12, 0, { statStreakMult: 0.5, winStreak: 10 }), rng).lastTrick.gained;
-    expect(gained).toBeCloseTo(B * streakBaseMult(serie) * statStreakFactor(0.5, serie));
-    expect(gained).toBeCloseTo(B * streakBaseMult(serie) * (1 + STREAK_STAT_CAP));
-    // Ohne den Cap wäre der Faktor (1 + 5,5) → der Cap senkt den Score echt.
-    expect(gained).toBeLessThan(B * streakBaseMult(serie) * (1 + 0.5 * serie));
-  });
-  it("Formations-Stat: greift nur bei aktiver Formation (§22.3)", () => {
-    // Ohne Formation (erste Karte) kein Effekt …
-    expect(resolveTrick(scenario(12, 0, { statFormMult: 0.15 }), rng).lastTrick.gained).toBeCloseTo(B * 1.02);
-    // … mit Formation (2. Karte eines Wiederholungs-Paars) wirkt +15 % zusätzlich zur Wiederholung ×1,25.
-    const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
-    const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
-    let s = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], statFormMult: 0.15 };
-    s = resolveTrick(s, rng); // pos0: keine Formation
-    s = resolveTrick(s, rng); // pos1: Wiederholung ×1,25 + Formations-Stat ×1,15
-    expect(s.lastTrick.gained).toBeCloseTo(B * 1.04 * 1.25 * 1.15);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(expected);
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * expected); // scoreBeforeCrit Basis×1,02 × Crit-Faktor
   });
 });
 
@@ -515,13 +575,13 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
   });
 
   it("Crit multipliziert NACH dem Formations-Multiplikator (§7.3)", () => {
-    // statCritChance 1 → beide Stiche critten; geprüft wird pos1 (Wiederholung ×1,25).
-    let s = base({ statCritChance: 1 });
+    // Crit-Chance 1 (Blitz-Stau) → beide Stiche critten; geprüft wird pos1 (Wiederholung ×1,25).
+    let s = base({ lightning: litCrit(1) });
     s = resolveTrick(s, rng); // pos0
     s = resolveTrick(s, rng); // pos1: Formation ×1,25, dann Crit ×1,5
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.04 * 1.25);      // Formation IN der Basis
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.04 * 1.25 * 1.5);      // Crit ×1,5 danach
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.04 * 1.25 * CRIT_BASE_MULT);      // Crit ×1,5 danach
   });
 
   it("Formationen werden persistent im State gehalten (je Durchlauf berechnet)", () => {
@@ -547,10 +607,10 @@ describe("Ionisierung — Engine (Stufe B)", () => {
   // constDeck mit stabilen ids; die gespielte Karte (pos 0) trägt `stacks` Ionisierungsstapel.
   const ionDeck = (v, stacks) => constDeck(v).map((c, i) => (i === 0 ? { ...c, id: "P0", ionStacks: stacks } : { ...c, id: `P${i}` }));
 
-  it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+25/Stapel)", () => {
-    // 2 Stapel → +50: (Basis+50) × streakBaseMult(1)=1,02 (kein Crit).
+  it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+ION_SCORE_PER_STACK/Stapel)", () => {
+    // 2 Stapel → +2×Flat: (Basis + 2×Flat) × streakBaseMult(1)=1,02 (kein Crit; rng 0,99 > die +2 pp Feld-Crit).
     const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 50) * 1.02);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 2 * ION_SCORE_PER_STACK) * 1.02);
   });
 
   it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 5 — #165 Skills-Spec §5.1)", () => {
@@ -561,15 +621,15 @@ describe("Ionisierung — Engine (Stufe B)", () => {
   });
 
   it("Überspannung: Crit mit ionisierter Karte gibt +3 Zusatzladung (1 Basis + 1 Blitzableiter + 3)", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1,deck: ionDeck(12, 1), playerOrder: identity(),
-      skills: ["SK_LIGHTNING_01", U], lightning: lit() }), rng);
+    const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 1), playerOrder: identity(),
+      skills: ["SK_LIGHTNING_01", U], lightning: lit() }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(5);
   });
 
   it("Volle Ladung + Ionisierung: ungespielte Karten werden ionisiert, Ladung verbraucht", () => {
     // Nur Ionisierung (kein Blitzableiter) → sauberer Verbrauch bis auf den Boden (0).
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I], lightning: lit({ charge: 9 }) }), rng);
+    const s = resolveTrick(scenario(12, 0, { skills: [I], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus dem Blitz-Skill (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lightning.charge).toBe(0);
     expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2);
@@ -578,30 +638,54 @@ describe("Ionisierung — Engine (Stufe B)", () => {
 
 describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
   const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
-        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, stormScoreWinsRemaining: 0, dauerstromCritBonus: 0, ...over });
+        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10", SS = "SK_LIGHTNING_17", TG = "SK_LIGHTNING_L01";
+  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, dauerstromCritBonus: 0, ...over });
 
-  it("Reststrom: Verbrauch lässt Ladung auf 3 statt 0 fallen", () => {
-    // Kein Blitzableiter → isolierter Reststrom-Boden (3); Blitzableiter würde +1 obendrauf geben (eigener Test).
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, R], lightning: lit({ charge: 9 }) }), rng);
-    expect(s.lightning.charge).toBe(3);
+  it("Reststrom: Verbrauch lässt Ladung auf den Boden fallen (statt 0)", () => {
+    // Kein Blitzableiter → isolierter Reststrom-Boden; Blitzableiter würde +1 obendrauf geben (eigener Test).
+    const s = resolveTrick(scenario(12, 0, { skills: [I, R], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
+    expect(s.lightning.charge).toBe(REST_CHARGE_FLOOR);
   });
 
-  it("Gewitterfront: je Verbrauch +2 pp Crit dauerhaft (Cap 20 pp), danach +100 Score für 3 Siege", () => {
-    const step = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, I, G], lightning: lit({ charge: 9 }) }), rng);
-    expect(step.lightning.stormCritBonus).toBeCloseTo(0.02);
-    const capped = resolveTrick(scenario(12, 0, { statCritChance: 1,skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: 0.20 }) }), rng);
-    expect(capped.lightning.stormScoreWinsRemaining).toBe(3);
+  it("Gewitterfront: je Verbrauch +Crit-Momentum, am Deckel gestoppt (Crit-Bändigung)", () => {
+    const step = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
+    expect(step.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_STEP);
+    // Am Deckel hört die Rampe auf — sie lief früher unbegrenzt weiter (Runaway-Quelle).
+    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: STORM_CRIT_CAP }) }), () => 0);
+    expect(capped.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_CAP);
   });
 
-  it("Gewitterfront-Score: aktiver Stack gibt +100 in die Basis und wird je Sieg abgebaut", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, G], lightning: lit({ stormScoreWinsRemaining: 2 }) }), () => 0.99);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + 100) * 1.02); // (Basis+100) × streakBaseMult(1)=1,02
-    expect(s.lightning.stormScoreWinsRemaining).toBe(1);
+  it("Entladung (v0.5): je Verbrauch +Crit-Mult-Momentum, dauerhaft (weicher Cap)", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9 }) }), () => 0);
+    expect(s.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_STEP);
+    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9, entladungMult: ENTLADUNG_MULT_CAP }) }), () => 0);
+    expect(capped.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_CAP); // Deckel hält
+  });
+
+  it("Serienschutz (v0.5): Niederlage mit ≥ halber Ladung hält die Serie und verbraucht die Ladung", () => {
+    // Niederlage (0<12), Serie 4 vorher, Ladung 8 ≥ halbe (5) → Serie hält, 5 Ladung weg.
+    const held = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 8 }) }), () => 0);
+    expect(held.lastTrick.result).toBe("loss");
+    expect(held.winStreak).toBe(4);                 // Serie gehalten
+    expect(held.lightning.charge).toBe(8 - Math.ceil(10 * 0.5)); // halbe Max-Ladung verbraucht → 3
+    // Zu wenig Ladung (4 < 5) → Serie bricht normal, Ladung unberührt.
+    const broke = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 4 }) }), () => 0);
+    expect(broke.winStreak).toBe(0);
+    expect(broke.lightning.charge).toBe(4);
+  });
+
+  it("Donnergott-Turbo (v0.5): Konsument löst schon bei 70 % Ladung aus (statt voll)", () => {
+    // maxCharge 10 → Schwelle ceil(7)=7. Ladung 6 + Blitz-Crit (+1) = 7 → Verbrauch feuert (Ionisierung), Ladung fällt auf Boden.
+    const turbo = resolveTrick(scenario(12, 0, { skills: [I, TG], lightning: lit({ charge: 6 }) }), () => 0);
+    expect(turbo.lightning.charge).toBeLessThan(6);       // Verbrauch ausgelöst → auf Boden gefallen
+    expect(turbo.deck.some((c) => (c.ionStacks || 0) > 0)).toBe(true); // ionisiert
+    // Ohne Donnergott feuert 7 < 10 nicht.
+    const noFire = resolveTrick(scenario(12, 0, { skills: [I], lightning: lit({ charge: 6 }) }), () => 0);
+    expect(noFire.lightning.charge).toBe(7);
   });
 
   it("Ladungsserie: ist KEIN Verbraucher — volle Ladung ohne Ionisierung parkt (kein Verbrauch)", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR, S], lightning: lit({ charge: 9 }) }), rng);
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, S], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lightning.charge).toBe(10);   // voll → parkt, kein Konsument
     expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(0); // nichts ionisiert
   });
@@ -615,19 +699,41 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
 
   it("On-Consume: Blitzableiter gibt bei jedem vollen Verbrauch +1 Ladung zurück (über den Boden)", () => {
     // [LR, I]: Crit → +2 Ladung (Basis +1, Blitzableiter +1) → voll (10) → Ionisierung verbraucht (Boden 0) → Blitzableiter +1.
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [LR, I], lightning: lit({ charge: 8 }) }), rng);
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, I], lightning: lit({ charge: 8 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.deck.filter((c) => (c.ionStacks || 0) > 0).length).toBeGreaterThan(0); // verbraucht → ionisiert
     expect(s.lightning.charge).toBe(BLITZABLEITER_CONSUME_CHARGE);                   // 0 (Boden) + 1 zurück
   });
 
-  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft (dauerstromCritBonus)", () => {
-    const s = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, DA], lightning: lit({ charge: 9 }) }), rng);
+  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft — bis zum Deckel (Crit-Bändigung)", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CONSUME_CRIT, 6);
+    // Am Deckel stoppt die Rampe. Ungedeckelt erreichte sie im Sim +1.844 pp und speiste über Überschlag den Crit-Mult.
+    const capped = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9, dauerstromCritBonus: DAUERSTROM_CRIT_CAP }) }), () => 0);
+    expect(capped.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CRIT_CAP, 6);
+  });
+
+  it("Überschlag ist ein Ventil: Crit-Überschuss über 100 % wird zu Ladung, NICHT zu Crit-Multiplikator", () => {
+    const UE = "SK_LIGHTNING_14";
+    // +150 pp Rohchance über die (gedeckelten) Rampen → 50 pp Überschuss → 50/10 = +5 Ladung. Kein Konsument im
+    // Build (Ionisierung fehlt) → die Ladung bleibt liegen und ist direkt ablesbar.
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0, stormCritBonus: STORM_CRIT_CAP, dauerstromCritBonus: DAUERSTROM_CRIT_CAP, stauBonus: 0.5 }) }), () => 0);
+    expect(s.lightning.charge).toBeGreaterThan(0);
+    // Der Crit-Mult bleibt bei den regulären (gedeckelten) Kanälen — der Überschuss fließt NICHT hinein.
+    const ohneUeberschuss = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0 }) }), () => 0);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(ohneUeberschuss.lastTrick.critMultiplier, 6);
+  });
+
+  it("Backstop: der Crit-Multiplikator ist hart gedeckelt, egal welcher Kanal ihn treibt", () => {
+    // Durchschlag/Entladung weit über dem Deckel angesetzt → der fertige Mult wird auf CRIT_MULT_CAP geklemmt.
+    const s = resolveTrick(scenario(12, 0, { skills: [LR, I], lightning: lit({ charge: 9, durchschlagMult: 50, entladungMult: 50 }) }), () => 0);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_MULT_CAP, 6);
   });
 
   it("On-Consume: Statische Aufladung gibt bei jedem vollen Verbrauch +CONSUME_SCORE Flat-Score", () => {
-    const withSt = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I, ST], lightning: lit({ charge: 9 }) }), rng);
-    const without = resolveTrick(scenario(12, 0, { statCritChance: 1, skills: [I],     lightning: lit({ charge: 9 }) }), rng);
+    // Beide Builds halten 2 Blitz-Skills → identischer Crit-Mult (je +LIGHTNING_CRIT_MULT_PER_SKILL/Skill).
+    // Serienschutz (SS) ist auf einem gewonnenen Crit-Stich wirkungslos → isoliert CONSUME_SCORE sauber.
+    const withSt = resolveTrick(scenario(12, 0, { skills: [I, ST], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
+    const without = resolveTrick(scenario(12, 0, { skills: [I, SS], lightning: lit({ charge: 9 }) }), () => 0);
     expect(withSt.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo(CONSUME_SCORE, 6);
   });
 
@@ -649,7 +755,7 @@ describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)"
 
 describe("Formationswerkzeuge — Engine (V2 §22.6 E)", () => {
   it("E10 Feinjustierung: die Formationsphase startet mit +1 Energie", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 4, perks: ["E10"] }), rng); // → cycle 5 (Formation, 60-Plan)
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 1, perks: ["E10"] }), rng); // → cycle 2 (Formation, #267 45-Plan)
     expect(s.phase).toBe("formation");
     expect(s.formationEnergy).toBe(FORMATION_ENERGY + 1);
   });
@@ -661,5 +767,117 @@ describe("resolveTrick — Nicht-play früher Rückgabezweig (#158)", () => {
     expect(resolveTrick(menu, rng)).toBe(menu);
     const over = { ...scenario(12, 0), phase: "gameover" };
     expect(resolveTrick(over, rng)).toBe(over);
+  });
+});
+
+describe("#370 Wochen-Mods: Karten-Wert (nur im Ranked-Lauf gesetzt)", () => {
+  it("Starke Karten (+mag Spielerwert) dreht einen knappen Stich zum Sieg", () => {
+    expect(resolveTrick(scenario(5, 7), rng).lastResult).toBe("loss");
+    expect(resolveTrick(scenario(5, 7, { weekMods: [{ effect: "cardValue", mag: 3 }] }), rng).lastResult).toBe("win");
+  });
+  it("Stärkere Gegner (+mag Gegnerwert) dreht einen knappen Sieg zur Niederlage", () => {
+    expect(resolveTrick(scenario(9, 7), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(9, 7, { weekMods: [{ effect: "enemyValue", mag: 3 }] }), rng).lastResult).toBe("loss");
+  });
+  it("ohne Wochen-Mods (Normal-/Sim-Lauf) unverändert", () => {
+    expect(resolveTrick(scenario(8, 7, { weekMods: [] }), rng).lastResult).toBe("win");
+    expect(resolveTrick(scenario(8, 7), rng).lastResult).toBe("win");
+  });
+});
+
+describe("#370 Wochen-Mods: Angebots-Umfang (Perk-/Skill-Verknappung, nur Ranked)", () => {
+  // Treibt einen frischen Lauf durch die Zyklen und fängt das ERSTE Perk- und Skill-Angebot der Engine ab.
+  function firstOffers(weekMods) {
+    let s = { ...initialState(makeRng(7)), weekMods };
+    let perkOffer = null, skillOffer = null;
+    for (let i = 0; i < 1500 && s.phase !== "gameover" && (!perkOffer || !skillOffer); i++) {
+      if (s.phase === "levelup") {
+        if (s.offer && !perkOffer) perkOffer = s.offer;
+        if (s.skillOffer && !skillOffer) skillOffer = s.skillOffer;
+        s = { ...s, phase: "play", offer: null, skillOffer: null, legendaryOffer: null, statOffer: null };
+        continue;
+      }
+      if (s.phase === "formation" || s.phase === "architect" || s.phase === "legendary") { s = { ...s, phase: "play" }; continue; }
+      s = resolveTrick(s, makeRng(100 + i));
+    }
+    return { perkOffer, skillOffer };
+  }
+  it("ohne Mods volles Angebot; mit Verknappung Perk=1 und Skill ≤4 (1/Fraktion)", () => {
+    const base = firstOffers([]);
+    expect(base.perkOffer && base.perkOffer.length).toBeGreaterThan(1);   // Default 3
+    expect(base.skillOffer && base.skillOffer.length).toBeGreaterThan(4); // Default 12 (3/Fraktion)
+    const scarce = firstOffers([{ effect: "scarcePerks" }, { effect: "scarceSkills" }]);
+    expect(scarce.perkOffer.length).toBe(1);
+    expect(scarce.skillOffer.length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe("#370 Wochen-Mods: Formations-Boost (nur Ranked)", () => {
+  // gained bei Sieg an pos 5, nur die Formation an pos 5 variiert → alle übrigen Score-Faktoren konstant (K).
+  const g = (formations, wm = []) => resolveTrick(scenario(12, 0, { pos: 5, formations, weekMods: wm }), rng).lastTrick.gained;
+  const neutralForms = () => identity().map(() => ({ mult: 1, baseMult: 1, formations: [] }));
+  it("verdoppelt den Formations-BONUS (Überschuss über 1); neutraler Sieg unberührt", () => {
+    const forms = neutralForms();
+    forms[5] = { mult: 2, baseMult: 2, formations: [{ type: "treppe", factor: 2 }] }; // formMult 2 → Bonus = K
+    const neutral = g(neutralForms());                       // formMult 1 → gained = K
+    const withForm = g(forms);                               // formMult 2 → gained = 2K
+    const boosted  = g(forms, [{ effect: "formBoost" }]);    // formMult 1+(2-1)*2 = 3 → gained = 3K
+    expect(withForm).toBeGreaterThan(neutral);
+    expect(boosted - neutral).toBeCloseTo((withForm - neutral) * 2); // Bonus exakt verdoppelt
+    expect(g(neutralForms(), [{ effect: "formBoost" }])).toBeCloseTo(neutral); // formMult 1 → kein Bonus, unberührt
+  });
+});
+
+describe("#370 Wochen-Mods: Bau-Boost (Architekt-Gebäude, nur Ranked)", () => {
+  it("verdoppelt den Gebäude-Bonus (Flat + Mult); ohne Gebäude ohne Wirkung", () => {
+    // Zollhaus (Flat auf Sieg) + Schatzkammer (×Mult) decken pos 5 → beide Kanäle aktiv.
+    const pre = precomputeArchitect({ buildings: [
+      { id: 1, familyId: "A_ZOLLHAUS", tier: 3, footprint: [4, 5], colorChoice: null },
+      { id: 2, familyId: "A_SCHATZ", tier: "legendary", footprint: [4, 5, 6, 7], colorChoice: null },
+    ] }, identity(), constDeck(12));
+    const withArch = (wm) => resolveTrick(scenario(12, 0, { pos: 5, architectEnabled: true, architect: { winCounters: {}, buildings: [] }, architectPre: pre, weekMods: wm }), rng).lastTrick.gained;
+    expect(withArch([{ effect: "buildBoost" }])).toBeGreaterThan(withArch([])); // Gebäude-Bonus verdoppelt
+    // Ohne Architekt: Bau-Boost darf nichts ändern (flat 0, mult 1 bleiben nach Verdopplung 0/1).
+    const noArchBase    = resolveTrick(scenario(12, 0, { pos: 5 }), rng).lastTrick.gained;
+    const noArchBoosted = resolveTrick(scenario(12, 0, { pos: 5, weekMods: [{ effect: "buildBoost" }] }), rng).lastTrick.gained;
+    expect(noArchBoosted).toBe(noArchBase);
+  });
+});
+
+describe("#381 Wochen-Mods: Legendär-Takt (legTakt, nur Ranked)", () => {
+  const legCount = (offer) => (Array.isArray(offer) ? offer.filter((e) => typeof e === "string" && isLegendary(e)).length : 0);
+  it("jede mag-te PERK-PHASE bietet 3 legendäre Perks", () => {
+    // Perk-Phasen liegen bei cycle 1,5,9 (perkPhaseAt = 1,2,3). mag 3 → pp 3 (cycle 9) ist Takt-Phase.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 8, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).toBe("levelup");
+    expect(legCount(s.offer)).toBe(3); // alle 3 Angebots-Slots legendär
+  });
+  it("Nicht-Takt-Perk-Phase bleibt normal (< 3 Legendäre)", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng); // cycle 1 = perkPhaseAt 1
+    expect(s.phase).toBe("levelup");
+    expect(legCount(s.offer)).toBeLessThan(3);
+  });
+  it("wandelt keine Nicht-Perk-Runde mehr um (Plan[3] = shop bleibt shop, keine Perk-Phase)", () => {
+    // cycle 2 + pos 39 → cycle 3 = shop (perkPhaseAt 0). Früher machte legTakt daraus eine Perk-Runde — jetzt nicht mehr.
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 2, weekMods: [{ effect: "legTakt", mag: 3 }] }), rng);
+    expect(s.phase).not.toBe("levelup");
+  });
+});
+
+describe("#370 Wochen-Mods: Deck-Shuffle (deckShuffle, nur Ranked)", () => {
+  const sorted = (a) => [...a].sort((x, y) => x - y);
+  it("mischt vor der Aufstellphase die Karten-Anordnung neu (gleiche Menge, andere Reihenfolge)", () => {
+    // cycle 1 + pos 39 → cycle 2; Plan[2] = "formation".
+    const before = scenario(12, 0, { pos: 39, cycle: 1, weekMods: [{ effect: "deckShuffle" }] });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).not.toEqual(before.playerOrder);
+    expect(sorted(s.playerOrder)).toEqual(sorted(before.playerOrder)); // echte Permutation, keine Karte verloren
+  });
+  it("ohne Mod bleibt die Anordnung persistent", () => {
+    const before = scenario(12, 0, { pos: 39, cycle: 1 });
+    const s = resolveTrick(before, rng);
+    expect(s.phase).toBe("formation");
+    expect(s.playerOrder).toEqual(before.playerOrder);
   });
 });

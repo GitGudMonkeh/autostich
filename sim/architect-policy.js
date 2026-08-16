@@ -7,7 +7,7 @@
 //
 // Rein deterministisch über den injizierten rng (nur der random-Modus nutzt ihn). Gleicher Seed + Policy → gleicher Run.
 import {
-  familyDef, enumeratePlacements, rowOf, ROWS, COLS, posOf, MAX_TIER, occupiedCells, MAX_COVER, structureFactorMap,
+  familyDef, enumeratePlacements, ROWS, COLS, posOf, MAX_TIER, occupiedCells, MAX_COVER, structureFactorMap,
 } from "../src/game/architect.js";
 import { SUIT_ORDER } from "../src/game/constants.js";
 
@@ -67,15 +67,21 @@ const buildActionFor = (s, fam, off, fp) => {
   return action;
 };
 
+// Baufeld-Deckel DIESES Laufs. MAX_COVER ist nur der Modul-Default — der wirksame Deckel steht am State und kann
+// höher liegen: Bauhütte (L_BAUH) hebt ihn dauerhaft um BAUHUETTE_COVER, der Fortschrittsbaum um treeCover.
+// Vorher las die Policy stur die Konstante und baute deshalb NIE über 24 Zellen hinaus — die Bauhütte war für die
+// Sim unsichtbar (gemessene 1,00×), obwohl der Reducer (SWAP/BUILD-Gate) die Extra-Fläche längst erlaubt.
+const coverCapOf = (s) => s.architect?.maxCover ?? MAX_COVER;
+
 // Cap-gültige Platzierungen einer Form gegen `buildings` (kein Overlap UND unter dem Baufeld-Deckel).
-function cappedPlacements(form, buildings) {
+function cappedPlacements(form, buildings, cap = MAX_COVER) {
   const occN = occupiedCells(buildings).size;
-  return enumeratePlacements(form, buildings).filter((fp) => occN + fp.length <= MAX_COVER);
+  return enumeratePlacements(form, buildings).filter((fp) => occN + fp.length <= cap);
 }
 
 // Beste Platzierung EINES Angebots: Primär Struktur-Fortschritt, sekundär value/target-Feinlage.
 function bestPlacementForOffer(s, fam, buildings, before, beforeScore) {
-  const places = cappedPlacements(fam.form, buildings);
+  const places = cappedPlacements(fam.form, buildings, coverCapOf(s));
   if (!places.length) return null;
   const wantLow = fam.category === "value"; // value kippt schwache Felder; score/formation reitet starke
   let bestFp = null, bestKey = -Infinity;
@@ -132,7 +138,7 @@ function bestSwapVictim(s, open, beforeScore) {
     const occN = afterRemove.size;
     for (const off of open) {
       const fam = familyDef(off.familyId);
-      const places = enumeratePlacements(fam.form, others).filter((fp) => occN + fp.length <= MAX_COVER);
+      const places = enumeratePlacements(fam.form, others).filter((fp) => occN + fp.length <= coverCapOf(s));
       let localBest = -Infinity;
       for (const fp of places) { const after = new Set(afterRemove); for (const p of fp) after.add(p); const sc = structScore(after); if (sc > localBest) localBest = sc; }
       if (localBest === -Infinity) continue;
@@ -173,7 +179,7 @@ function bestMove(s) {
     const curKey = b.footprint.slice().sort((x, y) => x - y).join(",");
     const base = coverSetOf(others);
     for (const fp of enumeratePlacements(fam.form, others)) {
-      if (occN + fp.length > MAX_COVER) continue;
+      if (occN + fp.length > coverCapOf(s)) continue;
       if (fp.slice().sort((x, y) => x - y).join(",") === curKey) continue; // identische Lage → kein Fortschritt
       const after = new Set(base); for (const p of fp) after.add(p);
       const gain = structScore(after) - curScore;
@@ -200,7 +206,7 @@ function randomMain(s, rng) {
   for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
   for (const off of shuffled) {
     const fam = familyDef(off.familyId);
-    const places = cappedPlacements(fam.form, a.buildings);
+    const places = cappedPlacements(fam.form, a.buildings, coverCapOf(s));
     if (places.length) {
       const fp = places[Math.floor(rng() * places.length)];
       const action = { type: "ARCHITECT_BUILD", familyId: off.familyId, tier: off.tier, footprint: fp };

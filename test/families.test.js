@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  FAMILY_DEFS, FAMILY_LIST, familyDef,
+  FAMILY_DEFS, FAMILY_LIST,
   activeTierDef, activeTierDefs, familySumHook, familyProdHook, hasCritFamily,
   isLayoutFamily, layoutFamilies,
 } from "../src/game/families.js";
@@ -11,7 +11,7 @@ describe("Familien-Registry — Struktur", () => {
   it("jede Familie hat id/cat/name/upgradeType und vier Stufen mit Beschreibung", () => {
     for (const fam of FAMILY_LIST) {
       expect(fam.id).toBeTruthy();
-      expect(["A", "B", "C", "D", "E"]).toContain(fam.cat);
+      expect(["A", "B", "C", "D", "E", "P"]).toContain(fam.cat);
       expect(fam.name).toBeTruthy();
       expect(Object.values(UPGRADE_TYPES)).toContain(fam.upgradeType);
       for (const t of [1, 2, 3, 4]) {
@@ -60,10 +60,10 @@ describe("Familien-Registry — Struktur", () => {
     const withTarget = e.filter((f) => [1, 2, 3, 4].some((t) => f.tiers[t].pickTarget)).map((f) => f.id).sort();
     expect(withTarget).toEqual(["E_COLOR_ALLIANCE", "E_CORE"]);
     expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pickTarget.suits).toBe(4);
-    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].pairs).toBe(true);
-    // #195: monotone, distincte Farballianz-Leiter (I/II waren zuvor identisch suits:2) — 2/3/4/4, nur IV mit pairs.
+    expect(FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[4].farbblockBonus).toBe(0.2); // #292: IV = alle vier als eine + Farbblock-Startbonus (früher „zwei Paare", mechanisch schwächer)
+    // Farballianz-Leiter: suits 2/3/4/4; III↔IV unterscheiden sich jetzt über den Farbblock-Startbonus (nicht mehr pairs).
     expect([1, 2, 3, 4].map((t) => FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pickTarget.suits)).toEqual([2, 3, 4, 4]);
-    expect([1, 2, 3].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
+    expect([1, 2, 3, 4].every((t) => !FAMILY_DEFS.E_COLOR_ALLIANCE.tiers[t].pairs)).toBe(true);
     expect(FAMILY_DEFS.E_CORE.tiers[1].pickTarget.formationType).toBe(true);
   });
 });
@@ -131,6 +131,20 @@ describe("Kategorie A — Kumulative Deck-Stufen (Spec §3.2 A)", () => {
     expect(iii.filter((c) => c.suit !== "R").every((c) => c.value === c.baseRank)).toBe(true);
     expect(t[4].onPick(d, makeRng(0), { suits: ["B"] }).filter((c) => c.suit === "B").every((c) => c.value === c.baseRank + 2)).toBe(true);
     expect(t[3].onPick(d, makeRng(0), null)).toBe(d); // ohne Ziel-Flow → No-Op (identische Referenz)
+  });
+
+  it("A_SUIT_BOOST + Pflanze-Grün: „Grün\" bumpt auch pflanzen-grüne Karten (card.green), andere Farben nur Originalfarbe", () => {
+    const t = FAMILY_DEFS.A_SUIT_BOOST.tiers;
+    const d = buildDeck();
+    const redIdx = d.findIndex((c) => c.suit === "R");
+    d[redIdx] = { ...d[redIdx], green: true }; // eine rote Karte ist pflanzen-grün (auf dem Board grün)
+    const out = t[3].onPick(d, makeRng(0), { suits: ["G"] });
+    expect(out[redIdx].value).toBe(d[redIdx].baseRank + 1); // zählt bei „Grün\" mit (via card.green)
+    expect(out.filter((c) => c.suit === "G").every((c) => c.value === c.baseRank + 1)).toBe(true); // echte Grün-Karten auch
+    const blue = out.find((c) => c.suit === "B" && !c.green); // eine nicht-grüne Blaue bleibt unberührt
+    expect(blue.value).toBe(blue.baseRank);
+    // Gegenprobe: „Blau\" ignoriert pflanzen-grün → die pflanzen-grüne ROTE Karte bekommt nichts von einem Blau-Boost.
+    expect(t[3].onPick(d, makeRng(0), { suits: ["B"] })[redIdx].value).toBe(d[redIdx].baseRank);
   });
 
   it("A_SMALL_BIG: zufällige ursprüngliche 1–3er (2/3/4 Karten), IV alle zwölf", () => {

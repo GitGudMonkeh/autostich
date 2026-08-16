@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, archetypeOf,
+import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer,
+  isLegendarySkill, archetypeOf,
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
-  ionScoreFor, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
+  ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
-import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES } from "../src/game/constants.js";
+import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
+  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP, REST_CHARGE_FLOOR } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -100,30 +102,24 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
     expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);
   });
 
-  // ---- Expliziter Legendär-Roll (Shop #107 S5c) ----
-  it("ohne Legendär-Chance (0) bleibt das Verhalten unverändert (kein rng-Drift)", () => {
+  // ---- #272: Legendäre kommen NICHT mehr im Skill-Angebot (nur über die Legendär-Phase, buildLegendaryOffer) ----
+  it("ohne Legendär-Chance (0) == Default (kein rng-Drift)", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6, 0)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
-  it("#247 Legendär je Archetyp: eigener Wurf, max EINER pro Archetyp, mehrere je Angebot möglich", () => {
-    // Chance 1 → jeder der 4 Archetypen bekommt genau EINEN Legendär (mehrere je Angebot, nie zwei im selben Archetyp).
-    for (let seed = 1; seed <= 20; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 12, 1);
-      expect(off).toHaveLength(12);
-      const legByArch = {};
-      for (const id of off) if (SKILL_DEFS[id].legendary) legByArch[archetypeOf(id)] = (legByArch[archetypeOf(id)] || 0) + 1;
-      expect(Object.values(legByArch).every((c) => c === 1)).toBe(true); // nie zwei Legendäre im selben Archetyp
-      expect(Object.keys(legByArch)).toHaveLength(4);                    // alle 4 würfeln unabhängig → 4 Legendäre bei Chance 1
-    }
-    // Determinismus bleibt: gleicher Seed → identisches Angebot (auch mit Per-Archetyp-Würfen).
-    expect(buildSkillOffer([], [], makeRng(7), 12, 0.5)).toEqual(buildSkillOffer([], [], makeRng(7), 12, 0.5));
-  });
-  it("Legendär-Roll erhält die 3+3+3+3-Archetyp-Balance (#129)", () => {
+  it("#272: bietet NIE einen Legendär an — auch mit Chance 1 und Garantie", () => {
     for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 12, 1); // erzwungener Legendär (Chance 1)
+      for (const [chance, guar] of [[0, false], [0.5, false], [1, false], [1, true]]) {
+        const off = buildSkillOffer([], [], makeRng(seed), 12, chance, guar);
+        expect(off.some(isLegendarySkill)).toBe(false);
+      }
+    }
+  });
+  it("#272: 3+3+3+3-Archetyp-Balance bleibt (12 normale Skills, keine Legendäre)", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1, true);
       expect(off).toHaveLength(12);
       const byArch = {};
       for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
-      // Alle 4 Archetypen, je 3 (einer davon legendär, ersetzt einen normalen SEINES Archetyps).
       const counts = Object.values(byArch);
       expect(counts).toHaveLength(4);
       expect(counts.every((c) => c === 3)).toBe(true);
@@ -137,6 +133,49 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
         expect(new Set(off).size).toBe(off.length);               // nie ein Duplikat
       }
     }
+  });
+});
+
+// #272 Legendär-Phase: 2 Legendäre NUR aus aktiven Fraktionen, deterministisch, verschieden, ohne gehaltene.
+describe("buildLegendaryOffer (#272 Legendär-Phase)", () => {
+  it("Mono (1 aktive Fraktion): 3 verschiedene Legendäre dieser Fraktion", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["ice"], [], makeRng(seed));
+      expect(off).toHaveLength(3);
+      expect(new Set(off).size).toBe(3);
+      expect(off.every((id) => isLegendarySkill(id) && archetypeOf(id) === "ice")).toBe(true);
+    }
+  });
+  it("Duo (2 aktive Fraktionen): 2 je Fraktion (4), immer verschieden", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["fire", "plant"], [], makeRng(seed));
+      expect(off).toHaveLength(4);
+      expect(new Set(off).size).toBe(4);
+      expect(off.filter((id) => archetypeOf(id) === "fire")).toHaveLength(2);
+      expect(off.filter((id) => archetypeOf(id) === "plant")).toHaveLength(2);
+    }
+  });
+  it("Trio (3 aktive Fraktionen): 2 je Fraktion (6)", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const off = buildLegendaryOffer(["fire", "plant", "ice"], [], makeRng(seed));
+      expect(off).toHaveLength(6);
+      expect(new Set(off).size).toBe(6);
+      for (const a of ["fire", "plant", "ice"]) expect(off.filter((id) => archetypeOf(id) === a)).toHaveLength(2);
+    }
+  });
+  it("schließt bereits gehaltene Legendäre aus (owned) — Rest der Fraktion füllt bis zum Soll", () => {
+    const off = buildLegendaryOffer(["ice"], ["SK_ICE_L01", "SK_ICE_L02"], makeRng(3));
+    expect(off).not.toContain("SK_ICE_L01");
+    expect(off).not.toContain("SK_ICE_L02");
+    expect(off).toHaveLength(2); // Mono-Soll 3, aber nur noch 2 verfügbar → füllt mit dem, was da ist
+    expect(off.every((id) => archetypeOf(id) === "ice")).toBe(true);
+  });
+  it("deterministisch: gleicher Seed → identisches Angebot", () => {
+    expect(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)))
+      .toEqual(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)));
+  });
+  it("keine aktiven Fraktionen → leeres Angebot", () => {
+    expect(buildLegendaryOffer([], [], makeRng(1))).toEqual([]);
   });
 });
 
@@ -214,11 +253,20 @@ describe("Ionisierung — Helfer (Stufe B)", () => {
   const I = "SK_LIGHTNING_02", K = "SK_LIGHTNING_03";
   const mkDeck = (stacks) => stacks.map((s, i) => ({ id: `c${i}`, suit: "R", baseRank: 1, value: 1, ...(s ? { ionStacks: s } : {}) }));
 
-  it("ionScoreFor: +25 je Stapel (0 ohne / null)", () => {
-    expect(ionScoreFor({ ionStacks: 3 })).toBe(75);
+  it("ionScoreFor: +ION_SCORE_PER_STACK je Stapel (0 ohne / null)", () => {
+    expect(ionScoreFor({ ionStacks: 3 })).toBe(3 * ION_SCORE_PER_STACK);
     expect(ionScoreFor({ ionStacks: 0 })).toBe(0);
     expect(ionScoreFor({})).toBe(0);
     expect(ionScoreFor(null)).toBe(0);
+  });
+  it("ionCritChance (#271): Σ Feldstapel × pp, gedeckelt; 0 ohne Stapel", () => {
+    expect(ionCritChance(mkDeck([3, 2, 0, 5]))).toBeCloseTo(10 * ION_CRIT_PP_PER_STACK, 10); // Σ 10
+    expect(ionCritChance(mkDeck([0, 0, 0]))).toBe(0);
+    expect(ionCritChance([])).toBe(0);
+    expect(ionCritChance(undefined)).toBe(0);
+    // Deckel: Σ über dem Cap zählt nur bis zum Cap.
+    const many = mkDeck(Array(30).fill(5)); // Σ 150 ≫ Cap
+    expect(ionCritChance(many)).toBeCloseTo(ION_CRIT_STACK_CAP * ION_CRIT_PP_PER_STACK, 10);
   });
   it("consumesCharge nur mit Ionisierung; ionizeCountFor = 2 (+2 mit Kettenblitz)", () => {
     expect(consumesCharge([I])).toBe(true);
@@ -257,8 +305,8 @@ describe("Reaktoren + Ladungsserie — Helfer (Stufe C)", () => {
     expect(consumesCharge([I])).toBe(true);   // Ionisierung verbraucht
     expect(consumesCharge([R])).toBe(false);  // Reststrom ist Reaktor, kein Verbraucher
   });
-  it("chargeFloorFor: Reststrom setzt Boden 3, sonst 0", () => {
-    expect(chargeFloorFor([R])).toBe(3);
+  it("chargeFloorFor: Reststrom setzt den Ladungsboden, sonst 0", () => {
+    expect(chargeFloorFor([R])).toBe(REST_CHARGE_FLOOR);
     expect(chargeFloorFor([])).toBe(0);
   });
   it("hasStorm nur mit Gewitterfront", () => {
@@ -290,5 +338,25 @@ describe("decodeArchetypes — Board-Icons (#139)", () => {
   it("unbekannte Tokens werden ignoriert (Zählung bleibt korrekt)", () => {
     expect(decodeArchetypes("fire,water,fire,ice")).toEqual(["fire", "fire", "ice"]);
     expect(decodeArchetypes("bogus")).toEqual([]);
+  });
+});
+
+describe("buildSkillOffer — max. 3 Skills pro Archetyp (#Onboarding-Fix)", () => {
+  const rng = makeRng(7);
+  const countPerArch = (offer) => offer.reduce((m, id) => { const a = archetypeOf(id); m[a] = (m[a] || 0) + 1; return m; }, {});
+  it("wenige freigeschaltete Archetypen: nie mehr als 3 desselben Archetyps (statt 6)", () => {
+    // count 12, aber nur 2 Archetypen freigeschaltet → früher 6 je Archetyp; jetzt gedeckelt auf 3.
+    const offer = buildSkillOffer([], [], rng, 12, 0, false, ["lightning", "ice"]);
+    const per = countPerArch(offer);
+    for (const a of Object.keys(per)) expect(per[a]).toBeLessThanOrEqual(3);
+  });
+  it("alle 4 Archetypen, count 12 → weiterhin 3 je Archetyp (unverändert)", () => {
+    const offer = buildSkillOffer([], [], makeRng(3), 12, 0, false, null);
+    const per = countPerArch(offer);
+    for (const a of Object.keys(per)) expect(per[a]).toBeLessThanOrEqual(3);
+  });
+  it("Mono (1 Archetyp) → höchstens 3 statt count", () => {
+    const offer = buildSkillOffer([], [], makeRng(9), 12, 0, false, ["lightning"]);
+    expect(offer.length).toBeLessThanOrEqual(3);
   });
 });

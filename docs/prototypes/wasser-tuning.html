@@ -1,0 +1,318 @@
+<title>Regen &amp; Pool · Wasser-Vorschau &amp; Tuning</title>
+<style>
+  :root{
+    --bg:#071018; --bg2:#040a10; --panel:#0d1a24; --panel2:#12222e; --line:#1f3646;
+    --ink:#e8f3fa; --dim:#8aa8bc; --dimmer:#5a7688;
+    --acc:#57c8ff; --acc-dim:#1e6f93; --hot:#dff2ff; --z:#ff7ad5;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1200px 720px at 76% -12%, #0e3348 0%, transparent 55%),
+      radial-gradient(900px 600px at -6% 112%, #0a2434 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:80ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a1a26,#06121b); box-shadow:inset 0 0 80px #000a, 0 20px 50px -20px #000c}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#08131b); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--acc)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .panel{background:linear-gradient(180deg,var(--panel),#08131b); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #57c8ff22, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #57c8ff22}
+  input#level{height:6px}
+  .config{max-width:1180px; margin:20px auto 0}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  textarea{width:100%; min-height:200px; background:#05121a; color:#bfe9ff; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Regen &amp; Pool · Wasser-Vorschau &amp; Tuning</h1>
+  <div class="sub">Realistischer <b>Regen</b>, der sich am Boden <b>pool</b>t: Regen-Streaks in Tiefen-Ebenen, <b>Aufschlag-Spritzer + Ripple-Ringe</b> auf der Oberfläche, und ein steigender, leicht transparenter <b>Wasserkörper</b> mit welliger Oberfläche, Glanz &amp; dezenter Spiegelung. Über <b>Tiefe / 3D</b> kippt die Fläche auf und läuft nach hinten in die Szene. Dreh am <b>Füllstand</b> (oder Auto-Füllen) und den Reglern, dann gib mir die <b>TUNE-Werte</b>. (Prototyp Canvas-2D; In-Game portiere ich es 1:1 nach Pixi.)</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:var(--acc)"></span> Regen <b>Tiefen-Ebenen</b></span>
+    <span class="chip"><span class="dot" style="color:var(--hot)"></span> Pool <b>Ripples · Glanz · steigt</b></span>
+    <span class="chip"><span class="dot" style="color:#9fe0ff"></span> Aufschlag <b>Spritzer</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud">Regen &amp; Pool · Füllstand <b id="hudLvl">45%</b></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="lvl">
+      <div class="lab"><label for="level">💧 Füllstand (Zustand · kein TUNE-Wert)</label><span class="val" id="v_level">45 %</span></div>
+      <input type="range" id="level" min="0" max="1" step="0.01" value="0.45">
+    </div>
+    <div class="transport">
+      <button id="btnPlay" class="on">Läuft ▮▮</button>
+      <button id="btnAuto">Auto-Füllen: aus</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="zoom">Zoom</label><input type="range" id="zoom" min="1" max="1.8" step="0.05" value="1.3" style="width:110px"><span class="val" id="v_zoom" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="bar"><h2>Wasser-TUNE-Werte · für <code>src/ui/fx/RainPool.jsx</code></h2>
+    <div style="display:flex;gap:10px;align-items:center"><span class="copied" id="copied">kopiert ✓</span><button id="btnCopy">Werte kopieren</button><button id="btnDefault">Auf Standard</button></div>
+  </div>
+  <textarea id="cfg" readonly spellcheck="false"></textarea>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var DEFAULTS = {
+    RAIN_COLOR:"#bcd8ee", DEEP:"#0b3550", SURF:"#57b8e0",
+    RAIN_RATE:420, RAIN_SPEED:900, RAIN_ANGLE:0.14, RAIN_LEN:20, RAIN_THICK:1.4, RAIN_ALPHA:0.5,
+    SPLASH:6, SPLASH_SIZE:1.6, RIPPLE_LIFE:900, RIPPLE_MAXR:26, RIPPLE_ALPHA:0.5,
+    DEPTH:0.35, W_OPACITY:0.62, WAVE_AMP:3.5, WAVE_SPEED:1.0, SURF_GLINT:0.6, REFLECT:0.4, FOAM:0.5
+  };
+  var T = Object.assign({}, DEFAULTS);
+  var pxFmt=function(v){return v+" px";}, msFmt=function(v){return v+" ms";}, xFmt=function(v){return v.toFixed(2);};
+  var sFmt=function(v){return v+" /s";}, vFmt=function(v){return v+" px/s";};
+  var GROUPS = [
+    { title:"Farben", note:"Regen-Ton, tiefes Wasser (unten) und Oberflächen-Ton.", rows:[
+      ["RAIN_COLOR","Regen",0,0,0,null,"color"],["DEEP","Tiefes Wasser",0,0,0,null,"color"],["SURF","Oberfläche",0,0,0,null,"color"]
+    ]},
+    { title:"Regen", note:"Streaks in Tiefen-Ebenen (nah lang/hell, fern kurz/dunkel).", rows:[
+      ["RAIN_RATE","Dichte",0,900,10,sFmt,""],["RAIN_SPEED","Fall-Tempo",300,1600,10,vFmt,""],["RAIN_ANGLE","Wind-Winkel",-0.5,0.5,0.01,xFmt,""],
+      ["RAIN_LEN","Streak-Länge",6,48,1,pxFmt,""],["RAIN_THICK","Streak-Dicke",0.5,3,0.1,pxFmt,""],["RAIN_ALPHA","Deckkraft",0.1,1,0.02,xFmt,""]
+    ]},
+    { title:"Aufschlag & Ripples", note:"Spritzer + expandierende Ringe auf der Wasseroberfläche je Einschlag.", rows:[
+      ["SPLASH","Spritzer-Menge",0,16,1,String,""],["SPLASH_SIZE","Spritzer-Größe",0.5,4,0.1,pxFmt,""],
+      ["RIPPLE_LIFE","Ripple-Dauer",300,1800,20,msFmt,""],["RIPPLE_MAXR","Ripple-Radius",8,60,1,pxFmt,""],["RIPPLE_ALPHA","Ripple-Stärke",0,1,0.02,xFmt,""]
+    ]},
+    { title:"Perspektive · 3D", note:"Wie weit die Wasserfläche nach hinten in die Szene ragt (0 = flache Seitenansicht).", rows:[
+      ["DEPTH","Tiefe / 3D",0,1,0.02,xFmt,"Höher = Fläche kippt auf, Pool reicht weiter nach hinten."]
+    ]},
+    { title:"Wasserkörper", note:"Steigender Pool mit welliger, glänzender Oberfläche + Spiegelung.", rows:[
+      ["W_OPACITY","Deckkraft / Klarheit",0.2,1,0.02,xFmt,"Kleiner = klarer (Karte scheint durch)."],
+      ["WAVE_AMP","Wellen-Höhe",0,10,0.5,pxFmt,""],["WAVE_SPEED","Wellen-Tempo",0,2.5,0.05,xFmt,""],
+      ["SURF_GLINT","Oberflächen-Glanz",0,1.2,0.05,xFmt,""],["REFLECT","Spiegelung",0,1,0.05,xFmt,""],["FOAM","Schaum an der Kante",0,1,0.05,xFmt,""]
+    ]}
+  ];
+  var INT={RAIN_RATE:1,RAIN_SPEED:1,RAIN_LEN:1,SPLASH:1,RIPPLE_LIFE:1,RIPPLE_MAXR:1};
+  var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
+  var $=function(id){return document.getElementById(id);};
+
+  (function build(){ var host=$("panels"), html="";
+    GROUPS.forEach(function(g){ html+='<div class="panel"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+      g.rows.forEach(function(r){ var key=r[0], lab=r[1], mn=r[2], mx=r[3], st=r[4], hint=r[6];
+        if(r[6]==="color") html+='<div class="row color"><div class="lab"><label for="'+key+'">'+lab+'</label><input type="color" id="'+key+'"></div></div>';
+        else html+='<div class="row"><div class="lab"><label for="'+key+'">'+lab+'</label><span class="val" id="v_'+key+'"></span></div><input type="range" id="'+key+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+      });
+      html+='</fieldset></div>';
+    });
+    host.innerHTML=html;
+    GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+      if(r[6]==="color"){ el.addEventListener("input",function(){ T[key]=el.value; writeConfig(); }); return; }
+      el.addEventListener("input",function(){ var v=parseFloat(el.value); if(INT[key]) v=Math.round(v); T[key]=v; $("v_"+key).textContent=(FMT[key]||String)(T[key]); writeConfig(); });
+    });});
+  })();
+  function syncInputs(){ GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+    if(r[6]==="color"){ el.value=T[key]; return; } el.value=T[key]; $("v_"+key).textContent=(FMT[key]||String)(T[key]); });}); writeConfig(); }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  function writeConfig(){ var o=T;
+    $("cfg").value="const TUNE = {\n"
+      + "  RAIN_COLOR: \""+o.RAIN_COLOR+"\", DEEP: \""+o.DEEP+"\", SURF: \""+o.SURF+"\",\n\n"
+      + "  RAIN_RATE: "+numStr(o.RAIN_RATE)+", RAIN_SPEED: "+numStr(o.RAIN_SPEED)+", RAIN_ANGLE: "+numStr(o.RAIN_ANGLE)+", RAIN_LEN: "+numStr(o.RAIN_LEN)+", RAIN_THICK: "+numStr(o.RAIN_THICK)+", RAIN_ALPHA: "+numStr(o.RAIN_ALPHA)+",\n\n"
+      + "  SPLASH: "+numStr(o.SPLASH)+", SPLASH_SIZE: "+numStr(o.SPLASH_SIZE)+", RIPPLE_LIFE: "+numStr(o.RIPPLE_LIFE)+", RIPPLE_MAXR: "+numStr(o.RIPPLE_MAXR)+", RIPPLE_ALPHA: "+numStr(o.RIPPLE_ALPHA)+",\n\n"
+      + "  DEPTH: "+numStr(o.DEPTH)+", W_OPACITY: "+numStr(o.W_OPACITY)+", WAVE_AMP: "+numStr(o.WAVE_AMP)+", WAVE_SPEED: "+numStr(o.WAVE_SPEED)+", SURF_GLINT: "+numStr(o.SURF_GLINT)+", REFLECT: "+numStr(o.REFLECT)+", FOAM: "+numStr(o.FOAM)+",\n};";
+  }
+
+  // ── Utils ──
+  function hexRGB(h){ h=String(h||"#57b8e0").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function roundRectPath(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  // ── Wasser-Oberfläche (welliger y-Wert an Position x) ──
+  function surfaceY(x, baseY, W){
+    var t=clockT*0.001*T.WAVE_SPEED;
+    var w1=Math.sin(x*0.03 + t*1.7)*0.6, w2=Math.sin(x*0.062 - t*2.3)*0.3, w3=Math.sin(x*0.11 + t*3.1)*0.12;
+    return baseY - (w1+w2+w3)*T.WAVE_AMP;
+  }
+
+  // ── Renderer ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+  window.addEventListener("resize", doResize);
+
+  var running=true, autoFill=false, zoom=1.3, level=0.45, last=0, fpsT=0, fpsN=0, clockT=0;
+  var drops=[], splashes=[], ripples=[], rAcc=0;
+
+  function box(){ var CH=Math.round(300*zoom), CW=Math.round(CH*104/144), ox=Math.round((CSSW-CW)/2), oy=Math.round((CSSH-CH)/2), cr=Math.round(16*zoom); return {ox:ox,oy:oy,CW:CW,CH:CH,cr:cr}; }
+
+  function spawnDrop(b){ var layer=Math.random(); // 0 fern … 1 nah
+    drops.push({ x:b.ox-20+Math.random()*(b.CW+40), y:b.oy-20-Math.random()*b.CH, layer:layer,
+      spd:T.RAIN_SPEED*(0.6+0.7*layer), len:T.RAIN_LEN*(0.5+0.8*layer), a:T.RAIN_ALPHA*(0.4+0.7*layer), th:T.RAIN_THICK*(0.6+0.7*layer) }); }
+  function spawnSplash(x,y){ var n=T.SPLASH; for(var i=0;i<n;i++){ var ang=-Math.PI/2 + (Math.random()-0.5)*1.5;
+    splashes.push({ x:x, y:y, vx:Math.cos(ang)*(40+Math.random()*90), vy:Math.sin(ang)*(90+Math.random()*140), born:clockT, life:260+Math.random()*260, sz:T.SPLASH_SIZE*(0.6+0.7*Math.random()) }); } }
+  function spawnRipple(x,y,lay){ if(ripples.length>60) ripples.shift(); ripples.push({ x:x, y:y, lay:lay||0, born:clockT, r0:2+Math.random()*3 }); }
+
+  function frame(ts){
+    if(!last) last=ts; var dt=Math.min(50, ts-last); last=ts; clockT+=dt; var dts=dt/1000;
+    fpsN++; fpsT+=dt; if(fpsT>=500){ $("fps").textContent=Math.round(1000/(fpsT/fpsN))+" fps"; fpsT=0; fpsN=0; }
+    if(autoFill){ level+=dts*0.06; if(level>1){level=0;} $("level").value=level; updLvl(); }
+    var b=box(), rC=hexRGB(T.RAIN_COLOR), cDeep=hexRGB(T.DEEP), cSurf=hexRGB(T.SURF);
+    var waterTop = b.oy+b.CH - level*(b.CH*0.94);   // Wasserspiegel-Basis-Y (vordere Kante)
+    var span = T.DEPTH * b.CH * 0.5;                 // Tiefe: wie weit die Fläche nach hinten ragt
+    ctx.clearRect(0,0,CSSW,CSSH);
+
+    // Karten-/Behälter-Hintergrund (damit man Transparenz sieht)
+    ctx.save();
+    var g0=ctx.createLinearGradient(b.ox,b.oy,b.ox+b.CW,b.oy+b.CH); g0.addColorStop(0,"#16283a"); g0.addColorStop(1,"#0d1a26");
+    roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.fillStyle=g0; ctx.fill();
+    ctx.save(); roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.clip();
+    for(var yy=b.oy+5;yy<b.oy+b.CH;yy+=8) for(var xx=b.ox+5;xx<b.ox+b.CW;xx+=8){ ctx.fillStyle="rgba(120,220,255,0.05)"; ctx.fillRect(xx,yy,1.4,1.4); }
+    ctx.restore();
+    ctx.restore();
+
+    // Alles Weitere in den Behälter geclippt
+    ctx.save(); roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.clip();
+
+    // ── Regen spawnen ──
+    rAcc += T.RAIN_RATE*dts; while(rAcc>=1 && running){ rAcc-=1; spawnDrop(b); }
+    // ── Regen updaten + zeichnen (über dem Wasser) ──
+    ctx.lineCap="round";
+    for(var i=drops.length-1;i>=0;i--){ var d=drops[i]; d.y += d.spd*dts; d.x += d.spd*dts*T.RAIN_ANGLE;
+      var sy;
+      if(level>0.002){ var lam=(1-d.layer)*span; sy = surfaceY(d.x, waterTop - lam, b.CW); } // fern → weiter hinten/höher
+      else sy = b.oy+b.CH-2;
+      if(d.y>=sy){ // Aufschlag
+        if(Math.random()<0.5) spawnSplash(d.x, sy);
+        spawnRipple(d.x, sy, d.layer);
+        drops.splice(i,1); continue;
+      }
+      if(d.y>b.oy+b.CH+20){ drops.splice(i,1); continue; }
+      ctx.strokeStyle=rgba(rC, d.a); ctx.lineWidth=d.th;
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.len*T.RAIN_ANGLE, d.y - d.len); ctx.stroke();
+    }
+
+    // ── Wasserkörper (mit Perspektive / Tiefe) ──
+    if(level>0.002){
+      var backBase = waterTop - span;
+      var frontY = function(x){ return surfaceY(x, waterTop, b.CW); };          // vordere (nahe) Kante
+      var backY  = function(x){ return Math.max(b.oy+2, surfaceY(x, backBase, b.CW)); }; // hintere (ferne) Kante
+
+      // Front-Wand: vertikale Wassersäule von der vorderen Kante bis zum Boden
+      ctx.beginPath(); ctx.moveTo(b.ox, b.oy+b.CH);
+      for(var x=b.ox; x<=b.ox+b.CW; x+=4){ ctx.lineTo(x, frontY(x)); }
+      ctx.lineTo(b.ox+b.CW, b.oy+b.CH); ctx.closePath();
+      var wg=ctx.createLinearGradient(0, waterTop, 0, b.oy+b.CH);
+      wg.addColorStop(0, rgba(cSurf, 0.7*T.W_OPACITY));
+      wg.addColorStop(1, rgba(cDeep, 0.92*T.W_OPACITY));
+      ctx.fillStyle=wg; ctx.fill();
+
+      // Oberflächen-Plane: läuft nach hinten in die Szene (nur wenn Tiefe > 0)
+      if(span>0.5){
+        ctx.beginPath();
+        for(var xb=b.ox; xb<=b.ox+b.CW; xb+=4){ var yb=backY(xb); if(xb===b.ox)ctx.moveTo(xb,yb); else ctx.lineTo(xb,yb); }
+        for(var xf=b.ox+b.CW; xf>=b.ox; xf-=4){ ctx.lineTo(xf, frontY(xf)); }
+        ctx.closePath();
+        var pg=ctx.createLinearGradient(0, backBase, 0, waterTop);
+        pg.addColorStop(0, rgba(mix(cDeep,cSurf,0.45), 0.5*T.W_OPACITY));                       // hinten: tiefer/dunkler
+        pg.addColorStop(1, rgba(mix(cSurf,{r:255,g:255,b:255},0.16), 0.7*T.W_OPACITY));         // vorne: heller
+        ctx.fillStyle=pg; ctx.fill();
+        // hinterer Kamm (Glanz)
+        ctx.save(); ctx.globalCompositeOperation="lighter";
+        ctx.beginPath(); for(var xk=b.ox; xk<=b.ox+b.CW; xk+=3){ var yk=backY(xk); if(xk===b.ox)ctx.moveTo(xk,yk); else ctx.lineTo(xk,yk); }
+        ctx.strokeStyle=rgba(mix(cSurf,{r:255,g:255,b:255},0.5), 0.22*T.SURF_GLINT); ctx.lineWidth=1.3; ctx.stroke();
+        ctx.restore();
+      }
+
+      // Spiegelung: wabernde vertikale Licht-Säulen in der Front-Wand
+      if(T.REFLECT>0){ ctx.save(); ctx.globalCompositeOperation="lighter";
+        for(var rr=0; rr<5; rr++){ var cx=b.ox+ (0.12+0.19*rr)*b.CW + Math.sin(clockT*0.0011+rr)*8;
+          var rgw=ctx.createLinearGradient(cx-8,0,cx+8,0); rgw.addColorStop(0,rgba(cSurf,0)); rgw.addColorStop(0.5,rgba(mix(cSurf,{r:255,g:255,b:255},0.4), 0.10*T.REFLECT)); rgw.addColorStop(1,rgba(cSurf,0));
+          ctx.fillStyle=rgw; ctx.fillRect(cx-8, waterTop, 16, b.oy+b.CH-waterTop); }
+        ctx.restore(); }
+
+      // Ripples auf der Plane (Foreshortening an Tiefe gekoppelt)
+      var rRatio = 0.12 + 0.5*T.DEPTH;
+      ctx.save(); ctx.globalCompositeOperation="lighter";
+      for(var ri=ripples.length-1; ri>=0; ri--){ var rp=ripples[ri], age=clockT-rp.born; if(age>T.RIPPLE_LIFE){ ripples.splice(ri,1); continue; }
+        var k=age/T.RIPPLE_LIFE, szl=0.55+0.55*(rp.lay||0), rad=(rp.r0 + k*T.RIPPLE_MAXR)*szl, a=(1-k)*(1-k)*T.RIPPLE_ALPHA;
+        ctx.strokeStyle=rgba(mix(cSurf,{r:255,g:255,b:255},0.5), a); ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.ellipse(rp.x, rp.y, rad, rad*rRatio, 0, 0, Math.PI*2); ctx.stroke();
+        if(k<0.5){ ctx.strokeStyle=rgba(mix(cSurf,{r:255,g:255,b:255},0.5), a*0.5); ctx.beginPath(); ctx.ellipse(rp.x, rp.y, rad*0.6, rad*0.6*rRatio, 0, 0, Math.PI*2); ctx.stroke(); }
+      }
+      ctx.restore();
+
+      // Vordere Wasserlinie: Specular-Glanz + Schaum
+      ctx.beginPath(); for(var x2=b.ox; x2<=b.ox+b.CW; x2+=3){ var yv=frontY(x2); if(x2===b.ox) ctx.moveTo(x2,yv); else ctx.lineTo(x2,yv); }
+      ctx.save(); ctx.globalCompositeOperation="lighter";
+      ctx.strokeStyle=rgba({r:230,g:248,b:255}, 0.5*T.SURF_GLINT); ctx.lineWidth=1.6; ctx.stroke();
+      ctx.restore();
+      if(T.FOAM>0){ ctx.strokeStyle=rgba({r:220,g:240,b:255}, 0.32*T.FOAM); ctx.lineWidth=2.6; ctx.stroke(); }
+    }
+
+    // ── Spritzer (über dem Wasser) ──
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    for(var si=splashes.length-1; si>=0; si--){ var sp=splashes[si], age2=clockT-sp.born; if(age2>sp.life){ splashes.splice(si,1); continue; }
+      var ss=age2/1000; sp.vy += 520*(dt/1000); var x3=sp.x+sp.vx*ss, y3=sp.y+sp.vy*ss*0.5;
+      var a3=(1-age2/sp.life);
+      ctx.fillStyle=rgba({r:210,g:238,b:255}, a3*0.8); ctx.beginPath(); ctx.arc(x3,y3,sp.sz,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    ctx.restore(); // Behälter-Clip
+
+    // Behälter-Rand
+    ctx.lineWidth=1.5; ctx.strokeStyle="rgba(120,200,240,0.5)"; roundRectPath(ctx,b.ox,b.oy,b.CW,b.CH,b.cr); ctx.stroke();
+
+    if(running||autoFill) requestAnimationFrame(frame);
+  }
+  function updLvl(){ var p=Math.round(level*100); $("v_level").textContent=p+" %"; $("hudLvl").textContent=p+"%"; }
+
+  $("level").addEventListener("input",function(){ level=parseFloat(this.value); autoFill=false; $("btnAuto").textContent="Auto-Füllen: aus"; $("btnAuto").classList.remove("on"); updLvl(); });
+  $("btnPlay").addEventListener("click",function(){ running=!running; this.textContent=running?"Läuft ▮▮":"Pause ▶"; this.classList.toggle("on",running); if(running){last=0;requestAnimationFrame(frame);} });
+  $("btnAuto").addEventListener("click",function(){ autoFill=!autoFill; this.textContent="Auto-Füllen: "+(autoFill?"an":"aus"); this.classList.toggle("on",autoFill); if(autoFill&&!running){running=true;$("btnPlay").textContent="Läuft ▮▮";$("btnPlay").classList.add("on");} if(autoFill){last=0;requestAnimationFrame(frame);} });
+  $("zoom").addEventListener("input",function(){ zoom=parseFloat(this.value); $("v_zoom").textContent=zoom.toFixed(2)+"×"; });
+  $("btnCopy").addEventListener("click",function(){ var ta=$("cfg"); ta.select(); try{navigator.clipboard.writeText(ta.value);}catch(e){try{document.execCommand("copy");}catch(e2){}} var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1400); });
+  $("btnDefault").addEventListener("click",function(){ T=Object.assign({},DEFAULTS); syncInputs(); });
+
+  $("v_zoom").textContent=zoom.toFixed(2)+"×"; updLvl(); syncInputs(); doResize(); requestAnimationFrame(frame);
+})();
+</script>

@@ -1,104 +1,58 @@
 import { describe, it, expect } from "vitest";
 import {
   DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked, unlockProgress, resolveSkinId,
-  DECK_GAME_UNLOCKS, BATTLEFIELD_GAME_UNLOCKS,
 } from "../src/game/cosmetics.js";
+import { unlockLabel } from "../src/i18n/unlockText.js"; // #sprache: der Klartext entsteht jetzt hier
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
-const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadMonoStatRun: false, ...o });
+const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoRerollRun: false, ...o });
 
 describe("cosmetics — Katalog", () => {
   it("Default-Decks/Battlefields sind ohne unlock (immer frei)", () => {
     expect(DECK_DEFS.default.unlock).toBeNull();
     expect(BATTLEFIELD_DEFS.default.unlock).toBeNull();
   });
-  it("#217 Meistergrad-Decks: deck_rank_* an Grad I..V gekoppelt (unlock + Fortschritt)", () => {
-    expect(DECK_DEFS.deck_rank_bronze.unlock).toEqual({ kind: "masteryGrade", n: 1 });
-    expect(DECK_DEFS.deck_rank_diamond.unlock).toEqual({ kind: "masteryGrade", n: 5 });
-    // Grad 3 → Bronze/Silber/Gold frei, Platin/Diamant gesperrt.
-    const p = prof({ masteryGrade: 3 });
-    expect(isUnlocked(DECK_DEFS.deck_rank_gold, p)).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_rank_platin, p)).toBe(false);
-    const prog = unlockProgress(DECK_DEFS.deck_rank_platin, p);
-    expect(prog).toMatchObject({ done: false, cur: 3, target: 4 });
-    expect(prog.label).toContain("Rang");
+  it("#299: alte Progressions-Decks/-Battlefields (deck_p*/bf_*) sind entfernt", () => {
+    for (const id of ["deck_p1", "deck_p2", "deck_p3", "deck_p4"]) expect(DECK_DEFS[id]).toBeUndefined();
+    for (const id of ["bf_1", "bf_2", "bf_3", "bf_4"]) expect(BATTLEFIELD_DEFS[id]).toBeUndefined();
   });
-  it("#226 Großmeister-Decks: deck_gm_* an Rang 6..10 gekoppelt (unlock + Großmeister-Label)", () => {
-    expect(DECK_DEFS.deck_gm_rot.unlock).toEqual({ kind: "masteryGrade", n: 6 });
-    expect(DECK_DEFS.deck_gm_marco.unlock).toEqual({ kind: "masteryGrade", n: 10 });
-    // Großmeister II (Grad 7) → Rot/Blau frei, Grün gesperrt.
-    const p = prof({ masteryGrade: 7 });
-    expect(isUnlocked(DECK_DEFS.deck_gm_blau, p)).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_gm_gruen, p)).toBe(false);
-    // Label nutzt das Großmeister-Rang-Label (nicht die rohe Zahl).
-    expect(unlockProgress(DECK_DEFS.deck_gm_gruen, p).label).toContain("Großmeister");
+  it("isUnlocked/unlockProgress verarbeiten die games-Bedingung weiterhin generisch", () => {
+    const def = { unlock: { kind: "games", n: 10 } };
+    expect(isUnlocked(def, prof({ games: 9 }))).toBe(false);
+    expect(isUnlocked(def, prof({ games: 10 }))).toBe(true);
+    expect(unlockProgress(def, prof({ games: 4 })).cur).toBe(4);
   });
-  it("deck_p1 schaltet bei 5 Läufen frei (erste Progressionsstufe)", () => {
-    expect(DECK_DEFS.deck_p1.unlock).toEqual({ kind: "games", n: 5 });
-    expect(DECK_GAME_UNLOCKS[0]).toBe(5);
-    expect(BATTLEFIELD_GAME_UNLOCKS[0]).toBe(10);
+  it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
+    for (const id of ["deck_beach", "deck_cat", "deck_spacedog", "deck_wale"]) {
+      const d = DECK_DEFS[id];
+      expect(d).toBeTruthy();
+      expect(d.unlock.kind).toBe("buy");
+      expect(isUnlocked(d, prof({ ownedCosmetics: { [d.unlock.ownKey]: true } }))).toBe(true);
+      expect(isUnlocked(d, prof())).toBe(false); // ohne Kauf gesperrt
+    }
+    // alte Challenge-/Archetyp-Decks sind raus (v0.4)
+    for (const id of ["deck_c1", "deck_c2", "deck_c3", "deck_c5", "deck_c6", "deck_c7", "deck_c8", "deck_c9"]) {
+      expect(DECK_DEFS[id]).toBeUndefined();
+    }
   });
-  it("deck_p2 schaltet bei 15 Läufen frei", () => {
-    expect(DECK_DEFS.deck_p2.unlock).toEqual({ kind: "games", n: 15 });
-    expect(isUnlocked(DECK_DEFS.deck_p2, prof({ games: 14 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p2, prof({ games: 15 }))).toBe(true);
+  it("Genesis (deck_onboarding/bf_onboarding) ist über abgeschlossenes Onboarding frei — nicht kaufbar", () => {
+    for (const def of [DECK_DEFS.deck_onboarding, BATTLEFIELD_DEFS.bf_onboarding]) {
+      expect(def.unlock).toEqual({ kind: "onboardingDone" });
+      expect(isUnlocked(def, prof({ onboarding: 5 }))).toBe(false);
+      expect(isUnlocked(def, prof({ onboarding: 6 }))).toBe(true);
+      expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
+    }
   });
-  it("bf_1 schaltet bei 10 Läufen frei (erste Battlefield-Progression)", () => {
-    expect(BATTLEFIELD_DEFS.bf_1.unlock).toEqual({ kind: "games", n: 10 });
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_1, prof({ games: 9 }))).toBe(false);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_1, prof({ games: 10 }))).toBe(true);
-  });
-  it("bf_2 schaltet bei 20 Läufen frei", () => {
-    expect(BATTLEFIELD_DEFS.bf_2.unlock).toEqual({ kind: "games", n: 20 });
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_2, prof({ games: 19 }))).toBe(false);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_2, prof({ games: 20 }))).toBe(true);
-  });
-  it("deck_p3 (25) & bf_3 (30) schalten an ihren Schwellen frei", () => {
-    expect(DECK_DEFS.deck_p3.unlock).toEqual({ kind: "games", n: 25 });
-    expect(BATTLEFIELD_DEFS.bf_3.unlock).toEqual({ kind: "games", n: 30 });
-    expect(isUnlocked(DECK_DEFS.deck_p3, prof({ games: 24 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p3, prof({ games: 25 }))).toBe(true);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_3, prof({ games: 30 }))).toBe(true);
-  });
-  it("deck_p4 (35) & bf_4 (40) schließen die Progression ab", () => {
-    expect(DECK_DEFS.deck_p4.unlock).toEqual({ kind: "games", n: 35 });
-    expect(BATTLEFIELD_DEFS.bf_4.unlock).toEqual({ kind: "games", n: 40 });
-    expect(isUnlocked(DECK_DEFS.deck_p4, prof({ games: 34 }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_p4, prof({ games: 35 }))).toBe(true);
-    expect(isUnlocked(BATTLEFIELD_DEFS.bf_4, prof({ games: 40 }))).toBe(true);
-  });
-  it("Challenge-Decks c1/c2/c3 haben die richtigen Bedingungen", () => {
-    expect(DECK_DEFS.deck_c1.unlock).toEqual({ kind: "streak", n: 100 });
-    expect(DECK_DEFS.deck_c2.unlock).toEqual({ kind: "score", n: 10_000_000 });
-    expect(DECK_DEFS.deck_c3.unlock).toEqual({ kind: "noRerollRun" }); // #214: löst noBuyRun ab
-    expect(isUnlocked(DECK_DEFS.deck_c1, prof({ bestStreak: 100 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c2, prof({ bestScore: 10_000_000 }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof({ hadNoRerollRun: true }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c3, prof())).toBe(false);
-  });
-  it("Archetyp-Decks c5-c9 (#215): Mono-Archetyp je Fraktion + Element-Bund", () => {
-    expect(DECK_DEFS.deck_c5.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "fire" });
-    expect(DECK_DEFS.deck_c6.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "lightning" });
-    expect(DECK_DEFS.deck_c7.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice" });
-    expect(DECK_DEFS.deck_c8.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "plant" });
-    expect(DECK_DEFS.deck_c9.unlock).toEqual({ kind: "allArchetypesRun" });
-    // Mono: nur die passende Fraktion schaltet ihr Deck frei
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { fire: true } }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof({ monoArchetypeRuns: { ice: true } }))).toBe(false);
-    expect(isUnlocked(DECK_DEFS.deck_c7, prof({ monoArchetypeRuns: { ice: true } }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c5, prof())).toBe(false); // ohne Flag gesperrt
-    // Bund: nur mit dem all-Flag
-    expect(isUnlocked(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true }))).toBe(true);
-    expect(isUnlocked(DECK_DEFS.deck_c9, prof())).toBe(false);
-    // unlockProgress liefert sprechende Labels
-    expect(unlockProgress(DECK_DEFS.deck_c8, prof()).label).toMatch(/Pflanze/);
-    expect(unlockProgress(DECK_DEFS.deck_c9, prof({ hadAllArchetypesRun: true })).done).toBe(true);
-  });
-  it("alle Progressions-Schwellen sind vollständig abgedeckt (Decks 5/15/25/35, BF 10/20/30/40)", () => {
-    const deckGames = Object.values(DECK_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);
-    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter(d => d.unlock?.kind === "games").map(d => d.unlock.n).sort((a,b)=>a-b);
-    expect(deckGames).toEqual([5, 15, 25, 35]);
-    expect(bfGames).toEqual([10, 20, 30, 40]);
+  it("games-Bedingung nur noch für das Hirsch-Stufen-Deck (#tiered: 10/20/30 abgeschlossene Läufe)", () => {
+    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
+    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
+    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3"]);
+    // korrekte Schwellen
+    expect(DECK_DEFS.deck_hirsch1.unlock.n).toBe(10);
+    expect(DECK_DEFS.deck_hirsch2.unlock.n).toBe(20);
+    expect(DECK_DEFS.deck_hirsch3.unlock.n).toBe(30);
   });
 });
 
@@ -109,7 +63,7 @@ describe("cosmetics — isUnlocked", () => {
   });
 
   it("games: erst ab der Schwelle frei", () => {
-    const d = DECK_DEFS.deck_p1; // n=5
+    const d = { unlock: { kind: "games", n: 5 } };
     expect(isUnlocked(d, prof({ games: 4 }))).toBe(false);
     expect(isUnlocked(d, prof({ games: 5 }))).toBe(true);
     expect(isUnlocked(d, prof({ games: 99 }))).toBe(true);
@@ -124,41 +78,72 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(score, prof({ bestScore: 10_000_000 }))).toBe(true);
   });
 
-  it("monoStatRun: an Profil-Flag gebunden", () => {
-    const mono  = { unlock: { kind: "monoStatRun" } };
-    expect(isUnlocked(mono, prof())).toBe(false);
-    expect(isUnlocked(mono, prof({ hadMonoStatRun: true }))).toBe(true);
-  });
+  // (#267: monoStatRun-Test entfernt — die Stat-Phase/Mono-Stat-Challenge ist weg.)
 
   it("noRerollRun (#214 Sparfuchs): an hadNoRerollRun gebunden + Klartext-Fortschritt", () => {
     const noReroll = { unlock: { kind: "noRerollRun" } };
     expect(isUnlocked(noReroll, prof())).toBe(false);
     expect(isUnlocked(noReroll, prof({ hadNoRerollRun: true }))).toBe(true);
-    expect(unlockProgress(noReroll, prof())).toEqual({ done: false, cur: 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
-    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toEqual({ done: true, cur: 1, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" });
+    setLocale(SOURCE_LOCALE);
+    expect(unlockProgress(noReroll, prof())).toMatchObject({ done: false, cur: 0, target: 1, kind: "noRerollRun" });
+    expect(unlockProgress(noReroll, prof({ hadNoRerollRun: true }))).toMatchObject({ done: true, cur: 1, target: 1, kind: "noRerollRun" });
+    // Der Klartext kommt aus dem Katalog (unlockLabel), nicht mehr aus cosmetics.js.
+    expect(unlockLabel(unlockProgress(noReroll, prof()))).toBe("Schließe einen Lauf ab, ohne einen Reroll zu benutzen");
   });
 
   it("unbekannter kind blockiert nicht (defensiv)", () => {
     expect(isUnlocked({ unlock: { kind: "zukunft", n: 3 } }, prof())).toBe(true);
   });
+
+  it("#303 Challenge-Decks: Katalog-Einträge + Freischalt-Bindung", () => {
+    // Serie 300 / 600 hängen an bestStreak (bestehende streak-Bedingung).
+    expect(DECK_DEFS.deck_serie300.unlock).toEqual({ kind: "streak", n: 300 });
+    expect(DECK_DEFS.deck_serie600.unlock).toEqual({ kind: "streak", n: 600 });
+    expect(isUnlocked(DECK_DEFS.deck_serie300, prof({ bestStreak: 299 }))).toBe(false);
+    expect(isUnlocked(DECK_DEFS.deck_serie300, prof({ bestStreak: 300 }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_serie600, prof({ bestStreak: 600 }))).toBe(true);
+    // Gottgleich / Sparfuchs hängen an eigenen sticky Flags.
+    expect(isUnlocked(DECK_DEFS.deck_gottgleich, prof())).toBe(false);
+    expect(isUnlocked(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true }))).toBe(true);
+    expect(isUnlocked(DECK_DEFS.deck_sparfuchs, prof())).toBe(false);
+    expect(isUnlocked(DECK_DEFS.deck_sparfuchs, prof({ hadMeisterNoRerollRun: true }))).toBe(true);
+    // Battlefields tragen dieselbe Bedingung wie ihr Deck.
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_gottgleich, prof({ hadGottgleichRun: true }))).toBe(true);
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_sparfuchs, prof({ hadMeisterNoRerollRun: true }))).toBe(true);
+  });
+
+  it("#303: neue Flag-Bedingungen liefern Klartext-Fortschritt", () => {
+    expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof()).done).toBe(false);
+    expect(unlockProgress(DECK_DEFS.deck_gottgleich, prof({ hadGottgleichRun: true })).done).toBe(true);
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_gottgleich, prof()))).toMatch(/Gottgleich/i);
+    // Sprachprüfung A10: der Modus heißt „Ranglisten-Lauf" (früher „Meisterrang") — storage.js führt den alten
+    // record-Key `ranked === "meister"` nur noch aus Kompatibilität.
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()))).toMatch(/Ranglisten.*Reroll/i);
+  });
 });
 
 describe("cosmetics — unlockProgress", () => {
   it("null-unlock: done, immer verfügbar", () => {
+    setLocale(SOURCE_LOCALE);
     const p = unlockProgress(DECK_DEFS.default, prof());
     expect(p.done).toBe(true);
-    expect(p.label).toMatch(/verfügbar/i);
+    expect(unlockLabel(p)).toMatch(/verfügbar/i);
   });
 
   it("games: cur auf target gedeckelt, Klartext-Label", () => {
-    const d = DECK_DEFS.deck_p1;
-    expect(unlockProgress(d, prof({ games: 3 }))).toEqual({ done: false, cur: 3, target: 5, label: "Spiele 5 Läufe" });
-    expect(unlockProgress(d, prof({ games: 8 }))).toEqual({ done: true, cur: 5, target: 5, label: "Spiele 5 Läufe" });
+    const d = { unlock: { kind: "games", n: 5 } };
+    setLocale(SOURCE_LOCALE);
+    expect(unlockProgress(d, prof({ games: 3 }))).toMatchObject({ done: false, cur: 3, target: 5 });
+    expect(unlockProgress(d, prof({ games: 8 }))).toMatchObject({ done: true, cur: 5, target: 5 });
+    expect(unlockLabel(unlockProgress(d, prof({ games: 3 })))).toBe("Spiele 5 Läufe");
   });
 
   it("streak: Label nennt die Serie, cur = beste bisher (gedeckelt)", () => {
+    setLocale(SOURCE_LOCALE);
     const p = unlockProgress({ unlock: { kind: "streak", n: 100 } }, prof({ bestStreak: 63 }));
-    expect(p).toEqual({ done: false, cur: 63, target: 100, label: "Erreiche eine Serie von 100" });
+    expect(p).toMatchObject({ done: false, cur: 63, target: 100 });
+    expect(unlockLabel(p)).toBe("Erreiche eine Serie von 100");
   });
 
   it("score: Label mit Tausenderpunkten (keine ICU-Abhängigkeit)", () => {
@@ -166,26 +151,64 @@ describe("cosmetics — unlockProgress", () => {
     expect(p.done).toBe(false);
     expect(p.cur).toBe(5_000_000);
     expect(p.target).toBe(10_000_000);
-    expect(p.label).toBe("Erreiche Score 10.000.000");
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(p)).toBe("Erreiche Score 10.000.000");
+    // Gegenprobe Englisch: dieselbe Zahl, englische Tausendertrennung.
+    setLocale("en");
+    expect(unlockLabel(p)).toBe("Reach a score of 10,000,000");
+    setLocale(SOURCE_LOCALE);
   });
 
   it("Flag-Challenges: target 1, cur 0/1, Klartext-Bedingung", () => {
-    const monoLocked = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof());
-    expect(monoLocked).toEqual({ done: false, cur: 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
-    const monoDone = unlockProgress({ unlock: { kind: "monoStatRun" } }, prof({ hadMonoStatRun: true }));
-    expect(monoDone).toEqual({ done: true, cur: 1, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" });
+    setLocale(SOURCE_LOCALE);
+    const locked = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof());
+    expect(locked).toMatchObject({ done: false, cur: 0, target: 1, kind: "noRerollRun" });
+    const done = unlockProgress({ unlock: { kind: "noRerollRun" } }, prof({ hadNoRerollRun: true }));
+    expect(done).toMatchObject({ done: true, cur: 1, target: 1, kind: "noRerollRun" });
+    expect(unlockLabel(done)).toBe("Schließe einen Lauf ab, ohne einen Reroll zu benutzen");
+  });
+});
+
+describe("cosmetics — #310 Element-Challenges & Prisma-Multi", () => {
+  const decks = { fire: "deck_feuer", ice: "deck_eis", lightning: "deck_blitz", plant: "deck_pflanze" };
+  it("Element-Decks: monoArchetypeRun mit n=5, frei erst ab 5 Mono-Läufen (Zähler)", () => {
+    for (const [arch, id] of Object.entries(decks)) {
+      const d = DECK_DEFS[id];
+      expect(d.unlock).toEqual({ kind: "monoArchetypeRun", archetype: arch, n: 5 });
+      expect(isUnlocked(d, prof({ monoArchetypeRuns: { [arch]: 4 } }))).toBe(false);
+      expect(isUnlocked(d, prof({ monoArchetypeRuns: { [arch]: 5 } }))).toBe(true);
+      expect(unlockProgress(d, prof({ monoArchetypeRuns: { [arch]: 2 } }))).toMatchObject({ cur: 2, target: 5, done: false });
+    }
+  });
+  it("Alt-Wert Boolean true zählt als 0 (nicht als 5 erfüllt)", () => {
+    expect(isUnlocked(DECK_DEFS.deck_feuer, prof({ monoArchetypeRuns: { fire: true } }))).toBe(false);
+  });
+  it("Prisma (deck_elementar): allMonoArchetypes — frei erst wenn alle vier ≥ 5", () => {
+    const d = DECK_DEFS.deck_elementar;
+    expect(d.unlock).toEqual({ kind: "allMonoArchetypes", n: 5 });
+    expect(isUnlocked(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5 } }))).toBe(false);
+    expect(isUnlocked(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5, lightning: 5, plant: 5 } }))).toBe(true);
+    expect(unlockProgress(d, prof({ monoArchetypeRuns: { fire: 5, ice: 5 } }))).toMatchObject({ cur: 2, target: 4, done: false });
+  });
+  it("BF spiegeln die Deck-Bedingung; DP-Kauf-Decks tragen ihren ownKey", () => {
+    expect(BATTLEFIELD_DEFS.bf_eis.unlock).toEqual({ kind: "monoArchetypeRun", archetype: "ice", n: 5 });
+    expect(BATTLEFIELD_DEFS.bf_elementar.unlock).toEqual({ kind: "allMonoArchetypes", n: 5 });
+    for (const [id, key] of [["deck_ronin", "pack:ronin"], ["deck_kosmos", "pack:kosmos"], ["deck_oni", "pack:oni"], ["deck_geometrie", "pack:geometrie"],
+      ["deck_sonne", "pack:sonne"], ["deck_drache", "pack:drache"]]) { // #311
+      expect(DECK_DEFS[id].unlock).toEqual({ kind: "buy", ownKey: key });
+    }
   });
 });
 
 describe("cosmetics — resolveSkinId (defensiver Fallback)", () => {
   it("gibt die id zurück, wenn sie existiert UND frei ist", () => {
-    expect(resolveSkinId(DECK_DEFS, "deck_p1", prof({ games: 5 }))).toBe("deck_p1");
+    expect(resolveSkinId(DECK_DEFS, "deck_sunset", prof({ ownedCosmetics: { "pack:sunset": true } }))).toBe("deck_sunset");
     expect(resolveSkinId(DECK_DEFS, "default", prof())).toBe("default");
   });
   it("fällt auf default zurück bei unbekannter id", () => {
     expect(resolveSkinId(DECK_DEFS, "gibtsnicht", prof({ games: 99 }))).toBe("default");
   });
   it("fällt auf default zurück, wenn die id (noch) gesperrt ist", () => {
-    expect(resolveSkinId(DECK_DEFS, "deck_p1", prof({ games: 2 }))).toBe("default");
+    expect(resolveSkinId(DECK_DEFS, "deck_sunset", prof())).toBe("default"); // Kauf-Pack nicht im Besitz → gesperrt
   });
 });

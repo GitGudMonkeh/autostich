@@ -10,19 +10,24 @@
    - Angebot: nur Stufen ECHT ÜBER dem aktuellen Rang (canOfferFamilyTier); Stufe IV schließt ab.
    - Legendäre bleiben AUSSERHALB dieses Systems (eigener Legendär-Wurf, unverändert).
 
-   Interne Bezeichnung Stufe IV = "epic" (technisch sauber); die sichtbare deutsche Bezeichnung
-   bleibt "Rar" (Spec §10). Drop-Gewichte + Preise sind Tuning-Konstanten.
+   Interne Bezeichnung Stufe IV = "epic" (technisch sauber). Die sichtbare deutsche Bezeichnung war
+   „Rar" und heißt seit der Sprachprüfung „Episch": „rar" und „selten" sind Synonyme, die Leiter
+   steigerte damit rückwärts (Selten → Sehr selten → Rar). „Episch" steigert und deckt sich mit der
+   englischen Leiter (Common · Uncommon · Rare · Epic, Übersetzerpaket §3.5).
+   Drop-Gewichte + Preise sind Tuning-Konstanten.
    ============================================================ */
 
 export const TIERS = [1, 2, 3, 4];
 
 // Stufen-Metadaten (Spec §1 + §8). `rarity` = interner Schlüssel, `label` = sichtbarer deutscher Name,
 // `color` = UI-Farbe (I Grau · II Grün · III Blau · IV Lila), `price` = Shoppreis der Zielstufe.
+// #369 §3 Umbenennung: die 5er-Leiter Normal · Selten · Sehr selten · Rar · Legendär mappt auf die vier regulären
+// Stufen + Legendär-Layer. Tier II heißt jetzt „Selten" (grün), Tier III „Sehr selten" (blau).
 export const TIER_META = {
-  1: { tier: 1, rarity: "normal",   label: "Normal",       color: "#8a8a95", price: 8 },
-  2: { tier: 2, rarity: "uncommon", label: "Ungewöhnlich", color: "#4ade80", price: 12 },
-  3: { tier: 3, rarity: "rare",     label: "Selten",       color: "#5a8ade", price: 18 },
-  4: { tier: 4, rarity: "epic",     label: "Rar",          color: "#a855f7", price: 30 },
+  1: { tier: 1, rarity: "normal",   label: "Normal",      color: "#8a8a95", price: 8 },
+  2: { tier: 2, rarity: "uncommon", label: "Selten",      color: "#4ade80", price: 12 },
+  3: { tier: 3, rarity: "rare",     label: "Sehr selten", color: "#5a8ade", price: 18 },
+  4: { tier: 4, rarity: "epic",     label: "Episch",      color: "#a855f7", price: 30 },
 };
 
 // Römische Stufe direkt hinter dem Familiennamen (Spec §8: „Momentum III").
@@ -33,12 +38,27 @@ export const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 // #217 Meistergrade — Rarität-Shift: höhere Grade verschieben Gewicht zu Selten/Rar. shift 0 = Basis,
 // 1 (Grad III) / 2 (Grad IV+). Tabellen IDENTISCH zu architect.js (Single Source hier → kein Drift; der
 // Sim-Env-Hook SIM_RARE_SHIFT und der Grad-Reward greifen auf dieselbe Skala zu).
-export const TIER_WEIGHTS_BY_SHIFT = {
+// shift 3 (Drop-Rate III): weiterer Schub zu Sehr selten/Rar. #369 §4: Drop IV = neuer shift 4 (22/18/32/28).
+// [TUNING — Playtest-justierbar]
+const TIER_WEIGHTS_BY_SHIFT = {
   0: { 1: 60, 2: 25, 3: 12, 4: 3 },
   1: { 1: 52, 2: 25, 3: 16, 4: 7 },
   2: { 1: 40, 2: 23, 3: 25, 4: 12 },
+  3: { 1: 30, 2: 20, 3: 30, 4: 20 },
+  4: { 1: 22, 2: 18, 3: 32, 4: 28 },
 };
-export const tierWeightsForShift = (shift) => TIER_WEIGHTS_BY_SHIFT[shift] || TIER_WEIGHTS_BY_SHIFT[0];
+// maxTier (Progression §4, Onboarding-Rarität): Obergrenze der anbietbaren Stufe — Stufen DARÜBER werden auf
+// Gewicht 0 gesetzt (der gewichtete Zug renormalisiert automatisch → „diese Stufe gibt es noch nicht"). Default 4
+// = kein Deckel → EXAKT dieselbe Objektreferenz (byte-identisch für Sim/Meister/Dev/Bestandstests, kein rng-Drift).
+// minTier (#370 Wochen-Mod „Perk-Segen"): Untergrenze der anbietbaren Stufe — Stufen DARUNTER auf Gewicht 0
+// (symmetrisch zum maxTier-Deckel). Default 1 = kein Boden → base-Referenz unverändert (byte-identisch).
+export const tierWeightsForShift = (shift, maxTier = 4, minTier = 1) => {
+  const base = TIER_WEIGHTS_BY_SHIFT[shift] || TIER_WEIGHTS_BY_SHIFT[0];
+  if (maxTier >= 4 && minTier <= 1) return base;
+  const capped = {};
+  for (const t of TIERS) capped[t] = (t <= maxTier && t >= minTier) ? base[t] : 0;
+  return capped;
+};
 export const TIER_WEIGHTS = TIER_WEIGHTS_BY_SHIFT[0]; // Basis (shift 0) — unveränderte Bestandssemantik
 
 export const tierMeta   = (tier) => TIER_META[tier] || null;

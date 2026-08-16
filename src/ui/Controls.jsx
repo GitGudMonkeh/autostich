@@ -1,4 +1,5 @@
 import { MuteButton } from "./MuteButton.jsx";
+import { t } from "../i18n/index.js"; // #sprache
 
 function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   return (
@@ -17,22 +18,16 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   );
 }
 
-/* Ablauf-Steuerung. Das Spiel läuft immer automatisch — nur Pause hält an (#29). */
-export function Controls({ paused, onTogglePause, speedMult, onSpeed, onRestart, onAbort, onOptions, muted, onToggleMute }) {
+/* Sekundär-Steuerung (Gameplay-Neu-Aufbau): Pause & Tempo sind in die schwebende StatusBar gewandert; hier bleiben
+   die selteneren Aktionen als eigene Reihe: Optionen · Neustart · Beenden · Ton. LINKSBÜNDIG (nicht über die
+   Breite verteilt) — sonst rissen die kürzeren englischen Labels (Options/Restart/End) große Lücken. */
+export function Controls({ onRestart, onAbort, onOptions, muted, onToggleMute }) {
   return (
-    <div className="rounded-xl p-3 flex flex-wrap items-center justify-center gap-2 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
-      <Btn active={paused} onClick={onTogglePause} tone="#d4a63a">
-        {paused ? "▶ Weiter" : "⏸ Pause"}
-      </Btn>
-
-      <Btn active={speedMult === 2} onClick={() => onSpeed(2)} tone="#8a7de0">X2</Btn>
-      <Btn active={speedMult === 4} onClick={() => onSpeed(4)} tone="#8a7de0">X4</Btn>
-      <Btn active={speedMult === 6} onClick={() => onSpeed(6)} tone="#8a7de0">MAX</Btn>
+    <div className="flex items-center justify-start gap-2 flex-wrap">
+      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label={t("controls.options.aria")}>{t("controls.options")}</Btn>}
+      <Btn onClick={onRestart} tone="#8a7de0">{t("controls.restart")}</Btn>
+      {onAbort && <Btn onClick={onAbort} tone="#8a7de0">{t("controls.quit")}</Btn>}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} />}
-
-      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label="Optionen">⚙ Optionen</Btn>}
-      {onAbort && <Btn onClick={onAbort} tone="#8a8a92">Beenden</Btn>}
-      <Btn onClick={onRestart} tone="#e0605a">Neustart</Btn>
     </div>
   );
 }

@@ -74,11 +74,13 @@ export function summarizeFormations(tel) {
   return { anyRate: tel.formationTricks / tricks, types };
 }
 
-// Build-Fingerprint als Bucket-Key (docs/sim-harness-plan.md §8): sortierte Perks/Skills/Archetypen + Stat-Vektor.
+// Build-Fingerprint als Bucket-Key (docs/sim-harness-plan.md §8): sortierte Perks/Skills/Archetypen +
+// Familien-Stufen-Vektor (#267: der Stat-Vektor ist mit der entfernten Stat-Phase weggefallen; die
+// Familien-Stufen — inkl. der neuen Präzision-Crit-Familien P_* — tragen den Build-Zustand jetzt).
 export function fingerprint(state) {
   const p = [...(state.perks || [])].sort().join(",");
   const s = [...(state.skills || [])].sort().join(",");
   const a = [...(state.activeArchetypes || [])].sort().join(",");
-  const st = [state.statCritChance, state.statCritMult, state.statFormMult, state.statStreakMult].join("/");
-  return `P:${p}|S:${s}|A:${a}|St:${st}`;
+  const ft = Object.entries(state.familyTiers || {}).map(([id, tier]) => `${id}:${tier}`).sort().join(",");
+  return `P:${p}|S:${s}|A:${a}|F:${ft}`;
 }

@@ -6,14 +6,88 @@ import buttonUrl from "../assets/sounds/button_click.mp3";
 import cardflipUrl from "../assets/sounds/cardflip.wav";
 import buyUrl from "../assets/sounds/buy_cashout.mp3";
 import deniedUrl from "../assets/sounds/muted_click.wav";
+// #295/#296 Sieg-Finisher-SFX (aufbereitet, an den Bestand angeglichen). fx_laser = Laser-Schnitt; Lasergitter hat seit
+// #: einen EIGENEN Sound (fx_lasergrid). fx_blackhole/fx_burnbeam laufen als persistente Loop-Betten (siehe loop/stopLoop).
+import bladeUrl from "../assets/sounds/fx_blade.mp3";
+import laserUrl from "../assets/sounds/fx_laser.mp3";
+import lasergridUrl from "../assets/sounds/fx_lasergrid.mp3";
+import burnbeamUrl from "../assets/sounds/fx_burnbeam.mp3";
+import blackholeUrl from "../assets/sounds/fx_blackhole.mp3";
+// #320 Schwarzes-Loch-Finisher: fx_blackhole = persistentes Loop-Bett (Sog/Drone), fx_blackhole_implode = Einmal-Impact
+// bei der Implosion (Kollaps → Flash/Nova). Registriert/vorbereitet; das Abspielen/Verdrahten folgt per Issue.
+import blackholeImplodeUrl from "../assets/sounds/fx_blackhole_implode.mp3";
+// #345 Neon-Brandung (Boden-BG-Effekt): fx_neonsurf = persistentes Loop-Bett (Plasma-See-Ambience, läuft solange der
+// Effekt aktiv ist), fx_neonsurf_splash = One-Shot „on top", wenn eine Groß-Ansage das Wasser wegdrückt (Surge).
+// Registriert/vorbereitet; das Abspielen/Verdrahten folgt mit der Effekt-Umsetzung (Issue #345).
+import neonsurfUrl from "../assets/sounds/fx_neonsurf.mp3";
+import neonsurfSplashUrl from "../assets/sounds/fx_neonsurf_splash.mp3";
+// #326 Supernova-Swell: epischer One-Shot, spielt über den epischen Groß-Ansagen (Gottgleich/Gönn dir/Lawine).
+// Registriert/vorbereitet — ersetzt bzw. layert später den bisherigen fx_godlike-Bass-Drop (siehe Issue).
+import supernovaUrl from "../assets/sounds/fx_supernova.mp3";
+// #300 Sieg-Finisher „Überladung" (Blitz) / „Zerstäubung" (Partikel) — eigene Sounds; fx_bass = tiefer Impact-Layer.
+// #: „Gottgleich"-Bass-Drop (fx_godlike) — feuert bei den epischen Groß-Ansagen (Gottgleich/Gönn dir/Lawine).
+import lightningUrl from "../assets/sounds/fx_lightning.mp3";
+import atomizeUrl from "../assets/sounds/fx_atomize.mp3";
+import bassUrl from "../assets/sounds/fx_bass.mp3";
+import godlikeUrl from "../assets/sounds/fx_godlike.mp3";
+// #glutfunken-raus: fx_embers-Sound entfernt (Effekt „Glutfunken" komplett raus).
+// #319 Scorch-Sieg-Finisher: Laser + organischer Burn in EINEM Sound (rate = Turbo-Speed → bleibt auf die Animation getimed).
+import scorchUrl from "../assets/sounds/fx_scorch.mp3";
+// #komet: Sternenfeld-Finisher. fx_comet = kleiner Komet (Tier 0, nur Whoosh). fx_comet_impact = Tiers mit Einschlag
+// (Woosh→Impact, Einschlag bei ~0,90 s → deckt sich mit dem visuellen Impact bei IMP_AT×SHOOT_DUR). rate bleibt 1
+// (Komet ist turbo-unabhängig, feste 1-s-Flugzeit), NICHT turbo-koppeln — sonst wandert der Einschlag weg.
+import cometUrl from "../assets/sounds/fx_comet.mp3";
+import cometImpactUrl from "../assets/sounds/fx_comet_impact.mp3";
+// Gottgleich-Prunk-eigene Swells (#322–#325): je Prunk-Effekt ein eigener Klang statt des gemeinsamen Supernova-Swells.
+// fx_laserfan = Laser-Fächer (~2,7 s) · fx_holocube = Holo-Würfel-Kollaps (~11 s Swell) · fx_prisma = Prisma-Kaskade (~4,6 s).
+import laserfanUrl from "../assets/sounds/fx_laserfan.mp3";
+import holocubeUrl from "../assets/sounds/fx_holocube.mp3";
+import prismaUrl from "../assets/sounds/fx_prisma.mp3";
 
-const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl };
+const SRC = { button: buttonUrl, cardflip: cardflipUrl, buy: buyUrl, denied: deniedUrl,
+              fx_blade: bladeUrl, fx_laser: laserUrl, fx_lasergrid: lasergridUrl, fx_burnbeam: burnbeamUrl, fx_blackhole: blackholeUrl, fx_blackhole_implode: blackholeImplodeUrl, fx_neonsurf: neonsurfUrl, fx_neonsurf_splash: neonsurfSplashUrl, fx_supernova: supernovaUrl,
+              fx_lightning: lightningUrl, fx_atomize: atomizeUrl, fx_bass: bassUrl, fx_godlike: godlikeUrl, fx_scorch: scorchUrl,
+              fx_comet: cometUrl, fx_comet_impact: cometImpactUrl,
+              fx_laserfan: laserfanUrl, fx_holocube: holocubeUrl, fx_prisma: prismaUrl };
 
 let ctx = null;
 let masterComp = null; // #196: persistenter Master-Kompressor — ALLE SFX laufen durch, fängt Clipping/Turbo-Überlappung ab.
 const buffers = {};
+let buffersLoaded = false; // #264: SFX-Puffer erst bei „hörbarem" Bedarf holen/dekodieren (nicht im Stumm-Start).
+const activeLoops = new Set(); // #296: laufende Loop-SFX (persistentes „Schwarzes Loch"-Bett) — Gain zieht bei Volume/Mute mit.
+// #297 Turbo-Drossel gegen die „Klangwand" bei schnellen Stichen. Zwei Hebel, beide tunebar:
+//  (1) globaler Stimmen-Deckel mit Voice-Stealing (älteste One-Shot-Stimme weicht) — verhindert Runaway/Kompressor-Pumpen;
+//  (2) Mindestabstand je Sound-Name (Cooldown) — thint Finisher-Bursts. cardflip bewusst 0 → das gewollte „MG" bei
+//  MAX-Turbo bleibt (dort sind die Finisher via flipMs-Gate ohnehin aus). Loops (activeLoops) zählen NICHT mit.
+const SFX_MAX_VOICES = 6;                                                    // max. gleichzeitige One-Shot-Stimmen
+/* LANGE Swells, die ihre volle Länge brauchen, statt vom Stimmen-Deckel gestohlen zu werden.
+   fx_supernova ist ein ~11-s-Swell und liegt damit zwangsläufig als ÄLTESTE Stimme im Pool, während
+   nebenher Kartendreher, Treffer und Ansagen durchlaufen. Der Deckel warf beim Überlauf immer die
+   älteste weg — also praktisch immer den Swell, oft schon nach ein bis zwei Sekunden. Genau das war
+   im Schwarzloch-Showcase zu hören: der Ton brach mitten im Aufbau ab.
+   fx_holocube (Holo-Würfel-Kollaps) ist ebenfalls ein ~11-s-Swell → gleicher Schutz.
+   Gedeckelt bleibt der Pool trotzdem: geschützte Stimmen können sich nicht stapeln, weil
+   SFX_COOLDOWN (3 s) ein Nachfeuern bremst. */
+const SFX_KEEP = new Set(["fx_supernova", "fx_holocube"]);
+const SFX_COOLDOWN = { fx_blade: 0.08, fx_laser: 0.08, fx_lasergrid: 0.08, fx_burnbeam: 0.08, fx_lightning: 0.08, fx_atomize: 0.08, fx_bass: 0.08, fx_godlike: 1.8, fx_scorch: 0.06, fx_comet: 0.11, fx_comet_impact: 0.11, fx_blackhole_implode: 0.5, fx_neonsurf_splash: 0.3, fx_supernova: 3.0, fx_laserfan: 2.4, fx_holocube: 3.0, fx_prisma: 2.4 };  // fx_supernova/fx_holocube = ~11-s-Swell → langer Cooldown gegen Überlappung bei dichten epischen Ansagen  // s; nicht gelistet ⇒ 0. fx_godlike lang (1,8 s) → kein Stapeln/Dröhnen bei dichten Gottgleich-Stichen; fx_blackhole_implode selten → 0,5 s reicht
+const voices = [];                                                           // aktive One-Shots: { src, g, name, t } (t = Start, für Voice-Stealing)
+const lastPlayAt = {};                                                       // name → letzte Startzeit (für Cooldown)
 let muted = false;
 let volume = 0.6;
+// #: Globaler „Loops aus"-Schalter. Persistente Finisher-Betten (Brennstrahl/Schwarzes Loch) sollen VERSTUMMEN, wenn der
+// Lauf nicht aktiv spielt — Pause, Auswahl-/Perk-Fenster (Phase ≠ „play"), Options-/Chronik-/Glossar-Overlay oder
+// Hintergrund-Tab. Getrennt von `muted` (Nutzer-Stumm), damit es der App-Zustand jederzeit setzen kann. One-Shots sind
+// nicht betroffen (die triggern nur bei aktivem Spiel ohnehin).
+let loopsSuspended = false;
+// #329: Analog zu loopsSuspended, aber für die One-Shot-EFFEKTSOUNDS (fx_*). Außerhalb von aktivem Stichspiel/Werkstatt-
+// Vorschau (Victory/Gameover, Pause, Auswahl-/Perk-Fenster, alle Overlays) sollen Effektsounds STUMM sein — inkl. des
+// Schwanzes eines beim Sieg gestarteten Sounds (fx_godlike 1,8 s u. Ä.). UI-Sounds (button/cardflip/buy/denied) bleiben.
+let fxSuspended = false;
+const isFxSound = (name) => typeof name === "string" && name.startsWith("fx_"); // fx_* = Effektsound; UI-Sounds tragen kein Präfix
+// #: App im Hintergrund/geschlossen (setSuspended). Hart: play()/loop() dürfen dann KEINE neuen Stimmen starten —
+// sonst weckt ihr c.resume() den (per setSuspended eingefrorenen) Context sofort wieder auf (z. B. Showcase-Timer,
+// die im Hintergrund weiterlaufen). Getrennt von loopsSuspended (nur Loop-Gains) und muted (Nutzer-Stumm).
+let bgSuspended = false;
 // Nicht-Stich-Sounds (Klick/Kauf/Verwehrt) etwas anheben → effektiv ~0,5 beim Default-Slider (0,4).
 // Der Stich-Sound (cardflip) übergibt stets seinen eigenen Gain und bleibt davon unberührt.
 const SFX_GAIN = 1.25;
@@ -29,41 +103,175 @@ function ensureCtx() {
   masterComp.threshold.value = -10; masterComp.knee.value = 24; masterComp.ratio.value = 3;
   masterComp.attack.value = 0.003; masterComp.release.value = 0.12;
   masterComp.connect(ctx.destination);
+  return ctx; // #264: KEINE Puffer hier — erst bei hörbarem Bedarf (loadBuffers)
+}
+
+// #264: SFX-Puffer erst holen/dekodieren, wenn Ton hörbar ist. Idempotent (nur ein Ladelauf).
+function audibleSfx() { return !muted && volume > 0; }
+function loadBuffers() {
+  const c = ensureCtx();
+  if (!c || buffersLoaded) return;
+  buffersLoaded = true;
   for (const [name, url] of Object.entries(SRC)) {
-    fetch(url).then((r) => r.arrayBuffer()).then((ab) => ctx.decodeAudioData(ab))
+    fetch(url).then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab))
       .then((buf) => { buffers[name] = buf; }).catch(() => {});
   }
-  return ctx;
+}
+
+// #296: Loop-Gain = (stumm ? 0 : volume) × Basis-Gain. Live-Anpassung bei Volume/Mute (setTargetAtTime, sanft).
+function loopGain(h) { return (muted || loopsSuspended ? 0 : volume) * h.base; }
+function refreshLoops() { if (!ctx) return; const now = ctx.currentTime; for (const h of activeLoops) { try { h.g.gain.setTargetAtTime(loopGain(h), now, 0.05); } catch (e) {} } }
+// #329: laufende Effekt-One-Shots sofort (kurzer Fade, kein Klick) ausblenden — UI-/cardflip-Stimmen bleiben unberührt.
+function stopFxVoices(fade = 0.06) {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  for (const v of voices.slice()) {
+    if (!isFxSound(v.name)) continue;
+    try {
+      v.g.gain.cancelScheduledValues(now);
+      v.g.gain.setValueAtTime(v.g.gain.value, now);
+      v.g.gain.linearRampToValueAtTime(0.0001, now + fade);
+      v.src.stop(now + fade + 0.02);
+    } catch (e) { /* schon gestoppt — egal */ }
+  }
 }
 
 export const audio = {
-  init() { ensureCtx(); },
+  init() { ensureCtx(); if (audibleSfx()) loadBuffers(); },
+  // #317: den geteilten AudioContext herausreichen (der Musik-Analyser der Cube-Matrix hängt sich hier ein statt einen
+  // zweiten Context zu bauen). Erzeugt den Context bei Bedarf (wie init/unlock).
+  context() { return ensureCtx(); },
   // Beim ersten User-Klick aufrufen: entsperrt den (browserseitig blockierten) AudioContext.
-  unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); },
-  setMuted(m) { muted = !!m; },
-  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); },
+  unlock() { const c = ensureCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); if (audibleSfx()) loadBuffers(); },
+  setMuted(m) { muted = !!m; if (audibleSfx()) loadBuffers(); refreshLoops(); }, // #264: Unmute → Puffer jetzt (lazy) laden; #296: laufende Loops mitziehen
+  setVolume(v) { volume = Math.max(0, Math.min(1, Number(v) || 0)); if (audibleSfx()) loadBuffers(); refreshLoops(); },
+  // #: Persistente Loop-Betten global verstummen/wieder hörbar machen (Pause/Overlay/Nicht-„play"-Phase/Hintergrund-Tab).
+  // Verändert nur die Loop-Gains (sanft) — die Quellen laufen weiter, damit sie beim Fortsetzen nahtlos wieder da sind.
+  setLoopsSuspended(s) { const n = !!s; if (n === loopsSuspended) return; loopsSuspended = n; refreshLoops(); },
+  // #329: Effekt-One-Shots (fx_*) global sperren/freigeben — exakt wie die Loop-Betten gegated (gleiche loopsAllowed-
+  // Bedingung in App.jsx). Beim Aktivieren laufende Effektsounds sofort ausblenden (z. B. fx_godlike-Schwanz → Victory).
+  setFxSuspended(s) { const n = !!s; if (n === fxSuspended) return; fxSuspended = n; if (n) stopFxVoices(); },
+  /* #: App im Hintergrund / geschlossen (v. a. Mobile) → den GANZEN AudioContext hart suspendieren: friert ALLE
+     Stimmen + Loops ein (kein Sound, kein CPU/Akku hinter dem gesperrten Bildschirm) und setzt beim Zurückkehren
+     nahtlos fort. Robust/idempotent; vor dem ersten unlock() (ctx==null oder noch nie „running") ein No-Op. */
+  setSuspended(s) {
+    bgSuspended = !!s; // #: merken → play()/loop() wecken den Context im Hintergrund NICHT wieder auf
+    const c = ctx;
+    if (!c) return;
+    try {
+      if (s) { if (c.state === "running") c.suspend().catch(() => {}); }
+      else if (c.state === "suspended") c.resume().catch(() => {});
+    } catch (e) { /* egal — Audio nie den Spielfluss stören */ }
+  },
   /* Einen SFX abspielen. `rate` = playbackRate (Turbo-Kopplung Stich-Sound), `gain` = zusätzlicher Faktor,
      `bass` = Lowshelf-Anhebung in dB (#196, 0 = aus). Je Aufruf eine neue BufferSource → Überlappen erlaubt
      (dezenter „Maschinengewehr"-Effekt bei hohem Turbo). Kette: src → [lowshelf?] → gain → masterComp → destination. */
-  play(name, { rate = 1, gain = SFX_GAIN, bass = 0 } = {}) {
-    if (muted || volume <= 0) return;
+  play(name, { rate = 1, gain = SFX_GAIN, bass = 0, soft = 0, attack = 0, release = 0, delay = 0 } = {}) {
+    if (muted || volume <= 0 || bgSuspended) return; // #: Hintergrund → keine neuen One-Shots (weckt sonst den Context)
+    if (fxSuspended && isFxSound(name)) return; // #329: Effektsounds außerhalb Spiel/Werkstatt aus (UI-Sounds bleiben)
+    loadBuffers(); // #264: hörbarer Bedarf → sicherstellen, dass die Puffer (lazy) geladen sind
     const c = ctx;
     if (!c || !buffers[name]) return;
     if (c.state === "suspended") c.resume().catch(() => {});
+    const now = c.currentTime;
+    // #297 Cooldown: denselben Sound nicht dichter als SFX_COOLDOWN[name] auslösen (thint Finisher-Bursts; cardflip = 0).
+    const cd = SFX_COOLDOWN[name] || 0;
+    if (cd && lastPlayAt[name] != null && (now - lastPlayAt[name]) < cd) return;
     try {
       const src = c.createBufferSource();
       src.buffer = buffers[name];
       src.playbackRate.value = rate;
+      const peak = volume * gain;
       const g = c.createGain();
-      g.gain.value = volume * gain;
       let node = src;
       if (bass > 0) { // #196: Bass-Anhebung (lowshelf ~200 Hz) — mehr Wucht bei Sieg/Crit/großer Effekt-Stufe.
         const shelf = c.createBiquadFilter();
         shelf.type = "lowshelf"; shelf.frequency.value = 200; shelf.gain.value = bass;
         node.connect(shelf); node = shelf;
       }
+      if (soft > 0) { // #: Lowpass rundet die harte/scharfe Höhen-Attacke ab (weicherer, weniger „harter" Sound).
+        const lp = c.createBiquadFilter();
+        lp.type = "lowpass"; lp.frequency.value = soft; lp.Q.value = 0.7;
+        node.connect(lp); node = lp;
+      }
+      // #: Hüllkurve — kurzer Attack (weiche Transiente statt harter Einsatz) + Release (sanftes Ausklingen statt hartem
+      // Abriss, z. B. im Turbo). Ohne attack/release identisch zum bisherigen Verhalten (Sofort-Pegel).
+      const dur = (buffers[name].duration || 0) / Math.max(0.01, rate);
+      // #: `delay` (s) → Start via Web-Audio-Scheduling in die Zukunft legen (z. B. Supernova-Swell zeitgleich zum
+      // visuellen Puls). Die Hüllkurve wird relativ zum geplanten Start t0 gesetzt.
+      const t0 = now + Math.max(0, delay);
+      if (attack > 0) { g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + Math.min(attack, dur * 0.5)); }
+      else g.gain.setValueAtTime(peak, t0);
+      // #: Release-Ausklang auf höchstens ~65 % der (raten-abhängigen) Dauer begrenzen — sonst würde bei hoher playbackRate
+      // (kurze dur im Turbo) die ganze Stimme von Beginn an wegfaden (zu leise) statt nur am Ende sanft auszuklingen.
+      if (release > 0 && dur > 0) { const rel = Math.min(release, dur * 0.65); const rs = Math.max(t0 + attack, t0 + dur - rel); g.gain.setValueAtTime(peak, rs); g.gain.linearRampToValueAtTime(0.0001, t0 + dur); }
+      node.connect(g).connect(masterComp || c.destination);
+      // #297 Voice-Tracking + Deckel: neue Stimme registrieren, älteste weicht bei Überlauf (sanfter 50-ms-Ausklang → kein Klick).
+      const v = { src, g, name, t: now, keep: SFX_KEEP.has(name) };
+      voices.push(v);
+      lastPlayAt[name] = now;
+      src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
+      /* Beim Überlauf die älteste Stimme opfern — aber die geschützten Swells überspringen (s. SFX_KEEP)
+         und niemals die gerade gestartete. Findet sich keine opferbare Stimme, wird gar nichts gestohlen;
+         der Pool darf dann kurz über den Deckel laufen, statt einen langen Ton zu zerschneiden. */
+      while (voices.length > SFX_MAX_VOICES) {
+        const idx = voices.findIndex((x) => x !== v && !x.keep);
+        if (idx < 0) break;
+        const old = voices.splice(idx, 1)[0];
+        try { old.g.gain.cancelScheduledValues(now); old.g.gain.setTargetAtTime(0.0001, now, 0.01); old.src.stop(now + 0.05); } catch (e) {}
+      }
+      src.start(t0);
+    } catch (e) { /* Audio nie den Spielfluss stören */ }
+  },
+  /* #296 Persistenter Loop-SFX (Bett für persistente Finisher wie „Schwarzes Loch"). Gibt ein Handle zurück; via
+     stopLoop beenden. `loopStart`/`loopEnd` loopen nur die gleichförmige Mitte (unter Umgehung der Fades) → nahtlos.
+     Kette wie play(): src(loop) → [lowshelf?] → gain → masterComp → destination. Robust: bei Stumm/kein Puffer null. */
+  loop(name, { gain = SFX_GAIN, bass = 0, rate = 1, loopStart = null, loopEnd = null } = {}) {
+    if (muted || volume <= 0 || bgSuspended) return null; // #: Hintergrund → keine neuen Loops
+    loadBuffers();
+    const c = ctx;
+    if (!c || !buffers[name]) return null;
+    if (c.state === "suspended") c.resume().catch(() => {});
+    try {
+      const src = c.createBufferSource();
+      src.buffer = buffers[name];
+      src.loop = true;
+      if (loopStart != null) src.loopStart = loopStart;
+      if (loopEnd != null) src.loopEnd = loopEnd;
+      src.playbackRate.value = rate;
+      const g = c.createGain();
+      const h = { src, g, base: gain };
+      g.gain.value = loopGain(h);
+      let node = src;
+      if (bass > 0) { const shelf = c.createBiquadFilter(); shelf.type = "lowshelf"; shelf.frequency.value = 200; shelf.gain.value = bass; node.connect(shelf); node = shelf; }
       node.connect(g).connect(masterComp || c.destination);
       src.start();
-    } catch (e) { /* Audio nie den Spielfluss stören */ }
+      activeLoops.add(h);
+      return h;
+    } catch (e) { return null; }
+  },
+  /* Einen Loop beenden: sanfter Gain-Ausklang (fade s), dann Quelle stoppen. Idempotent/robust gegen null. */
+  stopLoop(h, { fade = 0.2 } = {}) {
+    if (h) activeLoops.delete(h);
+    if (!h || !ctx) return;
+    try {
+      const now = ctx.currentTime;
+      h.g.gain.cancelScheduledValues(now);
+      h.g.gain.setValueAtTime(h.g.gain.value, now);
+      h.g.gain.linearRampToValueAtTime(0.0001, now + fade);
+      h.src.stop(now + fade + 0.03);
+    } catch (e) { /* schon gestoppt o. Ä. — ignorieren */ }
+  },
+  /* #298 Basis-Gain eines laufenden Loops sanft ändern (setTargetAtTime) — z. B. das „Schwarzes Loch"-Bett mit dem
+     Wachstum lauter ziehen. `ramp` = Zeitkonstante in s. Zieht via loopGain auch Volume/Mute korrekt mit. */
+  setLoopGain(h, base, { ramp = 0.4 } = {}) {
+    if (!h || !ctx) return;
+    h.base = Math.max(0, base);
+    try { h.g.gain.setTargetAtTime(loopGain(h), ctx.currentTime, ramp); } catch (e) { /* egal */ }
+  },
+  /* #: playbackRate eines laufenden Loops sanft ändern (z. B. Brennstrahl mit der Serie leicht schneller ziehen). */
+  setLoopRate(h, rate, { ramp = 0.4 } = {}) {
+    if (!h || !ctx) return;
+    try { h.src.playbackRate.setTargetAtTime(Math.max(0.25, rate), ctx.currentTime, ramp); } catch (e) { /* egal */ }
   },
 };

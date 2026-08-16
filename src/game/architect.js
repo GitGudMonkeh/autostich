@@ -13,8 +13,9 @@
    - formation: biegt computeFormations für abgedeckte Positionen (Sakralbau).
    Legendäre kommen fertig (keine Stufen). Alle Zahlen sind Platzhalter → per Sim tunen (TUNING-Block unten).
    ============================================================ */
-import { SUIT_ORDER } from "./constants.js";
+import { ARCH_STREAK_CAP } from "./constants.js";
 import { tierWeightsForShift } from "./rarity.js";
+import { colorMatches, colorsAllied } from "./color.js"; // #289: Farb-Match zentral (grün + Farballianz)
 
 // Brett-Geometrie (fix; NICHT aus formations.js importiert, um den Import-Zyklus formations↔architect zu vermeiden).
 export const COLS = 5;                    // Spalten je Segment (= SEGMENT_SIZE)
@@ -27,8 +28,8 @@ export const posOf = (r, c) => r * COLS + c;
 /* ---- TUNING-Block (zentral, leicht editierbar) — Balance-Pass 1 (Ziel: Eigenbeitrag ~25–35 %, weniger spät-lastig).
        Vorher: TIER_FACTOR [1,1.6,2.4,3.5], HAEUSERZEILE 1,25 → Eigenbeitrag 42–51 %, 66–75 % Spät. Gedämpft:
        Stufen-Tail komprimiert + die breiten Multiplikatoren (Häuserzeile/Schatzkammer/Kathedrale/Grundstein) runter. ---- */
-export const TIER_FACTOR   = [0, 1, 1.4, 1.9, 2.5];      // numerischer Effekt = base × TIER_FACTOR[tier] (Index 1..4) [Pass1: Tail 2,4/3,5→1,9/2,5]
-export const FORM_TIER_BONUS = 0.1;                       // Formations-/Faktor-Effekte: je Stufe +0,1 auf den Faktor
+export const TIER_FACTOR   = [0, 1, 1.5, 2.2, 3.1];      // #282 Impact-Buff: Tail hoch (1,4/1,9/2,5 → 1,5/2,2/3,1) — tiefe Ausbauten (greedy zielt drauf) lohnen deutlich mehr
+export const FORM_TIER_BONUS = 0.13;                      // #282: 0,10 → 0,13
 // SIM-Rare-Buff-Hook (Rang-Reward-Messung): SIM_RARE_SHIFT=1/2 → seltene Baupläne häufiger. Default 0. Tabellen aus
 // rarity.js (Single Source, kein Drift). #217: der Grad-Reward reicht seinen rareShift zur Laufzeit an buildArchitectOffer.
 const _archRareShift = (typeof process !== "undefined" && process.env && Number(process.env.SIM_RARE_SHIFT)) || 0;
@@ -46,9 +47,18 @@ export const MAX_TIER = 4;                               // höchste Stufe (Lege
 export const MAX_COVER = Math.max(4, Math.min(N_POS, Number((typeof process !== "undefined" && process.env && process.env.ARCH_MAX_COVER) || 24)));
 // Struktur-Boni (kompoundieren: greifen AB Komplettierung jeden Durchlauf → früh schließen zahlt über die Restlaufzeit).
 // Zeile (5) mittel, Spalte (8 über alle Segmente) teuer→stark, 2×2-Viertel (4) billig→klein. Stapeln multiplikativ.
-export const HAEUSERZEILE_FACTOR = 1.20;                 // volle Segment-Zeile (5 Zellen), KONZENTRIERT (1 Segment) → Formations-Fraktionen [Pass3d: 1,24→1,20, Eis/Pflanze-Zuwachs auf ~30 %]
-export const SPALTE_FACTOR       = 1.40;                 // volle Spalte über alle 8 Segmente (8 Zellen), GESTREUT → Flach-Score-Fraktionen [Pass3c: 1,60→1,40]
-export const DIAGONALE_FACTOR    = 1.34;                 // volle Diagonale (5 Zellen, je 1 pro Segment UND Spalte) — maximal GESTREUT, quasi nie zufällig → Feuer/Blitz
+// #282 Impact-Buff — Framing „Schwierigkeit zahlt": der Struktur-Faktor skaliert mit der PLATZIER-Schwierigkeit.
+// Leichte 2×2-Viertel holt auch der Zufall → kein Faktor. Volle Zeile (konzentriert) mittel; volle Spalte (8, gestreut)
+// und Diagonale (quasi nie zufällig) sind die schwersten → höchster Lohn. Genau diese schließt nur der geschickte Bau →
+// die Schere random↔greedy geht auf, ohne den Boden (schludrig gebaut) zu heben.
+export const HAEUSERZEILE_FACTOR = 1.35;                 // volle Segment-Zeile (5), konzentriert [1,20 → 1,35]
+export const SPALTE_FACTOR       = 1.75;                 // volle Spalte (8), gestreut — schwer [1,40 → 1,75]
+export const DIAGONALE_FACTOR    = 1.62;                 // volle Diagonale (5, maximal gestreut) — am schwersten [1,34 → 1,62]
+// #283 Distrikt-Bonus: Gebäude DERSELBEN Kategorie orthogonal aneinander bilden einen „Distrikt" → Score-Multiplikator
+// je Zelle, skaliert mit der Zahl verschiedener gleich-kategoriger Nachbargebäude (gedeckelt). Belohnt gezielt sinnvolles
+// Bauen (gleichartige Gebäude zusammenlegen). Multipliziert (wie die Struktur-Faktoren) über segFactor in den Score-Pfad.
+export const DISTRICT_BONUS = 0.08;   // je verschiedenem gleich-kategorigen Nachbargebäude +8 % auf die Zellen des Gebäudes
+export const DISTRICT_CAP   = 3;      // höchstens so viele Nachbarn zählen (Deckel gegen Ballungs-Runaway)
 
 // Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
 export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.round(base * (TIER_FACTOR[tier] || 1)));
@@ -72,6 +82,19 @@ export function upgradeInfo(fam, tier) {
 export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
 const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
+
+/* ============================================================
+   SPIELER-BESCHREIBUNG eines Bauplans/Gebäudes (Sprachprüfung A13) — die EINE Quelle.
+   Vorher stand dieselbe Logik dreimal, mit auseinandergelaufenem Wortlaut: ArchitectScreen.famEff (im Spiel),
+   scripts/gen-db.mjs (öffentliche Core-DB-Seite) und ui/archEffects.js (Kartendetail). Ergebnis waren drei
+   Fassungen desselben Satzes („+160 Score" / „+160 Punkte"), zwei Zahlformate (×1,10 vs. ×1.10) und rohe
+   Enum-Schlüssel im Spielertext („Formations-Joker (wiederholung/farbblock)").
+   Zahlformat folgt dem Style-Guide: Dezimal-KOMMA, Malzeichen ×, echtes Minus −.
+   ============================================================ */
+/* #sprache: `familyEffectText` ist nach src/i18n/buildingText.js gewandert (`buildingEffect`).
+   Der Wortlaut ist Anzeigetext und lebt jetzt als Satzbausteine im Katalog; die Zahlen-Helfer
+   (tierNum/tierFactor/bindSpanFor) bleiben hier, weil sie zur Mechanik gehören. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus: architect.js → i18n → de.js → families.js → architect.js. */
 
 /* ============================================================
    FORMEN (Polyominoes) — Zellenmengen [dr,dc] relativ zu einem Anker (0,0). Rotation in 4 Lagen (außer `zeile`,
@@ -143,8 +166,10 @@ export function neighborCounts(buildings = []) {
 const sameSet = (a, b) => a.length === b.length && (() => { const s = new Set(a); return b.every((x) => s.has(x)); })();
 
 // Alle gültigen Platzierungen einer Form (in-Gitter UND kein Overlap mit `buildings`). Dedupliziert nach Footprint.
-export function enumeratePlacements(form, buildings = []) {
+// #301 optionales `blocked` (gesperrte Challenge-Zellen) wird wie belegte Fläche behandelt → dort ist kein Bau möglich.
+export function enumeratePlacements(form, buildings = [], blocked = []) {
   const occ = occupiedCells(buildings);
+  for (const p of blocked) occ.add(p);
   const out = [], seenFp = new Set();
   for (const cells of shapeRotations(form)) {
     for (let anchor = 0; anchor < N_POS; anchor++) {
@@ -166,9 +191,10 @@ export function enumeratePlacements(form, buildings = []) {
   return out;
 }
 // Ist `footprint` eine gültige Platzierung von `form` (Form korrekt, in-Gitter, kein Overlap mit `buildings`)?
-export function isValidFootprint(form, footprint, buildings = []) {
+// #301 `blocked` (gesperrte Challenge-Zellen) sperren zusätzliche Zellen.
+export function isValidFootprint(form, footprint, buildings = [], blocked = []) {
   if (!Array.isArray(footprint) || !footprint.length) return false;
-  return enumeratePlacements(form, buildings).some((fp) => sameSet(fp, footprint));
+  return enumeratePlacements(form, buildings, blocked).some((fp) => sameSet(fp, footprint));
 }
 
 // Footprint einer Form bei (rotIdx, anchor) — im Gitter, sonst null.
@@ -274,10 +300,10 @@ export const ARCHITECT_FAMILIES = {
   A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] } },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
-  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 2 },   legendary: true },
-  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 2 },   legendary: true },
+  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 5 },   legendary: true }, // #284: 2→5, damit es sich legendär anfühlt (+ füllt eine ganze Zeile → Struktur)
+  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 6 },   legendary: true }, // #284: 2→6 (keine Eigen-Zeile → höher als Fundamentplatte; 6-Zellen-Festung = viele sichere Siege)
   A_SCHATZ:     { id: "A_SCHATZ",     name: "Schatzkammer",    category: "score",     form: "block2x2", base: { kind: "mult", factor: 1.3 }, legendary: true },
-  A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 100 },  legendary: true },
+  A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 300 },  legendary: true }, // #284: 100→300, verlässlicher Top-Legendär (füllt eine ganze Zeile → ×Struktur)
   A_KATHEDRALE: { id: "A_KATHEDRALE", name: "Kathedrale",      category: "formation", form: "zeile",    base: { kind: "formMult", factor: 1.4 }, legendary: true },
   A_BASILIKA:   { id: "A_BASILIKA",   name: "Basilika",        category: "formation", form: "zeile",    base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
   // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
@@ -317,21 +343,24 @@ export function initialArchitect() {
 // So lässt sich der Eigenbeitrag JE KATEGORIE messen (welche Kategorie treibt den Score/die Spät-Lastigkeit?).
 const ONLY_CAT = (typeof process !== "undefined" && process.env && process.env.ARCH_ONLY_CAT) || null;
 
-function weightedTier(rng, rareShift = _archRareShift) {
-  const entries = Object.entries(tierWeightsForShift(rareShift));
+// (Schritt 4c) maxTier = Onboarding-Rarität-Deckel (4 = kein Deckel): Stufen darüber haben Gewicht 0. Der rng()-Zug
+// wird IMMER identisch gezogen (Determinismus) — nur das Ergebnis mappt auf eine erlaubte Stufe.
+function weightedTier(rng, rareShift = _archRareShift, maxTier = 4) {
+  const entries = Object.entries(tierWeightsForShift(rareShift, maxTier));
   const total = entries.reduce((a, [, w]) => a + w, 0);
   let r = rng() * total;
   for (const [t, w] of entries) { if (r < w) return Number(t); r -= w; }
   return Number(entries[entries.length - 1][0]);
 }
 // #217: rareShift default = Env-Hook (Sim). Der Grad-Reward reicht zur Laufzeit masteryRareShift(grade) durch (Grad 0 = 0 = Basis).
-export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) {
+export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, legChanceMult = 1, maxTier = 4) {
   const builtLeg = new Set((architect.buildings || []).filter((b) => familyDef(b.familyId)?.legendary).map((b) => b.familyId));
   const offers = [], usedFam = new Set();
   // Legendär-Slot (höchstens einer): expliziter Wurf, dann eine noch nicht errichtete legendäre Familie ziehen.
+  // #M3: legChanceMult (Progression-Baum, Normal-Lauf) skaliert die Legendär-Chance (×2), gedeckelt bei 1.
   const catOk = (f) => !ONLY_CAT || f.category === ONLY_CAT;
   const legPool = Object.values(ARCHITECT_FAMILIES).filter((f) => f.legendary && !builtLeg.has(f.id) && catOk(f));
-  if (rng() < ARCHITECT_LEGENDARY_CHANCE && legPool.length) {
+  if (rng() < Math.min(1, ARCHITECT_LEGENDARY_CHANCE * legChanceMult) && legPool.length) {
     const f = legPool[Math.floor(rng() * legPool.length)];
     offers.push({ familyId: f.id, tier: "legendary", legendary: true, used: false });
     usedFam.add(f.id);
@@ -350,7 +379,7 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) 
     // mit `tier` — Aufrüsten ist dort ohnehin ein No-op (upgradeInfo → reason "inert"). Sie dürfen dann auch nicht
     // mit höherem Raritätsrahmen als „Stufe III/IV" angeboten werden → auf Stufe 1 pinnen. Der weightedTier-rng-Zug
     // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
-    const t = weightedTier(rng, rareShift);
+    const t = weightedTier(rng, rareShift, maxTier);
     const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
     // Inert ohne Kick → auf Stufe 1 pinnen (Aufrüsten ist No-op). Inert MIT Kick → bis zur Kick-Stufe `at` erlauben.
     const tier = inert ? (f.tierKick ? Math.min(t, f.tierKick.at) : 1) : t;
@@ -364,26 +393,62 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift) 
    Faktoren stapeln multiplikativ (eine Position kann in Zeile UND Spalte UND Viertel liegen). Kompoundiert, weil
    der Faktor pro Durchlauf gilt: früh geschlossen → über mehr Durchläufe wirksam.
    ============================================================ */
-export function structureFactorMap(coverSet) {
+// structBonus (v0.3, Legendäres „Fundament"): additiv auf JEDEN Strukturfaktor. Default 0 ⇒ unverändert.
+// Achtung beim Tunen: die Faktoren multiplizieren sich je Position übereinander (eine Zelle kann in Zeile,
+// Spalte UND Diagonale liegen) — der Bonus wirkt dort potenziert.
+export function structureFactorMap(coverSet, structBonus = 0) {
   const sf = new Array(N_POS).fill(1);
+  const fRow = HAEUSERZEILE_FACTOR + structBonus, fCol = SPALTE_FACTOR + structBonus, fDiag = DIAGONALE_FACTOR + structBonus;
   for (let r = 0; r < ROWS; r++) {                     // volle Segment-Zeile (5) — braucht Ausrichtung über die Spalten
     let full = true;
     for (let c = 0; c < COLS; c++) if (!coverSet.has(posOf(r, c))) { full = false; break; }
-    if (full) for (let c = 0; c < COLS; c++) sf[posOf(r, c)] *= HAEUSERZEILE_FACTOR;
+    if (full) for (let c = 0; c < COLS; c++) sf[posOf(r, c)] *= fRow;
   }
   for (let c = 0; c < COLS; c++) {                     // volle Spalte über alle 8 Segmente (8) — braucht vertikale Ausrichtung
     let full = true;
     for (let r = 0; r < ROWS; r++) if (!coverSet.has(posOf(r, c))) { full = false; break; }
-    if (full) for (let r = 0; r < ROWS; r++) sf[posOf(r, c)] *= SPALTE_FACTOR;
+    if (full) for (let r = 0; r < ROWS; r++) sf[posOf(r, c)] *= fCol;
   }
   for (let r0 = 0; r0 <= ROWS - COLS; r0++) {           // Diagonalen (5 Zellen, je 1 pro Segment UND Spalte) — Haupt & Gegen
     const main = [], anti = [];
     for (let i = 0; i < COLS; i++) { main.push(posOf(r0 + i, i)); anti.push(posOf(r0 + i, COLS - 1 - i)); }
-    if (main.every((p) => coverSet.has(p))) for (const p of main) sf[p] *= DIAGONALE_FACTOR;
-    if (anti.every((p) => coverSet.has(p))) for (const p of anti) sf[p] *= DIAGONALE_FACTOR;
+    if (main.every((p) => coverSet.has(p))) for (const p of main) sf[p] *= fDiag;
+    if (anti.every((p) => coverSet.has(p))) for (const p of anti) sf[p] *= fDiag;
   }
   // Kein 2×2-Viertel-Bonus: den holt jeder dichte Klumpen (auch naiv) → hebt den Boden statt Können auszudrücken.
   // Zeile/Spalte/Diagonale verlangen bewusste Ausrichtung, die ein Zufallsspieler kaum trifft → dort lebt der Skill-Gap.
+  return sf;
+}
+
+// #283 Distrikt-Faktor je Position: Gebäude mit ≥1 verschiedenem gleich-kategorigen Nachbargebäude bekommen auf ALLE
+// ihre Zellen einen Multiplikator 1 + DISTRICT_BONUS × min(gleich-kat. Nachbarn, DISTRICT_CAP). Rein geometrisch +
+// Kategorie (kein deck/order) → einmal pro Durchlauf. Belohnt das bewusste Zusammenlegen gleichartiger Gebäude.
+export function districtFactorMap(buildings = []) {
+  const df = new Array(N_POS).fill(1);
+  const owner = new Map();                                  // pos → { id, cat }
+  for (const b of buildings) { const fam = familyDef(b.familyId); if (!fam) continue; for (const p of b.footprint) owner.set(p, { id: b.id, cat: fam.category }); }
+  for (const b of buildings) {
+    const fam = familyDef(b.familyId); if (!fam) continue;
+    const sameCat = new Set();
+    for (const p of b.footprint) {
+      const r = rowOf(p), c = colOf(p);
+      const adj = [];
+      if (r > 0) adj.push(posOf(r - 1, c));
+      if (r < ROWS - 1) adj.push(posOf(r + 1, c));
+      if (c > 0) adj.push(posOf(r, c - 1));
+      if (c < COLS - 1) adj.push(posOf(r, c + 1));
+      for (const q of adj) { const o = owner.get(q); if (o && o.id !== b.id && o.cat === fam.category) sameCat.add(o.id); }
+    }
+    if (sameCat.size > 0) { const f = 1 + DISTRICT_BONUS * Math.min(sameCat.size, DISTRICT_CAP); for (const p of b.footprint) df[p] *= f; }
+  }
+  return df;
+}
+// Kombinierter Brett-Faktor je Position = Struktur (Zeile/Spalte/Diagonale) × Distrikt (gleiche Kategorie aneinander).
+// EINE Quelle für Engine (precompute→segFactor) UND UI-Anzeige, damit gezeigte und verrechnete Faktoren nie driften.
+export function boardFactorMap(buildings = [], structBonus = 0) {
+  const sf = structureFactorMap(occupiedCells(buildings), structBonus);
+  const df = districtFactorMap(buildings);
+  for (let p = 0; p < N_POS; p++) sf[p] *= df[p];
   return sf;
 }
 
@@ -407,7 +472,7 @@ export function completedStructures(coverSet) {
    (target highest/lowest hier EINMAL bestimmt) + Häuserzeile-Faktor je Position. Gebäude überlappen nie →
    je Position höchstens EIN value- und EIN score-Gebäude.
    ============================================================ */
-export function precomputeArchitect(architect, order, deck) {
+export function precomputeArchitect(architect, order, deck, structBonus = 0) {
   const value = Array.from({ length: N_POS }, () => null);
   const score = Array.from({ length: N_POS }, () => null);
   const segFactor = new Array(N_POS).fill(1);
@@ -449,9 +514,9 @@ export function precomputeArchitect(architect, order, deck) {
       if (fam.base.both && colOf(p) > 0) relayFlat[p - 1] += amt;             // Leuchtturm (legendär): auch nach links
     }
   }
-  // Struktur-Boni (Zeile/Spalte/Diagonale) — multiplikativ auf jede beteiligte Position.
+  // Struktur-Boni (Zeile/Spalte/Diagonale) × Distrikt (#283, gleiche Kategorie aneinander) — multiplikativ je Position.
   const coverSet = new Set(); for (let p = 0; p < N_POS; p++) if (cover[p]) coverSet.add(p);
-  const sf = structureFactorMap(coverSet);
+  const sf = boardFactorMap(buildings, structBonus);
   for (let p = 0; p < N_POS; p++) segFactor[p] = sf[p];
   // #Pool: cover/coverCount für Gebäude-Perks (Eckstein liest cover[actualPos], Dichte Bebauung coverCount).
   // segFactor[p] > 1 markiert zusätzlich eine vollendete Struktur (Zeile/Spalte/Diagonale) an der Position.
@@ -511,20 +576,25 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
 
 /* ---- Effekt-Anwendung (Engine, resolveTrick) ---- */
 // value: +temp Wert VOR dem Vergleich (an actualPos). pCard liefert Wert/Farbe für die Bedingungen.
-export function architectValueBonus(pre, actualPos, pCard) {
+export function architectValueBonus(pre, actualPos, pCard, alliance = []) {
   const e = pre && pre.value[actualPos];
   if (!e) return 0;
   if (e.kind === "flat") return e.amount;
   if (e.kind === "lowValue") return pCard.value <= e.threshold ? e.amount : 0;
-  if (e.kind === "color") return pCard.suit === e.colorChoice ? e.amount : 0;
+  // #289: Farb-Match zentral (colorMatches) → respektiert Pflanze-Grün („G") UND Farballianz (verbündete Farben zählen).
+  if (e.kind === "color") return colorMatches(pCard, e.colorChoice, alliance) ? e.amount : 0;
   if (e.kind === "target") return e.amount; // Effekt liegt nur auf der Zielposition
   return 0;
 }
 // score: bei Sieg an actualPos → { flat (in scoreBase), mult (eigener Faktor), bump (Gebäude-id für Meilenstein-Zähler) }.
 // Häuserzeile fließt IMMER als Mult (segFactor). `ctx` = { isCrit, serieStreak, suit }; `counters` = winCounters (Lesen).
-export function architectScore(pre, actualPos, ctx, counters) {
+export function architectScore(pre, actualPos, ctx, counters, alliance = []) {
   // #Pool Batch 3: relayFlat (Staffel) fließt IMMER ein, wenn die Zielposition gewinnt — unabhängig vom eigenen Effekt hier.
   let flat = (pre && pre.relayFlat && pre.relayFlat[actualPos]) || 0, mult = pre ? (pre.segFactor[actualPos] || 1) : 1, bump = null;
+  // Serien-Flat (Reihenhaus) läuft über einen EIGENEN Kanal, weil er in der Engine BEWUSST am Serien-Mult vorbeiläuft
+  // (kein Doppel-Dip: die Serie ist schon SEIN Skalierungshebel; der globale streakMult darf ihn nicht ein zweites Mal
+  // multiplizieren, sonst quadratisches Wachstum). Formation/Crit/Perk gelten weiter (in der Engine).
+  let streakFlat = 0;
   const e = pre && pre.score[actualPos];
   if (e) {
     switch (e.kind) {
@@ -532,10 +602,12 @@ export function architectScore(pre, actualPos, ctx, counters) {
       case "flat":     flat += e.amount * (e.critFlatMult && ctx.isCrit ? e.critFlatMult : 1); if (e.mult) mult *= e.mult; break;
       // #Pool Batch 4: Crit-Wette — Jackpot bei Crit, sonst Abzug. Der Boden (nie < 0) sitzt in der Engine (scoreBase-Klemme).
       case "gamble":   flat += ctx.isCrit ? e.crit : -e.penalty; break;
-      // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle.
-      case "streak": { const s = ctx.serieStreak || 0; flat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
+      // #Pool tierKick: streakDoubleFrom (Reihenhaus III) verdoppelt den Serien-Score ab der Schwelle. Der Betrag geht in
+      // den streakFlat-Kanal (kein Doppel-Dip, s. o.). Serie zusätzlich GEDECKELT (ARCH_STREAK_CAP, Serie 75) — analog
+      // Basis-/Stat-Serie — als Absicherung gegen pathologische Extremserien (Pflanze-Paare, Serie 262).
+      case "streak": { const s = Math.min(ctx.serieStreak || 0, ARCH_STREAK_CAP); streakFlat += e.amount * s * (e.streakDoubleFrom && s >= e.streakDoubleFrom ? 2 : 1); break; }
       case "crit":     if (ctx.isCrit) flat += e.amount; break;
-      case "color":    if (ctx.suit === e.colorChoice) flat += e.amount; break;
+      case "color":    if (colorsAllied(ctx.suit, e.colorChoice, alliance)) flat += e.amount; break; // #289: grün (ctx.suit ist bereits „G") + Farballianz
       case "target":   flat += e.amount; break;
       case "mult":     mult *= e.factor; break;
       case "milestone": {
@@ -547,7 +619,7 @@ export function architectScore(pre, actualPos, ctx, counters) {
       default: break;
     }
   }
-  return { flat, mult, bump };
+  return { flat, mult, bump, streakFlat };
 }
 
 /* ============================================================
@@ -555,7 +627,7 @@ export function architectScore(pre, actualPos, ctx, counters) {
    biegen. Rein aus den Gebäuden + der aktuellen Reihenfolge/Deck abgeleitet (deck reserviert für spätere,
    wert-abhängige Direktiven).
    ============================================================ */
-export function architectFormSpec(architect, order, deck) {
+export function architectFormSpec(architect, _order, _deck) {
   const jokerW = new Set(), jokerF = new Set(), jokerT = new Set(), jokerX = new Set();
   const transparentFarb = new Set();
   const crossSeg = new Set();

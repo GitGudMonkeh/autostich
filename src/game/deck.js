@@ -34,6 +34,18 @@ export function shuffle(arr, rng = Math.random) {
 export function shuffledOrder(n, rng = Math.random) {
   return shuffle(Array.from({ length: n }, (_, i) => i), rng);
 }
+/* #370 Deck-Shuffle: eine Ziehreihenfolge NUR auf den freien Brett-Positionen neu mischen. `isPinned(i)` markiert
+   Positionen, die ihren Eintrag behalten müssen — gefrorene Gletscher (STARR, docs §2.1) und gesperrte Aufstell-
+   Zellen. Die freien Positionen werden untereinander permutiert, die fixierten bleiben Karte-für-Karte an Ort und
+   Stelle. Ohne fixierte Positionen ist das Ergebnis eine ganz normale Vollmischung. */
+export function shuffleFreePositions(order, isPinned, rng = Math.random) {
+  const free = [];
+  for (let i = 0; i < order.length; i++) if (!isPinned(i)) free.push(i);
+  const mixed = shuffle(free.map((i) => order[i]), rng);
+  const out = order.slice();
+  for (let k = 0; k < free.length; k++) out[free[k]] = mixed[k];
+  return out;
+}
 export const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
 // ms → "m:ss" (Run-Timer, #10).

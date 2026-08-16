@@ -42,7 +42,6 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = fal
     act(s, rng, mem) {
       switch (s.phase) {
         case "levelup": {
-          if (s.statOffer) return { type: "PICK_STAT", statId: ucbPick("stat", s.statOffer, s, mem) };
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
             const cands = addable.length ? [...addable, DECLINE] : [DECLINE];

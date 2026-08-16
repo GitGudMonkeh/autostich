@@ -46,7 +46,7 @@ describe("Blitz-Rework v0 — Roster", () => {
 
 describe("Blitz-Rework v0 — reine Helfer", () => {
   it("initLightning: frischer Substate inkl. neuer Kaskade-/Crit-Maschine-Felder", () => {
-    expect(initLightning()).toMatchObject({ active: false, charge: 0, dischargeArmed: false, stauBonus: 0, durchschlagMult: 0 });
+    expect(initLightning()).toMatchObject({ active: false, charge: 0, entladungMult: 0, stauBonus: 0, durchschlagMult: 0 });
   });
   it("lightningCritRaw: Sockel + je Skill + Sturm + Spannungsstau-Rampe", () => {
     const l = { active: true, stormCritBonus: 0.04, stauBonus: 0.1 };
@@ -63,11 +63,17 @@ describe("Blitz-Rework v0 — reine Helfer", () => {
     // Dauerstrom-Verbrauchsrampe (persistentes Feld) fließt additiv ein.
     expect(lightningCritRaw(light({ dauerstromCritBonus: 0.06 }), ["SK_LIGHTNING_01"], 0)).toBeCloseTo(base + 0.06, 6);
   });
-  it("maxChargeFor / lightningCritMult: Donnergott 10→15 & +1,0×", () => {
+  it("Donnergott-Turbo (v0.5): hebt das Ladungsdach NICHT mehr, gibt weiter +Crit-Mult", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);
-    expect(maxChargeFor(["SK_LIGHTNING_L01"])).toBe(C.LIGHTNING_MAX_CHARGE_THUNDER);
-    expect(lightningCritMult(["SK_LIGHTNING_L01"])).toBe(C.THUNDER_CRIT_MULT);
+    expect(maxChargeFor(["SK_LIGHTNING_L01"])).toBe(C.LIGHTNING_MAX_CHARGE); // v0.5: kein Dach-Heben mehr (Turbo = früherer Verbrauch)
+    // v0.5-Tune: je gehaltenem Blitz-Skill +LIGHTNING_CRIT_MULT_PER_SKILL, plus Donnergott-Bonus (L).
+    expect(lightningCritMult(["SK_LIGHTNING_L01"])).toBeCloseTo(C.LIGHTNING_CRIT_MULT_PER_SKILL + C.THUNDER_CRIT_MULT, 6);
     expect(lightningCritMult([])).toBe(0);
+  });
+  it("lightningCritMult: +LIGHTNING_CRIT_MULT_PER_SKILL je gehaltenem Blitz-Skill (additiv, ohne Donnergott)", () => {
+    expect(lightningCritMult(["SK_LIGHTNING_01"])).toBeCloseTo(C.LIGHTNING_CRIT_MULT_PER_SKILL, 6);
+    expect(lightningCritMult(["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_05"]))
+      .toBeCloseTo(3 * C.LIGHTNING_CRIT_MULT_PER_SKILL, 6);
   });
   it("ionizeCountFor: Ionisierung 2 + Kettenblitz +2", () => {
     expect(ionizeCountFor(["SK_LIGHTNING_02"])).toBe(C.ION_BASE_COUNT);
@@ -101,20 +107,33 @@ describe("Blitz-Rework v0 — Engine-Integration", () => {
   it("Spannungsstau: Sieg ohne Crit rampt die Crit-Chance; ein Crit resettet", () => {
     const noC = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], lightning: light() }), noCrit);
     expect(noC.lightning.stauBonus).toBeCloseTo(C.SPANNUNGSSTAU_STEP);
-    const crit = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], statCritChance: 1, lightning: light({ stauBonus: 0.3 }) }), zero);
+    const crit = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_13"], lightning: light({ stauBonus: 0.3 }) }), zero); // Crit aus den Blitz-Skills (rng 0)
     expect(crit.lastTrick.isCrit).toBe(true);
     expect(crit.lightning.stauBonus).toBe(0);
   });
-  it("Kurzschluss: Sieg mit voller (5) Karte entlädt alle Stapel → +Ladung-Burst, Karte auf 0", () => {
+  it("Kurzschluss (Rework): Sieg mit voller (5) Karte → Score+Ladung-Burst, Stapel bleiben (kein Reset)", () => {
     const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 5 } : c));
     const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_09"], deck, lightning: light() }), noCrit);
-    expect(s.deck[0].ionStacks).toBe(0);
-    expect(s.lightning.charge).toBe(5 * C.KURZSCHLUSS_CHARGE_PER_STACK);
+    expect(s.deck[0].ionStacks).toBe(C.ION_MAX_STACKS);                 // voll bleibt voll — kein Opfer
+    expect(s.lightning.charge).toBe(C.KURZSCHLUSS_CHARGE);              // Ladungs-Burst
+    expect(s.lastTrick.breakdown.lightDirect).toBe(C.KURZSCHLUSS_SCORE); // Direkt-Score-Burst (post-stack)
   });
   it("Blitzschlag: ein Crit ionisiert die gewonnene Karte (+1 Stapel)", () => {
-    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], statCritChance: 1, lightning: light() }), zero);
+    const s = resolveTrick(scen(12, 0, { skills: ["SK_LIGHTNING_15"], lightning: light() }), zero); // Crit aus den Blitz-Skills (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.deck[0].ionStacks).toBe(C.BLITZSCHLAG_STACKS);
+  });
+  it("v0.5-UI: consumeCount zählt volle Verbräuche (Entladungen/Runde)", () => {
+    // Statische Aufladung (+1 Ladung je Nicht-Crit-Sieg) hebt 9→10 → Ionisierung-Konsument feuert → consumeCount +1.
+    const s = resolveTrick(scen(12, 0, { skills: [ION, "SK_LIGHTNING_08"], lightning: light({ charge: 9 }) }), noCrit);
+    expect(s.lightning.consumeCount).toBe(1);
+  });
+  it("v0.5-UI: serienschutzCount zählt gehaltene Serienbrüche; Serie hält, ½ Ladung weg", () => {
+    // Niederlage (0<12) mit Serienschutz + Ladung ≥ ⌈10·0,5⌉=5 → Serie hält, Ladung 6→1, Zähler +1.
+    const s = resolveTrick(scen(0, 12, { skills: ["SK_LIGHTNING_17"], lightning: light({ charge: 6 }), winStreak: 3 }), noCrit);
+    expect(s.lightning.serienschutzCount).toBe(1);
+    expect(s.lightning.charge).toBe(6 - Math.ceil(10 * C.SERIENSCHUTZ_COST_FRAC));
+    expect(s.winStreak).toBe(3); // Serie gehalten (kein Reset auf 0)
   });
 });
 

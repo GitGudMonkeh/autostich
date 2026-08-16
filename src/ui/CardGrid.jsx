@@ -1,16 +1,21 @@
 import { memo, useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
-import { PERK_DEFS } from "../game/perks.js";
-import { familyDef } from "../game/families.js";
+
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
-import { FrostOverlay } from "./FrostOverlay.jsx";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { glacierFormations } from "../game/glacier.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
+import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
+import { t } from "../i18n/index.js";
+
+// #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
+//   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
+const EMPTY_ROLES = [];
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
-const ANCHOR_LABEL = { power: "Kraft", score: "Score", crit: "Crit", streak: "Serie", formation: "Formation", joker: "Joker" };
 const fmt = (x) => x.toFixed(2).replace(".", ",");
 
 // #UI: Architekt-Overlay als EIN durchgezogener Rahmen in GEBÄUDE-FORM (statt Kästen um jede Karte). Aus den gemessenen
@@ -18,7 +23,10 @@ const fmt = (x) => x.toFixed(2).replace(".", ",");
 // als Liniensegmente erzeugt: eine Kante gehört zur Kontur, wenn der Nachbar dahinter NICHT zum selben Gebäude (bid)
 // gehört. Die Rechtecke werden um exH/exV (halbe Raster-Lücke) geweitet → die Kanten benachbarter Gebäudezellen
 // treffen sich EXAKT in der Lückenmitte und die Kontur läuft über die Lücken hinweg durch. Rein & unit-testbar.
-export function archFrameLines(cover, cells, total, exH, exV) {
+// exVOut: separater AUSSEN-Outset oben/unten (Default = exV). Kleiner gewählt zieht die waagerechten Außenbanden
+// näher an die Karten, damit sie nicht auf den „Grenze offen"-Text in der Zeilenmitte fallen. Innere Nähte bleiben
+// bei der halben gemessenen Lücke (halfV) → Kontur schließt weiter lückenlos über die Segmentgrenze.
+export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
   const lines = [];
   if (!cover || !cells) return lines;
   for (const key of Object.keys(cover)) {
@@ -37,7 +45,13 @@ export function archFrameLines(cover, cells, total, exH, exV) {
     // SegmentBridge VERBREITERTE Segmentgrenze lückenlos. An Außenkanten die halbe Nominal-Lücke (exH/exV).
     const halfV = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.top - r.bottom : r.top - rect.bottom) / 2) : exV; };
     const halfH = (p) => { const r = cells[p]; return r ? Math.max(0, (p < pos ? rect.left - r.right : r.left - rect.right) / 2) : exH; };
-    const exUp = sameUp ? halfV(up) : exV, exDown = sameDown ? halfV(down) : exV;
+    // #UI: An einer REENTRANTEN Ecke (ein Diagonal-Nachbar ist dasselbe Gebäude, der direkte H/V-Nachbar aber nicht —
+    // z. B. die Innenkerbe eines L/T/S/Plus) muss die AUSSEN-Kante bis zur Nahtmitte (halfV) reichen, damit ihr Ende
+    // die bis zur Nahtmitte laufende Seitenkante der Diagonalzelle trifft. Sonst blieb dort eine 2px-Lücke (Ecke „offen").
+    // Ohne Reentranz weiter das enge exVOut, damit die waagerechten Außenbanden nicht in den „Grenze offen"-Text reichen.
+    const reentUp   = !sameUp   && (same(up - 1,   up >= 0 && col > 0) || same(up + 1,   up >= 0 && col < SEGMENT_SIZE - 1));
+    const reentDown = !sameDown && (same(down - 1, down < total && col > 0) || same(down + 1, down < total && col < SEGMENT_SIZE - 1));
+    const exUp = sameUp ? halfV(up) : (reentUp ? halfV(up) : exVOut), exDown = sameDown ? halfV(down) : (reentDown ? halfV(down) : exVOut);
     const exLeft = sameLeft ? halfH(lft) : exH, exRight = sameRight ? halfH(rgt) : exH;
     const L = rect.left - exLeft, R = rect.right + exRight, T = rect.top - exUp, B = rect.bottom + exDown;
     if (!sameUp)    lines.push({ x1: L, y1: T, x2: R, y2: T, color, bid: a.bid }); // oben
@@ -56,7 +70,8 @@ export function archFrameLines(cover, cells, total, exH, exV) {
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
-                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, pillar = false, dimmed = false, arch = null, structLit = false }) {
+                   picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
+                   glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
   const col = suitColor(card.suit);
@@ -67,39 +82,44 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
-  // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Formations-/Farbrand.
-  const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : fb.color || col + "55";
+  // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Boden-Reserve (#386 firnStack, noch kein Gletscher).
+  // Dezent (nur leichter Blau-Schimmer + ❄-Marker), klar abgesetzt vom echten Gletscher (Cyan-Rahmen/Glow/Icon).
+  const firn = !glacier && firnMass >= 0.5;
+  // #112: „picked" (gold) hat Vorrang vor „selected" (weiß) vor Gletscher-Cyan vor Formations-/Farbrand.
+  const borderColor = picked ? "#d4a63a" : selected ? "#ffffff" : glacier ? "#5ec8f0" : fb.color || col + "55";
   const borderStyle = fb.dashed && !selected && !picked ? "dashed" : "solid";
   // Rollen-Label: flacher Perk (PERK_DEFS) ODER Familie (FAMILY_DEFS, Rarität #167 Kat. C) → sonst die rohe id.
-  const roleTitle = roleIds.length ? roleIds.map((p) => PERK_DEFS[p]?.label || familyDef(p)?.name || p).join(", ") : undefined;
+  const roleTitle = roleIds.length ? roleIds.map((p) => perkDef(p)?.label || familyDef(p)?.name || p).join(", ") : undefined;
   // #119: belegte Position (Shop-Anker) → dicker silberner AUSSENring via Outline+Offset — separat vom
   // inneren Auswahl-/Formationsrahmen und dessen Glow, damit beide gleichzeitig lesbar bleiben.
   // #182: `ring` markiert Positionen ohne Anker mit demselben Silberring (z. B. die von Zeitraffer/L11 gekoppelten 20 & 40).
   const anchorRing = (anchorType || ring) ? { outline: "2.5px solid #cdd6e0", outlineOffset: "2px" } : null;
-  // Eis-Architekt (#210): eine hervorgehobene Frost-Spalte (senkrechte Formation) → eisiger Inset-Rim + Cyan-Glow.
-  // Stapelt sich unter dem Auswahl-/Formations-Glow, damit beide lesbar bleiben (Pfeiler quer über die Segment-Zeilen).
-  const pillarShadow = pillar ? "inset 0 0 0 1.5px rgba(191,233,247,0.60), 0 0 12px rgba(94,200,240,0.50)" : null;
   // Architekt-Gebäude-Overlay (#202/#UI): der RAHMEN in Gebäude-Form wird jetzt als durchgezogene SVG-Kontur ÜBER dem
   // Grid gezeichnet (CardGrid, archFrameLines) — nicht mehr als Kasten je Karte. Die Kachel selbst bekommt nur noch
   // einen sehr dezenten Kategorie-Farbwash, damit man abgedeckte Zellen auch als Fläche erkennt (Legendär = Gold).
   const archShadow = arch ? `inset 0 0 0 9999px ${(arch.legendary ? "#c8962f" : arch.color)}1f` : null;
+  // #UI: Distrikt-Bonus (gleiche Kategorie aneinander) → Kachel glüht in ihrer Typ-Farbe (etwas kräftig), analog zum
+  // Architekt-Screen. Der rote Struktur-Kombi-Wash (arch-struct-lit) bleibt davon getrennt.
+  const distrShadow = distrLit && arch ? `0 0 16px 2px ${arch.color}cc, inset 0 0 9px ${arch.color}66, inset 0 0 0 1px ${arch.color}` : null;
   // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
   const tileBg = allyColor
     ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
     : "#20202a";
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
-      title={anchorType ? `⚓ Anker · ${ANCHOR_LABEL[anchorType] || anchorType}` : ring ? (ringTitle || undefined) : undefined}
+      title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
       className={`as-tile relative rounded-lg flex flex-col items-center justify-center transition-all${structLit ? " arch-struct-lit" : ""}`}
       style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
-               // #201.4: schon getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). picked(gold)/
-               // selected(weiß) haben Vorrang und bleiben voll sichtbar; disabled (0,45) sticht durch.
-               opacity: disabled ? 0.45 : (dimmed && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
+               // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher
+               // ebenso ausgrauen → Signal „starr, nicht tauschbar". picked(gold)/selected(weiß) haben Vorrang; disabled (0,45) sticht durch.
+               opacity: disabled ? 0.45 : ((dimmed || glacier) && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, pillarShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
-      {/* #136 Frostglas: ruhiger Eis-Layer (Tint + Körnung, KEIN Sweep) für eingefrorene Board-Karten. */}
-      {card.frozen && <FrostOverlay animated={false} radius="0.5rem" />}
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
+      {/* #301 C3: fixierte Aufstell-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss (wie beim Architekten). */}
+      {locked && (
+        <span aria-hidden className="absolute inset-0 rounded-lg pointer-events-none z-10" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.26) 3.5px, rgba(224,85,85,0.26) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
+      )}
       {/* Architekt-Gebäude-Badge (#202/#224.7): nur der echte Wert-Boost „+X" mittig an der oberen Kante (kein Icon mehr —
           die Kategorie liest man am Rahmen/Ring + Tooltip). Nur bei value-Gebäuden (boost > 0); score/formation zeigt nur den Ring.
           #UI: Badge-Farbe = die Karten-Farbe, für die das Gebäude den Wert-Bonus gibt (arch.badgeSuit); farblos → grau (#888). */}
@@ -110,16 +130,16 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           +{arch.boost}
         </span>
       )}
-      {((card.ionStacks || 0) > 0 || card.frozen || ripe) && (
+      {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
-          {(card.ionStacks || 0) > 0 && <span style={{ color: "#5ec8f0" }}>⚡{card.ionStacks}</span>}
-          {card.frozen && <span style={{ color: "#bfe9f7", textShadow: "0 0 3px #7fd4f0" }} title="Eingefroren">❄</span>}
-          {ripe && <span style={{ textShadow: "0 0 3px #5ab87a" }} title="Grün (reif) — zählt fürs Farbblock">🌿</span>}
+          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">❄</span>}
+          {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
+          {ripe && <span title="Grün (reif) — zählt für den Farbblock"><FactionIcon type="plant" size={9} /></span>}
         </span>
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
           damit die Zahl auf der dunklen Kachel unabhängig von der Farbe klar liest. Reife behält ihren grünen Glow. */}
-      <span className="text-xl sm:text-2xl font-bold font-pixel-dense" style={{ color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
+      <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: '"Orbitron", ui-monospace, monospace', color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
       {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {/* #112: Auswahl-Marker — Farbpfeil „→X" (Shop-Farbwechsel) bzw. ✓ (gold) für gewählte Karten/Position. */}
       {(arrow || picked) && (
@@ -127,7 +147,23 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           {arrow ? `→${arrow}` : "✓"}
         </span>
       )}
+      {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
+          die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
+      {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
       {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
+      {glacier && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Durchlauf-Beginn auf 12)` : ""}`}>
+          <FactionIcon type="ice" size={11} />
+          {Math.round(glacierMass)}
+        </span>
+      )}
+      {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
+      {firn && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
+          <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
+        </span>
+      )}
       {roleIds.length > 0 && <span className="absolute bottom-0.5 left-1 text-[8px] sm:text-xs leading-none" style={{ color: "#d4a63a" }} title={roleTitle}>●</span>}
     </button>
   );
@@ -153,7 +189,7 @@ function SegmentBridge({ segA, segB }) {
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
         <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide px-1.5 py-[1px] rounded-full whitespace-nowrap"
-          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>⇕ Grenze offen</span>
+          style={{ color: "#8be0a8", background: "#5ab87a1f", border: "1px solid #5ab87a55" }}>{t("cardgrid.openBoundary")}</span>
         <div className="h-px flex-1" style={line} />
       </div>
     </div>
@@ -162,14 +198,17 @@ function SegmentBridge({ segA, segB }) {
 
 export function CardGrid({ cards = [], formations = [], roles = {}, anchors = [], pe = {},
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
-                          highlightPos = [], highlightTitle = null, openSegments = null, frostPillarPos = [], swappedIds = new Set(),
-                          segStrength = [], segDelta = [], architectCover = null, structPos = null, glowBid = null }) {
+                          highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
+                          segStrength = [], segDelta = [], flashPos = null, flashKey = 0, architectCover = null, structPos = null, distrPos = null, glowBid = null,
+                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [] }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
+  // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
+  const glacierFormPos = glacierPos ? glacierFormations(glacierPos).formPos : null;
   const pickedSet = new Set(pickedIds || []);
   const disabledSet = new Set(disabledPos || []);
+  const lockedSet = new Set(lockedPos || []); // #301 C3: fixierte Aufstell-Zellen (rote Querbalken)
   const highlightSet = new Set(highlightPos || []); // #182: Positionen mit Silberring ohne Anker (z. B. Zeitraffer 20 & 40)
-  const pillarSet = new Set(frostPillarPos || []);  // #210 Eis-Architekt: Positionen der hervorgehobenen Frost-Spalte (Pfeiler)
   const nSeg = Math.ceil(cards.length / SEGMENT_SIZE);
   // #FB: offene Segmentgrenzen (E_SEGMENT). Grenze g liegt zwischen Zeile g und g+1; nur zeichnen, wenn Werkzeug aktiv.
   const segOpen = openSegments && openSegments.active ? openSegments : null;
@@ -202,7 +241,11 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         if (a && b && b.top > a.bottom) minGapV = Math.min(minGapV, b.top - a.bottom);
       }
       if (Number.isFinite(minGapV)) exV = Math.max(0, minGapV / 2);
-      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV) });
+      // Außen-Outset oben/unten kleiner als die halbe Zeilenlücke: die waagerechten Außenbanden sollen die Karten
+      // umschließen, aber nicht bis in die Zeilenmitte reichen, wo der „Grenze offen"-Verbinder-Text sitzt. Auf den
+      // waagerechten Zellabstand (exH) gedeckelt → gleichmäßiger, enger Rahmen; innere Nähte bleiben bei halber Lücke.
+      const exVOut = Math.min(exV, exH);
+      setArchFrame({ w: wr.width, h: wr.height, lines: archFrameLines(architectCover, cells, cards.length, exH, exV, exVOut) });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -221,9 +264,11 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
           {/* Inspiziertes Gebäude (glowBid) zuletzt zeichnen → seine Rahmenlinien liegen oben und glühen cyan. */}
           {[...archFrame.lines].sort((a, b) => (glowBid != null && a.bid === glowBid ? 1 : 0) - (glowBid != null && b.bid === glowBid ? 1 : 0)).map((l, i) => {
             const glow = glowBid != null && l.bid === glowBid;
+            // Rahmen glühen in ihrer Gebäude-Typfarbe (Wert/Score/Formation), sobald das Overlay an ist — dezenter,
+            // einzelner Schein. Das inspizierte Gebäude bleibt kräftig cyan (stärkerer Doppel-Schein) → klar abgesetzt.
             return <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
               stroke={glow ? "#5ec8f0" : l.color} strokeWidth={glow ? 4 : 2.5} strokeLinecap="square"
-              style={glow ? { filter: "drop-shadow(0 0 4px #5ec8f0) drop-shadow(0 0 2px #5ec8f0)" } : undefined} />;
+              style={{ filter: glow ? "drop-shadow(0 0 4px #5ec8f0) drop-shadow(0 0 2px #5ec8f0)" : `drop-shadow(0 0 2px ${l.color})` }} />;
           })}
         </svg>
       )}
@@ -232,14 +277,19 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         // reduced-motion automatisch erfüllt): stärker seit Phasenbeginn → grün, schwächer → dezent rot, sonst gedämpft.
         const segS = segStrength[s];
         const segD = segDelta[s] ?? 0;
-        const segTint = segD > 0.001 ? "#5ab87a" : segD < -0.001 ? "#e0605a" : "#8a8a92";
+        // (Nulllage zuerst — hält die Zeile frei von der Folge „> … <", die der i18n-Textgreifer sonst greift.)
+        const segTint = Math.abs(segD) <= 0.001 ? "#8a8a92" : (segD > 0.001 ? "#5ab87a" : "#e0605a");
         const row = (
           <div key={`seg${s}`} className="flex items-center gap-2">
-            <div className="w-9 shrink-0 text-right leading-tight">
-              <div className="text-[10px] opacity-40 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
+            {/* Segment-Spalte (Bereich + Stärke). Etwas größer als früher (w-9 / 10px / 9px): auf dem
+                Handy war die Prozentzahl kaum lesbar. Die Breite wächst erst ab `sm` mit — auf
+                schmalen Geräten kostet jeder Pixel hier direkt Kartenbreite (die Karten teilen sich
+                den Rest über flex-1). */}
+            <div className="w-10 sm:w-12 shrink-0 text-right leading-tight">
+              <div className="text-[11px] opacity-45 tabular-nums">{s * SEGMENT_SIZE + 1}–{Math.min(s * SEGMENT_SIZE + SEGMENT_SIZE, cards.length)}</div>
               {segS != null && (
-                <div className="text-[9px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
-                  title="Formations-Bonus dieses Segments in % (grün = seit Durchlaufbeginn stärker, rot = schwächer)">+{Math.round(segS * 100)} %</div>
+                <div className="text-[10px] sm:text-[11px] font-bold font-pixel-dense tabular-nums" style={{ color: segTint }}
+                  title={t("form.seg.strength.title")}>{t("form.seg.strength", { pct: Math.round(segS * 100) })}</div>
               )}
             </div>
             <div className="grid grid-cols-5 gap-1.5 flex-1">
@@ -247,13 +297,18 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 const pos = s * SEGMENT_SIZE + k;
                 const ally = linkedPartnerOf(pe, c.suit);
                 const disabled = disabledSet.has(pos);
-                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || []}
+                return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
                   anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
-                  ring={highlightSet.has(pos)} ringTitle={highlightTitle} pillar={pillarSet.has(pos)}
+                  ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
-                  structLit={structPos ? structPos.has(pos) : false}
+                  structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
+                  formFlash={flashPos && flashPos.has(pos) ? flashKey : false}
+                  glacier={glacierPos ? glacierPos.has(pos) : false} glacierMass={glacierMassByPos ? (glacierMassByPos[pos] || 0) : 0}
+                  firnMass={firnStackByPos ? (firnStackByPos[pos] || 0) : 0}
+                  glacierForm={glacierFormPos ? glacierFormPos.has(pos) : false}
+                  locked={lockedSet.has(pos)}
                   onClick={disabled || !onTilePick ? undefined : () => onTilePick(pos, c)} />;
               })}
             </div>

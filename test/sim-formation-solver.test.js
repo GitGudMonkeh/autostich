@@ -28,6 +28,6 @@ describe("sim formation solver (S4)", () => {
       s = reducer(s, base.act(s, rng));
     }
     expect(s.phase).toBe("gameover");
-    expect(phasesChecked).toBe(12); // 12 Formationsentscheidungen je Run (60-Plan, DECISION_SCHEDULE)
+    expect(phasesChecked).toBe(13); // #272: 13 Formationsentscheidungen je Run (50-Plan, DECISION_SCHEDULE)
   });
 });

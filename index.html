@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Autostich — Prototyp</title>
+
+  <!-- PWA: „Zum Startbildschirm hinzufügen" → Vollbild (Android + iOS). %BASE_URL% respektiert den Deploy-Unterpfad. -->
+  <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+  <meta name="theme-color" content="#141419" />
+  <link rel="icon" type="image/png" href="%BASE_URL%favicon-64.png" />
+
+  <!-- iOS: Standalone-Start (ohne Safari-Leisten) + Home-Screen-Icon. iOS nutzt diese Meta-Tags statt des Manifests. -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Autostich" />
+  <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
 </head>
 <body>
   <div id="root" class="min-h-screen"></div>

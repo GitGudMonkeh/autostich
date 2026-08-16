@@ -3,9 +3,12 @@ import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
-  architectFormSpec, summarizeArchitect, tierNum, tierFactor, ARCHITECT_OFFER, MAX_TIER, HAEUSERZEILE_FACTOR,
+  architectFormSpec, summarizeArchitect, tierNum, ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
+  districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
+import { ARCH_STREAK_CAP } from "../src/game/constants.js";
+import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
 import { computeFormations } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -117,6 +120,19 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(new Set(o1.map((o) => o.familyId)).size).toBe(o1.length);
   });
 
+  // #regression 1fa6778: ArchitectScreen löst jeden Bauplan über den i18n-Resolver (archFamily) auf und
+  // `return null`t bei fehlender Familie → wird der FALSCHE Resolver benutzt (labels.familyDef = Perk-Familien),
+  // ist jede Karte null und das Bauplan-Grid komplett leer. Wächter: archFamily MUSS jedes Angebot auflösen.
+  it("#regression: der i18n-Anzeige-Resolver löst JEDES Angebot auf (sonst leeres Bauplan-Grid)", () => {
+    for (let s = 0; s < 120; s++) {
+      for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
+        const fam = archFamily(o.familyId);
+        expect(fam, `archFamily(${o.familyId}) darf nicht null sein`).toBeTruthy();
+        expect(fam.name, `${o.familyId} braucht einen Namen`).toBeTruthy();
+      }
+    }
+  });
+
   it("höchstens EIN legendäres Angebot", () => {
     let maxLeg = 0;
     for (let s = 0; s < 200; s++) {
@@ -173,6 +189,21 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // B != choice
   });
 
+  it("color (Buntglas) + Pflanze: grüne Karte zählt als Farbe G, nicht als Ursprungsfarbe", () => {
+    // Bug: der Architekt matchte die URSPRUNGSFARBE. Grün (card.green) überschreibt die Farbe zu „G" (wie im Farbblock),
+    // also bufft ein G-Gebäude die sichtbar grüne Karte — und ein Ursprungsfarb-Gebäude bufft sie nicht mehr.
+    const deck = fakeDeck(() => 5, (i) => (i === 2 ? "G" : "R")); // pos0/1 = R, pos2 = native G
+    const amt = tierNum(ARCHITECT_FAMILIES.A_BUNTGLAS.base.value, 1);
+    const g = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 3], 1, { colorChoice: "G" })] }, idOrder, deck);
+    expect(architectValueBonus(g, 0, deck[0])).toBe(0);                          // R, nicht grün → kein G-Buff
+    expect(architectValueBonus(g, 1, { ...deck[1], green: true })).toBe(amt);    // ursprünglich R, aber grün → als G gebufft (der Fix)
+    expect(architectValueBonus(g, 2, deck[2])).toBe(amt);                        // native G-Karte
+    // Umkehrung: ein R-Gebäude bufft die jetzt grüne (ursprünglich R) Karte NICHT mehr.
+    const r = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1], 1, { colorChoice: "R" })] }, idOrder, deck);
+    expect(architectValueBonus(r, 0, { ...deck[0], green: true })).toBe(0);      // grün → nicht mehr R
+    expect(architectValueBonus(r, 0, deck[0])).toBe(amt);                        // nicht grün → weiterhin R
+  });
+
   it("target highest/lowest: Effekt liegt nur auf der Ziel-Position", () => {
     const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0); // Werte an 0..3
     const hi = precomputeArchitect({ buildings: [B("A_FIRST", [0, 1, 2, 3], 1)] }, idOrder, deck);
@@ -189,9 +220,20 @@ describe("Architekt — score-Effekte", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZOLLHAUS", [0, 1], 2)] }, idOrder, deck);
     expect(architectScore(pre, 0, { isCrit: false, serieStreak: 3, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_ZOLLHAUS.base.score, 2));
   });
-  it("streak (Reihenhaus): +N × Serie", () => {
+  it("streak (Reihenhaus): +N × Serie im eigenen streakFlat-Kanal (nicht im flat → kein Doppel-Dip)", () => {
     const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 1)] }, idOrder, deck);
-    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {}).flat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    const res = architectScore(pre, 0, { isCrit: false, serieStreak: 4, suit: "R" }, {});
+    expect(res.streakFlat).toBe(tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 1) * 4);
+    expect(res.flat).toBe(0); // Serien-Score läuft NICHT über flat (der bekäme sonst den globalen Serien-Mult obendrauf)
+  });
+  it("streak (Reihenhaus): Serie ist bei ARCH_STREAK_CAP gedeckelt (kein Runaway)", () => {
+    // Tier 3 → streakDoubleFrom aktiv (×2 ab Serie 4). Über dem Cap darf der streakFlat nicht weiterwachsen.
+    const pre = precomputeArchitect({ buildings: [B("A_REIHENHAUS", [0, 1, 2, 3], 3)] }, idOrder, deck);
+    const amt = tierNum(ARCHITECT_FAMILIES.A_REIHENHAUS.base.score, 3);
+    const atCap = architectScore(pre, 0, { isCrit: false, serieStreak: ARCH_STREAK_CAP, suit: "R" }, {}).streakFlat;
+    const overCap = architectScore(pre, 0, { isCrit: false, serieStreak: 262, suit: "R" }, {}).streakFlat;
+    expect(atCap).toBe(amt * ARCH_STREAK_CAP * 2);
+    expect(overCap).toBe(atCap); // Serie 262 zahlt nicht mehr als der Deckel
   });
   it("crit (Zinne): nur bei Crit", () => {
     const pre = precomputeArchitect({ buildings: [B("A_ZINNE", [0, 1, 2, 3], 1)] }, idOrder, deck);
@@ -324,6 +366,63 @@ describe("Architekt — Reducer-Aktionen", () => {
     expect(demo.architect.buildings.length).toBe(0);
     expect(reducer(demo, { type: "ARCHITECT_DONE" }).phase).toBe("play");
   });
+
+  // #361 (+ Folge) „↶ Rückgängig" / „Zurücksetzen": NUR Verschiebungen sind umkehrbar; ein gebautes Gebäude bleibt.
+  it("UNDO nimmt NUR die letzte Verschiebung zurück; ein gebautes Gebäude bleibt liegen", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    expect(built.architect.buildings.length).toBe(1);
+    expect((built.architect.phaseHistory || []).length).toBe(0);             // Bau erzeugt KEINEN Undo-Schritt
+    expect(reducer(built, { type: "ARCHITECT_UNDO" })).toBe(built);          // ohne Verschiebung → No-Op (Gebäude bleibt)
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    expect(moved.architect.buildings[0].footprint).toEqual([10, 11]);
+    expect(moved.architect.phaseHistory.length).toBe(1);
+    const undone = reducer(moved, { type: "ARCHITECT_UNDO" });
+    expect(undone.architect.buildings.length).toBe(1);                       // Gebäude bleibt
+    expect(undone.architect.buildings[0].footprint).toEqual([0, 1]);         // nur der Fußabdruck geht zurück
+    expect(undone.architect.actedMain).toBe(true);                           // Hauptaktion bleibt verbraucht
+    expect(reducer(undone, { type: "ARCHITECT_UNDO" })).toBe(undone);        // leerer Stapel → No-Op
+  });
+
+  it("UNDO geht Verschiebung für Verschiebung zurück; das Gebäude bleibt durchweg bestehen", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const m1 = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    const m2 = reducer(m1, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] });
+    expect(m2.architect.buildings[0].footprint).toEqual([20, 21]);
+    const u1 = reducer(m2, { type: "ARCHITECT_UNDO" });
+    expect(u1.architect.buildings[0].footprint).toEqual([10, 11]);
+    expect(u1.architect.buildings.length).toBe(1);
+    const u2 = reducer(u1, { type: "ARCHITECT_UNDO" });
+    expect(u2.architect.buildings[0].footprint).toEqual([0, 1]);
+    expect(u2.architect.buildings.length).toBe(1);
+  });
+
+  it("RESET setzt alle Verschiebungen auf die Ausgangslage zurück; die Gebäude bleiben (kein Abriss)", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [20, 21] });
+    const reset = reducer(moved, { type: "ARCHITECT_RESET" });
+    expect(reset.architect.buildings.length).toBe(1);                        // Gebäude bleibt
+    expect(reset.architect.buildings[0].footprint).toEqual([0, 1]);          // zurück auf die Anker-/Bau-Lage
+    expect(reset.architect.actedMain).toBe(true);                            // Hauptaktion bleibt verbraucht
+    expect(reset.architect.phaseHistory.length).toBe(0);
+  });
+
+  it("Eine Verschiebung legt einen Undo-Schritt an; DONE verwirft die transienten Undo-Daten", () => {
+    const s = inArchitectPhase();
+    const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
+    const id = built.architect.buildings[0].id;
+    const moved = reducer(built, { type: "ARCHITECT_MOVE", buildingId: id, footprint: [10, 11] });
+    expect(moved.architect.phaseHistory.length).toBe(1);
+    const done = reducer(moved, { type: "ARCHITECT_DONE" });
+    expect(done.phase).toBe("play");
+    expect(done.architect.phaseHistory).toEqual([]);
+    expect(done.architect.phaseAnchor).toBe(null);
+  });
 });
 
 describe("Architekt — Voll-Run", () => {
@@ -350,5 +449,43 @@ describe("Architekt — Voll-Run", () => {
     expect(sum.byCategory.value).toBe(1);
     expect(sum.byCategory.score).toBe(1);
     expect(sum.coverage).toBeCloseTo(6 / N_POS);
+  });
+});
+
+describe("#283 Distrikt-Bonus (gleiche Kategorie aneinander)", () => {
+  const V = (id, footprint) => ({ id, familyId: "A_STUETZE", footprint });   // value/domino-Familie als Kategorie-Träger
+  const S = (id, footprint) => ({ id, familyId: "A_ZOLLHAUS", footprint });   // score-Familie
+
+  it("zwei gleich-kategorige Gebäude aneinander → Faktor 1+BONUS auf beide", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0), posOf(0, 1)]), V(2, [posOf(1, 0), posOf(1, 1)])]); // vertikal benachbart
+    for (const p of [posOf(0, 0), posOf(0, 1), posOf(1, 0), posOf(1, 1)]) expect(df[p]).toBeCloseTo(1 + DISTRICT_BONUS);
+    expect(df[posOf(4, 4)]).toBe(1); // unbeteiligt
+  });
+
+  it("nicht benachbart → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), V(2, [posOf(6, 4)])]);
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(6, 4)]).toBe(1);
+  });
+
+  it("benachbart aber VERSCHIEDENE Kategorie → kein Distrikt-Faktor", () => {
+    const df = districtFactorMap([V(1, [posOf(0, 0)]), S(2, [posOf(1, 0)])]); // value neben score
+    expect(df[posOf(0, 0)]).toBe(1);
+    expect(df[posOf(1, 0)]).toBe(1);
+  });
+
+  it("mehr Nachbarn als DISTRICT_CAP → gedeckelt", () => {
+    const center = V(0, [posOf(2, 2)]);
+    const around = [V(1, [posOf(1, 2)]), V(2, [posOf(3, 2)]), V(3, [posOf(2, 1)]), V(4, [posOf(2, 3)])]; // 4 gleich-kat. Nachbarn
+    const df = districtFactorMap([center, ...around]);
+    expect(df[posOf(2, 2)]).toBeCloseTo(1 + DISTRICT_BONUS * DISTRICT_CAP); // 4 → auf CAP (3) gedeckelt
+  });
+
+  it("boardFactorMap = Struktur × Distrikt", () => {
+    // Volle Segment-Zeile aus zwei gleich-kategorigen Gebäuden (Struktur-Zeile UND Distrikt-Nachbarschaft).
+    const row = [V(1, [posOf(0, 0), posOf(0, 1), posOf(0, 2)]), V(2, [posOf(0, 3), posOf(0, 4)])];
+    const bf = boardFactorMap(row);
+    // Zeile komplett → HAEUSERZEILE_FACTOR; benachbart gleiche Kategorie → × (1+BONUS).
+    expect(bf[posOf(0, 0)]).toBeCloseTo(HAEUSERZEILE_FACTOR * (1 + DISTRICT_BONUS));
   });
 });

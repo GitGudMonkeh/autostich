@@ -1,0 +1,506 @@
+<title>Eis · Kristall-Feld · Gletscher-Siege · Synthwave</title>
+<style>
+  :root{
+    --bg:#070a16; --bg2:#04060f; --panel:#0d1430; --panel2:#111a3e; --line:#243056;
+    --ink:#e8f0ff; --dim:#9db0dd; --dimmer:#63739e;
+    --acc:#5ec8f0; --acc-dim:#2a5a8a; --hot:#d6ecff; --z:#a13cff;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1200px 720px at 78% -12%, #14204a 0%, transparent 55%),
+      radial-gradient(900px 600px at -6% 112%, #2a1150 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:82ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#0a0c1c,#050409); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  button.burst{border-color:var(--z); color:#d9bcff}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#080b1c); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--acc)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .panel{background:linear-gradient(180deg,var(--panel),#080b1c); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #5ec8f022, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #5ec8f022}
+  input#wins{height:6px}
+  .config{max-width:1180px; margin:20px auto 0}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  textarea{width:100%; min-height:220px; background:#070d1e; color:#bfe0ff; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Eis · Kristall-Feld · Gletscher-Siege</h1>
+  <div class="sub">Eigenständiger <b>Archetyp-Feld-Effekt</b> (unabhängig vom Karten-Frost). Zwei Neon-Kristall-<b>Cluster</b>
+    wachsen aus der <b>unteren linken</b> und <b>unteren rechten</b> Ecke <b>nach oben &amp; leicht zur Mitte</b> ins Bild —
+    Optik wie der Karten-Frost, nur <b>größer</b> und mit <b>Hologrid-Kanten</b> (helle Wireframe-Kanten + interne
+    Triangulation). Der Regler ist <b>Gletscher-Siege 0–10</b>: mit jedem Sieg wachsen die Kristalle (Akkretion). Bei
+    <b>10</b> <b>bersten</b> sie (Splitter fliegen nach außen/oben, verglühen). (Prototyp Canvas-2D; In-Game-Pfad nach Sign-off.)</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Cluster <b>unten-links</b></span>
+    <span class="chip"><span class="dot" style="color:#22e0ff"></span> Cluster <b>unten-rechts</b></span>
+    <span class="chip"><span class="dot" style="color:#a13cff"></span> Neon <b>Licht A/B</b></span>
+    <span class="chip"><span class="dot" style="color:#bfeaff"></span> Hologrid <b>Kanten</b></span>
+    <span class="chip"><span class="dot" style="color:#d9bcff"></span> Bersten <b>@ 10</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud">Gletscher-Siege · <b id="hudLvl">0 / 10</b></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="lvl">
+      <div class="lab"><label for="wins">🏆 Gletscher-Siege 0–10 (Zustand · kein TUNE-Wert)</label><span class="val" id="v_wins">0 / 10</span></div>
+      <input type="range" id="wins" min="0" max="10" step="1" value="0">
+      <div style="font-size:11px;color:var(--dimmer);margin-top:3px">Jeder Sieg lässt die Kristalle weiter wachsen. <b>Sieg 10</b> löst automatisch das <b>Bersten</b> aus.</div>
+    </div>
+    <div class="transport">
+      <button id="btnAuto">Auto-Wachsen: aus</button>
+      <button id="btnBurst" class="burst">Bersten ▶</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="scale">Skala</label><input type="range" id="scale" min="0.7" max="1.6" step="0.05" value="1" style="width:110px"><span class="val" id="v_scale" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="bar"><h2>Eis-Kristall-Feld · TUNE-Werte (Platzhalter-Datei <code>src/ui/fx/IceCrystalField.jsx</code>)</h2>
+    <div style="display:flex;gap:10px;align-items:center"><span class="copied" id="copied">kopiert ✓</span><button id="btnCopy">Werte kopieren</button><button id="btnDefault">Auf Standard</button></div>
+  </div>
+  <textarea id="cfg" readonly spellcheck="false"></textarea>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var TAU=Math.PI*2;
+  var WINS_MAX=10;                          // Gletscher-Siege bis zum Bersten
+  var DEFAULTS = {
+    ICE_DARK:"#141d47", ICE_MID:"#4f78c8", ICE_EDGE:"#cfeeff",
+    NEON_A:"#22e0ff", NEON_B:"#a13cff", NEON_ANGLE:90, NEON_RIM:0.16, NEON_TIP:0.28, NEON_PUNCH:0.68, NEON_BLOOM:0.36, NEON_BASE:1,
+    HOLO_EDGE:0.76, HOLO_GRID:0.8, HOLO_FLICK:0,
+    ANCHOR_X:0.01, ANCHOR_Y:1.09, CENTER_PULL:0.58, SPREAD:127, REACH:0.49, RISE:1.15, DENSITY:0.52, CLUMP:0.9, RAGGED:0.94, GROW_BAND:0.04, GROW_MS:230,
+    SHARD_LEN:32, SHARD_WIDTH:0.64, FACET:0.54, GLAZE:0,
+    RIME:0, SPARKLE:0, SHIMMER:0,
+    BURST_SPEED:3.4, BURST_SPREAD:0.86, BURST_GRAV:3, BURST_LIFE:1370, BURST_SPIN:0.12, BURST_FLASH:1.5
+  };
+  var T = Object.assign({}, DEFAULTS);
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";}, msFmt=function(v){return Math.round(v)+" ms";};
+  var GROUPS = [
+    { title:"Farben (Kristall)", note:"Basis/Schatten, Facetten-Fläche und helle Kristall-Kante. Neon + Hologrid liegen darüber.", rows:[
+      ["ICE_DARK","Basis / Schatten",0,0,0,null,"color"],["ICE_MID","Facetten-Fläche",0,0,0,null,"color"],["ICE_EDGE","Kristall-Kante",0,0,0,null,"color"]
+    ]},
+    { title:"Neon-Synthwave-Licht", note:"Zwei gegenüberliegende Bühnenlichter (A/B) strahlen das Feld an — Kanten fangen Neon ein, weiche Bloom-Aura, Punch macht's übersättigt/emissiv.", rows:[
+      ["NEON_A","Licht A",0,0,0,null,"color"],
+      ["NEON_B","Licht B",0,0,0,null,"color"],
+      ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,"Richtung der A↔B-Achse (90° = A oben / B unten)."],
+      ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,"Wie stark die Neonfarben das ganze Feld einfärben."],
+      ["NEON_TIP","Kanten-Neon",0,1,0.02,xFmt,"Helle additive Neon-Säume an Kristall-Kanten & Spitzen."],
+      ["NEON_PUNCH","Punch (Sättigung/Emission)",0,1.5,0.02,xFmt,"Macht die Neon-Kanten übersättigt & selbstleuchtend."],
+      ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,"Weiches Neon-Leuchten um die Kristall-Silhouette."],
+      ["NEON_BASE","Basis mitfärben",0,1,1,onOff,"Toggle: Neon zieht auch in Facetten-Fläche & Glasur."]
+    ]},
+    { title:"Hologrid-Kanten", note:"Der Unterschied zum Karten-Frost: die Kanten lesen sich wie ein leuchtendes Wireframe-Hologramm — helle Kanten, interne Triangulation, leichtes Flackern.", rows:[
+      ["HOLO_EDGE","Wireframe-Kanten",0,1.5,0.02,xFmt,"Helligkeit der scharfen Hologrid-Umrisslinien je Kristall."],
+      ["HOLO_GRID","Interne Triangulation",0,1,0.02,xFmt,"Feine Gitterlinien im Kristall (Facetten-Triangulation, Hologramm-Look)."],
+      ["HOLO_FLICK","Flackern",0,1,0.02,xFmt,"Leichtes Hologramm-Flackern der Kanten (0 = stabil)."]
+    ]},
+    { title:"Cluster & Wuchs", note:"Zwei Cluster wachsen aus den unteren Ecken nach oben & leicht zur Mitte. Reichweite/Fächer bestimmen die Silhouette; GROW_BAND weicht das Wachstum je Sieg auf.", rows:[
+      ["ANCHOR_X","Ecken-Abstand (X)",0,0.4,0.01,xFmt,"Wie weit die Cluster-Wurzel von der linken/rechten Kante steht (0 = ganz in der Ecke)."],
+      ["ANCHOR_Y","Boden-Anker (Y)",0.85,1.1,0.01,xFmt,"Höhe der Wurzel (1.0 = unterer Rand, >1 = knapp außerhalb → nur Spitzen ragen rein)."],
+      ["CENTER_PULL","Mitten-Zug",0,1.2,0.02,xFmt,"Wie stark die Cluster zur Bildmitte statt senkrecht wachsen."],
+      ["SPREAD","Fächer-Winkel",20,140,1,degFmt,"Öffnungswinkel des Kristall-Fächers je Cluster."],
+      ["REACH","Reichweite",0.35,1.1,0.02,xFmt,"Wie weit der Cluster bei Sieg 10 ins Bild wächst (Anteil der kürzeren Kante)."],
+      ["RISE","Höhen-Streckung",0.7,1.8,0.02,xFmt,"Streckt den Fächer vertikal (höher als breit)."],
+      ["DENSITY","Kristall-Dichte",0.2,1,0.02,xFmt,"Mehr Kristalle pro Cluster."],
+      ["CLUMP","Größen-Streuung",0,1,0.02,xFmt,"Variiert Kristall-Größen (unregelmäßiger)."],
+      ["RAGGED","Kanten-Zerklüftung",0,1,0.02,xFmt,"Fransige Wuchsfront statt glattem Bogen."],
+      ["GROW_BAND","Wachstums-Weichheit",0.04,0.4,0.01,xFmt,"Wie weich ein Kristall über einen Sieg einwächst (klein = knackiges Aufpoppen)."],
+      ["GROW_MS","Wachs-Tempo",80,1200,10,msFmt,"Dauer, über die ein Sieg die neuen Kristalle hochwachsen lässt (Animation statt Aufpoppen). Klein = schnelles Schießen, groß = langsames Wachsen."]
+    ]},
+    { title:"Kristall / Facetten", note:"Kantige Scherben mit Facetten-Schliff und milchiger Glasur — größer als auf der Karte.", rows:[
+      ["SHARD_LEN","Scherben-Länge",12,60,1,pxFmt,"Länge der Kristall-Scherben (größer = massivere Kristalle)."],
+      ["SHARD_WIDTH","Scherben-Breite",0.2,1,0.02,xFmt,"Schlank (Nadeln) bis breit (Platten)."],
+      ["FACET","Facetten-Kontrast",0,1,0.02,xFmt,"Stärke der zwei Facetten-Flächen (3D-Schliff)."],
+      ["GLAZE","Milchige Glasur",0,1,0.02,xFmt,"Weiche gefrorene Glasfläche zwischen den Kristallen."]
+    ]},
+    { title:"Details", note:"Feinheiten: Rime-Körnung, Funkeln, Puls bei voller Reife (bereit zu bersten).", rows:[
+      ["RIME","Rime-Körnung",0,1,0.02,xFmt,"Feine Frost-Kristall-Körnung am Rand."],
+      ["SPARKLE","Funkeln",0,1,0.02,xFmt,"Vereinzelte, langsam funkelnde Eis-Glitzer."],
+      ["SHIMMER","Puls (voll)",0,1,0.02,xFmt,"Atmendes Glühen bei Sieg 9–10 (bereit zu bersten)."]
+    ]},
+    { title:"Bersten (@ Sieg 10)", note:"One-Shot: die reifen Kristalle zerspringen in Neon-Splitter, die nach außen/oben fliegen und verglühen.", rows:[
+      ["BURST_SPEED","Splitter-Tempo",0.5,6,0.1,xFmt,"Anfangsgeschwindigkeit der Splitter (× Wuchsrichtung)."],
+      ["BURST_SPREAD","Streuung",0,1.2,0.02,xFmt,"Wie stark die Splitter-Richtungen streuen."],
+      ["BURST_GRAV","Schwerkraft",0,6,0.1,xFmt,"Wie schnell die Splitter wieder fallen."],
+      ["BURST_LIFE","Lebensdauer",300,1800,10,msFmt,"Wie lange die Splitter leben, bis sie verglüht sind."],
+      ["BURST_SPIN","Drehung",0,0.4,0.01,xFmt,"Eigendrehung der Splitter im Flug."],
+      ["BURST_FLASH","Blitz",0,1.5,0.02,xFmt,"Helligkeit des Berst-Aufblitzens an den Wurzeln."]
+    ]}
+  ];
+  var INT={NEON_BASE:1};
+  // ändert Feld-Aufbau/Struktur → Feld neu bauen
+  var LAYOUT={ANCHOR_X:1,ANCHOR_Y:1,CENTER_PULL:1,SPREAD:1,REACH:1,RISE:1,DENSITY:1,CLUMP:1,RAGGED:1,SHARD_WIDTH:1};
+  var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
+  var $=function(id){return document.getElementById(id);};
+
+  (function build(){ var host=$("panels"), html="";
+    GROUPS.forEach(function(g){ html+='<div class="panel"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+      g.rows.forEach(function(r){ var key=r[0], lab=r[1], mn=r[2], mx=r[3], st=r[4], hint=r[6];
+        if(r[6]==="color") html+='<div class="row color"><div class="lab"><label for="'+key+'">'+lab+'</label><input type="color" id="'+key+'"></div></div>';
+        else html+='<div class="row"><div class="lab"><label for="'+key+'">'+lab+'</label><span class="val" id="v_'+key+'"></span></div><input type="range" id="'+key+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+      });
+      html+='</fieldset></div>';
+    });
+    host.innerHTML=html;
+    GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+      if(r[6]==="color"){ el.addEventListener("input",function(){ T[key]=el.value; markDirty(false); writeConfig(); }); return; }
+      el.addEventListener("input",function(){ var v=parseFloat(el.value); if(INT[key]) v=Math.round(v); T[key]=v; $("v_"+key).textContent=(FMT[key]||String)(T[key]); markDirty(!!LAYOUT[key]); writeConfig(); });
+    });});
+  })();
+  function syncInputs(){ GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+    if(r[6]==="color"){ el.value=T[key]; return; } el.value=T[key]; $("v_"+key).textContent=(FMT[key]||String)(T[key]); });}); writeConfig(); }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  function writeConfig(){ var o=T;
+    $("cfg").value="const TUNE = {\n"
+      + "  ICE_DARK: \""+o.ICE_DARK+"\", ICE_MID: \""+o.ICE_MID+"\", ICE_EDGE: \""+o.ICE_EDGE+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  HOLO_EDGE: "+numStr(o.HOLO_EDGE)+", HOLO_GRID: "+numStr(o.HOLO_GRID)+", HOLO_FLICK: "+numStr(o.HOLO_FLICK)+",\n\n"
+      + "  ANCHOR_X: "+numStr(o.ANCHOR_X)+", ANCHOR_Y: "+numStr(o.ANCHOR_Y)+", CENTER_PULL: "+numStr(o.CENTER_PULL)+", SPREAD: "+numStr(o.SPREAD)+", REACH: "+numStr(o.REACH)+", RISE: "+numStr(o.RISE)+", DENSITY: "+numStr(o.DENSITY)+", CLUMP: "+numStr(o.CLUMP)+", RAGGED: "+numStr(o.RAGGED)+", GROW_BAND: "+numStr(o.GROW_BAND)+", GROW_MS: "+numStr(o.GROW_MS)+",\n\n"
+      + "  SHARD_LEN: "+numStr(o.SHARD_LEN)+", SHARD_WIDTH: "+numStr(o.SHARD_WIDTH)+", FACET: "+numStr(o.FACET)+", GLAZE: "+numStr(o.GLAZE)+",\n\n"
+      + "  RIME: "+numStr(o.RIME)+", SPARKLE: "+numStr(o.SPARKLE)+", SHIMMER: "+numStr(o.SHIMMER)+",\n\n"
+      + "  BURST_SPEED: "+numStr(o.BURST_SPEED)+", BURST_SPREAD: "+numStr(o.BURST_SPREAD)+", BURST_GRAV: "+numStr(o.BURST_GRAV)+", BURST_LIFE: "+numStr(o.BURST_LIFE)+", BURST_SPIN: "+numStr(o.BURST_SPIN)+", BURST_FLASH: "+numStr(o.BURST_FLASH)+",\n};";
+  }
+
+  // ── Utils ──
+  function hexRGB(h){ h=String(h||"#4f78c8").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function clampRGB(c){ return {r:Math.max(0,Math.min(255,c.r)), g:Math.max(0,Math.min(255,c.g)), b:Math.max(0,Math.min(255,c.b))}; }
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  function satBoost(c,s){ var L=0.30*c.r+0.59*c.g+0.11*c.b; return clampRGB({r:L+(c.r-L)*(1+s), g:L+(c.g-L)*(1+s), b:L+(c.b-L)*(1+s)}); }
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function vhash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+  function fbm(x,y){ return vhash(x*0.05,y*0.05)*0.6 + vhash(x*0.13,y*0.13)*0.28 + vhash(x*0.31,y*0.31)*0.12; }
+
+  // ── Renderer / Setup ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var _axc=0,_axs=1,_cNA={r:34,g:224,b:255},_cNB={r:161,g:60,b:255};
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
+  window.addEventListener("resize", doResize);
+
+  var autoGrow=false, autoAcc=0, scale=1, wins=0, last=0, fpsT=0, fpsN=0, clockT=0, frameDt=16;
+  var fieldDirty=true, field=[], anchors=[];
+  var burst=null;                          // {t0, parts:[...]} während des Berstens
+  var lastWins=0;
+  var frontCur=0, frontTarget=0, pendingBurst=false;   // frontCur eased → weiches Wachsen statt Aufpoppen
+
+  function markDirty(rebuild){ if(rebuild) fieldDirty=true; }
+
+  // Feld: zwei Cluster-Fächer aus den unteren Ecken. birthF = radiale Distanz/Reichweite (nah = früh, fern = spät).
+  function buildField(){
+    field=[]; anchors=[];
+    var reach = Math.min(CSSW,CSSH) * T.REACH * scale;
+    var sl = T.SHARD_LEN * scale;
+    [-1, +1].forEach(function(sign){
+      var ax = sign<0 ? CSSW*T.ANCHOR_X : CSSW*(1-T.ANCHOR_X);
+      var ay = CSSH*T.ANCHOR_Y;
+      anchors.push({x:ax,y:ay,sign:sign});
+      // Basis-Richtung: nach oben + zur Mitte (sign<0 → nach rechts, sign>0 → nach links)
+      var bdx = -sign * T.CENTER_PULL, bdy = -1;
+      var bl=Math.hypot(bdx,bdy)||1; bdx/=bl; bdy/=bl;
+      var baseAng=Math.atan2(bdy,bdx);
+      var spread = T.SPREAD*Math.PI/180;
+      var n = Math.round(T.DENSITY * (reach*reach) / (120*scale*scale));
+      var rng = mulberry32(sign<0 ? 0x51ce01 : 0x51ce02);
+      for(var i=0;i<n;i++){
+        var rr = Math.sqrt(rng()) * reach;
+        var ang = baseAng + (rng()-0.5)*spread;
+        var dirx=Math.cos(ang), diry=Math.sin(ang);
+        var x = ax + dirx*rr;
+        var y = ay + diry*rr*T.RISE;          // vertikale Streckung
+        if(x<-sl||x>CSSW+sl||y<-sl||y>CSSH+sl) continue;
+        var birthF = clamp01(rr/reach + T.RAGGED*(fbm(x,y)-0.5)*0.4);
+        if(birthF>0.995) continue;
+        var gl=Math.hypot(dirx, diry*T.RISE)||1;
+        var size = 0.5 + rng()*0.9 + T.CLUMP*(rng()*rng())*2.0;              // mehr Größen-Streuung
+        var kr=rng(), kind = kr<0.5 ? 0 : kr<0.78 ? 1 : 2;                   // 0=Gem (Sechskant), 1=Nadel, 2=Zwilling
+        field.push({ x:x, y:y, birthF:birthF, gdx:dirx/gl, gdy:(diry*T.RISE)/gl, size:size, kind:kind, seed:(0x9e3779b1*(i+1)*(sign+3))>>>0, sign:sign,
+          edgeProx: clamp01(1 - birthF/0.16) });
+      }
+    });
+    // Zeichenreihenfolge: spät geborene (hoher birthF = neu wachsende) ZUERST → liegen HINTER den früh etablierten (niedriger birthF, zuletzt = oben).
+    field.sort(function(a,b){ return b.birthF - a.birthF; });
+    fieldDirty=false;
+  }
+
+  // Ziel-Wuchs-Front aus Siegen 0..10 → 0..1 (frontCur eased in frame() dorthin)
+  function frontOf(w){ return clamp01(w/WINS_MAX); }
+
+  // Baut die (variierende) Kristall-Geometrie: eine oder mehrere facettierte Scherben mit 7-Punkt-Silhouette
+  // (Basis → Schulter → Spitze), Typen: 0=Sechskant-Gem, 1=schlanke Nadel, 2=Zwilling (zwei versetzte Scherben).
+  function crystalOf(t, mat){
+    var rng=mulberry32(t.seed);
+    var len=T.SHARD_LEN*scale*(0.45+0.75*t.size)*(0.4+0.6*mat), wid=len*T.SHARD_WIDTH*(0.42+0.5*rng());
+    var ja=(rng()-0.5)*1.3, ca=Math.cos(ja), sa=Math.sin(ja);
+    var dx=t.gdx*ca - t.gdy*sa, dy=t.gdx*sa + t.gdy*ca;
+    // Eine Scherbe von (ox,oy) entlang (ux,uy): 7-Punkt-Kristall (schmale Basis, breite Schulter, Spitze).
+    function shard(ox, oy, ux, uy, L, W, sh){
+      var vx=-uy, vy=ux;  // Perpendikular
+      function P(al, aw){ return { x:ox+ux*al+vx*aw, y:oy+uy*al+vy*aw }; }
+      return {
+        base:{x:ox-ux*L*0.30, y:oy-uy*L*0.30}, tip:P(L,0), ux:ux, uy:uy,
+        pts:[ P(-L*0.30,W*0.42), P(L*0.08,W*sh), P(L*0.52,W*0.55*sh), P(L,0), P(L*0.52,-W*0.55*sh), P(L*0.08,-W*sh), P(-L*0.30,-W*0.42) ]
+      };
+    }
+    var parts=[];
+    if(t.kind===1){                                   // Nadel: schlank & spitz
+      parts.push(shard(t.x,t.y,dx,dy,len*1.15,wid*0.46,0.5));
+    } else if(t.kind===2){                            // Zwilling: Haupt + kleinerer, versetzt & leicht gedreht
+      parts.push(shard(t.x,t.y,dx,dy,len,wid,0.95+0.3*rng()));
+      var a2=(rng()-0.5)*0.7, c2=Math.cos(a2), s2=Math.sin(a2);
+      var dx2=dx*c2-dy*s2, dy2=dx*s2+dy*c2, off=wid*(0.7+0.6*rng());
+      parts.push(shard(t.x+(-dy)*off, t.y+dx*off, dx2, dy2, len*(0.6+0.2*rng()), wid*0.8, 0.9));
+    } else {                                          // Gem: voller Sechskant-Kristall
+      parts.push(shard(t.x,t.y,dx,dy,len,wid,0.9+0.35*rng()));
+    }
+    return { dx:dx, dy:dy, len:len, parts:parts, tip:parts[0].tip };
+  }
+
+  function neonFor(t){
+    var tAxis=clamp01(0.5 + ((t.x-CSSW/2)*_axc + (t.y-CSSH/2)*_axs)/(Math.max(CSSW,CSSH)*0.62));
+    var neon=clampRGB(mix(_cNA,_cNB,tAxis)), neonP=satBoost(neon,0.45+0.9*T.NEON_PUNCH);
+    var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.4+0.3*clamp01(T.NEON_PUNCH)));
+    return {neon:neon, neonP:neonP, neonHot:neonHot};
+  }
+
+  function polyPath(g, pts){ g.beginPath(); g.moveTo(pts[0].x,pts[0].y); for(var i=1;i<pts.length;i++) g.lineTo(pts[i].x,pts[i].y); g.closePath(); }
+
+  function drawShard(g, t, mat, neonTips, flick){
+    var cDark=hexRGB(T.ICE_DARK), cMid=hexRGB(T.ICE_MID), cEdge=hexRGB(T.ICE_EDGE);
+    var C=crystalOf(t, mat), N=neonFor(t);
+    var washV = T.NEON_BASE>=0.5 ? T.NEON_RIM*0.55 : T.NEON_RIM*0.16;
+    var bodyBase=clampRGB(mix(clampRGB(mix(cDark,cMid,0.35+0.4*mat)),N.neonP,washV));
+    var bodyTip =clampRGB(mix(clampRGB(mix(cMid,cEdge,0.4+0.5*mat)),N.neonP,washV*0.7));
+    var edgeI=clamp01(T.HOLO_EDGE*(0.5+0.5*mat))*flick;
+    var rimI =clamp01(T.NEON_TIP*(0.4+0.6*mat)*(0.6+0.5*t.size));
+    for(var pi=0; pi<C.parts.length; pi++){ var p=C.parts[pi], P=p.pts, tip=p.tip, base=p.base;
+      // Körper (Verlauf Basis→Spitze)
+      var grd=g.createLinearGradient(base.x,base.y,tip.x,tip.y);
+      grd.addColorStop(0,rgba(bodyBase,0.80*mat)); grd.addColorStop(1,rgba(bodyTip,0.9*mat)); g.fillStyle=grd;
+      polyPath(g,P); g.fill();
+      // Facetten: Grat Basis→Spitze teilt links dunkler / rechts heller (3D-Schliff)
+      if(T.FACET>0){
+        g.fillStyle=rgba(clampRGB(mix(bodyBase,{r:0,g:0,b:0},0.35*T.FACET)),0.5*mat*T.FACET);
+        g.beginPath(); g.moveTo(base.x,base.y); g.lineTo(P[0].x,P[0].y); g.lineTo(P[1].x,P[1].y); g.lineTo(P[2].x,P[2].y); g.lineTo(tip.x,tip.y); g.closePath(); g.fill();
+        g.fillStyle=rgba(clampRGB(mix(bodyTip,{r:255,g:255,b:255},0.30*T.FACET)),0.35*mat*T.FACET);
+        g.beginPath(); g.moveTo(base.x,base.y); g.lineTo(P[6].x,P[6].y); g.lineTo(P[5].x,P[5].y); g.lineTo(P[4].x,P[4].y); g.lineTo(tip.x,tip.y); g.closePath(); g.fill();
+      }
+      // Hologrid: helle Wireframe-Kanten + interne Triangulation
+      if(T.HOLO_EDGE>0 || T.HOLO_GRID>0){
+        g.globalCompositeOperation="lighter"; g.lineJoin="round"; g.lineCap="round";
+        if(T.HOLO_EDGE>0){ g.strokeStyle=rgba(N.neonHot, 0.7*edgeI); g.lineWidth=0.7+0.9*clamp01(T.NEON_PUNCH); polyPath(g,P); g.stroke(); }
+        if(T.HOLO_GRID>0){
+          var cx=0,cy=0; for(var q=0;q<P.length;q++){cx+=P[q].x;cy+=P[q].y;} cx/=P.length; cy/=P.length;
+          g.strokeStyle=rgba(N.neonP, 0.5*T.HOLO_GRID*mat*flick); g.lineWidth=0.5; g.beginPath();
+          for(var q2=0;q2<P.length;q2++){ g.moveTo(cx,cy); g.lineTo(P[q2].x,P[q2].y); }
+          g.moveTo(base.x,base.y); g.lineTo(tip.x,tip.y);
+          g.stroke();
+        }
+        g.globalCompositeOperation="source-over";
+      }
+      // Neon-Spitze (additive Säume + heller Punkt)
+      if(T.NEON_TIP>0){
+        g.globalCompositeOperation="lighter"; g.lineJoin="round"; g.lineCap="round";
+        g.strokeStyle=rgba(N.neonP, rimI*(0.5+0.4*T.NEON_PUNCH)); g.lineWidth=1.0+1.4*T.NEON_PUNCH;
+        g.beginPath(); g.moveTo(P[2].x,P[2].y); g.lineTo(tip.x,tip.y); g.lineTo(P[4].x,P[4].y); g.stroke();
+        var pr=1.2+2.6*T.NEON_PUNCH;
+        g.fillStyle=rgba(N.neonHot, rimI*0.85); g.beginPath(); g.arc(tip.x,tip.y,pr*0.45,0,TAU); g.fill();
+        g.globalCompositeOperation="source-over";
+        if(neonTips.length<520 && rng2(t.seed+pi)<0.7) neonTips.push({x:tip.x,y:tip.y,c:N.neonP,i:rimI});
+      }
+    }
+  }
+  function rng2(s){ var r=mulberry32(s^0xabcdef); return r(); }
+
+  // ── Bersten ──
+  function startBurst(){
+    var front=Math.max(frontCur, 0.6), parts=[];
+    for(var i=0;i<field.length;i++){ var t=field[i]; var mat=clamp01((front-t.birthF)/T.GROW_BAND); if(mat<0.35) continue;
+      var C=crystalOf(t, mat), N=neonFor(t);
+      for(var ci=0; ci<C.parts.length; ci++){ var tip=C.parts[ci].tip;
+        var sp=T.BURST_SPEED*scale*(0.6+0.8*Math.random());
+        var jitter=(Math.random()-0.5)*T.BURST_SPREAD, ca=Math.cos(jitter), sa=Math.sin(jitter);
+        var vx=(C.dx*ca - C.dy*sa)*sp, vy=(C.dx*sa + C.dy*ca)*sp;
+        parts.push({ x:tip.x, y:tip.y, vx:vx, vy:vy, rot:Math.random()*TAU, vr:(Math.random()-0.5)*T.BURST_SPIN,
+          len:C.len*(0.4+0.5*mat), c:N.neonP, hot:N.neonHot });
+      }
+      if(parts.length>800) break;
+    }
+    burst={ t0:clockT, parts:parts };
+  }
+
+  function drawBurst(g, age){
+    var life=T.BURST_LIFE, k=age/life;
+    if(k>=1){ burst=null; wins=0; lastWins=0; frontCur=0; frontTarget=0; pendingBurst=false;   // nach dem Bersten: Feld LEER (kein Zurückpoppen)
+      $("wins").value=0; $("v_wins").textContent="0 / "+WINS_MAX; $("hudLvl").textContent="0 / "+WINS_MAX; return; }
+    // Aufblitzen an den Wurzeln (kurz)
+    if(T.BURST_FLASH>0 && k<0.5){
+      var fa=(1-k/0.5)*T.BURST_FLASH;
+      g.globalCompositeOperation="lighter";
+      for(var a=0;a<anchors.length;a++){ var an=anchors[a], rad=Math.min(CSSW,CSSH)*0.42*scale;
+        var rg=g.createRadialGradient(an.x, an.y-rad*0.35, 0, an.x, an.y-rad*0.35, rad);
+        rg.addColorStop(0, rgba(_cNA, 0.4*fa)); rg.addColorStop(0.5, rgba(_cNB, 0.14*fa)); rg.addColorStop(1, rgba(_cNB,0));
+        g.fillStyle=rg; g.beginPath(); g.arc(an.x, an.y-rad*0.35, rad, 0, TAU); g.fill();
+      }
+      g.globalCompositeOperation="source-over";
+    }
+    var step=Math.min(3, frameDt/16.67);   // 60fps-normierter Zeitschritt → fps-unabhängige Splitter-Bewegung
+    g.globalCompositeOperation="lighter"; g.lineCap="round";
+    for(var i=0;i<burst.parts.length;i++){ var p=burst.parts[i];
+      p.vy += T.BURST_GRAV*scale*0.016*step; p.x += p.vx*scale*0.9*step; p.y += p.vy*scale*0.9*step; p.rot += p.vr*step;
+      var a=Math.pow(1-k, 1.05);                                     // gleichmäßiger, langer Ausfade über die volle Dauer
+      var ex=p.x+Math.cos(p.rot)*p.len, ey=p.y+Math.sin(p.rot)*p.len;
+      g.strokeStyle=rgba(p.c, 0.8*a); g.lineWidth=1.6;
+      g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(ex,ey); g.stroke();
+      g.fillStyle=rgba(p.hot, 0.9*a); g.beginPath(); g.arc(p.x,p.y,1.5,0,TAU); g.fill();
+    }
+    g.globalCompositeOperation="source-over";
+  }
+
+  // ── Frame ──
+  function render(){
+    if(fieldDirty) buildField();
+    var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+    _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+    var front=frontCur;
+    var flick = T.HOLO_FLICK>0 ? (1 - T.HOLO_FLICK*0.5*(0.5+0.5*Math.sin(clockT*0.02)) - T.HOLO_FLICK*0.2*vhash(Math.floor(clockT*0.05),1)) : 1;
+    var pulse = (T.SHIMMER>0 && wins>=9) ? 1 + T.SHIMMER*0.3*Math.sin(clockT*0.004) : 1;
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,CSSW,CSSH);
+    // dezenter Boden-Frost-Schimmer (Kontext)
+    var floor=ctx.createLinearGradient(0,CSSH,0,CSSH*0.55);
+    floor.addColorStop(0, rgba(_cNA, 0.05*Math.max(front,0.15))); floor.addColorStop(1, rgba(_cNA,0));
+    ctx.fillStyle=floor; ctx.fillRect(0,CSSH*0.55,CSSW,CSSH*0.45);
+
+    // Während des Berstens löst sich das statische Kristallfeld glatt über die volle Berst-Dauer auf (kein Abbruch in der Mitte).
+    var fieldFade = burst ? Math.pow(clamp01(1 - (clockT-burst.t0)/T.BURST_LIFE), 1.4) : 1;
+    ctx.globalAlpha = fieldFade;
+
+    var neonTips=[];
+    // Glasur (radiale Puffs) unter den Kristallen
+    if(T.GLAZE>0){
+      for(var i=0;i<field.length;i++){ var t=field[i]; var mat=clamp01((front-t.birthF)/T.GROW_BAND); if(mat<=0) continue;
+        var tAxis=clamp01(0.5 + ((t.x-CSSW/2)*_axc + (t.y-CSSH/2)*_axs)/(Math.max(CSSW,CSSH)*0.62));
+        var gcol=clampRGB(mix(clampRGB(mix(hexRGB(T.ICE_DARK),hexRGB(T.ICE_MID),0.5)), clampRGB(mix(_cNA,_cNB,tAxis)), T.NEON_BASE>=0.5?0.4*T.NEON_RIM:0.12*T.NEON_RIM));
+        var rad=t.size*11*scale*(0.6+0.6*mat), rg=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,rad);
+        rg.addColorStop(0, rgba(gcol, 0.20*T.GLAZE*mat)); rg.addColorStop(1, rgba(gcol,0));
+        ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(t.x,t.y,rad,0,TAU); ctx.fill();
+      }
+    }
+    // Kristalle (von hinten/spät nach vorn: einfache Reihenfolge reicht)
+    for(var j=0;j<field.length;j++){ var t2=field[j]; var mat2=clamp01((front-t2.birthF)/T.GROW_BAND); if(mat2<=0) continue; drawShard(ctx,t2,mat2,neonTips,flick); }
+    // Rime-Körnung am Rand
+    if(T.RIME>0){ var rr=mulberry32(9182);
+      for(var r0=0;r0<field.length;r0++){ var t3=field[r0]; var mat3=clamp01((front-t3.birthF)/T.GROW_BAND); if(mat3<=0||t3.edgeProx<0.15) continue;
+        var np=Math.round(T.RIME*3*t3.edgeProx);
+        for(var q=0;q<np;q++){ var rx=t3.x+(rr()-0.5)*t3.size*6*scale, ry=t3.y+(rr()-0.5)*t3.size*6*scale;
+          ctx.fillStyle=rgba(hexRGB(T.ICE_EDGE), 0.5*T.RIME*mat3*t3.edgeProx*rr()); ctx.fillRect(rx,ry,1.2,1.2); }
+      }
+    }
+    // Bloom-Aura an Neon-Spitzen
+    if(T.NEON_BLOOM>0 && neonTips.length){
+      ctx.globalCompositeOperation="lighter"; var gr=Math.max(9, T.SHARD_LEN*scale*1.4)*clamp01(pulse);
+      for(var b0=0;b0<neonTips.length;b0++){ var nt=neonTips[b0], rad2=gr*(0.6+0.9*nt.i);
+        var rgd=ctx.createRadialGradient(nt.x,nt.y,0,nt.x,nt.y,rad2);
+        rgd.addColorStop(0, rgba(nt.c, 0.5*nt.i*T.NEON_BLOOM)); rgd.addColorStop(0.5, rgba(nt.c, 0.16*nt.i*T.NEON_BLOOM)); rgd.addColorStop(1, rgba(nt.c,0));
+        ctx.fillStyle=rgd; ctx.beginPath(); ctx.arc(nt.x,nt.y,rad2,0,TAU); ctx.fill();
+      }
+      ctx.globalCompositeOperation="source-over";
+    }
+    // Funkeln
+    if(T.SPARKLE>0){ ctx.globalCompositeOperation="lighter";
+      for(var s0=0;s0<field.length;s0+=3){ var t4=field[s0]; var mat4=clamp01((front-t4.birthF)/T.GROW_BAND); if(mat4<=0) continue;
+        if(vhash(t4.seed&255,3)>0.14) continue;
+        var tw=0.35+0.65*(0.5+0.5*Math.sin(clockT*0.005 + (t4.seed&31)));
+        ctx.fillStyle=rgba({r:210,g:240,b:255}, 0.6*T.SPARKLE*tw*mat4);
+        ctx.beginPath(); ctx.arc(t4.x,t4.y,(1.0+0.9*tw)*scale,0,TAU); ctx.fill();
+      }
+      ctx.globalCompositeOperation="source-over";
+    }
+    ctx.globalAlpha = 1;
+    // Bersten (Splitter über dem sich auflösenden Feld)
+    if(burst) drawBurst(ctx, clockT-burst.t0);
+  }
+
+  function frame(now){
+    var dt=Math.min(50, now-last); last=now; clockT+=dt; frameDt=dt;
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>1100){ autoAcc=0; setWins(wins>=WINS_MAX?0:wins+1); } }
+    // Weiches Wachsen: frontCur eased zur Ziel-Front (Zeitkonstante GROW_MS) → Kristalle wachsen hoch statt aufzupoppen
+    var k=1-Math.exp(-dt/Math.max(1,T.GROW_MS));
+    frontCur += (frontTarget-frontCur)*k;
+    if(pendingBurst && frontCur>=frontTarget-0.008){ startBurst(); pendingBurst=false; }   // erst bersten, wenn ausgewachsen
+    render();
+    fpsN++; if(now-fpsT>500){ $("fps").textContent=Math.round(fpsN*1000/(now-fpsT))+" fps"; fpsN=0; fpsT=now; }
+    requestAnimationFrame(frame);
+  }
+
+  function setWins(w){
+    w=Math.max(0,Math.min(WINS_MAX,Math.round(w)));
+    frontTarget=frontOf(w);                               // Ziel setzen → frontCur wächst weich hin
+    if(w===WINS_MAX && lastWins<WINS_MAX) pendingBurst=true;   // Bersten, sobald ausgewachsen (nicht sofort)
+    if(w<WINS_MAX) pendingBurst=false;                    // beim Zurückdrehen kein Berst-Rest
+    wins=w; lastWins=w;
+    $("wins").value=w; $("v_wins").textContent=w+" / "+WINS_MAX; $("hudLvl").textContent=w+" / "+WINS_MAX;
+  }
+
+  // ── Controls ──
+  $("wins").addEventListener("input", function(){ setWins(parseFloat(this.value)); });
+  $("btnAuto").addEventListener("click", function(){ autoGrow=!autoGrow; this.classList.toggle("on",autoGrow); this.textContent="Auto-Wachsen: "+(autoGrow?"an":"aus"); });
+  $("btnBurst").addEventListener("click", function(){ setWins(WINS_MAX); frontCur=1; frontTarget=1; pendingBurst=false; startBurst(); }); // Sofort-Preview: schnappt auf voll & berstet
+  $("scale").addEventListener("input", function(){ scale=parseFloat(this.value); $("v_scale").textContent=scale.toFixed(2)+"×"; markDirty(true); });
+  $("btnCopy").addEventListener("click", function(){ var ta=$("cfg"); ta.select(); try{ document.execCommand("copy"); }catch(e){} navigator.clipboard&&navigator.clipboard.writeText(ta.value); var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1200); });
+  $("btnDefault").addEventListener("click", function(){ T=Object.assign({},DEFAULTS); syncInputs(); markDirty(true); });
+
+  syncInputs(); $("v_scale").textContent="1.00×"; setWins(0);
+  doResize(); requestAnimationFrame(function(t){ last=t; fpsT=t; requestAnimationFrame(frame); });
+})();
+</script>

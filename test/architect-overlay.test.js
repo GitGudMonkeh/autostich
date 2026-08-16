@@ -2,12 +2,17 @@
 // Gebäude-Effekte an einer Position im Kartendetail. Geometrie (archFrameLines) rein/unit-getestet; CardGrid- und
 // CardDetail-Render als Smoke via renderToStaticMarkup (node-env, kein DOM → useLayoutEffect/Messung läuft nicht,
 // daher keine SVG-Linien im SSR — die testen wir direkt über archFrameLines).
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { CardGrid, archFrameLines } from "../src/ui/CardGrid.jsx";
 import { architectEffectStrings } from "../src/ui/archEffects.js";
 import { CardDetail } from "../src/ui/CardDetail.jsx";
+import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+
+// #sprache: Gebäude-Effekttexte lösen zur Anzeigezeit auf. Der Test prüft den DEUTSCHEN
+// Wortlaut, also wird die Sprache gesetzt — sonst liefe er gegen die Auslieferungssprache.
+beforeEach(() => setLocale(SOURCE_LOCALE));
 
 const card = (id, value) => ({ id, suit: "R", value });
 const covCell = (bid) => ({ cat: "score", color: "#5ab87a", icon: "", boost: 0, legendary: false, name: "Bau", bid });
@@ -38,6 +43,44 @@ describe("archFrameLines — Perimeter-Kontur in Gebäude-Form", () => {
     const lefts = lines.filter((l) => vert(l) && l.x1 === -3);
     expect(lefts.some((l) => l.y2 === 105)).toBe(true);  // Z0 links endet bei 105
     expect(lefts.some((l) => l.y1 === 105)).toBe(true);  // Z5 links beginnt bei 105 → durchgehend
+  });
+  it("exVOut zieht die AUSSEN-Banden oben/unten näher an die Karten, innere Naht bleibt bei halber Lücke", () => {
+    // Vertikales 2-Zellen-Gebäude über eine Zeilengrenze (10px Lücke). Voller exV=5 (Naht), exVOut=2 (Außenkante).
+    const cover = { 0: covCell("B1"), 5: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 5: rect(0, 110, 100, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2);
+    const tops = lines.filter(horiz);
+    // Z0-oben (Außenkante) sitzt jetzt bei -2 statt -5 → näher an der Karte.
+    expect(tops.some((l) => l.y1 === -2)).toBe(true);
+    // Z5-unten (Außenkante) bei 210+2=212.
+    expect(tops.some((l) => l.y1 === 212)).toBe(true);
+    // Innere Naht unverändert bei halber gemessener Lücke (105) → Kontur schließt weiter durch.
+    const lefts = lines.filter((l) => vert(l) && l.x1 === -3);
+    expect(lefts.some((l) => l.y2 === 105)).toBe(true);   // Z0 links endet bei 105
+    expect(lefts.some((l) => l.y1 === 105)).toBe(true);   // Z5 links beginnt bei 105
+    // Default exVOut = exV bleibt kompatibel (5 Args → Außenkante bei -5 wie zuvor).
+    const legacy = archFrameLines(cover, cells, 10, 3, 5);
+    expect(legacy.filter(horiz).some((l) => l.y1 === -5)).toBe(true);
+  });
+  it("reentrante Ecke (L-Form): Außenkante der Kerbe reicht bis zur Nahtmitte → Ecke geschlossen (kein 2px-Riss)", () => {
+    // L-Tromino: Zelle 0 (oben-links), 5 (unten-links), 6 (unten-rechts). Kerbe an Position 1 (oben-rechts leer).
+    // Reentrante Innenecke: rechte Kante von Z0 trifft obere Kante von Z6. Spalten-Lücke 6px, Zeilen-Lücke 10px.
+    const cover = { 0: covCell("B1"), 5: covCell("B1"), 6: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 1: rect(106, 0, 206, 100), 5: rect(0, 110, 100, 210), 6: rect(106, 110, 206, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2); // exVOut=2 (eng) — die reentrante Kante MUSS trotzdem bis 105 reichen
+    const rgt0 = lines.find((l) => vert(l) && l.x1 === 103 && l.y1 < 50);   // rechte Kante von Z0
+    const top6 = lines.find((l) => horiz(l) && l.x1 === 103 && l.y1 > 100); // obere Kante von Z6 (linkes Ende)
+    expect(rgt0).toBeTruthy();
+    expect(top6).toBeTruthy();
+    expect(rgt0.y2).toBe(105);   // Z0-rechts endet an der Nahtmitte (nicht bei 102 wie mit flachem exVOut)
+    expect(top6.y1).toBe(105);   // Z6-oben liegt an derselben Nahtmitte → Ecke geschlossen
+  });
+  it("gerade Außenkante ohne Reentranz: bleibt beim engen exVOut (Banden nah an der Karte)", () => {
+    // Vertikales 2-Zellen-Gebäude: die Außen-Oberkante hat KEINE reentrante Diagonale → weiter exVOut.
+    const cover = { 0: covCell("B1"), 5: covCell("B1") };
+    const cells = { 0: rect(0, 0, 100, 100), 5: rect(0, 110, 100, 210) };
+    const lines = archFrameLines(cover, cells, 10, 3, 5, 2);
+    expect(lines.filter(horiz).some((l) => l.y1 === -2)).toBe(true);  // Oberkante weiterhin eng bei -2
   });
   it("zwei getrennte 1-Zellen-Gebäude: jede Zelle voll umrandet (4 Kanten)", () => {
     const cover = { 0: covCell("B1"), 1: covCell("B2") };
@@ -79,7 +122,9 @@ describe("architectEffectStrings — Gebäude-Effekte an einer Position (CardDet
   it("Formations-Gebäude: Rolle wird ausformuliert (Joker / Formations-Multiplikator)", () => {
     const preEmpty = { value: [null], score: [null], segFactor: [1] };
     const joker = { category: "formation", base: { kind: "joker", types: ["farbblock", "wiederholung"] } };
-    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (farbblock/wiederholung)"]);
+    // Sprachprüfung E1: die Joker-Typen erscheinen als AUSGESCHRIEBENE Namen (formationLabel), nicht als rohe
+    // Enum-Schlüssel — dieselbe Quelle wie im Architekt-Bildschirm und in der Core-DB (familyEffectText).
+    expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, joker)).toEqual(["Formations-Joker (Farbblock/Wiederholung)"]);
     const kathedrale = { category: "formation", base: { kind: "formMult", factor: 1.4 } };
     expect(architectEffectStrings(preEmpty, 0, { value: 5, suit: "R" }, kathedrale)).toEqual(["Formationen hier ×1,40"]);
   });

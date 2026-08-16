@@ -1,0 +1,413 @@
+<title>Pflanze · Rahmen-Bewuchs · Stiche · Synthwave</title>
+<style>
+  :root{
+    --bg:#0a0710; --panel:#161030; --line:#2f2450;
+    --ink:#f0e8ff; --dim:#c2a8dd; --dimmer:#8a6fae;
+    --acc:#8ae06a; --acc2:#ea34d1; --acc-dim:#4a7a2a; --hot:#e8ffd6;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{ background:
+      radial-gradient(1100px 700px at 82% -14%, #241b4a 0%, transparent 55%),
+      radial-gradient(900px 600px at -8% 112%, #123a1e 0%, transparent 52%), var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.5; min-height:100vh; padding:clamp(14px,2.4vw,30px); }
+  a{color:var(--acc)} code{color:var(--hot)}
+  h1{font-size:clamp(20px,2.4vw,28px); margin:0; letter-spacing:.2px; font-weight:800}
+  .sub{color:var(--dim); font-size:13px; margin-top:4px; max-width:82ch}
+  header{max-width:1180px; margin:0 auto 18px}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--dim); display:inline-flex; gap:7px; align-items:center}
+  .chip b{color:var(--ink); font-weight:600}
+  .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .stagewrap{position:sticky; top:16px; display:flex; flex-direction:column; gap:12px}
+  @media(max-width:900px){.stagewrap{position:static}}
+  .stage{position:relative; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(180deg,#100a1e,#080510); box-shadow:inset 0 0 80px #000c, 0 20px 50px -20px #000d}
+  #cv{position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1}
+  .hud{position:absolute; top:12px; left:14px; z-index:5; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--dim)}
+  .hud b{color:var(--acc)}
+  .fps{position:absolute; top:12px; right:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--dimmer)}
+  .fps b{color:var(--acc)}
+  .transport{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  button{font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 13px; border-radius:9px; cursor:pointer; transition:border-color .15s, background .15s, color .15s}
+  button:hover{border-color:var(--acc-dim)} button:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+  button.on{border-color:var(--acc); color:var(--acc)}
+  button.fall{border-color:var(--acc2); color:#f4b8e8}
+  .ctl{display:inline-flex; gap:8px; align-items:center; font-size:12px; color:var(--dim)}
+  .ctl label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.05em; font-size:11px}
+  .lvl{background:linear-gradient(180deg,var(--panel),#0a0716); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px}
+  .lvl .lab{display:flex; justify-content:space-between; align-items:baseline}
+  .lvl .lab label{font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:var(--acc)}
+  .lvl .lab .val{font-family:var(--mono); font-size:13px; color:var(--hot); font-variant-numeric:tabular-nums}
+  .stack{display:flex; flex-direction:column; gap:16px}
+  .panel{background:linear-gradient(180deg,var(--panel),#0a0716); border:1px solid var(--line); border-radius:14px; padding:16px}
+  .panel h2{margin:0 0 2px; font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--acc)}
+  .panel .note{color:var(--dimmer); font-size:11px; margin:0 0 12px}
+  fieldset{border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  .row{display:flex; flex-direction:column; gap:6px}
+  .row .lab{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .row .lab label{font-size:13px; color:var(--ink)}
+  .row .lab .val{font-family:var(--mono); font-size:12px; color:var(--acc); font-variant-numeric:tabular-nums}
+  .row .hint{font-size:11px; color:var(--dimmer); margin-top:-2px}
+  .row.color .lab{align-items:center}
+  input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:var(--line); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--acc); cursor:pointer; box-shadow:0 0 0 3px #8ae06a22, 0 0 10px var(--acc-dim)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 0 3px #8ae06a22}
+  input#tricks{height:6px}
+  .config{max-width:1180px; margin:20px auto 0}
+  .config .bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px}
+  .config h2{margin:0;font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  textarea{width:100%; min-height:220px; background:#0c0718; color:#d6ffbf; border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12px; line-height:1.55; resize:vertical}
+  .copied{color:var(--acc); font-size:12px; font-family:var(--mono); opacity:0; transition:opacity .2s} .copied.show{opacity:1}
+</style>
+
+<header>
+  <h1>Pflanze · Rahmen-Bewuchs</h1>
+  <div class="sub">Eigenständiger <b>Archetyp-Feld-Effekt</b> (unabhängig vom Karten-Moos). Neon-Pflanzen wachsen am
+    <b>Battlefield-Rahmen</b> nach innen — DNA wie der Karten-Effekt, aber <b>deutlich lockerer</b>. Der Regler ist
+    <b>Stiche 0–20</b> (Stich mit ausgewachsener Pflanzen-Karte): mit jedem Stich wächst der Rahmen etwas zu (Akkretion,
+    von <b>unten hoch</b>). Bei <b>20</b> lösen sich die Pflanzen, <b>fallen nach unten</b> und <b>verblassen in Neon-Partikel</b>.
+    <b>Mobile-Perf:</b> statisch je Stufe (kein Dauer-rAF), nur das Fallen animiert — <b>Tuft-Zahl</b> im HUD im Blick behalten.</div>
+  <div class="legend">
+    <span class="chip"><span class="dot" style="color:#8ae06a"></span> Wuchs <b>am Rahmen → innen</b></span>
+    <span class="chip"><span class="dot" style="color:#8ae06a"></span> von <b>unten hoch</b></span>
+    <span class="chip"><span class="dot" style="color:#ea34d1"></span> Neon <b>A/B</b></span>
+    <span class="chip"><span class="dot" style="color:#f4b8e8"></span> Fallen <b>@ 20</b></span>
+    <span class="chip"><span class="dot" style="color:#e8ffd6"></span> Perf: <b>Tufts + fps</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stagewrap">
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud">Stiche · <b id="hudLvl">0 / 20</b> · <span id="hudCnt">–</span></div><div class="fps" id="fps">–</div>
+    </div>
+    <div class="lvl">
+      <div class="lab"><label for="tricks">🌿 Stiche 0–20 (Zustand · kein TUNE-Wert)</label><span class="val" id="v_tricks">0 / 20</span></div>
+      <input type="range" id="tricks" min="0" max="20" step="1" value="0">
+      <div style="font-size:11px;color:var(--dimmer);margin-top:3px">Jeder Stich mit ausgewachsener Pflanze lässt den Rahmen etwas zuwachsen. <b>Stich 20</b> löst das <b>Fallen</b> aus.</div>
+    </div>
+    <div class="transport">
+      <button id="btnAuto">Auto-Stiche: aus</button>
+      <button id="btnFall" class="fall">Fallen ▶</button>
+      <span style="flex:1"></span>
+      <span class="ctl"><label for="scale">Skala</label><input type="range" id="scale" min="0.7" max="1.5" step="0.05" value="1" style="width:100px"><span class="val" id="v_scale" style="font-family:var(--mono);font-size:12px;color:var(--acc)"></span></span>
+    </div>
+  </div>
+  <div class="stack" id="panels"></div>
+</div>
+
+<div class="config">
+  <div class="bar"><h2>Pflanze-Rahmen · TUNE-Werte (Platzhalter-Datei <code>src/ui/fx/PlantFrame.jsx</code>)</h2>
+    <div style="display:flex;gap:10px;align-items:center"><span class="copied" id="copied">kopiert ✓</span><button id="btnCopy">Werte kopieren</button><button id="btnDefault">Auf Standard</button></div>
+  </div>
+  <textarea id="cfg" readonly spellcheck="false"></textarea>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var TAU=Math.PI*2;
+  var TRICKS_MAX=20;
+  var LDX=-0.55, LDY=-0.83;   // Lichtrichtung (oben-links) — wie MossGrow
+  var DEFAULTS = {
+    MOSS_DARK:"#20331a", MOSS_MID:"#c251aa", MOSS_TIP:"#9bc255",
+    NEON_A:"#ea34d1", NEON_B:"#66b450", NEON_ANGLE:-74, NEON_RIM:0.82, NEON_TIP:0.44, NEON_PUNCH:0, NEON_BLOOM:0.46, NEON_BASE:1,
+    INSET:0.005, FRAME_R:0.005, EDGE_BAND:0.065, DENSITY:1, OVERHANG:1.46, RAGGED:1, DOWN_BIAS:1, GROW_BAND:0.35, GROW_MS:260,
+    FILA_PER:8, FILA_LEN:3.3, FILA_THICK:0.6, TILT:6, SPREAD:0.72, TIP_LIGHT:0.8,
+    FALL_GRAV:2, FALL_SPREAD:0.62, FALL_DRIFT:0.74, FALL_LIFE:1050, FALL_FLASH:0, PART_SIZE:0.6
+  };
+  var T = Object.assign({}, DEFAULTS);
+  var pxFmt=function(v){return v+" px";}, xFmt=function(v){return v.toFixed(2);}, degFmt=function(v){return Math.round(v)+"°";}, onOff=function(v){return v>=0.5?"an":"aus";}, msFmt=function(v){return Math.round(v)+" ms";};
+  var GROUPS = [
+    { title:"Farben (Moos)", note:"Basis/Schatten, Mittelton und helle Spitze der Halme. Neon liegt darüber.", rows:[
+      ["MOSS_DARK","Basis / Schatten",0,0,0,null,"color"],["MOSS_MID","Mittelton",0,0,0,null,"color"],["MOSS_TIP","Spitze",0,0,0,null,"color"]
+    ]},
+    { title:"Neon-Synthwave-Licht", note:"Zwei gegenüberliegende Bühnenlichter (A/B) strahlen die Halme an — Wash, Kanten-Neon, Bloom-Aura.", rows:[
+      ["NEON_A","Licht A",0,0,0,null,"color"],
+      ["NEON_B","Licht B",0,0,0,null,"color"],
+      ["NEON_ANGLE","Licht-Achse",-90,90,1,degFmt,"Richtung der A↔B-Achse."],
+      ["NEON_RIM","Anstrahlung (Wash)",0,1,0.02,xFmt,"Wie stark die Neonfarben die Halme einfärben."],
+      ["NEON_TIP","Kanten-Neon (Spitze)",0,1,0.02,xFmt,"Additiver Neon-Saum an den Halm-Spitzen."],
+      ["NEON_PUNCH","Punch",0,1.5,0.02,xFmt,"Übersättigt/emissiv statt nur getönt."],
+      ["NEON_BLOOM","Bloom-Aura",0,1,0.02,xFmt,"Weiches Neon-Leuchten an den Spitzen."],
+      ["NEON_BASE","Basis mitfärben",0,1,1,onOff,"Toggle: Neon-Wash zieht den ganzen Halm entlang."]
+    ]},
+    { title:"Rahmen & Wuchs", note:"Moos sitzt in einem Band am Rahmen und wächst NUR von OBEN & den beiden SEITEN nach innen/herunter — UNTEN bleibt frei (wie auf der Karte). Dichte moderat halten (Mobile!).", rows:[
+      ["INSET","Rahmen-Abstand",0,0.08,0.005,xFmt,"Wie weit der Bewuchs-Rahmen von der Panel-Kante steht."],
+      ["FRAME_R","Ecken-Radius",0,0.2,0.005,xFmt,"Rundung der Rahmen-Ecken (relativ)."],
+      ["EDGE_BAND","Band-Tiefe",0.05,0.35,0.005,xFmt,"Wie tief das Moos-Band von oben/den Seiten nach innen reicht."],
+      ["DENSITY","Dichte (Moos)",0.2,1,0.02,xFmt,"Moos-Dichte im Band. Moderat halten — Mobile-Last (Tuft-Zahl im HUD)."],
+      ["OVERHANG","Überhang",0,1.5,0.02,xFmt,"Wie weit die Härchen über die Rahmenkante hinausragen (Moos-Fransen)."],
+      ["RAGGED","Zerklüftung",0,1,0.02,xFmt,"Unregelmäßige Wuchsfront statt gleichmäßig."],
+      ["DOWN_BIAS","Von-oben-herunter",0,1,0.02,xFmt,"1 = wächst klar von oben die Seiten herunter; 0 = Band füllt von der Kante nach innen."],
+      ["GROW_BAND","Wachstums-Weichheit",0.03,0.35,0.01,xFmt,"Wie weich das Moos über einen Stich einwächst."],
+      ["GROW_MS","Wachs-Tempo",80,900,10,msFmt,"Dauer, über die ein Stich das neue Moos hochwachsen lässt."]
+    ]},
+    { title:"Härchen (Moos)", note:"Viele feine, weiche Härchen je Büschel — die Moos-Textur wie auf der Karte. Für Mobile FILA_PER moderat halten.", rows:[
+      ["FILA_PER","Härchen je Büschel",3,18,1,function(v){return Math.round(v);},"Anzahl Härchen pro Büschel — mehr = weicheres Moos, aber teurer."],
+      ["FILA_LEN","Härchen-Länge",1.5,10,0.1,pxFmt,"Grundlänge der Härchen (kurz = dichtes Moos)."],
+      ["FILA_THICK","Härchen-Dicke",0.5,3,0.05,xFmt,"Strichbreite der Härchen."],
+      ["TILT","Neigung",-40,40,1,degFmt,"Grund-Neigung der Härchen."],
+      ["SPREAD","Streuung",0,1,0.02,xFmt,"Fächerbreite je Büschel (Fuzz)."],
+      ["TIP_LIGHT","Spitzenlicht",0,1,0.02,xFmt,"Helle Punkte an den Härchen-Spitzen."]
+    ]},
+    { title:"Fallen (@ Stich 20)", note:"One-Shot: die Pflanzen lösen sich, fallen nach unten und verblassen in Neon-Partikel.", rows:[
+      ["FALL_GRAV","Schwerkraft",2,20,0.5,xFmt,"Wie schnell die Partikel fallen."],
+      ["FALL_SPREAD","Streuung (Start)",0,1.2,0.02,xFmt,"Anfangs-Streuung der Fall-Richtung."],
+      ["FALL_DRIFT","Seit-Drift",0,1.5,0.02,xFmt,"Horizontales Taumeln beim Fallen."],
+      ["FALL_LIFE","Lebensdauer",400,2200,10,msFmt,"Wie lange die Partikel fallen/verglühen."],
+      ["FALL_FLASH","Blitz",0,1.5,0.02,xFmt,"Kurzes Aufblitzen beim Ablösen."],
+      ["PART_SIZE","Partikel-Größe",0.6,4,0.1,xFmt,"Größe der Neon-Partikel."]
+    ]}
+  ];
+  var INT={NEON_BASE:1,FILA_PER:1};
+  var LAYOUT={INSET:1,FRAME_R:1,EDGE_BAND:1,DENSITY:1,DOWN_BIAS:1,RAGGED:1};   // ändert Moos-Feld → neu bauen
+  var FMT={}; GROUPS.forEach(function(g){g.rows.forEach(function(r){FMT[r[0]]=r[5];});});
+  var $=function(id){return document.getElementById(id);};
+
+  (function build(){ var host=$("panels"), html="";
+    GROUPS.forEach(function(g){ html+='<div class="panel"><h2>'+g.title+'</h2><p class="note">'+g.note+'</p><fieldset>';
+      g.rows.forEach(function(r){ var key=r[0], lab=r[1], mn=r[2], mx=r[3], st=r[4], hint=r[6];
+        if(r[6]==="color") html+='<div class="row color"><div class="lab"><label for="'+key+'">'+lab+'</label><input type="color" id="'+key+'"></div></div>';
+        else html+='<div class="row"><div class="lab"><label for="'+key+'">'+lab+'</label><span class="val" id="v_'+key+'"></span></div><input type="range" id="'+key+'" min="'+mn+'" max="'+mx+'" step="'+st+'">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+      });
+      html+='</fieldset></div>';
+    });
+    host.innerHTML=html;
+    GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+      if(r[6]==="color"){ el.addEventListener("input",function(){ T[key]=el.value; markDirty(false); writeConfig(); }); return; }
+      el.addEventListener("input",function(){ var v=parseFloat(el.value); if(INT[key]) v=Math.round(v); T[key]=v; $("v_"+key).textContent=(FMT[key]||String)(T[key]); markDirty(!!LAYOUT[key]); writeConfig(); });
+    });});
+  })();
+  function syncInputs(){ GROUPS.forEach(function(g){g.rows.forEach(function(r){ var key=r[0], el=$(key);
+    if(r[6]==="color"){ el.value=T[key]; return; } el.value=T[key]; $("v_"+key).textContent=(FMT[key]||String)(T[key]); });}); writeConfig(); }
+  function numStr(v){ return Number.isInteger(v)?String(v):String(parseFloat(v.toFixed(3))); }
+  function writeConfig(){ var o=T;
+    $("cfg").value="const TUNE = {\n"
+      + "  MOSS_DARK: \""+o.MOSS_DARK+"\", MOSS_MID: \""+o.MOSS_MID+"\", MOSS_TIP: \""+o.MOSS_TIP+"\",\n\n"
+      + "  NEON_A: \""+o.NEON_A+"\", NEON_B: \""+o.NEON_B+"\", NEON_ANGLE: "+numStr(o.NEON_ANGLE)+", NEON_RIM: "+numStr(o.NEON_RIM)+", NEON_TIP: "+numStr(o.NEON_TIP)+", NEON_PUNCH: "+numStr(o.NEON_PUNCH)+", NEON_BLOOM: "+numStr(o.NEON_BLOOM)+", NEON_BASE: "+numStr(o.NEON_BASE)+",\n\n"
+      + "  INSET: "+numStr(o.INSET)+", FRAME_R: "+numStr(o.FRAME_R)+", EDGE_BAND: "+numStr(o.EDGE_BAND)+", DENSITY: "+numStr(o.DENSITY)+", OVERHANG: "+numStr(o.OVERHANG)+", RAGGED: "+numStr(o.RAGGED)+", DOWN_BIAS: "+numStr(o.DOWN_BIAS)+", GROW_BAND: "+numStr(o.GROW_BAND)+", GROW_MS: "+numStr(o.GROW_MS)+",\n\n"
+      + "  FILA_PER: "+numStr(o.FILA_PER)+", FILA_LEN: "+numStr(o.FILA_LEN)+", FILA_THICK: "+numStr(o.FILA_THICK)+", TILT: "+numStr(o.TILT)+", SPREAD: "+numStr(o.SPREAD)+", TIP_LIGHT: "+numStr(o.TIP_LIGHT)+",\n\n"
+      + "  FALL_GRAV: "+numStr(o.FALL_GRAV)+", FALL_SPREAD: "+numStr(o.FALL_SPREAD)+", FALL_DRIFT: "+numStr(o.FALL_DRIFT)+", FALL_LIFE: "+numStr(o.FALL_LIFE)+", FALL_FLASH: "+numStr(o.FALL_FLASH)+", PART_SIZE: "+numStr(o.PART_SIZE)+",\n};";
+  }
+
+  // ── Utils ──
+  function hexRGB(h){ h=String(h||"#88cc55").replace("#",""); if(h.length===3)h=h.replace(/(.)/g,"$1$1"); var n=parseInt(h,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  function rgba(c,a){ return "rgba("+(c.r|0)+","+(c.g|0)+","+(c.b|0)+","+a+")"; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t, g:a.g+(b.g-a.g)*t, b:a.b+(b.b-a.b)*t}; }
+  function clampRGB(c){ return {r:Math.max(0,Math.min(255,c.r)), g:Math.max(0,Math.min(255,c.g)), b:Math.max(0,Math.min(255,c.b))}; }
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  function satBoost(c,s){ var L=0.30*c.r+0.59*c.g+0.11*c.b; return clampRGB({r:L+(c.r-L)*(1+s), g:L+(c.g-L)*(1+s), b:L+(c.b-L)*(1+s)}); }
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function vhash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+  function fbm(x,y){ return vhash(x*0.05,y*0.05)*0.6 + vhash(x*0.13,y*0.13)*0.28 + vhash(x*0.31,y*0.31)*0.12; }
+
+  // ── Setup ──
+  var cv=$("cv"), ctx=cv.getContext("2d"), stageEl=$("stage");
+  var _axc=0,_axs=1,_cNA={r:234,g:52,b:209},_cNB={r:102,g:180,b:80};
+  var dpr=Math.min(2,window.devicePixelRatio||1), CSSW=0, CSSH=0;
+  function doResize(){ var r=stageEl.getBoundingClientRect(); CSSW=r.width; CSSH=r.height; cv.width=Math.round(CSSW*dpr); cv.height=Math.round(CSSH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); markDirty(true); }
+  window.addEventListener("resize", doResize);
+
+  var autoGrow=false, autoAcc=0, scale=1, tricks=0, last=0, fpsT=0, fpsN=0, clockT=0, frameDt=16;
+  var fieldDirty=true, field=[], frameRect=null;
+  var frontCur=0, frontTarget=0, pendingFall=false, fall=null, lastTricks=0;
+  // #perf: Moos-Feld wird OFFSCREEN je Stufe gerendert und nur geblittet (wie MossGrow/FrostIce in-game). Kein Neu-
+  // zeichnen der ~hunderte Härchen pro Frame → mobile-tauglich; nur der kurze Wachs-Übergang + das Fallen rechnen live.
+  var mossCv=document.createElement("canvas"), mossCtx=mossCv.getContext("2d");
+  var renderedFront=-1, mossDirty=true, _tuftCount=0;
+
+  function markDirty(rebuild){ if(rebuild) fieldDirty=true; mossDirty=true; }
+
+  // Moos-Band am Rahmen: jittered Grid, nur wo der nächste Rand OBEN/LINKS/RECHTS ist (unten frei). Wuchs von oben herunter.
+  function buildField(){
+    field=[];
+    var inset=Math.min(CSSW,CSSH)*T.INSET;
+    var x0=inset, y0=inset, w=CSSW-2*inset, h=CSSH-2*inset;
+    var r=Math.min(T.FRAME_R*Math.min(w,h), w/2, h/2);
+    frameRect={x0:x0,y0:y0,w:w,h:h,r:r};
+    var bandPx=Math.min(CSSW,CSSH)*T.EDGE_BAND;
+    var step=(7 + (1-T.DENSITY)*13)*scale;         // kleiner = dichteres Moos (Karte ≈ 5)
+    var rng=mulberry32(0x9127a3), id=0;
+    for(var gy=y0+step*0.5; gy<y0+h; gy+=step){
+      for(var gx=x0+step*0.5; gx<x0+w; gx+=step){
+        var x=gx+(rng()-0.5)*step*0.9, y=gy+(rng()-0.5)*step*0.9;
+        var dTop=y-y0, dL=x-x0, dR=(x0+w)-x;        // NUR oben/links/rechts (unten NICHT)
+        var fromEdge=Math.min(dTop,dL,dR);
+        // welliger/ausgefaserter innerer Rand statt gerader Linie: Band-Tiefe variiert per Rauschen
+        var localBand=bandPx*(0.5 + 0.9*fbm(x*0.6+11, y*0.6+7));
+        if(fromEdge>localBand) continue;            // nur das (wellige) Rahmen-Band; unten-Mitte bleibt frei
+        var inwardNorm=clamp01(fromEdge/localBand);
+        var innerFade=1-inwardNorm;                 // 1 am Rand … 0 innen → nach innen ausdünnen
+        var yNorm=clamp01(dTop/h);                  // 0 oben … 1 unten (an den Seiten)
+        var birthT=clamp01(T.DOWN_BIAS*yNorm + (1-T.DOWN_BIAS)*inwardNorm + T.RAGGED*(fbm(x,y)-0.5)*0.55);
+        // Richtungen wie MossGrow: Halme nach oben, Überhang nach außen
+        var wL=1/(dL+6), wR=1/(dR+6), leanX=Math.max(-1,Math.min(1,(wL-wR)*6));
+        var ang=Math.atan2(-1, leanX*0.9+(rng()-0.5)*0.2);
+        var wT=1/(dTop+4), wLo=1/(dL+4), wRo=1/(dR+4), outAng=Math.atan2(-wT, wRo-wLo);
+        var edgeOut=clamp01(1-fromEdge/(step*1.6));
+        var size=(0.55+rng()*0.8)*(0.55+0.55*innerFade), hue=rng(), tuftJit=(rng()-0.5);   // nach innen kleiner → fasert aus
+        field.push({ x:x, y:y, birthT:birthT, ang:ang, outAng:outAng, edgeOut:edgeOut, size:size, hue:hue, tuftJit:tuftJit, seed:(id++ * 2654435761)>>>0 });
+      }
+    }
+    // spät (nach innen/unten) zuerst zeichnen → früh (Rand/oben) liegt oben
+    field.sort(function(a,b){ return b.birthT-a.birthT; });
+    fieldDirty=false;
+  }
+
+  function frontOf(w){ return clamp01(w/TRICKS_MAX); }
+  function neonFor(x,y){
+    var tAxis=clamp01(0.5 + ((x-CSSW/2)*_axc + (y-CSSH/2)*_axs)/(Math.max(CSSW,CSSH)*0.62));
+    var neon=clampRGB(mix(_cNA,_cNB,tAxis)), neonP=satBoost(neon,0.45+0.9*T.NEON_PUNCH);
+    var neonHot=clampRGB(mix(neonP,{r:255,g:255,b:255},0.35+0.25*clamp01(T.NEON_PUNCH)));
+    return {neon:neon,neonP:neonP,neonHot:neonHot};
+  }
+
+  // Ein Moos-Büschel: viele feine, weiche Härchen (Karten-DNA MossGrow) + EIN weicher Bloom-Puff je Büschel
+  // (#perf: statt ein Radial-Verlauf PRO Härchen — der teuerste Posten — nur einer pro Tuft).
+  function drawTuft(g, t, mat){
+    var rng=mulberry32(t.seed), k=(t.hue-0.5);
+    var cMid=hexRGB(T.MOSS_MID), cTip=hexRGB(T.MOSS_TIP), cTipHi=clampRGB(mix(cTip,{r:255,g:255,b:230},0.55));
+    var midT=clampRGB({r:cMid.r+k*34, g:cMid.g+k*12-Math.abs(k)*10, b:cMid.b-k*22});
+    var tipT=clampRGB({r:cTip.r+k*30, g:cTip.g+k*8, b:cTip.b-k*18});
+    var N=neonFor(t.x,t.y);
+    var tiltRad=T.TILT*Math.PI/180, spreadRad=0.2+T.SPREAD*2.1, eo=t.edgeOut*T.OVERHANG;
+    var bx=t.x+Math.cos(t.outAng)*eo*3.5*mat*scale, by=t.y+Math.sin(t.outAng)*eo*3.5*mat*scale;
+    var n=Math.max(2, Math.round(T.FILA_PER*(0.45+0.55*mat)*(0.6+0.7*t.size)));
+    if(T.NEON_BLOOM>0){                                     // ein Puff je Büschel (billig, additiv)
+      var brad=T.FILA_LEN*scale*(1.9+1.4*mat)*(0.7+0.6*t.size);
+      var bcx=bx+Math.cos(t.ang)*T.FILA_LEN*scale*0.9, bcy=by+Math.sin(t.ang)*T.FILA_LEN*scale*0.9;
+      g.globalCompositeOperation="lighter";
+      var rgd=g.createRadialGradient(bcx,bcy,0,bcx,bcy,brad);
+      rgd.addColorStop(0,rgba(N.neonP,0.22*T.NEON_BLOOM*mat)); rgd.addColorStop(0.55,rgba(N.neonP,0.07*T.NEON_BLOOM*mat)); rgd.addColorStop(1,rgba(N.neonP,0));
+      g.fillStyle=rgd; g.beginPath(); g.arc(bcx,bcy,brad,0,TAU); g.fill();
+      g.globalCompositeOperation="source-over";
+    }
+    for(var i=0;i<n;i++){ var rr=rng();
+      var len=T.FILA_LEN*scale*(0.45+rr*0.95)*(0.35+0.85*mat)*(0.7+0.5*t.size)*(1+eo*0.7);
+      var am=t.ang+tiltRad+t.tuftJit*spreadRad*0.6+(rng()-0.5)*spreadRad;
+      var dirx=Math.cos(am), diry=Math.sin(am), x2=bx+dirx*len, y2=by+diry*len;
+      var mpx=(bx+x2)/2+(rng()-0.5)*len*0.35, mpy=(by+y2)/2+(rng()-0.5)*len*0.25;
+      var lightK=0.66+0.5*Math.max(0, dirx*LDX+diry*LDY), up=clamp01(Math.hypot(x2-bx,y2-by)/10);
+      var col=clampRGB(mix(midT,tipT,(0.25+0.7*rng())*(0.4+0.6*mat)));
+      col=clampRGB({r:col.r*lightK*(0.85+0.3*up), g:col.g*lightK*(0.85+0.3*up), b:col.b*lightK*(0.85+0.3*up)});
+      var washU=T.NEON_BASE>=0.5 ? (0.70+0.20*up) : (0.26+0.36*up);
+      if(T.NEON_RIM>0) col=clampRGB(mix(col,N.neonP,T.NEON_RIM*washU));
+      g.strokeStyle=rgba(col,0.92); g.lineWidth=T.FILA_THICK*(0.6+0.7*rng())*scale; g.lineCap="round";
+      g.beginPath(); g.moveTo(bx,by); g.quadraticCurveTo(mpx,mpy,x2,y2); g.stroke();
+      if(T.NEON_TIP>0){
+        var rimI=clamp01(T.NEON_TIP*(0.18+0.82*up)*(0.5+0.7*eo)*(0.55+0.45*mat));
+        if(rimI>0.03){ g.globalCompositeOperation="lighter";
+          g.strokeStyle=rgba(N.neonP,rimI*(0.5+0.4*T.NEON_PUNCH)); g.lineWidth=T.FILA_THICK*(0.5+0.5*rng())*scale;
+          g.beginPath(); g.moveTo((bx+x2)*0.5,(by+y2)*0.5); g.lineTo(x2,y2); g.stroke();
+          g.fillStyle=rgba(N.neonHot,rimI*0.55); g.beginPath(); g.arc(x2,y2,T.FILA_THICK*0.6*scale,0,TAU); g.fill();
+          g.globalCompositeOperation="source-over";
+        }
+      }
+      if(rng()<T.TIP_LIGHT*0.55){ g.fillStyle=rgba(cTipHi,0.6*T.TIP_LIGHT); g.beginPath(); g.arc(x2,y2,T.FILA_THICK*0.55*scale,0,TAU); g.fill(); }
+    }
+  }
+
+  // ── Fallen ──
+  function startFall(){
+    var front=Math.max(frontCur,0.5), parts=[]; var tips=[];
+    for(var i=0;i<field.length;i++){ var t=field[i]; var mat=clamp01((front-t.birthT)/T.GROW_BAND); if(mat<0.3) continue;
+      // eine Handvoll Fall-Partikel je Tuft (Perf: begrenzt)
+      var k=Math.max(1, Math.round(T.FILA_PER*0.4));
+      for(var j=0;j<k;j++){
+        var jitter=(Math.random()-0.5)*T.FALL_SPREAD;
+        var vx=Math.sin(jitter)*2*scale, vy=(0.4+0.6*Math.random())*scale;
+        var N=neonFor(t.x,t.y);
+        parts.push({ x:t.x+(Math.random()-0.5)*6*scale, y:t.y+(Math.random()-0.5)*6*scale, vx:vx, vy:vy,
+          ph:Math.random()*TAU, c:N.neonP, hot:N.neonHot, sz:(0.7+0.7*Math.random()) });
+      }
+      if(parts.length>900) break;
+    }
+    fall={ t0:clockT, parts:parts };
+  }
+  function drawFall(g, age){
+    var life=T.FALL_LIFE, k=age/life;
+    if(k>=1){ fall=null; tricks=0; lastTricks=0; frontCur=0; frontTarget=0; pendingFall=false;
+      $("tricks").value=0; $("v_tricks").textContent="0 / "+TRICKS_MAX; $("hudLvl").textContent="0 / "+TRICKS_MAX; return; }
+    if(T.FALL_FLASH>0 && k<0.4){ var fa=(1-k/0.4)*T.FALL_FLASH; g.globalCompositeOperation="lighter";
+      g.fillStyle=rgba(_cNB, 0.05*fa); g.fillRect(0,0,CSSW,CSSH); g.globalCompositeOperation="source-over"; }
+    var step=Math.min(3, frameDt/16.67);
+    g.globalCompositeOperation="lighter";
+    var ps=T.PART_SIZE*scale;
+    for(var i=0;i<fall.parts.length;i++){ var p=fall.parts[i];
+      p.vy += T.FALL_GRAV*0.01*scale*step;
+      p.x += (p.vx + Math.sin(clockT*0.004+p.ph)*T.FALL_DRIFT)*step;
+      p.y += p.vy*step;
+      var a=Math.pow(1-k,1.1);
+      g.fillStyle=rgba(p.c, 0.5*a); g.beginPath(); g.arc(p.x,p.y,ps*p.sz*1.7,0,TAU); g.fill();
+      g.fillStyle=rgba(p.hot, 0.9*a); g.beginPath(); g.arc(p.x,p.y,ps*p.sz*0.7,0,TAU); g.fill();
+    }
+    g.globalCompositeOperation="source-over";
+  }
+
+  // ── Offscreen: statisches Moos-Feld bei frontCur (nur bei Stufen-/TUNE-Wechsel neu) ──
+  function renderMoss(){
+    if(fieldDirty) buildField();
+    var nang=T.NEON_ANGLE*Math.PI/180; _axc=Math.cos(nang); _axs=Math.sin(nang);
+    _cNA=hexRGB(T.NEON_A); _cNB=hexRGB(T.NEON_B);
+    mossCv.width=Math.max(1,Math.round(CSSW*dpr)); mossCv.height=Math.max(1,Math.round(CSSH*dpr));
+    mossCtx.setTransform(dpr,0,0,dpr,0,0); mossCtx.clearRect(0,0,CSSW,CSSH);
+    var front=frontCur, drawn=0;
+    for(var i=0;i<field.length;i++){ var t=field[i]; var mat=clamp01((front-t.birthT)/T.GROW_BAND); if(mat<=0) continue; drawTuft(mossCtx,t,mat); drawn++; }
+    _tuftCount=drawn; renderedFront=front; mossDirty=false;
+  }
+
+  // ── Frame: nur blitten (+ Fallen live) ──
+  function render(){
+    if(fieldDirty){ buildField(); mossDirty=true; }
+    if(mossDirty || Math.abs(frontCur-renderedFront)>0.004) renderMoss();
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,CSSW,CSSH);
+    if(frameRect){ var fr=frameRect;                       // dezenter Rahmen (Kontext)
+      ctx.strokeStyle="rgba(150,120,180,0.10)"; ctx.lineWidth=1;
+      roundRect(ctx,fr.x0,fr.y0,fr.w,fr.h,fr.r); ctx.stroke();
+    }
+    var fieldFade = fall ? Math.pow(clamp01(1-(clockT-fall.t0)/T.FALL_LIFE),1.4) : 1;
+    ctx.globalAlpha=fieldFade;
+    ctx.drawImage(mossCv, 0,0,mossCv.width,mossCv.height, 0,0,CSSW,CSSH);   // statisches Moos-Bitmap
+    ctx.globalAlpha=1;
+    if(fall) drawFall(ctx, clockT-fall.t0);
+  }
+  function roundRect(g,x,y,w,h,r){ r=Math.min(r,w/2,h/2); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+
+  function frame(now){
+    var dt=Math.min(50, now-last); last=now; clockT+=dt; frameDt=dt;
+    if(autoGrow){ autoAcc+=dt; if(autoAcc>650){ autoAcc=0; setTricks(tricks>=TRICKS_MAX?0:tricks+1); } }
+    var k=1-Math.exp(-dt/Math.max(1,T.GROW_MS));
+    frontCur += (frontTarget-frontCur)*k;
+    if(pendingFall && frontCur>=frontTarget-0.008){ startFall(); pendingFall=false; }
+    render();
+    fpsN++; if(now-fpsT>500){ $("fps").innerHTML=Math.round(fpsN*1000/(now-fpsT))+" fps"; $("hudCnt").textContent=_tuftCount+" tufts (cached)"; fpsN=0; fpsT=now; }
+    requestAnimationFrame(frame);
+  }
+
+  function setTricks(w){
+    w=Math.max(0,Math.min(TRICKS_MAX,Math.round(w)));
+    frontTarget=frontOf(w);
+    if(w===TRICKS_MAX && lastTricks<TRICKS_MAX) pendingFall=true;
+    if(w<TRICKS_MAX) pendingFall=false;
+    tricks=w; lastTricks=w;
+    $("tricks").value=w; $("v_tricks").textContent=w+" / "+TRICKS_MAX; $("hudLvl").textContent=w+" / "+TRICKS_MAX;
+  }
+
+  // ── Controls ──
+  $("tricks").addEventListener("input", function(){ setTricks(parseFloat(this.value)); });
+  $("btnAuto").addEventListener("click", function(){ autoGrow=!autoGrow; this.classList.toggle("on",autoGrow); this.textContent="Auto-Stiche: "+(autoGrow?"an":"aus"); });
+  $("btnFall").addEventListener("click", function(){ setTricks(TRICKS_MAX); frontCur=1; frontTarget=1; pendingFall=false; startFall(); });
+  $("scale").addEventListener("input", function(){ scale=parseFloat(this.value); $("v_scale").textContent=scale.toFixed(2)+"×"; markDirty(true); });
+  $("btnCopy").addEventListener("click", function(){ var ta=$("cfg"); ta.select(); try{ document.execCommand("copy"); }catch(e){} navigator.clipboard&&navigator.clipboard.writeText(ta.value); var c=$("copied"); c.classList.add("show"); setTimeout(function(){c.classList.remove("show");},1200); });
+  $("btnDefault").addEventListener("click", function(){ T=Object.assign({},DEFAULTS); syncInputs(); markDirty(true); });
+
+  syncInputs(); $("v_scale").textContent="1.00×"; setTricks(0);
+  doResize(); requestAnimationFrame(function(t){ last=t; fpsT=t; requestAnimationFrame(frame); });
+})();
+</script>

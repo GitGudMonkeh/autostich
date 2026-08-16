@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { DECK_BORDER } from "./modalStyle.jsx"; // #365-Folge: deck-getönter Rahmen (Soundtrack-Panel)
+import { t } from "../i18n/index.js"; // #sprache
 
 /* Musik-Panel (#111) — ganz unten im Run: aktueller Track-Titel + „Nächster Track"-Button (⏭) rechtsbündig.
    Der Skip-Button sitzt wieder hier im Panel (vorher im Header, #133). Langer Titel läuft durch (Marquee),
    sobald er nicht in den Rahmen passt. `onNext` fehlt → Button entfällt (z. B. wenn kein Handler gesetzt ist). */
 export function MusicBar({ title, onNext }) {
   return (
-    <div className="rounded-xl p-3 flex items-center gap-2 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+    <div className="rounded-xl p-3 flex items-center gap-2 as-panel as-panel-deck" style={{ background: "#17171c", border: `1px solid ${DECK_BORDER}` }}>
       <span className="text-base" aria-hidden>🎵</span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">Musik</div>
+        <div className="text-[10px] uppercase tracking-wide opacity-50">{t("music.title")}</div>
         <MarqueeText text={title || "—"} className="text-sm font-bold" />
       </div>
       {onNext && (
-        <button onClick={onNext} aria-label="Nächster Track"
-          title={title ? `Läuft: ${title} — nächster Track` : "Nächster Track"}
+        <button onClick={onNext} aria-label={t("music.next")}
+          title={title ? t("music.playing", { title }) : t("music.next")}
           className="shrink-0 rounded px-2.5 py-1 text-base leading-none transition-all hover:brightness-110"
           style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
           ⏭

@@ -1,15 +1,20 @@
-import { PERK_DEFS, CATEGORIES, rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor } from "../game/perks.js";
-import { familyDef, hasCritFamily } from "../game/families.js";
+import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
+import { hasCritFamily } from "../game/families.js";
+import { perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../game/constants.js"; // Legendär-Perk-Phase erkennen → eigener Reroll-Pool
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { PerkList, DeckHistogram } from "./BuildSummary.jsx";
+import { familyDef, perkCat, perkDef, rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsname zur Anzeigezeit
+import { t as tr, fmtNum } from "../i18n/index.js"; // tr = Alias: `t` ist hier lokal die Stufe
+import { PerkList, DeckStrength } from "./BuildSummary.jsx";
 import { DevPerkCatalog } from "./DevPerkCatalog.jsx"; // Dev-Run: Voll-Katalog statt Zufallsangebot
 import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
+import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
-const fmtMult = (x) => x.toFixed(2).replace(".", ",");
+const fmtMult = (x) => fmtNum(x.toFixed(2));
 
 /* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den
    Familiennamen mit römischer Stufe, die Stufenfarbe (grau/grün/blau/lila) und — bei bereits gehaltener
@@ -18,59 +23,69 @@ function offerView(entry, familyTiers = {}) {
   if (entry && typeof entry === "object" && entry.familyId) {
     const fam = familyDef(entry.familyId);
     const t = entry.tier;
-    const tm = tierMeta(t) || { color: "#8a8a95", label: "" };
+    const tm = tierMeta(t) || { color: "#8a8a95" };
     const held = familyTierOf(familyTiers, entry.familyId); // 0 = neu, sonst gehaltener Rang
     return {
-      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: CATEGORIES[fam.cat],
-      accent: tm.color, tierLabel: tm.label, tier: t, held, upgrade: held > 0,
+      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: perkCat(fam.cat),
+      accent: tm.color, tierLabel: rarityLabel(t), tier: t, held, upgrade: held > 0,
       name: `${fam.name} ${romanOf(t)}`, desc: (fam.tiers[t] || {}).desc || "",
       glow: t >= 3, // Selten/Rar erhalten einen dezenten Farbschein
     };
   }
-  const p = PERK_DEFS[entry];
+  const p = perkDef(entry);
   const rar = rarityOf(entry);
   const rm = RARITY_META[rar];
-  return { key: entry, entry, isFamily: false, cat: CATEGORIES[p.cat], accent: rm.color, rar, rm,
+  return { key: entry, entry, isFamily: false, cat: perkCat(p.cat), accent: rm.color, rar, rm,
            leg: rar === "legendary", name: p.label, desc: p.desc };
 }
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
 export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
-  // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
-  const rerollTokens = state.rerollsPerk || 0;
+  // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
+  // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
+  const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
+  const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   const canReroll = !!onReroll && rerollTokens > 0;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
-  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning, statCritChance = 0, statCritMult = 0 } = state;
-  // Crit inkl. Blitz-Basis (lightning) + Crit-Chance-Stat — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
+  const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;
+  // Crit inkl. Blitz-Basis (lightning) + Präzision-Familien — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
   // #181: ungeklemmt anzeigen (Gesamt-Crit kann > 100 % sein → speist L6 „Raserei" / Familie D „Überschusskrit").
   const critRaw = totalCritChanceRaw(state);
   const critPct = Math.round(Math.max(0, critRaw) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
-  const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active) || statCritChance > 0 || statCritMult > 0;
+  const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active);
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={{ background: "#181820", border: "1px solid #33333e" }}>
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
+        <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>
-            {(state.perks || []).length === 0 ? "Start" : `Durchlauf ${(state.cycle || 0) + 1}`}
+          <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
+            {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>
-          <h2 className="text-xl font-bold mt-1">Wähle einen Perk</h2>
+          <h2 className="text-xl font-bold mt-1">{tr("perk.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
+        {!state.devMode && (onDecline || canReroll) && (
+          <ActionBar pad={6}>
+            {canReroll && <ActionButton kind="reroll" flex onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
+            {onDecline && <ActionButton kind="decline" flex onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
+          </ActionBar>
+        )}
+
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-3">
-          {showCrit && <span><span className="opacity-50">Crit </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
-          <span><span className="opacity-50">Score-Mult </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
+          {showCrit && <span><span className="opacity-50">{tr("perk.stat.crit")} </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
+          <span><span className="opacity-50">{tr("perk.stat.scoreMult")} </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
         </div>
 
         {state.devMode ? (
           <DevPerkCatalog offer={offer} onPick={onPick} onDecline={onDecline} />
         ) : (
-        <div className="grid sm:grid-cols-3 gap-3 mt-5">
+        <div className="grid sm:grid-cols-3 gap-2.5 mt-4" data-tut="perk-offer">
           {offer.map((entry) => {
             const v = offerView(entry, state.familyTiers);
             const cat = v.cat;
@@ -78,7 +93,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               <button
                 key={v.key}
                 onClick={() => onPick(v.entry)}
-                className={`text-left rounded-xl p-4 h-full flex flex-col gap-2 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ background: "#20202a",
                          // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
                          border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
@@ -101,7 +116,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                       {v.upgrade && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${v.accent}14`, color: v.accent, border: `1px dashed ${v.accent}88` }}>
-                          ⬆ AUFWERTEN · {romanOf(v.held)}→{romanOf(v.tier)}
+                          {tr("perk.upgrade", { from: romanOf(v.held), to: romanOf(v.tier) })}
                         </span>
                       )}
                     </>
@@ -115,7 +130,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                   )}
                 </div>
                 <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
-                <div className="text-sm opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
+                <div className="text-[13px] opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );
           })}
@@ -124,48 +139,27 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
 
         {!state.devMode && (
         <div className="text-center text-xs opacity-40 mt-3">
-          Jeder Perk ist pro Lauf nur einmal wählbar.
+          {tr("perk.onceHint")}
         </div>
         )}
 
-        {/* #138: Neu würfeln (falls verfügbar) + „Alle ablehnen" — eine Perk-Runde ist nie „verschwendet" (keine Münzen mehr, #225.1). Im Dev-Modus hat der Katalog sein eigenes „Überspringen". */}
-        {!state.devMode && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
-          {canReroll && (
-            <button onClick={onReroll}
-              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: LEG_GOLD, border: `1px solid ${LEG_GOLD}66` }}>
-              🎲 Angebot neu würfeln · {rerollTokens} übrig
-            </button>
-          )}
-          {onDecline && (
-            <button onClick={onDecline}
-              className="text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-              style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
-              Alle ablehnen
-            </button>
-          )}
-        </div>
-        )}
-
-        {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). */}
-        <div className="mt-5 pt-4 border-t grid sm:grid-cols-2 gap-4" style={{ borderColor: "#2a2a33" }}>
-          <div>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((t) => t > 0).length;
-                return `Dein Build — ${n} Perk${n === 1 ? "" : "s"}`; })()}
-            </div>
-            <PerkList perks={perks} familyTiers={state.familyTiers} zinsBonus={state.zinsBonus} empty="Noch keine Perks gewählt." />
+        {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
+            Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}
+        {/* Reihenfolge: Deck-Stärke oben, dann Formationen, „Dein Build" ganz unten — alle als klappbare Felder. */}
+        {/* data-tut: Der Build-Coach-Mark zeigt HIER hin, nicht auf das BuildPanel unter dem Brett — das läge
+            hinter diesem Vollbild-Overlay und wäre nie zu sehen. */}
+        <div className="mt-4" data-tut="perk-build">
+          <CollapsibleField title={tr("perk.deckStrength")}>
+            <DeckStrength deck={deck} />
+          </CollapsibleField>
+          {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
+          <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
+            <FormationPanel state={state} title={tr("perk.formations")} collapsible defaultOpen={false} />
           </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">Deck-Werte je Farbe</div>
-            <DeckHistogram deck={deck} />
-          </div>
-        </div>
-
-        {/* #161 FB-1: aktive Formationen des Layouts als Kontext (v. a. für A-Deck-/Formations-Perks). */}
-        <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
-          <FormationPanel state={state} />
+          <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
+            return tr("perk.build", { count: n }); })()} defaultOpen={false}>
+            <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty={tr("perk.build.empty")} />
+          </CollapsibleField>
         </div>
         </div>
       </div>

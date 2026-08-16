@@ -41,3 +41,30 @@ export function greedyFormationStep(s) {
   }
   return best ? { type: "SWAP_CARDS", i: best.i, j: best.j } : { type: "CONFIRM_FORMATION" };
 }
+
+// FRONT-LOAD-Gegner (Vabanque & künftige Eröffnungs-Perks): arrangiert die stärksten Karten auf die ersten
+// `openTricks` Positionen. Das ist der Missbrauchsfall, den der constants.js-Kommentar seit #203 als Grund für
+// VABANQUE_MAX_PAYOUTS nennt, den die Sim aber nie modelliert hat — `playerOrder` ist PERSISTENT, ein Spieler
+// kann die Eröffnung also über mehrere Formationsphasen hinweg dauerhaft stapeln (4 Energie je Phase, ~13 Phasen
+// je Lauf ⇒ die 5 Eröffnungsplätze sind nach 1–2 Phasen sortiert und bleiben es).
+//
+// Bewusst NICHT formations-optimierend: dieser Gegner maximiert die Eröffnungs-Winrate, nicht den Score. Er ist
+// die OBERE Schranke für Eröffnungs-Perks, kein realistischer Spielstil — so gelesen gehören seine Zahlen auch
+// interpretiert (Worst Case, nicht Erwartungswert).
+//
+// Ein Tausch pro Aufruf (wie greedyFormationStep); ohne Energie liefert der Reducer denselben State → CONFIRM.
+export function frontLoadFormationStep(s, openTricks = 5) {
+  const n = s.playerOrder.length;
+  const lim = Math.min(openTricks, n);
+  const val = (p) => s.deck[s.playerOrder[p]]?.value ?? -Infinity;
+  for (let p = 0; p < lim; p++) {
+    // Stärkste Karte AUSSERHALB der Eröffnung suchen, die die hier liegende schlägt.
+    let best = -1, bestV = val(p);
+    for (let q = lim; q < n; q++) if (val(q) > bestV) { bestV = val(q); best = q; }
+    if (best < 0) continue;
+    // Nicht anwendbar (Energie leer, Gletscher starr, gesperrte Zelle) → nächste Eröffnungsposition probieren,
+    // statt sofort zu bestätigen; sonst blockiert eine einzelne starre Zelle den ganzen Gegner.
+    if (reducer(s, { type: "SWAP_CARDS", i: p, j: best }) !== s) return { type: "SWAP_CARDS", i: p, j: best };
+  }
+  return { type: "CONFIRM_FORMATION" };
+}

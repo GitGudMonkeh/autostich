@@ -11,67 +11,146 @@
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
-     { kind: "monoStatRun" } → profile.hadMonoStatRun === true  (Lauf mit nur einem Stat, Challenge 4)
-     { kind: "monoArchetypeRun", archetype } → profile.monoArchetypeRuns[archetype] (Lauf nur mit dieser Fraktion, #215 deck_c5..c8)
-     { kind: "allArchetypesRun" }            → profile.hadAllArchetypesRun === true (Lauf mit allen vier Fraktionen, #215 deck_c9)
-     { kind: "masteryGrade", n }             → profile.masteryGrade >= n (Meister I..V = n1–5 #217 deck_rank_* · Großmeister I..V = n6–10 #226 deck_gm_*)
+     { kind: "monoArchetypeRun", archetype, n } → profile.monoArchetypeRuns[archetype] >= n (#310: n Mono-Läufe dieser Fraktion — deck_feuer/eis/blitz/pflanze)
+     { kind: "allMonoArchetypes", n }           → alle vier monoArchetypeRuns[*] >= n (#310: alle Element-Decks frei → Prisma-Multi deck_elementar)
+     { kind: "allArchetypesRun" }               → profile.hadAllArchetypesRun === true (EIN Lauf mit allen vier Fraktionen, #215)
+     { kind: "gottgleichRun" }  → profile.hadGottgleichRun === true       (#303: erstmals einen GOTTGLEICH-Stich getriggert)
+     { kind: "meisterNoReroll" }→ profile.hadMeisterNoRerollRun === true  (#303 Sparfuchs: Meisterrang-Wochenlauf komplett ohne Reroll)
+     { kind: "championWeek" }   → profile.hadChampionWeek === true        (#303 Meister: Platz 1 einer Wochen-Rangliste — Champion-Board)
+     { kind: "onboardingDone" } → onboarding >= 6 (Genesis — Onboarding-Starter, frei nach abgeschlossenem Onboarding)
 
    Katalog wächst „Deck für Deck": ein neues Deck = ein Eintrag hier + sein Bild-Paar in
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
+import { onboardingDone } from "./progression.js"; // #: Genesis-Freischaltung koppelt an abgeschlossenes Onboarding (6/6)
 
-import { masteryGradeLabel } from "./mastery.js"; // #217/#226: Rang-Label (Meister „Rang I" / Großmeister „Großmeister I") für Freischalt-Texte
-
-// Progressions-Schwellen (gespielte Läufe) — Issue #190.
-export const DECK_GAME_UNLOCKS = [5, 15, 25, 35];        // deck_p1..p4
-export const BATTLEFIELD_GAME_UNLOCKS = [10, 20, 30, 40]; // bf_1..bf_4
+// #310: Element-Challenge-Decks verlangen N abgeschlossene Läufe mit reinem Mono-Build der Fraktion
+// (extends #215 „1 Lauf" → Zähler). Prisma (Element-Bund) = alle vier Element-Decks frei (quasi 4×N Läufe).
+export const MONO_CHALLENGE_N = 5;
 
 export const DECK_DEFS = {
   default: { id: "default", name: "Standard",  unlock: null },
-  // Progression (5/15/25/35 Läufe):
-  deck_p1: { id: "deck_p1", name: "Neonstadt",         unlock: { kind: "games", n: 5 } },
-  deck_p2: { id: "deck_p2", name: "Tankstopp",         unlock: { kind: "games", n: 15 } },
-  deck_p3: { id: "deck_p3", name: "Megacity",          unlock: { kind: "games", n: 25 } },
-  deck_p4: { id: "deck_p4", name: "Mondpagode",        unlock: { kind: "games", n: 35 } },
-  // Challenge-Decks (nur Decks, keine Battlefields):
-  deck_c1: { id: "deck_c1", name: "Endloskette",       unlock: { kind: "streak", n: 100 } },
-  deck_c2: { id: "deck_c2", name: "Rekordhalter",      unlock: { kind: "score",  n: 10_000_000 } },
-  deck_c3: { id: "deck_c3", name: "Sparfuchs",         unlock: { kind: "noRerollRun" } }, // #214: löst noBuyRun ab (Shop → Architekt, #202)
-  // deck_c4 (monoStatRun) folgt.
-  // Archetyp-Challenge-Decks (#215): Mono-Archetyp-Lauf je Fraktion + Element-Bund (alle vier).
-  deck_c5: { id: "deck_c5", name: "Reines Feuer",  unlock: { kind: "monoArchetypeRun", archetype: "fire" } },
-  deck_c6: { id: "deck_c6", name: "Reiner Blitz",  unlock: { kind: "monoArchetypeRun", archetype: "lightning" } },
-  deck_c7: { id: "deck_c7", name: "Reines Eis",    unlock: { kind: "monoArchetypeRun", archetype: "ice" } },
-  deck_c8: { id: "deck_c8", name: "Reine Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant" } },
-  deck_c9: { id: "deck_c9", name: "Element-Bund",  unlock: { kind: "allArchetypesRun" } },
-  // Meistergrad-Decks (#217): je erreichter Grad (I..V) schaltet eines frei — Beweis der laufübergreifenden Meisterschaft.
-  deck_rank_bronze:  { id: "deck_rank_bronze",  name: "Bronze",  unlock: { kind: "masteryGrade", n: 1 } },
-  deck_rank_silber:  { id: "deck_rank_silber",  name: "Silber",  unlock: { kind: "masteryGrade", n: 2 } },
-  deck_rank_gold:    { id: "deck_rank_gold",    name: "Gold",    unlock: { kind: "masteryGrade", n: 3 } },
-  deck_rank_platin:  { id: "deck_rank_platin",  name: "Platin",  unlock: { kind: "masteryGrade", n: 4 } },
-  deck_rank_diamond: { id: "deck_rank_diamond", name: "Diamant", unlock: { kind: "masteryGrade", n: 5 } },
-  // Großmeister-Decks (#226): je erreichter Großmeister-Rang (I..V = masteryGrade 6..10) schaltet eines frei.
-  deck_gm_rot:   { id: "deck_gm_rot",   name: "Rot",          unlock: { kind: "masteryGrade", n: 6 } },
-  deck_gm_blau:  { id: "deck_gm_blau",  name: "Blau",         unlock: { kind: "masteryGrade", n: 7 } },
-  deck_gm_gruen: { id: "deck_gm_gruen", name: "Grün",         unlock: { kind: "masteryGrade", n: 8 } },
-  deck_gm_lila:  { id: "deck_gm_lila",  name: "Lila",         unlock: { kind: "masteryGrade", n: 9 } },
-  deck_gm_marco: { id: "deck_gm_marco", name: "Marco stinkt", unlock: { kind: "masteryGrade", n: 10 } },
+  // #299: alte „Läufe"-Progressions-Decks (deck_p1–4) + Challenge-Decks entfernt — sauberer Neustart mit Standard
+  // (Prisma), Genesis und den kaufbaren DP-Packs. Die Freischalt-Kinds bleiben vorerst dormant in isUnlocked.
+  // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
+  // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
+  deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  deck_lofi:   { id: "deck_lofi",   name: "Kitsune",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  // #IP: deck_kaiju / deck_aura / deck_mecha entfernt.
+  // v0.4 Kauf-Packs:
+  deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  deck_cat:        { id: "deck_cat",        name: "Biolumen", unlock: { kind: "buy", ownKey: "pack:cat" } },
+  deck_spacedog:   { id: "deck_spacedog",   name: "Kosmospanther",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
+  // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
+  deck_gottgleich: { id: "deck_gottgleich", name: "Ascension", unlock: { kind: "gottgleichRun" } },
+  deck_serie300:   { id: "deck_serie300",   name: "Flamingo",   unlock: { kind: "streak", n: 300 } },
+  deck_serie600:   { id: "deck_serie600",   name: "Peacock",    unlock: { kind: "streak", n: 600 } },
+  deck_serie1500:  { id: "deck_serie1500",  name: "Königspfau", unlock: { kind: "streak", n: 1500 } },
+  deck_sparfuchs:  { id: "deck_sparfuchs",  name: "Sparfuchs",  unlock: { kind: "meisterNoReroll" } },
+  // #310 Element-Challenge-Decks (Freischalt via N Mono-Läufe je Fraktion):
+  deck_feuer:     { id: "deck_feuer",     name: "Feuer",   unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  deck_eis:       { id: "deck_eis",       name: "Eis",     unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  deck_blitz:     { id: "deck_blitz",     name: "Blitz",   unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  deck_pflanze:   { id: "deck_pflanze",   name: "Pflanze", unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  // #310 Prisma (Multi/Element-Bund): frei, sobald alle vier Element-Decks freigeschaltet sind.
+  deck_elementar: { id: "deck_elementar", name: "Prisma",  unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  // #310 DP-Kauf-Packs (Preis in themes.js):
+  deck_ronin:     { id: "deck_ronin",     name: "Ronin",          unlock: { kind: "buy", ownKey: "pack:ronin" } },
+  deck_kosmos:    { id: "deck_kosmos",    name: "Schwarzes Loch", unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  deck_oni:       { id: "deck_oni",       name: "Roter Oni",      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  deck_geometrie: { id: "deck_geometrie", name: "Seraph",         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  // #311 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
+  deck_sonne:  { id: "deck_sonne",  name: "Kolossus",         unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  deck_drache: { id: "deck_drache", name: "Laternenfest",     unlock: { kind: "buy", ownKey: "pack:drache" } },
+  // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
+  deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  deck_polarlicht: { id: "deck_polarlicht", name: "Scarab",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  deck_obsidian:   { id: "deck_obsidian",   name: "Obsidian",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
+  // #tiered Titan — Stufen-Challenge über Score (25/50/100 Mio). Die drei Skins sind einzeln freischaltbar.
+  deck_titan1:  { id: "deck_titan1",  name: "Titan · Erwachen",   unlock: { kind: "score", n: 25000000 } },
+  deck_titan2:  { id: "deck_titan2",  name: "Titan · Aufstieg",   unlock: { kind: "score", n: 50000000 } },
+  deck_titan3:  { id: "deck_titan3",  name: "Titan · Entfesselt", unlock: { kind: "score", n: 100000000 } },
+  // #tiered Hirsch — Stufen-Challenge über abgeschlossene Läufe (10/20/30).
+  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "games", n: 10 } },
+  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "games", n: 20 } },
+  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "games", n: 30 } },
+  // #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Gaia · Glazius · Voltaris · Pyrros
+  deck_gaia:     { id: "deck_gaia",     name: "Gaia",     unlock: { kind: "buy", ownKey: "pack:gaia" } },
+  deck_glazius:  { id: "deck_glazius",  name: "Glazius",  unlock: { kind: "buy", ownKey: "pack:glazius" } },
+  deck_voltaris: { id: "deck_voltaris", name: "Voltaris", unlock: { kind: "buy", ownKey: "pack:voltaris" } },
+  deck_pyrros:   { id: "deck_pyrros",   name: "Pyrros",   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
 };
+
+/* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
+   hier ein zweites Mal abgetippt — beim Umbenennen eines Decks wäre das Spielfeld zurückgeblieben.
+   Jetzt eine Quelle; nur das Suffix ist eigener Text. */
+export const BF_SUFFIX = " · Battlefield";
+const bfName = (deckId) => `${DECK_DEFS[deckId].name}${BF_SUFFIX}`;
 
 export const BATTLEFIELD_DEFS = {
   default: { id: "default", name: "Standard",       unlock: null },
-  // Progression (10/20/30/40 Läufe):
-  bf_1:    { id: "bf_1",    name: "Neon-Boulevard",  unlock: { kind: "games", n: 10 } },
-  bf_2:    { id: "bf_2",    name: "Nachttankstelle", unlock: { kind: "games", n: 20 } },
-  bf_3:    { id: "bf_3",    name: "Neon City",       unlock: { kind: "games", n: 30 } },
-  bf_4:    { id: "bf_4",    name: "Mondsee",         unlock: { kind: "games", n: 40 } },
-  // Battlefields KOMPLETT (4 Progressionen + Default). Battlefields haben KEINE Challenge-Varianten (Issue #190).
+  // #299: alte „Läufe"-Progressions-Battlefields (bf_1–4) entfernt. Deck-Werkstatt Kauf-Packs (#deckshop):
+  // das Battlefield ist Teil des Packs (ein Besitz-Schlüssel).
+  bf_sunset: { id: "bf_sunset", name: bfName("deck_sunset"), unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  bf_lofi:   { id: "bf_lofi",   name: bfName("deck_lofi"),      unlock: { kind: "buy", ownKey: "pack:lofi" } },
+  // #IP: bf_kaiju / bf_aura / bf_mecha entfernt.
+  // v0.4 Kauf-Packs (Battlefield = Teil des Packs, gleicher Besitz-Schlüssel):
+  bf_beach:      { id: "bf_beach",      name: bfName("deck_beach"),     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  bf_cat:        { id: "bf_cat",        name: bfName("deck_cat"), unlock: { kind: "buy", ownKey: "pack:cat" } },
+  bf_spacedog:   { id: "bf_spacedog",   name: bfName("deck_spacedog"),   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
+  bf_wale:       { id: "bf_wale",       name: bfName("deck_wale"),       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  bf_onboarding: { id: "bf_onboarding", name: bfName("deck_onboarding"),         unlock: { kind: "onboardingDone" } }, // #: wie deck_onboarding — via Onboarding-Abschluss frei
+  // #303 Challenge-Battlefields (Teil des jeweiligen Challenge-Packs, gleiche Bedingung wie das Deck).
+  bf_gottgleich: { id: "bf_gottgleich", name: bfName("deck_gottgleich"), unlock: { kind: "gottgleichRun" } },
+  bf_serie300:   { id: "bf_serie300",   name: bfName("deck_serie300"),  unlock: { kind: "streak", n: 300 } },
+  bf_serie600:   { id: "bf_serie600",   name: bfName("deck_serie600"),    unlock: { kind: "streak", n: 600 } },
+  bf_serie1500:  { id: "bf_serie1500",  name: bfName("deck_serie1500"), unlock: { kind: "streak", n: 1500 } },
+  bf_sparfuchs:  { id: "bf_sparfuchs",  name: bfName("deck_sparfuchs"),  unlock: { kind: "meisterNoReroll" } },
+  // #310 Element-Challenge-Battlefields (gleiche Bedingung wie ihr Deck) + Prisma + DP-Kauf-Packs:
+  bf_feuer:     { id: "bf_feuer",     name: bfName("deck_feuer"),          unlock: { kind: "monoArchetypeRun", archetype: "fire",      n: MONO_CHALLENGE_N } },
+  bf_eis:       { id: "bf_eis",       name: bfName("deck_eis"),            unlock: { kind: "monoArchetypeRun", archetype: "ice",       n: MONO_CHALLENGE_N } },
+  bf_blitz:     { id: "bf_blitz",     name: bfName("deck_blitz"),          unlock: { kind: "monoArchetypeRun", archetype: "lightning", n: MONO_CHALLENGE_N } },
+  bf_pflanze:   { id: "bf_pflanze",   name: bfName("deck_pflanze"),        unlock: { kind: "monoArchetypeRun", archetype: "plant",     n: MONO_CHALLENGE_N } },
+  bf_elementar: { id: "bf_elementar", name: bfName("deck_elementar"),         unlock: { kind: "allMonoArchetypes", n: MONO_CHALLENGE_N } },
+  bf_ronin:     { id: "bf_ronin",     name: bfName("deck_ronin"),          unlock: { kind: "buy", ownKey: "pack:ronin" } },
+  bf_kosmos:    { id: "bf_kosmos",    name: bfName("deck_kosmos"), unlock: { kind: "buy", ownKey: "pack:kosmos" } },
+  bf_oni:       { id: "bf_oni",       name: bfName("deck_oni"),      unlock: { kind: "buy", ownKey: "pack:oni" } },
+  bf_geometrie: { id: "bf_geometrie", name: bfName("deck_geometrie"),         unlock: { kind: "buy", ownKey: "pack:geometrie" } },
+  // #311 DP-Kauf-Packs:
+  bf_sonne:  { id: "bf_sonne",  name: bfName("deck_sonne"),         unlock: { kind: "buy", ownKey: "pack:sonne" } },
+  bf_drache: { id: "bf_drache", name: bfName("deck_drache"),     unlock: { kind: "buy", ownKey: "pack:drache" } },
+  // #312 DP-Kauf-Packs:
+  bf_arcade:     { id: "bf_arcade",     name: bfName("deck_arcade"),     unlock: { kind: "buy", ownKey: "pack:arcade" } },
+  bf_polarlicht: { id: "bf_polarlicht", name: bfName("deck_polarlicht"),     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
+  bf_seedrache:  { id: "bf_seedrache",  name: bfName("deck_seedrache"),   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  bf_obsidian:   { id: "bf_obsidian",   name: bfName("deck_obsidian"),   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
+  // #tiered Titan/Hirsch Battlefields (gleiche Bedingung wie ihr Deck).
+  bf_titan1:  { id: "bf_titan1",  name: bfName("deck_titan1"),  unlock: { kind: "score", n: 25000000 } },
+  bf_titan2:  { id: "bf_titan2",  name: bfName("deck_titan2"),  unlock: { kind: "score", n: 50000000 } },
+  bf_titan3:  { id: "bf_titan3",  name: bfName("deck_titan3"),  unlock: { kind: "score", n: 100000000 } },
+  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "games", n: 10 } },
+  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "games", n: 20 } },
+  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "games", n: 30 } },
+  // #deck40 Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_gaia:     { id: "bf_gaia",     name: bfName("deck_gaia"),     unlock: { kind: "buy", ownKey: "pack:gaia" } },
+  bf_glazius:  { id: "bf_glazius",  name: bfName("deck_glazius"),  unlock: { kind: "buy", ownKey: "pack:glazius" } },
+  bf_voltaris: { id: "bf_voltaris", name: bfName("deck_voltaris"), unlock: { kind: "buy", ownKey: "pack:voltaris" } },
+  bf_pyrros:   { id: "bf_pyrros",   name: bfName("deck_pyrros"),   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // #215: Anzeigenamen der Fraktionen für die Freischalt-Labels (Archetyp-Decks).
-const ARCH_LABEL = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
+// Die vier Archetyp-Schlüssel (Namen kommen aus dem Archetyp-Register, nicht von hier).
+const ARCHS = ["fire", "lightning", "ice", "plant"];
+// #310: robuster Mono-Lauf-Zähler je Fraktion. Toleriert Alt-Werte (Boolean true → 1) und fehlende Map.
+const monoCount = (p, a) => {
+  const m = p && p.monoArchetypeRuns;
+  const v = m ? Number(m[a]) : 0;
+  return Number.isFinite(v) && v > 0 ? v : 0;
+};
 
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
@@ -84,56 +163,86 @@ export function isUnlocked(def, profile) {
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
-    case "monoStatRun": return !!p.hadMonoStatRun;
-    case "monoArchetypeRun": return !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]); // #215: Lauf nur mit dieser Fraktion
+    case "monoArchetypeRun": return monoCount(p, u.archetype) >= (u.n || 1);                     // #310: N Mono-Läufe dieser Fraktion
+    case "allMonoArchetypes": return ARCHS.every((a) => monoCount(p, a) >= (u.n || 1));           // #310: alle vier Element-Decks frei (Prisma-Multi)
     case "allArchetypesRun": return !!p.hadAllArchetypesRun;                                     // #215: Lauf mit allen vier
-    case "masteryGrade": return (p.masteryGrade || 0) >= u.n;                                    // #217: erreichter Meistergrad
+    case "gottgleichRun":   return !!p.hadGottgleichRun;      // #303: erstmals einen GOTTGLEICH-Stich getriggert
+    case "meisterNoReroll": return !!p.hadMeisterNoRerollRun; // #303 Sparfuchs: Meisterrang-Wochenlauf ohne Reroll
+    case "championWeek":    return !!p.hadChampionWeek;       // #303 Meister: Platz 1 einer Wochen-Rangliste (Champion-Board)
+    case "buy":         return !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);               // #deckshop: mit DP gekauft (im Besitz)
+    case "onboardingDone": return onboardingDone(p);                                             // #: Genesis — Onboarding abgeschlossen (6/6)
     default:            return true;
   }
 }
 
-// Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
-//   { done, cur, target, label } — label = Klartext-Bedingung; cur/target = Fortschritt.
-// Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+/* Anzeige-Fortschritt für den Kollektion-Screen (analog runStats.achievements()):
+   { done, cur, target, kind, vars } — cur/target = Fortschritt, kind + vars beschreiben die Bedingung.
+   Zählbare kinds liefern cur (auf target gedeckelt) + target; Flag-Challenges target=1, cur 0/1.
+
+   #sprache: Der KLARTEXT steht nicht mehr hier, sondern im Katalog (`unlock.<kind>`), aufgelöst über
+   `unlockLabel` in src/i18n/unlockText.js — genau wie die Architekt-Effekttexte. Ein `import { t }`
+   an dieser Stelle wäre ein Zyklus (cosmetics.js → i18n/index.js → de.js → cosmetics.js), und mit
+   dem eingebauten deutschen Text hier hätte die englische Fassung eine zweite Pflegestelle. */
 export function unlockProgress(def, profile) {
   const u = def && def.unlock;
-  if (!u) return { done: true, cur: 1, target: 1, label: "Immer verfügbar" };
+  if (!u) return { done: true, cur: 1, target: 1, kind: "none", vars: {} };
   const p = profile || {};
   switch (u.kind) {
     case "games": {
       const have = p.games || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Spiele ${u.n} Läufe` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "streak": {
       const have = p.bestStreak || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche eine Serie von ${u.n}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "score": {
       const have = p.bestScore || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche Score ${grp(u.n)}` };
+      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf ab, ohne einen Reroll zu benutzen" };
-    }
-    case "monoStatRun": {
-      const done = !!p.hadMonoStatRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Wähle in einem Lauf immer nur denselben Stat" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "monoArchetypeRun": {
-      const done = !!(p.monoArchetypeRuns && p.monoArchetypeRuns[u.archetype]);
-      return { done, cur: done ? 1 : 0, target: 1, label: `Schließe einen Lauf nur mit ${ARCH_LABEL[u.archetype] || u.archetype}-Skills ab` };
+      const need = u.n || 1;
+      const have = monoCount(p, u.archetype);
+      return { done: have >= need, cur: Math.min(have, need), target: need,
+        kind: u.kind, vars: { n: need, archetype: u.archetype } };
+    }
+    case "allMonoArchetypes": {
+      const need = u.n || 1;
+      const have = ARCHS.reduce((acc, a) => acc + (monoCount(p, a) >= need ? 1 : 0), 0);
+      return { done: have >= ARCHS.length, cur: have, target: ARCHS.length, kind: u.kind, vars: { n: need } };
     }
     case "allArchetypesRun": {
       const done = !!p.hadAllArchetypesRun;
-      return { done, cur: done ? 1 : 0, target: 1, label: "Schließe einen Lauf mit allen vier Elementen ab" };
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
-    case "masteryGrade": {
-      const have = p.masteryGrade || 0;
-      return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, label: `Erreiche ${masteryGradeLabel(u.n)}` };
+    case "gottgleichRun": {
+      const done = !!p.hadGottgleichRun;
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
+    }
+    case "meisterNoReroll": {
+      const done = !!p.hadMeisterNoRerollRun;
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
+    }
+    case "championWeek": {
+      const done = !!p.hadChampionWeek;
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
+    }
+    case "buy": {
+      const done = !!(p.ownedCosmetics && p.ownedCosmetics[u.ownKey]);
+      // Der Preis steht auf der Pack-Kachel (je Pack verschieden, themes.js `price`) — der Text nennt
+      // nur die WÄHRUNG. Kein Import von themes.js: das gäbe einen Zyklus (themes.js → cosmetics.js).
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
+    }
+    case "onboardingDone": {
+      const done = onboardingDone(p);
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     default:
-      return { done: true, cur: 1, target: 1, label: "" };
+      return { done: true, cur: 1, target: 1, kind: "unknown", vars: {} };
   }
 }
 

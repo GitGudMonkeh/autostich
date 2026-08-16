@@ -157,6 +157,27 @@ Explore findet Kandidaten (inkl. seltener, die die Gewichtung hochzieht); **Eval
 
 **Seltene/legendäre Optionen**, die kaum *angeboten* werden: primär mehr Explore-Seeds (billig). Nur für die reine Ceiling-Frage optional eine Sim-Variante von `buildOffer`, die eine Ziel-Option ins Angebot zwingt — **klar als „was wäre, wenn baubar" gelabelt**, nicht als reale Häufigkeit.
 
+**Umgesetzt für den Legendär-Pool: `npm run impact`** (`sim/perk-impact.mjs`). Mehr Explore-Seeds allein reichen dort nicht — bei `PERK_LEGENDARY_BASE = 0,03` enthalten nur ~22 % der Läufe überhaupt einen legendären Perk, und die Hälfte des Pools erscheint in 40 Läufen kein einziges Mal. Das Skript hebt darum `SIM_PERK_LEGENDARY_BASE` an (Default 0,7) und ablatiert jeden Legendären gepaart gegen einen gemeinsamen Referenz-Arm. Das ist genau das oben gemeinte „was wäre, wenn baubar": es verzerrt die **Häufigkeit** (ein separater Knopf), nicht die **Stärke** des einzelnen Perks. Weil `MAX_LEGENDARIES_PER_OFFER = 1` gilt, liegt je Angebot höchstens ein Legendäres — der `full`-Arm ist dadurch für alle Perks derselbe und wird einmal gerechnet (Kosten `(1 + n) × runs` statt `2n × runs`).
+
+```
+npm run impact                              # 14 Legendäre, 80 Seeds, Explore-Referenzbuild
+npm run impact -- --runs 200 --explore 400  # mehr Statistik
+npm run impact -- --only L_HENK,L_PATT      # schneller Regressionscheck nach einer Tuning-Änderung
+npm run impact -- --only L_VAB --frontload 1  # gegen den Eröffnungs-Missbrauchsfall messen
+npm run impact -- --only L_VAB --pickfrom 30  # Einfluss des Pick-Zeitpunkts (erst ab Durchlauf 30 wählbar)
+```
+
+**`--frontload`** fährt statt des Formations-Solvers `frontLoadFormationStep` (sim/formation.js): die stärksten Karten
+werden auf die ersten Positionen arrangiert. Das ist die OBERE SCHRANKE für Eröffnungs-Perks, kein realistischer
+Spielstil — er maximiert die Eröffnungs-Winrate, nicht den Score, und kostet im heutigen Build ~34 % Gesamt-Score
+(Sweeps 16→38/50, Median 38,2M→25,2M). Entsprechend interpretieren: Worst Case, nicht Erwartungswert.
+
+**`--pickfrom N`** sperrt den gemessenen Perk bis Durchlauf N (in BEIDEN Armen, die Ablation bleibt gepaart). Damit
+wird sichtbar, ob ein Perk früh oder spät erworben mehr wert ist. Ein *steigender* Wert mit späterem Pick ist ein
+Warnsignal: er bedeutet meist einen Deckel oder ein Frühzeitfenster, das den Perk nach kurzer Zeit entwertet.
+
+Urteilsspalte ist `typ.×` (typischer multiplikativer Effekt, bedingt auf „im Spiel"), verglichen gegen das Ziel-Band aus `constants.js`. `anwendb.`/`n` sind **Kontext-Häufigkeit, keine Stärke** — unter ~15 anwendbaren Läufen markiert das Skript die Zeile selbst als „dünn".
+
 ---
 
 ## 7. Interpretation — die eigentliche Schwierigkeit

@@ -10,7 +10,7 @@
 -- Idempotent: mehrfaches Ausführen ist gefahrlos.
 --
 -- Der Client (src/game/leaderboard.js) erwartet genau diese Spalten:
---   COLS_FULL = name,score,level,tricks,cycles,archetypes,<FB-8>,created_at
+--   COLS_FULL = name,score,level,tricks,cycles,archetypes,<FB-8>,seed,board,created_at
 --   FB-8      = best_streak,perks,skills,max_formations,formation_score,crits,wins,crit_bonus_score,best_trick_score
 -- perks/skills werden als kompakte, komma-getrennte ID-Liste gespeichert (wie archetypes),
 -- deshalb text (KEIN varchar(N) — genau das war der #197-Übeltäter).
@@ -35,21 +35,22 @@ create table if not exists public.autostich_scores (
   wins              integer,
   crit_bonus_score  bigint,
   best_trick_score  bigint,
-  -- #217 Master-Board: gespielter Meister-/Großmeister-Rang (1..10; NULL = normaler Lauf). Trennt die Boards:
-  -- normales Board = `mastery_grade is null`, Master-Board (je Rang) = `mastery_grade = <g>`.
-  mastery_grade     smallint,
-  -- #201 P8-C / #217: kompakte finale Aufstellung (nur bei Meister-Läufen befüllt → kein Bloat bei normalen Läufen).
-  -- Wird nur dem EIGENEN Lauf angezeigt (Anti-Copy #205); Struktur = { cards:[{id,value,suit,green,frozen}], formations:[...] }.
-  deck_snapshot     jsonb,
   -- #205 Challenger: Lauf-Seed (uint32 → bigint, NULL bei Alt-/seedlosen Läufen). Challenge-Board = dieselbe Tabelle,
   -- Top-3-pro-Seed via `seed = eq.<n> order by score desc`. Erstklassig + indiziert (kein Bolt-on).
-  seed              bigint
+  seed              bigint,
+  -- §7 (Schritt 6) Getrennte Ranglisten-Boards: 'standard' (feste Baseline) | 'meister' (voller Baum) | NULL (Casual-
+  -- Lauf, kein Wettbewerbs-Board). Trennt die Boards: Standard = `board = 'standard'`, Meister = `board = 'meister'`;
+  -- ungefiltert (Global/alle) ohne board-Bedingung. (Das alte #217 mastery_grade/deck_snapshot-Master-Board ist entfernt.)
+  board             text
 );
 
 -- Falls die Tabelle schon existiert (frühere Version ohne diese Spalten): additiv nachziehen (idempotent).
-alter table public.autostich_scores add column if not exists mastery_grade smallint;
-alter table public.autostich_scores add column if not exists deck_snapshot jsonb;
 alter table public.autostich_scores add column if not exists seed bigint;
+alter table public.autostich_scores add column if not exists board text;
+-- Hinweis: die früheren #217-Spalten mastery_grade (smallint) + deck_snapshot (jsonb) werden nicht mehr genutzt.
+-- Auf bestehenden Tabellen bleiben sie (nullable) einfach liegen — kein destruktives DROP nötig. Wer aufräumen will:
+--   alter table public.autostich_scores drop column if exists mastery_grade;
+--   alter table public.autostich_scores drop column if exists deck_snapshot;
 
 -- Row Level Security: offenes Board → die anon-Rolle (publishable key) darf LESEN und EINFÜGEN,
 -- aber NICHT ändern oder löschen (kein update/delete-Policy → per Default verweigert).
@@ -69,10 +70,10 @@ create policy "anon can insert scores"
 create index if not exists autostich_scores_rank_idx
   on public.autostich_scores (score desc, tricks desc, created_at desc);
 
--- #217 Master-Board: Index für die per-Rang-Abfrage (nur Meister-Läufe; mastery_grade + score desc).
-create index if not exists autostich_scores_master_idx
-  on public.autostich_scores (mastery_grade, score desc)
-  where mastery_grade is not null;
+-- §7 Getrennte Boards: Index für die per-Board-Abfrage (nur getaggte Ranglisten-Läufe; board + score desc).
+create index if not exists autostich_scores_board_idx
+  on public.autostich_scores (board, score desc)
+  where board is not null;
 
 -- #205 Challenger: Index für die Top-3-pro-Seed-Abfrage (seed + score desc).
 create index if not exists autostich_scores_seed_idx

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildDeck } from "../src/game/deck.js";
-import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer } from "../src/game/perks.js";
+import { makeRng } from "../src/game/deck.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
 import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP } from "../src/game/constants.js";
 
@@ -34,9 +34,10 @@ describe("Legendäre Perks — Hooks (Legendär-Perks-Rework #203)", () => {
   const KEPT = ["L2", "L4", "L6"];                                                   // behalten (Serie/Crit-Favoriten)
   const NEU  = ["L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT"]; // 8 neue generische (#203)
   const POOL = ["L_MONO", "L_RICHT", "L_BAUH"];                                      // Pool-Erweiterung: Farb- + Gebäude-Legendäre
+  const V03  = ["L_MEIS", "L_SCHM", "L_HOCH", "L_OPFER", "L_TAKT", "L_BALL", "L_FUND"]; // v0.3: Pool-Lücken (Ausbau/Deck/Segment/Nachteil)
 
-  it("die 14 Legendären sind legendär; die Erstgen (L1/L3/L5/L7–L11) ist entfernt", () => {
-    for (const id of [...KEPT, ...NEU, ...POOL]) expect(isLegendary(id)).toBe(true);
+  it("die 21 Legendären sind legendär; die Erstgen (L1/L3/L5/L7–L11) ist entfernt", () => {
+    for (const id of [...KEPT, ...NEU, ...POOL, ...V03]) expect(isLegendary(id)).toBe(true);
     for (const id of ["L1", "L3", "L5", "L7", "L8", "L9", "L10", "L11"]) expect(PERK_DEFS[id]).toBeUndefined();
     expect(isLegendary("E10")).toBe(false);
   });
@@ -57,7 +58,7 @@ describe("Legendäre Perks — Hooks (Legendär-Perks-Rework #203)", () => {
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 3 })).toBe(UNAUFHALTSAM_VALUE);
     expect(PERK_DEFS.L2.cardBonus({ winStreak: 9 })).toBe(UNAUFHALTSAM_VALUE); // flach, kein Snowball
   });
-  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Schaden (kein cardBonus) (#115)", () => {
+  it("L6 Raserei: +5 % Crit-Chance je Serienpunkt + Überschuss→Crit-Multiplikator (kein cardBonus) (#115)", () => {
     expect(PERK_DEFS.L6.cardBonus).toBeUndefined();
     expect(PERK_DEFS.L6.critChance({ winStreak: 5 })).toBeCloseTo(0.25);
     expect(PERK_DEFS.L6.critMultBonus({ rawCrit: 1.5 })).toBeCloseTo(0.5);
@@ -135,8 +136,9 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
     expect(PERK_DEFS.E10.extraSwap).toBe(1);
     expect(PERK_DEFS.E10.offerable).toBe(false); // #162: aus dem Perk-Pool genommen → wird Shop-Familie (#164)
   });
-  it("V2 §22.4 / #203 + Pool: genau die 14 Legendären sind legendär, alles andere normal", () => {
-    const LEGENDARY = new Set(["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO", "L_RICHT", "L_BAUH"]);
+  it("V2 §22.4 / #203 + Pool + v0.3: genau die 21 Legendären sind legendär, alles andere normal", () => {
+    const LEGENDARY = new Set(["L2", "L4", "L6", "L_UMV", "L_ZINS", "L_VAB", "L_HENK", "L_ECHO", "L_SAMM", "L_BRENN", "L_PATT", "L_MONO", "L_RICHT", "L_BAUH",
+      "L_MEIS", "L_SCHM", "L_HOCH", "L_OPFER", "L_TAKT", "L_BALL", "L_FUND"]);
     for (const p of PERK_LIST) {
       if (LEGENDARY.has(p.id)) expect(p.rarity).toBe("legendary");
       else expect(p.rarity || "common").toBe("common");
@@ -147,3 +149,44 @@ describe("Seltene Perks (#71, Phase 2a)", () => {
 // Kartenrollen (Kat. C: Vorhut/Triumph/Leibwache/Staffelläufer/Anführer/Finisher/Überlebensvorteil/Joker/Opfergabe/
 // Bindeglied) sind zu Familien migriert (#167) — Stufeneffekte in families.test.js, Engine/Flow in families-engine.test.js.
 // B9 Perfekte Folge → Familie B_PERFECT (#167), Treppen-Ordinal-Tests ebenfalls in families.test.js.
+
+describe("buildPerkOffer — Legendäre koppeln an die Rarität (lila/Stufe IV) (#Onboarding-Fix)", () => {
+  it("maxTier < 4 (Onboarding-Deckel): KEIN legendärer Perk im Angebot", () => {
+    for (const mt of [2, 3]) {
+      for (let s = 0; s < 8; s++) {
+        const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, mt);
+        expect(offer.some((id) => isLegendary(id))).toBe(false);
+      }
+    }
+  });
+  it("maxTier = 4 (lila frei): Legendäre können wieder auftauchen (Standard/Post-Onboarding unverändert)", () => {
+    let sawLeg = false;
+    for (let s = 0; s < 40 && !sawLeg; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0.5, 0, false, 0, 4);
+      if (offer.some((id) => isLegendary(id))) sawLeg = true;
+    }
+    expect(sawLeg).toBe(true);
+  });
+});
+
+describe("buildPerkOffer — #370 Perk-Segen: Rarität-Boden (minTier)", () => {
+  it("minTier 3: nur Familien-Stufen ≥ III; flache Normal-Perks (Stufe I) fallen weg", () => {
+    let sawFam = false;
+    for (let s = 0; s < 40; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, 4, 3);
+      for (const e of offer) {
+        if (e && typeof e === "object") { expect(e.tier).toBeGreaterThanOrEqual(3); sawFam = true; }
+        else expect(isLegendary(e)).toBe(true); // flache Normal-Perks ausgeschlossen → nur Legendäre als Strings
+      }
+    }
+    expect(sawFam).toBe(true); // es kamen überhaupt Familien-III/IV-Angebote (Boden nicht leer)
+  });
+  it("ohne Boden (minTier 1 = Default): Stufen I/II erscheinen weiter (der Boden ist die Differenz)", () => {
+    let sawLow = false;
+    for (let s = 0; s < 40 && !sawLow; s++) {
+      const offer = buildPerkOffer([], {}, makeRng(s + 1), 5, 0, 0, false, 0, 4, 1);
+      if (offer.some((e) => e && typeof e === "object" && e.tier <= 2)) sawLow = true;
+    }
+    expect(sawLow).toBe(true);
+  });
+});

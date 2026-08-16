@@ -38,3 +38,9 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Sim-Scratch (WIP-Messungen, nicht committen)
+*.scratch.*
+
+# Temporäre Agent-Worktrees (nicht versionieren)
+.claude/worktrees/

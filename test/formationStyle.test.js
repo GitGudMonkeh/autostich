@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { formationBorder } from "../src/ui/formationStyle.js";
-import { formationLabel, formationAbbr, FORMATION_TYPES } from "../src/ui/formationLabels.js";
+import { formationLabel, formationAbbr, formationTypes } from "../src/ui/formationLabels.js";
+import { setLocale, DEFAULT_LOCALE } from "../src/i18n/index.js";
 
 // Rahmen-Helfer (Issue #95): Farbe = Anzahl Formations-Mitgliedschaften (1 grün · 2 blau · 3 lila · 4 gold),
 // Stil = gestrichelt nur ohne wirksamen Multiplikator. Durch den Überlappungsbonus (#95) hat jede Karte
@@ -40,16 +41,33 @@ describe("formationBorder (#95.4/8)", () => {
   });
 });
 
+/* #sprache: Namen und Kürzel lösen jetzt zur ANZEIGEZEIT über den Katalog auf (src/i18n/labels.js).
+   Deshalb wird die Sprache hier explizit gesetzt — ohne das liefe der Test gegen die
+   Auslieferungssprache (Englisch) und prüfte etwas anderes, als er behauptet. */
 describe("formationLabels (#147: eine Quelle für alle Formations-Anzeigen)", () => {
+  beforeEach(() => setLocale("de"));
+  afterAll(() => setLocale(DEFAULT_LOCALE));
+
   it("kennt auch nachhall und formationskern (leckten vorher als rohe Keys ins UI)", () => {
     expect(formationLabel("nachhall")).toBe("Nachhall");
     expect(formationLabel("formationskern")).toBe("Kern");
     expect(formationAbbr("nachhall")).toBe("N");
     expect(formationAbbr("formationskern")).toBe("K");
   });
-  it("Badge-Kürzel sind paarweise verschieden", () => {
-    const abbrs = Object.values(FORMATION_TYPES).map((t) => t.abbr);
-    expect(new Set(abbrs).size).toBe(abbrs.length);
+  it("dieselben Typen auf Englisch (Übersetzerpaket §3.3)", () => {
+    setLocale("en");
+    expect(formationLabel("nachhall")).toBe("Echo");
+    expect(formationLabel("formationskern")).toBe("Core");
+    expect(formationAbbr("nachhall")).toBe("E");
+    expect(formationAbbr("formationskern")).toBe("C");
+  });
+  it("Badge-Kürzel sind in JEDER Sprache paarweise verschieden", () => {
+    for (const loc of ["de", "en"]) {
+      setLocale(loc);
+      const abbrs = Object.values(formationTypes()).map((t) => t.abbr);
+      expect(abbrs.every((a) => a.length === 1), `${loc}: Kürzel müssen genau 1 Zeichen sein`).toBe(true);
+      expect(new Set(abbrs).size, `${loc}: Kürzel kollidieren`).toBe(abbrs.length);
+    }
   });
   it("Fallback: unbekannter Typ → roher Key als Label, leeres Kürzel statt undefined", () => {
     expect(formationLabel("xyz")).toBe("xyz");

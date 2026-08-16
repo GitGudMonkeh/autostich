@@ -1,38 +1,7 @@
 import { memo } from "react";
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ICE_LAYER_MAX, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
-import { FrostOverlay } from "./FrostOverlay.jsx";
-import { plantNumberColor, PLANT } from "./indicators/vocab.js";
-
-// Eis (#210): Schicht-Eck-Kristalle — dezenter, gestapelter Hinweis „diese Karte ist geschichtet" (bewusst KEINE
-// Zahl auf der Karte). Mehr Schichten → mehr Kristalle; ab dem wirksamen Deckel (ICE_LAYER_MAX) leuchten obenauf
-// Überlauf-Kristalle heller = Überlauf-Tiefe (die Nahrung der Eis-Legendären). Sitzt in der durch den Ion-Umzug
-// (#208) freigeräumten unteren linken Ecke (vocab.CORNER.frostLayers). Farben inline wie im übrigen Card-Stil.
-const CRYSTAL = "#8fcfe6", CRYSTAL_OVER = "#e6f7ff"; // gedämpfter Schicht-Kristall · heller Überlauf-Kristall
-function FrostLayerCrystals({ layers }) {
-  const n = layers || 0;
-  if (n <= 0) return null;
-  const eff = Math.min(n, ICE_LAYER_MAX);            // wirksame Schichten (gedeckelt)
-  const over = Math.max(0, n - ICE_LAYER_MAX);       // Überlauf-Tiefe
-  const basePips = Math.min(5, Math.max(1, Math.ceil(eff / 2.5))); // 1..5 gedämpfte Kristalle (grobe Tiefe)
-  const overPips = over > 0 ? Math.min(2, Math.ceil(over / 6)) : 0; // 0..2 helle Überlauf-Kristalle obenauf
-  const pips = [];
-  for (let i = 0; i < basePips; i++) pips.push(false);
-  for (let i = 0; i < overPips; i++) pips.push(true);
-  return (
-    // flex-col-reverse: der erste (gedämpfte) Kristall sitzt unten, die hellen Überlauf-Kristalle stapeln sich obenauf.
-    <div className="absolute bottom-1 left-1 flex flex-col-reverse items-center leading-none" style={{ gap: 1 }}
-      title={`Geschichtet — ${n} Schicht${n === 1 ? "" : "en"}${over > 0 ? ` · Überlauf +${over}` : ""}`}>
-      {pips.map((isOver, i) => (
-        <span key={i} style={{
-          fontSize: 9,
-          color: isOver ? CRYSTAL_OVER : CRYSTAL,
-          opacity: isOver ? 0.9 : 0.55,
-          textShadow: isOver ? "0 0 5px #bfe9f7" : "0 0 3px #8fcfe688",
-        }}>◆</span>
-      ))}
-    </div>
-  );
-}
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP } from "../game/constants.js";
+import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
+import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
    damit sie immer zum Stich-Ausgang passt.
@@ -41,7 +10,7 @@ function FrostLayerCrystals({ layers }) {
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, frozen = false, frostAnimated = false, frostbitten = false, green = false, forged = 0, branded = 0, frostLayers = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -71,10 +40,6 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   // Kräftiger bei „voll". Wird mit einem etwaigen Gewinn-/Verlust-Glow LAYERED (bleibt also immer sichtbar).
   const ionFull = ionStacks >= ION_MAX_STACKS;
   const ionRing = ionStacks > 0 ? `0 0 0 2px #5ec8f0, 0 0 ${ionFull ? 12 : 9}px #5ec8f0${ionFull ? "aa" : "77"}` : null;
-  // Frost (#93 F3 / #136): der eisige Look kommt jetzt aus dem FrostOverlay-Layer (Tint + Körnung + optional
-  // Sweep), nicht mehr aus einem box-shadow → mehr „eisig" und weiterhin konfliktfrei mit Ion-Ring/Glow.
-  // Frostbiss (#126): feindlicher −3-Debuff auf einer Gegnerkarte → ROTER Innen-Schimmer (nicht blau wie eigener Frost).
-  const frostbiteGlow = frostbitten ? "inset 0 0 14px #e0605a55" : null;
   // Pflanze (v0): grüne (reife) Karte → grüner Innensaum + Flächen-Schein; markiert Karten des Farbblocks (kollisionsfrei mit Ion-Ring, da inset).
   const greenGlow = green ? "inset 0 0 0 1px #5ab87a88, inset 0 0 16px #5ab87a55" : null;
   // Feuer (#206): geschmiedete EIGENE Karte glüht von INNEN (Inset-Bloom) — KEIN Ring, KEIN äußerer Halo (der 2px-Ring ist der Ionisierung vorbehalten).
@@ -89,11 +54,24 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   // solange die Karte wächst und NICHT reif ist (bei Reife übernimmt die grüne Zahl + 🌿 das Signal).
   const pt = plantNumberColor(color, growth, green, value);
   const numColor = pt ? pt.color : color;
+  // Neon-Tube-Zahl (#UI): mehrschichtiger Neon-Glow in Suit-/Pflanzenfarbe. Die Ziffer selbst ist hohl (transparente
+  // Füllung + farbige Kontur, siehe render), der Glow gibt die Leucht-Röhren-Optik. Pflanze moduliert die Stärke über pt.glow.
   const numShadow = pt
-    ? `0 0 ${Math.round(10 + 10 * pt.glow)}px ${pt.color}${pt.ripe ? "cc" : "88"}, 0 1px 3px #000c`
-    : `0 0 12px ${color}77, 0 1px 3px #000c`;
-  const showGrowthRing = !green && (growth || 0) > 0;
-  const growthPct = Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
+    ? `0 0 ${Math.round(8 + 10 * pt.glow)}px ${pt.color}, 0 0 ${Math.round(20 + 16 * pt.glow)}px ${pt.color}${pt.ripe ? "aa" : "66"}, 0 0 40px ${pt.color}44`
+    : `0 0 8px ${color}, 0 0 20px ${color}99, 0 0 40px ${color}55`;
+  // Pflanze (#277): ZWEISTUFIGER Wachstumsring — Stufe 1 Setzling→Grün (grau→grün, growth/Schwelle), Stufe 2 Grün→
+  // Ausgewachsen (heller, value/Deckel). Bleibt sichtbar, bis die Karte ausgewachsen ist (dann trägt die hellste
+  // grüne Zahl das „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie voll auswächst.
+  const fullyGrown = green && value >= PLANT_VALUE_CAP;
+  const growingStage2 = green && !fullyGrown;                        // grün, aber noch nicht am Wert-Deckel
+  const showGrowthRing = (!green && (growth || 0) > 0) || growingStage2;
+  const ringPct = growingStage2
+    ? Math.min(100, (value / PLANT_VALUE_CAP) * 100)
+    : Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
+  const ringColor = growingStage2 ? PLANT_RIPE : PLANT;             // Stufe 2 heller abgesetzt
+  const ringTitle = growingStage2
+    ? `Wert ${value} / ${PLANT_VALUE_CAP} → ausgewachsen`
+    : `Wachstum ${String(Math.round((growth || 0) * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`;
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -101,15 +79,11 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         width: 104, height: 144,
         backgroundColor: HOLO_BASE, backgroundImage: bgImage, backgroundSize: bgSize, backgroundRepeat: bgRepeat,
         opacity: dim ? 0.35 : 1,
-        // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) & Frostbiss darunter; Holo-Saum zuletzt. Frost = eigener Layer.
+        // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) darunter; Holo-Saum zuletzt.
         // Glow REIN blur-basiert (kein 0-Blur-Ring mehr) → weicher, kantenloser Rand statt harter Kontur am Kartenrand.
-        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, frostbiteGlow, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
+        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
-      {/* #136/#210 Eis-Schimmer: Frost-Kanten-Layer (Ecken + Inset-Rim + optional Sweep) über der eingefrorenen Karte — hinter Text/Markern, Mitte frei. */}
-      {frozen && <FrostOverlay animated={frostAnimated} radius="0.75rem" />}
-      {/* Eis (#210): Schicht-Eck-Kristalle unten-links (nur eingefrorene, geschichtete Karten) — grobes „geschichtet", keine Zahl. */}
-      {frozen && frostLayers > 0 && <FrostLayerCrystals layers={frostLayers} />}
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
@@ -125,18 +99,14 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           ⚒+{forged}
         </div>
       )}
-      <div className="text-5xl font-bold card-num" style={{ color: numColor, textShadow: numShadow }}>{effective}</div>
-      {/* Frost (#93 F3): Schneeflocke unten rechts markiert eine eingefrorene EIGENE Karte (blau, überall sichtbar).
-          #211: teilt sich die untere rechte Ecke mit dem Pflanze-Wachstumsring → bei beidem weicht das ❄ nach LINKS aus. */}
-      {frozen && (
-        <div className="absolute bottom-1 text-[15px] leading-none" style={{ right: showGrowthRing ? 22 : 4, color: "#d6f2fc", textShadow: "0 0 8px #7fd4f0, 0 1px 2px #000a" }} title="Eingefroren">❄</div>
-      )}
-      {/* Pflanze (#211): Wachstumsring unten-rechts — füllender Kreis 0 → Reife-Schwelle auf der EIGENEN, noch wachsenden
-          Karte; bei Reife ausgeblendet (dann trägt die grüne Zahl + 🌿 das Signal). Sitzt in vocab.CORNER.growthRing. */}
+      {/* Zahl (z-2). */}
+      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, textShadow: numShadow, "--num-shadow": numShadow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
+      {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
+          ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
-        <div className="absolute bottom-1 right-1 rounded-full" title={`Wachstum ${String(Math.round(growth * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`}
-          style={{ width: 16, height: 16, background: `conic-gradient(${PLANT} ${growthPct}%, #ffffff1f ${growthPct}%)`,
-                   border: `1px solid ${PLANT}66`, boxShadow: `0 0 4px ${PLANT}55` }}>
+        <div className="absolute bottom-1 right-1 rounded-full" title={ringTitle}
+          style={{ width: 16, height: 16, background: `conic-gradient(${ringColor} ${ringPct}%, #ffffff1f ${ringPct}%)`,
+                   border: `1px solid ${ringColor}66`, boxShadow: `0 0 4px ${ringColor}55` }}>
           <div className="absolute rounded-full" style={{ inset: 3, background: HOLO_BASE }} />
         </div>
       )}
@@ -146,27 +116,22 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       {colonized > 0 && (
         <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
           title={`Kolonisiert (Ausläufer) · Ernte +${colonized} Wachstum`}>
-          <span className="text-[15px]" style={{ color: "#9dedb4", textShadow: "0 0 8px #5ab87a, 0 1px 2px #000a" }}>🌿</span>
+          <FactionIcon type="plant" size={15} />
           <span className="text-[9px] font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
         </div>
       )}
-      {/* Frostbiss (#126): frostgebissene GEGNERkarte — ROTES ❄, klar als feindlicher −3-Debuff (nicht wie eigener Frost). */}
-      {frostbitten && (
-        <div className="absolute bottom-1 right-1 text-[15px] leading-none" style={{ color: "#f7b0aa", textShadow: "0 0 8px #e0605a, 0 1px 2px #000a" }} title="Frostbiss −3">❄</div>
-      )}
       {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}
       {green && (
-        <div className="absolute top-1 left-1 text-[15px] leading-none" style={{ color: "#9dedb4", textShadow: "0 0 8px #5ab87a, 0 1px 2px #000a" }} title="Grün (reif) — Teil des Farbblocks">🌿</div>
+        <div className="absolute top-1 left-1 leading-none" title="Grün (reif) — Teil des Farbblocks"><FactionIcon type="plant" size={15} /></div>
       )}
-      {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts (links neben ❄). Warm/orange → „Feuer, nicht Eis". */}
+      {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts. Warm/orange → „Feuer, nicht Eis". */}
       {branded > 0 && (
         <>
           <div className="absolute top-1 text-[10px] font-bold px-1 rounded leading-none"
             style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
             title={`Gebrandmarkt −${branded} Wert`}>−{branded}</div>
-          <div className="absolute bottom-1 text-[15px] leading-none"
-            style={{ right: frostbitten ? 20 : 4, color: "#f7b04a", textShadow: "0 0 9px #e0714a, 0 1px 2px #000a" }}
-            title={`Gebrandmarkt −${branded} Wert`}>🔥</div>
+          <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
+            title={`Gebrandmarkt −${branded} Wert`}><FactionIcon type="fire" size={15} /></div>
         </>
       )}
       {/* Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (gefüllt = Stapel, max ION_MAX_STACKS). Der

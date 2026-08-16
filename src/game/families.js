@@ -1,6 +1,8 @@
 import { UPGRADE_TYPES, withFamilyTier } from "./rarity.js";
 import { shuffle } from "./deck.js";
 import { SUIT_ORDER } from "./constants.js";
+import * as C from "./constants.js";
+import { colorsAllied } from "./color.js"; // #289: Farbfokus grün-/allianz-bewusst
 
 /* ============================================================
    FAMILIEN-REGISTRY (Rarität-Umbau #163, Spec docs/rarity-system.md §3.2).
@@ -66,7 +68,7 @@ const D_FAMILIES = {
     },
   },
   D_TENTH_WIN: {
-    id: "D_TENTH_WIN", cat: "D", name: "Zehnter Sieg", upgradeType: REPLACEMENT,
+    id: "D_TENTH_WIN", cat: "D", name: "Beutezug", upgradeType: REPLACEMENT,   // (Sprachprüfung G1) hieß „Zehnter Sieg" — kein Stufenwert lag bei 10
     tiers: {
       1: { scoreFlat: (c) => (c.wins % 12 === 0 ? 600 : 0) },
       2: { scoreFlat: (c) => (c.wins % 10 === 0 ? 800 : 0) },
@@ -130,7 +132,7 @@ const D_FAMILIES = {
     },
   },
   D_PRECISION: {
-    id: "D_PRECISION", cat: "D", name: "Präzision", upgradeType: REPLACEMENT,
+    id: "D_PRECISION", cat: "D", name: "Gleichklang", upgradeType: REPLACEMENT, // (#267: von „Präzision" umbenannt — die Crit-Perk-Kategorie heißt jetzt Präzision)
     // I/II: exakt gleicher Wert wie der letzte Sieg. III/IV: gleicher oder ±1 Wert.
     // #189 Fund B: I–III zahlen nur EINMAL je Paar — die Engine verbraucht lastWinValue (Referenz) nach einer
     // Auszahlung (precisionTol = Toleranz der Stufe: I/II 0, III/IV 1); nur IV (chain) kettet weiter (Referenz läuft mit).
@@ -192,7 +194,7 @@ const D_FAMILIES = {
       1: { desc: "Siege in Folge derselben Farbe: je +75 mehr Score (max +300).",  scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 75), 300) },
       2: { desc: "Siege in Folge derselben Farbe: je +100 mehr Score (max +500).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 100), 500) },
       3: { desc: "Siege in Folge derselben Farbe: je +150 mehr Score (max +750).", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 150), 750) },
-      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Stufe statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitHalveOnSwitch: true },
+      4: { desc: "Siege in Folge derselben Farbe: je +200 mehr Score (max +1.200); ein Farbwechsel halbiert die Farbserie, statt sie zurückzusetzen.", scoreFlat: (c) => Math.min(Math.max(0, ((c.suitStreak || 0) - 1) * 200), 1200), suitHalveOnSwitch: true },
     },
   },
   D_FULL_HOUSE: {
@@ -203,7 +205,7 @@ const D_FAMILIES = {
       1: { desc: "Fünf Siege in einem Segment: +500 Score auf den fünften.",  scoreFlat: (c) => (c.posInCycle % 5 === 4 && (c.recentWinCount || 0) >= 4 ? 500 : 0) },
       2: { desc: "Vier Siege in einem Segment: +650 Score auf den vierten.",  scoreFlat: (c) => (c.posInCycle % 5 === 3 && (c.recentWinCount || 0) >= 3 ? 650 : 0) },
       3: { desc: "Vier Siege in einem Segment: +900 Score auf den vierten.",  scoreFlat: (c) => (c.posInCycle % 5 === 3 && (c.recentWinCount || 0) >= 3 ? 900 : 0) },
-      4: { desc: "Drei Siege in einem Segment: +1.000 auf den dritten; der fünfte Sieg zusätzlich +1.000.", scoreFlat: (c) => ((c.posInCycle % 5 === 2 && (c.recentWinCount || 0) >= 2 ? 1000 : 0) + (c.posInCycle % 5 === 4 && (c.recentWinCount || 0) >= 4 ? 1000 : 0)) },
+      4: { desc: "Drei Siege in einem Segment: +1.000 Score auf den dritten; der fünfte Sieg zusätzlich +1.000 Score.", scoreFlat: (c) => ((c.posInCycle % 5 === 2 && (c.recentWinCount || 0) >= 2 ? 1000 : 0) + (c.posInCycle % 5 === 4 && (c.recentWinCount || 0) >= 4 ? 1000 : 0)) },
     },
   },
   D_OVERCRIT: {
@@ -212,7 +214,11 @@ const D_FAMILIES = {
       1: { desc: "Crit über 110 % effektiver Crit-Chance: +200 Score.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1.1 ? 200 : 0) },
       2: { desc: "Crit über 100 % effektiver Crit-Chance: +300 Score.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 300 : 0) },
       3: { desc: "Jeder Überschuss-Crit (über 100 %): +500 Score.",         scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 : 0) },
-      4: { desc: "Jeder Überschuss-Crit: +500 Score plus 5 je Prozentpunkt über 100 %.", scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 + Math.round(((c.rawCrit || 0) - 1) * 100) * 5 : 0) },
+      // Crit-Bändigung 2026-08-15: der Zuschlag je Prozentpunkt war UNGEDECKELT und las dieselbe unbegrenzte Roh-Crit-
+      // Chance wie Überschlag — bei +1.800 pp waren das ~9.500 Flat je Crit, und der Flat läuft durch den ganzen
+      // Multiplikator-Stack. Jetzt zählen höchstens OVERCRIT_EXCESS_PP_CAP Prozentpunkte Überschuss.
+      4: { desc: `Jeder Überschuss-Crit: +500 Score plus 5 je Prozentpunkt über 100 % (höchstens ${C.OVERCRIT_EXCESS_PP_CAP} Prozentpunkte gezählt).`,
+           scoreFlatOnCrit: (c) => ((c.rawCrit || 0) > 1 ? 500 + Math.min(Math.round(((c.rawCrit || 0) - 1) * 100), C.OVERCRIT_EXCESS_PP_CAP) * 5 : 0) },
     },
   },
   D_BEBAUUNG: {
@@ -281,7 +287,7 @@ const B_FAMILIES = {
     },
   },
   B_TENTH_STRIKE: {
-    id: "B_TENTH_STRIKE", cat: "B", name: "Zehnter Schlag", upgradeType: REPLACEMENT,
+    id: "B_TENTH_STRIKE", cat: "B", name: "Markstein", upgradeType: REPLACEMENT, // (Sprachprüfung G1) hieß „Zehnter Schlag" — wirkt auf POSITIONEN, nicht auf Siege
     // posInCycle ist 0-basiert → Position n = posInCycle n-1; „(pos+1) % k === 0" trifft jede k-te Position.
     tiers: {
       1: { desc: "Karten auf Position 20 und 40: +6 Stichwert.",               cardBonus: (c) => ((c.posInCycle + 1) % 20 === 0 ? 6 : 0) },
@@ -334,7 +340,7 @@ const B_FAMILIES = {
   B_PERFECT: {
     id: "B_PERFECT", cat: "B", name: "Perfekte Folge", upgradeType: REPLACEMENT,
     tiers: {
-      1: { desc: "Treppenkarten: ab der dritten +1, danach +2 Stichwert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
+      1: { desc: "Treppenkarten: +0/+0/+1, danach +2 Stichwert.", cardBonus: (c) => stairBonus(c, [0, 0, 1], 2) },
       2: { desc: "Treppenkarten: +1/+2/+3, danach +4 Stichwert.",                cardBonus: (c) => stairBonus(c, [1, 2, 3], 4) },
       3: { desc: "Treppenkarten: +2/+3/+4, danach +5 Stichwert.",                cardBonus: (c) => stairBonus(c, [2, 3, 4], 5) },
       4: { desc: "Treppenkarten: +3/+4/+5, danach +6 Stichwert.",                cardBonus: (c) => stairBonus(c, [3, 4, 5], 6) },
@@ -344,10 +350,10 @@ const B_FAMILIES = {
     id: "B_SUPERIOR", cat: "B", name: "Überzahl", upgradeType: REPLACEMENT,
     // Vergleich des DAUERWERTS (pValueBase) mit dem des direkten Vorgängers (predValue). Pos 0 (kein Vorgänger) → 0.
     tiers: {
-      1: { desc: "Dauerwert ≥2 höher als der Vorgänger: +2 Stichwert.", cardBonus: (c) => (c.predValue != null && c.pValueBase - c.predValue >= 2 ? 2 : 0) },
-      2: { desc: "Dauerwert höher als der Vorgänger: +3 Stichwert.",              cardBonus: (c) => (c.predValue != null && c.pValueBase > c.predValue ? 3 : 0) },
-      3: { desc: "Dauerwert nicht niedriger als der Vorgänger: +3 Stichwert.",    cardBonus: (c) => (c.predValue != null && c.pValueBase >= c.predValue ? 3 : 0) },
-      4: { desc: "Höher als der Vorgänger: +5; genau gleich: +2 Stichwert.",                   cardBonus: (c) => (c.predValue == null ? 0 : c.pValueBase > c.predValue ? 5 : c.pValueBase === c.predValue ? 2 : 0) },
+      1: { desc: "Kartenwert ≥2 höher als der Vorgänger: +2 Stichwert.", cardBonus: (c) => (c.predValue != null && c.pValueBase - c.predValue >= 2 ? 2 : 0) },
+      2: { desc: "Kartenwert höher als der Vorgänger: +3 Stichwert.",              cardBonus: (c) => (c.predValue != null && c.pValueBase > c.predValue ? 3 : 0) },
+      3: { desc: "Kartenwert nicht niedriger als der Vorgänger: +3 Stichwert.",    cardBonus: (c) => (c.predValue != null && c.pValueBase >= c.predValue ? 3 : 0) },
+      4: { desc: "Kartenwert höher als der Vorgänger: +5 Stichwert; genau gleich: +2.",                   cardBonus: (c) => (c.predValue == null ? 0 : c.pValueBase > c.predValue ? 5 : c.pValueBase === c.predValue ? 2 : 0) },
     },
   },
 };
@@ -377,10 +383,15 @@ const bumpRandomWhere = (deck, pred, n, delta, rng) => {
 // Häufigkeit je AKTUELLEM Wert (A_CONDENSE — mehrfach vorkommende Wertgruppen).
 const valueCounts = (deck) => { const cnt = {}; for (const c of deck) cnt[c.value] = (cnt[c.value] || 0) + 1; return cnt; };
 // Farbduell: Gewinnerfarbe +up, Verliererfarbe +down (down negativ), alles auf >= 0 geklemmt.
+// #291: grün-bewusst über suitMatch (wie A_SUIT_BOOST) — pflanzen-grüne Karten zählen als „G" (sonst greift ein
+// grüner Gewinner nicht auf begrünte Karten). up gewinnt bei up===down (Reihenfolge im Ternär).
 const suitDuel = (deck, up, down, upDelta, downDelta) =>
-  deck.map((c) => (c.suit === up ? { ...c, value: Math.max(0, c.value + upDelta) }
-    : c.suit === down ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
+  deck.map((c) => (suitMatch(c, up) ? { ...c, value: Math.max(0, c.value + upDelta) }
+    : suitMatch(c, down) ? { ...c, value: Math.max(0, c.value + downDelta) } : c));
 const randomSuit = (rng) => SUIT_ORDER[Math.floor(rng() * SUIT_ORDER.length)];
+// Farb-Prädikat für farbbasierte Wert-Boosts: „Grün" (Suit „G") umfasst auch pflanzen-grüne Karten (card.green) —
+// auf dem Board werden sie als grün angezeigt, also zählen sie auch als Grün. Alle anderen Farben: nur die Originalfarbe.
+const suitMatch = (c, s) => c.suit === s || (s === "G" && !!c.green);
 
 const A_FAMILIES = {
   A_WEAK_STRONG: {
@@ -410,7 +421,7 @@ const A_FAMILIES = {
       1: { desc: "Vier zufällige gerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 0, 4, 1, rng) },
       2: { desc: "Alle ursprünglichen 2er und 8er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 2 || c.baseRank === 8, 1) },
       3: { desc: "Alle ursprünglichen 4er und 6er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 4 || c.baseRank === 6, 1) },
-      4: { desc: "Alle geraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
+      4: { desc: "Alle geraden Karten: dauerhaft +1 Kartenwert (zusätzlich zu den Stufen davor).", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 0, 1) },
     },
   },
   A_ODD: {
@@ -419,17 +430,17 @@ const A_FAMILIES = {
       1: { desc: "Vier zufällige ungerade Karten: dauerhaft +1 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.value % 2 === 1, 4, 1, rng) },
       2: { desc: "Alle ursprünglichen 3er und 7er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 3 || c.baseRank === 7, 1) },
       3: { desc: "Alle ursprünglichen 1er und 9er: dauerhaft +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank === 1 || c.baseRank === 9, 1) },
-      4: { desc: "Alle ungeraden Karten: zusätzlich +1 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
+      4: { desc: "Alle ungeraden Karten: dauerhaft +1 Kartenwert (zusätzlich zu den Stufen davor).", onPick: (d) => bumpWhere(d, (c) => c.value % 2 === 1, 1) },
     },
   },
   A_SUIT_BOOST: {
     id: "A_SUIT_BOOST", cat: "A", name: "Farbverstärkung", upgradeType: CUMULATIVE,
     // III/IV: Spieler wählt die Farbe (pickTarget). I/II: zufällige Farbe.
     tiers: {
-      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => c.suit === s, 4, 1, rng); } },
-      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => c.suit === s, 1); } },
-      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 1) : d) },
-      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => c.suit === target.suits[0], 2) : d) },
+      1: { desc: "Eine zufällige Farbe: vier zufällige Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpRandomWhere(d, (c) => suitMatch(c, s), 4, 1, rng); } },
+      2: { desc: "Eine zufällige Farbe: alle Karten dauerhaft +1 Kartenwert.", onPick: (d, rng) => { const s = randomSuit(rng); return bumpWhere(d, (c) => suitMatch(c, s), 1); } },
+      3: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => suitMatch(c, target.suits[0]), 1) : d) },
+      4: { desc: "Wähle eine Farbe: alle ihre Karten dauerhaft +2 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, _rng, target) => (target?.suits?.[0] ? bumpWhere(d, (c) => suitMatch(c, target.suits[0]), 2) : d) },
     },
   },
   A_SMALL_BIG: {
@@ -439,7 +450,7 @@ const A_FAMILIES = {
       1: { desc: "Zwei zufällige ursprüngliche 1–3er: dauerhaft je +3 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 2, 3, rng) },
       2: { desc: "Drei zufällige ursprüngliche 1–3er: dauerhaft je +4 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3, 4, rng) },
       3: { desc: "Vier zufällige ursprüngliche 1–3er: dauerhaft je +5 Kartenwert.", onPick: (d, rng) => bumpRandomWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 4, 5, rng) },
-      4: { desc: "Alle ursprünglichen 1–3er: dauerhaft +3 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3) },
+      4: { desc: "Alle ursprünglichen 1–3er: dauerhaft je +3 Kartenwert.", onPick: (d) => bumpWhere(d, (c) => c.baseRank >= 1 && c.baseRank <= 3, 3) },
     },
   },
   A_MIDRANGE: {
@@ -477,7 +488,7 @@ const A_FAMILIES = {
     tiers: {
       1: { desc: "Eine zufällige Farbe +1 Kartenwert dauerhaft, eine andere −1 Kartenwert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 1, -1); } },
       2: { desc: "Eine zufällige Farbe +2 Kartenwert dauerhaft, eine andere −1 Kartenwert.", onPick: (d, rng) => { const s = shuffle(SUIT_ORDER, rng); return suitDuel(d, s[0], s[1], 2, -1); } },
-      3: { desc: "Wähle die Gewinnerfarbe (+3 Kartenwert); eine andere Farbe verliert zufällig −1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, rng, target) => { const up = target?.suits?.[0]; if (!up) return d; const down = shuffle(SUIT_ORDER.filter((s) => s !== up), rng)[0]; return suitDuel(d, up, down, 3, -1); } },
+      3: { desc: "Wähle die Gewinnerfarbe (+3 Kartenwert); eine zufällige andere Farbe verliert 1 Kartenwert.", pickTarget: { suits: 1 }, onPick: (d, rng, target) => { const up = target?.suits?.[0]; if (!up) return d; const down = shuffle(SUIT_ORDER.filter((s) => s !== up), rng)[0]; return suitDuel(d, up, down, 3, -1); } },
       4: { desc: "Wähle Gewinner- und Verliererfarbe: +4 / −1 Kartenwert.", pickTarget: { suits: 2 }, onPick: (d, _rng, target) => { const [up, down] = target?.suits || []; return up && down ? suitDuel(d, up, down, 4, -1) : d; } },
     },
   },
@@ -592,14 +603,14 @@ const C_FAMILIES = {
   },
   C_ECKSTEIN: {
     id: "C_ECKSTEIN", cat: "C", name: "Eckstein", upgradeType: ROLE, needsArchitect: true,
-    // Gebäude-Perk (Architekt): die Rollenkarte erhält ihren Bonus, solange sie UNTER einem Gebäude liegt
-    // (ctx.underBuilding). Pendant zu C_ECKPFEILER (Formation), nur eben für das Gebäude-Overlay. IV-Kicker,
-    // wenn die Position unter einer VOLLENDETEN Struktur liegt (Zeile/Spalte/Diagonale, ctx.underStructure).
+    // Gebäude-Perk (Architekt): die Rollenkarte erhält ihren Bonus, solange sie IN einem Gebäude liegt
+    // (ctx.underBuilding = Position vom Gebäude-Overlay abgedeckt). Pendant zu C_ECKPFEILER (Formation), nur
+    // fürs Gebäude-Overlay. IV-Kicker, wenn die Position IN einer VOLLENDETEN Struktur liegt (Zeile/Spalte/Diagonale).
     tiers: {
-      1: { desc: "Wähle 1 Karte: liegt sie unter einem Gebäude, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 3 : 0) },
-      2: { desc: "Wähle 2 Karten: unter einem Gebäude, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 4 : 0) },
-      3: { desc: "Wähle 3 Karten: unter einem Gebäude, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 5 : 0) },
-      4: { desc: "Wähle 4 Karten: unter einem Gebäude +6; unter einer vollendeten Struktur +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? (c.underStructure ? 9 : 6) : 0) },
+      1: { desc: "Wähle 1 Karte: liegt sie in einem Gebäude, +3 Stichwert.",  pickTarget: { cards: 1 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 3 : 0) },
+      2: { desc: "Wähle 2 Karten: in einem Gebäude, +4 Stichwert.",           pickTarget: { cards: 2 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 4 : 0) },
+      3: { desc: "Wähle 3 Karten: in einem Gebäude, +5 Stichwert.",           pickTarget: { cards: 3 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? 5 : 0) },
+      4: { desc: "Wähle 4 Karten: in einem Gebäude +6; in einer vollendeten Struktur +9 Stichwert.", pickTarget: { cards: 4 }, cardBonus: (c) => (c.isRole && c.isRole("C_ECKSTEIN") && c.underBuilding ? (c.underStructure ? 9 : 6) : 0) },
     },
   },
   C_SURVIVOR: {
@@ -704,11 +715,12 @@ const E_FAMILIES = {
   },
   E_PENDULUM: {
     id: "E_PENDULUM", cat: "E", name: "Pendelwerk", upgradeType: REPLACEMENT,
+    // #285: „von → nach" gegenüber dem Standard-Wechsel (ab 3 Karten, Differenz ≥4) → die Erleichterung ist sofort sichtbar.
     tiers: {
-      1: { desc: "Wechsel bilden sich ab 3 Karten (Mindestdifferenz 3).",                       wMinLen: 3, wMinDiff: 3 },
-      2: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 4).",                        wMinLen: 2, wMinDiff: 4 },
-      3: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 3).",                        wMinLen: 2, wMinDiff: 3 },
-      4: { desc: "Wechsel bilden sich ab 2 Karten (Mindestdifferenz 2); der Faktor startet bei ×1,35.", wMinLen: 2, wMinDiff: 2, wFactorStart: 1.35 },
+      1: { desc: "Für einen Wechsel genügt eine Nachbardifferenz von 3 (statt 4); weiterhin ab 3 Karten.",                 wMinLen: 3, wMinDiff: 3 },
+      2: { desc: "Ein Wechsel braucht nur noch 2 Karten (Nachbardifferenz weiterhin ≥4).",                             wMinLen: 2, wMinDiff: 4 },
+      3: { desc: "Ein Wechsel braucht nur noch 2 Karten, und eine Nachbardifferenz von 3 genügt.",                        wMinLen: 2, wMinDiff: 3 },
+      4: { desc: "Ein Wechsel braucht nur noch 2 Karten, und eine Nachbardifferenz von 2 genügt; Zweier-Wechsel zählen ab ×1,35.",  wMinLen: 2, wMinDiff: 2, wFactorStart: 1.35 },
     },
   },
   E_RPM: {
@@ -726,20 +738,20 @@ const E_FAMILIES = {
     id: "E_LOSS", cat: "E", name: "Kontrollverlust", upgradeType: REPLACEMENT,
     // Anker auf „geraden" Positionen (10er-Raster). III/IV: jede Segment-Endposition; IV zusätzlich ×1,35.
     tiers: {
-      1: { desc: "Positionen 20 und 40 sind Anker (siegreicher Anker ×1,25).",       anchor: { at: (p) => (p + 1) % 20 === 0, factor: ANKER, value: 0 } },
-      2: { desc: "Positionen 10, 20, 30 und 40 sind Anker.",                          anchor: { at: (p) => (p + 1) % 10 === 0, factor: ANKER, value: 0 } },
-      3: { desc: "Jede Segment-Endposition ist ein Anker.",                               anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
-      4: { desc: "Jede Segment-Endposition ist ein ×1,35-Anker.",                         anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 0 } },
+      1: { desc: "Positionen 20 und 40 zählen als Anker (×1,25).",       anchor: { at: (p) => (p + 1) % 20 === 0, factor: ANKER, value: 0 } },
+      2: { desc: "Positionen 10, 20, 30 und 40 zählen als Anker (×1,25).",                          anchor: { at: (p) => (p + 1) % 10 === 0, factor: ANKER, value: 0 } },
+      3: { desc: "Jede Segment-Endposition zählt als Anker (×1,25).",                               anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
+      4: { desc: "Jede Segment-Endposition zählt als Anker (×1,35).",                         anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 0 } },
     },
   },
   E_QUICKSHOT: {
     id: "E_QUICKSHOT", cat: "E", name: "Schnellschuss", upgradeType: REPLACEMENT,
     // Anker auf „ungeraden" Positionen (5er-Versatz). IV: jede fünfte Position ×1,35 und +2 Wert.
     tiers: {
-      1: { desc: "Positionen 5 und 25 sind Anker (siegreicher Anker ×1,25).", anchor: { at: (p) => (p - 4) % 20 === 0, factor: ANKER, value: 0 } },
-      2: { desc: "Positionen 5, 15, 25 und 35 sind Anker.",                    anchor: { at: (p) => (p - 4) % 10 === 0, factor: ANKER, value: 0 } },
-      3: { desc: "Jede fünfte Position (5, 10 … 40) ist ein Anker.",              anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
-      4: { desc: "Jede fünfte Position ist ein ×1,35-Anker und erhält +2 Stichwert.",   anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 2 } },
+      1: { desc: "Positionen 5 und 25 zählen als Anker (×1,25).", anchor: { at: (p) => (p - 4) % 20 === 0, factor: ANKER, value: 0 } },
+      2: { desc: "Positionen 5, 15, 25 und 35 zählen als Anker (×1,25).",                    anchor: { at: (p) => (p - 4) % 10 === 0, factor: ANKER, value: 0 } },
+      3: { desc: "Jede fünfte Position (5, 10 … 40) zählt als Anker (×1,25).",              anchor: { at: (p) => (p + 1) % 5 === 0, factor: ANKER, value: 0 } },
+      4: { desc: "Jede fünfte Position zählt als Anker (×1,35) und erhält +2 Stichwert.",   anchor: { at: (p) => (p + 1) % 5 === 0, factor: 1.35, value: 2 } },
     },
   },
   E_SEGMENT: {
@@ -764,7 +776,7 @@ const E_FAMILIES = {
     tiers: {
       1: { desc: "Zweite Karte einer Wiederholung: ×1,30 (statt ×1,25).", repSecond: 0.05, repThird: 0, repAllMult: 1 },
       2: { desc: "Zweite Karte einer Wiederholung: ×1,35.",               repSecond: 0.10, repThird: 0, repAllMult: 1 },
-      3: { desc: "Zweite und dritte Wiederholungskarte: je +0,10 Faktor.",  repSecond: 0.10, repThird: 0.10, repAllMult: 1 },
+      3: { desc: "Zweite und dritte Wiederholungskarte: je +0,10 auf ihren Formations-Faktor.",  repSecond: 0.10, repThird: 0.10, repAllMult: 1 },
       4: { desc: "Alle Wiederholungsfaktoren: zusätzlich ×1,20.",           repSecond: 0.10, repThird: 0.10, repAllMult: 1.20 },
     },
   },
@@ -772,23 +784,28 @@ const E_FAMILIES = {
     id: "E_AFTERGLOW", cat: "E", name: "Nachhall", upgradeType: REPLACEMENT,
     // afterglow = aktiv; afterglowMaxFactor kappt (null = kein Cap); afterglowRepsOnly = nur Wiederholungen; afterglowHold = Karten.
     tiers: {
-      1: { desc: "Nachhall: der Formations-Faktor deiner Wiederholung überträgt sich auf die nächste Karte (höchstens ×1,20), auch wenn sie selbst nicht Teil der Formation ist.", afterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true,  afterglowHold: 1 },
-      2: { desc: "Nachhall bei allen Formationen; Faktor höchstens ×1,25.",                    afterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 },
-      3: { desc: "Nachhall übernimmt den stärksten Einzelfaktor vollständig.",                 afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 1 },
-      4: { desc: "Nachhall übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 2 },
+      1: { desc: "Der Formations-Faktor deiner Wiederholung überträgt sich auf die nächste Karte (höchstens ×1,20), auch wenn sie selbst nicht Teil der Formation ist.", afterglow: true, afterglowMaxFactor: 1.20, afterglowRepsOnly: true,  afterglowHold: 1 },
+      2: { desc: "Wirkt bei allen Formationen; Faktor höchstens ×1,25.",                    afterglow: true, afterglowMaxFactor: 1.25, afterglowRepsOnly: false, afterglowHold: 1 },
+      3: { desc: "Übernimmt den stärksten Einzelfaktor vollständig.",                 afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 1 },
+      4: { desc: "Übernimmt den stärksten Einzelfaktor und hält für die nächsten zwei Karten.", afterglow: true, afterglowMaxFactor: null, afterglowRepsOnly: false, afterglowHold: 2 },
     },
   },
   E_COLOR_ALLIANCE: {
     id: "E_COLOR_ALLIANCE", cat: "E", name: "Farballianz", upgradeType: REPLACEMENT,
-    // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und in
-    // computeFormations zu linkedGroups aufgelöst. `pairs` (IV) = die 4 Farben bilden ZWEI Allianzen (je zwei).
+    // Farb-Ziel (pickTarget.suits): die gewählten Farben werden in roles["E_COLOR_ALLIANCE"] persistiert und über
+    // allianceGroups zu Gruppen aufgelöst. Wirkbereich (#289): Farbblock-Formationen, Buntglas/Zunfthaus, Farbserie/
+    // Monochrom, Farbfokus — alle über colorsAllied/colorMatches. AUSNAHME: die Pick-Zeit-Deck-Perks Farbverstärkung/
+    // Farbduell (onPick) editieren das Deck dauerhaft und kennen die Allianz NICHT (nur rohe/grüne Farbe).
+    // #292: III = alle 4 als EINE Farbe (normaler Farbblock). IV = ebenfalls alle 4 als eine + `farbblockBonus`
+    // (Farbblock-Startfaktor +0,20, in formations.js gestapelt) → IV ist eindeutig stärker als III (früher „zwei
+    // Paare", was mechanisch SCHWÄCHER war: kürzere Blöcke, oft unter der ≥3-Schwelle). Kickt auch Pflanze (grün→Farbblock).
     // #195: monotone Leiter auf EINER Achse (Breite der Allianz) — I und II trugen zuvor beide suits:2 (mechanisch
     // identische Phantom-Stufe, wie E_RPM/E_SEGMENT/B_INITIATIVE). Jetzt 2 → 3 → 4 (alle als eine) → 4 (zwei Allianzen).
     tiers: {
-      1: { desc: "Wähle 2 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 2 } },
-      2: { desc: "Wähle 3 Farben: sie zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 3 } },
-      3: { desc: "Wähle 4 Farben: alle vier zählen für Farbblöcke als dieselbe Farbe.", pickTarget: { suits: 4 } },
-      4: { desc: "Wähle 4 Farben: sie bilden zwei Allianzen (je zwei zählen als eine).", pickTarget: { suits: 4 }, pairs: true },
+      1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
+      2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
+      3: { desc: "Wähle 4 Farben: alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
+      4: { desc: "Wähle 4 Farben: alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
     },
   },
   E_CORE: {
@@ -815,6 +832,74 @@ const E_FAMILIES = {
   },
 };
 
+// ---- P · Präzision (#267 Teil 2) — Crit-Chance/-Mult als RNG-gegatete Perk-Familien (Ersatz für den entfernten
+//      Crit-Stat). Basis-Crit 0. Allesamt REGELERSETZUNG (nur die höchste gehaltene Stufe aktiv). KEIN Legendär.
+//      Hooks (von der Engine in der Crit-Aggregation je Stich gelesen):
+//        critChance(ctx) → +Roh-Crit-Chance (ungeklemmt, additiv zu Perk-/Blitz-Crit)
+//        critMult()      → +Crit-Multiplikator (auf Basis 1,5)
+//      Karten-Kontext ctx: { winValue, suit, formCount, focusSuits } (Kartenwert / Kartenfarbe / #aktive Formationen
+//      an der Siegposition / gewählte Farben bei Farbfokus). Zwei gerade Motoren (Schärfe/Wucht) + drei konditionale
+//      Generatoren (Zielsicherheit/Brennglas/Farbfokus). pp/×-Werte + Skalen aus den Konstanten (drift-frei). ----
+const ppP = (x) => Math.round(x * 100);            // pp als ganze Zahl
+const deP = (x) => String(x).replace(".", ",");    // deutsche Dezimalschreibweise
+const cSc = (x) => x * C.PRECISION_CHANCE_SCALE;   // Crit-Chance-Skala
+const mSc = (x) => x * C.PRECISION_MULT_SCALE;     // Crit-Mult-Skala
+const P_FAMILIES = {
+  P_SHARPNESS: {
+    id: "P_SHARPNESS", cat: "P", name: "Schärfe", upgradeType: REPLACEMENT,
+    // Grund-Crit-Motor (Stat-Ersatz): flat +Crit-Chance auf ALLE Karten.
+    tiers: {
+      1: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[0])} % Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[0]) },
+      2: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[1])} % Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[1]) },
+      3: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[2])} % Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[2]) },
+      4: { desc: `Alle Karten: +${ppP(C.PRECISION_SHARP_PP[3])} % Crit-Chance.`, critChance: () => cSc(C.PRECISION_SHARP_PP[3]) },
+    },
+  },
+  P_FORCE: {
+    id: "P_FORCE", cat: "P", name: "Wucht", upgradeType: REPLACEMENT,
+    // Mult-Stat-Ersatz: +Crit-Multiplikator auf Basis 1,5.
+    tiers: {
+      1: { desc: `+${deP(C.PRECISION_FORCE_MULT[0])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[0]) },
+      2: { desc: `+${deP(C.PRECISION_FORCE_MULT[1])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[1]) },
+      3: { desc: `+${deP(C.PRECISION_FORCE_MULT[2])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[2]) },
+      4: { desc: `+${deP(C.PRECISION_FORCE_MULT[3])}× Crit-Multiplikator (auf Basis ${deP(C.CRIT_BASE_MULT)}×).`, critMult: () => mSc(C.PRECISION_FORCE_MULT[3]) },
+    },
+  },
+  P_AIM: {
+    id: "P_AIM", cat: "P", name: "Zielsicherheit", upgradeType: REPLACEMENT,
+    // Konditional (Hochwert-/Überlegenheits-Builds): +Crit-Chance nur auf hohe Karten; die Schwelle weitet sich je Stufe.
+    tiers: {
+      1: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[0]}: +${ppP(C.PRECISION_AIM_PP)} % Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[0] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      2: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[1]}: +${ppP(C.PRECISION_AIM_PP)} % Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[1] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      3: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[2]}: +${ppP(C.PRECISION_AIM_PP)} % Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[2] ? cSc(C.PRECISION_AIM_PP) : 0) },
+      4: { desc: `Karten mit Wert ≥ ${C.PRECISION_AIM_THRESH[3]}: +${ppP(C.PRECISION_AIM_PP)} % Crit-Chance.`, critChance: (c) => ((c.winValue || 0) >= C.PRECISION_AIM_THRESH[3] ? cSc(C.PRECISION_AIM_PP) : 0) },
+    },
+  },
+  P_LENS: {
+    id: "P_LENS", cat: "P", name: "Brennglas", upgradeType: REPLACEMENT,
+    // Konditional (Formations-Overlap · Variante B): +Crit-Chance JE Formation ab der 2. an der Siegposition, Cap +3
+    // Extra-Formationen. Belohnt Tiefe (der Chase), nicht bloße Präsenz. formCount = #aktive Formationen der Siegposition.
+    tiers: {
+      1: { desc: `+${ppP(C.PRECISION_LENS_PP[0])} % Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[0] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      2: { desc: `+${ppP(C.PRECISION_LENS_PP[1])} % Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[1] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      3: { desc: `+${ppP(C.PRECISION_LENS_PP[2])} % Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[2] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+      4: { desc: `+${ppP(C.PRECISION_LENS_PP[3])} % Crit-Chance je gleichzeitiger Formation ab der zweiten an der Siegposition (max ${C.PRECISION_LENS_CAP} extra).`, critChance: (c) => cSc(C.PRECISION_LENS_PP[3] * Math.min(Math.max((c.formCount || 0) - 1, 0), C.PRECISION_LENS_CAP)) },
+    },
+  },
+  P_COLORFOCUS: {
+    id: "P_COLORFOCUS", cat: "P", name: "Farbfokus", upgradeType: REPLACEMENT,
+    // Konditional (Farbblock / Pflanze-Grün): Farbe(n) wählen → +Crit-Chance nur auf Karten dieser Farbe. IV-Twist:
+    // statt höherer pp eine ZWEITE wählbare Farbe (beide auf Stufe-III-Wert). Ziel-Fluss über pickTarget.suits
+    // (REPLACEMENT mit Ziel → applyFamilyPick persistiert roles["P_COLORFOCUS"]); die Engine gibt focusSuits durch.
+    tiers: {
+      1: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[0])} % Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[0]) : 0) },
+      2: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[1])} % Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[1]) : 0) },
+      3: { desc: `Wähle eine Farbe: Karten dieser Farbe +${ppP(C.PRECISION_COLOR_PP[2])} % Crit-Chance.`, pickTarget: { suits: 1 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[2]) : 0) },
+      4: { desc: `Wähle ZWEI Farben: Karten dieser Farben je +${ppP(C.PRECISION_COLOR_PP[3])} % Crit-Chance.`, pickTarget: { suits: 2 }, critChance: (c) => ((c.focusSuits || []).some((fs) => colorsAllied(c.suit, fs, c.alliance)) ? cSc(C.PRECISION_COLOR_PP[3]) : 0) },
+    },
+  },
+};
+
 /* ---- Muster-Beschreibungen (Text-Vereinfachung): 20 Familien teilen je EINEN Satz. Statt viermal fast
    identischer desc-Strings steht der Satz hier einmal als Template ($0,$1… = Werte je Stufe); die vier
    Stufen-descs werden nach dem Zusammenbau von FAMILY_DEFS erzeugt (applyMusterDescs). Die Effekt-Hooks der
@@ -835,13 +920,15 @@ const MUSTER_DESC = {
   D_STREAK: { tpl: "Jeder Sieg: +$0 Score je Serienpunkt (max +$1).", vals: [["15","150"],["25","250"],["35","420"],["50","750"]] },
   D_HIGH: { tpl: "Sieg mit Kartenwert ≥$0: +$1 Score.", vals: [["9","100"],["8","150"],["7","225"],["6","350"]] },
   D_UNDERDOG: { tpl: "Sieg mit Kartenwert ≤$0: +$1 Score.", vals: [["2","250"],["3","350"],["4","500"],["5","750"]] },
-  D_TENTH_WIN: { tpl: "Jeder $0. gewonnene Stich: +$1 Score.", vals: [["12","600"],["10","800"],["8","900"],["5","1.000"]] },
+  D_TENTH_WIN: { tpl: "Jeder $0. Sieg des Laufs: +$1 Score.", vals: [["12","600"],["10","800"],["8","900"],["5","1.000"]] },
   D_CRIT_SCORE: { tpl: "Jeder Crit: +$0 Score.", vals: [["100"],["175"],["275"],["450"]] },
   D_SHARP_EYE: { tpl: "Crit mit Kartenwert ≥$0: +$1 Score.", vals: [["9","225"],["8","350"],["7","500"],["6","750"]] },
-  D_RHYTHM: { tpl: "Jeder $0. gewonnene Stich: +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
+  D_RHYTHM: { tpl: "Im Takt: jeder $0. Sieg gibt +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
   D_OVERPOWER: { tpl: "Sieg mit ≥$0 Wertvorsprung: +$1 Score.", vals: [["10","300"],["8","400"],["6","550"],["4","750"]] },
   D_CRIT_HARVEST: { tpl: "Crit in ≥1 aktiver Formation: +$0 Score.", vals: [["175"],["300"],["475"],["750"]] },
-  E_TUNING: { tpl: "$0: +$1 Energie.", vals: [["Jede zweite Formationsphase","1"],["Jede Formationsphase","1"],["Jede Formationsphase","2"],["Jede Formationsphase","3"]] },
+  // Sprachprüfung: „Aufstellungsphase" ist der EINE Name der Phase (so auch im Glossar) — „Formationsphase"
+  // war hier das einzige Vorkommen in einem Spielertext und wurde vom Glossar deshalb nicht mal gefettet.
+  E_TUNING: { tpl: "$0: +$1 Energie.", vals: [["Jede zweite Aufstellungsphase","1"],["Jede Aufstellungsphase","1"],["Jede Aufstellungsphase","2"],["Jede Aufstellungsphase","3"]] },
 };
 const applyMusterDescs = (defs) => {
   for (const [id, m] of Object.entries(MUSTER_DESC)) {
@@ -856,6 +943,7 @@ export const FAMILY_DEFS = {
   ...A_FAMILIES,
   ...C_FAMILIES,
   ...E_FAMILIES,
+  ...P_FAMILIES,
 };
 
 applyMusterDescs(FAMILY_DEFS); // Stufen-descs der Muster-Familien aus MUSTER_DESC erzeugen
@@ -917,6 +1005,17 @@ export function familyProdHook(familyTiers, name, ctx) {
   return m;
 }
 
+// Präzision (#267): Summe der Roh-Crit-Chance über die aktiven Familien-Stufen (critChance-Hook). UNGEKLEMMT —
+// additiv zu Perk-/Blitz-Crit; die Engine klemmt die Gesamtsumme. ctx trägt den Karten-Kontext { winValue, suit,
+// formCount, focusSuits } für die konditionalen Generatoren (Zielsicherheit/Brennglas/Farbfokus).
+export function familyCritChanceRaw(familyTiers, ctx = {}) {
+  return familySumHook(familyTiers, "critChance", ctx);
+}
+// Präzision (#267): Summe des additiven Crit-Multiplikators über die aktiven Familien-Stufen (critMult-Hook, Wucht).
+export function familyCritMult(familyTiers) {
+  return familySumHook(familyTiers, "critMult", {});
+}
+
 // Feinjustierung (E_TUNING, #179 — ehem. Shop-Feinjustierung / Perk E10): Formationsenergie-Bonus aus dem gehaltenen
 // Rang. `everySecond` (Stufe I §10) nur jede zweite Formationsphase — über die Durchlauf-Parität genähert. cycle = state.cycle.
 export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
@@ -927,26 +1026,25 @@ export function formationEnergyBonus(familyTiers = {}, cycle = 0) {
   return def.energyBonus || 0;
 }
 
-// Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles + `pairs`-Flag der gehaltenen Stufe.
-// Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI (diagonaler Zweifarben-Split).
-// [] = keine Allianz; [[a,b]] = eine Gruppe (2/3 Farben); [[a,b],[c,d]] = zwei Paare (Stufe IV).
-export function allianceGroups(familyTiers = {}, roles = {}) {
+// Farballianz (#179, E_COLOR_ALLIANCE): die verlinkten Farbgruppen aus roles.
+// Eine gemeinsame Quelle für computeFormations (Farbblock-Verschmelzung) UND die UI.
+// [] = keine Allianz; [[a,b,…]] = EINE Gruppe aus allen verlinkten Farben (#292: alle als eine Farbe, kein Paar-Split mehr).
+export function allianceGroups(_familyTiers = {}, roles = {}) {
   const suits = (roles || {}).E_COLOR_ALLIANCE || [];
   if (suits.length < 2) return [];
-  const pairs = !!familyTierParam(familyTiers, "E_COLOR_ALLIANCE", "pairs");
-  return (pairs && suits.length === 4) ? [[suits[0], suits[1]], [suits[2], suits[3]]] : [suits.slice()];
+  return [suits.slice()];
 }
 
 // Belohnt eine gehaltene Familie Crits? (steuert die UI-Sichtbarkeit der Crit-Anzeigen, analog perks.hasCritPerk — #166).
 // Die crit-belohnenden D-Familien (D_CRIT_SCORE/D_SHARP_EYE/…) tragen scoreFlatOnCrit auf ihrer aktiven Stufe.
 export function hasCritFamily(familyTiers) {
-  return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit);
+  return activeTierDefs(familyTiers).some((def) => !!def.scoreFlatOnCrit || !!def.critChance || !!def.critMult);
 }
 
 // Familien, deren Wirkung von Position/Reihenfolge/Nachbarschaft/Formation abhängt — für die Aufstellungshilfe (#166,
 // analog perks.LAYOUT_EXTRA). Kuratiert: die positions-/nachbarschafts-/segment-/formationsbezogenen C-/B-/D-Familien;
 // ALLE E-Formationswerkzeuge kommen über cat==="E" dazu.
-export const LAYOUT_FAMILY_IDS = new Set([
+const LAYOUT_FAMILY_IDS = new Set([
   "C_VANGUARD", "C_GUARD", "C_RELAY", "C_LEADER", "C_FINISHER", "C_SURVIVOR", "C_JOKER", "C_BRIDGE", "C_ECKPFEILER", "C_ECKSTEIN", // Rollen an Position/Nachbar/Segment/Formation/Gebäude
   "B_OPENING", "B_FINALE", "B_TENTH_STRIKE", "B_TIGHT", "B_PERFECT", "B_SUPERIOR",                    // positions-/formationsbezogene Stich-Familien
   "D_FORMATION_BONUS", "D_CRIT_HARVEST", "D_FULL_HOUSE",                                              // formations-/segmentbezogene Score-Familien

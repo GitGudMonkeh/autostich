@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # QA-Gate: --max-warnings=0 — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
+      - run: npm run lint -- --max-warnings=0
       # #250: Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
       - name: Build-Metadaten
         run: |
@@ -47,5 +49,8 @@ jobs:
           publish_dir: dist
           # Nur in den Unterordner test/ schreiben; Root (main-Seite) unangetastet lassen.
           destination_dir: test
-          keep_files: true
+          # #F-01: keep_files FALSE — der Slot soll GENAU dem aktuellen Build entsprechen. Mit true blieben alle je
+          # gebauten gehashten Dateien für immer liegen (pixi/ trug ~3x so viele Dateien wie ein Build hat).
+          # Wirkt nur innerhalb von destination_dir, die anderen Slots und /media/ bleiben unberührt.
+          keep_files: false
           commit_message: "deploy(test): ${{ github.sha }}"

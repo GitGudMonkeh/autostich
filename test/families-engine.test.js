@@ -2,12 +2,11 @@ import { describe, it, expect } from "vitest";
 import { makeRng, buildDeck } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { initialShop } from "../src/game/shop.js";
 import { applyFamilyPick, FAMILY_DEFS } from "../src/game/families.js";
 import { computeFormations } from "../src/game/formations.js";
 import { precomputeArchitect } from "../src/game/architect.js";
 import { buildPerkOffer, isMigratedPerk, PERK_DEFS, PERK_LIST, isLegendary } from "../src/game/perks.js";
-import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER } from "../src/game/constants.js";
+import { SCORE_PER_WIN, RICHTFEST_STEP, BAUHUETTE_COVER, CRIT_BASE_MULT, PRECISION_FORCE_MULT } from "../src/game/constants.js";
 const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Sieg-Basis (Pacing-Pass 100→400)
 
 /* Engine-Verdrahtung des Raritätssystems (Epic #167, Schritt 1): der End-to-End-Nachweis, dass eine
@@ -29,8 +28,12 @@ function scenario(pVal, oVal, over = {}) {
   };
 }
 const rng = makeRng(9);
-// Kritwurf ist rng()<chance: 0,999… crittet nie bei realer Chance, aber immer bei erzwungener Chance 1 (statCritChance:1).
+// Kritwurf ist rng()<chance: 0,999… crittet nie bei realer Chance, aber immer bei erzwungener Chance 1 (litCrit(1)).
 const never = () => 0.999999;
+// #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
+// aktiver Blitz OHNE Skills trägt exakt 0,05 (Sockel) + stauBonus zur rawCrit bei — sonst nichts (kein Score/Mult/Ladung).
+// litCrit(V) hebt die rawCrit auf genau V → Drop-in für den alten statCritChance:V (Kritwurf bleibt rng()<V).
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v - 0.05 });
 
 describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schritt 1)", () => {
   it("D_HIGH IV: Stufe zahlt scoreFlat in die multiplizierte Basis (Wert ≥6)", () => {
@@ -65,8 +68,8 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
   });
 
   it("scoreFlatOnCrit-Familie (D_CRIT_SCORE) zahlt nur bei einem Crit", () => {
-    // erzwungener Crit via statCritChance:1 → Rang 2 gibt +175 in die Basis, dann Crit-Faktor.
-    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 }, statCritChance: 1 }), rng);
+    // erzwungener Crit via Blitz-Stau (litCrit(1)) → Rang 2 gibt +175 in die Basis, dann Crit-Faktor.
+    const s = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_SCORE: 2 }, lightning: litCrit(1) }), rng);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.gained).toBeCloseTo((B +175) * 1.02 * s.lastTrick.critMultiplier);
     // Ohne Crit (keine Crit-Chance) trägt die Familie nichts bei → nur Basis.
@@ -121,10 +124,10 @@ describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schrit
     s = resolveTrick(s, rng); expect(s.lastTrick.breakdown.flats).toBeCloseTo(600); // wins 3 → 3 % 3 === 0
   });
   it("D_CRIT_HARVEST: scoreFlatOnCrit nur bei Crit MIT aktiver Formation (Stufe I: +175)", () => {
-    // 2-Karten-Wiederholung: Pos 0 formationslos, Pos 1 = Wiederholung (hasFormation). Crit über statCritChance:1 erzwungen.
+    // 2-Karten-Wiederholung: Pos 0 formationslos, Pos 1 = Wiederholung (hasFormation). Crit über den Blitz-Stau erzwungen.
     const deck = [{ id: "a", suit: "R", baseRank: 12, value: 12 }, { id: "b", suit: "R", baseRank: 12, value: 12 }];
     const opp = [{ id: "o0", suit: "R", baseRank: 0, value: 0 }, { id: "o1", suit: "R", baseRank: 0, value: 0 }];
-    const base = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], familyTiers: { D_CRIT_HARVEST: 1 }, statCritChance: 1 };
+    const base = { ...initialState(makeRng(1)), deck, oppDeck: opp, playerOrder: [0, 1], oppOrder: [0, 1], familyTiers: { D_CRIT_HARVEST: 1 }, lightning: litCrit(1) };
     let s = resolveTrick(base, rng);          // Pos 0: Crit, aber keine Formation → 0
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(0);
     s = resolveTrick(s, rng);                 // Pos 1: Crit + Wiederholung → +175
@@ -225,12 +228,12 @@ describe("Familien-Engine — Kategorie C (Rollen über resolveTrick, Schritt 2b
     // Stufe IV Basis (eine Formation) → +6.
     expect(resolveTrick(eck({ familyTiers: { C_ECKPFEILER: 4 }, roles: { C_ECKPFEILER: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(11);
   });
-  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte unter einem Gebäude erhält den Bonus", () => {
+  it("C_ECKSTEIN (Gebäude-Perk): Rollenkarte in einem Gebäude erhält den Bonus", () => {
     // Score-Gebäude (A_ZOLLHAUS) deckt Positionen 2,3 ab OHNE Wertbonus → isoliert den C_ECKSTEIN-Wert.
     const arch = { buildings: [{ id: "b1", familyId: "A_ZOLLHAUS", tier: 1, footprint: [2, 3] }], winCounters: {} };
     const pre = precomputeArchitect(arch, identity(), constDeck(5));
     const eck = (over) => scenario(5, 6, { architectPre: pre, ...over });
-    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (unter Gebäude)
+    expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: { C_ECKSTEIN: ["X2"] }, pos: 2 }), rng).lastTrick.pValue).toBe(8); // 5 + 3 (in Gebäude)
     // ohne Rolle → kein Bonus.
     expect(resolveTrick(eck({ familyTiers: { C_ECKSTEIN: 1 }, roles: {}, pos: 2 }), rng).lastTrick.pValue).toBe(5);
     // Rollenkarte auf unbedeckter Position (Pos 1) → kein Bonus.
@@ -277,17 +280,20 @@ describe("Gebäude-Legendäre — Richtfest (Durchlauf-Ende) + Bauhütte (Pick)"
     const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
     expect(precomputeArchitect(arch, identity(), constDeck(12)).structureCount).toBe(1);
   });
-  it("L_RICHT (Richtfest): Struktur-Dividende stapelt je Durchlauf-Ende (+Schritt × Strukturen)", () => {
+  it("L_RICHT (Richtfest): Struktur-Dividende = Anteil am Durchlauf-Ertrag (× Strukturen)", () => {
     const arch = { buildings: [{ id: "b1", familyId: "A_PRUNKSAAL", tier: "legendary", footprint: [0, 1, 2, 3, 4] }], winCounters: {} };
     const pre = precomputeArchitect(arch, identity(), constDeck(12));
-    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: 0 }), rng);
-    expect(s.cycle).toBe(1);                                  // Durchlauf-Ende
-    expect(s.richtfestBonus).toBe(RICHTFEST_STEP);            // 1 Struktur → +Schritt
-    // Folgedurchlauf mit demselben Bau: stapelt weiter.
-    const s2 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, richtfestBonus: RICHTFEST_STEP }), rng);
-    expect(s2.richtfestBonus).toBe(2 * RICHTFEST_STEP);
-    // ohne vollendete Struktur (kein Bau) → kein Zuwachs.
-    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, richtfestBonus: 0 }), rng);
+    // cycleScoreSum = Ertrag der Vorstiche dieses Durchlaufs; der Schluss-Stich kommt noch dazu (Zuwachs = gained).
+    const s = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, cycleScoreSum: 100_000 }), rng);
+    expect(s.cycle).toBe(1);                                             // Durchlauf-Ende
+    // lastTrick.scoreGain enthält die Durchlauf-Ende-Payoffs bereits (Ledger-Zuschlag) → für die Bezugsgröße abziehen.
+    const trickGain = s.lastTrick.scoreGain - s.richtfestBonus;
+    expect(s.richtfestBonus).toBeCloseTo((100_000 + trickGain) * RICHTFEST_STEP * 1, 6); // 1 Struktur
+    // SELBSTSKALIEREND: doppelter Durchlauf-Ertrag → doppelte Dividende (ein flacher Schritt täte das nicht).
+    const rich = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, architectPre: pre, cycleScoreSum: 200_000 }), rng);
+    expect(rich.richtfestBonus - s.richtfestBonus).toBeCloseTo(100_000 * RICHTFEST_STEP, 6);
+    // ohne vollendete Struktur (kein Bau) → keine Dividende.
+    const s0 = resolveTrick(scenario(12, 0, { perks: ["L_RICHT"], pos: 39, cycleScoreSum: 100_000 }), rng);
     expect(s0.richtfestBonus).toBe(0);
   });
   it("L_BAUH (Bauhütte): PICK_PERK hebt den Baufeld-Deckel (maxCover) dauerhaft", () => {
@@ -416,6 +422,23 @@ describe("Familien-Ziel-Fluss — pickTarget-Stufen (Rarität #167, Kat. A)", ()
     expect(reducer(play, { type: "FAMILY_TARGET_CONFIRM", rng })).toBe(play);
   });
 
+  it("Farballianz III/IV (alle Farben) überspringt den Picker und wendet direkt an (Comfort)", () => {
+    // suits:4 = alle Farben → Auswahl erzwungen, Reihenfolge egal → kein „4 von 4 antippen"-Leerlauf.
+    for (const tier of [3, 4]) {
+      const s = reducer(base({ familyId: "E_COLOR_ALLIANCE", tier }), { type: "PICK_FAMILY", familyId: "E_COLOR_ALLIANCE", tier, rng });
+      expect(s.phase).toBe("play");                 // NICHT family-target
+      expect(s.familyTarget).toBeFalsy();
+      expect(s.familyTiers).toEqual({ E_COLOR_ALLIANCE: tier });
+      expect((s.roles.E_COLOR_ALLIANCE || []).slice().sort()).toEqual(["B", "G", "R", "Y"]); // alle vier als Ziel
+    }
+  });
+
+  it("Farballianz I/II (Teilmenge) öffnet weiterhin den Picker", () => {
+    const s = reducer(base({ familyId: "E_COLOR_ALLIANCE", tier: 2 }), { type: "PICK_FAMILY", familyId: "E_COLOR_ALLIANCE", tier: 2, rng });
+    expect(s.phase).toBe("family-target");          // 3 von 4 wählen → echte Auswahl bleibt
+    expect(s.familyTarget.need).toBe(3);
+  });
+
   it("initialState trägt familyTarget = null", () => {
     expect(initialState(makeRng(1)).familyTarget).toBeNull();
   });
@@ -489,7 +512,7 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     expect(resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, misfireScore: 0 }), never).misfireScore).toBe(75); // IV-Schritt
   });
   it("D_MISFIRE IV: Crit zahlt die volle Ladung aus und behält 25 %", () => {
-    const paid = resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, statCritChance: 1, misfireScore: 400 }), never);
+    const paid = resolveTrick(scenario(12, 0, { familyTiers: { D_MISFIRE: 4 }, lightning: litCrit(1), misfireScore: 400 }), never);
     expect(paid.lastTrick.isCrit).toBe(true);
     expect(paid.misfireScore).toBe(100); // round(400 × 0,25)
     expect(paid.lastTrick.gained).toBeCloseTo((B +400) * 1.02 * paid.lastTrick.critMultiplier); // volle 400 in die Basis
@@ -518,11 +541,11 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
   });
 
   it("D_CRIT_MOMENTUM IV: ein Crit erhöht die Siegesserie zusätzlich um 1", () => {
-    const iv = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 4 }, statCritChance: 1 }), never);
+    const iv = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 4 }, lightning: litCrit(1) }), never);
     expect(iv.lastTrick.isCrit).toBe(true);
     expect(iv.winStreak).toBe(2); // +1 Sieg, +1 Crit-Bonus
     // Stufe III ohne streakGainOnCrit → nur der Sieg zählt.
-    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 3 }, statCritChance: 1 }), never).winStreak).toBe(1);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_MOMENTUM: 3 }, lightning: litCrit(1) }), never).winStreak).toBe(1);
   });
 
   it("D_INTERPLAY IV: Niederlage speichert +200, der nächste Sieg zahlt sie als Flat aus (Stufe III speichert nicht)", () => {
@@ -537,7 +560,7 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
   });
 
   it("D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist, gibt zusätzlich +300", () => {
-    const cf = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true, statCritChance: 1 }), never);
+    const cf = resolveTrick(scenario(12, 0, { familyTiers: { D_CRIT_FOLLOW: 4 }, critFollowArmed: true, lightning: litCrit(1) }), never);
     expect(cf.lastTrick.isCrit).toBe(true);
     expect(cf.lastTrick.gained).toBeCloseTo((B +700 + 300) * 1.02 * cf.lastTrick.critMultiplier); // 700 (Folge) + 300 (Crit-Bonus)
     // Folgesieg ohne Crit → nur die 700 (kein +300).
@@ -566,6 +589,50 @@ describe("Engine-Parameter je Stufe (Schritt 2) — engine-gekoppelte D-Familien
     expect(s.lastTrick.breakdown.flats).toBeCloseTo(0); // nur 2 Segment-Siege davor → kein Full-House (früher: +650 Leck)
   });
 
+});
+
+// #267 Teil 2: die Perk-Familie „Präzision" (Kat. P) ist der ENGINE-Ersatz für den entfernten Crit-Stat — sie speist
+// über die critChance-/critMult-Hooks direkt die Crit-Aggregation in resolveTrick (Basis-Crit-Chance 0, Basis-Mult 1,5).
+// End-to-End über resolveTrick: rng 0,99 → kein realer Crit (nur critChance ablesbar), rng 0 → Crit erzwungen.
+describe("Familien-Engine — Kategorie P (Präzision: Crit-Chance/-Mult über resolveTrick, #267)", () => {
+  const zero = () => 0, high = () => 0.99;
+  const suitDeck = (suit) => Array.from({ length: 40 }, (_, i) => ({ id: `${suit}${i}`, suit, baseRank: 12, value: 12 }));
+
+  it("P_SHARPNESS: flache Crit-Chance auf ALLE Karten (Stufe I 0,06 / IV 0,15)", () => {
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 1 } }), high).lastTrick.critChance).toBeCloseTo(0.06);
+    expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 4 } }), high).lastTrick.critChance).toBeCloseTo(0.15);
+  });
+
+  it("P_FORCE: +Crit-Multiplikator auf den Basis-Crit-Mult (Stufe I → +0,25 / IV → +0,90); Crit via P_SHARPNESS + rng 0 erzwungen", () => {
+    // P_SHARPNESS IV liefert die Crit-CHANCE (0,15), rng 0 löst den Crit aus; P_FORCE liefert nur den Crit-MULT.
+    const trick = (force) => resolveTrick(scenario(12, 0, { familyTiers: { P_FORCE: force, P_SHARPNESS: 4 } }), zero).lastTrick;
+    expect(trick(1).isCrit).toBe(true);
+    expect(trick(1).critMultiplier).toBeCloseTo(CRIT_BASE_MULT + PRECISION_FORCE_MULT[0]); // Basis + 0,25
+    expect(trick(4).critMultiplier).toBeCloseTo(CRIT_BASE_MULT + PRECISION_FORCE_MULT[3]); // Basis + 0,90
+  });
+
+  it("P_AIM: Crit-Chance nur auf Karten ab der Stufen-Schwelle (IV: Wert ≥ 6)", () => {
+    expect(resolveTrick(scenario(6, 0, { familyTiers: { P_AIM: 4 } }), high).lastTrick.critChance).toBeCloseTo(0.15); // Wert 6 ≥ 6 → +0,15
+    expect(resolveTrick(scenario(5, 0, { familyTiers: { P_AIM: 4 } }), high).lastTrick.critChance).toBeCloseTo(0);    // Wert 5 < 6 → nichts
+  });
+
+  it("P_COLORFOCUS: Crit-Chance nur auf der gewählten Farbe (roles.P_COLORFOCUS → focusSuits)", () => {
+    const focusCrit = (suit) => resolveTrick(scenario(12, 0, { deck: suitDeck(suit), familyTiers: { P_COLORFOCUS: 1 }, roles: { P_COLORFOCUS: ["R"] } }), high).lastTrick.critChance;
+    expect(focusCrit("R")).toBeCloseTo(0.10); // R = Fokusfarbe → +0,10
+    expect(focusCrit("B")).toBeCloseTo(0);    // B ≠ Fokus → keine Crit-Chance
+  });
+
+  it("P_LENS (Variante B): +Crit-Chance je Formation AB DER 2. an der Siegposition, Cap +3 Extra-Formationen", () => {
+    // Konditionaler Generator: liest formCount = #aktive Formationen der Siegposition (die Engine speist critFamCtx.formCount).
+    // Belohnt TIEFE (Formations-Overlap), nicht bloße Präsenz — die 1. Formation zählt nicht, dann je +0,13 (Stufe IV), gedeckelt.
+    const h = FAMILY_DEFS.P_LENS.tiers[4].critChance;
+    expect(h({ formCount: 1 })).toBeCloseTo(0);     // nur 1 Formation → nichts (erst ab der 2.)
+    expect(h({ formCount: 2 })).toBeCloseTo(0.13);  // 1 Extra-Formation × 0,13
+    expect(h({ formCount: 3 })).toBeCloseTo(0.26);  // 2 Extra × 0,13
+    expect(h({ formCount: 6 })).toBeCloseTo(0.39);  // Cap +3 → 3 × 0,13 (kein weiterer Zuwachs)
+    // Stufe I skaliert schwächer (0,06 je Extra-Formation).
+    expect(FAMILY_DEFS.P_LENS.tiers[1].critChance({ formCount: 3 })).toBeCloseTo(0.12);
+  });
 });
 
 describe("buildPerkOffer — gemischtes Angebot Familien + flache Perks (Schritt 3)", () => {

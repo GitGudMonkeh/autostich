@@ -1,62 +1,81 @@
 import { describe, it, expect } from "vitest";
 import { buildSchedule, DECISION_SCHEDULE, MAX_CYCLES } from "../src/game/constants.js";
 
-// buildSchedule(n) erzeugt den Entscheidungsplan variabler Länge. Live-Ziel = 60 Durchläufe (handgesetzter Plan);
-// für n < 60 wird ein exaktes Prefix gespielt, für n > 60 wächst der Schwanz aus TAIL_BLOCK (nur SIM_MAX_CYCLES-
-// Sweeps). Der 60-Plan trägt eine Design-Invariante: jedes Shop-Fenster (Architekt) wird 2 Durchläufe später von
-// einer Formationsphase gefangen (die Bauzeit-Einheit für den geplanten Architekt-Umbau).
-const TYPES = ["stat", "perk", "formation", "shop", "skill"];
+// buildSchedule(n) erzeugt den Entscheidungsplan variabler Länge. Live-Ziel = 50 Durchläufe (#272, war 45 #267;
+// Commitment-Funnel Skill→Perk→Aufstellen→Architekt + einmalige Legendär-Phase). Für n < 50 wird ein exaktes Prefix
+// gespielt, für n > 50 wächst der Schwanz aus TAIL_BLOCK (nur SIM_MAX_CYCLES-Sweeps, ohne Legendär). Design-Invariante:
+// jede Formationsphase (Aufstellen) wird direkt von einer Architekt-Phase (shop) gefangen (erst Brett, dann Gebäude).
+const TYPES = ["perk", "formation", "shop", "skill", "legendary"]; // #267: „stat" entfernt · #272: „legendary" ergänzt
 const count = (arr, t) => arr.filter((d) => d === t).length;
 
 describe("buildSchedule", () => {
-  it("Default (kein Arg) == DECISION_SCHEDULE und respektiert MAX_CYCLES (= 60)", () => {
+  it("Default (kein Arg) == DECISION_SCHEDULE und respektiert MAX_CYCLES (= 50)", () => {
     expect(buildSchedule()).toEqual(DECISION_SCHEDULE);
     expect(DECISION_SCHEDULE).toHaveLength(MAX_CYCLES);
-    expect(MAX_CYCLES).toBe(60);
+    expect(MAX_CYCLES).toBe(50);
   });
 
-  it("60-Plan-Verteilung = 13 Stat · 13 Perk · 12 Formation · 12 Shop · 10 Skill", () => {
-    const s = buildSchedule(60);
-    expect(s).toHaveLength(60);
-    expect(s[0]).toBe("stat"); // Start-Entscheid
-    expect([count(s, "stat"), count(s, "perk"), count(s, "formation"), count(s, "shop"), count(s, "skill")])
-      .toEqual([13, 13, 12, 12, 10]);
+  it("50-Plan-Verteilung = 10 Skill · 13 Perk · 13 Formation · 13 Shop · 1 Legendär (keine Stats)", () => {
+    const s = buildSchedule(50);
+    expect(s).toHaveLength(50);
+    expect(s[0]).toBe("skill"); // Start-Entscheid = Skill (Runde 1, Blind-Commit)
+    // #293: Endgame-Skill nach R39 gezogen + Skill bei R43 eingeschoben (schiebt den letzten Architekten raus) → Skill 9→10, Shop 14→13.
+    expect([count(s, "skill"), count(s, "perk"), count(s, "formation"), count(s, "shop"), count(s, "legendary")])
+      .toEqual([10, 13, 13, 13, 1]);
+    expect(count(s, "stat")).toBe(0); // die Stat-Phase ist entfernt
   });
 
-  it("Design-Invariante: jedes Shop-Fenster wird exakt 2 Durchläufe später von einer Formation gefangen", () => {
-    const s = buildSchedule(60);
+  it("#272: genau EINE Legendär-Phase, spätes Mid-Game (Runde 29)", () => {
+    const s = buildSchedule(50);
+    const legRounds = s.map((d, i) => (d === "legendary" ? i + 1 : null)).filter(Boolean);
+    expect(legRounds).toEqual([29]);
+  });
+
+  it("Design-Invariante: jede Formationsphase wird direkt vom Architekten (shop) gefangen (Ausnahme #293: R41)", () => {
+    const s = buildSchedule(50);
+    // #293: Der Skill-Zug nach R39 macht R41 (Index 40) zu einer Aufstellung, die NICHT direkt von einem shop gefangen
+    // wird (R42 = Perk) — bewusste, dokumentierte Ausnahme. Alle anderen Formationsphasen behalten F→A.
+    const EXCEPT = new Set([40]);
     s.forEach((d, i) => {
-      if (d === "shop") expect(s[i + 2]).toBe("formation"); // 4→6, 9→11, …, 58→60
+      if (d === "formation" && i + 1 < s.length && !EXCEPT.has(i)) expect(s[i + 1]).toBe("shop"); // F→A: erst Brett, dann Gebäude
     });
   });
 
-  it("n < 60: exaktes Prefix des 60-Plans", () => {
-    const base = buildSchedule(60);
-    expect(buildSchedule(44)).toEqual(base.slice(0, 44));
-    expect(buildSchedule(30)).toEqual(base.slice(0, 30));
+  it("Skill-Runden (#293): front-loaded + zwei Endgame-Skills bei R39 & R43", () => {
+    const s = buildSchedule(50);
+    const skillRounds = s.map((d, i) => (d === "skill" ? i + 1 : null)).filter(Boolean);
+    expect(skillRounds).toEqual([1, 5, 9, 13, 17, 21, 25, 33, 39, 43]);
   });
 
-  it("n > 60: Prefix stabil, Länge exakt, nur bekannte Entscheidungstypen", () => {
-    const base60 = buildSchedule(60);
-    for (const n of [61, 72, 80, 120]) {
+  it("n < 50: exaktes Prefix des 50-Plans", () => {
+    const base = buildSchedule(50);
+    expect(buildSchedule(30)).toEqual(base.slice(0, 30));
+    expect(buildSchedule(20)).toEqual(base.slice(0, 20));
+  });
+
+  it("n > 50: Prefix stabil, Länge exakt, nur bekannte Entscheidungstypen", () => {
+    const base50 = buildSchedule(50);
+    for (const n of [51, 60, 80, 120]) {
       const sched = buildSchedule(n);
       expect(sched).toHaveLength(n);
-      expect(sched.slice(0, 60)).toEqual(base60); // 60-Plan unangetastet
+      expect(sched.slice(0, 50)).toEqual(base50); // 50-Plan unangetastet
       expect(sched.every((d) => TYPES.includes(d))).toBe(true);
     }
   });
 
-  it("Schwanz (> 60) hält grob das 60er-Verhältnis (Stat/Perk je ~22 %, Skill ~17 %, Shop ~20 %)", () => {
-    const tail = buildSchedule(120).slice(60); // 60 erzeugte Cycles
+  it("Schwanz (> 50) hält grob das Mix-Verhältnis (kein Stat, kein Legendär im Schwanz)", () => {
+    const tail = buildSchedule(100).slice(50); // 50 erzeugte Cycles
     const share = (t) => count(tail, t) / tail.length;
-    expect(share("stat")).toBeGreaterThanOrEqual(0.17);
-    expect(share("stat")).toBeLessThanOrEqual(0.30);
-    expect(share("perk")).toBeGreaterThanOrEqual(0.17);
+    expect(count(tail, "stat")).toBe(0);
+    expect(count(tail, "legendary")).toBe(0); // die eine Legendär-Phase steckt fest im Basis-Plan
+    expect(share("perk")).toBeGreaterThanOrEqual(0.15);
     expect(share("perk")).toBeLessThanOrEqual(0.30);
     expect(share("skill")).toBeGreaterThanOrEqual(0.10);
     expect(share("skill")).toBeLessThanOrEqual(0.22);
-    expect(share("shop")).toBeGreaterThanOrEqual(0.12);
-    expect(share("shop")).toBeLessThanOrEqual(0.25);
+    expect(share("shop")).toBeGreaterThanOrEqual(0.15);
+    expect(share("shop")).toBeLessThanOrEqual(0.30);
+    expect(share("formation")).toBeGreaterThanOrEqual(0.20);
+    expect(share("formation")).toBeLessThanOrEqual(0.40);
   });
 
   it("kein Cluster: nie zwei Shop- oder Skill-Entscheidungen hintereinander (auch über Blockgrenzen)", () => {
