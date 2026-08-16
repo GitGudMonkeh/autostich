@@ -11,6 +11,8 @@ import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, loadO
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
+import { withDecisionLog } from "./game/decisionLog.js"; // #telemetrie: Angebot↔Wahl mitschreiben (reiner Wrapper, reducer.js unberührt)
+import * as telemetry from "./game/telemetry.js";        // #telemetrie: anonyme Lauf-Daten (Opt-out in den Optionen)
 import { fmtDuration } from "./game/deck.js";
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
@@ -101,8 +103,12 @@ function OverlayFallback() {
   return <div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />;
 }
 
+// #telemetrie: der Spiel-Reducer plus Entscheidungs-Mitschrift. Modul-Ebene (nicht im Render) → die
+// Reducer-Identität bleibt über Re-Renders stabil, wie bei `reducer` vorher.
+const gameReducer = withDecisionLog(reducer);
+
 export function Autostich() {
-  const [state, dispatch] = useReducer(reducer, null, () => menuState());
+  const [state, dispatch] = useReducer(gameReducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
   const [options, setOptions] = useState(() => loadOptions());   // Optionen (#41): u. a. CRT-Skin
   // Perf: reducedFx auflösen (Mobile/schwaches Gerät/System-Wunsch) und als data-Attribut ans Root hängen.
@@ -193,6 +199,10 @@ export function Autostich() {
   const inRun = state.phase !== "menu" && state.phase !== "gameover";
   const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart;
   stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
+  // #telemetrie: gleiche Technik für Profil/Optionen — der pagehide-Handler ist EINMAL registriert und
+  // dürfte sonst einen eingefrorenen (stale) Stand von vor Stunden senden.
+  const metaRef = useRef({ profile, options });
+  metaRef.current = { profile, options };
   // Effektive Lauflänge — spiegelt die Engine-Endbedingung (engine.js): Dev-Run (state.maxCycles) ODER
   // Großmeister IV/V (difficulty.maxCycles 57/54) ODER Basis (MAX_CYCLES 60). HUD-Nenner + Completion-Check lesen DIES.
   const totalCycles = state.maxCycles || state.difficulty?.maxCycles || MAX_CYCLES;
@@ -287,7 +297,11 @@ export function Autostich() {
     audio.setLoopsSuspended(!loopsAllowed);
     audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
   }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
-  const changeOptions = (patch) => setOptions((o) => saveOptions({ ...o, ...patch }));
+  const changeOptions = (patch) => setOptions((o) => {
+    // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
+    if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
+    return saveOptions({ ...o, ...patch });
+  });
 
   // #254: Zentrale Zurück-Behandlung (mobil, Swipe/Hardware/Browser). Priorität: oberstes abweisbares Overlay
   // schließen → im aktiven Lauf Abbruch-Rückfrage öffnen (nicht sofort verlassen) → sonst Standard-Zurück zulassen.
@@ -326,6 +340,21 @@ export function Autostich() {
   };
   // Mobile-zuverlässige Speicherpunkte: Tab in den Hintergrund (visibilitychange→hidden) ODER Seite entladen
   // (pagehide) → sofortiger Snapshot. beforeunload feuert auf Mobile NICHT verlässlich → DAS hier ist der eigentliche Fix.
+  /* #telemetrie: Seite wird entladen, während ein Lauf läuft (Tab zu, harter Reload) → der Lauf gilt als
+     abgebrochen und geht als solcher raus. Bewusst NUR an `pagehide`, nicht an `visibilitychange`: Wegtabben
+     ist kein Abbruch (man kommt zurück), und ein Abbruch je Tab-Wechsel würde die Daten fluten.
+     Ein später fortgesetzter und beendeter Lauf schreibt zusätzlich seine reguläre Zeile — in der Auswertung
+     trennt `outcome` die beiden (docs/telemetry.md). `keepalive` hält den Request über das Entladen hinweg. */
+  const onPageHide = () => {
+    persistActiveRun();
+    const s = stateRef.current;
+    if (!s || s.phase === "menu" || s.phase === "gameover" || recorded.current) return;
+    const { profile: pf, options: op } = metaRef.current;
+    telemetry.recordAbandoned({
+      enabled: op.telemetry !== false, state: s, profile: pf, options: op, runId: runId.current,
+      durationMs: timeBase.current + (segStart.current != null ? Date.now() - segStart.current : 0),
+    });
+  };
   useEffect(() => {
     const onVis = () => {
       const hidden = document.visibilityState === "hidden";
@@ -337,12 +366,15 @@ export function Autostich() {
     //   `false` und der Lauf hinge für immer. `focus`/`pageshow` synchronisieren die Sichtbarkeit spätestens beim
     //   nächsten Fokus/Interaktion aus dem LIVE-Zustand nach → ein stale-false heilt von selbst.
     const onResync = () => setVisible(document.visibilityState !== "hidden");
-    window.addEventListener("pagehide", persistActiveRun);
+    window.addEventListener("pagehide", onPageHide);
     window.addEventListener("focus", onResync);
     window.addEventListener("pageshow", onResync);
     document.addEventListener("visibilitychange", onVis);
+    // #telemetrie: liegengebliebene Läufe aus früheren Sitzungen (offline/Netzfehler) jetzt nachreichen —
+    // aber nur bei aktivem Schalter; ist er aus, wird die Warteschlange stattdessen verworfen.
+    if (metaRef.current.options.telemetry !== false) telemetry.flush(); else telemetry.purge();
     return () => {
-      window.removeEventListener("pagehide", persistActiveRun);
+      window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("focus", onResync);
       window.removeEventListener("pageshow", onResync);
       document.removeEventListener("visibilitychange", onVis);
@@ -489,6 +521,15 @@ export function Autostich() {
         .filter(({ def }) => def.unlock && isUnlocked(def, nextProfile) && !isUnlocked(def, prevProfile))
         .map(({ def, type }) => ({ id: def.id, name: def.name, type }))
     );
+    // #telemetrie: denselben Lauf anonym an die Telemetrie-Tabelle schicken — UNABHÄNGIG vom Leaderboard.
+    // Bewusst getrennt: das Board schreibt nur mit gesetztem Namen und nur den Wettbewerbs-Ausschnitt; fürs
+    // Balancing brauchen wir JEDEN Lauf (auch namenlose und vorzeitig beendete) samt Entscheidungs-Mitschrift.
+    // `nextProfile` (nicht `profile`) → der Baum-/Kosmetik-Stand NACH diesem Lauf. Fehler sind gekapselt.
+    telemetry.recordRun({
+      enabled: options.telemetry !== false, state, profile: nextProfile, options, durationMs, runId: runId.current,
+      localEntry: { ...localEntry, archetypes: archetypesUsed },
+      outcome: completed ? "completed" : "ended",
+    });
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
     const name = (username || "").trim().slice(0, 20);

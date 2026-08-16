@@ -126,6 +126,12 @@ export function OptionsModal({ options, onChange, onClose }) {
           <Row title="Haptik (Vibration)" desc="Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.">
             <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
           </Row>
+          {/* #telemetrie: anonyme Lauf-Daten (Beta-Playtest) — Default an, hier abschaltbar. Bewusst mit klarer
+              Ansage, WAS gesendet wird und was nicht, statt einer nichtssagenden „Diagnosedaten"-Formel. */}
+          <Row title="Anonyme Spieldaten senden"
+            desc="Sendet nach jedem Lauf Score, gewählte Perks/Skills/Gebäude und den Fortschritt — anonym und ohne Namen. Hilft beim Balancing. Aus = es wird nichts gesendet.">
+            <Toggle on={options.telemetry !== false} onClick={() => onChange({ telemetry: options.telemetry === false })} />
+          </Row>
           {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
               FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
           {import.meta.env.VITE_PREVIEW === "1" && (

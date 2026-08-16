@@ -10,6 +10,9 @@ export const RUN_COMPLETE_DP = 5;
    echten Geist/Highscore nicht überschreiben. Produktions-/Dev-Build: kein Präfix (P=""). */
 const P = import.meta.env.VITE_PREVIEW === "1" ? "preview_" : "";
 const k = (key) => P + key;
+// #telemetrie: derselbe Namespace-Präfix auch für Nicht-Storage-Module (telemetry.js hält seine eigene
+// Install-ID) — EIN Ort, an dem die Preview-Trennung definiert ist, statt einer stillen Kopie.
+export const nsKey = k;
 
 /* Persistenz — lokaler Rekord überlebt Reload via localStorage.
 
@@ -404,6 +407,9 @@ export function recordRun(record) {
 const DEFAULT_OPTIONS = {
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
   reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  // #telemetrie: anonyme Lauf-Daten senden (Default AN, in den Optionen abschaltbar). Reine Pref → NICHT in
+  // COSMETIC_OPTION_KEYS (überlebt den Dev-Reset, wie Ton/Haptik).
+  telemetry: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
