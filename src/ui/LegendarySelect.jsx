@@ -38,14 +38,22 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.gold)}>
           <PhaseHairline />
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
-          {state.lastCycleScore != null && <div className="mb-3"><RoundScoreBadge state={state} /></div>}
-          <div className="text-[10px] uppercase tracking-[0.2em] font-mono mb-1" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
-          <p className="text-sm opacity-70 mb-4 leading-snug">
+          {/* Kopf im Muster der beiden Schwester-Panels (PerkSelect/SkillSelect): zentriert, Eyebrow `text-xs`,
+              Überschrift `text-xl`, Rundenscore darunter. Vorher war diese Karte die einzige mit linksbündigem
+              Kopf, einer Stufe größerer Überschrift und schmalerer Karte (max-w-2xl) — auf dem Handy las sich das
+              zusammen mit dem langen Intro wie „reingezoomt", obwohl nichts skaliert war. */}
+          <div className="text-center mb-1">
+            <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
+            <h2 className="text-xl font-bold mt-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
+            {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
+          </div>
+          {/* Das Intro bleibt — es trägt die einzige Warnung, dass die Wahl unumkehrbar ist. Aber in der Dichte
+              der übrigen Nebentexte (text-xs) statt als sechszeiliger text-sm-Block über dem halben Panel. */}
+          <p className="text-xs opacity-70 mt-3 mb-1 leading-snug">
             {t("leg.intro.a")} <b>{t("leg.intro.slot")}</b> {t("leg.intro.b")} <b>{t("leg.intro.final")}</b>{t("leg.intro.c")}
           </p>
           <ActionBar pad={6}>
