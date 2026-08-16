@@ -5,6 +5,7 @@
 //  · Regeln      — Modus-Baseline + voller Modifikator-Katalog + Ausschluss-Paare.
 import { useState, useMemo, useEffect } from "react";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
 import { fmtScore } from "./format.js";
 import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
@@ -123,6 +124,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
   useEscape(onClose);
   // #385 Default-Reiter „Diese Woche" (meister); „Meine Runs" ist entfernt (steht in der Statistik).
   const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "meister");
+  const tabSwipe = useTabSwipe(TABS.map((t) => t.id), tab, setTab); // horizontaler Swipe → Reiterwechsel
   const [now, setNow] = useState(() => Date.now()); // Live-Ticker für den Wochen-Countdown
 
   // Sekundentakt nur, solange der Meister-Reiter offen ist (Countdown live).
@@ -142,7 +144,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
       {/* #385 FESTE Kartenhöhe (nicht nur maxHeight) → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher
           Stelle; nur die innere Liste scrollt. */}
       <div className="w-full max-w-lg rounded-2xl overlay-card as-panel flex flex-col overflow-hidden"
-        style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
+        style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
         <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">

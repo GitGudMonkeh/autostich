@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
 import { ARCHETYPE_META, ARCHETYPE_ORDER } from "../game/skills.js";
@@ -137,6 +138,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   const toggleNode = (id) => setSelNode((cur) => (cur === id ? null : id)); // nochmal antippen = zuklappen
   // Reiter-Wechsel schließt die offene Detailzeile (sonst hinge sie im anderen Reiter nach).
   const selectTab = (key) => { setTab(key); setSelNode(null); };
+  const tabSwipe = useTabSwipe(["deck", "gen"], tab, selectTab); // horizontaler Swipe → Reiterwechsel
   useEscape(selNode ? () => setSelNode(null) : detailArch ? () => setDetailArch(null) : onClose);
   const p = profile || emptyProfile();
   const sp = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
@@ -154,7 +156,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel relative"
-        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
 
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen + Reiter. */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>

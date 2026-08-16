@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
+import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
@@ -982,6 +983,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
   const anyOverlay = !!packOv;
+  // Horizontaler Swipe → Reiterwechsel. Solange das Pack-Detail offen ist (eigene ‹ ›/Swipe-Geste), unterdrückt.
+  const tabSwipe = useTabSwipe(["packs", "challenges", "fx"], tab, setTab, { guard: () => anyOverlay });
 
   return (
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
@@ -994,7 +997,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
       <div className="w-full max-w-xl rounded-2xl my-auto as-panel flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
-        <div className={`overlay-card flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`}>
+        <div className={`overlay-card flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
           {/* Sticky Kopf */}
           <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
             <TopHairline />
