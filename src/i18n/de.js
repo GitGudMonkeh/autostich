@@ -398,6 +398,10 @@ export default {
 
   /* ---- Allgemein ---- */
   "common.close": "Schließen",
+  // #update: „Neue Version verfügbar"-Leiste (UpdateBanner)
+  "update.available": "Neue Version verfügbar",
+  "update.reload": "Neu laden",
+  "update.dismiss": "Ausblenden",
   // Kompakte Score-Abkürzung (fmtScoreShort). Im Deutschen mit Abstand und Punkt, im Englischen angehängt.
   "format.short.mega": "{n} Mio.",
   "format.short.giga": "{n} Mrd.",
