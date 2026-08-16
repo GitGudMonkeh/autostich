@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
+import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 
 /* #325 Gottgleich-Prunk „Holo-Würfel-Kollaps" (Rar) — PIXI. Ein Holowürfel aus N³ Wireframe-Blöcken baut sich aus der
    Ferne zusammen (Pop) → dreht sich frei → Kern-Blitz → zerspringt taumelnd nach außen und fadet. Pseudo-3D:
@@ -78,13 +79,14 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       playRef.current.blocks = blocks;
     }
 
-    function place() {
+    // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
+    const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return null;
       const cr = cardRef?.current?.getBoundingClientRect();
       const cx = cr && cr.width > 2 ? (cr.left - pr.left + cr.width / 2) : pr.width / 2;
       const W = pr.width, H = pr.height;
       return { W, H, cx, cy: H * TUNE.POS_Y, FOV: Math.min(W, H) * 0.95, camZ: TUNE.SIZE * 3.2 };
-    }
+    });
 
     function tick(ticker) {
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
@@ -95,7 +97,7 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
         return;
       }
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
-      const geo = place(); if (!geo) return;
+      const geo = placer.get(); if (!geo) return;
       const { cx, cy, FOV, camZ, W, H } = geo;
       const project = (x, y, z) => { const zz = z + camZ; const s = FOV / Math.max(0.4, zz); return [cx + x * s, cy + y * s, zz]; };
       const s = st.current;
@@ -159,12 +161,11 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; pl.gapping = false; pl.gapT = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; buildBlocks(); pl.playing = true; pl.bt = 0; placer.invalidate(); pl.gapping = false; pl.gapT = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
-    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -173,7 +174,7 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
         const core = new Sprite(coreTex); core.anchor.set(0.5); core.blendMode = "add"; core.alpha = 0;
         app.stage.addChild(g, core);
         nodesRef.current = { g, core };
-        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
+        app.ticker.maxFPS = gottMaxFPS(st.current.lite);
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 
