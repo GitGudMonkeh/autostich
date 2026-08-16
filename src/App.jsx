@@ -60,6 +60,7 @@ import { CrtParticles } from "./ui/CrtParticles.jsx";
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
 // Tutorial (geführter Lauf): reine UI-Schicht — der Lauf selbst ist ein normaler Lauf mit festem Seed.
 import { TutorialOverlay } from "./ui/tutorial/TutorialOverlay.jsx";
+import { UpdateBanner } from "./ui/UpdateBanner.jsx"; // #update: „Neue Version verfügbar"-Hinweis (pollt version.json)
 import { useTutorial } from "./ui/tutorial/useTutorial.js";
 import { TUTORIAL_SEED } from "./ui/tutorial/tutorialScript.js";
 
@@ -1150,6 +1151,9 @@ export function Autostich() {
       {/* Tutorial-Overlay: liegt ÜBER allen Phasen-Panels (eigener z-Index im Portal) und friert den Lauf
           über `tut.blocking` ein, solange es offen ist. Ohne laufende Führung rendert es nichts. */}
       {tutorialActive && <TutorialOverlay tut={tut} reducedFx={options.reducedFx} />}
+
+      {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
+      <UpdateBanner />
 
       {state.phase === "gameover" && (
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}

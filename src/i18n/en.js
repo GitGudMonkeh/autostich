@@ -395,6 +395,10 @@ export default {
 
   /* ---- Common ---- */
   "common.close": "Close",
+  // #update: "new version available" banner (UpdateBanner)
+  "update.available": "New version available",
+  "update.reload": "Reload",
+  "update.dismiss": "Dismiss",
   "common.cur.sp": "TP",
   "common.cur.dp": "DP",
   "format.short.mega": "{n}M",

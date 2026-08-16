@@ -55,6 +55,26 @@ const serveMediaInDev = () => ({
   },
 });
 
+/* #update: Beim Build eine kleine `version.json` an den Ausgabe-Wurzelpfad (→ `<base>/version.json`) legen.
+   Sie trägt DENSELBEN Build-Stempel wie die App (version.js, aus VITE_BUILD_* im CI). Der laufende Tab pollt
+   sie und meldet, wenn ein NEUERER Build deployt wurde (UpdateBanner). Bewusst NICHT unter /assets/ und keine
+   .json-Endung im SW-Cache-Filter → der Service Worker fasst sie nicht an, sie kommt immer frisch vom Netz. */
+const emitVersionJson = () => ({
+  name: "emit-version-json",
+  apply: "build",
+  generateBundle() {
+    this.emitFile({
+      type: "asset",
+      fileName: "version.json",
+      source: JSON.stringify({
+        build: process.env.VITE_BUILD_NUM || null,
+        sha: process.env.VITE_BUILD_SHA || null,
+        env: process.env.VITE_ENV || null,
+      }),
+    });
+  },
+});
+
 // Vite + React (JSX vorab kompiliert). Tailwind v4 als Vite-Plugin (kein Config-File).
 // Vitest liest den `test`-Block aus dieser Config.
 export default defineConfig(({ command }) => ({
@@ -62,7 +82,7 @@ export default defineConfig(({ command }) => ({
   // (sonst läuft localhost unter dem Unterpfad). Der Testbranch-Deploy überschreibt die
   // Base per DEPLOY_BASE (→ /autostich/test/), damit die Preview-Page als Unterpfad läuft.
   base: command === "build" ? (process.env.DEPLOY_BASE || "/autostich/") : "/",
-  plugins: [react(), tailwindcss(), serveMediaInDev()],
+  plugins: [react(), tailwindcss(), serveMediaInDev(), emitVersionJson()],
   build: {
     rollupOptions: {
       output: {
