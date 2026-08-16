@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, memo, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
+import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
@@ -198,10 +199,10 @@ const FX_TIER_MINS = BIG_SCORE_TIERS.map((s) => s.min).slice().reverse();
 // (throttled) GOTTGLEICH-Ansage weiter, kein zweiter voller Effekt.
 const GOTT_FX_COOLDOWN_MS = 30000;
 /* Vorlauf des Supernova-Swells (s), bis sein großer Impuls kommt. Nach Gehör getunt: der Ton hat
-   einen langen Aufbau, sein Einschlag sitzt tief in der Datei. Bei 0,85 s kam der Impuls hörbar VOR
-   dem Blitz der Supernova-Detonation — die Verzögerung schiebt ihn auf denselben Moment.
+   einen langen Aufbau, sein Einschlag sitzt tief in der Datei. 0,85 s und 1,85 s waren beide zu früh
+   (Impuls hörbar VOR dem Blitz der Detonation) — die Verzögerung schiebt ihn auf denselben Moment.
    Hier nachdrehen, wenn der Ton getauscht wird; die Zahl gehört zur DATEI, nicht zum Effekt. */
-const SUPERNOVA_SWELL_DELAY = 1.85;
+const SUPERNOVA_SWELL_DELAY = 2.85;
 function fxIntensity(gained) {
   const g = gained > 0 ? gained : 0;
   let tier = 0;
@@ -856,9 +857,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   //   Loop über die gleichförmige Mitte (loopStart/loopEnd meiden Ein-/Ausklang der 32,6-s-Aufnahme). Gain/Rate wachsen
   //   über onSize mit der Lochgröße mit; sanfter Ausklang (fade 0.3) beim Kollaps/Verschwinden.
   const holeSndRef = useRef(null);
+  // Zwei unabhängige Eingänge des Betts (Lochgröße + Vorbeben) — getrennt gemerkt, gemeinsam angewandt.
+  const holeFillRef = useRef(0);
+  const holeShudRef = useRef(0);
+  const applyHoleSnd = useCallback(() => {
+    const h = holeSndRef.current;
+    if (!h) return;
+    const { gain, rate } = holeSound(holeFillRef.current, holeShudRef.current);
+    audio.setLoopGain(h, gain); audio.setLoopRate(h, rate);
+  }, []);
   useEffect(() => {
     if (reduced || !blackhole || !holeGrown) return undefined;
-    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 }); // Start = onSize(level 0)-Pegel
+    holeFillRef.current = 0; holeShudRef.current = 0;   // neuer Loop startet auf dem Grundpegel
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
   }, [blackhole, reduced, holeGrown]);
   const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
@@ -1471,8 +1482,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           onImplode={(big, spd, grew) => { setHoleGrown(false); if (big || grew) audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) }); }} /* #: Kollaps auf 0 → Loop-Bett aus; Implosions-Sound nur bei großem Kollaps (big) oder wenn das Loch vorher ausreichend gewachsen war (grew) */
           /* #380 Nova-Flash NACH dem Zusammenziehen (nur großer Kollaps): der Supernova-Puls (Pegel wie im Gott-Showcase). */
           onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
-          /* #375 Bett wächst mit der Lochgröße: Gain 0.6→~0.95, Rate 0.96→~1.06 (dezent). setLoopGain/Rate rampen sanft. */
-          onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
+          /* #375 Bett wächst mit der Lochgröße UND mit dem Vorbeben (holeSound, EINE Quelle mit der
+             Werkstatt-Vorschau). Beide Signale laufen unabhängig — deshalb liegen sie in Refs und der
+             Pegel wird aus BEIDEN gerechnet; würde jeder Callback direkt setLoopGain rufen, überschriebe
+             der eine den anderen. */
+          onSize={(level, maxL) => { holeFillRef.current = maxL > 0 ? level / maxL : 0; applyHoleSnd(); }}
+          onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} /> /* #338-4: eingesogene Karte zeigt die Gegner-Deck-Rückseite (pro Phase konstant → einmal gecacht) */
       )}
       {/* #322–#326 Gottgleich-Prunk (PIXI): lazy gemountet erst beim ersten gottgleichen Sieg (gottTrigger>0), dann
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich

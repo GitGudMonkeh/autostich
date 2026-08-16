@@ -64,6 +64,7 @@ function prefetchFxChunks() {
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
+import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit dem Spiel
 import { globalFxList, globalFxDef, themeDef } from "../i18n/labels.js"; // #sprache: Kosmetik zur Anzeigezeit
 // #sprache: Pack-/Deck-Name zur Anzeigezeit auflösen (roh trägt DE-Namen wie „Feuer"/„Eis"). Objekt bleibt
 // unangetastet (STD_PACK.kind etc.) — nur der ANGEZEIGTE Name kommt aus dem i18n-Katalog.
@@ -498,8 +499,18 @@ function BlackholeScene({ deckTint = false }) {
   // #380 Loop-Bett (Sog/Drone) wie in-game: läuft durchgehend über die ganze Vorschau-Choreografie, Gain/Rate wachsen
   //   via onSize mit der Lochgröße → der Aufbau ist hörbar, nicht nur der Kollaps.
   const holeSndRef = useRef(null);
+  // Wie im Spiel: Lochgröße und Vorbeben getrennt merken, Pegel aus beiden rechnen (holeSound).
+  const holeFillRef = useRef(0);
+  const holeShudRef = useRef(0);
+  const applyHoleSnd = () => {
+    const h = holeSndRef.current;
+    if (!h) return;
+    const { gain, rate } = holeSound(holeFillRef.current, holeShudRef.current);
+    audio.setLoopGain(h, gain); audio.setLoopRate(h, rate);
+  };
   useEffect(() => {
-    holeSndRef.current = audio.loop("fx_blackhole", { gain: 0.6, loopStart: 1.5, loopEnd: 31.0 });
+    holeFillRef.current = 0; holeShudRef.current = 0;
+    holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
   }, []);
   const look = PREVIEW_LOOK.blackhole;
@@ -514,7 +525,8 @@ function BlackholeScene({ deckTint = false }) {
         /* #380 Sound wie in-game: Zusammenzieh-Impact · Nova-Flash → fx_supernova (nur großer Kollaps) · Bett-Pegel via onSize. */
         onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
         onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
-        onSize={(level, maxL) => { const h = holeSndRef.current; if (!h) return; const f = maxL > 0 ? Math.max(0, Math.min(1, level / maxL)) : 0; audio.setLoopGain(h, 0.6 + 0.35 * f); audio.setLoopRate(h, 0.96 + 0.1 * f); }} />
+        onSize={(level, maxL) => { holeFillRef.current = maxL > 0 ? level / maxL : 0; applyHoleSnd(); }}
+        onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} />
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );

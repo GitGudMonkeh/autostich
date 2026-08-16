@@ -54,7 +54,7 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 // Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null }) {
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null, onShudder = null }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
   const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
@@ -65,8 +65,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
   // #375/#380 SFX-Callbacks im ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps-START (Zusammenzieh-
-  //   Sound), onSize(level, maxLevel) bei Größenänderung, onNova(big) am FLASH-Moment (nach dem Zusammenziehen → fx_supernova).
-  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; ctrlRef.current.onNova = onNova; }, [onImplode, onSize, onNova]);
+  //   Sound), onSize(level, maxLevel) bei Größenänderung, onNova(big) am FLASH-Moment (nach dem Zusammenziehen → fx_supernova),
+  //   onShudder(0..1) während des Vorbebens (Bett steigt mit dem Zucken).
+  useEffect(() => { ctrlRef.current.onImplode = onImplode; ctrlRef.current.onSize = onSize; ctrlRef.current.onNova = onNova; ctrlRef.current.onShudder = onShudder; }, [onImplode, onSize, onNova, onShudder]);
   useEffect(() => {
     const st = backRef.current;
     if (!backSrc) { st.src = null; st.ready = false; st.canvas = null; return undefined; }
@@ -236,6 +237,12 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
         shudder = Math.max(shudder, clamp(1 - sim.collapseArm / TUNE.COLLAPSE_ARM_MS, 0, 1));
         if (sim.collapseArm <= 0) { sim.collapseArm = 0; implode(true); }
       }
+      /* Vorbeben hörbar machen: gestuft gemeldet (0,05er-Schritte), sonst feuerte der Callback in JEDEM
+         Frame. Der Aufrufer hebt Pegel und Tonhöhe des Loop-Betts damit leicht an — dieselbe Rampe, die
+         man gleichzeitig sieht. */
+      const shStep = Math.round(shudder * 20) / 20;
+      if (shStep !== sim._emitShudder) { sim._emitShudder = shStep; ctrl.onShudder && ctrl.onShudder(shStep); }
+
       // Vorbeben: das Loch zuckt subtil (Render-Radius), zunehmend schneller — „nicht zu krass" (max ~6 %).
       let R = sim.R;
       if (shudder > 0) {
