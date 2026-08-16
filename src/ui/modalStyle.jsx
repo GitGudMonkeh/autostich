@@ -104,14 +104,21 @@ export function PhaseHairline({ className = "" }) {
 
    `ActionBar` = der sticky Container. `pad` muss zum horizontalen Padding der umgebenden Karte passen (Bleed = negatives
    Margin, damit die Leiste über die volle Kartenbreite läuft und durchscrollende Inhalte maskiert). `bg` = Füllung
-   (PANEL_BG für Phasen-Overlays, STICKY_HEAD_BG für Modal-Screens). Kinder frei anordnen (mit `flex-1`/Spacer). */
+   (PANEL_BG für Phasen-Overlays, STICKY_HEAD_BG für Modal-Screens). Kinder frei anordnen (mit `flex-1`/Spacer).
+
+   `flex-wrap` ist NICHT kosmetisch: die Buttons tragen `whitespace-nowrap`, ihre Mindestbreite ist also die volle
+   Textbreite, und Flex-Kinder schrumpfen per Default nicht unter min-content. Auf einem 412-px-Handy passte
+   „↻ Neu würfeln (1)" + „Keinen Legendär — Skill wählen" damit nicht mehr nebeneinander (405 px Inhalt in 378 px
+   Karte) — und weil die Karte `overflow-y-auto` hat, wird ihr overflow-x automatisch zu `auto`: der zweite Button
+   war am Kartenrand abgeschnitten und die Karte horizontal scrollbar. Mit Umbruch rutscht er auf eine zweite Zeile.
+   Passt alles in eine Zeile, ändert `flex-wrap` nichts — Desktop bleibt unberührt. */
 const ACTIONBAR_BLEED = {
   3: "-mx-3 px-3", 4: "-mx-4 px-4", 5: "-mx-5 px-5", 6: "-mx-6 px-6",
   "5s6": "-mx-5 sm:-mx-6 px-5 sm:px-6", // Karte mit px-5 sm:px-6
 };
 export function ActionBar({ pad = 5, bg = PANEL_BG, top = 0, border = true, className = "", children }) {
   return (
-    <div className={`sticky z-20 ${ACTIONBAR_BLEED[pad] || ACTIONBAR_BLEED[5]} pt-2.5 pb-2.5 mb-3 flex items-stretch gap-2 ${className}`}
+    <div className={`sticky z-20 ${ACTIONBAR_BLEED[pad] || ACTIONBAR_BLEED[5]} pt-2.5 pb-2.5 mb-3 flex flex-wrap items-stretch gap-2 ${className}`}
       style={{ top, background: bg, ...(border ? { borderBottom: "1px solid #2a2a34" } : null) }}>
       {children}
     </div>
