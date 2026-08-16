@@ -158,7 +158,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-2xl px-4 pb-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
+        {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
+            Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
+            bleibt die Karte konstant, nur der Inhalt darunter scrollt. */}
+        <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card" style={{ ...phaseCard(PHASE_ACCENTS.violet), height: "min(92dvh, 760px)" }}>
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
