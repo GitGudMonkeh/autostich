@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture, Container, ParticleContainer, Particle } from "pixi.js";
+import { gottAppOptions, gottMaxFPS, GOTT_RES_FULL, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 import { SUPERNOVA_LIFE, SUPERNOVA_CHARGE, SUPERNOVA_TAIL } from "./supernovaTiming.js";
 
 /* #326 Gottgleich-Prunk „Supernova" (Legendär) — PIXI, der Showstopper. Mehrphasig: Kollaps (Sterne + Ring in den Kern
@@ -78,13 +79,14 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     const flashTex = makeRadial([[0, 1], [0.6, 0.3], [1, 0]]);
     const streakTex = makeStreak();
 
-    function place() {
+    // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
+    const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return null;
       const cr = cardRef?.current?.getBoundingClientRect();
       const cx = cr && cr.width > 2 ? (cr.left - pr.left + cr.width / 2) : pr.width / 2;
       const W = pr.width, H = pr.height;
       return { W, H, cx, cy: H * TUNE.POS_Y, diag: Math.hypot(W, H), halfDiag: Math.hypot(W, H) / 2 };
-    }
+    });
 
     function seedStars() {
       const r = refs.current; const s = st.current;
@@ -102,7 +104,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     function tick(ticker) {
       const pl = playRef.current, r = refs.current; if (!pl.playing || !r.novaG) return;
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
-      const geo = place(); if (!geo) return;
+      const geo = placer.get(); if (!geo) return;
       const { W, H, cx, cy, diag, halfDiag } = geo;
       const s = st.current;
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
@@ -183,11 +185,13 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     }
 
     function stopIdle() { const r = refs.current; try { r.tApp.renderer.render(r.tApp.stage); r.nApp.renderer.render(r.nApp.stage); r.nApp.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const r = refs.current, pl = playRef.current; if (!r.nApp || disposed) return; seedStars(); pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") r.nApp.ticker.start(); }
+    function startPlay() { const r = refs.current, pl = playRef.current; if (!r.nApp || disposed) return; seedStars(); pl.playing = true; pl.bt = 0; placer.invalidate(); st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") r.nApp.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 auf BEIDE Canvas (Tunnel + Nova) — der teuerste Posten (zwei Full-Screen-Apps + Flash).
-    const initOpts = (canvas, host) => ({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true, resolution: Math.min(st.current.lite ? 1.0 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" }); // #perf-mobile: lite-DPR 1.25→1.0 (zwei Full-Screen-Canvas → Fill-Rate verdoppelt)
+    /* #perf-gott: Supernova zieht ZWEI Full-Panel-Canvas auf (Tunnel + Nova) → doppelte Fill-Rate. Deshalb bleibt
+       die lite-Dichte bei 1.0 (statt 1.25 wie bei den Ein-Canvas-Prunks); voll teilt sich den Deckel mit dem Rest. */
+    const initOpts = (canvas, host) => gottAppOptions({ canvas, host, lite: st.current.lite, resLite: 1.0, resFull: GOTT_RES_FULL });
     Promise.all([tApp.init(initOpts(tCanvas, tHost)), nApp.init(initOpts(nCanvas, nHost))]).then(() => {
       if (disposed) { for (const a of [tApp, nApp]) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } } return; }
       for (const [cv, hs] of [[tCanvas, tHost], [nCanvas, nHost]]) { cv.style.width = "100%"; cv.style.height = "100%"; cv.style.display = "block"; hs.appendChild(cv); }
@@ -202,7 +206,7 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
       nRoot.addChild(starsPC, novaG, core); nApp.stage.addChild(nRoot);
       const flash = new Graphics(); flash.blendMode = "add"; nApp.stage.addChild(flash); // Flash außerhalb des Zoom-Containers
       Object.assign(refs.current, { tApp, nApp, tG, tRoot, nRoot, novaG, core, flash, starsPC, stars });
-      nApp.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf: Ticker-Cap (treibt beide Apps) — #perf-mobile: lite 45→30
+      nApp.ticker.maxFPS = gottMaxFPS(st.current.lite); // treibt beide Apps (Tunnel wird aus dem Nova-Ticker gerendert)
       nApp.ticker.add(tick); startPlay();
     }).catch(() => { /* WebGL fehlt → leer */ });
 

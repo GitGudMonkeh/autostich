@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
+import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 
 /* #322 Gottgleich-Prunk „Sonnen-Puls" (Standard, freier Default) — PIXI-Fassung. Die Outrun-Sonne bloomt EINMALIG
    hinter der Gegnerkarte auf: Scheibe mit vertikalem Sunset-Verlauf + horizontalen Scanline-Lücken (nach unten dicker),
@@ -85,14 +86,15 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     const coronaTex = makeRadial([[0, 1], [0.5, 0.5], [1, 0]]);
     const coreTex = makeRadial([[0, 1], [0.4, 0.6], [1, 0]]);
 
-    function place() {
+    // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
+    const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect();
       if (!pr || pr.width < 2) return null;
       const cr = cardRef?.current?.getBoundingClientRect();
       const cx = cr && cr.width > 2 ? (cr.left - pr.left + cr.width / 2) : pr.width / 2;
       const cy = pr.height * TUNE.POS_Y;
       return { W: pr.width, H: pr.height, cx, cy };
-    }
+    });
 
     // Sonnen-Textur (Verlauf hängt am Farbmodus) nur bei Bedarf neu backen.
     function ensureSun(nodes) {
@@ -106,7 +108,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     function tick(ticker) {
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
-      const geo = place(); if (!geo) return;
+      const geo = placer.get(); if (!geo) return;
       const { H, cx, cy } = geo;
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
       const env = envelope(prog), A = env.alpha * TUNE.BRIGHT;
@@ -145,15 +147,13 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
     function startPlay() {
       const a = appRef.current, pl = playRef.current; if (!a || disposed) return;
-      pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire();
+      pl.playing = true; pl.bt = 0; placer.invalidate(); st.current.onFire && st.current.onFire();
       if (document.visibilityState !== "hidden") a.ticker.start();
     }
     startRef.current = startPlay;
 
-    // #perf: Auf lite (Mobile/„ausgewogen") DPR deckeln (1.25 statt 2 → weniger Fill-Rate der großen additiven Sprites)
-    // und den Ticker auf 45 fps kappen (ProMotion 120 Hz füllt sonst 3× so oft) — spürbar billiger, Look praktisch gleich.
-    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+    // #perf-gott: DPR-Deckel, antialias und Ticker-Cap kommen aus pixiGott.js (eine Wahrheit für alle fünf Prunks).
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -164,7 +164,7 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
         const rays = new Graphics(); rays.blendMode = "add";
         app.stage.addChild(corona, rays, sun, core);
         nodesRef.current = { sun, corona, core, rays };
-        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30 (kurzer Einmaleffekt, kaum sichtbar)
+        app.ticker.maxFPS = gottMaxFPS(st.current.lite);
         app.ticker.add(tick);
         // Mount = spielen (Battlefield mountet nur beim Gott-Sieg; die Vorschau will den Loop). Trigger-Wechsel danach → Replay.
         startPlay();

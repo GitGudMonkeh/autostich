@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
+import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 
 /* #324 Gottgleich-Prunk „Prisma-Kaskade" (Sehr selten) — PIXI. Mehrere prismatische Schockwellen-Ringe zünden
    zeitversetzt (Kaskade) und laufen nach außen übers Board; jeder Ring aus mehreren radial getrennten Spektralbändern
@@ -53,18 +54,19 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
     const app = new Application();
     const flashTex = makeRadial([[0, 1], [0.5, 0.4], [1, 0]]);
 
-    function place() {
+    // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
+    const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return null;
       const cr = cardRef?.current?.getBoundingClientRect();
       const cx = cr && cr.width > 2 ? (cr.left - pr.left + cr.width / 2) : pr.width / 2;
       return { W: pr.width, H: pr.height, cx, cy: pr.height * TUNE.ORIGIN_Y, halfDiag: Math.hypot(pr.width, pr.height) / 2 };
-    }
+    });
     function prismColor(bu, dm, ca, cb) { const base = dm ? mix(ca, cb, bu) : hsl2rgb((bu * TUNE.HUE) / 360, 1, 0.55); return mix([255, 255, 255], base, TUNE.SAT); }
 
     function tick(ticker) {
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
-      const geo = place(); if (!geo) return;
+      const geo = placer.get(); if (!geo) return;
       const { cx, cy, halfDiag, H } = geo;
       const s = st.current;
       const dm = s.deckTint, ca = rgb(s.deckColor), cb = rgb(s.deckColor2 || s.deckColor);
@@ -96,12 +98,11 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; placer.invalidate(); st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
-    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -110,7 +111,7 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
         const rings = new Graphics(); rings.blendMode = "add";
         app.stage.addChild(flash, rings);
         nodesRef.current = { rings, flash };
-        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
+        app.ticker.maxFPS = gottMaxFPS(st.current.lite);
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 

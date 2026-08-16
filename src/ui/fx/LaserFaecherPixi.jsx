@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
+import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 
 /* #323 Gottgleich-Prunk „Laser-Fächer" (Selten) — PIXI. Scharfe Neon-Laser fächern aus der Kartenmitte (hinter der
    Karte) auf: abwechselnd lange Haupt- und kurze Nebenstrahlen (Sonnenstrahl-Look), jeder ein Kegel (schmal an der
@@ -79,17 +80,18 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     const beamTex = makeBeamTexture();
     const hubTex = makeRadial([[0, 1], [0.4, 0.55], [1, 0]]);
 
-    function place() {
+    // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
+    const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return null;
       const cr = cardRef?.current?.getBoundingClientRect();
       const cx = cr && cr.width > 2 ? (cr.left - pr.left + cr.width / 2) : pr.width / 2;
       return { W: pr.width, H: pr.height, cx, cy: pr.height * TUNE.ORIGIN_Y, diag: Math.hypot(pr.width, pr.height) };
-    }
+    });
 
     function tick(ticker) {
       const pl = playRef.current, nodes = nodesRef.current; if (!pl.playing || !nodes) return;
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
-      const geo = place(); if (!geo) return;
+      const geo = placer.get(); if (!geo) return;
       const { cx, cy, diag } = geo;
       const s = st.current;
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
@@ -125,12 +127,11 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; pl.rotBase = Math.random() * TAU; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; placer.invalidate(); pl.rotBase = Math.random() * TAU; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps (wie die anderen Effekte).
-    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(st.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
@@ -141,7 +142,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
         app.stage.addChild(cores);
         const hub = new Sprite(hubTex); hub.anchor.set(0.5); hub.blendMode = "add"; hub.alpha = 0; app.stage.addChild(hub);
         nodesRef.current = { beams, cores, hub };
-        app.ticker.maxFPS = st.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
+        app.ticker.maxFPS = gottMaxFPS(st.current.lite);
         app.ticker.add(tick); startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });
 
