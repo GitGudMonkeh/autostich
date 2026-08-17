@@ -110,9 +110,15 @@ const LAYERS = {
   deckglow: {
     // `vUv` kommt hier aus einer eigenen varying statt aus gl_FragCoord — der Port legt sie auf dieselbe UV.
     frag: () => toPixiFragment(DECKGLOW_FRAG_SRC, { varyingUv: "vUv" }),
-    /* Geschätzt, NICHT am Gerät beurteilt: die Glut ist reiner Halo um Konturen, also weich — der Ring-Sampler
-       macht sie ohnehin unscharf. Sie hängt aber am Bilddetail, darum nicht tiefer als Aurora. */
-    scaleCoarse: 0.6,
+    /* KEINE Verkleinerung — als einzige Ebene. Meine erste Schätzung war 0,6 („Halo ist weich"), und sie war
+       falsch: der Effekt reitet auf den KONTUREN des Hintergrundbildes, und eine grob gerechnete Glut trifft die
+       feinen Linien nicht mehr. Das Urteil am Gerät war „lässt den Hintergrund pixelig wirken, die Details gehen
+       verloren", und die Messung gegen die Canvas-Fassung stützt es (mittlere Abweichung von 255, Handy-Viewport):
+         0,50 → 5,45 · 0,60 → 4,88 · 0,75 → 3,63 · 0,85 → 3,33 · 1,00 → 0,56
+       Kein Knick, an dem man billig davonkäme: von 0,85 auf 1,0 kostet 28 % Füllarbeit und halbiert die Abweichung
+       gleich sechsfach. Diese Ebene verdient ihren Platz im Kompositor also über die GETEILTE BÜHNE, nicht über die
+       Auflösung. Wer das Verhältnis anders bewerten will: `?fxs=0.75` am Gerät ansehen, es ist eine Zahl. */
+    scaleCoarse: 1,
     scaleDesktop: 1,
     blend: "normal",     // premultipliziert: vec4(deckCol*alpha, alpha)
     texture: { name: "uTex", src: (p) => pickBfSrc(p) },
@@ -255,14 +261,25 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
         app.ticker.maxFPS = coarse ? 30 : 0;
 
         const scale = scaleOverride() ?? (coarse ? def.scaleCoarse : def.scaleDesktop);
+        /* Bei Faktor 1 KEINE Render-Textur, sondern direkt auf die Bühne.
+           Der Umweg ist bei voller Auflösung nicht gratis: `Math.round` auf eine krumme CSS-Breite lässt Textur- und
+           Bildschirmmaß um Bruchteile auseinanderlaufen, und das Hochskalieren des Sprites resampelt dann die ganze
+           Fläche. Gemessen (Handy-Viewport, gegen die Canvas-Fassung): mit Umweg blieb bei Faktor 1 eine mittlere
+           Abweichung von 1,81 von 255 stehen — sichtbar genau da, wo dieser Effekt lebt, nämlich auf dünnen hellen
+           Konturen. Ohne Umweg ist Faktor 1 wieder exakt der alte Pfad. */
+        const direct = scale >= 0.999;
         // Die Render-Textur ist die eigentliche Ersparnis: sie ist um `scale` KLEINER als die Bühne und wird
         // beim Zusammensetzen hochskaliert. Kosten ∝ Fläche → quadratisch in scale.
-        const rtSize = () => ({
-          w: Math.max(2, Math.round(app.screen.width * scale)),
-          h: Math.max(2, Math.round(app.screen.height * scale)),
-        });
+        const rtSize = () => (direct
+          ? { w: Math.max(2, app.screen.width), h: Math.max(2, app.screen.height) }
+          : {
+            w: Math.max(2, Math.round(app.screen.width * scale)),
+            h: Math.max(2, Math.round(app.screen.height * scale)),
+          });
         let size = rtSize();
-        rt = RenderTexture.create({ width: size.w, height: size.h, resolution: app.renderer.resolution, antialias: false });
+        if (!direct) {
+          rt = RenderTexture.create({ width: size.w, height: size.h, resolution: app.renderer.resolution, antialias: false });
+        }
 
         const uniforms = def.uniforms(pRef.current, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution });
         const resources = { fieldUniforms: uniforms };
@@ -277,9 +294,14 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
         });
         mesh = new Mesh({ geometry: fieldQuadGeometry(MeshGeometry), shader });
 
-        sprite = new Sprite(rt);
-        sprite.blendMode = def.blend;
-        app.stage.addChild(sprite);
+        if (direct) {
+          mesh.blendMode = def.blend;
+          app.stage.addChild(mesh);          // Pixis eigener Render-Durchgang zeichnet sie mit
+        } else {
+          sprite = new Sprite(rt);
+          sprite.blendMode = def.blend;
+          app.stage.addChild(sprite);
+        }
 
         const t0 = performance.now();
         let frozenT = null;
@@ -311,7 +333,7 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
           const s = rtSize();
           if (s.w !== size.w || s.h !== size.h) {
             size = s;
-            rt.resize(size.w, size.h);
+            if (rt) rt.resize(size.w, size.h);
           }
           // `animate=false` (reduzierte Effekte) → Standbild: Zeit einfrieren statt die Schleife zu stoppen,
           // damit Farb-/Größenwechsel weiterhin sauber durchschlagen.
@@ -321,9 +343,12 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
             tSec, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution }, mem);
 
           // Ebene in ihre Textur (klein), dann skaliert die Bühne sie auf die volle Fläche — EIN Composite.
+          // Bei Faktor 1 hängt die Ebene direkt an der Bühne; dann entfällt der Zwischenschritt komplett.
           mesh.width = size.w; mesh.height = size.h;
-          app.renderer.render({ container: mesh, target: rt, clear: true });
-          sprite.width = app.screen.width; sprite.height = app.screen.height;
+          if (!direct) {
+            app.renderer.render({ container: mesh, target: rt, clear: true });
+            sprite.width = app.screen.width; sprite.height = app.screen.height;
+          }
           } catch (e) {
             /* Ein Effekt darf nicht in eine Fehlerflut pro Frame laufen. Nach drei Fehlversuchen bleibt die Ebene
                still — das Brett läuft weiter, nur ohne diesen Effekt. */

@@ -150,7 +150,15 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
 Umsetzung des Ziels aus #fx-spike. `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry;
 jede Ebene rendert in eine **eigene, kleinere Render-Textur** und wird beim Zusammensetzen hochskaliert (Kosten ∝
 Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — am Gerät bestätigt), **Aurora**
-(mobil 0,6 — am Gerät bestätigt) und **Leuchten/DeckGlow** (mobil 0,6 — **geschätzt, noch nicht beurteilt**).
+(mobil 0,6 — am Gerät bestätigt) und **Leuchten/DeckGlow** (**mobil 1,0, also KEINE Verkleinerung**).
+- **Nicht jede Ebene verträgt den Auflösungs-Hebel.** Leuchten reitet auf den KONTUREN des Hintergrundbildes; grob
+  gerechnet trifft die Glut die feinen Linien nicht mehr → „Hintergrund wirkt pixelig, Details gehen verloren"
+  (Urteil am Gerät). Gemessene Abweichung zur Canvas-Fassung (von 255, Handy-Viewport): 0,50 → 5,45 · 0,60 → 4,88 ·
+  0,75 → 3,63 · 0,85 → 3,33 · **1,00 → 0,56**. Kein Knick, an dem man billig davonkäme. Diese Ebene verdient ihren
+  Platz im Kompositor über die geteilte Bühne, nicht über die Auflösung.
+- **Faktor 1 geht OHNE Render-Textur direkt auf die Bühne.** Der Umweg ist auch bei voller Auflösung nicht gratis:
+  `Math.round` auf eine krumme CSS-Breite lässt Textur- und Bildschirmmaß auseinanderlaufen, das Sprite resampelt
+  dann die ganze Fläche. Gemessen: 1,81 mit Umweg gegen **0,56** ohne. Sichtbar genau auf dünnen hellen Konturen.
 - **Abnahme einer portierten Ebene: rechnen, nicht gucken.** Beide Pfade auf `animate={false}` (friert sie auf
   dieselbe Sekunde), Panel gegen Panel, mittlere Abweichung je Zeilenband ausrechnen. Für Leuchten: **0,0 von 255**,
   also pixelgleich. Der Blickvergleich trägt hier nicht — bei additivem Magenta auf grünen Konturen hatte ich ein
