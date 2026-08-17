@@ -229,6 +229,25 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           `fixed` statt `absolute`: der Startbildschirm sitzt in einem auf 1520 px gedeckelten Container —
           absolut positioniert wäre das Band genauso breit und läge als Rechteck mitten im Bild statt als
           Hintergrund. Ein Hintergrund muss randlos laufen, und scrollen tut hier nichts. */}
+      {/* #deck-mobil — Deck-Hintergrund am HANDY (das Gegenstück zum Bodenband darunter, das erst ab 1400 px
+          erscheint). Beide sind bewusst getrennte Ebenen und keine gemeinsame mit Media-Query: sie zeigen
+          verschiedene BILDER (`mobile` gegen `desktop`), haben verschiedene Zuschnitte und verschiedene
+          Verschleierungen. Eine Ebene mit drei Weichen wäre kürzer und in einem halben Jahr unlesbar.
+
+          `battlefield.mobile` gibt es für alle 40 Spielfelder und ist bereits im Bundle — die Datei war
+          nur nirgends im Hub gelesen worden, der Desktop-Pass nahm ausschließlich `.desktop`. Es kommt
+          also KEIN Byte dazu.
+
+          Zuschnitt, Position und Schleier stehen in index.css unter `.as-hub-bg*`; dort steht auch, warum
+          der Ausschnitt bei 20 % und nicht mittig sitzt. */}
+      {battlefield && (
+        <div aria-hidden="true" className="as-hub-bg min-[1400px]:hidden pointer-events-none fixed inset-0">
+          <div className="as-hub-bg-img absolute inset-0"
+            style={{ backgroundImage: `url(${battlefield.mobile})` }} />
+          <div className="as-hub-bg-veil absolute inset-0" />
+        </div>
+      )}
+
       {battlefield && (
         <div aria-hidden="true" className="hidden min-[1400px]:block pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[768px]">
           <img src={battlefield.desktop} alt="" draggable="false"
@@ -365,8 +384,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
                 placeholder={t("start.seed.placeholder")}
                 aria-label={t("start.seed.aria")}
-                className="flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-mono tracking-wide"
-                style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
+                /* #deck-mobil: Fläche, Rahmen und Textfarbe kommen aus `.as-hub-field` statt aus einem
+                   inline-style — am Handy ist das Feld seit dem Deck-Hintergrund getöntes Glas, und ein
+                   inline gesetzter Grund ließe sich davon nicht überschreiben (inline schlägt jedes
+                   Stylesheet). Der Fehlerzustand bleibt eine Klasse, damit dasselbe für ihn gilt. */
+                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-mono tracking-wide`}
               />
               {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
                   der Rahmen ab 1400 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}

@@ -546,18 +546,18 @@ button { font-family: inherit; }
   font-size: var(--wm-size, clamp(28px, 3.3vw, 46px));
   line-height: 1.15;
   white-space: nowrap;
-  /* Mobil: der Verlauf des alten Logos, einmal quer durchs Wort. Statisch wie das PNG —
-     die Lichtwelle kommt erst mit der Deck-Fassung auf Desktop dazu.
-     #ruhe: dieselben vier Stopps, alle um 42 % entsättigt (s = 0,58, wie die Palette in StartScreen.jsx).
-     Der Verlauf BLEIBT vierfarbig — er ist die Quelle, aus der die Palette begründet ist, und eine
-     einfarbige Marke über einem entsättigten Hub sähe entfärbt aus statt ruhig. Er soll nur nicht mehr
-     lauter sein als alles, was unter ihm steht. */
-  background: linear-gradient(90deg, #5cb9cb, #6c88b9, #9688c7, #d6ab6b);
+  /* #deck-mobil: derselbe Fünf-Stopp-Verlauf wie auf Desktop, nur STATISCH — die Lichtwelle
+     (background-size + Animation) bleibt der Desktop-Regel vorbehalten, sie ist eine Dauer-Animation
+     und gehört nicht auf den Akku. Weiß an beiden Enden ist die Lesbarkeits-Reserve: bei dunklen Decks
+     trägt es die Glyphenmitte.
+     Rückfall ohne Deck sind die entsättigten #ruhe-Töne — dann sieht die Marke aus wie vor dem Deck-Pass. */
+  background: linear-gradient(90deg, #ffffff,
+    var(--deck-a2, #9688c7), var(--deck-a1, #5cb9cb), var(--deck-a2, #9688c7), #ffffff);
   -webkit-background-clip: text; background-clip: text;
   color: transparent; -webkit-text-fill-color: transparent;
   /* drop-shadow statt text-shadow: bei transparenter Füllung schattiert WebKit sonst die
      VOLLE Glyphe und überstrahlt den Verlauf (gleicher Grund wie bei .card-num/#ios-glow). */
-  filter: drop-shadow(0 0 9px rgba(150, 136, 199, 0.5));
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--deck-a1, #9688c7) 50%, transparent));
 }
 @keyframes as-wordmark-sweep {
   from { background-position: 0% center; }
@@ -579,12 +579,16 @@ button { font-family: inherit; }
    goldene Zone über die obere Bildschirmhälfte — die Kopfzone war damit dreigeteilt eingefärbt, und weil die
    Blasen unterschiedlich weit ausliefen, wanderte der Grundton, während man nach unten las. Genau das liest
    sich als „unruhig", noch bevor man ein einzelnes Element betrachtet. Jetzt ein einziger kühler Halo, mittig
-   unter der Marke, in der Familie des Start-Knopfs. Die Höhe halbiert der Aufrufer (StartScreen.jsx).
+   unter der Marke. Die Höhe halbiert der Aufrufer (StartScreen.jsx).
+   #deck-mobil: Der Halo zieht seinen Ton jetzt aus dem Deck — er ist die weichste Stelle des Bildschirms
+   und trägt den Deck-Bezug, ohne einen einzigen Knopf anzufassen. EINE Ellipse bleibt es trotzdem.
    Die Deck-Fassung ab 1400 px bleibt dreiteilig: dort sind es nur ZWEI Farben (a1/a2) und sie gehören
    demselben Deck, laufen also nicht gegeneinander. */
 .as-wm-glow {
   background:
-    radial-gradient(440px 210px at 50% 26%, rgba(70, 150, 190, .16) 0%, rgba(70, 150, 190, .05) 48%, transparent 84%);
+    radial-gradient(440px 210px at 50% 26%,
+      color-mix(in srgb, var(--deck-a1, #4696be) 16%, transparent) 0%,
+      color-mix(in srgb, var(--deck-a1, #4696be) 5%, transparent) 48%, transparent 84%);
 }
 .as-runhead-glow {
   background:
@@ -877,7 +881,62 @@ button { font-family: inherit; }
    #kante: Grund und Rahmen sind die der Kanten-Familie — flacher, dunkler Grund statt des früheren
    senkrechten Verlaufs (#1b1a24 → #161620) und der leisere Rahmen, den auch Auswahlkarten tragen. Das
    Farbsignal macht allein die Kante links (Stripe, s. StartScreen.jsx). */
-.as-hub-tile { background: #12121a; border: 1px solid rgba(150, 150, 170, .14); }
+/* #deck-mobil: Aus der deckenden Fläche wird getöntes Glas. Der Grund: seit der Hub am Handy einen
+   Deck-Hintergrund hat, lagen vier deckende `#12121a`-Rechtecke auf dem Bild und schnitten sich sichtbar
+   heraus — sie lasen sich als Löcher IM Bild statt als Schicht DARÜBER. Halbtransparent plus ein Hauch
+   der ersten Deckfarbe dreht das um, ohne dass ein Bedienelement seine Bedeutung wechselt: der Deck-Bezug
+   kommt aus der FLÄCHE, die Signalfarben (Gold = Guthaben) bleiben, wo sie sind.
+   Die zwei Stellschrauben sind die Tönungsanteile (13 % oben, 7 % unten) und die Deckkraft des Grundes
+   (.58 → .68); mehr Tönung heißt mehr Deck-Gefühl und weniger Textkontrast, beides linear.
+   Der Blur ist das, was „durchscheinend" von „unruhig" trennt — ohne ihn zeichnet sich jedes Bilddetail
+   hinter dem Text ab. ACHTUNG: Die projektweite Blur-Abschaltung auf `pointer: coarse` (ganz oben in
+   dieser Datei) trifft nur `.fixed.inset-0` / `.absolute.inset-0` / `.as-statusbar` — diese Kacheln
+   fallen NICHT darunter und blurren am Handy tatsächlich. Das Menü ist nicht perf-kritisch (kein
+   Frame-Loop), aber es sind sechs Blur-Flächen statt einer; wer hier Frames sucht, fängt damit an.
+   Ab 1400 px setzt `.as-hub-list .as-hub-tile` alles davon zurück — dort ist die Kachelbank eine Liste
+   auf EINER Glasscheibe, und ein zweiter Blur je Zeile wäre Blur auf Blur. */
+.as-hub-tile {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--deck-a1, #8a8a95) 13%, rgba(16, 16, 23, .58)) 0%,
+    color-mix(in srgb, var(--deck-a1, #8a8a95) 7%, rgba(13, 13, 19, .68)) 100%);
+  border: 1px solid color-mix(in srgb, var(--deck-a1, #8a8a95) 24%, rgba(150, 150, 170, .16));
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+/* Das Seed-Feld war mit `#141419` der zweite deckende Block im Stapel und hatte damit dasselbe Problem
+   wie die Kacheln. Chips, Ghost-Knopf und Discord-Kreis lagen schon vorher bei 50 % Deckkraft und
+   brauchten nichts. Als Klasse statt inline-style, sonst ließe sich der Fehler-Rahmen nicht mehr setzen. */
+.as-hub-field {
+  background: color-mix(in srgb, var(--deck-a1, #8a8a95) 8%, rgba(16, 16, 22, .60));
+  border: 1px solid color-mix(in srgb, var(--deck-a1, #8a8a95) 24%, rgba(150, 150, 170, .16));
+  color: #cfcfd6;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+.as-hub-field::placeholder { color: #8a8a96; }
+.as-hub-field.is-err { border-color: #e06a6a; }
+
+/* Deck-Hintergrund am Handy (#deck-mobil) — das Gegenstück zum Bodenband der Desktop-Fassung.
+   `fixed` aus demselben Grund wie dort: der Hub sitzt in einem gedeckelten Container, absolut positioniert
+   wäre das Bild genauso breit und läge als Rechteck mitten im Bildschirm statt als Hintergrund.
+   Der Zuschnitt ist die eine Entscheidung, die hier steckt: das Bild ist 4:3, das Fenster rund 1:2, also
+   bleiben bei `cover` nur 35,7 % der Bildbreite übrig. Diese Bilder haben ihr Motiv aber AM RAND und die
+   Mitte bewusst leer (dort liegt im Spiel das Brett) — mittig zugeschnitten sähe man von 40 Decks vierzig
+   Mal dieselbe Leerfläche. `20%` schiebt das Fenster auf 12,9–48,6 % der Bildbreite: weit genug nach links
+   für das Motiv, weit genug von der Kante weg, dass kein hartes Randdetail senkrecht durch den Bildschirm
+   läuft. Am Gerät nachdrehen: 0 % = Bildkante, 50 % = Mitte.
+   Der Schleier ist die eine Stellschraube für alle 40 Bilder gleichzeitig — nach unten dichter, weil dort
+   die Kacheln stehen; oben trägt ohnehin schon der Ambient-Glow. */
+.as-hub-bg { z-index: -20; }
+.as-hub-bg-img {
+  background-size: cover;
+  background-position: 20% center;
+  background-repeat: no-repeat;
+}
+.as-hub-bg-veil {
+  background: linear-gradient(180deg, rgba(20, 20, 25, .55) 0%, rgba(20, 20, 25, .50) 30%,
+    rgba(17, 17, 22, .62) 62%, rgba(17, 17, 22, .78) 100%);
+}
 /* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
 
@@ -901,22 +960,24 @@ button { font-family: inherit; }
    Die Kante ist dieselbe Sprache wie die Streifen der Verwaltungsliste: EIN Farbsignal an der linken
    Seite, sonst Ruhe. Sie verträgt darum auch 40 sehr unterschiedliche Decks.
 
-   Die FORM gilt auf allen Breiten. Die FARBE nicht: bis 1400 px trägt jeder Knopf seinen Ton aus dem
-   Logo-Dreiklang (Cyan = Start, Violett = Rangliste/Tutorial), erst darüber zieht er ihn aus dem
-   aktiven Deck — dieselbe Grenze wie bei der Wortmarke und ihrem Glow (#logo). Die Deck-Fassung steht
-   als eigene Regel in der 1400-px-Sektion und überschreibt genau die vier farbigen Deklarationen.
+   #deck-mobil (17.08.2026): Die FARBE kam bis hierher nur ab 1400 px aus dem Deck, darunter stand der
+   feste Logo-/#ruhe-Ton. Diese Grenze ist WEG — der Deckton gilt jetzt auf allen Breiten, und damit steht
+   der Ton EINMAL statt zweimal. Vorher lagen dieselben vier Deklarationen doppelt vor (hier fest, in der
+   1400-px-Sektion mit `var(--deck-a1)`), was genau die Drift erzeugt, vor der die Datei sonst überall warnt.
+   Der Rückfall ist der #ruhe-Wert: ohne gesetztes Deck sieht der Knopf aus wie vor dem Deck-Pass.
+   `--deck-a1`/`--deck-a2` hängen an `.app-root` (App.jsx) und sind auch im Menü gesetzt.
 
    Ein Umweg über lokale Variablen (`--btn-c` hier setzen, dort umbiegen) wäre kürzer, funktioniert
    hier aber nicht: Vite verschachtelt den color-mix-Fallback als @supports IN die Regel, und in dem
    Aufbau blieb die Kante am Fallback hängen, obwohl die Variable am Element schon die Deckfarbe trug.
-   Zwei Regelsätze sind länger, aber sie tun nachweislich das, was dasteht.
+   Deshalb steht die Variable direkt in jeder Deklaration.
    Als Klassen statt inline-style, weil inline jedes Stylesheet schlägt. */
 .as-cta-primary {
-  background: linear-gradient(90deg, color-mix(in srgb, #26c6e6 30%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .18);
-  border-left: 4px solid #26c6e6;
-  color: color-mix(in srgb, #7ceafb 45%, #ffffff);
-  box-shadow: 0 0 16px -8px #26c6e6;
+  border-left: 4px solid var(--deck-a1, #26c6e6);
+  color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
+  box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
 }
 /* Läuft ein Lauf, tritt „Normaler Lauf" hinter „Fortsetzen" zurück: gleiche Form, neutrale Kante. */
 .as-cta-ghost {
@@ -933,19 +994,20 @@ button { font-family: inherit; }
    Das ist der Kern des Umbaus: die Rangordnung „Ziel > Angebot" läuft über HELLIGKEIT innerhalb einer
    Familie statt über einen zusätzlichen Farbton. Zwei Knöpfe in zwei Farben streiten; zwei Knöpfe in einer
    Farbe und zwei Helligkeiten sortieren sich.
-   Ab 1400 px überschreiben beide Regeln der 1400-px-Sektion das mit `--deck-a2` — dort trägt der Knopf die
-   zweite Deckfarbe, und diese Werte greifen nicht mehr. */
+   #deck-mobil: Beide tragen jetzt auf ALLEN Breiten die zweite Deckfarbe (`--deck-a2`), der #ruhe-Ton ist
+   nur noch der Rückfall. Die Rangordnung bleibt trotzdem erhalten, weil `a2` in den Paketen durchweg die
+   hellere, ruhigere der beiden Deckfarben ist und der CTA auf `a1` sitzt. */
 .as-ranked-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, #6696a4 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #6696a4) 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, #6696a4 80%, transparent);
-  color: color-mix(in srgb, #6696a4 55%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #6696a4) 80%, transparent);
+  color: color-mix(in srgb, var(--deck-a2, #6696a4) 55%, #ffffff);
 }
 .as-tut-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, #6696a4 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #6696a4) 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, #6696a4 80%, transparent);
-  color: color-mix(in srgb, #cfe2e8 50%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #6696a4) 80%, transparent);
+  color: color-mix(in srgb, var(--deck-a2, #cfe2e8) 50%, #ffffff);
 }
 /* „↻ Spielen" neben dem Seed-Feld. Als Klasse statt inline-style, damit der Rahmen ab 1400 px vom
    Hover-Schein übernommen werden kann.
@@ -961,8 +1023,14 @@ button { font-family: inherit; }
 /* Der Wochen-Chip am Ranglisten-Knopf; die Desktop-Fassung steht in der 1400er-Media-Query.
    #ruhe: Grund und Schrift folgen dem Knopf, auf dem der Chip sitzt — vorher Violett-Schwarz auf einem
    inzwischen teal-grauen Knopf, also der letzte Rest der alten Palette an dieser Stelle. Press Start 2P
-   ist am Aufrufer entfallen (Begründung dort), der Chip nimmt jetzt die Mono des Hubs. */
-.as-week-chip { background: #1c2328; color: color-mix(in srgb, #6696a4 60%, #ffffff); }
+   ist am Aufrufer entfallen (Begründung dort), der Chip nimmt jetzt die Mono des Hubs.
+   #deck-mobil: Der Grund ist neutral-transparent statt eines festen Tons — er sitzt seit dem Deck-Pass auf
+   40 verschiedenen Hintergründen, und jede feste Fläche wäre dort 40-mal anders lesbar. Die Schrift folgt
+   dem Knopf (`--deck-a2`), damit Chip und Kante nicht auseinanderlaufen. */
+.as-week-chip {
+  background: rgba(12, 12, 18, .75);
+  color: color-mix(in srgb, var(--deck-a2, #6696a4) 70%, #ffffff);
+}
 
 /* ============================================================================
    KANTE STATT FLÄCHE — dieselbe Sprache für Knöpfe und Auswahlkarten (#kante)
@@ -1124,7 +1192,20 @@ button { font-family: inherit; }
     border: 0;
     border-bottom: 1px solid rgba(60, 58, 78, 0.55);
     border-radius: 0;
+    /* #deck-mobil: Die Grundregel gibt der Kachel seit dem Handy-Deckhintergrund getöntes Glas MIT Blur.
+       Hier muss beides weg — die Zeilen sitzen auf der einen Glasscheibe des Containers (`.as-glass`),
+       ein zweiter Blur je Zeile wäre Blur auf Blur und viermal dieselbe Fläche unschärfen. */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
+  /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war. */
+  .as-hub-field {
+    background: #141419;
+    border: 1px solid #2a2a33;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .as-hub-field.is-err { border-color: #e06a6a; }
   .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
 
   /* Die Knöpfe brauchen hier KEINE Sonderregel mehr: seit „Kante statt Fläche" ziehen sie ihre Farbe
@@ -1151,25 +1232,10 @@ button { font-family: inherit; }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
 
   /* --- Knöpfe in Deckfarbe --------------------------------------------------
-     Bis 1399 px tragen die Knöpfe den Logo-Dreiklang (Regeln oben), ab hier den Ton des aktiven Decks.
-     Überschrieben wird nur, was Farbe trägt — Form, Rahmen und Maße bleiben die der Grundregel.
-     Ohne gesetztes Deck greifen dieselben Rückfälle wie oben, dann sieht Desktop aus wie Handy. */
-  .as-cta-primary {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, #0e0e14) 0%, #0e0e14 30%);
-    border-left-color: var(--deck-a1, #26c6e6);
-    color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
-    box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
-  }
-  .as-ranked-btn {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
-    border-left-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
-    color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, #ffffff);
-  }
-  .as-tut-btn {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
-    border-left-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
-    color: color-mix(in srgb, var(--deck-a2, #d9ccff) 50%, #ffffff);
-  }
+     Hier stand bis #deck-mobil eine wortgleiche Kopie der drei Knopf-Regeln, nur mit `var(--deck-a1/a2)`
+     statt fester Töne. Seit die Grundregel die Deckfarbe selbst zieht (Begründung dort), ist die Kopie
+     ersatzlos entfallen — zwei Fassungen derselben vier Deklarationen sind genau die Drift, vor der die
+     Kommentare in dieser Datei sonst überall warnen. */
 
   /* --- Wortmarke + ihr Ambient-Glow in Deckfarbe (#logo) --------------------
      Erst hier, nicht in der Grundregel: mobil bleibt der Logo-Dreiklang stehen (s. `.as-wordmark` oben).

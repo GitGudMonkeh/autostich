@@ -339,6 +339,38 @@ nichts. `BLUE` war nicht mal eine eigene Farbe, sondern der Übergangswert Cyan�
   Discord-Blurple (Markenfarbe).
 - Offen: der `!onbDone`-Zweig der Bonus-Leiste (Violett) ist seit #316 unerreichbar und wurde nicht mitgezogen.
 
+### #deck-mobil — Deck-Hintergrund + Deckfarben jetzt auch am Handy (2026-08-17)
+Bis hierher war der Deck-Bezug des Hubs eine reine Desktop-Sache (Bodenband + Deckfarben ab 1400 px).
+Jetzt trägt auch die Handy-Fassung ihn — **Desktop bleibt unangetastet, es bekommt sein eigenes Layout.**
+- **Die Bilder waren längst da**: jedes der 40 Spielfelder hat `mobile.jpg` (1080×810) neben `desktop.jpg`
+  (1600×640), beide in `BATTLEFIELD_ASSETS` (`src/ui/cosmeticAssets.js`). Der Hub las nur `.desktop`.
+  **Kein zusätzliches Byte im Bundle**, nur ein zweiter Aufrufer.
+- **Eigene Ebene, nicht eine mit Media-Query** (`.as-hub-bg*` in index.css, gerendert in StartScreen.jsx):
+  andere Bilddatei, anderer Zuschnitt, andere Verschleierung. `fixed` aus demselben Grund wie beim
+  Bodenband (der Hub sitzt in einem gedeckelten Container).
+- **Zuschnitt `background-position: 20%` — die eine Entscheidung, die hier steckt.** Bild 4:3, Fenster ~1:2
+  → `cover` behält nur **35,7 % der Bildbreite**. Die Bilder haben ihr Motiv aber AM RAND und die Mitte
+  bewusst leer (dort liegt im Spiel das Brett) → mittig zugeschnitten sieht man 40× dieselbe Leerfläche
+  (Oni verliert Dämonenkopf UND roten Mond). `0 %` = harte Bildkante, ein senkrechtes Randdetail läuft
+  durch den Schirm. **20 % = Fenster auf 12,9–48,6 %.** Regler: 0 % Kante … 50 % Mitte.
+- **Deckfarben auf ALLEN Breiten**: `.as-cta-primary`/`.as-ranked-btn`/`.as-tut-btn`/`.as-wordmark`/
+  `.as-wm-glow`/`.as-week-chip` ziehen `var(--deck-a1/a2)` jetzt in der GRUNDREGEL. Die wortgleichen
+  Dubletten in der 1400-px-Sektion sind **ersatzlos entfallen** — sie waren genau die Doppelpflege, vor der
+  die Datei sonst überall warnt. Rückfall ist der #ruhe-Ton. `--deck-a1/a2` hängen an `.app-root` (App.jsx,
+  auch im Menü gesetzt). Wortmarke mobil **statisch** — die Lichtwelle bleibt Desktop (Dauer-Animation).
+- **Kacheln + Seed-Feld = getöntes Glas** (`.as-hub-tile`, neu `.as-hub-field`): deckende `#12121a`-Flächen
+  lasen sich auf dem Bild als *Löcher darin* statt als Schicht darüber. Jetzt 58→68 % Deckkraft plus
+  13→7 % `--deck-a1`. **Der Deck-Bezug kommt aus der FLÄCHE, die Signalfarben bleiben** (Gold = Guthaben).
+  Ab 1400 px setzt `.as-hub-list .as-hub-tile` alles zurück (dort ist die Bank EINE Glasscheibe).
+- **Blur-Warnung**: die projektweite Abschaltung auf `pointer: coarse` trifft nur `.fixed.inset-0` /
+  `.absolute.inset-0` / `.as-statusbar` — **diese Kacheln fallen NICHT darunter und blurren am Handy
+  wirklich** (6 Flächen statt 1). Menü hat keinen Frame-Loop, aber wer dort Frames sucht, fängt hier an.
+- `color-mix` kompiliert wie überall als **Fallback + `@supports`-Block** (s. Knopf-Kommentar): die erste,
+  „platte" Zeile im Build ist der Fallback, nicht das Ergebnis. Nicht erschrecken.
+- **Offen/nicht geprüft**: nur 3 der 40 Decks angesehen (Ascension · Oni · Pflanze), am Schreibtisch statt
+  am Gerät. Bei hellen Decks steht der goldene Guthaben-Stripe auf goldgetönter Kachel auf goldenem Bild —
+  das #ruhe-Signal ist ausgerechnet dort am schwächsten. Abnahme gehört in den `/test/`-Slot.
+
 ### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
 - **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/
   Gottgleich 2500 ms) + `BIG_DOMINANCE_MS=1400` (niedrigere Stufe kurz nach höherer unterdrückt → „nur die höchsten").
