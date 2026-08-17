@@ -23,6 +23,10 @@ export default [
       // JSX-Referenzen als „Nutzung" zählen — sonst meldet no-unused-vars jede nur in JSX verwendete Komponente/Variable
       // fälschlich als ungenutzt (kein automatischer JSX-Runtime-Zähler in js.recommended).
       "react/jsx-uses-vars": "error",
+      // Gegenstück dazu: eine in JSX benutzte, aber nirgends importierte Komponente meldet `no-undef` NICHT (die Regel
+      // sieht den JSX-Bezeichner nicht). Beim Zusammenziehen der vier Gebäude-Umschalter (#398) war genau das der
+      // Fehler — Lint und Tests blieben grün, der Bildschirm wäre erst zur Laufzeit gestorben.
+      "react/jsx-no-undef": "error",
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       // Der Kern-Nutzen: toten/ungenutzten Code melden. `_`-Präfix erlaubt bewusst Ungenutztes; caughtErrors aus.

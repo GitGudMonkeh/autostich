@@ -1,7 +1,8 @@
 import { GlacierFormLegend } from "./GlacierFormLegend.jsx";
 import FormIcon from "./FormIcon.jsx";
 import { formationLabel, formationAbbr } from "./formationLabels.js"; // Namen/Kuerzel: EINE Quelle (Sprachpruefung A12)
-import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { archFamily, archCatDef, archCatList } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { ARCH_CAT } from "./indicators/vocab.js";
 import { t } from "../i18n/index.js";
 
 // #UI: Geteilte Bausteine für Aufstellphase UND Chronik (eine Quelle → keine getrennte Pflege).
@@ -19,6 +20,26 @@ const FORMATION_LEGEND = [
   ["formationskern", "dein gewählter Formationstyp bekommt einen Zusatzfaktor"],
   ["grenzbonus",     "eine Formation läuft über eine Segmentgrenze und zahlt zusätzlich ×1,25"],
 ];
+
+/* Gebäude-Umschalter „🏗 Gebäude an/aus" + Kategorie-Legende (#398). Stand vier Mal fast identisch im Code
+   (Aufstellphase, Endscreen, Chronik, Lauf-Detail) — drei davon mit hartkodiert deutscher Beschriftung. Jetzt eine
+   Quelle: Knopf UND Legende, durchgehend über t(). Der Aufrufer entscheidet weiter, OB er ihn zeigt (`hasArch`). */
+export function ArchToggle({ on, onToggle }) {
+  return (
+    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+      <button onClick={onToggle}
+        className={`${on ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
+        style={on ? { "--c": ARCH_CAT.value.color } : undefined}>
+        {t(on ? "form.arch.on" : "form.arch.off")}
+      </button>
+      {on && archCatList().map(([k, v]) => (
+        <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
+          <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 /* Gebäude-Liste „🏗 Deine Gebäude": antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (inspectBid) — und
    umgekehrt markiert das Antippen einer Karte im Gebäude den Eintrag. Geteilt von FormationPhase & ChronikOverview.

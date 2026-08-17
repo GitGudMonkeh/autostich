@@ -6,7 +6,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
-import { archFamily, formationName, archCatList, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
+import { archFamily, formationName, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
@@ -17,7 +17,7 @@ import { occupiedCells as archOccupied } from "../game/architect.js";
 import { ARCH_CAT } from "./indicators/vocab.js";
 // #UI: geteilte Architekt-/Formations-Bausteine (eine Quelle mit der Aufstellphase → keine getrennte Pflege).
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
-import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
+import { ArchBuildingList, FormationLegend, ArchToggle } from "./ArchPanels.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (wie Perk-Auswahl)
 
 const fmtX = (x) => x.toFixed(2).replace(".", ","); // ×-Multiplikator-Format (1,50)
@@ -81,20 +81,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0">
             {/* #218: Architekt-Gebäude auf dem Grid ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Aufstellung. */}
-            {hasArch && (
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                <button onClick={() => setShowArch((v) => !v)}
-                  className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
-                  style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
-                  🏗 Gebäude {showArch ? "an" : "aus"}
-                </button>
-                {showArch && archCatList().map(([k, v]) => (
-                  <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
-                    <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
-                  </span>
-                ))}
-              </div>
-            )}
+            {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openSegmentInfo(state.familyTiers)}

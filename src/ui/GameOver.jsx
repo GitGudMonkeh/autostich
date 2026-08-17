@@ -10,11 +10,11 @@ import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Fr
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
-import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
+import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
 import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
-import { archFamily, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 
 // #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
@@ -354,20 +354,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
-              {hasArch && (
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                  <button onClick={() => setShowArch((v) => !v)}
-                    className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
-                    style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
-                    🏗 Gebäude {showArch ? "an" : "aus"}
-                  </button>
-                  {showArch && archCatList().map(([k, v]) => (
-                    <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
-                      <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
-                    </span>
-                  ))}
-                </div>
-              )}
+              {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
               <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
                 pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={hasArch && showArch ? architectCover : null}

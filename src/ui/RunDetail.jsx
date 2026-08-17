@@ -5,9 +5,9 @@ import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { fmtScore } from "./format.js";
-import { ARCH_CAT } from "./indicators/vocab.js";
 import FormIcon from "./FormIcon.jsx";
-import { archFamily, archCatList, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
+import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
+import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
@@ -61,20 +61,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie im Victory-Screen. */}
-              {hasArch && (
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                  <button onClick={() => setShowArch((v) => !v)}
-                    className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
-                    style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
-                    🏗 Gebäude {showArch ? "an" : "aus"}
-                  </button>
-                  {showArch && archCatList().map(([k, v]) => (
-                    <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
-                      <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
-                    </span>
-                  ))}
-                </div>
-              )}
+              {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
               <CardGrid cards={entry.deckSnapshot.cards} formations={entry.deckSnapshot.formations || []}
                 architectCover={hasArch && showArch ? archCover : null} lockedPos={entry.deckSnapshot.challengeBlockForm || []}
                 glowBid={hasArch && showArch ? inspectBid : null} quietTiles />

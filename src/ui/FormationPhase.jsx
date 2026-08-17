@@ -3,18 +3,17 @@ import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from ".
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
-import { ARCH_CAT } from "./indicators/vocab.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
-import { ArchBuildingList, FormationLegend } from "./ArchPanels.jsx";
+import { ArchBuildingList, FormationLegend, ArchToggle } from "./ArchPanels.jsx";
 import { audio } from "./audio.js";
 import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { skillDef, archCatList } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
@@ -248,20 +247,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           {/* Karten-Grid (links auf Desktop, kompakt) */}
           <div className="md:w-1/2 md:shrink-0" data-tut="form-board">
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
-            {hasArch && (
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                <button onClick={() => setShowArch((v) => !v)}
-                  className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
-                  style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
-                  {t(showArch ? "form.arch.on" : "form.arch.off")}
-                </button>
-                {showArch && archCatList().map(([k, v]) => (
-                  <span key={k} className="inline-flex items-center gap-1 opacity-80" style={{ color: "#aab4c4" }}>
-                    <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: v.color }} />{v.label}
-                  </span>
-                ))}
-              </div>
-            )}
+            {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} firnStackByPos={iceActive ? firnStack : null} />
           </div>
