@@ -961,6 +961,8 @@ button { font-family: inherit; }
   border-left: 4px solid rgba(150, 150, 170, .35);
   color: #b9b9c6;
 }
+/* Kleine Elemente (Fuß-Chips): dieselbe Kante, nur schmaler — 4 px wirken an einem 14-px-Chip wie ein Balken. */
+.as-edge-thin { border-left-width: 3px; }
 /* Auswahlkarte: ruhiger als jeder Knopf — der Text ist hier die Hauptsache, die Kante nur
    die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein. */
 .as-edge-card {

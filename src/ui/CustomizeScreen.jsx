@@ -1043,17 +1043,21 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>{t("common.close")}</button>
               </div>
             </div>
-            {/* Tab-Umschalter: Packs · Challenges · Effekte — im Upgrade-Reiter-Stil (gleiche Designsprache): umrandete
-                Kacheln, aktiver Reiter in seiner Akzentfarbe (Rand + Text + dezenter Glow), inaktiv grau/transparent. */}
+            {/* Tab-Umschalter: Packs · Challenges · Effekte.
+                #kante: Die Reiter tragen das Farbsignal an der UNTERkante, nicht links wie Knöpfe und Karten.
+                „Kante statt Fläche" heißt ein Signal an einer Kante — bei einer waagerechten Reiterzeile wären
+                drei senkrechte Striche ein Kampf gegen die Leserichtung. Der aktive Reiter bekommt zusätzlich
+                einen ganz flachen Anlauf von unten; die inaktiven sind reiner Text, ohne Kasten. */}
             <div className="flex gap-1.5 mt-3">
               {[["packs", "shop.tab.packs", "#9b82f0"], ["challenges", "shop.tab.challenges", "#e05555"], ["fx", "shop.tab.fx", "#d4a63a"]].map(([m, label, col]) => {
                 const on = tab === m;
                 return (
                   <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
-                    className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
+                    className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
                     style={on
-                      ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
-                      : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                      ? { color: "#fff", borderBottom: `2px solid ${col}`,
+                          background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${col} 14%, transparent))` }
+                      : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
                     {t(label)}
                   </button>
                 );
@@ -1118,8 +1122,11 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
       )}
       <div className="flex gap-1.5 mt-3 flex-wrap">
         {chips.map(([k, label]) => (
-          <button key={k} onClick={() => setFilter(k)} className="px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-colors"
-            style={{ background: filter === k ? "#26c6e6" : "#14131c", color: filter === k ? "#08181c" : "#9a97ab", border: `1px solid ${filter === k ? "#26c6e6" : "#2a2836"}` }}>{t(label)}</button>
+          /* #kante: Filter in der Chip-Fassung der Kanten-Familie — der aktive trägt eine schmale Cyan-Kante
+             statt einer gefüllten Cyan-Pille, die neben den ruhigen Kacheln als lauteste Fläche dastand. */
+          <button key={k} onClick={() => setFilter(k)}
+            className={`as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-colors${filter === k ? " text-white" : ""}`}
+            style={filter === k ? { borderLeftColor: "#26c6e6" } : undefined}>{t(label)}</button>
         ))}
       </div>
 
@@ -1143,9 +1150,12 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
             : s === "buy" ? [t("shop.tile.sub.buyable"), "#f2c14a"]
             : [unlockLabel(packUnlock(p, pack)), "#6d6a80"];
           return (
+            /* #kante: Kachel in der Kanten-Optik (index.css .as-edge-card). Die Kante trägt die Akzentfarbe des
+               Packs (a1 aus themes.js) — dieselbe Farbe, in der das Deck später den ganzen Bildschirm tönt.
+               `is-sel` = ausgerüstet; das frühere Grün am Rahmen ist damit frei für den Badge, wo es hingehört. */
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
-              className="relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5"
-              style={{ background: "#14131c", border: `1px solid ${active ? "#54e08a55" : "#2a2836"}`, boxShadow: active ? "0 0 0 1px #54e08a55" : undefined }}>
+              className={`as-edge-card${active ? " is-sel" : ""} relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5`}
+              style={{ "--c": pack.a1 || "#8a8a95" }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
                 <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
                 {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
@@ -1389,9 +1399,13 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
           {FX_GROUPS.map((g) => {
             const on = g.key === sel.group;
             return (
+              /* #kante: Kategorie-Reiter tragen ihr Signal wie die Haupt-Reiter an der Unterkante (Gold = die
+                 Werkstatt-Farbe), inaktive sind reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander. */
               <button key={g.key} onClick={() => pickCat(g.key)}
-                className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-lg text-[11px] font-extrabold transition-colors"
-                style={{ background: on ? "#241f38" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`, color: on ? "#e9e4ff" : "#9a97ab", boxShadow: on ? "0 0 0 1px #9b82f0" : undefined }}>
+                className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-[11px] font-extrabold transition-colors"
+                style={on
+                  ? { color: "#fff", borderBottom: "2px solid #d4a63a", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, #d4a63a 14%, transparent))" }
+                  : { color: "#9a97ab", borderBottom: "2px solid transparent", background: "transparent" }}>
                 {t(`fxgroup.${g.key}.title`)}
               </button>
             );
@@ -1617,12 +1631,14 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
     else lastTap.current = now;
   };
   return (
+    /* #kante: Die Zeile IST jetzt die Kanten-Karte (index.css .as-edge-card) — der frühere Aufbau aus
+       umlaufendem Rahmen PLUS separatem Farbbalken links ist damit auf ein Element geschrumpft. Die Kante
+       trägt die Signaturfarbe des Effekts (Rarity nach Preisstufe: grau/grün/blau/lila/gold), `is-sel`
+       markiert den in die Bühne gewählten. Das frühere Violett für „gewählt" entfällt — es hatte mit
+       keinem Effekt etwas zu tun. Ob ein Effekt LÄUFT, sagt weiterhin der grüne Status rechts. */
     <button type="button" onClick={handleTap} title={active ? t("shop.dblTap.off") : owned ? t("shop.dblTap.on") : undefined}
-      className="relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3"
-      style={{ padding: "11px 13px", background: selected ? "#211f2e" : "#14131c",
-        border: `1px solid ${selected ? "#9b82f0" : tint + "55"}`,
-        boxShadow: selected ? "0 0 0 1px #9b82f0" : undefined }}>
-      <span aria-hidden="true" className="absolute left-0 top-0 bottom-0" style={{ width: 4, background: tint, opacity: owned ? 1 : 0.85 }} />
+      className={`as-edge-card${selected ? " is-sel" : ""}${owned ? "" : " opacity-75"} relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3`}
+      style={{ padding: "11px 13px", "--c": tint }}>
       <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
       <span className="flex items-center gap-1.5 text-[10px] font-bold shrink-0" style={{ color: status.c }}>
         {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}

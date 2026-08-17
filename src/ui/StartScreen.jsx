@@ -136,10 +136,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const LANE_MID  = `w-[94%] max-w-sm ${LANE_DESK}`;
   const LANE_TAIL = `w-[88%] max-w-sm ${LANE_DESK}`;
 
-  // Sekundär-Navigation als ruhige Chip-Reihe — kompakter Pillen-Stil (dunkel, sekundär), einheitlich.
-  // #desktop: 17 px auf 44 px Höhe — damit erfüllen die Chips oberhalb von 1400 px die Mindest-Klickzielgröße.
-  const chipCls = "px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-full text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
-  const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
+  /* Sekundär-Navigation als ruhige Chip-Reihe.
+     #desktop: 17 px auf 44 px Höhe — damit erfüllen die Chips oberhalb von 1400 px die Mindest-Klickzielgröße.
+     #kante: Seit 17.08.2026 in der Kanten-Familie (index.css) — eckig statt Pille, dünne neutrale Kante links,
+     Grund und Rahmen exakt die der neutralen Knöpfe. Vorher war ihr Grund (#20202a) heller als der neue
+     Standard, dadurch stachen sie hervor, obwohl sie der leiseste Rang der Seite sind. */
+  const chipCls = "as-edge-neutral as-edge-thin px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-lg text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
@@ -564,22 +566,24 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className="grid gap-2 justify-items-center min-[1400px]:grid-flow-col min-[1400px]:justify-items-start min-[1400px]:gap-3">
         <div className="flex items-center gap-2 min-[1400px]:gap-3">
           {onOptions && (
-            <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
+            <button onClick={onOptions} aria-label={t("start.options")} className={chipCls}>{t("start.options")}</button>
           )}
           {canTutorial && (
-            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls} style={chipSty}>{t("start.tutorial")}</button>
+            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls}>{t("start.tutorial")}</button>
           )}
         </div>
         {/* #396 Feedback-Melder — bewusst „Feedback" und nicht „Bug melden": sonst kommen nur Bugs
             und keine Ideen. Nur hier im Menü, nie im Lauf. Daneben das Discord-Icon (Community-Invite). */}
         <div className="flex items-center gap-2">
           {onFeedback && (
-            <button onClick={onFeedback} aria-label={t("start.feedback")} className={chipCls} style={chipSty}>{t("start.feedback")}</button>
+            <button onClick={onFeedback} aria-label={t("start.feedback")} className={chipCls}>{t("start.feedback")}</button>
           )}
           <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
             aria-label={t("start.discord")} title={t("start.discord")}
-            className="p-2 rounded-full transition-all hover:-translate-y-0.5 inline-flex items-center justify-center"
-            style={{ ...chipSty, color: DISCORD_BLURPLE }}>
+            /* #kante: Der Discord-Knopf bleibt rund und behält sein Blurple — er trägt ein Logo, keinen Text,
+               und ist damit kein Chip in der Reihe, sondern ein Ziel für sich. */
+            className="as-edge-neutral p-2 rounded-full transition-all hover:-translate-y-0.5 inline-flex items-center justify-center"
+            style={{ color: DISCORD_BLURPLE, borderLeftColor: "rgba(150,150,170,.18)" }}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
               <path fill="currentColor" d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.419-2.157 2.419z"/>
             </svg>
