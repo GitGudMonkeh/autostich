@@ -180,9 +180,13 @@ function Chip({ label, dot, active, onClick }) {
   );
 }
 
+/* #kante: Jeder Begriff trägt die Farbe seiner Kategorie/Fraktion ohnehin schon an Icon und Überschrift —
+   als Kante wird daraus eine lesbare Spalte, ohne dass eine einzige Farbe dazukommt. Beim Scrollen durch die
+   ~70 Einträge sieht man so, wo eine Gruppe anfängt und aufhört. */
 function TermRow({ e }) {
   return (
-    <div className="flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row">
+    <div className="as-edge-card as-edge-thin flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row mb-1"
+      style={{ "--c": e.color }}>
       <span className="flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}>{FACTION_ICON_SRC[e.group] ? <FactionIcon type={e.group} size={14} /> : <span className="text-[15px]">{e.icon}</span>}</span>
       <div className="min-w-0">
         <div className="font-bold text-[13px] leading-tight" style={{ color: e.color }}>{e.label}</div>

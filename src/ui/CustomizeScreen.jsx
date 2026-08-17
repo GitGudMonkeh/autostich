@@ -1298,19 +1298,23 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               </div>
             )
           ) : active ? (
-            <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeCheck")}</div>
+            /* #kante: „läuft gerade" ist eine Auskunft, kein Knopf — Kanten-Karte in Grün. */
+            <div className="as-edge-card w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ "--c": "#54e08a", color: "#54e08a" }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
-            <button onClick={() => { onActivate(pack); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
-              style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>{t("shop.activate")}</button>
+            /* #kante: Ausrüsten ist das Angebot dieser Ansicht — violette Kante. */
+            <button onClick={() => { onActivate(pack); onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
+              style={{ "--c": "#9b82f0" }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
+            /* #kante: Kaufen — starker Kanten-Knopf in DP-Cyan, gedimmt-neutral wenn das Guthaben nicht
+               reicht (gleiche Fassung wie der Kaufen-Knopf der Effekt-Bühne). */
             <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
-              className="w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity"
-              style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114",
-                boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+              className={`w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity ${canBuy ? "as-edge-strong" : "as-edge-neutral"}`}
+              style={{ ...(canBuy ? { "--c": "#35c6e6" } : null), opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
               {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
             </button>
           ) : (
-            <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+            /* #kante: gesperrt — neutrale Kante, gedimmt: da ist etwas, aber nicht für dich. */
+            <div className="as-edge-card is-locked w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ "--c": "#8a8a95", color: "#9a97ab" }}>
               {t("shop.unlock", { cond: unlockLabel(unlock) })}
               {unlock.target > 1 && <span className="opacity-70"> · {fmtNum(unlock.cur)} / {fmtNum(unlock.target)}</span>}
             </div>
@@ -1455,23 +1459,30 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const canBuy = !fx.standard && !fx.alwaysOwned && canBuyGlobalFx(p, fx);
   const price = globalFxPrice(fx);
   const dpBal = Math.max(0, Math.floor(Number(p?.deckPoints) || 0));
+  /* #kante: Der Aktionsknopf der Bühne („Als Hintergrund wählen" / „Ausgewählt" / „Anschalten") in der
+     Kanten-Familie. AUS = violette Kante (das Angebot), AN = grüne Kante mit Schein (läuft gerade) — dieselbe
+     Zuordnung wie am Status rechts oben in der Bühne. Die Klassen kommen zum `actBtn` dazu, der nur Maße hält. */
   const actBtn = "w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
-  const onStyle = { background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" };
-  const offStyle = { background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" };
+  // `act(active)` liefert Klasse UND Farbe in einem Rutsch — die acht Aufrufstellen unten spreizen es
+  // einfach in den Knopf (<button {...act(active)}>), statt className und style getrennt zu führen.
+  const act = (on) => ({ className: `${actBtn} ${on ? "as-edge-strong" : "as-edge"}`, style: { "--c": on ? "#54e08a" : "#9b82f0" } });
 
   let action;
   if (fx.standard) {
-    action = <div className="w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ background: "#1c2433", color: "#7fb4ff", border: "1px solid #33507a" }}>{t("shop.standardFree")}</div>;
+    // #kante: „im Standard enthalten" ist kein Knopf, sondern eine Auskunft — Kanten-Karte, nicht anklickbar.
+    action = <div className="as-edge-card w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ "--c": "#7fb4ff", color: "#7fb4ff" }}>{t("shop.standardFree")}</div>;
   } else if (!owned) {
+    /* #kante: Kaufen ist das Ziel der Bühne — starker Kanten-Knopf in DP-Cyan. Reicht das Guthaben nicht,
+       bleibt er neutral und gedimmt: kein Farbsignal für etwas, das gerade nicht geht. */
     action = (
       <button onClick={() => { if (canBuy) onBuyFx(fx); }} disabled={!canBuy}
-        className={`${actBtn} transition-opacity`}
-        style={{ background: canBuy ? "#35c6e6" : "#12303a", color: "#0a1114", boxShadow: canBuy ? "0 0 16px rgba(53,198,230,.3)" : undefined, opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
+        className={`${actBtn} ${canBuy ? "as-edge-strong" : "as-edge-neutral"} transition-opacity`}
+        style={{ ...(canBuy ? { "--c": "#35c6e6" } : null), opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
         {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
       </button>
     );
   } else if (group.mode === "finisher") {
-    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseFinisher")}</button>;
+    const chooseBtn = <button onClick={() => onChoose(finisherFlags(fx.key))} {...act(active)}>{t(active ? "shop.selected" : "shop.chooseFinisher")}</button>;
     // #319 Scorch: Standard-Feuer ↔ Deckfarbe (Farbrampe von Laser/Glut). #320 Schwarzes Loch: Standard blau/pink ↔
     // Deckfarbe. Andere Finisher (Standard/Klinge) haben keinen Farbmodus.
     const finDeckOpt = fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck"
@@ -1492,15 +1503,15 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (fx.key === "deckglow") {
     // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set). #336: KEINE Farbauswahl mehr — Glow ist immer
     //   Deckfarbe. Nur noch An/Aus.
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} {...act(active)}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   } else if (group.mode === "bg") {
     // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
     // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;
     // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen. Leuchten (deckglow) läuft NICHT hier durch (eigener Toggle-Zweig oben).
     if (fx.key === "none") {
-      action = <button onClick={() => onChoose(bgFlags("none"))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.bg.noneActive" : "shop.bg.none")}</button>;
+      action = <button onClick={() => onChoose(bgFlags("none"))} {...act(active)}>{t(active ? "shop.bg.noneActive" : "shop.bg.none")}</button>;
     } else {
-      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseBg")}</button>;
+      const chooseBtn = <button onClick={() => onChoose(bgFlags(fx.key))} {...act(active)}>{t(active ? "shop.selected" : "shop.chooseBg")}</button>;
       const wireOn = !!options?.fxCubeMatrixWire;
       action = !deckOpt ? chooseBtn : (
         <div className="flex flex-col gap-2">
@@ -1530,7 +1541,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   } else if (group.mode === "gott") {
     // #322–#326 Gottgleich-Prunk (einfach-exklusiv): „Als Prunk wählen" schreibt gottFlags (genau einer an, gottStandard
     // = kein Prunk). Jeder Prunk-Effekt bietet zusätzlich Standard/Deckfarbe (deckOpt); „Gottgleich · Standard" nicht.
-    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{active ? t("shop.selected") : t(fx.key === "gottStandard" ? "shop.chooseGottStandard" : "shop.chooseGott")}</button>;
+    const chooseBtn = <button onClick={() => onChoose(gottFlags(fx.key))} {...act(active)}>{active ? t("shop.selected") : t(fx.key === "gottStandard" ? "shop.chooseGottStandard" : "shop.chooseGott")}</button>;
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
@@ -1558,13 +1569,13 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     );
   } else if (group.mode === "cardanim" && fx.key === "none") {
     // #318/#331 „Keine Animation" (Aus-Zustand der einfach-exklusiven Karten-Animationen): schaltet alle ab.
-    action = <button onClick={() => onChoose(animNoneFlags())} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.anim.noneActive" : "shop.anim.none")}</button>;
+    action = <button onClick={() => onChoose(animNoneFlags())} {...act(active)}>{t(active ? "shop.anim.noneActive" : "shop.anim.none")}</button>;
   } else if (group.mode === "cardanim") {
     // #331 Karten-Animation ist jetzt EINFACH-EXKLUSIV (genau eine): „Als Animation wählen". Läuft immer in der
     //   Deckfarbe (kein Standard/Deckfarbe-Farbmodus). Abwählen über „Keine Animation" bzw. Doppeltippen in der Liste.
-    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.selected" : "shop.chooseAnim")}</button>;
+    action = <button onClick={() => onChoose(cardAnimFlags(fx.key))} {...act(active)}>{t(active ? "shop.selected" : "shop.chooseAnim")}</button>;
   } else {
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} className={actBtn} style={active ? onStyle : offStyle}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
+    action = <button onClick={() => onChoose({ [fx.option]: !active })} {...act(active)}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
   }
 
   return (
