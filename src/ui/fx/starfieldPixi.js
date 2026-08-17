@@ -1,11 +1,13 @@
 import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
 import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
 import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: Standard-Farbe = Feuer-Archetyp (FireHead)
+import { cometLifeS, trailSamples, sparkScale } from "./starfieldBudget.js"; // #perf-meteor: Deckel für Turbo/Late-Game (nur lite)
 
 /* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
      1) ein DICHTES Parallax-Ambiente über 3 Tiefen-Ebenen (fern klein/dunkel/viele → nah groß/hell/wenige) mit
-        eigenem Drift + Twinkle je Ebene und einem dezenten, additiven Nebel-Backdrop,
+        eigenem Drift + Twinkle je Ebene und einem dezenten, additiven Nebel-Backdrop (#perf-meteor: auf `lite`
+        aus — er war der teuerste Posten des Effekts, Begründung am Update),
      2) eine Sternschnuppe je GEWONNENEM Stich (#357-Folge: bei Niederlage kein Komet), Größe stufenweise mit dem Hit-Tier (TIER_SIZE),
      3) einen Impact (Blitz + Funken-Burst) am Kopf — NUR ab Tier ≥ 1 (TIER_IMP[0] = 0 → „Schwach" bleibt impact-frei),
      4) einen Deck-Dual: Standard (Weiß-Blau-Sternenlicht) vs. Deck (getönter Kopf + Deck→deck2-Schweif).
@@ -94,10 +96,14 @@ const TX = 64;         // Kantenlänge der Radial-Textur
 // #357: von 4 auf 5 angehoben — bei Max-Turbo (Stich alle ~350 ms, Flug SHOOT_DUR 1 s) überlappen bis zu ~4 Kometen;
 //   mit Cap 5 (und lite 4, s. erupt) passt die maximale Überlappung hinein → kein Komet wird mehr MID-FLIGHT weggecullt
 //   (Bogen/Einschlag spielen vollständig aus). Der Schweif-Pool ist auf MAXCOMET dimensioniert (exakt 5 × 97 Slots).
+// #perf-meteor: auf lite kommt es dazu gar nicht mehr — dort folgt die Flugdauer dem Stich-Takt (cometLifeS), der
+//   Komet überlebt seinen Stich also nie und die Überlappung bleibt bei ~2. Der Pool bleibt für Desktop dimensioniert.
 const MAXCOMET = 5;
 const TRAIL_POOL = MAXCOMET * (TUNE.TRAIL_SAMPLES + 1); // ~388
 const SPARK_POOL = 512;
 const NEB_BLOBS = 4;
+
+const LUT_N = 256;     // Auflösung der Schweif-Farbtabelle (s. rebuildRamp)
 
 // ── Standard-Palette ─ #357: Standard = FEUER-ARCHETYP (FireHead-Neon-Palette, geteilt über firePalette.js) statt der
 //   alten warmen Gold/Orange-Glut. Schweif-Rampe: weiß-heißer Kopf → ROT (heiß hinter dem Kopf) → MAGENTA (Mitte) →
@@ -193,10 +199,12 @@ export function createStarfield(app) {
 
   let params = { effect: null, deck: [...MITTE], deck2: [...AUSKLANG], reduced: false, lite: false, deckTint: readDeckDefault() };
   const comets = [];
+  let liveSparks = 0;   // #perf-meteor: lebende Funken, damit der Einschlag sein Budget kennt (s. impact)
 
   function reset() {
     comets.length = 0;
     for (const s of sparks) { s.alive = false; s.p.alpha = 0; }
+    liveSparks = 0;
     for (const t of trail) t.alpha = 0;
     for (const f of flashes) { f.alive = false; f.spr.alpha = 0; }
   }
@@ -206,6 +214,7 @@ export function createStarfield(app) {
       deck:  next.color  != null ? hexToRGB(next.color)  : params.deck,
       deck2: next.color2 != null ? hexToRGB(next.color2) : params.deck2,
       deckTint: next.deckTint != null ? next.deckTint : params.deckTint };
+    rebuildRamp();
     if (params.effect !== "starfield") reset();
   }
 
@@ -216,11 +225,36 @@ export function createStarfield(app) {
     return [[0, head], [TUNE.COL_MID, deck], [1, deck2]];
   }
 
-  function grabSpark() { const s = sparks[spHead]; spHead = (spHead + 1) % SPARK_POOL; s.alive = true; return s; }
+  /* #perf-meteor: Farben EINMAL je Farbwechsel auflösen statt je Sample je Frame.
+     Vorher lief `interpStops(stops, f)` für jedes Schweif-Sample in jedem Frame — bei drei Kometen ~150 Aufrufe,
+     jeder mit einem frischen 3er-Array aus `mix()`, dazu `rgbInt`. Das sind ~300 kurzlebige Arrays pro Frame, die
+     der GC auf dem Handy wieder einsammeln muss. Die Rampe hängt aber NUR an deckTint/deck/deck2 — also an dem,
+     was über `setParams` kommt, nicht am Frame. 256 Stufen: der steilste Rampen-Abschnitt (Kern→Mitte über 0,09
+     in f) verliert dadurch höchstens ~3/255 je Kanal, auf einem additiven Schweif unsichtbar.
+     Dasselbe gilt für die Ambiente-/Nebel-/Funken-Farbe — auch die stand je Frame neu im Update. */
+  const trailLut = new Uint32Array(LUT_N);
+  let headInt = 0, sparkInt = 0, ambInt = 0, nebInt = 0;
+  function rebuildRamp() {
+    const { deckTint, deck, deck2 } = params;
+    const stops = trailStops(deckTint, deck, deck2);
+    for (let i = 0; i < LUT_N; i++) trailLut[i] = rgbInt(interpStops(stops, i / (LUT_N - 1)));
+    headInt = rgbInt(stops[0][1]);
+    // #meteor: Einschlag-Funken im Standard warm (Feuerkomet); im Deckfarbe-Modus wie bisher der getönte Kopf.
+    sparkInt = deckTint ? headInt : rgbInt(FIRE_SPARK);
+    ambInt = rgbInt(deckTint ? mix(AMB_COL, deck, 0.35) : AMB_COL);
+    nebInt = rgbInt(deckTint ? deck : FIRE_NEB);
+  }
+  rebuildRamp();
+
+  function grabSpark() {
+    const s = sparks[spHead]; spHead = (spHead + 1) % SPARK_POOL;
+    if (!s.alive) { s.alive = true; liveSparks++; }   // überschriebene lebende Funke ändert den Zähler nicht
+    return s;
+  }
   function grabFlash() { for (const f of flashes) if (!f.alive) return f; return flashes[0]; }
 
   // ── Impact (Blitz + Funken) — nur ab Tier ≥ 1 ──────────────────────────────
-  function impact(x, y, sc, imp, headInt, sparkTint) {
+  function impact(x, y, sc, imp) {
     if (imp <= 0) return;
     const f = grabFlash();
     f.alive = true; f.age = 0; f.life = TUNE.IMP_FLASH_DUR; f.x = x; f.y = y;
@@ -231,18 +265,19 @@ export function createStarfield(app) {
        her gesetzt: 90 × 5 × LITE_SPARK = 60 Funken bei Gottgleich (vorher 225 bei Faktor 0,5).
        Die kleineren Stufen fallen proportional mit — bewusst, statt nur die Spitze zu deckeln: sie tragen dieselben
        Partikel und derselbe Spray wirkt bei ihnen bereits bei weniger Funken dicht genug. */
-    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? TUNE.LITE_SPARK : 1));
+    // #perf-meteor: … und ihre STAPELUNG deckelt das Funken-Budget (Begründung in starfieldBudget.js).
+    const n = Math.round(TUNE.IMP_SPARKS * imp * (params.lite ? TUNE.LITE_SPARK : 1) * sparkScale(params.lite, liveSparks));
     for (let i = 0; i < n; i++) {
       const s = grabSpark();
       const ang = Math.random() * 6.283, sp = TUNE.IMP_SPARK_SPD * sc * (0.5 + Math.random() * 0.8) * (0.8 + 0.4 * imp);
       s.x = x; s.y = y; s.vx = Math.cos(ang) * sp; s.vy = Math.sin(ang) * sp;
       s.age = 0; s.life = TUNE.IMP_SPARK_LIFE * (0.6 + Math.random() * 0.5);
-      s.sz = TUNE.IMP_SPARK_SZ * (0.7 + Math.random() * 0.7); s.seed = Math.random() * 6.28; s.tint = sparkTint;
+      s.sz = TUNE.IMP_SPARK_SZ * (0.7 + Math.random() * 0.7); s.seed = Math.random() * 6.28; s.tint = sparkInt;
     }
   }
 
   // ── Schnuppe je Stich ──────────────────────────────────────────────────────
-  function erupt({ sweepId, win, tier = 0 }) {
+  function erupt({ sweepId, sweepDur = 0, win, tier = 0 }) {
     // #357-Folge: Komet feuert NUR bei einem GEWONNENEN Stich (Niederlage → kein Komet). Der Showcase ruft mit win=true.
     if (params.effect !== "starfield" || params.reduced || !win || !(sweepId > 0)) return;
     const t = clamp(tier | 0, 0, 4);
@@ -256,10 +291,13 @@ export function createStarfield(app) {
     const ds = lerp(TUNE.PLANE_DEPTH_MIN, 1, d);                // Tiefen-Skala (fern kleiner)
     // Start oben, seitlich vom Ziel versetzt → diagonaler Einflug (mal von links, mal von rechts).
     const sideN = (Math.random() * 2 - 1) * 0.4;
+    // #perf-meteor: auf lite folgt die Flugdauer dem STICH-TAKT (`sweepDur` = flipMs, kam schon immer an und lag
+    //   ungenutzt herum), gedeckelt auf höchstens doppelte Geschwindigkeit (Begründung in starfieldBudget.js).
+    const life = cometLifeS(params.lite, sweepDur, TUNE.SHOOT_DUR);
     comets.push({
       nx0: clamp(txN - sideN, 0.02, 0.98), ny0: 0.02 + Math.random() * 0.12,
       txN, tyN, ds,                                            // Zielpunkt (normiert) + Tiefen-Skala
-      age: 0, life: TUNE.SHOOT_DUR, tier: t, size: TIER_SIZE[t] * ds,
+      age: 0, life, tier: t, size: TIER_SIZE[t] * ds,
       imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
     });
     // #357: Cap so gewählt, dass die maximale Turbo-Überlappung (~4) hineinpasst → der Splice greift NICHT mehr
@@ -276,24 +314,23 @@ export function createStarfield(app) {
     clock += dt;
     if (params.effect !== "starfield") return;
     const W = app.screen.width, H = app.screen.height, sc = Math.max(0.4, H / HREF);
-    const deckTint = params.deckTint, deck = params.deck, deck2 = params.deck2;
-    const stops = trailStops(deckTint, deck, deck2);
-    const headInt = rgbInt(stops[0][1]);
-    // #meteor: Einschlag-Funken im Standard warm (Feuerkomet); im Deckfarbe-Modus wie bisher der getönte Kopf.
-    const sparkInt = deckTint ? headInt : rgbInt(FIRE_SPARK);
-    const ambInt = rgbInt(deckTint ? mix(AMB_COL, deck, 0.35) : AMB_COL);
-    const nebInt = rgbInt(deckTint ? deck : FIRE_NEB);
 
-    // Nebel-Backdrop (sehr niedrige Alpha, langsames Twinkle).
-    for (const nb of nebSpr) {
+    /* Nebel-Backdrop (sehr niedrige Alpha, langsames Twinkle) — auf lite KOMPLETT AUS.
+       #perf-meteor: beim Vermessen des Meteors war der Nebel der größere Posten. Die Blobs sind auf
+       `min(W,H) × r × 2` dimensioniert, also ~333 px bei einem 360er Panel; die zwei, die auf lite bisher übrig
+       blieben, decken zusammen rund 1,25× die PANELFLÄCHE additiv ab — in JEDEM Frame, unabhängig von Stich und
+       Turbo. Gerechnet sind das ~9,0 Mpx/s gegen 5,0 Mpx/s beim Meteor auf seiner Spitze und 0,3 im Ruhezustand:
+       „Meteor" kostete auf dem Handy also am meisten, wenn gar kein Meteor flog. Niedrigere Alpha hilft nicht —
+       additiv wird jedes Fragment trotzdem gerechnet; nur Fläche oder Anzahl senken die Kosten. Entscheidung des
+       Users: auf lite ganz weg (Ambiente-Sterne + Meteor bleiben, der Schleier war ohnehin der leiseste Anteil). */
+    if (params.lite) { for (const nb of nebSpr) nb.spr.alpha = 0; }
+    else for (const nb of nebSpr) {
       const tw = 0.5 + 0.5 * Math.sin(clock * 0.35 + nb.ph);
       const d = Math.min(W, H) * nb.r * 2;
       nb.spr.x = nb.nx * W; nb.spr.y = nb.ny * H; nb.spr.width = d; nb.spr.height = d;
       nb.spr.tint = nebInt;
       nb.spr.alpha = 0.11 * TUNE.NEBULA * (params.reduced ? 1 : 0.7 + 0.3 * tw);
     }
-    // #perf-mobile: dito für die Nebel-Blobs — die zweite Hälfte bleibt auf `lite` unsichtbar.
-    if (params.lite) for (let ni = Math.ceil(nebSpr.length / 2); ni < nebSpr.length; ni++) nebSpr[ni].spr.alpha = 0;
 
     /* Ambiente-Sterne (3 Ebenen): Drift (nur !reduced) + Twinkle (nur !reduced), nah größer/heller.
        #perf-mobile: auf `lite` läuft nur die HALBE Streuung. Bewusst als Sichtbarkeits-Grenze im
@@ -320,6 +357,10 @@ export function createStarfield(app) {
     // Impact am Bahnende (ab Tier ≥ 1).
     let ti = 0; // laufender Index in den Schweif-Pool
     const glow = 0.7 + 0.3 * TUNE.SHOOT_GLOW; // Halo-Verbreiterung des Streaks
+    // #perf-meteor: Schweif-Budget statt fester Sample-Zahl je Komet — der jüngste behält die volle Auflösung,
+    //   die älteren teilen sich den Rest (Begründung in starfieldBudget.js).
+    const { nFull, nOld } = trailSamples(params.lite, comets.length, Math.round(TUNE.TRAIL_SAMPLES * (params.lite ? 0.5 : 1)));
+    let youngest = true;
     for (let ci = comets.length - 1; ci >= 0; ci--) {
       const c = comets[ci];
       c.age += dt;
@@ -333,13 +374,14 @@ export function createStarfield(app) {
       const dxu = dpx / dlen, dyu = dpy / dlen;                    // Einheitsrichtung (Schweif-Orientierung)
       const k = prog / TUNE.IMP_AT;
       const hx = startX + dpx * k, hy = startY + dpy * k;
-      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp, headInt, sparkInt); }
+      if (!c.impacted && prog >= TUNE.IMP_AT) { c.impacted = true; impact(endX, endY, sc * c.ds, c.imp); }
       const trailLen = TUNE.TRAIL_LEN * c.size * sc;
       const headFoot = TUNE.HEAD_SIZE * c.size * sc * K_HEAD;
       const flick = TUNE.TRAIL_FLICK > 0 ? (1 - TUNE.TRAIL_FLICK + TUNE.TRAIL_FLICK * (0.5 + 0.5 * Math.sin(clock * 40 + c.seed))) : 1;
       // PATH_JITTER = Bahn-Streuung: KONSTANTER seitlicher Versatz je Komet (kein Wackeln) → Streak bleibt gerade.
       const off = TUNE.PATH_JITTER * c.jit * sc, oxH = -dyu * off, oyH = dxu * off;
-      const N = Math.round(TUNE.TRAIL_SAMPLES * (params.lite ? 0.5 : 1)); // #perf-mobile: halbe Schweif-Samples auf lite (größter Hotspot: verschachtelte Schleife + interpStops)
+      const N = youngest ? nFull : nOld; // #perf-mobile: halbe Schweif-Samples auf lite · #perf-meteor: ältere teilen sich das Restbudget
+      youngest = false;
       // Schweif-Samples N..1: hinter dem Kopf, Breite verjüngt (TAPER), Alpha fällt (TAIL_FADE), Farbe Kopf→Ausklang.
       for (let i = N; i >= 1; i--) {
         if (ti >= TRAIL_POOL) break;
@@ -348,7 +390,7 @@ export function createStarfield(app) {
         const w = TUNE.TAIL_WIDTH * c.size * sc * K_TAIL * (1 - TUNE.TAPER * f) * glow;
         const a = TUNE.TRAIL_ALPHA * (1 - TUNE.TAIL_FADE * f) * env * flick;
         const p = trail[ti++]; p.x = sx; p.y = sy; p.scaleX = p.scaleY = Math.max(0, w) / TX;
-        p.tint = rgbInt(interpStops(stops, f)); p.alpha = clamp(a, 0, 1);
+        p.tint = trailLut[(f * (LUT_N - 1)) | 0]; p.alpha = clamp(a, 0, 1);
       }
       // Kopf (oben): hell, HEAD_BOOST.
       if (ti < TRAIL_POOL) {
@@ -365,7 +407,7 @@ export function createStarfield(app) {
     for (let i = 0; i < SPARK_POOL; i++) {
       const s = sparks[i]; if (!s.alive) continue;
       s.age += dt;
-      if (s.age >= s.life) { s.alive = false; s.p.alpha = 0; continue; }
+      if (s.age >= s.life) { s.alive = false; liveSparks--; s.p.alpha = 0; continue; }
       s.vy += TUNE.IMP_GRAV * sc * dt; s.vx -= s.vx * TUNE.IMP_DRAG * dt;
       s.x += s.vx * dt; s.y += s.vy * dt;
       const r = s.sz * sc * 0.5;
