@@ -99,7 +99,8 @@ function Section({ id, title, innerRef, children }) {
   return (
     <section ref={innerRef} data-sec={id} className="pb-1">
       <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-xs font-bold uppercase tracking-widest"
-        style={{ color: "#8a7de0", background: STICKY_HEAD_BG }}>{title}</h3>
+        /* #deckui: Sektions-Überschrift zieht die Deckfarbe (Chrome-Akzent). */
+        style={{ color: "var(--deck-a1, #8a7de0)", background: STICKY_HEAD_BG }}>{title}</h3>
       <div className="grid gap-2.5 pt-2.5">{children}</div>
     </section>
   );
@@ -154,7 +155,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
 
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col" style={MODAL_CARD}>
+      {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
         <ModalHairline />
 
         {/* FIXER KOPF (#395): Titel · Schließen · Sprung-Chips — scrollt NICHT mit, damit die
@@ -162,7 +164,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
         <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
           <div className="flex items-start gap-3">
             <div className="min-w-0">
-              <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("options.eyebrow")}</div>
+              {/* #deckui: Eyebrow deck-getönt. */}
+              <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.eyebrow")}</div>
               <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
             </div>
             <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
@@ -205,7 +208,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               {onPrivacy && (
                 <button type="button" onClick={onPrivacy}
                   className="underline underline-offset-2 ml-1 font-semibold transition-opacity hover:opacity-100"
-                  style={{ color: "#8a7de0" }}>{t("options.telemetry.more")}</button>
+                  /* #deckui: Mehr-Link deck-getönt. */
+                  style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.telemetry.more")}</button>
               )}
             </>}>
             <Toggle on={options.telemetry !== false} onClick={() => onChange({ telemetry: options.telemetry === false })} />
@@ -248,7 +252,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               disabled={!!options.muted}
               onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
               aria-label={t("options.music.aria")}
-              style={{ width: 120, accentColor: "#8a7de0", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+              /* #deckui: generischer Violett-Akzent des Musik-Reglers → Deckfarbe (SFX bleibt grün, Zahlengröße gold — die tragen Bedeutung). */
+              style={{ width: 120, accentColor: "var(--deck-a1, #8a7de0)", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
           </Section>
           <Section id="display" title={t("options.sec.display")}
@@ -266,7 +271,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
                 onChange({ hideFloatScore: hide, hideFloatMult: hide, hideFloatWinLose: hide });
               }} />
           </Row>
-          <div className="flex flex-col gap-2.5 pl-3 ml-1" style={{ borderLeft: "2px solid #8a7de044" }}>
+          {/* #deckui: Einrück-Kante der Float-Unterschalter deck-getönt (~27 % Alpha). */}
+          <div className="flex flex-col gap-2.5 pl-3 ml-1" style={{ borderLeft: "2px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 27%, transparent)" }}>
             <Row title={t("options.float.score.title")} desc={t("options.float.score.desc")}>
               <Toggle on={!options.hideFloatScore} onClick={() => onChange({ hideFloatScore: !options.hideFloatScore })} />
             </Row>
@@ -293,7 +299,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           </Section>
         </div>
 
-        <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "#8a7de022", color: "#c9c0f0" }}>
+        {/* #deckui: Fußzeilen-Box zieht die Deckfarbe als leichte Fläche (~13 % Alpha); Text bleibt neutral-hell. */}
+        <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 13%, transparent)", color: "#c9c0f0" }}>
           {t("options.footer")}
         </div>
         </div>

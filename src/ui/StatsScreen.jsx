@@ -51,7 +51,8 @@ function Section({ title, hint, children }) {
   return (
     <div className="mt-5">
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{title}</h3>
+        {/* #deckui: generische Sektions-Überschrift zieht die Deckfarbe (Fallback = bisheriges Violett) */}
+        <h3 className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{title}</h3>
         {hint && <span className="text-[11px] opacity-40">{hint}</span>}
       </div>
       {children}
@@ -147,7 +148,8 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
   return (
     <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${detail ? "overflow-hidden" : "overflow-y-auto"}`}
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel"
+      {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
+      <div className="w-full max-w-2xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel as-panel-deck"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>

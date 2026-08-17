@@ -1256,7 +1256,7 @@ function AutostichGame() {
       {confirmAbort && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmAbort(false)}>
-          <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
             <div className="text-base font-bold">{t("app.abort.title")}</div>
@@ -1280,7 +1280,7 @@ function AutostichGame() {
       {confirmRestart && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmRestart(false)}>
-          <div className="w-full max-w-xs rounded-2xl overflow-hidden" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
             <ModalHairline />
             <div className="p-5">
             <div className="text-base font-bold">{t("app.restart.title")}</div>

@@ -113,7 +113,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={MODAL_CARD}>
+      {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
+      <div className="w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit. Abstand opak im
             Balken (pt/pb), kein negativer Margin/keine transparente Lücke → kein Durchscheinen der Kopfzeile. */}
         <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-6 flex gap-2 relative" style={{ background: STICKY_HEAD_BG }}>
@@ -138,7 +139,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
           <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
-              <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "#8a7de0", background: "#8a7de01f", border: "1px solid #8a7de055" }}>
+              /* #deckui: „neuer Rekord"-Chip zieht die Deckfarbe (generischer Violett-Akzent, kein Gold-Rekordwert). */
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "var(--deck-a1, #8a7de0)", background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 33%, transparent)" }}>
                 ★ {t("gameover.record.new")}{deltaPct != null && deltaPct > 0 ? ` · +${deltaPct} %` : ""}
               </span>
             ) : deltaPct != null ? (
@@ -166,7 +168,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 <span style={{ color: "#8a8896" }}>{mb.atMax ? t("gameover.milestones.max") : t("gameover.milestones.next", { n: Math.round(mb.next.at / 1_000_000) })}</span>
               </div>
               <div className="relative h-2 rounded-full overflow-hidden" style={{ background: "#0e0e13" }}>
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: "linear-gradient(90deg,#26c6e6,#5fe0f7)" }} />
+                {/* #deckui: Meilenstein-Fortschrittsbalken zieht die Deckfarbe statt fixem Cyan. */}
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: "linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #5fe0f7))" }} />
                 {Array.from({ length: mb.total - 1 }, (_, i) => (
                   <i key={i} className="absolute inset-y-0" style={{ left: `${(i + 1) / mb.total * 100}%`, width: 1.5, background: "#0e0e13" }} />
                 ))}

@@ -1038,7 +1038,9 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           UND alle Filter gleich groß; auch eine leere Ansicht („Nichts in dieser Ansicht") lässt es nicht schrumpfen.
           Gescrollt wird nur noch der Inhaltsbereich darunter — der Sticky-Kopf lebt weiter IN diesem Scroll-Container,
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
-      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl my-auto as-panel cz-card flex flex-col overflow-hidden"
+      {/* #deckui: äußerer Modal-Rahmen zieht die aktive Deckfarbe (as-panel-deck) — wie die übrigen Werkstatt-/
+          Options-Panels. NUR die Haupt-Shop-Karte; die Effekt-Vorschau-Bühnen (FxStage/Scenes) bleiben unberührt. */}
+      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
         <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
@@ -1062,8 +1064,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 „Kante statt Fläche" heißt ein Signal an einer Kante — bei einer waagerechten Reiterzeile wären
                 drei senkrechte Striche ein Kampf gegen die Leserichtung. Der aktive Reiter bekommt zusätzlich
                 einen ganz flachen Anlauf von unten; die inaktiven sind reiner Text, ohne Kasten. */}
+            {/* #deckui: Der TAB-Aktiv-Akzent ist reines Chrome → alle drei Reiter ziehen die aktive Deckfarbe
+                (var(--deck-a1)); der bisherige Ton je Reiter bleibt als Fallback, falls kein Deck gesetzt ist. */}
             <div className="flex gap-1.5 mt-3">
-              {[["packs", "shop.tab.packs", "#9b82f0"], ["challenges", "shop.tab.challenges", "#e05555"], ["fx", "shop.tab.fx", "#d4a63a"]].map(([m, label, col]) => {
+              {[["packs", "shop.tab.packs", "var(--deck-a1, #9b82f0)"], ["challenges", "shop.tab.challenges", "var(--deck-a1, #e05555)"], ["fx", "shop.tab.fx", "var(--deck-a1, #d4a63a)"]].map(([m, label, col]) => {
                 const on = tab === m;
                 return (
                   <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
@@ -1441,12 +1445,13 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
           {FX_GROUPS.map((g) => {
             const on = g.key === sel.group;
             return (
-              /* #kante: Kategorie-Reiter tragen ihr Signal wie die Haupt-Reiter an der Unterkante (Gold = die
-                 Werkstatt-Farbe), inaktive sind reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander. */
+              /* #kante: Kategorie-Reiter tragen ihr Signal wie die Haupt-Reiter an der Unterkante, inaktive sind
+                 reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander.
+                 #deckui: der Aktiv-Akzent ist Chrome → Deckfarbe (var(--deck-a1)), Gold nur noch als Fallback. */
               <button key={g.key} onClick={() => pickCat(g.key)}
                 className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-[11px] font-extrabold transition-colors"
                 style={on
-                  ? { color: "#fff", borderBottom: "2px solid #d4a63a", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, #d4a63a 14%, transparent))" }
+                  ? { color: "#fff", borderBottom: "2px solid var(--deck-a1, #d4a63a)", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--deck-a1, #d4a63a) 14%, transparent))" }
                   : { color: "#9a97ab", borderBottom: "2px solid transparent", background: "transparent" }}>
                 {t(`fxgroup.${g.key}.title`)}
               </button>

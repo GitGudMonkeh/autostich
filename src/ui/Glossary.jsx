@@ -102,7 +102,8 @@ export function GlossaryOverlay({ onClose }) {
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("glossary.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel relative"
+        {/* #deckui: neutrale Modal-Schale zieht den Rahmen-Verlauf aus der aktiven Deckfarbe (Fallback Violett). */}
+        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel as-panel-deck relative"
           style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...catSwipe}>
           <TopHairline />
 
@@ -110,7 +111,8 @@ export function GlossaryOverlay({ onClose }) {
           <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2c2a3a", background: STICKY_HEAD_BG }}>
             <div className="flex items-center gap-2.5">
               <span className="gloss-i-mark">i</span>
-              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("glossary.title")}</h2>
+              {/* #deckui: Titel-Akzent in Deckfarbe (Fallback = bisheriges Pastellviolett). */}
+              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "var(--deck-a1, #d8d2f2)" }}>{t("glossary.title")}</h2>
               <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
             <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("glossary.subtitle")}</div>
@@ -139,14 +141,16 @@ export function GlossaryOverlay({ onClose }) {
           <div ref={bodyRef} className="flex-1 overflow-y-auto overlay-card pb-8" style={{ overscrollBehavior: "contain" }}>
             {sections.length === 0 && (
               <div className="px-5 py-9 text-center text-sm" style={{ color: "#71717c" }}>
-                {t("glossary.noHit.pre")} <b style={{ color: "#c9c2ea" }}>„{q.trim()}“</b>.<br />{t("glossary.noHit.post")}
+                {/* #deckui: hervorgehobener Suchbegriff als reiner Chrome-Akzent → Deckfarbe (Fallback bisher). */}
+                {t("glossary.noHit.pre")} <b style={{ color: "var(--deck-a1, #c9c2ea)" }}>„{q.trim()}“</b>.<br />{t("glossary.noHit.post")}
               </div>
             )}
             {sections.map(({ cat, items, groups }) => (
               <section key={cat.id} ref={(el) => (secRefs.current[cat.id] = el)} className="px-4 pt-3.5" style={{ scrollMarginTop: "6px" }}>
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="w-2.5 h-2.5 rounded-sm" style={{ background: cat.color }} />
-                  <h3 className="text-[10px] tracking-[0.24em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{cat.label}</h3>
+                  {/* #deckui: Sektions-Titel-Akzent → Deckfarbe. Die Bedeutung trägt der Kategorie-Punkt (cat.color) daneben, der bleibt. */}
+                  <h3 className="text-[10px] tracking-[0.24em] uppercase font-bold" style={{ color: "var(--deck-a1, #b9b3cf)" }}>{cat.label}</h3>
                   <span className="flex-1 h-px max-w-[54px]" style={{ background: "linear-gradient(90deg,#33333e,transparent)" }} />
                   <span className="text-[10px] tabular-nums" style={{ color: "#71717c" }}>{items.length}</span>
                 </div>

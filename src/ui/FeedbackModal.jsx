@@ -106,7 +106,8 @@ export function FeedbackModal({ onClose }) {
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel" style={MODAL_CARD}>
+      {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         <ModalHairline />
         <div className="p-6">
           <ActionBar pad={6}>
@@ -115,7 +116,8 @@ export function FeedbackModal({ onClose }) {
           </ActionBar>
 
           <div className="text-center mb-4">
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("feedback.eyebrow")}</div>
+            {/* #deckui: Eyebrow deck-getönt. */}
+            <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("feedback.eyebrow")}</div>
             <h2 className="text-xl font-bold mt-1">{t("feedback.title")}</h2>
           </div>
 
@@ -141,7 +143,8 @@ export function FeedbackModal({ onClose }) {
                     /* #kante: gewählte Kategorie mit violetter Kante statt gefüllter Fläche. */
                     <button key={kk} type="button" onClick={() => setKind(kk)}
                       className={`${kind === kk ? "as-edge" : "as-edge-neutral"} as-edge-thin ${chipCls}`}
-                      style={kind === kk ? { "--c": "#8a7de0" } : undefined}>
+                      /* #deckui: aktive Kategorie-Kante zieht die Deckfarbe. */
+                      style={kind === kk ? { "--c": "var(--deck-a1, #8a7de0)" } : undefined}>
                       {t(`feedback.kind.${kk}`)}
                     </button>
                   ))}
@@ -180,7 +183,8 @@ export function FeedbackModal({ onClose }) {
               <label className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer" style={{ background: "#20202a" }}>
                 <input type="checkbox" checked={useRun && !!run} disabled={!run}
                   onChange={(e) => setUseRun(e.target.checked)}
-                  style={{ marginTop: 2, accentColor: "#8a7de0" }} />
+                  /* #deckui: generischer Akzent der Checkbox → Deckfarbe. */
+                  style={{ marginTop: 2, accentColor: "var(--deck-a1, #8a7de0)" }} />
                 <span className="min-w-0">
                   <span className="text-[12px] font-bold block">{runLabel}</span>
                   <span className="text-[11px] opacity-60 leading-snug block">{t("feedback.run.hint")}</span>
@@ -205,7 +209,8 @@ export function FeedbackModal({ onClose }) {
 
               <button type="button" onClick={send} disabled={!canSend}
                 className="w-full rounded-lg py-2.5 text-sm font-bold transition-all"
-                style={{ background: canSend ? "#8a7de0" : "#2a2733", color: canSend ? "#141419" : "#6d6a80",
+                /* #deckui: Primär-Senden-Button zieht im aktiven Zustand die Deckfarbe (deaktiviert bleibt neutral). */
+                style={{ background: canSend ? "var(--deck-a1, #8a7de0)" : "#2a2733", color: canSend ? "#141419" : "#6d6a80",
                          cursor: canSend ? "pointer" : "not-allowed" }}>
                 {t(state === "sending" ? "feedback.sending" : "feedback.send")}
               </button>

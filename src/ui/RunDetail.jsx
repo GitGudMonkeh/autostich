@@ -32,13 +32,15 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
   return (
     <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel"
+      {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
+      <div className="w-full max-w-md rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → bleibt beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-4 flex items-start justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
+            {/* #deckui: generisches Sektions-Label zieht die Deckfarbe (Fallback = bisheriges Violett) */}
+            <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}
           </div>
           <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>

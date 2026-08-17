@@ -127,9 +127,10 @@ function Spotlight({ rect, animate }) {
       <div style={{ ...shade, top: t + h, left: 0, right: 0, bottom: 0 }} />
       <div style={{ ...shade, top: t, left: 0, width: l, height: h }} />
       <div style={{ ...shade, top: t, left: l + w, right: 0, height: h }} />
+      {/* #deckui: Spotlight-Ring zieht die aktive Deckfarbe statt fixem Violett. */}
       <div style={{
         position: "fixed", top: t, left: l, width: w, height: h, borderRadius: 14,
-        border: "2px solid #9b82f0", boxShadow: "0 0 0 1px #9b82f055, 0 0 26px -6px #9b82f0",
+        border: "2px solid var(--deck-a1, #9b82f0)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--deck-a1, #9b82f0) 33%, transparent), 0 0 26px -6px var(--deck-a1, #9b82f0)",
         pointerEvents: "none", transition: animate ? "top .18s ease, left .18s ease, width .18s ease, height .18s ease" : "none",
       }} />
     </div>
@@ -240,16 +241,18 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
       ? `calc(100dvh - max(1.5rem, env(safe-area-inset-top)) - ${box.top}px - max(1rem, env(safe-area-inset-bottom)))`
       : box.maxH;
 
+  // #deckui: Coach-Mark-/Phasen-Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck).
   const card = (
     <div ref={cardRef} data-tut-card
-      className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel overlay-card overflow-y-auto"
+      className="w-full max-w-md rounded-2xl px-4 pb-4 pt-4 sm:px-5 sm:pb-5 relative pointer-events-auto as-panel as-panel-deck overlay-card overflow-y-auto"
       style={{ ...MODAL_CARD, maxHeight: cardMaxH }}>
       <TopHairline />
 
       {/* Kein „Schritt n/m" mehr — bewusst nur die Rubrik. Die Zahl verunsicherte mehr als sie half
           (bedingte Phasen ohne Nummer, Reihenfolge ≠ Skript). */}
       <div className="mb-1.5">
-        <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "#9b82f0" }}>
+        {/* #deckui: Sprechblasen-Akzent (Rubrik) zieht die aktive Deckfarbe statt fixem Violett. */}
+        <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "var(--deck-a1, #9b82f0)" }}>
           {t("tutorial.eyebrow")}
         </span>
       </div>

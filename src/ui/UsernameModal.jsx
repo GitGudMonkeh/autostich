@@ -20,7 +20,9 @@ import { isAllowedUsername } from "../game/profanity.js"; // #174 Profanity-Filt
    die Sprache nur noch dort änderbar (Optionen → Sprache/Language). Die Sprachnamen stehen bewusst
    in ihrer EIGENEN Sprache („Deutsch"/„English") — wer die aktuelle nicht lesen kann, findet seine. */
 const MAX = 20;
-const CY = "#26c6e6", VI = "#9b82f0", AM = "#f2a83a"; // Logo-Verlauf (links→mitte→rechts)
+// #deckui: CY/VI dienen jetzt nur noch als FALLBACK in var(--deck-a1/a2, …) — die Chrome zieht die aktive
+//   Deckfarbe (Default = Genesis-Cyan/Violett, also unverändertes Erstbild). ER = Fehlerfarbe (bleibt).
+const CY = "#26c6e6", VI = "#9b82f0";
 const ER = "#e2685f"; // #174 Fehlerfarbe — der Glührahmen wechselt mit, nicht nur der Text
 
 export function UsernameModal({ initial = "", firstTime = false, onLang = null, onPrivacy = null, onSave, onClose }) {
@@ -40,7 +42,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
   return (
     <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl overflow-hidden"
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck"
         style={MODAL_CARD}>
         <ModalHairline />
         <div className="p-6">
@@ -51,12 +53,12 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           <ActionButton kind="primary" disabled={!canSave} onClick={submit}>{t("name.save")}</ActionButton>
         </ActionBar>
         <div className="text-center mb-4">
-          <div className="text-xs uppercase tracking-widest" style={{ color: CY }}>
+          <div className="text-xs uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
             {t(firstTime ? "name.eyebrow.first" : "name.eyebrow.change")}
           </div>
-          {/* Gradient-Wortmarke (Logo-Verlauf) mit weichem Glühschimmer statt schlichter Textzeile. */}
+          {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett. */}
           <h2 className="text-xl font-bold mt-1 ty-display"
-            style={{ backgroundImage: `linear-gradient(90deg, ${CY}, ${VI}, ${AM})`,
+            style={{ backgroundImage: `linear-gradient(90deg, var(--deck-a1,${CY}), var(--deck-a2,${VI}), var(--deck-a1,${CY}))`,
                      WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
             {t(firstTime ? "name.title.first" : "name.title.change")}
@@ -71,7 +73,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             placeholder={t("name.placeholder")}
             aria-invalid={!!errKey}
             className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-center font-semibold tracking-wide"
-            style={{ background: errKey ? "#221114" : "#0e1b22", border: `1px solid ${errKey ? ER : CY}`,
+            style={{ background: errKey ? "#221114" : "#0e1b22", border: `1px solid ${errKey ? ER : `var(--deck-a1, ${CY})`}`,
                      color: errKey ? "#f0bdb8" : "#a8ecf7" }} />
         </div>
         <div className="text-[11px] opacity-45 mt-2 leading-snug">
@@ -82,7 +84,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           {onPrivacy && (
             <button type="button" onClick={onPrivacy}
               className="underline underline-offset-2 ml-1 font-semibold opacity-80 hover:opacity-100 transition-opacity"
-              style={{ color: VI }}>{t("privacy.link")}</button>
+              style={{ color: `var(--deck-a1, ${VI})` }}>{t("privacy.link")}</button>
           )}
         </div>
         {/* #174 Begründung zum toten Speichern-Knopf. role=alert, damit Screenreader sie
@@ -107,7 +109,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
                   <button key={l.id} type="button" role="radio" aria-checked={on}
                     onClick={() => { setLocaleId(l.id); if (onLang) onLang(l.id); }}
                     className={`${on ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin px-3 py-2 rounded-lg text-sm font-semibold transition-all`}
-                    style={on ? { "--c": VI } : undefined}>
+                    style={on ? { "--c": `var(--deck-a1, ${VI})` } : undefined}>
                     {l.label}
                   </button>
                 );

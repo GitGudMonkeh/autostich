@@ -81,7 +81,10 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
   return (
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel relative"
+      {/* #deckui: NUR die neutrale Modal-Schale zieht den Rahmen-Verlauf aus der Deckfarbe (Fallback Violett).
+          Alles Innere (Reiter, Status-Pillen, Fortschritt, Skill-Akzente) bleibt in der FRAKTIONSFARBE `color` —
+          der Leitfaden ist je Fraktion in ihrer Farbe, das ist Bedeutung, nicht Chrome. */}
+      <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck relative"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...archSwipe}>
 
         {/* Sticky-Kopf: Zurück + Fraktions-Icon + Name + Status-Pills + Schließen. */}

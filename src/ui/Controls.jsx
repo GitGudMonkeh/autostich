@@ -1,15 +1,16 @@
 import { MuteButton } from "./MuteButton.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 
-/* #kante: Sekundär-Knöpfe des Laufs in der Kanten-Familie. `tone` färbt nur den aktiven Zustand — im Lauf
-   sind diese drei durchweg inaktiv und damit neutral, was sie auch sein sollen: Auswege, keine Angebote. */
-function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
+/* #kante: Sekundär-Knöpfe des Laufs in der Kanten-Familie. #deckui: Ist ein `tone` gesetzt, trägt die Kante
+   diese Farbe (die drei Lauf-Controls ziehen so die DECKFARBE des laufenden Laufs — var(--deck-a1)); ohne
+   `tone` bleibt der Knopf neutral-grau. */
+function Btn({ onClick, disabled, children, tone = null }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed`}
-      style={active ? { "--c": tone } : undefined}
+      className={`${tone ? "as-edge" : "as-edge-neutral"} as-edge-thin px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed`}
+      style={tone ? { "--c": tone } : undefined}
     >
       {children}
     </button>
@@ -22,9 +23,11 @@ function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
 export function Controls({ onRestart, onAbort, onOptions, muted, onToggleMute }) {
   return (
     <div className="flex items-center justify-start gap-2 flex-wrap">
-      {onOptions && <Btn onClick={onOptions} tone="#8a7de0" aria-label={t("controls.options.aria")}>{t("controls.options")}</Btn>}
-      <Btn onClick={onRestart} tone="#8a7de0">{t("controls.restart")}</Btn>
-      {onAbort && <Btn onClick={onAbort} tone="#8a7de0">{t("controls.quit")}</Btn>}
+      {/* #deckui: die drei Lauf-Controls tragen die Deckfarbe des LAUFENDEN Laufs (var(--deck-a1) am .app-root =
+          im Lauf das Run-Deck). Fallback = bisheriges Violett, wenn kein Deck aktiv. */}
+      {onOptions && <Btn onClick={onOptions} tone="var(--deck-a1, #8a7de0)" aria-label={t("controls.options.aria")}>{t("controls.options")}</Btn>}
+      <Btn onClick={onRestart} tone="var(--deck-a1, #8a7de0)">{t("controls.restart")}</Btn>
+      {onAbort && <Btn onClick={onAbort} tone="var(--deck-a1, #8a7de0)">{t("controls.quit")}</Btn>}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} />}
     </div>
   );
