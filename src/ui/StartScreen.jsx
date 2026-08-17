@@ -43,8 +43,9 @@ const onbRewards = (t) => [
 ];
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
-  // #desktop — Zutaten der Status-Tafel. Sie erscheint erst ab 1400 px; darunter bleiben die Props ungenutzt.
-  deckId = null, bfId = null, deckBack = null, lastRun = null }) {
+  // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1400 px;
+  // darunter bleiben die Props ungenutzt.
+  deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -175,6 +176,27 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
           gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
           Der Info-Button überschreibt den Kreis-Default (gloss-i-btn) auf denselben Pill-Look wie Mute. */}
+      {/* #desktop — Deck-Hintergrund als BODENBAND (erst ab 1400 px).
+          Bewusst kein Vollbild: die 40 Spielfelder sind 1600 × 640, also 2,5 : 1 — genau die Proportion
+          dieses Fensters. Sie passen ohne Beschnitt hinein und werden nur 1,2× hochskaliert. Ein Vollbild
+          bräuchte 1,69× und schnitte 29 % der Breite ab; nachgemessen im Entwurfsdokument, und genau
+          deshalb bleiben die Bestandsbilder unangetastet.
+          Oben ausgeblendet (Maske) → die Kopfzone bleibt dunkel, die Wortmarke steht frei. Darüber ein nach
+          unten dichter werdender Schleier: er bringt 40 unterschiedlich helle Spielfelder gemeinsam unter
+          die Kontrastforderung und ist die eine Stellschraube, falls ein Deck zu laut wird.
+          `fixed` statt `absolute`: der Startbildschirm sitzt in einem auf 1520 px gedeckelten Container —
+          absolut positioniert wäre das Band genauso breit und läge als Rechteck mitten im Bild statt als
+          Hintergrund. Ein Hintergrund muss randlos laufen, und scrollen tut hier nichts. */}
+      {battlefield && (
+        <div aria-hidden="true" className="hidden min-[1400px]:block pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[768px]">
+          <img src={battlefield.desktop} alt="" draggable="false"
+            className="absolute inset-0 w-full h-full object-cover select-none"
+            style={{ WebkitMaskImage: "linear-gradient(180deg,transparent 0%,#000 30%)", maskImage: "linear-gradient(180deg,transparent 0%,#000 30%)" }} />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg,rgba(20,20,25,0) 0%,rgba(17,17,22,.55) 45%,rgba(17,17,22,.82) 100%)" }} />
+        </div>
+      )}
+
       {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
       <GlossaryPanel className="absolute top-2 right-2 min-[1400px]:top-0 min-[1400px]:right-0"

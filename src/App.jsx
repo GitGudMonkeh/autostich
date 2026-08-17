@@ -1034,7 +1034,7 @@ function AutostichGame() {
             onTutorial={startTutorialRun} tutorialDone={tutorialDone}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)}
-            deckId={activeDeckId} bfId={activeBfId} deckBack={deckSkin.back} lastRun={lastRun} />
+            deckId={activeDeckId} bfId={activeBfId} deckBack={deckSkin.back} lastRun={lastRun} battlefield={bfSkin} />
         ) : (<>
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +

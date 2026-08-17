@@ -803,17 +803,48 @@ button { font-family: inherit; }
 .as-hub-num { color: #f2a83a; text-shadow: 0 0 12px rgba(242, 168, 58, .45); }
 .as-hub-cur { color: #f2a83a; }
 
-/* #desktop — Knopf-Optik des Startbildschirms. Ebenfalls bewusst als Klassen statt inline: die Desktop-
-   Stufe färbt sie in die Deckfarbe, und ein inline-style ließe sich davon nicht überschreiben. Die Werte
-   sind exakt die bisherigen aus StartScreen.jsx (cyanPrimary / normalGhost / Rangliste / Tutorial). */
+/* ============================================================================
+   Knopf-Optik des Hubs — „Kante statt Fläche"
+   ----------------------------------------------------------------------------
+   Der Deckton sitzt als kräftige LINKE KANTE an einem dunklen Knopf, die Fläche selbst bleibt tief.
+   Vorgänger war eine gefüllte Taste mit senkrechtem Hochglanz (fast weiß oben → dunkel unten) plus
+   breitem Außen-Glow. Auf dem kühlen Cyan fiel das nicht auf; sobald der Hub seine Farbe aus dem
+   aktiven Deck zieht, landet dieselbe Regel auf sattem Rot (Roter Oni #ff2e3e) — und Hochglanz plus
+   Glow sind exakt die zwei Zutaten, die einen Knopf nach Gratis-App aussehen lassen.
+   Die Kante ist dieselbe Sprache wie die Streifen der Verwaltungsliste: EIN Farbsignal an der linken
+   Seite, sonst Ruhe. Sie verträgt darum auch 40 sehr unterschiedliche Decks.
+
+   Gilt auf ALLEN Breiten, nicht nur auf Desktop — die Maße bleiben je Breite unverändert, nur die Optik
+   ist überall dieselbe. Ohne gesetzte Deckfarbe greifen die bisherigen Violett-/Cyan-Rückfälle.
+   Als Klassen statt inline-style, weil inline jedes Stylesheet schlägt. */
 .as-cta-primary {
-  background: linear-gradient(180deg, #7ceafb 0%, #5fe0f7 42%, #3fc9e3 100%);
-  color: #052730;
-  box-shadow: 0 0 20px rgba(95, 224, 247, .5), inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 0 rgba(3, 42, 52, .35);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, #0e0e14) 0%, #0e0e14 30%);
+  border: 1px solid rgba(150, 150, 170, .18);
+  border-left: 4px solid var(--deck-a1, #26c6e6);
+  color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
+  box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
 }
-.as-cta-ghost { background: #12151f; border: 1px solid #5a8ade88; color: #93b4f2; }
-.as-ranked-btn { background: #181425; border: 1px solid rgba(155, 130, 240, .4); color: #9b82f0; }
-.as-tut-btn { background: #1a1330; border: 1px solid rgba(155, 130, 240, .67); color: #d9ccff; box-shadow: 0 0 20px -8px #9b82f0; }
+/* Läuft ein Lauf, tritt „Normaler Lauf" hinter „Fortsetzen" zurück: gleiche Form, neutrale Kante. */
+.as-cta-ghost {
+  background: rgba(12, 12, 18, .5);
+  border: 1px solid rgba(150, 150, 170, .18);
+  border-left: 4px solid rgba(150, 150, 170, .35);
+  color: #b9b9c6;
+}
+/* Rangliste und Tutorial tragen dieselbe Kante, aber im zweiten Deckton und leiser — sie sind Angebote,
+   kein Ziel. Damit bleibt die Rangordnung erhalten, ohne dass ein zweiter Knopf um Aufmerksamkeit ruft. */
+.as-ranked-btn {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+  border: 1px solid rgba(150, 150, 170, .16);
+  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
+  color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, #ffffff);
+}
+.as-tut-btn {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+  border: 1px solid rgba(150, 150, 170, .16);
+  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
+  color: color-mix(in srgb, var(--deck-a2, #d9ccff) 50%, #ffffff);
+}
 
 /* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
    reicht ihre Kinder unverändert an die Flex-Spalte des Startbildschirms durch. Reihenfolge und Abstände
@@ -874,38 +905,8 @@ button { font-family: inherit; }
   }
   .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
 
-  /* --- Deckfarben an den Knöpfen -------------------------------------------
-     Ab hier zieht der Startbildschirm seine Farbigkeit aus dem aktiven Deck (--deck-a1/--deck-a2, in
-     App.jsx am .app-root gesetzt). Ohne gesetzte Variablen greifen dieselben Violett-Rückfälle wie beim
-     Panel-Rahmen — der Screen sieht dann aus wie bisher, nur breiter.
-     BEWUSST NICHT eingefärbt: nichts. Der Farbcode des Startbildschirms (Cyan = Start, Violett = Rangliste,
-     Amber = Währung, abgeleitet aus dem Wortmarken-Verlauf) tritt auf Desktop zugunsten der Deck-Identität
-     zurück; die Wortmarke selbst bleibt als deck-übergreifender Anker unverändert. */
-  .as-cta-primary {
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--deck-a1, #5fe0f7) 55%, #ffffff) 0%,
-      var(--deck-a1, #5fe0f7) 44%,
-      color-mix(in srgb, var(--deck-a1, #5fe0f7) 76%, #000000) 100%);
-    color: color-mix(in srgb, var(--deck-a1, #5fe0f7) 22%, #000000);
-    box-shadow: 0 0 24px color-mix(in srgb, var(--deck-a1, #5fe0f7) 50%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -2px 0 rgba(0, 0, 0, .28);
-  }
-  .as-cta-ghost {
-    background: #12151f;
-    border-color: color-mix(in srgb, var(--deck-a1, #5a8ade) 55%, transparent);
-    color: color-mix(in srgb, var(--deck-a2, #93b4f2) 78%, #ffffff);
-  }
-  .as-ranked-btn {
-    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 12%, #101018);
-    border-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, transparent);
-    color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, #ffffff);
-  }
-  .as-tut-btn {
-    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 14%, #101018);
-    border-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 60%, transparent);
-    color: color-mix(in srgb, var(--deck-a2, #d9ccff) 82%, #ffffff);
-    box-shadow: 0 0 20px -8px var(--deck-a1, #9b82f0);
-  }
+  /* Die Knöpfe brauchen hier KEINE Sonderregel mehr: seit „Kante statt Fläche" ziehen sie ihre Farbe
+     schon in der Grundregel aus dem Deck und sehen auf jeder Breite gleich aus. */
 
   /* --- Vier Stufen aus ZWEI Deckfarben --------------------------------------
      Die Streifen der Verwaltungsliste und die beiden Guthaben-Zahlen. Die Reihenfolge folgt dem INHALT,
