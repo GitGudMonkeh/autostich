@@ -1979,7 +1979,17 @@ button { font-family: inherit; }
      Pixi-Szenen und wächst von 342 px Höhe auf gut das Zweieinhalbfache, während die Effektliste
      daneben vollständig sichtbar bleibt statt darunter wegzuscrollen.
      ========================================================================== */
-  .cz-root { padding: 16px 44px 20px !important; align-items: stretch !important; }
+  /* #werkstatt (18.08.2026): Überzug und Randmaße sind die des Upgrade-Baums (`.up-root`), damit beide
+     Screens gleich im Bild stehen. Vorher lag die Werkstatt bei 93 % Deckkraft mit 3 px Blur und las sich
+     dadurch als Vollbild, während der Baum als gerahmter Screen über dem Deck schwebt.
+     `!important`, weil beide Werte inline am Wurzelknoten stehen und inline jedes Stylesheet schlägt. */
+  .cz-root {
+    padding: 16px 48px 18px !important;
+    align-items: stretch !important;
+    background: rgba(12, 12, 16, .82) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
 
   /* Die Karte gibt ihre feste Höhe auf (die stammt aus der Handy-Fassung, wo alle Reiter gleich groß
      bleiben sollten) und füllt den Rahmen. `!important` schlägt das inline gesetzte `height`. */
@@ -1992,21 +2002,54 @@ button { font-family: inherit; }
   .cz-card.as-panel { background-image: none !important; animation: none !important; }
   .cz-scroll { overflow: hidden !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 0 !important; display: flex; flex-direction: column; }
 
-  /* Der Kopf verliert seine deckende Leiste und sein negatives Ausbluten (beides gehört zur Karte). */
+  /* Der Kopf verliert seine deckende Leiste und sein negatives Ausbluten (beides gehört zur Karte).
+     #werkstatt: auch der Verlauf ist weg — er war die Kante einer Karte, die es hier nicht mehr gibt.
+     Der Kopf steht jetzt frei über den beiden Panels, wie im Upgrade-Baum. */
   .cz-head {
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    background: none !important;
     margin-left: 0 !important; margin-right: 0 !important;
     padding-left: 0 !important; padding-right: 0 !important;
-    padding-top: 6px !important; padding-bottom: 10px !important;
+    padding-top: 4px !important; padding-bottom: 12px !important;
     flex: none;
   }
+  .cz-head h2 { font-size: 26px; letter-spacing: -.02em; }
+
+  /* --- Die Reiter werden Knöpfe -------------------------------------------
+     Bis 1399 px sind es Karteikartenreiter über die volle Breite (drei gleich breite Flächen mit
+     Unterkante). Auf 1824 px Breite wurde daraus eine 600 px breite Fläche je Reiter — ein Rahmen-
+     element, kein Bedienelement. Hier sind es Knöpfe der Kanten-Familie, links ausgerichtet, in der
+     Breite am Text bemessen. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
+  .cz-head [role="tab"] {
+    flex: none !important;
+    min-width: 210px;
+    padding: 11px 22px !important;
+    border-radius: 12px !important;
+    background: rgba(12, 12, 18, .5) !important;
+    border: 1px solid rgba(150, 150, 170, .16) !important;
+    border-left: 3px solid rgba(150, 150, 170, .3) !important;
+    color: #a9a9b8 !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    letter-spacing: -.005em !important;
+    text-align: left;
+  }
+  .cz-head [role="tab"][aria-selected="true"] {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #0e0e14) 0%, #0e0e14 34%) !important;
+    border-left: 4px solid var(--deck-a1, #8a7de0) !important;
+    color: color-mix(in srgb, var(--deck-a2, #b3a8ff) 40%, #ffffff) !important;
+    box-shadow: 0 0 16px -8px var(--deck-a1, #8a7de0);
+  }
+  .cz-head [role="tablist"], .cz-head .flex.gap-1\.5 { gap: 10px !important; }
   .cz-head > div[aria-hidden="true"]:first-child { display: none; }   /* Haarlinie: hing an der Kartenecke */
 
   /* Katalog | Detail. Die Detailspalte ist fest — eine mitwachsende Spalte würde die Kartenvorschau
      darin auf Ultrawide grotesk groß ziehen. */
+  /* 430 → 520 px (Mockup-Abnahme 18.08.2026): In der Vorschau stehen Cover und Karte jetzt nebeneinander
+     statt hintereinander. Bei 430 wären die beiden je 190 px breit; 520 gibt ihnen 234 und dem Spielfeld
+     darunter 480 × 192. Der Katalog behält seine sechs Spalten. */
   .cz-split {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 430px;
+    grid-template-columns: minmax(0, 1fr) 520px;
     gap: 26px;
     flex: 1;
     min-height: 0;
@@ -2015,16 +2058,61 @@ button { font-family: inherit; }
   /* Im Reiter „Effekte" gibt es kein Pack-Detail. Ohne diese Regel bliebe die 430-px-Spalte leer
      stehen und die Effekt-Bühne wäre um 456 px schmaler, als sie sein könnte. */
   .cz-split:not(:has(.cz-side)) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  /* Die beiden Spalten SIND die Panels des Screens — genau wie `.up-nav` / `.up-page` im Upgrade-Baum.
+     Die Karte darüber trägt keine Fläche mehr (s. `.cz-card` oben), sie ist nur noch das Raster.
+     Werte an dessen Panels abgemessen: Glas, Radius 14, Schein in Deckfarbe, dazu der Ring über
+     `.as-ring`-Konstruktion (hier direkt, weil die Klasse nicht am Element hängt). */
+  .cz-main, .cz-side {
+    position: relative;
+    border-radius: 14px;
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent);
+  }
+  .cz-main::before, .cz-side::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    z-index: 2;
+    background: linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%);
+    background-size: 200% auto;
+    animation: as-ring-sweep 7s linear infinite;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
   .cz-main {
     display: block;
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 6px;                       /* Luft für die Scrollleiste, sonst klebt sie an den Kacheln */
+    padding: 14px 16px 12px;
   }
   .cz-side { min-height: 0; }
+  /* Die Detailkarte im Panel wird selbst flächenlos: sonst läge eine Karte in einer Karte, und der
+     Rahmen des Panels bekäme einen zweiten, 6 px weiter innen. */
   .cz-detail, .cz-detailcard { max-width: none; }
-  .cz-detailcard { border-radius: 14px; }
+  .cz-detailcard {
+    border-radius: 14px;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .cz-detailcard.as-panel { background-image: none !important; animation: none !important; }
+  /* Die Haarlinie oben an der Detailkarte gehört zur Overlay-Fassung. */
+  .cz-detailcard > div[aria-hidden="true"]:first-child { display: none; }
+
+  /* Beschriftung über den drei Vorschaubildern — dieselbe Kleinversalien-Zeile wie über den Blöcken
+     des Upgrade-Baums, nur eine Stufe leiser. */
+  .cz-shotlab {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #75758a;
+  }
 
   /* Der Katalog: sechs Spalten. Die Tailwind-Vorgabe `grid-cols-2 sm:grid-cols-3` friert bei 640 px
      ein, deshalb hier explizit — `!important`, weil Tailwinds Utility dieselbe Spezifität hat. */

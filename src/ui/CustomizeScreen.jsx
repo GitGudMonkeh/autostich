@@ -948,12 +948,15 @@ function CardPreview({ deckId, face = "back", className = "", style }) {
 
 // Battlefield-Vorschau: echtes BF-Bild in der AKTUELL gespielten Version (mobile/desktop, gleiche 640px-
 // Schwelle wie im Spiel). showVersion blendet ein kleines Label ein, welche Version man gerade sieht.
-function BfPreview({ bfId, className = "", showVersion = false }) {
+/* `ratio` ist der Zuschnitt des Rahmens, nicht des Bildes: 16 / 10 ist der Kompromiss der Handy-Fassung,
+   in der die Vorschau hoch stehen muss. Die Spielfelder selbst sind 1600 × 640 (2,5 : 1) — wo Platz in
+   die Breite ist (Desktop-Vorschau), zeigt „1600 / 640" das ganze Bild statt eines Ausschnitts. */
+function BfPreview({ bfId, className = "", showVersion = false, ratio = "16 / 10" }) {
   const bf = battlefieldAssets(bfId);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   return (
-    <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: "16 / 10", background: "#0b0a16" }}>
+    <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: ratio, background: "#0b0a16" }}>
       {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
           : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">{t("shop.noBattlefield")}</div>}
       {showVersion && bf && (
@@ -1125,6 +1128,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
    beiden Zustände müssen unterscheidbar bleiben (man betrachtet ja meist ein anderes als das eigene). */
 function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null, sel = null }) {
   const challenge = cat === "challenges";
+  const wide = useIsWide();   // ab 1400 px steht die Vorschau dauerhaft daneben (s. Untertitel unten)
   const [filter, setFilter] = useState("alle");
   const chips = challenge ? [["alle", "shop.filter.all"], ["besitz", "shop.filter.free"], ["gesperrt", "shop.filter.locked"]] : [["alle", "shop.filter.all"], ["besitz", "shop.filter.owned"], ["kaufbar", "shop.filter.buyable"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
@@ -1182,8 +1186,12 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
+          /* #werkstatt: „tippen → Details" führt ab 1400 px zu etwas, das schon im Bild steht — die
+             Vorschau liegt dort dauerhaft daneben. Dann sagt die Zeile den Zustand statt der Geste. */
           const sub = active ? [t("shop.tile.sub.active"), "#54e08a"]
-            : s === "own" ? [tiered ? t("shop.tile.sub.detailsTier", { roman: cover?.roman || "I" }) : t("shop.tile.sub.details"), "#9a97ab"]
+            : s === "own" ? [tiered
+                ? t(wide ? "shop.tile.sub.ownedTier" : "shop.tile.sub.detailsTier", { roman: cover?.roman || "I" })
+                : t(wide ? "shop.tile.sub.owned" : "shop.tile.sub.details"), "#9a97ab"]
             : s === "buy" ? [t("shop.tile.sub.buyable"), "#f2c14a"]
             : [unlockLabel(packUnlock(p, pack)), "#6d6a80"];
           return (
@@ -1286,24 +1294,53 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
           </div>
 
-          {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
-          <div className="flex items-center gap-2" style={{ height: 252 }}>
-            <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
-            <div className="flex-1 min-w-0 h-full flex items-center justify-center">
-              {activeSel === "bg"
-                ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
-                : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
-            </div>
-            <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
-          </div>
+          {/* #werkstatt (18.08.2026) — Ab 1400 px liegen alle drei Ansichten NEBENEINANDER statt hinter
+              einem Umschalter: Cover und Karte oben als Paar, das Spielfeld quer darunter. Der Grund für
+              „quer" ist das Bild selbst — die 40 Spielfelder sind 1600 × 640; in einer halben Panelbreite
+              wäre das ein hochkant beschnittener Streifen, in dem man nichts erkennt. Über die volle
+              Breite misst es 480 × 192 und bleibt das Bild, das es ist.
+              Der Umschalter und die ‹ ›-Blätterpfeile bleiben der Handy-Fassung: dort ist das Detail ein
+              Overlay ohne Katalog daneben, da braucht es beides. Hier steht der Katalog links — zwei Wege
+              zum selben Ziel wären Rauschen. */}
+          {inline ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {[["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]].map(([face, label]) => (
+                  <div key={face} className="flex flex-col gap-1.5">
+                    <span className="cz-shotlab">{label}</span>
+                    <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={face} className="w-full" />
+                  </div>
+                ))}
+              </div>
+              {hasBf && (
+                <div className="flex flex-col gap-1.5 mt-3">
+                  <span className="cz-shotlab">{t("shop.packSel.bg")}</span>
+                  <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" ratio="1600 / 640" />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
+              <div className="flex items-center gap-2" style={{ height: 252 }}>
+                <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
+                <div className="flex-1 min-w-0 h-full flex items-center justify-center">
+                  {activeSel === "bg"
+                    ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
+                    : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
+                </div>
+                <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
+              </div>
 
-          {/* Umschalter Karte vorne / hinten / Hintergrund */}
-          <div className="flex gap-1.5 justify-center mt-2.5">
-            {segs.map(([k, label]) => (
-              <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
-                style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "#9b82f0" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
-            ))}
-          </div>
+              {/* Umschalter Karte vorne / hinten / Hintergrund */}
+              <div className="flex gap-1.5 justify-center mt-2.5">
+                {segs.map(([k, label]) => (
+                  <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                    style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "#9b82f0" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* #tiered: Stufen-Wähler I / II / III — ALLE Stufen anklickbar (auch gesperrte = Vorschau); gesperrte tragen 🔒
               und zeigen unten die Freischalt-Bedingung. Nur der Aktivieren-Button hängt an der Freischaltung. */}
@@ -1326,16 +1363,21 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             </div>
           )}
 
-          <div className="flex gap-1.5 justify-center my-2.5">
-            {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
-          </div>
+          {/* Die Positionspunkte gehören zur Wisch-Geste der Handy-Fassung. Neben einem sichtbaren Katalog
+              zählen sie eine Liste ab, die vollständig danebensteht. */}
+          {!inline && (
+            <div className="flex gap-1.5 justify-center my-2.5">
+              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
+            </div>
+          )}
+          {inline && <div className="mt-3" />}
 
           {/* Aktion */}
           {tiered ? (
             active ? (
               <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
             ) : selTierUnlocked ? (
-              <button onClick={() => { onActivateTier(pack, selTier); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
+              <button onClick={() => { onActivateTier(pack, selTier); if (!inline) onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
                 /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
                 style={{ background: "#20202c", border: `1px solid var(--deck-a1, #9b82f0)`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
             ) : (
@@ -1349,13 +1391,13 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             <div className="as-edge-card w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ "--c": "#54e08a", color: "#54e08a" }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
             /* #kante: Ausrüsten ist das Angebot dieser Ansicht — violette Kante. */
-            <button onClick={() => { onActivate(pack); onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
+            <button onClick={() => { onActivate(pack); if (!inline) onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
               /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
               style={{ "--c": "var(--deck-a1, #9b82f0)" }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             /* #kante: Kaufen — starker Kanten-Knopf in DP-Cyan, gedimmt-neutral wenn das Guthaben nicht
                reicht (gleiche Fassung wie der Kaufen-Knopf der Effekt-Bühne). */
-            <button onClick={() => { if (canBuy) { onBuy(pack); onClose(); } }} disabled={!canBuy}
+            <button onClick={() => { if (canBuy) { onBuy(pack); if (!inline) onClose(); } }} disabled={!canBuy}
               className={`w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity ${canBuy ? "as-edge-strong" : "as-edge-neutral"}`}
               style={{ ...(canBuy ? { "--c": "#35c6e6" } : null), opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
               {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}

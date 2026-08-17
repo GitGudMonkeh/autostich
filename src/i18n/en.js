@@ -994,6 +994,9 @@ export default {
   "shop.tile.sub.active": "active",
   "shop.tile.sub.details": "tap → details",
   "shop.tile.sub.detailsTier": "Tier {roman} · tap → details",
+  // From 1400 px up the preview stays open beside the catalogue — reasoning in de.js.
+  "shop.tile.sub.owned": "unlocked",
+  "shop.tile.sub.ownedTier": "Tier {roman} · unlocked",
   "shop.tile.sub.buyable": "available",
   // #393 Random deck per run (packs tab).
   "shop.randomDeck.title": "Random deck per run",

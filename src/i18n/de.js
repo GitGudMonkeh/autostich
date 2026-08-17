@@ -1013,6 +1013,10 @@ export default {
   "shop.tile.sub.active": "aktiv",
   "shop.tile.sub.details": "tippen → Details",
   "shop.tile.sub.detailsTier": "Stufe {roman} · tippen → Details",
+  /* Ab 1400 px steht die Vorschau dauerhaft daneben — „tippen → Details" führt dort zu etwas, das
+     bereits im Bild ist. Die Zeile sagt stattdessen den Zustand. */
+  "shop.tile.sub.owned": "freigeschaltet",
+  "shop.tile.sub.ownedTier": "Stufe {roman} · freigeschaltet",
   "shop.tile.sub.buyable": "kaufbar",
   // #393 Zufalls-Deck je Lauf (Packs-Reiter).
   "shop.randomDeck.title": "Zufalls-Deck je Lauf",
