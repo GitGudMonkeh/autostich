@@ -177,7 +177,13 @@ export default function NeonSurfFieldGL({ color = null, color2 = null, deckColor
     };
 
     let raf = null, startT = null, disposed = false;
-    const minMs = coarse ? 1000 / 30 : 0;
+    // #perf-judder: Die Schwelle braucht eine HALBE Frame-Dauer Toleranz. Mit dem exakten Wert (1000/30 = 33,33 ms)
+    // liegt sie haargenau auf zwei 60-Hz-Frames (2 × 16,667 ms) — kommt der übernächste Frame den Hauch zu früh,
+    // fällt die Zeichnung auf den ÜBERnächsten und der Abstand springt auf 50 ms. Simuliert (400 Frames): schon ohne
+    // jeden Jitter ergibt das 33/50/33/50 statt gleichmäßig 33 → nur ~26 statt 30 Zeichnungen/s, und vor allem
+    // UNGLEICHMÄSSIG. Das ist der Grund, warum die Effekte auf dem Handy ruckelig wirken, obwohl der FPS-Zähler 60
+    // zeigt: der zählt rAF-Frames, nicht Zeichnungen. Mit −8 ms passt jeder zweite Frame sicher durch (auch bei 90 Hz).
+    const minMs = coarse ? 1000 / 30 - 8 : 0;
     let lastDraw = -1e9;
     const frame = (ms) => {
       if (disposed) return;
