@@ -109,22 +109,29 @@ const GLYPHS = {
    Als Konstanten und nicht als JSX-Text, aus demselben Grund wie bei GLYPHS oben. */
 const EMO_BONUS = "💠";
 const EMO_ONB = "🎓";
-const EMO_RANK_FREE = "🏆";
-const EMO_RANK_LOCK = "🔒";
 
 /* Schloss/Pokal am Ranglisten-Knopf, ab 1400 px anstelle der Emoji. Pfaddaten wie bei GLYPHS:
    als Konstanten, nicht als JSX-Text (Begründung dort). */
 const RANK_PATHS = {
   // Zu: Bügel über geschlossenem Kasten.
   lock: ["M8 10V7a4 4 0 0 1 8 0v3"],
-  // Frei: Pokal mit zwei Henkeln auf einem Fuß.
-  cup: ["M8 4h8v5a4 4 0 0 1-8 0z", "M8 5.5H5.5V7a3 3 0 0 0 3 3", "M16 5.5h2.5V7a3 3 0 0 1-3 3",
-    "M12 13v3", "M9 19.5h6"],
+  /* Frei: der Pokal nach der Vorlage — zwei nach oben geschwungene Flügel, der Bogen darüber, die
+     Raute in der Mitte, der Stufensockel. Er ersetzt den klassischen Henkelpokal, weil die Vorlage
+     genau diese Form zeigt und weil er damit in derselben Strichsprache steht wie die vier
+     Kachel-Zeichen darunter (GLYPHS).
+     Der BOGEN ist der Teil, den man nicht weglassen darf: ohne ihn stehen zwei geschwungene Linien
+     nebeneinander, und die lesen sich bei 15 px als Blattpaar — also ausgerechnet wie das
+     Pflanzen-Icon des Spiels. Erst der geschlossene Rand macht daraus einen Kelch. Die Raute ist
+     klein gehalten, sonst läuft der Innenraum bei 13 px zu; der Funke über dem Pokal (die Vorlage
+     hat einen) ist entfallen, er verschmilzt auf dieser Größe mit dem Bogen. */
+  cup: ["M7.2 6.4a6.4 6.4 0 0 1 9.6 0", "M5.6 5.6c-.4 5.6 1.9 8.8 6.4 10.2",
+    "M18.4 5.6c.4 5.6-1.9 8.8-6.4 10.2", "M12 8l1.9 2.4-1.9 3.9-1.9-3.9z",
+    "M12 15.8V18.4", "M8.8 18.7h6.4", "M7 21.2h10"],
 };
 
 function RankIcon({ free }) {
   return (
-    <svg className="as-rank-icon hidden min-[1400px]:block" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+    <svg className="as-rank-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
       fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       {(free ? RANK_PATHS.cup : RANK_PATHS.lock).map((d) => <path key={d} d={d} />)}
       {!free && <rect x="4.5" y="10" width="15" height="10.5" rx="2" />}
@@ -546,11 +553,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <button onClick={onRankedBoard}
             className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl ty-title text-[15px] min-[1400px]:text-[19px] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
-            {/* #premium: Emoji nur noch bis 1399 px (s. `Lead` oben, gleiche Begründung). Ab 1400 px
-                zeichnet ein Vektor in der Knopffarbe — Schloss für „Spielen noch gesperrt", Pokal für
-                „frei". Die Aussage ist dieselbe, sie trägt nur nicht mehr ihre eigene Farbe herein. */}
-            <span className="min-[1400px]:flex min-[1400px]:items-center min-[1400px]:gap-2">
-              <span className={`min-[1400px]:hidden${rankedFree ? "" : " opacity-70"}`}>{rankedFree ? EMO_RANK_FREE : EMO_RANK_LOCK}</span>{" "}
+            {/* #premium/#pokal: Hier zeichnet auf JEDER Breite ein Vektor in der Knopffarbe — Schloss
+                für „Spielen noch gesperrt", Pokal für „frei". Die Emoji-Fassung darunter ist entfallen.
+                Das ist der eine Punkt, an dem dieser Knopf weiter geht als der übrige #premium-Pass
+                (der hält Emoji bis 1399 px, s. `Lead` oben): Das Argument gegen Emoji — sie bringen
+                ihre eigene Farbe mit und stehen damit quer zu einem Screen, der seine Farben aus dem
+                aktiven Deck zieht — gilt am Handy seit #deck-mobil genauso. Und der Pokal ist das eine
+                Zeichen dieses Screens, für das es eine gezeichnete Vorlage gibt.
+                Zwei Zustände, EIN Ausdruck: `rankedFree` wählt die Pfade, nicht zwei Codepfade. */}
+            <span className="flex items-center gap-2">
               <RankIcon free={rankedFree} />
               {t("start.ranked")}
             </span>

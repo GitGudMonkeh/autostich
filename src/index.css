@@ -1090,6 +1090,14 @@ button { font-family: inherit; }
    Fünftel der Fläche. Der Glow ist ersatzlos weg (Glow-Budget: nur der Primär-CTA leuchtet).
    Ab 1400 px überschreibt `.as-hub-list .as-hub-num` beides mit dem Ton der Listenzeile. */
 .as-hub-num { color: #dcdce4; }
+/* Schloss/Pokal am Ranglisten-Knopf. Etwas kleiner als die Schrift daneben und leicht zurück-
+   genommen: das Zeichen begleitet das Wort, es kündigt es nicht an.
+   Größe in `em` statt in px, und das ist der Grund, warum die Regel hier steht und nicht mehr in
+   der 1400-px-Sektion: das Zeichen gilt seit dem Pokal-Tausch auf ALLEN Breiten, und der Knopf ist
+   am Handy 15 px, ab 1400 px 19 px groß. 0,9 em hält auf beiden dasselbe Verhältnis zur Schrift —
+   auf Desktop sind das die 17 px, gegen die es abgenommen wurde. */
+.as-rank-icon { width: 0.9em; height: 0.9em; flex: none; opacity: .8; }
+
 .as-hub-cur { color: #d6ab6b; }
 
 /* #kachel-glyph — das Wasserzeichen der vier Verwaltungskacheln (Begründung an `TileGlyph` in
@@ -1481,10 +1489,6 @@ button { font-family: inherit; }
     background: currentColor;
     opacity: .85;
   }
-  /* Schloss/Pokal am Ranglisten-Knopf. Etwas kleiner als die Schrift daneben und leicht zurück-
-     genommen: das Zeichen begleitet das Wort, es kündigt es nicht an. */
-  .as-rank-icon { width: 17px; height: 17px; flex: none; opacity: .8; }
-
   /* Die Zeichen der Fuß-Chips — eine Spur kleiner als die 15-px-Schrift daneben und deutlich
      zurückgenommen: sie sollen die Wörter begleiten, nicht mit ihnen um Aufmerksamkeit streiten. */
   .as-chip-icon { width: 15px; height: 15px; flex: none; opacity: .55; }

@@ -49,21 +49,23 @@ describe("#394/#385 — Hub-Modals behalten eine konstante Fenstergröße", () =
 });
 
 describe("#394 — Mainscreen: Rangliste-Schloss verschwindet bei Freischaltung", () => {
-  /* #premium (18.08.2026): Der Knopf zeigt den Zustand jetzt in ZWEI Fassungen — bis 1399 px weiter
-     als Emoji, ab 1400 px als Vektor (`RankIcon`, Begründung in StartScreen.jsx). Die Emoji stehen
-     seither als Konstanten und nicht mehr als Literale im JSX, deshalb greift der frühere Wortlaut-
-     Test `rankedFree ? "🏆"` nicht mehr. Geprüft wird unverändert die Absicht: EIN zustandsabhängiger
-     Ausdruck aus `rankedUnlocked`, kein zweiter Pfad — nur eben für beide Fassungen. */
-  it("StartScreen zeigt 🏆/🔒 zustandsabhängig aus rankedUnlocked", () => {
+  /* #premium (18.08.2026) hatte den Knopf auf ZWEI Fassungen gestellt: Emoji bis 1399 px, Vektor ab
+     1400 px. Seit dem Pokal-Tausch (#pokal) ist es wieder EINE — der Vektor gilt auf allen Breiten,
+     die Emoji-Konstanten am Knopf sind entfallen. Der frühere Wortlaut-Test `rankedFree ? "🏆"`
+     greift damit endgültig nicht mehr.
+     Geprüft wird durch alle drei Fassungen hindurch dieselbe Absicht, und sie ist der Grund, warum
+     es diesen Test gibt: das Schloss darf NUR im gesperrten Zustand erscheinen, entschieden von
+     genau einem Ausdruck aus `rankedUnlocked`. Ein zweiter Codepfad wäre die Stelle, an der die
+     Anzeige und die Freischaltung auseinanderlaufen können, ohne dass etwas rot wird. */
+  it("StartScreen zeigt Pokal/Schloss zustandsabhängig aus rankedUnlocked", () => {
     const src = ui("StartScreen.jsx");
     expect(src).toContain("const rankedFree = rankedUnlocked(prof);"); // aus dem live gereichten `profile`-Prop
-    expect(src).toMatch(/const EMO_RANK_FREE = "🏆"/); // frei → Pokal
-    expect(src).toMatch(/const EMO_RANK_LOCK = "🔒"/); // gesperrt → Schloss
-    // Emoji-Fassung: derselbe Ausdruck entscheidet über beide Zeichen.
-    expect(src).toMatch(/rankedFree \? EMO_RANK_FREE : EMO_RANK_LOCK/);
-    // Vektor-Fassung ab 1400 px: hängt am selben Zustand und wählt zwischen denselben zwei Formen.
+    // EIN Zeichen am Knopf, und es hängt am Zustand.
     expect(src).toMatch(/<RankIcon free=\{rankedFree\} \/>/);
+    // Drinnen wählt derselbe Zustand zwischen genau zwei Formen — kein zweiter Pfad daneben.
     expect(src).toMatch(/free \? RANK_PATHS\.cup : RANK_PATHS\.lock/);
+    // Die Emoji-Fassung des Knopfes ist weg und soll nicht zurückkommen.
+    expect(src).not.toMatch(/EMO_RANK/);
   });
 
   it("rankedUnlocked: erst alle Deck-Knoten UND je ≥1 abgeschlossener Lauf", () => {
