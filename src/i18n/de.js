@@ -612,6 +612,7 @@ export default {
   "arch.buffsSuit": "bufft Farbe {suit}",
   "arch.boostDelta": "Boost {arrow}{pct} %",
   "arch.boostDelta.title": "Änderung des Gebäude-Boosts an dieser Vorschau-Position",
+  "arch.boostDelta.phaseTitle": "Änderung des Gebäude-Boosts seit Beginn dieser Bauphase",
   "arch.combos": "Kombis",
   "arch.combos.title": "Gebäude mit Struktur-/Distrikt-Bonus glühen in ihrer Typ-Farbe",
   "arch.forms": "Formationen",

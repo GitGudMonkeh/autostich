@@ -194,6 +194,14 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const formGain = Math.max(0, sum(formations) - sum(formationsNoArch));
     return Math.round((structBonus + formGain) * 100);
   }, [structF, formations, formationsNoArch]);
+  // #UI: Phasen-Δ des Gebäude-Boosts — wie viel diese Bauphase am Boost geändert hat, PERSISTENT sichtbar (nicht nur
+  // beim Ziehen), analog zum Aufstellungs-Δ (FormationPhase). Baseline an state.cycle gebunden → beim Rundenwechsel
+  // deterministisch neu gesetzt, auch wenn der Screen über die Phasen hinweg NICHT neu mountet. Erster Boost der Runde
+  // = Nulllage; committete Bauten/Verschiebungen bewegen das Δ.
+  const boostBaseline = useRef({ cycle: null, base: null });
+  if (boostBaseline.current.cycle !== state.cycle && cards.length)
+    boostBaseline.current = { cycle: state.cycle, base: archBoostPct };
+  const phaseBoostDelta = boostBaseline.current.base === null ? 0 : archBoostPct - boostBaseline.current.base;
   // #UI: In der Aufwerten-Phase behalten ALLE Gebäude ihre durchgezogene TYP-Kontur (kein Stufen-Farb-Rahmen mehr —
   // die Stufe zeigt das Ecken-Symbol + das Infopanel). Nur die Kontur der NICHT-aufwertbaren Gebäude wird gedimmt
   // (Spotlight auf das Aufwertbare), statt die ganze Kontur zu dimmen und je Zelle einen Rahmen zu ziehen (der rechts riss).
@@ -585,11 +593,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const scoreDiffColor = scorePctDiff === 0 ? "#8a8a92" : (scorePctDiff > 0 ? "#5ab87a" : "#e0605a");
   const scoreDiffSign = scorePctDiff === 0 ? "±" : (scorePctDiff > 0 ? "+" : "−");
   const scoreDiffStr = t("arch.scoreDiff", { sign: scoreDiffSign, pct: Math.abs(scorePctDiff) });
-  // Farbton + Pfeil des Boost-Δ-Chips beim Ziehen — gleiche Nulllage-zuerst-Form.
-  const boostTone = !dragDelta ? null
-    : dragDelta.dBoost === 0 ? { fg: "#8a97a5", bg: "#ffffff0c", br: "#2b3e4d", arrow: "±" }
-    : dragDelta.dBoost > 0 ? { fg: "#5fce86", bg: "#155e3126", br: "#2f9d5566", arrow: "▲ +" }
-    : { fg: "#e0705a", bg: "#8a1e1e26", br: "#d1462f66", arrow: "▼ " };
+  // Farbton + Pfeil eines Boost-Δ-Chips (Nulllage zuerst) — gilt für den Live-Wert beim Ziehen UND das persistente
+  // Phasen-Δ.
+  const boostToneOf = (d) =>
+      d === 0 ? { fg: "#8a97a5", bg: "#ffffff0c", br: "#2b3e4d", arrow: "±" }
+    : d > 0   ? { fg: "#5fce86", bg: "#155e3126", br: "#2f9d5566", arrow: "▲ +" }
+    :           { fg: "#e0705a", bg: "#8a1e1e26", br: "#d1462f66", arrow: "▼ " };
+  // Beim Ziehen zeigt der Chip die Vorschau-Differenz der schwebenden Position; ohne Drag persistent das Phasen-Δ
+  // (wie viel diese Bauphase am Boost geändert hat) — so bleibt die Änderung „an dieser Stelle" dauerhaft sichtbar.
+  const shownBoostDelta = dragDelta ? dragDelta.dBoost : phaseBoostDelta;
+  const boostTone = boostToneOf(shownBoostDelta);
 
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
@@ -656,18 +669,18 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               </div>
             )}
             <div className="flex items-center gap-2 mb-2">
-              {/* #UI: „Bau-Brett"-Label entfällt — der Boost-Δ (beim Verschieben) hätte die Zeile sonst umgebrochen und das
+              {/* #UI: „Bau-Brett"-Label entfällt — der (jetzt persistente) Boost-Δ hätte die Zeile sonst umgebrochen und das
                   Brett verrutschen/„zittern" lassen. Der Δ-Chip hat feste Breite (tabular-nums + minWidth), damit er beim
                   Ziehen nicht in der Breite flackert; die Toggles bleiben rechts (ml-auto) unverrückt. */}
-              {dragDelta && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
-                  style={{ fontVariantNumeric: "tabular-nums", minWidth: 92,
-                           color: boostTone.fg, background: boostTone.bg,
-                           border: `1px solid ${boostTone.br}` }}
-                  title={t("arch.boostDelta.title")}>
-                  {t("arch.boostDelta", { arrow: boostTone.arrow, pct: dragDelta.dBoost })}
-                </span>
-              )}
+              {/* #ui: Persistenter Boost-Δ-Chip — zeigt dauerhaft, wie viel diese Bauphase am Boost geändert hat
+                  (analog zum Aufstellungs-Δ). Beim Ziehen wechselt er auf die Live-Vorschau der schwebenden Position. */}
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
+                style={{ fontVariantNumeric: "tabular-nums", minWidth: 92,
+                         color: boostTone.fg, background: boostTone.bg,
+                         border: `1px solid ${boostTone.br}` }}
+                title={dragDelta ? t("arch.boostDelta.title") : t("arch.boostDelta.phaseTitle")}>
+                {t("arch.boostDelta", { arrow: boostTone.arrow, pct: shownBoostDelta })}
+              </span>
               <div className="flex items-center gap-1.5 ml-auto">
                 {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
                     Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}

@@ -82,8 +82,11 @@ export function TrickBreakdown({ trick = null }) {
                  color: CHAIN_COLOR.direct, title: t("bf.bd.direct.title"), op: "+" });
 
   return (
-    // Auf schmalen Geräten eine Stufe kleiner — die Kette soll auch mit sechs Gliedern in EINE Zeile passen.
-    <div className="flex items-baseline justify-center gap-1.5 leading-none text-[10px] sm:text-[11px]"
+    // Auf schmalen Geräten eine Stufe kleiner — die Kette soll möglichst in EINE Zeile passen. Reicht die Breite
+    // nicht (viele wirkende Faktoren, schmales Gerät), bricht die Kette per flex-wrap sauber auf die nächste Zeile
+    // um, statt am Rand abgeschnitten zu werden (#ui). Jedes Glied trägt seinen Operator, das `= Summe`-Glied bleibt
+    // durch das zusammengefasste Span geschlossen — so orphant nie ein „=" allein am Zeilenanfang.
+    <div className="flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-0.5 leading-none text-[10px] sm:text-[11px]"
       aria-label={t("bf.bd.aria")}>
       {links.map((l, i) => (
         <span key={l.key} className="inline-flex items-baseline gap-1.5">
@@ -91,8 +94,10 @@ export function TrickBreakdown({ trick = null }) {
           <Link label={l.label} value={l.value} color={l.color} title={l.title} />
         </span>
       ))}
-      <Op>=</Op>
-      <Link label={t("bf.bd.total")} value={fmtScoreShort(total)} color={CHAIN_COLOR.streak} title={t("bf.bd.total.title")} />
+      <span className="inline-flex items-baseline gap-1.5">
+        <Op>=</Op>
+        <Link label={t("bf.bd.total")} value={fmtScoreShort(total)} color={CHAIN_COLOR.streak} title={t("bf.bd.total.title")} />
+      </span>
     </div>
   );
 }

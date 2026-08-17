@@ -603,6 +603,7 @@ export default {
   "arch.buffsSuit": "buffs suit {suit}",
   "arch.boostDelta": "Boost {arrow}{pct}%",
   "arch.boostDelta.title": "Change of the building boost at this preview position",
+  "arch.boostDelta.phaseTitle": "Change of the building boost since this build phase began",
   "arch.combos": "Combos",
   "arch.combos.title": "Buildings with a structure/district bonus glow in their type colour",
   "arch.forms": "Formations",

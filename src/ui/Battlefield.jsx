@@ -1720,9 +1720,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       </div>
 
       {/* Stich-Aufschlüsselung (§17) — die Faktorenkette des laufenden Stichs, unter der Sieg/Niederlage-Ansage.
-          FESTE Höhe (h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz reserviert,
-          damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog). */}
-      <div className="relative z-10 h-5 mt-1 flex items-center justify-center overflow-hidden">
+          MINDEST-Höhe (min-h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz reserviert,
+          damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog). Kein
+          overflow-hidden mehr: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per flex-wrap
+          auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */}
+      <div className="relative z-10 min-h-5 mt-1 flex items-center justify-center">
         {!hideBreakdown && <TrickBreakdown trick={t} />}
       </div>
     </div>
