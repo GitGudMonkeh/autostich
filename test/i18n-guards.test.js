@@ -69,6 +69,7 @@ describe("i18n · Katalog-Parität", () => {
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
     "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
     "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort

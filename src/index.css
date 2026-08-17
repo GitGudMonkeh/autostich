@@ -792,3 +792,179 @@ button { font-family: inherit; }
 :root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-fac {
   animation: as-panel-sweep 7s linear infinite !important;
 }
+
+/* #desktop — Grundzustand der Hub-Kacheln. Steht bewusst hier und nicht als inline-style im JSX: nur so
+   kann die Desktop-Fassung sie überhaupt überschreiben (inline schlägt jedes Stylesheet). Die Werte sind
+   1:1 die bisherigen — auf dem Handy ändert sich dadurch nichts. */
+.as-hub-tile { background: linear-gradient(180deg, #1b1a24, #161620); border: 1px solid #2c2a3a; }
+/* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
+   sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
+   Der Wert ist das bisherige Währungs-Gold — auf dem Handy ändert sich nichts. */
+.as-hub-num { color: #f2a83a; text-shadow: 0 0 12px rgba(242, 168, 58, .45); }
+.as-hub-cur { color: #f2a83a; }
+
+/* #desktop — Knopf-Optik des Startbildschirms. Ebenfalls bewusst als Klassen statt inline: die Desktop-
+   Stufe färbt sie in die Deckfarbe, und ein inline-style ließe sich davon nicht überschreiben. Die Werte
+   sind exakt die bisherigen aus StartScreen.jsx (cyanPrimary / normalGhost / Rangliste / Tutorial). */
+.as-cta-primary {
+  background: linear-gradient(180deg, #7ceafb 0%, #5fe0f7 42%, #3fc9e3 100%);
+  color: #052730;
+  box-shadow: 0 0 20px rgba(95, 224, 247, .5), inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 0 rgba(3, 42, 52, .35);
+}
+.as-cta-ghost { background: #12151f; border: 1px solid #5a8ade88; color: #93b4f2; }
+.as-ranked-btn { background: #181425; border: 1px solid rgba(155, 130, 240, .4); color: #9b82f0; }
+.as-tut-btn { background: #1a1330; border: 1px solid rgba(155, 130, 240, .67); color: #d9ccff; box-shadow: 0 0 20px -8px #9b82f0; }
+
+/* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
+   reicht ihre Kinder unverändert an die Flex-Spalte des Startbildschirms durch. Reihenfolge und Abstände
+   bleiben damit exakt wie vorher — die Gruppen existieren allein für das Desktop-Raster. */
+.hub-pair, .hub-play, .hub-stand, .hub-foot { display: contents; }
+
+/* ============================================================================
+   #desktop — Startbildschirm ab 1400 px (Desktop-Pass)
+   ----------------------------------------------------------------------------
+   Bis 1399 px ist ALLES hier wirkungslos: sämtliche Regeln stehen in der Media Query, die Klassen im
+   JSX sind darunter tote Haken. Das ist Absicht — das Handy-Layout wurde bis auf den Pixel gegen ein
+   iPhone SE abgestimmt (s. LANE_LEAD-Kommentar in StartScreen.jsx) und darf sich nicht bewegen.
+
+   Warum 1400 und nicht der `xl`-Standard 1280: das Spaltenpaar misst 1520 px. Bei 1280 bliebe kein Rand,
+   der Entwurf klappt dort bewusst auf eine Spalte zurück. 1400 ist die erste Breite, bei der das Paar mit
+   Luft steht (fluid gedeckelt, s. .hub-pair).
+   ============================================================================ */
+@media (min-width: 1400px) {
+  /* Das Spaltenpaar: Spielen links, Stand rechts. Fluid bis 1520 px gedeckelt — auf Ultrawide läuft es
+     NICHT weiter auseinander, sondern bleibt als Paar zusammen (Verankerungs-Regel: Wichtiges gehört nicht
+     an die äußersten Bildschirmränder). */
+  .hub-pair {
+    display: grid;
+    grid-template-columns: 700fr 740fr;
+    column-gap: 80px;
+    align-items: center;
+    width: min(1520px, 100%);
+    margin-inline: auto;
+  }
+  /* Senkrechter Rhythmus der Desktop-Fassung (auf 1080 px Höhe abgestimmt). */
+  .hub-root { gap: 40px; padding-top: 24px; }
+  .hub-play { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+  .hub-stand { display: flex; flex-direction: column; gap: 20px; }
+  /* Der Fuß löst sich von der Inhaltsspalte und wird ein Band über die volle Breite. */
+  .hub-foot { display: flex; align-items: center; justify-content: space-between; gap: 32px; width: 100%; }
+
+  /* --- Durchscheinende Panels ---------------------------------------------
+     Der Deck-Hintergrund soll durchbluten, ohne die Lesbarkeit anzutasten. Der Alpha-Wert ist die eine
+     Stellschraube, die 40 unterschiedlich helle Spielfelder gleichzeitig beherrschbar macht. Der Blur ist
+     das, was „durchscheinend" von „unruhig" trennt — ohne ihn zeichnet sich jedes Bilddetail hinter dem
+     Text ab. Auf `pointer: coarse` (Handy) ist Backdrop-Blur projektweit aus Perf-Gründen abgeschaltet;
+     diese Regeln greifen dort ohnehin nicht, weil kein Handy 1400 px CSS-Pixel hat. */
+  .as-glass {
+    background: linear-gradient(180deg, rgba(27, 26, 36, 0.72), rgba(22, 22, 32, 0.78));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 0;
+  }
+
+  /* Aus der 2×2-Kachelbank wird eine Liste: EINE Glasscheibe mit EINEM Ring um alle vier Einträge, statt
+     vier einzelner Panels. Die Zeilen selbst werden dafür transparent und tragen nur noch einen Trenner. */
+  .as-hub-list { border-radius: 12px; overflow: hidden; }
+  .as-hub-list .as-hub-tile {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgba(60, 58, 78, 0.55);
+    border-radius: 0;
+  }
+  .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
+
+  /* --- Deckfarben an den Knöpfen -------------------------------------------
+     Ab hier zieht der Startbildschirm seine Farbigkeit aus dem aktiven Deck (--deck-a1/--deck-a2, in
+     App.jsx am .app-root gesetzt). Ohne gesetzte Variablen greifen dieselben Violett-Rückfälle wie beim
+     Panel-Rahmen — der Screen sieht dann aus wie bisher, nur breiter.
+     BEWUSST NICHT eingefärbt: nichts. Der Farbcode des Startbildschirms (Cyan = Start, Violett = Rangliste,
+     Amber = Währung, abgeleitet aus dem Wortmarken-Verlauf) tritt auf Desktop zugunsten der Deck-Identität
+     zurück; die Wortmarke selbst bleibt als deck-übergreifender Anker unverändert. */
+  .as-cta-primary {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--deck-a1, #5fe0f7) 55%, #ffffff) 0%,
+      var(--deck-a1, #5fe0f7) 44%,
+      color-mix(in srgb, var(--deck-a1, #5fe0f7) 76%, #000000) 100%);
+    color: color-mix(in srgb, var(--deck-a1, #5fe0f7) 22%, #000000);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--deck-a1, #5fe0f7) 50%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -2px 0 rgba(0, 0, 0, .28);
+  }
+  .as-cta-ghost {
+    background: #12151f;
+    border-color: color-mix(in srgb, var(--deck-a1, #5a8ade) 55%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #93b4f2) 78%, #ffffff);
+  }
+  .as-ranked-btn {
+    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 12%, #101018);
+    border-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, #ffffff);
+  }
+  .as-tut-btn {
+    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 14%, #101018);
+    border-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 60%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #d9ccff) 82%, #ffffff);
+    box-shadow: 0 0 20px -8px var(--deck-a1, #9b82f0);
+  }
+
+  /* --- Vier Stufen aus ZWEI Deckfarben --------------------------------------
+     Die Streifen der Verwaltungsliste und die beiden Guthaben-Zahlen. Die Reihenfolge folgt dem INHALT,
+     nicht der Helligkeit: die zwei Zeilen mit Zahl (SP, DP) bekommen die kräftigsten Töne, weil eine dunkle
+     Zahl sich wie „ausgegraut" liest; der dunkelste Ton sitzt unten auf Statistiken, wo keine Zahl steht.
+     Bei Decks mit zwei fast gleichen Farben (z. B. Gold/Blassgold) rücken die vier Stufen zusammen — das
+     ist bekannt und akzeptiert, weite Farbpaare tragen die Leiter deutlich besser. */
+  .as-hub-list .as-hub-tile:nth-child(1) { --row-tone: var(--deck-a1, #26c6e6); }
+  .as-hub-list .as-hub-tile:nth-child(2) { --row-tone: color-mix(in srgb, var(--deck-a2, #5a8ade) 65%, #ffffff); }
+  .as-hub-list .as-hub-tile:nth-child(3) { --row-tone: color-mix(in srgb, var(--deck-a1, #9b82f0) 45%, var(--deck-a2, #b3a8ff)); }
+  .as-hub-list .as-hub-tile:nth-child(4) { --row-tone: color-mix(in srgb, var(--deck-a1, #f2a83a) 74%, #000000); }
+  .as-hub-list .as-hub-stripe { background: var(--row-tone) !important; }
+  .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
+  .as-hub-list .as-hub-cur { color: var(--row-tone); }
+
+  /* --- Wandernder Deckfarben-Rahmen an durchscheinenden Panels --------------
+     WICHTIG, sonst baut das jemand falsch nach: Der Rahmen von `.as-panel` (oben) funktioniert NUR, weil
+     die Panelfläche deckend ist — dort liegt `linear-gradient(#17171c,#17171c)` auf padding-box über dem
+     wandernden Verlauf und lässt ihn allein im 1-px-Rand stehen. Mit einer transparenten Fläche leuchtet
+     derselbe Verlauf durch das ganze Panel und der Rahmen ist keiner mehr.
+     Deshalb hier eine Ring-Konstruktion: ein Pseudo-Element trägt den Verlauf, seine Mitte wird per Maske
+     ausgestanzt (`mask-composite: exclude`). Gleicher Look, Fläche bleibt frei. */
+  .as-ring { position: relative; }
+  .as-ring::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%);
+    background-size: 200% auto;
+    animation: as-ring-sweep 7s linear infinite;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  .as-ring { box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent); }
+}
+
+/* Flache Desktop-Fenster: Auf 1080 px Höhe geht der Startbildschirm mit großzügigem Rhythmus genau auf.
+   Bei 864 px (1080p unter 125 % Windows-Skalierung — ein Hauptprüfpunkt des Zielbands) fehlten knapp
+   20 px und die Seite fing an zu scrollen. Statt den Rhythmus überall zu kürzen, wird er nur dort enger,
+   wo die Höhe es verlangt; die abgenommene Optik auf 1080 bleibt unberührt. */
+@media (min-width: 1400px) and (max-height: 950px) {
+  .hub-root { gap: 18px; padding-top: 6px; }
+  .hub-pair { column-gap: 56px; }
+  .hub-play { gap: 14px; }
+  .hub-stand { gap: 12px; }
+}
+
+/* Eigene Keyframes: `as-panel-sweep` bewegt ZWEI Hintergrund-Ebenen (Füllung + Verlauf), der Ring hat nur
+   eine — mit den alten Keyframes bliebe er stehen. Außerhalb der Media Query, weil @keyframes global sind. */
+@keyframes as-ring-sweep {
+  from { background-position: 0% center; }
+  to   { background-position: 200% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .as-ring::before { animation: none; }
+}
+/* Effekt-Stufe „minimal": der Sweep friert ein, der Rahmen bleibt (Farbe trägt weiter die Deck-Identität). */
+:root[data-reduced-fx="1"] .as-ring::before { animation: none !important; }

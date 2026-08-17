@@ -1214,6 +1214,26 @@ export default {
   "start.tile.lock_one": "🔒 noch {count} Lauf",
   "start.tile.lock_other": "🔒 noch {count} Läufe",
 
+  /* #desktop — Status-Tafel des Startbildschirms. Sie erscheint erst ab 1400 px und zeigt, was der
+     Spieler wissen will, BEVOR er startet: welches Deck aktiv ist, wie die Guthaben stehen, was die
+     Woche noch hergibt und wie der letzte Lauf lief. Die Untertitel der beiden Währungs-Einträge stehen
+     ebenfalls nur dort — auf dem Handy bleibt es beim reinen Titel plus Zahl. */
+  "start.board.title": "Dein Stand",
+  "start.board.field": "Spielfeld · {name}",
+  "start.board.sp": "Stichpunkte",
+  "start.board.sp.sub": "{done} / {total} Knoten",
+  "start.board.dp": "Deck-Punkte",
+  "start.board.dp.sub": "Werkstatt-Guthaben",
+  "start.board.week": "Woche {n}",
+  "start.board.week.open": "Bonus noch offen",
+  "start.board.week.done": "Bonus geholt",
+  "start.board.last": "Letzter Lauf",
+  "start.board.last.sub": "Durchlauf {cycle}",
+  "start.board.last.none": "—",
+  "start.board.last.none.sub": "noch kein Lauf",
+  "start.tile.upgrades.sub": "Dauerhafte Verbesserungen",
+  "start.tile.workshop.sub": "Decks, Spielfelder, Effekte",
+
   "start.options": "Optionen",
   "start.name.set": "Namen festlegen für den globalen Highscore",
   "start.name.change": "Name ändern",

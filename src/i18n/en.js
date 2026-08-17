@@ -1184,6 +1184,24 @@ export default {
   "start.tile.lock_one": "🔒 {count} more run",
   "start.tile.lock_other": "🔒 {count} more runs",
 
+  /* #desktop — status board on the start screen (shown from 1400 px). Terminology per the frozen table:
+     Durchlauf = cycle, Stichpunkte = Trick Points, Spielfeld = battlefield. */
+  "start.board.title": "Your standing",
+  "start.board.field": "Battlefield · {name}",
+  "start.board.sp": "Trick Points",
+  "start.board.sp.sub": "{done} / {total} nodes",
+  "start.board.dp": "Deck Points",
+  "start.board.dp.sub": "Workshop balance",
+  "start.board.week": "Week {n}",
+  "start.board.week.open": "Bonus still open",
+  "start.board.week.done": "Bonus claimed",
+  "start.board.last": "Last run",
+  "start.board.last.sub": "Cycle {cycle}",
+  "start.board.last.none": "—",
+  "start.board.last.none.sub": "no run yet",
+  "start.tile.upgrades.sub": "Permanent improvements",
+  "start.tile.workshop.sub": "Decks, battlefields, effects",
+
   "start.options": "Options",
   "start.name.set": "Set a name for the global high score",
   "start.name.change": "change name",

@@ -8,7 +8,7 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone, loadRunHistory } from "./game/storage.js";
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -703,6 +703,11 @@ function AutostichGame() {
   const activeBfId   = resolveSkinId(BATTLEFIELD_DEFS, vOpt.battlefieldId, profile);
   const deckSkin = deckAssets(activeDeckId);
   const bfSkin   = battlefieldAssets(activeBfId);
+  /* #desktop — jüngster Lauf für die Status-Tafel des Startbildschirms. `recordRun` stellt neue Läufe vorn
+     in die Chronik, [0] ist also immer der letzte. Die Phase als einzige Abhängigkeit genügt: In die Chronik
+     wird ausschließlich beim Beenden eines Laufs geschrieben, und danach führt der Weg immer über einen
+     Phasenwechsel zurück ins Menü — der Eintrag ist beim Betreten also garantiert schon da. */
+  const lastRun = useMemo(() => (state.phase === "menu" ? loadRunHistory()[0] || null : null), [state.phase]);
 
   // Perf-Recorder: Spiel-Events markieren, damit Frame-Ruckler dem zugeordnet werden, WAS gerade
   // passiert (perfMark ist außerhalb des Preview-Builds ein billiger No-op). Deck-Wechsel, laufender
@@ -984,10 +989,12 @@ function AutostichGame() {
 
   return (
     // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
-    //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Nur während eines Laufs gesetzt; im Menü/ohne Deck
-    //   ungesetzt → die Rahmen fallen auf ihren neutralen Grauton zurück. Wechselt das Deck, ziehen die Rahmen mit.
+    //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
+    //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
+    //   ab 1400 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
+    //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
     <div className="app-root relative w-full flex justify-center"
-      style={inRun ? { "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined } : undefined}>
+      style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
           sichtbar (CSS), klick-durchlässig. */}
       <div className="crt-overlay" aria-hidden="true" />
@@ -1012,7 +1019,10 @@ function AutostichGame() {
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}
       {state.phase === "menu" && <CrtParticles />}
-      <div className="w-full max-w-5xl grid gap-4">
+      {/* #desktop: Der Lauf behält seinen 1024er-Deckel (max-w-5xl) — dort ist die Breite an das Kartenfeld
+          gebunden. Nur der Startbildschirm bekommt ab 1400 px mehr Bühne, gedeckelt bei 1520 px: das ist die
+          Breite des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen. */}
+      <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "min-[1400px]:max-w-[1520px]" : ""}`}>
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("meister")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
@@ -1023,7 +1033,8 @@ function AutostichGame() {
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onTutorial={startTutorialRun} tutorialDone={tutorialDone}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
-            username={username} onEditName={() => setShowUsername(true)} />
+            username={username} onEditName={() => setShowUsername(true)}
+            deckId={activeDeckId} bfId={activeBfId} deckBack={deckSkin.back} lastRun={lastRun} />
         ) : (<>
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +

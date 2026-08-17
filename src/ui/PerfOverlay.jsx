@@ -24,6 +24,21 @@ function readFxMode() {
   } catch { /* kein window → Standard */ }
   return "pixi";
 }
+// #desktop: Viewport-Readout. Beim Desktop-Layout-Pass muss jederzeit ablesbar sein, in WELCHEM CSS-Viewport
+// gerade geprüft wird — das eigene Entwicklerfenster ist dafür unbrauchbar: auf einem hochskalierten oder
+// ultrabreiten Monitor weicht es stark von dem ab, was ein Standardspieler sieht. Merkposten des Zielbands:
+// 1920 = Anker (1080p bei 100 %) · 1536 = dasselbe Gerät bei 125 % Windows-Skalierung · 1280 = unteres Bandende.
+// Trifft die Breite einen davon, färbt sich die Anzeige grün — sonst grau („du misst gerade irgendwas").
+// DPR steht daneben, weil die Skalierung die zweite Hälfte des Unterschieds ausmacht und sonst unsichtbar bleibt.
+const VIEWPORT_MARKS = [1920, 1536, 1280];
+function readViewport() {
+  return {
+    w: Math.round(window.innerWidth),
+    h: Math.round(window.innerHeight),
+    // Auf 2 Stellen gerundet: Browser-Zoom erzeugt sonst Zahlen wie 1.2000000476837158.
+    dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
+  };
+}
 function toggleFxMode() {
   const next = readFxMode() === "pixi" ? "dom" : "pixi";
   try {
@@ -54,11 +69,27 @@ function toggleFx2() {
 export function PerfOverlay() {
   const [live, setLive] = useState({ fps: 0, p95: 0, jank: 0 });
   const [copied, setCopied] = useState(false);
+  const [vp, setVp] = useState(readViewport);
 
   useEffect(() => {
     startPerf();
     const id = setInterval(() => setLive(getLive()), 500);
     return () => { clearInterval(id); stopPerf(); };
+  }, []);
+
+  // Zwei Quellen, weil eine allein lügt:
+  //   • `resize` am window — deckt echtes Fensterziehen ab UND reine DPR-Wechsel (Browser-Zoom, Fenster auf einen
+  //     anders skalierten Monitor gezogen), bei denen sich die Pixelmaße gar nicht ändern.
+  //   • ResizeObserver am <html> — deckt Viewport-Wechsel ab, die OHNE resize-Event passieren: die
+  //     Geräte-Emulation der DevTools bzw. ein per CDP gesetzter Viewport meldet sich nicht am window.
+  //     Genau der Fall beim Desktop-Layout-Pass — sonst zeigt das Readout die vorige Auflösung und
+  //     ein Screenshot behauptet, bei 1920 entstanden zu sein, obwohl er es nicht ist.
+  useEffect(() => {
+    const onResize = () => setVp(readViewport());
+    window.addEventListener("resize", onResize);
+    const ro = new ResizeObserver(onResize);
+    ro.observe(document.documentElement);
+    return () => { window.removeEventListener("resize", onResize); ro.disconnect(); };
   }, []);
 
   const doReport = () => {
@@ -78,6 +109,7 @@ export function PerfOverlay() {
     pointerEvents: "auto", cursor: "pointer", background: "#1a1a21", color: "#c8c8d0",
     border: "1px solid #33333e", borderRadius: 4, padding: "1px 5px", font: "inherit",
   };
+  const vpCol = VIEWPORT_MARKS.includes(vp.w) ? "#5ab87a" : "#8a8a92";  // grün = auf einem Prüfpunkt des Zielbands
   const fxMode = readFxMode();                            // aktueller Feld-Effekt-Renderer (pixi/dom)
   const fxCol = fxMode === "pixi" ? "#35e0ff" : "#e0a35a";
   const { on: fx2, scale: fx2Scale } = readFx2();         // #kompositor: läuft er, und mit welchem Faktor
@@ -89,6 +121,8 @@ export function PerfOverlay() {
     >
       <span style={{ color: col }}>{live.fps} FPS</span>
       <span style={{ color: "#8a8a92" }}>· p95 {live.p95}ms · jank {live.jank}</span>
+      <span style={{ color: vpCol }}>· {vp.w}×{vp.h}</span>
+      <span style={{ color: "#8a8a92" }}>· DPR {vp.dpr}</span>
       <button style={btn} onClick={doReport} title={t("perf.report")}>{copied ? "✓" : "⧉"}</button>
       <button style={btn} onClick={resetPerf} title={t("perf.reset")}>↺</button>
       <button style={{ ...btn, color: fxCol, borderColor: `${fxCol}66` }} onClick={toggleFxMode}

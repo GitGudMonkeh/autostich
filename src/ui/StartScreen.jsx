@@ -5,7 +5,7 @@ import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Woc
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
-import { rarityLabel } from "../i18n/labels.js";      // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
+import { rarityLabel, deckDef, battlefieldDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
@@ -42,7 +42,9 @@ const onbRewards = (t) => [
   t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName }) {
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
+  // #desktop — Zutaten der Status-Tafel. Sie erscheint erst ab 1400 px; darunter bleiben die Props ungenutzt.
+  deckId = null, bfId = null, deckBack = null, lastRun = null }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -115,30 +117,32 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      Höhe. 88 % ist die letzte Stufe, auf der beide Viewports sauber bleiben (390 px ganz, 375 px bis auf die
      zweizeilige Unterzeile „Global high scores", +3 px). Wer die Stufe vertiefen will, muss vorher an den
      Kacheltexten oder ihrem Innenabstand arbeiten — nicht an der Prozentzahl. */
-  const LANE_LEAD = "w-full max-w-sm";
-  const LANE_MID  = "w-[94%] max-w-sm";
-  const LANE_TAIL = "w-[88%] max-w-sm";
+  /* #desktop: Ab 1400 px trägt die BREITE die Rangordnung nicht mehr — dort steht der Trichter in einer
+     eigenen Spalte, und Rangordnung entsteht über Größe, senkrechte Position und Leuchtkraft. Alle drei
+     Bahnen laufen deshalb auf volle Spaltenbreite. Die abgemessenen Handy-Werte (100/94/88 %, gegen ein
+     iPhone SE geprüft) bleiben unangetastet — die Desktop-Stufe überschreibt sie nur oberhalb. */
+  const LANE_DESK = "min-[1400px]:w-full min-[1400px]:max-w-none";
+  const LANE_LEAD = `w-full max-w-sm ${LANE_DESK}`;
+  const LANE_MID  = `w-[94%] max-w-sm ${LANE_DESK}`;
+  const LANE_TAIL = `w-[88%] max-w-sm ${LANE_DESK}`;
 
   // Sekundär-Navigation als ruhige Chip-Reihe — kompakter Pillen-Stil (dunkel, sekundär), einheitlich.
-  const chipCls = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5";
+  // #desktop: 17 px auf 44 px Höhe — damit erfüllen die Chips oberhalb von 1400 px die Mindest-Klickzielgröße.
+  const chipCls = "px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-full text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
   const chipSty = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
   const hasResume = !!(onResume && resume);
-  // Cyan-Primär-Optik (hell, mit kräftigem Cyan-Glow) — geteilte Quelle für „Lauf fortsetzen" UND „Normaler Lauf",
-  // wenn dieser (ohne laufenden Run) selbst die Primär-Aktion ist → beide glühen identisch (#).
-  /* #knopf-relief (F): war eine flache Fläche (#5fe0f7 + Glow). „Zu breit" war in Wahrheit „zu flach" — ein
+  /* Cyan-Primär-Optik (hell, mit kräftigem Cyan-Glow) — geteilte Quelle für „Lauf fortsetzen" UND „Normaler
+     Lauf", wenn dieser (ohne laufenden Run) selbst die Primär-Aktion ist → beide glühen identisch.
+     #knopf-relief (F): war eine flache Fläche (#5fe0f7 + Glow). „Zu breit" war in Wahrheit „zu flach" — ein
      358 px breites Rechteck stört, eine 358 px breite TASTE nicht. Deshalb Licht von oben: Verlauf hell→dunkel,
-     eine helle Kante an der Oberseite und ein dunkler Fuß unten. Maße bleiben unangetastet, nur die Form entsteht. */
-  const cyanPrimary = {
-    background: "linear-gradient(180deg,#7ceafb 0%,#5fe0f7 42%,#3fc9e3 100%)",
-    color: "#052730",
-    boxShadow: "0 0 20px rgba(95,224,247,.5), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(3,42,52,.35)",
-  };
-  // Läuft ein Run, tritt „Normaler Lauf" hinter das helle „Fortsetzen" zurück → ruhiger Cyan/Blau-Outline (unverändert).
-  const normalGhost = { background: "#12151f", border: `1px solid ${BLUE}88`, color: "#93b4f2" };
-  const normalStyle = hasResume ? normalGhost : cyanPrimary;
+     eine helle Kante an der Oberseite und ein dunkler Fuß unten. Maße bleiben unangetastet, nur die Form entsteht.
+     #desktop: Die Werte sind nach index.css gewandert (`.as-cta-primary` / `.as-cta-ghost`). Grund: ab 1400 px
+     ziehen die Knöpfe ihre Farbe aus dem aktiven Deck, und ein inline-style ließe sich davon nicht
+     überschreiben. Auf dem Handy liefern die Klassen exakt dieselben Farben wie vorher. */
+  const normalCls = hasResume ? "as-cta-ghost" : "as-cta-primary";
 
   /* #kopf-kompakt (16.08.2026): Der Startbildschirm brauchte auf einem iPhone 14 Pro 865 px bei 664 px
      Sichtfläche — man musste scrollen, um „Normaler Lauf" überhaupt zu sehen. Der Abstand lag über NEUN
@@ -154,10 +158,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      ohne Reserve. Kommt eine Zeile dazu, scrollt sie sofort wieder — dann nicht am Polster drehen (da ist
      nichts mehr), sondern an einem Baustein. */
   return (
-    <div className="relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1">
+    /* `hub-root`: der senkrechte Rhythmus der Desktop-Fassung steht in index.css, weil er von ZWEI
+       Bedingungen abhängt (Breite ≥ 1400 UND Fensterhöhe) — als Tailwind-Variante wäre das nicht lesbar. */
+    <div className="hub-root relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1">
       {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
-          Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] -z-10"
+          Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen.
+          #desktop: skaliert mit, sonst bliebe er auf 1920 px ein kleiner Fleck über einer breiten Bühne. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] min-[1400px]:h-[620px] -z-10"
         style={{ filter: "blur(30px)", background:
           // Weicher Auslauf: sanfte Falloff-Kurve (Farbe → halb → 0) statt harter transparent-70%-Kante, plus
           // blur(30px) → der Glow löst sich komplett kantenlos auf, ganz weich in den dunklen Grund.
@@ -168,17 +175,23 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
           gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
           Der Info-Button überschreibt den Kreis-Default (gloss-i-btn) auf denselben Pill-Look wie Mute. */}
-      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2" />}
-      <GlossaryPanel className="absolute top-2 right-2"
+      {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne. */}
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
+      <GlossaryPanel className="absolute top-2 right-2 min-[1400px]:top-0 min-[1400px]:right-0"
         style={{ width: "auto", height: "auto", borderRadius: "0.5rem", padding: "0.375rem 0.75rem",
           background: "#20202a", border: "1px solid #30303a", color: "#b3a8ff",
           fontFamily: "inherit", fontStyle: "normal", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }} />
 
+      {/* #desktop — ab hier das Spaltenpaar: links spielen, rechts der Stand. Unterhalb von 1400 px sind
+          `hub-pair`/`hub-play`/`hub-stand` per `display: contents` reine Klammern ohne eigene Box, die
+          Flex-Spalte darüber ordnet also weiterhin alle Bausteine direkt — Handy-Reihenfolge unverändert. */}
+      <div className="hub-pair">
+      <div className="hub-play">
       {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
           daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
       <div className="inline-block">
         <img src={logo} alt={t("start.logo.alt")} draggable="false"
-          className="w-full max-w-[248px] h-auto select-none" />
+          className="w-full max-w-[248px] min-[1400px]:max-w-[480px] h-auto select-none" />
       </div>
       {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
           den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
@@ -189,20 +202,20 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Das goldene v-Banner an der Wortmarke ist ersatzlos weg. Es saß als absolutes Overlay über der
           Unterkante der Marke, kostete den Kopf diesen Überhang — und nannte mit „v0.4" ohnehin nur den
           Anfang dessen, was der Stempel daneben vollständig trägt. Eine Zeile, eine Versionsangabe. */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-3" title={t("start.version.title")}>{VERSION_FULL}</div>
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-3 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
           harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
-      <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 flex flex-col gap-1.5`}
+      <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 min-[1400px]:px-5 min-[1400px]:py-3.5 flex flex-col gap-1.5 min-[1400px]:gap-2`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
-            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
+            <span className="text-[12.5px] min-[1400px]:text-[17px] font-semibold opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
           ) : (
-            <span className="text-[12.5px] font-semibold opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
+            <span className="text-[12.5px] min-[1400px]:text-[17px] font-semibold opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
           )}
-          <span className="text-[11.5px] opacity-55 font-mono tabular-nums">
+          <span className="text-[11.5px] min-[1400px]:text-[15px] opacity-55 font-mono tabular-nums">
             {onbDone ? t("start.progress.runs", { done: dripInto, total: SP_LOYALTY_EVERY })
                      : t("start.progress.links", { done: onbStep, total: ONBOARDING_LINKS })}
           </span>
@@ -227,10 +240,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={{ background: "#1a1330", border: `1px solid ${VI}aa`, color: "#d9ccff", boxShadow: `0 0 20px -8px ${VI}` }}>
-            <span className="text-[17px]">{t("start.tutorial.offer")}</span>
-            <span className="text-[11px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
+            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
+            <span className="text-[17px] min-[1400px]:text-[21px]">{t("start.tutorial.offer")}</span>
+            <span className="text-[11px] min-[1400px]:text-[14px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
         </div>
       )}
@@ -241,10 +253,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="w-full px-5 py-3 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight"
-            style={cyanPrimary}>
-            <span className="text-[19px]">{t("start.resume")}</span>
-            <span className="text-[11px] font-mono font-semibold opacity-80">
+            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            <span className="text-[19px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
+            <span className="text-[11px] min-[1400px]:text-[14px] font-mono font-semibold opacity-80">
               {t("start.resume.sub", {
                 cycle: Math.min((resume.cycle || 0) + 1, resume.totalCycles),
                 total: resume.totalCycles,
@@ -259,8 +270,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className="w-full px-5 py-3.5 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center"
-          style={normalStyle}>
+          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-2xl text-base min-[1400px]:text-[26px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
         </button>
         {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
@@ -275,11 +285,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(false); }}
                 placeholder={t("start.seed.placeholder")}
                 aria-label={t("start.seed.aria")}
-                className="flex-1 min-w-0 px-3 py-2 rounded-xl text-sm font-mono tracking-wide"
+                className="flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-mono tracking-wide"
                 style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
               />
               <button type="submit" disabled={!seedInput.trim()}
-                className="shrink-0 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                className="shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold transition-all disabled:opacity-40"
                 style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
                 {t("start.seed.play")}
               </button>
@@ -298,8 +308,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="relative w-full px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            style={{ background: "#181425", border: `1px solid ${VI}66`, color: VI }}
+            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-[14px] min-[1400px]:text-[20px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
@@ -312,14 +321,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   breit und würde in die Knopf-Mitte hineinragen.
                 - Ist der Bonus geholt, verschwindet die Zeile ersatzlos (kein „1/1"): eine Belohnung, die es diese
                   Woche nicht mehr gibt, soll nicht weiter Platz und Aufmerksamkeit binden. */}
-            <span className="absolute inset-y-0 right-2 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
+            <span className="absolute inset-y-0 right-2 min-[1400px]:right-4 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
               aria-label={t("start.ranked.badge.aria", { n: week.week })}>
-              <span className="px-1 rounded text-[9px] font-bold font-pixel leading-tight"
+              <span className="px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[9px] min-[1400px]:text-[12px] font-bold font-pixel leading-tight"
                 style={{ background: "#241d3a", color: VI, textShadow: "none" }}>
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {weekBonusOpen && (
-                <span className="text-[9px] font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
+                <span className="text-[9px] min-[1400px]:text-[12px] font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
                   {t("start.ranked.bonus", { have: 0, max: 1 })}
                 </span>
               )}
@@ -334,39 +343,92 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Lesereihenfolge (TL→TR→BL→BR) dem Logo-Verlauf CY → BLUE → VI → AM. Keine Icons — nur Titel, Stripe
           und (wo vorhanden) Kennzahl. Währungs-Zahlen (DP/SP) bleiben im Gold der Währung, unabhängig vom
           dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge statt Kennzahl. */}
-      <div className={`${LANE_TAIL} grid grid-cols-2 gap-2.5`}>
-        {/* Kachel-Basis: gleiche Höhe (justify-between), Stripe links absolut, keine Icons. */}
-        {(() => { const tileCls = "relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5";
-          const tileSty = { background: "linear-gradient(180deg,#1b1a24,#161620)", border: "1px solid #2c2a3a" };
-          const Stripe = ({ c, dim }) => (<span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]"
+      {/* #desktop — Ende der Spiel-Spalte, Anfang der Stand-Spalte. */}
+      </div>
+      <div className="hub-stand">
+
+      {/* #desktop — Status-Tafel. Erst ab 1400 px sichtbar (`hidden min-[1400px]:flex`), auf dem Handy also
+          gar nicht im Layout. Sie beantwortet, was man vor dem Start wissen will: welches Deck aktiv ist,
+          wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
+          stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
+      <div className="hidden min-[1400px]:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
+        <div className="font-pixel text-[10px] tracking-[.12em] opacity-45" style={{ textShadow: "none" }}>
+          {t("start.board.title")}
+        </div>
+        <div className="flex items-center gap-4">
+          {deckBack && (
+            <img src={deckBack} alt="" draggable="false"
+              className="w-[96px] h-auto rounded-lg select-none"
+              style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
+          )}
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="text-[21px] font-bold truncate">{deckId ? deckDef(deckId).name : ""}</div>
+            <div className="text-[14px] opacity-55 truncate">{bfId ? t("start.board.field", { name: battlefieldDef(bfId).name }) : ""}</div>
+          </div>
+        </div>
+        {/* Vier Kennzahlen. Die Farben bleiben hier bewusst die BEDEUTUNGS-Farben (Gold = Währung,
+            Violett = Rangliste, Cyan = Lauf) — die Tafel ist der Ort, an dem gelesen und nicht navigiert
+            wird, und die Deckfarbe trägt hier ohnehin schon Rahmen, Schimmer und Kartenbild. */}
+        <div className="grid grid-cols-4 gap-px rounded-xl overflow-hidden" style={{ background: "rgba(60,58,78,.5)", border: "1px solid rgba(60,58,78,.5)" }}>
+          {[
+            { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
+            { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
+            { k: t("start.board.week", { n: week.week }), v: t("start.ranked.bonus", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI, s: t(weekBonusOpen ? "start.board.week.open" : "start.board.week.done") },
+            { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
+              c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
+          ].map((s, i) => (
+            <div key={i} className="flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
+              <span className="text-[13px] opacity-45">{s.k}</span>
+              <span className="text-[30px] font-extrabold tabular-nums leading-none" style={{ color: s.c }}>{s.v}</span>
+              <span className="text-[12px] opacity-40">{s.s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={`${LANE_TAIL} as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 min-[1400px]:grid-cols-1 min-[1400px]:gap-0`}>
+        {/* Kachel-Basis: gleiche Höhe (justify-between), Stripe links absolut, keine Icons.
+            #desktop: dieselben vier Ziele werden zur Liste — flex-row statt flex-col, kein eigener Rahmen
+            je Kachel (Glas + Ring sitzen am Container), dafür ein Trenner (CSS `.as-hub-list`). Die Fläche
+            kommt aus der Klasse `as-hub-tile` statt aus einem inline-style, sonst ließe sie sich oberhalb
+            von 1400 px nicht auf Glas umstellen. */}
+        {(() => { const tileCls = "as-hub-tile relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5"
+            + " min-[1400px]:flex-row min-[1400px]:items-center min-[1400px]:gap-3 min-[1400px]:min-h-0 min-[1400px]:rounded-none min-[1400px]:py-4 min-[1400px]:pl-6 min-[1400px]:pr-5 min-[1400px]:hover:translate-y-0";
+          const Stripe = ({ c, dim }) => (<span aria-hidden="true" className="as-hub-stripe absolute inset-y-0 left-0 w-[3px]"
             style={{ background: c, opacity: dim ? 0.45 : 1 }} />);
-          const head = (t) => (<b className="text-[13.5px] tracking-tight">{t}</b>);
-          const arrow = <span className="text-[13px] opacity-35">›</span>;
+          const head = (t) => (<b className="text-[13.5px] min-[1400px]:text-[20px] tracking-tight">{t}</b>);
+          const arrow = <span className="text-[13px] opacity-35 min-[1400px]:hidden">›</span>;
+          // Nur Desktop: Untertitel je Eintrag + der Pfeil ganz rechts. `hidden` hält beide aus dem Handy-Flex heraus.
+          const sub = (s) => (<span className="hidden min-[1400px]:block text-[13.5px] opacity-50 font-normal">{s}</span>);
+          const arrowDesk = <span className="hidden min-[1400px]:block text-[20px] opacity-35">›</span>;
+          const headBox = "flex items-center justify-between gap-1 min-[1400px]:flex-1 min-[1400px]:flex-col min-[1400px]:items-start min-[1400px]:gap-0.5";
           const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
             style={{ background: bg, color: "#c9c9d2" }}>{t("start.tile.lock", { count: ONBOARDING_LINKS - onbStep })}</span>);
           return (<>
             {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe CY (Grid-Position TL, Logo-Verlauf bleibt). SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
             {onbDone ? (
-              <button onClick={onUpgrades || undefined} className={tileCls} style={tileSty} title={t("start.tile.upgrades.title")}>
+              <button onClick={onUpgrades || undefined} className={tileCls} title={t("start.tile.upgrades.title")}>
                 <Stripe c={CY} />
-                <div className="flex items-center justify-between gap-1">
+                <div className={headBox}>
                   {head(t("start.tile.upgrades"))}
                   {progBuyable > 0
-                    ? <span className="shrink-0 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
+                    ? <span className="shrink-0 text-[9.5px] min-[1400px]:text-[12px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
                     : arrow}
+                  {sub(t("start.tile.upgrades.sub"))}
                 </div>
                 {progLigaFree ? (
-                  <span className="text-[13px] font-extrabold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
+                  <span className="text-[13px] min-[1400px]:text-[18px] font-extrabold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
                 ) : (
                   <span className="flex items-baseline gap-1">
-                    <span className="text-[19px] font-extrabold tabular-nums" style={{ color: SP, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progSp}</span>
-                    <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: SP }}>{t("common.cur.sp")}</span>
-                    <span className="text-[10px] opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
+                    <span className="as-hub-num text-[19px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progSp}</span>
+                    <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.sp")}</span>
+                    <span className="text-[10px] min-[1400px]:hidden opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
                   </span>
                 )}
+                {arrowDesk}
               </button>
             ) : (
-              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title={t("start.tile.upgrades.locked")}>
+              <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.upgrades.locked")}>
                 <Stripe c={CY} dim />
                 {head(t("start.tile.upgrades"))}
                 {lockBadge("#20202a")}
@@ -375,16 +437,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
             {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe BLUE (Grid-Position TR, Logo-Verlauf bleibt). DP-Guthaben in Gold. Onboarding-Gate. */}
             {onCustomize && (onbDone ? (
-              <button onClick={onCustomize} className={tileCls} style={tileSty} title={t("start.tile.workshop")}>
+              <button onClick={onCustomize} className={tileCls} title={t("start.tile.workshop")}>
                 <Stripe c={BLUE} />
-                <div className="flex items-center justify-between gap-1">{head(t("start.tile.workshop"))}{arrow}</div>
+                <div className={headBox}>{head(t("start.tile.workshop"))}{arrow}{sub(t("start.tile.workshop.sub"))}</div>
                 <span className="flex items-baseline gap-1">
-                  <span className="text-[19px] font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.45)" }}>{progDp}</span>
-                  <span className="text-[10px] font-bold tracking-wider opacity-75" style={{ color: AM }}>{t("common.cur.dp")}</span>
+                  <span className="as-hub-num text-[19px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progDp}</span>
+                  <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.dp")}</span>
                 </span>
+                {arrowDesk}
               </button>
             ) : (
-              <div className={tileCls + " cursor-default"} style={{ ...tileSty, opacity: 0.6 }} title={t("start.tile.workshop.locked")}>
+              <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.workshop.locked")}>
                 <Stripe c={BLUE} dim />
                 {head(t("start.tile.workshop"))}
                 {lockBadge("#20202a")}
@@ -393,30 +456,39 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
             {/* 3 · Bestenliste — Stripe VI (Violett = Wettbewerb/Rang, passt semantisch). */}
             {onLeaderboard && (
-              <button onClick={onLeaderboard} className={tileCls} style={tileSty} title={t("start.tile.leaderboard")}>
+              <button onClick={onLeaderboard} className={tileCls} title={t("start.tile.leaderboard")}>
                 <Stripe c={VI} />
-                <div className="flex items-center justify-between gap-1">{head(t("start.tile.leaderboard"))}{arrow}</div>
-                <span className="text-[11px] opacity-50">{t("start.tile.leaderboard.sub")}</span>
+                <div className={headBox}>{head(t("start.tile.leaderboard"))}{arrow}{sub(t("start.tile.leaderboard.sub"))}</div>
+                <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.leaderboard.sub")}</span>
+                {arrowDesk}
               </button>
             )}
 
             {/* 4 · Statistiken — Stripe AM (Logo-Ende). */}
             {onStats && (
-              <button onClick={onStats} className={tileCls} style={tileSty} title={t("start.tile.stats")}>
+              <button onClick={onStats} className={tileCls} title={t("start.tile.stats")}>
                 <Stripe c={AM} />
-                <div className="flex items-center justify-between gap-1">{head(t("start.tile.stats"))}{arrow}</div>
-                <span className="text-[11px] opacity-50">{t("start.tile.stats.sub")}</span>
+                <div className={headBox}>{head(t("start.tile.stats"))}{arrow}{sub(t("start.tile.stats.sub"))}</div>
+                <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.stats.sub")}</span>
+                {arrowDesk}
               </button>
             )}
           </>); })()}
       </div>
+      {/* #desktop — Ende der Stand-Spalte und damit des Spaltenpaars. */}
+      </div>
+      </div>
+
+      {/* #desktop — Chips und Fußlinks laufen ab 1400 px als EIN Band über die volle Breite zusammen
+          (Chips links, Nachschlage-Links rechts). Darunter bleiben es zwei gestapelte Blöcke wie bisher. */}
+      <div className="hub-foot">
 
       {/* Optionen + Tutorial — zwei ruhige Chips unter dem Grid (kein eigener Grid-Platz nötig). Das Tutorial
           steht bewusst hier und nicht als fünfte Kachel: es ist jederzeit wiederholbar, aber kein Dauerziel.
           Feedback bekommt eine EIGENE Zeile darunter: die beiden oberen Chips führen ins Spiel, der
           Melder führt heraus. Nebeneinander lasen sich alle drei wie eine Reihe gleichrangiger Knöpfe. */}
-      <div className="grid gap-2 justify-items-center">
-        <div className="flex items-center gap-2">
+      <div className="grid gap-2 justify-items-center min-[1400px]:grid-flow-col min-[1400px]:justify-items-start min-[1400px]:gap-3">
+        <div className="flex items-center gap-2 min-[1400px]:gap-3">
           {onOptions && (
             <button onClick={onOptions} aria-label={t("start.options")} className={chipCls} style={chipSty}>{t("start.options")}</button>
           )}
@@ -448,9 +520,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           bewusst im Fuß und nicht als Chip neben Feedback/Discord: die dort sind Angebote, das hier ist
           Nachschlagewerk. Die anderen beiden Einstiege sitzen dort, wo entschieden wird — Telemetrie-Zeile
           der Optionen und Namens-Dialog beim Erststart.) */}
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+      <div className="flex flex-wrap items-center justify-center min-[1400px]:justify-end gap-x-3 gap-y-1 min-[1400px]:gap-x-4">
         {onEditName && (
-          <button onClick={onEditName} className="text-xs opacity-60 hover:opacity-100 transition-opacity">
+          <button onClick={onEditName} className="text-xs min-[1400px]:text-[14px] opacity-60 hover:opacity-100 transition-opacity">
             {username
               ? <>{t("start.name.signedIn")} <b style={{ color: CY }}>{username}</b> · {t("start.name.change")}</>
               : <>{t("start.name.set")}</>}
@@ -458,10 +530,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
         <PwaInstall />
         {onPrivacy && (
-          <button onClick={onPrivacy} className="text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2">
+          <button onClick={onPrivacy} className="text-xs min-[1400px]:text-[14px] opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2">
             {t("privacy.link")}
           </button>
         )}
+      </div>
+      {/* #desktop — Ende des Fuß-Bandes. */}
       </div>
     </div>
   );
