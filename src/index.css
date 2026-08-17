@@ -878,15 +878,22 @@ button { font-family: inherit; }
    Die Kante ist dieselbe Sprache wie die Streifen der Verwaltungsliste: EIN Farbsignal an der linken
    Seite, sonst Ruhe. Sie verträgt darum auch 40 sehr unterschiedliche Decks.
 
-   Gilt auf ALLEN Breiten, nicht nur auf Desktop — die Maße bleiben je Breite unverändert, nur die Optik
-   ist überall dieselbe. Ohne gesetzte Deckfarbe greifen die bisherigen Violett-/Cyan-Rückfälle.
+   Die FORM gilt auf allen Breiten. Die FARBE nicht: bis 1400 px trägt jeder Knopf seinen Ton aus dem
+   Logo-Dreiklang (Cyan = Start, Violett = Rangliste/Tutorial), erst darüber zieht er ihn aus dem
+   aktiven Deck — dieselbe Grenze wie bei der Wortmarke und ihrem Glow (#logo). Die Deck-Fassung steht
+   als eigene Regel in der 1400-px-Sektion und überschreibt genau die vier farbigen Deklarationen.
+
+   Ein Umweg über lokale Variablen (`--btn-c` hier setzen, dort umbiegen) wäre kürzer, funktioniert
+   hier aber nicht: Vite verschachtelt den color-mix-Fallback als @supports IN die Regel, und in dem
+   Aufbau blieb die Kante am Fallback hängen, obwohl die Variable am Element schon die Deckfarbe trug.
+   Zwei Regelsätze sind länger, aber sie tun nachweislich das, was dasteht.
    Als Klassen statt inline-style, weil inline jedes Stylesheet schlägt. */
 .as-cta-primary {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, #26c6e6 30%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .18);
-  border-left: 4px solid var(--deck-a1, #26c6e6);
-  color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
-  box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
+  border-left: 4px solid #26c6e6;
+  color: color-mix(in srgb, #7ceafb 45%, #ffffff);
+  box-shadow: 0 0 16px -8px #26c6e6;
 }
 /* Läuft ein Lauf, tritt „Normaler Lauf" hinter „Fortsetzen" zurück: gleiche Form, neutrale Kante. */
 .as-cta-ghost {
@@ -898,16 +905,16 @@ button { font-family: inherit; }
 /* Rangliste und Tutorial tragen dieselbe Kante, aber im zweiten Deckton und leiser — sie sind Angebote,
    kein Ziel. Damit bleibt die Rangordnung erhalten, ohne dass ein zweiter Knopf um Aufmerksamkeit ruft. */
 .as-ranked-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, #9b82f0 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
-  color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, #9b82f0 80%, transparent);
+  color: color-mix(in srgb, #9b82f0 55%, #ffffff);
 }
 .as-tut-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, #9b82f0 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
-  color: color-mix(in srgb, var(--deck-a2, #d9ccff) 50%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, #9b82f0 80%, transparent);
+  color: color-mix(in srgb, #d9ccff 50%, #ffffff);
 }
 
 /* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
@@ -985,6 +992,27 @@ button { font-family: inherit; }
   .as-hub-list .as-hub-stripe { background: var(--row-tone) !important; }
   .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
+
+  /* --- Knöpfe in Deckfarbe --------------------------------------------------
+     Bis 1399 px tragen die Knöpfe den Logo-Dreiklang (Regeln oben), ab hier den Ton des aktiven Decks.
+     Überschrieben wird nur, was Farbe trägt — Form, Rahmen und Maße bleiben die der Grundregel.
+     Ohne gesetztes Deck greifen dieselben Rückfälle wie oben, dann sieht Desktop aus wie Handy. */
+  .as-cta-primary {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, #0e0e14) 0%, #0e0e14 30%);
+    border-left-color: var(--deck-a1, #26c6e6);
+    color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
+    box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
+  }
+  .as-ranked-btn {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+    border-left-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #9b82f0) 55%, #ffffff);
+  }
+  .as-tut-btn {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #9b82f0) 20%, #0e0e14) 0%, #0e0e14 30%);
+    border-left-color: color-mix(in srgb, var(--deck-a2, #9b82f0) 80%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #d9ccff) 50%, #ffffff);
+  }
 
   /* --- Wortmarke + ihr Ambient-Glow in Deckfarbe (#logo) --------------------
      Erst hier, nicht in der Grundregel: mobil bleibt der Logo-Dreiklang stehen (s. `.as-wordmark` oben).
