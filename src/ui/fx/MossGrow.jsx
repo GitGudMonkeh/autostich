@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { dprCap } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 
 /* Archetyp-Karteneffekt „Pflanze" als Neon-Moos — realistisches Moos überwächst die eigene Karte mit dem Wachstum.
    Von OBEN & den beiden SEITEN wächst es nach innen/unten zu (Akkretion: bestehendes Moos bleibt, neues kommt dazu).
@@ -89,7 +90,7 @@ function getField() {
 // ── Moos-Bitmap je Reifestufe: MODUL-WEIT gecacht (renderMossBitmap ≤ einmal pro Stufe pro Session) ──
 const _bmpCache = new Map();  // key `${RDPR}:${covKey}:${nA}:${nB}` → { moss, glow }
 function getMossBitmap(cov, nA, nB) {
-  const RDPR = Math.min(2, window.devicePixelRatio || 1);
+  const RDPR = dprCap();
   const key = RDPR + ":" + Math.round(cov * 1000) + ":" + nA + ":" + nB;   // Farbmodus (Standard/Deckfarbe) im Key
   let e = _bmpCache.get(key);
   if (e) return e;
@@ -243,7 +244,7 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
     function computeGeo() {
       const cw = host.clientWidth, ch = host.clientHeight;
       if (cw < 4 || ch < 4) return null;
-      const DPR = Math.min(2, window.devicePixelRatio || 1);
+      const DPR = dprCap();
       const sx = cw / REF_W, sy = ch / REF_H, mLeft = M * sx, mTop = M * sy;
       const cwF = cw + 2 * mLeft, chF = ch + 2 * mTop;           // Canvas mit Überwuchs-Rand (ragt über die Karte hinaus)
       canvas.style.display = "block";

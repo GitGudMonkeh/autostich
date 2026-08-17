@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 
 /* Sieg-Finisher „Schwarzes Loch" (#320 Rework) — serien-getriebenes, persistentes Panel-Loch mit Akkretionsscheibe
    (außen deck → innen deck2 um einen soliden schwarzen Kern). Architektur wie der alte BlackholeFieldFx: eine
@@ -182,10 +183,16 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
     };
 
     let raf = 0, last = 0;
+    const MIN_MS = frameMinMs(); let lastDraw = -1e9;
     const step = (now) => {
       // #perf-overlay-2: Brett verdeckt → nichts simulieren und nichts zeichnen. Der rAF-Takt läuft weiter (leere
       //   Callback ≈ gratis) und `last` wird zurückgesetzt, damit beim Zurückkehren kein Riesen-dt die Sim durchreißt.
       if (ctrlRef.current.boardVisible === false) { last = 0; raf = requestAnimationFrame(step); return; }
+      // #perf-mobile: ~30 Zeichnungen/s. Anders als bei den Feld-Effekten läuft hier eine SIMULATION mit — die darf
+      //   nicht ausgesetzt werden, sonst zuckt das Loch. Deshalb wird der Frame komplett übersprungen (dt sammelt
+      //   sich im nächsten an, `last` bleibt stehen) statt nur das Zeichnen zu überspringen.
+      if (now - lastDraw < MIN_MS) { raf = requestAnimationFrame(step); return; }
+      lastDraw = now;
       if (!last) last = now;
       const dt = Math.min(50, now - last); last = now;
       const ctrl = ctrlRef.current;

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 
 /* Archetyp-Karteneffekt „Eis" als Neon-Kristall-Frost — Vereisung der eigenen Karte mit der Gletscher-Masse.
    Von UNTEN & den beiden SEITEN wächst kantiger Neon-Frost nach innen/oben zu (Akkretion: bestehende Kristalle bleiben,
@@ -85,7 +86,7 @@ function getField() {
 // ── Frost-Bitmap je Front-Stufe: MODUL-WEIT gecacht (renderFrostBitmap ≤ einmal pro Stufe/Session) ──
 const _bmpCache = new Map();  // key `${RDPR}:${frontKey}:${nA}:${nB}` → { frost, glow }
 function getFrostBitmap(front, nA, nB) {
-  const RDPR = Math.min(2, window.devicePixelRatio || 1);
+  const RDPR = dprCap();
   const key = RDPR + ":" + Math.round(front * 1000) + ":" + nA + ":" + nB;   // Farbmodus (Standard/Deckfarbe) im Key
   let e = _bmpCache.get(key);
   if (e) return e;
@@ -255,7 +256,7 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
     function size() {
       const w = host.clientWidth, h = host.clientHeight;
       if (w < 4 || h < 4) return false;
-      DPR = Math.min(2, window.devicePixelRatio || 1);
+      DPR = dprCap();
       if (w !== cw || h !== ch) { cw = w; ch = h; canvas.width = Math.round(cw * DPR); canvas.height = Math.round(ch * DPR); }
       return true;
     }
@@ -301,13 +302,18 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       ctx.globalAlpha = 1; ctx.restore();
     }
 
+    const MIN_MS = frameMinMs(); let lastDraw = -1e9;
     function frame(now) {
       if (disposed) return;
       clockT += Math.min(50, now - last); last = now;
+      // #perf-mobile: auf dem Handy nur ~30 Zeichnungen/s. clockT läuft in Echtzeit weiter → Funkeln/Puls bleiben
+      //   tempo-korrekt. Der Ausstieg unten zeichnet bewusst noch einmal (Standbild), darum dort lastDraw zurücksetzen.
+      if (now - lastDraw < MIN_MS) { raf = requestAnimationFrame(frame); return; }
+      lastDraw = now;
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
       // #perf-overlay-2: `active` false = Brett von einem Vollbild-Overlay verdeckt (Architekt/Perk/Skill/Formation).
       //   Wie „reduced": einmal statisch zeichnen, rAF anhalten. Der Architekt allein sind 13 von 50 Runden.
-      if (mass <= 0 || stateRef.current.reduced || stateRef.current.active === false || document.visibilityState === "hidden") { compose(); raf = 0; return; } // statisch/aus → rAF anhalten
+      if (mass <= 0 || stateRef.current.reduced || stateRef.current.active === false || document.visibilityState === "hidden") { lastDraw = -1e9; compose(); raf = 0; return; } // statisch/aus → rAF anhalten
       compose();
       raf = requestAnimationFrame(frame);
     }

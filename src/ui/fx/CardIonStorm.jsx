@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 
 /* Archetyp-Karteneffekt „Blitz" · Ionensturm-Rahmen als KIND der Kartenvorderseite (Canvas-2D).
    Um eine VOLL ionisierte Karte (ionStacks >= ION_MAX_STACKS) zucken Blitze: ein bewegter, gezackter Blitzrahmen um die
@@ -91,6 +92,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
     const ctx = canvas.getContext("2d");
     const MGN = Math.ceil(TUNE.JIT_AMP + TUNE.W_GLOW * 0.5 + 3);   // Rand für nach AUSSEN blutende Zacken/Glow
     let cw = 0, ch = 0, DPR = 1, clockT = 0, last = 0, raf = 0, disposed = false;
+    const MIN_MS = frameMinMs(); let lastDraw = -1e9;
     let sc = 1;   // #showcase-fix: Zacken-/Glow-Größen kartengrößen-relativ (In-Game-Karte ≈ 144px → Skala 1). Auf kleinen
     //             Karten (Spezial-Showcase) sind die absoluten JIT/W-Werte sonst proportional zu groß → Bewegung wirkt zu
     //             intensiv; jetzt proportional wie in-game.
@@ -101,7 +103,7 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
     function size() {
       const w = host.clientWidth, h = host.clientHeight;
       if (w < 4 || h < 4) return false;
-      DPR = Math.min(2, window.devicePixelRatio || 1);
+      DPR = dprCap();
       if (w !== cw || h !== ch) {
         cw = w; ch = h;
         canvas.style.left = (-MGN) + "px"; canvas.style.top = (-MGN) + "px";
@@ -221,9 +223,11 @@ export function CardIonStorm({ active = false, color = "#5ec8f0", reduced = fals
     function frame(now) {
       if (disposed) return;
       clockT += Math.min(50, now - last); last = now;
-      draw();
+      // #perf-mobile: auf dem Handy nur ~30 Zeichnungen/s. Die Uhr (clockT) läuft in ECHTZEIT weiter → das Blitz-
+      //   Flackern bleibt tempo-korrekt, es wird nur seltener gemalt. Schwelle inkl. Judder-Toleranz, s. mobileTier.js.
+      if (now - lastDraw >= MIN_MS) { lastDraw = now; draw(); }
       const st = stateRef.current;
-      if (!st.active || st.reduced || document.visibilityState === "hidden") { raf = 0; return; }
+      if (!st.active || st.reduced || document.visibilityState === "hidden") { lastDraw = -1e9; draw(); raf = 0; return; }
       raf = requestAnimationFrame(frame);
     }
     function ensureRun() {

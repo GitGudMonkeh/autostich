@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 
 /* Karten-Animation „Kantenglühen" (Edge-Glow, #318) als KIND der Kartenvorderseite — additiv gestapelte Rounded-Rect-
    Strokes um die Kartenkante (weicher Halo ohne Blur) + weiß-heiße Kern-Linie; der Deck-Verlauf färbt den Rand diagonal
@@ -38,11 +39,12 @@ export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false
     host.appendChild(canvas);
     const ctx = canvas.getContext("2d");
     let cw = 0, ch = 0, DPR = 1, mgn = 8, clockT = 0, last = 0, raf = 0, disposed = false;
+    const MIN_MS = frameMinMs(); let lastDraw = -1e9;
 
     function size() {
       const w = host.clientWidth, h = host.clientHeight;
       if (w < 4 || h < 4) return false;
-      DPR = Math.min(2, window.devicePixelRatio || 1);
+      DPR = dprCap();
       const sc = h / HREF;
       const m = Math.max(4, Math.ceil(EDGE_TUNE.halo.breite * sc));   // Rand für den nach AUSSEN blutenden Halo
       if (w !== cw || h !== ch || m !== mgn) {
@@ -87,9 +89,11 @@ export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false
     function frame(now) {
       if (disposed) return;
       clockT += Math.min(50, now - last); last = now;
-      draw();
+      // #perf-mobile: auf dem Handy nur ~30 Zeichnungen/s. Die Uhr (clockT) läuft in ECHTZEIT weiter → die Animation
+      //   bleibt tempo-korrekt, es wird nur seltener gemalt. Schwelle inkl. Judder-Toleranz, s. mobileTier.js.
+      if (now - lastDraw >= MIN_MS) { lastDraw = now; draw(); }
       const st = stateRef.current;
-      if (st.reduced || !st.active || document.visibilityState === "hidden") { raf = 0; return; } // Standbild/verdeckt → rAF anhalten
+      if (st.reduced || !st.active || document.visibilityState === "hidden") { lastDraw = -1e9; draw(); raf = 0; return; } // Standbild/verdeckt → rAF anhalten
       raf = requestAnimationFrame(frame);
     }
     function ensureRun() {
