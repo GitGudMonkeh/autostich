@@ -68,7 +68,7 @@ const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
 import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung — eigene WebGL-Canvas (wie Aurora)
-import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor A/B (`?fx2=1`): alte Canvas ODER Kompositor-Ebene
+import FieldLayer, { FIELD_COMPOSITOR } from "./fx/FieldLayer.jsx"; // #kompositor A/B (`?fx2=1`): alte Canvas ODER Kompositor-Ebene
 import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
@@ -1379,6 +1379,33 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // --- Panel-Rahmen + äußerer Bloom ---
   // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
   // das Battlefield bleibt neutral, nur die Sieg-/Krit-Aura des aktuellen Stich-Ergebnisses liegt noch am Panel.
+  /* #kompositor: die WebGL-Feld-Ebenen als DATEN statt als drei fast gleiche JSX-Blöcke — nur so lassen sie sich zu
+     EINER Bühne bündeln. `alt` ist jeweils die bisherige Einzel-Canvas; sie rendert ohne `?fx2=1` und als Rückfall.
+     Aurora und Brandung schließen einander aus (beide sind `bgFx`), Leuchten läuft unabhängig dazu. */
+  const glowProps = { srcDesktop: battlefield?.desktop, srcMobile: battlefield?.mobile,
+    color: deckA1 || "#7fdcff", on: true, animate: !reduced };
+  const glowAlt = (
+    <DeckGlowFieldGL srcDesktop={battlefield?.desktop} srcMobile={battlefield?.mobile}
+      deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />
+  );
+  const bgLayer = auroraGL
+    ? {
+      key: "aurora",
+      props: { color: deckA1, color2: deckA2, deckColored: auroraDeck, animate: !reduced },
+      alt: <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} active={boardVisible} />,
+    }
+    : neonsurfGL
+      ? {
+        key: "neonsurf",
+        props: { color: deckA1, color2: deckA2 || deckA1, deckColored: neonsurfDeck, animate: !reduced, surge: surfSurge },
+        alt: <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
+          animate={!reduced} surge={surfSurge} active={boardVisible} />,
+      }
+      : null;
+  /* Zusammenlegen NUR, wenn beide laufen. Sonst bleibt Leuchten in seinem z-0-Container: dort liegt es unter dem
+     z-1-Ambiente, und das ist ohne Aurora/Brandung nicht unterdrückt — eine gemeinsame Bühne würde es darüberheben. */
+  const glowStacked = FIELD_COMPOSITOR && deckGlowOn && !!bgLayer;
+
   const panelBorder = `1px solid ${DECK_BORDER}`; // #365/#356: Nicht-CRT-Fallback deck-getönt (unter CRT übernimmt die .as-panel-deck-Regel)
   const outerParts = [];
   // #192: der Screen-Shake eines großen NORMALEN Siegs bekommt eine dezente grün/gold Panel-Aura (Sieg-Identität,
@@ -1409,22 +1436,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (Komet/Sternenfeld),
           sobald der Effekt portiert ist (PIXI_FIELD). Der Ticker pausiert im Hintergrund-Tab. #346: läuft auch in
           Produktion — Pixi lädt aber lazy und NUR, wenn der Spieler den Effekt tatsächlich aktiviert hat. */}
-      {/* Hintergrund-Effekt (reiner BG) — Aurora als eigene WebGL-Canvas, z-2 HINTER dem Finisher. */}
-      {auroraGL && (
+      {/* Hintergrund-Effekt (reiner BG) — z-2 HINTER dem Finisher. Läuft Leuchten mit, hängt es als UNTERSTE Ebene
+          in DERSELBEN Bühne (`glowStacked`) statt in einer zweiten Canvas: das ist der Punkt des Kompositors.
+          Die z-Ordnung bleibt dabei erhalten — Leuchten lag als z-0-Kind unter dem Hintergrund, und genau dazwischen
+          liegt nichts, weil das z-1-Ambiente bei aktivem Aurora/Brandung ohnehin unterdrückt ist (suppressField). */}
+      {bgLayer && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <FieldLayer layer="aurora" color={deckA1} color2={deckA2} deckColored={auroraDeck}
-            animate={!reduced} active={boardVisible}
-            fallback={<AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck}
-              animate={!reduced} active={boardVisible} />} />
-        </div>
-      )}
-      {/* #345 Neon-Brandung — Plasma-See am unteren Rand, z-2 HINTER dem Finisher. Groß-Ansagen treiben den Impact-Puls. */}
-      {neonsurfGL && (
-        <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <FieldLayer layer="neonsurf" color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
-            animate={!reduced} surge={surfSurge} active={boardVisible}
-            fallback={<NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
-              animate={!reduced} surge={surfSurge} active={boardVisible} />} />
+          <FieldLayer layer={bgLayer.key} stack={glowStacked ? [{ key: "deckglow", props: glowProps }, bgLayer] : null}
+            {...(glowStacked ? {} : bgLayer.props)} active={boardVisible}
+            fallback={<>{glowStacked && glowAlt}{bgLayer.alt}</>} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
@@ -1606,12 +1626,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
           {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
-          {deckGlowOn && (
-            <FieldLayer layer="deckglow" srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-              color={deckA1 || "#7fdcff"}
-              on animate={!reduced} active={boardVisible}
-              fallback={<DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-                deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />} />
+          {deckGlowOn && !glowStacked && (
+            <FieldLayer layer="deckglow" {...glowProps} active={boardVisible} fallback={glowAlt} />
           )}
         </div>
       )}

@@ -184,11 +184,15 @@ Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — 
   Aurora schreibt `gl_FragCoord.xy / uRes.xy` MIT Leerzeichen, die Brandung ohne → Ersetzung griff nicht, Bild kam
   trotzdem, nur y-gespiegelt). Die Ebenen benutzen die Shader-Quelle der Originalkomponente (`NEONSURF_FRAG`,
   `AURORA_FRAG_SRC`) — **nie abtippen**, sonst driften alter und neuer Pfad auseinander.
-- **Noch NICHT gemessen: der eigentliche Gewinn** („ein Composite statt vier bis fünf"). Jede Ebene hat weiterhin
-  ihre EIGENE Bühne — der Kompositor ist bisher nur der gemeinsame Pfad, nicht die gemeinsame Fläche. Aurora und
-  Brandung schließen einander als Hintergrund aus; erst Leuchten läuft GLEICHZEITIG mit einem Hintergrund. Der
-  nächste Schritt ist deshalb: `FieldCompositor` nimmt MEHRERE Ebenen in eine Bühne (Reihenfolge Leuchten →
-  Hintergrund, das ist die heutige z-Ordnung z-0 unter z-2) — danach ist der Gewinn belegbar.
+- **Mehrere Ebenen je Bühne: `stack={[{key,props},…]}`** (unten → oben). Das Battlefield legt Leuchten + Hintergrund
+  genau dann zusammen, wenn BEIDE laufen (`glowStacked`) — nur dann ist es z-sicher, weil das z-1-Ambiente bei
+  aktivem Aurora/Brandung ohnehin unterdrückt ist (`suppressField`). Läuft Leuchten allein, bleibt es in seinem
+  z-0-Container, sonst rutschte es über das Ambiente. Nachgemessen: Bild identisch (0,31 von 255, bei laufender
+  Zeit), **Canvas 2 → 1**.
+- **Der Gewinn selbst ist weiter NICHT belegt.** Gebündelt wird nicht die Füllarbeit — dieselben Pixel, dieselben
+  Shader —, sondern der zweite WebGL-Kontext und der zweite Browser-Composite. Genau die sind im Messstand
+  (Software-GL, headless) unsichtbar: gemessen wurden 28 gegen 24 ms JS-Arbeit auf 6 s, was nichts beweist. Der
+  Beleg gehört ans Gerät: `?fx2=1` gegen ohne, Leuchten UND Aurora/Brandung an, FPS/p95/jank aus dem Perf-HUD.
 - **Textur-Ebenen: Y-Dreher gehört ins Laden.** Die portierte UV zählt von unten (nachgemessen), die raw-Fassungen
   benutzen dafür `UNPACK_FLIP_Y_WEBGL`, Pixi lädt ungedreht. Prüfen an einer Wegwerf-Ebene, die NUR die Textur
   ausgibt, neben demselben Bild als DOM-`<img>` — nicht am fertigen Effekt.

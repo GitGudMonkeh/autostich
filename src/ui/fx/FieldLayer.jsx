@@ -21,14 +21,17 @@ const FieldCompositor = lazy(() => import("./FieldCompositor.jsx"));
 export const FIELD_COMPOSITOR = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
   && (() => { try { return new URLSearchParams(window.location.search).get("fx2") === "1"; } catch { return false; } })();
 
-/* `fallback` ist die bisherige Fassung dieser Ebene — sie rendert ohne `?fx2=1` UND als Rückfall im Fehlerfall.
-   Alle weiteren Props gehen unverändert an den Kompositor. */
-export default function FieldLayer({ layer, fallback, ...props }) {
+/* `fallback` ist die bisherige Fassung dieser Ebene(n) — sie rendert ohne `?fx2=1` UND als Rückfall im Fehlerfall.
+   Entweder EINE Ebene (`layer` + flache Props) oder mehrere in EINER Bühne (`stack={[{ key, props }]}`, von unten
+   nach oben). Der Stapel ist der eigentliche Punkt des Umbaus: solange jede Ebene ihre eigene Bühne hat, ist der
+   Kompositor nur ein gemeinsamer Pfad und noch keine gemeinsame Fläche. */
+export default function FieldLayer({ layer, stack = null, fallback, ...props }) {
   if (!FIELD_COMPOSITOR) return fallback;
+  const name = stack ? stack.map((e) => e.key).join("+") : layer;
   return (
-    <FxBoundary name={`Feld-Kompositor (${layer})`} fallback={fallback}>
+    <FxBoundary name={`Feld-Kompositor (${name})`} fallback={fallback}>
       <Suspense fallback={null}>
-        <FieldCompositor layer={layer} {...props} />
+        <FieldCompositor layer={layer} stack={stack} {...props} />
       </Suspense>
     </FxBoundary>
   );

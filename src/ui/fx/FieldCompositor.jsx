@@ -25,9 +25,14 @@ import { DECKGLOW_FRAG_SRC } from "./DeckGlowFieldGL.jsx";
    Was das NICHT ändert: den Shader selbst. Derselbe Shader durch Pixi ist nicht schneller — im Spike liefen der
    raw-WebGL- und der Pixi-Pfad beide bei 60 Zeichnungen/s. Der Gewinn kommt aus Bündelung und Auflösung.
 
-   Stand: DREI Ebenen (Neon-Brandung, Aurora, Leuchten). Jede kam einzeln rein, mit eigenem Gate. Leuchten ist die
-   erste mit einer Textur und die erste, die GLEICHZEITIG mit einem Hintergrund läuft — Brandung und Aurora sind
-   einander ausschließende Hintergründe, es lief also bis dahin trotz „Kompositor" immer nur EINE Ebene.
+   Stand: DREI Ebenen (Neon-Brandung, Aurora, Leuchten), und seit `stack` liegen sie bei Bedarf in DERSELBEN Bühne.
+   Bis dahin war der Kompositor nur der gemeinsame PFAD, nicht die gemeinsame FLÄCHE: jede Ebene hatte ihre eigene
+   Bühne, und weil Brandung und Aurora einander ausschließen, lief ohnehin nie mehr als eine. Erst Leuchten läuft
+   gleichzeitig mit einem Hintergrund — deshalb ist es die Ebene, die das Bündeln überhaupt erst möglich macht.
+
+   Was das Bündeln NICHT ändert: die Füllarbeit. Es werden dieselben Pixel von denselben Shadern beschrieben. Weg
+   fallen der zweite WebGL-Kontext und der zweite Composite des Browsers — beides zahlt der Rahmen, nicht der
+   Effekt, und beides ist in einem Software-GL-Messstand NICHT sichtbar. Der Beleg gehört ans Gerät.
 
    Wie eine portierte Ebene abgenommen wird: Bild gegen Bild, bei EINGEFRORENER Zeit (`animate={false}` friert beide
    Pfade auf dieselbe Sekunde), und der Unterschied wird GERECHNET statt begutachtet. Für Leuchten ist die mittlere
@@ -153,6 +158,16 @@ export function layerFragment(key) {
   return LAYERS[key].frag();
 }
 
+/* Prop-Bag einer Ebene in die Form bringen, die `uniforms`/`tick` erwarten. Die Farbumrechnung passiert hier und
+   nicht in den Ebenen-Definitionen, damit jede Ebene dieselben Rückfallfarben sieht. */
+function normProps(p = {}) {
+  return {
+    ...p,
+    d1: hexToRgb(p.color, [0.0431, 0.2275, 0.2667]),
+    d2: hexToRgb(p.color2 || p.color, [0.2, 1.0, 0.8]),
+  };
+}
+
 function hexToRgb(h, fb) {
   if (typeof h !== "string") return fb;
   let s = h.replace("#", "");
@@ -212,29 +227,29 @@ async function loadFieldTexture(url, Texture, ImageSource) {
   return { texture: new Texture({ source: new ImageSource({ resource: res }) }), aspect };
 }
 
-export default function FieldCompositor({ layer = "neonsurf", color = null, color2 = null,
-  deckColored = false, animate = true, active = true, surge = null, bandScale = 1, bandShift = 0,
-  srcDesktop = null, srcMobile = null, on = true }) {
+export default function FieldCompositor({ layer = "neonsurf", stack = null, active = true, ...rest }) {
   const hostRef = useRef(null);
+  /* Ebenen dieser Bühne, von UNTEN nach OBEN. `stack` ist die eigentliche Form (`[{ key, props }]`); die
+     Einzel-Ebenen-Schreibweise (`layer` + flache Props) bleibt als Abkürzung erhalten, weil die meisten Aufrufer
+     genau eine Ebene mounten. */
+  const entries = stack && stack.length ? stack : [{ key: layer, props: rest }];
+  const stackKey = entries.map((e) => e.key).join(",");
+
   // Live-Props für den Ticker spiegeln — die Bühne wird nur EINMAL gebaut (Muster wie NeonSurfFieldGL/PixiStage:
   // ein Prop-Wechsel darf den WebGL-Kontext nicht abreißen, sonst blitzt der Effekt bei jedem Farbwechsel weg).
-  const pRef = useRef({});
-  pRef.current = {
-    d1: hexToRgb(color, [0.0431, 0.2275, 0.2667]),
-    d2: hexToRgb(color2 || color, [0.2, 1.0, 0.8]),
-    deckColored, animate, surge, bandScale, bandShift, srcDesktop, srcMobile, on,
-  };
+  const pRef = useRef([]);
+  pRef.current = entries.map((e) => normProps(e.props));
   const activeRef = useRef(active);
   activeRef.current = active;
   const applyRunRef = useRef(null);
 
   useEffect(() => {
     const host = hostRef.current;
-    const def = LAYERS[layer];
-    if (!host || !def) return undefined;
+    const keys = stackKey.split(",");
+    if (!host || keys.some((k) => !LAYERS[k])) return undefined;
 
-    let disposed = false, app = null, rt = null, mesh = null, sprite = null, shader = null;
-    let texUrl = null, texObj = null;   // Bildquelle der Ebene (nur Ebenen mit `sampler2D`, s. syncTexture)
+    let disposed = false, app = null;
+    let layers = [];              // je Ebene ein Satz Pixi-Objekte, s. Aufbau unten
     const canvas = document.createElement("canvas");
 
     const applyRun = () => {
@@ -260,99 +275,112 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
         // Pixis maxFPS macht denselben Fehler nicht, weil es intern akkumuliert.
         app.ticker.maxFPS = coarse ? 30 : 0;
 
-        const scale = scaleOverride() ?? (coarse ? def.scaleCoarse : def.scaleDesktop);
-        /* Bei Faktor 1 KEINE Render-Textur, sondern direkt auf die Bühne.
-           Der Umweg ist bei voller Auflösung nicht gratis: `Math.round` auf eine krumme CSS-Breite lässt Textur- und
-           Bildschirmmaß um Bruchteile auseinanderlaufen, und das Hochskalieren des Sprites resampelt dann die ganze
-           Fläche. Gemessen (Handy-Viewport, gegen die Canvas-Fassung): mit Umweg blieb bei Faktor 1 eine mittlere
-           Abweichung von 1,81 von 255 stehen — sichtbar genau da, wo dieser Effekt lebt, nämlich auf dünnen hellen
-           Konturen. Ohne Umweg ist Faktor 1 wieder exakt der alte Pfad. */
-        const direct = scale >= 0.999;
-        // Die Render-Textur ist die eigentliche Ersparnis: sie ist um `scale` KLEINER als die Bühne und wird
-        // beim Zusammensetzen hochskaliert. Kosten ∝ Fläche → quadratisch in scale.
-        const rtSize = () => (direct
-          ? { w: Math.max(2, app.screen.width), h: Math.max(2, app.screen.height) }
-          : {
-            w: Math.max(2, Math.round(app.screen.width * scale)),
-            h: Math.max(2, Math.round(app.screen.height * scale)),
+        /* Ebenen in Array-Reihenfolge auf die Bühne — Index 0 liegt UNTEN. Das ist genau die z-Ordnung, die die
+           Aufrufer vorher über getrennte DOM-Ebenen hergestellt haben (Leuchten unter dem Hintergrund). */
+        layers = keys.map((key, i) => {
+          const def = LAYERS[key];
+          const scale = scaleOverride() ?? (coarse ? def.scaleCoarse : def.scaleDesktop);
+          /* Bei Faktor 1 KEINE Render-Textur, sondern direkt auf die Bühne.
+             Der Umweg ist bei voller Auflösung nicht gratis: `Math.round` auf eine krumme CSS-Breite lässt Textur-
+             und Bildschirmmaß um Bruchteile auseinanderlaufen, und das Hochskalieren des Sprites resampelt dann die
+             ganze Fläche. Gemessen (Handy-Viewport, gegen die Canvas-Fassung): mit Umweg blieb bei Faktor 1 eine
+             mittlere Abweichung von 1,81 von 255 stehen — sichtbar genau da, wo ein konturen-naher Effekt lebt.
+             Ohne Umweg ist Faktor 1 wieder exakt der alte Pfad. */
+          const direct = scale >= 0.999;
+          // Die Render-Textur ist die eigentliche Ersparnis: sie ist um `scale` KLEINER als die Bühne und wird
+          // beim Zusammensetzen hochskaliert. Kosten ∝ Fläche → quadratisch in scale.
+          const rtSize = () => (direct
+            ? { w: Math.max(2, app.screen.width), h: Math.max(2, app.screen.height) }
+            : {
+              w: Math.max(2, Math.round(app.screen.width * scale)),
+              h: Math.max(2, Math.round(app.screen.height * scale)),
+            });
+          const size = rtSize();
+          const rt = direct ? null
+            : RenderTexture.create({ width: size.w, height: size.h, resolution: app.renderer.resolution, antialias: false });
+
+          const props = pRef.current[i] || {};
+          const resources = {
+            fieldUniforms: def.uniforms(props, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution }),
+          };
+          /* Ebenen mit `sampler2D` (Leuchten) brauchen von Anfang an eine gebundene Textur: der Sampler-Slot wird
+             beim Programmaufbau vergeben, ein späteres Nachreichen allein genügt nicht. Platzhalter ist bewusst ein
+             SCHWARZES Pixel — der Shader rechnet daraus Alpha 0, die Ebene ist also unsichtbar statt weiß zu
+             blitzen, bis das Battlefield-Bild da ist. */
+          if (def.texture) resources[def.texture.name] = blankSource(TextureSource);
+          const shader = Shader.from({
+            gl: GlProgram.from({ vertex: PIXI_FIELD_VERT, fragment: def.frag() }),
+            resources,
           });
-        let size = rtSize();
-        if (!direct) {
-          rt = RenderTexture.create({ width: size.w, height: size.h, resolution: app.renderer.resolution, antialias: false });
-        }
-
-        const uniforms = def.uniforms(pRef.current, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution });
-        const resources = { fieldUniforms: uniforms };
-        /* Ebenen mit `sampler2D` (Deck-Glow) brauchen von Anfang an eine gebundene Textur: der Sampler-Slot wird
-           beim Programmaufbau vergeben, ein späteres Nachreichen allein genügt nicht. Platzhalter ist bewusst ein
-           SCHWARZES Pixel — der Shader rechnet daraus Alpha 0, die Ebene ist also unsichtbar statt weiß zu blitzen,
-           bis das Battlefield-Bild da ist. */
-        if (def.texture) resources[def.texture.name] = blankSource(TextureSource);
-        shader = Shader.from({
-          gl: GlProgram.from({ vertex: PIXI_FIELD_VERT, fragment: def.frag() }),
-          resources,
+          const mesh = new Mesh({ geometry: fieldQuadGeometry(MeshGeometry), shader });
+          let sprite = null;
+          if (direct) {
+            mesh.blendMode = def.blend;
+            app.stage.addChild(mesh);        // Pixis eigener Render-Durchgang zeichnet sie mit
+          } else {
+            sprite = new Sprite(rt);
+            sprite.blendMode = def.blend;
+            app.stage.addChild(sprite);
+          }
+          return {
+            key, def, direct, rtSize, size, rt, sprite, mesh, shader, i,
+            frozenT: null, texUrl: null, texObj: null,
+            mem: { surgeId: null, surgeStart: null, surgeMag: 0 },   // Ebenen-Gedächtnis über Frames (s. tick)
+          };
         });
-        mesh = new Mesh({ geometry: fieldQuadGeometry(MeshGeometry), shader });
-
-        if (direct) {
-          mesh.blendMode = def.blend;
-          app.stage.addChild(mesh);          // Pixis eigener Render-Durchgang zeichnet sie mit
-        } else {
-          sprite = new Sprite(rt);
-          sprite.blendMode = def.blend;
-          app.stage.addChild(sprite);
-        }
 
         const t0 = performance.now();
-        let frozenT = null;
-        const mem = { surgeId: null, surgeStart: null, surgeMag: 0 };   // Ebenen-Gedächtnis über Frames (s. tick)
         let tickFails = 0;
 
         /* Bildquelle in-place nachziehen. Wie in der Canvas-Fassung wird bei einem Bildwechsel NUR die Textur
            getauscht — die Bühne bleibt stehen. Ein Neuaufbau je Deckwechsel kostete sonst einen WebGL-Kontext,
            und davon hat iOS Safari sehr wenige. */
-        const syncTexture = () => {
-          if (!def.texture) return;
-          const url = def.texture.src(pRef.current);
-          if (!url || url === texUrl) return;
-          texUrl = url;
+        const syncTexture = (L, props) => {
+          if (!L.def.texture) return;
+          const url = L.def.texture.src(props);
+          if (!url || url === L.texUrl) return;
+          L.texUrl = url;
           loadFieldTexture(url, Texture, ImageSource).then(({ texture, aspect }) => {
-            if (disposed || !shader || texUrl !== url) { try { texture.destroy(true); } catch { /* ignore */ } return; }
-            const old = texObj; texObj = texture;
-            mem.imgAspect = aspect;
-            shader.resources[def.texture.name] = texture.source;
+            if (disposed || L.texUrl !== url) { try { texture.destroy(true); } catch { /* ignore */ } return; }
+            const old = L.texObj; L.texObj = texture;
+            L.mem.imgAspect = aspect;
+            L.shader.resources[L.def.texture.name] = texture.source;
             if (old) { try { old.destroy(true); } catch { /* ignore */ } }
           }).catch((e) => console.warn("[fx] Kompositor-Textur nicht geladen:", e));
         };
-        syncTexture();
+        layers.forEach((L) => syncTexture(L, pRef.current[L.i] || {}));
+
         app.ticker.add(() => {
           if (disposed || !app) return;
           try {
-          const p = pRef.current;
-          syncTexture();   // Bildwechsel (anderes Deck/Viewport) zieht die Textur nach, ohne die Bühne anzufassen
-          const s = rtSize();
-          if (s.w !== size.w || s.h !== size.h) {
-            size = s;
-            if (rt) rt.resize(size.w, size.h);
-          }
-          // `animate=false` (reduzierte Effekte) → Standbild: Zeit einfrieren statt die Schleife zu stoppen,
-          // damit Farb-/Größenwechsel weiterhin sauber durchschlagen.
-          const tSec = p.animate ? (performance.now() - t0) / 1000 : (frozenT ??= 6.0);
-          if (p.animate) frozenT = null;
-          def.tick(shader.resources.fieldUniforms.uniforms, p,
-            tSec, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution }, mem);
+            for (const L of layers) {
+              const p = pRef.current[L.i] || {};
+              syncTexture(L, p);   // Bildwechsel (anderes Deck/Viewport) zieht die Textur nach, Bühne bleibt stehen
+              const s = L.rtSize();
+              if (s.w !== L.size.w || s.h !== L.size.h) {
+                L.size = s;
+                if (L.rt) L.rt.resize(s.w, s.h);
+              }
+              // `animate=false` (reduzierte Effekte) → Standbild: Zeit einfrieren statt die Schleife zu stoppen,
+              // damit Farb-/Größenwechsel weiterhin sauber durchschlagen.
+              const tSec = p.animate === false ? (L.frozenT ??= 6.0) : (performance.now() - t0) / 1000;
+              if (p.animate !== false) L.frozenT = null;
+              const res = app.renderer.resolution;
+              L.def.tick(L.shader.resources.fieldUniforms.uniforms, p, tSec,
+                { w: L.size.w * res, h: L.size.h * res }, L.mem);
 
-          // Ebene in ihre Textur (klein), dann skaliert die Bühne sie auf die volle Fläche — EIN Composite.
-          // Bei Faktor 1 hängt die Ebene direkt an der Bühne; dann entfällt der Zwischenschritt komplett.
-          mesh.width = size.w; mesh.height = size.h;
-          if (!direct) {
-            app.renderer.render({ container: mesh, target: rt, clear: true });
-            sprite.width = app.screen.width; sprite.height = app.screen.height;
-          }
+              // Ebene in ihre Textur (klein), dann skaliert die Bühne sie auf die volle Fläche — EIN Composite.
+              // Bei Faktor 1 hängt die Ebene direkt an der Bühne; dann entfällt der Zwischenschritt komplett.
+              L.mesh.width = L.size.w; L.mesh.height = L.size.h;
+              if (!L.direct) {
+                app.renderer.render({ container: L.mesh, target: L.rt, clear: true });
+                L.sprite.width = app.screen.width; L.sprite.height = app.screen.height;
+              }
+            }
           } catch (e) {
-            /* Ein Effekt darf nicht in eine Fehlerflut pro Frame laufen. Nach drei Fehlversuchen bleibt die Ebene
-               still — das Brett läuft weiter, nur ohne diesen Effekt. */
-            if (++tickFails >= 3) { try { app.ticker.stop(); } catch { /* ignore */ } console.warn("[fx] Kompositor-Ebene angehalten:", e); }
+            /* Ein Effekt darf nicht in eine Fehlerflut pro Frame laufen. Nach drei Fehlversuchen bleibt die Bühne
+               still — das Brett läuft weiter, nur ohne diese Effekte. */
+            if (++tickFails >= 3) { try { app.ticker.stop(); } catch { /* ignore */ } console.warn("[fx] Kompositor angehalten:", e); }
           }
         });
         applyRunRef.current = applyRun;
@@ -360,7 +388,7 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
       } catch (e) {
         /* WebGL fehlt oder eine Ebene ist kaputt → Bühne bleibt leer, das Spiel läuft normal weiter. Der Log ist
            wichtig: ein Port-Fehler (s. pixiFieldShader.js) landet genau hier und wäre sonst spurlos. */
-        console.warn(`[fx] Kompositor-Ebene "${layer}" nicht aufgebaut:`, e);
+        console.warn(`[fx] Kompositor "${stackKey}" nicht aufgebaut:`, e);
       }
     })();
 
@@ -370,14 +398,17 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
       disposed = true;
       document.removeEventListener("visibilitychange", onVis);
       const a = app; app = null;
-      if (rt) { try { rt.destroy(true); } catch { /* ignore */ } rt = null; }
-      if (texObj) { try { texObj.destroy(true); } catch { /* ignore */ } texObj = null; }
+      for (const L of layers) {
+        if (L.rt) { try { L.rt.destroy(true); } catch { /* ignore */ } }
+        if (L.texObj) { try { L.texObj.destroy(true); } catch { /* ignore */ } }
+      }
+      layers = [];
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-  }, [layer]);
+  }, [stackKey]);
 
   /* #perf-overlay: Ticker anhalten, sobald ein Vollbild-Overlay das Brett verdeckt. Bewusst ein EIGENER Effekt
-     ohne `layer` in den Deps — der Aufbau-Effekt oben darf bei einem `active`-Wechsel nicht neu laufen, sonst
+     ohne `stackKey` in den Deps — der Aufbau-Effekt oben darf bei einem `active`-Wechsel nicht neu laufen, sonst
      kostete jeder Overlay-Wechsel eine komplette Pixi-Init. */
   useEffect(() => { applyRunRef.current?.(); }, [active]);
 
