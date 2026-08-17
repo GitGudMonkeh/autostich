@@ -39,11 +39,14 @@ const GEN_LANES = [
 const nodeAccent = (n, laneAccent) =>
   n.maxTier ? tierColor(n.maxTier) : n.legLayer ? GOLD : (n.arch ? FACTION_GLOW[n.arch] : laneAccent);
 
-// Gruppen-Panel in der Gruppen-/Archetyp-Farbe rahmen — NUR ein crisper farbiger Rahmen auf flachem, dunklem Grund.
-// Kein Glow, kein Farb-Tint innen (wirkte „billig ad-game") → jede Gruppe ist allein am Rahmen zuzuordnen, ruhig/clean.
+/* Gruppen-Panel: die Fraktionsfarbe steht an der linken Kante statt als umlaufender Rahmen (#kante).
+   Der flache dunkle Grund bleibt — kein Glow, kein Farb-Tint über die ganze Fläche (wirkte „billig ad-game");
+   die Zuordnung zur Gruppe macht allein die Kante, so wie überall sonst im Spiel. Als Inline-Objekt statt
+   Klasse, weil die Farbe je Gruppe aus den Spieldaten kommt und der Aufrufer sie schon zur Hand hat. */
 const panelStyle = (c) => ({
-  background: "#141419",
-  border: `1px solid ${c}66`,
+  background: `linear-gradient(90deg, color-mix(in srgb, ${c} 10%, #111119) 0%, #111119 38%)`,
+  border: "1px solid rgba(150, 150, 170, .12)",
+  borderLeft: `4px solid color-mix(in srgb, ${c} 75%, transparent)`,
 });
 
 // Innerer Inhalt einer Pille (Titel + Marke) — zentriert, damit gleich breite Pillen sauber in Spalten sitzen.
@@ -60,23 +63,30 @@ function PillBody({ label, mark, titleColor, markColor }) {
 // die Detailzeile unter der Lane erklärt dann, was er bewirkt. Kauf passiert NICHT mehr per Direkt-Tipp, sondern
 // über den Kaufen-Button in der Detailzeile (bewusster 2. Schritt, keine Fehlkäufe). Angetippt = Akzent-Ring.
 // flex-1 → alle Pillen einer Lane sind gleich breit (saubere Spalten-Ausrichtung, kein Umbruch).
+/* #kante: Die Pille ist eine Kanten-Karte (index.css .as-edge-card + .as-edge-thin, 3 px — 4 px wirken an
+   einem so kleinen Element wie ein Balken). Die Kante trägt den ZUSTAND, nicht die Fraktion: innerhalb einer
+   Lane gehören alle Knoten zur selben Fraktion, die Farbe würde dort nichts unterscheiden (dieselbe
+   Überlegung wie bei den Skill-Karten). Also
+     Gold             = hier kannst du TP ausgeben
+     Fraktionsakzent  = gehört dir schon
+     grau + gedimmt   = gesperrt
+     gestrichelt      = Platzhalter
+   Damit sieht man beim Öffnen sofort, wo es etwas zu holen gibt; vorher waren kaufbar, besessen und gesperrt
+   drei gleich laute Rahmen, die man vergleichen musste. Angetippt = `is-sel` (Schein + volle Deckkraft). */
 function NodePill({ node, st, accent, selected, onSelect }) {
   const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
-  const mark = isOwned ? "✓" : isPlaceholder ? t("upgrades.state.soon") : (isBuy || st === "lock-sp") ? `${node.cost} ${t("common.cur.sp")}` : "🔒";
-  const base = isOwned
-    ? { border: `1px solid ${accent}`, background: `${accent}18` }
-    : isBuy
-      ? { border: `1px solid ${GOLD}`, boxShadow: `0 0 0 1px ${GOLD}22, 0 0 10px ${GOLD}22` }
-      : isPlaceholder
-        ? { border: "1px dashed #3a3a45", background: "transparent", opacity: 0.6 }
-        : { border: "1px solid #26262e", opacity: 0.5 };
-  // Angetippt: Akzent-Ring + volle Deckkraft (auch gesperrte/Platzhalter werden beim Lesen klar hervorgehoben).
-  const style = selected ? { ...base, boxShadow: `0 0 0 2px ${accent}`, opacity: 1 } : base;
-  const markColor = isOwned ? accent : (isBuy || st === "lock-sp") ? GOLD : "#8a8a95";
+  const tooPoor = st === "lock-sp";        // freigeschaltet, aber die TP fehlen gerade
+  const hasPrice = isBuy || tooPoor;
+  const mark = isOwned ? "✓" : isPlaceholder ? t("upgrades.state.soon") : hasPrice ? `${node.cost} ${t("common.cur.sp")}` : "🔒";
+  // Kante = Zustand. Gold trägt alles mit Preisschild; ob man ihn ZAHLEN kann, sagt die Deckkraft:
+  // voll = jetzt kaufbar, gedimmt = kostet TP, die du nicht hast (dieselbe Sprache wie zu teure Packs).
+  const edgeColor = isOwned ? accent : hasPrice ? GOLD : "#8a8a95";
+  const stateCls = selected ? " is-sel" : isPlaceholder ? " is-soon" : (isOwned || isBuy) ? "" : " is-locked";
+  const markColor = edgeColor;
   return (
     <span title={`${node.detail}`} onClick={() => onSelect(node.id)} role="button" aria-pressed={selected}
-      className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 cursor-pointer transition-transform hover:-translate-y-px"
-      style={style}>
+      className={`as-edge-card as-edge-thin${stateCls} flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 cursor-pointer transition-transform hover:-translate-y-px`}
+      style={{ "--c": edgeColor }}>
       <PillBody label={node.label} mark={mark} titleColor={isOwned ? "#e8e8ea" : isBuy ? "#f0e8d0" : "#c8c8d0"} markColor={markColor} />
     </span>
   );
@@ -92,20 +102,27 @@ function nodeStatusText(node, st) {
   return t("upgrades.state.buyable");
 }
 
-// Detailzeile (Tipp-zum-Erklären): erscheint unter der Lane des angetippten Knotens. Name + Wirkung (node.detail)
-// + Status; kaufbare Knoten bekommen hier den Kaufen-Button. Rahmen im Lane-/Knoten-Akzent.
+/* Detailzeile (Tipp-zum-Erklären): erscheint unter der Lane des angetippten Knotens. Name + Wirkung
+   (node.detail) + Status; kaufbare Knoten bekommen hier den Kaufen-Button.
+   #kante: Die Zeile trägt die Farbe des ZUSTANDS — kaufbar also Gold wie der Knopf daneben, besessen den
+   Fraktionsakzent. So gehören Kante, Statuszeile und Knopf sichtbar zusammen, statt drei Farben zu mischen.
+   Der Kaufen-Knopf verliert seine gefüllte Goldfläche; als einziges Element der Zeile mit Glow bleibt er
+   trotzdem das lauteste. */
 function NodeDetail({ node, st, accent, onBuy }) {
+  // Dieselbe Zuordnung wie an der Pille (NodePill): Gold für alles mit Preisschild — auch wenn die TP gerade
+  // nicht reichen. Sonst trüge die Zeile Grau, während der angetippte Knoten darüber Gold zeigt.
+  const stateColor = st === "owned" ? accent : (st === "buy" || st === "lock-sp") ? GOLD : "#8a8a95";
   return (
-    <div className="mt-2 rounded-lg px-3 py-2.5 flex items-center gap-3" style={{ background: "#12121a", border: `1px solid ${accent}55` }}>
+    <div className="as-edge-card is-sel mt-2 rounded-lg px-3 py-2.5 flex items-center gap-3" style={{ "--c": stateColor }}>
       <div className="min-w-0 flex-1">
         <div className="text-[12.5px] font-extrabold" style={{ color: accent }}>{node.label}</div>
         <div className="text-[11.5px] leading-snug opacity-75 mt-0.5">{node.detail}</div>
-        <div className="text-[10.5px] font-semibold mt-1" style={{ color: st === "owned" ? accent : st === "buy" ? GOLD : "#8a8a95" }}>{nodeStatusText(node, st)}</div>
+        <div className="text-[10.5px] font-semibold mt-1" style={{ color: stateColor }}>{nodeStatusText(node, st)}</div>
       </div>
       {st === "buy" && (
         <button onClick={() => onBuy(node.id)}
-          className="shrink-0 px-3 py-2 rounded-lg text-[12px] font-extrabold transition-transform hover:-translate-y-0.5"
-          style={{ background: GOLD, color: "#141419" }}>{t("upgrades.buy", { cost: node.cost })}</button>
+          className="as-edge-strong shrink-0 px-3 py-2 rounded-lg text-[12px] font-extrabold transition-transform hover:-translate-y-0.5"
+          style={{ "--c": GOLD }}>{t("upgrades.buy", { cost: node.cost })}</button>
       )}
     </div>
   );
@@ -115,7 +132,8 @@ function NodeDetail({ node, st, accent, onBuy }) {
 // Ist ein Knoten dieser Lane angetippt (selected), klappt darunter seine Detailzeile auf.
 function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) {
   const items = [];
-  if (lead) items.push(<span key="lead" className="flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2" style={{ border: `1px solid ${lead.color}`, background: `${lead.color}18` }}>
+  // #kante: Das Startglied einer Lane ist immer freigeschaltet → dieselbe Optik wie eine besessene Pille.
+  if (lead) items.push(<span key="lead" className="as-edge-card as-edge-thin flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2" style={{ "--c": lead.color }}>
     <PillBody label={lead.label} mark={`✓ ${t("upgrades.free")}`} titleColor="#e8e8ea" markColor={lead.color} />
   </span>);
   nodes.forEach((n) => {
@@ -170,9 +188,10 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
             <div className="flex items-center gap-2.5 shrink-0">
+              {/* #kante: neutraler Kanten-Knopf mit schmaler Kante (kleines Element) — Respec ist ein Ausweg,
+                  kein Angebot, und trägt darum kein Farbsignal. */}
               <button onClick={doRespec} disabled={owned === 0}
-                className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40"
-                style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>{t("upgrades.respec")}</button>
+                className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40">{t("upgrades.respec")}</button>
               <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
           </div>
@@ -181,11 +200,14 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {[{ key: "deck", labelKey: "upgrades.tab.decks" }, { key: "gen", labelKey: "upgrades.tab.gen" }].map((tb) => {
               const on = tb.key === tab, col = tb.key === "deck" ? VI : CY;
               return (
+                /* #kante: Signal an der Unterkante — wie in der Werkstatt. Bei einer waagerechten Reiterzeile
+                   wären senkrechte Striche ein Kampf gegen die Leserichtung. */
                 <button key={tb.key} onClick={() => selectTab(tb.key)} role="tab" aria-selected={on}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-colors"
+                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
                   style={on
-                    ? { color: col, background: "#131318", border: `1px solid ${col}55`, boxShadow: `0 0 16px -9px ${col}` }
-                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                    ? { color: "#fff", borderBottom: `2px solid ${col}`,
+                        background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${col} 14%, transparent))` }
+                    : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
                   {t(tb.labelKey)}
                 </button>
               );
