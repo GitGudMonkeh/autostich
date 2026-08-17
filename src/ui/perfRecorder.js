@@ -86,7 +86,11 @@ export function startPerf() {
       for (const entry of list.getEntries()) {
         S.lt.count++; S.lt.totalMs += entry.duration;
         if (entry.duration > S.lt.worstMs) S.lt.worstMs = entry.duration;
-        S.lt.worst.push({ ms: Math.round(entry.duration), ctx: { ...S.ctx, at: S.lastMark.label } });
+        // Frische-Regel wie im Frame-Pfad: ein Mark taggt nur, wenn er innerhalb von MARK_WINDOW_MS liegt —
+        // sonst klebte hier der letzte Mark aus einer ganz anderen Phase (Minuten alt) am Long Task.
+        const t = now();
+        const fresh = S.lastMark.label && (t - S.lastMark.t) <= MARK_WINDOW_MS ? S.lastMark.label : null;
+        S.lt.worst.push({ ms: Math.round(entry.duration), t: Math.round(t - S.startT), ctx: { ...S.ctx, at: fresh } });
         S.lt.worst.sort((a, b) => a.ms - b.ms);
         if (S.lt.worst.length > WORST_K) S.lt.worst.shift();
       }
@@ -143,7 +147,11 @@ export function getReport() {
     frameMs: { p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), worst: Math.round(S.worstMs) },
     jankFrames: S.jank,
     jankPerMin: durS > 0 ? +((S.jank / durS) * 60).toFixed(1) : 0,
-    longTasks: { count: S.lt.count, worstMs: Math.round(S.lt.worstMs), totalMs: Math.round(S.lt.totalMs) },
+    // #perf: Die schlimmsten Long Tasks MIT Kontext ausgeben. Sie wurden immer schon gesammelt, aber nie
+    // ausgeliefert — ein Report mit „36 Long Tasks · 2693 ms" nannte damit den größten Einzelposten, ohne zu
+    // sagen, WO er anfällt. Long Tasks blockieren den Hauptthread am Stück und erklären die dicksten Frames.
+    longTasks: { count: S.lt.count, worstMs: Math.round(S.lt.worstMs), totalMs: Math.round(S.lt.totalMs),
+      worst: [...S.lt.worst].reverse().map((w) => ({ ms: w.ms, atS: w.t != null ? +(w.t / 1000).toFixed(1) : null, ctx: w.ctx })) },
     worstFrames: [...S.worst].reverse().map((w) => ({ ms: w.ms, atS: +(w.t / 1000).toFixed(1), ctx: w.ctx })),
     byEvent,
     memoryMB: performance.memory ? { start: +S.mem.start.toFixed(0), peak: +S.mem.peak.toFixed(0), end: +S.mem.end.toFixed(0) } : null,
@@ -160,6 +168,10 @@ export function formatReport(r = getReport()) {
   if (r.byEvent.length) {
     lines.push(`Ruckler nach Event (schlimmster zuerst):`);
     for (const e of r.byEvent.slice(0, 8)) lines.push(`   ${e.label.padEnd(20)} jank ${e.jank}× · max ${e.worstMs}ms · ${e.count}× ausgelöst`);
+  }
+  if (r.longTasks.worst && r.longTasks.worst.length) {
+    lines.push(`Schlimmste Long Tasks (blockierter Hauptthread):`);
+    for (const w of r.longTasks.worst.slice(0, 5)) lines.push(`   ${String(w.ms).padStart(4)}ms @${w.atS}s  [${w.ctx.at || "phase:" + w.ctx.phase} · c${w.ctx.cycle}·t${w.ctx.trick}]`);
   }
   if (r.worstFrames.length) {
     lines.push(`Schlimmste Frames:`);
