@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { GOTT_BASE_S, GOTT_INGAME_S, gottSpeedFor } from "../src/ui/fx/gottTiming.js";
-import { SUPERNOVA_LIFE, SUPERNOVA_TAIL } from "../src/ui/fx/supernovaTiming.js";
+import { GOTT_BASE_S, GOTT_INGAME_S, GOTT_INGAME_OVERRIDE, gottSpeedFor, gottTargetFor } from "../src/ui/fx/gottTiming.js";
+import { SUPERNOVA_LIFE, SUPERNOVA_CHARGE, SUPERNOVA_TAIL, SUPERNOVA_IMPACT_S, supernovaDetonationS } from "../src/ui/fx/supernovaTiming.js";
 
 /* QUELLTEXT-RATSCHE (Muster wie test/trick-breakdown.test.js). Die TUNE-Blöcke der Prunk-Effekte lassen sich nicht
    importieren, ohne Pixi in den Test (und in den Haupt-Bundle) zu ziehen — genau darum existieren gottTiming.js und
@@ -29,10 +29,32 @@ describe("Gottgleich-Prunk — Zeitachse (gottTiming.js)", () => {
     expect(GOTT_BASE_S.supernova).toBeCloseTo(SUPERNOVA_LIFE + SUPERNOVA_TAIL, 6);
   });
 
-  it("alle Prunks spielen in-game gleich lang (das war der Punkt)", () => {
+  it("jeder Prunk trifft seine Ziel-Spieldauer (das war der Punkt)", () => {
     for (const key of Object.keys(GOTT_BASE_S)) {
-      expect(GOTT_BASE_S[key] / gottSpeedFor(key)).toBeCloseTo(GOTT_INGAME_S, 6);
+      expect(GOTT_BASE_S[key] / gottSpeedFor(key)).toBeCloseTo(gottTargetFor(key), 6);
     }
+  });
+
+  it("die Prunks OHNE Sonderfall laufen alle gleich lang", () => {
+    for (const key of Object.keys(GOTT_BASE_S)) {
+      if (key in GOTT_INGAME_OVERRIDE) continue;
+      expect(gottTargetFor(key)).toBeCloseTo(GOTT_INGAME_S, 6);
+    }
+    expect(Object.keys(GOTT_INGAME_OVERRIDE)).toEqual(["supernova"]); // Sonderfälle bewusst die Ausnahme
+  });
+
+  /* DER Grund für Supernovas Sonderlänge: in-game ist der Swell-Vorlauf auf 0 geklemmt, der Ton startet also mit dem
+     Effekt. Damit entscheidet allein die Streckung, ob der Detonationsblitz auf dem großen Impuls des Swells sitzt.
+     Bei den vorherigen 2,4 s lag der Blitz 0,144 s davor. Dieser Test nagelt die Synchronität fest — wer an
+     GOTT_INGAME_OVERRIDE.supernova dreht, verschiebt den Ton und wird hier rot. */
+  it("Supernova: der Detonationsblitz sitzt auf dem Swell-Impuls", () => {
+    const speed = gottSpeedFor("supernova");
+    expect(supernovaDetonationS(speed)).toBeCloseTo(SUPERNOVA_IMPACT_S, 6);
+    expect(gottTargetFor("supernova")).toBeGreaterThan(GOTT_INGAME_S); // „etwas verlängert" gegenüber dem Rest
+    // Gegenprobe: mit der alten Einheitslänge lag der Blitz messbar VOR dem Impuls.
+    const oldSpeed = Math.min(1, (SUPERNOVA_LIFE + SUPERNOVA_TAIL) / GOTT_INGAME_S);
+    expect(supernovaDetonationS(oldSpeed)).toBeLessThan(SUPERNOVA_IMPACT_S - 0.1);
+    expect(SUPERNOVA_CHARGE).toBeGreaterThan(0); // Blitz kommt nicht bei 0 → die Herleitung ist überhaupt sinnvoll
   });
 
   it("Tempo ist nie schneller als die Eigenzeit und unbekannte Effekte laufen normal", () => {
