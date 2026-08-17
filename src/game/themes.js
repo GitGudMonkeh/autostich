@@ -183,7 +183,11 @@ export const THEME_DEFS = {
     deckId: "deck_serie300", bfId: "bf_serie300", els: ["deck", "bf"],
     tiers: [
       { roman: "I",   name: packName("deck_serie300"),  deckId: "deck_serie300",  bfId: "bf_serie300",  a1: "#ff2d9b", a2: "#ff6ac0" },
-      { roman: "II",  name: packName("deck_serie600"),  deckId: "deck_serie600",  bfId: "bf_serie600",  a1: "#7b3ff0", a2: "#ffcf3a" },
+      // Stufe II war auf Lila/Gold gesetzt (aus der Patch-Notes-Beschreibung „Pfau in Lila/Gold"), das Kartenbild
+      // ist aber Pink: 84 % der farbigen Pixel in deck_serie600 liegen im Farbton 315–360°, Gold (45–60°) kommt
+      // mit 0,0 % gar nicht vor. Werte aus den hellsten Bildfarben (#f0288c/#f0508c) abgeleitet und im Verlauf
+      // heller gezogen, damit die Stufe trotz gleicher Farbfamilie von Stufe I (Flamingo) unterscheidbar bleibt.
+      { roman: "II",  name: packName("deck_serie600"),  deckId: "deck_serie600",  bfId: "bf_serie600",  a1: "#ff1f7a", a2: "#ffa3c4" },
       { roman: "III", name: packName("deck_serie1500"), deckId: "deck_serie1500", bfId: "bf_serie1500", a1: "#8a4dff", a2: "#ffd84a" },
     ] },
   // #tiered Titan — Stufen-Deck über Score (25/50/100 Mio). Lila Steingigant, der über die Stufen erwacht/aufsteigt.

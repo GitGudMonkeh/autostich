@@ -164,11 +164,11 @@ describe("#tiered — Stufen-Deck Peacock (serie300/600/1500 zusammengefasst)", 
     const view = tierAsPack(PEACOCK, PEACOCK.tiers[1]);
     expect(view.deckId).toBe("deck_serie600");
     expect(view.bfId).toBe("bf_serie600");
-    expect(view.a1).toBe("#7b3ff0");
+    expect(view.a1).toBe("#ff1f7a");
   });
   it("resolvePackByDeckId: jede Stufe → Peacock + Stufen-eigene Farben", () => {
     expect(resolvePackByDeckId("deck_serie300")).toMatchObject({ a1: "#ff2d9b" });
-    expect(resolvePackByDeckId("deck_serie600")).toMatchObject({ a1: "#7b3ff0" });
+    expect(resolvePackByDeckId("deck_serie600")).toMatchObject({ a1: "#ff1f7a" });
     expect(resolvePackByDeckId("deck_serie1500")).toMatchObject({ a1: "#8a4dff" });
     expect(resolvePackByDeckId("deck_serie600").pack.id).toBe("peacock");
     expect(resolvePackByDeckId("deck_obsidian").pack.id).toBe("obsidian"); // Nicht-Stufen-Pack unverändert
