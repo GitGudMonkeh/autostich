@@ -68,6 +68,7 @@ const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
+import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
@@ -718,6 +719,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      die andere Achse. */
   const panelOnScreen = useOnScreen(panelRef);   // Hook IMMER aufrufen, erst danach verknüpfen (Hook-Regel)
   const boardOn = boardVisible && panelOnScreen;
+  /* #perf-scroll: Scroll-Wechsel als Mark, damit der Perf-Report Ruckler daran festmachen kann. Ohne den Mark
+     landen sie im Eimer der laufenden Phase und sind von normalem Spiel nicht zu unterscheiden — bei einem
+     Verdacht wie „beim Zurückscrollen bricht die Bildrate ein" ist genau das die Frage. */
+  useEffect(() => { perfMark(panelOnScreen ? "scroll:board-in" : "scroll:board-out"); }, [panelOnScreen]);
   const oppSlotRef = useRef(null);
   // #376 Neon-Brandung Loop-Bett (Plasma-See-Ambience): startet/endet mit dem aktiven Effekt. Nahtloser Loop über die
   // gleichförmige Mitte der 29,9-s-Aufnahme (loopStart/loopEnd meiden die Anfang-/Ende-Fades → kein Naht-Klick). Gating
