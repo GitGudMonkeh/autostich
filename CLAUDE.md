@@ -135,6 +135,13 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
      die ganze Ausgabe. Die Komponente lädt `+999` hoch (Zeit SEIT der Ansage).
 - Vorbehalt: die Spike-Rechtecke sind je ~190 px hoch, nicht Vollbild. „60/s laufen" ist damit KEIN Beleg für
   Vollbild-Kopffreiheit — nur dafür, dass der Pfad funktioniert.
+- **Auflösungs-Grenze am Gerät bestimmt (Spike-Block 4, Neon-Brandung):** ×0,75 ist unauffällig, **×0,5 ist
+  sichtbar zu weich** (Urteil des Users, Seite-an-Seite-Vergleich). Ersparnis bei 0,75 also **~44 %** Füllarbeit
+  (Pixel skalieren QUADRATISCH: 0,75² = 0,5625), nicht die 75 %, die 0,5 gebracht hätte.
+  Grund für die Grenze ist plausibel die harte, helle Wasserlinie der Brandung — genau die Art Detail, die
+  Hochskalieren nicht verzeiht. **Der Faktor muss deshalb PRO EBENE einstellbar sein, nicht global:** Aurora
+  (breite weiche Vorhänge) und Leuchten (Glow an Konturen) tragen vermutlich weniger, sind aber NICHT gemessen —
+  wer sie in den Kompositor holt, lässt sie einzeln beurteilen.
 
 ### #perf-overlay + #perf-hologrid (aus einem Perf-Report, 2026-08-17)
 Report eines 409-s-Laufs (Meteor + Hologrid-Slice + Neonrahmen): 386 Ruckler, davon **99 in nur 4 Architekt-Besuchen**.
