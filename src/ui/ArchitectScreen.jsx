@@ -594,8 +594,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   return (
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
+      {/* #kante: Der Architekt behält seine Blau-Petrol-Welt — er ist die Bauphase, ein anderer Ort. Damit
+          seine Bausteine trotzdem die Formensprache des Spiels sprechen können, setzt er hier die beiden
+          Grund-Variablen der Kanten-Familie (index.css) auf seine eigenen Töne und vererbt sie nach unten.
+          Die Klassen `as-edge-*` zeichnen dann Kante und Anlauf auf Petrol statt auf Violett-Schwarz. */}
       <div ref={scrollerRef} className="relative w-full max-w-5xl rounded-2xl p-4 sm:p-6 max-h-[96dvh] overflow-y-auto overlay-card"
-        style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5" }}>
+        style={{ ...phaseCard(PHASE_ACCENTS.blue, ["#111c27", "#0d1720"]), color: "#e7eef5",
+                 "--edge-bg": "#16232f", "--edge-btn-bg": "#101c26" }}>
         <PhaseHairline />
 
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
@@ -636,7 +641,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Bestätigen-Leiste (mobil darüber) und dem Brett. Eigener Rahmen + Abstand nach unten, damit man beim Tippen
                 der Farbe nicht versehentlich Bestätigen trifft (vorher lag sie weit oben im Panel → hochscrollen nötig). */}
             {selBuilding && phase === "move" && familyDef(selBuilding.familyId)?.colorLocked && (
-              <div ref={colorBarRef} className="mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap" style={{ background: "#141f29", border: "1px solid #d97a3a66", boxShadow: "0 0 10px #d97a3a1f", scrollMarginTop: "12px" }}>
+              /* #kante: Die Farbwahl-Leiste ist ein Hinweis mit Aufforderung — Kante in ihrem Orange samt
+                 Schein (`is-sel`), statt Vollrahmen plus Außen-Glow. */
+              <div ref={colorBarRef} className="as-edge-card is-sel mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap"
+                style={{ "--c": "#d97a3a", scrollMarginTop: "12px" }}>
                 <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
                 <div className="flex gap-2.5">
                   {SUIT_ORDER.map((s) => (
@@ -661,11 +669,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 </span>
               )}
               <div className="flex items-center gap-1.5 ml-auto">
-                <button onClick={toggleCombos} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
-                  style={{ background: showCombos ? "#2a2416" : "#16232f", border: `1px solid ${showCombos ? "#d4a63a" : "#2b3e4d"}`, color: showCombos ? "#e0c060" : "#7d8a97" }}
+                {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
+                    Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}
+                <button onClick={toggleCombos}
+                  className={`${showCombos ? "as-edge" : "as-edge-neutral"} as-edge-thin text-[11px] font-bold rounded-lg px-2 py-1 transition-colors`}
+                  style={showCombos ? { "--c": "#d4a63a" } : undefined}
                   title={t("arch.combos.title")}>{showCombos ? "◉" : "○"} {t("arch.combos")}</button>
-                <button onClick={toggleForms} className="text-[11px] font-bold rounded-lg px-2 py-1 transition-colors"
-                  style={{ background: showForms ? "#16283a" : "#16232f", border: `1px solid ${showForms ? "#3b7dbe" : "#2b3e4d"}`, color: showForms ? "#7db4e6" : "#7d8a97" }}
+                <button onClick={toggleForms}
+                  className={`${showForms ? "as-edge" : "as-edge-neutral"} as-edge-thin text-[11px] font-bold rounded-lg px-2 py-1 transition-colors`}
+                  style={showForms ? { "--c": "#3b7dbe" } : undefined}
                   title={t("arch.forms.title")}>{showForms ? "◉" : "○"} {t("arch.forms")}</button>
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
@@ -903,9 +915,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         const marked = demolishIds.includes(b.id);
                         const soloOk = replaceableSet.has(b.id);
                         return (
+                          /* #kante: Abriss-Liste — zum Abriss markierte Gebäude tragen die rote Kante samt
+                             Schein, die übrigen bleiben neutral. */
                           <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
-                            className="rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110"
-                            style={{ background: marked ? "#2a1416" : "#16232f", border: `1px solid ${marked ? "#d1462f" : "#2b3e4d"}` }}>
+                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110`}
+                            style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
                               <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
                               <b>{bf.name}</b>
@@ -919,10 +933,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     </div>
                     {n > 0 && <div className="text-[10px] opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
                     <div className="flex gap-2">
-                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="flex-1 rounded-lg py-1.5 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
+                      {/* #kante: Zurück neutral, Abreißen als roter Kanten-Knopf — destruktiv, aber hier ist es
+                          die gewollte Aktion, also volle Kante statt der leisen Fassung. */}
+                      <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }}
+                        className="as-edge-neutral as-edge-thin flex-1 rounded-lg py-1.5 text-xs font-bold">{t("arch.back")}</button>
                       <button onClick={confirmDemolish} disabled={!enough}
-                        className="flex-1 rounded-lg py-1.5 text-xs font-bold"
-                        style={{ background: enough ? "#d1462f" : "#2a1c1c", color: enough ? "#fff" : "#7a5a55", opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
+                        className={`${enough ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin flex-1 rounded-lg py-1.5 text-xs font-bold`}
+                        style={{ ...(enough ? { "--c": "#d1462f" } : null), opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
                         {n > 0 ? t("arch.demolish.n", { n }) : t("arch.demolish")}
                       </button>
                     </div>
@@ -949,9 +966,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       const tierCol = o.legendary ? GOLD : tierColor(o.tier); // Rahmen/Badge = Stufe (Rarität): grau/grün/blau/lila/gold
                       const noRoom = !fitFor(o);
                       return (
+                        /* #kante: Angebotskarte in der Familie — die Stufenfarbe (Rarität) sitzt an der Kante
+                           statt als 1,5-px-Vollrahmen mit Glow rundum. Verbrauchte Angebote sind `is-locked`
+                           statt eigener opacity. Der Grund bleibt Petrol (--edge-bg am Container). */
                         <button key={idx} onClick={() => chooseOffer(o)} disabled={o.used}
-                          className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
-                          style={{ background: "#16232f", border: `1.5px solid ${tierCol}`, boxShadow: o.used ? undefined : `0 0 8px ${tierCol}40`, opacity: o.used ? 0.4 : 1, cursor: o.used ? "not-allowed" : "pointer" }}>
+                          className={`as-edge-card as-edge-thin${o.used ? " is-locked" : ""} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+                          style={{ "--c": tierCol, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
                             <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
@@ -969,9 +989,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       );
                     })}
                     {/* 4. Karte: Aufwerten */}
+                    {/* #kante: „Aufwerten" ist kein Angebot, sondern ein Weg — gestrichelte Kante (`is-soon`
+                        führt genau das), gedimmt wenn nichts aufwertbar ist. */}
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
-                      className="rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110"
-                      style={{ background: "#16232f", border: `1px dashed ${CAT.value.color}66`, opacity: canUpgradeAny ? 1 : 0.4, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
+                      className={`as-edge-card as-edge-thin is-soon${canUpgradeAny ? "" : " is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+                      style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-lg leading-none">⬆</div>
                       <div className="text-[13px] font-bold leading-tight">{t("arch.upgrade")}</div>
                       <div className="text-[10px] font-mono opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>

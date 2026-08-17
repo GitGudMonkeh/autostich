@@ -946,6 +946,11 @@ button { font-family: inherit; }
    Fallback in jedem var()-Aufruf. Grund steht ausführlich am Knopf-Block oben — eine im
    selben Regelsatz definierte Variable kann beim Bauen statisch aufgelöst werden, dann
    greift das Setzen von außen nicht mehr.
+
+   ZWEITE VARIABLE, --edge-bg / --edge-btn-bg: der Grund, auf dem die Kante sitzt. Default ist
+   das Violett-Schwarz des Spiels; der Architekt setzt am Container sein Petrol und erbt es an
+   alle Bausteine darunter. So spricht auch eine fremde Farbwelt dieselbe Formensprache, ohne
+   ihre Farben aufzugeben — der Grund gehört dem Bildschirm, die Form der Familie.
    ============================================================================ */
 .as-edge,
 .as-edge-strong,
@@ -954,11 +959,13 @@ button { font-family: inherit; }
   border-left: 4px solid color-mix(in srgb, var(--c, #8a8a95) 80%, transparent);
 }
 .as-edge {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c, #8a8a95) 20%, var(--edge-btn-bg, #0e0e14)) 0%, var(--edge-btn-bg, #0e0e14) 30%);
   color: color-mix(in srgb, var(--c, #8a8a95) 55%, #ffffff);
 }
 .as-edge-strong {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 30%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c, #8a8a95) 30%, var(--edge-btn-bg, #0e0e14)) 0%, var(--edge-btn-bg, #0e0e14) 30%);
   border-left-color: var(--c, #8a8a95);
   color: color-mix(in srgb, var(--c, #8a8a95) 40%, #ffffff);
   box-shadow: 0 0 16px -8px var(--c, #8a8a95);
@@ -974,10 +981,12 @@ button { font-family: inherit; }
 /* Auswahlkarte: ruhiger als jeder Knopf — der Text ist hier die Hauptsache, die Kante nur
    die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein. */
 .as-edge-card {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 14%, #12121a) 0%, #12121a 42%);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c, #8a8a95) 14%, var(--edge-bg, #12121a)) 0%, var(--edge-bg, #12121a) 42%);
 }
 .as-edge-card.is-sel {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 24%, #12121a) 0%, #12121a 46%);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c, #8a8a95) 24%, var(--edge-bg, #12121a)) 0%, var(--edge-bg, #12121a) 46%);
   border-left-color: var(--c, #8a8a95);
   box-shadow: inset 0 0 22px -14px var(--c, #8a8a95), 0 0 18px -12px var(--c, #8a8a95);
 }
