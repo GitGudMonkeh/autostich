@@ -1220,6 +1220,7 @@ export default {
      ebenfalls nur dort — auf dem Handy bleibt es beim reinen Titel plus Zahl. */
   "start.board.title": "Dein Stand",
   "start.board.field": "Spielfeld · {name}",
+  "start.board.fx": "Effekte · {list}",
   "start.board.sp": "Stichpunkte",
   "start.board.sp.sub": "{done} / {total} Knoten",
   "start.board.dp": "Deck-Punkte",

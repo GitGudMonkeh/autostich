@@ -1188,6 +1188,7 @@ export default {
      Durchlauf = cycle, Stichpunkte = Trick Points, Spielfeld = battlefield. */
   "start.board.title": "Your standing",
   "start.board.field": "Battlefield · {name}",
+  "start.board.fx": "Effects · {list}",
   "start.board.sp": "Trick Points",
   "start.board.sp.sub": "{done} / {total} nodes",
   "start.board.dp": "Deck Points",

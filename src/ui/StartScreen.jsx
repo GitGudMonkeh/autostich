@@ -4,7 +4,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import { GlossaryPanel } from "./Glossary.jsx";
-import { rarityLabel, deckDef, battlefieldDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
+import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
@@ -45,7 +45,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1400 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
-  musicTitle = null, onMusicNext = null }) {
+  musicTitle = null, onMusicNext = null, activeFx = null }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -81,6 +81,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   // #desktop — Namen für die Status-Tafel, einmal aufgelöst (beide Leser sind übersetzte Register).
   const deckName = deckId ? deckDef(deckId).name : "";
   const bfName = bfId ? battlefieldDef(bfId).name : "";
+  /* Namen der ausgerüsteten Effekte. Zwei Register: Katalog-Effekte über `globalFxDef`, synthetische
+     Sieg-Finisher über `fxsyn.<key>.name` (die haben bewusst keinen GLOBAL_FX-Eintrag). Aufgelöst wird
+     hier und nicht in App.jsx, damit ein Sprachwechsel die Zeile neu rendert. */
+  const fxNames = (activeFx || [])
+    .map((f) => (f.syn ? t(`fxsyn.${f.key}.name`) : globalFxDef(f.key)?.name))
+    .filter(Boolean);
   const week = currentWeek(new Date());
   const weekBonusOpen = (prof.lastRankedWeekSeed ?? null) !== week.seed;
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
@@ -401,6 +407,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
             {bfName && !bfName.startsWith(deckName) && (
               <div className="text-[14px] opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
+            )}
+            {/* Ausgerüstete Effekte, gleiche Zeilen-Optik wie das Spielfeld darüber. Ohne aktive Effekte
+                entfällt die Zeile — „Effekte · —" wäre eine Zeile, die nichts sagt. */}
+            {fxNames.length > 0 && (
+              <div className="text-[14px] opacity-55 truncate" title={fxNames.join(" + ")}>
+                {t("start.board.fx", { list: fxNames.join(" + ") })}
+              </div>
             )}
             {/* #musik — Was gerade läuft, plus Weiterschalten. Sitzt hier und nicht als eigener Block, weil
                 die Musik zum „Stand" gehört wie Deck und Spielfeld: alles, was der Screen gerade IST. */}

@@ -766,6 +766,20 @@ function AutostichGame() {
     cubematrixWire: !!vOpt.fxCubeMatrixWire, // #317 Cube-Matrix Optik: false = gefüllt, true = nur leuchtende Rahmen
   };
 
+  /* #desktop — Welche Effekte gerade ausgerüstet sind, für die Status-Tafel des Startbildschirms.
+     Hier werden nur die SCHLÜSSEL gesammelt; die Namen löst der Startbildschirm auf, damit ein
+     Sprachwechsel sie neu rendert. Zwei Registerquellen: die Katalog-Effekte (GLOBAL_FX → globalFxDef)
+     und die synthetischen Sieg-Finisher, die bewusst KEINEN GLOBAL_FX-Eintrag haben und deshalb über
+     `fxsyn.<key>.name` laufen — daher das `syn`-Flag. „standard"/„gottStandard" heißt „kein Effekt"
+     und wird weggelassen, sonst stünde bei jedem Spieler „Standard" in der Zeile. */
+  const activeFx = [];
+  if (deckFx.bgFx) activeFx.push({ key: deckFx.bgFx });
+  if (deckFx.bgFinisher) activeFx.push({ key: deckFx.bgFinisher });
+  if (deckFx.deckGlow) activeFx.push({ key: "deckglow" });
+  for (const k of deckFx.cardAnims || []) activeFx.push({ key: k });
+  if (deckFx.gottEffect && deckFx.gottEffect !== "gottStandard") activeFx.push({ key: deckFx.gottEffect });
+  if (deckFx.finisher && deckFx.finisher !== "standard") activeFx.push({ key: deckFx.finisher, syn: true });
+
   // #372 Archetyp-Karten-FX (Neon-Moos/Frost/Ionensturm) im Leerlauf vorwärmen — NUR außerhalb des Stichspiels
   // (Entscheidungs-/Ruhephasen: Skill-/Perk-Wahl, Formation, Architekt, Menü), damit Chunk-Load + Erst-Bitmap-Aufbau
   // nicht selbst mitten in Animationsframes fallen. Je Session einmal pro aktivem Archetyp; gestaffelt (ein Effekt je
@@ -1034,7 +1048,7 @@ function AutostichGame() {
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)}
             deckId={activeDeckId} bfId={activeBfId} deckBack={deckSkin.back} lastRun={lastRun} battlefield={bfSkin}
-            musicTitle={musicTitle} onMusicNext={() => music.next()} />
+            musicTitle={musicTitle} onMusicNext={() => music.next()} activeFx={activeFx} />
         ) : (<>
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +
