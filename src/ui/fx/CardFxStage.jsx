@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isCoarse, DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: Gerätestufe (eine Wahrheit)
 import { Application, Container, Graphics } from "pixi.js";
 import { drawEdgeGlow } from "./cardFx/edgeGlow.js";
 import { drawHolo } from "./cardFx/holo.js";
@@ -142,7 +143,10 @@ export function CardFxStage({
     };
 
     app.init({
-      canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
+      /* #perf-mobile: MSAA auf dem Handy aus. Dieselbe Begründung wie bei den Prunks (pixiGott.js), dort gemessen:
+         die Ebenen hier sind weiche Glows und vorgebackene Verläufe — daran hat MSAA nichts zu glätten, es kostet
+         aber pro Frame ein Full-Canvas-Resolve. Am Desktop bleibt es an (dort ist die Kante bei Holo/Glitch sichtbar). */
+      canvas, preference: "webgl", backgroundAlpha: 0, antialias: !isCoarse(), autoDensity: true,
       // #perf-mobile: auf lite (Mobile) DPR 1.25 statt 2 → das Karten-Overlay (bis 2 Karten vollflächig) kostet ~⅗ Fill.
       resolution: Math.min(stateRef.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance",
     }).then(() => {
@@ -160,7 +164,12 @@ export function CardFxStage({
       const st = stateRef.current;
       // #perf-mobile: Karten-Overlay auf lite auf 40 fps deckeln (fokaler Effekt → bewusst etwas höher als die 30 fps
       //   der Feld-Bühne), Desktop/full ungedeckelt. Bei jedem applyRun (Aktiv-/Stufenwechsel) frisch gesetzt.
-      a.ticker.maxFPS = st.lite ? 40 : 0;
+      /* #perf-mobile: auf dem Handy 30 statt 40. Der teure Posten ist hier NICHT das Zeichnen, sondern dass der
+         tick je Frame die Kartenboxen misst — getBoundingClientRect erzwingt ein Layout, und im Battlefield halten
+         Score-Floats, Groß-Ansage und Kartenflip das Layout ohnehin permanent schmutzig. Cachen geht nicht: anders
+         als das Prunk-Panel BEWEGEN sich die Karten (Flip, Sieger-Ankippen), die Messung muss also je Frame sein.
+         Bleibt, sie seltener zu machen — 40 → 30 Hz sind ein Viertel weniger erzwungene Layouts. */
+      a.ticker.maxFPS = isCoarse() ? DRAW_HZ_COARSE : (st.lite ? 40 : 0);
       const run = st.anyLayer && st.anyActive && st.active && document.visibilityState !== "hidden";
       if (run) a.ticker.start();
       else { a.ticker.stop(); clearAll(); }
