@@ -78,7 +78,7 @@ function toPixiFrag(src) {
 }
 
 /* Ein Pixi-Feld mit gegebenem Fragment-Shader. Fängt ALLES ab und meldet den Fehlertext nach außen. */
-function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
+function PixiShaderBox({ label, fragment, needsSurfUniforms = false, resScale = 1, onPixels = null }) {
   const hostRef = useRef(null);
   const [draws, setDraws] = useState(0);
   const [err, setErr] = useState("");
@@ -94,7 +94,7 @@ function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
         const canvas = document.createElement("canvas");
         app = new Application();
         await app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: false,
-          autoDensity: true, resolution: Math.min(1.5, window.devicePixelRatio || 1), resizeTo: host });
+          autoDensity: true, resolution: Math.min(1.5, window.devicePixelRatio || 1) * resScale, resizeTo: host });
         if (disposed) { app.destroy(true); return; }
         canvas.style.cssText = "width:100%;height:100%;display:block";
         host.appendChild(canvas);
@@ -103,7 +103,7 @@ function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
         const uniforms = { uTime: { value: 0, type: "f32" } };
         if (needsSurfUniforms) Object.assign(uniforms, {
           // uRes MUSS die Framebuffer-Größe sein (canvas.width), nicht die CSS-Größe — s. Kommentar an `fit()`.
-          uRes: { value: [(host.clientWidth || 300) * 1.5, (host.clientHeight || 190) * 1.5], type: "vec2<f32>" },
+          uRes: { value: [canvas.width || 450, canvas.height || 285], type: "vec2<f32>" },
           uMode: { value: 0, type: "f32" },   // 0 = Standard-Palette, wie Feld 1 → Bilder direkt vergleichbar
           uDeck1: { value: [0.043, 0.227, 0.267], type: "vec3<f32>" },
           uDeck2: { value: [0.2, 1.0, 0.8], type: "vec3<f32>" },
@@ -147,6 +147,7 @@ function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
         };
         app.ticker.stop();            // eigener Takt → Zeichnungen sind zählbar
         raf = requestAnimationFrame(loop);
+        onPixels && onPixels(canvas.width * canvas.height);
         const iv = setInterval(() => { if (!disposed) { setDraws(n); n = 0; } }, 1000);
         host._iv = iv;
       } catch (e) { onGlError(e); }
@@ -158,7 +159,7 @@ function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
       if (host._iv) clearInterval(host._iv);
       if (app) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-  }, [fragment, needsSurfUniforms]);
+  }, [fragment, needsSurfUniforms, resScale, onPixels]);
 
   return (
     <div style={BOX}>
@@ -200,18 +201,60 @@ export default function FxSpike() {
         <PixiShaderBox label="3 · Pixi — DERSELBE Brandungs-Shader" fragment={toPixiFrag(NEONSURF_FRAG)} needsSurfUniforms />
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 11, lineHeight: 1.5, opacity: 0.85 }}>
-        <b>So lesen — entscheidend ist Feld 2.</b><br />
-        Feld 1 muss leuchten. Tut es das nicht, sagt die Seite nichts über Pixi, sondern etwas über das Gerät.<br />
-        <b>Feld 2 leuchtet</b> → Pixi-Custom-Shader laufen auf diesem Gerät. Der alte Befund („rendert auf dem
-        Mobile-Setup NICHT") ist damit überholt, ein Pixi-Kompositor ist möglich (Ziel A).<br />
-        <b>Feld 2 schwarz oder FEHLER</b> → Pixi-Custom-Shader gehen hier nicht. Kompositor wird raw-WebGL (Ziel C).<br />
-        <br />
-        <b>Feld 3</b> ist die Probe, ob der fertige Brandungs-Shader unverändert durch Pixi läuft. Auf dem
-        Entwicklungsrechner tut er das, und er soll dabei aussehen wie Feld 1 (gleiche Palette, gleiche Wellen —
-        die Bilder laufen unabhängig, sind also nicht Frame-gleich). Sieht er bei dir anders aus oder bleibt
-        schwarz, ist DAS der interessante Befund für die Portierung.
+      <ResCompare />
+
+      <div style={{ marginTop: 14, fontSize: 11, lineHeight: 1.5, opacity: 0.85 }}>
+        <b>So lesen.</b><br />
+        <b>1</b> muss leuchten. Tut es das nicht, sagt die Seite nichts über Pixi, sondern etwas über das Gerät.<br />
+        <b>2</b> ist die Architektur-Frage: leuchtet es, laufen Pixi-Custom-Shader auf diesem Gerät und ein
+        Pixi-Kompositor ist möglich. Schwarz oder FEHLER → der Kompositor müsste raw-WebGL werden.<br />
+        <b>3</b> prüft, ob der fertige Brandungs-Shader unverändert durch Pixi läuft. Er soll aussehen wie 1
+        (gleiche Palette und Wellen — die Bilder laufen unabhängig, sind also nicht Frame-gleich).<br />
+        <b>4</b> ist die Kostenfrage: rechts wird reduziert gerendert und hochskaliert. <b>Siehst du zwischen links
+        und rechts keinen Unterschied, ist der Hebel frei</b> — dann kann jede weiche Ebene so laufen und spart die
+        angezeigte Füllarbeit. Wichtig ist der Vergleich NEBENEINANDER; aus dem Gedächtnis urteilt man daneben.
       </div>
+    </div>
+  );
+}
+
+/* Der eigentliche Hebel des Umbaus: die Kosten hängen fast nur an Canvas-Pixeln pro Sekunde und skalieren
+   QUADRATISCH mit der Auflösung. Eine weiche Ebene bei halber Auflösung zu rendern und hochzuskalieren wäre
+   also ~4× billiger — wenn man den Unterschied nicht sieht. Genau das kann nur ein Auge auf einem echten Gerät
+   beurteilen, und nur NEBENEINANDER: aus dem Gedächtnis vergleicht niemand zuverlässig zwei Weichzeichnungen.
+   Links immer voll, rechts der gewählte Faktor, beide mit ihrer echten Pixelzahl. */
+function ResCompare() {
+  const [scale, setScale] = useState(0.5);
+  const [pxFull, setPxFull] = useState(0);
+  const [pxRed, setPxRed] = useState(0);
+  const frag = toPixiFrag(NEONSURF_FRAG);
+  const btn = (v) => ({
+    padding: "6px 10px", borderRadius: 6, border: "1px solid " + (scale === v ? "#5fce86" : "#3a3a44"),
+    background: scale === v ? "#5fce8622" : "#1a1a22", color: scale === v ? "#5fce86" : "#c8c8d2",
+    font: "600 12px ui-monospace, monospace", cursor: "pointer",
+  });
+  const spar = pxFull > 0 && pxRed > 0 ? Math.round((1 - pxRed / pxFull) * 100) : 0;
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>4 · Auflösung: trägt die Halbierung?</div>
+      <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 8 }}>
+        Links volle Auflösung, rechts reduziert und hochskaliert. Siehst du keinen Unterschied, ist der Hebel frei.
+      </div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+        {[1, 0.75, 0.5, 0.35].map((v) => (
+          <button key={v} type="button" style={btn(v)} onClick={() => setScale(v)}>×{v}</button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <PixiShaderBox label="VOLL" fragment={frag} needsSurfUniforms resScale={1} onPixels={setPxFull} />
+        <PixiShaderBox label={`REDUZIERT ×${scale}`} fragment={frag} needsSurfUniforms resScale={scale} onPixels={setPxRed} />
+      </div>
+      <div style={{ marginTop: 6, fontSize: 11, opacity: 0.8 }}>
+        {pxFull > 0 && pxRed > 0
+          ? `${(pxFull / 1000).toFixed(0)}k gegen ${(pxRed / 1000).toFixed(0)}k Pixel je Zeichnung — ${spar} % weniger Füllarbeit.`
+          : "Pixelzahlen werden ermittelt …"}
+      </div>
+
     </div>
   );
 }
