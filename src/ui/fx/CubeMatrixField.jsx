@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { getMusicAnalyser } from "../musicAnalyser.js";
+import { isCoarse } from "./mobileTier.js";
 
 /* #317 Cube-Matrix — musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer von oben.
    Reiner Hintergrund-Effekt (bgfx): läuft KONTINUIERLICH zur laufenden Musik (nicht pro Stich). Jeder Würfel = ein
@@ -67,6 +68,15 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     const ctx = canvas.getContext("2d");
     if (!ctx) return () => { try { host.removeChild(canvas); } catch { /* ignore */ } };
 
+    /* #perf-mobile: Der Sparpfad hing bisher allein an der OPTION `lite`. Ein Handy mit „Effekte voll" lief damit im
+       kompletten Desktop-Pfad — DPR 1,25 · ~41 fps · 18×6 Würfel · 40 Strahlstreifen · Spot-Bloom an. Genau die
+       Geräteblindheit, gegen die mobileTier.js existiert. Der Zeigertyp ist jetzt ein UNTERGRENZE: coarse ⇒ mindestens
+       lite, die Option kann nur noch weiter drosseln, nicht mehr aufdrehen. Gemessen (fx-bench, 4× Drossel, isoliert):
+       Haupt-Thread-JS 12,3 % → 5,3 % der Kernzeit, also gut die Hälfte weg — und das ist die eine Datei, in der nach
+       den Hebeln 01–05 überhaupt noch nennenswert Skriptlast steckt (alle übrigen Effekt-Schleifen messen ~0). */
+    const COARSE = isCoarse();
+    const liteOn = () => COARSE || !!propsRef.current.lite;
+
     let W = 0, H = 0, DPR = 1, raf = 0, disposed = false;
     const cubeV = new Float32Array(4096), baseB = new Float32Array(4096);
     let spotBass = 0, spotBassBase = 0;
@@ -78,7 +88,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     function resize() {
       const r = host.getBoundingClientRect();
       // #perf: DPR gedeckelt (Vollflächen-Effekt) — auf Mobile (lite) auf 1.0 → ~halbe Fill-Kosten ggü. 1.5.
-      DPR = Math.min(propsRef.current.lite ? 1.0 : 1.25, window.devicePixelRatio || 1);
+      DPR = Math.min(liteOn() ? 1.0 : 1.25, window.devicePixelRatio || 1);
       W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
       canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -169,7 +179,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         // #glow: LEUCHTENDER Neon-Look statt blasser Striche — heller Kern-Strich + ein breiterer, dimmerer additiver
         //   Glow-Halo (Bloom um die Kanten). Beide in glowC (Deckfarbe, #343) → satter Neon-Rahmen ohne Weiß-Wäsche.
         const laCore = clamp(0.78 + glowA * 1.2, 0.55, 1) * (0.55 + 0.45 * alpha);   // heller als vorher (war 0.5-Basis)
-        const litFull = !propsRef.current.lite;
+        const litFull = !liteOn();
         ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; ctx.lineJoin = "round";
         const face = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.stroke(); };
         const drawFaces = () => {
@@ -194,7 +204,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     // Weicher Lichtstrahl: viele dünne, aneinandergereihte Streifen; Helligkeit quer = Gauß → glatte Kante ohne Layer.
     function drawBeam(ax, ay, bx, by, apexHalf, baseHalf, col, alpha, sigma) {
       const g = ctx.createLinearGradient(0, ay, 0, by); g.addColorStop(0, rgba(col, 1)); g.addColorStop(0.55, rgba(col, 0.4)); g.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = g; const N = propsRef.current.lite ? 18 : 40, s2 = 2 * sigma * sigma; // #perf: weniger Streifen (war 64) — #perf-mobile: lite 28→18
+      ctx.fillStyle = g; const N = liteOn() ? 18 : 40, s2 = 2 * sigma * sigma; // #perf: weniger Streifen (war 64) — #perf-mobile: lite 28→18
       for (let k = 0; k < N; k++) { const u0 = (k / N) * 2 - 1, u1 = ((k + 1) / N) * 2 - 1, um = (u0 + u1) * 0.5;
         ctx.globalAlpha = alpha * Math.exp(-(um * um) / s2);
         ctx.beginPath(); ctx.moveTo(ax + u0 * apexHalf, ay); ctx.lineTo(ax + u1 * apexHalf, ay); ctx.lineTo(bx + u1 * baseHalf, by); ctx.lineTo(bx + u0 * baseHalf, by); ctx.closePath(); ctx.fill(); }
@@ -211,7 +221,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       for (let i = 0; i < n; i++) {
         const ax = W / 2 + (n > 1 ? (i / (n - 1) * 2 - 1) : 0) * span * (W * 0.5), hw = (W / (n + 1)) * TUNE.SPOT_WIDTH, bx = ax - (ax - W / 2) * TUNE.SPOT_TILT;
         drawBeam(ax, apexY, bx, baseYY, hw * 0.14, hw, col, pulse, sigma);
-        if (TUNE.SPOT_BLOOM > 0 && !propsRef.current.lite) { const qy = apexY + H * 0.03, qr = H * (0.05 + 0.10 * TUNE.SPOT_BLOOM), sg = ctx.createRadialGradient(ax, qy, 0, ax, qy, qr); // #perf-mobile: Spot-Bloom (Radial-Gradient/Frame) auf lite aus
+        if (TUNE.SPOT_BLOOM > 0 && !liteOn()) { const qy = apexY + H * 0.03, qr = H * (0.05 + 0.10 * TUNE.SPOT_BLOOM), sg = ctx.createRadialGradient(ax, qy, 0, ax, qy, qr); // #perf-mobile: Spot-Bloom (Radial-Gradient/Frame) auf lite aus
           sg.addColorStop(0, rgba(mix(col, [255, 255, 255], 0.5), pulse * TUNE.SPOT_BLOOM)); sg.addColorStop(1, rgba(col, 0)); ctx.fillStyle = sg; ctx.fillRect(ax - qr, qy - qr, qr * 2, qr * 2); }
       }
       ctx.globalCompositeOperation = "source-over";
@@ -229,7 +239,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const hasAudio = !p.reduced && computeSpeed();
       if (drawField) {
         // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
-        const C = Math.round(TUNE.C_COLS) - (p.lite ? 6 : 0), R = Math.round(TUNE.C_ROWS) - (p.lite ? 2 : 0), TC = C * R; // #perf-mobile: lite 14×5=70 → 12×4=48 Würfel
+        const C = Math.round(TUNE.C_COLS) - (liteOn() ? 6 : 0), R = Math.round(TUNE.C_ROWS) - (liteOn() ? 2 : 0), TC = C * R; // #perf-mobile: lite 14×5=70 → 12×4=48 Würfel
         if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio);
         const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP * (p.depthScale || 1), hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
         const taper = TUNE.C_TAPER;
@@ -265,7 +275,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     function frame(now) {
       if (disposed) return;
       raf = requestAnimationFrame(frame);
-      const FRAME_MS = propsRef.current.lite ? 40 : 24; // #perf-mobile: lite ~25fps (war ~30) — Ambiente verträgt das
+      const FRAME_MS = liteOn() ? 40 : 24; // #perf-mobile: lite ~25fps (war ~30) — Ambiente verträgt das
       if (now - lastT < FRAME_MS) return;
       lastT = now;
       render();
