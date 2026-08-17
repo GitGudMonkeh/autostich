@@ -212,9 +212,29 @@ Punktliste, Farbmischung und die `passes`-Literale. Bei 30 fps sind das ~5800 ku
   reihenfolge-unabhängig. Die Sortierung lief dort also jeden Frame umsonst.
 - Scratch-Puffer liegen **je Instanz**, nicht modulweit: der Effekt kann doppelt leben (Spiel + Werkstatt-
   Vorschau) und beide würden sich sonst im selben Frame denselben Puffer überschreiben.
-- **Gezählt, nicht am Gerät gemessen** — die Einsparung ist aus dem Code abgeleitet. Der nächste Hebel wäre
-  `resLite` (1,25 → 1,0 wie bei der Supernova, ~36 % weniger Fill), aber die 1,5-px-Kernlinien werden ohne
-  MSAA sichtbar treppig; das gehört an ein echtes Gerät, nicht auf den Schreibtisch.
+- **Gezählt, nicht am Gerät gemessen** — die Einsparung ist aus dem Code abgeleitet.
+
+#### #perf-holo2 — Auflösung runter, Linienbreite gegengerechnet
+Zweiter Durchgang. Frage war „hilft es, den Würfel ~20 % kleiner zu machen?" — **nein, und die Rechnung sagt
+auch warum.** Auf einem 360×340-Panel decken die 96 Kanten (7.200 px Linie × 1,5 px) rund **8,8 % der Canvas**
+ab; der Rest ist die vollflächige transparente Ebene, die pro Frame ohnehin komponiert wird (dieselbe Messung
+wie bei den anderen Prunks: Kosten ≈ Canvas-Pixel/s, fast unabhängig vom Bildinhalt). 20 % kleiner spart
+deshalb 20 % von 8,8 % = **1,6 %** — und auf der CPU gar nichts, weil die Tessellierung an der SEGMENTZAHL
+hängt (96, unverändert), nicht an der Länge.
+- **Der Hebel ist `resolution`** (quadratisch): `resLite` 1,25 → 1,0 = **~35 % weniger Füllarbeit**.
+- **Kleiner machen kompensiert das Aliasing NICHT.** Was über „treppig" entscheidet, ist die Linienbreite in
+  GERÄTE-Pixeln — und die ist von der Würfelgröße unabhängig (Stroke-Breite steht in CSS-px). Ein kleinerer
+  Würfel macht die Artefakte nur kleiner, nicht seltener.
+- **Was kompensiert, ist die Breite:** `coreW` auf lite 1,5 → **1,9**. Über Geräte-Pixel gemessen ist die Linie
+  danach exakt so breit wie vorher (1,5 × 1,25 = 1,875 gegen 1,9 × 1,0). Kostet ~1 Prozentpunkt der Ersparnis
+  und kauft die Schärfe vollständig zurück. **Netto 34,6 % bei unveränderter Kantenschärfe.**
+- Gröber abgetastet wird damit nur der Kern-Blitz — eine weiche, vorgebackene Radialtextur, also genau der
+  Fall, in dem Auflösung am wenigsten trägt (dieselbe Begründung wie für `antialias: false`).
+- **Merksatz für die anderen vier Prunks:** Auflösung senken ist fast immer richtig, aber jede Linie, die
+  danach dünner als ~1,8 Geräte-Pixel läge, braucht ihren Breiten-Ausgleich mit. Ohne den tauscht man Fill
+  gegen Aliasing statt gegen nichts.
+- **Nicht am Gerät verifiziert.** Alles gerechnet; ob 1,9 px auf dem Display wirklich wie vorher aussieht,
+  entscheidet das Display.
 
 ### #perf-meteor2 — „noch weniger Meteoriten": Anzahl bei Turbo, Fläche im späten Lauf
 Die drei Deckel aus Runde 1 (`starfieldBudget.js`) machen jeden EINZELNEN Kometen billiger, die Menge blieb.

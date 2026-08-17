@@ -201,7 +201,11 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
         if (doFaces) { for (const f of FACES) { g.poly([P[base + f[0] * 2], P[base + f[0] * 2 + 1], P[base + f[1] * 2], P[base + f[1] * 2 + 1], P[base + f[2] * 2], P[base + f[2] * 2 + 1], P[base + f[3] * 2], P[base + f[3] * 2 + 1]]).fill({ color: cGlow, alpha: clamp(0.10 * TUNE.FACE * A, 0, 1) }); } }
         // Kanten: Zwei-Pass (breiter Glow + heller Kern) → Neon-Glow ohne shadowBlur. #perf: auf lite nur der Kern-Pass
         // (halbe Stroke-Zahl) — der Glow-Pass entfällt, dafür der Kern minimal breiter/kräftiger, damit der Look hält.
-        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.5 : 1.6;
+        /* #perf-holo2: Auf lite 1,9 statt 1,5 CSS-px. Das ist KEINE Look-Änderung, sondern die Gegenrechnung
+   zur gesenkten `resolution` (1,25 → 1,0, s. app.init unten): über die Geräte-Pixel gemessen ist die
+   Linie danach exakt so breit wie vorher (1,5 × 1,25 = 1,875 gegen 1,9 × 1,0). Genau diese Zahl —
+   Breite in GERÄTE-Pixeln — entscheidet darüber, ob eine dünne Linie ohne MSAA treppig wird. */
+        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.9 : 1.6;
         const passes = s.lite ? PASS_LITE : PASS_FULL;
         for (let pi = 0; pi < passes.length; pi++) {
           const isGlow = passes[pi] === 0;
@@ -228,8 +232,15 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
     function startPlay() { const a = appRef.current, pl = playRef.current; if (disposed) return; if (!a) { pl.pending = true; return; } pl.pending = false; buildBlocks(); pl.playing = true; pl.bt = 0; placer.invalidate(); pl.gapping = false; pl.gapT = 0; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
-    // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
-    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
+    /* #perf-holo2: `resLite` 1,25 → 1,0. Fill geht QUADRATISCH mit der Auflösung, das ist damit der einzige
+       Hebel am Würfel mit zweistelligem Gewinn: gerechnet auf einem 360×340-Panel rund 35 % weniger Füllarbeit
+       je Frame — gegenüber 1,6 %, die ein um 20 % kleinerer Würfel gebracht hätte (die Striche decken nur ~9 %
+       der Canvas ab, der Rest ist die vollflächige transparente Ebene, die ohnehin jeden Frame komponiert wird).
+       Die Kanten verlieren dabei nichts: ihre Breite ist oben gegengerechnet. Was gröber abgetastet wird, ist der
+       Kern-Blitz — und der ist eine weiche, vorgebackene Radialtextur, also genau der Fall, in dem Auflösung am
+       wenigsten trägt (dieselbe Begründung wie für `antialias: false`, s. pixiGott.js).
+       Ticker-Cap kommt aus `mobileTier` (lite = DRAW_HZ_COARSE). */
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite, resLite: 1.0 }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
