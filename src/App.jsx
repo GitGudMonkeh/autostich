@@ -7,7 +7,6 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import logo from "./assets/logo-wordmark.png"; // #UI: Neon-Wortmarke (wie StartScreen) — ersetzt das Text-Logo im Run-Kopf
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone, loadRunHistory } from "./game/storage.js";
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
@@ -1042,18 +1041,17 @@ function AutostichGame() {
           <header className="flex items-center justify-between gap-2">
             {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
             <div className="flex items-center gap-3 flex-wrap min-w-0">
-              {/* #UI: Neon-Wortmarke als Bild (wie StartScreen). Das Logo hat einen echten Alpha-Kanal → ohne
-                  mix-blend-mode, blendet sauber auf den dunklen Run-Kopf. Ambient-Glow dahinter wie am Mainscreen
-                  (Cyan links · Violett Mitte · Amber rechts → spiegelt den Wortmarken-Verlauf). */}
+              {/* #UI: Wortmarke im Run-Kopf, mit Ambient-Glow dahinter wie am Mainscreen. */}
               <div className="relative isolate shrink-0">
-                {/* Fläche großzügig größer als das Logo + früher Transparenz-Auslauf + Blur → weicher Übergang,
-                    kein harter Rechteck-Rand. */}
-                <div aria-hidden="true" className="pointer-events-none absolute -z-10" style={{ inset: "-150% -70%", filter: "blur(9px)",
-                  background:
-                    "radial-gradient(58% 62% at 30% 50%, rgba(38,198,230,.20), transparent 60%)," +
-                    "radial-gradient(60% 64% at 52% 46%, rgba(155,130,240,.22), transparent 60%)," +
-                    "radial-gradient(58% 62% at 74% 50%, rgba(242,168,58,.16), transparent 60%)" }} />
-                <img src={logo} alt={t("start.logo.alt")} draggable="false" className="h-14 w-auto select-none block" />
+                {/* Fläche großzügig größer als die Marke + früher Transparenz-Auslauf + Blur → weicher
+                    Übergang, kein harter Rechteck-Rand. Farben in index.css unter `.as-runhead-glow`:
+                    bis 1400 px der Logo-Dreiklang, darüber die Deckfarben — dieselbe Regel wie am Hub. */}
+                <div aria-hidden="true" className="as-runhead-glow pointer-events-none absolute -z-10"
+                  style={{ inset: "-150% -70%", filter: "blur(9px)" }} />
+                {/* #logo — dieselbe Text-Wortmarke wie am Mainscreen (index.css `.as-wordmark`), nur klein.
+                    Hier im Lauf ist --deck-a1/--deck-a2 immer gesetzt, die Marke trägt also ab 1400 px
+                    durchgehend die Farbe des gespielten Decks. */}
+                <div className="as-wordmark as-wordmark-sm select-none block" aria-hidden="true">{t("start.logo.alt")}</div>
               </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>

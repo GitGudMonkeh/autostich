@@ -520,6 +520,70 @@ button { font-family: inherit; }
   font-weight: 400 900; font-style: normal; font-display: swap;
 }
 
+/* ============================================================================
+   WORTMARKE (#logo) — Orbitron-Text statt logo-wordmark.png
+   ----------------------------------------------------------------------------
+   WARUM: Das PNG brachte seine eigene Palette mit (Cyan → Violett → Amber). Seit der
+   Desktop-Pass Knöpfe, Streifen und Panel-Rahmen aus dem aktiven Deck einfärbt, stand
+   die Marke als einziges Element quer zu jeder Deckfarbe. Als Text folgt sie mit.
+
+   AB WELCHER BREITE DECKFARBE: erst ab 1400 px, zusammen mit dem Rest des Hubs (Knöpfe,
+   Streifen, Panel-Rahmen färben genau dort aus dem Deck). Darunter — also auf dem Handy —
+   behält die Marke den Verlauf des alten PNG: Cyan → Blau → Violett → Amber, statisch.
+   Das ist kein Rückfall, sondern die Regel: mobil bleibt der Logo-Dreiklang der Farbcode
+   (Cyan = Start, Violett = Rangliste, Amber = Währung), und der braucht seinen Anker.
+   Die Deck-Fassung steht deshalb unten in der 1400-px-Sektion, nicht hier.
+
+   Schnitt aus der Mockup-Abnahme (17.08.2026): Gewicht 450, Sperrung 0.06em, 46 px auf
+   Desktop. Die Größe hängt an --wm-size, damit Mainscreen (groß) und Run-Kopf (klein)
+   dieselbe Regel teilen. Kein `font-pixel`/`crt-title` hier: die Marke soll auch unter dem
+   CRT-Skin Orbitron bleiben, nicht auf Press Start 2P umspringen.
+   ============================================================================ */
+.as-wordmark {
+  font-family: "Orbitron", ui-monospace, monospace;
+  font-weight: 450;
+  letter-spacing: 0.06em;
+  font-size: var(--wm-size, clamp(28px, 3.3vw, 46px));
+  line-height: 1.15;
+  white-space: nowrap;
+  /* Mobil: der Verlauf des alten Logos, einmal quer durchs Wort. Statisch wie das PNG —
+     die Lichtwelle kommt erst mit der Deck-Fassung auf Desktop dazu. */
+  background: linear-gradient(90deg, #26c6e6, #5a8ade, #9b82f0, #f2a83a);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  /* drop-shadow statt text-shadow: bei transparenter Füllung schattiert WebKit sonst die
+     VOLLE Glyphe und überstrahlt den Verlauf (gleicher Grund wie bei .card-num/#ios-glow). */
+  filter: drop-shadow(0 0 9px rgba(155, 130, 240, 0.5));
+}
+@keyframes as-wordmark-sweep {
+  from { background-position: 0% center; }
+  to   { background-position: 200% center; }
+}
+/* Run-Kopf: dieselbe Marke, nur klein — ersetzt das h-14-Logo neben den Kopf-Controls. */
+.as-wordmark-sm { --wm-size: 22px; }
+@media (prefers-reduced-motion: reduce) {
+  .as-wordmark { animation: none; }
+}
+
+/* Ambient-Glow hinter der Marke — drei weiche Ellipsen im Logo-Dreiklang (Cyan links · Violett Mitte ·
+   Amber rechts). Lag bis 17.08.2026 als inline-style im JSX; inline kann keine Media Query, und genau
+   die braucht es, seit der Glow ab 1400 px in die Deckfarbe wechselt (Deck-Fassung s. 1400-px-Sektion).
+   Zwei Fassungen derselben Idee: `as-wm-glow` über der Kopfzone des Hubs, `as-runhead-glow` im Run-Kopf.
+   Beide Flächen sind absichtlich größer als die Marke und laufen früh in transparent aus — zusammen mit
+   dem Blur am Element ergibt das den kantenlosen Übergang statt eines sichtbaren Rechtecks. */
+.as-wm-glow {
+  background:
+    radial-gradient(400px 220px at 28% 30%, rgba(38, 198, 230, .16) 0%, rgba(38, 198, 230, .06) 45%, transparent 82%),
+    radial-gradient(400px 230px at 50% 24%, rgba(155, 130, 240, .17) 0%, rgba(155, 130, 240, .06) 45%, transparent 82%),
+    radial-gradient(400px 220px at 72% 30%, rgba(242, 168, 58, .13) 0%, rgba(242, 168, 58, .05) 45%, transparent 82%);
+}
+.as-runhead-glow {
+  background:
+    radial-gradient(58% 62% at 30% 50%, rgba(38, 198, 230, .20), transparent 60%),
+    radial-gradient(60% 64% at 52% 46%, rgba(155, 130, 240, .22), transparent 60%),
+    radial-gradient(58% 62% at 74% 50%, rgba(242, 168, 58, .16), transparent 60%);
+}
+
 /* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
    Selektiv angewandt (Titel/Kartenzahlen/Ueberschriften bzw. dichte Zahlen-Labels). */
 [data-skin="crt"] .font-pixel {
@@ -921,6 +985,40 @@ button { font-family: inherit; }
   .as-hub-list .as-hub-stripe { background: var(--row-tone) !important; }
   .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
+
+  /* --- Wortmarke + ihr Ambient-Glow in Deckfarbe (#logo) --------------------
+     Erst hier, nicht in der Grundregel: mobil bleibt der Logo-Dreiklang stehen (s. `.as-wordmark` oben).
+     Der Verlauf hat fünf Stopps mit Weiß an beiden Enden — nur so wandert die Lichtwelle durchs Wort,
+     ohne an der Wiederholungskante zu springen (background-size 200 % + Position 0 → 200 %).
+     Das Weiß ist außerdem die Lesbarkeits-Reserve: bei dunklen Decks trägt es die Glyphenmitte. */
+  .as-wordmark {
+    background: linear-gradient(90deg, #ffffff,
+      var(--deck-a2, #b3a8ff), var(--deck-a1, #26c6e6), var(--deck-a2, #b3a8ff), #ffffff);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(0 0 9px color-mix(in srgb, var(--deck-a1, #26c6e6) 55%, transparent));
+    animation: as-wordmark-sweep 7s linear infinite;
+  }
+  /* Der Glow hinter der Marke folgt mit: drei Ellipsen, links → rechts von der ersten in die zweite
+     Deckfarbe. Vorher standen hier feste Cyan-/Violett-/Amber-Werte — der Dreiklang des alten PNG.
+     Mit einer deckfarbenen Marke war das der letzte Rest, der die alte Palette festhielt. */
+  .as-wm-glow {
+    background:
+      radial-gradient(400px 220px at 28% 30%, color-mix(in srgb, var(--deck-a1, #26c6e6) 16%, transparent) 0%,
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 6%, transparent) 45%, transparent 82%),
+      radial-gradient(400px 230px at 50% 24%, color-mix(in srgb, var(--deck-a2, #9b82f0) 17%, transparent) 0%,
+        color-mix(in srgb, var(--deck-a2, #9b82f0) 6%, transparent) 45%, transparent 82%),
+      radial-gradient(400px 220px at 72% 30%, color-mix(in srgb, var(--deck-a1, #f2a83a) 13%, transparent) 0%,
+        color-mix(in srgb, var(--deck-a1, #f2a83a) 5%, transparent) 45%, transparent 82%);
+  }
+  /* Run-Kopf: gleiche Idee, engere Geometrie (die Fläche ist absichtlich größer als die Marke, damit der
+     Übergang kantenlos ausläuft). */
+  .as-runhead-glow {
+    background:
+      radial-gradient(58% 62% at 30% 50%, color-mix(in srgb, var(--deck-a1, #26c6e6) 20%, transparent), transparent 60%),
+      radial-gradient(60% 64% at 52% 46%, color-mix(in srgb, var(--deck-a2, #9b82f0) 22%, transparent), transparent 60%),
+      radial-gradient(58% 62% at 74% 50%, color-mix(in srgb, var(--deck-a1, #f2a83a) 16%, transparent), transparent 60%);
+  }
 
   /* --- Wandernder Deckfarben-Rahmen an durchscheinenden Panels --------------
      WICHTIG, sonst baut das jemand falsch nach: Der Rahmen von `.as-panel` (oben) funktioniert NUR, weil

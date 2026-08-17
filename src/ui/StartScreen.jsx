@@ -3,7 +3,6 @@ import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
-import logo from "../assets/logo-wordmark.png";
 import { GlossaryPanel } from "./Glossary.jsx";
 import { rarityLabel, deckDef, battlefieldDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
@@ -162,16 +161,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     /* `hub-root`: der senkrechte Rhythmus der Desktop-Fassung steht in index.css, weil er von ZWEI
        Bedingungen abhängt (Breite ≥ 1400 UND Fensterhöhe) — als Tailwind-Variante wäre das nicht lesbar. */
     <div className="hub-root relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1">
-      {/* Ambient-Glow hinter dem Logo — spiegelt den Logo-Verlauf (Cyan links · Violett Mitte · Amber rechts).
-          Verankert die ganze Kopfzone farblich im Logo, ohne laute Flächen.
-          #desktop: skaliert mit, sonst bliebe er auf 1920 px ein kleiner Fleck über einer breiten Bühne. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[380px] min-[1400px]:h-[620px] -z-10"
-        style={{ filter: "blur(30px)", background:
-          // Weicher Auslauf: sanfte Falloff-Kurve (Farbe → halb → 0) statt harter transparent-70%-Kante, plus
-          // blur(30px) → der Glow löst sich komplett kantenlos auf, ganz weich in den dunklen Grund.
-          "radial-gradient(400px 220px at 28% 30%, rgba(38,198,230,.16) 0%, rgba(38,198,230,.06) 45%, transparent 82%)," +
-          "radial-gradient(400px 230px at 50% 24%, rgba(155,130,240,.17) 0%, rgba(155,130,240,.06) 45%, transparent 82%)," +
-          "radial-gradient(400px 220px at 72% 30%, rgba(242,168,58,.13) 0%, rgba(242,168,58,.05) 45%, transparent 82%)" }} />
+      {/* Ambient-Glow hinter der Wortmarke. Verankert die ganze Kopfzone farblich, ohne laute Flächen.
+          #desktop: skaliert mit, sonst bliebe er auf 1920 px ein kleiner Fleck über einer breiten Bühne.
+          #logo: Die drei Ellipsen stehen seit 17.08.2026 in index.css unter `.as-wm-glow` — bis 1400 px im
+          Logo-Dreiklang (Cyan · Violett · Amber), darüber in den Deckfarben, genau wie die Marke selbst.
+          Als Klasse statt inline, weil ein inline-style keine Media Query kennt.
+          Der weiche Auslauf (Farbe → halb → 0) plus blur(30px) löst den Glow kantenlos in den Grund auf —
+          ohne die Falloff-Kurve zeichnete sich die Rechteckkante der Fläche ab. */}
+      <div aria-hidden="true" className="as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[380px] min-[1400px]:h-[620px] -z-10"
+        style={{ filter: "blur(30px)" }} />
 
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
           gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
@@ -209,12 +207,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Flex-Spalte darüber ordnet also weiterhin alle Bausteine direkt — Handy-Reihenfolge unverändert. */}
       <div className="hub-pair">
       <div className="hub-play">
-      {/* Neon-Wortmarke (ersetzt Text-Logo + altes Element-PNG). Echter Alpha-Kanal (dunkel → transparent),
-          daher kein Rechteck-Rahmen mehr — blendet sauber auf jeden Grund (auch CRT-Skin). */}
-      <div className="inline-block">
-        <img src={logo} alt={t("start.logo.alt")} draggable="false"
-          className="w-full max-w-[248px] min-[1400px]:max-w-[480px] h-auto select-none" />
-      </div>
+      {/* #logo — Wortmarke als Text (Orbitron) statt logo-wordmark.png: das PNG hatte eine feste Palette und
+          stand damit quer zu jeder Deckfarbe, seit der Desktop-Pass den Hub aus dem aktiven Deck einfärbt.
+          Look, Größe und Verlauf stehen in index.css unter `.as-wordmark`. Der Text kommt weiter aus dem
+          i18n-Katalog — der Key hieß zu PNG-Zeiten „alt", trägt jetzt die sichtbare Marke (in beiden
+          Sprachen „AUTOSTICH", deshalb in der SAME_OK-Liste der i18n-Guards). */}
+      <h1 className="as-wordmark select-none">{t("start.logo.alt")}</h1>
       {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
           den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
           Spiel ohnehin schon offen hat, und der Stempel war unter Nickname, PWA-Link und Datenschutz-Zeile
@@ -223,8 +221,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
           Das goldene v-Banner an der Wortmarke ist ersatzlos weg. Es saß als absolutes Overlay über der
           Unterkante der Marke, kostete den Kopf diesen Überhang — und nannte mit „v0.4" ohnehin nur den
-          Anfang dessen, was der Stempel daneben vollständig trägt. Eine Zeile, eine Versionsangabe. */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text -mt-3 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
+          Anfang dessen, was der Stempel daneben vollständig trägt. Eine Zeile, eine Versionsangabe.
+
+          #logo: Das frühere `-mt-3` ist raus. Es zog die Zeile in den transparenten Rand des PNG hinein;
+          die Text-Wortmarke hat diesen Rand nicht, dort saß die Zeile dann auf der Unterkante der Marke.
+          Höhe kostet das nichts — der Text baut ohnehin gut 30 px niedriger als das Bild. */}
+      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text mt-0.5 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
