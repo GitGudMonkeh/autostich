@@ -197,6 +197,27 @@ Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — 
   benutzen dafür `UNPACK_FLIP_Y_WEBGL`, Pixi lädt ungedreht. Prüfen an einer Wegwerf-Ebene, die NUR die Textur
   ausgibt, neben demselben Bild als DOM-`<img>` — nicht am fertigen Effekt.
 
+### #perf-nova — Supernova mobil getrimmt: die Kosten waren die CPU, nicht die Füllrate
+Profil des Prunks im isolierten Messstand (Handy-Viewport, `lite`): **`buildLine` allein 673 von 1563 ms**, mit
+`buildSimpleUvs`/`packIndex`/`packAttributes`/`buildContextBatches` rund **60 % der Hauptthread-Arbeit** — reines
+Neu-Tessellieren derselben Striche, Frame für Frame. Das ist die Ergänzung zur alten Prunk-Regel („Kosten hängen an
+Canvas-Pixeln pro Sekunde"): die gilt für die FÜLLRATE, aber ein `Graphics`, das je Frame `clear()`+neu aufzeichnet,
+kostet zusätzlich auf der CPU — und zwar auf dem Thread, wo die Frames verloren gehen.
+- **Gemessen (24-s-Fenster, Median aus 3 Läufen — kürzere Fenster streuen um Faktor 2, weil mal mehr, mal weniger
+  Detonation hineinfällt): 2239 → 1423 ms Hauptthread (−36 %), davon Geometrie-Neubau 1135 → 477 ms (−58 %).**
+- **Ohne jede Look-Änderung:** (1) die Tunnel-SPEICHEN haben eine unveränderliche Form (gleicher Innen-/Außenradius,
+  gleiche Breite, gleiche Farbe — nur Winkel und Deckkraft wandern). Sie liegen jetzt EINMAL je Abspielvorgang als
+  eigenes `Graphics` und werden nur noch gedreht. (2) Solange der Tunnel unsichtbar ist (vor dem Ein-, nach dem
+  Ausblenden), wird die Canvas nicht mehr jeden Frame geleert UND gerendert.
+- **Nur auf `lite` (Handy):** Tunnel-Ringe 10→8 · Chroma-Bänder 6→4 · Strahlen 24→16 · Speed-Streaks 30→20.
+- **Falle beim Bänder-Kürzen:** `nBands` steuerte auch die BREITE der chromatischen Spreizung mit
+  (`rb = R + (bu−0.5)·RING_SEP·nBands·H`). Weniger Bänder hätten den Farbsaum also schmaler statt nur gröber gemacht
+  — eine andere Choreografie, keine Sparmaßnahme. Anzahl und Breite sind jetzt getrennt (`bandSpread`).
+- **Nicht angefasst, wäre der nächste Schritt:** die ZWEI Vollbild-Canvas (Tunnel z-9 + Nova z-11, DOM-Karte z-10
+  dazwischen). Sie zu bündeln hieße, die Karte wie beim Hologrid-Slice in die Pixi-Bühne zu backen — echter Umbau,
+  keine Nachjustierung. Ebenso offen: `lite`-Dichte 1,0 → 0,85 (~28 % weniger Füllarbeit, dünne Linien werden ohne
+  MSAA treppig) und der Tunnel mit halber Zeichenrate (halbiert seine Kosten ganz, Risiko sichtbares Ruckeln im Spin).
+
 ### #perf-overlay + #perf-hologrid (aus einem Perf-Report, 2026-08-17)
 Report eines 409-s-Laufs (Meteor + Hologrid-Slice + Neonrahmen): 386 Ruckler, davon **99 in nur 4 Architekt-Besuchen**.
 - **Report-Lesart (wichtig!):** `perfRecorder.js` schreibt einen Ruckler dem letzten Mark innerhalb von
