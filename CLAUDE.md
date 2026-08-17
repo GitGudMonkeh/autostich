@@ -124,8 +124,8 @@ ein trivialer Pixi-Custom-Shader UND der komplette Neon-Brandungs-Shader rendern
 und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger Grund: WebGPU ohne WGSL-Variante —
 `PixiStage` erzwingt inzwischen `preference:"webgl"`.
 **Ziel ist damit EIN Pixi-Kompositor** (Auflösung je Ebene, ein Composite statt vier bis fünf).
-- **Vier Fallen beim Portieren eines Vollbild-Shaders nach Pixi**, alle mit demselben Symptom: schwarzes Bild,
-  KEIN Fehler, Shader läuft. Wer die nächste Ebene portiert, spart sich damit einen halben Tag:
+- **Fünf Fallen beim Portieren eines Vollbild-Shaders nach Pixi**, die ersten vier mit demselben Symptom: falsches
+  Bild, KEIN Fehler, Shader läuft. Wer die nächste Ebene portiert, spart sich damit einen halben Tag:
   1. Bühne/Mesh rechnen in CSS-Pixeln (`app.screen`). In Pixi v8 ist `renderer.width` **nicht** die Framebuffer-
      Breite, sondern gleich `screen.width` (gemessen 300 gegen `canvas.width` 450 bei `resolution 1,5`).
   2. `gl_FragCoord` ist in einer Pixi-Bühne als Bildschirmkoordinate unbrauchbar → über `vUV` versorgen. Für den
@@ -133,6 +133,9 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
   3. GLSL ES 3.00 verlangt die Default-Precision VOR den ersten `in`/`out`-Deklarationen.
   4. Uniform-Vorzeichen: `uSurgeT = -999` ergibt über `exp(-uSurgeT/2.3)` Inf, dann `0 * Inf = NaN`, und NaN frisst
      die ganze Ausgabe. Die Komponente lädt `+999` hoch (Zeit SEIT der Ansage).
+  5. **Reservierte Wörter.** GLSL ES 3.00 hat Bezeichner reserviert, die in ES 1.00 frei waren — Aurora hatte eine
+     lokale Variable `patch` (jetzt `patchV`). Diese Falle meldet sich immerhin ehrlich („Illegal use of reserved
+     word"). Weitere Kandidaten: `sample`, `filter`, `active`, `common`, `partition`, `resource`, `input`, `output`.
 - Vorbehalt: die Spike-Rechtecke sind je ~190 px hoch, nicht Vollbild. „60/s laufen" ist damit KEIN Beleg für
   Vollbild-Kopffreiheit — nur dafür, dass der Pfad funktioniert.
 - **Auflösungs-Grenze am Gerät bestimmt (Spike-Block 4, Neon-Brandung):** ×0,75 ist unauffällig, **×0,5 ist
@@ -142,6 +145,27 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
   Hochskalieren nicht verzeiht. **Der Faktor muss deshalb PRO EBENE einstellbar sein, nicht global:** Aurora
   (breite weiche Vorhänge) und Leuchten (Glow an Konturen) tragen vermutlich weniger, sind aber NICHT gemessen —
   wer sie in den Kompositor holt, lässt sie einzeln beurteilen.
+
+### #kompositor — Feld-Ebenen in EINE Pixi-Bühne (`?fx2=1`, laufender Umbau)
+Umsetzung des Ziels aus #fx-spike. `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry;
+jede Ebene rendert in eine **eigene, kleinere Render-Textur** und wird beim Zusammensetzen hochskaliert (Kosten ∝
+Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (Faktor mobil 0,75 — am Gerät bestätigt) und **Aurora**
+(mobil 0,6 — **geschätzt, NICHT am Gerät beurteilt**; braucht denselben Seite-an-Seite-Check wie die Brandung).
+- **Umschalter je Ebene: `src/ui/fx/FieldLayer.jsx`** (`?fx2=1`, Preview/Dev-gegatet). Aufrufer geben die bisherige
+  Fassung als `fallback` mit — sie rendert ohne den Schalter UND als Rückfall, wenn der Kompositor scheitert.
+  Bewusst ENTWEDER/ODER: liefen beide, wäre die Fläche doppelt bezahlt und jede Messung wertlos.
+- **`FxBoundary` ist Pflicht um jeden lazy-Effekt.** Der Kompositor hängt an `React.lazy`; scheitert der Chunk, WIRFT
+  `lazy` beim Rendern — und die App hat sonst KEINE Error-Boundary, der ganze Baum riss ab (schwarzer Bildschirm,
+  wenige Minuten nach dem ersten Deploy live passiert).
+- **Der Shader-Port liegt in `src/ui/fx/pixiFieldShader.js`** — dort stehen die inzwischen **fünf** Fallen (s. u.),
+  `toPixiFragment` bricht neuerdings laut ab, wenn ein `gl_FragCoord` stehen bleibt (das war Falle 2 zum zweiten Mal:
+  Aurora schreibt `gl_FragCoord.xy / uRes.xy` MIT Leerzeichen, die Brandung ohne → Ersetzung griff nicht, Bild kam
+  trotzdem, nur y-gespiegelt). Die Ebenen benutzen die Shader-Quelle der Originalkomponente (`NEONSURF_FRAG`,
+  `AURORA_FRAG_SRC`) — **nie abtippen**, sonst driften alter und neuer Pfad auseinander.
+- **Noch NICHT gemessen: der eigentliche Gewinn** („ein Composite statt vier bis fünf"). Aurora und Brandung sind
+  einander ausschließende Hintergründe, es läuft also weiterhin nur EINE Ebene. Belegbar wird das erst mit
+  **Leuchten (DeckGlow)** in der Bühne — die einzige Ebene, die GLEICHZEITIG mit dem Hintergrund läuft. Sie braucht
+  zusätzlich einen `sampler2D` (Battlefield-Bild) und ist damit der nächste, größere Schritt.
 
 ### #perf-overlay + #perf-hologrid (aus einem Perf-Report, 2026-08-17)
 Report eines 409-s-Laufs (Meteor + Hologrid-Slice + Neonrahmen): 386 Ruckler, davon **99 in nur 4 Architekt-Besuchen**.

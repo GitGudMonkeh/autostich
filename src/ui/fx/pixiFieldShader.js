@@ -5,8 +5,9 @@
    60 Zeichnungen/s, optisch wie die Referenz). Damit können alle Ebenen in EINE Pixi-Bühne — und genau dafür
    ist diese Datei da.
 
-   VIER FALLEN, jede mit demselben Symptom: schwarzes Bild, KEIN Fehler, Shader läuft. Sie haben mich beim
-   ersten Port einen halben Tag gekostet; wer die nächste Ebene holt, findet sie hier statt sie neu zu suchen:
+   FÜNF FALLEN, die ersten vier mit demselben Symptom: schwarzes (oder falsches) Bild, KEIN Fehler, Shader läuft.
+   Sie haben mich beim ersten Port einen halben Tag gekostet; wer die nächste Ebene holt, findet sie hier statt
+   sie neu zu suchen:
 
      1. Zwei Koordinatenräume. Bühne und Mesh rechnen in CSS-Pixeln (`app.screen`), `gl_FragCoord` läuft über den
         FRAMEBUFFER. In Pixi v8 ist `renderer.width` NICHT die Framebuffer-Breite, sondern gleich `screen.width`
@@ -14,11 +15,19 @@
         den resolution-Faktor zu groß.
      2. `gl_FragCoord` ist in einer Pixi-Bühne als Bildschirmkoordinate unbrauchbar → über `vUV` versorgen.
         Für den Kompositor ohnehin zwingend: sobald eine Ebene in eine Render-Textur zeichnet, ist `gl_FragCoord`
-        zielrelativ und hat mit dem Bildschirm nichts mehr zu tun.
+        zielrelativ und hat mit dem Bildschirm nichts mehr zu tun. Aurora hat mich das ein zweites Mal gekostet:
+        ihr `uv` steht MIT Leerzeichen da (`gl_FragCoord.xy / uRes.xy`), die Brandung ohne — die Ersetzung griff
+        nicht, das Bild kam trotzdem, nur y-gespiegelt. Deshalb toleriert die Vorlage jetzt Zwischenraum, und
+        ein übrig gebliebenes `gl_FragCoord` bricht laut ab statt still falsch zu rendern.
      3. GLSL ES 3.00 verlangt die Default-Precision VOR den ersten `in`/`out`-Deklarationen.
      4. Uniform-Vorzeichen. Beispiel Brandung: `damp = exp(-uSurgeT/2.3)`; ein negatives `uSurgeT` ergibt Inf,
         dann `0 * Inf = NaN`, und NaN frisst die gesamte Ausgabe. Werte immer so übergeben, wie die
         Ursprungs-Komponente sie hochlädt — nicht „plausibel" raten.
+     5. RESERVIERTE WÖRTER. ES 3.00 hat Bezeichner reserviert, die in ES 1.00 frei waren — Aurora hatte eine
+        lokale Variable `patch` (jetzt `patchV`) und compilierte deshalb nicht. Diese Falle meldet sich
+        immerhin ehrlich: „Illegal use of reserved word" in der Konsole, kein stummes schwarzes Bild.
+        Weitere Kandidaten, falls eine Ebene zickt: `sample`, `filter`, `active`, `common`, `partition`,
+        `resource`, `superp`, `input`, `output`.
 
    Was hier NICHT passiert: die Bildlogik anfassen. Die Ersetzungen sind rein mechanisch, damit der Pixi-Pfad
    Zeichen für Zeichen dieselbe Rechnung macht wie das Original. */
@@ -41,13 +50,33 @@ export const PIXI_FIELD_VERT = [
    `uvExpr` ist der Ausdruck, der im Original die Bildschirm-UV liefert — er wird durch die vUV-Fassung ersetzt.
    Y wird gedreht, weil Pixis Bühne von oben zählt und die Shader von unten rechnen. */
 export function toPixiFragment(src, { uvExpr = "gl_FragCoord.xy/uRes.xy" } = {}) {
-  const uvPattern = new RegExp(uvExpr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\//g, "\\s*/\\s*"), "g");
-  const body = String(src)
-    .replace(/gl_FragColor/g, "fragColor")
-    .replace(uvPattern, "vec2(vUV.x, 1.0 - vUV.y)")
+  const body0 = String(src).replace(/gl_FragColor/g, "fragColor");
+  const body = body0
+    .replace(looseExpr(uvExpr), "vec2(vUV.x, 1.0 - vUV.y)")
     .replace(/^\s*precision\s+\w+\s+float\s*;\s*$/m, "");   // wandert in den Kopf (Falle 3)
+  /* Wächter zu Falle 2: bleibt ein `gl_FragCoord` stehen, hat die Ersetzung NICHT gegriffen (Aurora schreibt
+     `gl_FragCoord.xy / uRes.xy` mit Leerzeichen, die Brandung ohne). Das Bild kommt dann trotzdem — nur
+     y-gespiegelt, weil `gl_FragCoord` in einer Render-Textur zielrelativ zählt. Genau so ein stiller Fehler
+     soll hier nicht durchrutschen, darum laut abbrechen statt falsch rendern. */
+  if (/gl_FragCoord/.test(body)) {
+    throw new Error(`toPixiFragment: uvExpr "${uvExpr}" passt nicht auf den Quelltext — gl_FragCoord blieb stehen.`);
+  }
   return ["#version 300 es", "precision highp float;", "in vec2 vUV;", "out vec4 fragColor;"]
     .concat(body.split("\n")).join("\n");
+}
+
+/* Regex aus einem GLSL-Ausdruck, die Leerzeichen im Quelltext toleriert: die Vorlage wird entleert und an jeder
+   Naht, an der ein Nicht-Wortzeichen beteiligt ist (`.`, `/`), darf beliebiger Zwischenraum stehen. Innerhalb von
+   Bezeichnern bewusst NICHT — `gl_ FragCoord` gibt es nicht, und die Regex bleibt lesbar. */
+function looseExpr(expr) {
+  const compact = expr.replace(/\s+/g, "");
+  let out = "";
+  for (let i = 0; i < compact.length; i++) {
+    const c = compact[i];
+    if (i > 0 && !(/\w/.test(c) && /\w/.test(compact[i - 1]))) out += "\\s*";
+    out += c.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  }
+  return new RegExp(out, "g");
 }
 
 /* Geometrie eines Vollflächen-Quads in lokalen 0..1-Koordinaten. Bewusst hier und nicht beim Aufrufer:

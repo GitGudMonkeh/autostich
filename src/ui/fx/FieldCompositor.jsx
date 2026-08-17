@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { isCoarse, dprCap } from "./mobileTier.js";
 import { PIXI_FIELD_VERT, toPixiFragment, fieldQuadGeometry } from "./pixiFieldShader.js";
 import { NEONSURF_FRAG } from "./NeonSurfFieldGL.jsx";
+import { AURORA_FRAG_SRC } from "./AuroraFieldGL.jsx";
 
 /* FELD-KOMPOSITOR — eine Bühne, viele Ebenen, Auflösung je Ebene.
 
@@ -64,6 +65,37 @@ const LAYERS = {
       else { u.uSurgeT = tSec - mem.surgeStart; u.uSurgeMag = mem.surgeMag; }
     },
   },
+
+  /* Aurora — rein prozedural, kein Sampler, also derselbe mechanische Port wie die Brandung.
+     Auflösungsfaktor bewusst NIEDRIGER als bei der Brandung (0,6 statt 0,75): Aurora sind breite, weiche
+     Vorhänge ohne harte Kante — genau der Inhalt, der Hochskalieren verzeiht, während die Wasserlinie der
+     Brandung es nicht tat. Das ist eine begründete Schätzung, KEINE Messung: sie gehört am Gerät bestätigt
+     wie die 0,75, bevor man sie stehen lässt. Zu weich → hochsetzen, das ist eine Zahl. */
+  aurora: {
+    frag: () => toPixiFragment(AURORA_FRAG_SRC),
+    scaleCoarse: 0.6,
+    scaleDesktop: 1,
+    blend: "normal",
+    uniforms: (p, size) => ({
+      uRes: { value: [size.w, size.h], type: "vec2<f32>" },
+      uTime: { value: 0, type: "f32" },
+      uMode: { value: p.deckColored ? 1 : 0, type: "f32" },
+      uDeck1: { value: p.d1, type: "vec3<f32>" },
+      uDeck2: { value: p.d2, type: "vec3<f32>" },
+      // Vorhang-Anzahl wie in der Originalfassung: mobil 3, sonst 5.
+      uLayers: { value: isCoarse() ? 3 : 5, type: "f32" },
+      uBandScale: { value: p.bandScale ?? 1, type: "f32" },
+      uBandShift: { value: p.bandShift ?? 0, type: "f32" },
+    }),
+    tick: (u, p, tSec, size) => {
+      u.uTime = tSec;
+      u.uRes = [size.w, size.h];
+      u.uMode = p.deckColored ? 1 : 0;
+      u.uDeck1 = p.d1; u.uDeck2 = p.d2;
+      u.uBandScale = p.bandScale ?? 1;
+      u.uBandShift = p.bandShift ?? 0;
+    },
+  },
 };
 
 export const COMPOSITOR_LAYER_KEYS = Object.keys(LAYERS);
@@ -78,7 +110,7 @@ function hexToRgb(h, fb) {
 }
 
 export default function FieldCompositor({ layer = "neonsurf", color = null, color2 = null,
-  deckColored = false, animate = true, active = true, surge = null }) {
+  deckColored = false, animate = true, active = true, surge = null, bandScale = 1, bandShift = 0 }) {
   const hostRef = useRef(null);
   // Live-Props für den Ticker spiegeln — die Bühne wird nur EINMAL gebaut (Muster wie NeonSurfFieldGL/PixiStage:
   // ein Prop-Wechsel darf den WebGL-Kontext nicht abreißen, sonst blitzt der Effekt bei jedem Farbwechsel weg).
@@ -86,7 +118,7 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
   pRef.current = {
     d1: hexToRgb(color, [0.0431, 0.2275, 0.2667]),
     d2: hexToRgb(color2 || color, [0.2, 1.0, 0.8]),
-    deckColored, animate, surge,
+    deckColored, animate, surge, bandScale, bandShift,
   };
   const activeRef = useRef(active);
   activeRef.current = active;
@@ -175,7 +207,11 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
         });
         applyRunRef.current = applyRun;
         applyRun();
-      } catch { /* WebGL fehlt → Bühne bleibt leer, das Spiel läuft normal weiter */ }
+      } catch (e) {
+        /* WebGL fehlt oder eine Ebene ist kaputt → Bühne bleibt leer, das Spiel läuft normal weiter. Der Log ist
+           wichtig: ein Port-Fehler (s. pixiFieldShader.js) landet genau hier und wäre sonst spurlos. */
+        console.warn(`[fx] Kompositor-Ebene "${layer}" nicht aufgebaut:`, e);
+      }
     })();
 
     const onVis = () => applyRun();

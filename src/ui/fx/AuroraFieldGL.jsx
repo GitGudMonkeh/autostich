@@ -22,7 +22,10 @@ import { useRef, useEffect } from "react";
 
 const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }";
 
-const FRAG = [
+/* #kompositor: FRAG ist exportiert, damit der Feld-Kompositor EXAKT diesen Shader fährt statt eines Nachbaus
+   (s. FieldCompositor.jsx / pixiFieldShader.js). Nur lesen — die Aussagekraft des Vergleichs hängt an der
+   Wortgleichheit. */
+export const AURORA_FRAG_SRC = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2; uniform float uLayers;",
   // #359 Showcase-Platzierung: vertikale Skalierung/Verschiebung NUR des Vorhang-Bandes (nicht der Sterne). Default
@@ -123,9 +126,11 @@ const FRAG = [
   "    if(env<=0.0) continue;",
   "    float rays = fbm(vec2(x*RAY_F + fi*20.0, yy*RAY_VF/max(persp,0.15) - t*RAY_S));",
   "    rays = pow(clamp(rays,0.0,1.0), RAY_C);",
-  "    float patch = smoothstep(PATCH_FL, PATCH_FL+PATCH_C, fbm(vec2(x*PATCH_S + fi*3.0, 1.5 + t*DRIFT*0.5)));",
+  // patchV statt patch: `patch` ist in GLSL ES 3.00 ein RESERVIERTES Wort (Tessellation) und compiliert im
+  // Kompositor nicht. In ES 1.00 war es frei — umbenannt, damit BEIDE Pfade denselben Quelltext fahren.
+  "    float patchV = smoothstep(PATCH_FL, PATCH_FL+PATCH_C, fbm(vec2(x*PATCH_S + fi*3.0, 1.5 + t*DRIFT*0.5)));",
   "    float haze = mix(1.0, DEPTH_FADE, d);", // atmosphärische Tiefe: fern blasser
-  "    float v = env*(0.18+0.82*rays)*patch*haze;",
+  "    float v = env*(0.18+0.82*rays)*patchV*haze;",
   "    float h = clamp((yy-botY)/max(topY-botY,0.001),0.0,1.0);",
   "    aur += auroraCol(h)*v;",
   "  }",
@@ -135,6 +140,7 @@ const FRAG = [
   "  gl_FragColor = vec4(rgb * a, a);",   // PREMULTIPLIED (Browser-Default) → korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
+const FRAG = AURORA_FRAG_SRC;
 
 function hexToRgb(h, fb) {
   if (typeof h !== "string") return fb;

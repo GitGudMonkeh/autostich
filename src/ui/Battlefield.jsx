@@ -67,16 +67,8 @@ import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
-import { FxBoundary } from "./fx/FxBoundary.jsx"; // Auffangnetz: ein Effekt darf das Spiel nicht mitnehmen
 import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung — eigene WebGL-Canvas (wie Aurora)
-/* #kompositor A/B: `?fx2=1` schaltet die Feld-Ebene vom heutigen Ein-Canvas-Pfad auf den Kompositor um
-   (eine Bühne, Auflösung je Ebene). Default AUS — der alte Pfad bleibt der ausgelieferte, solange der
-   Umbau nicht durchgemessen ist. Hinter demselben Preview/Dev-Gate wie FX_RENDERER, damit Prod nichts davon
-   sieht und der Minifier den Leser wegfaltet. Absicht des Schalters: derselbe Build, dasselbe Gerät, EIN
-   Unterschied — nur so ist der Kompositor-Gewinn belegbar statt behauptet. */
-const FieldCompositor = lazy(() => import("./fx/FieldCompositor.jsx"));
-export const FIELD_COMPOSITOR = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
-  && (() => { try { return new URLSearchParams(window.location.search).get("fx2") === "1"; } catch { return false; } })();
+import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor A/B (`?fx2=1`): alte Canvas ODER Kompositor-Ebene
 import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
@@ -1420,32 +1412,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Hintergrund-Effekt (reiner BG) — Aurora als eigene WebGL-Canvas, z-2 HINTER dem Finisher. */}
       {auroraGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} active={boardVisible} />
+          <FieldLayer layer="aurora" color={deckA1} color2={deckA2} deckColored={auroraDeck}
+            animate={!reduced} active={boardVisible}
+            fallback={<AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck}
+              animate={!reduced} active={boardVisible} />} />
         </div>
       )}
       {/* #345 Neon-Brandung — Plasma-See am unteren Rand, z-2 HINTER dem Finisher. Groß-Ansagen treiben den Impact-Puls. */}
       {neonsurfGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          {(() => {
-            /* #kompositor: dieselbe Ebene, aber durch die geteilte Bühne mit eigener Auflösung. Bewusst ein
-               ENTWEDER/ODER — liefen beide, wäre die Fläche doppelt bezahlt und die Messung wertlos.
-               Die alte Fassung ist gleichzeitig der Rückfall: scheitert der Kompositor (Chunk, WebGL, Shader),
-               sieht der Spieler den bisherigen Effekt statt eines schwarzen Bildschirms. Ohne diese Grenze
-               riss ein fehlgeschlagener lazy-Chunk den ganzen React-Baum ab — die App hat sonst keine. */
-            const alt = (
-              <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
-                animate={!reduced} surge={surfSurge} active={boardVisible} />
-            );
-            if (!FIELD_COMPOSITOR) return alt;
-            return (
-              <FxBoundary name="Feld-Kompositor" fallback={alt}>
-                <Suspense fallback={null}>
-                  <FieldCompositor layer="neonsurf" color={deckA1} color2={deckA2 || deckA1}
-                    deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} active={boardVisible} />
-                </Suspense>
-              </FxBoundary>
-            );
-          })()}
+          <FieldLayer layer="neonsurf" color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
+            animate={!reduced} surge={surfSurge} active={boardVisible}
+            fallback={<NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
+              animate={!reduced} surge={surfSurge} active={boardVisible} />} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
