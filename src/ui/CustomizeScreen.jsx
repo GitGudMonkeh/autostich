@@ -1336,7 +1336,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
             ) : selTierUnlocked ? (
               <button onClick={() => { onActivateTier(pack, selTier); onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
-                style={{ background: "#20202c", border: "1px solid #9b82f0", color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
+                /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
+                style={{ background: "#20202c", border: `1px solid var(--deck-a1, #9b82f0)`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
             ) : (
               <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
                 {t("shop.unlock", { cond: unlockLabel(selTierLock) })}
@@ -1349,7 +1350,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
           ) : s === "own" ? (
             /* #kante: Ausrüsten ist das Angebot dieser Ansicht — violette Kante. */
             <button onClick={() => { onActivate(pack); onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
-              style={{ "--c": "#9b82f0" }}>{t("shop.activate")}</button>
+              /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
+              style={{ "--c": "var(--deck-a1, #9b82f0)" }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             /* #kante: Kaufen — starker Kanten-Knopf in DP-Cyan, gedimmt-neutral wenn das Guthaben nicht
                reicht (gleiche Fassung wie der Kaufen-Knopf der Effekt-Bühne). */
@@ -1513,7 +1515,8 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const actBtn = "w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
   // `act(active)` liefert Klasse UND Farbe in einem Rutsch — die acht Aufrufstellen unten spreizen es
   // einfach in den Knopf (<button {...act(active)}>), statt className und style getrennt zu führen.
-  const act = (on) => ({ className: `${actBtn} ${on ? "as-edge-strong" : "as-edge"}`, style: { "--c": on ? "#54e08a" : "#9b82f0" } });
+  // #deckui: „Angebot" (off) zieht die Deckfarbe (war Violett); „läuft gerade" (on) bleibt Grün (Zustands-Signal).
+  const act = (on) => ({ className: `${actBtn} ${on ? "as-edge-strong" : "as-edge"}`, style: { "--c": on ? "#54e08a" : "var(--deck-a1, #9b82f0)" } });
 
   let action;
   if (fx.standard) {

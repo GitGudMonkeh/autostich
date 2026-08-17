@@ -122,13 +122,15 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {/* #kante: „Menü" ist der Ausweg (neutral), „Neuer Lauf" das Ziel — starker Kanten-Knopf in Gold
               statt gefüllter Goldtaste. Er bleibt der lauteste Knopf des Screens, weil er als einziger
               Glow trägt. */}
+          {/* #deckui: Aktions-Buttons ziehen die Deckfarbe (hier = Mainscreen-Deck, s. GameOver-Kontext). */}
           {onMenu && (
-            <button onClick={onMenu} className="as-edge-neutral py-2.5 px-4 rounded-lg font-bold transition-all">
+            <button onClick={onMenu} className="as-edge as-edge-thin py-2.5 px-4 rounded-lg font-bold transition-all"
+              style={{ "--c": "var(--deck-a1, #8a7de0)" }}>
               {t("gameover.menu")}
             </button>
           )}
           <button onClick={onRestart} className="as-edge-strong flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
-            style={{ "--c": "#d4a63a" }}>
+            style={{ "--c": "var(--deck-a1, #d4a63a)" }}>
             {t("gameover.newRun")}
           </button>
         </div>
