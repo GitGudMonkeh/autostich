@@ -33,6 +33,24 @@ function toggleFxMode() {
   } catch { /* localStorage/URL nicht verfügbar → einfacher Reload */ }
   window.location.reload();
 }
+/* #kompositor-Zustand aus der URL (`?fx2=1`, optional `?fxs=<zahl>`). Bewusst NICHT aus FieldLayer importiert:
+   das HUD soll den Zustand ANZEIGEN, nicht den Effekt-Chunk in den Preview-Pfad ziehen. */
+function readFx2() {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const s = parseFloat(q.get("fxs"));
+    return { on: q.get("fx2") === "1", scale: Number.isFinite(s) ? s : null };
+  } catch { return { on: false, scale: null }; }
+}
+function toggleFx2() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("fx2");
+    url.searchParams.delete("fxs");
+    window.location.href = url.toString();
+  } catch { window.location.reload(); }
+}
+
 export function PerfOverlay() {
   const [live, setLive] = useState({ fps: 0, p95: 0, jank: 0 });
   const [copied, setCopied] = useState(false);
@@ -62,6 +80,7 @@ export function PerfOverlay() {
   };
   const fxMode = readFxMode();                            // aktueller Feld-Effekt-Renderer (pixi/dom)
   const fxCol = fxMode === "pixi" ? "#35e0ff" : "#e0a35a";
+  const { on: fx2, scale: fx2Scale } = readFx2();         // #kompositor: läuft er, und mit welchem Faktor
   return (
     <div
       className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
@@ -74,6 +93,13 @@ export function PerfOverlay() {
       <button style={btn} onClick={resetPerf} title={t("perf.reset")}>↺</button>
       <button style={{ ...btn, color: fxCol, borderColor: `${fxCol}66` }} onClick={toggleFxMode}
         title="Feld-Effekt-Renderer umschalten (GPU-Emitter ↔ DOM) + neu laden">FX:{fxMode === "pixi" ? "PIXI" : "DOM"}</button>
+      {/* #kompositor: OB der Kompositor läuft und mit WELCHEM Auflösungsfaktor. Ohne diese Anzeige ist jedes Urteil
+          über einen Effekt zweideutig — „sieht grob aus" heißt je nach Schalterstellung etwas völlig anderes, und
+          man kann es dem Bildschirmfoto nicht ansehen. Erscheint nur, wenn `?fx2=1` gesetzt ist. */}
+      {fx2 && (
+        <button style={{ ...btn, color: "#9d7cff", borderColor: "#9d7cff66" }} onClick={toggleFx2}
+          title="Feld-Kompositor aus (zurück auf je eine Canvas pro Effekt) + neu laden">FX2{fx2Scale ? `:${fx2Scale}` : ""}</button>
+      )}
     </div>
   );
 }

@@ -161,6 +161,10 @@ Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — 
   gegenprüfen, dann Bilder.** Mit gleicher Größe war der Unterschied sofort exakt null.
 - Wächter: `test/pixi-field-shader.test.js` prüft die Port-Regeln als reine Funktion (kein WebGL nötig) und baut
   JEDE registrierte Ebene — ein Port-Fehler fällt damit in Millisekunden auf statt am Gerät.
+- **Am Gerät entscheiden, nicht schätzen: `?fxs=<zahl>`** überschreibt den Auflösungsfaktor aller Ebenen (nur mit
+  `?fx2=1`, Preview/Dev). `?fxs=1` = volle Auflösung und beantwortet damit die Kernfrage bei jedem „sieht grob aus":
+  liegt es am FAKTOR oder am EFFEKT? Der Perf-HUD zeigt jetzt eine `FX2`-Kachel (mit Faktor, Klick = aus) —
+  ohne die war einem Bildschirmfoto nicht anzusehen, welcher Pfad überhaupt lief, und jedes Urteil zweideutig.
 - **Umschalter je Ebene: `src/ui/fx/FieldLayer.jsx`** (`?fx2=1`, Preview/Dev-gegatet). Aufrufer geben die bisherige
   Fassung als `fallback` mit — sie rendert ohne den Schalter UND als Rückfall, wenn der Kompositor scheitert.
   Bewusst ENTWEDER/ODER: liefen beide, wäre die Fläche doppelt bezahlt und jede Messung wertlos.

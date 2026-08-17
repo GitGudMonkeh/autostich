@@ -156,6 +156,18 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
+/* `?fxs=<zahl>` überschreibt den Auflösungsfaktor ALLER Ebenen — der Regler, mit dem am echten Gerät entschieden
+   wird, statt am Schreibtisch zu schätzen. Genauso ist die 0,75 der Brandung zustande gekommen. Nur zusammen mit
+   `?fx2=1` sinnvoll und hinter demselben Preview/Dev-Gate; ohne den Parameter bleibt es beim Wert der Ebene.
+   `?fxs=1` heißt „volle Auflösung" und beantwortet damit die wichtigste Frage überhaupt: liegt ein weiches oder
+   grobes Bild an DIESEM Faktor — oder am Effekt selbst? */
+function scaleOverride() {
+  try {
+    const v = parseFloat(new URLSearchParams(window.location.search).get("fxs"));
+    return Number.isFinite(v) && v > 0.1 && v <= 2 ? v : null;
+  } catch { return null; }
+}
+
 /* Dieselbe Schwelle wie das `<picture media="(max-width: 640px)">` unter dem Effekt — die Glut muss auf DEM Bild
    sitzen, das gerade angezeigt wird. Bewusst ohne Listener: `syncTexture()` läuft je Frame und merkt den Wechsel
    von selbst (ein Stringvergleich pro Frame gegen eine zweite Abo-Verwaltung). */
@@ -242,7 +254,7 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
         // Pixis maxFPS macht denselben Fehler nicht, weil es intern akkumuliert.
         app.ticker.maxFPS = coarse ? 30 : 0;
 
-        const scale = coarse ? def.scaleCoarse : def.scaleDesktop;
+        const scale = scaleOverride() ?? (coarse ? def.scaleCoarse : def.scaleDesktop);
         // Die Render-Textur ist die eigentliche Ersparnis: sie ist um `scale` KLEINER als die Bühne und wird
         // beim Zusammensetzen hochskaliert. Kosten ∝ Fläche → quadratisch in scale.
         const rtSize = () => ({
