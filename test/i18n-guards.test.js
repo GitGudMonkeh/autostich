@@ -67,6 +67,7 @@ describe("i18n · Katalog-Parität", () => {
     "options.float.score.title", // „↳ Score" — Score bleibt Score (Begriffstabelle §3.1)
     "start.progress.onboarding", // „Onboarding" ist im Deutschen der etablierte Begriff (§3.5)
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
+    "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort

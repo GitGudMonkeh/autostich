@@ -397,7 +397,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {[
             { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
             { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
-            { k: t("start.board.week", { n: week.week }), v: t("start.ranked.bonus", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI, s: t(weekBonusOpen ? "start.board.week.open" : "start.board.week.done") },
+            /* Nur das Verhältnis als Kennzahl — das Wort „Bonus" stand vorher IN der großen Zahl und
+               wiederholte damit, was die Unterzeile ohnehin sagt („Bonus noch offen"). Die Zeile darüber
+               nennt die Woche, die darunter den Zustand; in der Mitte gehört die Zahl allein. */
+            { k: t("start.board.week", { n: week.week }), v: t("start.board.week.val", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI, s: t(weekBonusOpen ? "start.board.week.open" : "start.board.week.done") },
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (

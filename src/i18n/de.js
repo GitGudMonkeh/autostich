@@ -1225,6 +1225,9 @@ export default {
   "start.board.dp": "Deck-Punkte",
   "start.board.dp.sub": "Werkstatt-Guthaben",
   "start.board.week": "Woche {n}",
+  // Reine Zahlenzeile: die Kennzahl der Wochen-Kachel trägt nur noch das Verhältnis. Das Wort „Bonus"
+  // stand vorher IN der großen Zahl und wiederholte, was die Unterzeile darunter ohnehin sagt.
+  "start.board.week.val": "{have}/{max}",
   "start.board.week.open": "Bonus noch offen",
   "start.board.week.done": "Bonus geholt",
   "start.board.last": "Letzter Lauf",
