@@ -163,7 +163,21 @@ export const THEME_DEFS = {
     deckId: "deck_wale",       bfId: "bf_wale",       els: ["deck", "bf"] },
   // Genesis = Onboarding-Starter → Bedingungs-Pack (kind "cond"): NICHT kaufbar, frei nach abgeschlossenem
   // Onboarding (6/6). Bedingung kommt via packCond aus deck_onboarding.unlock ({ kind: "onboardingDone" }).
-  genesis:  { id: "genesis",  name: packName("deck_onboarding"),         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#9b82f0",
+  /* #deck-mobil: `a2` war Violett (#9b82f0) — der alte Logo-Ton, nicht aus dem Bild gezogen. Aufgefallen ist
+     das erst, seit der Hub am Handy den Spielfeld-Hintergrund zeigt: `bf_onboarding` ist ein Synthwave-
+     Horizont, dessen Leuchtmasse bei ~308° (Magenta) liegt, und Violett sitzt 54° daneben. Nachgemessen über
+     alle 40 Spielfelder (`npm run bf:helligkeit` misst Helligkeit, die Farbprüfung lief einmalig daneben) war
+     das der mit ABSTAND schlechteste Wert — der nächstschlechtere lag bei 31°.
+     Grund ist die Bauart des Bildes: es ist ein voller Farbverlauf (Blau → Magenta → Orange), sein stärkster
+     Neon-Sektor hält nur 13 % der Leuchtmasse — der niedrigste Wert aller 40. Ein Zweifarb-Paar kann so ein
+     Bild nie ganz treffen; es kann nur aufhören, danebenzuliegen.
+     Geändert wurde deshalb NUR `a2` (54° → 8°). `a1` bleibt Cyan: es ist die Marken-/CTA-Farbe, es steckt als
+     Gitterfarbe links im Bild, und Genesis ist das Standard-Deck jedes neuen Spielers (storage.js
+     DEFAULT_PROFILE) — der Grundton des Spiels soll nicht an einem Hintergrundbild hängen. Cyan → Magenta
+     zeichnet jetzt genau den Schwenk nach, den das Bild von links nach rechts macht.
+     Nicht `#ff4dcb` genommen, obwohl ebenso nah dran: das ist exakt Kosmos' `a1`, die beiden Decks wären
+     im Hub kaum zu unterscheiden. */
+  genesis:  { id: "genesis",  name: packName("deck_onboarding"),         emblem: "🔷", kind: "cond", a1: "#26c6e6", a2: "#ff2ec8",
     deckId: "deck_onboarding", bfId: "bf_onboarding", els: ["deck", "bf"] },
   // #299: alte Progressions-/„Läufe"-Packs (neon/tank/mega/mond → deck_p1–4/bf_1–4) entfernt — sauberer Neustart
   // mit Standard (Prisma), Genesis und den kaufbaren DP-Packs. Kein Migrationspfad.
