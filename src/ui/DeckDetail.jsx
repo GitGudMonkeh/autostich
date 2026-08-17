@@ -48,11 +48,14 @@ function StatusPill({ label, on, color }) {
   );
 }
 
-export function DeckDetail({ archetype: initialArch, profile, onBack, onClose }) {
+/* `initialTab` — mit welchem Reiter geöffnet wird. Die Desktop-Fraktionsseite hat einen eigenen Knopf
+   „Leitfaden", der hier direkt landen soll, statt den Spieler nochmal einen Reiter suchen zu lassen.
+   Ohne Angabe bleibt es bei den Skills wie bisher. */
+export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, initialTab = "passives" }) {
   // Der Screen remountet bei jedem Öffnen (UpgradeScreen rendert bedingt) → Prop seedet den Zustand sauber neu.
   const [archetype, setArchetype] = useState(initialArch);
   const archSwipe = useTabSwipe(ARCHETYPE_ORDER, archetype, setArchetype); // Swipe ←/→ = voriger/nächster Archetyp (geklemmt)
-  const [tab, setTab] = useState("passives");
+  const [tab, setTab] = useState(initialTab);
   useEscape(onBack);
   const meta = archMeta(archetype);
   const color = meta?.color || FACTION_GLOW[archetype] || GOLD;

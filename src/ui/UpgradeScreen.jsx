@@ -4,9 +4,14 @@ import { useIsWide } from "./useIsWide.js"; // #desktop: Deck-Spalte statt Reite
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
-import { ARCHETYPE_ORDER } from "../game/skills.js";
+import { ARCHETYPE_ORDER, SKILL_LIST } from "../game/skills.js";
 import { tierColor, tierWeightsForShift } from "../game/rarity.js";
-import { rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsnamen für die Drop-Verteilung
+// #desktop: Skill-Liste + Challenge-Deck stehen jetzt direkt auf der Fraktionsseite (statt zwei Ebenen tief).
+import { PACKS as PACKS_ALL, packCond, packState, packUnlock } from "../game/themes.js";
+import { deckAssets } from "./cosmeticAssets.js";
+import { unlockLabel } from "../i18n/unlockText.js";
+import { guideDef } from "../i18n/guideText.js"; // Einzeiler der Fraktion über der Skill-Liste
+import { rarityLabel, skillDef, themeDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
@@ -26,6 +31,9 @@ const AM = "#f2a83a";
 const CY = "#26c6e6";     // Allgemein-Akzent
 const VI = "#9b82f0";     // Rarität-/Legendär-Akzent
 const GRUEN = "#54e08a";  // gekauft (Häkchen in der Desktop-Deckspalte) — derselbe Ton wie „aktiv" im Shop
+
+// Pack-Name zur Anzeigezeit. Gleiche Auflösung wie in der Werkstatt (dort ebenfalls lokal, kein Export).
+const packLabel = (pk) => (pk ? (themeDef(pk.id)?.name ?? pk.name) : "");
 
 // Allgemein-Zweig als Lanes (Reihenfolge = Kette).
 const GEN_LANES = [
@@ -181,7 +189,10 @@ function VNode({ node, st, accent, selected, onSelect }) {
   const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
   const mark = isOwned ? t("upgrades.state.owned") : isPlaceholder ? t("upgrades.state.soon")
     : (isBuy || st === "lock-sp") ? t("upgrades.buy.short", { cost: node.cost }) : `🔒 ${node.cost}`;
-  const cls = isPlaceholder ? " is-soon" : (isOwned || isBuy) ? "" : " is-locked";
+  /* `is-buy` trennt „kann ich mir leisten" von „gehört mir schon": Gekaufte behalten den Farbanlauf
+     der Kanten-Karte, Kaufbare bekommen nur die goldene Kante auf flachem Grund. Vorher trugen beide
+     denselben Anlauf und waren im Raster kaum auseinanderzuhalten. */
+  const cls = isPlaceholder ? " is-soon" : isOwned ? "" : isBuy ? " is-buy" : " is-locked";
   return (
     <button type="button" onClick={() => onSelect(node.id)} aria-pressed={selected} title={node.detail}
       className={`up-vnode as-edge-card as-edge-thin${cls}${selected ? " is-sel" : ""}`}
@@ -193,7 +204,8 @@ function VNode({ node, st, accent, selected, onSelect }) {
   );
 }
 
-// Eine Kategorie als Spalte: Überschrift, darunter die Knoten mit Pfeilen.
+// Eine Kategorie als Spalte: Überschrift, darunter die Knoten mit Pfeilen. Nur die Allgemein-Seite
+// nutzt das — die Fraktionsketten laufen quer (s. `.up-chain-row`), drei Knoten sind keine Säule.
 function VLane({ title, accent, nodes, p, selected, onSelect }) {
   return (
     <div className="up-vlane">
@@ -211,6 +223,57 @@ function VLane({ title, accent, nodes, p, selected, onSelect }) {
   );
 }
 
+/* Die Skill-Liste einer Fraktion. Name, Schlagworte und Wirkung stehen alle in skills.js — bisher
+   nur zwei Ebenen tief hinter „Details ›". Die Beschreibung wird auf drei Zeilen geklemmt: der Median
+   liegt bei 177 Zeichen, die längste hat 628, und im Raster bestimmt die höchste Zelle die ganze
+   Zeilenhöhe. Ungeklemmt reißt ein einziger Skill die Reihe auseinander. */
+function SkillGrid({ arch }) {
+  const alle = SKILL_LIST.filter((s) => s.archetype === arch);
+  const normal = alle.filter((s) => !s.legendary);
+  const leg = alle.filter((s) => s.legendary);
+  const accent = FACTION_GLOW[arch] || VI;
+  const karte = (s, gold) => {
+    const d = skillDef(s.id);
+    return (
+      <div key={s.id} className={`up-skill${gold ? " is-leg" : ""}`} style={{ "--c": gold ? GOLD : accent }}>
+        <span className="up-skill-n">{d?.name || s.name}</span>
+        <span className="up-skill-d">{d?.desc || s.desc}</span>
+      </div>
+    );
+  };
+  return (
+    <div className="up-skills">
+      <div className="up-skills-h">{t("upgrades.skills.title")}<span>{alle.length}</span></div>
+      <div className="up-skillgrid">{normal.map((s) => karte(s, false))}</div>
+      <div className="up-skills-h is-leg">{t("upgrades.skills.legendary")}<span>{leg.length}</span></div>
+      <div className="up-skillgrid">{leg.map((s) => karte(s, true))}</div>
+    </div>
+  );
+}
+
+/* Das Challenge-Deck der Fraktion: die Element-Decks aus themes.js (freigeschaltet über N Mono-Läufe).
+   Zeigt Kartenrücken, Bedingung und Fortschritt — dieselben Daten wie der Challenges-Reiter der
+   Detailansicht, hier nur ohne den Umweg dorthin. */
+function ChallengeBox({ arch, p }) {
+  const pack = PACKS_ALL.find((pk) => packCond(pk)?.archetype === arch);
+  if (!pack) return null;
+  const st = packState(p, pack);
+  const fort = packUnlock(p, pack);
+  const accent = FACTION_GLOW[arch] || VI;
+  const pct = fort && fort.target ? Math.min(100, Math.round((fort.cur / fort.target) * 100)) : (st === "own" ? 100 : 0);
+  const bild = deckAssets(pack.deckId)?.back;
+  return (
+    <aside className="up-chall">
+      <div className="up-chall-h">{t("deckdetail.tab.challenges")}</div>
+      {bild && <div className="up-chall-img"><img src={bild} alt="" style={st === "own" ? undefined : { filter: "grayscale(.6) brightness(.6)" }} /></div>}
+      <div className="up-chall-n" style={{ color: accent }}>{packLabel(pack)}</div>
+      <div className="up-chall-b">{unlockLabel(fort)}</div>
+      <div className="up-chall-bar"><i style={{ width: `${pct}%`, background: accent }} /></div>
+      {fort && fort.target ? <div className="up-chall-f">{fort.cur} / {fort.target}</div> : null}
+    </aside>
+  );
+}
+
 /* Der Auswirkungs-Kasten: was der Baum GERADE bewirkt. Die Zahlen kommen aus `nodeEffects` und den
    Basiswerten — nichts davon ist im Baum selbst ablesbar, obwohl es die Frage ist, die man dort stellt. */
 function ImpactBox({ p }) {
@@ -219,17 +282,30 @@ function ImpactBox({ p }) {
     { k: t("upgrades.impact.cover"), v: COVER_FLOOR + fx.treeCoverBonus, max: COVER_FLOOR + 4, c: CY },
     { k: t("upgrades.impact.energy"), v: ENERGY_FLOOR + fx.treeEnergyBonus, max: ENERGY_FLOOR + 2, c: CY },
     { k: t("upgrades.impact.rerolls"), v: REROLL_BASE + fx.treeRerollBonus, max: REROLL_BASE + 2, c: CY },
+    /* Die Legendär-Phasen haben ihre eigenen Rerolls und zählen NICHT zum Angebots-Reroll oben:
+       einer in der Archetyp-Phase (`deckReroll`), einer in der generellen (`perk2Reroll`). Beide
+       hängen an eigenen Knoten, deshalb hier als eigene Achse statt in die Zeile darüber gerechnet. */
+    { k: t("upgrades.impact.legRerolls"), v: fx.rerollDeckLeg + fx.rerollPerk2, max: 2, c: VI },
   ];
-  const jetzt = tierWeightsForShift(fx.treeRareShift);
-  const beste = tierWeightsForShift(4);
-  const balken = (w) => (
+  /* WICHTIG: `maxTier` mitgeben. Ohne das zeigte der Balken Rar und Episch an, bevor die
+     Rarität-Knoten sie überhaupt freigeschaltet haben — Prozente für Stufen, die im Lauf gar nicht
+     fallen können. `tierWeightsForShift` nullt gesperrte Stufen, und weil die Gewichte dann nicht
+     mehr auf 100 summieren (bei maxTier 2 nur noch 85), wird hier normalisiert: gezeigt wird die
+     tatsächliche Wahrscheinlichkeit, nicht das rohe Gewicht. */
+  const alsProzent = (w) => {
+    const summe = [1, 2, 3, 4].reduce((s, tier) => s + w[tier], 0) || 1;
+    return [1, 2, 3, 4].map((tier) => ({ tier, pct: Math.round((w[tier] / summe) * 100) })).filter((x) => x.pct > 0);
+  };
+  const jetzt = alsProzent(tierWeightsForShift(fx.treeRareShift, fx.maxTier));
+  const beste = alsProzent(tierWeightsForShift(4, 4)); // Vollausbau: alle Stufen frei + höchste Drop-Rate
+  const balken = (liste) => (
     <>
       <div className="up-dropbar">
-        {[1, 2, 3, 4].map((tier) => <i key={tier} style={{ width: `${w[tier]}%`, background: tierColor(tier) }} />)}
+        {liste.map(({ tier, pct }) => <i key={tier} style={{ width: `${pct}%`, background: tierColor(tier) }} />)}
       </div>
       <div className="up-droplegend">
-        {[1, 2, 3, 4].map((tier) => (
-          <span key={tier}><i style={{ background: tierColor(tier) }} />{rarityLabel(tier)} <b>{w[tier]} %</b></span>
+        {liste.map(({ tier, pct }) => (
+          <span key={tier}><i style={{ background: tierColor(tier) }} />{rarityLabel(tier)} <b>{pct} %</b></span>
         ))}
       </div>
     </>
@@ -278,10 +354,17 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   // #desktop: Zähler für die „Allgemein"-Zeile der Deck-Spalte + der angetippte Knoten für die Detailzeile.
   const genOwned = GEN_LANES.reduce((s, l) => s + l.ids.filter((id) => nodeState(p, id) === "owned").length, 0);
   const selDeskNode = selNode ? nodeDef(selNode) : null;
+  // Die Kette der gerade gewählten Fraktion (leer auf der Allgemein-Seite).
+  const deckChain = page === "gen" ? [] : nodeList().filter((n) => n.arch === page);
 
   // Deck-Detailansicht (Ebene 2) — überlagert den Baum, Zurück kehrt in den Decks-Reiter zurück.
   if (detailArch) {
-    return <DeckDetail archetype={detailArch} profile={p} onBack={() => setDetailArch(null)} onClose={onClose} />;
+    /* Der Zustand trägt seit dem Desktop-Umbau ein Objekt: die Fraktionsseite hat zwei Einstiege
+       („Leitfaden" und „Details"), die im selben Screen auf verschiedenen Reitern landen sollen.
+       Der Handy-Pfad ruft weiter mit einem blanken Archetyp-String — deshalb beides annehmen. */
+    const d = typeof detailArch === "string" ? { arch: detailArch } : detailArch;
+    return <DeckDetail archetype={d.arch} initialTab={d.tab || "passives"} profile={p}
+      onBack={() => setDetailArch(null)} onClose={onClose} />;
   }
 
   return (
@@ -401,13 +484,36 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <div className="up-page-h">
                     <FactionIcon type={page} size={28} />
                     <span className="up-page-eyebrow" style={{ color: FACTION_GLOW[page] || VI }}>{archMeta(page)?.label || page}</span>
-                    <button type="button" onClick={() => setDetailArch(page)} className="up-page-more">{t("upgrades.details")}</button>
+                    <span className="up-page-hint">{guideDef(page)?.subtitle}</span>
+                    <button type="button" onClick={() => setDetailArch({ arch: page, tab: "leitfaden" })}
+                      className="up-page-guide" style={{ "--c": FACTION_GLOW[page] || VI }}>{t("guide.title")} ›</button>
+                    <button type="button" onClick={() => setDetailArch({ arch: page })} className="up-page-more">{t("upgrades.details")}</button>
                   </div>
-                  <div className="up-vgrid">
-                    <VLane title={archMeta(page)?.label || page} accent={FACTION_GLOW[page] || VI}
-                      nodes={nodeList().filter((n) => n.arch === page)} p={p} selected={selNode} onSelect={toggleNode} />
+                  {/* Die Kette läuft hier QUER: drei Knoten sind keine Säule, und quer bleibt der Platz
+                      darunter für Skills und Challenge. `lead` = Feuer und Blitz haben keinen Deck-Knoten
+                      zu kaufen (von Beginn an spielbar); ohne die „✓ frei"-Kachel startete ihre Kette
+                      mitten drin bei Legendär I. „Deck" als Literal wie in der Handy-Fassung. */}
+                  <div className="up-chain-row">
+                    {deckChain.some((n) => n.deckUnlock) ? null : (
+                      <div className="up-vnode as-edge-card as-edge-thin is-lead" style={{ "--c": FACTION_GLOW[page] || VI }}>
+                        <span className="up-vnode-t">{t("upgrades.deckLead")}</span>
+                        <span className="up-vnode-m" style={{ color: FACTION_GLOW[page] || VI }}>✓ {t("upgrades.free")}</span>
+                      </div>
+                    )}
+                    {deckChain.map((n, i) => (
+                      <div key={n.id} className="contents">
+                        {(i > 0 || !deckChain.some((x) => x.deckUnlock)) && <span className="up-charrow" aria-hidden="true">→</span>}
+                        <VNode node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, FACTION_GLOW[page] || VI)}
+                          selected={selNode === n.id} onSelect={toggleNode} />
+                      </div>
+                    ))}
                   </div>
-                  <ImpactBox p={p} />
+                  {/* Kein Auswirkungs-Kasten hier: Er zeigt allgemeine Werte (Baufeld, Energie, Rerolls)
+                      und gehört dorthin, wo diese Knoten stehen. */}
+                  <div className="up-facbody">
+                    <SkillGrid arch={page} />
+                    <ChallengeBox arch={page} p={p} />
+                  </div>
                 </>
               )}
               {/* Die Detailzeile des angetippten Knotens — dieselbe wie auf dem Handy, nur hier unten. */}
@@ -427,7 +533,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               const accent = FACTION_GLOW[arch] || VI;
               const chain = nodeList().filter((n) => n.arch === arch); // ice/plant: Deck-Knoten + Legs; fire/lightning: nur Legs
               const hasDeckNode = chain.some((n) => n.deckUnlock);
-              const lead = hasDeckNode ? null : { label: "Deck", color: accent }; // Feuer/Blitz: Deck von Beginn an frei
+              const lead = hasDeckNode ? null : { label: t("upgrades.deckLead"), color: accent }; // Feuer/Blitz: Deck von Beginn an frei
               return (
                 <div key={arch} className="rounded-2xl p-3" style={panelStyle(accent)}>
                   <button onClick={() => setDetailArch(arch)}

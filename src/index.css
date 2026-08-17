@@ -1318,12 +1318,14 @@ button { font-family: inherit; }
      gleich als Klasse anlegen, dann entfällt das.]
      ========================================================================== */
 
-  /* Der Überzug wird durchlässiger: das Bodenband des aktiven Decks soll durchscheinen, wie im Hub.
-     93 % Deckkraft (der Inline-Wert) lassen davon nichts übrig. */
+  /* Der Überzug lässt das Bodenband des aktiven Decks durchscheinen, wie im Hub — aber nur als Ahnung.
+     Bei 66 % las man den Startbildschirm dahinter noch mit (Deckkarte, Kennzahlen, Knopftexte), und das
+     zog den Blick vom Baum weg. 82 % plus kräftigerer Blur: das Deck bleibt als Farbe und Textur da,
+     die Wörter dahinter sind weg. */
   .up-root {
-    background: rgba(12, 12, 16, .66) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    background: rgba(12, 12, 16, .82) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
     /* Knapp bemessen, und das ist gerechnet: Kopf (172) + der längere Zweig (808) + Legende (42) füllen
        auf 1080 px Höhe fast alles. Mit dem ursprünglichen 28/32er Rand lief der Screen um 31 px über und
        fing an zu scrollen — auf dem Design-Anker soll er ohne Scrollen stehen. */
@@ -1436,17 +1438,29 @@ button { font-family: inherit; }
      Energie zwei). Das ist der Preis der Bauform und bewusst nicht kaschiert — eine erzwungene
      gemeinsame Unterkante hätte leere Kästen bedeutet.
      ========================================================================== */
+  /* Die Karte muss die Höhe DECKELN, sonst wächst sie mit dem Inhalt aus dem Bild heraus (die
+     Fraktionsseite mit 21 Skills schob sie auf 1125 px in einem 1080er Rahmen). Erst wenn sie eine
+     feste Höhe hat, kann die Skill-Spalte weiter unten ihre Resthöhe kennen und intern scrollen. */
+  .up-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   .up-desk {
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
     gap: 22px;
-    align-items: start;
+    align-items: stretch;   /* die Seite füllt den Track — Voraussetzung fürs interne Scrollen */
     margin-top: 4px;
+    flex: 1;
+    min-height: 0;
   }
+  .up-nav { align-self: start; }   /* die Spalte selbst soll NICHT auf volle Höhe gezogen werden */
   .up-nav {
     border-radius: 14px; padding: 14px 12px;
     display: flex; flex-direction: column; gap: 7px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
+    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .up-navhead {
@@ -1484,7 +1498,7 @@ button { font-family: inherit; }
   .up-page {
     border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
     display: flex; flex-direction: column;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
+    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -1510,10 +1524,71 @@ button { font-family: inherit; }
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .up-vnode:hover { transform: translateY(-1px); }
+  /* Kaufbar = NUR die goldene Kante auf flachem Grund. Der Farbanlauf der Kanten-Karte bleibt den
+     GEKAUFTEN vorbehalten; solange beide ihn trugen, war im Raster nicht zu sehen, was einem schon
+     gehört und was man sich gerade leisten kann. */
+  .up-vnode.is-buy { background: #12121a; }
+  /* Feuer und Blitz sind von Beginn an spielbar — ihre Kette startet mit einem Deck, das nie gekauft
+     wurde. Sieht aus wie „gehört dir", ist aber nichts zum Anklicken. */
+  .up-vnode.is-lead { cursor: default; }
   .up-vnode-t { font-size: 14.5px; font-weight: 700; line-height: 1.2; }
   .up-vnode-w { font-size: 11.5px; color: #8a8a95; line-height: 1.3; font-variant-numeric: tabular-nums; }
   .up-vnode-m { font-size: 12px; font-weight: 700; margin-top: 1px; }
   .up-varrow { display: block; text-align: center; font-size: 14px; line-height: 1; padding: 6px 0; color: #3f3f4c; }
+
+  /* --- Fraktionsseite: Kette quer, darunter Skills und Challenge -------------
+     Drei Knoten sind keine Säule. Quer gelegt bleibt der Platz darunter für das, was die Seite
+     eigentlich erzählen soll: was diese Fraktion kann (Skills) und was sie freischaltet (Challenge). */
+  .up-chain-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+  .up-chain-row .up-vnode { flex: none; min-width: 200px; }
+  .up-charrow { align-self: center; font-size: 16px; color: #3f3f4c; }
+
+  /* `stretch` statt `start`, damit die Skill-Spalte die Resthöhe FÜLLT statt sie zu überschreiten —
+     nur so greift ihr `overflow-y: auto` und die 21 Skills scrollen in sich, statt die Seite zu
+     verlängern. Die Challenge bleibt oben stehen (`align-self: start`), sie soll nicht mitwachsen. */
+  .up-facbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: stretch; }
+  .up-skills { min-width: 0; min-height: 0; overflow-y: auto; padding-right: 6px; }
+  .up-chall { align-self: start; }
+  .up-skills-h {
+    display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px;
+    font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf;
+  }
+  .up-skills-h span { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600; color: #71717c; }
+  .up-skills-h.is-leg { color: #d4a63a; margin-top: 14px; }
+  .up-skillgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .up-skill {
+    display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 9%, #12121a) 0%, #12121a 44%);
+    border: 1px solid rgba(150, 150, 170, .1);
+    border-left: 3px solid color-mix(in srgb, var(--c) 65%, transparent);
+  }
+  .up-skill-n { font-size: 13.5px; font-weight: 700; line-height: 1.2; }
+  /* Auf drei Zeilen geklemmt: Der Median liegt bei 177 Zeichen, die längste Beschreibung hat 628 —
+     und im Raster bestimmt die höchste Zelle die Höhe der ganzen Reihe. Ungeklemmt reißt ein
+     einzelner Skill die Zeile auseinander. Der volle Text steht weiter in der Detailansicht. */
+  .up-skill-d {
+    font-size: 11.5px; color: #8a8a95; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .up-chall { border-radius: 12px; padding: 13px 15px; background: #12121a; border: 1px solid rgba(150, 150, 170, .1); }
+  .up-chall-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
+  .up-chall-img { border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+  .up-chall-img img { width: 100%; display: block; }
+  .up-chall-n { font-size: 17px; font-weight: 800; }
+  .up-chall-b { font-size: 12.5px; color: #9a97ab; margin-top: 3px; line-height: 1.4; }
+  .up-chall-bar { height: 8px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 9px; }
+  .up-chall-bar i { display: block; height: 100%; border-radius: 99px; }
+  .up-chall-f { font-size: 12.5px; color: #8a8a95; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  .up-page-guide {
+    font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #0e0e14) 0%, #0e0e14 34%);
+    border: 1px solid rgba(150, 150, 170, .16); border-left: 4px solid var(--c);
+    color: color-mix(in srgb, var(--c) 45%, #ffffff);
+    margin-left: auto;
+  }
+  .up-page-guide + .up-page-more { margin-left: 0; }
 
   /* „Was der Baum gerade bewirkt" — die Zahlen stehen sonst nirgends, obwohl sie die Frage sind,
      die man im Baum stellt. Quelle: nodeEffects() + tierWeightsForShift(). */
@@ -1522,7 +1597,7 @@ button { font-family: inherit; }
     background: #12121a; border: 1px solid rgba(150, 150, 170, .1);
   }
   .up-impact-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
-  .up-impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .up-impact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
   .up-stat { display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px; background: #14131c; }
   .up-stat-k { font-size: 12.5px; color: #8a8a95; }
   .up-stat-v { font-size: 25px; font-weight: 800; line-height: 1; display: flex; align-items: baseline; gap: 7px; font-variant-numeric: tabular-nums; }
