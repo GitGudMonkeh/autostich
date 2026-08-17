@@ -20,15 +20,17 @@ import { t as tr } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hie
 
 const TOP_N = 20;
 const CHAMP_WEEKS = 10; // so viele abgelaufene Wochen zeigen wir im Champions-Archiv
-const GOLD = "#d4a63a";
-const CY = "#26c6e6";   // Regeln-Akzent
-const AM = "#f2a83a";   // Wochen-Akzent (Diese Woche)
-// Reiter mit eigener Akzentfarbe (aktiver Zustand) — folgt dem Logo-Farbsystem des Hubs. #385: „Meine Runs" entfernt
-//   (steht in der Statistik) → 3 Reiter, gleich breit. Board-String bleibt intern "meister" (Wochen-Board + Champions).
+const GOLD = "#d4a63a";  // Champion-Score (Wert-Signal, bleibt)
+/* #deckui: Generische UI-Chrome (Reiter-Akzent, Wochen-Box, „Spielen"-Button) zieht die aktive DECKFARBE. Fallback =
+   alter Ton, wenn kein Deck aktiv. BEWUSST NICHT getönt: Wochen-Mod-Chips (grün/rot = pos/neg), Champion-Medaillen,
+   Rang-Medaillen — die tragen Bedeutung. Vars kaskadieren von .app-root (auch außerhalb eines Laufs gesetzt). */
+const UI1 = "var(--deck-a1, #9b82f0)";
+const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, transparent)`;
+// Reiter-Akzent (aktiver Zustand) → alle drei auf Deckfarbe (nur der aktive Reiter zeigt ihn, einer zur Zeit).
 const TABS = [
-  { id: "meister",    labelKey: "board.tab.week",       accent: AM },
-  { id: "champions",  labelKey: "board.tab.challenger", accent: GOLD },
-  { id: "regeln",     labelKey: "board.tab.rules",      accent: CY },
+  { id: "meister",    labelKey: "board.tab.week",       accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1 },
+  { id: "regeln",     labelKey: "board.tab.rules",      accent: UI1 },
 ];
 // #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
 //   positiv/negativ; darunter die Ausschluss-Paare.
@@ -118,7 +120,7 @@ function ChampionsList({ reloadToken, username, onChampionWeeks }) {
         <div className="grid gap-1">
           {champs.map((c) => (
             <div key={`${c.year}-${c.week}`} className="flex items-center gap-2.5 text-sm px-2.5 py-1.5 rounded-lg"
-              style={{ background: "#20202a", border: `1px solid ${AM}33` }}>
+              style={{ background: "#20202a", border: `1px solid ${deckMix(20)}` }}>
               <span className="shrink-0 text-[15px]">🏆</span>
               <span className="flex-1 min-w-0 truncate font-semibold">
                 {c.name || "—"}<span className="text-[10px] opacity-45 ml-1.5">{c.labelShort}</span>
@@ -155,7 +157,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #385 FESTE Kartenhöhe (nicht nur maxHeight) → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher
           Stelle; nur die innere Liste scrollt. */}
-      <div className="w-full max-w-lg rounded-2xl overlay-card as-panel flex flex-col overflow-hidden"
+      <div className="w-full max-w-lg rounded-2xl overlay-card as-panel as-panel-deck flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
         <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
@@ -189,19 +191,19 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="flex items-baseline justify-between gap-2 mb-2.5">
-                    <span className="text-[14px] font-extrabold" style={{ color: AM }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
                     <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
-                  {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). */}
-                  <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#221b0f,#1b1610)", border: `1px solid ${AM}44` }}>
+                  {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
+                  <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
-                      <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: AM, background: "#2a2110", border: `1px solid ${AM}66` }}>{prettySeed(week.seed)}</span>
+                      <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: UI1, background: "#1c1b24", border: `1px solid ${deckMix(45)}` }}>{prettySeed(week.seed)}</span>
                     </div>
                     {canPlayRanked && (
                       <button onClick={onPlayRanked || undefined}
                         className="w-full mt-3 border-none rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5"
-                        style={{ background: AM, color: "#141419", boxShadow: `0 0 14px ${AM}44` }}>{tr("board.play")}</button>
+                        style={{ background: UI1, color: "#141419", boxShadow: `0 0 14px ${deckMix(30)}` }}>{tr("board.play")}</button>
                     )}
                     {!canPlayRanked && (
                       <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
