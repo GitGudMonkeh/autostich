@@ -208,7 +208,9 @@ function ensureEl() {
   // #334: Der Nachfolger wird EINGEBLENDET statt hart auf Vollpegel gestartet → kein „Pop" am Songende (deckt auch den
   //   aufgeschobenen Schwellenwechsel ab: frischer Song lief aus, neuer Stufen-Track blendet ein).
   el.addEventListener("ended", () => {
-    if (mode !== "run" || userPaused) return;
+    if (userPaused) return;
+    if (mode === "menu") { startTrack(randomMenuTrack(), { fade: true }); return; } // #musik-menue: ruhiger Pool
+    if (mode !== "run") return;
     startTrack(randomPoolTrack(tier), { fade: true }); // Ein-Fade statt Hart-Start
   });
   return el;
@@ -224,7 +226,9 @@ function effVol() { return volume * duck; }
 function syncPlayback() {
   const a = el;
   if (!a) return;
-  a.loop = mode === "menu"; // Menü/Victory lückenlos loopen; im Run reiht onEnded den nächsten Track der Stufe
+  // #musik-menue: früher loopte das Menü seinen einen Track endlos. Jetzt reiht auch dort onEnded weiter
+  // (ruhiger Pool) — `loop` muss deshalb überall aus sein, sonst feuert „ended" im Menü nie.
+  a.loop = false;
   if (audible() && current) {
     if (loadedUrl !== current.url) { a.src = current.url; loadedUrl = current.url; } // erster Ladevorgang genau jetzt
     a.volume = effVol();
@@ -299,13 +303,29 @@ function randomPoolTrack(wantTier = null) {
   return pool[i];
 }
 
+/* #musik-menue — Der Startbildschirm hatte EINEN Dauerschleifen-Track (MENU_TRACK). Jetzt ist der nur noch
+   der Auftakt: danach reiht das Menü weiter, und zwar ausschließlich aus den beiden RUHIGEN Stufen.
+   Warum nur calm und mid: Das Menü ist kein Lauf, dort eskaliert nichts — hot/overdrive würden Spannung
+   behaupten, wo keine ist. Dieselbe Grenze zieht bereits der „Ruhige Modus" (CALM_CAP = mid).
+   MENU_TRACK selbst liegt bewusst NICHT im Pool (s. Kommentar dort) — er käme sonst gleich nach sich
+   selbst ein zweites Mal dran. */
+const MENU_TIERS = ["calm", "mid"];
+function randomMenuTrack() {
+  const pool = POOL.filter((t) => MENU_TIERS.includes(t.tier));
+  if (!pool.length) return MENU_TRACK;
+  let i = Math.floor(Math.random() * pool.length);
+  if (current && pool.length > 1) { let guard = 0; while (pool[i].url === current.url && guard++ < 8) i = Math.floor(Math.random() * pool.length); }
+  return pool[i];
+}
+
 export const music = {
   menu() { mode = "menu"; tier = "calm"; playTrack(MENU_TRACK); },                 // Menü + Victory
   // #339: Run-/Resume-Start score-abhängig initialisieren — ein fortgesetzter High-Score-Lauf startet SOFORT mit der zur
   //   gespeicherten Score-Schwelle passenden Stufe (frischer Lauf: Score 0 → weiterhin calm). setProgress übernimmt danach
   //   nur die laufenden Stufenwechsel; ohne das lief ein ganzer Calm-Song aus, bevor die Musik hochschaltete.
   enterRun(score = 0) { mode = "run"; lastScore = Math.max(0, Number(score) || 0); tier = tierForScore(lastScore); playTrack(randomPoolTrack(tier)); },
-  next() { if (mode === "run") playTrack(randomPoolTrack(tier)); },                // „Nächster Track" (aus aktueller Stufe)
+  // „Nächster Track" — im Lauf aus der aktuellen Intensitäts-Stufe, im Menü aus dem ruhigen Menü-Pool.
+  next() { playTrack(mode === "menu" ? randomMenuTrack() : mode === "run" ? randomPoolTrack(tier) : null); },
   // Aktueller Score (state.score): bestimmt die Intensitäts-Stufe. Ein FRISCHER Song (< SWITCH_MIN_PLAY s) wird nie
   // angeschnitten — er läuft aus, dann reiht onEnded den neuen-Stufen-Track. Lief er schon länger, wird JETZT weich
   // (Fade) auf einen Track der neuen Stufe gewechselt.

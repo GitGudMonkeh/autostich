@@ -44,7 +44,8 @@ const onbRewards = (t) => [
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1400 px;
   // darunter bleiben die Props ungenutzt.
-  deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null }) {
+  deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
+  musicTitle = null, onMusicNext = null }) {
   const [seedInput, setSeedInput] = useState("");
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
@@ -77,6 +78,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      Ranked-Läufe starten auf dem Wochen-Seed (App.jsx startRankedRun), darum ist der Vergleich mit currentWeek()
      exakt und nicht nur ungefähr. Bewusst ohne useMemo: currentWeek() ist ein paar Rechenschritte, und so ist die
      Nummer über einen Wochenwechsel hinweg in einer langen Sitzung immer aktuell. */
+  // #desktop — Namen für die Status-Tafel, einmal aufgelöst (beide Leser sind übersetzte Register).
+  const deckName = deckId ? deckDef(deckId).name : "";
+  const bfName = bfId ? battlefieldDef(bfId).name : "";
   const week = currentWeek(new Date());
   const weekBonusOpen = (prof.lastRankedWeekSeed ?? null) !== week.seed;
   const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
@@ -385,9 +389,31 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               className="w-[96px] h-auto rounded-lg select-none"
               style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
           )}
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="text-[21px] font-bold truncate">{deckId ? deckDef(deckId).name : ""}</div>
-            <div className="text-[14px] opacity-55 truncate">{bfId ? t("start.board.field", { name: battlefieldDef(bfId).name }) : ""}</div>
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <div className="text-[21px] font-bold truncate">{deckName}</div>
+            {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
+                eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
+                hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
+                Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
+            {bfName && !bfName.startsWith(deckName) && (
+              <div className="text-[14px] opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
+            )}
+            {/* #musik — Was gerade läuft, plus Weiterschalten. Sitzt hier und nicht als eigener Block, weil
+                die Musik zum „Stand" gehört wie Deck und Spielfeld: alles, was der Screen gerade IST. */}
+            <div className="flex items-center gap-2 mt-1 min-w-0">
+              <span className="text-[13px] opacity-40 shrink-0" aria-hidden="true">♪</span>
+              <span className="text-[13px] opacity-55 truncate flex-1" title={musicTitle || undefined}>
+                {musicTitle || "—"}
+              </span>
+              {onMusicNext && (
+                <button onClick={onMusicNext} aria-label={t("music.next")}
+                  title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
+                  className="shrink-0 rounded px-2 py-1 text-[13px] leading-none transition-all hover:brightness-125"
+                  style={{ background: "rgba(32,32,42,.7)", border: "1px solid rgba(150,150,170,.22)" }}>
+                  ⏭
+                </button>
+              )}
+            </div>
           </div>
         </div>
         {/* Vier Kennzahlen. Die Farben bleiben hier bewusst die BEDEUTUNGS-Farben (Gold = Währung,

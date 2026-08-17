@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, basename } from "node:path";
 import { MUSIC_TRACKS } from "../src/ui/music.js";
@@ -36,5 +36,39 @@ describe("#F-01 Musik-Referenzen zeigen auf existierende Dateien", () => {
   it("kein Track ist doppelt im Pool", () => {
     const runUrls = MUSIC_TRACKS.slice(1).map((t) => t.url); // [0] = Menü-Track, darf im Pool fehlen
     expect(new Set(runUrls).size).toBe(runUrls.length);
+  });
+});
+
+/* ============================================================
+   #musik-menue — Der Startbildschirm reiht nur RUHIGE Tracks.
+
+   Das ist eine zugesagte Eigenschaft, keine Laune: Im Menü eskaliert nichts, hot/overdrive würden dort
+   Spannung behaupten, wo keine ist. Die Auswahl passiert in `randomMenuTrack()` und ist von außen nicht
+   aufrufbar — deshalb wird hier beides geprüft: dass die Daten den Pool überhaupt hergeben, und dass die
+   drei Nähte (Stufenliste, „Nächster Track", Songende) tatsächlich darauf zeigen. Kippt eine davon,
+   spielt das Menü irgendwann Overdrive, und das fällt sonst erst einem Spieler auf.
+   ============================================================ */
+describe("#musik-menue — Menü-Pool bleibt auf calm/mid beschränkt", () => {
+  const src = readFileSync(new URL("../src/ui/music.js", import.meta.url), "utf8");
+
+  it("es gibt überhaupt ruhige Tracks zu reihen", () => {
+    const ruhig = MUSIC_TRACKS.filter((t) => t.tier === "calm" || t.tier === "mid");
+    expect(ruhig.length).toBeGreaterThan(10);
+  });
+
+  it("die Stufenliste des Menüs nennt genau calm und mid", () => {
+    expect(src).toMatch(/const MENU_TIERS = \["calm", "mid"\];/);
+  });
+
+  it("Nächster-Track-Knopf und Songende ziehen im Menü aus dem Menü-Pool", () => {
+    // next(): im Menü randomMenuTrack, im Lauf weiterhin die Stufe.
+    expect(src).toMatch(/next\(\)\s*\{[^}]*mode === "menu" \? randomMenuTrack\(\)/);
+    // ended: der Menü-Zweig steht VOR dem Run-Zweig und reiht ebenfalls aus dem Menü-Pool.
+    expect(src).toMatch(/if \(mode === "menu"\) \{ startTrack\(randomMenuTrack\(\)/);
+  });
+
+  it("das audio-Element loopt nicht mehr — sonst feuert ended im Menü nie", () => {
+    expect(src).toMatch(/a\.loop = false;/);
+    expect(src).not.toMatch(/a\.loop = mode === "menu"/);
   });
 });
