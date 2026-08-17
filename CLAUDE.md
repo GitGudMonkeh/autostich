@@ -149,8 +149,18 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
 ### #kompositor — Feld-Ebenen in EINE Pixi-Bühne (`?fx2=1`, laufender Umbau)
 Umsetzung des Ziels aus #fx-spike. `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry;
 jede Ebene rendert in eine **eigene, kleinere Render-Textur** und wird beim Zusammensetzen hochskaliert (Kosten ∝
-Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (Faktor mobil 0,75 — am Gerät bestätigt) und **Aurora**
-(mobil 0,6 — **geschätzt, NICHT am Gerät beurteilt**; braucht denselben Seite-an-Seite-Check wie die Brandung).
+Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — am Gerät bestätigt), **Aurora**
+(mobil 0,6 — am Gerät bestätigt) und **Leuchten/DeckGlow** (mobil 0,6 — **geschätzt, noch nicht beurteilt**).
+- **Abnahme einer portierten Ebene: rechnen, nicht gucken.** Beide Pfade auf `animate={false}` (friert sie auf
+  dieselbe Sekunde), Panel gegen Panel, mittlere Abweichung je Zeilenband ausrechnen. Für Leuchten: **0,0 von 255**,
+  also pixelgleich. Der Blickvergleich trägt hier nicht — bei additivem Magenta auf grünen Konturen hatte ich ein
+  vertikal GESPIEGELTES Bild zuerst für richtig gehalten.
+- **Vergleichsaufbau braucht das CSS des Spiels.** Ohne Tailwind bleibt die raw-Canvas auf der HTML-Standardgröße
+  300×150 (`w-full h-full` greift nicht), der Kompositor misst seinen Host → man vergleicht zwei Auflösungen. Genau
+  das hat mich zwei wirkungslose „Korrekturen" (alphaMode, Mipmaps) einbauen lassen. **Erst Canvas-Größen
+  gegenprüfen, dann Bilder.** Mit gleicher Größe war der Unterschied sofort exakt null.
+- Wächter: `test/pixi-field-shader.test.js` prüft die Port-Regeln als reine Funktion (kein WebGL nötig) und baut
+  JEDE registrierte Ebene — ein Port-Fehler fällt damit in Millisekunden auf statt am Gerät.
 - **Umschalter je Ebene: `src/ui/fx/FieldLayer.jsx`** (`?fx2=1`, Preview/Dev-gegatet). Aufrufer geben die bisherige
   Fassung als `fallback` mit — sie rendert ohne den Schalter UND als Rückfall, wenn der Kompositor scheitert.
   Bewusst ENTWEDER/ODER: liefen beide, wäre die Fläche doppelt bezahlt und jede Messung wertlos.
@@ -162,10 +172,14 @@ Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (Faktor mobil 0,
   Aurora schreibt `gl_FragCoord.xy / uRes.xy` MIT Leerzeichen, die Brandung ohne → Ersetzung griff nicht, Bild kam
   trotzdem, nur y-gespiegelt). Die Ebenen benutzen die Shader-Quelle der Originalkomponente (`NEONSURF_FRAG`,
   `AURORA_FRAG_SRC`) — **nie abtippen**, sonst driften alter und neuer Pfad auseinander.
-- **Noch NICHT gemessen: der eigentliche Gewinn** („ein Composite statt vier bis fünf"). Aurora und Brandung sind
-  einander ausschließende Hintergründe, es läuft also weiterhin nur EINE Ebene. Belegbar wird das erst mit
-  **Leuchten (DeckGlow)** in der Bühne — die einzige Ebene, die GLEICHZEITIG mit dem Hintergrund läuft. Sie braucht
-  zusätzlich einen `sampler2D` (Battlefield-Bild) und ist damit der nächste, größere Schritt.
+- **Noch NICHT gemessen: der eigentliche Gewinn** („ein Composite statt vier bis fünf"). Jede Ebene hat weiterhin
+  ihre EIGENE Bühne — der Kompositor ist bisher nur der gemeinsame Pfad, nicht die gemeinsame Fläche. Aurora und
+  Brandung schließen einander als Hintergrund aus; erst Leuchten läuft GLEICHZEITIG mit einem Hintergrund. Der
+  nächste Schritt ist deshalb: `FieldCompositor` nimmt MEHRERE Ebenen in eine Bühne (Reihenfolge Leuchten →
+  Hintergrund, das ist die heutige z-Ordnung z-0 unter z-2) — danach ist der Gewinn belegbar.
+- **Textur-Ebenen: Y-Dreher gehört ins Laden.** Die portierte UV zählt von unten (nachgemessen), die raw-Fassungen
+  benutzen dafür `UNPACK_FLIP_Y_WEBGL`, Pixi lädt ungedreht. Prüfen an einer Wegwerf-Ebene, die NUR die Textur
+  ausgibt, neben demselben Bild als DOM-`<img>` — nicht am fertigen Effekt.
 
 ### #perf-overlay + #perf-hologrid (aus einem Perf-Report, 2026-08-17)
 Report eines 409-s-Laufs (Meteor + Hologrid-Slice + Neonrahmen): 386 Ruckler, davon **99 in nur 4 Architekt-Besuchen**.

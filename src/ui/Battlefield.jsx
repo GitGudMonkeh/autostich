@@ -1607,8 +1607,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && (
-            <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-              deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />
+            <FieldLayer layer="deckglow" srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
+              color={deckA1 || "#7fdcff"}
+              on animate={!reduced} active={boardVisible}
+              fallback={<DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
+                deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />} />
           )}
         </div>
       )}

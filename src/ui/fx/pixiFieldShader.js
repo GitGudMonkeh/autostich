@@ -28,6 +28,18 @@
         immerhin ehrlich: „Illegal use of reserved word" in der Konsole, kein stummes schwarzes Bild.
         Weitere Kandidaten, falls eine Ebene zickt: `sample`, `filter`, `active`, `common`, `partition`,
         `resource`, `superp`, `input`, `output`.
+     6. TEXTUR-ORIENTIERUNG (nur Ebenen mit `sampler2D`). Die portierte UV zählt von UNTEN — nachgemessen mit einer
+        Wegwerf-Ebene, die `vec4(vUv.x, vUv.y, 0, 1)` ausgibt: Grün ist am OBEREN Rand 1. Die raw-Fassungen laden
+        ihr Bild deshalb mit `UNPACK_FLIP_Y_WEBGL = true`; Pixi lädt ungedreht (`GlStateSystem` setzt das Flag hart
+        auf false, kein Uploader ändert es). Der Dreher gehört also ins LADEN, sonst sampelt die Ebene das vertikal
+        gespiegelte Bild. Prüfen an einer Ebene, die NUR die Textur ausgibt, neben demselben Bild als DOM-`<img>` —
+        am fertigen Effekt ist es NICHT zuverlässig zu beurteilen (s. loadFieldTexture in FieldCompositor.jsx).
+
+   Und eine Falle, die keine Shader-Falle ist, mich aber zweimal erwischt hat: ein Vergleichsaufbau OHNE das CSS des
+   Spiels lässt die raw-Canvas auf ihrer HTML-Standardgröße 300×150 stehen (`w-full h-full` ist Tailwind). Der
+   Kompositor misst dagegen seinen Host. Dann vergleicht man zwei Auflösungen und deutet den Unterschied als
+   Portierungsfehler — ich habe daraufhin zwei Änderungen eingebaut, die nichts taten. Erst Canvas-Größen
+   gegenprüfen, dann Bilder.
 
    Was hier NICHT passiert: die Bildlogik anfassen. Die Ersetzungen sind rein mechanisch, damit der Pixi-Pfad
    Zeichen für Zeichen dieselbe Rechnung macht wie das Original. */
@@ -49,8 +61,20 @@ export const PIXI_FIELD_VERT = [
 /* Einen GLSL-ES-1.00-Fragment-Shader (wie ihn die raw-WebGL-Felder benutzen) nach ES 3.00 für Pixi heben.
    `uvExpr` ist der Ausdruck, der im Original die Bildschirm-UV liefert — er wird durch die vUV-Fassung ersetzt.
    Y wird gedreht, weil Pixis Bühne von oben zählt und die Shader von unten rechnen. */
-export function toPixiFragment(src, { uvExpr = "gl_FragCoord.xy/uRes.xy" } = {}) {
-  const body0 = String(src).replace(/gl_FragColor/g, "fragColor");
+export function toPixiFragment(src, { uvExpr = "gl_FragCoord.xy/uRes.xy", varyingUv = null } = {}) {
+  const head = ["#version 300 es", "precision highp float;", "in vec2 vUV;", "out vec4 fragColor;"];
+  let body0 = String(src)
+    .replace(/gl_FragColor/g, "fragColor")
+    .replace(/\btexture(2D|Cube)\s*\(/g, "texture(");   // ES 3.00 kennt nur noch `texture(...)`
+  /* Manche Ebenen holen die Bildschirm-UV nicht aus `gl_FragCoord`, sondern aus einer eigenen `varying`, die der
+     Vertex-Shader füllt (Deck-Glow: `vUv` aus `aPos*0.5+0.5`). Deren Deklaration muss raus — der Kopf bringt
+     `vUV` schon mit — und der Name wird auf dieselbe gedrehte UV gelegt wie bei den gl_FragCoord-Ebenen. */
+  if (varyingUv) {
+    const decl = new RegExp(`^\\s*varying\\s+vec2\\s+${varyingUv}\\s*;\\s*$`, "m");
+    if (!decl.test(body0)) throw new Error(`toPixiFragment: varyingUv "${varyingUv}" nicht im Quelltext gefunden.`);
+    body0 = body0.replace(decl, "");
+    head.push(`#define ${varyingUv} vec2(vUV.x, 1.0 - vUV.y)`);
+  }
   const body = body0
     .replace(looseExpr(uvExpr), "vec2(vUV.x, 1.0 - vUV.y)")
     .replace(/^\s*precision\s+\w+\s+float\s*;\s*$/m, "");   // wandert in den Kopf (Falle 3)
@@ -61,8 +85,12 @@ export function toPixiFragment(src, { uvExpr = "gl_FragCoord.xy/uRes.xy" } = {})
   if (/gl_FragCoord/.test(body)) {
     throw new Error(`toPixiFragment: uvExpr "${uvExpr}" passt nicht auf den Quelltext — gl_FragCoord blieb stehen.`);
   }
-  return ["#version 300 es", "precision highp float;", "in vec2 vUV;", "out vec4 fragColor;"]
-    .concat(body.split("\n")).join("\n");
+  // Gleiche Logik für ES-1.00-Reste: eine übrig gebliebene `varying` linkt nicht, das meldet sich zwar — aber hier
+  // steht der Grund gleich dabei, statt in einer nackten GLSL-Fehlermeldung.
+  if (/^\s*(varying|attribute)\s/m.test(body)) {
+    throw new Error("toPixiFragment: `varying`/`attribute` übrig — ES 3.00 kennt nur `in`/`out` (varyingUv setzen?).");
+  }
+  return head.concat(body.split("\n")).join("\n");
 }
 
 /* Regex aus einem GLSL-Ausdruck, die Leerzeichen im Quelltext toleriert: die Vorlage wird entleert und an jeder

@@ -26,7 +26,10 @@ const TUNE = { intensity: 2.5, threshold: 0.28, bloom: 2.0, flow: 1.4, flowSpeed
 
 const VERT = "attribute vec2 aPos; varying vec2 vUv; void main(){ vUv = aPos*0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }";
 
-const FRAG = [
+/* EXPORTIERT für den Feld-Kompositor (#kompositor): dort läuft derselbe Shader als Ebene einer geteilten Pixi-Bühne.
+   Die Quelle wird geteilt und NICHT abgetippt — sonst driften alter und neuer Pfad auseinander und ein A/B-Vergleich
+   misst zwei verschiedene Effekte. Die ES-1.00→3.00-Anhebung macht `toPixiFragment` (pixiFieldShader.js) mechanisch. */
+export const DECKGLOW_FRAG_SRC = [
   "precision highp float;",
   "varying vec2 vUv;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMix; uniform float uImgAspect;",
@@ -83,6 +86,7 @@ const FRAG = [
   "  gl_FragColor = vec4(deckCol * alpha, alpha);",                          // premultiplied: satte Deckfarbe, Alpha = Intensität // korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
+const FRAG = DECKGLOW_FRAG_SRC;
 
 function hexToRgb(h, fb) {
   if (typeof h !== "string") return fb;
