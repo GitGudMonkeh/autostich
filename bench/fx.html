@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FX-Messstand</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0b0a16;overflow:hidden}
+    #stage{position:absolute;inset:0}
+  </style>
+</head>
+<body>
+  <!-- Isolierter Messstand: mountet GENAU EINEN Effekt formatfüllend, ohne Spiel-UI drumherum.
+       Getrieben von maintenance/fx-bench.mjs (Playwright). Nicht Teil des Builds — Vite bündelt nur index.html. -->
+  <div id="stage"></div>
+  <script type="module" src="./fx.jsx"></script>
+</body>
+</html>
