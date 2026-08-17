@@ -60,9 +60,15 @@ function makeBeamTexture() {
   x.fillStyle = g; x.fillRect(0, 0, BW, BH); x.restore(); return Texture.from(c);
 }
 
+  /* #perf-warm: `warm` = Bühne aufbauen, aber NICHT abspielen. Der Prunk wurde bisher erst beim ersten
+     gottgleichen Sieg gemountet — und weil `startPlay()` direkt in der Init steht, fielen Chunk-Laden und
+     `Application.init()` genau in den lautesten Moment des Laufs (gemessen: 362 ms blockierter Hauptthread,
+     Supernova zieht dafür ZWEI Pixi-Apps auf). Mit `warm` passiert das, während ein Vollbild-Overlay liegt,
+     wo ein Hitch unsichtbar ist. Kommt der Sieg vor dem Ende der (asynchronen) Init, merkt sich `startPlay()`
+     das als `pending` und die Init holt das Abspielen nach — sonst würde der erste Gottgleich stumm bleiben. */
 export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0,
   deckColor = "#2ff0ff", deckColor2 = null, deckTint = false, reduced = false, lite = false, loop = false, speed = 1,
-  onDone = null, onFire = null }) {
+  onDone = null, onFire = null, warm = false }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const nodesRef = useRef(null);   // { beams: Sprite[], cores: Graphics, hub: Sprite }
@@ -70,7 +76,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
   const startRef = useRef(null);
   const firstRef = useRef(true);
   const st = useRef({ deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire });
-  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire };
+  st.current = { deckColor, deckColor2, deckTint, reduced, lite, loop, speed, onDone, onFire, warm };
 
   useEffect(() => {
     const host = hostRef.current; if (!host) return undefined;
@@ -127,7 +133,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     }
 
     function stopIdle() { const a = appRef.current; if (!a) return; try { a.renderer.render(a.stage); a.ticker.stop(); } catch { /* ignore */ } }
-    function startPlay() { const a = appRef.current, pl = playRef.current; if (!a || disposed) return; pl.playing = true; pl.bt = 0; placer.invalidate(); pl.rotBase = Math.random() * TAU; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
+    function startPlay() { const a = appRef.current, pl = playRef.current; if (disposed) return; if (!a) { pl.pending = true; return; } pl.pending = false; pl.playing = true; pl.bt = 0; placer.invalidate(); pl.rotBase = Math.random() * TAU; st.current.onFire && st.current.onFire(); if (document.visibilityState !== "hidden") a.ticker.start(); }
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps (wie die anderen Effekte).
@@ -143,7 +149,10 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
         const hub = new Sprite(hubTex); hub.anchor.set(0.5); hub.blendMode = "add"; hub.alpha = 0; app.stage.addChild(hub);
         nodesRef.current = { beams, cores, hub };
         app.ticker.maxFPS = gottMaxFPS(st.current.lite);
-        app.ticker.add(tick); startPlay();
+        app.ticker.add(tick); if (!st.current.warm || playRef.current.pending) startPlay();
+      // Nur vorgewärmt: Pixi startet seinen Ticker bei der Init von selbst — hier wieder anhalten, sonst
+      // renderte die (leere) Bühne den ganzen Lauf über mit. stopIdle() ist derselbe Ruhezustand wie nach dem Abspielen.
+      else stopIdle();
       }).catch(() => { /* WebGL fehlt → leer */ });
 
     const onVis = () => { const a = appRef.current; if (a && playRef.current.playing && document.visibilityState !== "hidden") a.ticker.start(); };

@@ -1219,6 +1219,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Bei „reduced" (Barrierefreiheit) läuft kein voller Prunk.
   const [gottTrigger, setGottTrigger] = useState(0);
   const gottLastAt = useRef(0);
+  /* #perf-warm: Der Prunk hing bisher am ERSTEN gottgleichen Sieg — dort fielen Chunk-Laden und Pixi-Init auf
+     einen Schlag an (gemessen: 362 ms blockierter Hauptthread, ausgerechnet im lautesten Moment des Laufs;
+     Supernova zieht dafür zwei Pixi-Apps auf). Jetzt wird die Bühne schon vorgewärmt, sobald das Brett zum
+     ERSTEN Mal von einem Vollbild-Overlay verdeckt ist (Auswahl-Phase/Pause): dort sieht niemand einen Hitch,
+     und bis zum ersten Gottgleich steht alles. `warm` baut auf, ohne abzuspielen (s. die Prunk-Dateien).
+     Einmal wahr, bleibt wahr — die Bühne soll nicht bei jedem Overlay neu entstehen. */
+  const [gottWarm, setGottWarm] = useState(false);
+  useEffect(() => { if (!boardVisible) setGottWarm(true); }, [boardVisible]);
+  const gottMounted = gottTrigger > 0 || gottWarm;   // gemountet = spielbereit (abgespielt wird erst am Trigger)
   useEffect(() => {
     if (!t) { gottLastAt.current = 0; return; }
     /* Derselbe Wert wie die Ansage: `t.gained`, also der Stich-Score NACH dem Krit-Multiplikator.
@@ -1543,37 +1552,37 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           persistent → Replay je weiterem Sieg über den Trigger. Nicht bei „reduced". Der Effekt-Layer positioniert sich
           selbst (z-9 hinter der Karte bzw. eigene Ebenen bei Supernova). cardRef=null → der Prunk zentriert sich auf die
           PANEL-Mitte (pr.width/2), nicht auf die außermittige Gegnerkarte — sonst saß der Effekt v. a. auf Mobile rechts. */}
-      {gottTrigger > 0 && gottEffect === "sonnenPuls" && !reduced && (
+      {gottMounted && gottEffect === "sonnenPuls" && !reduced && (
         <Suspense fallback={null}>
-          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("sonnenPuls")}
+          <SonnenPulsPixi trigger={gottTrigger} warm={gottTrigger === 0} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("sonnenPuls")}
             deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
-      {gottTrigger > 0 && gottEffect === "laserFaecher" && !reduced && (
+      {gottMounted && gottEffect === "laserFaecher" && !reduced && (
         <Suspense fallback={null}>
-          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("laserFaecher")}
+          <LaserFaecherPixi trigger={gottTrigger} warm={gottTrigger === 0} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("laserFaecher")}
             deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
-      {gottTrigger > 0 && gottEffect === "prismaKaskade" && !reduced && (
+      {gottMounted && gottEffect === "prismaKaskade" && !reduced && (
         <Suspense fallback={null}>
-          <PrismaKaskadePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("prismaKaskade")}
+          <PrismaKaskadePixi trigger={gottTrigger} warm={gottTrigger === 0} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("prismaKaskade")}
             deckColor={deckA1 || "#31d0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
-      {gottTrigger > 0 && gottEffect === "holoCube" && !reduced && (
+      {gottMounted && gottEffect === "holoCube" && !reduced && (
         <Suspense fallback={null}>
-          <HoloCubePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("holoCube")}
+          <HoloCubePixi trigger={gottTrigger} warm={gottTrigger === 0} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("holoCube")}
             deckColor={deckA1 || "#35e0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
-      {gottTrigger > 0 && gottEffect === "supernova" && !reduced && (
+      {gottMounted && gottEffect === "supernova" && !reduced && (
         <Suspense fallback={null}>
-          <SupernovaPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("supernova")}
+          <SupernovaPixi trigger={gottTrigger} warm={gottTrigger === 0} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("supernova")}
             deckColor={deckA1 || "#ffd24a"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
