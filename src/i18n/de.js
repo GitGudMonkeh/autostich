@@ -906,7 +906,6 @@ export default {
   "upgrades.impact.legRerolls": "Legendär-Rerolls",
   "upgrades.impact.of": "von {max}",
   "upgrades.impact.dropNow": "Perk-Qualität jetzt",
-  "upgrades.impact.dropMax": "im Vollausbau",
   "upgrades.page.general": "Allgemein",
   "upgrades.page.generalHint": "Gilt für jeden Lauf, unabhängig vom Deck.",
   "upgrades.nav.decks": "Decks",

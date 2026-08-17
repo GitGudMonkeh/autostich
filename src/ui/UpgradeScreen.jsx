@@ -297,7 +297,11 @@ function ImpactBox({ p }) {
     return [1, 2, 3, 4].map((tier) => ({ tier, pct: Math.round((w[tier] / summe) * 100) })).filter((x) => x.pct > 0);
   };
   const jetzt = alsProzent(tierWeightsForShift(fx.treeRareShift, fx.maxTier));
-  const beste = alsProzent(tierWeightsForShift(4, 4)); // Vollausbau: alle Stufen frei + höchste Drop-Rate
+  /* Der zweite Balken „im Vollausbau" ist entfallen. Er zeigte einen FESTEN Zielzustand
+     (tierWeightsForShift(4, 4)) und war damit bei vollem Baum eine wortgleiche Kopie des Balkens
+     daneben — zweimal dasselbe Bild nebeneinander, genau dort, wo man den Fortschritt abliest.
+     Was er beantworten sollte („wie weit ist noch hin?"), beantworten die vier Zähler darüber
+     bereits als `x von max`. */
   const balken = (liste) => (
     <>
       <div className="up-dropbar">
@@ -322,10 +326,24 @@ function ImpactBox({ p }) {
           </div>
         ))}
       </div>
-      <div className="up-droppair">
-        <div className="up-dropbox"><span className="up-drop-t">{t("upgrades.impact.dropNow")}</span>{balken(jetzt)}</div>
-        <div className="up-dropbox"><span className="up-drop-t">{t("upgrades.impact.dropMax")}</span>{balken(beste)}</div>
-      </div>
+      <div className="up-dropbox up-dropnow"><span className="up-drop-t">{t("upgrades.impact.dropNow")}</span>{balken(jetzt)}</div>
+    </div>
+  );
+}
+
+/* Die Zeichenerklärung. Sie steht ZWEIMAL im DOM und ist trotzdem EINE Quelle — sichtbar ist immer
+   genau eine (dieselbe Technik wie beim Glossar-Knopf im Startbildschirm, Begründung dort).
+   Grund: Auf dem Handy hängt sie unter dem Stapel, ab 1400 px gehört sie INS Panel (unter den
+   Auswirkungs-Kasten, über die Panelkante) — und die beiden Plätze liegen in verschiedenen
+   Containern. Verschieben ließe sich das nur im DOM, und das zöge die Handy-Fassung mit.
+   `where` schaltet, welche Instanz die jeweilige Breite zeigt (Regeln in index.css). */
+function Legend({ where }) {
+  return (
+    <div className={`flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend up-legend-${where}`}
+      style={{ color: "#a6a6b0" }}>
+      <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> {t("upgrades.owned")}</span>
+      <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
+      <span>{t("upgrades.locked")} <span style={{ opacity: .7 }}>{t("upgrades.soon")}</span></span>
     </div>
   );
 }
@@ -523,6 +541,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                 <NodeDetail node={selDeskNode} st={nodeState(p, selDeskNode.id)}
                   accent={nodeAccent(selDeskNode, VI)} onBuy={buy} />
               )}
+              {/* Letztes Kind des Panels: die Erklärung erklärt, was IM Panel steht, und stand bis hier
+                  außerhalb davon — unter der Kante, wo sie zu nichts mehr gehörte. */}
+              <Legend where="page" />
             </section>
           </div>
         ) : (
@@ -573,12 +594,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         </div>
         )}
 
-        {/* Legende. */}
-        <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend" style={{ color: "#a6a6b0" }}>
-          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> {t("upgrades.owned")}</span>
-          <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
-          <span>{t("upgrades.locked")} <span style={{ opacity: .7 }}>{t("upgrades.soon")}</span></span>
-        </div>
+        {/* Legende, Handy-Platz: unter dem Stapel. Ab 1400 px übernimmt die Instanz im Panel. */}
+        <Legend where="outer" />
       </div>
     </div>
   );

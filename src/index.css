@@ -1265,6 +1265,10 @@ button { font-family: inherit; }
 .up-branches { display: contents; }
 .up-branch.is-off { display: none; }
 .up-branch-h { display: none; }
+/* Die Zeichenerklärung steht zweimal im DOM (Begründung an `Legend` in UpgradeScreen.jsx). Bis
+   1399 px gilt der Handy-Platz unter dem Stapel; die Instanz im Panel ist hier aus dem Layout.
+   Umgeschaltet wird in der 1400-px-Sektion — sichtbar ist immer genau eine. */
+.up-legend-page { display: none; }
 
 /* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1399 px reichen `cz-split` und `cz-main` ihre
    Kinder unverändert an den Scroller durch — Katalog, Effekt-Bühne und Liste sitzen exakt wie bisher.
@@ -1554,6 +1558,10 @@ button { font-family: inherit; }
   .up-branch > .mt-4 { margin-top: 12px; }
 
   .up-legend { margin-top: 16px !important; font-size: 13px !important; }
+  /* Platzwechsel der Zeichenerklärung: raus aus dem Außenraum, rein ins Panel. Draußen stand sie
+     UNTER der Panelkante und erklärte damit Zeichen, die sichtbar zu etwas anderem gehörten. */
+  .up-legend-outer { display: none; }
+  .up-legend-page  { display: flex; }
 
   /* ==========================================================================
      #desktop — der Baum steht hoch (Deck-Spalte + Kategorie-Spalten)
@@ -1720,8 +1728,10 @@ button { font-family: inherit; }
 
   /* „Was der Baum gerade bewirkt" — die Zahlen stehen sonst nirgends, obwohl sie die Frage sind,
      die man im Baum stellt. Quelle: nodeEffects() + tierWeightsForShift(). */
+  /* 14 → 28 px: Der Kasten klebte an der untersten Knotenreihe und las sich dadurch wie deren
+     Fortsetzung. Er ist aber die AUSWERTUNG darüber — der Abstand ist das einzige, was das sagt. */
   .up-impact {
-    margin-top: 14px; padding: 13px 15px; border-radius: 12px;
+    margin-top: 28px; padding: 13px 15px; border-radius: 12px;
     background: #12121a; border: 1px solid rgba(150, 150, 170, .1);
   }
   .up-impact-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
@@ -1732,8 +1742,10 @@ button { font-family: inherit; }
   .up-stat-v i { font-style: normal; font-size: 12.5px; font-weight: 600; color: #71717c; }
   .up-stat-b { height: 6px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 3px; }
   .up-stat-b i { display: block; height: 100%; border-radius: 99px; }
-  .up-droppair { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 11px; }
+  /* Nur noch EIN Balken (der zweite war im Vollausbau eine Kopie, s. UpgradeScreen.jsx) — er läuft
+     jetzt über die ganze Panelbreite. Der frühere Zweispalter `.up-droppair` ist damit entfallen. */
   .up-dropbox { padding: 9px 11px; border-radius: 9px; background: #14131c; }
+  .up-dropnow { margin-top: 11px; }
   .up-drop-t { font-size: 12.5px; color: #8a8a95; display: block; margin-bottom: 6px; }
   .up-dropbar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; }
   .up-dropbar i { display: block; height: 100%; }
