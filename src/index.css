@@ -1503,13 +1503,9 @@ button { font-family: inherit; }
   }
   .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .up-page-eyebrow { font-size: 15px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
-  .up-page-hint { font-size: 13px; color: #71717c; }
-  .up-page-more {
-    margin-left: auto; font-size: 13px; font-weight: 600; color: #a6a6b0; cursor: pointer;
-    padding: 7px 12px; border-radius: 8px;
-    background: rgba(12, 12, 18, .5); border: 1px solid rgba(150, 150, 170, .18);
-    border-left: 3px solid rgba(150, 150, 170, .35);
-  }
+  /* Der Einzeiler darf schrumpfen, damit der Leitfaden-Knopf rechts in der Ecke steht statt vom Text
+     weggeschoben zu werden — und er bricht nicht um, sondern endet mit Auslassungspunkten. */
+  .up-page-hint { font-size: 13px; color: #71717c; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .up-vgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; align-items: start; }
   .up-vlane { display: flex; flex-direction: column; min-width: 0; }
@@ -1581,14 +1577,16 @@ button { font-family: inherit; }
   .up-chall-bar i { display: block; height: 100%; border-radius: 99px; }
   .up-chall-f { font-size: 12.5px; color: #8a8a95; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
+  /* `flex: none` gehört dazu: Ohne das schrumpft der Knopf, sobald der Einzeiler daneben lang wird,
+     und „Leitfaden ›" bricht mitten im Wort um (genau so ist es dem alten Details-Knopf ergangen). */
   .up-page-guide {
+    flex: none;
+    margin-left: auto;
     font-size: 14px; font-weight: 700; padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #0e0e14) 0%, #0e0e14 34%);
     border: 1px solid rgba(150, 150, 170, .16); border-left: 4px solid var(--c);
     color: color-mix(in srgb, var(--c) 45%, #ffffff);
-    margin-left: auto;
   }
-  .up-page-guide + .up-page-more { margin-left: 0; }
 
   /* „Was der Baum gerade bewirkt" — die Zahlen stehen sonst nirgends, obwohl sie die Frage sind,
      die man im Baum stellt. Quelle: nodeEffects() + tierWeightsForShift(). */

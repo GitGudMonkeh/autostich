@@ -485,9 +485,11 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                     <FactionIcon type={page} size={28} />
                     <span className="up-page-eyebrow" style={{ color: FACTION_GLOW[page] || VI }}>{archMeta(page)?.label || page}</span>
                     <span className="up-page-hint">{guideDef(page)?.subtitle}</span>
+                    {/* Kein „Details" mehr daneben: Was dort lag — Skills, Leitfaden, Challenges — steht
+                        jetzt auf dieser Seite bzw. hinter diesem Knopf. Ein zweiter Einstieg in denselben
+                        Screen wäre nur noch ein Umweg. Der Handy-Pfad behält seinen Details-Knopf. */}
                     <button type="button" onClick={() => setDetailArch({ arch: page, tab: "leitfaden" })}
                       className="up-page-guide" style={{ "--c": FACTION_GLOW[page] || VI }}>{t("guide.title")} ›</button>
-                    <button type="button" onClick={() => setDetailArch({ arch: page })} className="up-page-more">{t("upgrades.details")}</button>
                   </div>
                   {/* Die Kette läuft hier QUER: drei Knoten sind keine Säule, und quer bleibt der Platz
                       darunter für Skills und Challenge. `lead` = Feuer und Blitz haben keinen Deck-Knoten
