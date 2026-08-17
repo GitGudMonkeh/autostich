@@ -869,7 +869,7 @@ export default {
 
   /* ---- Upgrade-Baum (UpgradeScreen) ---- */
   "upgrades.title": "Upgrades",
-  "upgrades.respec": "↺ Respec",
+  "upgrades.respec": "↺ Zurücksetzen",
   "upgrades.nodes": " / {total} Knoten · Ranglisten-Lauf",
   "upgrades.ranked.free": "frei",
   "upgrades.ranked.at": "bei {total}/{total} Knoten",

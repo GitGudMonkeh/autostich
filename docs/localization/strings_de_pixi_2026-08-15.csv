@@ -2364,7 +2364,7 @@ Your first skill of an archetype activates it and brings up its resource bar. Yo
 "upgrades.owned","i18n","gekauft","owned","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.ranked.at","i18n","bei {total}/{total} Knoten","at {total}/{total} nodes","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.ranked.free","i18n","frei","unlocked","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"upgrades.respec","i18n","↺ Respec","↺ Respec","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"upgrades.respec","i18n","↺ Zurücksetzen","↺ Respec","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.soon","i18n","Bald = Platzhalter","Soon = placeholder","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.tapHint","i18n","Knoten antippen zeigt, was er bewirkt.","Tap a node to see what it does.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.title","i18n","Upgrades","Upgrades","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

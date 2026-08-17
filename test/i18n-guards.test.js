@@ -122,7 +122,6 @@ describe("i18n · Katalog-Parität", () => {
     "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
     // Menü-/Werkstatt-Bildschirme: Fremdwörter und Eigennamen, die im Englischen genauso lauten.
     "upgrades.title",         // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
-    "upgrades.respec",        // „Respec" — Genre-Fachwort, im Deutschen unübersetzt
     "upgrades.details",       // „Details ›"
     "deckdetail.deck",        // „Deck" ist in beiden Sprachen dasselbe Wort
     "deckdetail.tab.skills",  // „Skills" (§3.1)
