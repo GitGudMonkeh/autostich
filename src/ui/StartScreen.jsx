@@ -4,6 +4,7 @@ import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügte
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import { GlossaryPanel } from "./Glossary.jsx";
+import { battlefieldVeil } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder
 import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
@@ -244,7 +245,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         <div aria-hidden="true" className="as-hub-bg min-[1400px]:hidden pointer-events-none fixed inset-0">
           <div className="as-hub-bg-img absolute inset-0"
             style={{ backgroundImage: `url(${battlefield.mobile})` }} />
-          <div className="as-hub-bg-veil absolute inset-0" />
+          {/* `--vk` skaliert die Schleier-Deckkraft. Standard 1; nur die zwei gemessenen Ausreisser
+              bekommen mehr (Liste + Begruendung in cosmeticAssets.js). */}
+          <div className="as-hub-bg-veil absolute inset-0" style={{ "--vk": battlefieldVeil(bfId) }} />
         </div>
       )}
 

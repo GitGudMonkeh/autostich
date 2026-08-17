@@ -18,7 +18,8 @@
     "gen:profanity-sql": "node scripts/gen-profanity-sql.mjs",
     "loc:export": "node scripts/export-strings.mjs",
     "compress:music": "node scripts/compress-music.mjs",
-    "music:overview": "node maintenance/music-overview.mjs"
+    "music:overview": "node maintenance/music-overview.mjs",
+    "bf:helligkeit": "node scripts/bf-helligkeit.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.19.0",

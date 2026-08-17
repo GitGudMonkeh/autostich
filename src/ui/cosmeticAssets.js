@@ -290,3 +290,29 @@ export const BATTLEFIELD_ASSETS = {
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
 export const battlefieldAssets = (id) => BATTLEFIELD_ASSETS[id] || BATTLEFIELD_ASSETS.default;
+
+/* #deck-mobil — Schleier-Deckel für zu helle Spielfelder (Handy-Hub).
+   Gemessen wurde die mittlere Helligkeit ALLER 40 Bilder in genau dem Ausschnitt, den `cover` am Handy
+   zeigt (`npm run bf:helligkeit`, Skript im Repo — bei einem neuen Deck einmal laufen lassen). Ergebnis:
+
+     · Nach dem Schleier liegen die Bilder zwischen 15,1 und 35,1 (von 255), Median 19,9.
+       Roh waren es 8,8 bis 57,2 — der Schleier drückt die Spanne also schon von Faktor 6,5 auf 2,3.
+       Grund: die Schleierfarbe hat selbst eine Helligkeit von rund 19 und wirkt als Anziehungspunkt,
+       sie zieht dunkle Bilder hoch und helle herunter.
+     · LESBARKEIT ist nirgends das Thema: der schlechteste Kacheltext-Kontrast über alle 40 Decks und
+       alle Pixel liegt bei 10,6:1 (WCAG AAA verlangt 7:1). Diese Liste ist eine OPTIK-Entscheidung.
+     · 32 der 40 Decks liegen zwischen 15 und 24. Genau ZWEI fallen sichtbar heraus.
+
+   Deshalb ein Deckel und keine Normalisierung: hier steht nur, was NACH OBEN begrenzt wird. Dunkle Decks
+   bleiben dunkel. Alle Decks auf dieselbe Helligkeit zu ziehen nähme ihnen ihren Charakter — Ascension
+   IST ein Lichtdom, Kosmos IST das Weltall, und ein Hub, in dem der Deckwechsel die Grundstimmung nicht
+   mehr ändert, verliert genau das, wofür der Hintergrund gebaut wurde.
+
+   Der Faktor skaliert die Alpha-Stützstellen des Schleiers (`--vk` in `.as-hub-bg-veil`, index.css);
+   die Werte hier bringen ihr Deck rechnerisch auf die Ziel-Helligkeit 24. Ein Eintrag ist eine AUSNAHME —
+   wer hier etwas einträgt, sollte die Messung dazu haben. Nicht eingetragen = Faktor 1. */
+const BATTLEFIELD_VEIL = {
+  bf_gottgleich: 1.54, // gemessen 35,1 — Median +76 %, mit Abstand der hellste (goldener Lichtdom)
+  bf_pflanze:    1.38, // gemessen 29,0 — Median +46 %, zweiter und letzter sichtbarer Ausreißer
+};
+export const battlefieldVeil = (id) => BATTLEFIELD_VEIL[id] || 1;

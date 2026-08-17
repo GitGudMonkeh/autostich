@@ -371,6 +371,25 @@ Jetzt trägt auch die Handy-Fassung ihn — **Desktop bleibt unangetastet, es be
   am Gerät. Bei hellen Decks steht der goldene Guthaben-Stripe auf goldgetönter Kachel auf goldenem Bild —
   das #ruhe-Signal ist ausgerechnet dort am schwächsten. Abnahme gehört in den `/test/`-Slot.
 
+#### Schleier-Deckel — alle 40 vermessen (`npm run bf:helligkeit`)
+Gemessen wird die mittlere Luma im **Handy-Ausschnitt** (nicht im ganzen Bild), roh und mit Schleier.
+- **Lesbarkeit ist NICHT das Thema**: schlechtester Kacheltext-Kontrast über alle 40 Decks und alle Pixel
+  **10,6:1** (WCAG AAA verlangt 7:1). Der Deckel ist eine **Optik-**, keine Sicherheitsentscheidung.
+- **Der Schleier leistet schon den Löwenanteil**: roh 8,8–57,2 (Faktor 6,5) → mit Schleier 15,1–35,1
+  (Faktor 2,3), Median 19,9. Grund: die Schleierfarbe hat selbst Luma ≈ 19 und wirkt als Anziehungspunkt —
+  sie zieht dunkle Bilder hoch und helle herunter.
+- **32 von 40 liegen zwischen 15 und 24.** Sichtbar heraus fallen **zwei**: `bf_gottgleich` 35,1
+  (Median +76 %) und `bf_pflanze` 29,0 (+46 %). Ein Deckel bei 24 träfe 8 Decks — sechs davon nur 1–8 %
+  darüber, dort korrigiert man Rauschen. **Eingetragen sind deshalb genau zwei** (`BATTLEFIELD_VEIL` in
+  `cosmeticAssets.js`, Faktor 1,54 / 1,38).
+- **Deckel statt Normalisierung, bewusst**: alle Decks auf dieselbe Helligkeit zu ziehen nähme ihnen den
+  Charakter (Ascension IST ein Lichtdom, Kosmos IST das Weltall). Die Liste begrenzt nur nach oben;
+  dunkle Decks bleiben dunkel. Ein Eintrag ist eine **Ausnahme**, keine Pflege-Tabelle für 40 Werte.
+- Technisch: `--vk` skaliert die vier Alpha-Stützstellen in `.as-hub-bg-veil` (`min(1, calc(…))`, sonst
+  Alpha > 1). Wächter: `test/hub-deck-bg.test.js` prüft die Naht über drei Dateien als Quelltext-Ratsche.
+- **Was die Messung nicht kann**: sie sieht Durchschnittshelligkeit, nicht Unruhe — ein Bild mit ruhigem
+  Mittel, aber harten Kanten quer durch die Kachelzone kann störender sein als ein gleichmäßig helleres.
+
 ### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
 - **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/
   Gottgleich 2500 ms) + `BIG_DOMINANCE_MS=1400` (niedrigere Stufe kurz nach höherer unterdrückt → „nur die höchsten").

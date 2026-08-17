@@ -933,9 +933,17 @@ button { font-family: inherit; }
   background-position: 20% center;
   background-repeat: no-repeat;
 }
+/* Die vier Alpha-Stützstellen sind mit `--vk` skalierbar (Standard 1). Zu helle Spielfelder bekommen
+   darüber einen Deckel, ohne dass der Verlauf selbst zweimal existieren muss — welches Deck welchen
+   Faktor bekommt und warum, steht in `cosmeticAssets.js` (`BATTLEFIELD_VEIL`) samt Messung.
+   `min(1, …)` deckelt die Alpha bei voller Deckkraft, sonst ergäbe ein großzügiger Faktor Werte > 1. */
 .as-hub-bg-veil {
-  background: linear-gradient(180deg, rgba(20, 20, 25, .55) 0%, rgba(20, 20, 25, .50) 30%,
-    rgba(17, 17, 22, .62) 62%, rgba(17, 17, 22, .78) 100%);
+  --vk: 1;
+  background: linear-gradient(180deg,
+    rgb(20 20 25 / min(1, calc(.55 * var(--vk)))) 0%,
+    rgb(20 20 25 / min(1, calc(.50 * var(--vk)))) 30%,
+    rgb(17 17 22 / min(1, calc(.62 * var(--vk)))) 62%,
+    rgb(17 17 22 / min(1, calc(.78 * var(--vk)))) 100%);
 }
 /* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
