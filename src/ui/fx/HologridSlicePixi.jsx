@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Application, Container, Graphics, Sprite, Texture, Rectangle } from "pixi.js";
+import { DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Zeichenrate
 
 /* #321 Sieg-Finisher „Hologrid-Slice" — PIXI. Beim Sieg fährt eine schlichte Laserlinie achsen-parallel über die
    geschlagene (Gegner-)Karte und deckt dabei im überfahrenen Bereich ein Nahtraster (COLS×ROWS) auf (Reveal). Danach
@@ -372,7 +373,7 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
         canvas.style.width = "100%"; canvas.style.height = "100%"; canvas.style.display = "block"; host.appendChild(canvas);
-        app.ticker.maxFPS = p.current.lite ? 30 : 0; // #perf-mobile: lite 45→30
+        app.ticker.maxFPS = p.current.lite ? DRAW_HZ_COARSE : 0; // #perf-mobile: Rate aus mobileTier (?hz=)
         app.ticker.add(frame);
         startPlay();
       }).catch(() => { /* WebGL fehlt → leer */ });

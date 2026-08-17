@@ -14,11 +14,22 @@ const src = (p) => readFileSync(new URL("../src/ui/fx/" + p, import.meta.url), "
 
 describe("mobileTier — Rechenwerte", () => {
   it("hält die halbe Frame-Toleranz im Zeichen-Mindestabstand", () => {
-    // Ohne die −8 ms liegt die Schwelle exakt auf zwei 60-Hz-Frames und jede zweite Zeichnung rutscht auf den
-    // übernächsten Frame → 33/50/33/50 statt gleichmäßig 33. Die Herleitung steht in mobileTier.js.
-    expect(frameMinMs(true)).toBeCloseTo(1000 / DRAW_HZ_COARSE - 8, 10);
-    expect(frameMinMs(true)).toBeLessThan(1000 / 30);
-    expect(frameMinMs(true)).toBeGreaterThan(1000 / 30 - 1000 / 120);
+    /* Ohne die −8 ms liegt die Schwelle exakt auf einem Vielfachen der 60-Hz-Frames und jede zweite Zeichnung
+       rutscht auf den übernächsten Frame → bei 30 Hz z. B. 33/50/33/50 statt gleichmäßig 33. Die Herleitung steht
+       in mobileTier.js.
+       Formuliert ist das bewusst als VERHÄLTNIS zur eingestellten Rate und nicht mehr gegen die feste 30: die Rate
+       ist seit #perf-spend eine Stellschraube (Standard 60, `?hz=` am Gerät). Ein Test, der die alte Zahl festhält,
+       hätte hier nur gemeldet, dass sich der Standard geändert hat — und nicht, ob die Toleranz noch stimmt. */
+    const period = 1000 / DRAW_HZ_COARSE;
+    expect(frameMinMs(true)).toBeCloseTo(period - 8, 10);
+    expect(frameMinMs(true)).toBeLessThan(period);          // sonst bremst der Deckel die eigene Rate weg
+    expect(frameMinMs(true)).toBeGreaterThan(period - 1000 / 60);  // …aber nicht mehr als eine ganze 60-Hz-Frame-Dauer
+  });
+
+  it("bremst gar nicht, wenn die Rate am oder über dem Bildschirmtakt liegt", () => {
+    // Bei einem Deckel jenseits der Bildschirmrate ist jedes Bremsen falsch: die Schwelle läge unter der echten
+    // Frame-Dauer und würde nur noch Frames verwerfen, die ohnehin rechtzeitig kämen.
+    expect(frameMinMs(false)).toBe(0);   // Desktop ist ungedeckelt
   });
 
   it("deckelt die Auflösung auf dem Handy schärfer als am Desktop", () => {

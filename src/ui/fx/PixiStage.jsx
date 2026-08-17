@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Application } from "pixi.js";
 import { createStarfield } from "./starfieldPixi.js"; // #glutfunken-raus: embersPixi entfernt
+import { DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Zeichenrate
 
 /* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
    Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an.
@@ -85,7 +86,7 @@ export function PixiStage({
       appRef.current = app;
       // #perf-mobile: Feld-Bühne auf lite auf 30 fps deckeln (Aurora macht dasselbe) → halbiert den Render-Takt der
       //   Dauer-Emitter auf dem Handy, ohne Partikel zu entfernen. Desktop/full = 0 (ungedeckelt).
-      app.ticker.maxFPS = paramsRef.current.lite ? 30 : 0;
+      app.ticker.maxFPS = paramsRef.current.lite ? DRAW_HZ_COARSE : 0; // #perf-mobile: Rate aus mobileTier (?hz=)
       canvas.style.width = "100%";
       canvas.style.height = "100%";
       canvas.style.display = "block";

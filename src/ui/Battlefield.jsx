@@ -67,6 +67,7 @@ import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
+import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
@@ -680,6 +681,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // dort mit voller Rate für ein Bild, das niemand sieht. Gemessen: 99 von 386 Rucklern eines Laufs fielen in
   // 4 Architekt-Besuche. Bisher hielt nur `visibilitychange` (Tab im Hintergrund) sie an.
   boardVisible = true }) {
+  /* #perf-scroll: …und „zu sehen" heißt AUCH: nicht aus dem Bild gescrollt. Die Spielseite ist deutlich höher als
+     ein Handy-Viewport (Fraktions-Panels unter dem Brett); wer nach unten scrollt, lässt das Battlefield oben
+     stehen — bisher liefen alle Effektschleifen dort mit voller Rate für ein Bild, das niemand sieht. Es gab im
+     ganzen Projekt keine einzige Stelle, die auf Scrollen reagiert hat.
+     Derselbe Hebel wie beim Overlay-Gate, nur die andere Achse. `rootMargin` startet die Effekte ein Stück VOR dem
+     Einscrollen wieder — sonst sieht man beim Hochscrollen das Anlaufen. */
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
@@ -704,6 +711,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
   const panelRef = useRef(null);
+  /* #perf-scroll: …und „zu sehen" heißt AUCH: nicht aus dem Bild gescrollt. Die Spielseite ist deutlich höher als
+     ein Handy-Viewport (Fraktions-Panels unter dem Brett); wer nach unten scrollt, lässt das Battlefield oben
+     stehen — bisher liefen alle Effektschleifen dort mit voller Rate für ein Bild, das niemand sieht. Es gab im
+     ganzen Projekt keine einzige Stelle, die auf Scrollen reagiert hat. Derselbe Hebel wie das Overlay-Gate, nur
+     die andere Achse. */
+  const panelOnScreen = useOnScreen(panelRef);   // Hook IMMER aufrufen, erst danach verknüpfen (Hook-Regel)
+  const boardOn = boardVisible && panelOnScreen;
   const oppSlotRef = useRef(null);
   // #376 Neon-Brandung Loop-Bett (Plasma-See-Ambience): startet/endet mit dem aktiven Effekt. Nahtloser Loop über die
   // gleichförmige Mitte der 29,9-s-Aufnahme (loopStart/loopEnd meiden die Anfang-/Ende-Fades → kein Naht-Klick). Gating
@@ -867,7 +881,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   //   Produktion (NICHT preview-gegatet). Aus cardAnims-Toggle bzw. ?edgeglow=1 (Dev). Immer in der Deckfarbe.
   const cardEdgeGlow = (cardAnims || []).includes("edgeglow") || EDGEGLOW_FORCE;
   const edgeGlowEl = cardEdgeGlow ? (
-    <Suspense fallback={null}><CardEdgeGlow color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"} reduced={reduced} lite={lite} active={boardVisible} /></Suspense>
+    <Suspense fallback={null}><CardEdgeGlow color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"} reduced={reduced} lite={lite} active={boardOn} /></Suspense>
   ) : null;
   const pCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
@@ -880,10 +894,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Aktiv bei voll ionisierter Karte (ionStacks >= ION_MAX_STACKS) bzw. ?blitzframe=1 (Dev). Farbe: Standard-Cyan
           oder Deckfarbe (archDeckColor). #spezial: immer aktiv (nicht mehr Preview/Dev-gegatet). */}
       {((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE) && (
-        <Suspense fallback={null}><CardIonStorm active={boardVisible} color={archDeckColor ? (deckA1 || "#5ec8f0") : "#5ec8f0"} reduced={reduced} /></Suspense>
+        <Suspense fallback={null}><CardIonStorm active={boardOn} color={archDeckColor ? (deckA1 || "#5ec8f0") : "#5ec8f0"} reduced={reduced} /></Suspense>
       )}
       {pIceMass > 0 && (
-        <Suspense fallback={null}><FrostIce mass={pIceMass} active={boardVisible} reduced={reduced} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
+        <Suspense fallback={null}><FrostIce mass={pIceMass} active={boardOn} reduced={reduced} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
       )}
       {pGrowth > 0 && (
         <Suspense fallback={null}><MossGrow growth={pGrowth} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
@@ -1156,7 +1170,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      und bis zum ersten Gottgleich steht alles. `warm` baut auf, ohne abzuspielen (s. die Prunk-Dateien).
      Einmal wahr, bleibt wahr — die Bühne soll nicht bei jedem Overlay neu entstehen. */
   const [gottWarm, setGottWarm] = useState(false);
-  useEffect(() => { if (!boardVisible) setGottWarm(true); }, [boardVisible]);
+  useEffect(() => { if (!boardOn) setGottWarm(true); }, [boardOn]);
   const gottMounted = gottTrigger > 0 || gottWarm;   // gemountet = spielbereit (abgespielt wird erst am Trigger)
   useEffect(() => {
     if (!t) { gottLastAt.current = 0; return; }
@@ -1365,7 +1379,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {bgLayer && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
           <FieldLayer layer={bgLayer.key} stack={glowStacked ? [{ key: "deckglow", props: glowProps }, bgLayer] : null}
-            {...(glowStacked ? {} : bgLayer.props)} active={boardVisible} />
+            {...(glowStacked ? {} : bgLayer.props)} active={boardOn} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
@@ -1374,12 +1388,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <>
           <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} floorBottom={cmZone.floorBottom} active={boardVisible} />
+              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} floorBottom={cmZone.floorBottom} active={boardOn} />
             </Suspense>
           </div>
           <div aria-hidden="true" className="absolute inset-0 z-[11] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="spots" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} active={boardVisible} />
+              <CubeMatrixField mode="spots" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} active={boardOn} />
             </Suspense>
           </div>
         </>
@@ -1389,7 +1403,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           {/* Hintergrund-Finisher (reagiert je Stich) — Pixi, z-3 VOR dem BG-Effekt. #346: mountet in Produktion NUR,
               wenn pixiFin aktiv ist (Komet/Sternenfeld gewählt) → Pixi lädt dann lazy; ohne aktiven Effekt bleibt es aus. */}
           <PixiStage className="z-[3]"
-            active={boardVisible}
+            active={boardOn}
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
@@ -1432,7 +1446,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
                  hat) → mono-Deckfarbe statt Verlauf zu einem Fremdton. */
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"}
-              tier={hitTier} reduced={reduced} lite={lite} active={boardVisible} />
+              tier={hitTier} reduced={reduced} lite={lite} active={boardOn} />
           </Suspense>
         );
       })()}
@@ -1484,7 +1498,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <BlackholeFx active={holeActive} pulse={holePulse}
           color={blackholeDeck ? (deckA1 || "#4aa0ff") : "#4aa0ff"}
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
-          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced} boardVisible={boardVisible}
+          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced} boardVisible={boardOn}
           /* #375 Zusammenzieh-Impact am Kollaps-Start: große Nova wuchtiger (gain+bass); rate an den Turbo-Kollaps gekoppelt (spd), bei 2× gedeckelt. */
           onImplode={(big, spd, grew) => { setHoleGrown(false); if (big || grew) audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) }); }} /* #: Kollaps auf 0 → Loop-Bett aus; Implosions-Sound nur bei großem Kollaps (big) oder wenn das Loch vorher ausreichend gewachsen war (grew) */
           /* #380 Nova-Flash NACH dem Zusammenziehen (nur großer Kollaps): der Supernova-Puls (Pegel wie im Gott-Showcase). */
@@ -1548,7 +1562,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && !glowStacked && (
-            <FieldLayer layer="deckglow" {...glowProps} active={boardVisible} />
+            <FieldLayer layer="deckglow" {...glowProps} active={boardOn} />
           )}
         </div>
       )}

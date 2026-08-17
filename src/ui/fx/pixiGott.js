@@ -19,10 +19,11 @@
    ACHTUNG bei `resolution`: `autoDensity: true` rechnet die CSS-Größe selbst zurück — die Zahl ist reine
    Backing-Store-Dichte, das Layout ändert sich dadurch NICHT. */
 
+import { DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Zeichenrate
+
 export const GOTT_RES_FULL = 1.5;
 export const GOTT_RES_LITE = 1.25;
 export const GOTT_FPS_FULL = 60;
-export const GOTT_FPS_LITE = 30;
 
 /* `resLite` überschreibt die lite-Dichte für Effekte, die mehr als eine Canvas aufziehen (Supernova: Tunnel + Nova
    → doppelte Fill-Rate, deshalb dort 1.0). */
@@ -37,7 +38,10 @@ export function gottAppOptions({ canvas, host, lite, resLite = GOTT_RES_LITE, re
   };
 }
 
-export function gottMaxFPS(lite) { return lite ? GOTT_FPS_LITE : GOTT_FPS_FULL; }
+/* Zeichenrate der Prunks. `lite` (Handy/„ausgewogen") holt sie aus mobileTier — EINE Wahrheit für alle Effekte,
+   und damit auch über `?hz=` am Gerät regelbar. Sie stand hier lange fest auf 30; wenn ein Prunk bei 60 sichtbar
+   rangiert, ist genau dieser Knopf die Stelle (und nicht ein neuer, zweiter Wert an dieser Datei vorbei). */
+export function gottMaxFPS(lite) { return lite ? DRAW_HZ_COARSE : GOTT_FPS_FULL; }
 
 /* Panel-/Karten-Geometrie EINMAL pro Abspielvorgang messen statt pro Frame.
    `place()` rief in jedem Effekt zwei `getBoundingClientRect()` pro Frame auf — jeder Aufruf erzwingt ein

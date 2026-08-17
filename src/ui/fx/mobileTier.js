@@ -31,6 +31,23 @@ export function dprCap(coarse = isCoarse()) {
   return Math.min(cap, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 }
 
+/* Zeichenrate auf Mobile. Lange stand hier 30 — als Sparmaßnahme aus einer Zeit, in der das Brett vier bis fünf
+   eigene Vollbild-Canvas trug und auf dem Handy sichtbar rangierte. Dieser Zustand ist vorbei: am Gerät gemessen
+   liegen p50 UND p95 auf 17 ms (ein 60-Hz-Frame), 1 Ruckler in 66 s, keine Long Tasks. Der Deckel halbiert also
+   nicht mehr die Last eines überlasteten Bretts, sondern nur noch die Bildrate der Effekte auf einem Brett, das
+   Luft hat — und genau dafür war der ganze Umbau da: den Gewinn AUSGEBEN, nicht horten.
+
+   `?hz=<zahl>` überschreibt die Rate am Gerät (Preview/Dev), damit die Entscheidung gemessen statt geglaubt wird:
+   `?hz=30` ist der alte Zustand, direkt vergleichbar im selben Build. */
+const HZ_DEFAULT_COARSE = 60;
+function hzOverride() {
+  try {
+    const v = parseFloat(new URLSearchParams(window.location.search).get("hz"));
+    return Number.isFinite(v) && v >= 10 && v <= 240 ? v : null;
+  } catch { return null; }
+}
+export const DRAW_HZ_COARSE = hzOverride() ?? HZ_DEFAULT_COARSE;
+
 /* Mindestabstand zwischen zwei ZEICHNUNGEN auf Mobile (der rAF-Takt läuft weiter, die Zeitbasis bleibt echt).
    Die −8 ms sind Pflicht, nicht Kosmetik: die glatte 1000/30 = 33,33 ms liegt haargenau auf zwei 60-Hz-Frames
    (2 × 16,667). Kommt der übernächste Frame den Hauch zu früh, fällt die Zeichnung auf den ÜBERnächsten und der
@@ -38,7 +55,7 @@ export function dprCap(coarse = isCoarse()) {
    pro Sekunde und vor allem UNGLEICHMÄSSIG. Das ist der Grund, warum Effekte auf dem Handy ruckelig wirken, obwohl
    der FPS-Zähler 60 zeigt: der zählt rAF-Frames, nicht Zeichnungen. Mit der halben Frame-Toleranz passt jeder
    zweite Frame sicher durch, auch bei 90 Hz. (Herkunft: #perf-warm, dort für die WebGL-Felder hergeleitet.) */
-export const DRAW_HZ_COARSE = 30;
 export function frameMinMs(coarse = isCoarse()) {
-  return coarse ? 1000 / DRAW_HZ_COARSE - 8 : 0;
+  // Ohne Deckel (Rate ≥ Bildschirmrate) gar nicht erst bremsen — sonst fällt bei 60 Hz jeder zweite Frame durch.
+  return coarse && DRAW_HZ_COARSE < 90 ? 1000 / DRAW_HZ_COARSE - 8 : 0;
 }

@@ -179,6 +179,26 @@ Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor
   beliebige Pixi-Container aufnehmen statt nur ein Shader-Quad. Eigener Entwurfsschritt, kein mechanischer Port.
   Ein Perf-Argument dafür gibt es nach der Messung oben ohnehin nicht.
 
+### #perf-scroll + #perf-spend — Scroll-Gate und Zeichenrate 30 → 60 (mobil)
+- **Aus dem Bild gescrollt = Effekte anhalten** (`src/ui/fx/useOnScreen.js`, `boardOn` in Battlefield). Es gab im
+  ganzen Projekt KEINE Stelle, die auf Scrollen reagiert hat: `boardVisible` prüfte nur Phase und Tab-Sichtbarkeit.
+  Die Spielseite ist auf dem Handy höher als der Viewport (Fraktions-Panels unter dem Brett) — wer nach unten
+  scrollt, ließ alle Effektschleifen mit voller Rate für ein Bild laufen, das niemand sieht. Derselbe Hebel wie
+  #perf-overlay, nur die andere Achse. Bewusst `IntersectionObserver` statt `scroll`-Listener: ein Handler mit
+  `getBoundingClientRect()` erzwingt je Scroll-Frame ein synchrones Layout, verursacht also genau die Kosten, die
+  er sparen soll. `rootMargin: 200px` startet die Effekte VOR dem Einscrollen (sonst sieht man das Anlaufen).
+- **`DRAW_HZ_COARSE` 30 → 60.** Der Deckel stammte aus der Zeit von vier bis fünf eigenen Vollbild-Canvas; am Gerät
+  liegen p50 UND p95 inzwischen auf 17 ms, 1 Ruckler in 66 s, keine Long Tasks. Damit halbiert er nicht mehr die
+  Last eines überlasteten Bretts, sondern nur noch die Bildrate auf einem Brett, das Luft hat — und den Gewinn
+  auszugeben war das Ziel des ganzen Umbaus. **`?hz=<zahl>` überschreibt ihn am Gerät** (`?hz=30` = alter Zustand,
+  im selben Build vergleichbar).
+- **EINE Wahrheit:** Kompositor, Prunks (`gottMaxFPS`), `CardFxStage`, Hologrid-Slice und `PixiStage` holen die Rate
+  jetzt alle aus `mobileTier`. Vorher stand die 30 an fünf Stellen einzeln. Rangiert ein Effekt bei 60, ist DIESER
+  Knopf die Stelle — kein zweiter Wert daneben.
+- `frameMinMs` behält die halbe Frame-Toleranz relativ zur eingestellten Rate (1000/hz − 8) und bremst gar nicht
+  mehr, wenn der Deckel jenseits der Bildschirmrate liegt. Der Wächter (`test/mobile-tier.test.js`) prüft jetzt das
+  VERHÄLTNIS statt der festen 30 — sonst hätte er nur gemeldet, dass sich der Standard geändert hat.
+
 ### #perf-nova — Supernova mobil getrimmt: die Kosten waren die CPU, nicht die Füllrate
 Profil des Prunks im isolierten Messstand (Handy-Viewport, `lite`): **`buildLine` allein 673 von 1563 ms**, mit
 `buildSimpleUvs`/`packIndex`/`packAttributes`/`buildContextBatches` rund **60 % der Hauptthread-Arbeit** — reines

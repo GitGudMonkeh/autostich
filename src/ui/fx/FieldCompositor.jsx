@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { isCoarse, dprCap } from "./mobileTier.js";
+import { isCoarse, dprCap, DRAW_HZ_COARSE } from "./mobileTier.js";
 import { PIXI_FIELD_VERT, toPixiFragment, fieldQuadGeometry } from "./pixiFieldShader.js";
 import { NEONSURF_FRAG } from "./neonsurfShader.js";
 import { AURORA_FRAG_SRC } from "./auroraShader.js";
@@ -271,9 +271,9 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
         if (disposed) { app.destroy(true, { children: true, texture: true }); return; }
         canvas.style.cssText = "width:100%;height:100%;display:block";
         host.appendChild(canvas);
-        // #perf-mobile: gedeckelte Zeichenrate auf dem Handy. Die halbe Frame-Toleranz steckt in mobileTier;
-        // Pixis maxFPS macht denselben Fehler nicht, weil es intern akkumuliert.
-        app.ticker.maxFPS = coarse ? 30 : 0;
+        // #perf-mobile: Zeichenrate auf dem Handy aus mobileTier (EINE Wahrheit, per `?hz=` am Gerät regelbar).
+        // Pixis maxFPS braucht die halbe Frame-Toleranz nicht, weil es intern akkumuliert.
+        app.ticker.maxFPS = coarse ? DRAW_HZ_COARSE : 0;
 
         /* Ebenen in Array-Reihenfolge auf die Bühne — Index 0 liegt UNTEN. Das ist genau die z-Ordnung, die die
            Aufrufer vorher über getrennte DOM-Ebenen hergestellt haben (Leuchten unter dem Hintergrund). */
