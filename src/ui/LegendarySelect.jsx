@@ -111,7 +111,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                       <div className="flex items-center gap-2">
                         <ArchIcon meta={meta} size={18} />
                         <span className="font-bold text-lg leading-tight" style={{ color: GOLD }}>{s.name}</span>
-                        <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
+                        <span className="ml-auto ty-badge text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap"
                           style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}66` }}>{meta.label}</span>
                       </div>
                       <div className="text-sm leading-snug opacity-90 whitespace-pre-line"><GlossaryText text={s.desc} /></div>

@@ -85,7 +85,7 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: "#17171c" }}>
           <div>
-            <h2 className="text-lg font-bold font-pixel" style={{ color: "#d4a63a" }}>{t("dev.run.title")}</h2>
+            <h2 className="text-lg font-bold ty-display" style={{ color: "#d4a63a" }}>{t("dev.run.title")}</h2>
             <p className="text-xs opacity-55">{t("dev.run.sub")}</p>
           </div>
           <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
@@ -97,7 +97,7 @@ export function DevRunSetup({ onStart, onClose }) {
             <span className="text-sm font-semibold">{t("dev.run.cycles")}</span>
             <input type="number" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds}
               onChange={(e) => changeRounds(e.target.value)}
-              className="w-16 text-right px-2 py-1 rounded text-sm font-pixel-dense"
+              className="w-16 text-right px-2 py-1 rounded text-sm ty-num"
               style={{ background: "#0f0f13", border: "1px solid #30303a", color: "#e8e8ea" }} />
           </div>
           <input type="range" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds} onChange={(e) => changeRounds(e.target.value)} className="w-full" />
@@ -139,7 +139,7 @@ export function DevRunSetup({ onStart, onClose }) {
             <div className="max-h-72 overflow-y-auto px-3 pb-3 flex flex-col gap-1.5">
               {schedule.map((tk, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="w-9 shrink-0 text-[11px] opacity-45 text-right font-pixel-dense">R{i + 1}</span>
+                  <span className="w-9 shrink-0 text-[11px] opacity-45 text-right ty-num">R{i + 1}</span>
                   <div className="flex flex-wrap gap-1">
                     {enabledOrdered.map((token) => (
                       <button key={token} onClick={() => setRound(i, token)}
@@ -160,14 +160,14 @@ export function DevRunSetup({ onStart, onClose }) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-sm">
               <span className="font-semibold">Baupunkte (Baufeld)</span>
-              <span className="font-pixel-dense" style={{ color: "#e0605a" }}>{cover} / {N_POS}</span>
+              <span className="ty-num" style={{ color: "#e0605a" }}>{cover} / {N_POS}</span>
             </div>
             <input type="range" min={0} max={N_POS} value={cover} onChange={(e) => setCover(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-sm">
               <span className="font-semibold">{t("dev.run.energy")}</span>
-              <span className="font-pixel-dense" style={{ color: "#5a8ade" }}>{energy}</span>
+              <span className="ty-num" style={{ color: "#5a8ade" }}>{energy}</span>
             </div>
             <input type="range" min={0} max={N_POS} value={energy} onChange={(e) => setEnergy(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />
           </div>

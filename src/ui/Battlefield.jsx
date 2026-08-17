@@ -1688,6 +1688,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {(() => {
+              /* #typo: Die Groß-Ansage bleibt bewusst bei 800 — die Drei-Sprossen-Leiter (400/500/600) gilt für
+                 die BEDIENOBERFLÄCHE. Hier steht ein Effekt: ein einzelnes Wort auf 40–100 px, das eine halbe
+                 Sekunde lang den Bildschirm besitzt und dabei gegen Klinge, Glut und Screenshake bestehen muss.
+                 Auf dieser Größe liest sich 600 nicht ruhiger, sondern dünn. Schriftfamilie erbt es (Geist). */
               const ws = { margin: 0, fontWeight: 800, whiteSpace: "nowrap", lineHeight: 1, textTransform: "uppercase", // Q2/Loc: Caps zentral über CSS
                 fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px` }; // höhere Stufe = luftiger
               return (<>

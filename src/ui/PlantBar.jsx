@@ -162,7 +162,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           ].map((s) => (
             <div key={s.k} className="rounded-lg px-2 py-1.5 text-center" title={s.title}
               style={{ background: `${s.col}12`, border: `1px solid ${s.col}${s.n ? "44" : "22"}`, opacity: s.n ? 1 : 0.5 }}>
-              <div className="text-base font-bold tabular-nums leading-none" style={{ color: s.col }}>{s.n}</div>
+              <div className="text-base ty-num leading-none" style={{ color: s.col }}>{s.n}</div>
               <div className="text-[9px] uppercase tracking-wide opacity-55 mt-0.5">{s.lab}</div>
               <div className="rounded-full overflow-hidden mt-1" style={{ height: 4, background: "#26262e" }}>
                 <div className="h-full rounded-full" style={{ width: `${Math.round(s.bar * 100)}%`, background: s.col }} />
@@ -205,7 +205,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       {colonizedN > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${PLANT}22` }}>
           <span className="opacity-55 shrink-0">{t("bar.plant.runners")}</span>
-          <span className="tabular-nums font-bold shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
+          <span className="ty-num shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
           <span className="inline-flex flex-wrap gap-0.5 min-w-0">
             {Array.from({ length: Math.min(colonizedN, 12) }, (_, i) => (
               <FactionIcon key={i} type="plant" size={11} />

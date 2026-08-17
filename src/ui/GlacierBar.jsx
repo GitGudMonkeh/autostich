@@ -46,15 +46,17 @@ function Glacier({ mass, order = null, value = null }) {
     }} className={alert ? "as-glacier-shiver" : undefined} title={t(bricht ? "bar.ice.chip.title.burst" : "bar.ice.chip.title",
       { mass, tier: mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0 })}>
       {alert && <span style={{
-        position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)",
+        /* #typo: KEIN `--font-mono` — „kritisch"/„bricht" sind Wörter, keine Werte. Die drei Zahlen
+           an diesem Chip (Reihenfolge, Kartenwert, Masse) tragen es dagegen sehr wohl. */
+        position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)",
         fontSize: 7.5, letterSpacing: ".04em", textTransform: "uppercase", color: "#071016", background: bricht ? "#eafaff" : FROST_BRIGHT, borderRadius: 4, padding: "0 3px", whiteSpace: "nowrap",
         fontWeight: bricht ? 700 : 400, boxShadow: bricht ? `0 0 8px ${FROST}` : undefined,
       }}>{t(bricht ? "bar.ice.bursting" : "bar.ice.critical")}</span>}
       {/* #384 Positionsnummer (Spielreihenfolge, 1-basiert) links · Kartenwert rechts — „welche Karte kommt wann". */}
       {(order != null || value != null) && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", width: "100%", padding: "0 1px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-          <span title={t("bar.ice.playOrder")} style={{ fontSize: 8.5, color: "#7f95a5", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)" }}>#{order}</span>
-          {value != null && <span title={t("bar.ice.cardValue")} style={{ fontSize: 11, fontWeight: 700, color: "#cfe4ef", fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)" }}>{value}</span>}
+          <span title={t("bar.ice.playOrder")} style={{ fontSize: 8.5, color: "#7f95a5", fontFamily: "var(--font-mono)" }}>#{order}</span>
+          {value != null && <span title={t("bar.ice.cardValue")} style={{ fontSize: 11, fontWeight: 600, color: "#cfe4ef", fontFamily: "var(--font-mono)" }}>{value}</span>}
         </div>
       )}
       <div style={{ height: 34, display: "grid", placeItems: "end center", width: "100%" }}>
@@ -64,7 +66,7 @@ function Glacier({ mass, order = null, value = null }) {
           filter: alert ? `saturate(1.15) brightness(1.18) drop-shadow(0 0 ${bricht ? 12 : 9}px ${FROST})` : "saturate(.85) brightness(.85) drop-shadow(0 2px 4px #0007)",
         }} />
       </div>
-      <span style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 13, color: FROST_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mass}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 13, color: FROST_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mass}</span>
       <div style={{ display: "flex", gap: 3, width: "88%", justifyContent: "center" }}>{THRESHOLDS.map(seg)}</div>
     </div>
   );
@@ -129,14 +131,14 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
     <div title={title} style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3" : "1", minWidth: 0 }}>
       <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".07em", color: "#6a7a86" }}>{k}</div>
       {/* #253: nowrap + overflow-hidden hält große Werte in der Kachel (Gletscher-Ertrag wird kompakt abgekürzt, s. u.) */}
-      <div style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.05, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...(sub ? { fontSize: 22, color: FROST_BRIGHT, textShadow: `0 0 12px ${FROST}55` } : { fontSize: 17, color: "#e4eef4" }) }}>{v}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.05, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...(sub ? { fontSize: 22, color: FROST_BRIGHT, textShadow: `0 0 12px ${FROST}55` } : { fontSize: 17, color: "#e4eef4" }) }}>{v}</div>
     </div>
   );
   const chip = (label, val, color, dim) => (
     <span style={{ fontSize: 10.5, display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: 999,
       border: `1px solid ${color}${dim ? "44" : "99"}`, background: "#191922", color: dim ? "#6a7a86" : "#93a9ba", opacity: dim ? 0.7 : 1 }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, boxShadow: dim ? undefined : `0 0 5px ${color}` }} />
-      {label} {val != null && <b style={{ fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", color: dim ? "#93a9ba" : "#e4eef4", fontVariantNumeric: "tabular-nums" }}>{val}</b>}
+      {label} {val != null && <b style={{ fontFamily: "var(--font-mono)", color: dim ? "#93a9ba" : "#e4eef4", fontVariantNumeric: "tabular-nums" }}>{val}</b>}
     </span>
   );
 
@@ -154,7 +156,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
       {burst && burst.gain > 0 && (
         <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
-          fontFamily: "var(--font-pixel-dense, ui-monospace, monospace)", fontWeight: 700, fontSize: 20, color: FROST_BRIGHT, textShadow: `0 0 14px ${FROST}`, whiteSpace: "nowrap",
+          fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 20, color: FROST_BRIGHT, textShadow: `0 0 14px ${FROST}`, whiteSpace: "nowrap",
           padding: "3px 12px", borderRadius: 999, background: "rgba(7,16,22,.82)", border: `1px solid ${FROST}88`, boxShadow: `0 0 18px ${FROST}55`, display: "flex", alignItems: "center", gap: 4 }}>
           <FactionIcon type="ice" size={16} /> +{fmtScoreShort(burst.gain)}
         </div>

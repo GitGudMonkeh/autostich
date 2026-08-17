@@ -67,7 +67,7 @@ function SatRow({ label, cur, max, on, payoff }) {
   return (
     <div>
       <div className="flex justify-between text-[11px] mb-0.5">
-        <span className="opacity-55">{label} <span className="tabular-nums opacity-80">{pct}%</span></span>
+        <span className="opacity-55">{label} <span className="ty-num-sm opacity-80">{pct}%</span></span>
         {on
           ? <span className="font-semibold inline-flex items-center gap-0.5" style={{ color: CASCADE_BRIGHT }}><FactionIcon type="lightning" size={11} /> {payoff}</span>
           : <span className="opacity-35">{payoff}</span>}

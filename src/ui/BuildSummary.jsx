@@ -25,24 +25,24 @@ export function ZinsReadout({ zins, color = "#5ab87a" }) {
   if (!zins) return null;
   const genommen = zins.wins >= zins.hurdle;
   return (
-    <div className="mt-2 pt-2 text-xs font-mono grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
+    <div className="mt-2 pt-2 text-xs grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
       <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.capital")}</span>
-        <b style={{ color }}>{fmtNum(Math.round(zins.capital))}</b>
+        <b className="ty-num-sm" style={{ color }}>{fmtNum(Math.round(zins.capital))}</b>
         <span className="opacity-55">{t("zins.rate")}</span>
-        <b style={{ color }}>{Math.round(zins.rate * 100)} %</b>
+        <b className="ty-num-sm" style={{ color }}>{Math.round(zins.rate * 100)} %</b>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.payout")}</span>
-        <b style={{ color }}>+{fmtNum(Math.round(zins.capital * zins.rate))}</b>
+        <b className="ty-num-sm" style={{ color }}>+{fmtNum(Math.round(zins.capital * zins.rate))}</b>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.paid")}</span>
-        <b style={{ color }}>{fmtNum(Math.round(zins.paidTotal || 0))}</b>
+        <b className="ty-num-sm" style={{ color }}>{fmtNum(Math.round(zins.paidTotal || 0))}</b>
       </div>
       <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.wins")}</span>
-        <b style={{ color: genommen ? "#4ade80" : "#e0605a" }}>{zins.wins} / {zins.hurdle}</b>
+        <b className="ty-num-sm" style={{ color: genommen ? "#4ade80" : "#e0605a" }}>{zins.wins} / {zins.hurdle}</b>
         <span className="opacity-55">{t(genommen ? "zins.cleared" : "zins.crash")}</span>
       </div>
     </div>
@@ -240,7 +240,7 @@ export function DeckStrength({ deck = [] }) {
                 <span style={{ width: `${fillPct}%`, background: col }} />
                 {overPct > 0 && <span style={{ width: `${overPct}%`, background: UNBEAT }} />}
               </span>
-              <span className="shrink-0 w-9 text-right tabular-nums opacity-70">⌀{avg.toFixed(1).replace(".", ",")}</span>
+              <span className="shrink-0 w-9 text-right ty-num-sm opacity-70">⌀{avg.toFixed(1).replace(".", ",")}</span>
               <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-none"
                 style={unbeat > 0 ? { background: `${UNBEAT}22`, color: UNBEAT, border: `1px solid ${UNBEAT}55` }
                                   : { background: "#1a1a22", color: "#55555f", border: "1px solid #2a2a33" }}>◆{unbeat}</span>

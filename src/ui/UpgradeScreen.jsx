@@ -67,7 +67,7 @@ function PillBody({ label, mark, titleColor, markColor }) {
       {/* #desktop: eine Stufe größer ab 1400 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
           zu klein. Größer geht nicht: 27 Knoten müssen gleichzeitig ins Bild passen. */}
       <span className="text-[11px] min-[1400px]:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
-      <span className="text-[9.5px] min-[1400px]:text-[12px] font-bold tabular-nums leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
+      <span className="text-[9.5px] min-[1400px]:text-[12px] ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
     </>
   );
 }

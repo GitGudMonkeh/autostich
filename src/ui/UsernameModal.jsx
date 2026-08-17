@@ -55,7 +55,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             {t(firstTime ? "name.eyebrow.first" : "name.eyebrow.change")}
           </div>
           {/* Gradient-Wortmarke (Logo-Verlauf) mit weichem Glühschimmer statt schlichter Textzeile. */}
-          <h2 className="text-xl font-bold mt-1 font-pixel"
+          <h2 className="text-xl font-bold mt-1 ty-display"
             style={{ backgroundImage: `linear-gradient(90deg, ${CY}, ${VI}, ${AM})`,
                      WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
@@ -125,7 +125,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             <span className="flex-1 truncate font-semibold" style={{ color: trimmed ? "#5ab87a" : "#5f6b62" }}>
               {trimmed || t("name.placeholder")}<span className="opacity-60 text-xs"> · {t("name.preview.you")}</span>
             </span>
-            <span className="shrink-0 tabular-nums opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
+            <span className="shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
           </div>
         </div>
 

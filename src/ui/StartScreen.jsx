@@ -274,7 +274,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <GlossaryPanel className="as-edge as-edge-thin as-gloss-corner absolute top-2 right-2"
         style={{ width: "auto", height: "auto", borderRadius: "0.75rem", padding: "0.375rem 0.75rem",
           "--c": "#8a7de0", color: "#b3a8ff",
-          fontFamily: "inherit", fontStyle: "normal", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }} />
+          fontFamily: "inherit", fontStyle: "normal", fontWeight: 600, fontSize: "0.9rem", lineHeight: 1 }} />
 
       {/* #desktop — ab hier das Spaltenpaar: links spielen, rechts der Stand. Unterhalb von 1400 px sind
           `hub-pair`/`hub-play`/`hub-stand` per `display: contents` reine Klammern ohne eigene Box, die
@@ -300,7 +300,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           #logo: Das frühere `-mt-3` ist raus. Es zog die Zeile in den transparenten Rand des PNG hinein;
           die Text-Wortmarke hat diesen Rand nicht, dort saß die Zeile dann auf der Unterkante der Marke.
           Höhe kostet das nichts — der Text baut ohnehin gut 30 px niedriger als das Bild. */}
-      <div className="text-[10px] font-mono opacity-40 tracking-wide select-text mt-0.5 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
+      <div className="ty-meta text-[10px] opacity-40 select-text mt-0.5 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
@@ -309,11 +309,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {onbDone ? (
-            <span className="text-[12.5px] min-[1400px]:text-[17px] font-semibold opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
+            <span className="text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
           ) : (
-            <span className="text-[12.5px] min-[1400px]:text-[17px] font-semibold opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
+            <span className="text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
           )}
-          <span className="text-[11.5px] min-[1400px]:text-[15px] opacity-55 font-mono tabular-nums">
+          <span className="ty-num-sm text-[11px] min-[1400px]:text-[15px] opacity-55">
             {onbDone ? t("start.progress.runs", { done: dripInto, total: SP_LOYALTY_EVERY })
                      : t("start.progress.links", { done: onbStep, total: ONBOARDING_LINKS })}
           </span>
@@ -342,9 +342,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
-            <span className="text-[17px] min-[1400px]:text-[21px]">{t("start.tutorial.offer")}</span>
-            <span className="text-[11px] min-[1400px]:text-[14px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
+            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
+            <span className="text-[18px] min-[1400px]:text-[21px]">{t("start.tutorial.offer")}</span>
+            <span className="text-[12px] min-[1400px]:text-[14px] font-normal opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
         </div>
       )}
@@ -355,9 +355,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
-            <span className="text-[19px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
-            <span className="text-[11px] min-[1400px]:text-[14px] font-mono font-semibold opacity-80">
+            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            <span className="text-[20px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
+            <span className="ty-num-sm text-[11px] min-[1400px]:text-[14px] opacity-80">
               {t("start.resume.sub", {
                 cycle: Math.min((resume.cycle || 0) + 1, resume.totalCycles),
                 total: resume.totalCycles,
@@ -372,7 +372,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-xl text-base min-[1400px]:text-[26px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-xl ty-title text-[17px] min-[1400px]:text-[24px] transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
         </button>
         {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
@@ -391,12 +391,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                    inline-style — am Handy ist das Feld seit dem Deck-Hintergrund getöntes Glas, und ein
                    inline gesetzter Grund ließe sich davon nicht überschreiben (inline schlägt jedes
                    Stylesheet). Der Fehlerzustand bleibt eine Klasse, damit dasselbe für ihn gilt. */
-                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-mono tracking-wide`}
+                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl font-mono text-sm min-[1400px]:text-[18px]`}
               />
               {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
                   der Rahmen ab 1400 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
               <button type="submit" disabled={!seedInput.trim()}
-                className="as-seed-play shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold min-[1400px]:font-medium transition-all disabled:opacity-40">
+                className="as-seed-play shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-medium transition-all disabled:opacity-40">
                 {t("start.seed.play")}
               </button>
             </form>
@@ -414,7 +414,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl text-[14px] min-[1400px]:text-[20px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl ty-title text-[15px] min-[1400px]:text-[19px] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
@@ -425,7 +425,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
                 #ruhe: Der Chip lief unter dem CRT-Skin in Press Start 2P und war damit die EINZIGE Stelle des
                 Hubs in einer dritten Schrift — neben Mono (überall) und Orbitron (Marke). Der Preis dafür stand
-                als Sonderbehandlung direkt daneben: die `.font-pixel`-Regel bringt einen Neon-Glow mit, der die
+                als Sonderbehandlung direkt daneben: die `.ty-display`-Regel bringt einen Neon-Glow mit, der die
                 dünnen Striche bis zur Unlesbarkeit überstrahlte, also musste hier ein `textShadow: "none"`
                 dagegenhalten; und die Bonus-Zeile darunter durfte den Font gar nicht erst tragen, weil Press
                 Start 2P doppelt so breit baut und in die Knopfmitte geragt wäre. Beide Sonderfälle sind mit dem
@@ -437,7 +437,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   die letzte Stelle am Knopf, die das aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel
                   sonst der Wortmarke und den Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe
                   Rolle. Darunter läuft er seit #ruhe in der System-Mono wie der ganze Rest des Hubs. */}
-              <span className="as-week-chip px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[10px] min-[1400px]:text-[12px] font-bold leading-tight">
+              <span className="as-week-chip ty-num-sm px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[10px] min-[1400px]:text-[12px] leading-tight">
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
@@ -445,7 +445,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   dieselbe Information nebeneinander ist keine Betonung, nur Rauschen. Unterhalb von
                   1400 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
               {weekBonusOpen && (
-                <span className="text-[9px] min-[1400px]:hidden font-semibold leading-tight tabular-nums" style={{ color: `${RANK}c0` }}>
+                <span className="ty-num-sm text-[9.5px] min-[1400px]:hidden leading-tight" style={{ color: `${RANK}c0` }}>
                   {t("start.ranked.bonus", { have: 0, max: 1 })}
                 </span>
               )}
@@ -473,7 +473,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
           stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
       <div className="hidden min-[1400px]:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
-        <div className="font-pixel text-[10px] tracking-[.12em] opacity-45" style={{ textShadow: "none" }}>
+        <div className="ty-screen-title text-[11px] opacity-45">
           {t("start.board.title")}
         </div>
         <div className="flex items-center gap-4">
@@ -483,18 +483,18 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
           )}
           <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <div className="text-[21px] font-bold truncate">{deckName}</div>
+            <div className="ty-title text-[20px] truncate">{deckName}</div>
             {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
                 eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
                 hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
                 Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
             {bfName && !bfName.startsWith(deckName) && (
-              <div className="text-[14px] opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
+              <div className="text-[13px] opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
             )}
             {/* Ausgerüstete Effekte, gleiche Zeilen-Optik wie das Spielfeld darüber. Ohne aktive Effekte
                 entfällt die Zeile — „Effekte · —" wäre eine Zeile, die nichts sagt. */}
             {fxNames.length > 0 && (
-              <div className="text-[14px] opacity-55 truncate" title={fxNames.join(" + ")}>
+              <div className="text-[13px] opacity-55 truncate" title={fxNames.join(" + ")}>
                 {t("start.board.fx", { list: fxNames.join(" + ") })}
               </div>
             )}
@@ -535,9 +535,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
             <div key={i} className="flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
-              <span className="text-[13px] opacity-45">{s.k}</span>
-              <span className="text-[30px] font-extrabold tabular-nums leading-none" style={{ color: s.c }}>{s.v}</span>
-              <span className="text-[12px] opacity-40">{s.s}</span>
+              <span className="text-[12px] font-medium opacity-45">{s.k}</span>
+              <span className="ty-num text-[27px] leading-none" style={{ color: s.c }}>{s.v}</span>
+              <span className="text-[11px] opacity-40">{s.s}</span>
             </div>
           ))}
         </div>
@@ -561,13 +561,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             style={{ borderLeft: `4px solid ${c}`,
                      background: `linear-gradient(90deg, color-mix(in srgb, ${c} 14%, transparent) 0%, transparent 42%)`,
                      opacity: dim ? 0.45 : 1 }} />);
-          const head = (t) => (<b className="text-[13.5px] min-[1400px]:text-[20px] tracking-tight">{t}</b>);
+          const head = (t) => (<b className="ty-title text-[14px] min-[1400px]:text-[19px]">{t}</b>);
           const arrow = <span className="text-[13px] opacity-35 min-[1400px]:hidden">›</span>;
           // Nur Desktop: Untertitel je Eintrag + der Pfeil ganz rechts. `hidden` hält beide aus dem Handy-Flex heraus.
-          const sub = (s) => (<span className="hidden min-[1400px]:block text-[13.5px] opacity-50 font-normal">{s}</span>);
+          const sub = (s) => (<span className="hidden min-[1400px]:block text-[13px] opacity-50 font-normal">{s}</span>);
           const arrowDesk = <span className="hidden min-[1400px]:block text-[20px] opacity-35">›</span>;
           const headBox = "flex items-center justify-between gap-1 min-[1400px]:flex-1 min-[1400px]:flex-col min-[1400px]:items-start min-[1400px]:gap-0.5";
-          const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
+          const lockBadge = (bg) => (<span className="ty-badge self-start shrink-0 px-1.5 py-0.5 rounded text-[10px] leading-tight whitespace-nowrap"
             style={{ background: bg, color: "#c9c9d2" }}>{t("start.tile.lock", { count: ONBOARDING_LINKS - onbStep })}</span>);
           return (<>
             {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe AM: hier liegt das SP-Guthaben. „kaufbar"-Hinweis, Onboarding-Gate. */}
@@ -577,17 +577,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 <div className={headBox}>
                   {head(t("start.tile.upgrades"))}
                   {progBuyable > 0
-                    ? <span className="shrink-0 text-[9.5px] min-[1400px]:text-[12px] font-extrabold px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
+                    ? <span className="ty-badge shrink-0 text-[10px] min-[1400px]:text-[12px] px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
                     : arrow}
                   {sub(t("start.tile.upgrades.sub"))}
                 </div>
                 {progLigaFree ? (
-                  <span className="text-[13px] min-[1400px]:text-[18px] font-extrabold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
+                  <span className="text-[13px] min-[1400px]:text-[18px] font-semibold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
                 ) : (
                   <span className="flex items-baseline gap-1">
-                    <span className="as-hub-num text-[16px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progSp}</span>
-                    <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.sp")}</span>
-                    <span className="text-[10px] min-[1400px]:hidden opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
+                    <span className="as-hub-num ty-num text-[17px] min-[1400px]:text-[27px]">{progSp}</span>
+                    <span className="as-hub-cur ty-unit text-[10px] min-[1400px]:text-[12px] opacity-75">{t("common.cur.sp")}</span>
+                    <span className="ty-num-sm text-[10px] min-[1400px]:hidden opacity-45 ml-1">{progOwned}/{TOTAL_NODES}</span>
                   </span>
                 )}
                 {arrowDesk}
@@ -606,8 +606,8 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 <Stripe c={AM} />
                 <div className={headBox}>{head(t("start.tile.workshop"))}{arrow}{sub(t("start.tile.workshop.sub"))}</div>
                 <span className="flex items-baseline gap-1">
-                  <span className="as-hub-num text-[16px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progDp}</span>
-                  <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.dp")}</span>
+                  <span className="as-hub-num ty-num text-[17px] min-[1400px]:text-[27px]">{progDp}</span>
+                  <span className="as-hub-cur ty-unit text-[10px] min-[1400px]:text-[12px] opacity-75">{t("common.cur.dp")}</span>
                 </span>
                 {arrowDesk}
               </button>
@@ -624,7 +624,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <button onClick={onLeaderboard} className={tileCls} title={t("start.tile.leaderboard")}>
                 <Stripe c={NEU} />
                 <div className={headBox}>{head(t("start.tile.leaderboard"))}{arrow}{sub(t("start.tile.leaderboard.sub"))}</div>
-                <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.leaderboard.sub")}</span>
+                <span className="text-[12px] min-[1400px]:hidden opacity-50">{t("start.tile.leaderboard.sub")}</span>
                 {arrowDesk}
               </button>
             )}
@@ -634,7 +634,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <button onClick={onStats} className={tileCls} title={t("start.tile.stats")}>
                 <Stripe c={NEU} />
                 <div className={headBox}>{head(t("start.tile.stats"))}{arrow}{sub(t("start.tile.stats.sub"))}</div>
-                <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.stats.sub")}</span>
+                <span className="text-[12px] min-[1400px]:hidden opacity-50">{t("start.tile.stats.sub")}</span>
                 {arrowDesk}
               </button>
             )}

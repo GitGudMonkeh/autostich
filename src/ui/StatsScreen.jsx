@@ -35,7 +35,7 @@ function Kpi({ label, value, color, title, className = "" }) {
   return (
     <div title={title} className={`rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={MENU_PANEL}>
       <div className="opacity-50 text-[11px] truncate">{label}</div>
-      <div className="font-bold text-lg tabular-nums whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
+      <div className="ty-num text-lg whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
     </div>
   );
 }
@@ -92,7 +92,7 @@ function BarRow({ label, color, frac, right }) {
   return (
     <div className="grid items-center gap-x-2.5" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}>
       <span className="text-xs truncate" style={{ color }} title={label}>{label}</span>
-      <span className="text-[11px] tabular-nums opacity-60 text-right whitespace-nowrap">{right}</span>
+      <span className="text-[11px] ty-num-sm opacity-60 text-right whitespace-nowrap">{right}</span>
       <div className="col-span-2 h-1.5 rounded overflow-hidden mt-1" style={{ background: "#0c0d14" }}>
         <div className="h-full rounded" style={{ width: `${Math.max(3, (frac || 0) * 100)}%`, background: color, opacity: 0.85 }} />
       </div>
@@ -108,7 +108,7 @@ function WinRow({ tag, children, val }) {
       <div className="text-[10px] font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{children}</span>
-        {val && <span className="tabular-nums font-bold whitespace-nowrap shrink-0" style={{ color: "#5ab87a" }}>{val}</span>}
+        {val && <span className="ty-num whitespace-nowrap shrink-0" style={{ color: "#5ab87a" }}>{val}</span>}
       </div>
     </div>
   );
@@ -188,7 +188,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   style={{ "--c": "#d4a63a" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-3xl font-bold tabular-nums leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
+                      <div className="text-3xl ty-num leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
                       {buildSubtitle(best) && <div className="text-[11px] opacity-50 mt-1.5 truncate">{buildSubtitle(best)}</div>}
                     </div>
                     <div className="text-2xl shrink-0 leading-none">{(best.archetypes || []).map((a, i) => <FactionIcon key={i} type={a} size={20} />)}</div>
@@ -213,9 +213,9 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                     <button key={r.ts || i} onClick={() => setDetail({ entry: r, rank: null })} title={t("stats.showDetails")}
                       className="as-edge-card as-edge-thin grid items-center gap-2.5 text-xs px-2.5 py-1.5 rounded text-left transition-all hover:brightness-125"
                       style={{ "--c": delta >= 0 ? "#d4a63a" : "#3a3a48", gridTemplateColumns: "auto minmax(0,1fr) auto" }}>
-                      <span className="opacity-45 tabular-nums shrink-0">{r.ts ? fmtDayMonth(r.ts) : "—"}</span>
+                      <span className="opacity-45 ty-num-sm shrink-0">{r.ts ? fmtDayMonth(r.ts) : "—"}</span>
                       <span className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-bold tabular-nums shrink-0" title={fmtScore(r.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(r.score)}</span>
+                        <span className="ty-num shrink-0" title={fmtScore(r.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(r.score)}</span>
                         <span className="tabular-nums shrink-0" style={{ color: delta >= 0 ? "#5ab87a" : "#8a8a95" }}>{delta >= 0 ? t("stats.record") : fmtScoreShort(delta)}</span>
                         <span className="hidden sm:inline opacity-55 shrink-0">{(r.bestStreak || 0)}×</span>
                         <span className="hidden sm:inline opacity-55 shrink-0">{critPct == null ? "–" : `${critPct}%`}</span>

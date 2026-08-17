@@ -162,7 +162,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
       {brandTotal > 0 && (
         <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
           <span className="opacity-55 shrink-0">{t("bar.fire.brand")}</span>
-          <span className="tabular-nums font-bold shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
+          <span className="ty-num shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
           <span className="inline-flex gap-0.5 shrink-0 overflow-hidden">
             {Array.from({ length: Math.min(brandTotal, 6) }, (_, i) => (
               <FactionIcon key={i} type="fire" size={11} />

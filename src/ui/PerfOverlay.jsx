@@ -83,7 +83,7 @@ export function PerfOverlay() {
   const fxScale = readFxScale();                          // #kompositor: gesetzter Auflösungsfaktor (?fxs=)
   return (
     <div
-      className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
+      className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold ty-display tracking-wide"
       style={{ background: "#141419dd", border: `1px solid ${col}55`, pointerEvents: "none" }}
       aria-hidden="true"
     >

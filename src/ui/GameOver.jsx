@@ -134,7 +134,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         <div className="text-center mt-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
-          <div className="text-4xl sm:text-5xl font-bold mt-2 tabular-nums leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
+          <div className="text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
           <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
@@ -179,13 +179,13 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                     die Farbe steckt weiter in Kante und Zahl. */}
                 <div className="as-edge-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ "--c": "#d4a63a" }}>
                   <span className="text-[11px] font-bold" style={{ color: "#d4a63a" }}>{t("gameover.sp")}</span>
-                  <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: "#f2c14a" }}>+{spUp}</span>
+                  <span className="ty-num text-[18px]" style={{ color: "#f2c14a" }}>+{spUp}</span>
                 </div>
                 <div className="as-edge-card relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ "--c": "#35c6e6" }}>
                   <span className="text-[11px] font-bold" style={{ color: "#35c6e6" }}>{t("gameover.dp")}</span>
                   <span className="flex items-center gap-1.5">
                     {dpRoll.minus && <span className="text-[10px] font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
-                    <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
+                    <span className="ty-num text-[18px]" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
                   </span>
                   {dpRoll.minus && <span aria-hidden className="absolute bottom-0 left-0 h-[3px]" style={{ width: "100%", background: "#e05555" }} />}
                 </div>
@@ -201,7 +201,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   <span className="text-[12px] font-extrabold block" style={{ color: "#f2c14a" }}>{t("gameover.welcome")}</span>
                   <span className="text-[10.5px] leading-snug block" style={{ color: "#c8bb8a" }}>{t("gameover.welcome.hint")}</span>
                 </span>
-                <span className="font-mono text-[18px] font-extrabold tabular-nums shrink-0" style={{ color: "#f2c14a" }}>
+                <span className="ty-num text-[18px] shrink-0" style={{ color: "#f2c14a" }}>
                   {t("gameover.welcome.value", { n: earn.welcomeDp })}
                 </span>
               </div>
@@ -309,7 +309,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   {motor.map((m) => (
                     <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}` }}>
                       <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
-                      <div className="font-bold tabular-nums leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
+                      <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -374,7 +374,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       const on = inspectBid === b.id;
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
                           style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}` }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />

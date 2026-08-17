@@ -606,7 +606,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.18em] font-mono opacity-60" style={{ color: CAT.value.color }}>{t("arch.eyebrow", { cycle: round })}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] opacity-60" style={{ color: CAT.value.color }}>{t("arch.eyebrow", { cycle: round })}</div>
             <h2 className="text-xl font-bold mt-0.5">{t("arch.title")}</h2>
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
@@ -618,17 +618,17 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
             title={t("arch.boost.title")}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
+            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
-            <span className="text-[9px] font-mono opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
+            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
+            <span className="text-[9px] ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
           </div>
           {state.lastCycleScore != null && (
             <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
               <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
-              <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
+              <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
               {scoreHasDiff && <span className="text-[10px] font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
             </div>
           )}
@@ -645,7 +645,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                  Schein (`is-sel`), statt Vollrahmen plus Außen-Glow. */
               <div ref={colorBarRef} className="as-edge-card is-sel mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap"
                 style={{ "--c": "#d97a3a", scrollMarginTop: "12px" }}>
-                <span className="text-[11px] font-mono uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
+                <span className="text-[11px] uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
                 <div className="flex gap-2.5">
                   {SUIT_ORDER.map((s) => (
                     <button key={s} onClick={() => onRecolor?.({ buildingId: selBuilding.id, colorChoice: s })}
@@ -761,7 +761,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const isDragOrig = draggingId != null && b && b.id === draggingId;
                 return (
                   <button key={pos} data-arch-pos={pos} onPointerDown={(e) => onCellDown(pos, e)}
-                    className={`relative rounded-md aspect-square flex items-center justify-center font-mono font-bold${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
+                    className={`relative rounded-md aspect-square flex items-center justify-center ty-num${dragPrev ? "" : " transition-all"}${showCombos && !dragPrev && b && comboLit(pos) ? " arch-struct-lit" : ""}`}
                     style={{
                       // #UI: Gebäude-Füllung/-Rand einheitlich (Typ-Farbe raus); die Stufe/Rarität zeigt der Ring (boxShadow) unten.
                       // #UI: Origin-Zellen des gezogenen Gebäudes zeigen sich als LEERES Feld (Gebäude „aufgehoben"); die
@@ -812,13 +812,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
                         <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] font-bold leading-none tabular-nums z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
                     <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
@@ -850,21 +850,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               }); })()}
             </div>
             {/* Legende */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] font-mono opacity-80">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] opacity-80">
               <span className="opacity-70">{t("arch.legend.frame")}</span>
               {Object.entries(CAT).map(([k, v]) => (
                 <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${v.color}` }} />{v.label}</span>
               ))}
             </div>
             {/* Stufe/Rarität = die Zahl (I–IV / ★) in der ECKE des Gebäudes; der Rahmen zeigt den Typ. */}
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] font-mono opacity-70">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] opacity-70">
               <span className="opacity-70">{t("arch.legend.tier")}</span>
               {[1, 2, 3, 4].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1"><b className="tabular-nums" style={{ color: tierColor(t) }}>{ROMAN[t]}</b></span>
               ))}
               <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> {t("arch.legendary")}</span>
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] font-mono opacity-60">
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] opacity-60">
               <span>{t("arch.legend.ring")}</span>
               {["wiederholung", "farbblock", "treppe", "wechsel", "anker"].map((ft) => (
                 <span key={ft}><b>{formationAbbr(ft)}</b> {formationLabel(ft)}</span>
@@ -880,7 +880,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <div className="rounded-xl p-3 order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
-              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] font-mono leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
+              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
                 head={<span className="uppercase tracking-wide opacity-55">{t("arch.struct.head")}</span>}>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>{t("arch.struct.row", { f: fmt(HAEUSERZEILE_FACTOR) })}</span>
@@ -918,7 +918,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           /* #kante: Abriss-Liste — zum Abriss markierte Gebäude tragen die rote Kante samt
                              Schein, die übrigen bleiben neutral. */
                           <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
-                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-[11px] font-mono leading-snug transition-all hover:brightness-110`}
+                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-[11px] leading-snug transition-all hover:brightness-110`}
                             style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
                               <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
@@ -974,7 +974,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           style={{ "--c": tierCol, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
-                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
                               style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                               {o.legendary ? "★" : tierLabel(o.tier)}
                             </span>
@@ -982,9 +982,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           <div className="text-[13px] font-bold flex items-center gap-1 leading-tight">
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
-                          <div className="text-[10px] font-mono opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
-                          {noRoom && !o.used && <span className="text-[9px] font-mono" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
+                          <div className="text-[10px] opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
+                          {noRoom && !o.used && <span className="text-[9px]" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
                         </button>
                       );
                     })}
@@ -996,7 +996,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-lg leading-none">⬆</div>
                       <div className="text-[13px] font-bold leading-tight">{t("arch.upgrade")}</div>
-                      <div className="text-[10px] font-mono opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
+                      <div className="text-[10px] opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
                     </button>
                   </div>
                   )}
@@ -1022,9 +1022,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         <div className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
                           <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
                           {uf.name}
-                          <span className="font-mono" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
+                          <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
                         </div>
-                        <div className="mt-1.5 grid gap-1 text-[11px] font-mono leading-snug">
+                        <div className="mt-1.5 grid gap-1 text-[11px] leading-snug">
                           <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
                             <span className="opacity-55">{t("arch.now")}</span> {famEff(uf, up)}
                           </div>
@@ -1054,7 +1054,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                               const f = familyDef(b.familyId);
                               return (
                                 <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
-                                  className="rounded px-2 py-1.5 text-left text-[10px] font-mono leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
+                                  className="rounded px-2 py-1.5 text-left text-[10px] leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
                                   style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
@@ -1080,7 +1080,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   {upgradeDone && (
                     <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
                       <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> {t("arch.upgraded")}
-                      <span className="font-mono" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
+                      <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
                     </div>
                   )}
                   {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
@@ -1108,7 +1108,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               ))}
               {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
               {showRotate && rotateMsg && (
-                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
+                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
                   ⟳ {rotateMsg}
                 </div>
               )}
@@ -1165,7 +1165,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 if (!efam) return null;
                 return (
                   // #UI: Effekt-Readout mit typ-farbigem Rahmen (Kategorie-Farbe = die Typ-Farbe, die vorher der Gebäude-Hintergrund trug).
-                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug"
+                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug"
                     style={{ border: `1px solid ${CAT[efam.category].color}`, background: `${CAT[efam.category].color}12` }}>
                     <span className="inline-flex items-center gap-1.5 align-middle">
                       <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
@@ -1182,7 +1182,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Antippen (Liste ODER Brett) lässt Gebäude + Beschreibung gemeinsam cyan leuchten. Steht direkt unter „Nichts bauen". */}
             {!removeFor && phase === "choose" && committed.length > 0 && (
               <div className="order-1 rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-                <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-0.5">{t("arch.yourBuildings", { n: committed.length })}</div>
+                <div className="text-[11px] uppercase tracking-wide opacity-60 mb-0.5">{t("arch.yourBuildings", { n: committed.length })}</div>
                 <div className="text-[10px] opacity-45 mb-2">{t("archpanels.tapHint")}</div>
                 <div className="flex flex-col gap-1">
                   {committed.map((b) => {
@@ -1190,7 +1190,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     const on = inspectId === b.id;
                     return (
                       <button key={b.id} id={`arch-inspect-${b.id}`} onClick={() => setInspectId(on ? null : b.id)}
-                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] font-mono leading-snug flex flex-col gap-0.5 transition-all"
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
                         style={{ background: on ? "#12313f" : "#16232f", border: `1px solid ${on ? "#5ec8f0" : "#24333f"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                         <span className="inline-flex items-center gap-1.5 flex-wrap">
                           <span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: f.legendary ? GOLD : CAT[f.category].color }} />
@@ -1207,11 +1207,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
             <div className="rounded-xl p-3 order-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-              <div className="text-[11px] font-mono uppercase tracking-wide opacity-60 mb-2">{t("arch.preview.head")}</div>
+              <div className="text-[11px] uppercase tracking-wide opacity-60 mb-2">{t("arch.preview.head")}</div>
               {dragPrev && (() => {
                 const ok = dragPrev.valid && dragPrev.footprint.length > 0;
                 return (
-                  <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex items-center gap-3 flex-wrap"
+                  <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] flex items-center gap-3 flex-wrap"
                     style={{ background: ok ? "#15351f" : "#3a1518", border: `1px solid ${ok ? "#2f9d55" : "#d1462f"}` }}>
                     <span className="font-bold" style={{ color: ok ? "#5fce86" : "#e0705a" }}>{t(ok ? "arch.preview.ok" : "arch.preview.bad")}</span>
                     {ok && dragDelta && <>
@@ -1227,7 +1227,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 <Stat k={t("arch.stat.plotUsed")} v={`${Math.round(coverCount / maxCover * 100)}%`} />
                 <Stat k={t("arch.stat.rows")} v={houseRows} />
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] font-mono opacity-80">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] opacity-80">
                 <span>{t("arch.buildingCount", { n: committed.length })}</span>
                 {Object.entries(CAT).map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[9px] h-[9px] rounded-full" style={{ background: v.color }} />{v.label} <b>{catCount[k]}</b></span>
@@ -1248,8 +1248,8 @@ function pendingFamName(o) { const f = familyDef(o.familyId); return f ? f.name 
 function Stat({ k, v, hero = false }) {
   return (
     <div className="rounded-lg p-2.5" style={{ background: hero ? `${CAT.value.color}12` : "#16232f", border: `1px solid ${hero ? CAT.value.color + "4d" : "#20303d"}` }}>
-      <div className="text-[10px] font-mono uppercase tracking-wide opacity-55">{k}</div>
-      <div className="text-xl font-extrabold tabular-nums mt-0.5">{v}</div>
+      <div className="text-[10px] uppercase tracking-wide opacity-55">{k}</div>
+      <div className="text-xl ty-num mt-0.5">{v}</div>
     </div>
   );
 }
@@ -1301,7 +1301,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
                       <button onClick={() => setOpenFam(fo ? null : fid)} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left">
                         <span className="flex flex-col gap-0.5 min-w-0">
                           <span className="font-semibold text-sm" style={{ color: meta.color }}>{fam.name}</span>
-                          {repDesc && <span className="text-[11px] font-mono opacity-60 leading-snug">{repDesc}</span>}
+                          {repDesc && <span className="text-[11px] opacity-60 leading-snug">{repDesc}</span>}
                         </span>
                         <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲" : "▼"} {t("arch.tierWord")}</span>
                       </button>

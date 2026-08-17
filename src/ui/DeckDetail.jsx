@@ -173,7 +173,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
                     <>
                       <div className="flex items-baseline justify-between gap-2 mb-1">
                         <span className="text-[11px] leading-tight" style={{ color: "#a6a6b0" }}>{prog.label}</span>
-                        <span className="text-[11px] font-bold tabular-nums shrink-0" style={{ color: unlocked ? color : "#c8c8d0" }}>{Math.min(prog.cur, prog.target)} / {prog.target}</span>
+                        <span className="text-[11px] ty-num shrink-0" style={{ color: unlocked ? color : "#c8c8d0" }}>{Math.min(prog.cur, prog.target)} / {prog.target}</span>
                       </div>
                       <ProgressBar cur={prog.cur} target={prog.target} color={color} done={unlocked} />
                     </>

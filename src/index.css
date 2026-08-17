@@ -1,9 +1,35 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   #typo — Tailwind-Theme: Schriftfamilien und Gewichte an EINER Stelle
+   ----------------------------------------------------------------------------
+   Der `@theme`-Block ist in Tailwind 4 die Quelle für die Utilities. Zwei
+   Eingriffe, beide mit Absicht projektweit:
+
+   1. `font-mono` bedeutet ab jetzt „Geist Mono", nicht mehr System-Monospace.
+      Bis zum Schriftwechsel lief ALLES in Mono, `font-mono` war damit eine
+      folgenlose Verzierung. Jetzt sagt die Klasse etwas: hier stehen Zahlen.
+
+   2. `font-bold`/`font-extrabold` liefern 600 statt 700/800. Grund: das
+      Typografie-System kennt nur 400 / 500 / 600, und Geist auf 700 wirkt
+      neben 600 nicht kräftiger, sondern nur plump. Die Alternative wäre,
+      knapp 290 Fundstellen einzeln umzuschlüsseln — dieselbe Wirkung, nur
+      mit 290 Gelegenheiten für Ausreißer. Wer wirklich 700 braucht, schreibt
+      es als `font-[700]` hin und begründet es dort.
+   ============================================================================ */
+@theme {
+  --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
+}
+
 /* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
 /* #314: iOS Safari vergrößert Text in manchen Layouts automatisch („text inflation") → Elemente wirken auf dem
    iPhone zu groß. text-size-adjust: 100% pinnt die vom Layout gesetzte Größe (kein Effekt auf Desktop/Android). */
-html, body { background:#141419; color:#e8e8ea; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* #typo: Grundschrift ist Geist. Sie ist bei gleicher Pixelgröße SCHMALER als die frühere System-Monospace —
+   wer eine Zeile nachjustiert, korrigiert deshalb nach OBEN, nicht nach unten. */
+html, body { background:#141419; color:#e8e8ea; font-family: var(--font-sans); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* #356: deck-getönter Rahmen der NEUTRALEN Struktur-Panels. --deck-a1 setzt App.jsx am Run-Container (aktive Deckfarbe);
    fehlt sie (Menü/deckloser Fallback), greift der neutrale Grauton #2c2a3a. Der Deck-Anteil (45 %) ist hier tunebar.
    Lazy substituiert → pro Element mit der dort kaskadierten --deck-a1 aufgelöst (in-Run getönt, außerhalb neutral). */
@@ -497,21 +523,53 @@ button { font-family: inherit; }
 }
 
 /* ============================================================================
-   CRT-/PIXEL-SKIN (#41) — komplett additiv. Alles unten ist entweder ungenutzt
-   (Default) oder hinter [data-skin="crt"] gated, damit der aktuelle Look
-   unberührt bleibt, solange der Skin aus ist.
-   Pixel-Schriften self-hosted, aus src/ referenziert -> Vite bundlet und hasht
-   den Pfad (funktioniert unter dem Pages-Subpfad /autostich/).
+   SCHRIFTEN (#typo, 17.08.2026) — self-hosted, aus src/ referenziert, damit Vite
+   bundlet und hasht (funktioniert unter dem Pages-Subpfad /autostich/).
+   ----------------------------------------------------------------------------
+   Geist trägt die SPRACHE (Überschriften, Knöpfe, Namen, Beschreibungen),
+   Geist Mono die ZAHLEN und Systemwerte (SP/DP, Score, Seeds, Version). Beide
+   sind variabel (100–900); benutzt werden nur 400 / 500 / 600 — die Regel dazu
+   steht am Rollen-Block weiter unten.
+
+   Warum je ZWEI Dateien: `latin` deckt DE/EN vollständig ab (ä ö ü ß é liegen
+   alle unter U+0100), `latin-ext` kommt über `unicode-range` nur dann vom Server,
+   wenn eine spätere Sprache Zeichen daraus braucht. Für heutige Spieler sind es
+   also 52 kB, nicht 84 kB — und eine neue Sprache kostet keinen Umbau.
+
+   ENTFALLEN sind mit diesem Pass „Press Start 2P" (Überschriften/Badges) und
+   „VT323" (dichte Zahlen). Die Pixel-Schriften waren der Rest des CRT-Skins in
+   der Typografie; der NEON-GLOW des Skins bleibt (er hängt an `.ty-display`,
+   nicht an der Schrift). Kartenzahlen und Wortmarke bleiben Orbitron.
    ============================================================================ */
 @font-face {
-  font-family: "Press Start 2P";
-  src: url("./assets/fonts/PressStart2P.ttf") format("truetype");
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: "VT323";
-  src: url("./assets/fonts/VT323-Regular.ttf") format("truetype");
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-family: "Geist";
+  src: url("./assets/fonts/GeistLatinExt.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./assets/fonts/GeistMono.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./assets/fonts/GeistMonoLatinExt.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
 }
 /* Orbitron (variabel 400–900) — Floating-Scores & Kartenzahlen: geometrisch-technisch, passt zum Neon-Look. */
 @font-face {
@@ -536,8 +594,8 @@ button { font-family: inherit; }
 
    Schnitt aus der Mockup-Abnahme (17.08.2026): Gewicht 450, Sperrung 0.06em, 46 px auf
    Desktop. Die Größe hängt an --wm-size, damit Mainscreen (groß) und Run-Kopf (klein)
-   dieselbe Regel teilen. Kein `font-pixel`/`crt-title` hier: die Marke soll auch unter dem
-   CRT-Skin Orbitron bleiben, nicht auf Press Start 2P umspringen.
+   dieselbe Regel teilen. Keine Rollen-Klasse hier: die Marke bleibt Orbitron und ist damit
+   die eine Stelle, die der Schriftwechsel (#typo) ausdrücklich NICHT anfasst.
    ============================================================================ */
 .as-wordmark {
   font-family: "Orbitron", ui-monospace, monospace;
@@ -597,27 +655,99 @@ button { font-family: inherit; }
     radial-gradient(58% 62% at 74% 50%, rgba(242, 168, 58, .16), transparent 60%);
 }
 
-/* Font-Utilities — nur unter Skin aktiv, sonst No-op (Default-Font bleibt).
-   Selektiv angewandt (Titel/Kartenzahlen/Ueberschriften bzw. dichte Zahlen-Labels). */
-[data-skin="crt"] .font-pixel {
-  font-family: "Press Start 2P", ui-monospace, monospace;
-  letter-spacing: 0;
-  /* Neon-Glow, folgt der Textfarbe. Mehrstufig mit ENGEM Kern (1px/3px) + weichem Halo (8px):
-     der Kern hält die Glyphen-Kante scharf, egal wie breit die Engine den Blur malt. Wichtig gegen
-     iOS/Safari (WebKit), das text-shadow-Blur deutlich breiter zieht als Android/Chrome (Blink) und die
-     dünnen Press-Start-2P-Striche sonst zu unlesbarem Leucht-Matsch überstrahlt. */
+/* ============================================================================
+   #typo — DIE ROLLEN. Hier steht, welche Schrift eine Sache trägt, nicht wie
+   groß sie ist.
+   ----------------------------------------------------------------------------
+   Die Regel des Systems in einem Satz: **Geist trägt Sprache, Geist Mono trägt
+   Zahlen.** Alles, was man LIEST (Überschriften, Knöpfe, Namen, Beschreibungen,
+   Fließtext) ist Geist; alles, was man ABLIEST (Punkte, Guthaben, Multiplikatoren,
+   Seeds, Versionen, Zeiten) ist Geist Mono. Der Zweifelsfall entscheidet sich an
+   der Frage „steht das in einer Spalte untereinander und soll sich vergleichen
+   lassen?" — dann Mono.
+
+   WAS DIE KLASSEN SETZEN: Familie, Gewicht, Sperrung, Ziffernvariante.
+   WAS SIE NICHT SETZEN: die Schriftgröße.
+   Das ist keine Nachlässigkeit, sondern zwingend. Diese Datei steht hinter
+   `@import "tailwindcss"` und ist damit UNGELAYERT — jede Regel hier schlägt
+   jede Tailwind-Utility, unabhängig von Spezifität. Eine `font-size` in einer
+   Rollen-Klasse würde also das `text-[25px]` an der Fundstelle stumm
+   überschreiben, und zwar an ~470 Stellen gleichzeitig. Größen bleiben deshalb
+   dort, wo sie gegen echte Viewports abgemessen wurden.
+
+   GEWICHTE: nur 400 / 500 / 600. `font-bold` und `font-extrabold` liefern über
+   den `@theme`-Block oben ebenfalls 600 — die Leiter hat also drei Sprossen,
+   nicht fünf.
+   ============================================================================ */
+
+/* Zahlen. Ersetzt das frühere `.font-pixel-dense` (VT323) an allen Fundstellen.
+   `tabular-nums` gehört zur Rolle und nicht an die Fundstelle: eine Zahl, die
+   sich beim Hochzählen in der Breite ändert, lässt das halbe Panel wackeln —
+   und das ist bei Score, Multiplikator und Energie der Normalfall, nicht die
+   Ausnahme. Die frühere Sonderregel „StatusBar behält System-Mono, weil VT323
+   schmaler baut" ist ersatzlos entfallen: es gibt nur noch EINE Zahlenschrift. */
+.ty-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+/* Dieselbe Rolle, eine Stufe leiser — Nebenwerte, Verhältnisse, Fortschritts-Zähler. */
+.ty-num-sm {
+  font-family: var(--font-mono);
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+}
+/* Einheit neben einer Zahl (SP, DP, ×, %). Bewusst Geist und nicht Mono: das ist
+   ein WORT neben der Zahl, kein Wert — und als Kleinversalie ordnet es sich der
+   Zahl unter, statt mit ihr um dieselbe Höhe zu streiten. */
+.ty-unit {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* Technischer Kleinkram: Versionsstempel, Seeds, Build-Angaben. */
+.ty-meta {
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+/* Kategorie-/Zustands-Kürzel („3 kaufbar", „🔒 noch 2 Läufe", Raritäts-Badges). */
+.ty-badge {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+/* Überschrift eines Bildschirms oder Panels — die Kleinversalien-Zeile über einem Block. */
+.ty-screen-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* Große Überschriften und Knopf-Schriften ab ~18 px. Negative Sperrung, weil Geist
+   auf Größe sonst auseinanderfällt — unter ~16 px gehört sie NICHT hin (dort macht
+   sie den Text nur eng). */
+.ty-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* Ersetzt das frühere `.font-pixel` (Press Start 2P). Die Schrift ist weg, der
+   NEON-GLOW bleibt — er war immer der eigentliche Träger des CRT-Looks, die
+   Pixelschrift nur seine lauteste Begleiterscheinung.
+   Mehrstufig mit ENGEM Kern (1px/3px) + weichem Halo (8px): der Kern hält die
+   Glyphen-Kante scharf, egal wie breit die Engine den Blur malt. Wichtig gegen
+   iOS/Safari (WebKit), das text-shadow-Blur deutlich breiter zieht als
+   Android/Chrome (Blink). */
+.ty-display {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+[data-skin="crt"] .ty-display {
   text-shadow: 0 0 1px currentColor, 0 0 3px currentColor, 0 0 8px currentColor;
-}
-[data-skin="crt"] .font-pixel-dense {
-  font-family: "VT323", ui-monospace, monospace;
-  letter-spacing: 0.5px;
-}
-/* Gameplay-StatusBar: die Vitalwerte behalten AUCH unter dem CRT-Skin die kräftige System-Mono (statt VT323) —
-   gleiche Schriftgröße & gleiches Panel-Layout in beiden Skins, wie vom Spieler gewünscht (VT323 rendert schmaler/kleiner). */
-[data-skin="crt"] .as-statusbar .font-pixel-dense {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0;
-  text-shadow: none;
 }
 
 /* Gradient-Titel (weiss->violett) + Glow fuer die AUTOSTICH-Wortmarke.
@@ -668,9 +798,9 @@ button { font-family: inherit; }
 }
 
 /* Touch/Handy: WebKit (iOS Safari) zieht den Blur am breitesten → dort den weichen Außen-Halo kappen,
-   damit die kleine Pixelschrift auch auf dem iPhone lesbar bleibt. Kern-Glow bleibt, nur die weite Schicht schrumpft. */
+   damit die kleine Schrift auch auf dem iPhone lesbar bleibt. Kern-Glow bleibt, nur die weite Schicht schrumpft. */
 @media (pointer: coarse) {
-  [data-skin="crt"] .font-pixel { text-shadow: 0 0 1px currentColor, 0 0 3px currentColor; }
+  [data-skin="crt"] .ty-display { text-shadow: 0 0 1px currentColor, 0 0 3px currentColor; }
   [data-skin="crt"] .card-num,
   [data-skin="crt"] .neon-num   { --num-glow-near: 1.5px; --num-glow-far: 5px; }
 }
@@ -1649,10 +1779,12 @@ button { font-family: inherit; }
   }
 
   /* --- Wochen-Chip am Ranglisten-Knopf ---------------------------------------
-     Orbitron im Deckton statt Press Start 2P im festen Violett. Zwei Selektoren, und das ist kein
-     Versehen: `.as-week-chip` allein (0,1,0) verliert gegen `[data-skin="crt"] .font-pixel` (0,2,0),
-     das die Pixel-Schrift setzt. Der zweite Selektor hat dieselbe Spezifität und steht später,
-     schlägt sie also — ohne dass irgendwo `!important` nötig wird. */
+     Orbitron im Deckton. Der Chip bleibt beim Schriftwechsel (#typo) ausdrücklich bei Orbitron:
+     er trägt EINE Zahl als Abzeichen, also dieselbe Rolle wie die Kartenzahlen — nicht die einer
+     ablesbaren Kennzahl, für die Geist Mono zuständig ist.
+     Die zweite, skin-gegatete Zeile darunter ist Erbe: sie musste früher `[data-skin="crt"]
+     .font-pixel` schlagen. Diese Regel gibt es nicht mehr, die Zeile bleibt nur als Schutz vor
+     einer künftigen skin-gegateten Schriftregel stehen und kostet nichts. */
   /* Der Glossar-Knopf wechselt den Platz: raus aus der oberen Ecke, rein ins Fußband hinter Discord.
      Dort wächst er auf die Größe des Discord-Zeichens (36 px) — die beiden sind ein Paar aus zwei
      Symbolen. Die 26 px der Grundregel wären daneben ein Kieselstein. */

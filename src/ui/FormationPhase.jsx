@@ -204,11 +204,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.green)}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.bonus")}</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>{t("form.bonus.value", { pct: pctOf(curStrength) })}</span>
+            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>{t("form.bonus.value", { pct: pctOf(curStrength) })}</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
             <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
-            <span className="font-pixel-dense leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>
         </div>
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.

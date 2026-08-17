@@ -38,7 +38,7 @@ function Link({ label, value, color, title }) {
   return (
     <span className="inline-flex items-baseline gap-1 whitespace-nowrap" title={title}>
       <span className="opacity-45 uppercase tracking-wide" style={{ fontSize: 9 }}>{label}</span>
-      <span className="font-bold font-pixel-dense" style={{ color }}>{value}</span>
+      <span className="font-bold ty-num" style={{ color }}>{value}</span>
     </span>
   );
 }

@@ -1,4 +1,11 @@
-Copyright 2011, The VT323 Project Authors (peter.hull@oikoi.com)
+Die Schriften in diesem Ordner stehen alle unter der SIL Open Font License 1.1.
+Der Lizenztext steht einmal unten; hier die Urheberzeilen je Schrift:
+
+  Geist / Geist Mono   Copyright (c) 2023 Vercel, Inc. (https://vercel.com),
+                       with Reserved Font Name "Geist".
+  Orbitron             Copyright (c) 2009, Matt McInerney (matt@pixelspread.com),
+                       with Reserved Font Name "Orbitron".
+
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

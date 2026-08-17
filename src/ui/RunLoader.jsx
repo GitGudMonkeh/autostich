@@ -52,7 +52,7 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
         <ModalHairline />
         <div className="px-6 py-7 text-center">
           {/* Gradient-Wortmarke im Logo-Verlauf (wie die Kopf-Wortmarke der übrigen Hub-Overlays). */}
-          <div className="text-base font-bold font-pixel tracking-wide mb-4"
+          <div className="text-base font-bold ty-display tracking-wide mb-4"
             style={{ backgroundImage: HAIRLINE.background, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
             {t("runloader.loading")}
@@ -63,7 +63,7 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
             <div className="absolute inset-0" style={{ backgroundImage: HAIRLINE.background }} />
             <div className="absolute inset-y-0 transition-[left] duration-200" style={{ left: `${pct}%`, right: 0, background: "#141320" }} />
           </div>
-          <div className="text-[11px] mt-2 opacity-50 tabular-nums font-pixel">{pct}%</div>
+          <div className="text-[11px] mt-2 opacity-50 ty-num-sm">{pct}%</div>
         </div>
       </div>
     </div>

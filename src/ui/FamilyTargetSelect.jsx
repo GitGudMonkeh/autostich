@@ -132,11 +132,11 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
         {previewOn && (
           <div className="text-center text-[11px] mt-4 opacity-85">
             <span className="opacity-60">{tr("famtarget.strength")}</span>{" "}
-            <span className="tabular-nums font-pixel-dense">×{fmtStr(1 + curStrength)}</span>
+            <span className="tabular-nums ty-num">×{fmtStr(1 + curStrength)}</span>
             {projStrength != null && (() => {
               const d = projStrength - curStrength;
               const c = d > 0.001 ? "#5ab87a" : d < -0.001 ? "#e0605a" : "#c8c8d0";
-              return (<>{" → "}<span className="tabular-nums font-pixel-dense" style={{ color: c }}>×{fmtStr(1 + projStrength)}</span>{" "}<span style={{ color: c }}>({d >= 0 ? "+" : "−"}{fmtStr(Math.abs(d))})</span></>);
+              return (<>{" → "}<span className="tabular-nums ty-num" style={{ color: c }}>×{fmtStr(1 + projStrength)}</span>{" "}<span style={{ color: c }}>({d >= 0 ? "+" : "−"}{fmtStr(Math.abs(d))})</span></>);
             })()}
           </div>
         )}

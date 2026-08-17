@@ -101,7 +101,7 @@ function Bar({ b }) {
       </div>
       {single && (
         <div className="flex justify-between mt-1.5 text-[10px]" style={{ color: "#71717c" }}>
-          {b.scale.map((s, i) => <span key={i} className={i === b.scale.length - 1 ? "" : "font-mono"}>{s}</span>)}
+          {b.scale.map((s, i) => <span key={i} className={i === b.scale.length - 1 ? "" : "ty-num-sm"}>{s}</span>)}
         </div>
       )}
     </div>
@@ -166,7 +166,7 @@ export function GuideBody({ archetype, showTitle = true }) {
         <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
           {g.loop.steps.map((s, i) => (
             <li key={i} className="grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
-              <span className="grid place-items-center text-[11px] font-mono rounded-md"
+              <span className="grid place-items-center text-[11px] ty-num-sm rounded-md"
                     style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
               <span><RT t={s} /></span>
             </li>
@@ -188,7 +188,7 @@ export function GuideBody({ archetype, showTitle = true }) {
         {g.principle.map((p, i) => (
           <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
               style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
-            <span className="h-fit text-[10.5px] font-mono uppercase tracking-wide px-2 py-1 rounded-md whitespace-nowrap"
+            <span className="h-fit ty-badge text-[10.5px] uppercase px-2 py-1 rounded-md whitespace-nowrap"
                   style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
             <span className="leading-relaxed"><RT t={p.text} /></span>
           </li>
@@ -196,7 +196,7 @@ export function GuideBody({ archetype, showTitle = true }) {
       </ul>
 
       {showTitle && (
-        <div className="mt-6 pt-3.5 text-[11px] font-mono flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
+        <div className="mt-6 pt-3.5 text-[11px] flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
           <ArchIcon meta={meta} size={14} /> {meta.label} · {t("guide.archOf", { n: ARCHETYPE_ORDER.indexOf(active) + 1, total: ARCHETYPE_ORDER.length })}
         </div>
       )}

@@ -709,6 +709,9 @@ function SpezialScene({ deckTint = false }) {
           <div key={c.key} className="relative flex flex-col items-center gap-1" style={{ height: "60%" }}>
             <div ref={c.ref || undefined} className="relative rounded-md overflow-visible"
               style={{ height: "100%", aspectRatio: CARD_RATIO, background: "linear-gradient(180deg,#26304a,#141a28)", boxShadow: "0 2px 9px #000a" }}>
+              {/* #typo: 800 ist hier Absicht — die Zahl steht auf einer Karten-ATTRAPPE und soll wie eine
+                  Kartenzahl wirken, nicht wie ein Oberflächen-Wert. Sie liegt damit außerhalb der
+                  400/500/600-Leiter (zweite Ausnahme neben der Groß-Ansage in Battlefield.jsx). */}
               <div className="absolute inset-0 flex items-center justify-center" style={{ color: "#dde6f5", fontWeight: 800, fontSize: "clamp(13px,3vw,20px)" }}>7</div>
               {c.fx && <Suspense fallback={null}>{c.fx}</Suspense>}
             </div>

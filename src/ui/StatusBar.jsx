@@ -16,7 +16,7 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutrale
 function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   return (
     <button type="button" onClick={onClick} title={title}
-      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap`}
+      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap`}
       style={active ? { "--c": tone } : undefined}>
       {children}
     </button>
@@ -28,7 +28,7 @@ function MiniCell({ label, children, className = "" }) {
   return (
     <div className={`flex flex-col justify-center px-2 leading-none ${className}`} style={{ textAlign: "right" }}>
       <span className="text-[9px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
-      <span className="font-pixel-dense mt-0.5 whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 15 }}>{children}</span>
+      <span className="ty-num mt-0.5 whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 15 }}>{children}</span>
     </div>
   );
 }
@@ -38,7 +38,7 @@ function Cell({ label, children, className = "" }) {
   return (
     <div className={`flex flex-col justify-center gap-1 px-2.5 py-2 ${className}`} style={{ textAlign: "right" }}>
       <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
-      <span className="font-pixel-dense leading-none whitespace-nowrap"
+      <span className="ty-num leading-none whitespace-nowrap"
         style={{ fontVariantNumeric: "tabular-nums", fontSize: 18 }}>{children}</span>
     </div>
   );
@@ -60,7 +60,7 @@ export function StatusBar({
         <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
           {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
           <button type="button" onClick={onTogglePause} title={t(paused ? "hud.resume" : "hud.pause")}
-            className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
+            className="text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
             style={paused
               ? { background: "#8a7de0", color: "#141419", border: "1px solid #8a7de0" }
               : { background: "#8a7de022", color: "#8a7de0", border: "1px solid #8a7de066" }}>
@@ -71,7 +71,7 @@ export function StatusBar({
           <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title={t("hud.speed.max")}>{t("hud.speed.max.label")}</Pill>
           {onChronik && (
             <button type="button" onClick={onChronik} title={t("hud.cards.title")}
-              className="as-edge-neutral as-edge-thin flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
+              className="as-edge-neutral as-edge-thin flex items-center gap-1 text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
               {deckBack
                 ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
                 : <span>🎴</span>}
@@ -104,7 +104,7 @@ export function StatusBar({
             </div>
             {/* #: Bei sehr großen Zahlen (>100 Mio · 9+ Stellen) die Score-Schrift etwas verkleinern, damit die Zeile
                 zusammen mit hoher Serie (z. B. 1000×) nicht rechts über den Rahmen hinausläuft. */}
-            <span className="font-pixel-dense leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
+            <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
           {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
           <Cell label={t("hud.streak")} className="border-l border-[color:var(--deck-border)]">
@@ -114,7 +114,7 @@ export function StatusBar({
           {/* Mult — ganz rechts. */}
           <Cell label={t("hud.mult")} className="border-l border-[color:var(--deck-border)]">
             <span className={mult?.shakeClass || ""}>
-              <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 font-pixel-dense"
+              <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 ty-num"
                 style={{ fontVariantNumeric: "tabular-nums", fontSize: 18,
                          background: mult?.hot ? `${mult.color}22` : "#ffffff0f",
                          color: mult?.hot ? mult.color : "#8a8a92",

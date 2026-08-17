@@ -34,7 +34,7 @@ Gleicher Tree = gleiche Daten, egal was der Zähler sagt.
 
 Gearbeitet wird ausschließlich auf `Autostich/pixi`. **Vor jedem Arbeitsbeginn UND vor jedem Push**
 `git fetch origin Autostich/pixi && git rebase origin/Autostich/pixi` (Parallel-Sessions committen zeitweise
-denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1290 grün**) müssen vor jedem Push grün sein.
+denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1351 grün**) müssen vor jedem Push grün sein.
 Deutschsprachiger Code/Kommentare beibehalten.
 
 ### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
@@ -454,6 +454,46 @@ Gemessen wird die mittlere Luma im **Handy-Ausschnitt** (nicht im ganzen Bild), 
   Alpha > 1). Wächter: `test/hub-deck-bg.test.js` prüft die Naht über drei Dateien als Quelltext-Ratsche.
 - **Was die Messung nicht kann**: sie sieht Durchschnittshelligkeit, nicht Unruhe — ein Bild mit ruhigem
   Mittel, aber harten Kanten quer durch die Kachelzone kann störender sein als ein gleichmäßig helleres.
+
+### #typo — Geist statt System-Mono, projektweit (2026-08-17)
+Bis hierher lief **alles** in `ui-monospace` (eine Zeile in index.css: `html, body`). Überschriften, Knöpfe,
+Beschreibungen und Zahlen trugen dieselbe Schrift — Typografie war damit als Ordnungsmittel gar nicht im Einsatz.
+Jetzt zwei Schriften mit je einer Aufgabe: **Geist trägt Sprache, Geist Mono trägt Zahlen.**
+- **Der Zweifelsfall-Test:** „Steht das untereinander in einer Spalte und soll sich vergleichen lassen?" → Mono.
+  Sonst Geist. Deshalb ist `Bonus noch offen` unter der Kennzahl `0/1` **Geist** und nicht Mono, und deshalb ist
+  die Einheit `SP` neben der Zahl Geist (ein Wort), die Zahl selbst Mono.
+- **Rollen statt Einzelfälle** (`.ty-*` in index.css, ganze Begründung am Block dort): `ty-num` · `ty-num-sm` ·
+  `ty-unit` · `ty-meta` · `ty-badge` · `ty-screen-title` · `ty-title` · `ty-display`.
+  **Die Rollen setzen KEINE `font-size`** — und das ist zwingend, kein Versehen: index.css steht hinter
+  `@import "tailwindcss"` und ist damit **ungelayert**, schlägt also jede Utility unabhängig von Spezifität.
+  Eine Größe in einer Rolle würde die ~470 abgemessenen `text-[Npx]` stumm überschreiben. Größen bleiben an der
+  Fundstelle, Familie/Gewicht/Sperrung/Ziffernvariante in der Rolle.
+- **Gewichte nur 400/500/600.** `font-bold`/`font-extrabold` liefern über den `@theme`-Block **600** statt
+  700/800 — eine Zeile statt 290 Einzeländerungen. Wer wirklich 700 braucht: `font-[700]` plus Begründung.
+  **Zwei bewusste Ausnahmen:** die Groß-Ansage (`Battlefield.jsx`, 800 auf 40–100 px — auf der Größe liest
+  sich 600 dünn, nicht ruhig) und die Kartenvorschau in der Werkstatt.
+- **`font-mono` bedeutet ab jetzt etwas.** Vorher war die Klasse folgenlose Verzierung (alles war Mono), sie
+  stand deshalb an 56 Stellen, die meisten davon Prosa. Alle geprüft und getrennt; Gegenprobe war `tabular-nums`
+  (96 Stellen), das die echten Zahlen fast vollständig markiert hatte.
+- **Entfallen: Press Start 2P und VT323** samt Dateien und Lizenztexten. VT323 (`font-pixel-dense`, 27×) stand
+  ausschließlich an Zahlen → `ty-num`; Press Start 2P (`font-pixel`, 8×) an Überschriften/Badges → `ty-display`.
+  **Der Neon-Glow des CRT-Skins bleibt** — er hängt jetzt an `.ty-display` statt an der Pixelschrift; er war
+  immer der Träger des Looks, die Pixelschrift nur seine lauteste Begleiterscheinung. Damit ist auch die
+  Sonderregel „StatusBar behält System-Mono, weil VT323 schmaler baut" ersatzlos weg: es gibt EINE Zahlenschrift.
+- **Orbitron bleibt unangetastet**: Wortmarke, Kartenzahlen, Floats, Wochen-Chip. Der Wochen-Chip ist die eine
+  begründete Grenze — er trägt eine Zahl als ABZEICHEN (Rolle wie Kartenzahlen), keine ablesbare Kennzahl.
+- **Geist baut schmaler als die alte Mono.** Wer eine Zeile nachjustiert, korrigiert nach **oben**: im Hub sind
+  CTA 16→17 px, Kacheltitel 13,5→14 px, Ranglisten-Knopf 14→15 px. Umgekehrt sind die großen Zahlen **kleiner**
+  geworden (Status-Tafel 30→27 px, Kachel-Guthaben 16→17 px bei Gewicht 800→600) — Mono trägt auf Größe mehr.
+- **Selbst gehostet wie Orbitron**, `src/assets/fonts/`: je Familie `latin` + `latin-ext` mit `unicode-range`.
+  DE/EN laden nur latin = **52 kB** (29,4 + 23,1); latin-ext (16,5 + 14,7) kommt erst, wenn eine Sprache Zeichen
+  daraus braucht. Beide OFL, Urheberzeilen in `src/assets/fonts/OFL.txt`.
+- **Geprüft**: Build + ESLint (0/0) + 1351 Tests grün; Hub (Handy 390 + Desktop 1520), Skill-/Perk-Auswahl,
+  Aufstellungsphase, StatusBar und Namens-Dialog im echten Produktions-Build nachgerendert und die berechneten
+  Schriften je Element ausgelesen (nicht nur angeschaut). **Nicht** am Gerät gesehen, und **nicht** gesehen:
+  Architekt, Werkstatt, Bestenliste, Statistiken, Upgrade-Baum, GameOver — die Klassen dort sind geändert, der
+  Blick darauf steht aus. Ebenso offen: Geist Mono setzt die **Null geschlitzt**; im Score-HUD fällt das auf,
+  abschaltbar wäre es zentral über `font-feature-settings` an `.ty-num`.
 
 ### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
 - **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/
