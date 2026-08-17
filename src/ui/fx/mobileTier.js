@@ -31,15 +31,23 @@ export function dprCap(coarse = isCoarse()) {
   return Math.min(cap, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 }
 
-/* Zeichenrate auf Mobile. Lange stand hier 30 — als Sparmaßnahme aus einer Zeit, in der das Brett vier bis fünf
-   eigene Vollbild-Canvas trug und auf dem Handy sichtbar rangierte. Dieser Zustand ist vorbei: am Gerät gemessen
-   liegen p50 UND p95 auf 17 ms (ein 60-Hz-Frame), 1 Ruckler in 66 s, keine Long Tasks. Der Deckel halbiert also
-   nicht mehr die Last eines überlasteten Bretts, sondern nur noch die Bildrate der Effekte auf einem Brett, das
-   Luft hat — und genau dafür war der ganze Umbau da: den Gewinn AUSGEBEN, nicht horten.
+/* Zeichenrate auf Mobile. Bleibt bei 30 — AUSPROBIERT UND VERWORFEN, das ist der Punkt dieses Kommentars.
 
-   `?hz=<zahl>` überschreibt die Rate am Gerät (Preview/Dev), damit die Entscheidung gemessen statt geglaubt wird:
-   `?hz=30` ist der alte Zustand, direkt vergleichbar im selben Build. */
-const HZ_DEFAULT_COARSE = 60;
+   Die Ausgangslage sprach für mehr: der Deckel stammt aus der Zeit von vier bis fünf eigenen Vollbild-Canvas, und
+   nach dem Umbau liegen am Gerät p50 UND p95 auf 17 ms (ein 60-Hz-Frame), 1 Ruckler in 66 s, keine Long Tasks. Es
+   war also Luft da, und den Gewinn auszugeben war erklärtes Ziel. Der Standard stand deshalb kurzzeitig auf 60.
+
+   Am Gerät verglichen (derselbe Build, nur `?hz=30` dagegen): **kein sichtbarer Unterschied.** Damit ist die
+   Verdopplung ein reiner Verlust — doppelte Füllarbeit für jeden Dauer-Effekt, bezahlt in Akku und Wärme, ohne
+   Gegenwert. Entscheidung des Users, und die richtige.
+
+   Wichtig für den nächsten, der hier nachdenkt: das frühere „ruckelt trotz 60 FPS" lag NICHT an der Rate, sondern
+   an ihrer Ungleichmäßigkeit (s. `frameMinMs` — die Schwelle lag exakt auf zwei 60-Hz-Frames). Nach der
+   Halbframe-Toleranz war das Problem weg, und 60 hatte nichts mehr zu holen. Wer die Rate wieder anheben will,
+   braucht dafür einen Effekt, dem man den Unterschied ANSIEHT — die weichen Ambiente-Ebenen sind es nicht.
+
+   `?hz=<zahl>` überschreibt sie am Gerät (Preview/Dev), damit so eine Frage messbar bleibt statt geglaubt. */
+const HZ_DEFAULT_COARSE = 30;
 function hzOverride() {
   try {
     const v = parseFloat(new URLSearchParams(window.location.search).get("hz"));

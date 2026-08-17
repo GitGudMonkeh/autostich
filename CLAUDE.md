@@ -187,11 +187,12 @@ Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor
   #perf-overlay, nur die andere Achse. Bewusst `IntersectionObserver` statt `scroll`-Listener: ein Handler mit
   `getBoundingClientRect()` erzwingt je Scroll-Frame ein synchrones Layout, verursacht also genau die Kosten, die
   er sparen soll. `rootMargin: 200px` startet die Effekte VOR dem Einscrollen (sonst sieht man das Anlaufen).
-- **`DRAW_HZ_COARSE` 30 → 60.** Der Deckel stammte aus der Zeit von vier bis fünf eigenen Vollbild-Canvas; am Gerät
-  liegen p50 UND p95 inzwischen auf 17 ms, 1 Ruckler in 66 s, keine Long Tasks. Damit halbiert er nicht mehr die
-  Last eines überlasteten Bretts, sondern nur noch die Bildrate auf einem Brett, das Luft hat — und den Gewinn
-  auszugeben war das Ziel des ganzen Umbaus. **`?hz=<zahl>` überschreibt ihn am Gerät** (`?hz=30` = alter Zustand,
-  im selben Build vergleichbar).
+- **`DRAW_HZ_COARSE` bleibt 30 — 60 wurde probiert und verworfen.** Nach dem Umbau war Luft da (p50/p95 = 17 ms),
+  also stand der Standard kurz auf 60. Am Gerät verglichen (`?hz=30` im selben Build): **kein sichtbarer
+  Unterschied** → die Verdopplung ist reiner Verlust, doppelte Füllarbeit in Akku und Wärme ohne Gegenwert.
+  Merksatz für den nächsten Anlauf: das frühere „ruckelt trotz 60 FPS" lag NICHT an der Rate, sondern an ihrer
+  Ungleichmäßigkeit (`frameMinMs`, Halbframe-Toleranz) — das ist längst behoben. Wer erhöhen will, braucht einen
+  Effekt, dem man es ANSIEHT; die weichen Ambiente-Ebenen sind es nicht. **`?hz=<zahl>`** hält die Frage messbar.
 - **EINE Wahrheit:** Kompositor, Prunks (`gottMaxFPS`), `CardFxStage`, Hologrid-Slice und `PixiStage` holen die Rate
   jetzt alle aus `mobileTier`. Vorher stand die 30 an fünf Stellen einzeln. Rangiert ein Effekt bei 60, ist DIESER
   Knopf die Stelle — kein zweiter Wert daneben.
