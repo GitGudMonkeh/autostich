@@ -290,6 +290,34 @@ abgegriffen), 412 px: Mount ~97 ms · **Layout 52 ms** (2 Durchgänge) · Style 
 - Messstand-Vorbehalt: die 2 Layout-Durchgänge sind vermutlich Webfont-Nachladen auf frischer Seite; im laufenden
   Spiel steht die Schrift schon → real eher ~26 ms Layout.
 
+### #ruhe — Hub-Palette: ZWEI Farbrollen statt vier (2026-08-17)
+Der Startbildschirm wirkte unruhig, und es lag nicht am Layout: er trug den kompletten Logo-Verlauf
+(Cyan · Blau · Violett · Gold) als Palette, dazu Discord-Blurple und Grün/Rot für Seed-Meldungen. **Farbe war
+Deko statt Signal** — die vier Kachel-Kanten liefen den Verlauf in Lesereihenfolge nach und unterschieden damit
+nichts. `BLUE` war nicht mal eine eigene Farbe, sondern der Übergangswert Cyan→Violett; **ersatzlos entfallen**.
+- **Die Regel** (`StartScreen.jsx`, Konstanten-Block trägt die volle Begründung): `CY` Handlung (einzige Farbe
+  auf voller Sättigung) · `AM` Währung · `RANK` Angebot (Rangliste/Tutorial) · `NEU` nichts zu melden.
+  Kachel-Kanten: **Gold = hier liegt ein Guthaben** (Upgrades/Werkstatt), **Neutral = nur nachschlagen**
+  (Bestenliste/Statistiken).
+- **Alles außer `CY` ist um 42 % entsättigt** (sRGB-Sättigungsmatrix, s = 0,58 — die Rechnung hinter
+  `filter: saturate()`). Bewusst **feste Hexwerte statt eines Filters** am Wurzelknoten: der erzeugte einen
+  Stacking-Context, bräche das `backdrop-filter` der Bonus-Leiste und färbte ab 1400 px Bodenband und
+  Deckfarben mit ein. Werte: Gold `#f2a83a`→`#d6ab6b`, Rangliste `#9b82f0`→`#6696a4`, Marke vierstopfig
+  entsättigt (`.as-wordmark`).
+- **Glow-Budget = 1**: nur `.as-cta-primary` leuchtet. Bonus-Balken (`boxShadow` raus) und `.as-hub-num`
+  (`text-shadow` raus) haben ihren Schein verloren. Neue Dauer-Leuchtquelle im Hub → hier begründen.
+- **Ambient-Glow**: drei Farbblasen → **eine** kühle Ellipse (`.as-wm-glow`), Höhe **380 → 190 px**. Die
+  Kopfzone war dreigeteilt eingefärbt und der Grundton wanderte beim Lesen nach unten.
+- Guthaben-Zahlen: **Zahl neutral (`#dcdce4`, 19→16 px), nur die EINHEIT bleibt gold** — sie sind Kontostand,
+  kein Angebot. · Radien **16/12/8 → durchgehend 12 px** (`rounded-xl`; Ausnahmen: Discord-Kreis, 4-px-Wochen-Chip).
+  · **Press Start 2P am Wochen-Chip raus** → damit entfallen zwei Sonderbehandlungen (`textShadow:"none"` gegen
+  den `.font-pixel`-Glow, und die Bonus-Zeile durfte den Font wegen doppelter Laufweite gar nicht tragen).
+- **GILT NUR UNTERHALB 1400 px.** Ab dort ziehen Knöpfe, Marke und Glow ihren Ton aus dem aktiven Deck
+  (1400-px-Sektion in `index.css`) — diese Palette greift dort nicht. Bewusst **nicht** angefasst: die
+  Desktop-Status-Tafel (Woche weiter in `VI`), `.as-hub-list`-Zeilentöne, der `font-pixel`-Tafeltitel und das
+  Discord-Blurple (Markenfarbe).
+- Offen: der `!onbDone`-Zweig der Bonus-Leiste (Violett) ist seit #316 unerreichbar und wurde nicht mitgezogen.
+
 ### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
 - **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/
   Gottgleich 2500 ms) + `BIG_DOMINANCE_MS=1400` (niedrigere Stufe kurz nach höherer unterdrückt → „nur die höchsten").

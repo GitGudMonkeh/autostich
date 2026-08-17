@@ -12,9 +12,11 @@ import { fmtNum } from "../i18n/index.js";
 import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
-   Farbsystem aus dem Neon-Logo abgeleitet (Verlauf Cyan → Violett → Amber): Cyan = Start/SP/Energie,
-   Violett = Marke/Upgrades, Amber/Gold = Prestige/Ranglisten. Ambient-Glow hinter dem Logo spiegelt
-   denselben Dreiklang. Nur 2 laute CTAs (Normal cyan · Rangliste gold), Rest ruhig.
+   Das Farbsystem war aus dem Neon-Logo abgeleitet: der Verlauf Cyan → Blau → Violett → Amber lieferte
+   VIER Rollen, und die vier Kachel-Kanten liefen ihn in Lesereihenfolge nach. Seit #ruhe (17.08.2026)
+   sind es zwei — Cyan für die Handlung, Gold für die Währung, alles andere neutral. Die vollständige
+   Begründung samt Zahlen steht am Konstanten-Block weiter unten; sie ist die Stelle, an der man beim
+   Nachdrehen der Palette anfängt.
 
    HINWEIS: Progression-Backend (SP, Upgrades, Ranglisten-Modi) ist noch NICHT gebaut. Bonus-Leiste,
    Upgrades-Card und Ranglisten-Gabel laufen mit festen Platzhalter-Werten (mit „Vorschau"-Markierung),
@@ -24,11 +26,32 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 // #datenschutz: liegt seit dem Hinweis-Overlay in ui/links.js, weil der Invite dort ein zweites Mal
 // gebraucht wird (er ist der Kontaktweg). Eine URL an zwei Stellen driftet beim nächsten Wechsel.
 
-// Logo-Farben (aus dem Wortmarken-Verlauf gesampelt) — Rollen folgen dem Logo-Verlauf links→rechts:
-const CY = "#26c6e6";   // Logo links (Cyan) — Start / Normaler Lauf
-const BLUE = "#5a8ade";  // Logo-Übergang Cyan→Violett
-const VI = "#9b82f0";   // Logo Mitte (Violett) — Ranglisten
-const AM = "#f2a83a";   // Logo rechts (Amber/Gold) — Upgrades / SP-Währung
+/* #ruhe (17.08.2026) — ZWEI Farbrollen statt vier. Der Hub trug den kompletten Logo-Verlauf als
+   Palette: Cyan, Blau, Violett, Gold, dazu Discord-Blurple und Grün/Rot für Seed-Meldungen. Sechs
+   Farbfamilien auf einem Bildschirm, und keine davon sagte etwas — die vier Kachel-Kanten folgten in
+   Lesereihenfolge dem Verlauf, unterschieden also nichts, sondern dekorierten nur. `BLUE` war dabei
+   nicht einmal eine eigene Farbe, sondern der ÜBERGANGSWERT zwischen Cyan und Violett; er ist ersatzlos
+   entfallen.
+
+   Die Regel jetzt, und sie ist der ganze Umbau:
+     CY   Handlung — der Knopf, der den Lauf startet. Die EINZIGE Farbe auf voller Sättigung.
+     AM   Währung  — SP/DP, Bonus-Leiste, „kaufbar"-Hinweis. Alles, was ein Guthaben ist.
+     RANK Angebot  — Rangliste und Tutorial. Dieselbe Familie wie CY, nur weit zurückgenommen:
+                     Rangordnung über Helligkeit statt über einen fünften Farbton.
+     NEU  gar nichts zu melden — die zwei Kacheln ohne Guthaben.
+
+   Alle Werte außer CY sind um 42 % entsättigt (sRGB-Sättigungsmatrix, s = 0,58 — dieselbe Rechnung,
+   die `filter: saturate()` macht). Bewusst als feste Hexwerte und NICHT als Filter am Wurzelknoten:
+   ein `filter` dort erzeugt einen Stacking-Context, bricht das `backdrop-filter` der Bonus-Leiste und
+   färbte ab 1400 px auch das Spielfeld-Bodenband und die Deckfarben mit ein.
+
+   Ab 1400 px ziehen Knöpfe, Marke und Glow ohnehin ihren Ton aus dem AKTIVEN DECK (Regeln in der
+   1400-px-Sektion von index.css) — dort greift von hier nichts. Diese Palette ist die Handy-Fassung. */
+const CY = "#26c6e6";   // Logo links (Cyan) — Start / Normaler Lauf; einzige unangetastete Farbe
+const VI = "#9b82f0";   // Logo Mitte (Violett) — nur noch Onboarding-Leiste + Desktop-Status-Tafel
+const AM = "#d6ab6b";   // Währung (war #f2a83a) — Upgrades / SP / DP / Bonus-Leiste
+const RANK = "#6696a4"; // Rangliste + Tutorial: CY zur Hälfte ins Neutrale gezogen, dann entsättigt
+const NEU = "#8a8a95";  // Kachel-Kante ohne Aussage — der Rückfallton der Kanten-Familie (index.css)
 const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
 
 // (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
@@ -141,7 +164,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      #kante: Seit 17.08.2026 in der Kanten-Familie (index.css) — eckig statt Pille, dünne neutrale Kante links,
      Grund und Rahmen exakt die der neutralen Knöpfe. Vorher war ihr Grund (#20202a) heller als der neue
      Standard, dadurch stachen sie hervor, obwohl sie der leiseste Rang der Seite sind. */
-  const chipCls = "as-edge-neutral as-edge-thin px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-lg text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
+  /* #ruhe Radien: `rounded-lg` → `rounded-xl`. Auf dem Bildschirm standen drei Radien nebeneinander
+     (16 px CTA · 12 px Kacheln/Seed · 8 px Rangliste/Chips/Ecken) — drei Formsprachen für eine Seite.
+     Alles läuft jetzt auf 12 px zusammen; einzige Ausnahme bleibt der Discord-Knopf, der als Kreis ein
+     Ziel für sich ist, und der 4-px-Wochen-Chip, der dafür zu klein ist. */
+  const chipCls = "as-edge-neutral as-edge-thin px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-xl text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
@@ -180,7 +207,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Als Klasse statt inline, weil ein inline-style keine Media Query kennt.
           Der weiche Auslauf (Farbe → halb → 0) plus blur(30px) löst den Glow kantenlos in den Grund auf —
           ohne die Falloff-Kurve zeichnete sich die Rechteckkante der Fläche ab. */}
-      <div aria-hidden="true" className="as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[380px] min-[1400px]:h-[620px] -z-10"
+      {/* #ruhe: 380 → 190 px, also genau die halbe Höhe. Der Glow färbte die obere BILDSCHIRMHÄLFTE ein
+          (bis unter die Play-Gruppe) und legte damit drei Farbzonen hinter Marke, Bonus-Leiste und
+          Start-Knopf. Jetzt trägt er nur noch die Marke und läuft über der Bonus-Leiste aus.
+          Die Desktop-Höhe bleibt bei 620 px: dort steht die Marke in einer eigenen, viel höheren Kopfzone,
+          und der Glow läuft ohnehin in Deckfarben (1400-px-Sektion) statt in dieser Palette. */}
+      <div aria-hidden="true" className="as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[190px] min-[1400px]:h-[620px] -z-10"
         style={{ filter: "blur(30px)" }} />
 
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
@@ -208,11 +240,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       )}
 
       {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne. */}
-      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="rounded-xl absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
       {/* #kante: Der Glossar-Knopf ist ein Angebot, kein Ziel — leise violette Kante (die Textfarbe trägt
           die Klasse nicht, die kommt weiter von hier). */}
       <GlossaryPanel className="as-edge as-edge-thin absolute top-2 right-2 min-[1400px]:top-0 min-[1400px]:right-0"
-        style={{ width: "auto", height: "auto", borderRadius: "0.5rem", padding: "0.375rem 0.75rem",
+        style={{ width: "auto", height: "auto", borderRadius: "0.75rem", padding: "0.375rem 0.75rem",
           "--c": "#8a7de0", color: "#b3a8ff",
           fontFamily: "inherit", fontStyle: "normal", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }} />
 
@@ -258,10 +290,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                      : t("start.progress.links", { done: onbStep, total: ONBOARDING_LINKS })}
           </span>
         </div>
+        {/* #ruhe Glow-Budget: der Balken hatte einen eigenen `boxShadow`. Auf dem Bildschirm leuchteten damit
+            gleichzeitig CTA, Balken, beide Guthaben-Zahlen und drei Ambient-Blasen — wenn alles glüht, zeigt
+            kein Glow mehr irgendwohin. Ab jetzt leuchtet NUR der Primär-CTA; er ist das eine Ziel der Seite.
+            Der Balken behält seine Farbe, er verliert nur den Schein. */}
         <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
           <div className="h-full rounded-full" style={onbDone
-            ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#b87d1f,${SP})`, boxShadow: `0 0 8px rgba(242,168,58,.5)` }
-            : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})`, boxShadow: `0 0 8px rgba(155,130,240,.5)` }} />
+            ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#a27f49,${SP})` }
+            : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})` }} />
         </div>
         {/* (Schritt 4e) Nächste Freischaltung — nur während des Onboardings; danach übernimmt die SP-Drip-Zeile oben. */}
         {!onbDone && ONB_REWARDS[onbStep] && (
@@ -278,7 +314,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
+            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
             <span className="text-[17px] min-[1400px]:text-[21px]">{t("start.tutorial.offer")}</span>
             <span className="text-[11px] min-[1400px]:text-[14px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
@@ -291,7 +327,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-2xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-[19px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
             <span className="text-[11px] min-[1400px]:text-[14px] font-mono font-semibold opacity-80">
               {t("start.resume.sub", {
@@ -308,7 +344,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-2xl text-base min-[1400px]:text-[26px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-xl text-base min-[1400px]:text-[26px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
         </button>
         {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
@@ -347,28 +383,30 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-[14px] min-[1400px]:text-[20px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl text-[14px] min-[1400px]:text-[20px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
                 - `inset-y-0 justify-center` statt `top-1.5`: der Block ist jetzt zweizeilig und soll mittig zum
                   Knopf-Label stehen. Absolut positioniert → er kann den Knopf nicht höher machen.
-                - `textShadow: none` hebt den CRT-Glow der .font-pixel-Regel (index.css) für DIESE Stelle auf.
-                  Der Glow überstrahlt die dünnen Press-Start-2P-Striche; bei „Woche" allein ging das gerade noch,
-                  mit einer Zahl dahinter wurde es unlesbar. Der Glow bleibt überall sonst unangetastet.
-                - Die Bonus-Zeile läuft in der System-Mono, nicht im Pixel-Font: Press Start 2P ist rund doppelt so
-                  breit und würde in die Knopf-Mitte hineinragen.
                 - Ist der Bonus geholt, verschwindet die Zeile ersatzlos (kein „1/1"): eine Belohnung, die es diese
-                  Woche nicht mehr gibt, soll nicht weiter Platz und Aufmerksamkeit binden. */}
+                  Woche nicht mehr gibt, soll nicht weiter Platz und Aufmerksamkeit binden.
+
+                #ruhe: Der Chip lief unter dem CRT-Skin in Press Start 2P und war damit die EINZIGE Stelle des
+                Hubs in einer dritten Schrift — neben Mono (überall) und Orbitron (Marke). Der Preis dafür stand
+                als Sonderbehandlung direkt daneben: die `.font-pixel`-Regel bringt einen Neon-Glow mit, der die
+                dünnen Striche bis zur Unlesbarkeit überstrahlte, also musste hier ein `textShadow: "none"`
+                dagegenhalten; und die Bonus-Zeile darunter durfte den Font gar nicht erst tragen, weil Press
+                Start 2P doppelt so breit baut und in die Knopfmitte geragt wäre. Beide Sonderfälle sind mit dem
+                Font entfallen. 9 → 10 px, weil die System-Mono auf 9 px kleiner baut als der Pixel-Font.
+                Ab 1400 px stand hier ohnehin schon Orbitron (`.as-week-chip`, s. u.). */}
             <span className="absolute inset-y-0 right-2 min-[1400px]:right-4 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
               aria-label={t("start.ranked.badge.aria", { n: week.week })}>
-              {/* #desktop: Ab 1400 px trägt der Chip Orbitron im Deckton statt Press Start 2P im festen
-                  Violett (`.as-week-chip` in index.css) — er war die letzte Stelle am Knopf, die das
-                  aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel sonst der Wortmarke und den
-                  Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe Rolle. Unterhalb des
-                  Bruchpunkts bleibt alles wie es war. */}
-              <span className="as-week-chip px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[9px] min-[1400px]:text-[12px] font-bold font-pixel leading-tight"
-                style={{ textShadow: "none" }}>
+              {/* #desktop: Ab 1400 px trägt der Chip Orbitron im Deckton (`.as-week-chip` in index.css) — er war
+                  die letzte Stelle am Knopf, die das aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel
+                  sonst der Wortmarke und den Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe
+                  Rolle. Darunter läuft er seit #ruhe in der System-Mono wie der ganze Rest des Hubs. */}
+              <span className="as-week-chip px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[10px] min-[1400px]:text-[12px] font-bold leading-tight">
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
@@ -376,7 +414,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   dieselbe Information nebeneinander ist keine Betonung, nur Rauschen. Unterhalb von
                   1400 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
               {weekBonusOpen && (
-                <span className="text-[9px] min-[1400px]:hidden font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
+                <span className="text-[9px] min-[1400px]:hidden font-semibold leading-tight tabular-nums" style={{ color: `${RANK}c0` }}>
                   {t("start.ranked.bonus", { have: 0, max: 1 })}
                 </span>
               )}
@@ -387,8 +425,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* Variante C — Verwaltungszone als ruhiges, einheitliches 2×2-Kachel-Grid (Werkstatt · Upgrades ·
           Bestenliste · Statistik). Statt vieler unterschiedlich lauter Blöcke: gleich große Kacheln, deren
-          EINZIGES Farbsignal ein dünner Stripe an der linken Kachel-Seite ist. Die vier Stripes folgen in
-          Lesereihenfolge (TL→TR→BL→BR) dem Logo-Verlauf CY → BLUE → VI → AM. Keine Icons — nur Titel, Stripe
+          EINZIGES Farbsignal ein dünner Stripe an der linken Kachel-Seite ist.
+          #ruhe: Die vier Stripes folgten in Lesereihenfolge (TL→TR→BL→BR) dem Logo-Verlauf CY → BLUE → VI → AM.
+          Vier Farben an vier gleich aussehenden Kacheln, und keine davon sagte etwas — das Auge sucht dort eine
+          Bedeutung und findet keine. Jetzt trägt die Kante genau EINE Aussage: Gold heißt „hier liegt ein
+          Guthaben" (Upgrades = SP, Werkstatt = DP), Neutral heißt „hier gibt es nichts zu holen, nur
+          nachzuschlagen" (Bestenliste, Statistiken). Keine Icons — nur Titel, Stripe
           und (wo vorhanden) Kennzahl. Währungs-Zahlen (DP/SP) bleiben im Gold der Währung, unabhängig vom
           dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge statt Kennzahl. */}
       {/* #desktop — Ende der Spiel-Spalte, Anfang der Stand-Spalte. */}
@@ -497,10 +539,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           const lockBadge = (bg) => (<span className="self-start shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-pixel leading-tight whitespace-nowrap"
             style={{ background: bg, color: "#c9c9d2" }}>{t("start.tile.lock", { count: ONBOARDING_LINKS - onbStep })}</span>);
           return (<>
-            {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe CY (Grid-Position TL, Logo-Verlauf bleibt). SP-Guthaben in Gold (bzw. „komplett"), „kaufbar"-Hinweis. Onboarding-Gate. */}
+            {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe AM: hier liegt das SP-Guthaben. „kaufbar"-Hinweis, Onboarding-Gate. */}
             {onbDone ? (
               <button onClick={onUpgrades || undefined} className={tileCls} title={t("start.tile.upgrades.title")}>
-                <Stripe c={CY} />
+                <Stripe c={AM} />
                 <div className={headBox}>
                   {head(t("start.tile.upgrades"))}
                   {progBuyable > 0
@@ -512,7 +554,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   <span className="text-[13px] min-[1400px]:text-[18px] font-extrabold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
                 ) : (
                   <span className="flex items-baseline gap-1">
-                    <span className="as-hub-num text-[19px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progSp}</span>
+                    <span className="as-hub-num text-[16px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progSp}</span>
                     <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.sp")}</span>
                     <span className="text-[10px] min-[1400px]:hidden opacity-45 tabular-nums ml-1">{progOwned}/{TOTAL_NODES}</span>
                   </span>
@@ -521,45 +563,45 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               </button>
             ) : (
               <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.upgrades.locked")}>
-                <Stripe c={CY} dim />
+                <Stripe c={AM} dim />
                 {head(t("start.tile.upgrades"))}
                 {lockBadge("#20202a")}
               </div>
             )}
 
-            {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe BLUE (Grid-Position TR, Logo-Verlauf bleibt). DP-Guthaben in Gold. Onboarding-Gate. */}
+            {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe AM: hier liegt das DP-Guthaben. Onboarding-Gate. */}
             {onCustomize && (onbDone ? (
               <button onClick={onCustomize} className={tileCls} title={t("start.tile.workshop")}>
-                <Stripe c={BLUE} />
+                <Stripe c={AM} />
                 <div className={headBox}>{head(t("start.tile.workshop"))}{arrow}{sub(t("start.tile.workshop.sub"))}</div>
                 <span className="flex items-baseline gap-1">
-                  <span className="as-hub-num text-[19px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progDp}</span>
+                  <span className="as-hub-num text-[16px] min-[1400px]:text-[30px] font-extrabold tabular-nums">{progDp}</span>
                   <span className="as-hub-cur text-[10px] min-[1400px]:text-[14px] font-bold tracking-wider opacity-75">{t("common.cur.dp")}</span>
                 </span>
                 {arrowDesk}
               </button>
             ) : (
               <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.workshop.locked")}>
-                <Stripe c={BLUE} dim />
+                <Stripe c={AM} dim />
                 {head(t("start.tile.workshop"))}
                 {lockBadge("#20202a")}
               </div>
             ))}
 
-            {/* 3 · Bestenliste — Stripe VI (Violett = Wettbewerb/Rang, passt semantisch). */}
+            {/* 3 · Bestenliste — Stripe NEU: kein Guthaben, nur nachschlagen. */}
             {onLeaderboard && (
               <button onClick={onLeaderboard} className={tileCls} title={t("start.tile.leaderboard")}>
-                <Stripe c={VI} />
+                <Stripe c={NEU} />
                 <div className={headBox}>{head(t("start.tile.leaderboard"))}{arrow}{sub(t("start.tile.leaderboard.sub"))}</div>
                 <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.leaderboard.sub")}</span>
                 {arrowDesk}
               </button>
             )}
 
-            {/* 4 · Statistiken — Stripe AM (Logo-Ende). */}
+            {/* 4 · Statistiken — Stripe NEU: kein Guthaben, nur nachschlagen. */}
             {onStats && (
               <button onClick={onStats} className={tileCls} title={t("start.tile.stats")}>
-                <Stripe c={AM} />
+                <Stripe c={NEU} />
                 <div className={headBox}>{head(t("start.tile.stats"))}{arrow}{sub(t("start.tile.stats.sub"))}</div>
                 <span className="text-[11px] min-[1400px]:hidden opacity-50">{t("start.tile.stats.sub")}</span>
                 {arrowDesk}

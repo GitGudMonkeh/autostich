@@ -547,13 +547,17 @@ button { font-family: inherit; }
   line-height: 1.15;
   white-space: nowrap;
   /* Mobil: der Verlauf des alten Logos, einmal quer durchs Wort. Statisch wie das PNG —
-     die Lichtwelle kommt erst mit der Deck-Fassung auf Desktop dazu. */
-  background: linear-gradient(90deg, #26c6e6, #5a8ade, #9b82f0, #f2a83a);
+     die Lichtwelle kommt erst mit der Deck-Fassung auf Desktop dazu.
+     #ruhe: dieselben vier Stopps, alle um 42 % entsättigt (s = 0,58, wie die Palette in StartScreen.jsx).
+     Der Verlauf BLEIBT vierfarbig — er ist die Quelle, aus der die Palette begründet ist, und eine
+     einfarbige Marke über einem entsättigten Hub sähe entfärbt aus statt ruhig. Er soll nur nicht mehr
+     lauter sein als alles, was unter ihm steht. */
+  background: linear-gradient(90deg, #5cb9cb, #6c88b9, #9688c7, #d6ab6b);
   -webkit-background-clip: text; background-clip: text;
   color: transparent; -webkit-text-fill-color: transparent;
   /* drop-shadow statt text-shadow: bei transparenter Füllung schattiert WebKit sonst die
      VOLLE Glyphe und überstrahlt den Verlauf (gleicher Grund wie bei .card-num/#ios-glow). */
-  filter: drop-shadow(0 0 9px rgba(155, 130, 240, 0.5));
+  filter: drop-shadow(0 0 9px rgba(150, 136, 199, 0.5));
 }
 @keyframes as-wordmark-sweep {
   from { background-position: 0% center; }
@@ -571,11 +575,16 @@ button { font-family: inherit; }
    Zwei Fassungen derselben Idee: `as-wm-glow` über der Kopfzone des Hubs, `as-runhead-glow` im Run-Kopf.
    Beide Flächen sind absichtlich größer als die Marke und laufen früh in transparent aus — zusammen mit
    dem Blur am Element ergibt das den kantenlosen Übergang statt eines sichtbaren Rechtecks. */
+/* #ruhe: EINE Ellipse statt drei. Der Dreiklang legte nebeneinander eine cyanfarbene, eine violette und eine
+   goldene Zone über die obere Bildschirmhälfte — die Kopfzone war damit dreigeteilt eingefärbt, und weil die
+   Blasen unterschiedlich weit ausliefen, wanderte der Grundton, während man nach unten las. Genau das liest
+   sich als „unruhig", noch bevor man ein einzelnes Element betrachtet. Jetzt ein einziger kühler Halo, mittig
+   unter der Marke, in der Familie des Start-Knopfs. Die Höhe halbiert der Aufrufer (StartScreen.jsx).
+   Die Deck-Fassung ab 1400 px bleibt dreiteilig: dort sind es nur ZWEI Farben (a1/a2) und sie gehören
+   demselben Deck, laufen also nicht gegeneinander. */
 .as-wm-glow {
   background:
-    radial-gradient(400px 220px at 28% 30%, rgba(38, 198, 230, .16) 0%, rgba(38, 198, 230, .06) 45%, transparent 82%),
-    radial-gradient(400px 230px at 50% 24%, rgba(155, 130, 240, .17) 0%, rgba(155, 130, 240, .06) 45%, transparent 82%),
-    radial-gradient(400px 220px at 72% 30%, rgba(242, 168, 58, .13) 0%, rgba(242, 168, 58, .05) 45%, transparent 82%);
+    radial-gradient(440px 210px at 50% 26%, rgba(70, 150, 190, .16) 0%, rgba(70, 150, 190, .05) 48%, transparent 84%);
 }
 .as-runhead-glow {
   background:
@@ -871,9 +880,15 @@ button { font-family: inherit; }
 .as-hub-tile { background: #12121a; border: 1px solid rgba(150, 150, 170, .14); }
 /* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
-   Der Wert ist das bisherige Währungs-Gold — auf dem Handy ändert sich nichts. */
-.as-hub-num { color: #f2a83a; text-shadow: 0 0 12px rgba(242, 168, 58, .45); }
-.as-hub-cur { color: #f2a83a; }
+
+   #ruhe: Die ZAHL ist jetzt neutral, nur die EINHEIT bleibt Gold. Vorher standen 161 und 654 in gesättigtem
+   Gold, 19 px extrafett, mit Glow — auf dem Handy zwei Kacheln nebeneinander, die fast so laut riefen wie der
+   Start-Knopf. Sie sind aber Kontostand, kein Angebot: man liest sie, man klickt sie nicht. Der Ton wandert
+   deshalb auf das Kürzel daneben, das ohnehin sagt, WELCHE Währung gemeint ist — dieselbe Information, ein
+   Fünftel der Fläche. Der Glow ist ersatzlos weg (Glow-Budget: nur der Primär-CTA leuchtet).
+   Ab 1400 px überschreibt `.as-hub-list .as-hub-num` beides mit dem Ton der Listenzeile. */
+.as-hub-num { color: #dcdce4; }
+.as-hub-cur { color: #d6ab6b; }
 
 /* ============================================================================
    Knopf-Optik des Hubs — „Kante statt Fläche"
@@ -910,19 +925,27 @@ button { font-family: inherit; }
   border-left: 4px solid rgba(150, 150, 170, .35);
   color: #b9b9c6;
 }
-/* Rangliste und Tutorial tragen dieselbe Kante, aber im zweiten Deckton und leiser — sie sind Angebote,
-   kein Ziel. Damit bleibt die Rangordnung erhalten, ohne dass ein zweiter Knopf um Aufmerksamkeit ruft. */
+/* Rangliste und Tutorial tragen dieselbe Kante, aber leiser — sie sind Angebote, kein Ziel. Damit bleibt die
+   Rangordnung erhalten, ohne dass ein zweiter Knopf um Aufmerksamkeit ruft.
+
+   #ruhe: Der Ton war Violett (#9b82f0) und damit ein eigener Farbton neben Cyan und Gold. Jetzt ist es
+   derselbe Farbton wie der Start-Knopf, nur zur Hälfte ins Neutrale gezogen und entsättigt (#6696a4).
+   Das ist der Kern des Umbaus: die Rangordnung „Ziel > Angebot" läuft über HELLIGKEIT innerhalb einer
+   Familie statt über einen zusätzlichen Farbton. Zwei Knöpfe in zwei Farben streiten; zwei Knöpfe in einer
+   Farbe und zwei Helligkeiten sortieren sich.
+   Ab 1400 px überschreiben beide Regeln der 1400-px-Sektion das mit `--deck-a2` — dort trägt der Knopf die
+   zweite Deckfarbe, und diese Werte greifen nicht mehr. */
 .as-ranked-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, #9b82f0 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, #6696a4 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, #9b82f0 80%, transparent);
-  color: color-mix(in srgb, #9b82f0 55%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, #6696a4 80%, transparent);
+  color: color-mix(in srgb, #6696a4 55%, #ffffff);
 }
 .as-tut-btn {
-  background: linear-gradient(90deg, color-mix(in srgb, #9b82f0 20%, #0e0e14) 0%, #0e0e14 30%);
+  background: linear-gradient(90deg, color-mix(in srgb, #6696a4 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
-  border-left: 4px solid color-mix(in srgb, #9b82f0 80%, transparent);
-  color: color-mix(in srgb, #d9ccff 50%, #ffffff);
+  border-left: 4px solid color-mix(in srgb, #6696a4 80%, transparent);
+  color: color-mix(in srgb, #cfe2e8 50%, #ffffff);
 }
 /* „↻ Spielen" neben dem Seed-Feld. Als Klasse statt inline-style, damit der Rahmen ab 1400 px vom
    Hover-Schein übernommen werden kann.
@@ -935,9 +958,11 @@ button { font-family: inherit; }
   color: #b9b9c6;
 }
 
-/* Der Wochen-Chip am Ranglisten-Knopf. Grundfassung = die bisherigen inline-Werte (Press Start 2P
-   kommt weiterhin aus `.font-pixel`); die Desktop-Fassung steht in der 1400er-Media-Query. */
-.as-week-chip { background: #241d3a; color: #9b82f0; }
+/* Der Wochen-Chip am Ranglisten-Knopf; die Desktop-Fassung steht in der 1400er-Media-Query.
+   #ruhe: Grund und Schrift folgen dem Knopf, auf dem der Chip sitzt — vorher Violett-Schwarz auf einem
+   inzwischen teal-grauen Knopf, also der letzte Rest der alten Palette an dieser Stelle. Press Start 2P
+   ist am Aufrufer entfallen (Begründung dort), der Chip nimmt jetzt die Mono des Hubs. */
+.as-week-chip { background: #1c2328; color: color-mix(in srgb, #6696a4 60%, #ffffff); }
 
 /* ============================================================================
    KANTE STATT FLÄCHE — dieselbe Sprache für Knöpfe und Auswahlkarten (#kante)
