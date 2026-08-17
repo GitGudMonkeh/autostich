@@ -106,9 +106,10 @@ export function PrivacyModal({ onClose }) {
             </div>
           )}
 
+          {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Akzentfarbe des Modals. */}
           <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
-            className="block text-center text-sm font-bold rounded-lg py-2.5 mt-3 transition-all"
-            style={{ background: "#20202a", color: ACC, border: "1px solid #30303a" }}>
+            className="as-edge as-edge-thin block text-center text-sm font-bold rounded-lg py-2.5 mt-3 transition-all"
+            style={{ "--c": ACC }}>
             {t("privacy.contact.discord")}
           </a>
 

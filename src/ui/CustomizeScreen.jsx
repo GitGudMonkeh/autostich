@@ -1036,7 +1036,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                   <span className="text-lg font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
                   <span className="text-[10px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
                 </span>
-                <button onClick={onClose} className="shrink-0 px-3 py-1.5 rounded-lg text-sm" style={{ background: "#20202a", border: "1px solid #3a3a46" }}>{t("common.close")}</button>
+                <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-sm">{t("common.close")}</button>
               </div>
             </div>
             {/* Tab-Umschalter: Packs · Challenges · Effekte.
@@ -1237,7 +1237,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="p-3.5">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[15px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
-            <button onClick={onClose} className="shrink-0 text-[11px] px-2.5 py-1 rounded-lg" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a97ab" }}>{t("common.close")}</button>
+            <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>
           </div>
 
           {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}

@@ -103,12 +103,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
               {LOCALES.map((l) => {
                 const on = locale === l.id;
                 return (
+                  /* #kante: gewählte Sprache mit violetter Kante und Schein statt gefüllter Fläche. */
                   <button key={l.id} type="button" role="radio" aria-checked={on}
                     onClick={() => { setLocaleId(l.id); if (onLang) onLang(l.id); }}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold transition-all"
-                    style={on
-                      ? { background: VI, color: "#141419", boxShadow: `0 0 12px ${VI}66` }
-                      : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
+                    className={`${on ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin px-3 py-2 rounded-lg text-sm font-semibold transition-all`}
+                    style={on ? { "--c": VI } : undefined}>
                     {l.label}
                   </button>
                 );

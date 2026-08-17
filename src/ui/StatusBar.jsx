@@ -10,12 +10,14 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutrale
    #UI-Layout: zwei Zeilen. Oben Steuerung + Runde + Zeit (Sekundärwerte, rechts neben dem Karten-Icon). Unten der
    Score über die volle Breite (Platz bis 999.999.999, nie abgeschnitten) mit Serie und Mult rechts daneben. */
 
+/* #kante: Tempo-/Pause-Schalter in der Kanten-Familie — gewählt trägt seinen Ton an der Kante statt als
+   gefüllter Fläche. Das HUD ist der einzige Ort, den man in JEDEM Lauf dauernd sieht; hier zahlt Ruhe am
+   meisten, und eine gefüllte Taste neben der laufenden Score-Zahl zog bisher den Blick. */
 function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   return (
     <button type="button" onClick={onClick} title={title}
-      className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
-      style={{ background: active ? tone : "#20202a", color: active ? "#141419" : "#c8c8d0",
-               border: `1px solid ${active ? tone : "#33333e"}` }}>
+      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin font-mono text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap`}
+      style={active ? { "--c": tone } : undefined}>
       {children}
     </button>
   );
@@ -69,8 +71,7 @@ export function StatusBar({
           <Pill active={speedMult === 5} onClick={() => onSpeed(5)} title={t("hud.speed.max")}>{t("hud.speed.max.label")}</Pill>
           {onChronik && (
             <button type="button" onClick={onChronik} title={t("hud.cards.title")}
-              className="flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap"
-              style={{ background: "#20202a", color: "#c8c8d0", border: "1px solid #33333e" }}>
+              className="as-edge-neutral as-edge-thin flex items-center gap-1 font-mono text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
               {deckBack
                 ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
                 : <span>🎴</span>}

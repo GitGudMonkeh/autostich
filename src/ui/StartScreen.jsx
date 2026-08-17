@@ -209,9 +209,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
-      <GlossaryPanel className="absolute top-2 right-2 min-[1400px]:top-0 min-[1400px]:right-0"
+      {/* #kante: Der Glossar-Knopf ist ein Angebot, kein Ziel — leise violette Kante (die Textfarbe trägt
+          die Klasse nicht, die kommt weiter von hier). */}
+      <GlossaryPanel className="as-edge as-edge-thin absolute top-2 right-2 min-[1400px]:top-0 min-[1400px]:right-0"
         style={{ width: "auto", height: "auto", borderRadius: "0.5rem", padding: "0.375rem 0.75rem",
-          background: "#20202a", border: "1px solid #30303a", color: "#b3a8ff",
+          "--c": "#8a7de0", color: "#b3a8ff",
           fontFamily: "inherit", fontStyle: "normal", fontWeight: 700, fontSize: "0.9rem", lineHeight: 1 }} />
 
       {/* #desktop — ab hier das Spaltenpaar: links spielen, rechts der Stand. Unterhalb von 1400 px sind
@@ -324,9 +326,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 className="flex-1 min-w-0 px-3 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-mono tracking-wide"
                 style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
               />
+              {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
+                  der Rahmen ab 1400 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
               <button type="submit" disabled={!seedInput.trim()}
-                className="shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold min-[1400px]:font-medium transition-all disabled:opacity-40"
-                style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+                className="as-seed-play shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold min-[1400px]:font-medium transition-all disabled:opacity-40">
                 {t("start.seed.play")}
               </button>
             </form>
@@ -359,8 +362,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   Woche nicht mehr gibt, soll nicht weiter Platz und Aufmerksamkeit binden. */}
             <span className="absolute inset-y-0 right-2 min-[1400px]:right-4 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
               aria-label={t("start.ranked.badge.aria", { n: week.week })}>
-              <span className="px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[9px] min-[1400px]:text-[12px] font-bold font-pixel leading-tight"
-                style={{ background: "#241d3a", color: VI, textShadow: "none" }}>
+              {/* #desktop: Ab 1400 px trägt der Chip Orbitron im Deckton statt Press Start 2P im festen
+                  Violett (`.as-week-chip` in index.css) — er war die letzte Stelle am Knopf, die das
+                  aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel sonst der Wortmarke und den
+                  Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe Rolle. Unterhalb des
+                  Bruchpunkts bleibt alles wie es war. */}
+              <span className="as-week-chip px-1 min-[1400px]:px-1.5 min-[1400px]:py-0.5 rounded text-[9px] min-[1400px]:text-[12px] font-bold font-pixel leading-tight"
+                style={{ textShadow: "none" }}>
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel

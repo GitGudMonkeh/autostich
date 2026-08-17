@@ -16,8 +16,7 @@ export function MusicBar({ title, onNext }) {
       {onNext && (
         <button onClick={onNext} aria-label={t("music.next")}
           title={title ? t("music.playing", { title }) : t("music.next")}
-          className="shrink-0 rounded px-2.5 py-1 text-base leading-none transition-all hover:brightness-110"
-          style={{ background: "#20202a", border: "1px solid #3a3a46" }}>
+          className="as-edge-neutral as-edge-thin shrink-0 rounded px-2.5 py-1 text-base leading-none transition-all hover:brightness-110">
           ⏭
         </button>
       )}

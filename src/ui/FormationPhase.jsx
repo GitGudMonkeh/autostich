@@ -166,10 +166,13 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const base = baseStrength.current.base;
   const delta = base === null ? 0 : curStrength - base;
   const deltaStr = t("form.delta", { sign: delta >= 0 ? "+" : "−", pct: pctOf(Math.abs(delta)) });
-  // #UI: dunkle Δ-Tönung, die AUF Gold lesbar bleibt (grün/rot/neutral) — für den Fortfahren-Knopf (Live-Feedback beim Tauschen).
-  // (Die Nulllage zuerst zu prüfen hält die Zeile frei von der Folge „> … <", die der
-  //  i18n-Textgreifer sonst als JSX-Textknoten missversteht.)
-  const deltaOnGold = Math.abs(delta) <= 0.001 ? "#141419" : (delta > 0.001 ? "#155e31" : "#8a1e1e");
+  /* #UI: Δ-Tönung für den Fortfahren-Knopf (Live-Feedback beim Tauschen) — grün/rot/neutral.
+     #kante: Seit der Knopf keine gefüllte Goldfläche mehr ist, sondern dunkel mit Goldkante, brauchen die
+     drei Töne die HELLE Fassung; die alten dunklen Werte (#155e31/#8a1e1e) waren für Text AUF Gold gedacht
+     und wären auf dunklem Grund kaum zu sehen.
+     (Die Nulllage zuerst zu prüfen hält die Zeile frei von der Folge „> … <", die der
+      i18n-Textgreifer sonst als JSX-Textknoten missversteht.) */
+  const deltaOnGold = Math.abs(delta) <= 0.001 ? "#c8c8d0" : (delta > 0.001 ? "#5ab87a" : "#e0605a");
 
   // #201.5: Pro-Segment-Stärke + Verbesserungs-Highlight. Analog zur Gesamt-Baseline oben, aber je 5er-Segment:
   // jedes Segment zeigt seine eigene Formations-Stärke am Bereichs-Label; ein seit Phasenbeginn stärker gewordenes
@@ -216,15 +219,17 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
              style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
-            <button onClick={onUndo} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.undo")}</button>
-            <button onClick={onReset} disabled={!hasSwaps} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.reset")}</button>
+            {/* #kante: Beides sind Auswege — neutral, ohne Farbsignal. */}
+            <button onClick={onUndo} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+              style={{ opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.undo")}</button>
+            <button onClick={onReset} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+              style={{ opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.reset")}</button>
           </div>
           {/* Fortfahren voll-breit — trägt das Live-Feedback (Differenz seit Durchlaufbeginn + Restenergie), damit man es
               bei jedem Tausch direkt sieht (der Knopf klebt oben, im Gegensatz zum scrollenden Hero-Wert). */}
-          <button onClick={onConfirm} className="w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
-            style={{ background: GOLD, color: "#141419" }}>
+          {/* #kante: „Fortfahren" ist das Ziel dieser Phase — starker Kanten-Knopf, einziger mit Glow. */}
+          <button onClick={onConfirm} className="as-edge-strong w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
+            style={{ "--c": GOLD }}>
             <span className="text-sm">{t("form.confirm")}</span>
             <span className="text-[11px] mt-0.5" title={t("form.confirm.title")}>
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
@@ -245,9 +250,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
             {hasArch && (
               <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
-                  style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
-                                  : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
+                <button onClick={() => setShowArch((v) => !v)}
+                  className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
+                  style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
                   {t(showArch ? "form.arch.on" : "form.arch.off")}
                 </button>
                 {showArch && archCatList().map(([k, v]) => (

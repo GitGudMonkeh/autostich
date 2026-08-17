@@ -184,12 +184,12 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
               (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
           <h2 className="text-lg min-[1400px]:text-2xl font-bold">{t("upgrades.title")}</h2>
-          <div className="flex items-center justify-between gap-2.5 mt-2.5">
+          <div className="up-headrow flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
               <span className="text-xl min-[1400px]:text-3xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
               <span className="text-[10px] min-[1400px]:text-[13px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="up-actions flex items-center gap-2.5 shrink-0">
               {/* #kante: neutraler Kanten-Knopf mit schmaler Kante (kleines Element) — Respec ist ein Ausweg,
                   kein Angebot, und trägt darum kein Farbsignal. */}
               <button onClick={doRespec} disabled={owned === 0}
@@ -216,11 +216,17 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               );
             })}
           </div>
-          <div className="h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${VI}, ${CY}, ${AM})`, opacity: .7 }} />
-          <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
-            <b className="text-[#e8e8ea]">{owned}</b>{t("upgrades.nodes", { total: TOTAL_NODES })} {treeComplete(p) ? <b style={{ color: AM }}>{t("upgrades.ranked.free")}</b> : t("upgrades.ranked.at", { total: TOTAL_NODES })}
+          <div className="up-hair h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${VI}, ${CY}, ${AM})`, opacity: .7 }} />
+          {/* Knotenzähler + Tipp-Hinweis. Der Wrapper existiert für Desktop: dort rücken beide als EINE
+              Einheit neben das Guthaben in die Kopfzeile (s. .up-readout in index.css), statt zwei volle
+              Bänder unter der Haarlinie zu belegen. Unterhalb von 1400 px ist er eine reine Klammer ohne
+              eigene Darstellung — die Abstände sitzen wie bisher an den beiden Zeilen selbst. */}
+          <div className="up-readout">
+            <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
+              <b className="text-[#e8e8ea]">{owned}</b>{t("upgrades.nodes", { total: TOTAL_NODES })} {treeComplete(p) ? <b style={{ color: AM }}>{t("upgrades.ranked.free")}</b> : t("upgrades.ranked.at", { total: TOTAL_NODES })}
+            </div>
+            <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
           </div>
-          <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
         </div>
 
         {/* ===== Die beiden Zweige =====

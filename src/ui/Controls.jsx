@@ -1,17 +1,15 @@
 import { MuteButton } from "./MuteButton.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 
+/* #kante: Sekundär-Knöpfe des Laufs in der Kanten-Familie. `tone` färbt nur den aktiven Zustand — im Lauf
+   sind diese drei durchweg inaktiv und damit neutral, was sie auch sein sollen: Auswege, keine Angebote. */
 function Btn({ active, onClick, disabled, children, tone = "#5a8ade" }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-      style={{
-        background: active ? tone : "#20202a",
-        color: active ? "#141419" : "#e8e8ea",
-        border: `1px solid ${active ? tone : "#30303a"}`,
-      }}
+      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed`}
+      style={active ? { "--c": tone } : undefined}
     >
       {children}
     </button>

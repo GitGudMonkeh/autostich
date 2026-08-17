@@ -1117,14 +1117,17 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   „← Zurück"-Sub-Navigation (Upgrade/Ersetzen) vermengen. Aktiv, sobald in dieser Phase etwas geschah. */}
               {!removeFor && (phase === "choose" || phase === "move") && (
                 <div className="flex gap-2 mb-2">
-                  <button onClick={doArchUndo} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
-                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
-                  <button onClick={doArchReset} disabled={!canArchUndo} className="flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
-                    style={{ background: "#20202a", border: "1px solid #3a3a46", opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
+                  {/* #kante: Diese Leiste trug bis zuletzt das Menü-Grau (#20202a) mitten in der Petrol-Welt —
+                      sie sitzt weit weg vom Rest der Datei und war beim ersten Durchgang durchgerutscht.
+                      Als Kanten-Knöpfe erben sie den Grund des Architekten automatisch. */}
+                  <button onClick={doArchUndo} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+                    style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
+                  <button onClick={doArchReset} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+                    style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
                 </div>
               )}
               {removeFor ? (
-                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.otherPlan")}</button>
+                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="as-edge-neutral as-edge-thin w-full rounded-lg py-2 text-xs font-bold">{t("arch.otherPlan")}</button>
               ) : phase === "choose" ? (
                 // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
                 // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").

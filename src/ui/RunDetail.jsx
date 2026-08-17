@@ -63,9 +63,9 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie im Victory-Screen. */}
               {hasArch && (
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
-                  <button onClick={() => setShowArch((v) => !v)} className="px-2 py-1 rounded-lg font-bold"
-                    style={showArch ? { background: `${ARCH_CAT.value.color}22`, border: `1px solid ${ARCH_CAT.value.color}`, color: "#cfe3f5" }
-                                    : { background: "#20202a", border: "1px solid #3a3a46", color: "#8a8a92" }}>
+                  <button onClick={() => setShowArch((v) => !v)}
+                    className={`${showArch ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
+                    style={showArch ? { "--c": ARCH_CAT.value.color } : undefined}>
                     🏗 Gebäude {showArch ? "an" : "aus"}
                   </button>
                   {showArch && archCatList().map(([k, v]) => (

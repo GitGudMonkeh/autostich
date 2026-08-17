@@ -138,11 +138,10 @@ export function FeedbackModal({ onClose }) {
                 <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.kind")}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {KINDS.map((kk) => (
+                    /* #kante: gewählte Kategorie mit violetter Kante statt gefüllter Fläche. */
                     <button key={kk} type="button" onClick={() => setKind(kk)}
-                      className={chipCls}
-                      style={kind === kk
-                        ? { background: "#8a7de0", color: "#141419", border: "1px solid #8a7de0" }
-                        : { background: "#20202a", color: "#c8c8d0", border: "1px solid #30303a" }}>
+                      className={`${kind === kk ? "as-edge" : "as-edge-neutral"} as-edge-thin ${chipCls}`}
+                      style={kind === kk ? { "--c": "#8a7de0" } : undefined}>
                       {t(`feedback.kind.${kk}`)}
                     </button>
                   ))}

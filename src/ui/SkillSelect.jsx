@@ -129,6 +129,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const prevG = nPages > 1 ? groups[(page - 1 + nPages) % nPages] : null;
   const nextG = nPages > 1 ? groups[(page + 1) % nPages] : null;
   const detailOpen = !!curG && openArch === curG.arch;
+  /* #kante: Der Rahmen der Auswahl trägt die Farbe des GEZEIGTEN Archetyps statt eines festen Violett — beim
+     Blättern durch die Fraktionen wechselt er mit. Zusammen mit den Karten (die ihre Seltenheit tragen)
+     ergibt das zwei Achsen ohne Konkurrenz: der Rahmen sagt „wo bin ich", die Karten „wie gut ist das".
+     phaseCard erwartet den Ton zusätzlich als "r,g,b" für seine rgba()-Schichten. */
+  const archAccent = curG
+    ? { c: curG.meta.color, rgb: [1, 3, 5].map((i) => parseInt(curG.meta.color.slice(i, i + 2), 16)).join(",") }
+    : PHASE_ACCENTS.violet;
   const groupKws = curG ? (PASSIVE_KEYWORDS[curG.arch] || []) : [];
   const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
@@ -161,7 +168,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
             Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
             bleibt die Karte konstant, nur der Inhalt darunter scrollt. */}
-        <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card" style={{ ...phaseCard(PHASE_ACCENTS.violet), height: "min(92dvh, 760px)" }}>
+        <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card" style={{ ...phaseCard(archAccent), height: "min(92dvh, 760px)" }}>
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
@@ -278,9 +285,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const deactivates = !!arch && ARCH_LOSS[arch] && archetypeOf(pending) !== arch
                     && held.filter((h) => archetypeOf(h.id) === arch).length === 1;
                   return (
+                  /* #kante: Ersetzen-Liste — die Kante warnt. Rot, wenn dieser Tausch die letzte Karte einer
+                     Fraktion abgibt und damit deren Passiv abschaltet; sonst die Fraktionsfarbe des Skills. */
                   <button key={s.id} onClick={() => { pick(pending, s.id); setPending(null); }}
-                    className="text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110"
-                    style={{ background: "#20202a", border: `1px solid ${deactivates ? "#d1462f" : ac(s.id).color + "66"}` }}>
+                    className={`as-edge-card${deactivates ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110`}
+                    style={{ "--c": deactivates ? "#d1462f" : ac(s.id).color }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
                       {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
@@ -299,7 +308,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   );
                 })}
               </div>
-              <button onClick={() => setPending(null)} className="w-full mt-3 rounded-lg py-2 text-sm font-bold" style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>{t("skill.cancel")}</button>
+              <button onClick={() => setPending(null)} className="as-edge-neutral w-full mt-3 rounded-lg py-2 text-sm font-bold">{t("skill.cancel")}</button>
             </div>
           </div>
         )}

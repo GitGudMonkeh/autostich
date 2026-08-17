@@ -102,9 +102,12 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                 {curG.list.map((s) => {
                   const meta = ac(s.id);
                   return (
+                    /* #kante: Legendäre Wahl — Kanten-Karte MIT Schein UND dem animierten Goldrahmen
+                       (`as-legendary`). Der einzige Ort außer den Freischaltungen im Endscreen, wo beides
+                       zusammenkommt: hier wählt man nur einmal pro Lauf, und das darf man sehen. */
                     <button key={s.id} onClick={() => onPick(s.id)}
-                      className="text-left rounded-xl p-4 transition-all hover:brightness-110 flex flex-col gap-2"
-                      style={{ background: "#20202a", border: `1px solid ${GOLD}`, boxShadow: `0 0 12px ${GOLD}22` }}>
+                      className="as-edge-card is-sel as-legendary text-left rounded-xl p-4 transition-all hover:brightness-110 flex flex-col gap-2"
+                      style={{ "--c": GOLD }}>
                       <div className="flex items-center gap-2">
                         <ArchIcon meta={meta} size={18} />
                         <span className="font-bold text-lg leading-tight" style={{ color: GOLD }}>{s.name}</span>

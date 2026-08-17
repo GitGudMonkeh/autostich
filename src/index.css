@@ -924,6 +924,20 @@ button { font-family: inherit; }
   border-left: 4px solid color-mix(in srgb, #9b82f0 80%, transparent);
   color: color-mix(in srgb, #d9ccff 50%, #ffffff);
 }
+/* „↻ Spielen" neben dem Seed-Feld. Als Klasse statt inline-style, damit der Rahmen ab 1400 px vom
+   Hover-Schein übernommen werden kann.
+   #kante: Grund und Rahmen sind jetzt die der neutralen Kanten-Knöpfe. Die Hover-Regel weiter unten setzt
+   ohnehin schon eine linke Kante in der Deckfarbe — sie hatte bis eben nur keine, auf der sie aufbauen konnte. */
+.as-seed-play {
+  background: rgba(12, 12, 18, .5);
+  border: 1px solid rgba(150, 150, 170, .18);
+  border-left: 3px solid rgba(150, 150, 170, .35);
+  color: #b9b9c6;
+}
+
+/* Der Wochen-Chip am Ranglisten-Knopf. Grundfassung = die bisherigen inline-Werte (Press Start 2P
+   kommt weiterhin aus `.font-pixel`); die Desktop-Fassung steht in der 1400er-Media-Query. */
+.as-week-chip { background: #241d3a; color: #9b82f0; }
 
 /* ============================================================================
    KANTE STATT FLÄCHE — dieselbe Sprache für Knöpfe und Auswahlkarten (#kante)
@@ -1221,13 +1235,41 @@ button { font-family: inherit; }
   }
 
   /* Der Kopf verliert seine deckende Leiste (sonst liegt ein Balken über dem Deckbild) und bleibt
-     trotzdem sticky — beim Scrollen langer Listen ist das Guthaben die wichtigste Zahl im Bild. */
+     trotzdem sticky — beim Scrollen langer Listen ist das Guthaben die wichtigste Zahl im Bild.
+
+     Aus vier gestapelten Bändern (Titel · Guthaben+Knöpfe · Zähler · Hinweis, zusammen 172 px) wird
+     EINE Zeile. Der Kniff ist `display: contents` an der inneren Guthaben-Zeile: sie verschwindet als
+     Box, ihre Kinder werden direkte Rasterfelder — so lassen sich Titel, Guthaben, Zähler und Knöpfe
+     nebeneinander setzen, ohne die DOM-Reihenfolge anzufassen (unter 1400 px muss sie die alte
+     bleiben). Spart rund 95 px, die der Baum auf flachen Fenstern zum Scrollen gebraucht hätte. */
   .up-head {
     background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    column-gap: 22px;
+    padding-top: 10px !important;
+    padding-bottom: 8px !important;
+  }
+  .up-headrow { display: contents; }
+  .up-head > h2 { grid-column: 1; grid-row: 1; }
+  .up-headrow > span:first-child { grid-column: 2; grid-row: 1; }   /* das Guthaben */
+  .up-readout { grid-column: 3; grid-row: 1; padding-left: 22px; border-left: 1px solid rgba(150, 150, 170, .18); }
+  .up-readout > div { margin-top: 0 !important; }
+  .up-actions { grid-column: 4; grid-row: 1; }
+  .up-hair { grid-column: 1 / -1; grid-row: 2; margin-top: 10px !important; }
+
+  /* Respec und Schließen waren 80 × 30 bzw. 106 × 42 px — ungleich hoch und beide unter dem
+     44-px-Mindestklickziel, das für den Rest des Desktop-Passes gilt. Ab hier tragen beide dieselbe
+     Größe; `.up-actions > *` trifft sie, ohne dass eine der beiden Knopf-Sorten ihre Optik verliert. */
+  .up-actions > * {
+    font-size: 15px !important;
+    padding: 11px 18px !important;
+    border-radius: 8px;
   }
   /* Die Haarlinie sitzt an der Kartenecke; ohne Karte hat sie dort nichts mehr zu suchen. */
   .up-head > div[aria-hidden="true"]:first-child { display: none; }
@@ -1268,6 +1310,57 @@ button { font-family: inherit; }
   .up-branch > .mt-4 { margin-top: 12px; }
 
   .up-legend { margin-top: 16px !important; font-size: 13px !important; }
+
+  /* ==========================================================================
+     #desktop — Rückmeldung beim Überfahren
+     --------------------------------------------------------------------------
+     Bis hierher hoben sich die Knöpfe beim Überfahren nur an. Auf Desktop, wo eine Maus da ist und
+     der Zeiger über die Fläche wandert, ist das wenig: Das Anheben sieht man erst, wenn man schon
+     getroffen hat. Der Rahmen zieht ab hier zusätzlich den Deckton an und wirft einen Schein — nach
+     außen und, ganz schwach, nach innen. Auf Touch greift `:hover` ohnehin nicht, und unter 1400 px
+     bleibt es beim reinen Anheben.
+
+     `:hover` steht bewusst ohne `@media (hover: hover)`: Ein Desktop-Fenster unter 1400 px gibt es,
+     ein Touchgerät mit 1400 CSS-Pixeln Breite praktisch nicht. Die Breite ist hier das schärfere
+     Kriterium und sie steht schon in der umgebenden Regel.
+     ========================================================================== */
+  .as-cta-primary:hover,
+  .as-cta-ghost:hover,
+  .as-ranked-btn:hover,
+  .as-tut-btn:hover,
+  .as-seed-play:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--deck-a1, #26c6e6) 68%, transparent);
+    border-left-color: var(--deck-a1, #26c6e6);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--deck-a1, #26c6e6) 40%, transparent),
+                0 0 20px -3px var(--deck-a1, #26c6e6),
+                inset 0 0 26px -14px var(--deck-a1, #26c6e6);
+  }
+
+  /* Die Verwaltungsliste: Fläche hellt auf, der Farbanlauf zieht an und die Kante wächst von 4 auf
+     6 px. KEIN Schein am Rahmen — die Liste sitzt in EINEM Glasrahmen, ein Leuchten je Zeile würde
+     gegen diesen Rahmen arbeiten. Angehoben wird hier auch nicht (steht schon im JSX als
+     `min-[1400px]:hover:translate-y-0`): eine Liste, die beim Überfahren hüpft, wirkt unruhig.
+     `!important` beim Streifen, weil seine Farbe inline aus dem JSX kommt. */
+  .as-hub-list .as-hub-tile:hover { background: rgba(255, 255, 255, .06); }
+  .as-hub-list .as-hub-tile:hover .as-hub-stripe {
+    border-left-width: 6px !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--row-tone) 30%, transparent) 0%, transparent 58%) !important;
+  }
+
+  /* --- Wochen-Chip am Ranglisten-Knopf ---------------------------------------
+     Orbitron im Deckton statt Press Start 2P im festen Violett. Zwei Selektoren, und das ist kein
+     Versehen: `.as-week-chip` allein (0,1,0) verliert gegen `[data-skin="crt"] .font-pixel` (0,2,0),
+     das die Pixel-Schrift setzt. Der zweite Selektor hat dieselbe Spezifität und steht später,
+     schlägt sie also — ohne dass irgendwo `!important` nötig wird. */
+  .as-week-chip,
+  [data-skin="crt"] .as-week-chip {
+    font-family: "Orbitron", ui-monospace, monospace;
+    font-weight: 600;
+    letter-spacing: .05em;
+    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 16%, #12121a);
+    color: color-mix(in srgb, var(--deck-a2, #b3a8ff) 62%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--deck-a1, #9b82f0) 34%, transparent);
+  }
 }
 
 /* Flache Desktop-Fenster: 27 Knoten nebeneinander brauchen Höhe. Auf 1080 px geht der Baum ohne Scrollen
@@ -1279,7 +1372,19 @@ button { font-family: inherit; }
   .up-root { padding: 10px 36px 12px !important; }
   .up-branches { gap: 22px; }
   .up-branch { padding: 12px 16px 16px; }
-  .up-legend { margin-top: 12px !important; }
+  /* 8 statt 12 px: nach dem Kopfumbau blieben exakt 2 px Überhang stehen — und 2 px genügen, damit
+     der Browser eine Scrollleiste einblendet. Die vier Pixel hier sind billiger als jede Kürzung am
+     Inhalt. */
+  .up-legend { margin-top: 8px !important; }
+
+  /* Der Kopfumbau allein reichte nicht: auf 1638 × 857 (Ultrawide unter 125 % Skalierung) blieben
+     danach noch 73 px Überhang. Diese drei Straffungen holen sie herein — gemessen im laufenden
+     Spiel: Panel-Polster 36 px, Panel-Abstand 15 px, flachere Pillen 22 px, macht 0 px Überhang.
+     Sie greifen NUR auf flachen Fenstern; auf 1920 × 1080 passte der Baum schon vorher und behält
+     dort seinen luftigen Rhythmus. */
+  .up-branch .rounded-2xl { padding: 9px; }
+  .up-branch .grid { gap: 7px; }
+  .up-branch .as-edge-card { padding-top: 6px; padding-bottom: 6px; }
 }
 
 /* Flache Desktop-Fenster: Auf 1080 px Höhe geht der Startbildschirm mit großzügigem Rhythmus genau auf.
