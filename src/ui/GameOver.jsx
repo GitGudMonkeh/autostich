@@ -283,8 +283,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   <div key={u.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
                     <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ {u.label}</span>
                     {nav && nav.fn && (
-                      <button onClick={nav.fn} className="shrink-0 text-[11px] font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
-                        style={{ background: "#d4a63a", color: "#141419" }}>{nav.label} ›</button>
+                      /* #kante: Weiterleitung in der Freischaltungs-Zeile — starker Kanten-Knopf statt
+                         gefüllter Goldtaste. Die Zeile drumherum behält bewusst ihre Fläche. */
+                      <button onClick={nav.fn} className="as-edge-strong as-edge-thin shrink-0 text-[11px] font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
+                        style={{ "--c": "#d4a63a" }}>{nav.label} ›</button>
                     )}
                   </div>
                 );

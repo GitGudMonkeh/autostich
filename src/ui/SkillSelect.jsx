@@ -241,10 +241,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               {t("skill.consumer.post", { kind: CONSUMER_LABEL[pendingConsumer.type] })}
             </div>
             <div className="flex gap-2">
+              {/* #kante: Bestätigen als starker Kanten-Knopf, Abbrechen neutral. */}
               <button onClick={() => { pick(pendingConsumer.id, pendingConsumer.replace); setPendingConsumer(null); }}
-                className="px-3 py-1.5 rounded font-bold transition-all hover:brightness-110" style={{ background: "#d4a63a", color: "#0c0c10" }}>{t("skill.replace")}</button>
+                className="as-edge-strong as-edge-thin px-3 py-1.5 rounded font-bold transition-all hover:brightness-110"
+                style={{ "--c": "#d4a63a" }}>{t("skill.replace")}</button>
               <button onClick={() => setPendingConsumer(null)}
-                className="px-3 py-1.5 rounded transition-all hover:opacity-80" style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#e8e8ea" }}>{t("skill.cancel")}</button>
+                className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded transition-all hover:opacity-80">{t("skill.cancel")}</button>
             </div>
           </div>
         )}

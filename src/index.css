@@ -810,9 +810,15 @@ button { font-family: inherit; }
    benutzen beide Overlays dieselbe Reihe, deshalb der neutrale Name. */
 .as-chiprow { scrollbar-width: none; }
 .as-chiprow::-webkit-scrollbar { display: none; }
-.as-chip { border: 1px solid #33333e; background: #1a1a21; color: #9a9aa4; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
-.as-chip:hover { color: #e8e8ea; border-color: #4a4258; }
-.as-chip-on { background: #241f42; border-color: #4a3f78; color: #e5e0ff; }
+/* #kante: Sprung-Chips (Optionen-Sektionen, Glossar-Kategorien) in der Kanten-Familie — Grund und Rahmen
+   wie bei den neutralen Knöpfen, der gewählte Chip trägt eine violette Kante statt einer gefüllten Fläche.
+   Die Rundung kommt weiter aus dem JSX (`rounded-full`); wer sie eckig will, ändert sie dort. */
+.as-chip { border: 1px solid rgba(150, 150, 170, .18); border-left: 3px solid rgba(150, 150, 170, .35);
+  background: rgba(12, 12, 18, .5); color: #9a9aa4; cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s; }
+.as-chip:hover { color: #e8e8ea; border-left-color: #6a6a85; }
+.as-chip-on { border-left-color: #8a7de0; color: #e5e0ff;
+  background: linear-gradient(90deg, color-mix(in srgb, #8a7de0 20%, #0e0e14) 0%, #0e0e14 45%); }
 .as-chip:focus-visible { outline: 2px solid #8a7de0; outline-offset: 2px; }
 .gloss-term-row:hover { background: #1a1a22; }
 
@@ -980,6 +986,17 @@ button { font-family: inherit; }
    Beide bleiben lesbar; sie treten nur zurück, damit das Kaufbare die Aufmerksamkeit bekommt. */
 .as-edge-card.is-locked { opacity: .45; }
 .as-edge-card.is-soon   { opacity: .55; border-left-style: dashed; }
+
+/* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
+   man beim Scrollen, was vom Standard abweicht, ohne jeden Schalter einzeln zu lesen.
+   Warum `:has()` statt eines Props an der Zeile: der Zustand steckt im Schalter, den die Zeile nur als
+   `children` bekommt — ihn nach oben zu reichen hieße, jede einzelne Aufrufstelle anzufassen. So bleibt
+   die Zeile dumm, und die Anzeige kann gar nicht erst auseinanderlaufen.
+   Nur echte Ein/Aus-Schalter (`role="switch"`) färben; Mehrfachauswahlen (Auto/An/Aus) haben kein „an".
+   Beide Werte stehen hier und NICHT als inline-style an der Zeile: inline schlägt jedes Stylesheet, der
+   graue Standard hätte das Grün also nie durchgelassen. */
+.as-opt-row { --c: #3a3a48; }
+.as-opt-row:has([role="switch"][aria-checked="true"]) { --c: #5ab87a; }
 
 /* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
    reicht ihre Kinder unverändert an die Flex-Spalte des Startbildschirms durch. Reihenfolge und Abstände

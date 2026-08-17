@@ -86,8 +86,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose })
           <TopHairline />
           <div className="flex items-center gap-2.5">
             <button onClick={onBack} title={t("deckdetail.back.title")} aria-label={t("deckdetail.back.title")}
-              className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#c8c8d0" }}>{t("deckdetail.back")}</button>
+              className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold">{t("deckdetail.back")}</button>
             <FactionIcon type={archetype} size={26} />
             <div className="min-w-0">
               <h2 className="text-lg font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
@@ -104,11 +103,13 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose })
             {TABS.map((t) => {
               const on = t.key === tab;
               return (
+                /* #kante: Reiter mit Signal an der Unterkante, in der Deckfarbe. */
                 <button key={t.key} onClick={() => setTab(t.key)} role="tab" aria-selected={on}
-                  className="flex-1 text-[12px] font-semibold tracking-wide px-3 py-1.5 rounded-lg transition-colors"
+                  className="flex-1 text-[12px] font-semibold tracking-wide px-3 pt-1.5 pb-1 rounded-t-md transition-colors"
                   style={on
-                    ? { color, background: "#131318", border: `1px solid ${color}55`, boxShadow: `0 0 14px -8px ${color}` }
-                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                    ? { color: "#fff", borderBottom: `2px solid ${color}`,
+                        background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${color} 14%, transparent))` }
+                    : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
                   {t.label}
                 </button>
               );
@@ -196,10 +197,11 @@ function SkillGroup({ title, skills, color, legendary = false }) {
       </div>
       <div className="grid gap-2">
         {skills.map((s) => (
-          <div key={s.id} className="rounded-xl px-3 py-2.5"
-            style={legendary
-              ? { background: `linear-gradient(180deg, ${color}1a, #16140e)`, border: `1px solid ${color}55`, borderLeft: `3px solid ${color}` }
-              : { background: `linear-gradient(180deg, ${color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}` }}>
+          /* #kante: Die Zeile hatte die Kante schon (3 px links) — sie bekommt jetzt die Form der Familie:
+             waagerechter Farbanlauf statt senkrechtem Verlauf, leiserer Rahmen. Die Farbe bleibt die des
+             Decks; legendäre Skills heben sich weiter durch Stern und kräftigere Kante ab (`is-sel`). */
+          <div key={s.id} className={`as-edge-card as-edge-thin${legendary ? " is-sel" : ""} rounded-xl px-3 py-2.5`}
+            style={{ "--c": color }}>
             <div className="flex items-center gap-1.5 flex-wrap">
               {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
               <span className="text-[13px] font-bold" style={{ color }}>{skillDef(s.id)?.name || s.name}</span>

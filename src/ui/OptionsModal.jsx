@@ -22,10 +22,12 @@ function Toggle({ on, onClick }) {
       aria-checked={on}
       onClick={onClick}
       className="relative rounded-full transition-all shrink-0"
+      /* #kante: „an" ist im Spiel grün (wie die Aktiv-Marken in der Werkstatt), nicht gold — Gold gehört
+         der Währung und dem Ziel einer Phase. Die Zeile darum färbt sich in derselben Farbe. */
       style={{
         width: 46, height: 26,
-        background: on ? "#d4a63a" : "#30303a",
-        border: `1px solid ${on ? "#d4a63a" : "#3a3a44"}`,
+        background: on ? "#5ab87a" : "#30303a",
+        border: `1px solid ${on ? "#5ab87a" : "#3a3a44"}`,
       }}
     >
       <span
@@ -61,9 +63,11 @@ function Segmented({ value, options, onChange }) {
 /* Eine Options-Zeile: Titel + Beschreibung links, Steuerung rechts. `stack` (#363) → Text OBEN, Steuerung darunter
    (voll-breit) — für Zeilen mit breiter Steuerung + langem Text (z. B. „Effekte reduziert"), damit auf schmalen
    Breiten weder Text noch die Knöpfe gequetscht werden. */
+/* #kante: Kanten-Zeile mit schmaler Kante. Ob sie grün wird, entscheidet index.css anhand des Schalters
+   in `children` (`.as-opt-row:has(…)`) — die Zeile selbst muss den Zustand gar nicht kennen. */
 function Row({ title, desc, children, stack = false }) {
   return (
-    <div className={`rounded-lg p-3 ${stack ? "flex flex-col gap-2.5" : "flex items-center gap-3"}`} style={{ background: "#20202a" }}>
+    <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
       <div className="flex-1">
         <div className="font-bold text-sm">{title}</div>
         {desc && <div className="text-sm opacity-70 leading-snug">{desc}</div>}
@@ -105,7 +109,8 @@ function Section({ id, title, innerRef, children }) {
 function JumpChip({ label, active, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-full" + (active ? " as-chip-on" : "")}>
+      /* #kante: eckig statt Pille — an einer runden Form würde die linke Kante zur Sichel. */
+      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
       {label}
     </button>
   );

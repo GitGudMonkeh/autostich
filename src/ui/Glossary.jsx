@@ -172,7 +172,8 @@ export function GlossaryOverlay({ onClose }) {
 function Chip({ label, dot, active, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-full" + (active ? " as-chip-on" : "")}>
+      /* #kante: eckig statt Pille — an einer runden Form würde die linke Kante zur Sichel. */
+      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
       {dot && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: dot }} />}
       {label}
     </button>
