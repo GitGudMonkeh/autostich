@@ -356,7 +356,7 @@ export function Autostich() {
     prevBuys.current = n;
   }, [state.shop?.purchaseLog?.length]);
   // Musik (#111): Titel-Abo für die Anzeige + phasengesteuerte Wiedergabe. musicHome = Menü ODER Gameover
-  // → „Relay of Multipliers"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
+  // → „Midnight Drive"; sonst (im Run) ein zufälliger Track aus dem harmonisierten Pool. Lautstärke/Mute spiegeln.
   const [musicTitle, setMusicTitle] = useState(null);
   useEffect(() => music.subscribe(setMusicTitle), []);
   const musicHome = state.phase === "menu" || state.phase === "gameover";

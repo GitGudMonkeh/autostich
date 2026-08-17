@@ -1,5 +1,5 @@
 /* Musik-Manager (#111, Sound Phase 2) — HTMLAudio (Streaming + Loop), KEIN game/-Bezug.
-   Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Relay of Multipliers"; im Run ein zufälliger Track
+   Getrennt vom SFX-Web-Audio (audio.js): Menü & Victory = „Midnight Drive"; im Run ein zufälliger Track
    aus dem harmonisierten Pool (mp3_norm). Autoplay-Gate: die erste User-Geste ruft unlock().
    Eigene Lautstärke (Optionen · Default 0,2); globaler „Ton stumm" mutet auch die Musik. */
 /* #F-01 Medien-Auslagerung: Die Musik liegt NICHT mehr im Vite-Graph (früher `import … from "../assets/music/*.m4a"`).
@@ -14,9 +14,8 @@
    Dateinamen, sonst behalten Clients die alte Fassung. Neue Tracks sind davon nicht betroffen. */
 const MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE || "/autostich/media/";
 const track = (file) => `${MEDIA_BASE}music/${file}.m4a`;
-const relay_of_multipliers = track("relay_of_multipliers");
 // #171: neu normalisierte Tracks (EBU R128, −14 LUFS — wie der Bestand) im Run-Pool.
-// Main-Screen/Victory spielt „Relay of Multipliers".
+// Main-Screen/Victory spielt „Midnight Drive" (MENU_TRACK).
 const formation_shuffle = track("formation_shuffle");
 // v0.4-Batch (10 neue calm-Tracks, Suno) — aufbereitet auf −14 LUFS + AAC/.m4a 128k via maintenance/normalize-music.mjs.
 const amber_standby = track("amber_standby");
@@ -76,7 +75,7 @@ const neon_apocalypse = track("neon_apocalypse");
 const fast_lane = track("fast_lane");
 const chrome_runner = track("chrome_runner");
 
-const MENU_TRACK = { title: "Midnight Drive", url: midnight_drive }; // Main-Screen + Victory (Relay bleibt reiner mid-Run-Track)
+const MENU_TRACK = { title: "Midnight Drive", url: midnight_drive }; // Main-Screen + Victory
 
 // Intensitäts-Stufen: jeder Run-Track trägt ein `tier`. Der aktuelle SCORE (state.score) wählt die aktive Stufe
 // (von Runden ENTKOPPELT — die Musik folgt jetzt der erspielten Punktzahl); innerhalb einer Stufe werden Tracks
@@ -114,7 +113,6 @@ const POOL = [
   { title: "Faded Neon", url: faded_neon, tier: "calm" },
   // mid
   { title: "Neon Pulse", url: neon_pulse, tier: "mid" },                         // #: von calm → mid verschoben
-  { title: "Relay of Multipliers", url: relay_of_multipliers, tier: "mid" },
   { title: "Neon Card Game", url: neon_card_game, tier: "mid" },
   { title: "Neon Cruise", url: neon_cruise, tier: "mid" },
   { title: "Chrome Horizon", url: chrome_horizon, tier: "mid" },
