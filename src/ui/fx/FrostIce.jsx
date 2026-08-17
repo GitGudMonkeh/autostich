@@ -233,13 +233,13 @@ function renderFrostBitmap(front, field, RDPR, nA, nB) {
 
 /* FrostIce — KIND der Kartenvorderseite, UNTER dem Moos (z-1). Blittet das (gecachte) Frost-Bitmap strikt aufs
    Karten-RoundRect; Funkeln/Puls laufen live per rAF (statisch bei reduced). Karten-Bewegungen erledigt CSS. */
-export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColor = null, deckColor2 = null }) {
+export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColor = null, deckColor2 = null, active = true }) {
   const hostRef = useRef(null);
   // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 als Bühnenlicht.
   const nA = deckTint && deckColor ? deckColor : TUNE.NEON_A;
   const nB = deckTint && deckColor ? (deckColor2 || deckColor) : TUNE.NEON_B;
-  const stateRef = useRef({ mass, reduced, nA, nB });
-  stateRef.current = { mass, reduced, nA, nB };
+  const stateRef = useRef({ mass, reduced, nA, nB, active });
+  stateRef.current = { mass, reduced, nA, nB, active };
   const syncRef = useRef(null);
 
   useEffect(() => {
@@ -305,7 +305,9 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       if (disposed) return;
       clockT += Math.min(50, now - last); last = now;
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
-      if (mass <= 0 || stateRef.current.reduced || document.visibilityState === "hidden") { compose(); raf = 0; return; } // statisch/aus → rAF anhalten
+      // #perf-overlay-2: `active` false = Brett von einem Vollbild-Overlay verdeckt (Architekt/Perk/Skill/Formation).
+      //   Wie „reduced": einmal statisch zeichnen, rAF anhalten. Der Architekt allein sind 13 von 50 Runden.
+      if (mass <= 0 || stateRef.current.reduced || stateRef.current.active === false || document.visibilityState === "hidden") { compose(); raf = 0; return; } // statisch/aus → rAF anhalten
       compose();
       raf = requestAnimationFrame(frame);
     }
@@ -324,7 +326,7 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
         fading = false;   // reduced/verdeckt oder erster Draw → kein Fade
       }
       prevFront = front;
-      const run = mass > 0 && !stateRef.current.reduced && document.visibilityState !== "hidden";
+      const run = mass > 0 && !stateRef.current.reduced && stateRef.current.active !== false && document.visibilityState !== "hidden";
       if (run) { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
       else { if (raf) { cancelAnimationFrame(raf); raf = 0; } compose(); }   // reduced/aus → einmal statisch zeichnen
     }
@@ -342,7 +344,7 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
      
   }, []);
 
-  useEffect(() => { syncRef.current?.(); }, [mass, reduced, nA, nB]);
+  useEffect(() => { syncRef.current?.(); }, [mass, reduced, nA, nB, active]);
 
   // z-1 = AUF der Karte, aber UNTER dem Moos (z-2) im selben Karten-Wrapper. Blitz (Panel-IonStorm) liegt darüber (ok).
   return <div ref={hostRef} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }} />;

@@ -47,15 +47,16 @@ const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, depthScale = 1, floorBottom = null, sun = true, wire = false }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, depthScale = 1, floorBottom = null, sun = true, wire = false, active = true }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale = Musik-Ausschlag (Höhen-Delta je
   // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag). yBias = Feld nach OBEN schieben (0..1 × H),
   // damit der Showcase das Feld höher/mittiger setzen kann als das In-Game-Panel (dort yBias=0 → unverändert).
   // depthScale = Reihen-Abstand-Faktor (< 1 = flacheres Feld, zieht die hinteren Reihen nach vorn; Showcase < 1,
   // In-Game = 1 → unverändert).
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire };
+  const syncRef = useRef(null); // #perf-overlay-2: start/stop aus dem Mount-Effekt nach außen (Muster wie FrostIce)
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -269,13 +270,17 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       lastT = now;
       render();
     }
-    function start() { if (!raf && !disposed && document.visibilityState !== "hidden") raf = requestAnimationFrame(frame); }
+    // #perf-overlay-2: `active` false = Brett von einem Vollbild-Overlay verdeckt → Loop gar nicht erst starten.
+    function start() { if (!raf && !disposed && propsRef.current.active !== false && document.visibilityState !== "hidden") raf = requestAnimationFrame(frame); }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
 
     resize();
     const ro = new ResizeObserver(() => { resize(); if (propsRef.current.reduced) render(); });
     ro.observe(host);
     const onVis = () => { if (document.visibilityState === "hidden") stop(); else start(); };
+    // #perf-overlay-2: derselbe Schalter für „Brett verdeckt". Der Mount-Effekt hat keine Prop-Deps, also muss der
+    //   Wechsel von außen angestoßen werden (Effekt unten) — sonst liefe der Loop bis zum Unmount weiter.
+    syncRef.current = () => { if (propsRef.current.active === false) stop(); else start(); };
     document.addEventListener("visibilitychange", onVis);
 
     if (propsRef.current.reduced) render();  // Standbild — kein Loop
@@ -289,6 +294,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     };
     // Canvas EINMAL bauen; Farben/reduced kommen über propsRef in den Loop.
   }, []);
+
+  useEffect(() => { syncRef.current?.(); }, [active]);
 
   return <div ref={hostRef} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />;
 }

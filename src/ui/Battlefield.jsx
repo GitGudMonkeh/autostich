@@ -950,10 +950,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Aktiv bei voll ionisierter Karte (ionStacks >= ION_MAX_STACKS) bzw. ?blitzframe=1 (Dev). Farbe: Standard-Cyan
           oder Deckfarbe (archDeckColor). #spezial: immer aktiv (nicht mehr Preview/Dev-gegatet). */}
       {((t.pCard.ionStacks || 0) >= ION_MAX_STACKS || BLITZ_FORCE) && (
-        <Suspense fallback={null}><CardIonStorm active color={archDeckColor ? (deckA1 || "#5ec8f0") : "#5ec8f0"} reduced={reduced} /></Suspense>
+        <Suspense fallback={null}><CardIonStorm active={boardVisible} color={archDeckColor ? (deckA1 || "#5ec8f0") : "#5ec8f0"} reduced={reduced} /></Suspense>
       )}
       {pIceMass > 0 && (
-        <Suspense fallback={null}><FrostIce mass={pIceMass} reduced={reduced} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
+        <Suspense fallback={null}><FrostIce mass={pIceMass} active={boardVisible} reduced={reduced} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
       )}
       {pGrowth > 0 && (
         <Suspense fallback={null}><MossGrow growth={pGrowth} deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} /></Suspense>
@@ -1411,13 +1411,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Hintergrund-Effekt (reiner BG) — Aurora als eigene WebGL-Canvas, z-2 HINTER dem Finisher. */}
       {auroraGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} />
+          <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} active={boardVisible} />
         </div>
       )}
       {/* #345 Neon-Brandung — Plasma-See am unteren Rand, z-2 HINTER dem Finisher. Groß-Ansagen treiben den Impact-Puls. */}
       {neonsurfGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} />
+          <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} active={boardVisible} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
@@ -1426,12 +1426,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <>
           <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} floorBottom={cmZone.floorBottom} />
+              <CubeMatrixField mode="field" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} sun={false} wire={cubematrixWire} floorBottom={cmZone.floorBottom} active={boardVisible} />
             </Suspense>
           </div>
           <div aria-hidden="true" className="absolute inset-0 z-[11] pointer-events-none">
             <Suspense fallback={null}>
-              <CubeMatrixField mode="spots" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} />
+              <CubeMatrixField mode="spots" color={deckA1} color2={deckA2 || deckA1} deckColored={cubematrixDeck} reduced={reduced} lite={lite} active={boardVisible} />
             </Suspense>
           </div>
         </>
@@ -1536,7 +1536,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <BlackholeFx active={holeActive} pulse={holePulse}
           color={blackholeDeck ? (deckA1 || "#4aa0ff") : "#4aa0ff"}
           color2={blackholeDeck ? (deckA2 || deckA1 || "#ff3ea8") : "#ff3ea8"}
-          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced}
+          scale={fxScale} panelRef={panelRef} oppRef={oppSlotRef} backSrc={oppBackImg} reduced={reduced} boardVisible={boardVisible}
           /* #375 Zusammenzieh-Impact am Kollaps-Start: große Nova wuchtiger (gain+bass); rate an den Turbo-Kollaps gekoppelt (spd), bei 2× gedeckelt. */
           onImplode={(big, spd, grew) => { setHoleGrown(false); if (big || grew) audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) }); }} /* #: Kollaps auf 0 → Loop-Bett aus; Implosions-Sound nur bei großem Kollaps (big) oder wenn das Loch vorher ausreichend gewachsen war (grew) */
           /* #380 Nova-Flash NACH dem Zusammenziehen (nur großer Kollaps): der Supernova-Puls (Pegel wie im Gott-Showcase). */
@@ -1601,7 +1601,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && (
             <DeckGlowFieldGL srcDesktop={battlefield.desktop} srcMobile={battlefield.mobile}
-              deckColor={deckA1 || "#7fdcff"} on animate={!reduced} />
+              deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />
           )}
         </div>
       )}

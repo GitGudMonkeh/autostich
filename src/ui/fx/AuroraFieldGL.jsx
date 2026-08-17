@@ -146,7 +146,7 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true, bandScale = 1, bandShift = 0 }) {
+export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true, bandScale = 1, bandShift = 0, active = true }) {
   const canvasRef = useRef(null);
 
   // #313/#342-bugfix: Farbe/Modus als LIVE-Ref, den der Draw-Loop pro Frame liest — NICHT als useEffect-Dep. Sonst riss
@@ -159,6 +159,7 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
   stateRef.current.d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);  // Deck-Default #b06afa
   stateRef.current.deckColored = deckColored;
   stateRef.current.animate = animate;
+  stateRef.current.active = active;   // #perf-overlay-2: false = Brett verdeckt → Schleife tut nichts
   stateRef.current.bandScale = Number.isFinite(bandScale) ? bandScale : 1;   // #359 vertikale Band-Skalierung (Showcase)
   stateRef.current.bandShift = Number.isFinite(bandShift) ? bandShift : 0;   // #359 vertikale Band-Verschiebung (Showcase)
   const dirtyRef = useRef(true);
@@ -240,6 +241,12 @@ export default function AuroraFieldGL({ color = null, color2 = null, deckColored
     let lastDraw = -1e9;
     const frame = (ms) => {
       if (disposed) return;
+      /* #perf-overlay-2: Brett verdeckt → NICHTS tun. Der rAF-Takt läuft bewusst weiter (eine leere Callback ist
+         praktisch gratis und erspart die Neustart-Logik samt Rennen), aber Zeichnen UND `resize()` entfallen —
+         resize liest clientWidth, erzwingt also je Frame ein Layout. Genau dieser Fall war der Befund aus
+         #perf-overlay: die Lauf-UI wird für jede Phase außer menu/gameover gerendert, Architekt/Perk-/Skill-Overlays
+         liegen als `fixed inset-0` DARÜBER und ersetzen das Brett nicht. Der Architekt allein sind 13 von 50 Runden. */
+      if (stateRef.current.active === false) { raf = requestAnimationFrame(frame); return; }
       if (startT === null) startT = ms;
       const sized = resize();
       if (stateRef.current.animate) {

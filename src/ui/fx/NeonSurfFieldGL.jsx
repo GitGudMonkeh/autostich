@@ -95,7 +95,7 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function NeonSurfFieldGL({ color = null, color2 = null, deckColored = false, animate = true, surge = null }) {
+export default function NeonSurfFieldGL({ color = null, color2 = null, deckColored = false, animate = true, surge = null, active = true }) {
   const canvasRef = useRef(null);
 
   // #313/#342-bugfix-Muster: Farbe/Modus/Surge als LIVE-Ref, den der Draw-Loop pro Frame liest — NICHT als useEffect-Dep.
@@ -107,6 +107,7 @@ export default function NeonSurfFieldGL({ color = null, color2 = null, deckColor
   stateRef.current.deckColored = deckColored;
   stateRef.current.animate = animate;
   stateRef.current.surge = surge;
+  stateRef.current.active = active;   // #perf-overlay-2: false = Brett verdeckt → Schleife tut nichts
   const dirtyRef = useRef(true);
   useEffect(() => { dirtyRef.current = true; }, [color, color2, deckColored, animate]);
 
@@ -187,6 +188,9 @@ export default function NeonSurfFieldGL({ color = null, color2 = null, deckColor
     let lastDraw = -1e9;
     const frame = (ms) => {
       if (disposed) return;
+      // #perf-overlay-2: Brett verdeckt → weder zeichnen noch `resize()` (das liest clientWidth = Layout je Frame).
+      //   Der rAF-Takt läuft weiter; eine leere Callback ist praktisch gratis und erspart die Neustart-Logik.
+      if (stateRef.current.active === false) { raf = requestAnimationFrame(frame); return; }
       if (startT === null) startT = ms;
       const sized = resize();
       if (stateRef.current.animate) {

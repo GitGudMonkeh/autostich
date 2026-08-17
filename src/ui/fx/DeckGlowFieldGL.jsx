@@ -94,7 +94,7 @@ function hexToRgb(h, fb) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", on = true, animate = true }) {
+export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, deckColor = "#7fdcff", on = true, animate = true, active = true }) {
   const canvasRef = useRef(null);
   // Live-Werte über Refs → die Zeichenschleife liest sie, ohne dass der GL-Context neu gebaut wird.
   const onRef = useRef(on);
@@ -106,7 +106,9 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
   const reloadRef = useRef(true); // Anforderung: Textur (neu) laden (bei Bildwechsel gesetzt)
 
   useEffect(() => { onRef.current = on; }, [on]);
+  const activeRef = useRef(active); // #perf-overlay-2: false = Brett verdeckt
   useEffect(() => { animRef.current = animate; }, [animate]);
+  useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => { colorRef.current = hexToRgb(deckColor, [0.5, 0.86, 1.0]); }, [deckColor]);
   useEffect(() => { srcsRef.current = { d: srcDesktop, m: srcMobile }; reloadRef.current = true; }, [srcDesktop, srcMobile]);
 
@@ -215,6 +217,12 @@ export default function DeckGlowFieldGL({ srcDesktop = null, srcMobile = null, d
     let lastDraw = -1e9;
     const frame = (ms) => {
       if (disposed) return;
+      /* #perf-overlay-2: Brett verdeckt → NICHTS tun. Der rAF-Takt läuft bewusst weiter (eine leere Callback ist
+         praktisch gratis und erspart die Neustart-Logik samt Rennen), aber Zeichnen UND `resize()` entfallen —
+         resize liest clientWidth, erzwingt also je Frame ein Layout. Genau dieser Fall war der Befund aus
+         #perf-overlay: die Lauf-UI wird für jede Phase außer menu/gameover gerendert, Architekt/Perk-/Skill-Overlays
+         liegen als `fixed inset-0` DARÜBER und ersetzen das Brett nicht. Der Architekt allein sind 13 von 50 Runden. */
+      if (activeRef.current === false) { raf = requestAnimationFrame(frame); return; }
       if (startT === null) startT = ms;
       if (ms - lastDraw >= minMs) {
         lastDraw = ms;

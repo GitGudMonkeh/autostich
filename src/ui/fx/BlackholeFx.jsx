@@ -54,14 +54,18 @@ function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; le
 // Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, onImplode = null, onSize = null, onNova = null, onShudder = null }) {
+/* #perf-overlay-2: `boardVisible` NICHT `active` — `active` ist hier schon vergeben (= Schwarzes Loch als Finisher
+   gewählt). Der Loop läuft sonst auch im Leerlauf weiter (`if (!busy) { raf = …; return; }`), also auch hinter
+   Architekt-/Perk-/Skill-Overlays. */
+export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = "#ff3ea8", scale = 1, panelRef, oppRef, backSrc = null, reduced = false, boardVisible = true, onImplode = null, onSize = null, onNova = null, onShudder = null }) {
   const canvasRef = useRef(null);
   const simRef = useRef(null);
-  const ctrlRef = useRef({ pulse: null, scale: 1, color, color2 });
+  const ctrlRef = useRef({ pulse: null, scale: 1, color, color2, boardVisible: true });
   // #338-4: Offscreen-Cache der eingesogenen Karte = Deck-RÜCKSEITE (pro Auswahl-Phase konstant). Einmal pro backSrc-
   //   Wechsel in Kartengröße vorrendern → pro Flyer nur noch drawImage (kein Neuzeichnen je Wert/Frame, kein num mehr).
   const backRef = useRef({ src: null, canvas: null, ready: false });
   useEffect(() => { ctrlRef.current.scale = scale; }, [scale]);
+  useEffect(() => { ctrlRef.current.boardVisible = boardVisible; }, [boardVisible]);
   useEffect(() => { ctrlRef.current.color = color; ctrlRef.current.color2 = color2; }, [color, color2]);
   useEffect(() => { if (pulse) ctrlRef.current.pulse = pulse; }, [pulse]);
   // #375/#380 SFX-Callbacks im ctrlRef (Sim liest sie im Ticker): onImplode(big, spd) beim Kollaps-START (Zusammenzieh-
@@ -179,6 +183,9 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
 
     let raf = 0, last = 0;
     const step = (now) => {
+      // #perf-overlay-2: Brett verdeckt → nichts simulieren und nichts zeichnen. Der rAF-Takt läuft weiter (leere
+      //   Callback ≈ gratis) und `last` wird zurückgesetzt, damit beim Zurückkehren kein Riesen-dt die Sim durchreißt.
+      if (ctrlRef.current.boardVisible === false) { last = 0; raf = requestAnimationFrame(step); return; }
       if (!last) last = now;
       const dt = Math.min(50, now - last); last = now;
       const ctrl = ctrlRef.current;
