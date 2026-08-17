@@ -32,6 +32,16 @@ const CY = "#26c6e6";     // Allgemein-Akzent
 const VI = "#9b82f0";     // Rarität-/Legendär-Akzent
 const GRUEN = "#54e08a";  // gekauft (Häkchen in der Desktop-Deckspalte) — derselbe Ton wie „aktiv" im Shop
 
+/* #deckui (mobil): Die GENERISCHE UI-Chrome (Reiter, Zweig-Überschriften, Haarlinie, Allgemein-Lanes, „gekauft"-
+   Punkt) zieht jetzt die aktive DECKFARBE statt des festen Violett/Cyan. `--deck-a1/--deck-a2` hängen an `.app-root`
+   (App.jsx) und sind auch außerhalb eines Laufs gesetzt → die Vars kaskadieren in diesen Screen. Der Fallback ist
+   exakt der alte Ton (VI/CY), falls kein Deck aktiv ist. BEWUSST NICHT deck-getönt: Fraktionsfarben (Deck-Identität),
+   Raritäts-Töne (tierColor) und Gold (kaufbar/SP) — die tragen Spielbedeutung, kein reines Chrome. */
+const UI1 = "var(--deck-a1, #9b82f0)"; // war VI — „Decks"-Reiter, Rarität-Lane-Chrome, gekauft-Punkt
+const UI2 = "var(--deck-a2, #26c6e6)"; // war CY — „Allgemein"-Reiter/-Lanes
+// Mobile-Lane-Akzent auf Deckfarbe mappen (Struktur, kein Spiel-Signal). Desktop-VLane bleibt bei lane.accent.
+const genAccentMobile = (a) => (a === CY ? UI2 : UI1);
+
 // Pack-Name zur Anzeigezeit. Gleiche Auflösung wie in der Werkstatt (dort ebenfalls lokal, kein Export).
 const packLabel = (pk) => (pk ? (themeDef(pk.id)?.name ?? pk.name) : "");
 
@@ -341,7 +351,7 @@ function Legend({ where }) {
   return (
     <div className={`flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend up-legend-${where}`}
       style={{ color: "#a6a6b0" }}>
-      <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> {t("upgrades.owned")}</span>
+      <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: UI1 }} /> {t("upgrades.owned")}</span>
       <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
       <span>{t("upgrades.locked")} <span style={{ opacity: .7 }}>{t("upgrades.soon")}</span></span>
     </div>
@@ -388,7 +398,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   return (
     <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel up-card relative"
+      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck up-card relative"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
 
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen + Reiter. */}
@@ -414,7 +424,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               index.css) — dann hat die Reiterzeile nichts mehr zu schalten und wird ausgeblendet. */}
           <div className="flex gap-1.5 mt-3 up-tabs">
             {[{ key: "deck", labelKey: "upgrades.tab.decks" }, { key: "gen", labelKey: "upgrades.tab.gen" }].map((tb) => {
-              const on = tb.key === tab, col = tb.key === "deck" ? VI : CY;
+              const on = tb.key === tab, col = tb.key === "deck" ? UI1 : UI2;
               return (
                 /* #kante: Signal an der Unterkante — wie in der Werkstatt. Bei einer waagerechten Reiterzeile
                    wären senkrechte Striche ein Kampf gegen die Leserichtung. */
@@ -429,7 +439,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               );
             })}
           </div>
-          <div className="up-hair h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${VI}, ${CY}, ${AM})`, opacity: .7 }} />
+          <div className="up-hair h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${UI1}, ${UI2}, ${UI1})`, opacity: .7 }} />
           {/* Knotenzähler + Tipp-Hinweis. Der Wrapper existiert für Desktop: dort rücken beide als EINE
               Einheit neben das Guthaben in die Kopfzeile (s. .up-readout in index.css), statt zwei volle
               Bänder unter der Haarlinie zu belegen. Unterhalb von 1400 px ist er eine reine Klammer ohne
@@ -549,7 +559,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         ) : (
         <div className="up-branches">
         <div className={`up-branch as-ring${tab === "deck" ? "" : " is-off"}`}>
-          <h3 className="up-branch-h" style={{ color: VI }}>{t("upgrades.tab.decks")}</h3>
+          <h3 className="up-branch-h" style={{ color: UI1 }}>{t("upgrades.tab.decks")}</h3>
           <div className="mt-4 grid gap-2.5">
             {ARCHETYPE_ORDER.map((arch) => {
               const meta = archMeta(arch);
@@ -572,23 +582,26 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             {/* Extras: Deck-Reroll + Platzhalter. */}
             <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
               <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>{t("upgrades.legPhase")}</div>
-              <Lane nodes={[nodeDef("deckReroll"), nodeDef("synLeg")]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
+              <Lane nodes={[nodeDef("deckReroll"), nodeDef("synLeg")]} p={p} laneAccent={UI1} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
         </div>
 
         <div className={`up-branch as-ring${tab === "gen" ? "" : " is-off"}`}>
-          <h3 className="up-branch-h" style={{ color: CY }}>{t("upgrades.tab.gen")}</h3>
+          <h3 className="up-branch-h" style={{ color: UI2 }}>{t("upgrades.tab.gen")}</h3>
           <div className="mt-4 grid gap-2.5">
-            {GEN_LANES.map((lane) => (
-              <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(lane.accent)}>
+            {GEN_LANES.map((lane) => {
+              const acc = genAccentMobile(lane.accent); // #deckui: Allgemein-Lanes ziehen die Deckfarbe (Struktur, kein Signal)
+              return (
+              <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(acc)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
-                  <span className="text-[13px] min-[1400px]:text-[16px] font-extrabold" style={{ color: lane.accent }}>{t(lane.nameKey)}</span>
+                  <span className="text-[13px] min-[1400px]:text-[16px] font-extrabold" style={{ color: acc }}>{t(lane.nameKey)}</span>
                   {lane.noteKey && <span className="text-[9.5px] min-[1400px]:text-[12px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
                 </div>
-                <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
+                <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={acc} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         </div>

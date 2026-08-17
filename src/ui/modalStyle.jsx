@@ -17,7 +17,14 @@ export const MENU_PANEL = {
   border: "1px solid #302d40",
 };
 
-export const HAIRLINE = { background: "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)", opacity: 0.85 };
+// #deckui: Die Modal-Haarlinie zieht jetzt DURCHGEHEND die aktive Deckfarbe (--deck-a1/--deck-a2, an .app-root gesetzt,
+//   auch außerhalb eines Laufs). Fallback = der alte Logo-Verlauf (Cyan→Violett), falls kein Deck aktiv ist. Gilt für ALLE
+//   Menü-Overlays über ModalHairline/TopHairline (Optionen, Bestenliste, Upgrade, Werkstatt, GameOver, Glossar, Stats …).
+//   Die IN-RUN-Phasenleiste (PhaseHairline unten) ist bewusst ENTKOPPELT — dort bleibt der feste Verlauf.
+export const HAIRLINE = { background: "linear-gradient(90deg, var(--deck-a1,#26c6e6), var(--deck-a2,#9b82f0), var(--deck-a1,#26c6e6))", opacity: 0.85 };
+// Fester Verlauf NUR für die In-Run-Phasenleiste (Skill/Perk/Legendär/Ziel/Gletscher) — „was während man spielt" behält
+//   sein eigenes Farbsystem, nicht die Deckfarbe.
+const PHASE_HAIRLINE_BG = "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)";
 
 // Die 3px-Gradient-Haarlinie als eigenes, nicht-scrollendes Element (als erstes Kind der Karte platzieren).
 export function ModalHairline() {
@@ -95,7 +102,7 @@ export function phasePanel(accent, base = "#141419") {
 // gebraucht (die Linie ankert an der Kante, unabhängig vom Padding).
 export function PhaseHairline({ className = "" }) {
   return <div aria-hidden="true" className={`absolute top-0 left-0 right-0 z-20 ${className}`}
-    style={{ height: 3, background: HAIRLINE.background, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
+    style={{ height: 3, background: PHASE_HAIRLINE_BG, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
 }
 
 /* #362 — EINHEITLICHE Aktionsleiste (sticky OBEN). EINE Quelle für die Button-Zone aller Panels/Modals: feste
