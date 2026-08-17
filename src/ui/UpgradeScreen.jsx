@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
+import { useIsWide } from "./useIsWide.js"; // #desktop: Deck-Spalte statt Reiterzeile
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
 import { ARCHETYPE_ORDER } from "../game/skills.js";
-import { tierColor } from "../game/rarity.js";
+import { tierColor, tierWeightsForShift } from "../game/rarity.js";
+import { rarityLabel } from "../i18n/labels.js"; // #sprache: Raritätsnamen für die Drop-Verteilung
 import { DeckDetail } from "./DeckDetail.jsx";
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
-  TOTAL_NODES,
+  TOTAL_NODES, COVER_FLOOR, ENERGY_FLOOR, REROLL_BASE, nodeEffects,
   emptyProfile, nodeState, buyNode, respec, ownedCount, treeComplete,
 } from "../game/progression.js";
 import { nodeDef, nodeList, archMeta } from "../i18n/labels.js"; // #sprache: Knoten-/Archetyp-Texte zur Anzeigezeit
@@ -23,6 +25,7 @@ const GOLD = "#d4a63a";   // kaufbar / SP-Währung
 const AM = "#f2a83a";
 const CY = "#26c6e6";     // Allgemein-Akzent
 const VI = "#9b82f0";     // Rarität-/Legendär-Akzent
+const GRUEN = "#54e08a";  // gekauft (Häkchen in der Desktop-Deckspalte) — derselbe Ton wie „aktiv" im Shop
 
 // Allgemein-Zweig als Lanes (Reihenfolge = Kette).
 const GEN_LANES = [
@@ -151,6 +154,106 @@ function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) 
   );
 }
 
+/* ============================================================================
+   #desktop — die senkrechte Fassung (ab 1400 px)
+   ----------------------------------------------------------------------------
+   Statt sechs waagerechter Ketten untereinander stehen die Kategorien als Spalten nebeneinander,
+   die Knoten laufen darin von oben nach unten. Zwei Unterschiede zur Handy-Fassung, die nicht nur
+   Anordnung sind und deshalb eigene Komponenten bekommen:
+
+     · Jeder Knoten trägt seine Wirkung direkt (`node.detail`). Auf dem Handy ist dafür kein Platz,
+       dort klappt sie beim Antippen auf. Bei den Drop-Raten steht viermal derselbe Satz im Register —
+       da zeigt die Desktop-Fassung stattdessen die echte Verteilung aus `tierWeightsForShift`.
+     · Die Kette ist senkrecht, der Pfeil zeigt nach unten.
+
+   Die Handy-Komponenten (Lane/NodePill) bleiben unangetastet.
+   ============================================================================ */
+
+// Bei Drop-Raten sagt `detail` bei allen vier Stufen dasselbe — die Verteilung ist die eigentliche
+// Auskunft. Sonst der Registertext.
+function wirkungOf(node) {
+  if (!node.shift) return node.detail;
+  const w = tierWeightsForShift(node.shift);
+  return [1, 2, 3, 4].map((t) => w[t]).join(" · ");
+}
+
+function VNode({ node, st, accent, selected, onSelect }) {
+  const isOwned = st === "owned", isBuy = st === "buy", isPlaceholder = st === "placeholder";
+  const mark = isOwned ? t("upgrades.state.owned") : isPlaceholder ? t("upgrades.state.soon")
+    : (isBuy || st === "lock-sp") ? t("upgrades.buy.short", { cost: node.cost }) : `🔒 ${node.cost}`;
+  const cls = isPlaceholder ? " is-soon" : (isOwned || isBuy) ? "" : " is-locked";
+  return (
+    <button type="button" onClick={() => onSelect(node.id)} aria-pressed={selected} title={node.detail}
+      className={`up-vnode as-edge-card as-edge-thin${cls}${selected ? " is-sel" : ""}`}
+      style={{ "--c": isOwned ? accent : isBuy ? GOLD : "#8a8a95" }}>
+      <span className="up-vnode-t">{node.label}</span>
+      <span className="up-vnode-w">{wirkungOf(node)}</span>
+      <span className="up-vnode-m" style={{ color: isOwned ? accent : isBuy ? GOLD : "#8a8a95" }}>{mark}</span>
+    </button>
+  );
+}
+
+// Eine Kategorie als Spalte: Überschrift, darunter die Knoten mit Pfeilen.
+function VLane({ title, accent, nodes, p, selected, onSelect }) {
+  return (
+    <div className="up-vlane">
+      <div className="up-vlane-h" style={{ color: accent, borderBottomColor: `${accent}55` }}>{title}</div>
+      <div className="up-vchain">
+        {nodes.map((n, i) => (
+          <div key={n.id} className="contents">
+            {i > 0 && <span className="up-varrow" aria-hidden="true">↓</span>}
+            <VNode node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, accent)}
+              selected={selected === n.id} onSelect={onSelect} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Der Auswirkungs-Kasten: was der Baum GERADE bewirkt. Die Zahlen kommen aus `nodeEffects` und den
+   Basiswerten — nichts davon ist im Baum selbst ablesbar, obwohl es die Frage ist, die man dort stellt. */
+function ImpactBox({ p }) {
+  const fx = nodeEffects(p);
+  const werte = [
+    { k: t("upgrades.impact.cover"), v: COVER_FLOOR + fx.treeCoverBonus, max: COVER_FLOOR + 4, c: CY },
+    { k: t("upgrades.impact.energy"), v: ENERGY_FLOOR + fx.treeEnergyBonus, max: ENERGY_FLOOR + 2, c: CY },
+    { k: t("upgrades.impact.rerolls"), v: REROLL_BASE + fx.treeRerollBonus, max: REROLL_BASE + 2, c: CY },
+  ];
+  const jetzt = tierWeightsForShift(fx.treeRareShift);
+  const beste = tierWeightsForShift(4);
+  const balken = (w) => (
+    <>
+      <div className="up-dropbar">
+        {[1, 2, 3, 4].map((tier) => <i key={tier} style={{ width: `${w[tier]}%`, background: tierColor(tier) }} />)}
+      </div>
+      <div className="up-droplegend">
+        {[1, 2, 3, 4].map((tier) => (
+          <span key={tier}><i style={{ background: tierColor(tier) }} />{rarityLabel(tier)} <b>{w[tier]} %</b></span>
+        ))}
+      </div>
+    </>
+  );
+  return (
+    <div className="up-impact">
+      <div className="up-impact-h">{t("upgrades.impact.title")}</div>
+      <div className="up-impact-grid">
+        {werte.map((x) => (
+          <div key={x.k} className="up-stat">
+            <span className="up-stat-k">{x.k}</span>
+            <span className="up-stat-v" style={{ color: x.c }}>{x.v}<i>{t("upgrades.impact.of", { max: x.max })}</i></span>
+            <span className="up-stat-b"><i style={{ width: `${Math.round((x.v / x.max) * 100)}%`, background: x.c }} /></span>
+          </div>
+        ))}
+      </div>
+      <div className="up-droppair">
+        <div className="up-dropbox"><span className="up-drop-t">{t("upgrades.impact.dropNow")}</span>{balken(jetzt)}</div>
+        <div className="up-dropbox"><span className="up-drop-t">{t("upgrades.impact.dropMax")}</span>{balken(beste)}</div>
+      </div>
+    </div>
+  );
+}
+
 export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   const [tab, setTab] = useState("deck");
   const [detailArch, setDetailArch] = useState(null);
@@ -159,6 +262,12 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   // Reiter-Wechsel schließt die offene Detailzeile (sonst hinge sie im anderen Reiter nach).
   const selectTab = (key) => { setTab(key); setSelNode(null); };
   const tabSwipe = useTabSwipe(["deck", "gen"], tab, selectTab); // horizontaler Swipe → Reiterwechsel
+  /* #desktop — ab 1400 px navigiert nicht mehr die Reiterzeile, sondern eine Spalte links: „Allgemein"
+     plus die vier Fraktionen, jede mit eigener Seite. Das ist kein Umsortieren derselben Bausteine,
+     sondern eine andere Navigation — deshalb JS-State statt Media Query. Unter 1400 px bleibt alles
+     beim Alten (zwei Reiter, Fraktions-Ketten untereinander, Deck-Details als Ebene 2). */
+  const wide = useIsWide();
+  const [page, setPage] = useState("gen");   // "gen" | Fraktions-Key
   useEscape(selNode ? () => setSelNode(null) : detailArch ? () => setDetailArch(null) : onClose);
   const p = profile || emptyProfile();
   const sp = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
@@ -166,6 +275,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
 
   const buy = (id) => onProfileChange && onProfileChange(buyNode(p, id));
   const doRespec = () => onProfileChange && onProfileChange(respec(p));
+  // #desktop: Zähler für die „Allgemein"-Zeile der Deck-Spalte + der angetippte Knoten für die Detailzeile.
+  const genOwned = GEN_LANES.reduce((s, l) => s + l.ids.filter((id) => nodeState(p, id) === "owned").length, 0);
+  const selDeskNode = selNode ? nodeDef(selNode) : null;
 
   // Deck-Detailansicht (Ebene 2) — überlagert den Baum, Zurück kehrt in den Decks-Reiter zurück.
   if (detailArch) {
@@ -229,12 +341,83 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           </div>
         </div>
 
-        {/* ===== Die beiden Zweige =====
-            Beide sind IMMER im DOM; welcher zu sehen ist, entscheidet CSS (.up-branch.is-off → display:none).
-            Bis 1399 px ist das exakt das alte Verhalten — genau ein Zweig sichtbar, umgeschaltet über die
-            Reiter. Ab 1400 px stehen beide nebeneinander und `is-off` wird wirkungslos; nur so lassen sich
-            die zwei Zweige ohne zweiten Renderpfad gleichzeitig zeigen. Die Umschaltung im JSX (`tab === …`)
-            hätte das nicht gekonnt: ein nicht gerendeter Zweig ist auch auf Desktop nicht da. */}
+        {/* ===== Desktop: Deck-Spalte links, eine Seite rechts =====
+            Bewusst ein EIGENER Renderpfad statt der `display: contents`-Klammer, die der Rest des
+            Desktop-Passes benutzt: Hier wird nicht dasselbe anders angeordnet, sondern anders navigiert
+            (Spalte statt Reiter, eine Seite statt zweier Zweige). Das in eine gemeinsame DOM-Struktur zu
+            zwingen hätte beide Fassungen verbogen. Unter 1400 px läuft weiter der Zweig-Pfad darunter. */}
+        {wide ? (
+          <div className="up-desk">
+            <nav className="up-nav as-ring" aria-label={t("upgrades.nav.decks")}>
+              <button type="button" onClick={() => { setPage("gen"); setSelNode(null); }}
+                className={`up-navrow${page === "gen" ? " is-on" : ""}`} style={{ "--c": CY }}>
+                <span className="up-navtext"><b>{t("upgrades.page.general")}</b><i>{genOwned} / {GEN_LANES.reduce((s, l) => s + l.ids.length, 0)}</i></span>
+              </button>
+              <div className="up-navhead">{t("upgrades.nav.decks")}</div>
+              {ARCHETYPE_ORDER.map((arch) => {
+                const meta = archMeta(arch);
+                const chain = nodeList().filter((n) => n.arch === arch);
+                const have = chain.filter((n) => nodeState(p, n.id) === "owned").length;
+                return (
+                  <button key={arch} type="button" onClick={() => { setPage(arch); setSelNode(null); }}
+                    className={`up-navrow${page === arch ? " is-on" : ""}`} style={{ "--c": FACTION_GLOW[arch] || VI }}>
+                    <FactionIcon type={arch} size={26} />
+                    <span className="up-navtext"><b>{meta?.label || arch}</b><i>{have} / {chain.length}</i></span>
+                  </button>
+                );
+              })}
+              <div className="up-navhead">{t("upgrades.legPhase")}</div>
+              {[nodeDef("deckReroll"), nodeDef("synLeg")].map((n) => {
+                const st = nodeState(p, n.id);
+                return (
+                  <button key={n.id} type="button" onClick={() => toggleNode(n.id)}
+                    className={`up-navpassive${st === "placeholder" ? " is-soon" : ""}${selNode === n.id ? " is-sel" : ""}`}>
+                    <span>{n.label}</span>
+                    <i style={{ color: st === "owned" ? GRUEN : st === "placeholder" ? "#8a8a95" : GOLD }}>
+                      {st === "owned" ? "✓" : st === "placeholder" ? t("upgrades.state.soon") : t("upgrades.buy.short", { cost: n.cost })}
+                    </i>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <section className="up-page as-ring">
+              {page === "gen" ? (
+                <>
+                  <div className="up-page-h">
+                    <span className="up-page-eyebrow" style={{ color: CY }}>{t("upgrades.page.general")}</span>
+                    <span className="up-page-hint">{t("upgrades.page.generalHint")}</span>
+                  </div>
+                  <div className="up-vgrid">
+                    {GEN_LANES.map((lane) => (
+                      <VLane key={lane.nameKey} title={t(lane.nameKey)} accent={lane.accent}
+                        nodes={lane.ids.map((id) => nodeDef(id))} p={p} selected={selNode} onSelect={toggleNode} />
+                    ))}
+                  </div>
+                  <ImpactBox p={p} />
+                </>
+              ) : (
+                <>
+                  <div className="up-page-h">
+                    <FactionIcon type={page} size={28} />
+                    <span className="up-page-eyebrow" style={{ color: FACTION_GLOW[page] || VI }}>{archMeta(page)?.label || page}</span>
+                    <button type="button" onClick={() => setDetailArch(page)} className="up-page-more">{t("upgrades.details")}</button>
+                  </div>
+                  <div className="up-vgrid">
+                    <VLane title={archMeta(page)?.label || page} accent={FACTION_GLOW[page] || VI}
+                      nodes={nodeList().filter((n) => n.arch === page)} p={p} selected={selNode} onSelect={toggleNode} />
+                  </div>
+                  <ImpactBox p={p} />
+                </>
+              )}
+              {/* Die Detailzeile des angetippten Knotens — dieselbe wie auf dem Handy, nur hier unten. */}
+              {selDeskNode && (
+                <NodeDetail node={selDeskNode} st={nodeState(p, selDeskNode.id)}
+                  accent={nodeAccent(selDeskNode, VI)} onBuy={buy} />
+              )}
+            </section>
+          </div>
+        ) : (
         <div className="up-branches">
         <div className={`up-branch as-ring${tab === "deck" ? "" : " is-off"}`}>
           <h3 className="up-branch-h" style={{ color: VI }}>{t("upgrades.tab.decks")}</h3>
@@ -280,6 +463,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           </div>
         </div>
         </div>
+        )}
 
         {/* Legende. */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend" style={{ color: "#a6a6b0" }}>

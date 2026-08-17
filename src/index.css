@@ -1416,6 +1416,122 @@ button { font-family: inherit; }
   .up-legend { margin-top: 16px !important; font-size: 13px !important; }
 
   /* ==========================================================================
+     #desktop — der Baum steht hoch (Deck-Spalte + Kategorie-Spalten)
+     --------------------------------------------------------------------------
+     Links eine Navigationsspalte („Allgemein" plus die vier Fraktionen), rechts die gewählte Seite.
+     Auf der Seite stehen die Kategorien NEBENEINANDER und ihre Knoten laufen von oben nach unten —
+     das liest sich als Baum, während sechs waagerechte Ketten eher wie eine Tabelle wirkten. Gemessen
+     braucht die senkrechte Fassung weniger Höhe (499 statt 624 px), weil sie die Breite nutzt; der
+     frei werdende Platz geht an den Auswirkungs-Kasten darunter.
+
+     Bekannte Eigenheit: Die Spalten enden auf verschiedenen Höhen (Drop-Raten hat vier Knoten,
+     Energie zwei). Das ist der Preis der Bauform und bewusst nicht kaschiert — eine erzwungene
+     gemeinsame Unterkante hätte leere Kästen bedeutet.
+     ========================================================================== */
+  .up-desk {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    margin-top: 4px;
+  }
+  .up-nav {
+    border-radius: 14px; padding: 14px 12px;
+    display: flex; flex-direction: column; gap: 7px;
+    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .up-navhead {
+    font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
+    color: #82828f; margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(150, 150, 170, .14);
+  }
+  .up-navrow {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 12px 13px; border-radius: 11px; cursor: pointer;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, #12121a) 0%, #12121a 46%);
+    border: 1px solid rgba(150, 150, 170, .14);
+    border-left: 4px solid color-mix(in srgb, var(--c) 70%, transparent);
+    transition: background .14s ease, box-shadow .14s ease;
+  }
+  .up-navrow:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 20%, #12121a) 0%, #12121a 50%); }
+  .up-navrow.is-on {
+    border-left-color: var(--c);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 26%, #12121a) 0%, #12121a 52%);
+    box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
+  }
+  .up-navtext { display: flex; flex-direction: column; line-height: 1.25; }
+  .up-navtext b { font-size: 16px; font-weight: 700; }
+  .up-navtext i { font-style: normal; font-size: 12.5px; color: #8a8a95; font-variant-numeric: tabular-nums; }
+  .up-navpassive {
+    display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;
+    padding: 9px 12px; border-radius: 9px; font-size: 13px;
+    background: #12121a; border: 1px solid rgba(150, 150, 170, .12);
+    border-left: 3px solid rgba(150, 150, 170, .3);
+  }
+  .up-navpassive i { margin-left: auto; font-style: normal; font-size: 12.5px; font-weight: 700; }
+  .up-navpassive.is-soon { opacity: .55; border-left-style: dashed; }
+  .up-navpassive.is-sel { box-shadow: 0 0 0 2px rgba(155, 130, 240, .5); }
+
+  .up-page {
+    border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
+    display: flex; flex-direction: column;
+    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .up-page-eyebrow { font-size: 15px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+  .up-page-hint { font-size: 13px; color: #71717c; }
+  .up-page-more {
+    margin-left: auto; font-size: 13px; font-weight: 600; color: #a6a6b0; cursor: pointer;
+    padding: 7px 12px; border-radius: 8px;
+    background: rgba(12, 12, 18, .5); border: 1px solid rgba(150, 150, 170, .18);
+    border-left: 3px solid rgba(150, 150, 170, .35);
+  }
+
+  .up-vgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; align-items: start; }
+  .up-vlane { display: flex; flex-direction: column; min-width: 0; }
+  .up-vlane-h {
+    font-size: 14.5px; font-weight: 800; text-align: center;
+    padding-bottom: 7px; margin-bottom: 10px; border-bottom: 2px solid;
+  }
+  .up-vchain { display: flex; flex-direction: column; }
+  .up-vnode {
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px;
+    padding: 11px 10px; border-radius: 11px; cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .up-vnode:hover { transform: translateY(-1px); }
+  .up-vnode-t { font-size: 14.5px; font-weight: 700; line-height: 1.2; }
+  .up-vnode-w { font-size: 11.5px; color: #8a8a95; line-height: 1.3; font-variant-numeric: tabular-nums; }
+  .up-vnode-m { font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .up-varrow { display: block; text-align: center; font-size: 14px; line-height: 1; padding: 6px 0; color: #3f3f4c; }
+
+  /* „Was der Baum gerade bewirkt" — die Zahlen stehen sonst nirgends, obwohl sie die Frage sind,
+     die man im Baum stellt. Quelle: nodeEffects() + tierWeightsForShift(). */
+  .up-impact {
+    margin-top: 14px; padding: 13px 15px; border-radius: 12px;
+    background: #12121a; border: 1px solid rgba(150, 150, 170, .1);
+  }
+  .up-impact-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
+  .up-impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .up-stat { display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px; background: #14131c; }
+  .up-stat-k { font-size: 12.5px; color: #8a8a95; }
+  .up-stat-v { font-size: 25px; font-weight: 800; line-height: 1; display: flex; align-items: baseline; gap: 7px; font-variant-numeric: tabular-nums; }
+  .up-stat-v i { font-style: normal; font-size: 12.5px; font-weight: 600; color: #71717c; }
+  .up-stat-b { height: 6px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 3px; }
+  .up-stat-b i { display: block; height: 100%; border-radius: 99px; }
+  .up-droppair { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 11px; }
+  .up-dropbox { padding: 9px 11px; border-radius: 9px; background: #14131c; }
+  .up-drop-t { font-size: 12.5px; color: #8a8a95; display: block; margin-bottom: 6px; }
+  .up-dropbar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; }
+  .up-dropbar i { display: block; height: 100%; }
+  .up-droplegend { display: flex; flex-wrap: wrap; gap: 3px 13px; margin-top: 6px; font-size: 11.5px; color: #9a97ab; }
+  .up-droplegend span { display: flex; align-items: center; gap: 5px; }
+  .up-droplegend span > i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .up-droplegend b { color: #d8d8e0; font-variant-numeric: tabular-nums; }
+
+  /* ==========================================================================
      #desktop — Rückmeldung beim Überfahren
      --------------------------------------------------------------------------
      Bis hierher hoben sich die Knöpfe beim Überfahren nur an. Auf Desktop, wo eine Maus da ist und

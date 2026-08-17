@@ -73,6 +73,7 @@ describe("i18n · Katalog-Parität", () => {
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
     "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
+    "upgrades.nav.decks",    // dito — Überschrift der Deck-Spalte in der Desktop-Fassung
     "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort
     "shop.tab.packs",        // „Packs" — dasselbe Wort in beiden Sprachen
     "shop.tab.challenges",   // „Challenges" — dasselbe Wort in beiden Sprachen

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
+import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
@@ -328,21 +329,6 @@ function useIsMobile() {
   return m;
 }
 
-/* #desktop — ab 1400 px steht die Werkstatt zweispaltig: Katalog links, Pack-Detail rechts.
-   Warum als JS-Hook und nicht per CSS wie sonst im Desktop-Pass: Das Pack-Detail hängt bis 1399 px
-   als Portal an `document.body` (der Shop-Root trägt `backdrop-filter` und wäre sonst der
-   Containing-Block für `position: fixed`). Portal oder nicht ist eine Frage der DOM-Struktur —
-   die lässt sich mit keiner Media Query beantworten. Dieselbe Bauart wie `useIsMobile` oben. */
-function useIsWide() {
-  const [w, setW] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 1400px)").matches);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1400px)");
-    const on = () => setW(mq.matches);
-    mq.addEventListener ? mq.addEventListener("change", on) : mq.addListener(on);
-    return () => (mq.removeEventListener ? mq.removeEventListener("change", on) : mq.removeListener(on));
-  }, []);
-  return w;
-}
 
 // Einmalig injizierte Keyframes für die Gottgleich-Standard-Vorschau (Event-Loop).
 const FX_CSS = `
