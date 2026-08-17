@@ -1,8 +1,12 @@
-import { useRef, useEffect } from "react";
+/* Aurora-Feldeffekt — NUR die Shader-Quelle. Gerendert wird sie vom Feld-Kompositor (FieldCompositor.jsx).
 
-/* Aurora-Feldeffekt als EIGENSTÄNDIGE WebGL-Canvas (NICHT über Pixi). Grund: Pixis Custom-Shader-Pfad (Mesh & Filter)
-   rendert auf dem Mobile-Setup nichts; rohes WebGL läuft dort nachweislich (Tuning-Artifact). Bewusst WebGL1 /
-   GLSL ES 1.00 → maximale Kompatibilität auf alten mobilen GPUs.
+   Diese Datei war einmal eine eigenständige WebGL-Canvas-Komponente, mit der Begründung „Pixis Custom-Shader-Pfad
+   rendert auf dem Mobile-Setup nichts". Das ist am echten Gerät widerlegt (#fx-spike), und die Komponente ist
+   entfallen: es gibt jetzt EINEN Renderpfad für alle Feld-Effekte statt einer eigenen Canvas je Effekt. Übrig
+   bleibt hier, was den Effekt ausmacht — die Bildrechnung und ihre Begründung.
+
+   Bewusst weiterhin GLSL ES 1.00: `toPixiFragment` (pixiFieldShader.js) hebt den Quelltext mechanisch auf ES 3.00,
+   und der Effekt bleibt damit für sich lesbar und woanders wiederverwendbar.
 
    #342 Aurora-Rework — perspektivische Vorhänge (aus dem „Aurora Tuner"-Artifact 1:1 nach GLSL ES 1.00):
    - Vorhänge hängen vom OBEREN Rahmen (topY) und weichen mit der Tiefe d zum Horizont (botY), fern vertikal gestaucht
@@ -19,8 +23,6 @@ import { useRef, useEffect } from "react";
 
    Zwei Modi: Standard (feste Palette grün→cyan→violett) oder Deckfarbe (deckA1 unten → deckA2 oben, via deckColored).
    `animate=false` (reduzierte Effekte) → statisches Standbild. */
-
-const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }";
 
 /* #kompositor: FRAG ist exportiert, damit der Feld-Kompositor EXAKT diesen Shader fährt statt eines Nachbaus
    (s. FieldCompositor.jsx / pixiFieldShader.js). Nur lesen — die Aussagekraft des Vergleichs hängt an der
@@ -140,137 +142,3 @@ export const AURORA_FRAG_SRC = [
   "  gl_FragColor = vec4(rgb * a, a);",   // PREMULTIPLIED (Browser-Default) → korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
-const FRAG = AURORA_FRAG_SRC;
-
-function hexToRgb(h, fb) {
-  if (typeof h !== "string") return fb;
-  let s = h.replace("#", "");
-  if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
-  if (s.length !== 6) return fb;
-  const n = parseInt(s, 16);
-  if (Number.isNaN(n)) return fb;
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-}
-
-export default function AuroraFieldGL({ color = null, color2 = null, deckColored = false, animate = true, bandScale = 1, bandShift = 0, active = true }) {
-  const canvasRef = useRef(null);
-
-  // #313/#342-bugfix: Farbe/Modus als LIVE-Ref, den der Draw-Loop pro Frame liest — NICHT als useEffect-Dep. Sonst riss
-  // ein Standard↔Deckfarbe-Toggle (deckColored-Wechsel bei stabilem Key, siehe #perf-shop Plan B) den ganzen WebGL-
-  // Kontext ab: Der Cleanup ruft WEBGL_lose_context.loseContext(), und ein erneutes getContext() auf DERSELBEN Canvas
-  // liefert danach einen weiterhin „verlorenen" Kontext → die Aurora blieb leer, bis man den Effekt wechselte (frische
-  // Canvas) und zurück. Jetzt lebt der Kontext über die ganze Komponenten-Lebensdauer; der Toggle ändert nur Uniforms.
-  const stateRef = useRef({});
-  stateRef.current.d1 = hexToRgb(color, [0.20, 0.82, 0.53]);   // Deck-Default #33d187
-  stateRef.current.d2 = hexToRgb(color2, [0.69, 0.42, 0.98]);  // Deck-Default #b06afa
-  stateRef.current.deckColored = deckColored;
-  stateRef.current.animate = animate;
-  stateRef.current.active = active;   // #perf-overlay-2: false = Brett verdeckt → Schleife tut nichts
-  stateRef.current.bandScale = Number.isFinite(bandScale) ? bandScale : 1;   // #359 vertikale Band-Skalierung (Showcase)
-  stateRef.current.bandShift = Number.isFinite(bandShift) ? bandShift : 0;   // #359 vertikale Band-Verschiebung (Showcase)
-  const dirtyRef = useRef(true);
-  // Prop-Änderung → einen Redraw anfordern (nötig fürs Standbild bei animate=false; im Animate-Fall zeichnet der Loop ohnehin).
-  useEffect(() => { dirtyRef.current = true; }, [color, color2, deckColored, animate, bandScale, bandShift]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    let gl;
-    try { gl = canvas.getContext("webgl", { alpha: true, antialias: true, depth: false, powerPreference: "low-power" }) || canvas.getContext("experimental-webgl"); }
-    catch { gl = null; }
-    if (!gl) return undefined;
-
-    const compile = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { gl.deleteShader(s); return null; } return s; };
-    const vs = compile(gl.VERTEX_SHADER, VERT), fs = compile(gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return undefined;
-    const prog = gl.createProgram();
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return undefined;
-    gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(prog, "aPos");
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    const uRes = gl.getUniformLocation(prog, "uRes");
-    const uTime = gl.getUniformLocation(prog, "uTime");
-    const uMode = gl.getUniformLocation(prog, "uMode");
-    const uDeck1 = gl.getUniformLocation(prog, "uDeck1");
-    const uDeck2 = gl.getUniformLocation(prog, "uDeck2");
-    const uLayers = gl.getUniformLocation(prog, "uLayers");
-    const uBandScale = gl.getUniformLocation(prog, "uBandScale");
-    const uBandShift = gl.getUniformLocation(prog, "uBandShift");
-
-    // #perf-A1 / #342: Mobile drosseln. Der neue Vorhang-Loop ruft je Band mehrfach fbm → mehr fbm/Fragment als der
-    // alte 3-Bögen-Loop; laut Effekt-Audit ohnehin der größte Mobile-GPU-Posten. Auf Mobile (coarse): DPR-Deckel senken
-    // + Bildrate auf ~30 fps kappen (das Schimmern ist langsam → optisch unmerklich) UND Vorhang-Anzahl reduzieren
-    // (LAYERS 5 → 3). Desktop = voll (5 Vorhänge, DPR 2).
-    const coarse = typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(pointer: coarse)").matches : false;
-    const layers = coarse ? 3 : 5;
-    const dprCap = coarse ? 1.4 : 2;
-    const dprOf = () => Math.min(dprCap, window.devicePixelRatio || 1);
-    const resize = () => {   // aktualisiert die Canvas-Größe, meldet true bei Änderung (→ Standbild neu zeichnen)
-      const w = Math.max(1, Math.floor(canvas.clientWidth * dprOf()));
-      const h = Math.max(1, Math.floor(canvas.clientHeight * dprOf()));
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); return true; }
-      return false;
-    };
-    const draw = (tSec) => {
-      const st = stateRef.current;   // Farbe/Modus LIVE aus dem Ref → Standard↔Deckfarbe-Toggle sofort sichtbar
-      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); // transparenter Grund → nichts Opakes hinter der Aurora
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, tSec);
-      gl.uniform1f(uMode, st.deckColored ? 1 : 0);
-      gl.uniform3f(uDeck1, st.d1[0], st.d1[1], st.d1[2]);
-      gl.uniform3f(uDeck2, st.d2[0], st.d2[1], st.d2[2]);
-      gl.uniform1f(uLayers, layers);
-      gl.uniform1f(uBandScale, st.bandScale || 1);   // #359 Default 1 → In-Game-Bogen unverändert
-      gl.uniform1f(uBandShift, st.bandShift || 0);   // #359 Default 0 → keine Verschiebung
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    };
-
-    let raf = null, startT = null, disposed = false;
-    // #perf-A1: FPS-Cap auf Mobile — rAF läuft weiter (glatte Zeitbasis), es wird aber nur ~alle 33 ms wirklich
-    // gezeichnet. Die Zeit fließt echt (ms-startT) → das Schimmern bleibt tempo-korrekt, nur eben in ~30 statt 60/120 fps.
-    // #perf-judder: Die Schwelle braucht eine HALBE Frame-Dauer Toleranz. Mit dem exakten Wert (1000/30 = 33,33 ms)
-    // liegt sie haargenau auf zwei 60-Hz-Frames (2 × 16,667 ms) — kommt der übernächste Frame den Hauch zu früh,
-    // fällt die Zeichnung auf den ÜBERnächsten und der Abstand springt auf 50 ms. Simuliert (400 Frames): schon ohne
-    // jeden Jitter ergibt das 33/50/33/50 statt gleichmäßig 33 → nur ~26 statt 30 Zeichnungen/s, und vor allem
-    // UNGLEICHMÄSSIG. Das ist der Grund, warum die Effekte auf dem Handy ruckelig wirken, obwohl der FPS-Zähler 60
-    // zeigt: der zählt rAF-Frames, nicht Zeichnungen. Mit −8 ms passt jeder zweite Frame sicher durch (auch bei 90 Hz).
-    const minMs = coarse ? 1000 / 30 - 8 : 0;
-    let lastDraw = -1e9;
-    const frame = (ms) => {
-      if (disposed) return;
-      /* #perf-overlay-2: Brett verdeckt → NICHTS tun. Der rAF-Takt läuft bewusst weiter (eine leere Callback ist
-         praktisch gratis und erspart die Neustart-Logik samt Rennen), aber Zeichnen UND `resize()` entfallen —
-         resize liest clientWidth, erzwingt also je Frame ein Layout. Genau dieser Fall war der Befund aus
-         #perf-overlay: die Lauf-UI wird für jede Phase außer menu/gameover gerendert, Architekt/Perk-/Skill-Overlays
-         liegen als `fixed inset-0` DARÜBER und ersetzen das Brett nicht. Der Architekt allein sind 13 von 50 Runden. */
-      if (stateRef.current.active === false) { raf = requestAnimationFrame(frame); return; }
-      if (startT === null) startT = ms;
-      const sized = resize();
-      if (stateRef.current.animate) {
-        if (ms - lastDraw >= minMs) { lastDraw = ms; draw((ms - startT) / 1000); }
-      } else if (dirtyRef.current || sized) {   // Standbild: nur bei Prop-/Größen-Änderung neu zeichnen
-        dirtyRef.current = false; draw(6.0);
-      }
-      raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-
-    return () => {
-      disposed = true;
-      if (raf) cancelAnimationFrame(raf);
-      const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext();
-    };
-  }, []); // einmaliger Aufbau — der WebGL-Kontext lebt über die ganze Lebensdauer; Farbe/Modus kommen live aus stateRef
-
-  return <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full"
-    style={{ pointerEvents: "none" }} />;
-}

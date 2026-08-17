@@ -14,7 +14,7 @@ import { dprCap } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenr
    Opacity-Spiegeln, kein Flip-Verstecken mehr nötig. Das Moos ist statisch (nur bei Stufen-Wechsel neu gezeichnet).
 
    BEWUSST Canvas-2D (kein Pixi-Custom-Shader): Pixis Mesh/Filter-Shader rendern auf dem Mobile-Setup NICHT (siehe
-   AuroraFieldGL/NeonSilk). Nur weiche Fills/Strokes in ein gecachtes Offscreen-Bitmap → auf dem Handy tragbar.
+   Feld-Shader/NeonSilk). Nur weiche Fills/Strokes in ein gecachtes Offscreen-Bitmap → auf dem Handy tragbar.
 
    GRÖSSEN-UNABHÄNGIG: Das Moos-Bitmap wird in der REFERENZGRÖSSE (REF_W×REF_H = Prototyp @ zoom 1.3) gerendert und
    proportional auf die echte (kleinere) Kartenbox heruntergeblittet. Das Bitmap ist MODUL-WEIT je Reifestufe gecacht

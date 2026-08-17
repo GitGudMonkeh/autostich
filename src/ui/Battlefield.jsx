@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
@@ -66,10 +66,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
-import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
-import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung — eigene WebGL-Canvas (wie Aurora)
-import FieldLayer, { FIELD_COMPOSITOR } from "./fx/FieldLayer.jsx"; // #kompositor A/B (`?fx2=1`): alte Canvas ODER Kompositor-Ebene
-import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow ebenfalls als eigene WebGL-Canvas
+import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei → läuft auch in Produktion)
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch, Canvas-2D)
 const CubeMatrixField = lazy(() => import("./fx/CubeMatrixField.jsx")); // #317 musik-reaktives Würfelfeld (lazy → nicht im Prod-Bundle)
@@ -599,70 +596,11 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
    Pool NICHT pro Stich remountet, floatet der Ghost in voller Länge aus und überlappt bei hohem Turbo/vielen Siegen
    mit dem nächsten Stich — Spieler- UND Gegnerkarte fühlen sich damit gleich lang an (#186). Ghosts entfernen sich
    nach ihrer Lebensdauer selbst. */
-// #306 Battlefield-Ambiente-Layer (einfach-exklusiv): rendert genau EINEN Feld-Effekt als z-1-Overlay in der Deckfarbe
-// (color). Ambiente = ruhige Endlos-Animation; die Reaktion je Stich remountet über key={sweepId} (Turbo-Throttle sitzt
-// im Battlefield). reduced → nur statisches Ambiente. Nur transform/opacity/gradient/background-position (GPU-günstig).
-// Pixi-Umbau: A/B-Umschalter für die Feld-Effekt-Render-Schicht (nur Preview/Dev — s. env-Gate am Mount). „pixi" = der
-// GPU-Emitter (PixiStage), „dom" = die alte DOM-Fassung. Erlaubt Vorher/Nachher-Messung im SELBEN Build:
-// ?fx=dom bzw. ?fx=pixi (oder localStorage as_fx). Standard: pixi. Prod (main) ignoriert das komplett.
-// Hinter dem env-Gate → in Prod faltet der Minifier `false ? (…) : "dom"` weg; der URL/localStorage-Leser landet
-// gar nicht erst im main-Bundle (die IIFE wird komplett entfernt).
-export const FX_RENDERER = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
-  ? (() => {
-      try {
-        const q = new URLSearchParams(window.location.search).get("fx");
-        if (q === "pixi" || q === "dom") return q;
-        const ls = window.localStorage?.getItem("as_fx");
-        if (ls === "pixi" || ls === "dom") return ls;
-      } catch { /* kein window (SSR/Test) → Standard */ }
-      return "pixi";
-    })()
-  : "dom";
-// #cleanup: Die DOM-Fassung der Glutfunken (Ambiente-Dots + Per-Stich-Jet-Fontänen samt emberFountain*-Helfern) wurde
-// entfernt — Glutfunken laufen jetzt ausschließlich über den Pixi-Emitter (src/ui/fx/embersPixi.js), wie Sternenfeld
-// und Cube-Matrix auch. Damit gibt es keine parallele DOM-Implementierung mehr zu pflegen.
-// #perf A2-lite: memoisiert — alle Props sind Primitive (effect/color/sweepId/sweepDur/reduced/win). Re-rendert das
-// Ambiente-DOM (Sternenfeld/Glutfunken/… — teils viele Knoten) NUR, wenn sich diese Werte ändern; bei sonstigen
-// Battlefield-Re-Renders (ohne Stich/Feld-Wechsel) bleibt die Ebene stehen. Kein visueller Unterschied (Desktop unverändert).
-// #347: SHOOT_PATHS/COMET_TRAIL (DOM-Sternschnuppen) entfernt — der Komet/Meteor läuft ausschließlich über den Pixi-
-//   Emitter (starfieldPixi.js); die DOM-Fassung ist tot (FieldFxLayer kennt nur „aurora").
-// #: dezente Sterne für die Aurora (obere Feldhälfte). x/y in %, s = Größe (px), d = Twinkle-Versatz (s).
-const AURORA_STARS = [{ x: 12, y: 14, s: 2, d: 0 }, { x: 26, y: 24, s: 1.4, d: 0.8 }, { x: 43, y: 9, s: 2.2, d: 1.5 }, { x: 57, y: 20, s: 1.5, d: 0.5 }, { x: 71, y: 12, s: 2, d: 1.2 }, { x: 85, y: 27, s: 1.4, d: 0.9 }, { x: 36, y: 33, s: 1.5, d: 1.9 }, { x: 64, y: 34, s: 1.3, d: 0.3 }];
-const FieldFxLayerInner = function FieldFxLayer({ effect, color, color2 = null, sweepId, sweepDur, reduced, lite = false, win, suppressField = false }) {
-  const react = !reduced && sweepId > 0; // per-Stich-Reaktion aktiv?
-  const A = (c) => (reduced ? "" : c); // Ambiente-Animationsklasse nur ohne „Effekte reduziert" → sonst statisches Bild
-  // Pixi-Umbau: übernimmt der GPU-Emitter diesen Feld-Effekt, rendert die DOM-Fassung KEINE Nodes.
-  if (suppressField) return null;
-  let inner = null;
-  if (effect === "aurora") {
-    // #: Echte Aurora statt Mittel-Bloom — ein „umgedrehter Halbkreis" (Dome) hängt oben am Feld: zwei versetzte
-    // Farb-Bögen (Deckfarbe + zweite Farbe) mit weichem Glow, sanft undulierend, dazu ein paar dezente twinkelnde
-    // Sterne. Je Stich pulsiert der Bogen kurz heller. transformOrigin oben-mittig → der Bogen „atmet" vom oberen Rand.
-    const c2 = color2 || "#b06bff"; // zweite Aurora-Farbe (Deck-Sekundärfarbe, sonst sanftes Violett)
-    inner = (
-      <>
-        {/* #perf-A2: blur + mix-blend-mode: screen sind auf Mobile teuer → im lite-Modus (ausgewogen/minimal) kleinerer
-            Blur-Radius (12→8 / 18→12). Diese DOM-Bögen sind ohnehin nur der Fallback (der WebGL-Aurora-Canvas übernimmt
-            im Regelfall via suppressField) — hier zählt v. a. der Nicht-Pixi-Pfad. Desktop/voll unverändert. */}
-        {/* #: Aurora etwas tiefer angesetzt (top −10%→0% / −6%→4%) → hängt nicht mehr am oberen Rand, sondern zieht
-            sichtbar ins Feld (analog zum tieferen WebGL-BASEY). */}
-        {/* #353 DOM-Fallback (Prod) intensiver — analog zum GL-Buff (I_/ALPHA), damit Aurora auch auf der Hauptseite gut sichtbar ist. */}
-        <div className={`${A("as-field-aurora-a")} absolute`} style={{ left: "-8%", right: "-8%", top: "0%", height: "64%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(130% 82% at 50% 0%, ${color}cc, ${color}44 34%, transparent 66%)`, filter: `blur(${lite ? 8 : 12}px)`, opacity: 0.92 }} />
-        <div className={`${A("as-field-aurora-b")} absolute`} style={{ left: "-8%", right: "-8%", top: "4%", height: "60%", transformOrigin: "50% 0%", mixBlendMode: "screen",
-          background: `radial-gradient(118% 74% at 44% 0%, ${c2}99, transparent 60%)`, filter: `blur(${lite ? 12 : 18}px)`, opacity: 0.78 }} />
-        {AURORA_STARS.map((st, i) => (
-          <span key={i} className={A("as-star-twinkle")} style={{ position: "absolute", left: `${st.x}%`, top: `${st.y + 8}%`, width: st.s, height: st.s,
-            borderRadius: "50%", background: "#ffffff", boxShadow: `0 0 ${(st.s * 2).toFixed(0)}px #ffffffcc`, opacity: 0.6, animationDelay: `${st.d}s` }} />
-        ))}
-        {react && <div key={sweepId} className="as-field-bloom absolute" style={{ left: "-8%", right: "-8%", top: "0%", height: "66%", mixBlendMode: "screen",
-          background: `radial-gradient(130% 84% at 50% 0%, ${win ? color : c2}${win ? "aa" : "66"}, transparent 64%)`, animationDuration: `${sweepDur}ms` }} />}
-      </>
-    );
-  } else return null;
-  return <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>{inner}</div>;
-};
-export const FieldFxLayer = memo(FieldFxLayerInner);
+/* #kompositor-cleanup: Die DOM-Fassung der Aurora ist entfallen — und mit ihr die letzte Ebene, die `FieldFxLayer`
+   überhaupt noch gerendert hat (alle anderen Feld-Effekte waren längst auf Pixi/WebGL umgezogen, die Komponente gab
+   für sie `null` zurück). Damit gab es Aurora DREIFACH: raw-WebGL-Canvas, Kompositor-Ebene und diese DOM-Bögen mit
+   einem sichtbar anderen Look. Erreichbar war die DOM-Fassung ohnehin nur im Preview/Dev über `?fx=dom`; in
+   Produktion lief immer WebGL. Genau so entsteht Drift: drei Fassungen, von denen zwei niemand mehr ansieht. */
 function SlashGhostLayer({ ghosts }) {
   return (
     <>
@@ -753,24 +691,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const fxLevel = useFxLevel(reducedFx);
   const reduced = fxLevel === "minimal";
   const lite    = fxLevel !== "full";
-  // Aurora läuft als eigene raw-WebGL-Canvas (nicht über Pixi). Sie rendert jetzt AUCH in echter Produktion — wie
-  // Neon-Brandung (#345) und Komet/Sternenfeld (#346): der DOM-Fallback („Glow von oben") entsprach nicht dem
-  // Showcase, sichtbar sobald der Renderer auf DOM stand (= Prod). Opt-in (nur wenn als bgFx gewählt) + mobil bereits
-  // gedrosselt (3 Vorhänge/30fps in AuroraFieldGL). Im Preview/Dev bleibt der A/B-Schalter erhalten: FX:dom zeigt weiter
-  // die DOM-Fassung (auroraGL=false → FieldFxLayer rendert), FX:pixi die WebGL-Canvas. In Prod immer WebGL.
-  const auroraGL = bgFx === "aurora" && !!deckA1
-    && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
-  // #346 Prod-Renderpfad: Komet/Sternenfeld (Pixi), Leuchten & Würfel-Matrix (WebGL/Canvas) laufen — wie neonsurf — bewusst
-  // AUCH in echter Produktion. Grund: für diese drei gibt es KEINE DOM-Fassung mehr (FieldFxLayer kennt nur „aurora") →
-  // sonst wäre der gekaufte Effekt auf der Hauptseite kaufbar-aber-unsichtbar. Opt-in (nur wenn gewählt) + intern
-  // gedrosselt; die Pixi/Canvas-Komponenten sind lazy → laden erst, wenn der Effekt tatsächlich aktiv ist.
-  const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
-  const deckGlowOn = deckGlow && !!battlefield && !!deckA1;    // #deckglow: eigene WebGL-Canvas über dem BF-Bild (kombinierbar)
-  const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
-  // #345 Neon-Brandung: eigene WebGL-Canvas (rohes WebGL1, mobil-sicher). ANDERS als Aurora bewusst AUCH in Produktion,
-  // weil es keine DOM-Fassung gibt (FieldFxLayer kennt nur „aurora") → sonst wäre der gekaufte Effekt im Spiel unsichtbar.
-  // Opt-in (nur wenn als bgFx gewählt) + intern coarse-DPR/30fps/fbm-Oktaven-gedrosselt. Lawine/Ansagen treiben den Puls.
+  /* Die Shader-Feldeffekte laufen über den Feld-Kompositor — EIN Renderpfad, in Preview wie in Produktion. Es gab
+     hier lange eine env-abhängige Verzweigung („in Prod immer WebGL, im Preview A/B gegen die DOM-Fassung"); die
+     DOM-Fassungen sind entfallen, damit auch die Verzweigung. Opt-in bleibt es: eine Ebene baut nur auf, wenn der
+     Spieler den Effekt gewählt hat, und der Kompositor-Chunk lädt lazy. */
+  const auroraGL = bgFx === "aurora" && !!deckA1;
   const neonsurfGL = bgFx === "neonsurf" && !!deckA1;
+  const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
+  const deckGlowOn = deckGlow && !!battlefield && !!deckA1;    // #deckglow: Glut auf den Konturen des BF-Bildes (kombinierbar)
+  const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -1384,27 +1313,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Aurora und Brandung schließen einander aus (beide sind `bgFx`), Leuchten läuft unabhängig dazu. */
   const glowProps = { srcDesktop: battlefield?.desktop, srcMobile: battlefield?.mobile,
     color: deckA1 || "#7fdcff", on: true, animate: !reduced };
-  const glowAlt = (
-    <DeckGlowFieldGL srcDesktop={battlefield?.desktop} srcMobile={battlefield?.mobile}
-      deckColor={deckA1 || "#7fdcff"} on animate={!reduced} active={boardVisible} />
-  );
   const bgLayer = auroraGL
     ? {
       key: "aurora",
       props: { color: deckA1, color2: deckA2, deckColored: auroraDeck, animate: !reduced },
-      alt: <AuroraFieldGL color={deckA1} color2={deckA2} deckColored={auroraDeck} animate={!reduced} active={boardVisible} />,
     }
     : neonsurfGL
       ? {
         key: "neonsurf",
         props: { color: deckA1, color2: deckA2 || deckA1, deckColored: neonsurfDeck, animate: !reduced, surge: surfSurge },
-        alt: <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
-          animate={!reduced} surge={surfSurge} active={boardVisible} />,
       }
       : null;
   /* Zusammenlegen NUR, wenn beide laufen. Sonst bleibt Leuchten in seinem z-0-Container: dort liegt es unter dem
      z-1-Ambiente, und das ist ohne Aurora/Brandung nicht unterdrückt — eine gemeinsame Bühne würde es darüberheben. */
-  const glowStacked = FIELD_COMPOSITOR && deckGlowOn && !!bgLayer;
+  const glowStacked = deckGlowOn && !!bgLayer;
 
   const panelBorder = `1px solid ${DECK_BORDER}`; // #365/#356: Nicht-CRT-Fallback deck-getönt (unter CRT übernimmt die .as-panel-deck-Regel)
   const outerParts = [];
@@ -1443,8 +1365,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {bgLayer && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
           <FieldLayer layer={bgLayer.key} stack={glowStacked ? [{ key: "deckglow", props: glowProps }, bgLayer] : null}
-            {...(glowStacked ? {} : bgLayer.props)} active={boardVisible}
-            fallback={<>{glowStacked && glowAlt}{bgLayer.alt}</>} />
+            {...(glowStacked ? {} : bgLayer.props)} active={boardVisible} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
@@ -1627,17 +1548,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
               Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
           {deckGlowOn && !glowStacked && (
-            <FieldLayer layer="deckglow" {...glowProps} active={boardVisible} fallback={glowAlt} />
+            <FieldLayer layer="deckglow" {...glowProps} active={boardVisible} />
           )}
         </div>
-      )}
-      {/* #306 Battlefield-Ambiente (einfach-exklusiv): genau EIN Feld-Effekt (Hologrid/Sternenfeld/Aurora/Glutfunken/
-          Scanline/Vignette) als z-1-Layer über dem BF-Bild, hinter Glut/Frost/Blitz (z-0/2) & Karten (z-10),
-          immer in der Deck-Hauptfarbe. Ambiente läuft ruhig; die Reaktion je Stich (sweepId, Turbo-Throttle) läuft voll
-          durch. reduced-motion → nur das statische Ambiente (kein Springen). */}
-      {bgFx && deckA1 && (
-        <FieldFxLayer effect={bgFx} color={deckA1} color2={deckA2} sweepId={sweepId} sweepDur={sweepDur} reduced={reduced} lite={lite} win={win}
-          suppressField={auroraGL || neonsurfGL} />
       )}
       {/* #cleanup: Der DOM-Hintergrund-Finisher entfällt — Glutfunken & Sternenfeld laufen nur noch über den
           Pixi-Emitter (PixiStage). Es gibt keine DOM-Finisher-Fassung mehr. */}

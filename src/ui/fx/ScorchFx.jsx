@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
    Glut-, fallende Asche- und kleine Funken-Partikel. Werte 1:1 aus dem Tuning-Board (Issue #319).
 
    BEWUSST Canvas-2D (kein Pixi-Custom-Shader): Pixis Mesh/Filter-Shader rendern auf dem Mobile-Setup NICHT (siehe
-   AuroraFieldGL). Der Burn ist ein kurzer (~0,85 s) per-Pixel-Effekt über ein klein gehaltenes Burn-Feld (~120 px breit)
+   auroraShader/Kompositor). Der Burn ist ein kurzer (~0,85 s) per-Pixel-Effekt über ein klein gehaltenes Burn-Feld (~120 px breit)
    → auf dem Handy tragbar. Eigenständige Komponente (wie IonStorm/FireHead): eigene Canvas, per rAF, absolut über dem
    Panel, positioniert über der Karte via cardRef/panelRef. */
 

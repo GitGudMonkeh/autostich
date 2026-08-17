@@ -14,12 +14,10 @@ import {
 // unlockText.js zum Satz — Zahlen darin über fmtNum, nicht über einen eigenen Tausenderpunkt-Helfer.
 import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
-import { SliceFx, FieldFxLayer, FX_RENDERER, KLINGE_TUNE } from "./Battlefield.jsx";
+import { SliceFx, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
-import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora-Vorschau als eigene WebGL-Canvas (nicht Pixi)
-import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung-Vorschau (eigene WebGL-Canvas)
-import DeckGlowFieldGL from "./fx/DeckGlowFieldGL.jsx"; // #deckglow: Deck-Glow-Vorschau (eigene WebGL-Canvas)
+import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: Vorschau fährt DENSELBEN Renderpfad wie das Spiel
 import ScorchFx from "./fx/ScorchFx.jsx"; // #319 Scorch-Sieg-Finisher (Canvas-2D, pixi-frei) — Vorschau + In-Game
 import BlackholeFx from "./fx/BlackholeFx.jsx"; // #320 Schwarzes-Loch-Sieg-Finisher (persistentes Panel-Loch) — Vorschau + In-Game
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
@@ -755,7 +753,7 @@ function DeckGlowScene() { // #336: kein Farbmodus mehr — Glow ist immer Deckf
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {bf && <DeckGlowFieldGL srcDesktop={bf.desktop} srcMobile={bf.mobile} deckColor={cur.a1} on={on} animate />}
+      {bf && <FieldLayer layer="deckglow" srcDesktop={bf.desktop} srcMobile={bf.mobile} color={cur.a1} on={on} animate />}
       <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
       {/* #330 Ausnahme-Slot unten-links (bewusst reserviert): Deck-Glow zeigt „Feldname · mit/ohne Deck-Glow" im
           einheitlichen PanelChip-Design. Der Farbmodus-Chip (BR) sowie Name/Status kommen zentral aus der Bühne. */}
@@ -809,11 +807,10 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
 // „none" zeigt nur das BF-Bild. Vorschau = In-Game (dieselbe Komponente, kein Drift).
 // Hit-Tier-Leiter für die Feld-Finisher-Eskalations-Vorschau (Pixi, Komet/Sternenfeld): Schwach → Gottgleich.
 const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
-// Der GPU-Emitter zeigt den Feld-Finisher als Eskalation — nur im Preview/Dev-Build mit „pixi"-Renderer; sonst DOM-Fassung.
-// Aurora rendert im Showcase jetzt AUCH in Prod als WebGL (spiegelt den In-Game-Pfad, siehe Battlefield): der DOM-Fallback
-// entsprach nicht der echten Aurora. Preview/Dev behält den A/B-Schalter (FX:dom → DOM-Fassung, FX:pixi → WebGL); Prod immer WebGL.
-const auroraGLActive = (effect) => effect === "aurora"
-  && ((import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) ? FX_RENDERER === "pixi" : true);
+// Aurora/Brandung/Leuchten laufen in der Vorschau über DENSELBEN Kompositor wie im Spiel — es gibt keinen zweiten
+// Renderpfad mehr, den die Vorschau versehentlich zeigen könnte. Genau hier saß die Drift-Gefahr am größten: eine
+// Vorschau, die etwas anderes zeigt als das Spiel, ist schlimmer als gar keine.
+const auroraGLActive = (effect) => effect === "aurora";
 function FieldFxPreview({ effect, deckTint = false }) {
   const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-BG (look.bf).
@@ -870,7 +867,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      {/* Pixi-Feldeffekte (Aurora/Sternenfeld/Glutfunken) auf der GPU-Bühne — sonst die DOM-Fassung (FieldFxLayer). */}
+      {/* Feld-Finisher (Komet/Sternenfeld/Glutfunken) auf der Pixi-Emitter-Bühne. */}
       {pixiField && (
         <Suspense fallback={null}>
           <PixiStage className="absolute inset-0 z-[2]" effect={effect} color={look.a1} color2={look.a2} deckTint={deckTint}
@@ -883,13 +880,13 @@ function FieldFxPreview({ effect, deckTint = false }) {
           {/* #359: Die Showcase-Box ist niedrig+breit — der In-Game-Bogen (Scheitel bei ~1,2 der Höhe) würde oben
               abgeschnitten. bandScale/bandShift legen NUR im Showcase den Bogen tiefer + leicht gestaucht in die Box
               (voller Bogen sichtbar). In-Game bleibt bei den Defaults (1/0) → unverändert. [TUNING] */}
-          <AuroraFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate bandScale={1.12} bandShift={0.2} />
+          <FieldLayer layer="aurora" color={look.a1} color2={look.a2} deckColored={deckTint} animate bandScale={1.12} bandShift={0.2} />
         </div>
       )}
       {/* #383 Neon-Brandung — ruhige See als Default; der Surge kommt NUR beim 6-s-Impact (neonSurge, sonst null). */}
       {neonsurfGL && (
         <div className="absolute inset-0 z-[2] pointer-events-none">
-          <NeonSurfFieldGL color={look.a1} color2={look.a2} deckColored={deckTint} animate surge={neonSurge} />
+          <FieldLayer layer="neonsurf" color={look.a1} color2={look.a2} deckColored={deckTint} animate surge={neonSurge} />
         </div>
       )}
       {/* #383 Ansage zum Impact (Stark/Brutal/Irre) — poppt synchron zum Surge/Splash; key erzwingt den Neustart der Pop-Animation. */}
@@ -899,7 +896,6 @@ function FieldFxPreview({ effect, deckTint = false }) {
           {neonAnn.label}
         </span>
       )}
-      {effect !== "none" && !pixiField && !auroraGL && !neonsurfGL && <FieldFxLayer effect={effect} color={look.a1} color2={look.a2} sweepId={sweep} sweepDur={1100} reduced={false} win score={0} />}
       {/* #330 Tier/Score-Chip entfernt — kein Scene-Chrome mehr (nur noch das 4-Ecken-Template der Bühne). */}
     </div>
   );
@@ -1576,7 +1572,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
       <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a" }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
-            (frischer AuroraFieldGL-/PixiStage-Canvas mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
+            (frische Effekt-Bühne mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
             konstant false → Key stabil, kein unnötiger Remount. */}
         {/* #perf-shop (Plan B): key trägt NUR den Effekt (nicht den Farbmodus) → Standard↔Deckfarbe-Toggle remountet die

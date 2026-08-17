@@ -8,22 +8,8 @@ import { t } from "../i18n/index.js"; // #sprache
    Buttons:
      ⧉ Report → volle Zusammenfassung in die Konsole + JSON in die Zwischenablage (auf dem Handy
                 per Remote-Debug/„Copy" teilbar). ↺ Reset → Messung neu starten.
-     FX:PIXI/DOM → A/B-Umschalter für die Feld-Effekt-Render-Schicht (GPU-Emitter vs. DOM), setzt
-                localStorage as_fx + lädt neu → Vorher/Nachher direkt vergleichbar.
    Auto-Dump bei Game-Over macht App (formatReport-Aufruf), damit ein Lauf immer eine Bilanz hinterlässt. */
 
-// A/B-Umschalter für die Feld-Effekte (spiegelt FX_RENDERER in Battlefield.jsx: URL-Param ?fx hat Vorrang,
-// dann localStorage as_fx, Standard "pixi"). Toggle schreibt localStorage + räumt einen fixen URL-Param auf
-// (sonst würde der den localStorage-Wert nach dem Reload überstimmen) und lädt neu.
-function readFxMode() {
-  try {
-    const q = new URLSearchParams(window.location.search).get("fx");
-    if (q === "pixi" || q === "dom") return q;
-    const ls = window.localStorage?.getItem("as_fx");
-    if (ls === "pixi" || ls === "dom") return ls;
-  } catch { /* kein window → Standard */ }
-  return "pixi";
-}
 // #desktop: Viewport-Readout. Beim Desktop-Layout-Pass muss jederzeit ablesbar sein, in WELCHEM CSS-Viewport
 // gerade geprüft wird — das eigene Entwicklerfenster ist dafür unbrauchbar: auf einem hochskalierten oder
 // ultrabreiten Monitor weicht es stark von dem ab, was ein Standardspieler sieht. Merkposten des Zielbands:
@@ -39,31 +25,15 @@ function readViewport() {
     dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
   };
 }
-function toggleFxMode() {
-  const next = readFxMode() === "pixi" ? "dom" : "pixi";
+/* #kompositor: `?fxs=<zahl>` überschreibt den Auflösungsfaktor aller Feld-Ebenen — der Regler, mit dem am echten
+   Gerät entschieden wird, statt am Schreibtisch zu schätzen. Das HUD zeigt ihn nur an; ohne den Parameter gilt der
+   Wert der Ebene. Einem Bildschirmfoto war sonst nicht anzusehen, mit welcher Auflösung es entstanden ist — und
+   jedes „sieht grob aus" wäre damit zweideutig. */
+function readFxScale() {
   try {
-    window.localStorage?.setItem("as_fx", next);
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("fx")) { url.searchParams.set("fx", next); window.location.href = url.toString(); return; }
-  } catch { /* localStorage/URL nicht verfügbar → einfacher Reload */ }
-  window.location.reload();
-}
-/* #kompositor-Zustand aus der URL (`?fx2=1`, optional `?fxs=<zahl>`). Bewusst NICHT aus FieldLayer importiert:
-   das HUD soll den Zustand ANZEIGEN, nicht den Effekt-Chunk in den Preview-Pfad ziehen. */
-function readFx2() {
-  try {
-    const q = new URLSearchParams(window.location.search);
-    const s = parseFloat(q.get("fxs"));
-    return { on: q.get("fx2") === "1", scale: Number.isFinite(s) ? s : null };
-  } catch { return { on: false, scale: null }; }
-}
-function toggleFx2() {
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("fx2");
-    url.searchParams.delete("fxs");
-    window.location.href = url.toString();
-  } catch { window.location.reload(); }
+    const v = parseFloat(new URLSearchParams(window.location.search).get("fxs"));
+    return Number.isFinite(v) ? v : null;
+  } catch { return null; }
 }
 
 export function PerfOverlay() {
@@ -110,9 +80,7 @@ export function PerfOverlay() {
     border: "1px solid #33333e", borderRadius: 4, padding: "1px 5px", font: "inherit",
   };
   const vpCol = VIEWPORT_MARKS.includes(vp.w) ? "#5ab87a" : "#8a8a92";  // grün = auf einem Prüfpunkt des Zielbands
-  const fxMode = readFxMode();                            // aktueller Feld-Effekt-Renderer (pixi/dom)
-  const fxCol = fxMode === "pixi" ? "#35e0ff" : "#e0a35a";
-  const { on: fx2, scale: fx2Scale } = readFx2();         // #kompositor: läuft er, und mit welchem Faktor
+  const fxScale = readFxScale();                          // #kompositor: gesetzter Auflösungsfaktor (?fxs=)
   return (
     <div
       className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold font-pixel tracking-wide"
@@ -125,15 +93,7 @@ export function PerfOverlay() {
       <span style={{ color: "#8a8a92" }}>· DPR {vp.dpr}</span>
       <button style={btn} onClick={doReport} title={t("perf.report")}>{copied ? "✓" : "⧉"}</button>
       <button style={btn} onClick={resetPerf} title={t("perf.reset")}>↺</button>
-      <button style={{ ...btn, color: fxCol, borderColor: `${fxCol}66` }} onClick={toggleFxMode}
-        title="Feld-Effekt-Renderer umschalten (GPU-Emitter ↔ DOM) + neu laden">FX:{fxMode === "pixi" ? "PIXI" : "DOM"}</button>
-      {/* #kompositor: OB der Kompositor läuft und mit WELCHEM Auflösungsfaktor. Ohne diese Anzeige ist jedes Urteil
-          über einen Effekt zweideutig — „sieht grob aus" heißt je nach Schalterstellung etwas völlig anderes, und
-          man kann es dem Bildschirmfoto nicht ansehen. Erscheint nur, wenn `?fx2=1` gesetzt ist. */}
-      {fx2 && (
-        <button style={{ ...btn, color: "#9d7cff", borderColor: "#9d7cff66" }} onClick={toggleFx2}
-          title="Feld-Kompositor aus (zurück auf je eine Canvas pro Effekt) + neu laden">FX2{fx2Scale ? `:${fx2Scale}` : ""}</button>
-      )}
+      {fxScale && <span style={{ color: "#9d7cff" }}>· FX ×{fxScale}</span>}
     </div>
   );
 }

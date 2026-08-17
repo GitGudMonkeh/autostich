@@ -38,7 +38,7 @@ denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1290 g
 Deutschsprachiger Code/Kommentare beibehalten.
 
 ### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
-- **Bleibt:** Hintergrund-Effekt **Aurora** (raw-WebGL `src/ui/fx/AuroraFieldGL.jsx`; die damalige Begründung
+- **Bleibt:** Hintergrund-Effekt **Aurora** (Shader-Quelle `src/ui/fx/auroraShader.js`, gerendert vom Kompositor; die damalige Begründung
   „Pixi-Custom-Shader rendert auf dem Mobile-Setup nicht" ist **widerlegt**, s. #fx-spike), Hintergrund-Finisher **Glutfunken** (Pixi `src/ui/fx/embersPixi.js`), der synthetische
   **Klinge**-Finisher (einziger Sieg-Finisher) und die **Gottgleich-Kategorie** (`group "gott"`) mit nur „Standard"
   (`GOTT_STANDARD`) — Prunk kommt später neu rein.
@@ -67,16 +67,11 @@ Invalidiert wird in `startPlay()`; Screen-Shake ist ein `translate` und lässt B
   „balanced" → `reduced=false`, `lite=true`. Der Prunk läuft dort also — nur `reducedFx:"an"` (minimal) schaltet ihn ab.
 
 ### Rendering-Fakten (wichtig!)
-- **Produktion = DOM** (`FX_RENDERER`/`pixiEnabled` sind an `VITE_PREVIEW/DEV` gegated). Pixi-Emitter laufen nur
-  im Preview/Dev. In-Game + Showcase nutzen in Prod für die verbliebenen DOM-Effekte die DOM-`FieldFxLayer`. Die
-  DOM-Fassung kennt **kein `deckTint`** → Standard/Deckfarbe muss über die `color`-Wahl im Aufrufer geschaltet werden
-  (siehe Showcase-Fix in CustomizeScreen).
-- **Aurora läuft jetzt AUCH in Produktion als raw-WebGL** (`AuroraFieldGL`, wie Neon-Brandung/#345 & Komet/#346) — der
-  DOM-Fallback („Glow von oben") entsprach nicht dem Showcase. `auroraGL` (Battlefield.jsx + `auroraGLActive` in
-  CustomizeScreen) = `bgFx==="aurora" && deckA1 && (Preview/Dev ? FX_RENDERER==="pixi" : true)`. Heißt: in Prod IMMER
-  WebGL; im Preview/Dev bleibt der A/B-Schalter (FX:dom → DOM-`FieldFxLayer`, FX:pixi → WebGL). `AuroraFieldGL` ist ein
-  kleiner statischer Import (kein Pixi), mobil bereits gedrosselt (3 Vorhänge/30fps/DPR1.4). Die DOM-Aurora in
-  `FieldFxLayer` bleibt als reiner Preview-A/B-Fallback bestehen.
+- **DOM-Fassungen gibt es nicht mehr.** Die Shader-Feldeffekte laufen über den Kompositor (Preview wie Prod), die
+  Feld-FINISHER (Glutfunken/Sternenfeld) über den Pixi-Emitter `PixiStage`. Historie: früher war „Produktion = DOM"
+  über `FX_RENDERER` gegated — dieser Schalter ist entfallen (s. #kompositor).
+- **Aurora/Neon-Brandung/Leuchten laufen über den Feld-Kompositor** — in Preview WIE in Produktion, ohne env-Verzweigung
+  (s. #kompositor). `FieldFxLayer`, `FX_RENDERER` und die DOM-Aurora sind entfallen.
 - **AUSNAHME #318 Karten-Animationen** (Edge-Glow/Holo/Glitch/Materialize, CardFxStage): das sind KAUFBARE Shop-Effekte
   und laufen daher **auch in Produktion** (`CARD_FX_ENABLED=true` in Battlefield.jsx, ersetzt das Preview/Dev-Gate der
   CardFxStage + `matActive`). Pixi lädt nur lazy, wenn der Spieler eine Animation besitzt UND aktiviert hat (sonst
@@ -119,7 +114,7 @@ Die Faktorenkette unter dem Feld war entfernt („im Spielfluss nicht lesbar") u
 ### #fx-spike WIDERLEGT: Pixi-Custom-Shader laufen auf dem Handy (2026-08-17)
 Der Satz „Pixi-Custom-Shader rendert auf dem Mobile-Setup NICHT" hat die Effekt-Architektur zersplittert (Aurora,
 Neon-Brandung und Leuchten sind deswegen je eine eigene raw-WebGL-Canvas). **Er stimmt nicht mehr.** Auf dem echten
-Gerät des Users (Android, 5G-Handy) nachgemessen über `?fxspike=1` (`src/ui/fx/FxSpike.jsx`, nur Preview/Dev):
+Gerät des Users (Android, 5G-Handy) nachgemessen über eine Spike-Seite (inzwischen entfallen, Erkenntnisse hier):
 ein trivialer Pixi-Custom-Shader UND der komplette Neon-Brandungs-Shader rendern beide, jeweils **60 Zeichnungen/s**,
 und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger Grund: WebGPU ohne WGSL-Variante —
 `PixiStage` erzwingt inzwischen `preference:"webgl"`.
@@ -146,56 +141,43 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
   (breite weiche Vorhänge) und Leuchten (Glow an Konturen) tragen vermutlich weniger, sind aber NICHT gemessen —
   wer sie in den Kompositor holt, lässt sie einzeln beurteilen.
 
-### #kompositor — Feld-Ebenen in EINE Pixi-Bühne (`?fx2=1`, laufender Umbau)
-Umsetzung des Ziels aus #fx-spike. `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry;
-jede Ebene rendert in eine **eigene, kleinere Render-Textur** und wird beim Zusammensetzen hochskaliert (Kosten ∝
-Fläche → quadratisch im Faktor). Portiert: **Neon-Brandung** (mobil 0,75 — am Gerät bestätigt), **Aurora**
-(mobil 0,6 — am Gerät bestätigt) und **Leuchten/DeckGlow** (**mobil 1,0, also KEINE Verkleinerung**).
-- **Nicht jede Ebene verträgt den Auflösungs-Hebel.** Leuchten reitet auf den KONTUREN des Hintergrundbildes; grob
-  gerechnet trifft die Glut die feinen Linien nicht mehr → „Hintergrund wirkt pixelig, Details gehen verloren"
-  (Urteil am Gerät). Gemessene Abweichung zur Canvas-Fassung (von 255, Handy-Viewport): 0,50 → 5,45 · 0,60 → 4,88 ·
-  0,75 → 3,63 · 0,85 → 3,33 · **1,00 → 0,56**. Kein Knick, an dem man billig davonkäme. Diese Ebene verdient ihren
-  Platz im Kompositor über die geteilte Bühne, nicht über die Auflösung.
+### #kompositor — EIN Renderpfad für die Shader-Feldeffekte (kein A/B mehr)
+`src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry; jede Ebene rendert in eine eigene
+Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor 1 — direkt auf die Bühne. Ebenen:
+**Neon-Brandung** (mobil 0,75), **Aurora** (mobil 0,6), **Leuchten/DeckGlow** (mobil 1,0, s. u.). Aufrufer ist
+`src/ui/fx/FieldLayer.jsx` (`layer=` für eine Ebene, `stack=[{key,props}]` für mehrere in derselben Bühne).
+- **Der A/B-Schalter `?fx2=1` ist WEG, und zwar ohne dass der Kompositor schneller wäre.** Am Gerät gemessen
+  (5 Runden mit/ohne, sonst identisch): Spielphase 2 von 160 Stichen gegen 1 von 162 Ruckler, p50/p95/p99 in beiden
+  Läufen 17/17/33 ms — weder Vorteil noch Nachteil. Entschieden wurde für den Kompositor, weil ein Schalter ZWEI
+  Implementierungen bedeutet und zwei Implementierungen driften. Eine Fassung ist besser als zwei gleich schnelle.
+- **Was dabei verschwunden ist** (vorher parallel gepflegt): `AuroraFieldGL`/`NeonSurfFieldGL`/`DeckGlowFieldGL`
+  (raw-WebGL-Komponenten → nur noch `auroraShader.js`/`neonsurfShader.js`/`deckglowShader.js` mit der Shader-Quelle),
+  die DOM-Aurora in `FieldFxLayer` (dritte Aurora-Fassung, anderer Look, nur über `?fx=dom` erreichbar) samt der
+  ganzen Komponente, `FX_RENDERER` + der FX:PIXI/DOM-Schalter im Perf-HUD, und `FxSpike.jsx` (die Spike-Seite hatte
+  ihre eine Frage beantwortet und hielt sonst nur eine zweite Fassung derselben Shader am Leben).
+- **Die Vorschau im Anpassen-Bildschirm fährt jetzt denselben Pfad wie das Spiel.** Vorher lag genau dort die
+  größte Drift-Gefahr: der Showcase mountete noch die raw-Canvas, das Spiel den Kompositor.
+- **Leuchten verträgt KEINE Verkleinerung.** Es reitet auf den KONTUREN des Hintergrundbildes; grob gerechnet trifft
+  die Glut die feinen Linien nicht mehr → „Hintergrund wirkt pixelig, Details gehen verloren" (Urteil am Gerät).
+  Gemessene Abweichung zur alten Fassung (von 255, Handy-Viewport): 0,50 → 5,45 · 0,60 → 4,88 · 0,75 → 3,63 ·
+  0,85 → 3,33 · **1,00 → 0,56**. Kein Knick, an dem man billig davonkäme.
 - **Faktor 1 geht OHNE Render-Textur direkt auf die Bühne.** Der Umweg ist auch bei voller Auflösung nicht gratis:
   `Math.round` auf eine krumme CSS-Breite lässt Textur- und Bildschirmmaß auseinanderlaufen, das Sprite resampelt
-  dann die ganze Fläche. Gemessen: 1,81 mit Umweg gegen **0,56** ohne. Sichtbar genau auf dünnen hellen Konturen.
+  dann die ganze Fläche. Gemessen: 1,81 mit Umweg gegen **0,56** ohne. Sichtbar auf dünnen hellen Konturen.
 - **Abnahme einer portierten Ebene: rechnen, nicht gucken.** Beide Pfade auf `animate={false}` (friert sie auf
-  dieselbe Sekunde), Panel gegen Panel, mittlere Abweichung je Zeilenband ausrechnen. Für Leuchten: **0,0 von 255**,
-  also pixelgleich. Der Blickvergleich trägt hier nicht — bei additivem Magenta auf grünen Konturen hatte ich ein
-  vertikal GESPIEGELTES Bild zuerst für richtig gehalten.
-- **Vergleichsaufbau braucht das CSS des Spiels.** Ohne Tailwind bleibt die raw-Canvas auf der HTML-Standardgröße
-  300×150 (`w-full h-full` greift nicht), der Kompositor misst seinen Host → man vergleicht zwei Auflösungen. Genau
-  das hat mich zwei wirkungslose „Korrekturen" (alphaMode, Mipmaps) einbauen lassen. **Erst Canvas-Größen
-  gegenprüfen, dann Bilder.** Mit gleicher Größe war der Unterschied sofort exakt null.
+  dieselbe Sekunde), Panel gegen Panel, mittlere Abweichung je Zeilenband ausrechnen. Für Leuchten: 0,0 von 255.
+  Der Blickvergleich trägt nicht — bei additivem Magenta auf grünen Konturen hatte ich ein vertikal GESPIEGELTES
+  Bild zuerst für richtig gehalten.
+- **Vergleichsaufbau braucht das CSS des Spiels.** Ohne Tailwind bleibt eine raw-Canvas auf der HTML-Standardgröße
+  300×150 (`w-full h-full` greift nicht) → man vergleicht zwei Auflösungen. Erst Canvas-Größen gegenprüfen.
+- **`?fxs=<zahl>`** überschreibt den Auflösungsfaktor aller Ebenen (Preview/Dev) — der Regler, mit dem am Gerät
+  entschieden wird. Der Perf-HUD zeigt ihn an, sobald er gesetzt ist.
 - Wächter: `test/pixi-field-shader.test.js` prüft die Port-Regeln als reine Funktion (kein WebGL nötig) und baut
-  JEDE registrierte Ebene — ein Port-Fehler fällt damit in Millisekunden auf statt am Gerät.
-- **Am Gerät entscheiden, nicht schätzen: `?fxs=<zahl>`** überschreibt den Auflösungsfaktor aller Ebenen (nur mit
-  `?fx2=1`, Preview/Dev). `?fxs=1` = volle Auflösung und beantwortet damit die Kernfrage bei jedem „sieht grob aus":
-  liegt es am FAKTOR oder am EFFEKT? Der Perf-HUD zeigt jetzt eine `FX2`-Kachel (mit Faktor, Klick = aus) —
-  ohne die war einem Bildschirmfoto nicht anzusehen, welcher Pfad überhaupt lief, und jedes Urteil zweideutig.
-- **Umschalter je Ebene: `src/ui/fx/FieldLayer.jsx`** (`?fx2=1`, Preview/Dev-gegatet). Aufrufer geben die bisherige
-  Fassung als `fallback` mit — sie rendert ohne den Schalter UND als Rückfall, wenn der Kompositor scheitert.
-  Bewusst ENTWEDER/ODER: liefen beide, wäre die Fläche doppelt bezahlt und jede Messung wertlos.
-- **`FxBoundary` ist Pflicht um jeden lazy-Effekt.** Der Kompositor hängt an `React.lazy`; scheitert der Chunk, WIRFT
-  `lazy` beim Rendern — und die App hat sonst KEINE Error-Boundary, der ganze Baum riss ab (schwarzer Bildschirm,
-  wenige Minuten nach dem ersten Deploy live passiert).
-- **Der Shader-Port liegt in `src/ui/fx/pixiFieldShader.js`** — dort stehen die inzwischen **fünf** Fallen (s. u.),
-  `toPixiFragment` bricht neuerdings laut ab, wenn ein `gl_FragCoord` stehen bleibt (das war Falle 2 zum zweiten Mal:
-  Aurora schreibt `gl_FragCoord.xy / uRes.xy` MIT Leerzeichen, die Brandung ohne → Ersetzung griff nicht, Bild kam
-  trotzdem, nur y-gespiegelt). Die Ebenen benutzen die Shader-Quelle der Originalkomponente (`NEONSURF_FRAG`,
-  `AURORA_FRAG_SRC`) — **nie abtippen**, sonst driften alter und neuer Pfad auseinander.
-- **Mehrere Ebenen je Bühne: `stack={[{key,props},…]}`** (unten → oben). Das Battlefield legt Leuchten + Hintergrund
-  genau dann zusammen, wenn BEIDE laufen (`glowStacked`) — nur dann ist es z-sicher, weil das z-1-Ambiente bei
-  aktivem Aurora/Brandung ohnehin unterdrückt ist (`suppressField`). Läuft Leuchten allein, bleibt es in seinem
-  z-0-Container, sonst rutschte es über das Ambiente. Nachgemessen: Bild identisch (0,31 von 255, bei laufender
-  Zeit), **Canvas 2 → 1**.
-- **Der Gewinn selbst ist weiter NICHT belegt.** Gebündelt wird nicht die Füllarbeit — dieselben Pixel, dieselben
-  Shader —, sondern der zweite WebGL-Kontext und der zweite Browser-Composite. Genau die sind im Messstand
-  (Software-GL, headless) unsichtbar: gemessen wurden 28 gegen 24 ms JS-Arbeit auf 6 s, was nichts beweist. Der
-  Beleg gehört ans Gerät: `?fx2=1` gegen ohne, Leuchten UND Aurora/Brandung an, FPS/p95/jank aus dem Perf-HUD.
-- **Textur-Ebenen: Y-Dreher gehört ins Laden.** Die portierte UV zählt von unten (nachgemessen), die raw-Fassungen
-  benutzen dafür `UNPACK_FLIP_Y_WEBGL`, Pixi lädt ungedreht. Prüfen an einer Wegwerf-Ebene, die NUR die Textur
-  ausgibt, neben demselben Bild als DOM-`<img>` — nicht am fertigen Effekt.
+  JEDE registrierte Ebene — ein Port-Fehler fällt in Millisekunden auf statt am Gerät.
+- **NICHT im Kompositor** (eigene Canvas, bewusst offen): die Pixi-Emitter für Glutfunken/Sternenfeld (`PixiStage`)
+  und die Würfel-Matrix. Das sind Partikel-/Szenen-Effekte, keine Vollbild-Shader — die Registry müsste dafür
+  beliebige Pixi-Container aufnehmen statt nur ein Shader-Quad. Eigener Entwurfsschritt, kein mechanischer Port.
+  Ein Perf-Argument dafür gibt es nach der Messung oben ohnehin nicht.
 
 ### #perf-nova — Supernova mobil getrimmt: die Kosten waren die CPU, nicht die Füllrate
 Profil des Prunks im isolierten Messstand (Handy-Viewport, `lite`): **`buildLine` allein 673 von 1563 ms**, mit

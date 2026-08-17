@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 import { isCoarse, dprCap } from "./mobileTier.js";
 import { PIXI_FIELD_VERT, toPixiFragment, fieldQuadGeometry } from "./pixiFieldShader.js";
-import { NEONSURF_FRAG } from "./NeonSurfFieldGL.jsx";
-import { AURORA_FRAG_SRC } from "./AuroraFieldGL.jsx";
-import { DECKGLOW_FRAG_SRC } from "./DeckGlowFieldGL.jsx";
+import { NEONSURF_FRAG } from "./neonsurfShader.js";
+import { AURORA_FRAG_SRC } from "./auroraShader.js";
+import { DECKGLOW_FRAG_SRC } from "./deckglowShader.js";
 
 /* FELD-KOMPOSITOR — eine Bühne, viele Ebenen, Auflösung je Ebene.
 
@@ -235,7 +235,7 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
   const entries = stack && stack.length ? stack : [{ key: layer, props: rest }];
   const stackKey = entries.map((e) => e.key).join(",");
 
-  // Live-Props für den Ticker spiegeln — die Bühne wird nur EINMAL gebaut (Muster wie NeonSurfFieldGL/PixiStage:
+  // Live-Props für den Ticker spiegeln — die Bühne wird nur EINMAL gebaut (Muster wie PixiStage:
   // ein Prop-Wechsel darf den WebGL-Kontext nicht abreißen, sonst blitzt der Effekt bei jedem Farbwechsel weg).
   const pRef = useRef([]);
   pRef.current = entries.map((e) => normProps(e.props));

@@ -1,35 +1,29 @@
 import { lazy, Suspense } from "react";
 import { FxBoundary } from "./FxBoundary.jsx";
 
-/* #kompositor A/B — EIN Umschalter für alle Feld-Ebenen.
+/* Feld-Ebene(n) — der EINZIGE Renderpfad für die Shader-Feldeffekte (Aurora, Neon-Brandung, Leuchten).
 
-   `?fx2=1` schaltet die Feld-Ebene vom heutigen Ein-Canvas-Pfad (je Effekt eine eigene raw-WebGL-Canvas) auf den
-   Kompositor um (eine Bühne, Auflösung je Ebene). Default AUS — der alte Pfad bleibt der ausgelieferte, solange
-   der Umbau nicht durchgemessen ist. Hinter demselben Preview/Dev-Gate wie FX_RENDERER, damit Prod nichts davon
-   sieht und der Minifier den Leser wegfaltet. Absicht des Schalters: derselbe Build, dasselbe Gerät, EIN
-   Unterschied — nur so ist der Kompositor-Gewinn belegbar statt behauptet.
+   Es gab hier lange einen A/B-Umschalter (`?fx2=1`): links der alte Pfad mit je einer eigenen WebGL-Canvas pro
+   Effekt, rechts der Kompositor. Der ist entfallen, und zwar bewusst OHNE dass der Kompositor sich als schneller
+   erwiesen hätte — am Gerät gemessen war er weder schneller noch langsamer. Der Grund ist ein anderer: ein Schalter
+   heißt zwei Implementierungen, und zwei Implementierungen driften. Genau daran hat dieses Projekt schon einmal
+   Wochen verloren (dieselbe Arbeit lag mehrfach als verschiedene Objekte vor, s. CLAUDE.md). Der Kompositor gewinnt
+   also nicht über Zahlen, sondern weil eine Fassung besser ist als zwei gleich schnelle.
 
-   Bewusst ein ENTWEDER/ODER: liefen alte und neue Fassung gleichzeitig, wäre die Fläche doppelt bezahlt und jede
-   Messung wertlos. Die alte Fassung ist gleichzeitig der Rückfall — scheitert der Kompositor (Chunk, WebGL,
-   Shader), sieht der Spieler den bisherigen Effekt statt eines schwarzen Bildschirms. Ohne diese Grenze riss ein
-   fehlgeschlagener lazy-Chunk den ganzen React-Baum ab; die App hat sonst keine Error-Boundary.
+   Entweder EINE Ebene (`layer` + flache Props) oder mehrere in EINER Bühne (`stack={[{ key, props }]}`, von unten
+   nach oben). Der Stapel spart den zweiten WebGL-Kontext und das zweite Composite des Browsers.
 
-   Warum als eigene Datei und nicht inline im Battlefield: die Umschaltung ist je Ebene identisch und stand nach
-   der zweiten Ebene wortgleich zweimal da. */
+   `FxBoundary` bleibt Pflicht: der Kompositor hängt an `React.lazy`, und scheitert der Chunk, WIRFT `lazy` beim
+   Rendern. Die App hat keine andere Error-Boundary — ohne diese hier riss ein fehlgeschlagener Chunk den ganzen
+   Baum ab (schwarzer Bildschirm, live passiert). Der Rückfall ist jetzt „kein Effekt" statt „alter Effekt": ein
+   Effekt ist Schmuck und darf das Spiel nicht mitnehmen, aber eine zweite Fassung nur als Notnagel vorzuhalten
+   wäre genau die Doppelung, die hier gerade verschwunden ist. */
 const FieldCompositor = lazy(() => import("./FieldCompositor.jsx"));
 
-export const FIELD_COMPOSITOR = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV)
-  && (() => { try { return new URLSearchParams(window.location.search).get("fx2") === "1"; } catch { return false; } })();
-
-/* `fallback` ist die bisherige Fassung dieser Ebene(n) — sie rendert ohne `?fx2=1` UND als Rückfall im Fehlerfall.
-   Entweder EINE Ebene (`layer` + flache Props) oder mehrere in EINER Bühne (`stack={[{ key, props }]}`, von unten
-   nach oben). Der Stapel ist der eigentliche Punkt des Umbaus: solange jede Ebene ihre eigene Bühne hat, ist der
-   Kompositor nur ein gemeinsamer Pfad und noch keine gemeinsame Fläche. */
-export default function FieldLayer({ layer, stack = null, fallback, ...props }) {
-  if (!FIELD_COMPOSITOR) return fallback;
+export default function FieldLayer({ layer, stack = null, ...props }) {
   const name = stack ? stack.map((e) => e.key).join("+") : layer;
   return (
-    <FxBoundary name={`Feld-Kompositor (${name})`} fallback={fallback}>
+    <FxBoundary name={`Feld-Kompositor (${name})`} fallback={null}>
       <Suspense fallback={null}>
         <FieldCompositor layer={layer} stack={stack} {...props} />
       </Suspense>

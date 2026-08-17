@@ -4,10 +4,10 @@ import { createStarfield } from "./starfieldPixi.js"; // #glutfunken-raus: ember
 
 /* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
    Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an.
-   Aurora ist NICHT hier: sie läuft als eigenständige WebGL-Canvas (AuroraFieldGL). Die damalige Begründung war
-   „Pixis Custom-Shader rendert auf dem Mobile-Setup nicht" — die ist WIDERLEGT (#fx-spike, 2026-08-17): auf dem
-   echten Handy rendern Pixi-Custom-Shader, auch der komplette Brandungs-Shader, mit 60 Zeichnungen/s. Aurora
-   bleibt vorerst hier draußen, bis der Kompositor-Umbau sie planmäßig einsammelt. */
+   Aurora/Neon-Brandung/Leuchten sind NICHT hier: das sind Vollbild-SHADER und laufen im Feld-Kompositor
+   (FieldCompositor.jsx). Hier wohnen die EMITTER (Partikel/Szenen). Ob die auch in den Kompositor gehören, ist
+   offen und bewusst nicht entschieden: seine Registry nimmt heute ein Shader-Quad, kein beliebiges Pixi-Objekt —
+   und ein Perf-Argument dafür gibt es nach der Gerätemessung nicht (s. CLAUDE.md #kompositor). */
 const FIELD_FX = {
   starfield: createStarfield,
 };
