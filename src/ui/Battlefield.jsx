@@ -730,7 +730,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   hideFloatScore = false, hideFloatMult = false, hideFloatWinLose = false,
   // Stich-Aufschlüsselung (§17) unter dem Feld: Basis × Serie × Perks × Form × Crit (+ Direkt) = Summe.
   // Default SICHTBAR (false) wie die Floating-Text-Schalter; die Zeile hält ihre Höhe auch ausgeblendet.
-  hideBreakdown = false }) {
+  hideBreakdown = false,
+  // #perf-overlay: „Das Brett ist wirklich zu sehen." Jede Auswahl-Phase (Architekt/Perk/Skill/Aufstellung/Ziel/
+  // Legendär) legt ein Vollbild-Overlay ÜBER das weiterhin gemountete Battlefield — die Effekt-Schleifen liefen
+  // dort mit voller Rate für ein Bild, das niemand sieht. Gemessen: 99 von 386 Rucklern eines Laufs fielen in
+  // 4 Architekt-Besuche. Bisher hielt nur `visibilitychange` (Tab im Hintergrund) sie an.
+  boardVisible = true }) {
   const klinge = finisher === "klinge"; // Klinge-Schnitt aktiv? Sonst schlichter Standard-Wegflug.
   const scorch = finisher === "scorch"; // #319 Scorch: Laser + organischer Burn statt Wegflug.
   const hologrid = finisher === "hologridSlice"; // #321 Hologrid-Slice: Laser-Reveal + Kachel-Zerfall statt Wegflug.
@@ -927,7 +932,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   //   Produktion (NICHT preview-gegatet). Aus cardAnims-Toggle bzw. ?edgeglow=1 (Dev). Immer in der Deckfarbe.
   const cardEdgeGlow = (cardAnims || []).includes("edgeglow") || EDGEGLOW_FORCE;
   const edgeGlowEl = cardEdgeGlow ? (
-    <Suspense fallback={null}><CardEdgeGlow color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"} reduced={reduced} lite={lite} /></Suspense>
+    <Suspense fallback={null}><CardEdgeGlow color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"} reduced={reduced} lite={lite} active={boardVisible} /></Suspense>
   ) : null;
   const pCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
@@ -1408,6 +1413,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           {/* Hintergrund-Finisher (reagiert je Stich) — Pixi, z-3 VOR dem BG-Effekt. #346: mountet in Produktion NUR,
               wenn pixiFin aktiv ist (Komet/Sternenfeld gewählt) → Pixi lädt dann lazy; ohne aktiven Effekt bleibt es aus. */}
           <PixiStage className="z-[3]"
+            active={boardVisible}
             effect={pixiFin ? bgFinisher : null}
             color={deckA1 || "#ffffff"}
             color2={deckA2 || "#b06bff"}
@@ -1450,7 +1456,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               /* Karten-Animationen IMMER in der Deckfarbe: color2 = deckA2 (oder deckA1, wenn das Deck nur eine Farbe
                  hat) → mono-Deckfarbe statt Verlauf zu einem Fremdton. */
               color={deckA1 || "#5a8ade"} color2={deckA2 || deckA1 || "#5a8ade"}
-              tier={hitTier} reduced={reduced} lite={lite} />
+              tier={hitTier} reduced={reduced} lite={lite} active={boardVisible} />
           </Suspense>
         );
       })()}

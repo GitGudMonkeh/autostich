@@ -279,6 +279,13 @@ export function Autostich() {
     onDone: () => { saveTutorialDone(true); setTutorialDone(true); },
   });
   const active = inRun && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && !tut.blocking;
+  // #perf-overlay: „Das Brett ist wirklich zu sehen." `active` deckt nur die Modals ab (Optionen/Chronik/Glossar/
+  // Rückfragen/Pause) — die AUSWAHL-PHASEN fehlten: Architekt, Perk/Skill, Aufstellung, Ziel- und Legendär-Wahl
+  // rendern ihr Vollbild-Overlay ÜBER das weiterhin gemountete Battlefield (s. `state.phase === "architect"` weiter
+  // unten — der Screen ersetzt das Brett nicht, er liegt darauf). Die Effekt-Schleifen liefen dort mit voller Rate
+  // für ein unsichtbares Bild weiter; im Perf-Report fielen 99 von 386 Rucklern eines Laufs in nur 4 Architekt-
+  // Besuche. Das Brett ist nur in der Spielphase sichtbar → genau dann dürfen die Emitter laufen.
+  const boardVisible = active && state.phase === "play";
   stateRef.current = state; // Snapshot-Handler lesen immer den aktuellen State (kein Re-Registrieren je Stich)
   // #telemetrie: gleiche Technik für Profil/Optionen — der pagehide-Handler ist EINMAL registriert und
   // dürfte sonst einen eingefrorenen (stale) Stand von vor Stunden senden.
@@ -1069,7 +1076,7 @@ export function Autostich() {
                 deckGlow={deckFx.deckGlow}
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
-                hideBreakdown={options.hideBreakdown}
+                hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
               {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
                   Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}

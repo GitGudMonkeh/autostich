@@ -44,6 +44,9 @@ export function CardFxStage({
   layers = {},                // { edgeGlow?, holo?, glitch? } — welche Layer an sind
   color = "#5a8ade", color2 = null,
   tier = 0, reduced = false, lite = false,
+  // #perf-overlay: false, sobald das Brett von einem Vollbild-Overlay verdeckt ist (Auswahl-Phasen) oder der Lauf
+  // pausiert — dann hält der Ticker an, statt für ein unsichtbares Bild weiterzurechnen.
+  active = true,
 }) {
   const hostRef = useRef(null);
   const appRef = useRef(null);
@@ -58,7 +61,7 @@ export function CardFxStage({
     colInt: colNum(color),
     col2Int: color2 != null ? colNum(color2, colNum(color)) : null,
     tierMul: TIER_MUL[Math.max(0, Math.min(TIER_MUL.length - 1, tier | 0))],
-    reduced, lite,
+    reduced, lite, active,
     anyLayer: !!(layers && (layers.edgeGlow || layers.holo || layers.glitch)),
     anyActive: (cards || []).some((c) => c && c.active),
   };
@@ -158,7 +161,7 @@ export function CardFxStage({
       // #perf-mobile: Karten-Overlay auf lite auf 40 fps deckeln (fokaler Effekt → bewusst etwas höher als die 30 fps
       //   der Feld-Bühne), Desktop/full ungedeckelt. Bei jedem applyRun (Aktiv-/Stufenwechsel) frisch gesetzt.
       a.ticker.maxFPS = st.lite ? 40 : 0;
-      const run = st.anyLayer && st.anyActive && document.visibilityState !== "hidden";
+      const run = st.anyLayer && st.anyActive && st.active && document.visibilityState !== "hidden";
       if (run) a.ticker.start();
       else { a.ticker.stop(); clearAll(); }
     }

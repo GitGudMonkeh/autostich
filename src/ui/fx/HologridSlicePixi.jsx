@@ -54,8 +54,10 @@ function roundRect(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPat
 
 /* Karten-Textur (frontImage-Skin + große Wert-Zahl) in ein Off-Canvas backen — Grundlage für die Kachel-Füllung.
    (Angelehnt an ScorchFx.buildCardCanvas: Deck-Skin füllt die Karte, die Zahl macht sie erkennbar.) */
-function buildCardCanvas(w, h, opts) {
-  const cv = document.createElement("canvas"); cv.width = Math.max(2, w | 0); cv.height = Math.max(2, h | 0);
+/* #perf-hologrid: malt in ein ÜBERGEBENES Canvas (statt je Aufruf ein neues zu allozieren). Der Slice läuft bei
+   JEDEM Sieg — ein frisches Canvas + eine frische GPU-Textur pro Stich waren ein Gutteil der Stich-Spitze. Jetzt
+   wird dasselbe Canvas neu bemalt und die EINE Textur aktualisiert. */
+function paintCardCanvas(cv, opts) {
   const cc = cv.getContext("2d"); const W = cv.width, H = cv.height, rad = W * 0.11;
   cc.clearRect(0, 0, W, H);
   cc.save(); roundRect(cc, 0, 0, W, H, rad); cc.clip();
@@ -72,6 +74,15 @@ function buildCardCanvas(w, h, opts) {
   }
   cc.restore();
   return cv;
+}
+
+// Off-Canvas in der gewünschten Größe bereitstellen (wiederverwendet, solange die Größe passt).
+function sizedCanvas(cv, w, h) {
+  const W = Math.max(2, w | 0), H = Math.max(2, h | 0);
+  if (cv && cv.width === W && cv.height === H) return cv;
+  const n = cv || document.createElement("canvas");
+  n.width = W; n.height = H;
+  return n;
 }
 
 export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, frontImage = null, value = null, suit = "#e0605a",
@@ -96,7 +107,8 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
 
     const play = { on: false, t: 0 };
     let tiles = [], pix = [], root = null, beamG = null, pixG = null;
-    let cardTex = null, tileTexes = [];
+    let cardCv = null, cardTex = null, tileTexes = [];
+    let sceneKey = null;      // Raster + Kartengröße der GEBAUTEN Bühne — ändert sie sich nicht, wird nichts neu gebaut
     let geo = null;           // { cardX, cardY, cardW, cardH, W, H, floorY, sweepx, sweepy, entry }
     let DUR = 0;
 
@@ -105,26 +117,30 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
       for (const tx of tileTexes) { try { tx.destroy(false); } catch { /* ignore */ } }
       tileTexes = [];
       if (cardTex) { try { cardTex.destroy(true); } catch { /* ignore */ } cardTex = null; }
+      cardCv = null; sceneKey = null; geo = null;
       tiles = []; pix = []; beamG = pixG = null;
     }
 
-    function build() {
-      const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return false;
-      const cr = cardRef?.current?.getBoundingClientRect(); if (!cr || cr.width < 8) return false;
+    /* #perf-hologrid: Die Bühne wird EINMAL gebaut und über die Stiche hinweg behalten.
+       Vorher lief bei jedem Sieg `clearScene() + build()`: Kartentextur neu backen UND COLS×ROWS Kacheln neu
+       allozieren — auf der vollen Stufe 12×16 = 192 Kacheln, jede mit eigener Texture + Container + Sprite +
+       Graphics-Stroke, also ~770 frische Pixi-Objekte je gewonnenem Stich (plus Zerstörung der alten). Genau das
+       war die gemessene Stich-Spitze (Perf-Report: schlimmste Frames 117–133 ms auf `trick`).
+       Neu gebaut wird nur noch, wenn sich RASTER oder KARTENGRÖSSE ändern (Effekt-Stufe/Layout). Je Sieg bleiben:
+       dasselbe Canvas neu bemalen + eine Textur-Aktualisierung, Positionen und Sweep-Koordinaten neu rechnen
+       (reine Arithmetik, keine Allokation). Der Look ist unverändert. */
+    function ensureScene(cardW, cardH) {
       const s = p.current;
-      const cardX = cr.left - pr.left, cardY = cr.top - pr.top, cardW = cr.width, cardH = cr.height;
-      const W = pr.width, H = pr.height;
-      // Sweep-Richtung: eine der 4 Kardinalrichtungen; die Laserlinie steht senkrecht dazu.
-      const dirIdx = Math.floor(rndSeed() * 4);
-      const dir = [[1, 0], [-1, 0], [0, 1], [0, -1]][dirIdx];   // →/←/↓/↑
-      const [sweepx, sweepy] = dir;
       // #perf Medium-Stufe (lite): gröberes Raster → deutlich weniger Kacheln (dominanter Kostenposten).
       const cols = s.lite ? Math.max(4, Math.round(TUNE.COLS * TUNE.LITE_GRID)) : TUNE.COLS;
       const rows = s.lite ? Math.max(4, Math.round(TUNE.ROWS * TUNE.LITE_GRID)) : TUNE.ROWS; // #perf-mobile: Boden 5→4, sonst bremst er die Halbierung aus
+      const RES = s.lite ? 1.25 : 2;   // Karten-Textur 2× für Schärfe, lite 1,25×
+      const key = `${cols}x${rows}@${Math.round(cardW)}x${Math.round(cardH)}@${RES}`;
+      if (key === sceneKey && root && cardTex) return { cols, rows, fresh: false };
 
-      // Karten-Textur backen (2× für Schärfe, lite 1,25×), in cols×rows Kacheln zerlegen.
-      const RES = s.lite ? 1.25 : 2;
-      const cardCv = buildCardCanvas(cardW * RES, cardH * RES, { img: imgRef.current, value: s.value, suit: s.suit });
+      clearScene();
+      cardCv = sizedCanvas(null, cardW * RES, cardH * RES);
+      paintCardCanvas(cardCv, { img: imgRef.current, value: s.value, suit: s.suit });
       cardTex = Texture.from(cardCv);
       const src = cardTex.source; src.scaleMode = "linear";
       const twT = cardCv.width / cols, thT = cardCv.height / rows;   // Kachel in Textur-px
@@ -137,12 +153,9 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
       const holoAt = (u) => intOf(mix(ca, cb, clamp01(u)));   // Deck-Verlauf entlang der Karte (u = 0..1 quer)
 
       tiles = [];
-      const cx = cardX + cardW / 2, cy = cardY + cardH / 2;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const tex = new Texture({ source: src, frame: new Rectangle(c * twT, r * thT, twT, thT) }); tileTexes.push(tex);
         const cont = new Container();
-        const homeX = cardX + (c + 0.5) * tw, homeY = cardY + (r + 0.5) * th;
-        cont.position.set(homeX, homeY);
         const fill = new Sprite(tex); fill.anchor.set(0.5); fill.width = tw + 0.6; fill.height = th + 0.6;   // 0.6px Overlap → keine Naht-Ritzen vor Reveal
         // Rahmen (Hologrid): Rechteck-Kontur in Deckfarbe, lokal um die Kachelmitte. Alpha animiert (Reveal → Wire → Fade).
         const hf = (c + 0.5) / cols;           // #359: Verlaufs-Anteil quer über die Karte (für Live-Umfärben gespeichert)
@@ -150,22 +163,41 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
         const frame = new Graphics(); frame.rect(-tw / 2, -th / 2, tw, th).stroke({ width: TUNE.SEAM_W, color: holo, alpha: 1 });
         frame.blendMode = "add"; frame.alpha = 0;
         cont.addChild(fill, frame); root.addChild(cont);
-        // Sweep-Koordinate u ∈ [0,1] (0 = Eintrittskante des Lasers): Projektion der Kachelmitte auf die Sweep-Achse.
-        const u = sweepx !== 0 ? (sweepx > 0 ? (homeX - cardX) / cardW : 1 - (homeX - cardX) / cardW)
-                               : (sweepy > 0 ? (homeY - cardY) / cardH : 1 - (homeY - cardY) / cardH);
-        // Ausricht-Richtung (vom Kartenzentrum nach außen) für den Wegflug.
-        const ox = homeX - cx, oy = homeY - cy, ol = Math.hypot(ox, oy) || 1;
-        tiles.push({ cont, fill, frame, homeX, homeY, u, hf, holo,
-          outx: ox / ol, outy: oy / ol, released: false, dead: false,
-          x: homeX, y: homeY, vx: 0, vy: 0, ang: 0, spin: 0, tphase: rndSeed() * TAU, life: 0,
-          jx: (rndSeed() - 0.5), jy: (rndSeed() - 0.5) });
+        // Position/Sweep/Würfe kommen aus placeTiles()/armSweep() — sie ändern sich je Stich, die Objekte nicht.
+        tiles.push({ cont, fill, frame, r, c, hf, holo,
+          homeX: 0, homeY: 0, u: 0, outx: 0, outy: 0, released: false, dead: false,
+          x: 0, y: 0, vx: 0, vy: 0, ang: 0, spin: 0, tphase: 0, life: 0, jx: 0, jy: 0 });
       }
       root.addChild(beamG, pixG);   // Beam + Mini-Pixel liegen über den Kacheln (Rahmen sitzt je Kachel als Kind-Graphics)
       pix = [];
-      geo = { cardX, cardY, cardW, cardH, W, H, floorY: H * TUNE.FLOOR, sweepx, sweepy, cx, cy, tw, th };
-      // Gesamtdauer: Ladung + Sweep-Release (letzte Kachel bei u=1) + Fragment-Leben.
-      DUR = TUNE.CHARGE + (TUNE.CUT + TUNE.STAGGER) + TUNE.FRAG_LIFE;
-      return true;
+      sceneKey = key;
+      return { cols, rows, fresh: true };
+    }
+
+    // Kachel-Ruhelagen an die aktuelle Kartenposition setzen (die Karte kann zwischen Stichen wandern).
+    function placeTiles(cardX, cardY, cardW, cardH, cols, rows) {
+      const tw = cardW / cols, th = cardH / rows;
+      const cx = cardX + cardW / 2, cy = cardY + cardH / 2;
+      for (const tl of tiles) {
+        tl.homeX = cardX + (tl.c + 0.5) * tw; tl.homeY = cardY + (tl.r + 0.5) * th;
+        // Ausricht-Richtung (vom Kartenzentrum nach außen) für den Wegflug.
+        const ox = tl.homeX - cx, oy = tl.homeY - cy, ol = Math.hypot(ox, oy) || 1;
+        tl.outx = ox / ol; tl.outy = oy / ol;
+      }
+    }
+
+    // Neue Sweep-Richtung würfeln + die davon abhängigen Kachel-Werte neu rechnen (kein Neubau).
+    function armSweep(cardX, cardY, cardW, cardH) {
+      // Sweep-Richtung: eine der 4 Kardinalrichtungen; die Laserlinie steht senkrecht dazu.
+      const dirIdx = Math.floor(rndSeed() * 4);
+      const [sweepx, sweepy] = [[1, 0], [-1, 0], [0, 1], [0, -1]][dirIdx];   // →/←/↓/↑
+      for (const tl of tiles) {
+        // Sweep-Koordinate u ∈ [0,1] (0 = Eintrittskante des Lasers): Projektion der Kachelmitte auf die Sweep-Achse.
+        tl.u = sweepx !== 0 ? (sweepx > 0 ? (tl.homeX - cardX) / cardW : 1 - (tl.homeX - cardX) / cardW)
+                            : (sweepy > 0 ? (tl.homeY - cardY) / cardH : 1 - (tl.homeY - cardY) / cardH);
+        tl.tphase = rndSeed() * TAU; tl.jx = rndSeed() - 0.5; tl.jy = rndSeed() - 0.5;
+      }
+      return { sweepx, sweepy };
     }
 
     // deterministischer-genug Zufall ohne Math.random-Verbot-Bruch: einfacher LCG, je build neu geseedet über performance.now
@@ -294,10 +326,23 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
 
     function startPlay() {
       if (disposed || !appRef.current) return;
-      clearScene();
-      if (!build()) return;
-      play.on = true; play.t = 0;
-      p.current.onFire && p.current.onFire();   // #378 Sound (fx_lasergrid) am Slice-Start — auch beim ersten Abspielen im Showcase
+      const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return;
+      const cr = cardRef?.current?.getBoundingClientRect(); if (!cr || cr.width < 8) return;
+      const s = p.current;
+      const cardX = cr.left - pr.left, cardY = cr.top - pr.top, cardW = cr.width, cardH = cr.height;
+
+      const { cols, rows, fresh } = ensureScene(cardW, cardH);
+      if (!root) return;
+      // Nur das KARTENBILD wechselt je Stich (anderer Wert/Farbe). Bei wiederverwendeter Bühne dasselbe Canvas neu
+      // bemalen und die eine Textur aktualisieren — die Kachel-Ausschnitte zeigen weiter auf dieselbe Quelle.
+      if (!fresh) { paintCardCanvas(cardCv, { img: imgRef.current, value: s.value, suit: s.suit }); cardTex.source.update(); }
+      placeTiles(cardX, cardY, cardW, cardH, cols, rows);
+      const { sweepx, sweepy } = armSweep(cardX, cardY, cardW, cardH);
+      geo = { cardX, cardY, cardW, cardH, W: pr.width, H: pr.height, floorY: pr.height * TUNE.FLOOR,
+              sweepx, sweepy, cx: cardX + cardW / 2, cy: cardY + cardH / 2, tw: cardW / cols, th: cardH / rows };
+      // Gesamtdauer: Ladung + Sweep-Release (letzte Kachel bei u=1) + Fragment-Leben.
+      DUR = TUNE.CHARGE + (TUNE.CUT + TUNE.STAGGER) + TUNE.FRAG_LIFE;
+      restart();   // Kachel-Zustand zurücksetzen + #378 Sound (fx_lasergrid) + play scharf stellen
       if (document.visibilityState !== "hidden") app.ticker.start();
     }
     startRef.current = startPlay;
@@ -342,7 +387,8 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
     };
   }, [panelRef, cardRef]);
 
-  // Neuer Sieg (trigger wechselt je Stich) → neu abspielen (Karte neu backen + Kacheln neu).
+  // Neuer Sieg (trigger wechselt je Stich) → neu abspielen. #perf-hologrid: das backt nur noch das Kartenbild neu,
+  // die Kacheln bleiben stehen (s. ensureScene).
   useEffect(() => { if (firstRef.current) { firstRef.current = false; return; } startRef.current?.(); }, [trigger]);
 
   // #359 Farbmodus-Wechsel (Standard↔Deckfarbe) ohne Remount → Kachel-Rahmen live umfärben (s. recolor()).

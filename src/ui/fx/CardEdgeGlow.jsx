@@ -22,10 +22,13 @@ const HREF = 360;         // Board-Referenz-Kartenhöhe
 
 function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false, lite = false }) {
+/* #perf-overlay: `active` = false, sobald das Brett von einem Vollbild-Overlay verdeckt ist (Auswahl-Phasen) oder
+   der Lauf pausiert. Dann hält die rAF-Schleife an — vorher lief sie (zweimal, je Karte) mit voller Rate weiter,
+   während z. B. der Architekten-Bildschirm darüber lag. */
+export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false, lite = false, active = true }) {
   const hostRef = useRef(null);
-  const stateRef = useRef({ color, color2, reduced, lite });
-  stateRef.current = { color, color2, reduced, lite };
+  const stateRef = useRef({ color, color2, reduced, lite, active });
+  stateRef.current = { color, color2, reduced, lite, active };
   const syncRef = useRef(null);
 
   useEffect(() => {
@@ -85,12 +88,14 @@ export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false
       if (disposed) return;
       clockT += Math.min(50, now - last); last = now;
       draw();
-      if (stateRef.current.reduced || document.visibilityState === "hidden") { raf = 0; return; } // Standbild → rAF anhalten
+      const st = stateRef.current;
+      if (st.reduced || !st.active || document.visibilityState === "hidden") { raf = 0; return; } // Standbild/verdeckt → rAF anhalten
       raf = requestAnimationFrame(frame);
     }
     function ensureRun() {
       if (disposed) return;
-      const run = !stateRef.current.reduced && document.visibilityState !== "hidden";
+      const st = stateRef.current;
+      const run = !st.reduced && st.active && document.visibilityState !== "hidden";
       if (run) { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
       else { if (raf) { cancelAnimationFrame(raf); raf = 0; } draw(); }   // reduced → einmal statisch
     }
@@ -108,7 +113,7 @@ export function CardEdgeGlow({ color = "#5a8ade", color2 = null, reduced = false
      
   }, []);
 
-  useEffect(() => { syncRef.current?.(); }, [color, color2, reduced, lite]);
+  useEffect(() => { syncRef.current?.(); }, [color, color2, reduced, lite, active]);
 
   // z-0 = ÜBER dem Karten-Skin, aber UNTER Eis (z-1) und Moos (z-2) im selben Karten-Wrapper.
   return <div ref={hostRef} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible", zIndex: 0 }} />;
