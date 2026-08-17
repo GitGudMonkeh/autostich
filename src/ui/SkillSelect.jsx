@@ -174,16 +174,17 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
         <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1" style={{ background: PANEL_BG }}>
           <div className="flex items-stretch gap-2">
+            {/* #kante: gleiche Optik wie die zentrale ActionButton-Leiste (index.css) — Reroll ist das Ziel
+                (Gold, voller Anlauf), Ablehnen der Ausweg (neutral, ohne Farbsignal). */}
             {!devMode && canReroll && (
               <button onClick={onReroll}
-                className="flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-                style={{ background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }}>
+                className="as-edge-strong flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+                style={{ "--c": "#d4a63a" }}>
                 {t("skill.reroll", { n: rerollTokens })}
               </button>
             )}
             <button onClick={onDecline}
-              className="flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80"
-              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+              className="as-edge-neutral flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80">
               {t(devMode ? "skill.skipCycle" : "skill.decline")}
             </button>
           </div>
@@ -339,11 +340,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const sel = pending === id;
                   const col = curG.meta.color;
                   return (
+                    /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Anders als beim
+                       Perk-Angebot trägt die Kante hier die SELTENHEIT, nicht die Fraktion: man blättert die
+                       Fraktionen einzeln durch, alle Karten einer Ansicht haben also dieselbe Fraktionsfarbe —
+                       als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
+                       Die Fraktion steht weiterhin im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
-                      style={{ background: sel ? "#2a2740" : "#20202a",
-                               border: `1px solid ${s.legendary ? "#d4a63a" : (sel ? col : col + "88")}`,
-                               boxShadow: s.legendary ? undefined : (sel ? `0 0 16px ${col}88` : `0 0 14px ${col}33`) }}>
+                      className={`as-edge-card${sel ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>

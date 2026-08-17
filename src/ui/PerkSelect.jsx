@@ -93,13 +93,16 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
               <button
                 key={v.key}
                 onClick={() => onPick(v.entry)}
-                className={`text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
-                style={{ background: "#20202a",
-                         // Familie: Rahmen = Stufenfarbe (grau/grün/blau/lila). Flach: Seltenheit (grau/grün/gold).
-                         border: `1px solid ${v.accent}${(v.isFamily ? v.tier === 1 : v.rar === "common") ? "55" : ""}`,
-                         // Legendär (flach): einheitlicher animierter Gold-Rahmen über die .as-legendary-Klasse (#201.3) → hier KEINE Inline-box-shadow.
+                /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Die Kante trägt die
+                   KATEGORIE — in einem Angebot stehen mehrere Sorten nebeneinander (Score/Deck/Rolle…), und
+                   die ist beim Überfliegen die nützlichere Achse. Die Seltenheit steht weiter im Badge und
+                   zusätzlich im Schein: hohe Stufen bekommen einen dezenten Halo in ihrer Stufenfarbe, damit
+                   die zweite Achse nicht ganz verschwindet. */
+                className={`as-edge-card text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                style={{ "--c": cat.color,
+                         // Legendär (flach): animierter Gold-Rahmen über .as-legendary (#201.3) → dort KEIN eigener Schein.
                          boxShadow: (!v.isFamily && v.leg) ? undefined
-                                  : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 12px ${v.accent}22` : undefined }}
+                                  : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 14px -6px ${v.accent}` : undefined }}
               >
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"

@@ -917,6 +917,61 @@ button { font-family: inherit; }
   color: color-mix(in srgb, #d9ccff 50%, #ffffff);
 }
 
+/* ============================================================================
+   KANTE STATT FLÄCHE — dieselbe Sprache für Knöpfe und Auswahlkarten (#kante)
+   ----------------------------------------------------------------------------
+   Der Hub hat den Stil erfunden, hier wird er zur allgemeinen Regel: dunkler Grund, EIN
+   Farbsignal als linke Kante, sonst Ruhe. Vier Stufen, absteigend nach Lautstärke:
+
+     as-edge-strong   Ziel der Phase (Reroll, „Beenden & speichern") — voller Anlauf + Glow
+     as-edge          Angebot, leiser (zweite Wahl, destruktive Aktionen)
+     as-edge-neutral  Ausweg ohne Farbsignal („Alle ablehnen", „Weiterspielen")
+     as-edge-card     Auswahlkarte; `is-sel` markiert die gewählte
+
+   Die Farbe kommt IMMER von außen als --c (inline aus dem JSX, weil sie von Kategorie,
+   Rarität oder Fraktion abhängt und damit aus den Spieldaten stammt). Was --c bedeutet,
+   entscheidet der jeweilige Bildschirm: Perk-Karten tragen ihre KATEGORIE (in einem
+   Angebot stehen mehrere nebeneinander), Skill-Karten ihre RARITÄT (dort ist die Fraktion
+   für alle Karten gleich und sagt deshalb nichts).
+
+   ACHTUNG: --c wird hier NICHT mit einem eigenen Wert vorbelegt, der Rückfall steht als
+   Fallback in jedem var()-Aufruf. Grund steht ausführlich am Knopf-Block oben — eine im
+   selben Regelsatz definierte Variable kann beim Bauen statisch aufgelöst werden, dann
+   greift das Setzen von außen nicht mehr.
+   ============================================================================ */
+.as-edge,
+.as-edge-strong,
+.as-edge-card {
+  border: 1px solid rgba(150, 150, 170, .16);
+  border-left: 4px solid color-mix(in srgb, var(--c, #8a8a95) 80%, transparent);
+}
+.as-edge {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 20%, #0e0e14) 0%, #0e0e14 30%);
+  color: color-mix(in srgb, var(--c, #8a8a95) 55%, #ffffff);
+}
+.as-edge-strong {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 30%, #0e0e14) 0%, #0e0e14 30%);
+  border-left-color: var(--c, #8a8a95);
+  color: color-mix(in srgb, var(--c, #8a8a95) 40%, #ffffff);
+  box-shadow: 0 0 16px -8px var(--c, #8a8a95);
+}
+.as-edge-neutral {
+  background: rgba(12, 12, 18, .5);
+  border: 1px solid rgba(150, 150, 170, .18);
+  border-left: 4px solid rgba(150, 150, 170, .35);
+  color: #b9b9c6;
+}
+/* Auswahlkarte: ruhiger als jeder Knopf — der Text ist hier die Hauptsache, die Kante nur
+   die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein. */
+.as-edge-card {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 14%, #12121a) 0%, #12121a 42%);
+}
+.as-edge-card.is-sel {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #8a8a95) 24%, #12121a) 0%, #12121a 46%);
+  border-left-color: var(--c, #8a8a95);
+  box-shadow: inset 0 0 22px -14px var(--c, #8a8a95), 0 0 18px -12px var(--c, #8a8a95);
+}
+
 /* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
    reicht ihre Kinder unverändert an die Flex-Spalte des Startbildschirms durch. Reihenfolge und Abstände
    bleiben damit exakt wie vorher — die Gruppen existieren allein für das Desktop-Raster. */

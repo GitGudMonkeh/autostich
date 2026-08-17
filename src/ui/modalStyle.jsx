@@ -125,21 +125,31 @@ export function ActionBar({ pad = 5, bg = PANEL_BG, top = 0, border = true, clas
   );
 }
 
-// Standard-Aktions-Button. `kind`: primary (Gold/Bestätigen) · secondary (grau/Schließen/Abbrechen) · reroll (Gold-Umriss) ·
-//   decline (grau, gedämpft/„ablehnen") · danger (rot/Beenden). `flex` → nimmt gleichen Raum ein (nebeneinander).
+/* Standard-Aktions-Button. `kind`: primary (bestätigen) · secondary (schließen/abbrechen) · reroll (neu würfeln) ·
+   decline (ablehnen) · danger (beenden/löschen). `flex` → nimmt gleichen Raum ein (nebeneinander).
+
+   #kante: Seit 17.08.2026 trägt jede Sorte die Optik „Kante statt Fläche" aus index.css statt eigener
+   Inline-Farben — dunkler Grund, EIN Farbsignal als linke Kante. Vorher war `primary` eine gefüllte
+   Goldtaste und die übrigen Sorten dünn umrandete Kästen; nebeneinander riefen die alle gleich laut.
+   Jetzt entscheidet die Klasse über die Lautstärke:
+     primary/reroll → as-edge-strong (Gold)  = das Ziel der Phase, einziger mit Glow
+     danger         → as-edge (Rot), leiser  = die Abrissbirne, kein Angebot
+     secondary/decline → as-edge-neutral     = Ausweg, ohne Farbsignal
+   Deaktiviert bleibt bewusst flach grau: kein Signal, keine Kante, nichts zu holen. */
 const ACTIONBTN_BASE = "rounded-lg font-bold text-sm px-4 py-2.5 whitespace-nowrap transition-all";
+const ACTIONBTN_KIND = {
+  primary: { cls: "as-edge-strong", c: "#d4a63a" },
+  reroll:  { cls: "as-edge-strong", c: "#d4a63a" },
+  danger:  { cls: "as-edge",        c: "#e0605a" },
+  decline: { cls: "as-edge-neutral" },
+};
 export function ActionButton({ kind = "secondary", onClick, disabled = false, flex = false, title, className = "", children }) {
-  const style = disabled
-    ? { background: "#2a2a33", color: "#8a8a92", cursor: "not-allowed" }
-    : kind === "primary" ? { background: "#d4a63a", color: "#141419" }
-    : kind === "danger"  ? { background: "#20202a", color: "#e0605a", border: "1px solid #e0605a55" }
-    : kind === "reroll"  ? { background: "#20202a", color: "#d4a63a", border: "1px solid #d4a63a66" }
-    : kind === "decline" ? { background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }
-    :                      { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
+  const k = ACTIONBTN_KIND[kind] || { cls: "as-edge-neutral" };
   return (
     <button type="button" onClick={disabled ? undefined : onClick} disabled={disabled} title={title}
-      className={`${ACTIONBTN_BASE} ${flex ? "flex-1" : ""} ${disabled ? "" : "hover:brightness-110"} ${className}`}
-      style={style}>
+      className={`${ACTIONBTN_BASE} ${disabled ? "" : k.cls} ${flex ? "flex-1" : ""} ${disabled ? "" : "hover:brightness-110"} ${className}`}
+      style={disabled ? { background: "#2a2a33", color: "#8a8a92", cursor: "not-allowed" }
+                      : (k.c ? { "--c": k.c } : undefined)}>
       {children}
     </button>
   );
