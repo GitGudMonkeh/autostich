@@ -49,11 +49,21 @@ describe("#394/#385 — Hub-Modals behalten eine konstante Fenstergröße", () =
 });
 
 describe("#394 — Mainscreen: Rangliste-Schloss verschwindet bei Freischaltung", () => {
+  /* #premium (18.08.2026): Der Knopf zeigt den Zustand jetzt in ZWEI Fassungen — bis 1399 px weiter
+     als Emoji, ab 1400 px als Vektor (`RankIcon`, Begründung in StartScreen.jsx). Die Emoji stehen
+     seither als Konstanten und nicht mehr als Literale im JSX, deshalb greift der frühere Wortlaut-
+     Test `rankedFree ? "🏆"` nicht mehr. Geprüft wird unverändert die Absicht: EIN zustandsabhängiger
+     Ausdruck aus `rankedUnlocked`, kein zweiter Pfad — nur eben für beide Fassungen. */
   it("StartScreen zeigt 🏆/🔒 zustandsabhängig aus rankedUnlocked", () => {
     const src = ui("StartScreen.jsx");
     expect(src).toContain("const rankedFree = rankedUnlocked(prof);"); // aus dem live gereichten `profile`-Prop
-    expect(src).toMatch(/rankedFree \? "🏆"/); // frei → Pokal
-    expect(src).toMatch(/rankedFree \? "🏆"[\s\S]{0,80}🔒/); // gesperrt → Schloss (derselbe Ausdruck, kein zweiter Pfad)
+    expect(src).toMatch(/const EMO_RANK_FREE = "🏆"/); // frei → Pokal
+    expect(src).toMatch(/const EMO_RANK_LOCK = "🔒"/); // gesperrt → Schloss
+    // Emoji-Fassung: derselbe Ausdruck entscheidet über beide Zeichen.
+    expect(src).toMatch(/rankedFree \? EMO_RANK_FREE : EMO_RANK_LOCK/);
+    // Vektor-Fassung ab 1400 px: hängt am selben Zustand und wählt zwischen denselben zwei Formen.
+    expect(src).toMatch(/<RankIcon free=\{rankedFree\} \/>/);
+    expect(src).toMatch(/free \? RANK_PATHS\.cup : RANK_PATHS\.lock/);
   });
 
   it("rankedUnlocked: erst alle Deck-Knoten UND je ≥1 abgeschlossener Lauf", () => {

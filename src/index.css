@@ -1046,6 +1046,11 @@ button { font-family: inherit; }
 .as-hub-field::placeholder { color: #8a8a96; }
 .as-hub-field.is-err { border-color: #e06a6a; }
 
+/* Die Rinne des Bonus-/Onboarding-Balkens. Stand bis 18.08.2026 als inline-style am Element und ist
+   hier WERTGLEICH übernommen — unterhalb von 1400 px ändert sich dadurch nichts. Der Umzug war nötig,
+   damit die Desktop-Fassung sie überhaupt überschreiben kann (inline schlägt jedes Stylesheet). */
+.as-bonus-track { background: #0e0e13; border: 1px solid #26262e; }
+
 /* Deck-Hintergrund am Handy (#deck-mobil) — das Gegenstück zum Bodenband der Desktop-Fassung.
    `fixed` aus demselben Grund wie dort: der Hub sitzt in einem gedeckelten Container, absolut positioniert
    wäre das Bild genauso breit und läge als Rechteck mitten im Bildschirm statt als Hintergrund.
@@ -1331,10 +1336,43 @@ button { font-family: inherit; }
   }
   /* Senkrechter Rhythmus der Desktop-Fassung (auf 1080 px Höhe abgestimmt). */
   .hub-root { gap: 40px; padding-top: 24px; }
+
+  /* --- Der Hub schrumpft proportional, statt an die Ränder zu wachsen -------
+     Der Deckel von 1520 px ist eine feste ZAHL, kein Anteil. Bei 1920 px sind das 79 % der Bildbreite
+     und 200 px Rand je Seite; bei 1638 px (das häufigste Fenster hier: Ultrawide auf 125 % Skalierung)
+     sind es schon 93 % und 59 px Rand. Derselbe Entwurf wirkt dort gedrängt, obwohl sich nichts geändert
+     hat außer dem Fenster.
+
+     Also rechnet der Hub unterhalb von 1920 px intern WEITER in 1920 und wird als Ganzes verkleinert.
+     Gemessen: 1638 px ergibt 171 px Rand und 1297 px Paar — exakt dieselben 79,2 % wie der Anker.
+
+     Zwei Dinge, die man beim Nachbauen falsch machen kann:
+
+     1. `zoom` sitzt an den beiden Layout-Containern, NICHT am `.hub-root`. `zoom` skaliert das gesamte
+        Koordinatensystem darunter — auch `position: fixed`, und genau daran hängt das Bodenband des
+        aktiven Decks. Am Root gezoomt wäre das Band nicht mehr randlos, sondern ein Rechteck im Bild.
+     2. Der Faktor muss EINHEITENLOS sein, und `calc(100vw / 1920px)` ist in CSS keine gültige Division.
+        `tan(atan2(100vw, 1920px))` liefert genau dieses Verhältnis als Zahl (atan2 nimmt zwei Längen,
+        tan gibt eine Zahl zurück). Kennt eine Engine die Trigonometrie-Funktionen nicht, ist die
+        Deklaration ungültig und `zoom` bleibt 1 — dann steht der Hub wie bisher, nichts bricht.
+
+     Untergrenze 0,85: darunter wird der Start-Knopf kleiner als 22 px. Auf einem 1280er Laptop ohne
+     Systemskalierung ist das die Grenze des Lesbaren, und lieber wird es dort wieder etwas enger. */
+  .hub-pair, .hub-foot { zoom: clamp(0.85, tan(atan2(100vw, 1920px)), 1); }
+
+  /* Der Hub stand im oberen Drittel: auf 1920 × 1080 endete das Fußband bei y = 825, darunter blieben
+     255 px leer — ausgerechnet unten, wo das Bodenband des Decks am dichtesten ist. `margin-block: auto`
+     am Paar verteilt die Restluft nach oben UND unten und schiebt das Fußband an den Rand. */
+  .hub-pair { margin-block: auto; }
   .hub-play { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
   .hub-stand { display: flex; flex-direction: column; gap: 20px; }
   /* Der Fuß löst sich von der Inhaltsspalte und wird ein Band über die volle Breite. */
-  .hub-foot { display: flex; align-items: center; justify-content: space-between; gap: 32px; width: 100%; }
+  /* `width: min(1520px, 100%)` und nicht `100%`, und das ist keine Kosmetik: Der Zoom weiter unten
+     rechnet PROZENTBREITEN heraus — ein Kind mit `width: 100%` füllt seinen Elternteil physisch
+     weiterhin ganz, egal wie stark gezoomt wird. Das Fußband wäre damit 1520 px breit geblieben,
+     während das Spaltenpaar daneben auf 1297 schrumpft; die beiden fluchten dann nicht mehr.
+     Mit einer festen Zahl skaliert das Band mit. */
+  .hub-foot { display: flex; align-items: center; justify-content: space-between; gap: 32px; width: min(1520px, 100%); margin-inline: auto; }
 
   /* --- Durchscheinende Panels ---------------------------------------------
      Der Deck-Hintergrund soll durchbluten, ohne die Lesbarkeit anzutasten. Der Alpha-Wert ist die eine
@@ -1389,16 +1427,78 @@ button { font-family: inherit; }
   /* #kante: Der Streifen ist seit dem Kanten-Pass Kante PLUS Farbanlauf (StartScreen.jsx). Auf Desktop zieht
      beides den Deckton der Zeile — sonst bliebe der Anlauf in der Logo-Farbe stehen, während die Kante schon
      deckfarben ist. `!important`, weil die Farbe inline aus dem JSX kommt und inline sonst gewinnt. */
+  /* Die Kante wird DÜNN, sobald das Zeichen daneben steht (s. `.as-hub-glyph` gleich darunter): zwei
+     Träger derselben Farbe brauchen nicht beide Signalstärke. 4 → 2 px, und der Anlauf halbiert sich
+     mit — eine schmale Kante mit breitem Schleier dahinter sieht aus wie eine verrutschte breite. */
   .as-hub-list .as-hub-stripe {
+    border-left-width: 2px !important;
     border-left-color: var(--row-tone) !important;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--row-tone) 14%, transparent) 0%, transparent 42%) !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--row-tone) 7%, transparent) 0%, transparent 42%) !important;
   }
   .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
-  /* Das Kachel-Wasserzeichen ist eine Handy-Sache. Hier sind die Kacheln Listenzeilen MIT Untertitel
-     („Dauerhafte Verbesserungen", „Decks, Spielfelder, Effekte") — die sagen bereits, was die Zeile
-     ist. Ein zweites Erkennungszeichen daneben wäre Wiederholung, kein Gewinn. */
-  .as-hub-glyph { display: none; }
+
+  /* --- Aus dem Wasserzeichen wird das Zeichen der Zeile ---------------------
+     Am Handy liegt dieselbe Glyphe als 9-%-Wasserzeichen unten rechts in der Kachel (Begründung an
+     `TileGlyph` in StartScreen.jsx). Hier steht sie vorne in der Zeile, in Signalstärke und in einer
+     eigenen Kachel — dieselben vier Formen, dieselbe Komponente, nur eine andere Rolle.
+
+     Warum das ohne zweite Komponente geht: das SVG ist im DOM ohnehin das erste Kind der Zeile (direkt
+     nach dem Streifen), es muss also nur aus `position: absolute` in den Fluss zurück. Ein zweites
+     Icon-Element wären zwei Quellen für dieselben Pfade, und die laufen erfahrungsgemäß auseinander.
+
+     Die Strichstärke wird hier nachgezogen: `TileGlyph` zeichnet mit 1,6 von 24 Einheiten, was auf
+     54 px Wasserzeichen rund 3,6 px ergibt — auf 18 px Icon aber nur 1,2. Das ist zu dünn, sobald die
+     Form nicht mehr flächig gelesen wird, sondern als Zeichen. */
+  .as-hub-list .as-hub-glyph {
+    position: static;
+    width: 34px; height: 34px;
+    flex: none;
+    padding: 8px;
+    opacity: 1;
+    stroke-width: 1.9;
+    color: var(--row-tone);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--row-tone) 14%, rgba(255, 255, 255, .02));
+    border: 1px solid color-mix(in srgb, var(--row-tone) 26%, transparent);
+  }
+  /* Der linke Innenabstand der Zeile war auf die 4-px-Kante gerechnet; mit Zeichen davor rückt der
+     Text ohnehin ein, und 24 px vor der Icon-Kachel wären eine Delle. */
+  .as-hub-list .as-hub-tile { padding-left: 18px; }
+
+  /* Kennzahl-Raster der Status-Tafel: Haarlinie zwischen den Zellen statt freigelegter Container-Fläche
+     (Begründung an der Fundstelle in StartScreen.jsx). */
+  .as-kpi + .as-kpi { border-left: 1px solid rgba(60, 58, 78, .5); }
+
+  /* Die Raute vor der Bonus-/Onboarding-Zeile (ersetzt ab hier das Emoji, s. `Lead` in StartScreen.jsx).
+     `currentColor`, damit sie den Zustandston der Zeile mitnimmt — Gold für das Guthaben, Violett für
+     das Onboarding — ohne dass die Farbe ein zweites Mal irgendwo stehen muss. */
+  .as-lead-gem {
+    width: 9px; height: 9px;
+    flex: none;
+    transform: rotate(45deg);
+    border-radius: 2px;
+    background: currentColor;
+    opacity: .85;
+  }
+  /* Schloss/Pokal am Ranglisten-Knopf. Etwas kleiner als die Schrift daneben und leicht zurück-
+     genommen: das Zeichen begleitet das Wort, es kündigt es nicht an. */
+  .as-rank-icon { width: 17px; height: 17px; flex: none; opacity: .8; }
+
+  /* Die Zeichen der Fuß-Chips — eine Spur kleiner als die 15-px-Schrift daneben und deutlich
+     zurückgenommen: sie sollen die Wörter begleiten, nicht mit ihnen um Aufmerksamkeit streiten. */
+  .as-chip-icon { width: 15px; height: 15px; flex: none; opacity: .55; }
+
+  /* Der Chevron am Start-Knopf: absolut rechts, damit das Label mittig bleibt. */
+  .as-cta-chev {
+    position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; opacity: .55; pointer-events: none;
+  }
+
+  /* Aus der Röhre wird ein Faden. Die 7-px-Rinne MIT Rahmen war das lauteste Element der oberen
+     Spalte — für die leiseste Information, die dort steht (ein Zähler bis zur nächsten +5). Bei 2 px
+     ohne Rahmen und ohne Radius bleibt der Fortschritt ablesbar und hört auf zu rufen. */
+  .as-bonus-track { border: 0; border-radius: 999px; background: #24242e; }
 
   /* --- Knöpfe in Deckfarbe --------------------------------------------------
      Hier stand bis #deck-mobil eine wortgleiche Kopie der drei Knopf-Regeln, nur mit `var(--deck-a1/a2)`
@@ -1419,6 +1519,17 @@ button { font-family: inherit; }
     filter: drop-shadow(0 0 9px color-mix(in srgb, var(--deck-a1, #26c6e6) 55%, transparent));
     animation: as-wordmark-sweep 7s linear infinite;
   }
+  /* Größe und Sitz der Marke im Hub (Mockup-Abnahme 18.08.2026). 46 px waren für eine Kopfzone von
+     gut 340 px zu klein; bei 88 px ist das Wort 620 px breit und die Spalte 700 — der Rest ist Luft,
+     nicht Enge. Wer hier weiterdreht: ab 98 px läuft die Marke in die Lücke zur Stand-Spalte.
+
+     Der negative `margin-top` zieht die Marke nach oben UND vergrößert damit den Abstand zur
+     Bonus-Leiste — beides war gewollt, die Marke stand vorher zu dicht auf dem Block darunter.
+
+     `.hub-play .as-wordmark` und nicht `.as-wordmark`: der Run-Kopf trägt dieselbe Klasse und holt
+     sich seine 22 px aus `.as-wordmark-sm`. Diese Regel hier steht später in der Datei und hätte mit
+     gleicher Spezifität gewonnen — die Marke im laufenden Spiel wäre auf 88 px gesprungen. */
+  .hub-play .as-wordmark { --wm-size: 88px; margin-top: -70px; }
   /* Der Glow hinter der Marke folgt mit: drei Ellipsen, links → rechts von der ersten in die zweite
      Deckfarbe. Vorher standen hier feste Cyan-/Violett-/Amber-Werte — der Dreiklang des alten PNG.
      Mit einer deckfarbenen Marke war das der letzte Rest, der die alte Palette festhielt. */

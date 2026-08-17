@@ -98,6 +98,72 @@ const GLYPHS = {
   stats: { paths: ["M12 4a8 8 0 1 1 0 16a8 8 0 1 1 0-16", "M12 4v8h8"] },
 };
 
+/* #premium (18.08.2026) — das führende Zeichen der Bonus-/Onboarding-Zeile.
+   Bis 1399 px steht dort weiter das Emoji, das vorher IM i18n-String stand (💠 bzw. 🎓); die Zeile
+   sieht am Handy also unverändert aus, was sie auch soll — Handy ist ein anderer Durchgang.
+   Ab 1400 px übernimmt eine schlichte Raute in der Textfarbe. Emoji bringen ihre eigene Farbe und
+   ihr eigenes Gewicht mit, und beides steht quer zu einem Screen, der seine Farben aus dem aktiven
+   Deck zieht — 💠 ist immer blau, egal ob das Deck grün, rot oder gold ist.
+   Die Raute ist bewusst KEIN zweites Symbol je Zustand: sie markiert die Zeile, benannt wird der
+   Zustand vom Text dahinter. Zwei Vektoren wären zwei Bedeutungsträger für dieselbe Aussage.
+   Als Konstanten und nicht als JSX-Text, aus demselben Grund wie bei GLYPHS oben. */
+const EMO_BONUS = "💠";
+const EMO_ONB = "🎓";
+const EMO_RANK_FREE = "🏆";
+const EMO_RANK_LOCK = "🔒";
+
+/* Schloss/Pokal am Ranglisten-Knopf, ab 1400 px anstelle der Emoji. Pfaddaten wie bei GLYPHS:
+   als Konstanten, nicht als JSX-Text (Begründung dort). */
+const RANK_PATHS = {
+  // Zu: Bügel über geschlossenem Kasten.
+  lock: ["M8 10V7a4 4 0 0 1 8 0v3"],
+  // Frei: Pokal mit zwei Henkeln auf einem Fuß.
+  cup: ["M8 4h8v5a4 4 0 0 1-8 0z", "M8 5.5H5.5V7a3 3 0 0 0 3 3", "M16 5.5h2.5V7a3 3 0 0 1-3 3",
+    "M12 13v3", "M9 19.5h6"],
+};
+
+function RankIcon({ free }) {
+  return (
+    <svg className="as-rank-icon hidden min-[1400px]:block" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      {(free ? RANK_PATHS.cup : RANK_PATHS.lock).map((d) => <path key={d} d={d} />)}
+      {!free && <rect x="4.5" y="10" width="15" height="10.5" rx="2" />}
+    </svg>
+  );
+}
+
+/* Die Zeichen der drei Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1400 px
+   sichtbar: am Handy steht die Reihe eng, dort kostet jedes Zeichen Breite, die die Wörter brauchen. */
+const CHIP_PATHS = {
+  // Optionen — drei Regler. Die Linien sind unterbrochen, damit die Knöpfe nicht überzeichnet werden.
+  options: ["M3 6h3M11 6h10M3 12h9M17 12h4M3 18h5M14 18h7"],
+  // Tutorial — aufgeschlagenes Buch.
+  tutorial: ["M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-1.6H4.5A1.5 1.5 0 0 1 3 16z",
+    "M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-1.6h5.5a1.5 1.5 0 0 0 1.5-1.4z"],
+  // Feedback — Sprechblase.
+  feedback: ["M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"],
+};
+const CHIP_DOTS = { options: [[8.5, 6], [14.5, 12], [11, 18]] };
+
+function ChipIcon({ kind }) {
+  return (
+    <svg className="as-chip-icon hidden min-[1400px]:block" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      {CHIP_PATHS[kind].map((d) => <path key={d} d={d} />)}
+      {(CHIP_DOTS[kind] || []).map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="2.2" />)}
+    </svg>
+  );
+}
+
+function Lead({ emoji }) {
+  return (
+    <>
+      <span className="min-[1400px]:hidden">{emoji}</span>
+      <span aria-hidden="true" className="as-lead-gem hidden min-[1400px]:block" />
+    </>
+  );
+}
+
 function TileGlyph({ kind }) {
   const g = GLYPHS[kind];
   return (
@@ -209,7 +275,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      (16 px CTA · 12 px Kacheln/Seed · 8 px Rangliste/Chips/Ecken) — drei Formsprachen für eine Seite.
      Alles läuft jetzt auf 12 px zusammen; einzige Ausnahme bleibt der Discord-Knopf, der als Kreis ein
      Ziel für sich ist, und der 4-px-Wochen-Chip, der dafür zu klein ist. */
-  const chipCls = "as-edge-neutral as-edge-thin px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-xl text-sm min-[1400px]:text-[17px] font-medium transition-all hover:-translate-y-0.5";
+  /* #premium: 17 → 15 px ab 1400 px. Die Chips waren größer gesetzt als die Unterzeilen der
+     Verwaltungsliste, obwohl sie der leiseste Rang der Seite sind; die Klickzielgröße hält der
+     Innenabstand, nicht die Schrift. Dazu ein Zeichen je Chip — `inline-flex`, damit es neben dem
+     Wort sitzt statt darüber. */
+  const chipCls = "as-edge-neutral as-edge-thin min-[1400px]:inline-flex min-[1400px]:items-center min-[1400px]:gap-2 px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-xl text-sm min-[1400px]:text-[15px] font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
@@ -348,10 +418,18 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 min-[1400px]:px-5 min-[1400px]:py-3.5 flex flex-col gap-1.5 min-[1400px]:gap-2`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
+          {/* Der Flex-Kontext gilt ERST ab 1400 px. Darunter bleibt die Zeile ein normaler Textfluss —
+              Emoji, Leerzeichen, Text — also Zeichen für Zeichen das, was vorher im i18n-String stand.
+              Als Flex-Zeile mit `gap` läge dort ein 6-px-Abstand statt der Breite eines Leerzeichens,
+              und das wäre eine sichtbare Änderung am Handy (anderer Durchgang, anderer Chat). */}
           {onbDone ? (
-            <span className="text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: SP }}>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
+            <span className="min-[1400px]:flex min-[1400px]:items-center min-[1400px]:gap-1.5 text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: SP }}>
+              <Lead emoji={EMO_BONUS} />{" "}<span>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
+            </span>
           ) : (
-            <span className="text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: VI }}>{t("start.progress.onboarding")}</span>
+            <span className="min-[1400px]:flex min-[1400px]:items-center min-[1400px]:gap-1.5 text-[13px] min-[1400px]:text-[17px] font-medium opacity-90" style={{ color: VI }}>
+              <Lead emoji={EMO_ONB} />{" "}<span>{t("start.progress.onboarding")}</span>
+            </span>
           )}
           <span className="ty-num-sm text-[11px] min-[1400px]:text-[15px] opacity-55">
             {onbDone ? t("start.progress.runs", { done: dripInto, total: SP_LOYALTY_EVERY })
@@ -362,7 +440,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             gleichzeitig CTA, Balken, beide Guthaben-Zahlen und drei Ambient-Blasen — wenn alles glüht, zeigt
             kein Glow mehr irgendwohin. Ab jetzt leuchtet NUR der Primär-CTA; er ist das eine Ziel der Seite.
             Der Balken behält seine Farbe, er verliert nur den Schein. */}
-        <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "#0e0e13", border: "1px solid #26262e" }}>
+        {/* #premium: Fläche und Rahmen kommen aus `.as-bonus-track` statt aus einem inline-style — ab
+            1400 px wird aus der 7-px-Röhre ein 2-px-Faden, und ein inline gesetzter Grund ließe sich
+            davon nicht überschreiben (inline schlägt jedes Stylesheet). Die Klasse liefert unterhalb
+            exakt dieselben Werte wie vorher. */}
+        <div className="as-bonus-track h-[7px] min-[1400px]:h-[2px] rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={onbDone
             ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#a27f49,${SP})` }
             : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})` }} />
@@ -412,8 +494,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-xl ty-title text-[17px] min-[1400px]:text-[24px] transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} relative w-full px-5 py-3.5 min-[1400px]:py-5 rounded-xl ty-title text-[17px] min-[1400px]:text-[24px] transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
+          {/* #premium: Der Knopf sagt jetzt auch in der Form, dass es weitergeht. Absolut am rechten Rand
+              und nicht als Flex-Kind, damit das Label mittig bleibt — mit dem Zeichen im Fluss säße es
+              um die halbe Zeichenbreite nach links versetzt. Erst ab 1400 px: am Handy ist der Knopf
+              schmaler und die Zeile dort ohnehin randvoll. */}
+          <svg className="as-cta-chev hidden min-[1400px]:block" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
         </button>
         {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
             tryPlaySeed). Zwischenzeitlich hing sie an einem Satelliten-Knopf neben dem CTA — zurückgebaut: der
@@ -456,7 +546,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <button onClick={onRankedBoard}
             className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-xl ty-title text-[15px] min-[1400px]:text-[19px] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
-            <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
+            {/* #premium: Emoji nur noch bis 1399 px (s. `Lead` oben, gleiche Begründung). Ab 1400 px
+                zeichnet ein Vektor in der Knopffarbe — Schloss für „Spielen noch gesperrt", Pokal für
+                „frei". Die Aussage ist dieselbe, sie trägt nur nicht mehr ihre eigene Farbe herein. */}
+            <span className="min-[1400px]:flex min-[1400px]:items-center min-[1400px]:gap-2">
+              <span className={`min-[1400px]:hidden${rankedFree ? "" : " opacity-70"}`}>{rankedFree ? EMO_RANK_FREE : EMO_RANK_LOCK}</span>{" "}
+              <RankIcon free={rankedFree} />
+              {t("start.ranked")}
+            </span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
                 - `inset-y-0 justify-center` statt `top-1.5`: der Block ist jetzt zweizeilig und soll mittig zum
                   Knopf-Label stehen. Absolut positioniert → er kann den Knopf nicht höher machen.
@@ -520,13 +617,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {t("start.board.title")}
         </div>
         <div className="flex items-center gap-4">
+          {/* 96 → 112 px (Mockup-Abnahme 18.08.2026): das Deck ist der GEGENSTAND dieser Tafel und war
+              kleiner gesetzt als die vier Kennzahlen darunter. */}
           {deckBack && (
             <img src={deckBack} alt="" draggable="false"
-              className="w-[96px] h-auto rounded-lg select-none"
+              className="w-[112px] h-auto rounded-lg select-none"
               style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
           )}
           <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <div className="ty-title text-[20px] truncate">{deckName}</div>
+            <div className="ty-title text-[24px] truncate">{deckName}</div>
             {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
                 eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
                 hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
@@ -549,7 +648,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 weiterschaltet. Der Titel darf wachsen (`max-w`), der Kasten folgt ihm nur so weit. */}
             <div className="inline-flex self-start items-center gap-2 mt-1.5 min-w-0 max-w-full rounded-lg pl-2.5 pr-1 py-1"
               style={{ border: "1px solid rgba(150,150,170,.22)", background: "rgba(20,20,26,.45)" }}>
-              <span className="text-[13px] opacity-40 shrink-0" aria-hidden="true">♪</span>
+              {/* Wiedergabe-Dreieck statt der Note: die Zeile sagt, was gerade LÄUFT — ein Zustand,
+                  kein Genre. Als Vektor, damit es dieselbe Strichfamilie hat wie die Zeichen daneben. */}
+              <svg className="w-[11px] h-[11px] shrink-0 opacity-45" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
               <span className="text-[13px] opacity-60 truncate max-w-[260px]" title={musicTitle || undefined}>
                 {musicTitle || "—"}
               </span>
@@ -566,7 +669,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Vier Kennzahlen. Die Farben bleiben hier bewusst die BEDEUTUNGS-Farben (Gold = Währung,
             Violett = Rangliste, Cyan = Lauf) — die Tafel ist der Ort, an dem gelesen und nicht navigiert
             wird, und die Deckfarbe trägt hier ohnehin schon Rahmen, Schimmer und Kartenbild. */}
-        <div className="grid grid-cols-4 gap-px rounded-xl overflow-hidden" style={{ background: "rgba(60,58,78,.5)", border: "1px solid rgba(60,58,78,.5)" }}>
+        {/* #premium: Die Fugen waren keine Linien, sondern eine durchscheinende FLÄCHE zwischen vier
+            Boxen — `gap-px` legte den Container-Grund in dem einen Pixel frei. Bei vier gleich hellen
+            Zellen liest sich das als Raster statt als Trennung. Jetzt eine echte Haarlinie je Zelle
+            (`as-kpi`), und der Container trägt nur noch seinen Rahmen. */}
+        <div className="as-kpis grid grid-cols-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(60,58,78,.5)" }}>
           {[
             { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
             { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
@@ -577,7 +684,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
-            <div key={i} className="flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
+            <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
               <span className="text-[12px] font-medium opacity-45">{s.k}</span>
               <span className="ty-num text-[27px] leading-none" style={{ color: s.c }}>{s.v}</span>
               <span className="text-[11px] opacity-40">{s.s}</span>
@@ -712,17 +819,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className="grid gap-2 justify-items-center min-[1400px]:grid-flow-col min-[1400px]:justify-items-start min-[1400px]:gap-3">
         <div className="flex items-center gap-2 min-[1400px]:gap-3">
           {onOptions && (
-            <button onClick={onOptions} aria-label={t("start.options")} className={chipCls}>{t("start.options")}</button>
+            <button onClick={onOptions} aria-label={t("start.options")} className={chipCls}><ChipIcon kind="options" />{t("start.options")}</button>
           )}
           {canTutorial && (
-            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls}>{t("start.tutorial")}</button>
+            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls}><ChipIcon kind="tutorial" />{t("start.tutorial")}</button>
           )}
         </div>
         {/* #396 Feedback-Melder — bewusst „Feedback" und nicht „Bug melden": sonst kommen nur Bugs
             und keine Ideen. Nur hier im Menü, nie im Lauf. Daneben das Discord-Icon (Community-Invite). */}
         <div className="flex items-center gap-2">
           {onFeedback && (
-            <button onClick={onFeedback} aria-label={t("start.feedback")} className={chipCls}>{t("start.feedback")}</button>
+            <button onClick={onFeedback} aria-label={t("start.feedback")} className={chipCls}><ChipIcon kind="feedback" />{t("start.feedback")}</button>
           )}
           <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
             aria-label={t("start.discord")} title={t("start.discord")}
