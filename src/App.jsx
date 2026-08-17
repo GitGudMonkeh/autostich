@@ -146,7 +146,19 @@ function pickRandomOwnedPack(profile, options = null) {
   return { deckId: t.deckId, battlefieldId: t.bfId };
 }
 
+/* #fx-spike (Phase 0 Kompositor-Umbau): `?fxspike=1` im Preview-Build zeigt statt des Spiels die
+   Shader-Vergleichsseite. Nur dort erreichbar, lazy geladen → das Prod-Bundle sieht sie nie. Sie
+   klärt die eine Frage, an der die Kompositor-Architektur hängt (s. FxSpike.jsx). */
+const FxSpike = lazy(() => import("./ui/fx/FxSpike.jsx"));
+const FX_SPIKE_ON = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV) &&
+  (() => { try { return new URLSearchParams(window.location.search).get("fxspike") === "1"; } catch { return false; } })();
+
 export function Autostich() {
+  if (FX_SPIKE_ON) return <Suspense fallback={null}><FxSpike /></Suspense>;
+  return <AutostichGame />;
+}
+
+function AutostichGame() {
   const [state, dispatch] = useReducer(gameReducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
   // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang die

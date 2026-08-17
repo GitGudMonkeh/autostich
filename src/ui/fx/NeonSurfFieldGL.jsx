@@ -16,9 +16,14 @@ import { useRef, useEffect } from "react";
    sichtbar). Zwei Modi: Standard (cLow→cHigh violett→cyan) oder Deckfarbe (deckA1→deckA2 via deckColored).
    `animate=false` (reduzierte Effekte) → statisches Standbild ohne Fluss/Puls. */
 
-const VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }";
+/* #fx-spike: VERT/FRAG sind exportiert, damit der Architektur-Spike (FxSpike.jsx) EXAKT denselben Shader
+   auch durch Pixi schickt. Ein nachgebauter Shader wäre als Vergleich wertlos — die offene Frage ist, ob
+   Pixi DIESEN Code auf dem Handy rendert (CLAUDE.md: „Pixi-Custom-Shader rendert auf dem Mobile-Setup NICHT").
+   Nur lesen, nicht anfassen: der Spike hängt an der Wortgleichheit. */
+export const NEONSURF_VERT = "attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }";
+const VERT = NEONSURF_VERT;
 
-const FRAG = [
+export const NEONSURF_FRAG = [
   "precision highp float;",
   "uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform vec3 uDeck1; uniform vec3 uDeck2;",
   "uniform float uSurgeT; uniform float uSurgeMag; uniform float uFbmOct;",
@@ -84,6 +89,7 @@ const FRAG = [
   "  gl_FragColor=vec4(col*a,a);",   // PREMULTIPLIED → korrektes Kompositing auch auf iOS-Safari
   "}",
 ].join("\n");
+const FRAG = NEONSURF_FRAG;
 
 function hexToRgb(h, fb) {
   if (typeof h !== "string") return fb;
