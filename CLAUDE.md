@@ -38,8 +38,8 @@ denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1290 g
 Deutschsprachiger Code/Kommentare beibehalten.
 
 ### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
-- **Bleibt:** Hintergrund-Effekt **Aurora** (raw-WebGL `src/ui/fx/AuroraFieldGL.jsx` — Pixi-Custom-Shader rendert auf
-  dem Mobile-Setup NICHT), Hintergrund-Finisher **Glutfunken** (Pixi `src/ui/fx/embersPixi.js`), der synthetische
+- **Bleibt:** Hintergrund-Effekt **Aurora** (raw-WebGL `src/ui/fx/AuroraFieldGL.jsx`; die damalige Begründung
+  „Pixi-Custom-Shader rendert auf dem Mobile-Setup nicht" ist **widerlegt**, s. #fx-spike), Hintergrund-Finisher **Glutfunken** (Pixi `src/ui/fx/embersPixi.js`), der synthetische
   **Klinge**-Finisher (einziger Sieg-Finisher) und die **Gottgleich-Kategorie** (`group "gott"`) mit nur „Standard"
   (`GOTT_STANDARD`) — Prunk kommt später neu rein.
 - **Vollständig entfernt** (Definition, Optionen, Render, Previews, FX-Komponenten, SFX, CSS, Tests, Dateien):
@@ -115,6 +115,26 @@ Die Faktorenkette unter dem Feld war entfernt („im Spielfluss nicht lesbar") u
   dem Floating-Text-Master (die Zeile steht fest im Layout statt aufzusteigen). Die Zeile hat **feste Höhe (h-5)**,
   auch leer/ausgeblendet — sonst springen die Karten, genau der Grund, aus dem die alte Fassung rausflog.
 - Wächter: `test/trick-breakdown.test.js` (Engine-Naht + Quelltext-Ratsche für Verdrahtung/Schalter).
+
+### #fx-spike WIDERLEGT: Pixi-Custom-Shader laufen auf dem Handy (2026-08-17)
+Der Satz „Pixi-Custom-Shader rendert auf dem Mobile-Setup NICHT" hat die Effekt-Architektur zersplittert (Aurora,
+Neon-Brandung und Leuchten sind deswegen je eine eigene raw-WebGL-Canvas). **Er stimmt nicht mehr.** Auf dem echten
+Gerät des Users (Android, 5G-Handy) nachgemessen über `?fxspike=1` (`src/ui/fx/FxSpike.jsx`, nur Preview/Dev):
+ein trivialer Pixi-Custom-Shader UND der komplette Neon-Brandungs-Shader rendern beide, jeweils **60 Zeichnungen/s**,
+und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger Grund: WebGPU ohne WGSL-Variante —
+`PixiStage` erzwingt inzwischen `preference:"webgl"`.
+**Ziel ist damit EIN Pixi-Kompositor** (Auflösung je Ebene, ein Composite statt vier bis fünf).
+- **Vier Fallen beim Portieren eines Vollbild-Shaders nach Pixi**, alle mit demselben Symptom: schwarzes Bild,
+  KEIN Fehler, Shader läuft. Wer die nächste Ebene portiert, spart sich damit einen halben Tag:
+  1. Bühne/Mesh rechnen in CSS-Pixeln (`app.screen`). In Pixi v8 ist `renderer.width` **nicht** die Framebuffer-
+     Breite, sondern gleich `screen.width` (gemessen 300 gegen `canvas.width` 450 bei `resolution 1,5`).
+  2. `gl_FragCoord` ist in einer Pixi-Bühne als Bildschirmkoordinate unbrauchbar → über `vUV` versorgen. Für den
+     Kompositor ohnehin richtig: beim Rendern in Render-Texturen wird `gl_FragCoord` zielrelativ.
+  3. GLSL ES 3.00 verlangt die Default-Precision VOR den ersten `in`/`out`-Deklarationen.
+  4. Uniform-Vorzeichen: `uSurgeT = -999` ergibt über `exp(-uSurgeT/2.3)` Inf, dann `0 * Inf = NaN`, und NaN frisst
+     die ganze Ausgabe. Die Komponente lädt `+999` hoch (Zeit SEIT der Ansage).
+- Vorbehalt: die Spike-Rechtecke sind je ~190 px hoch, nicht Vollbild. „60/s laufen" ist damit KEIN Beleg für
+  Vollbild-Kopffreiheit — nur dafür, dass der Pfad funktioniert.
 
 ### #perf-overlay + #perf-hologrid (aus einem Perf-Report, 2026-08-17)
 Report eines 409-s-Laufs (Meteor + Hologrid-Slice + Neonrahmen): 386 Ruckler, davon **99 in nur 4 Architekt-Besuchen**.

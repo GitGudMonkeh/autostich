@@ -15,7 +15,8 @@ import { createGlitch } from "./cardFx/glitch.js";
 
    Sauberkeit (wie IonStorm):
    - EINE `Application`, additive Blends (`blendMode="add"`), DPR ≤ 2, KEIN shadowBlur / KEIN Custom-Shader
-     (Custom-Shader rendern auf dem Mobile-Setup nicht — Holo läuft daher aus additiven Graphics-Streifen).
+     (Begründung ÜBERHOLT, s. #fx-spike 2026-08-17: Custom-Shader rendern auf dem Handy sehr wohl. Holo bleibt
+     vorerst aus additiven Graphics-Streifen — funktioniert und ist nicht der Kostentreiber).
    - Ticker läuft NUR, wenn mindestens ein Layer aktiv, mindestens eine Karte sichtbar UND der Tab sichtbar ist.
    - Pixi v8 init ist async → `disposed`-Guard; Cleanup zerstört die App (Container/Graphics hängen dran).
    - Gate am Mount-Ort (Preview/Dev) → Produktion lädt kein Pixi (Ziel des Pixi-Umbaus: DOM-Effekte vermeiden).
