@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  cometLifeS, trailSamples, sparkScale,
-  MAX_SPEEDUP, TRAIL_BUDGET_LITE, TRAIL_MIN, SPARK_BUDGET_LITE, SPARK_MIN_FRAC,
+  cometLifeS, trailSamples, sparkScale, cometStride, cometSize,
+  MAX_SPEEDUP, TRAIL_BUDGET_LITE, TRAIL_MIN, SPARK_BUDGET_LITE, SPARK_MIN_FRAC, SIZE_CAP_LITE,
 } from "../src/ui/fx/starfieldBudget.js";
 
 /* Wächter für die Meteor-Deckel (#perf-meteor).
@@ -146,5 +146,62 @@ describe("#perf-meteor — Verdrahtung im Emitter (Quelltext-Ratsche)", () => {
   it("löst die Schweif-Farbe über die Tabelle statt je Sample je Frame", () => {
     expect(src).toMatch(/p\.tint = trailLut\[/);
     expect(src).not.toMatch(/p\.tint = rgbInt\(interpStops/);   // die alte, allozierende Fassung
+  });
+});
+
+/* ============================================================
+   Runde 2 (#perf-meteor2) — „noch weniger Meteoriten": Anzahl bei Turbo, Fläche im späten Lauf.
+   Warum getrennt: Bei Turbo überlappen die Kometen, dort fällt einer weniger nicht auf. Im späten Lauf
+   kommen sie einzeln und gehören sichtbar zum Stich — dort würde ein Weglassen als Fehler gelesen, deshalb
+   schrumpft dort stattdessen der Riese.
+   ============================================================ */
+describe("#perf-meteor2 — Spawn-Takt (Turbo) und Größen-Deckel (spätes Spiel)", () => {
+  const FULL = 1;   // TUNE.SHOOT_DUR
+
+  it("Desktop bleibt unangetastet — beide Deckel greifen nur auf lite", () => {
+    expect(cometStride(false, 0.35 * 1000, FULL)).toBe(1);
+    expect(cometSize(false, 3)).toBe(3);
+  });
+
+  it("halbiert erst, wenn die Kometen sich überhaupt überlappen können", () => {
+    /* Die Schwelle ist der BODEN von cometLifeS (fullS / MAX_SPEEDUP = 0,5 s), nicht der Punkt, an dem
+       die Flugdauer zu folgen beginnt. Solange der Stich-Takt über dem Boden liegt, endet jeder Komet mit
+       seinem eigenen Stich — es überlappt nichts, und Auslassen wäre reiner Verlust. */
+    expect(cometStride(true, 1750, FULL)).toBe(1);   // 1x Tempo
+    expect(cometStride(true, 875, FULL)).toBe(1);    // 2x — Komet endet mit seinem Stich
+    expect(cometStride(true, 500, FULL)).toBe(1);    // exakt am Boden — immer noch keine Überlappung
+    expect(cometStride(true, 499, FULL)).toBe(2);    // erster Takt, bei dem der Komet seinen Stich überlebt
+    expect(cometStride(true, 350, FULL)).toBe(2);    // MAX
+  });
+
+  it("ohne bekannten Stich-Takt (Showcase/Altaufruf) feuert jeder Stich", () => {
+    expect(cometStride(true, 0, FULL)).toBe(1);
+    expect(cometStride(true, undefined, FULL)).toBe(1);
+  });
+
+  it("der Größen-Deckel trifft NUR den gottgleichen Riesen", () => {
+    const TIER_SIZE = [0.5, 1.2, 1.5, 2, 3];   // Spiegel der Tabelle in starfieldPixi.js
+    const capped = TIER_SIZE.map((v) => cometSize(true, v));
+    expect(capped.slice(0, 4)).toEqual(TIER_SIZE.slice(0, 4));   // Schwach..Irre unberührt
+    expect(capped[4]).toBe(SIZE_CAP_LITE);
+    // Halbierte Fläche (Fill geht quadratisch) — das ist der Zweck der Zahl, nicht ihr Nebeneffekt.
+    expect((SIZE_CAP_LITE / TIER_SIZE[4]) ** 2).toBeCloseTo(0.49, 2);
+    // Die Tier-Leiter darf nicht umkippen: Gottgleich bleibt sichtbar größer als Irre.
+    expect(SIZE_CAP_LITE).toBeGreaterThan(TIER_SIZE[3]);
+  });
+
+  it("der Zähler hängt am gewonnenen STICH, nicht am gespawnten Kometen", () => {
+    // Zählte er die Kometen, verschöbe sich das Muster mit jedem Übersprungenen und die Halbierung liefe
+    // aus dem Tritt (es käme mal jeder zweite, mal jeder dritte).
+    expect(src).toMatch(/const seq = winSeq\+\+;/);
+    expect(src).toMatch(/seq % 2 !== 0\) return;/);
+    expect(src).toMatch(/winSeq = 0;/);   // reset() beim Effektwechsel
+  });
+
+  it("überspringt VOR der Zufalls-/Geometrierechnung", () => {
+    // Sonst zöge ein übersprungener Meteor trotzdem seine Zufallszahlen — die Streuung der verbleibenden
+    // Kometen würde sich mit dem Tempo verschieben, das Feld sähe bei Turbo anders aus.
+    const body = src.slice(src.indexOf("function erupt("));
+    expect(body.indexOf("cometStride(")).toBeLessThan(body.indexOf("const d = Math.random()"));
   });
 });

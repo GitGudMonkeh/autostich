@@ -200,6 +200,42 @@ Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor
   mehr, wenn der Deckel jenseits der Bildschirmrate liegt. Der Wächter (`test/mobile-tier.test.js`) prüft jetzt das
   VERHÄLTNIS statt der festen 30 — sonst hätte er nur gemeldet, dass sich der Standard geändert hat.
 
+### #perf-holo — Holo-Würfel: dieselbe Diagnose wie bei der Supernova, nur kleiner (2026-08-17)
+Nicht die Füllrate, sondern die **GC**. Die Zeichenschleife baute pro Frame ~190 Wegwerf-Arrays: je Ecke ein
+Vektor UND ein Projektions-Ergebnis (8 Blöcke × 8 Ecken = 128 allein dafür), dazu je Block Mittelpunkt,
+Punktliste, Farbmischung und die `passes`-Literale. Bei 30 fps sind das ~5800 kurzlebige Objekte je Sekunde.
+- **Behoben ohne jede Look-Änderung**: ein vorab angelegter Punktpuffer (`Float64Array`), EIN wiederverwendeter
+  Vektor, Farben als Skalare statt über `mix()`/`intOf()`, Pass-Kennungen als Modul-Konstanten. Hot Path
+  alloziert jetzt **nichts** mehr (~190 → 0 je Frame).
+- **Die Tiefensortierung ist auf `lite` ersatzlos entfallen.** Sie ist der Maler-Algorithmus für die gefüllten
+  Flächen — und die sind auf lite aus. Übrig bleiben rein ADDITIVE Kanten, und additives Blending ist
+  reihenfolge-unabhängig. Die Sortierung lief dort also jeden Frame umsonst.
+- Scratch-Puffer liegen **je Instanz**, nicht modulweit: der Effekt kann doppelt leben (Spiel + Werkstatt-
+  Vorschau) und beide würden sich sonst im selben Frame denselben Puffer überschreiben.
+- **Gezählt, nicht am Gerät gemessen** — die Einsparung ist aus dem Code abgeleitet. Der nächste Hebel wäre
+  `resLite` (1,25 → 1,0 wie bei der Supernova, ~36 % weniger Fill), aber die 1,5-px-Kernlinien werden ohne
+  MSAA sichtbar treppig; das gehört an ein echtes Gerät, nicht auf den Schreibtisch.
+
+### #perf-meteor2 — „noch weniger Meteoriten": Anzahl bei Turbo, Fläche im späten Lauf
+Die drei Deckel aus Runde 1 (`starfieldBudget.js`) machen jeden EINZELNEN Kometen billiger, die Menge blieb.
+Runde 2 setzt an den zwei Achsen an — **bewusst getrennt, weil sich das Halbieren sehr unterschiedlich anfühlt**:
+- **Turbo → Anzahl.** `cometStride`: unter dem Boden von `cometLifeS` (Stich-Takt < `SHOOT_DUR/MAX_SPEEDUP`
+  = 500 ms) feuert nur noch jeder ZWEITE gewonnene Stich. Bei MAX (~350 ms Takt) fallen die gleichzeitigen
+  Kometen damit von 2 auf 1. Oberhalb des Bodens endet jeder Komet ohnehin mit seinem eigenen Stich, dort
+  wäre Auslassen reiner Verlust — deshalb greift es exakt erst ab da.
+  **Einheitenfalle:** `sweepDurMs` ist in ms, `fullS` in Sekunden. Der erste Wurf verglich beides direkt; der
+  Test hat es gefangen, nicht das Auge.
+- **Spätes Spiel → Fläche.** `cometSize`/`SIZE_CAP_LITE = 2.1` deckelt `TIER_SIZE[4]` (3 → 2,1) — Fill geht
+  quadratisch, also **halbe Fläche** ((2,1/3)² = 0,49) für den gottgleichen Riesen, der im späten Lauf der
+  Dauerzustand ist. Alle Stufen darunter liegen unter dem Deckel und bleiben unberührt; 2,1 > 2 hält den
+  Abstand zu „Irre", die Tier-Leiter kippt nicht um.
+  **Hier NICHT die Anzahl halbiert, und das ist die eigentliche Entscheidung:** bei Normaltempo kommen die
+  Stiche einzeln, jeder Komet gehört sichtbar zu seinem Stich. Jeden zweiten wegzulassen liest sich als
+  Fehler, nicht als Sparmaßnahme. Wer das doch will: `cometStride` um eine Tier-Bedingung erweitern.
+- Der Zähler (`winSeq`) hängt am gewonnenen STICH, nicht am gespawnten Kometen — sonst verschöbe sich das
+  Muster mit jedem Übersprungenen. Übersprungen wird VOR der Zufallsrechnung, sonst wanderte die Streuung der
+  verbleibenden Kometen mit dem Tempo. Wächter: `test/starfield-budget.test.js`.
+
 ### #perf-nova — Supernova mobil getrimmt: die Kosten waren die CPU, nicht die Füllrate
 Profil des Prunks im isolierten Messstand (Handy-Viewport, `lite`): **`buildLine` allein 673 von 1563 ms**, mit
 `buildSimpleUvs`/`packIndex`/`packAttributes`/`buildContextBatches` rund **60 % der Hauptthread-Arbeit** — reines

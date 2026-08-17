@@ -19,6 +19,10 @@ const TUNE = {
   TAIL: 0.1,
 };
 const STD_A = "#35e0ff", STD_B = "#ff5db1";
+/* Die zwei Kanten-Durchgänge als Kennungen statt als frisch gebaute Array-Literale je Block und Frame:
+   0 = breiter Glow-Pass, 1 = heller Kern-Pass. Auf `lite` bleibt nur der Kern. */
+const PASS_FULL = [0, 1];
+const PASS_LITE = [1];
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -85,6 +89,35 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       playRef.current.blocks = blocks;
     }
 
+    /* #perf-holo: Arbeitspuffer, EINMAL je Instanz angelegt und jeden Frame wiederverwendet. Bewusst nicht
+       modulweit — der Effekt kann doppelt leben (im Spiel und als Werkstatt-Vorschau) und beide würden sich
+       im selben Frame denselben Puffer überschreiben. Die paar KB pro Instanz sind dagegen nichts. */
+    const scratch = (() => {
+      let P = null, Z = null, ORD = null;
+      const v = [0, 0, 0];
+      return {
+        v,
+        pts(n) { if (!P || P.length < n * 16) P = new Float64Array(n * 16); return P; },
+        z(n) { if (!Z || Z.length < n) Z = new Float64Array(n); return Z; },
+        /* Zeichenreihenfolge. `zs === null` (lite, keine Flächen) → schlichte Reihenfolge, keine Sortierung.
+           Sonst hinten→vorn per Einfüge-Sortierung: bei n = 8 ist die billiger als `Array.sort` und braucht
+           vor allem keine Vergleichs-Closure und kein Objekt-Array, das jeden Frame neu entsteht. */
+        order(n, zs) {
+          if (!ORD || ORD.length !== n) ORD = new Int32Array(n);
+          for (let i = 0; i < n; i++) ORD[i] = i;
+          if (zs) {
+            for (let i = 1; i < n; i++) {
+              const k = ORD[i], kz = zs[k];
+              let j = i - 1;
+              while (j >= 0 && zs[ORD[j]] < kz) { ORD[j + 1] = ORD[j]; j--; }
+              ORD[j + 1] = k;
+            }
+          }
+          return ORD;
+        },
+      };
+    })();
+
     // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
     const placer = createPlacer(() => {
       const pr = panelRef?.current?.getBoundingClientRect(); if (!pr || pr.width < 2) return null;
@@ -105,7 +138,6 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       pl.bt += (ticker.deltaMS / 1000) * st.current.speed;
       const geo = placer.get(); if (!geo) return;
       const { cx, cy, FOV, camZ, W, H } = geo;
-      const project = (x, y, z) => { const zz = z + camZ; const s = FOV / Math.max(0.4, zz); return [cx + x * s, cy + y * s, zz]; };
       const s = st.current;
       const prog = clamp(pl.bt / TUNE.LIFE, 0, 1);
       const ca = s.deckTint ? rgb(s.deckColor) : rgb(STD_A), cb = s.deckTint ? rgb(s.deckColor2 || s.deckColor) : rgb(STD_B);
@@ -118,38 +150,64 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
       const ax = pl.bt * TUNE.SPIN_X * 1.4, ay = pl.bt * TUNE.SPIN_Y * 1.4;
       const cax = Math.cos(ax), sax = Math.sin(ax), cay = Math.cos(ay), say = Math.sin(ay);
 
-      const drawn = [];
-      for (const bl of pl.blocks) {
-        const bc = [bl.home[0], bl.home[1], bl.home[2]];
-        if (prog < TUNE.BUILD) { const o = TUNE.IN_DIST * 10 * (1 - asm) * TUNE.SIZE; bc[0] += bl.flight[0] * o; bc[1] += bl.flight[1] * o; bc[2] += bl.flight[2] * o; }
-        else if (burst > 0) { bc[0] += bl.flight[0] * burst * TUNE.SIZE; bc[1] += bl.flight[1] * burst * TUNE.SIZE; bc[2] += bl.flight[2] * burst * TUNE.SIZE; }
+      /* #perf-holo (17.08.2026) — dieselbe Baustelle wie bei der Supernova (#perf-nova): nicht die Füllrate,
+         sondern die CPU. Die Schleife hier lief pro Frame durch ~150 frische Arrays (je Ecke ein Vektor, je
+         Ecke ein Projektions-Ergebnis, je Block Mittelpunkt/Punktliste/Farbe) — bei 8 Blöcken × 8 Ecken und
+         30 fps sind das rund 4500 Wegwerf-Objekte pro Sekunde, allesamt kurzlebig und damit reines Futter
+         für die GC. Auf dem Handy fällt genau das als Ruckeln auf, nicht das Zeichnen.
+         Jetzt: EIN vorab angelegter Punktpuffer, EIN wiederverwendeter Vektor, Farben als Skalare gerechnet.
+         Die Mathematik ist Zeile für Zeile dieselbe, das Bild also identisch. */
+      const nb = pl.blocks.length;
+      const P = scratch.pts(nb);          // x,y je Ecke — flach, wiederverwendet
+      const ZS = scratch.z(nb);           // mittlere Tiefe je Block (nur für die Sortierung gebraucht)
+      const v = scratch.v;
+      for (let bi = 0; bi < nb; bi++) {
+        const bl = pl.blocks[bi];
+        let bcx = bl.home[0], bcy = bl.home[1], bcz = bl.home[2];
+        if (prog < TUNE.BUILD) { const o = TUNE.IN_DIST * 10 * (1 - asm) * TUNE.SIZE; bcx += bl.flight[0] * o; bcy += bl.flight[1] * o; bcz += bl.flight[2] * o; }
+        else if (burst > 0) { bcx += bl.flight[0] * burst * TUNE.SIZE; bcy += bl.flight[1] * burst * TUNE.SIZE; bcz += bl.flight[2] * burst * TUNE.SIZE; }
         const tcx = Math.cos(tumble * bl.tax[0] * 6), tsx = Math.sin(tumble * bl.tax[0] * 6);
         const tcy = Math.cos(tumble * bl.tax[1] * 6), tsy = Math.sin(tumble * bl.tax[1] * 6);
         const tcz = Math.cos(tumble * bl.tax[2] * 6), tsz = Math.sin(tumble * bl.tax[2] * 6);
-        const pts = new Array(8); let zsum = 0;
+        let zsum = 0;
+        const base = bi * 16;
         for (let c = 0; c < 8; c++) {
-          const v = [CORNERS[c][0] * bl.half, CORNERS[c][1] * bl.half, CORNERS[c][2] * bl.half];
+          v[0] = CORNERS[c][0] * bl.half; v[1] = CORNERS[c][1] * bl.half; v[2] = CORNERS[c][2] * bl.half;
           if (tumble > 0) { rotX(v, tcx, tsx); rotY(v, tcy, tsy); rotZ(v, tcz, tsz); }
-          v[0] += bc[0]; v[1] += bc[1]; v[2] += bc[2];
+          v[0] += bcx; v[1] += bcy; v[2] += bcz;
           rotX(v, cax, sax); rotY(v, cay, say);
           v[0] *= farScale; v[1] *= farScale; v[2] *= farScale;
-          pts[c] = project(v[0], v[1], v[2]); zsum += pts[c][2];
+          const zz = v[2] + camZ, sc = FOV / Math.max(0.4, zz);
+          P[base + c * 2] = cx + v[0] * sc; P[base + c * 2 + 1] = cy + v[1] * sc;
+          zsum += zz;
         }
-        drawn.push({ pts, z: zsum / 8, col: mix(ca, cb, bl.colU) });
+        ZS[bi] = zsum / 8;
       }
-      drawn.sort((a, b) => b.z - a.z);
 
       const g = nodes.g; g.clear();
       const doFaces = TUNE.FACE > 0 && !s.lite;
-      for (const b of drawn) {
-        if (doFaces) { const ci = intOf(b.col); for (const f of FACES) { g.poly([b.pts[f[0]][0], b.pts[f[0]][1], b.pts[f[1]][0], b.pts[f[1]][1], b.pts[f[2]][0], b.pts[f[2]][1], b.pts[f[3]][0], b.pts[f[3]][1]]).fill({ color: ci, alpha: clamp(0.10 * TUNE.FACE * A, 0, 1) }); } }
+      /* Hinten→vorn sortieren ist der Maler-Algorithmus — er wird NUR für die gefüllten Flächen gebraucht.
+         Auf `lite` sind die Flächen aus (`doFaces` false) und es bleiben rein ADDITIVE Kanten übrig, und
+         additives Blending ist reihenfolge-unabhängig: dasselbe Bild, egal in welcher Folge gezeichnet wird.
+         Die Sortierung war dort also jeden Frame umsonst. */
+      const order = scratch.order(nb, doFaces ? ZS : null);
+      // Farbmischung als Skalare statt über `mix()`/`intOf()` — pro Block sparte das zwei Arrays je Frame.
+      const car = ca[0], cag = ca[1], cab = ca[2], cbr = cb[0], cbg = cb[1], cbb = cb[2];
+      for (let oi = 0; oi < nb; oi++) {
+        const bi = order[oi], base = bi * 16, u = pl.blocks[bi].colU;
+        const r = car + (cbr - car) * u, gg = cag + (cbg - cag) * u, bb = cab + (cbb - cab) * u;
+        const cGlow = ((r & 255) << 16) | ((gg & 255) << 8) | (bb & 255);
+        const cCore = ((((r + 255) / 2) & 255) << 16) | ((((gg + 255) / 2) & 255) << 8) | (((bb + 255) / 2) & 255);
+        if (doFaces) { for (const f of FACES) { g.poly([P[base + f[0] * 2], P[base + f[0] * 2 + 1], P[base + f[1] * 2], P[base + f[1] * 2 + 1], P[base + f[2] * 2], P[base + f[2] * 2 + 1], P[base + f[3] * 2], P[base + f[3] * 2 + 1]]).fill({ color: cGlow, alpha: clamp(0.10 * TUNE.FACE * A, 0, 1) }); } }
         // Kanten: Zwei-Pass (breiter Glow + heller Kern) → Neon-Glow ohne shadowBlur. #perf: auf lite nur der Kern-Pass
         // (halbe Stroke-Zahl) — der Glow-Pass entfällt, dafür der Kern minimal breiter/kräftiger, damit der Look hält.
-        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.5 : 1.6, cGlow = intOf(b.col), cCore = intOf(mix(b.col, [255, 255, 255], 0.5));
-        const passes = s.lite ? [[coreW, cCore, 0.95]] : [[glowW, cGlow, 0.22 * TUNE.EDGE * 0.5], [coreW, cCore, 0.9]];
-        for (const pass of passes) {
-          for (const e of EDGES) { g.moveTo(b.pts[e[0]][0], b.pts[e[0]][1]); g.lineTo(b.pts[e[1]][0], b.pts[e[1]][1]); }
-          g.stroke({ width: pass[0], color: pass[1], alpha: clamp(pass[2] * A, 0, 1), cap: "round", join: "round" });
+        const glowW = s.lite ? 3 : 5, coreW = s.lite ? 1.5 : 1.6;
+        const passes = s.lite ? PASS_LITE : PASS_FULL;
+        for (let pi = 0; pi < passes.length; pi++) {
+          const isGlow = passes[pi] === 0;
+          for (const e of EDGES) { g.moveTo(P[base + e[0] * 2], P[base + e[0] * 2 + 1]); g.lineTo(P[base + e[1] * 2], P[base + e[1] * 2 + 1]); }
+          g.stroke({ width: isGlow ? glowW : coreW, color: isGlow ? cGlow : cCore,
+            alpha: clamp((isGlow ? 0.22 * TUNE.EDGE * 0.5 : (s.lite ? 0.95 : 0.9)) * A, 0, 1), cap: "round", join: "round" });
         }
       }
 

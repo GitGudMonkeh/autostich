@@ -1,7 +1,7 @@
 import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
 import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
 import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: Standard-Farbe = Feuer-Archetyp (FireHead)
-import { cometLifeS, trailSamples, sparkScale } from "./starfieldBudget.js"; // #perf-meteor: Deckel für Turbo/Late-Game (nur lite)
+import { cometLifeS, trailSamples, sparkScale, cometStride, cometSize } from "./starfieldBudget.js"; // #perf-meteor: Deckel für Turbo/Late-Game (nur lite)
 
 /* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
@@ -199,10 +199,14 @@ export function createStarfield(app) {
 
   let params = { effect: null, deck: [...MITTE], deck2: [...AUSKLANG], reduced: false, lite: false, deckTint: readDeckDefault() };
   const comets = [];
+  // #perf-meteor2: zählt GEWONNENE Stiche, nicht Kometen — sonst verschöbe sich der Takt mit jedem
+  // übersprungenen Meteor und die Halbierung liefe aus dem Tritt. Beginnt bei 0 → der erste feuert immer.
+  let winSeq = 0;
   let liveSparks = 0;   // #perf-meteor: lebende Funken, damit der Einschlag sein Budget kennt (s. impact)
 
   function reset() {
     comets.length = 0;
+    winSeq = 0;   // #perf-meteor2: sonst startet der nächste Lauf/Showcase evtl. auf dem übersprungenen Takt
     for (const s of sparks) { s.alive = false; s.p.alpha = 0; }
     liveSparks = 0;
     for (const t of trail) t.alpha = 0;
@@ -281,6 +285,13 @@ export function createStarfield(app) {
     // #357-Folge: Komet feuert NUR bei einem GEWONNENEN Stich (Niederlage → kein Komet). Der Showcase ruft mit win=true.
     if (params.effect !== "starfield" || params.reduced || !win || !(sweepId > 0)) return;
     const t = clamp(tier | 0, 0, 4);
+    /* #perf-meteor2: bei Turbo schickt nur jeder ZWEITE gewonnene Stich einen Kometen (Begründung und
+       Schwelle in starfieldBudget.js). Steht bewusst VOR der Zufalls-/Geometrierechnung darunter: ein
+       übersprungener Meteor soll gar nichts kosten und auch keine Zufallszahlen ziehen — sonst wanderte
+       die Streuung der verbleibenden Kometen mit dem Tempo, und das Feld sähe bei Turbo anders aus.
+       Der Zähler läuft trotzdem hoch, damit das Muster gleichmäßig jeden zweiten trifft. */
+    const seq = winSeq++;
+    if (cometStride(params.lite, sweepDur, TUNE.SHOOT_DUR) > 1 && seq % 2 !== 0) return;
     // #317-artig: ZUFÄLLIGER Einschlagpunkt auf einer perspektivischen Fläche (Trapez): d=0 fern (hinten, hoch, schmal,
     // klein) .. d=1 nah (vorn, tief, breit, groß). Kopf/Schweif/Impact skalieren mit der Tiefe → 3D-Streuung übers Feld.
     const lerp = (a, b, u) => a + (b - a) * u;
@@ -297,7 +308,8 @@ export function createStarfield(app) {
     comets.push({
       nx0: clamp(txN - sideN, 0.02, 0.98), ny0: 0.02 + Math.random() * 0.12,
       txN, tyN, ds,                                            // Zielpunkt (normiert) + Tiefen-Skala
-      age: 0, life, tier: t, size: TIER_SIZE[t] * ds,
+      // #perf-meteor2: Größen-Deckel auf lite — halbiert die Fläche des gottgleichen Riesen (s. Budget-Datei).
+      age: 0, life, tier: t, size: cometSize(params.lite, TIER_SIZE[t]) * ds,
       imp: TIER_IMP[t], impacted: false, seed: Math.random() * 1000, jit: Math.random() * 2 - 1,
     });
     // #357: Cap so gewählt, dass die maximale Turbo-Überlappung (~4) hineinpasst → der Splice greift NICHT mehr

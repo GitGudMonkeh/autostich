@@ -58,3 +58,48 @@ export function sparkScale(lite, liveSparks) {
   if (!lite) return 1;
   return clamp(1 - liveSparks / SPARK_BUDGET_LITE, SPARK_MIN_FRAC, 1);
 }
+
+/* ── Runde 2 (User-Ansage „noch weniger Meteoriten, fast halbieren") ────────────────────────────────
+   Die drei Deckel oben machen jeden EINZELNEN Kometen billiger. Was sie NICHT antasten, ist die Menge:
+   es fliegt weiter je gewonnenem Stich einer, und im späten Lauf ist jeder davon der größte, den es gibt.
+   Genau dort setzen die zwei folgenden an — und zwar an den zwei Achsen GETRENNT, weil sie sich sehr
+   unterschiedlich anfühlen, wenn man sie halbiert:
+
+     Turbo    → die ANZAHL. Bei hohem Tempo überlappen sich die Kometen ohnehin; einer weniger fällt
+                nicht auf, weil man den einzelnen gar nicht mehr verfolgt.
+     Late Game → die FLÄCHE. Hier kommen die Stiche einzeln, jeder Komet ist sichtbar und gehört zum
+                Stich. Hier die Anzahl zu halbieren hieße: jeder zweite gewonnene Stich bleibt ohne
+                Rückmeldung — das liest sich als Fehler, nicht als Sparmaßnahme. Also bleibt die Anzahl,
+                und der Riese wird kleiner.
+
+   Beide greifen wie die drei oben NUR auf `lite`. Desktop bleibt unangetastet. */
+
+/* 4) Spawn-Takt bei Turbo: nur noch jeder ZWEITE gewonnene Stich schickt einen Kometen.
+   Die Schwelle ist keine neue Zahl, sondern genau der Boden von `cometLifeS`: dessen Flugdauer folgt dem
+   Stich-Takt, kann aber nicht unter SHOOT_DUR/MAX_SPEEDUP = 0,5 s fallen. Solange der Takt ÜBER diesem
+   Boden liegt, endet jeder Komet mit seinem eigenen Stich und es überlappt gar nichts — dort wäre ein
+   Auslassen reiner Verlust. Erst darunter (Takt < 500 ms) lebt der Komet länger als sein Stich, und erst
+   ab da gibt es überhaupt etwas einzusparen.
+   Gerechnet bei MAX (~350 ms Takt): Flugdauer 500 ms → es hängen 2 Kometen gleichzeitig. Mit Stride 2
+   kommt effektiv alle 700 ms einer, also wieder mehr als die Flugdauer → nur noch 1. Halbiert, ohne dass
+   ein einzeln sichtbarer Komet verschwindet.
+   Der Zähler im Aufrufer beginnt bei 0, deshalb feuert der ERSTE Stich immer (0 % 2 === 0) — ein
+   Turbo-Abschnitt startet nie mit einem verschluckten Meteor. */
+export function cometStride(lite, sweepDurMs, fullS) {
+  if (!lite || !(sweepDurMs > 0)) return 1;
+  // ACHTUNG Einheiten: `sweepDurMs` in Millisekunden, `fullS` in Sekunden — wie in `cometLifeS` oben.
+  return sweepDurMs / 1000 < fullS / MAX_SPEEDUP ? 2 : 1;
+}
+
+/* 5) Größen-Deckel fürs späte Spiel. `TIER_SIZE` läuft [0.5, 1.2, 1.5, 2, 3] — der Sprung von „Irre" (2)
+   auf „Gottgleich" (3) ist der teuerste im ganzen Effekt, weil Fill quadratisch geht: 2,25× Fläche für
+   EINE Tier-Stufe. Und im späten Lauf ist praktisch jeder Stich gottgleich, der Spitzenwert also der
+   Dauerzustand.
+   2,1 ist so gewählt, dass die Fläche des größten Kometen fast genau halbiert wird ((2,1/3)² = 0,49) und
+   er trotzdem der sichtbar größte bleibt — der Abstand zu „Irre" (2) bleibt erhalten, die Tier-Leiter
+   kippt also nicht um. Alle Stufen darunter liegen unter dem Deckel und sind damit unberührt: das ist
+   ein Deckel für den Riesen, keine Verkleinerung des Effekts. */
+export const SIZE_CAP_LITE = 2.1;
+export function cometSize(lite, tierSize) {
+  return lite ? Math.min(tierSize, SIZE_CAP_LITE) : tierSize;
+}
