@@ -1087,6 +1087,29 @@ button { font-family: inherit; }
 .as-hub-num { color: #dcdce4; }
 .as-hub-cur { color: #d6ab6b; }
 
+/* #kachel-glyph — das Wasserzeichen der vier Verwaltungskacheln (Begründung an `TileGlyph` in
+   StartScreen.jsx). Hier stehen die zwei Zahlen, an denen man dreht.
+
+   DECKKRAFT 9 %: darüber wird aus Textur ein Zeichen und die Kachel bekommt ein zweites Signal
+   neben ihrem Streifen; darunter verschwindet die Kontur auf den helleren der 40 Spielfelder.
+
+   FARBE als Mischung statt reiner Deckfarbe: 62 % Deck auf Weiß. Reines `--deck-a1` schwankt über
+   die 40 Decks um ein Vielfaches in der Helligkeit (Ascension-Gold gegen Kosmos-Blau) — bei 10 %
+   Deckkraft wäre das Zeichen mal sichtbar, mal gar nicht. Der Weiß-Anteil zieht einen Boden ein und
+   lässt trotzdem erkennen, welches Deck aktiv ist.
+
+   Unten RECHTS und VOLLSTÄNDIG sichtbar: dort ist die Kachel am freisten (Titel oben links, Guthaben
+   unten links, Badge oben rechts). Der erste Wurf ließ das Zeichen über die Kachelkante laufen — bei
+   den Balken der Bestenliste schnitt das den rechten weg, und übrig blieb kein Diagramm, sondern ein
+   Rest. Ein Wasserzeichen darf leise sein, aber nicht unvollständig.
+   `pointer-events: none`, damit die Kachel der Knopf bleibt. */
+.as-hub-glyph {
+  position: absolute; right: 5px; bottom: 5px; width: 54px; height: 54px;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--deck-a1, #8a8a95) 62%, #ffffff);
+  opacity: .09;
+}
+
 /* ============================================================================
    Knopf-Optik des Hubs — „Kante statt Fläche"
    ----------------------------------------------------------------------------
@@ -1372,6 +1395,10 @@ button { font-family: inherit; }
   }
   .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
+  /* Das Kachel-Wasserzeichen ist eine Handy-Sache. Hier sind die Kacheln Listenzeilen MIT Untertitel
+     („Dauerhafte Verbesserungen", „Decks, Spielfelder, Effekte") — die sagen bereits, was die Zeile
+     ist. Ein zweites Erkennungszeichen daneben wäre Wiederholung, kein Gewinn. */
+  .as-hub-glyph { display: none; }
 
   /* --- Knöpfe in Deckfarbe --------------------------------------------------
      Hier stand bis #deck-mobil eine wortgleiche Kopie der drei Knopf-Regeln, nur mit `var(--deck-a1/a2)`

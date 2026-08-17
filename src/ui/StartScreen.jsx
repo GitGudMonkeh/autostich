@@ -65,6 +65,50 @@ const onbRewards = (t) => [
   t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
 ];
 
+/* #kachel-glyph (17.08.2026) — das Wasserzeichen in der Ecke der vier Verwaltungskacheln.
+   Die Kacheln trugen bewusst KEINE Icons: vier gleich aussehende Flächen, deren einziges Farbsignal
+   der Streifen links ist (#ruhe — Gold heißt Guthaben, Neutral heißt nachschlagen). Ein Icon in
+   Signalstärke hätte genau diese Ordnung wieder aufgeweicht. Als **Wasserzeichen** tut es das nicht:
+   bei 10 % Deckkraft ist es Textur, kein Zeichen — man sieht es beim Draufschauen, nicht beim Suchen,
+   und es macht die vier Kacheln auf einen Blick unterscheidbar, ohne dass eine lauter würde.
+
+   Deshalb auch alle vier gleich groß, gleich hell, gleiche Ecke: sobald eines heraussticht, ist es
+   wieder ein Signal. Farbe und Deckkraft stehen in index.css unter `.as-hub-glyph` (EINE Stellschraube
+   für alle 40 Decks); ab 1400 px ist es aus — dort sind die Kacheln Listenzeilen mit Untertitel, und
+   die brauchen keine zweite Kennzeichnung.
+
+   Strichzeichnung statt Fläche, weil eine Fläche bei 9 % zu einem Fleck verläuft: die Kontur bleibt
+   auch schwach noch lesbar. Die Strichstärke skaliert bewusst MIT (kein `vector-effect`) — 1,6 von
+   24 Einheiten werden auf 54 px zu rund 3,6 px. Eine hauchdünne Linie bei 9 % Deckkraft ist auf den
+   helleren der 40 Spielfelder schlicht weg; die Form braucht etwas Fleisch, um leise sein zu können. */
+/* Die Formen als reine DATEN, nicht als JSX. Das ist kein Stilwunsch: die i18n-Ratsche
+   (`test/i18n-guards.test.js`) fischt JSX-Textknoten mit einem `>…<`-Greifer aus dem Quelltext, und
+   eine Tabelle aus `<>…</>`-Fragmenten liefert ihm zwischen zwei Einträgen genau so ein Paar — der
+   Schlüsselname der nächsten Zeile ging als „fest verdrahteter Anzeigetext" durch. Mit Pfaddaten
+   entsteht die Stelle gar nicht erst. */
+const GLYPHS = {
+  // Upgrades — Pfeil nach oben: der Baum wächst, das Guthaben geht hinein.
+  upgrades: { paths: ["M12 20V5", "M5.5 11.5 12 5l6.5 6.5"] },
+  // Deck-Werkstatt — vier Bausteine: Deck, Spielfeld, Effekt, Rückseite.
+  workshop: { rects: [[4, 4], [13, 4], [4, 13], [13, 13]] },
+  /* Bestenliste — Treppchen. Die Grundlinie ist nicht Zierrat: ohne sie sind es drei frei
+     schwebende Striche, und die lesen sich bei 9 % Deckkraft als Kratzer statt als Diagramm. */
+  board: { paths: ["M4.5 20.5h15", "M7 17.5V12", "M12 17.5V5", "M17 17.5V9"] },
+  // Statistiken — Ring mit herausgeschnittenem Stück: die klassische Auswertung.
+  stats: { paths: ["M12 4a8 8 0 1 1 0 16a8 8 0 1 1 0-16", "M12 4v8h8"] },
+};
+
+function TileGlyph({ kind }) {
+  const g = GLYPHS[kind];
+  return (
+    <svg className="as-hub-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {(g.paths || []).map((d) => <path key={d} d={d} />)}
+      {(g.rects || []).map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="7" height="7" rx="1.6" />)}
+    </svg>
+  );
+}
+
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1400 px;
   // darunter bleiben die Props ungenutzt.
@@ -134,30 +178,26 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   };
 
 
-  /* #trichter (Variante D): Breite IST die Rangordnung. Vorher lief jeder Block randlos von Kante zu Kante —
-     damit war Breite als Signal verbraucht: nichts konnte wichtiger aussehen, weil alles schon das Maximum hatte.
-     Jetzt drei Stufen, von oben nach unten enger. Das Auge läuft den Trichter von selbst nach unten, und es
-     braucht dafür keine zusätzliche Farbe.
+  /* #kante-bündig (17.08.2026) — EINE Bahn statt drei. Bis hierher trug die BREITE die Rangordnung:
+     100 % Bonus-Leiste/Start · 94 % Rangliste · 88 % Kacheln, ein Trichter, der das Auge nach unten
+     führen sollte. Aufgegeben, und der Grund ist einfach: drei verschiedene Breiten heißen drei
+     verschiedene linke UND rechte Kanten auf einem 358 px schmalen Bildschirm. Was als Rangordnung
+     gedacht war, liest sich als schiefer Stapel — die Stufen sind mit 6 Prozentpunkten (rund 21 px,
+     also gut 10 px je Seite) zu klein, um als Absicht durchzugehen, und zu groß, um nicht aufzufallen.
+     Jetzt fluchten alle Blöcke auf der Kachelbreite. Rangordnung tragen weiterhin Farbe (nur der
+     Start-Knopf auf voller Sättigung), Höhe und Reihenfolge — die brauchen keine Kante dafür.
 
-       lead  100 %  Bonus-Leiste · Tutorial-Angebot · Start-Knopf   — das Ziel, breiteste Stufe
-       mid    94 %  Rangliste                                       — Angebot, aber nicht der Standardweg
-       tail   88 %  Verwaltungs-Kacheln                             — nachschlagen, nicht spielen
-
-     Die Chips und der Fuß darunter sind ohnehin inhaltsbreit und setzen den Trichter von selbst fort.
-
-     Warum die Leiter bei 88 % endet und nicht tiefer: Die Kacheln sind zweispaltig, jede Stufe halbiert sich
-     also im Text. Gemessen auf 375 px (iPhone SE) bricht ab 86 % die ÜBERSCHRIFT „Deck workshop" um — eine
-     umbrechende Kachel-Überschrift liest sich als Fehler, nicht als Gestaltung, und kostete zusätzlich 22 px
-     Höhe. 88 % ist die letzte Stufe, auf der beide Viewports sauber bleiben (390 px ganz, 375 px bis auf die
-     zweizeilige Unterzeile „Global high scores", +3 px). Wer die Stufe vertiefen will, muss vorher an den
-     Kacheltexten oder ihrem Innenabstand arbeiten — nicht an der Prozentzahl. */
-  /* #desktop: Ab 1400 px trägt die BREITE die Rangordnung nicht mehr — dort steht der Trichter in einer
-     eigenen Spalte, und Rangordnung entsteht über Größe, senkrechte Position und Leuchtkraft. Alle drei
-     Bahnen laufen deshalb auf volle Spaltenbreite. Die abgemessenen Handy-Werte (100/94/88 %, gegen ein
-     iPhone SE geprüft) bleiben unangetastet — die Desktop-Stufe überschreibt sie nur oberhalb. */
+     Warum ausgerechnet 88 %: Das ist die abgemessene Grenze der KACHELN, und die ist die engste im
+     Stapel. Sie sind zweispaltig, jede Stufe halbiert sich also im Text; auf 375 px (iPhone SE) bricht
+     ab 86 % die Überschrift „Deck workshop" um (+22 px Höhe, liest sich als Fehler). Alle anderen
+     Blöcke sind einspaltig und vertragen die Breite mühelos — der Stapel richtet sich deshalb nach dem
+     empfindlichsten Glied. Wer enger will, muss zuerst an den Kacheltexten arbeiten, nicht an der Zahl. */
+  /* #desktop: Ab 1400 px ist das ohnehin gegenstandslos — dort steht der Stapel in einer eigenen Spalte
+     und läuft auf volle Spaltenbreite. Die Konstanten bleiben getrennt benannt, damit eine spätere
+     Rangordnung über Breite nicht wieder an drei Stellen einzeln erfunden werden muss. */
   const LANE_DESK = "min-[1400px]:w-full min-[1400px]:max-w-none";
-  const LANE_LEAD = `w-full max-w-sm ${LANE_DESK}`;
-  const LANE_MID  = `w-[94%] max-w-sm ${LANE_DESK}`;
+  const LANE_LEAD = `w-[88%] max-w-sm ${LANE_DESK}`;
+  const LANE_MID  = `w-[88%] max-w-sm ${LANE_DESK}`;
   const LANE_TAIL = `w-[88%] max-w-sm ${LANE_DESK}`;
 
   /* Sekundär-Navigation als ruhige Chip-Reihe.
@@ -461,9 +501,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Vier Farben an vier gleich aussehenden Kacheln, und keine davon sagte etwas — das Auge sucht dort eine
           Bedeutung und findet keine. Jetzt trägt die Kante genau EINE Aussage: Gold heißt „hier liegt ein
           Guthaben" (Upgrades = SP, Werkstatt = DP), Neutral heißt „hier gibt es nichts zu holen, nur
-          nachzuschlagen" (Bestenliste, Statistiken). Keine Icons — nur Titel, Stripe
-          und (wo vorhanden) Kennzahl. Währungs-Zahlen (DP/SP) bleiben im Gold der Währung, unabhängig vom
-          dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge statt Kennzahl. */}
+          nachzuschlagen" (Bestenliste, Statistiken). Währungs-Zahlen (DP/SP) bleiben im Gold der Währung,
+          unabhängig vom dekorativen Stripe. Gesperrt (Onboarding < 6/6): Kachel gedimmt + Countdown-Badge
+          statt Kennzahl.
+          #kachel-glyph: Hier stand „Keine Icons". Seit 17.08.2026 trägt jede Kachel doch eines — aber als
+          WASSERZEICHEN bei 9 % Deckkraft (`TileGlyph`, Begründung dort). Der Satz galt einem Icon in
+          Signalstärke; ein Zeichen, das die Streifen-Ordnung nicht anfasst, widerspricht ihm nicht. */}
       {/* #desktop — Ende der Spiel-Spalte, Anfang der Stand-Spalte. */}
       </div>
       <div className="hub-stand">
@@ -573,11 +616,25 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe AM: hier liegt das SP-Guthaben. „kaufbar"-Hinweis, Onboarding-Gate. */}
             {onbDone ? (
               <button onClick={onUpgrades || undefined} className={tileCls} title={t("start.tile.upgrades.title")}>
-                <Stripe c={AM} />
+                <Stripe c={AM} /><TileGlyph kind="upgrades" />
                 <div className={headBox}>
                   {head(t("start.tile.upgrades"))}
+                  {/* „kaufbar"-Hinweis. Am Handy steht hier NUR DIE ZAHL im goldenen Ring, der ganze
+                      Satz erst ab 1400 px — und das ist eine Fehlerbehebung, keine Verknappung:
+                      nachgemessen lief die Kachel in JEDER Kombination über und wurde am Kachelrand
+                      abgeschnitten (390 px/DE 11 px, 390 px/EN 18 px, 375 px/EN 25 px, „9 availabl…").
+                      „Upgrades" (63 px) plus „9 available" (74 px) brauchen 141 px, die Kachel hat
+                      116–123 px Innenbreite — kein Innenabstand und keine Schriftgröße holt das auf,
+                      eines von beiden muss weichen. Die Zahl allein trägt hier, weil Gold auf diesem
+                      Bildschirm bereits „hier liegt ein Guthaben" heißt (#ruhe) und direkt darunter
+                      steht, worum es geht. Der volle Satz bleibt als `title` erreichbar. */}
                   {progBuyable > 0
-                    ? <span className="ty-badge shrink-0 text-[10px] min-[1400px]:text-[12px] px-1.5 py-0.5 rounded-full" style={{ border: `1px solid ${AM}66`, color: AM }}>{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
+                    ? <span className="shrink-0 font-semibold text-[11px] min-[1400px]:text-[12px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                        style={{ border: `1px solid ${AM}66`, color: AM }}
+                        title={t("start.tile.upgrades.buyable", { n: progBuyable })}>
+                        <span className="ty-num-sm min-[1400px]:hidden">{progBuyable}</span>
+                        <span className="hidden min-[1400px]:inline">{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
+                      </span>
                     : arrow}
                   {sub(t("start.tile.upgrades.sub"))}
                 </div>
@@ -594,7 +651,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               </button>
             ) : (
               <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.upgrades.locked")}>
-                <Stripe c={AM} dim />
+                <Stripe c={AM} dim /><TileGlyph kind="upgrades" />
                 {head(t("start.tile.upgrades"))}
                 {lockBadge("#20202a")}
               </div>
@@ -603,7 +660,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe AM: hier liegt das DP-Guthaben. Onboarding-Gate. */}
             {onCustomize && (onbDone ? (
               <button onClick={onCustomize} className={tileCls} title={t("start.tile.workshop")}>
-                <Stripe c={AM} />
+                <Stripe c={AM} /><TileGlyph kind="workshop" />
                 <div className={headBox}>{head(t("start.tile.workshop"))}{arrow}{sub(t("start.tile.workshop.sub"))}</div>
                 <span className="flex items-baseline gap-1">
                   <span className="as-hub-num ty-num text-[17px] min-[1400px]:text-[27px]">{progDp}</span>
@@ -613,7 +670,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               </button>
             ) : (
               <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.workshop.locked")}>
-                <Stripe c={AM} dim />
+                <Stripe c={AM} dim /><TileGlyph kind="workshop" />
                 {head(t("start.tile.workshop"))}
                 {lockBadge("#20202a")}
               </div>
@@ -622,7 +679,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             {/* 3 · Bestenliste — Stripe NEU: kein Guthaben, nur nachschlagen. */}
             {onLeaderboard && (
               <button onClick={onLeaderboard} className={tileCls} title={t("start.tile.leaderboard")}>
-                <Stripe c={NEU} />
+                <Stripe c={NEU} /><TileGlyph kind="board" />
                 <div className={headBox}>{head(t("start.tile.leaderboard"))}{arrow}{sub(t("start.tile.leaderboard.sub"))}</div>
                 <span className="text-[12px] min-[1400px]:hidden opacity-50">{t("start.tile.leaderboard.sub")}</span>
                 {arrowDesk}
@@ -632,7 +689,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             {/* 4 · Statistiken — Stripe NEU: kein Guthaben, nur nachschlagen. */}
             {onStats && (
               <button onClick={onStats} className={tileCls} title={t("start.tile.stats")}>
-                <Stripe c={NEU} />
+                <Stripe c={NEU} /><TileGlyph kind="stats" />
                 <div className={headBox}>{head(t("start.tile.stats"))}{arrow}{sub(t("start.tile.stats.sub"))}</div>
                 <span className="text-[12px] min-[1400px]:hidden opacity-50">{t("start.tile.stats.sub")}</span>
                 {arrowDesk}

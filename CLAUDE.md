@@ -455,6 +455,28 @@ Gemessen wird die mittlere Luma im **Handy-Ausschnitt** (nicht im ganzen Bild), 
 - **Was die Messung nicht kann**: sie sieht Durchschnittshelligkeit, nicht Unruhe — ein Bild mit ruhigem
   Mittel, aber harten Kanten quer durch die Kachelzone kann störender sein als ein gleichmäßig helleres.
 
+### #kante-bündig + #kachel-glyph — Hub-Handy: eine Bahn, vier Wasserzeichen (2026-08-17)
+- **Der Breiten-Trichter ist aufgegeben.** Die drei Bahnen (100 % Bonus/Start · 94 % Rangliste ·
+  88 % Kacheln) sollten Rangordnung tragen; auf 358 px sind 6 Prozentpunkte aber nur ~21 px, also gut
+  10 px je Seite — zu wenig für Absicht, zu viel für unsichtbar. Es las sich als schiefer Stapel.
+  **Alle Blöcke fluchten jetzt auf 88 %**, der abgemessenen Grenze der Kacheln (bei 86 % bricht auf
+  375 px die Überschrift „Deck workshop" um). Nachgemessen: alle Bahnen links 37 / rechts 338.
+  Rangordnung tragen weiter Farbe, Höhe und Reihenfolge. Desktop unberührt (volle Spaltenbreite).
+- **Die vier Verwaltungskacheln haben ein Wasserzeichen** (`TileGlyph` in StartScreen.jsx,
+  `.as-hub-glyph` in index.css): Pfeil · vier Bausteine · Treppchen · Ring, unten rechts, 54 px,
+  **9 % Deckkraft**, Farbe `color-mix(--deck-a1 62 %, #fff)`. Der Weiß-Anteil ist der Punkt — reine
+  Deckfarbe schwankt über die 40 Decks zu stark in der Helligkeit, das Zeichen wäre mal da, mal weg.
+  Damit bleibt die #ruhe-Regel heil: bei 9 % ist es Textur, kein zweites Signal neben dem Streifen.
+  Ab 1400 px aus (dort tragen die Listenzeilen ohnehin Untertitel).
+- **Die Formen liegen als PFADDATEN vor, nicht als JSX.** Eine Tabelle aus `<>…</>`-Fragmenten lässt
+  die i18n-Ratsche anschlagen: ihr `>…<`-Greifer fischt den Schlüsselnamen der nächsten Zeile als
+  „fest verdrahteten Anzeigetext". Wer hier Formen ergänzt, bleibt bei Daten.
+- **Nebenbei behoben, war schon vorher kaputt:** Der „kaufbar"-Hinweis lief in JEDER Kombination über
+  den Kachelrand (390/DE 11 px · 390/EN 18 px · 375/EN 25 px, sichtbar als „9 availabl…"). „Upgrades"
+  (63 px) + „9 available" (74 px) brauchen 141 px, die Kachel hat 116–123 px Innenbreite — daran ist
+  mit Innenabstand nichts zu retten. Am Handy steht deshalb nur noch **die Zahl** im goldenen Ring
+  (Gold heißt dort bereits „Guthaben"), der volle Satz ab 1400 px und im `title`.
+
 ### #typo — Geist statt System-Mono, projektweit (2026-08-17)
 Bis hierher lief **alles** in `ui-monospace` (eine Zeile in index.css: `html, body`). Überschriften, Knöpfe,
 Beschreibungen und Zahlen trugen dieselbe Schrift — Typografie war damit als Ordnungsmittel gar nicht im Einsatz.
