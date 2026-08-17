@@ -1060,6 +1060,19 @@ button { font-family: inherit; }
 .up-branch.is-off { display: none; }
 .up-branch-h { display: none; }
 
+/* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1399 px reichen `cz-split` und `cz-main` ihre
+   Kinder unverändert an den Scroller durch — Katalog, Effekt-Bühne und Liste sitzen exakt wie bisher.
+   Ab 1400 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts). */
+.cz-split, .cz-main { display: contents; }
+
+/* Der Glossar-Knopf steht zweimal im Startbildschirm: oben rechts in der Ecke (bis 1399 px) und unten
+   im Fußband hinter dem Discord-Zeichen (ab 1400 px). Zwei Instanzen statt einer wandernden, weil die
+   beiden Plätze in verschiedenen Containern liegen — verschieben ließe sich das nur im DOM, und das
+   würde die Handy-Fassung mitziehen. Sichtbar ist immer genau eine.
+   `!important` ist hier nicht Bequemlichkeit: `.gloss-i-btn` (der ⓘ-Kreis) setzt selbst `display: grid`
+   und gewinnt sonst gegen jede Utility-Klasse am Element. */
+.as-gloss-foot { display: none !important; }
+
 /* ============================================================================
    #desktop — Startbildschirm ab 1400 px (Desktop-Pass)
    ----------------------------------------------------------------------------
@@ -1377,6 +1390,16 @@ button { font-family: inherit; }
      Versehen: `.as-week-chip` allein (0,1,0) verliert gegen `[data-skin="crt"] .font-pixel` (0,2,0),
      das die Pixel-Schrift setzt. Der zweite Selektor hat dieselbe Spezifität und steht später,
      schlägt sie also — ohne dass irgendwo `!important` nötig wird. */
+  /* Der Glossar-Knopf wechselt den Platz: raus aus der oberen Ecke, rein ins Fußband hinter Discord.
+     Dort wächst er auf die Größe des Discord-Zeichens (36 px) — die beiden sind ein Paar aus zwei
+     Symbolen. Die 26 px der Grundregel wären daneben ein Kieselstein. */
+  .as-gloss-corner { display: none !important; }
+  .as-gloss-foot {
+    display: grid !important;
+    width: 36px; height: 36px;
+    font-size: 1.05rem;
+  }
+
   .as-week-chip,
   [data-skin="crt"] .as-week-chip {
     font-family: "Orbitron", ui-monospace, monospace;
@@ -1386,6 +1409,99 @@ button { font-family: inherit; }
     color: color-mix(in srgb, var(--deck-a2, #b3a8ff) 62%, #ffffff);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #9b82f0) 34%, transparent);
   }
+
+  /* ==========================================================================
+     #desktop — Deck-Werkstatt ab 1400 px
+     --------------------------------------------------------------------------
+     Der Katalog zeigt 21 gezeichnete Kartenrücken durch ein 576 px schmales Fenster; sechs sind
+     sichtbar, für den Rest scrollt man 1535 px. Ab hier steht der Screen randverankert, der Katalog
+     bekommt sechs Spalten, und das Pack-Detail hört auf, ein Overlay zu sein: Es steht rechts fest
+     daneben, sodass Auswahl und Vorschau zusammen im Bild sind. Das Blättern mit ‹ › wird damit
+     überflüssig — man springt im Katalog direkt zum nächsten Deck.
+
+     Im Reiter „Effekte" zahlt sich dasselbe Raster am stärksten aus: Die Bühne zeigt laufende
+     Pixi-Szenen und wächst von 342 px Höhe auf gut das Zweieinhalbfache, während die Effektliste
+     daneben vollständig sichtbar bleibt statt darunter wegzuscrollen.
+     ========================================================================== */
+  .cz-root { padding: 16px 44px 20px !important; align-items: stretch !important; }
+
+  /* Die Karte gibt ihre feste Höhe auf (die stammt aus der Handy-Fassung, wo alle Reiter gleich groß
+     bleiben sollten) und füllt den Rahmen. `!important` schlägt das inline gesetzte `height`. */
+  .cz-card {
+    height: 100% !important;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .cz-card.as-panel { background-image: none !important; animation: none !important; }
+  .cz-scroll { overflow: hidden !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 0 !important; display: flex; flex-direction: column; }
+
+  /* Der Kopf verliert seine deckende Leiste und sein negatives Ausbluten (beides gehört zur Karte). */
+  .cz-head {
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    margin-left: 0 !important; margin-right: 0 !important;
+    padding-left: 0 !important; padding-right: 0 !important;
+    padding-top: 6px !important; padding-bottom: 10px !important;
+    flex: none;
+  }
+  .cz-head > div[aria-hidden="true"]:first-child { display: none; }   /* Haarlinie: hing an der Kartenecke */
+
+  /* Katalog | Detail. Die Detailspalte ist fest — eine mitwachsende Spalte würde die Kartenvorschau
+     darin auf Ultrawide grotesk groß ziehen. */
+  .cz-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 430px;
+    gap: 26px;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+  /* Im Reiter „Effekte" gibt es kein Pack-Detail. Ohne diese Regel bliebe die 430-px-Spalte leer
+     stehen und die Effekt-Bühne wäre um 456 px schmaler, als sie sein könnte. */
+  .cz-split:not(:has(.cz-side)) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .cz-main {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;                       /* Luft für die Scrollleiste, sonst klebt sie an den Kacheln */
+  }
+  .cz-side { min-height: 0; }
+  .cz-detail, .cz-detailcard { max-width: none; }
+  .cz-detailcard { border-radius: 14px; }
+
+  /* Der Katalog: sechs Spalten. Die Tailwind-Vorgabe `grid-cols-2 sm:grid-cols-3` friert bei 640 px
+     ein, deshalb hier explizit — `!important`, weil Tailwinds Utility dieselbe Spezifität hat. */
+  .cz-main .grid-cols-2 { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: 16px !important; }
+
+  /* Die Kachel, die gerade rechts im Detail steht. `is-sel` ist für das AUSGERÜSTETE Deck reserviert;
+     dieser Marker muss davon unterscheidbar bleiben, also ein Ring statt einer Kante. */
+  .cz-shown { box-shadow: 0 0 0 2px var(--c, #8a8a95), 0 0 18px -6px var(--c, #8a8a95); }
+
+  /* --- Reiter „Effekte": Bühne links, Liste rechts ---------------------------
+     Die drei Teile von FxView sind Geschwister in einem Fragment. `cz-main` wird für sie zum Raster;
+     die Bühne bekommt beide Zeilen, Liste und Fußnote stapeln sich rechts daneben. */
+  .cz-main:has(.cz-stage) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 520px;
+    grid-template-rows: 1fr auto;
+    gap: 0 24px;
+    overflow: hidden;
+  }
+  .cz-stage {
+    grid-column: 1; grid-row: 1 / span 2;
+    position: static !important;              /* sticky ergibt neben der Liste keinen Sinn mehr */
+    margin: 0 !important; padding: 0 !important;
+    border-bottom: 0 !important;
+    background: none !important;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  /* Die Vorschau selbst füllt, was Reiterzeile, Beschreibung und Aktionsknopf übrig lassen. Ohne das
+     bliebe sie auf ihren 208 px stehen und die gewonnene Höhe wäre leere Fläche — genau der Punkt,
+     um den es beim Umbau ging. */
+  .cz-fxpreview { flex: 1; min-height: 0; height: auto !important; }
+  .cz-fxlist { grid-column: 2; grid-row: 1; min-height: 0; overflow-y: auto; margin-top: 0 !important; padding-right: 6px; }
+  .cz-fxhint { grid-column: 2; grid-row: 2; }
 }
 
 /* Flache Desktop-Fenster: 27 Knoten nebeneinander brauchen Höhe. Auf 1080 px geht der Baum ohne Scrollen

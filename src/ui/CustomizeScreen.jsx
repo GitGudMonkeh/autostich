@@ -328,6 +328,22 @@ function useIsMobile() {
   return m;
 }
 
+/* #desktop — ab 1400 px steht die Werkstatt zweispaltig: Katalog links, Pack-Detail rechts.
+   Warum als JS-Hook und nicht per CSS wie sonst im Desktop-Pass: Das Pack-Detail hängt bis 1399 px
+   als Portal an `document.body` (der Shop-Root trägt `backdrop-filter` und wäre sonst der
+   Containing-Block für `position: fixed`). Portal oder nicht ist eine Frage der DOM-Struktur —
+   die lässt sich mit keiner Media Query beantworten. Dieselbe Bauart wie `useIsMobile` oben. */
+function useIsWide() {
+  const [w, setW] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 1400px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1400px)");
+    const on = () => setW(mq.matches);
+    mq.addEventListener ? mq.addEventListener("change", on) : mq.addListener(on);
+    return () => (mq.removeEventListener ? mq.removeEventListener("change", on) : mq.removeListener(on));
+  }, []);
+  return w;
+}
+
 // Einmalig injizierte Keyframes für die Gottgleich-Standard-Vorschau (Event-Loop).
 const FX_CSS = `
 /* #gott Showcase: die geteilte Chrome-„GOTTGLEICH"-Ansage poppt SYNCHRON zum Effekt-Loop rein (Pop → Halten → Fade),
@@ -977,6 +993,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   //   Anzeigen eines Effekts. Läuft nur einmal pro Session (interner Guard).
   useEffect(() => { prefetchFxChunks(); }, []);
   const p = profile || {};
+  const wide = useIsWide();                          // #desktop: ab 1400 px steht das Pack-Detail fest daneben
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("back");   // "back" | "front" | "bg" — Cover (Rücken) zuerst, dann Front
@@ -998,6 +1015,15 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
     return () => ro?.disconnect();
   }, [tab]);
 
+  /* #desktop: Das Detail steht ab 1400 px fest neben dem Katalog — also darf es nie leer sein. Beim Öffnen
+     und bei jedem Reiterwechsel wird das erste Pack der Kategorie vorgewählt; `orderPacks` stellt das
+     ausgerüstete nach vorn, man landet also auf dem eigenen Deck. Bis 1399 px passiert hier nichts: dort ist
+     das Detail ein Overlay, das erst auf Tippen aufgeht (`packOv` bleibt null, bis der Spieler wählt). */
+  useEffect(() => {
+    if (!wide || tab === "fx") return;
+    setPackOv((cur) => (cur && cur.cat === tab ? cur : { cat: tab, idx: 0 }));
+  }, [wide, tab]);
+
   const buy = (fn) => { if (onProfileChange) onProfileChange(fn(p)); };
   const activate = (pack) => onChoose(hasBattlefield(pack) ? { deckId: pack.deckId, battlefieldId: pack.bfId } : { deckId: pack.deckId });
   // #tiered: eine bestimmte Stufe aktivieren + als zuletzt gewählte Stufe merken (tierSel[packId]=deckId → Zufalls-Modus).
@@ -1008,24 +1034,27 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
-  const anyOverlay = !!packOv;
+  /* Sperrt das Scrollen des Katalogs, solange das Detail als Overlay darüber liegt. Ab 1400 px ist das
+     Detail KEIN Overlay mehr, sondern die zweite Spalte — dort muss der Katalog weiter scrollen können,
+     sonst wäre er auf die sichtbaren zwölf Packs eingefroren. */
+  const anyOverlay = !!packOv && !wide;
   // Horizontaler Swipe → Reiterwechsel. Solange das Pack-Detail offen ist (eigene ‹ ›/Swipe-Geste), unterdrückt.
   const tabSwipe = useTabSwipe(["packs", "challenges", "fx"], tab, setTab, { guard: () => anyOverlay });
 
   return (
-    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
+    <div className="fixed inset-0 overlay-root cz-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
       {/* #394 FESTE Kartenhöhe (wie Bestenliste #385) → das Fenster bleibt über ALLE Reiter (Packs/Challenges/Effekte)
           UND alle Filter gleich groß; auch eine leere Ansicht („Nichts in dieser Ansicht") lässt es nicht schrumpfen.
           Gescrollt wird nur noch der Inhaltsbereich darunter — der Sticky-Kopf lebt weiter IN diesem Scroll-Container,
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
-      <div className="w-full max-w-xl rounded-2xl my-auto as-panel flex flex-col overflow-hidden"
+      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl my-auto as-panel cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
-        <div className={`overlay-card flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
+        <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
           {/* Sticky Kopf */}
-          <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
+          <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative cz-head" style={{ background: STICKY_HEAD_BG }}>
             <TopHairline />
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <h2 className="text-lg font-bold whitespace-nowrap">{t("shop.title")}</h2>
@@ -1061,15 +1090,31 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             </div>
           </div>
 
-          {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} />
-            : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} />
-            : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+          {/* `cz-split` ist bis 1399 px `display: contents` — der Katalog fällt unverändert in den Scroller
+              durch. Ab 1400 px wird daraus das Zwei-Spalten-Raster: Katalog links, Pack-Detail rechts. */}
+          <div className="cz-split">
+            <div className="cz-main">
+              {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} />
+                : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} />
+                : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+            </div>
+            {/* Ab 1400 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
+            {wide && packOv && tab !== "fx" && (
+              <div className="cz-side">
+                <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
+                  deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
+                  options={options} onActivate={activate} onActivateTier={activateTier} inline
+                  onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
-          Containing-Block für `position:fixed` — das Portal löst das Overlay heraus → echtes Vollbild-Overlay. */}
-      {packOv && createPortal(
+          Containing-Block für `position:fixed` — das Portal löst das Overlay heraus → echtes Vollbild-Overlay.
+          Ab 1400 px entfällt das Overlay; das Detail steht dann oben im Raster (s. `cz-side`). */}
+      {!wide && packOv && createPortal(
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
           options={options} onActivate={activate} onActivateTier={activateTier}
@@ -1082,7 +1127,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* ============================ Packs- / Challenges-Tab ============================ */
 // #Shop-Reorg: geteilte Ansicht für „Packs" (Kauf-Packs, nach DP-Preis sortiert) und „Challenges" (freischaltbare
 // cond-Packs). `list` kommt vorsortiert rein; die Reihenfolge bleibt (kein erneutes Sortieren) → billig oben, teuer unten.
-function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null }) {
+/* `sel` = Index des Packs, das ab 1400 px rechts im Detail steht (bis dahin null). Die Kachel bekommt
+   dafür einen eigenen Marker: `is-sel` ist schon vergeben — das trägt das AUSGERÜSTETE Deck, und die
+   beiden Zustände müssen unterscheidbar bleiben (man betrachtet ja meist ein anderes als das eigene). */
+function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null, sel = null }) {
   const challenge = cat === "challenges";
   const [filter, setFilter] = useState("alle");
   const chips = challenge ? [["alle", "shop.filter.all"], ["besitz", "shop.filter.free"], ["gesperrt", "shop.filter.locked"]] : [["alle", "shop.filter.all"], ["besitz", "shop.filter.owned"], ["kaufbar", "shop.filter.buyable"]];
@@ -1150,7 +1198,7 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
                Packs (a1 aus themes.js) — dieselbe Farbe, in der das Deck später den ganzen Bildschirm tönt.
                `is-sel` = ausgerüstet; das frühere Grün am Rahmen ist damit frei für den Badge, wo es hingehört. */
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
-              className={`as-edge-card${active ? " is-sel" : ""} relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5`}
+              className={`as-edge-card${active ? " is-sel" : ""}${sel === gi ? " cz-shown" : ""} relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5`}
               style={{ "--c": pack.a1 || "#8a8a95" }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
                 <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
@@ -1192,7 +1240,11 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
 /* Pack-Detailansicht (Portal): Vorschau (Karte vorne/hinten/Hintergrund), ‹ ›/Swipe zwischen Packs, Kaufen/Aktivieren.
    #tiered: Bei Stufen-Decks steht über der Aktion ein I/II/III-Wähler (nur freigeschaltete Stufen wählbar); Vorschau,
    Farbe und Aktivierung folgen der gewählten Stufe. Ohne tiers verhält sich alles unverändert. */
-function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, options = null, onActivate, onActivateTier, onBuy }) {
+/* `inline` = die Desktop-Fassung: kein Overlay, sondern die feste zweite Spalte neben dem Katalog.
+   Es ändert sich NUR die Hülle — Vorschau, Stufenwahl, Kaufen und alle Zustände bleiben identisch.
+   Zwei Dinge entfallen eingebettet: der Dim samt Klick-daneben-schließt (es liegt nichts darüber) und
+   der Schließen-Knopf (das Panel ist permanent; ein „Schließen" daran läse sich wie „Shop verlassen"). */
+function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, onClose, options = null, onActivate, onActivateTier, onBuy, inline = false }) {
   const touch = useRef(0);
   const tiered = isTieredPack(pack);
   const tiers = tiered ? pack.tiers : [];
@@ -1228,16 +1280,17 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   const unlock = pack.kind === "cond" ? packUnlock(p, pack) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
-      style={{ background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden my-auto" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
+    <div className={inline ? "cz-detail h-full" : "fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"}
+      style={inline ? undefined : { background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={inline ? undefined : onClose}>
+      <div className={`w-full rounded-2xl overflow-hidden ${inline ? "cz-detailcard h-full flex flex-col" : "max-w-sm my-auto"}`}
+        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
         onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
-        <div className="h-[3px] w-full" style={HAIRLINE} aria-hidden="true" />
-        <div className="p-3.5">
+        <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
+        <div className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
-            <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>
+            <span className="text-[15px] min-[1400px]:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
           </div>
 
           {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
@@ -1394,7 +1447,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   return (
     <>
       {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar. */}
-      <div className="sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+      <div className="cz-stage sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
         <div className="flex gap-1.5 mb-2.5">
           {FX_GROUPS.map((g) => {
             const on = g.key === sel.group;
@@ -1414,8 +1467,9 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
         <FxStage fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)} onChoose={onChoose} onBuyFx={onBuyFx} options={options} />
       </div>
 
-      {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten. */}
-      <div className="mt-3">
+      {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten.
+          #desktop: ab 1400 px rückt sie neben die Bühne (s. .cz-fxlist), statt darunter wegzuscrollen. */}
+      <div className="cz-fxlist mt-3">
         <div className={EYEBROW} style={{ color: "#9a97ab" }}>
           {selGroup.title}
           <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
@@ -1433,7 +1487,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
         </div>
       </div>
 
-      <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+      <p className="cz-fxhint text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
         {t("shop.fx.hint")}
       </p>
     </>
@@ -1581,7 +1635,10 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   return (
     <>
       {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
-      <div className="relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a" }}>
+      {/* Die Höhe ist auf dem Handy bewusst gedeckelt (die Liste soll darunter noch sichtbar sein). Ab
+          1400 px steht die Liste daneben statt darunter — dort füllt die Vorschau die ganze Spalte
+          (s. .cz-fxpreview in index.css; der Deckel hier ist inline und braucht deshalb `!important`). */}
+      <div className="cz-fxpreview relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a" }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
             (frische Effekt-Bühne mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn

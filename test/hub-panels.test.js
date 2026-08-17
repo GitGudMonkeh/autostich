@@ -33,10 +33,15 @@ describe("#394/#385 — Hub-Modals behalten eine konstante Fenstergröße", () =
     });
   }
 
+  /* Gesucht wird nur noch `w-full max-w-xl` statt der ganzen Kette bis `rounded-2xl`: seit dem
+     Desktop-Pass steht `min-[1400px]:max-w-none` dazwischen (ab 1400 px füllt die Werkstatt den
+     Bildschirm). Die Absicht des Tests ändert das nicht — die Karte soll auf JEDER Breite eine
+     feste Größe haben statt mit dem Reiterinhalt zu springen; auf Desktop ist diese feste Größe
+     eben der volle Rahmen. Die drei geprüften Eigenschaften gelten unverändert. */
   it("Deck-Werkstatt: die Karte wächst NICHT mehr mit dem Inhalt (flex-col + overflow-hidden)", () => {
     const card = ui("CustomizeScreen.jsx")
       .split("\n")
-      .find((l) => l.includes("w-full max-w-xl rounded-2xl"));
+      .find((l) => l.includes("w-full max-w-xl"));
     expect(card).toBeTruthy();
     expect(card).toContain("flex flex-col");
     expect(card).toContain("overflow-hidden");
