@@ -6,6 +6,7 @@ import { linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
 import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
+import { gottSpeedFor } from "./fx/gottTiming.js"; // #prunk-laenge: In-Game-Spieldauer je Prunk (Pixi-frei)
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
@@ -158,12 +159,12 @@ const GOTT_FX_MIN = 500000;
 // Supernova-Swell (Alt-Verhalten). delay = Versatz nach dem Punch (Supernova/Holo-Würfel bauen langsam auf → 0,85 s
 // wie bisher; die kürzeren laufen sofort mit). [TUNING]
 const GOTT_SWELL = {
-  supernova:     { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }, // abgeleitetes Timing (in-game = 0)
+  supernova:     { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(gottSpeedFor("supernova")) }, // abgeleitetes Timing — MIT dem gestreckten In-Game-Tempo, sonst sitzt der Impuls wieder vor dem Blitz
   holoCube:      { snd: "fx_holocube",  gain: 1.0, delay: 0 },
   laserFaecher:  { snd: "fx_laserfan",  gain: 1.0, delay: 0 },
   prismaKaskade: { snd: "fx_prisma",    gain: 1.0, delay: 0 },
 };
-const GOTT_SWELL_DEFAULT = { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(1) }; // sonnenPuls / gottStandard: generischer Swell
+const GOTT_SWELL_DEFAULT = { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(gottSpeedFor("sonnenPuls")) }; // sonnenPuls / gottStandard: generischer Swell
 const BIG_SCORE_TIERS = [
   { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
   { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
@@ -174,6 +175,10 @@ const BIG_SCORE_TIERS = [
     chrome: { grad: "linear-gradient(100deg,#ffffff,#eafcff,#7fe6ff,#ffffff,#7fe6ff,#eafcff,#ffffff)", glow: "#12d6ff" } },
 ];
 const BIG_DOMINANCE_MS = 2000; // #315/#344: eine niedrigere Stufe wird so lange nach einer HÖHEREN unterdrückt → „nur die höchsten"
+// #ansage-overlap: effektive Stufe einer Ansage für den „nur die höchste ist sichtbar"-Vergleich. Die epischen
+// One-Shots (Lawine, „Gönn dir") tragen bewusst keinen `rank` (sie umgehen Dominanz/Throttle), zählen hier aber als
+// oberste Stufe — sonst könnte ein Stark sie von der Bühne schieben.
+const bigRankOf = (tier) => tier.rank ?? (tier.epic ? 4 : 0);
 // #344: geschichteter Chrome-Glow — enger + weiter Halo in `glow`, optionale weite `aura` für die „coolere" Doppelkante
 //   (mobil-bewusst über gBig/gMid = lite ? 16/8 : 32/12). Bei transparentem Fill greift text-shadow nicht → drop-shadow.
 const chromeFilter = (c, gBig, gMid) => {
@@ -1181,9 +1186,23 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       audio.play("fx_neonsurf_splash", { gain: 0.6 + 0.7 * surgeMag, bass: surgeMag >= 1.2 ? 3 : 0 });
     }
     // #Fix: id global eindeutig über den monotonen bigSeq (nicht nur trickNo) → keine duplicate-key-Kollision.
-    // #344: kein lane/jitter mehr (alle mittig) → Pool auf max 2 gleichzeitig gedeckelt.
-    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: toShow };
-    setBigFloats((cur) => [...cur, entry].slice(-2));
+    /* #ansage-overlap: Seit #344 liegen ALLE Ansagen exakt mittig (left/top 50 %). Ein Pool von zwei gleichzeitigen
+       Einträgen heißt damit: zwei Wortmarken exakt übereinander. Im Playtest ergab BRUTAL + IRRE das unlesbare
+       „BIRRRE". Die bestehende Dominanz-Regel oben half nicht — sie unterdrückt nur eine NIEDRIGERE Stufe kurz NACH
+       einer höheren, nicht die höhere ÜBER einer noch laufenden niedrigeren. Und die epischen Ansagen (Lawine,
+       „Gönn dir") haben gar keinen `rank` und laufen an dem Gate komplett vorbei.
+       Regel jetzt, am Pool statt am Gate: es ist IMMER nur eine Ansage sichtbar.
+         • Läuft gerade eine HÖHERWERTIGE → die neue tritt nicht an (der größere Moment behält die Bühne).
+         • Sonst → die neue ERSETZT alles, was noch steht.
+       Rangvergleich über eine effektive Stufe: `rank`, und epische Ansagen ohne rank (Lawine/Gönn dir) zählen als
+       oberste Stufe — sie sind One-Shot-Höhepunkte und dürfen von einem Stark nicht weggeschoben werden. */
+    const entry = { id: `b${t.trickNo}-${bigSeq.current}`, tier: toShow, rank: bigRankOf(toShow) };
+    let superseded = false;
+    setBigFloats((cur) => {
+      if (cur.some((f) => f.rank > entry.rank)) { superseded = true; return cur; } // Höherwertige Ansage läuft → nicht antreten
+      return [entry];                                                              // sonst: ersetzt alles Laufende
+    });
+    if (superseded) return;
     const tm = setTimeout(() => {
       setBigFloats((cur) => cur.filter((f) => f.id !== entry.id));
       bigTimers.current = bigTimers.current.filter((x) => x !== tm);
@@ -1526,35 +1545,35 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           PANEL-Mitte (pr.width/2), nicht auf die außermittige Gegnerkarte — sonst saß der Effekt v. a. auf Mobile rechts. */}
       {gottTrigger > 0 && gottEffect === "sonnenPuls" && !reduced && (
         <Suspense fallback={null}>
-          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
+          <SonnenPulsPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("sonnenPuls")}
             deckColor={deckA1 || "#ff3d81"} deckColor2={deckA2 || deckA1 || "#ffb43d"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "laserFaecher" && !reduced && (
         <Suspense fallback={null}>
-          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
+          <LaserFaecherPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("laserFaecher")}
             deckColor={deckA1 || "#2ff0ff"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "prismaKaskade" && !reduced && (
         <Suspense fallback={null}>
-          <PrismaKaskadePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
+          <PrismaKaskadePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("prismaKaskade")}
             deckColor={deckA1 || "#31d0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "holoCube" && !reduced && (
         <Suspense fallback={null}>
-          <HoloCubePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
+          <HoloCubePixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("holoCube")}
             deckColor={deckA1 || "#35e0ff"} deckColor2={deckA2 || deckA1 || "#ff5db1"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
       )}
       {gottTrigger > 0 && gottEffect === "supernova" && !reduced && (
         <Suspense fallback={null}>
-          <SupernovaPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null}
+          <SupernovaPixi trigger={gottTrigger} panelRef={panelRef} cardRef={null} speed={gottSpeedFor("supernova")}
             deckColor={deckA1 || "#ffd24a"} deckColor2={deckA2 || deckA1 || "#ff2d9b"} deckTint={gottDeck}
             reduced={reduced} lite={lite} />
         </Suspense>
