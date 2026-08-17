@@ -158,10 +158,16 @@ export function getLive() {
 
 export function getReport() {
   const durS = (S.lastT - S.startT) / 1000;
+  /* ALLE Marks ausgeben, auch die ohne Ruckler.
+     Vorher flog jede Zeile mit `jank === 0` raus — was für „welche Aktion ruckelt am meisten" praktisch war, für
+     die Gegenprobe aber tödlich: bei einem Verdacht wie „beim Zurückscrollen bricht die Bildrate ein" ist das
+     WERTVOLLE Ergebnis oft „dieser Mark ist 6× gefeuert und hat 0 Ruckler verursacht". Genau die Zeile fehlte
+     dann im Report, und „kein Jank" war nicht von „nie ausgelöst" zu unterscheiden — ein Report, der eine
+     Hypothese nur bestätigen, nie widerlegen kann. Sortiert bleibt nach worstMs, ruckelfreie Marks landen unten. */
   const byEvent = [...S.byEvent.entries()]
     .map(([label, e]) => ({ label, count: e.count, jank: e.jank, worstMs: e.worstMs }))
-    .filter((e) => e.jank > 0 || e.worstMs > 0)
-    .sort((a, b) => b.worstMs - a.worstMs);
+    .filter((e) => e.count > 0 || e.jank > 0)
+    .sort((a, b) => b.worstMs - a.worstMs || b.jank - a.jank);
   return {
     durationS: +durS.toFixed(1),
     frames: S.frames,
