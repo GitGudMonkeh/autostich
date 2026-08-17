@@ -47,14 +47,21 @@ const LAYERS = {
       uSurgeMag: { value: 0, type: "f32" },
       uFbmOct: { value: isCoarse() ? 3 : 5, type: "f32" },
     }),
-    // Je Frame gepflegte Uniforms (die restlichen stehen fest, bis sich die Props ändern).
-    tick: (u, p, tSec, size) => {
+    /* Je Frame gepflegte Uniforms (die restlichen stehen fest, bis sich die Props ändern).
+       `surge` kommt vom Battlefield als `{ id, mag }` — OHNE Zeitstempel. Der Shader braucht aber die ZEIT SEIT
+       der Ansage (`uSurgeT`), und die muss die Ebene selbst führen: neue id → Startzeit merken, danach hochzählen.
+       Das war zuerst falsch (ich las ein `p.surge.t`, das es nie gab) → der Impact-Puls der Groß-Ansagen wäre im
+       Kompositor stumm geblieben, ohne dass irgendetwas kaputt ausgesehen hätte. Ohne Ansage 999 = „lange her";
+       NIE negativ, sonst Inf → NaN (s. pixiFieldShader.js, Falle 4). */
+    tick: (u, p, tSec, size, mem) => {
       u.uTime = tSec;
       u.uRes = [size.w, size.h];
       u.uMode = p.deckColored ? 1 : 0;
       u.uDeck1 = p.d1; u.uDeck2 = p.d2;
-      if (p.surge && p.surge.t != null) { u.uSurgeT = p.surge.t; u.uSurgeMag = p.surge.mag || 0; }
-      else { u.uSurgeT = 999; u.uSurgeMag = 0; }
+      const sg = p.surge;
+      if (sg && sg.id !== mem.surgeId) { mem.surgeId = sg.id; mem.surgeStart = tSec; mem.surgeMag = +sg.mag || 0; }
+      if (mem.surgeStart == null) { u.uSurgeT = 999; u.uSurgeMag = 0; }
+      else { u.uSurgeT = tSec - mem.surgeStart; u.uSurgeMag = mem.surgeMag; }
     },
   },
 };
@@ -138,8 +145,11 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
 
         const t0 = performance.now();
         let frozenT = null;
+        const mem = { surgeId: null, surgeStart: null, surgeMag: 0 };   // Ebenen-Gedächtnis über Frames (s. tick)
+        let tickFails = 0;
         app.ticker.add(() => {
           if (disposed || !app) return;
+          try {
           const p = pRef.current;
           const s = rtSize();
           if (s.w !== size.w || s.h !== size.h) {
@@ -151,12 +161,17 @@ export default function FieldCompositor({ layer = "neonsurf", color = null, colo
           const tSec = p.animate ? (performance.now() - t0) / 1000 : (frozenT ??= 6.0);
           if (p.animate) frozenT = null;
           def.tick(shader.resources.fieldUniforms.uniforms, p,
-            tSec, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution });
+            tSec, { w: size.w * app.renderer.resolution, h: size.h * app.renderer.resolution }, mem);
 
           // Ebene in ihre Textur (klein), dann skaliert die Bühne sie auf die volle Fläche — EIN Composite.
           mesh.width = size.w; mesh.height = size.h;
           app.renderer.render({ container: mesh, target: rt, clear: true });
           sprite.width = app.screen.width; sprite.height = app.screen.height;
+          } catch (e) {
+            /* Ein Effekt darf nicht in eine Fehlerflut pro Frame laufen. Nach drei Fehlversuchen bleibt die Ebene
+               still — das Brett läuft weiter, nur ohne diesen Effekt. */
+            if (++tickFails >= 3) { try { app.ticker.stop(); } catch { /* ignore */ } console.warn("[fx] Kompositor-Ebene angehalten:", e); }
+          }
         });
         applyRunRef.current = applyRun;
         applyRun();

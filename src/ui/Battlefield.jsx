@@ -67,6 +67,7 @@ import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import AuroraFieldGL from "./fx/AuroraFieldGL.jsx"; // Aurora läuft als eigene WebGL-Canvas (nicht über Pixi)
+import { FxBoundary } from "./fx/FxBoundary.jsx"; // Auffangnetz: ein Effekt darf das Spiel nicht mitnehmen
 import NeonSurfFieldGL from "./fx/NeonSurfFieldGL.jsx"; // #345 Neon-Brandung — eigene WebGL-Canvas (wie Aurora)
 /* #kompositor A/B: `?fx2=1` schaltet die Feld-Ebene vom heutigen Ein-Canvas-Pfad auf den Kompositor um
    (eine Bühne, Auflösung je Ebene). Default AUS — der alte Pfad bleibt der ausgelieferte, solange der
@@ -1425,16 +1426,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* #345 Neon-Brandung — Plasma-See am unteren Rand, z-2 HINTER dem Finisher. Groß-Ansagen treiben den Impact-Puls. */}
       {neonsurfGL && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          {FIELD_COMPOSITOR ? (
+          {(() => {
             /* #kompositor: dieselbe Ebene, aber durch die geteilte Bühne mit eigener Auflösung. Bewusst ein
-               ENTWEDER/ODER — liefen beide, wäre die Fläche doppelt bezahlt und die Messung wertlos. */
-            <Suspense fallback={null}>
-              <FieldCompositor layer="neonsurf" color={deckA1} color2={deckA2 || deckA1}
-                deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} active={boardVisible} />
-            </Suspense>
-          ) : (
-            <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} active={boardVisible} />
-          )}
+               ENTWEDER/ODER — liefen beide, wäre die Fläche doppelt bezahlt und die Messung wertlos.
+               Die alte Fassung ist gleichzeitig der Rückfall: scheitert der Kompositor (Chunk, WebGL, Shader),
+               sieht der Spieler den bisherigen Effekt statt eines schwarzen Bildschirms. Ohne diese Grenze
+               riss ein fehlgeschlagener lazy-Chunk den ganzen React-Baum ab — die App hat sonst keine. */
+            const alt = (
+              <NeonSurfFieldGL color={deckA1} color2={deckA2 || deckA1} deckColored={neonsurfDeck}
+                animate={!reduced} surge={surfSurge} active={boardVisible} />
+            );
+            if (!FIELD_COMPOSITOR) return alt;
+            return (
+              <FxBoundary name="Feld-Kompositor" fallback={alt}>
+                <Suspense fallback={null}>
+                  <FieldCompositor layer="neonsurf" color={deckA1} color2={deckA2 || deckA1}
+                    deckColored={neonsurfDeck} animate={!reduced} surge={surfSurge} active={boardVisible} />
+                </Suspense>
+              </FxBoundary>
+            );
+          })()}
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
