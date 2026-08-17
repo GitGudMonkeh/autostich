@@ -268,7 +268,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
+            className="as-tut-btn w-full px-5 py-3 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center min-[1400px]:items-start leading-tight">
             <span className="text-[17px] min-[1400px]:text-[21px]">{t("start.tutorial.offer")}</span>
             <span className="text-[11px] min-[1400px]:text-[14px] font-semibold opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
@@ -281,7 +281,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-2xl text-base font-bold transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-2xl text-base font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-[19px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
             <span className="text-[11px] min-[1400px]:text-[14px] font-mono font-semibold opacity-80">
               {t("start.resume.sub", {
@@ -298,7 +298,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-2xl text-base min-[1400px]:text-[26px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} w-full px-5 py-3.5 min-[1400px]:py-5 rounded-2xl text-base min-[1400px]:text-[26px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
         </button>
         {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
@@ -317,7 +317,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 style={{ background: "#141419", border: `1px solid ${seedError ? "#e06a6a" : "#2a2a33"}`, color: "#cfcfd6" }}
               />
               <button type="submit" disabled={!seedInput.trim()}
-                className="shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold transition-all disabled:opacity-40"
+                className="shrink-0 px-3.5 py-2 min-[1400px]:px-4 min-[1400px]:py-3 rounded-xl text-sm min-[1400px]:text-[18px] font-semibold min-[1400px]:font-medium transition-all disabled:opacity-40"
                 style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
                 {t("start.seed.play")}
               </button>
@@ -336,7 +336,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-[14px] min-[1400px]:text-[20px] font-bold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="as-ranked-btn relative w-full px-5 py-2.5 min-[1400px]:px-6 min-[1400px]:py-4 rounded-lg text-[14px] min-[1400px]:text-[20px] font-bold min-[1400px]:font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             <span>{rankedFree ? "🏆" : <span className="opacity-70">🔒</span>} {t("start.ranked")}</span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
@@ -355,8 +355,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 style={{ background: "#241d3a", color: VI, textShadow: "none" }}>
                 {t("start.ranked.badge", { n: week.week })}
               </span>
+              {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
+                  rechts zeigt denselben Stand ausführlicher (Woche · 0/1 · „Bonus noch offen"). Zweimal
+                  dieselbe Information nebeneinander ist keine Betonung, nur Rauschen. Unterhalb von
+                  1400 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
               {weekBonusOpen && (
-                <span className="text-[9px] min-[1400px]:text-[12px] font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
+                <span className="text-[9px] min-[1400px]:hidden font-semibold leading-tight tabular-nums" style={{ color: `${VI}c0` }}>
                   {t("start.ranked.bonus", { have: 0, max: 1 })}
                 </span>
               )}
@@ -400,16 +404,20 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             )}
             {/* #musik — Was gerade läuft, plus Weiterschalten. Sitzt hier und nicht als eigener Block, weil
                 die Musik zum „Stand" gehört wie Deck und Spielfeld: alles, was der Screen gerade IST. */}
-            <div className="flex items-center gap-2 mt-1 min-w-0">
+            {/* EIN gemeinsamer Rahmen um Titel und Knopf, und `self-start` statt voller Breite: Als
+                gestreckte Zeile stand der Knopf ganz am Panelrand und las sich wie ein eigenes Element
+                neben dem Titel. Zusammengefasst sind beide sichtbar EINE Sache — was läuft, und wie man
+                weiterschaltet. Der Titel darf wachsen (`max-w`), der Kasten folgt ihm nur so weit. */}
+            <div className="inline-flex self-start items-center gap-2 mt-1.5 min-w-0 max-w-full rounded-lg pl-2.5 pr-1 py-1"
+              style={{ border: "1px solid rgba(150,150,170,.22)", background: "rgba(20,20,26,.45)" }}>
               <span className="text-[13px] opacity-40 shrink-0" aria-hidden="true">♪</span>
-              <span className="text-[13px] opacity-55 truncate flex-1" title={musicTitle || undefined}>
+              <span className="text-[13px] opacity-60 truncate max-w-[260px]" title={musicTitle || undefined}>
                 {musicTitle || "—"}
               </span>
               {onMusicNext && (
                 <button onClick={onMusicNext} aria-label={t("music.next")}
                   title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
-                  className="shrink-0 rounded px-2 py-1 text-[13px] leading-none transition-all hover:brightness-125"
-                  style={{ background: "rgba(32,32,42,.7)", border: "1px solid rgba(150,150,170,.22)" }}>
+                  className="shrink-0 rounded px-1.5 py-0.5 text-[13px] leading-none opacity-60 transition-all hover:opacity-100">
                   ⏭
                 </button>
               )}
