@@ -13,10 +13,10 @@ import NeonSurfFieldGL, { NEONSURF_FRAG } from "./NeonSurfFieldGL.jsx";
    Drei Felder, damit ein schwarzes Rechteck AUSSAGEKRÄFTIG ist:
      1. raw-WebGL, echte Neon-Brandung  → die Referenz. Ist die schwarz, ist das Gerät/der Kontext das Problem.
      2. Pixi, TRIVIALER Custom-Shader   → Kontrollprobe. Rendert die nicht, scheitern Pixi-Custom-Shader generell.
-     3. Pixi, derselbe Brandungs-Shader → Portierungs-Probe, KEIN Geräte-Urteil. Stand: compiliert und läuft
-        fehlerfrei, trifft aber nichts Sichtbares — auf dem Entwicklungsrechner nicht gelöst. Nachgewiesen ist
-        dabei, dass es NICHT an Pixi liegt: Uniforms kommen an (plain und UBO gegengeprüft), das Mesh deckt die
-        Box (Feld 2 füllt sie), der Shader compiliert ohne Fehler. Offen bleiben weitere Annahmen im Shader.
+     3. Pixi, derselbe Brandungs-Shader → läuft (Stand Entwicklungsrechner). Bis dahin waren es drei Fallen,
+        die ALLE ein schwarzes Bild ohne Fehlermeldung ergeben — sie stehen unten an ihren Stellen dokumentiert:
+        Framebuffer- gegen CSS-Größe, gl_FragCoord in der Pixi-Bühne, und ein Uniform mit falschem Vorzeichen,
+        das über exp() zu Inf und dann per 0*Inf zu NaN wurde.
 
    Jedes Feld zeigt seine Zeichnungen/s und — entscheidend — Compile-/Link-Fehler als TEXT. Ein Spike, der nur
    „schwarz" meldet, hätte uns nichts gesagt.
@@ -68,8 +68,13 @@ const PIXI_VERT = [
 function toPixiFrag(src) {
   const body = src
     .replace(/gl_FragColor/g, "fragColor")
-    .replace(/gl_FragCoord\.xy\s*\/\s*uRes\.xy/g, "vec2(vUV.x, 1.0 - vUV.y)");
-  return ["#version 300 es", "in vec2 vUV;", "out vec4 fragColor;"].concat(body.split("\n")).join("\n");
+    .replace(/gl_FragCoord\.xy\s*\/\s*uRes\.xy/g, "vec2(vUV.x, 1.0 - vUV.y)")
+    .replace(/^\s*precision\s+\w+\s+float\s*;\s*$/m, "");   // wandert in den Kopf, s. u.
+  /* REIHENFOLGE ist Pflicht: In GLSL ES 3.00 muss die Default-Precision VOR den ersten `in`/`out`-Deklarationen
+     stehen, sonst haben die float-Typen darin keine Präzision. Genau daran lag es — der Shader compilierte
+     trotzdem ohne Fehlermeldung und lief, traf aber nichts Sichtbares. */
+  return ["#version 300 es", "precision highp float;", "in vec2 vUV;", "out vec4 fragColor;"]
+    .concat(body.split("\n")).join("\n");
 }
 
 /* Ein Pixi-Feld mit gegebenem Fragment-Shader. Fängt ALLES ab und meldet den Fehlertext nach außen. */
@@ -99,10 +104,14 @@ function PixiShaderBox({ label, fragment, needsSurfUniforms = false }) {
         if (needsSurfUniforms) Object.assign(uniforms, {
           // uRes MUSS die Framebuffer-Größe sein (canvas.width), nicht die CSS-Größe — s. Kommentar an `fit()`.
           uRes: { value: [(host.clientWidth || 300) * 1.5, (host.clientHeight || 190) * 1.5], type: "vec2<f32>" },
-          uMode: { value: 1, type: "f32" },
+          uMode: { value: 0, type: "f32" },   // 0 = Standard-Palette, wie Feld 1 → Bilder direkt vergleichbar
           uDeck1: { value: [0.043, 0.227, 0.267], type: "vec3<f32>" },
           uDeck2: { value: [0.2, 1.0, 0.8], type: "vec3<f32>" },
-          uSurgeT: { value: -999, type: "f32" },
+          /* +999, NICHT -999: der Shader rechnet `damp = exp(-uSurgeT/2.3)`. Ein negativer Wert ergibt exp(+434)
+             = unendlich, und `uSurgeMag * Inf` = 0 * Inf = NaN — NaN frisst die gesamte Ausgabe, der Shader läuft
+             fehlerfrei und zeichnet nichts. Die Komponente lädt hier ebenfalls 999 hoch (NeonSurfFieldGL, uSurgeT):
+             uSurgeT ist die ZEIT SEIT der letzten Ansage, ohne Ansage also „sehr lange her". */
+          uSurgeT: { value: 999, type: "f32" },
           uSurgeMag: { value: 0, type: "f32" },
           uFbmOct: { value: 3, type: "f32" },
         });
@@ -188,7 +197,7 @@ export default function FxSpike() {
           <div style={LABEL}>1 · raw-WebGL — echte Neon-Brandung (Referenz)</div>
         </div>
         <PixiShaderBox label="2 · Pixi — trivialer Custom-Shader (Kontrolle)" fragment={"#version 300 es\n" + TRIVIAL_FRAG} />
-        <PixiShaderBox label="3 · Pixi — Brandungs-Shader (Portierungs-Probe, hier noch schwarz)" fragment={toPixiFrag(NEONSURF_FRAG)} needsSurfUniforms />
+        <PixiShaderBox label="3 · Pixi — DERSELBE Brandungs-Shader" fragment={toPixiFrag(NEONSURF_FRAG)} needsSurfUniforms />
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, lineHeight: 1.5, opacity: 0.85 }}>
@@ -198,11 +207,10 @@ export default function FxSpike() {
         Mobile-Setup NICHT") ist damit überholt, ein Pixi-Kompositor ist möglich (Ziel A).<br />
         <b>Feld 2 schwarz oder FEHLER</b> → Pixi-Custom-Shader gehen hier nicht. Kompositor wird raw-WebGL (Ziel C).<br />
         <br />
-        <b>Feld 3 ist KEIN Geräte-Urteil.</b> Es ist die Probe, ob sich der fertige Brandungs-Shader unverändert
-        durch Pixi schicken lässt — und das ist auf dem Entwicklungsrechner noch nicht gelungen: er compiliert
-        fehlerfrei, läuft, trifft aber nichts Sichtbares. Wenn es hier bei dir ebenfalls schwarz ist, ist das der
-        erwartete Stand und sagt nur, dass die Portierung Arbeit braucht (vermutlich weitere
-        Koordinaten-/Präzisionsannahmen im Shader), nicht dass dein Gerät etwas nicht kann.
+        <b>Feld 3</b> ist die Probe, ob der fertige Brandungs-Shader unverändert durch Pixi läuft. Auf dem
+        Entwicklungsrechner tut er das, und er soll dabei aussehen wie Feld 1 (gleiche Palette, gleiche Wellen —
+        die Bilder laufen unabhängig, sind also nicht Frame-gleich). Sieht er bei dir anders aus oder bleibt
+        schwarz, ist DAS der interessante Befund für die Portierung.
       </div>
     </div>
   );
