@@ -230,9 +230,18 @@ hängt (96, unverändert), nicht an der Länge.
   und kauft die Schärfe vollständig zurück. **Netto 34,6 % bei unveränderter Kantenschärfe.**
 - Gröber abgetastet wird damit nur der Kern-Blitz — eine weiche, vorgebackene Radialtextur, also genau der
   Fall, in dem Auflösung am wenigsten trägt (dieselbe Begründung wie für `antialias: false`).
-- **Merksatz für die anderen vier Prunks:** Auflösung senken ist fast immer richtig, aber jede Linie, die
-  danach dünner als ~1,8 Geräte-Pixel läge, braucht ihren Breiten-Ausgleich mit. Ohne den tauscht man Fill
-  gegen Aliasing statt gegen nichts.
+- **Merksatz für die anderen Prunks:** Auflösung senken ist fast immer richtig, aber jede Linie, die danach
+  dünner als ~1,8 Geräte-Pixel läge, braucht ihren Breiten-Ausgleich mit. Ohne den tauscht man Fill gegen
+  Aliasing statt gegen nichts. **Angewandt auf Laser-Fächer und Prisma-Kaskade** (17.08.2026):
+  - **Laser-Fächer**: `resLite` 1,0 **+** Kernlinie × 1,25 auf lite (1,58 → 1,98 CSS-px, damit wieder
+    1,98 Geräte-px wie vorher). Die BEAMS brauchen nichts — Sprites mit vorgebackener Verlaufstextur.
+  - **Prisma-Kaskade**: `resLite` 1,0, **bewusst OHNE Ausgleich**. Die Ringe sind `THICK×H` ≈ 6,8 CSS-px
+    breit und liegen auch bei 1,0 weit über der Grenze; ×1,25 wäre dort keine Kompensation, sondern eine
+    sichtbare Look-Änderung.
+  - **Sonnen-Puls ist als einziger noch auf 1,25** — nicht angefasst, offener Rest.
+  - Wächter: `test/gott-resolution.test.js` bindet Auflösung und Breite aneinander. Grund: die zwei Zahlen
+    stehen ~130 Zeilen auseinander (Zeichenschleife oben, `app.init` unten), und wer nur EINE zurückdreht,
+    bekommt nicht „wie vorher", sondern schlechter als beide Zustände (zu fett bzw. zu dünn).
 - **Nicht am Gerät verifiziert.** Alles gerechnet; ob 1,9 px auf dem Display wirklich wie vorher aussieht,
   entscheidet das Display.
 

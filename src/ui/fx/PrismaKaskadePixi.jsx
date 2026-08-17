@@ -77,6 +77,11 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
       const s = st.current;
       const dm = s.deckTint, ca = rgb(s.deckColor), cb = rgb(s.deckColor2 || s.deckColor);
       const nBands = s.lite ? 6 : TUNE.BANDS; // #perf: lite 6 statt 14 Kreis-Strokes/Ring → bis 5×6=30 statt 70 Kreise/Frame
+      /* #perf-holo2-Regel: `resolution` ist auf lite von 1,25 auf 1,0 gefallen (s. app.init). Ein
+         Breiten-Ausgleich wie beim Holo-Würfel und beim Laser-Fächer wird hier NICHT gebraucht — die Ringe sind
+         mit THICK×H rund 6,8 CSS-px breit (auf einem 340-px-hohen Panel), liegen also auch bei res 1,0 weit über
+         der ~1,8-Geräte-Pixel-Grenze, ab der eine Linie ohne MSAA treppig wird. Sie 1,25× breiter zu machen wäre
+         hier keine Kompensation, sondern eine sichtbare Look-Änderung. */
       const thick = Math.max(1, TUNE.THICK * H);
       const rings = nodes.rings; rings.clear();
       let flashMax = 0;
@@ -108,7 +113,7 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps.
-    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite, resLite: 1.0 }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;

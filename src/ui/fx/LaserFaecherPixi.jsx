@@ -106,6 +106,14 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
       const nSpokes = s.lite ? Math.round(TUNE.SPOKES * 0.42) : TUNE.SPOKES; // #perf: lite ~20 statt 48 große additive Beam-Sprites (Fill-Rate)
       const rot = pl.rotBase + performance.now() / 1000 * TUNE.SPIN * TAU;
 
+      /* #perf-holo2-Regel, hier angewandt: `resolution` ist auf lite von 1,25 auf 1,0 gefallen (s. app.init).
+         Fill geht quadratisch, das sind ~36 % weniger Füllarbeit — aber jede Linie, die danach dünner als rund
+         1,8 GERÄTE-Pixel läge, wird ohne MSAA treppig. Die Kernlinie ist genau so eine: auf einem 360×340-Panel
+         1,58 CSS-px, heute also 1,98 Geräte-px, bei res 1,0 nur noch 1,58. Der Faktor 1,25 stellt exakt die
+         bisherige Geräte-Breite wieder her — es ist ein Ausgleich, keine Verbreiterung.
+         Die BEAMS brauchen nichts: das sind Sprites mit vorgebackener Verlaufstextur, dort kostet weniger
+         Auflösung nur etwas Weichheit (dieselbe Begründung wie für `antialias: false`, s. pixiGott.js). */
+      const coreW = Math.max(1, diag * 0.0032) * (s.lite ? 1.25 : 1);
       const cores = nodes.cores; cores.clear();
       for (let i = 0; i < nodes.beams.length; i++) {
         const beam = nodes.beams[i];
@@ -120,7 +128,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
         // Helle Kernlinie mittig auf dem Strahl (Graphics additiv).
         const tx = cx + Math.cos(ang) * len, ty = cy + Math.sin(ang) * len;
         cores.moveTo(cx, cy); cores.lineTo(tx, ty);
-        cores.stroke({ width: Math.max(1, diag * 0.0032), color: intOf(mix(col, [255, 255, 255], 0.7)), alpha: clamp(0.9 * TUNE.GLOW * A * flick, 0, 1), cap: "round" });
+        cores.stroke({ width: coreW, color: intOf(mix(col, [255, 255, 255], 0.7)), alpha: clamp(0.9 * TUNE.GLOW * A * flick, 0, 1), cap: "round" });
       }
 
       const hub = nodes.hub, hr = diag * 0.12 * (0.7 + 0.3 * env.lenScale);
@@ -137,7 +145,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     startRef.current = startPlay;
 
     // #perf: lite → DPR-Deckel 1.25 + Ticker-Cap 45 fps (wie die anderen Effekte).
-    app.init(gottAppOptions({ canvas, host, lite: st.current.lite }))
+    app.init(gottAppOptions({ canvas, host, lite: st.current.lite, resLite: 1.0 }))
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
         appRef.current = app;
