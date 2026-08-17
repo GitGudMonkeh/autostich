@@ -93,12 +93,17 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             const mineRow = isMine(r);
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null; // Medaillen für die Top 3
+            /* #kante: Die Kante trägt den Rang — Gold, Silber, Bronze fürs Podium, Grün für den eigenen
+               Eintrag (der zusätzlich den Schein bekommt, damit man ihn beim Scrollen sofort wiederfindet),
+               neutral für den Rest. Vorher waren alle Zeilen gleich grau und das Podium hing allein an den
+               Medaillen-Emoji. Der eigene Eintrag schlägt die Medaille: seine Zeile zu finden ist der
+               häufigere Grund, warum man diese Liste öffnet. */
+            const rankTone = mineRow ? "#5ab87a" : i === 0 ? "#d4a63a" : i === 1 ? "#c8ccd8" : i === 2 ? "#c98b4b" : "#3a3a48";
             return (
               // #169 FB-8: Zeile klickbar → Detailansicht (RunStats). Alt-Einträge degradieren.
               <button key={r.id ?? `${r.name}:${r.score}:${r.tricks}:${r.cycles}`} onClick={() => setDetail({ entry: toRunEntry(r), rank: i + 1, anonymized: !mineRow })} title={t("stats.showDetails")}
-                className="flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125"
-                style={{ background: mineRow ? "#5ab87a22" : "#20202a",
-                  border: `1px solid ${mineRow ? "#5ab87a66" : "transparent"}` }}>
+                className={`as-edge-card as-edge-thin${mineRow ? " is-sel" : ""} flex items-center gap-2 text-sm px-2 py-1 rounded text-left w-full transition-all hover:brightness-125`}
+                style={{ "--c": rankTone }}>
                 <span className="w-6 shrink-0 text-center tabular-nums" style={medal ? { fontSize: "14px" } : { opacity: 0.5 }}>{medal || `#${i + 1}`}</span>
                 <span className="flex-1 truncate" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
                   {r.name || "—"}{mineRow && <span className="opacity-60 text-xs"> · du</span>}

@@ -180,9 +180,12 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Bestes Build — die EINZIGE Score-Herkunft im Screen (Fraktions-Aufschlüsselung des Rekord-Laufs). */}
             {best && (
               <Section title={t("stats.bestBuild")} hint={t("stats.bestBuild.hint")}>
+                {/* #kante: Der Rekordlauf ist das einzige Gold auf diesem Schirm. Statistiken haben sonst
+                    keine Farbachse — Kategorien, Seltenheit oder Zustände gibt es hier nicht —, deshalb
+                    bleibt alles andere neutral und die Farbe behält eine Aussage: „das ist deine Bestmarke". */}
                 <button onClick={() => setDetail({ entry: best, rank: 1 })} title={t("stats.showDetails")}
-                  className="w-full text-left rounded-xl px-4 py-4 transition-all hover:brightness-125"
-                  style={MENU_PANEL}>
+                  className="as-edge-card w-full text-left rounded-xl px-4 py-4 transition-all hover:brightness-125"
+                  style={{ "--c": "#d4a63a" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-3xl font-bold tabular-nums leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
@@ -205,9 +208,11 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   const delta = Math.floor((r.score || 0) - (profile.bestScore || 0));
                   const critPct = r.wins > 0 ? Math.round(((r.crits || 0) / r.wins) * 100) : null;
                   return (
+                    /* #kante: Lauf-Zeilen neutral — bis auf die, die den Rekord hält (delta ≥ 0). Nur dort
+                       trägt die Kante Gold, sonst wäre die Farbe bloß Dekoration über einer Zahlenliste. */
                     <button key={r.ts || i} onClick={() => setDetail({ entry: r, rank: null })} title={t("stats.showDetails")}
-                      className="grid items-center gap-2.5 text-xs px-2.5 py-1.5 rounded text-left transition-all hover:brightness-125"
-                      style={{ background: "#20202a", gridTemplateColumns: "auto minmax(0,1fr) auto" }}>
+                      className="as-edge-card as-edge-thin grid items-center gap-2.5 text-xs px-2.5 py-1.5 rounded text-left transition-all hover:brightness-125"
+                      style={{ "--c": delta >= 0 ? "#d4a63a" : "#3a3a48", gridTemplateColumns: "auto minmax(0,1fr) auto" }}>
                       <span className="opacity-45 tabular-nums shrink-0">{r.ts ? fmtDayMonth(r.ts) : "—"}</span>
                       <span className="flex items-center gap-2.5 min-w-0">
                         <span className="font-bold tabular-nums shrink-0" title={fmtScore(r.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(r.score)}</span>

@@ -169,11 +169,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
             {TABS.map(({ id, labelKey, accent }) => {
               const on = tab === id;
               return (
+                /* #kante: Signal an der Unterkante wie in Werkstatt und Upgrades — bei waagerechten
+                   Reiterzeilen die passende Kante. Inaktive sind reiner Text, ohne Kasten. */
                 <button key={id} role="tab" aria-selected={on} onClick={() => setTab(id)}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 py-2 rounded-lg transition-all"
+                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-all"
                   style={on
-                    ? { color: accent, background: "#131318", border: `1px solid ${accent}55`, boxShadow: `0 0 16px -9px ${accent}` }
-                    : { color: "#8a8a95", background: "transparent", border: "1px solid #2a2a33" }}>
+                    ? { color: "#fff", borderBottom: `2px solid ${accent}`,
+                        background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${accent} 14%, transparent))` }
+                    : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
                   {tr(labelKey)}
                 </button>
               );

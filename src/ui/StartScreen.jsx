@@ -470,8 +470,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             von 1400 px nicht auf Glas umstellen. */}
         {(() => { const tileCls = "as-hub-tile relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5"
             + " min-[1400px]:flex-row min-[1400px]:items-center min-[1400px]:gap-3 min-[1400px]:min-h-0 min-[1400px]:rounded-none min-[1400px]:py-4 min-[1400px]:pl-6 min-[1400px]:pr-5 min-[1400px]:hover:translate-y-0";
-          const Stripe = ({ c, dim }) => (<span aria-hidden="true" className="as-hub-stripe absolute inset-y-0 left-0 w-[3px]"
-            style={{ background: c, opacity: dim ? 0.45 : 1 }} />);
+          /* #kante: Aus dem 3-px-Streifen wird die Kante der Kanten-Familie — 4 px plus der kurze Farbanlauf
+             nach rechts, den auch Auswahlkarten und Knöpfe tragen. Bleibt ein absolut liegendes Overlay über
+             der ganzen Kachel (nicht deren border-left), weil die Kachel ab 1400 px zur randlosen Listenzeile
+             wird und ihren eigenen Rahmen verliert; so überlebt das Farbsignal beide Fassungen unverändert.
+             Klickdurchlässig, damit die Kachel darunter der Knopf bleibt. */
+          const Stripe = ({ c, dim }) => (<span aria-hidden="true"
+            className="as-hub-stripe absolute inset-y-0 left-0 right-0 rounded-xl pointer-events-none min-[1400px]:rounded-none"
+            style={{ borderLeft: `4px solid ${c}`,
+                     background: `linear-gradient(90deg, color-mix(in srgb, ${c} 14%, transparent) 0%, transparent 42%)`,
+                     opacity: dim ? 0.45 : 1 }} />);
           const head = (t) => (<b className="text-[13.5px] min-[1400px]:text-[20px] tracking-tight">{t}</b>);
           const arrow = <span className="text-[13px] opacity-35 min-[1400px]:hidden">›</span>;
           // Nur Desktop: Untertitel je Eintrag + der Pfeil ganz rechts. `hidden` hält beide aus dem Handy-Flex heraus.

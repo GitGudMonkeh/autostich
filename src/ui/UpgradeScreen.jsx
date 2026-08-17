@@ -53,8 +53,10 @@ const panelStyle = (c) => ({
 function PillBody({ label, mark, titleColor, markColor }) {
   return (
     <>
-      <span className="text-[11px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
-      <span className="text-[9.5px] font-bold tabular-nums leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
+      {/* #desktop: eine Stufe größer ab 1400 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
+          zu klein. Größer geht nicht: 27 Knoten müssen gleichzeitig ins Bild passen. */}
+      <span className="text-[11px] min-[1400px]:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
+      <span className="text-[9.5px] min-[1400px]:text-[12px] font-bold tabular-nums leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
     </>
   );
 }
@@ -171,21 +173,21 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   }
 
   return (
-    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
+    <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-xl rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel relative"
+      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel up-card relative"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
 
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen + Reiter. */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative" style={{ background: STICKY_HEAD_BG }}>
+        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative up-head" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
               (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
-          <h2 className="text-lg font-bold">{t("upgrades.title")}</h2>
+          <h2 className="text-lg min-[1400px]:text-2xl font-bold">{t("upgrades.title")}</h2>
           <div className="flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
-              <span className="text-xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
-              <span className="text-[10px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
+              <span className="text-xl min-[1400px]:text-3xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
+              <span className="text-[10px] min-[1400px]:text-[13px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
             <div className="flex items-center gap-2.5 shrink-0">
               {/* #kante: neutraler Kanten-Knopf mit schmaler Kante (kleines Element) — Respec ist ein Ausweg,
@@ -195,8 +197,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
           </div>
-          {/* Reiter Decks / Allgemein */}
-          <div className="flex gap-1.5 mt-3">
+          {/* Reiter Decks / Allgemein. Ab 1400 px stehen beide Zweige nebeneinander (s. .up-branches in
+              index.css) — dann hat die Reiterzeile nichts mehr zu schalten und wird ausgeblendet. */}
+          <div className="flex gap-1.5 mt-3 up-tabs">
             {[{ key: "deck", labelKey: "upgrades.tab.decks" }, { key: "gen", labelKey: "upgrades.tab.gen" }].map((tb) => {
               const on = tb.key === tab, col = tb.key === "deck" ? VI : CY;
               return (
@@ -220,8 +223,15 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
         </div>
 
-        {/* ===== Reiter „Decks" ===== */}
-        {tab === "deck" && (
+        {/* ===== Die beiden Zweige =====
+            Beide sind IMMER im DOM; welcher zu sehen ist, entscheidet CSS (.up-branch.is-off → display:none).
+            Bis 1399 px ist das exakt das alte Verhalten — genau ein Zweig sichtbar, umgeschaltet über die
+            Reiter. Ab 1400 px stehen beide nebeneinander und `is-off` wird wirkungslos; nur so lassen sich
+            die zwei Zweige ohne zweiten Renderpfad gleichzeitig zeigen. Die Umschaltung im JSX (`tab === …`)
+            hätte das nicht gekonnt: ein nicht gerendeter Zweig ist auch auf Desktop nicht da. */}
+        <div className="up-branches">
+        <div className={`up-branch as-ring${tab === "deck" ? "" : " is-off"}`}>
+          <h3 className="up-branch-h" style={{ color: VI }}>{t("upgrades.tab.decks")}</h3>
           <div className="mt-4 grid gap-2.5">
             {ARCHETYPE_ORDER.map((arch) => {
               const meta = archMeta(arch);
@@ -234,8 +244,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <button onClick={() => setDetailArch(arch)}
                     className="flex items-center gap-2 w-full text-left mb-2.5 group" title={`${meta?.label}: Details`}>
                     <FactionIcon type={arch} size={20} />
-                    <span className="text-[14px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
-                    <span className="ml-auto text-[10.5px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
+                    <span className="text-[14px] min-[1400px]:text-[17px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
+                    <span className="ml-auto text-[10.5px] min-[1400px]:text-[13px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
                   </button>
                   <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} selected={selNode} onSelect={toggleNode} />
                 </div>
@@ -247,25 +257,26 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               <Lane nodes={[nodeDef("deckReroll"), nodeDef("synLeg")]} p={p} laneAccent={VI} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
-        )}
+        </div>
 
-        {/* ===== Reiter „Allgemein" ===== */}
-        {tab === "gen" && (
+        <div className={`up-branch as-ring${tab === "gen" ? "" : " is-off"}`}>
+          <h3 className="up-branch-h" style={{ color: CY }}>{t("upgrades.tab.gen")}</h3>
           <div className="mt-4 grid gap-2.5">
             {GEN_LANES.map((lane) => (
               <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(lane.accent)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
-                  <span className="text-[13px] font-extrabold" style={{ color: lane.accent }}>{t(lane.nameKey)}</span>
-                  {lane.noteKey && <span className="text-[9.5px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
+                  <span className="text-[13px] min-[1400px]:text-[16px] font-extrabold" style={{ color: lane.accent }}>{t(lane.nameKey)}</span>
+                  {lane.noteKey && <span className="text-[9.5px] min-[1400px]:text-[12px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
                 </div>
                 <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={lane.accent} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>
             ))}
           </div>
-        )}
+        </div>
+        </div>
 
         {/* Legende. */}
-        <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px]" style={{ color: "#a6a6b0" }}>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend" style={{ color: "#a6a6b0" }}>
           <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: VI }} /> {t("upgrades.owned")}</span>
           <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
           <span>{t("upgrades.locked")} <span style={{ opacity: .7 }}>{t("upgrades.soon")}</span></span>

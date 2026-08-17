@@ -858,9 +858,11 @@ button { font-family: inherit; }
 }
 
 /* #desktop — Grundzustand der Hub-Kacheln. Steht bewusst hier und nicht als inline-style im JSX: nur so
-   kann die Desktop-Fassung sie überhaupt überschreiben (inline schlägt jedes Stylesheet). Die Werte sind
-   1:1 die bisherigen — auf dem Handy ändert sich dadurch nichts. */
-.as-hub-tile { background: linear-gradient(180deg, #1b1a24, #161620); border: 1px solid #2c2a3a; }
+   kann die Desktop-Fassung sie überhaupt überschreiben (inline schlägt jedes Stylesheet).
+   #kante: Grund und Rahmen sind die der Kanten-Familie — flacher, dunkler Grund statt des früheren
+   senkrechten Verlaufs (#1b1a24 → #161620) und der leisere Rahmen, den auch Auswahlkarten tragen. Das
+   Farbsignal macht allein die Kante links (Stripe, s. StartScreen.jsx). */
+.as-hub-tile { background: #12121a; border: 1px solid rgba(150, 150, 170, .14); }
 /* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
    Der Wert ist das bisherige Währungs-Gold — auf dem Handy ändert sich nichts. */
@@ -984,6 +986,15 @@ button { font-family: inherit; }
    bleiben damit exakt wie vorher — die Gruppen existieren allein für das Desktop-Raster. */
 .hub-pair, .hub-play, .hub-stand, .hub-foot { display: contents; }
 
+/* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
+   seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
+   im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
+   das alte Verhalten (genau ein Zweig sichtbar, umgeschaltet über die Reiterzeile). Die Spalten-
+   überschriften gibt es nur auf Desktop; bis dahin sagt die Reiterzeile schon, was man sieht. */
+.up-branches { display: contents; }
+.up-branch.is-off { display: none; }
+.up-branch-h { display: none; }
+
 /* ============================================================================
    #desktop — Startbildschirm ab 1400 px (Desktop-Pass)
    ----------------------------------------------------------------------------
@@ -1051,7 +1062,13 @@ button { font-family: inherit; }
   .as-hub-list .as-hub-tile:nth-child(2) { --row-tone: color-mix(in srgb, var(--deck-a2, #5a8ade) 65%, #ffffff); }
   .as-hub-list .as-hub-tile:nth-child(3) { --row-tone: color-mix(in srgb, var(--deck-a1, #9b82f0) 45%, var(--deck-a2, #b3a8ff)); }
   .as-hub-list .as-hub-tile:nth-child(4) { --row-tone: color-mix(in srgb, var(--deck-a1, #f2a83a) 74%, #000000); }
-  .as-hub-list .as-hub-stripe { background: var(--row-tone) !important; }
+  /* #kante: Der Streifen ist seit dem Kanten-Pass Kante PLUS Farbanlauf (StartScreen.jsx). Auf Desktop zieht
+     beides den Deckton der Zeile — sonst bliebe der Anlauf in der Logo-Farbe stehen, während die Kante schon
+     deckfarben ist. `!important`, weil die Farbe inline aus dem JSX kommt und inline sonst gewinnt. */
+  .as-hub-list .as-hub-stripe {
+    border-left-color: var(--row-tone) !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--row-tone) 14%, transparent) 0%, transparent 42%) !important;
+  }
   .as-hub-list .as-hub-num { color: var(--row-tone); text-shadow: 0 0 12px color-mix(in srgb, var(--row-tone) 45%, transparent); }
   .as-hub-list .as-hub-cur { color: var(--row-tone); }
 
@@ -1133,6 +1150,110 @@ button { font-family: inherit; }
     mask-composite: exclude;
   }
   .as-ring { box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent); }
+
+  /* ==========================================================================
+     #desktop — Upgrade-Baum ab 1400 px
+     --------------------------------------------------------------------------
+     Aus dem schmalen Modal (576 px, 30 % der Bildbreite) wird ein randverankerter Screen: die beiden
+     Zweige stehen nebeneinander, damit alle 27 Knoten gleichzeitig sichtbar sind. Das ist der Punkt
+     der Übung — beim Sparen wägt man Deck-Knoten und Allgemein-Knoten gegeneinander ab, und dafür
+     musste man bisher den Reiter wechseln.
+
+     Viel `!important` hier, und das hat einen Grund: Der Screen setzt seine Flächen über Inline-Styles
+     (MODAL_CARD, STICKY_HEAD_BG, der Dim am Overlay-Root). Inline schlägt jedes Stylesheet, also ist
+     das der einzige Weg, sie ab 1400 px durch Glas zu ersetzen, ohne die geteilte Quelle in
+     modalStyle.jsx anzufassen — die hängt an allen anderen Modals mit dran. [Neue Screens besser
+     gleich als Klasse anlegen, dann entfällt das.]
+     ========================================================================== */
+
+  /* Der Überzug wird durchlässiger: das Bodenband des aktiven Decks soll durchscheinen, wie im Hub.
+     93 % Deckkraft (der Inline-Wert) lassen davon nichts übrig. */
+  .up-root {
+    background: rgba(12, 12, 16, .66) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    /* Knapp bemessen, und das ist gerechnet: Kopf (172) + der längere Zweig (808) + Legende (42) füllen
+       auf 1080 px Höhe fast alles. Mit dem ursprünglichen 28/32er Rand lief der Screen um 31 px über und
+       fing an zu scrollen — auf dem Design-Anker soll er ohne Scrollen stehen. */
+    padding: 16px 48px 18px !important;
+  }
+
+  /* Die Karte hört auf, eine Karte zu sein — sie ist ab hier nur noch das Raster. Fläche, Rahmen und
+     der wandernde Sweep wandern in die beiden Spalten. Die zweite Regel schlägt gezielt die
+     CRT-Skin-Fassung von `.as-panel` (gleiche Spezifität, steht später → gewinnt). */
+  .up-card {
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;   /* das pb-6 der Karte; die Legende bringt ihren Abstand selbst mit */
+  }
+  .up-card.as-panel {
+    background-image: none !important;
+    animation: none !important;
+  }
+
+  /* Der Kopf verliert seine deckende Leiste (sonst liegt ein Balken über dem Deckbild) und bleibt
+     trotzdem sticky — beim Scrollen langer Listen ist das Guthaben die wichtigste Zahl im Bild. */
+  .up-head {
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  /* Die Haarlinie sitzt an der Kartenecke; ohne Karte hat sie dort nichts mehr zu suchen. */
+  .up-head > div[aria-hidden="true"]:first-child { display: none; }
+
+  /* Die Reiterzeile hat nichts mehr zu schalten. */
+  .up-tabs { display: none; }
+
+  /* Zwei Spalten, oben bündig. Gedeckelt wie das Spaltenpaar des Startbildschirms, damit der Screen
+     auf Ultrawide nicht auseinanderläuft. */
+  .up-branches {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+    width: min(1720px, 100%);
+    margin-inline: auto;
+    margin-top: 4px;
+  }
+  .up-branch.is-off { display: block; }   /* ab hier sind IMMER beide Zweige zu sehen */
+  .up-branch {
+    border-radius: 14px;
+    padding: 16px 20px 20px;
+    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  /* Spaltenüberschrift statt Reiter: dieselbe Schriftbehandlung wie das „Legendär-Phase"-Etikett im
+     Screen (gesperrt, versal) — kein neues Typo-Vokabular für zwei Wörter. */
+  .up-branch-h {
+    display: block;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+  /* Der erste Panel-Block im Zweig bringt `mt-4` mit — unter der Überschrift ist das zu viel. */
+  .up-branch > .mt-4 { margin-top: 12px; }
+
+  .up-legend { margin-top: 16px !important; font-size: 13px !important; }
+}
+
+/* Flache Desktop-Fenster: 27 Knoten nebeneinander brauchen Höhe. Auf 1080 px geht der Baum ohne Scrollen
+   auf; bei 864 px (1080p unter 125 % Windows-Skalierung) fehlen rund 250 px — das ist mit zwei Spalten
+   nicht wegzukürzen, ohne die Knoten unlesbar zu machen. Der Screen scrollt dort also, und das ist die
+   bewusste Entscheidung: der Kopf bleibt sticky, das Guthaben also immer im Bild. Was hier passiert, ist
+   nur, den Rand zusammenzuziehen, damit möglichst viel Inhalt in den ersten Bildschirm fällt. */
+@media (min-width: 1400px) and (max-height: 950px) {
+  .up-root { padding: 10px 36px 12px !important; }
+  .up-branches { gap: 22px; }
+  .up-branch { padding: 12px 16px 16px; }
+  .up-legend { margin-top: 12px !important; }
 }
 
 /* Flache Desktop-Fenster: Auf 1080 px Höhe geht der Startbildschirm mit großzügigem Rhythmus genau auf.

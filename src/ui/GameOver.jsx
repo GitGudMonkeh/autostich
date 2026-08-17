@@ -118,14 +118,16 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Balken (pt/pb), kein negativer Margin/keine transparente Lücke → kein Durchscheinen der Kopfzeile. */}
         <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-6 flex gap-2 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
+          {/* #kante: „Menü" ist der Ausweg (neutral), „Neuer Lauf" das Ziel — starker Kanten-Knopf in Gold
+              statt gefüllter Goldtaste. Er bleibt der lauteste Knopf des Screens, weil er als einziger
+              Glow trägt. */}
           {onMenu && (
-            <button onClick={onMenu} className="py-2.5 px-4 rounded-lg font-bold transition-all"
-              style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
+            <button onClick={onMenu} className="as-edge-neutral py-2.5 px-4 rounded-lg font-bold transition-all">
               {t("gameover.menu")}
             </button>
           )}
-          <button onClick={onRestart} className="flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
-            style={{ background: "#d4a63a", color: "#141419" }}>
+          <button onClick={onRestart} className="as-edge-strong flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
+            style={{ "--c": "#d4a63a" }}>
             {t("gameover.newRun")}
           </button>
         </div>
@@ -172,11 +174,14 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             </div>
             {earn && (
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="rounded-xl px-3 py-2 flex items-center justify-between" style={{ background: "#1a1608", border: "1px solid #3a2f12" }}>
+                {/* #kante: Die beiden Währungs-Zeilen waren getönte Flächen (Braungold / Dunkelcyan). Als
+                    Kanten auf gleichem Grund lesen sie sich als ein Paar statt als zwei verschiedene Kästen;
+                    die Farbe steckt weiter in Kante und Zahl. */}
+                <div className="as-edge-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ "--c": "#d4a63a" }}>
                   <span className="text-[11px] font-bold" style={{ color: "#d4a63a" }}>{t("gameover.sp")}</span>
                   <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: "#f2c14a" }}>+{spUp}</span>
                 </div>
-                <div className="relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ background: "#08171b", border: "1px solid #16323a" }}>
+                <div className="as-edge-card relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ "--c": "#35c6e6" }}>
                   <span className="text-[11px] font-bold" style={{ color: "#35c6e6" }}>{t("gameover.dp")}</span>
                   <span className="flex items-center gap-1.5">
                     {dpRoll.minus && <span className="text-[10px] font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
