@@ -1755,10 +1755,17 @@ button { font-family: inherit; }
 
   /* „Was der Baum gerade bewirkt" — die Zahlen stehen sonst nirgends, obwohl sie die Frage sind,
      die man im Baum stellt. Quelle: nodeEffects() + tierWeightsForShift(). */
-  /* 14 → 28 px: Der Kasten klebte an der untersten Knotenreihe und las sich dadurch wie deren
-     Fortsetzung. Er ist aber die AUSWERTUNG darüber — der Abstand ist das einzige, was das sagt. */
+  /* `margin-top: auto` — der Kasten und die Zeichenerklärung dahinter sitzen am UNTEREN Ende des
+     Panels. Das Panel füllt die Rasterzeile (`align-items: stretch`), die Knotenspalten der
+     Allgemein-Seite füllen sie nicht; die Restluft sammelte sich deshalb unter dem letzten Element
+     und ließ den Rahmen unten offen wirken. Jetzt wandert genau diese Restluft nach OBEN, zwischen
+     Knoten und Auswertung — dorthin, wo sie ohnehin hingehört (die 28 px unten sind der Sockel für
+     den Fall, dass die Seite die Höhe doch einmal füllt und `auto` auf 0 fällt).
+     Der Kasten klebte vorher an der untersten Knotenreihe und las sich als deren Fortsetzung. Er ist
+     aber die AUSWERTUNG darüber — der Abstand ist das einzige, was das sagt. */
+  .up-vgrid { margin-bottom: 28px; }
   .up-impact {
-    margin-top: 28px; padding: 13px 15px; border-radius: 12px;
+    margin-top: auto; padding: 13px 15px; border-radius: 12px;
     background: #12121a; border: 1px solid rgba(150, 150, 170, .1);
   }
   .up-impact-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
