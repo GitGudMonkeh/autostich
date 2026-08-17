@@ -33,12 +33,28 @@ const S = {
   lt: { count: 0, totalMs: 0, worstMs: 0, worst: [] }, // Long Tasks
   mem: { start: 0, peak: 0, end: 0 },
   live: [],                 // Ring der letzten LIVE_WIN Frame-Dauern
+  skipNext: false,          // nächster Frame ist eine Sichtbarkeits-Lücke → verwerfen (s. onFrame)
+  hiddenGaps: 0,            // wie oft das passiert ist (gehört in den Report, nicht unter den Tisch)
+  onVis: null,
 };
 
 function now() { return performance.now(); }
 
 function onFrame(t) {
   const dt = t - S.lastT; S.lastT = t;
+  /* Pausen, in denen die Seite nicht sichtbar war, sind KEINE Ruckler.
+     `requestAnimationFrame` steht still, sobald der Tab verdeckt ist oder der Bildschirm ausgeht — der erste Frame
+     danach hat dann einen Abstand von Sekunden. Ohne diese Regel landete das als „schlimmster Frame" ganz oben im
+     Report und zog nebenbei den FPS-Schnitt herunter. Genau so ein Fall stand real drin: 3284 ms als Spitzenwert,
+     während der längste Long Task derselben Messung 103 ms war — der Hauptthread war also gar nicht beschäftigt,
+     die Seite lag nur weg. Ein solcher Frame wird komplett verworfen (weder gezählt noch gemittelt) und separat
+     als `hiddenGaps` ausgewiesen, damit im Report sichtbar bleibt, DASS etwas verworfen wurde. */
+  if (S.skipNext) {
+    S.skipNext = false;
+    S.hiddenGaps++;
+    S.rafId = requestAnimationFrame(onFrame);
+    return;
+  }
   S.frames++; S.totalMs += dt;
   const b = Math.min(HIST_MAX, Math.max(0, Math.round(dt)));
   S.hist[b]++;
@@ -79,6 +95,7 @@ export function startPerf() {
   S.frames = 0; S.totalMs = 0; S.jank = 0; S.worstMs = 0;
   S.worst = []; S.byEvent = new Map(); S.live = [];
   S.lt = { count: 0, totalMs: 0, worstMs: 0, worst: [] };
+  S.skipNext = false; S.hiddenGaps = 0;
   S.mem = { start: performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0, peak: 0, end: 0 };
   S.mem.peak = S.mem.start;
   try {
@@ -97,11 +114,16 @@ export function startPerf() {
     });
     S.obs.observe({ entryTypes: ["longtask"] });
   } catch { S.obs = null; } // longtask nicht überall unterstützt (z. B. Safari) → weglassen
+  /* Beide Richtungen markieren: beim Verdecken UND beim Zurückkommen. Der Frame direkt nach dem Zurückkommen
+     trägt die Lücke; das Ereignis beim Verdecken kann je nach Browser als letztes vor dem Stillstand kommen. */
+  S.onVis = () => { S.skipNext = true; S.lastT = now(); };
+  try { document.addEventListener("visibilitychange", S.onVis); } catch { /* kein document → egal */ }
   S.rafId = requestAnimationFrame(onFrame);
 }
 
 export function stopPerf() {
   S.running = false;
+  if (S.onVis) { try { document.removeEventListener("visibilitychange", S.onVis); } catch { /* ignore */ } S.onVis = null; }
   if (S.rafId != null) cancelAnimationFrame(S.rafId);
   if (S.obs) { try { S.obs.disconnect(); } catch {} S.obs = null; }
 }
@@ -147,6 +169,9 @@ export function getReport() {
     frameMs: { p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), worst: Math.round(S.worstMs) },
     jankFrames: S.jank,
     jankPerMin: durS > 0 ? +((S.jank / durS) * 60).toFixed(1) : 0,
+    // Verworfene Sichtbarkeits-Lücken (Bildschirm aus, App gewechselt). > 0 heißt: die Messung hat Pausen,
+    // die Laufzeit ist also länger als die tatsächlich gemessene Spielzeit — nicht dasselbe wie ein Ruckler.
+    hiddenGaps: S.hiddenGaps,
     // #perf: Die schlimmsten Long Tasks MIT Kontext ausgeben. Sie wurden immer schon gesammelt, aber nie
     // ausgeliefert — ein Report mit „36 Long Tasks · 2693 ms" nannte damit den größten Einzelposten, ohne zu
     // sagen, WO er anfällt. Long Tasks blockieren den Hauptthread am Stück und erklären die dicksten Frames.
@@ -164,6 +189,7 @@ export function formatReport(r = getReport()) {
   lines.push(`── PERF-REPORT · ${r.durationS}s · ${r.frames} Frames · Ø ${r.avgFps} FPS ──`);
   lines.push(`Frame-Zeit  p50 ${r.frameMs.p50}ms · p95 ${r.frameMs.p95}ms · p99 ${r.frameMs.p99}ms · max ${r.frameMs.worst}ms`);
   lines.push(`Jank (>${JANK_MS}ms): ${r.jankFrames} Frames (${r.jankPerMin}/min) · LongTasks: ${r.longTasks.count} (max ${r.longTasks.worstMs}ms)`);
+  if (r.hiddenGaps) lines.push(`Verworfen: ${r.hiddenGaps}× Pause (Bildschirm aus / App gewechselt) — kein Ruckler`);
   if (r.memoryMB) lines.push(`Heap: ${r.memoryMB.start}→${r.memoryMB.end} MB (Peak ${r.memoryMB.peak} MB)`);
   if (r.byEvent.length) {
     lines.push(`Ruckler nach Event (schlimmster zuerst):`);
