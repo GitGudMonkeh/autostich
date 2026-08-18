@@ -502,6 +502,14 @@ export default {
   "perk.build_one": "Your build — {count} perk",
   "perk.build_other": "Your build — {count} perks",
   "perk.build.empty": "No perks chosen yet.",
+  // #sprache: build overview below the board + the shared lists (BuildPanel/BuildSummary).
+  "build.perks.head": "Perks — {count}",
+  "build.skills.head": "Skills — {count}",
+  "build.perks.empty": "No perks yet.",
+  "build.skills.empty": "No skills yet.",
+  "build.perks.emptyRun": "No perks yet. Some cycles let you pick one.",
+  "build.skills.emptyRun": "No skills yet — pickable from cycle {cycle}.",
+  "build.deck.legend": "Bar = avg value · purple ◆ = unbeatable (>{over}, beats any opponent card).",
 
   /* ---- Legendary choice (LegendarySelect) ---- */
   "leg.fallbackLabel": "Legendary",

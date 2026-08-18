@@ -69,6 +69,8 @@ describe("i18n · Katalog-Parität", () => {
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "lv.wing.deck",          // „Deck" ist in beiden Sprachen dasselbe Wort (Begriffstabelle §3.1)
+    "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
+    "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
@@ -509,6 +511,10 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/tutorial/TutorialOverlay.jsx",
     // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
     "src/ui/ScoreMilestoneBar.jsx",
+    // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).
+    "src/ui/BuildPanel.jsx", "src/ui/BuildSummary.jsx",
+    // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
+    "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
     "src/ui/PrivacyModal.jsx"];
 

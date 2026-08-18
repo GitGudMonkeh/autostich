@@ -1389,8 +1389,18 @@ neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen
 - Wächter: `test/levelup-wings.test.js` (14). Gegenprobe gemacht: `auto`-Spur, fehlendes `grid-column`,
   verstellte Griffbahn und aufgehobene Entdopplung lassen ihn fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
-- **Nebenbefund, NICHT gefixt**: `DeckStrength` trägt eine fest verdrahtete deutsche Fußzeile („Balken = Ø-Wert
-  · violett ◆ = unschlagbar …"). Fällt im englischen Build auf; die Datei steht noch nicht in der i18n-`MIGRATED`-Liste.
+- **Gleich mitgezogen (#sprache-Nachzügler)**: `BuildSummary.jsx` und `BuildPanel.jsx` sind jetzt migriert und
+  stehen in der `MIGRATED`-Ratsche. Sieben neue Schlüssel (`build.*`). Anlass war die deutsche Fußzeile der
+  Deck-Stärke, die im englischen Build danebenstand — dabei kamen die Build-Panel-Überschriften („Perks — N",
+  „Skills — N") und drei „noch keine …"-Texte mit heraus, die genauso einsprachig waren.
+  - **`empty` als Default-PARAMETER darf `t()` rufen** (`empty = t("build.perks.empty")`): Default-Werte werden
+    bei JEDEM Aufruf ausgewertet, nicht beim Laden des Moduls — ein Sprachwechsel schlägt also durch. Eine
+    Modul-Konstante daneben wäre auf der Startsprache eingefroren.
+  - Die Schwelle „unschlagbar" (>10) stand zweimal da — im Filter und ausgeschrieben in der Legende. Sie ist
+    jetzt `UNBEAT_OVER` und wird in den Text interpoliert.
+  - **Falle in `BuildPanel`**: der Filter-Parameter hieß `t` und hätte den i18n-Leser in genau dieser Funktion
+    verdeckt (jetzt `lv`). Der Fehler wäre erst beim nächsten `t()`-Aufruf INNERHALB des Filters aufgefallen.
+  - `build.perks.head`/`build.skills.head` stehen in `SAME_OK` — „Perks"/„Skills" heißen in beiden Sprachen gleich.
 
 ### #packsort + #herausforderungen — Sortier-Knopf in der Werkstatt, und der Reiter heißt jetzt deutsch (18.08.2026)
 Neben den drei Filtern (Alle · Besitz · Kaufbar) steht auf den Reitern **Packs** und **Herausforderungen** ein

@@ -517,6 +517,14 @@ export default {
   "perk.build_one": "Dein Build — {count} Perk",
   "perk.build_other": "Dein Build — {count} Perks",
   "perk.build.empty": "Noch keine Perks gewählt.",
+  // #sprache: Build-Übersicht unter dem Brett + die geteilten Listen (BuildPanel/BuildSummary).
+  "build.perks.head": "Perks — {count}",
+  "build.skills.head": "Skills — {count}",
+  "build.perks.empty": "Noch keine Perks.",
+  "build.skills.empty": "Noch keine Skills.",
+  "build.perks.emptyRun": "Noch keine Perks. In manchen Durchläufen wählst du einen dazu.",
+  "build.skills.emptyRun": "Noch keine Skills — ab Durchlauf {cycle} wählbar.",
+  "build.deck.legend": "Balken = Ø-Wert · violett ◆ = unschlagbar (>{over}, überbietet jede Gegnerkarte).",
 
   /* ---- Legendär-Wahl (LegendarySelect) ---- */
   "leg.fallbackLabel": "Legendär",

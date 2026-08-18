@@ -11,7 +11,7 @@ import { t, fmtNum } from "../i18n/index.js";
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
-const ac = (id) => archMeta(archetypeOf(id)) || { label: "Skill", icon: "•", color: "#8a8a95" };
+const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
 
 /* Gemeinsame Build-Kontext-Bausteine (#22): geteilt von BuildPanel und PerkSelect. */
 
@@ -51,7 +51,9 @@ export function ZinsReadout({ zins, color = "#5ab87a" }) {
 
 // `zins` (optional, nur im laufenden Lauf): Kontostand der Zinseszins-Bank { capital, rate, wins, hurdle } — von
 // zinsReadout(state) gebaut, damit Panel und Perk-Auswahl dieselbe Quelle nutzen.
-export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.", zins }) {
+/* `empty` als Default-PARAMETER darf `t()` rufen: Default-Werte werden bei jedem Aufruf ausgewertet,
+   nicht beim Laden des Moduls — ein Sprachwechsel schlägt also durch (anders als bei einer Modul-Konstante). */
+export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty"), zins }) {
   const [open, setOpen] = useState(null); // { kind: "perk"|"family", id }
   const isOpen = (kind, id) => open && open.kind === kind && open.id === id;
   const toggle = (kind, id) => setOpen(isOpen(kind, id) ? null : { kind, id });
@@ -127,7 +129,7 @@ export function PerkList({ perks, familyTiers = {}, empty = "Noch keine Perks.",
 }
 
 /* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1). */
-export function SkillList({ skills = [], empty = "Noch keine Skills." }) {
+export function SkillList({ skills = [], empty = t("build.skills.empty") }) {
   const [openSkill, setOpenSkill] = useState(null);
   const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill) : null;
   if (skills.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
@@ -218,6 +220,9 @@ export function DeckHistogram({ deck }) {
    Anzahl unschlagbarer Karten (Wert > 10, überbietet jede Gegnerkarte). Ersetzt das platzintensive 4×11-Histogramm
    in der Perk-Auswahl: zeigt Farb-Stärke und Auto-Siege auf einen Blick. */
 const UNBEAT = "#8a7de0";
+// „Unschlagbar" = Kartenwert über dieser Schwelle (überbietet jede Gegnerkarte). Stand als 10 zweimal da —
+// im Filter und ausgeschrieben in der Legende; die Legende interpoliert sie jetzt, statt sie abzutippen.
+const UNBEAT_OVER = 10;
 export function DeckStrength({ deck = [] }) {
   const bySuit = {};
   for (const c of deck) (bySuit[c.suit] ||= []).push(c.value);
@@ -228,7 +233,7 @@ export function DeckStrength({ deck = [] }) {
           const vals = bySuit[su] || [];
           const n = vals.length;
           const avg = n ? vals.reduce((a, b) => a + b, 0) / n : 0;
-          const unbeat = vals.filter((v) => v > 10).length;
+          const unbeat = vals.filter((v) => v > UNBEAT_OVER).length;
           const col = suitColor(su);
           const fillPct = Math.min(100, (avg / 11) * 100);       // Ø-Wert auf 1..11-Skala
           const overPct = n ? Math.min(100 - fillPct, (unbeat / n) * 100) : 0; // Anteil unschlagbarer Karten als violettes Ende
@@ -248,7 +253,7 @@ export function DeckStrength({ deck = [] }) {
           );
         })}
       </div>
-      <div className="text-[10px] opacity-40 mt-2">Balken = Ø-Wert · violett ◆ = unschlagbar (&gt;10, überbietet jede Gegnerkarte).</div>
+      <div className="text-[10px] opacity-40 mt-2">{t("build.deck.legend", { over: UNBEAT_OVER })}</div>
     </div>
   );
 }
