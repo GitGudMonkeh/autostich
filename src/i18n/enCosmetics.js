@@ -68,6 +68,11 @@ export default {
   "cosmetic.deck_quecksilber.name": "Quicksilver",
   "cosmetic.deck_kintsugi.name": "Kintsugi",
   "cosmetic.deck_salar.name": "Salar",
+  /* #deck-neon — „Nachtklinge" beschreibt die Waffe der Figur und wird deshalb übersetzt; „Nightblade" ist im
+     englischen Genre-Wortschatz dasselbe Bild (Kettensichel im Nachtregen). „Paradox" ist in beiden Sprachen
+     identisch geschrieben und benennt das Prinzip des Motivs (Penrose-Dreieck, Möbiusband, endlose Treppe). */
+  "cosmetic.deck_nachtklinge.name": "Nightblade",
+  "cosmetic.deck_paradox.name": "Paradox",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

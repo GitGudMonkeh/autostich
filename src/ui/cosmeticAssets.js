@@ -157,6 +157,11 @@ import kintsugiFront    from "../assets/cards/decks_player/deck_kintsugi/front.w
 import kintsugiBack     from "../assets/cards/decks_player/deck_kintsugi/back.webp";
 import salarFront       from "../assets/cards/decks_player/deck_salar/front.webp";
 import salarBack        from "../assets/cards/decks_player/deck_salar/back.webp";
+// #deck-neon Nachtklinge (20 DP) · Paradox (10 DP)
+import nachtklingeFront from "../assets/cards/decks_player/deck_nachtklinge/front.webp";
+import nachtklingeBack  from "../assets/cards/decks_player/deck_nachtklinge/back.webp";
+import paradoxFront     from "../assets/cards/decks_player/deck_paradox/front.webp";
+import paradoxBack      from "../assets/cards/decks_player/deck_paradox/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -197,6 +202,10 @@ import bfKintsugiDesktop    from "../assets/battlefields/bf_kintsugi/desktop.jpg
 import bfKintsugiMobile     from "../assets/battlefields/bf_kintsugi/mobile.jpg";
 import bfSalarDesktop       from "../assets/battlefields/bf_salar/desktop.jpg";
 import bfSalarMobile        from "../assets/battlefields/bf_salar/mobile.jpg";
+import bfNachtklingeDesktop from "../assets/battlefields/bf_nachtklinge/desktop.jpg";
+import bfNachtklingeMobile  from "../assets/battlefields/bf_nachtklinge/mobile.jpg";
+import bfParadoxDesktop     from "../assets/battlefields/bf_paradox/desktop.jpg";
+import bfParadoxMobile      from "../assets/battlefields/bf_paradox/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -250,6 +259,8 @@ export const DECK_ASSETS = {
   deck_quecksilber: { front: quecksilberFront, back: quecksilberBack },
   deck_kintsugi:    { front: kintsugiFront,    back: kintsugiBack },
   deck_salar:       { front: salarFront,       back: salarBack },
+  deck_nachtklinge: { front: nachtklingeFront, back: nachtklingeBack },
+  deck_paradox:     { front: paradoxFront,     back: paradoxBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -305,6 +316,8 @@ export const BATTLEFIELD_ASSETS = {
   bf_quecksilber: { desktop: bfQuecksilberDesktop, mobile: bfQuecksilberMobile },
   bf_kintsugi:    { desktop: bfKintsugiDesktop,    mobile: bfKintsugiMobile },
   bf_salar:       { desktop: bfSalarDesktop,       mobile: bfSalarMobile },
+  bf_nachtklinge: { desktop: bfNachtklingeDesktop, mobile: bfNachtklingeMobile },
+  bf_paradox:     { desktop: bfParadoxDesktop,     mobile: bfParadoxMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;

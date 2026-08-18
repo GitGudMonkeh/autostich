@@ -93,6 +93,9 @@ export const DECK_DEFS = {
   deck_quecksilber: { id: "deck_quecksilber", name: "Quecksilber", unlock: { kind: "buy", ownKey: "pack:quecksilber" } },
   deck_kintsugi:    { id: "deck_kintsugi",    name: "Kintsugi",    unlock: { kind: "buy", ownKey: "pack:kintsugi" } },
   deck_salar:       { id: "deck_salar",       name: "Salar",       unlock: { kind: "buy", ownKey: "pack:salar" } },
+  // #deck-neon zwei DP-Kauf-Packs: Nachtklinge (20 DP) · Paradox (10 DP).
+  deck_nachtklinge: { id: "deck_nachtklinge", name: "Nachtklinge", unlock: { kind: "buy", ownKey: "pack:nachtklinge" } },
+  deck_paradox:     { id: "deck_paradox",     name: "Paradox",     unlock: { kind: "buy", ownKey: "pack:paradox" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -158,6 +161,9 @@ export const BATTLEFIELD_DEFS = {
   bf_quecksilber: { id: "bf_quecksilber", name: bfName("deck_quecksilber"), unlock: { kind: "buy", ownKey: "pack:quecksilber" } },
   bf_kintsugi:    { id: "bf_kintsugi",    name: bfName("deck_kintsugi"),    unlock: { kind: "buy", ownKey: "pack:kintsugi" } },
   bf_salar:       { id: "bf_salar",       name: bfName("deck_salar"),       unlock: { kind: "buy", ownKey: "pack:salar" } },
+  // #deck-neon Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_nachtklinge: { id: "bf_nachtklinge", name: bfName("deck_nachtklinge"), unlock: { kind: "buy", ownKey: "pack:nachtklinge" } },
+  bf_paradox:     { id: "bf_paradox",     name: bfName("deck_paradox"),     unlock: { kind: "buy", ownKey: "pack:paradox" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

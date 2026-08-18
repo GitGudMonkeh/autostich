@@ -304,6 +304,19 @@ export const THEME_DEFS = {
     deckId: "deck_kintsugi",    bfId: "bf_kintsugi",    els: ["deck", "bf"] },
   salar:       { id: "salar",       name: packName("deck_salar"),       emblem: "🌙", kind: "buy", price: 20, a1: "#c6c9f0", a2: "#8f93cc",
     deckId: "deck_salar",       bfId: "bf_salar",       els: ["deck", "bf"] },
+
+  /* ---- #deck-neon zwei DP-Kauf-Packs ----
+     Farben wie bei den letzten Sätzen aus den LEUCHTENDEN Stellen des Motivs gemessen, nicht geschätzt.
+     Nachtklinge ist zweifarbig gebaut (Magenta 33 % der Spitzlichter, Cyan 18 %) — das ist die klassische
+     Cyberpunk-Doppelung, und beide Töne tragen im Bild eine eigene Aufgabe: Magenta die Stadt und der Tunnel,
+     Cyan die Klinge und die HUD-Ecken des Rahmens. Deshalb ist `a1` das Magenta (Fläche) und `a2` das Cyan.
+     Paradox dagegen ist eindeutig GOLD-dominiert (45–60° zusammen mit 30–45° = 82 %), Türkis ist mit 8 % nur
+     der Glaskörper — entsprechend Gold als `a1`. Nachbarn im Goldband sind gottgleich (44°) und geometrie (44°);
+     Paradox liegt mit 50° darüber und trennt sich zusätzlich am `a2` (Türkis statt Creme). */
+  nachtklinge: { id: "nachtklinge", name: packName("deck_nachtklinge"), emblem: "🥷", kind: "buy", price: 20, a1: "#ff2ea0", a2: "#22c4dc",
+    deckId: "deck_nachtklinge", bfId: "bf_nachtklinge", els: ["deck", "bf"] },
+  paradox:     { id: "paradox",     name: packName("deck_paradox"),     emblem: "♾️", kind: "buy", price: 10, a1: "#e0b83c", a2: "#16b8a4",
+    deckId: "deck_paradox",     bfId: "bf_paradox",     els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
