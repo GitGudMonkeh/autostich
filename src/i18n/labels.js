@@ -177,7 +177,18 @@ export const battlefieldDef = (id) => {
 export const themeDef = (id) => {
   const th = THEME_DEFS[id];
   if (!th) return null;
-  const out = { ...th, name: t(`cosmetic.${th.nameDeckId || th.deckId}.name`) };
+  /* Der Paketname eines Stufen-Decks ist NICHT der Name seines Stufe-I-Decks. Titan, Hirsch und Thron
+     heißen im Kosmetik-Katalog „Titan · Erwachen", „Hirsch · Sternbild", „Thron · Anwärter" — der
+     Deckname enthält die Stufe bereits. Wer daraus den Paketnamen macht, bekommt überall dort, wo
+     Paket UND Stufe zusammen stehen, die Stufe zweimal: im Kopf der Werkstatt-Vorschau stand
+     „Titan · Erwachen · Erwachen", und bei gewählter Stufe II sogar „Titan · Erwachen · Aufstieg" —
+     also die falsche Stufe zuerst.
+     Deshalb behalten Pakete MIT Stufen ihren eigenen Basisnamen aus THEME_DEFS („Titan"). Peacock
+     bleibt ausgenommen: dort sagt `nameDeckId` ausdrücklich, dass das Paket seinen Namen von Stufe II
+     bezieht, und der trägt keinen Stufen-Zusatz.
+     Die drei Basisnamen sind Eigennamen und stehen unübersetzt in themes.js — genau wie „Obsidian“. */
+  const tiered = Array.isArray(th.tiers) && !th.nameDeckId;
+  const out = { ...th, name: tiered ? th.name : t(`cosmetic.${th.nameDeckId || th.deckId}.name`) };
   if (Array.isArray(th.tiers)) {
     out.tiers = th.tiers.map((ti) => {
       /* Nur übersetzen, wenn die Stufe im Register WIRKLICH den Namen ihres Decks trägt (Peacock:

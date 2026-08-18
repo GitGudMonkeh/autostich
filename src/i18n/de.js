@@ -1009,6 +1009,11 @@ export default {
   // #tiered Stufen-Decks (I/II/III): {roman} ist die römische Stufenziffer — sie bleibt in beiden Sprachen gleich.
   "shop.tier.active": "Stufe {roman} aktiv ✓",
   "shop.tier.activate": "Stufe {roman} aktivieren",
+  /* Auskunft in der Kopfzeile (erst ab 1400 px, wo Platz dafür ist) — dasselbe Muster wie im
+     Upgrade-Baum: eine Zeile Bestand, eine Zeile, was ein Antippen bewirkt. */
+  "shop.head.packs": "{n} Packs · {own} freigeschaltet",
+  "shop.head.challenges": "{n} Herausforderungen · {own} freigeschaltet",
+  "shop.head.hint": "Karte antippen zeigt Rücken, Front und Spielfeld.",
   // Untertitel der Pack-Kachel.
   "shop.tile.sub.active": "aktiv",
   "shop.tile.sub.details": "tippen → Details",

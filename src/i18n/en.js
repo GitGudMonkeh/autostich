@@ -990,6 +990,10 @@ export default {
   // #tiered tiered decks (I/II/III): {roman} is the Roman tier numeral — identical in both languages.
   "shop.tier.active": "Tier {roman} active ✓",
   "shop.tier.activate": "Activate tier {roman}",
+  // Header readout from 1400 px up — same pattern as the upgrade tree; reasoning in de.js.
+  "shop.head.packs": "{n} packs · {own} unlocked",
+  "shop.head.challenges": "{n} challenges · {own} unlocked",
+  "shop.head.hint": "Tap a card to see back, front and battlefield.",
   // Pack tile subtitle.
   "shop.tile.sub.active": "active",
   "shop.tile.sub.details": "tap → details",

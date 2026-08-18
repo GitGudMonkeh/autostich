@@ -1309,7 +1309,7 @@ button { font-family: inherit; }
 /* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1399 px reichen `cz-split` und `cz-main` ihre
    Kinder unverändert an den Scroller durch — Katalog, Effekt-Bühne und Liste sitzen exakt wie bisher.
    Ab 1400 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts). */
-.cz-split, .cz-main { display: contents; }
+.cz-split, .cz-main, .cz-mainscroll { display: contents; }
 
 /* Der Glossar-Knopf steht zweimal im Startbildschirm: oben rechts in der Ecke (bis 1399 px) und unten
    im Fußband hinter dem Discord-Zeichen (ab 1400 px). Zwei Instanzen statt einer wandernden, weil die
@@ -2002,17 +2002,35 @@ button { font-family: inherit; }
   .cz-card.as-panel { background-image: none !important; animation: none !important; }
   .cz-scroll { overflow: hidden !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 0 !important; display: flex; flex-direction: column; }
 
-  /* Der Kopf verliert seine deckende Leiste und sein negatives Ausbluten (beides gehört zur Karte).
-     #werkstatt: auch der Verlauf ist weg — er war die Kante einer Karte, die es hier nicht mehr gibt.
-     Der Kopf steht jetzt frei über den beiden Panels, wie im Upgrade-Baum. */
+  /* --- Kopfzeile: dasselbe Raster wie im Upgrade-Baum ----------------------
+     Werte 1:1 von `.up-head` übernommen (Spalten, Spaltenabstand, Verlauf, Polster), damit beide
+     Screens denselben Kopf haben und nicht nur ähnliche.
+       Spalte 1  Titel
+       Spalte 2  Guthaben (groß, in Währungsfarbe)
+       Spalte 3  Auskunft, durch einen senkrechten Strich abgesetzt
+       Spalte 4  Aktionen
+       Zeile 2   Haarlinie über die volle Breite
+       Zeile 3   Reiter
+     Das negative Ausbluten und die seitlichen Polster gehören zur Handy-Karte und entfallen. */
   .cz-head {
-    background: none !important;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    column-gap: 22px;
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
     margin-left: 0 !important; margin-right: 0 !important;
     padding-left: 0 !important; padding-right: 0 !important;
-    padding-top: 4px !important; padding-bottom: 12px !important;
+    padding-top: 10px !important; padding-bottom: 8px !important;
     flex: none;
   }
-  .cz-head h2 { font-size: 26px; letter-spacing: -.02em; }
+  /* Die beiden Flex-Container der Handy-Fassung reichen ihre Kinder ins Raster durch. */
+  .cz-topline, .cz-headrow { display: contents; }
+  .cz-head h2 { grid-column: 1; grid-row: 1; }
+  .cz-bal { grid-column: 2; grid-row: 1; }
+  .cz-readout { grid-column: 3; grid-row: 1; padding-left: 22px; border-left: 1px solid rgba(150, 150, 170, .18); }
+  .cz-close { grid-column: 4; grid-row: 1; font-size: 15px !important; padding: 11px 18px !important; border-radius: 8px; }
+  .cz-hair { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
+  .cz-tabs { grid-column: 1 / -1; grid-row: 3; }
 
   /* --- Die Reiter werden Knöpfe -------------------------------------------
      Bis 1399 px sind es Karteikartenreiter über die volle Breite (drei gleich breite Flächen mit
@@ -2083,14 +2101,27 @@ button { font-family: inherit; }
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
   }
+  /* Der Rahmen gehört an die Box, das Scrollen nach INNEN. Lag beides am selben Element, lief die
+     untere Ringkante beim Scrollen mitten durch die Kacheln — ein Pseudo-Element mit `inset: 0` sitzt
+     im Inhaltsfluss und wandert mit ihm. Deshalb trägt `.cz-main` nur noch Rahmen und Fläche, und
+     `.cz-mainscroll` darin scrollt. Unter 1400 px ist der Wrapper `display: contents`, also nicht da. */
   .cz-main {
     display: block;
     min-width: 0;
     min-height: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+  .cz-mainscroll {
+    display: block;
+    height: 100%;
     overflow-y: auto;
     padding: 14px 16px 12px;
   }
-  .cz-side { min-height: 0; }
+  /* Die Vorschau ist so hoch wie ihr Inhalt, nicht so hoch wie die Spalte — wie `.up-nav` im
+     Upgrade-Baum, die nach ihrem letzten Eintrag endet statt bis zum Fuß durchzulaufen. Vorher stand
+     unter „Aktivieren" ein knappes Drittel Panel leer. `max-height` hält lange Inhalte im Bild. */
+  .cz-side { min-height: 0; align-self: start; max-height: 100%; }
   /* Die Detailkarte im Panel wird selbst flächenlos: sonst läge eine Karte in einer Karte, und der
      Rahmen des Panels bekäme einen zweiten, 6 px weiter innen. */
   .cz-detail, .cz-detailcard { max-width: none; }
@@ -2101,6 +2132,9 @@ button { font-family: inherit; }
     box-shadow: none !important;
   }
   .cz-detailcard.as-panel { background-image: none !important; animation: none !important; }
+  /* `h-full` an Detail und Detailkarte stammt aus der Fassung, in der die Spalte durchlief. Mit einem
+     Panel, das nach seinem Inhalt endet, muss die Höhe der Karte dem Inhalt folgen. */
+  .cz-detail, .cz-detailcard { height: auto !important; max-height: 100%; }
   /* Die Haarlinie oben an der Detailkarte gehört zur Overlay-Fassung. */
   .cz-detailcard > div[aria-hidden="true"]:first-child { display: none; }
 
@@ -2123,9 +2157,11 @@ button { font-family: inherit; }
   .cz-shown { box-shadow: 0 0 0 2px var(--c, #8a8a95), 0 0 18px -6px var(--c, #8a8a95); }
 
   /* --- Reiter „Effekte": Bühne links, Liste rechts ---------------------------
-     Die drei Teile von FxView sind Geschwister in einem Fragment. `cz-main` wird für sie zum Raster;
-     die Bühne bekommt beide Zeilen, Liste und Fußnote stapeln sich rechts daneben. */
-  .cz-main:has(.cz-stage) {
+     Die drei Teile von FxView sind Geschwister in einem Fragment. Der Scroller wird für sie zum Raster;
+     die Bühne bekommt beide Zeilen, Liste und Fußnote stapeln sich rechts daneben.
+     Das Raster sitzt an `.cz-mainscroll` und nicht mehr an `.cz-main`: seit der Katalog innen scrollt
+     (s. o.), ist der Wrapper das Element, in dem die drei Teile liegen. */
+  .cz-mainscroll:has(.cz-stage) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 520px;
     grid-template-rows: 1fr auto;
