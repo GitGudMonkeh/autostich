@@ -477,6 +477,42 @@ Gemessen wird die mittlere Luma im **Handy-Ausschnitt** (nicht im ganzen Bild), 
   mit Innenabstand nichts zu retten. Am Handy steht deshalb nur noch **die Zahl** im goldenen Ring
   (Gold heißt dort bereits „Guthaben"), der volle Satz ab 1400 px und im `title`.
 
+### #desktop-leitfaden — Leitfaden ab 1400 px gerahmt wie Baum und Werkstatt (2026-08-18)
+Der letzte große Screen, der noch als **672-px-Modal** in der Mitte eines 1920-px-Bildes stand (35 % der Breite
+genutzt, dafür ~2900 px Inhalt untereinander). Jetzt derselbe gerahmte Screen: Überzug `rgba(12,12,16,.82)` +
+`blur(10px)`, Rand `16/48/18`, Panelglas `.93→.95`, Radius 14, `as-ring` — alles an `.up-root`/`.up-nav`/`.up-page`
+**abgemessen, nicht neu erfunden**. Die vier Archetypen werden zur Nav-Spalte (300 px) statt zur Reiterzeile;
+das sind dieselben vier Fraktionen, die im Baum schon als Spalte stehen. Zweitzeile der Nav ist **kein neuer
+Text**, sondern `loop.center` aus den Leitfaden-Daten („STURM · nährt sich selbst"). Spalte endet am Inhalt
+(`align-self: start` wie `.up-nav`), nicht auf voller Höhe.
+- **KEIN zweiter Renderpfad.** `GuideOverlay.jsx` setzt die Klammern `gd-desk`/`gd-page`/`gd-cols`/`gd-col` in
+  jeder Breite; unterhalb 1400 px sind sie `display: contents` (Basis-Regel in index.css) → Handy-Fassung
+  DOM- und pixelgleich (nachgemessen: Schriftgrößen 15/13,5/10,5 px und Ring-Deckel 190 px unverändert).
+  Nur Nav-Spalte und Seitenkopf hängen an `useIsWide()` — die sind DOM, nicht Anordnung.
+- **Das Spaltenraster hängt an `.gd-page`**, nicht an `.gd-cols` allein: `DeckDetail.jsx` zeigt dieselbe
+  `GuideBody` in einer schmalen Spalte und hat kein `.gd-page` → dort bleibt alles einspaltig.
+- **Höhe füllt man NICHT mit Spalten.** Die Spalten teilen sich die Panelbreite, also ist die Inhaltshöhe immer
+  *Inhaltsfläche ÷ Panelbreite* — egal auf wie viele Spalten verteilt (mit 3 und 4 nachgemessen: identisch).
+  Der einzige Hebel ist die GRÖSSE; der Körper stand bis dahin in Handy-Maßen auf einem 1920er Bild und füllte
+  70 %. Alles hängt jetzt an EINEM Wert `--gs` (Schrift, Polster, Abstände, Ringbreite) in **drei gemessenen
+  Stufen**: `.95` ab 1400 px · **`1.2`** ab 1750 px UND 1000 px Höhe · **`.9`** im bestehenden
+  `max-height: 950px`-Block (dort zusätzlich Rand 10/36/12 wie beim Baum).
+  Gemessen (längste Spalte / Platz, alle vier Archetypen): 1920×1080 **85–95 %** · 1440×900 84–96 % ·
+  1600×900 77–86 % · 1400×950 83–93 % · 1400×1080 85–95 % — **überall ohne Scrollen**. 2560×1400 bleibt bei
+  54–62 % (Baum und Werkstatt haben dort dieselbe Luft; weiter aufblasen hieße 20-px-Fließtext).
+- **Ohne die kleine Stufe liefe es über**: mit der heutigen Größe braucht Eis auf 1400×950 799 px bei 762 px
+  Platz (105 %), auf 1600×900 106 %. Die Stufe ist Pflicht, nicht Feinschliff.
+- **Ventil**: `.gd-scroll` ist auf dem Desktop `overflow: hidden` (wie die Werkstatt) — Überlauf würde
+  ABGESCHNITTEN. Gescrollt wird deshalb INNEN an `.gd-page .gd-cols`, nicht am Panel: der `as-ring` sitzt mit
+  `inset: 0` im Fluss und liefe sonst beim Scrollen mitten durch den Inhalt (dieselbe Naht wie `.cz-main`).
+- Wächter: `test/guide-desktop.test.js` (Quelltext-Ratsche über beide Dateien: `display: contents`, die
+  `.gd-page`-Bindung, das Ventil, die drei Stufen, `align-self: start`).
+- **Bewusst NICHT drin**: ein „Glossar ›"-Knopf im Seitenkopf (spiegelbildlich zum „Leitfaden ›" im Baum).
+  Das wäre Overlay auf Overlay — `GlossaryOverlay` liegt wie `GuideOverlay` auf `z-[60]` und beide hängen an
+  `useEscape`, ein Escape schlösse also beide. Eigener Schritt, kein Layout.
+- **Nicht am Gerät gesehen** — alles im Produktionspfad über Playwright gemessen und nachgerendert
+  (Chromium, echte Komponente), aber nicht auf einem physischen Monitor abgenommen.
+
 ### #typo — Geist statt System-Mono, projektweit (2026-08-17)
 Bis hierher lief **alles** in `ui-monospace` (eine Zeile in index.css: `html, body`). Überschriften, Knöpfe,
 Beschreibungen und Zahlen trugen dieselbe Schrift — Typografie war damit als Ordnungsmittel gar nicht im Einsatz.

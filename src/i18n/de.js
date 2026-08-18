@@ -867,6 +867,9 @@ export default {
   "guide.core": "Kernidee",
   "guide.loop": "Der Kreislauf",
   "guide.principles": "Spielprinzip",
+  // #desktop: Überschrift und Fußnote der Archetyp-Spalte (ab 1400 px statt der Reiterzeile).
+  "guide.nav.archetypes": "Archetypen",
+  "guide.nav.note": "Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.",
 
   /* ---- Upgrade-Baum (UpgradeScreen) ---- */
   "upgrades.title": "Upgrades",

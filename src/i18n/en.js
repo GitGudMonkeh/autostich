@@ -848,6 +848,9 @@ export default {
   "guide.core": "Core idea",
   "guide.loop": "The loop",
   "guide.principles": "How it plays",
+  // #desktop: heading and footnote of the archetype column (from 1400 px on, replacing the tab row).
+  "guide.nav.archetypes": "Archetypes",
+  "guide.nav.note": "The guide explains how an archetype plays. Terms and special rules live in the glossary.",
 
   /* ---- Upgrade tree (UpgradeScreen) ---- */
   "upgrades.title": "Upgrades",

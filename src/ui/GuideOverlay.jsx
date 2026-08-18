@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ARCHETYPE_ORDER } from "../game/skills.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Archetyp-Wechsel per Swipe
-import { FactionIcon, ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { FactionIcon, ArchIcon, FACTION_GLOW } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { guideDef } from "../i18n/guideText.js"; // #sprache: Leitfaden zur Anzeigezeit
 import { useEscape } from "./useEscape.js";
+import { useIsWide } from "./useIsWide.js"; // #desktop: Spalte statt Reiter
 import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
@@ -15,6 +16,11 @@ import { t } from "../i18n/index.js";
    - GuideButton:  der beschriftete „📖 Leitfaden"-Knopf.
    - GuideOverlay: das Overlay mit vier Reitern.
    - GuidePanel:   Button + selbstverwaltetes Overlay als Drop-in (eine Zeile je Panel).
+
+   #desktop (18.08.2026) — ab 1400 px ist das kein Modal mehr, sondern ein gerahmter Screen wie
+   Upgrade-Baum und Werkstatt: Navigationsspalte links, Seite rechts, Körper in drei Spalten.
+   Die `gd-*`-Klassen hier sind reine HAKEN — sie tragen unterhalb von 1400 px keine Darstellung
+   (`display: contents` in index.css), die Handy-Fassung bleibt damit DOM- und pixelgleich.
    ============================================================ */
 
 // Text mit **fett**-Markup rendern (kein React-Markup in den Daten).
@@ -30,9 +36,9 @@ function RT({ t }) {
 // Sektions-Überschrift (kleine Kapitälchen + Akzent-Strich in Archetyp-Farbe).
 function SecLabel({ children, color }) {
   return (
-    <div className="flex items-center gap-2.5 mb-3 mt-6">
+    <div className="gd-seclabel flex items-center gap-2.5 mb-3 mt-6">
       <span className="w-3.5 h-0.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-      <h3 className="text-[10px] tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{children}</h3>
+      <h3 className="gd-sectext text-[10px] tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{children}</h3>
     </div>
   );
 }
@@ -72,12 +78,12 @@ function LoopRing({ color, nodes, center }) {
 function Bar({ b }) {
   const single = !!b.scale;
   return (
-    <div className="rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
+    <div className="gd-bar rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="text-[13px] tracking-wide" style={{ color: "#e2e0ee" }}>
+        <span className="gd-barname text-[13px] tracking-wide" style={{ color: "#e2e0ee" }}>
           <span className="mr-1.5" style={{ color: b.color }}>{b.faction ? <FactionIcon type={b.faction} size={12} /> : b.glyph}</span>{b.name}
         </span>
-        {!single && b.payoff && <span className="text-[11px] text-right" style={{ color: "#9a9aa6" }}><RT t={b.payoff} /></span>}
+        {!single && b.payoff && <span className="gd-barpay text-[11px] text-right" style={{ color: "#9a9aa6" }}><RT t={b.payoff} /></span>}
       </div>
       <div className="relative overflow-hidden rounded-md" style={{ height: single ? 18 : 12, background: "#0c0c11", border: "1px solid #2a2a33" }}>
         <span className="absolute inset-y-0 left-0" style={{
@@ -100,7 +106,7 @@ function Bar({ b }) {
         )}
       </div>
       {single && (
-        <div className="flex justify-between mt-1.5 text-[10px]" style={{ color: "#71717c" }}>
+        <div className="gd-barscale flex justify-between mt-1.5 text-[10px]" style={{ color: "#71717c" }}>
           {b.scale.map((s, i) => <span key={i} className={i === b.scale.length - 1 ? "" : "ty-num-sm"}>{s}</span>)}
         </div>
       )}
@@ -120,8 +126,13 @@ export function GuideButton({ onClick, className = "", style }) {
 
 /* Reiner Leitfaden-INHALT je Archetyp (ohne Schale) — Single Source, damit sowohl das GuideOverlay als auch
    die Deck-Detailansicht (#369) exakt dasselbe rendern (kein Abschreiben). showTitle blendet den großen
-   Archetyp-Titel + die Fußzeile aus, wenn der Aufrufer (Deck-Detail) bereits einen eigenen Kopf hat. */
-export function GuideBody({ archetype, showTitle = true }) {
+   Archetyp-Titel + die Fußzeile aus, wenn der Aufrufer (Deck-Detail) bereits einen eigenen Kopf hat;
+   showSubtitle zusätzlich den Untertitel (auf dem Desktop trägt ihn der Seitenkopf).
+
+   Die drei `gd-col`-Klammern sind der Grund, warum der Desktop-Körper OHNE zweiten Renderpfad in drei
+   Spalten steht: unterhalb von 1400 px sind sie `display: contents` und damit gar nicht da. Sie stehen
+   in Lesereihenfolge — wer eine Sektion verschiebt, verschiebt sie auf beiden Fassungen. */
+export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) {
   const active = ARCHETYPE_ORDER.includes(archetype) ? archetype : "lightning";
   const g = guideDef(active);
   const meta = archMeta(active);
@@ -136,64 +147,75 @@ export function GuideBody({ archetype, showTitle = true }) {
           </h1>
           <p className="text-[13.5px] mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
         </div>
-      ) : (
+      ) : showSubtitle && (
         <p className="text-[13.5px] pt-1 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
       )}
 
-      <SecLabel color={color}>{t("guide.core")}</SecLabel>
-      <p className="text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
+      <div className="gd-cols">
+        {/* Spalte 1 — worum es geht und woraus es besteht. */}
+        <div className="gd-col">
+          <SecLabel color={color}>{t("guide.core")}</SecLabel>
+          <p className="gd-core text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
 
-      <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
-      <div className="grid gap-2.5">
-        {g.pillars.map((p, i) => (
-          <div key={i} className="grid gap-3 items-start rounded-xl px-3.5 py-3"
-               style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
-            <div className="w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
-                 style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
-            <div>
-              <div className="text-[14.5px] font-semibold" style={{ color: p.color }}>
-                {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
+          <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
+          <div className="grid gap-2.5">
+            {g.pillars.map((p, i) => (
+              <div key={i} className="gd-pillar grid gap-3 items-start rounded-xl px-3.5 py-3"
+                   style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
+                <div className="gd-pglyph w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
+                     style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
+                <div>
+                  <div className="gd-pname text-[14.5px] font-semibold" style={{ color: p.color }}>
+                    {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
+                  </div>
+                  <div className="gd-ptext text-[13px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
+                </div>
               </div>
-              <div className="text-[13px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <SecLabel color={color}>{t("guide.loop")}</SecLabel>
-      <div className="grid gap-4 items-center sm:grid-cols-[190px_1fr]">
-        <div className="mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
-        <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
-          {g.loop.steps.map((s, i) => (
-            <li key={i} className="grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
-              <span className="grid place-items-center text-[11px] ty-num-sm rounded-md"
-                    style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
-              <span><RT t={s} /></span>
-            </li>
-          ))}
-        </ol>
-      </div>
-      <div className="mt-3.5 rounded-xl px-3.5 py-3 text-[13px] leading-relaxed"
-           style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
-        <RT t={g.loop.valve} />
-      </div>
+        {/* Spalte 2 — wie es sich dreht. */}
+        <div className="gd-col">
+          <SecLabel color={color}>{t("guide.loop")}</SecLabel>
+          <div className="gd-loopgrid grid gap-4 items-center sm:grid-cols-[190px_1fr]">
+            <div className="gd-ringbox mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
+            <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
+              {g.loop.steps.map((s, i) => (
+                <li key={i} className="gd-step grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
+                  <span className="gd-stepno grid place-items-center text-[11px] ty-num-sm rounded-md"
+                        style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
+                  <span><RT t={s} /></span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="gd-valve mt-3.5 rounded-xl px-3.5 py-3 text-[13px] leading-relaxed"
+               style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
+            <RT t={g.loop.valve} />
+          </div>
+        </div>
 
-      <SecLabel color={color}>{g.status.label}</SecLabel>
-      <div className="grid gap-2.5">
-        {g.status.bars.map((b, i) => <Bar key={i} b={b} />)}
-      </div>
+        {/* Spalte 3 — woran man den Stand abliest und was man daraus macht. */}
+        <div className="gd-col">
+          <SecLabel color={color}>{g.status.label}</SecLabel>
+          <div className="grid gap-2.5">
+            {g.status.bars.map((b, i) => <Bar key={i} b={b} />)}
+          </div>
 
-      <SecLabel color={color}>{t("guide.principles")}</SecLabel>
-      <ul className="grid gap-2.5 list-none p-0 m-0">
-        {g.principle.map((p, i) => (
-          <li key={i} className="grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
-              style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
-            <span className="h-fit ty-badge text-[10.5px] uppercase px-2 py-1 rounded-md whitespace-nowrap"
-                  style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
-            <span className="leading-relaxed"><RT t={p.text} /></span>
-          </li>
-        ))}
-      </ul>
+          <SecLabel color={color}>{t("guide.principles")}</SecLabel>
+          <ul className="grid gap-2.5 list-none p-0 m-0">
+            {g.principle.map((p, i) => (
+              <li key={i} className="gd-princ grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
+                  style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
+                <span className="gd-tag h-fit ty-badge text-[10.5px] uppercase px-2 py-1 rounded-md whitespace-nowrap"
+                      style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
+                <span className="leading-relaxed"><RT t={p.text} /></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       {showTitle && (
         <div className="mt-6 pt-3.5 text-[11px] flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
@@ -207,30 +229,37 @@ export function GuideBody({ archetype, showTitle = true }) {
 export function GuideOverlay({ onClose, initial = "lightning" }) {
   const [active, setActive] = useState(ARCHETYPE_ORDER.includes(initial) ? initial : "lightning");
   const archSwipe = useTabSwipe(ARCHETYPE_ORDER, active, setActive); // Swipe ←/→ = voriger/nächster Archetyp
+  const wide = useIsWide();
   useEscape(onClose);
+  const activeMeta = archMeta(active);
 
   return (
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("guide.title")}>
-      <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
-      <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
+      <div className="gd-dim absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
+      <div className="gd-frame absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
         {/* #369: Werkstatt-Schale (MODAL_CARD + Tri-Color-Hairline). #deckui: deck-getönter Rahmen (as-panel-deck);
             die Reiter/Akzente bleiben Fraktionsfarbe (Deck-Identität, wie in DeckDetail). */}
-        <div className="pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel as-panel-deck relative"
+        <div className="gd-card pointer-events-auto w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden overlay-card as-panel as-panel-deck relative"
           style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...archSwipe}>
           <TopHairline />
 
-          {/* Kopf */}
-          <div className="px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
-            <div className="flex items-center gap-2.5">
-              <span aria-hidden="true">📖</span>
-              <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
-              <ActionButton kind="secondary" className="ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
+          {/* Kopf. Ab 1400 px wird aus den zwei gestapelten Zeilen EINE Rasterzeile
+              (Titel · Auskunft · Schließen) — dasselbe Raster wie `.up-head`/`.cz-head`. */}
+          <div className="gd-head px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
+            <div className="gd-headrow flex items-center gap-2.5">
+              <span className="gd-title flex items-center gap-2.5">
+                <span aria-hidden="true">📖</span>
+                <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
+              </span>
+              <ActionButton kind="secondary" className="gd-close ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
-            <div className="text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("guide.subtitle")}</div>
+            <div className="gd-hint text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("guide.subtitle")}</div>
+            {/* Die Haarlinie der Karte sitzt an deren Ecke; ohne Kartenfläche braucht der Kopf eine eigene. */}
+            {wide && <div className="gd-hair" aria-hidden="true" />}
           </div>
 
-          {/* Archetyp-Reiter */}
-          <div className="flex gap-1.5 px-3 pt-2.5 pb-0 flex-none overflow-x-auto" style={{ borderBottom: "1px solid #2a2a33" }}>
+          {/* Archetyp-Reiter — ab 1400 px übernimmt die Spalte links (s. `.gd-tabs` in index.css). */}
+          <div className="gd-tabs flex gap-1.5 px-3 pt-2.5 pb-0 flex-none overflow-x-auto" style={{ borderBottom: "1px solid #2a2a33" }}>
             {ARCHETYPE_ORDER.map((k) => {
               const m = archMeta(k);
               const on = k === active;
@@ -250,9 +279,41 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             })}
           </div>
 
-          {/* Körper (Single-Source-Inhalt) */}
-          <div className="flex-1 overflow-y-auto overlay-card px-4 pb-8" style={{ overscrollBehavior: "contain" }}>
-            <GuideBody archetype={active} />
+          {/* Körper (Single-Source-Inhalt). `gd-desk`/`gd-page` sind unterhalb von 1400 px
+              `display: contents` — dort landet GuideBody wie eh und je direkt im Scroller. */}
+          <div className="gd-scroll flex-1 overflow-y-auto overlay-card px-4 pb-8" style={{ overscrollBehavior: "contain" }}>
+            <div className="gd-desk">
+              {wide && (
+                /* Wie `.up-nav` im Baum: die Spalte endet an ihrem Inhalt, sie wird NICHT auf volle
+                   Höhe gezogen. Die zweite Zeile ist kein neuer Text, sondern der Kern des Kreislaufs
+                   aus den Leitfaden-Daten (`loop.center`) — vier Zeilen, die den Archetyp benennen. */
+                <nav className="gd-nav as-ring" aria-label={t("guide.nav.archetypes")}>
+                  <div className="gd-navhead">{t("guide.nav.archetypes")}</div>
+                  {ARCHETYPE_ORDER.map((k) => {
+                    const m = archMeta(k);
+                    const c = m.color || FACTION_GLOW[k];
+                    const centre = guideDef(k).loop.center;
+                    return (
+                      <button key={k} type="button" onClick={() => setActive(k)} role="tab" aria-selected={k === active}
+                        className={`gd-navrow${k === active ? " is-on" : ""}`} style={{ "--c": c }}>
+                        <ArchIcon meta={m} size={22} />
+                        <span className="gd-navtext"><b>{m.label}</b><i>{centre[0]} · {centre[1]}</i></span>
+                      </button>
+                    );
+                  })}
+                  <div className="gd-navnote">{t("guide.nav.note")}</div>
+                </nav>
+              )}
+              <section className="gd-page as-ring">
+                {wide && (
+                  <div className="gd-page-h" style={{ "--c": activeMeta.color }}>
+                    <span className="gd-page-eyebrow"><ArchIcon meta={activeMeta} size={17} />{activeMeta.label}</span>
+                    <span className="gd-page-hint">{guideDef(active).subtitle}</span>
+                  </div>
+                )}
+                <GuideBody archetype={active} showTitle={!wide} showSubtitle={!wide} />
+              </section>
+            </div>
           </div>
         </div>
       </div>

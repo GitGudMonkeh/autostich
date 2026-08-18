@@ -1800,6 +1800,8 @@
 "guide.lightning.status.label","i18n","Wie weit ist dein Sturm?","How far along is your storm?","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.lightning.subtitle","i18n","Der einzige Archetyp, der seinen kritischen Treffer selbst erzeugt — eine Maschine, die sich mit jedem Sieg weiter auflädt, bis ein sich selbst speisender Sturm über das Feld rollt.","The only archetype that generates its own critical hit — a machine that charges itself further with every win, until a self-feeding storm rolls across the field.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.loop","i18n","Der Kreislauf","The loop","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"guide.nav.archetypes","i18n","Archetypen","Archetypes","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"guide.nav.note","i18n","Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.","The guide explains how an archetype plays. Terms and special rules live in the glossary.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.open","i18n","Leitfaden öffnen","Open the guide","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.plant.kernidee","i18n","Siege lassen deine Karten **wachsen**, bis sie dauerhaft grün werden und gemeinsam ein Feld bilden. Kein Sofort-Payoff — ein Garten, der langsam anschwillt und dann alles überwuchert.","Wins make your cards **grow** until they turn permanently green and together form a field. No instant payoff — a garden that slowly swells and then overruns everything.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.plant.loop.center.0","i18n","GARTEN","GARDEN","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
