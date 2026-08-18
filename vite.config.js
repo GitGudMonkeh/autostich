@@ -75,6 +75,15 @@ const emitVersionJson = () => ({
   },
 });
 
+/* Pixis eigene Abhängigkeiten (aus pixi.js/package.json). Sie tragen „pixi" nicht im Pfad und müssen darum
+   namentlich in den Pixi-Chunk geleitet werden — sonst landen sie im eager geladenen `vendor` (siehe die
+   ausführliche Begründung an `manualChunks` unten). Ohne @types/* und @webgpu/types: reine Typpakete, die
+   im Bundle nie auftauchen. */
+export const PIXI_DEPS = [
+  "@pixi/colord", "@xmldom/xmldom", "earcut", "eventemitter3",
+  "gifuct-js", "ismobilejs", "parse-svg-path", "tiny-lru",
+];
+
 // Vite + React (JSX vorab kompiliert). Tailwind v4 als Vite-Plugin (kein Config-File).
 // Vitest liest den `test`-Block aus dieser Config.
 export default defineConfig(({ command }) => ({
@@ -101,7 +110,16 @@ export default defineConfig(({ command }) => ({
             // Pixi (~570 KB) in einen EIGENEN Chunk. Er wird nur über den dynamischen Import der PixiStage erreicht
             // (env-gegatet auf Preview/Dev) → bleibt async und lädt NIE auf main. `vendor` (React & Co.) bleibt schlank
             // und eager cachebar. Sobald ein Pixi-Effekt bewusst live geht, wird der Chunk regulär mitgeladen.
-            if (id.includes("pixi")) return "pixi";
+            //
+            // ACHTUNG, das war die Lücke: `id.includes("pixi")` fängt nur Pixis EIGENE Dateien. Seine
+            // Abhängigkeiten heißen nicht „pixi" und fielen deshalb in den Zweig darunter — also in den EAGER
+            // geladenen `vendor`-Chunk. Damit lagen ~210 KB roh (@xmldom/xmldom allein ~150 KB, dazu earcut,
+            // tiny-lru, eventemitter3, ismobilejs, parse-svg-path) auf dem kritischen Pfad JEDES Seitenaufrufs,
+            // obwohl Pixi selbst sauber async blieb — die Absicht oben war damit zur Hälfte ausgehebelt.
+            // Alle Namen unten sind laut `npm ls` ausschließlich über pixi.js erreichbar; sie gehören in
+            // denselben async Chunk. Kommt eine Pixi-Version mit neuer Abhängigkeit, gehört sie hierher —
+            // `test/bundle-split.test.js` zieht die Liste aus pixi/package.json und wird sonst rot.
+            if (id.includes("pixi") || PIXI_DEPS.some((d) => id.includes("node_modules/" + d + "/"))) return "pixi";
             return "vendor";
           }
           if (id.includes("/src/game/")) return "game";
