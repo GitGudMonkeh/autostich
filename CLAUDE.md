@@ -1433,6 +1433,21 @@ neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen
     **Score- und Crit-Zeile bleiben ausdrücklich stehen** (Entscheidung des Users: sie entscheiden mit, ob
     man den Skill nimmt), obwohl sie auch im Glossar stehen.
   - Offen/nicht angefasst: Überschlag und Reststrom bekommen denselben Durchgang später.
+  - **Die Karte hat ab 1400 px keine feste Höhe mehr.** Am Handy ist `height: min(92dvh,760px)` richtig (die
+    zentrierte Karte sprang sonst beim Archetyp-Wechsel in Position UND Größe); auf dem Desktop ist sie die
+    Mittelspur eines Rasters, dessen Höhe die höheren Flügel bestimmen — der Kopf steht also fest, und der
+    Rahmen darf am Angebot enden. `max-height` bleibt als Deckel. Gemessen 1600 px: **540 px ohne gehaltene
+    Skills, 673 px mit einem** — der Rahmen wächst also erst ab der zweiten Skill-Runde, statt vorher einen
+    halben Bildschirm Leere zu zeigen.
+  - **Die Haarlinie trägt jetzt die Identitätsfarbe der Phase** (Skill = Fraktion, Perk = Rot) statt des festen
+    Tri-Color-Verlaufs: Rahmen, Überschrift und Balken sagen dasselbe. `PhaseHairline` nimmt dafür einen
+    optionalen `accent` (ein PHASE_ACCENTS-Eintrag) und baut den Verlauf aus dessen `rgb`
+    (halbtransparent → voll → halbtransparent, damit der Balken seine Silhouette behält). **Ohne `accent`
+    bleibt der alte Verlauf** — Legendär, Ziel, Gletscher, Aufstellung und Architekt tragen ihn weiter und
+    sollen sich nicht heimlich mitverändern; sie umzustellen ist je eine Zeile.
+  - **Zurückgenommen**: die Flügelrahmen kurz auf `--deck-border` gestellt und wieder auf den Archetyp-Akzent
+    zurück (Entscheidung des Users: „das ist sogar besser"). Die #356-Regel („neutrale Struktur-Panels tragen
+    den Deck-Rahmen") gilt damit hier bewusst NICHT — die Flügel gehören zur Phase, nicht zum Brett.
 - **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
 - **Gleich mitgezogen (#sprache-Nachzügler)**: `BuildSummary.jsx` und `BuildPanel.jsx` sind jetzt migriert und
   stehen in der `MIGRATED`-Ratsche. Sieben neue Schlüssel (`build.*`). Anlass war die deutsche Fußzeile der

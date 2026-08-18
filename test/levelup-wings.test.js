@@ -130,6 +130,25 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(wings.slice(railAt), "PerkList muss UNTER der StatusRail stehen").toMatch(/<PerkList/);
   });
 
+  it("die Haarlinie trägt die Identitätsfarbe der Phase, nicht mehr den festen Tri-Color-Verlauf", () => {
+    /* Rahmen, Überschrift und Balken sagen jetzt dasselbe. `PhaseHairline` behält den alten Verlauf als
+       Default — die übrigen Phasen (Legendär, Ziel, Gletscher, Aufstellung, Architekt) tragen ihn noch und
+       sollen sich beim Umstellen dieser beiden nicht heimlich mitverändern. */
+    expect(read("src/ui/modalStyle.jsx")).toMatch(/PhaseHairline\(\{ className = "", accent = null \}\)/);
+    expect(read("src/ui/SkillSelect.jsx")).toMatch(/<PhaseHairline accent=\{archAccent\} \/>/);
+    expect(read("src/ui/PerkSelect.jsx")).toMatch(/<PhaseHairline accent=\{PHASE_ACCENTS\.red\} \/>/);
+  });
+
+  it("die Karte hat ab 1400 px KEINE feste Höhe mehr — der Rahmen endet am Inhalt", () => {
+    /* Am Handy ist die feste Höhe richtig (die zentrierte Karte sprang sonst beim Archetyp-Wechsel in
+       Position UND Größe). Ab 1400 px ist die Karte die Mittelspur eines Rasters, dessen Höhe die höheren
+       Flügel bestimmen — der Kopf steht also fest, und der Rahmen darf am Angebot enden statt in der ersten
+       Skill-Runde einen halben Bildschirm Leere zu zeigen. `max-height` bleibt als Deckel. */
+    const skill = read("src/ui/SkillSelect.jsx");
+    expect(skill).toMatch(/height: wide \? undefined : "min\(92dvh, 760px\)"/);
+    expect(skill).toMatch(/maxHeight: wide \? "min\(92dvh, 760px\)" : undefined/);
+  });
+
   it("die Passiv-Beschreibung merkt sich ihren Zustand und startet zu", () => {
     const skill = read("src/ui/SkillSelect.jsx");
     // Kein Komponenten-State mehr: die Skill-Wahl wird je Phase neu gemountet.

@@ -69,7 +69,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
       <LevelupRig accent={PHASE_ACCENTS.red.c} state={state} deck={deck} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
-        <PhaseHairline />
+        <PhaseHairline accent={PHASE_ACCENTS.red} />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>

@@ -99,13 +99,22 @@ export function phasePanel(accent, base = "#141419") {
   };
 }
 
-// Tri-Color-Haarlinie bündig an der oberen Kante der Phasen-Karte. ABSOLUT positioniert (außerhalb des Flusses),
-// damit sie den Kopfinhalt NICHT nach oben zieht — die Karte behält ihr volles oberes Padding. Die Karte muss
-// `relative` sein; die runden Ecken klippen die Linie (overflow-y-auto ⇒ auch x). padX/padY werden nicht mehr
-// gebraucht (die Linie ankert an der Kante, unabhängig vom Padding).
-export function PhaseHairline({ className = "" }) {
+/* Haarlinie bündig an der oberen Kante der Phasen-Karte. ABSOLUT positioniert (außerhalb des Flusses),
+   damit sie den Kopfinhalt NICHT nach oben zieht — die Karte behält ihr volles oberes Padding. Die Karte muss
+   `relative` sein; die runden Ecken klippen die Linie (overflow-y-auto ⇒ auch x).
+
+   `accent` (ein PHASE_ACCENTS-Eintrag) färbt die Linie in die IDENTITÄTSFARBE der Phase, statt den festen
+   Tri-Color-Verlauf zu ziehen: Rahmen, Überschrift und Balken der Karte sagen dann dasselbe. Ohne `accent`
+   bleibt der alte Verlauf — die Phasen, die ihn noch tragen, sollen sich beim Umstellen nicht heimlich
+   mitverändern. Der Verlauf entsteht aus EINER Farbe (halbtransparent → voll → halbtransparent), damit der
+   Balken seine Silhouette behält und nicht zum flachen Strich wird; `rgb` liegt in PHASE_ACCENTS ohnehin
+   bereit, es braucht also keine Farbrechnung zur Laufzeit. */
+export function PhaseHairline({ className = "", accent = null }) {
+  const bg = accent
+    ? `linear-gradient(90deg, rgba(${accent.rgb},.5), rgb(${accent.rgb}), rgba(${accent.rgb},.5))`
+    : PHASE_HAIRLINE_BG;
   return <div aria-hidden="true" className={`absolute top-0 left-0 right-0 z-20 ${className}`}
-    style={{ height: 3, background: PHASE_HAIRLINE_BG, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
+    style={{ height: 3, background: bg, opacity: 0.9, borderTopLeftRadius: "1rem", borderTopRightRadius: "1rem" }} />;
 }
 
 /* #362 — EINHEITLICHE Aktionsleiste (sticky OBEN). EINE Quelle für die Button-Zone aller Panels/Modals: feste

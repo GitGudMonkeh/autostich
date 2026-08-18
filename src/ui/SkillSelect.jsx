@@ -190,9 +190,18 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
             Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
-            bleibt die Karte konstant, nur der Inhalt darunter scrollt. */}
-        <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card" style={{ ...phaseCard(archAccent), height: "min(92dvh, 760px)" }}>
-        <PhaseHairline />
+            bleibt die Karte konstant, nur der Inhalt darunter scrollt.
+
+            AB 1400 px gilt das nicht mehr: dort ist die Karte kein zentriertes Modal, sondern die Mittelspur
+            eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht also fest,
+            egal wie hoch die Karte ist. Der Rahmen darf deshalb am Inhalt enden und erst mitwachsen, wenn
+            gehaltene Skills dazukommen. Bleibt die feste Höhe, steht unter dem Angebot in der ersten
+            Skill-Runde ein halber Bildschirm Leere. `max-height` bleibt als Deckel, der Inhalt scrollt. */}
+        <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card"
+          style={{ ...phaseCard(archAccent),
+                   height: wide ? undefined : "min(92dvh, 760px)",
+                   maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
+        <PhaseHairline accent={archAccent} />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
           <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
