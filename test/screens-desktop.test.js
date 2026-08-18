@@ -87,7 +87,8 @@ describe("#desktop-screens — Bestenliste und Ranked", () => {
 
   it("neben dem Cockpit bleibt die Liste einspaltig", () => {
     // 420 px gehen an das Cockpit — für zwei Spalten Liste bliebe zu wenig.
-    expect(deskBlock).toMatch(/\.lb-page:has\(\.lb-cockpit\) \.lb-rows\s*\{[^}]*grid-auto-flow:\s*row/);
+    // #lb-rahmen: das Cockpit-Raster hängt seit dem Rahmen-Umbau am SCROLLER, nicht mehr am Panel.
+    expect(deskBlock).toMatch(/\.lb-pagescroll:has\(\.lb-cockpit\) \.lb-rows\s*\{[^}]*grid-auto-flow:\s*row/);
   });
 
   it("die Reiter werden zur Navigationsspalte und der Schließen-Knopf behält seinen Platz", () => {
@@ -100,11 +101,14 @@ describe("#desktop-screens — Bestenliste und Ranked", () => {
 describe("#desktop-screens — Victory", () => {
   const jsx = read("ui/GameOver.jsx");
 
-  it("die Aufstellung steht offen und scrollt INNEN", () => {
+  it("die Aufstellung steht offen — Brett und Gebäudeliste NEBENEINANDER", () => {
     expect(jsx).toMatch(/const wide = useIsWide\(\)/);
     expect(jsx).toMatch(/className="go-layout as-ring[^"]*" open=\{wide\}/);
-    // Ventil: das Panel bekommt einen Deckel (die Gebäudeliste unter dem Brett kann lang werden).
-    expect(deskBlock).toMatch(/\.go-layout > div[^{]*\{[^}]*max-height:\s*\d+px[^}]*overflow-y:\s*auto/);
+    /* #go-breit: Der Deckel mit innerem Scroller ist weg — das Panel ist nicht mehr die Summe aus Brett UND
+       Liste, seit die Liste daneben steht. Die zwei Klammern im JSX sind dafür die Voraussetzung. */
+    expect(jsx).toMatch(/className="go-board"/);
+    expect(jsx).toMatch(/className="go-blist/);
+    expect(deskBlock).toMatch(/\.go-layout > div \{[^}]*grid-template-columns:\s*var\(--go-board-w/);
   });
 
   it("Freischaltungen und Skins laufen über die volle Breite", () => {
@@ -126,13 +130,18 @@ describe("#desktop-screens — Victory", () => {
     expect(rule[1]).toMatch(/grid-column:\s*1/);
     // Build und Aufstellung teilen sich als EINZIGE eine Spalte (dort ist das Verschieben gewollt).
     expect(deskBlock).toMatch(/\.go-build\s*\{[^}]*grid-column:\s*3/);
-    expect(deskBlock).toMatch(/\.go-layout\s*\{[^}]*grid-column:\s*3/);
+    // #go-breit: die Aufstellung liegt seit 18.08.2026 UNTER allen dreien, über die volle Breite.
+    expect(deskBlock).toMatch(/\.go-layout \{[^}]*grid-column:\s*1\s*\/\s*-1/);
   });
 
-  it("das Brett steht als Ganzes im Panel (verkleinert, nicht gescrollt)", () => {
-    // `zoom` und nicht `max-width`: die Kartenhöhe hängt am Inhalt, ein schmaleres Raster wurde nur schmaler.
+  it("das Brett steht als Ganzes im Panel — über die SPALTENBREITE, nicht über zoom", () => {
+    /* Die alte Fassung nahm `zoom`, weil „die Kartenhöhe am Inhalt hängt". Das stimmt für diese Kacheln
+       nicht: sie sind ab 640 px quadratisch, die Höhe folgt der Breite (nachgemessen 646/440 = 1,47).
+       Und `zoom` kostete die Gebäude-Kontur: `getBoundingClientRect()` liefert gezoomte Maße, gezeichnet
+       wird im unskalierten System — der Rahmen lag um exakt den Faktor daneben. */
     expect(read("ui/CardGrid.jsx")).toMatch(/className="cg-root relative grid gap-2\.5"/);
-    expect(deskBlock).toMatch(/\.go-layout \.cg-root[^{]*\{[^}]*zoom:/);
+    expect(deskBlock).not.toMatch(/\.go-layout \.cg-root[^{]*\{[^}]*zoom:/);
+    expect(deskBlock).toMatch(/\.go-layout \.cg-root \{[^}]*width:\s*100%/);
   });
 
   it("der Screen steht als zentrierter Block, nicht randverankert", () => {

@@ -381,16 +381,21 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <i className="as-ring-run" aria-hidden="true" />
             <div className="p-3 pt-0">
-              {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
-              {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
-              <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
-                pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
-                architectCover={hasArch && showArch ? architectCover : null}
-                glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
+              {/* #go-breit: Brett und Gebäudeliste stehen ab 1400 px NEBENEINANDER (das Panel läuft dort über
+                  alle drei Spalten). Die zwei Klammern sind dafür da; unterhalb 1400 px sind sie schlichte
+                  Blöcke im Fluss und ändern nichts. */}
+              <div className="go-board">
+                {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
+                {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
+                <CardGrid cards={finalCards} formations={finalForms} roles={state.roles} {...glacierGridProps(state)} anchors={state.shop?.anchors || []}
+                  pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
+                  architectCover={hasArch && showArch ? architectCover : null}
+                  glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
+              </div>
 
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
-                <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                <div className="go-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
                   <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: archBuildings.length })}</div>
                   <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">

@@ -1362,6 +1362,10 @@ button { font-family: inherit; }
    Die Flügel und die Griffe darin werden dort ohnehin nicht gerendert (`useIsWide`-Gate). */
 .lv-rig { display: contents; }
 
+/* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1400 px keine Box,
+   dort scrollt weiter das Panel selbst. */
+.lb-pagescroll { display: contents; }
+
 /* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
    im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
@@ -3148,12 +3152,16 @@ button { font-family: inherit; }
     align-items: start;
     min-height: 0;
   }
+  /* #lb-rahmen: Die zwei Panels klebten an der Haarlinie unter dem Kopf — als einzige des Desktop-Passes.
+     22 px ist der Wert, mit dem `.st-sec`, `.up-*` und die Lauf-Details ihre Panels absetzen. */
+  .lb-tabs, .lb-page { margin-top: 22px !important; }
   .lb-tabs {
     grid-column: 1; grid-row: 3;
     flex-direction: column;
     gap: 8px !important;
     margin-bottom: 0 !important;
     padding: 13px 12px;
+    align-self: start;   /* die Spalte endet an ihrem letzten Reiter, wie `.up-nav` */
   }
   /* Aus dem Reiter wird die Navigationszeile des Baums (`.up-navrow`) — dieselbe Form, damit die Screens
      dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
@@ -3187,6 +3195,20 @@ button { font-family: inherit; }
     padding: 16px 18px !important;
     min-height: 0;
     align-self: stretch;
+    /* Rahmen an die Box, Scrollen nach INNEN — sonst wandert die Ringkante (`inset: 0`) beim Scrollen mitten
+       durch die Liste. Dieselbe Naht wie `.up-page`/`.up-vgrid` und `.cz-main`/`.cz-mainscroll`. */
+    overflow: hidden !important;
+    display: flex; flex-direction: column;
+  }
+  .lb-pagescroll { display: block; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  /* Das Spaltenraster der Top-20-Liste und das Ranked-Cockpit hängen am Panel — sie sitzen jetzt eine
+     Ebene tiefer, im Scroller. */
+  .lb-pagescroll:has(.lb-cockpit) {
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: start;
+    align-content: start;
   }
   /* Top 20 als ZWEI Spalten à 10. Einzeilig wären es zwanzig 1 300 px breite Zeilen mit einem Loch in der
      Mitte. Spaltenweise gefüllt (1–10 links, 11–20 rechts), damit die Rangfolge senkrecht lesbar bleibt.
@@ -3199,18 +3221,11 @@ button { font-family: inherit; }
     gap: 8px 22px;
   }
   /* Ranked: Cockpit (Seed · Spielen · Modifikatoren) als eigene Spalte NEBEN der Liste. */
-  .lb-page:has(.lb-cockpit) {
-    display: grid;
-    grid-template-columns: 420px minmax(0, 1fr);
-    column-gap: 22px;
-    align-items: start;
-    align-content: start;
-  }
-  .lb-page:has(.lb-cockpit) > .lb-weekhead { grid-column: 1 / -1; }
+  .lb-pagescroll:has(.lb-cockpit) > .lb-weekhead { grid-column: 1 / -1; }
   .lb-cockpit { display: block; grid-column: 1; }
-  .lb-page:has(.lb-cockpit) > .gl-wrap { grid-column: 2; margin-top: 0 !important; }
+  .lb-pagescroll:has(.lb-cockpit) > .gl-wrap { grid-column: 2; margin-top: 0 !important; }
   /* Neben dem Cockpit steht die Liste EINSPALTIG — 420 px sind weg, für zwei Spalten bliebe zu wenig. */
-  .lb-page:has(.lb-cockpit) .lb-rows { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; }
+  .lb-pagescroll:has(.lb-cockpit) .lb-rows { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; }
   .lb-modlist { grid-template-columns: minmax(0, 1fr); }
 
   /* ---- Regeln: links positiv, rechts negativ — und deutlich größer -------
@@ -3249,8 +3264,11 @@ button { font-family: inherit; }
      Daten, die ein gespeicherter Lauf trägt (kein Punkteverlauf, kein Verdienst). */
   .rd-root {
     padding: 16px 48px 18px !important;
-    /* KEIN Überzugs-Wert hier: die Detailansicht liegt über der Statistik/Bestenliste, nicht über dem Hub —
-       ihr Grund ist deshalb deckend (inline `#0c0c10`) und bleibt es. Nur der Blur fällt (#perf-blur). */
+    /* #ueberzug: derselbe Wert wie an allen anderen Overlays (94 %). Er stand hier bis 18.08.2026 deckend,
+       mit der Begründung, die Detailansicht liege über der Statistik statt über dem Hub — am Gerät las sich
+       genau das als „schwarzer Kasten", während jeder Nachbar-Screen leicht durchscheint. Der Blur fällt
+       weiter weg (#perf-blur); `!important`, weil der Grund inline am Wurzelknoten steht. */
+    background: rgba(12, 12, 16, .94) !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
     /* Der Screen MUSS scrollen können. Die Karte scrollte auf dem Handy in sich; auf dem Desktop hat sie
        das abgegeben (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte
@@ -3400,7 +3418,30 @@ button { font-family: inherit; }
   .go-col1   { display: block; grid-column: 1; grid-row: 5; }
   .go-stats  { grid-column: 2; grid-row: 5; }
   .go-build  { grid-column: 3; grid-row: 5; }
-  .go-layout { grid-column: 3; grid-row: 6; }
+  /* #go-breit (18.08.2026): Die Aufstellung läuft über ALLE DREI Spalten statt allein in der dritten.
+     Vorher stand sie unter dem Build in Spalte 3 — und weil sie mit Abstand das höchste Panel des Screens
+     ist (gemessen 597 px gegen 317/329 der Nachbarn), klaffte links daneben ein Loch von rund 620 px, durch
+     das der Hauptschirm schien. Über die volle Breite gibt es dieses Loch nicht mehr, und der frei gewordene
+     Platz trägt die Gebäudeliste: Brett links, Liste rechts daneben statt darunter.
+     Die zwei kürzeren Panels der Zeile darüber werden auf die Höhe der Spalte gezogen — ein Panel mit etwas
+     Luft am Fuß ist eine Fläche, ein Loch ist keine. */
+  .go-layout { grid-column: 1 / -1; grid-row: 6; }
+  .go-stats, .go-build { align-self: stretch; }
+  .go-layout > div {
+    display: grid;
+    grid-template-columns: var(--go-board-w, 440px) minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: start;
+  }
+  .go-board { grid-column: 1; }
+  .go-blist { grid-column: 2; margin-top: 0 !important; }
+  /* Die Gebäude stehen in der breiten Spalte NEBENEINANDER statt untereinander — drei Einzeiler in einer
+     1 200 px breiten Spalte lesen sich sonst als drei fast leere Zeilen. */
+  .go-blist > .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  /* Ohne Gebäude gibt es keine zweite Spalte: das Brett stünde sonst links an einem 1 200 px breiten
+     Nichts. Dann EINE Spur, Brett mittig. */
+  .go-layout > div:not(:has(.go-blist)) { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .go-layout > div:not(:has(.go-blist)) .go-board { width: var(--go-board-w, 440px); }
   /* Das Onboarding-Banner liegt seit #316 auf totem Zweig (jedes Profil startet fertig); es steht in der
      linken Klammer und wäre dort ein Panel in Spalte 1 statt über die volle Breite. */
   /* Die Aufstellung steht offen (`open={wide}` im JSX): zugeklappt war sie, weil der Screen als schmale Karte
@@ -3418,12 +3459,18 @@ button { font-family: inherit; }
      statt zwei), so wie es der Upgrade-Baum dort auch tut. */
   /* Das BRETT steht vollständig im Panel (dafür der Breiten-Deckel darunter). Was darunter noch kommt — die
      Gebäudeliste — darf scrollen; ohne Deckel wäre die Spalte 940 px hoch und der ganze Screen scrollte. */
-  .go-layout > div { max-height: 530px; overflow-y: auto; }
+  /* Kein Deckel und kein innerer Scroller mehr: seit #go-breit steht die Gebäudeliste NEBEN dem Brett statt
+     darunter, das Panel ist also nicht mehr die Summe aus beiden. */
   /* `zoom`, nicht `max-width`: die Kartenhöhe hängt am INHALT (Zahl + Fähnchen), nicht an der Breite —
      ein schmaleres Raster wurde nur schmaler, nicht flacher (nachgemessen: 454 px hoch bei 513 wie bei 300).
      `zoom` skaliert das ganze Koordinatensystem samt der absolut liegenden Gebäude-Kontur und verkleinert
      dabei auch die Layout-Box, anders als `transform` (dieselbe Begründung wie am Hub, s. `.hub-pair`). */
-  .go-layout .cg-root { width: 430px; zoom: .72; }
+  /* KEIN `zoom` — derselbe Fehler wie in den Lauf-Details (dort steht die ausführliche Begründung): die
+     Gebäude-Kontur ist ein SVG, dessen Koordinaten per `getBoundingClientRect()` gemessen werden, und der
+     Rückgabewert ist bereits zoom-skaliert. Gemessen am Siegesbildschirm: Brett 310 × 454, Kontur 223 × 327
+     — Verhältnis 0,72, also exakt der Zoomfaktor. Der Hebel für die Größe ist stattdessen `--go-board-w`;
+     die Kachelhöhe folgt der Breite (`sm:aspect-square`, Verhältnis 1,47). */
+  .go-layout .cg-root { width: 100%; }
   /* KEIN `zoom` in den Lauf-Details — und das ist ein Fehler, kein Geschmack: die Gebäude-Kontur ist ein SVG,
      dessen Koordinaten `CardGrid` per `getBoundingClientRect()` misst. Der Rückgabewert ist bereits
      zoom-skaliert, gezeichnet wird aber im UNskalierten Koordinatensystem → der Rahmen lag um exakt den
@@ -3582,7 +3629,8 @@ button { font-family: inherit; }
   /* Flaches Fenster: das Brett wird KLEINER statt zu scrollen — 40 Karten sind acht Reihen, und die
      Übersicht ist der Zweck des Panels. Bei 260 px Rasterbreite ist eine Karte ~48 px breit; die Zahl bleibt
      lesbar, die Multiplikator-Fähnchen werden klein. */
-  .go-layout .cg-root { width: 430px; zoom: .62; }
+  /* Flaches Fenster: das Brett wird über die SPALTENBREITE kleiner, nicht über `zoom` (s. oben). */
+  .go-layout > div { --go-board-w: 360px; }
   /* Lauf-Details: weiter ohne `zoom` (Begründung oben) — auf flachen Fenstern scrollt stattdessen der Screen,
      genau wie es der Upgrade-Baum dort tut. Ein Brett mit versetzter Gebäude-Kontur ist kein Gegenwert für
      einen gesparten Scrollbalken. */

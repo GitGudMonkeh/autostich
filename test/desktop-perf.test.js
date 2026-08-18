@@ -192,3 +192,48 @@ describe("#kpi-kacheln — die Kennzahlen der Statistik sind Panels, keine Käst
     expect(kpi[1]).not.toMatch(/--deck-a[12]|--c\b/);
   });
 });
+
+describe("#go-breit — der Siegesbildschirm hat kein Loch mehr, und das Brett keinen Zoom", () => {
+  it("die Aufstellung läuft über alle drei Spalten, Brett und Liste nebeneinander", () => {
+    /* Gemessen (2048 x 1071, echter Produktionspfad): die Aufstellung war 597 px hoch, ihre beiden Nachbarn
+       317 und 329 — links daneben klaffte ein Loch von rund 620 px, durch das der Hauptschirm schien. */
+    expect(css).toMatch(/\.go-layout \{[^}]*grid-column:\s*1\s*\/\s*-1/);
+    expect(css).toMatch(/\.go-layout > div \{[^}]*grid-template-columns:\s*var\(--go-board-w/);
+    expect(css).toMatch(/\.go-board \{[^}]*grid-column:\s*1/);
+    expect(css).toMatch(/\.go-blist \{[^}]*grid-column:\s*2/);
+    // Ohne Gebäude gibt es keine zweite Spur — sonst steht das Brett an einem 1200-px-Nichts.
+    expect(css).toMatch(/\.go-layout > div:not\(:has\(\.go-blist\)\)/);
+    // Die zwei kürzeren Panels der Zeile darüber werden gezogen: ein Panel mit Luft am Fuß ist kein Loch.
+    expect(css).toMatch(/\.go-stats, \.go-build \{[^}]*align-self:\s*stretch/);
+  });
+
+  it("KEIN zoom am Brett — in keinem der beiden Screens", () => {
+    /* Der Zoom skaliert das Koordinatensystem, `getBoundingClientRect()` liefert die gezoomten Masse, und
+       die Gebaeude-Kontur wird im UNskalierten System gezeichnet: sie sass um exakt den Faktor daneben
+       (gemessen 310x454 gegen 223x327 = 0,72). Der Hebel fuer die Groesse ist die BREITE. */
+    expect(css).not.toMatch(/\.go-layout \.cg-root \{[^}]*zoom/);
+    expect(css).not.toMatch(/\.rd-c3 \.cg-root \{[^}]*zoom:\s*\.\d/);
+  });
+});
+
+describe("#lb-rahmen — die Bestenliste steht wie die anderen Screens im Bild", () => {
+  it("beide Panels tragen den Ring und setzen sich von der Haarlinie ab", () => {
+    expect(css).toMatch(/\.lb-tabs, \.lb-page \{[^}]*margin-top:\s*22px/);
+    const jsx = src("ui/LeaderboardScreen.jsx");
+    expect(jsx).toMatch(/lb-tabs as-ring/);
+    expect(jsx).toMatch(/lb-page as-ring/);
+  });
+
+  it("Rahmen aussen, Scroller innen — sonst laeuft die Ringkante durch die Liste", () => {
+    expect(css).toMatch(/\.lb-page \{[^}]*overflow:\s*hidden/);
+    expect(css).toMatch(/\.lb-pagescroll \{[^}]*overflow-y:\s*auto/);
+    // Unter 1400 px ist der Wrapper keine Box — dort scrollt weiter das Panel selbst.
+    expect(css).toMatch(/^\.lb-pagescroll \{ display: contents; \}/m);
+  });
+});
+
+describe("#ueberzug — alle Overlays liegen gleich stark auf dem Hauptschirm", () => {
+  it("auch die Lauf-Details, sie waren als einzige deckend", () => {
+    expect(css).toMatch(/\.rd-root \{[^}]*background:\s*rgba\(12,\s*12,\s*16,\s*\.94\)/);
+  });
+});

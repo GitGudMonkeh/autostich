@@ -200,7 +200,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
           {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
           {/* #desktop: Ab 1400 px wird aus der Reiterzeile eine Navigationsspalte (wie im Upgrade-Baum) —
               dieselben Knöpfe, dieselbe Reihenfolge, nur untereinander und mit Zweitzeile. */}
-          <div className="lb-tabs flex gap-1.5 mb-4 shrink-0" role="tablist">
+          <div className="lb-tabs as-ring flex gap-1.5 mb-4 shrink-0" role="tablist">
+            <i className="as-ring-run" aria-hidden="true" />
             {TABS.map(({ id, labelKey, subKey, accent, icon }) => {
               const on = tab === id;
               return (
@@ -221,7 +222,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
             })}
           </div>
 
-          <div className="lb-page rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+          {/* #lb-rahmen: Panel wie im Upgrade-Baum (`.up-page`) — Ring aussen, Scroller INNEN. Läge beides am
+              selben Element, liefe die untere Ringkante beim Scrollen mitten durch die Liste (der Rahmen sitzt
+              mit `inset: 0` im Inhaltsfluss). Der Wächter zählt die Klassennamen im Quelltext — deshalb steht
+              hier keiner ausgeschrieben. Unterhalb 1400 px ist der Scroll-Wrapper `display: contents`, dort
+              scrollt weiter das Panel selbst — die Handy-Fassung bleibt unverändert. */}
+          <div className="lb-page as-ring rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+            <i className="as-ring-run" aria-hidden="true" />
+            <div className="lb-pagescroll">
             {/* #global Allzeit-Board: alle CASUAL-Läufe (die Abfrage filtert Ranglisten-Zeilen weg), Baum-Pille an.
                 Kein `board`-Prop → fetchGlobalTop statt fetchBoardTop. */}
             {tab === "global" && (
@@ -282,6 +290,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
             {tab === "champions" && <ChampionsList reloadToken={reloadToken} username={username} onChampionWeeks={onChampionWeeks} />}
 
             {tab === "regeln" && <RegelnPanel />}
+            </div>
           </div>
         </div>
       </div>
