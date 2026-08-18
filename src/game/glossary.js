@@ -203,7 +203,7 @@ export const GLOSSARY = {
     text: `Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills kommen ausschließlich aus der Legendär-Phase (Durchlauf ${C.LEG_PHASE_CYCLE}) — welche Archetypen dort antreten, entscheidet der Upgrade-Baum.`,
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, sonst wäre er verschwendet. Feuer (Weißglut) zahlt daraus einen kleinen generischen Direkt-Score; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
+    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet — Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 % —, sonst wäre er verschwendet. Feuer (Weißglut) staut ihn als Überhitzung auf; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
     match: ["Überlauf", "Überlauf-Wachstum"] },
   bekenntnis: { category: "frak", group: "gen", label: "Bekenntnis", icon: "✦", color: CLR.lightning,
     text: "Wie stark du dich einem Archetyp verschrieben hast: der Anteil deiner Skill-Slots, den seine Skills belegen. Viele Effekte — vor allem Legendäre — zahlen anteilig danach, voll erst bei reinem Deck.",
@@ -225,8 +225,8 @@ export const GLOSSARY = {
   // Zwei getrennte Überlauf-Pfade, die früher beide „Weißglut" hießen (Sprachprüfung B1): HITZE über 100 %
   // (Skill Weißglut) und ASCHE über die Schmiede-Kapazität (Ascheglut). Ein Wort = eine Bedeutung.
   whiteheat: { category: "frak", group: "fire", label: "Weißglut", icon: "🔥", color: CLR.fire,
-    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, wird jeder weitere Hitzegewinn sofort zu Score (+${C.WHITEHEAT_PER_POINT} Score je überlaufendem Hitzepunkt). Braucht den Skill Weißglut.`,
-    match: ["Weißglut"] },
+    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, staut sich jeder weitere Hitzegewinn als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %) — je heißer, desto weniger davon kommt an. Jeder Punkt Überhitzung gibt +${Math.round(C.OVERHEAT_SCORE_STEP * 100)} % auf deinen gesamten Feuer-Score und baut sich je Stich wieder ab. Braucht den Skill Weißglut.`,
+    match: ["Weißglut", "Überhitzung"] },
   ashglow: { category: "frak", group: "fire", label: "Ascheglut", icon: "🔥", color: CLR.fire,
     text: `Der Asche-Überlauf: Ist die Schmiede-Kapazität voll, wird restliche Asche am Durchlauf-Ende in Score-Häppchen verbrannt (+${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche) — Asche wird so jeden Durchlauf vollständig ausgegeben, kein toter Haufen mehr.`,
     match: ["Ascheglut"] },

@@ -1,5 +1,6 @@
-import { fireFlag, hasHeatConsumer, glowingValueFor } from "../game/skills.js";
-import { GLOWING_T1_HEAT, GLOWING_T2_HEAT, WHITEHEAT_PER_POINT } from "../game/constants.js";
+import { fireFlag, hasHeatConsumer, glowingValueFor, glowMarginFor } from "../game/skills.js";
+import { GLOWING_T1_HEAT, GLOWING_T2_HEAT, GLOWING_T3_HEAT, GLOWING_T1_VALUE, GLOWING_T2_VALUE, GLOWING_T3_VALUE,
+  GLOWING_T2_MARGIN, GLOWING_T3_MARGIN, OVERHEAT_MAX, OVERHEAT_SCORE_STEP, SPARKFLIGHT_MIN_MARGIN } from "../game/constants.js";
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -43,17 +44,21 @@ const grp = (n) => fmtNum(Math.round(n));
 export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0, options = {}, onOption, manyActive = false }) {
   if (!heat || !heat.active) return null;
   const { value, max } = heat;
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  // Weißglut (#fire-balance): die Hitze über 100 % staut sich als ÜBERHITZUNG in `heat.over` (eigener Sub-Akku, s.
+  // constants.js). Die Leiste wächst deshalb auf 0–150 %, sobald der Skill gehalten wird — mit heller Marke bei 100.
+  const whiteHeat = fireFlag(skills, "whiteHeat");
+  const over = whiteHeat ? Math.max(0, heat.over || 0) : 0;
+  const scale = whiteHeat ? max + OVERHEAT_MAX : max;   // Bezugsgröße ALLER Leisten-Geometrie (Füllung, Schwellenstriche)
+  const pct = Math.max(0, Math.min(100, (value / scale) * 100));
+  const overPct = Math.max(0, Math.min(100, (over / scale) * 100));
   const hot = value >= 50;                         // Glühende-Klinge-Schwelle
   // #234: Feuer darf mehrere Hitze-Konsumenten halten → je Typ prüfen (nicht nur den ersten).
   const conflagReady = hasHeatConsumer(skills, "conflagration") && value >= 100;
-  // #219.5: Glühende Klinge markiert die ECHTEN Schwellen (40/70/100; 100 = Leisten-Ende) statt fälschlich 50 %.
+  // #219.5: Glühende Klinge markiert die ECHTEN Schwellen (40/70/100; 100 = volle Hitze) statt fälschlich 50 %.
   const glow = fireFlag(skills, "glowingBlade");
-  // Weißglut (#206 §3): bei voller Hitze läuft der Überschuss als Score über (heat bei max gedeckelt) →
-  // Schwellenzustand. Weiße Kappe am heißen Ende, sobald der Skill gehalten wird; „ausbrennend" bei max.
-  const whiteHeat = fireFlag(skills, "whiteHeat");
   const atMax = value >= max;
-  const whiteGlow = whiteHeat && atMax;
+  const whiteGlow = whiteHeat && (atMax || over > 0);
+  const overBonus = Math.round(over * OVERHEAT_SCORE_STEP * 100); // % Feuer-Score aus der Überhitzung (Ablesung)
 
   // Asche / Schmieden (#206 §1/§2): Sekundär-Akkus rechts neben der Leiste (Entscheidung A).
   const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
@@ -68,19 +73,32 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   }
   // #219.5: Glühende Klinge als fixes, immer sichtbares Readout (Bonus 0/+1/+2/+3 je nach Hitze) — wie Feuerwalze.
   if (glow) {
-    const gv = glowingValueFor(value, skills);
-    badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0 });
+    // #fire-balance: die oberen Stufen hängen zusätzlich am Segment-Fenster (glowMarginFor) — das Abzeichen muss es
+    // mitlesen, sonst zeigte es +3, wo im Stich nur +1 wirkt.
+    const gv = glowingValueFor(value, skills, glowMarginFor(heat));
+    badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0,
+      title: t("bar.fire.badge.glow.title", { v1: GLOWING_T1_VALUE, h1: GLOWING_T1_HEAT, v2: GLOWING_T2_VALUE, h2: GLOWING_T2_HEAT,
+                                              m2: GLOWING_T2_MARGIN, v3: GLOWING_T3_VALUE, h3: GLOWING_T3_HEAT, m3: GLOWING_T3_MARGIN }) });
+  }
+  // #fire-balance: Funkenflug war die einzige Feuer-Mechanik ohne jede Anzeige — man sah nie, wie viel im Speicher
+  // liegt und wann er ausschüttet. Dasselbe feste Readout wie Feuerwalze/Glühende Klinge.
+  if (fireFlag(skills, "sparkflight")) {
+    const st = Math.round(heat.sparkStore || 0);
+    badges.push({ k: "ff", t: st > 0 ? t("bar.fire.badge.spark.n", { n: grp(st) }) : t("bar.fire.badge.spark"), c: WHITE_HEAT, dim: st === 0,
+      title: t("bar.fire.badge.spark.title", { m: SPARKFLIGHT_MIN_MARGIN }) });
   }
 
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacFire ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacFire: !collapsed });
-  const stateText = conflagReady ? t("bar.fire.state.conflag") : whiteGlow ? t("bar.fire.state.white")
+  const stateText = conflagReady ? t("bar.fire.state.conflag")
+    : over > 0 ? t("bar.fire.state.over", { n: overBonus })
+    : whiteGlow ? t("bar.fire.state.white")
     : t("bar.fire.state.heat", { value: Math.round(value), max });
   const stateOn = conflagReady || whiteGlow || hot;
 
   // #deckshop: Feuer-Glut wandert vom Battlefield ins eigene Panel — warme Innen-Aura, Deckkraft = Hitze; Puls nahe voll.
-  const heatRatio = Math.max(0, Math.min(1, value / max));
+  const heatRatio = Math.max(0, Math.min(1, (value + over) / max));
   const ambient = heatRatio > 0.02
     ? `inset 0 -22px 48px -14px rgba(224,113,74,${(0.55 * heatRatio).toFixed(2)}), inset 0 0 34px rgba(240,168,58,${(0.14 * heatRatio).toFixed(2)})`
     : null;
@@ -94,8 +112,8 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           Schmiede-Kapazität); deshalb heißt er neutral „Überlauf" und nicht nach einem der beiden (Sprachprüfung B1). */}
       <div className="mb-2">
         <YieldMeter title={t("bar.fire.yield")} accent={HOT} channels={[
-          { label: "Feuer-Score", value: fireBase, color: FIRE_HOT },
-          { label: "Überlauf", value: fireWhite, color: WHITE_HEAT, hint: "Weißglut (Hitze über 100 %) + Ascheglut (Asche über die Schmiede-Kapazität)" },
+          { label: t("bar.fire.yield.base"), value: fireBase, color: FIRE_HOT },
+          { label: t("bar.fire.yield.over"), value: fireWhite, color: WHITE_HEAT, hint: t("bar.fire.yield.over.hint") },
         ]} />
         {ashBurned > 0 && (
           <div className="text-[10px] opacity-55 mt-1">{t("bar.fire.ashBurned")} <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">{t("bar.fire.overRun")}</span></div>
@@ -109,7 +127,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
               {conflagReady && <span style={{ color: HOT }}>{t("bar.fire.conflagReady")}</span>}
               {whiteGlow && <span style={{ color: WHITE_HEAT }}>{t("bar.fire.whiteGlow")}</span>}
             </span>
-            <span className="font-bold" style={{ color: whiteGlow ? WHITE_HEAT : hot ? HOT : FIRE }}>{Math.round(value)} / {max}</span>
+            <span className="font-bold" style={{ color: whiteGlow ? WHITE_HEAT : hot ? HOT : FIRE }}>{Math.round(value + over)} / {scale}</span>
           </div>
           <div className="relative rounded-sm overflow-hidden" style={{ height: 12, background: "#26262e" }}>
             <div className="absolute inset-y-0 left-0 transition-all"
@@ -117,23 +135,26 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
                        background: hot ? `linear-gradient(90deg, ${FIRE}, ${HOT})` : FIRE,
                        boxShadow: conflagReady ? `0 0 8px ${HOT}` : hot ? `0 0 6px ${FIRE}88` : undefined }} />
             {glow && [GLOWING_T1_HEAT, GLOWING_T2_HEAT].map((t) => (
-              <div key={t} className="absolute inset-y-0" style={{ left: `${(t / max) * 100}%`, width: 2, background: "#ffffff55" }}
+              <div key={t} className="absolute inset-y-0" style={{ left: `${(t / scale) * 100}%`, width: 2, background: "#ffffff55" }}
                 title={tr("bar.fire.tick.glow", { n: t })} />
             ))}
-            {/* Weißglut-Kappe am heißen Ende — „brennt weiß aus" bei voller Hitze (kein Zähler, s. o.). */}
-            {whiteHeat && (
-              <div className="absolute inset-y-0 right-0 transition-all"
-                style={{ width: atMax ? 7 : 5,
-                         background: `linear-gradient(90deg, transparent, ${WHITE_HEAT})`,
-                         opacity: atMax ? 1 : 0.45,
-                         boxShadow: atMax ? `0 0 9px ${WHITE_HEAT}, 0 0 4px #ffffff` : undefined }}
-                title={t("bar.fire.tick.white", { n: WHITEHEAT_PER_POINT })} />
-            )}
+            {/* #fire-balance: Überhitzungszone — eigenes Segment RECHTS der 100-%-Marke, damit sichtbar bleibt, dass
+                sie ein zweiter Akku ist und nicht mehr Hitze (alles unter 100 % liest weiter `value`, s. constants.js).
+                Die Marke steht auch bei leerer Zone, sonst wüsste man nicht, wo die normale Leiste endet. */}
+            {whiteHeat && (<>
+              <div className="absolute inset-y-0 transition-all"
+                style={{ left: `${(max / scale) * 100}%`, width: `${overPct}%`,
+                         background: `linear-gradient(90deg, ${HOT}, ${WHITE_HEAT})`,
+                         boxShadow: over > 0 ? `0 0 9px ${WHITE_HEAT}, 0 0 4px #ffffff` : undefined }}
+                title={t("bar.fire.tick.white", { n: Math.round(OVERHEAT_SCORE_STEP * 100), max: max + OVERHEAT_MAX })} />
+              <div className="absolute inset-y-0" style={{ left: `${(max / scale) * 100}%`, width: 2, background: `${WHITE_HEAT}99` }}
+                title={tr("bar.fire.tick.full")} />
+            </>)}
           </div>
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {badges.map((b) => (
-                <span key={b.k} className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                <span key={b.k} className="text-[10px] px-1.5 py-0.5 rounded font-semibold" title={b.title}
                   style={{ background: `${b.c}${b.dim ? "14" : "22"}`, color: b.c,
                            border: `1px solid ${b.c}${b.dim ? "3a" : "66"}`, opacity: b.dim ? 0.55 : 1 }}>{b.t}</span>
               ))}

@@ -127,21 +127,21 @@ export const SKILL_DEFS = {
     desc: `Nach einer Niederlage gibt der nächste Sieg +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % Hitze je Punkt Wert-Rückstand und der Siegkarte +${C.RUECKZUENDUNG_VALUE} Stichwert.`, rueckzuendung: true },
   // Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %.`, glowingBlade: true },
+    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} % Hitze. +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} % und +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} % musst du dir je Segment einmal verdienen — mit einem Sieg über ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Wertvorsprung. Bleibt ein Segment ohne solchen Stich, fällst du zurück.`, glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"],
-    desc: `Bei voller Hitze wird jeder weitere Hitzegewinn zu Score: +${C.WHITEHEAT_PER_POINT} Score je überlaufendem Hitzepunkt.`, whiteHeat: true },
+    desc: `Bei voller Hitze verfällt der Überschuss nicht mehr, sondern staut sich als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %) — je heißer, desto weniger kommt davon an. Jeder Punkt Überhitzung gibt +${pct(C.OVERHEAT_SCORE_STEP)} % auf deinen gesamten Feuer-Score. Sie baut sich je Stich um ${C.OVERHEAT_DECAY} ab (${C.OVERHEAT_DECAY_LOSS} bei Niederlage), wenn du sie nicht fütterst.`, whiteHeat: true },
   // Linie 4 — Wert-/Score-Motoren
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
     desc: `Ab ${C.FIREROLL_MIN_HEAT} % Hitze gibt jeder Sieg in Folge der nächsten Karte +1 Stichwert (steigend bis +${C.FIREROLL_MAX}); eine Niederlage setzt zurück.`, fireRoll: true },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
     desc: `Großer Wertvorsprung gibt mehr Feuer-Score: ×${de(C.VERBRENNUNG_T1_MULT)} ab ${C.VERBRENNUNG_T1_MARGIN}, ×${de(C.VERBRENNUNG_T2_MULT)} ab ${C.VERBRENNUNG_T2_MARGIN} Wertvorsprung.`, verbrennung: true },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Wertvorsprung legt seinen Feuer-Score in einen Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet den Speicher aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
+    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Wertvorsprung legt das ${de(C.SPARKFLIGHT_BANK_MULT)}-fache seines Feuer-Scores plus ${C.SPARKFLIGHT_FLOOR_BASE} (+${C.SPARKFLIGHT_FLOOR_PER_SKILL} je weiterem Feuer-Skill) in einen Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet ihn aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
   // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze verbrennt der nächste Sieg deine ganze Hitze für +${C.CONFLAG_PER_HEAT} Score je Hitzepunkt (voll ≈ +${grp(C.CONFLAG_PER_HEAT * C.HEAT_MAX)}).`, heatConsumer: "conflagration" },
+    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze brennt der nächste Sieg deine Hitze bis auf ${C.CONFLAG_KEEP} % herunter: +${C.CONFLAG_PER_HEAT} Score je verbranntem Hitzepunkt, +${C.CONFLAG_PER_SKILL} je weiterem Feuer-Skill (voll ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * C.CONFLAG_PER_HEAT)}).`, heatConsumer: "conflagration" },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Vor jedem Stich −${C.MELT_COST} % Hitze; bei Sieg +${C.MELT_COST * C.MELT_PER_HEAT} Score.`, heatConsumer: "melt" },
+    desc: `Vor jedem Stich −${C.MELT_COST} % Hitze; bei Sieg ${C.MELT_SCORE_BASE} Score je verbranntem Punkt, +${de(C.MELT_SCORE_PER_HEAT)} je Prozent Hitze, die du dabei hältst (bei voller Leiste ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} Score).`, heatConsumer: "melt" },
   // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand", "ash"],
     desc: `Jeder Sieg brandmarkt eine Gegnerkarte (−${C.BRAND_VALUE} Wert) und gibt +${C.BRAND_ASH} Asche.`, brandmal: true },
@@ -341,8 +341,12 @@ export function initLightning() {
 
 // Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
 // fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
+// over = Überhitzung (Weißglut, #fire-balance) · glowSegBest/glowPrevBest = größter Wertvorsprung im LAUFENDEN bzw.
+// im vorigen Segment, gelesen von der Glühenden Klinge (s. glowMarginFor). Alle drei sind über `|| 0` abgesichert —
+// Altstände ohne die Felder laufen weiter.
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0 };
+  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0,
+           over: 0, glowSegBest: 0, glowPrevBest: 0 };
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
@@ -411,20 +415,53 @@ export function fireScoreFor(margin, skills, _heatValue = 0) {
   if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
   return Math.round(s);
 }
-// Glühende-Klinge-Wertbonus nach Hitze (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
-export function glowingValueFor(heatValue, skills) {
+// Maßgeblicher Wertvorsprung für die Glühende Klinge: der größte Sieg des LAUFENDEN oder des VORIGEN Segments.
+// Damit ist die Stufe je Segment EINMAL zu verdienen und hält dann durch — ein einzelner knapper Sieg oder eine
+// Niederlage stuft nicht sofort zurück (das wäre im Spielfluss nicht lesbar). Erst ein ganzes Segment ohne
+// passenden Stich lässt sie fallen: beim Segmentwechsel rückt `glowSegBest` auf `glowPrevBest` und beginnt bei 0.
+export const glowMarginFor = (heat) => Math.max(heat?.glowSegBest || 0, heat?.glowPrevBest || 0);
+
+// Glühende-Klinge-Wertbonus (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
+// #fire-balance: Stufe 1 hängt allein an der Hitze (verlässlicher Sockel), die OBEREN zusätzlich am Wertvorsprung —
+// sonst lag mit Feuerwalze dauerhaft +6 Wert auf jeder Karte und blies genau die Margen auf, aus denen die Hitze
+// kommt. `bestMargin` kommt aus glowMarginFor (Segment-Fenster). Voreinstellung Infinity = „kein Margen-Gate"
+// (Anzeige-/Testaufrufer ohne Kontext).
+export function glowingValueFor(heatValue, skills, bestMargin = Infinity) {
   if (!fireFlag(skills, "glowingBlade")) return 0;
   let v = 0;
   if (heatValue >= C.GLOWING_T1_HEAT) v = C.GLOWING_T1_VALUE;
-  if (heatValue >= C.GLOWING_T2_HEAT) v = C.GLOWING_T2_VALUE;
-  if (heatValue >= C.GLOWING_T3_HEAT) v = C.GLOWING_T3_VALUE;
+  if (heatValue >= C.GLOWING_T2_HEAT && bestMargin >= C.GLOWING_T2_MARGIN) v = C.GLOWING_T2_VALUE;
+  if (heatValue >= C.GLOWING_T3_HEAT && bestMargin >= C.GLOWING_T3_MARGIN) v = C.GLOWING_T3_VALUE;
   return v;
 }
-// Weißglut-Score aus Hitze-Überlauf: überlaufende Punkte × 10. Reiner Nicht-Legendär-Skill.
-export function whiteHeatScore(overflow, skills, _heatValue = 0) {
-  if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return 0;
-  return overflow * C.WHITEHEAT_PER_POINT;
+
+/* Weißglut → ÜBERHITZUNG (#fire-balance). Drei reine Helfer; die Zone liegt in `heat.over` und ist damit von
+   allem isoliert, was `heat.value` liest (Sonnenzorn-Peak, Glutdividende, Glühende Klinge, Flächenbrand). */
+// Zufluss aus dem Hitze-Überlauf, mit STEIGENDEN Kosten: ankommend = Überlauf / (1 + over/K). Bei 0 kommt alles an,
+// bei 30 noch ein Viertel — tiefe Überhitzung verlangt echten Wertvorsprung, nicht viele kleine Siege.
+export function overheatGain(over, overflow, skills) {
+  const o = Math.max(0, over || 0);
+  if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return o;
+  return Math.min(C.OVERHEAT_MAX, o + overflow / (1 + o / C.OVERHEAT_COST_K));
 }
+// Kontinuierlicher Abbau je Stich (nicht nur bei Niederlage) — `amount` = OVERHEAT_DECAY bzw. OVERHEAT_DECAY_LOSS.
+export const overheatDecay = (over, amount) => Math.max(0, (over || 0) - amount);
+// Der Hebel: Multiplikator auf den GESAMTEN Feuer-Score eines Stichs (+2 % je Punkt, bei OVERHEAT_MAX also ×2).
+export function overheatMult(over, skills) {
+  if (!fireFlag(skills, "whiteHeat")) return 1;
+  return 1 + Math.min(Math.max(0, over || 0), C.OVERHEAT_MAX) * C.OVERHEAT_SCORE_STEP;
+}
+// Flächenbrand: Score je verbranntem Hitzepunkt — bekenntnis-skaliert wie fireScoreFor (ein 2-Skill-Splash bekommt wenig).
+export const conflagRateFor = (skills) =>
+  C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * Math.max(0, activeFireCount(skills) - 1);
+// Schmelzpunkt: Score je verbranntem Punkt — steigt mit der GEHALTENEN Hitze (Halte-Mechanik, s. Konstanten-Block).
+export const meltRateFor = (heatValue) =>
+  C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * Math.max(0, heatValue || 0);
+// Funkenflug: Einlage je kleinem Sieg — Vielfaches des Feuer-Scores + bekenntnis-skalierter Sockel (damit auch ein
+// Sieg mit 1–2 Vorsprung einzahlt; dessen Feuer-Score ist unter HEAT_MIN_MARGIN exakt 0).
+export const sparkBankFor = (fireScore, skills) =>
+  Math.round((fireScore || 0) * C.SPARKFLIGHT_BANK_MULT
+    + C.SPARKFLIGHT_FLOOR_BASE + C.SPARKFLIGHT_FLOOR_PER_SKILL * Math.max(0, activeFireCount(skills) - 1));
 // Schmieden: Asche-Kosten je Schmiedung. #268: Schmelzofen-Rabatt ab 50 % Hitze als FAKTOR (−25 %, skaliert mit den
 // Kosten: 20 → 15), nicht mehr flat −1 (bei Kosten 20 trivial). Ganzzahlig gerundet, min 1.
 export function forgeCostFor(skills, heatValue = 0) {

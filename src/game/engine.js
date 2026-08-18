@@ -11,7 +11,8 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasBlitzableiter, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, hasThunderGod, hasSerienschutz, // Blitz-Rework (v0/v0.5): Legendäre + Serienschutz
   fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
-  glowingValueFor, whiteHeatScore, forgeCostFor, // Feuer-Rework (v0): Schwellen/Weißglut/Schmiede
+  glowingValueFor, forgeCostFor, // Feuer-Rework (v0): Schwellen/Schmiede
+  overheatGain, overheatDecay, overheatMult, conflagRateFor, meltRateFor, sparkBankFor, glowMarginFor, // #fire-balance: Überhitzung + die drei Sätze + das Segment-Fenster der Klinge
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
@@ -320,19 +321,30 @@ export function resolveTrick(state, rng) {
   let fireValueBonus = 0;
   let meltScore = 0; // Schmelzpunkt-Drip dieses Stichs — im Sieg-Block als Flat ausgezahlt (Ledger-konsistent, s. u.)
   const suncore = fireFlag(skills, "suncore"); // Sonnenkern (L): Win-Condition — brennt am Durchlauf-Ende hohe Hitze dauerhaft in den Deck-Boden (s. u., ~Z.1020); KEIN Konsum-Verstärker mehr [#230 N11]
-  // Phönixfeuer: verbrauchte Hitze (value ≤ 0) entzündet 1×/Durchlauf neu (+40 % zurück). Nach jedem Konsum geprüft.
-  const reignite = (h) => (fireFlag(skills, "phoenix") && !h.phoenixUsed && h.value <= 0)
-    ? { ...h, value: Math.round(C.PHOENIX_REIGNITE * h.max), phoenixUsed: true } : h;
+  // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu (+40 % der Leiste). Nach jedem Konsum geprüft.
+  // #fire-balance: Auslöser ist zusätzlich ein GROSSER Einzelverbrauch (`burned`) — Flächenbrand hört seit dem
+  // Boden (CONFLAG_KEEP) bei 40 % auf, „value ≤ 0" allein wäre also aus einem Konsum nie mehr erreichbar.
+  const reignite = (h, burned = 0) =>
+    (fireFlag(skills, "phoenix") && !h.phoenixUsed && (h.value <= 0 || burned >= C.PHOENIX_MIN_BURN))
+      ? { ...h, value: Math.min(h.max, h.value + Math.round(C.PHOENIX_REIGNITE * h.max)), phoenixUsed: true } : h;
   if (heat && heat.active) {
-    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −10 % Hitze; der Score zahlt sich im SIEG-Block aus (MELT_PER_HEAT
-    // je Punkt) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+= außerhalb von gained). [#230 N11: Sonnenkern-Bonus hier entfernt]
+    // Glühende Klinge (#fire-balance): Segmentwechsel — der beste Sieg des abgelaufenen Segments rückt ins Fenster
+    // nach, das neue beginnt bei 0. Die Stufe ist damit je Segment EINMAL zu verdienen und hält dann durch; erst ein
+    // Segment ganz ohne passenden Stich lässt sie fallen. Muss VOR dem glowingValueFor-Lesen unten stehen.
+    if (actualPos % SEGMENT_SIZE === 0)
+      heat = { ...heat, glowPrevBest: heat.glowSegBest || 0, glowSegBest: 0 };
+    // Schmelzpunkt (Konsument, Drip): vor JEDEM Stich −MELT_COST % Hitze; der Score zahlt sich im SIEG-Block aus
+    // (Satz aus meltRateFor, ∝ gehaltener Hitze) — so bleibt er im Per-Karte-Ledger attribuiert (kein loser score+=
+    // außerhalb von gained). [#230 N11: Sonnenkern-Bonus hier entfernt]
     if (hasHeatConsumer(skills, "melt") && heat.value >= C.MELT_COST) {
+      // Satz aus der Hitze VOR dem Abzug: der Skill zahlt für das, was du gehalten HAST (#fire-balance).
+      meltScore = Math.round(C.MELT_COST * meltRateFor(heat.value));
       heat = { ...heat, value: heat.value - C.MELT_COST };
-      meltScore = C.MELT_COST * C.MELT_PER_HEAT;
-      heat = reignite(heat);
+      heat = reignite(heat, C.MELT_COST);
     }
-    // Glühende Klinge: +Wert je Hitze-Stufe (+Sonnenzorn). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
-    fireValueBonus += glowingValueFor(heat.value, skills);
+    // Glühende Klinge: +Wert je Hitze-Stufe; die OBEREN Stufen verlangen zusätzlich einen dominanten Sieg im
+    // Segment-Fenster (#fire-balance). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
+    fireValueBonus += glowingValueFor(heat.value, skills, glowMarginFor(heat));
     if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
   }
   // Rückzündung: nach einer Niederlage bekommt die Karte +2 Wert (hilft, den Konter zu gewinnen).
@@ -461,7 +473,7 @@ export function resolveTrick(state, rng) {
                    coverCount: archPreNow ? (archPreNow.coverCount || 0) : 0, // Gebäude-Perk Dichte Bebauung (D_BEBAUUNG): abgedeckte Positionen
                    hasFormation, lastResult, misfireScore }; // V2 §22.6 D: Formation-Sieg / Wechselspiel / Fehlzündungs-Ladung (D15)
     winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
-    // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überlauf), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
+    // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überhitzung), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = meltScore; // Schmelzpunkt-Drip (im Vor-Stich verbrauchte Hitze) zahlt sich hier als Flat aus (nur bei Sieg)
     let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
@@ -470,19 +482,23 @@ export function resolveTrick(state, rng) {
       // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
       const gain = heatGainFor(fmargin, skills, { winStreak: serieStreak, lostLast: lastResult === "loss", deficit: heat.lastLossDeficit || 0 });
       const raw = heat.value + gain;
-      // Weißglut: der über HEAT_MAX hinaus überlaufende Hitzeanteil wird zu Score (Sonnenzorn ×2).
       const overflow = Math.max(0, raw - heat.max);
-      if (overflow > 0) { const wh = whiteHeatScore(overflow, skills, heat.max); fireFlat += wh; fireWhiteWin += wh; } // #270.2: Weißglut-Kanal
-      heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)) }; // peak = Sonnenzorn
+      heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)), // peak = Sonnenzorn (bleibt bei HEAT_MAX gedeckelt — die Überhitzung ist eine ISOLIERTE Zone)
+               glowSegBest: Math.max(heat.glowSegBest || 0, fmargin) }; // Glühende Klinge: größter Sieg dieses Segments
+      // Weißglut → Überhitzung (#fire-balance): erst der kontinuierliche Abbau, dann der gedrosselte Zufluss aus dem
+      // Überlauf. Reihenfolge zählt: andersherum bezahlte ein gefütterter Stich seinen eigenen Zufluss gleich wieder mit.
+      if (fireFlag(skills, "whiteHeat"))
+        heat = { ...heat, over: overheatGain(overheatDecay(heat.over || 0, C.OVERHEAT_DECAY), overflow, skills) };
       fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
       fireFlat += fireBaseFlat;
-      // Flächenbrand (Konsument, Burst): Sieg ab 80 % Hitze verbrennt die GANZE Hitze → +CONFLAG_PER_HEAT Score/Punkt. [#230 N11: Sonnenkern-Bonus hier entfernt]
+      // Flächenbrand (Konsument, Burst): Sieg ab CONFLAG_MIN_HEAT brennt bis auf CONFLAG_KEEP herunter → Score je
+      // verbranntem Punkt, bekenntnis-skaliert. [#230 N11: Sonnenkern-Bonus hier entfernt]
       if (hasHeatConsumer(skills, "conflagration") && heat.value >= C.CONFLAG_MIN_HEAT) {
-        const burned = heat.value;
-        fireFlat += burned * C.CONFLAG_PER_HEAT;
-        heat = reignite({ ...heat, value: 0 }); // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu
+        const burned = heat.value - C.CONFLAG_KEEP; // #fire-balance: BODEN statt Totalverbrennung (Feuerwalze + Klingen-Sockel überleben)
+        fireFlat += burned * conflagRateFor(skills);
+        heat = reignite({ ...heat, value: C.CONFLAG_KEEP }, burned); // Phönixfeuer: großer Einzelverbrauch entzündet 1×/Durchlauf neu
       }
       // Feuerwalze: nächste Karte +1 Wert (bis +3) — nur ab 40 % Hitze aufgebaut.
       if (fireFlag(skills, "fireRoll") && heat.value >= C.FIREROLL_MIN_HEAT)
@@ -490,8 +506,14 @@ export function resolveTrick(state, rng) {
       // Funkenflug: kleine Siege banken ihren Feuer-Score; ein Sieg ≥8 Vorsprung entlädt den Speicher voll.
       if (fireFlag(skills, "sparkflight")) {
         if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { fireFlat += heat.sparkStore || 0; heat = { ...heat, sparkStore: 0 }; }
-        else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + fireBaseFlat };
+        else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + sparkBankFor(fireBaseFlat, skills) };
       }
+      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den GESAMTEN Feuer-Score dieses Stichs — Grund-Score,
+      // Schmelzpunkt-Tropf, Flächenbrand-Burst und die Funkenflug-Ausschüttung. Bewusst EIN Satz auf die ganze
+      // Hitze-Linie statt drei Sonderfälle; Glutstahl (Schmiede-Linie) kommt erst danach dazu und bleibt draußen.
+      // Der Aufschlag ist der Weißglut-KANAL (#270.2) — fireBase bekommt unten den Rest.
+      const wMult = overheatMult(heat.over || 0, skills);
+      if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; }
     }
     // Glutstahl: geschmiedete Siegkarte → +GLUTSTAHL_PER_VALUE Score je geschmiedetem Wert (fließt in die multiplizierte Basis). [#230 N10: war „+20", ist 12]
     if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
@@ -1086,6 +1108,7 @@ export function resolveTrick(state, rng) {
       const nv = Math.min(heat.max, Math.max(0, heat.value - loss) + phoenixGain);
       heat = { ...heat, value: nv, peak: Math.max(heat.peak || 0, nv), fireRoll: 0,
                sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
+               over: overheatDecay(heat.over || 0, C.OVERHEAT_DECAY_LOSS), // Weißglut: Überhitzung kühlt schneller aus
                lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.

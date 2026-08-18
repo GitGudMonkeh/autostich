@@ -436,7 +436,26 @@ export const RUECKZUENDUNG_VALUE = 2;   // Rückzündung: … und die Siegkarte 
 export const GLOWING_T1_HEAT = 40, GLOWING_T1_VALUE = 1; // Glühende Klinge: +1 Wert ab 40 % // v0 — tunebar
 export const GLOWING_T2_HEAT = 70, GLOWING_T2_VALUE = 2; //                 +2 Wert ab 70 %  // v0 — tunebar
 export const GLOWING_T3_HEAT = 100, GLOWING_T3_VALUE = 3;//                 +3 Wert bei 100 % // v0 — tunebar
-export const WHITEHEAT_PER_POINT = 10;  // Weißglut: +10 Score je überlaufendem Hitzepunkt   // v0 — tunebar
+// #fire-balance: die OBEREN Stufen verlangen zusätzlich einen dominanten letzten Sieg. Grund: Hitze allein war zu
+// leicht oben zu halten — zusammen mit Feuerwalze (+3) lag dauerhaft +6 Wert auf JEDER Karte, was die Margen
+// aufblies, die die Hitze erzeugen (Rückkopplung). Die Stufe liest darum den Vorsprung des LETZTEN Siegs mit;
+// eine Niederlage setzt ihn auf 0 → die Klinge fällt ohne eigene Regel auf die Sockelstufe zurück. Die zwei Zahlen
+// sind bewusst die schon vorhandenen Fraktions-Schwellen (8 = groß · 12 = überlegen: Verbrennung, Funkenflug),
+// damit Feuer EINE Sprache spricht. Feuerwalze bleibt an der SERIE — die beiden trennen sich damit sauber:
+// eine Serie knapper Siege gibt Feuerwalze +3 und der Klinge nur +1.
+export const GLOWING_T2_MARGIN = 8;     // Glühende Klinge: +2 erst mit letztem Sieg ≥8 Vorsprung   // #fire-balance — tunebar
+export const GLOWING_T3_MARGIN = 12;    // Glühende Klinge: +3 erst mit letztem Sieg ≥12 Vorsprung  // #fire-balance — tunebar
+// WEISSGLUT → ÜBERHITZUNG (#fire-balance). Eigener Sub-Akku `heat.over` (0…OVERHEAT_MAX) NEBEN `heat.value` —
+// bewusst ein zweites Feld statt `heat.max = 150`: alles, was heat.value liest (Sonnenzorn-Peak, Glutdividende,
+// Glühende Klinge, Flächenbrand, Schmelzofen), bleibt damit OHNE eine einzige Zeile Sonderfall bei 100 gedeckelt.
+// Die Zone ist strukturell isoliert, nicht per Ausnahme. Die Leiste zeigt sie als 0–150 %.
+// Alt war „+10 Score je überlaufendem Hitzepunkt“ — ein flacher Betrag, der bei exakt 100 % Hitze ~160 Score gab und
+// mit dem Build nicht mitwuchs. Jetzt ist der Überlauf ein ZUSTAND mit steigenden Zuflusskosten und einem Hebel.
+export const OVERHEAT_MAX        = 50;   // Überhitzung max (= Leiste bis 150 %)                    // #fire-balance — tunebar
+export const OVERHEAT_COST_K     = 10;   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
+export const OVERHEAT_DECAY      = 2;    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
+export const OVERHEAT_DECAY_LOSS = 5;    // Abbau bei Niederlage
+export const OVERHEAT_SCORE_STEP = 0.02; // +2 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2)
 // Linie 4 — Wert-/Score-Motoren
 export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
 export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
@@ -444,11 +463,27 @@ export const VERBRENNUNG_T1_MARGIN = 8,  VERBRENNUNG_T1_MULT = 1.5; // Verbrennu
 export const VERBRENNUNG_T2_MARGIN = 12, VERBRENNUNG_T2_MULT = 2.0; // Verbrennung: Feuer-Score ×2 ab 12 Vorsprung  // v0
 export const SPARKFLIGHT_MIN_MARGIN = 8;  // Funkenflug: Sieg ≥8 Vorsprung entlädt den Speicher voll // v0 — tunebar
 export const SPARKFLIGHT_LOSS_KEEP  = 0.5;// Funkenflug: Niederlage halbiert den Speicher     // v0 — tunebar
+// #fire-balance: der Speicher bekam bisher eine 1:1-Kopie des Feuer-Scores kleiner Siege — und der ist bei kleiner
+// Marge naturgemäß klein (unter HEAT_MIN_MARGIN sogar exakt 0, ein Sieg mit 1–2 Vorsprung legte also NICHTS ein).
+// Jetzt das Doppelte plus einen bekenntnis-skalierten Sockel, damit auch der knappste Sieg sichtbar einzahlt.
+export const SPARKFLIGHT_BANK_MULT       = 2;  // Einlage = Vielfaches des Feuer-Scores des kleinen Siegs
+export const SPARKFLIGHT_FLOOR_BASE      = 60; // + Sockel je kleinem Sieg (erster Feuer-Skill)
+export const SPARKFLIGHT_FLOOR_PER_SKILL = 20; // + je weiterem Feuer-Skill (6 Skills → 160), Muster wie FIRE_SCORE_PER_SKILL
 // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
 export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Flächenbrand: ab 80 % Hitze bewaffnet [Sim-tunebar]
-export const CONFLAG_PER_HEAT = 12;     // Flächenbrand: +12 Score je verbrannten Hitzepunkt (verbrennt die GANZE Hitze) // v0
-export const MELT_COST        = 10;     // Schmelzpunkt: −10 % Hitze je Stich                // v0 — tunebar
-export const MELT_PER_HEAT    = 5;      // Schmelzpunkt: +5 Score je verbrauchtem Hitzepunkt // v0 — tunebar
+// #fire-balance: Flächenbrand verbrannte die GANZE Leiste für einen flachen Satz. Der Verbrauch war nicht bezahlbar —
+// unten liegen VIER Dinge (Feuerwalze ≥40, Glühende Klinge 40/70/100, Glutdividende, Weißglut-Zufluss), und der
+// Wiederaufbau von 0 auf 80 dauert ~10 Siege. Jetzt: BODEN statt Totalverbrennung + bekenntnis-skalierter Satz.
+export const CONFLAG_KEEP     = 40;     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
+export const CONFLAG_PER_HEAT = 20;     // Flächenbrand: Score je verbranntem Hitzepunkt (erster Feuer-Skill)
+export const CONFLAG_PER_SKILL = 5;     // … + je weiterem Feuer-Skill (6 Skills → 45/Punkt), Muster wie FIRE_SCORE_PER_SKILL
+// #fire-balance Schmelzpunkt: kostete 10 %/Stich — MEHR, als ein durchschnittlicher Sieg erzeugt (~16 % bei vollem
+// Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
+// Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
+// bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
+export const MELT_COST           = 4;   // Schmelzpunkt: −4 % Hitze je Stich                        // #fire-balance — tunebar
+export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
+export const MELT_SCORE_PER_HEAT = 0.8; // … + je % gehaltener Hitze (bei 100 % also 90/Punkt = 360/Sieg) // #fire-balance — tunebar
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
 export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
@@ -478,6 +513,10 @@ export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    //
 // Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
 export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
 export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
+// #fire-balance: Auslöser war allein „Hitze ≤ 0“. Seit Flächenbrand einen Boden hat (CONFLAG_KEEP), gibt es das aus
+// einem Konsum nicht mehr — die Klausel wäre still gestorben. Sie zündet jetzt zusätzlich nach einem GROSSEN Einzel-
+// verbrauch; der kleine Schmelzpunkt-Tropf (MELT_COST) liegt bewusst darunter, sonst verpuffte das 1×/Durchlauf sofort.
+export const PHOENIX_MIN_BURN      = 25;                                     // … oder: so viel Hitze auf einmal verbrannt
 // Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
 export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 4);    // Selbst-Schmiede deckelt auf so viele Karten (gegen 60-Runden-Compounding) [Legendär-Umbau]
 export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]

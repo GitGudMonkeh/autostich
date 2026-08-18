@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, heatGainFor, heatLossFor, fireScoreFor, verbrennungMult,
-  glowingValueFor, whiteHeatScore, forgeCostFor, initHeat } from "../src/game/skills.js";
+  glowingValueFor, glowMarginFor, forgeCostFor, initHeat,
+  overheatGain, overheatDecay, overheatMult, conflagRateFor, meltRateFor, sparkBankFor } from "../src/game/skills.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
+import { SEGMENT_SIZE } from "../src/game/formations.js";
 
 // Engine-Test-Helfer (konstante Decks; pos 0 → Formations-Mult 1, wie in den Bestandstests).
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
@@ -88,10 +90,47 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(glowingValueFor(100, ["SK_FIRE_06"])).toBe(3);
     expect(glowingValueFor(100, ["SK_FIRE_06", "SK_FIRE_L03"])).toBe(3); // Sonnenzorn hebt die Stufe nicht mehr
   });
-  it("whiteHeatScore: +10/Punkt (reiner Nicht-Legendär-Skill, kein Sonnenzorn ×2 mehr)", () => {
-    expect(whiteHeatScore(3, ["SK_FIRE_07"], 100)).toBe(30);
-    expect(whiteHeatScore(3, ["SK_FIRE_07", "SK_FIRE_L03"], 100)).toBe(30);
-    expect(whiteHeatScore(3, [], 100)).toBe(0); // ohne Weißglut
+  // #fire-balance: die OBEREN Stufen hängen zusätzlich am Segment-Fenster — sonst lag mit Feuerwalze dauerhaft
+  // +6 Wert auf jeder Karte und blies genau die Margen auf, aus denen die Hitze kommt (Rückkopplung).
+  it("glowingValueFor: obere Stufen verlangen den Wertvorsprung aus dem Segment-Fenster", () => {
+    expect(glowingValueFor(100, ["SK_FIRE_06"], 0)).toBe(C.GLOWING_T1_VALUE);
+    expect(glowingValueFor(100, ["SK_FIRE_06"], C.GLOWING_T2_MARGIN - 1)).toBe(C.GLOWING_T1_VALUE);
+    expect(glowingValueFor(100, ["SK_FIRE_06"], C.GLOWING_T2_MARGIN)).toBe(C.GLOWING_T2_VALUE);
+    expect(glowingValueFor(100, ["SK_FIRE_06"], C.GLOWING_T3_MARGIN)).toBe(C.GLOWING_T3_VALUE);
+    expect(glowingValueFor(70, ["SK_FIRE_06"], C.GLOWING_T3_MARGIN)).toBe(C.GLOWING_T2_VALUE); // Hitze deckelt weiter
+  });
+  it("glowMarginFor: Fenster = größter Sieg des LAUFENDEN oder des vorigen Segments", () => {
+    expect(glowMarginFor({ glowSegBest: 3, glowPrevBest: 12 })).toBe(12);
+    expect(glowMarginFor({ glowSegBest: 12, glowPrevBest: 0 })).toBe(12);
+    expect(glowMarginFor({})).toBe(0);
+    expect(glowMarginFor(null)).toBe(0);
+  });
+  // #fire-balance: Weißglut ist kein Flat mehr, sondern die ÜBERHITZUNG — ein eigener Akku mit steigenden
+  // Zuflusskosten, kontinuierlichem Abbau und einem Multiplikator auf den gesamten Feuer-Score.
+  it("overheatGain: Zufluss wird mit steigender Überhitzung teurer, Deckel bei OVERHEAT_MAX", () => {
+    expect(overheatGain(0, 10, ["SK_FIRE_07"])).toBeCloseTo(10);                                  // Faktor 1
+    expect(overheatGain(C.OVERHEAT_COST_K, 10, ["SK_FIRE_07"])).toBeCloseTo(C.OVERHEAT_COST_K + 5); // Faktor 1/2
+    expect(overheatGain(3 * C.OVERHEAT_COST_K, 10, ["SK_FIRE_07"])).toBeCloseTo(3 * C.OVERHEAT_COST_K + 2.5); // Faktor 1/4
+    expect(overheatGain(0, 10, [])).toBe(0);                       // ohne Weißglut kein Zufluss
+    expect(overheatGain(C.OVERHEAT_MAX, 99, ["SK_FIRE_07"])).toBe(C.OVERHEAT_MAX); // Deckel
+  });
+  it("overheatDecay / overheatMult: Abbau bis 0, +Feuer-Score je Punkt (bei MAX ×2)", () => {
+    expect(overheatDecay(10, C.OVERHEAT_DECAY)).toBe(10 - C.OVERHEAT_DECAY);
+    expect(overheatDecay(1, C.OVERHEAT_DECAY_LOSS)).toBe(0);       // nie negativ
+    expect(overheatMult(0, ["SK_FIRE_07"])).toBe(1);
+    expect(overheatMult(10, ["SK_FIRE_07"])).toBeCloseTo(1 + 10 * C.OVERHEAT_SCORE_STEP);
+    expect(overheatMult(C.OVERHEAT_MAX, ["SK_FIRE_07"])).toBeCloseTo(1 + C.OVERHEAT_MAX * C.OVERHEAT_SCORE_STEP);
+    expect(overheatMult(30, [])).toBe(1);                          // ohne Weißglut kein Hebel
+  });
+  it("conflagRateFor / meltRateFor / sparkBankFor: die drei neu skalierten Sätze", () => {
+    expect(conflagRateFor(["SK_FIRE_11"])).toBe(C.CONFLAG_PER_HEAT);                                  // ein Feuer-Skill
+    expect(conflagRateFor(["SK_FIRE_11", "SK_FIRE_01", "SK_FIRE_02"])).toBe(C.CONFLAG_PER_HEAT + 2 * C.CONFLAG_PER_SKILL);
+    expect(meltRateFor(0)).toBe(C.MELT_SCORE_BASE);                                                   // Satz ∝ gehaltener Hitze
+    expect(meltRateFor(C.HEAT_MAX)).toBeCloseTo(C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX);
+    // Der Sockel ist der Punkt: ein Sieg unter HEAT_MIN_MARGIN hat Feuer-Score 0 und legte damit früher NICHTS ein.
+    expect(fireScoreFor(2, ["SK_FIRE_10"], 0)).toBe(0);
+    expect(sparkBankFor(0, ["SK_FIRE_10"])).toBe(C.SPARKFLIGHT_FLOOR_BASE);
+    expect(sparkBankFor(100, ["SK_FIRE_10"])).toBe(100 * C.SPARKFLIGHT_BANK_MULT + C.SPARKFLIGHT_FLOOR_BASE);
   });
   it("forgeCostFor: FORGE_COST, Schmelzofen-Rabatt als Faktor ab 50 % (#268)", () => {
     expect(forgeCostFor(["SK_FIRE_15"], 0)).toBe(C.FORGE_COST);
@@ -100,7 +139,8 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(forgeCostFor(["SK_FIRE_15", "SK_FIRE_17"], 20)).toBe(C.FORGE_COST); // unter 50 % kein Rabatt
   });
   it("initHeat: frischer Substate", () => {
-    expect(initHeat()).toMatchObject({ active: false, value: 0, fireRoll: 0, sparkStore: 0, phoenixUsed: false });
+    expect(initHeat()).toMatchObject({ active: false, value: 0, fireRoll: 0, sparkStore: 0, phoenixUsed: false,
+      over: 0, glowSegBest: 0, glowPrevBest: 0 });
   });
 });
 
@@ -116,26 +156,72 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat({ value: 0 }) }), noCrit);
     expect(s.heat.value).toBe(6); // round((min(6,8)−2)×1 × 1,5)
   });
-  it("Glühende Klinge: +3 Wert bei 100 % Hitze macht einen Rückstand zum Sieg", () => {
-    const s = resolveTrick(scen(8, 10, { skills: ["SK_FIRE_06"], heat: heat({ value: 100 }) }), noCrit);
+  it("Glühende Klinge: +3 Wert bei 100 % Hitze macht einen Rückstand zum Sieg (Segment-Fenster erfüllt)", () => {
+    const s = resolveTrick(scen(8, 10, { skills: ["SK_FIRE_06"], heat: heat({ value: 100, glowSegBest: C.GLOWING_T3_MARGIN }) }), noCrit);
+    // glowSegBest, nicht glowPrevBest: der erste Stich eines Segments (hier actualPos 0) rückt das Fenster ZUERST
+    // nach — ein direkt gesetztes glowPrevBest würde dabei überschrieben.
     expect(s.lastTrick.result).toBe("win");
     expect(s.lastTrick.pValue).toBe(11); // 8 + 3
   });
-  it("Weißglut: Hitze-Überlauf über 100 wird zu Score (+10/Punkt)", () => {
+  // #fire-balance: die Stufe wird JE SEGMENT einmal verdient und hält dann durch — erst ein Segment ohne passenden
+  // Stich lässt sie fallen. Ein einzelner knapper Sieg stuft NICHT sofort zurück (im Spielfluss nicht lesbar).
+  it("Glühende Klinge: obere Stufe hält ein Segment nach und fällt erst im übernächsten", () => {
+    // Start mit einem erfüllten Fenster; danach nur noch Siege mit Vorsprung 1 (unter beiden Schwellen).
+    let s = scen(3, 2, { skills: ["SK_FIRE_06"], heat: heat({ value: 100, glowSegBest: C.GLOWING_T3_MARGIN }) });
+    const val = [];
+    for (let i = 0; i < 8; i++) { s = resolveTrick(s, noCrit); val.push(s.lastTrick.pValue); }
+    expect(val[0]).toBe(3 + C.GLOWING_T3_VALUE);          // Segment 1: Fenster aus dem Vorsegment trägt
+    expect(val[SEGMENT_SIZE - 1]).toBe(3 + C.GLOWING_T3_VALUE);
+    expect(val[SEGMENT_SIZE]).toBe(3 + C.GLOWING_T1_VALUE); // Segment 2: kein passender Stich mehr im Fenster
+  });
+  it("Weißglut: Hitze über 100 % staut sich als Überhitzung und hebt den GESAMTEN Feuer-Score", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 98 }) }), noCrit);
     expect(s.heat.value).toBe(100);
-    // Überlauf 4 → +40; Feuer-Score (2 Skills, Basis 30) = lineare Linie + √-Bonus; + Glutdividende (direkt, Hitze × Satz × Bekenntnis 2/6).
+    expect(s.heat.over).toBeCloseTo(4); // Gewinn 6 → Überlauf 4; Abbau greift auf 0 nicht, Zufluss bei over 0 voll
+    // Feuer-Score (2 Skills, Basis 30) × Überhitzungs-Hebel; + Glutdividende (direkt, Hitze × Satz × Bekenntnis 2/6).
     const fs2 = Math.round((6 - 2) * 30 + 30 * C.FIRE_SCORE_SQRT_K * Math.sqrt(6 - 2));
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + fs2 + 40) * 1.02 + Math.min(s.heat.value, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * Math.min(1, 2 / C.SKILL_SLOTS));
+    const extra = Math.round(fs2 * (overheatMult(s.heat.over, ["SK_FIRE_07"]) - 1));
+    expect(extra).toBeGreaterThan(0);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + fs2 + extra) * 1.02 + Math.min(s.heat.value, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * Math.min(1, 2 / C.SKILL_SLOTS));
+  });
+  // Die Zone ist bewusst ein ZWEITES Feld statt heat.max = 150: alles, was heat.value liest, bleibt bei 100 gedeckelt.
+  it("Weißglut: die Überhitzung ist ISOLIERT — Sonnenzorn-Peak bleibt bei HEAT_MAX", () => {
+    const s = resolveTrick(scen(30, 0, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 100, over: 20 }) }), noCrit);
+    expect(s.heat.value).toBe(C.HEAT_MAX);
+    expect(s.heat.over).toBeGreaterThan(20);       // gefüttert
+    expect(s.heat.peak).toBe(C.HEAT_MAX);          // NICHT 100 + Überhitzung
+  });
+  it("Weißglut: die Überhitzung baut sich je Stich ab — auch ohne Niederlage", () => {
+    const won = resolveTrick(scen(3, 2, { skills: ["SK_FIRE_07"], heat: heat({ value: 100, over: 20 }) }), noCrit);
+    expect(won.lastTrick.result).toBe("win");      // Vorsprung 1 → kein Hitzegewinn, also kein Zufluss
+    expect(won.heat.over).toBeCloseTo(20 - C.OVERHEAT_DECAY);
+    const lost = resolveTrick(scen(2, 9, { skills: ["SK_FIRE_07"], heat: heat({ value: 100, over: 20 }) }), noCrit);
+    expect(lost.lastTrick.result).toBe("loss");
+    expect(lost.heat.over).toBeCloseTo(20 - C.OVERHEAT_DECAY_LOSS); // Niederlage kühlt schneller aus
+  });
+  it("Schmelzpunkt: kostet MELT_COST je Stich und zahlt nach GEHALTENER Hitze", () => {
+    const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_12"], heat: heat({ value: 50 }) }), noCrit);
+    expect(s.heat.value).toBe(50 - C.MELT_COST + heatGainFor(6, ["SK_FIRE_12"], {}));
+    // Isoliert gegen einen gleich großen Nicht-Konsumenten-Build bei identischer Hitze: die Differenz IST der Tropf.
+    const withMelt = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_12"], heat: heat({ value: 100 }) }), noCrit);
+    const without  = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_09"], heat: heat({ value: 100 }) }), noCrit);
+    expect(withMelt.lastTrick.scoreGain - without.lastTrick.scoreGain)
+      .toBeGreaterThan(C.MELT_COST * C.MELT_SCORE_PER_HEAT * C.HEAT_MAX); // ≫ die alten 50 Score
+  });
+  it("Funkenflug: auch ein Sieg unter HEAT_MIN_MARGIN zahlt in den Speicher ein", () => {
+    const s = resolveTrick(scen(8, 6, { skills: ["SK_FIRE_10"], heat: heat({ value: 0 }) }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.heat.sparkStore).toBe(sparkBankFor(0, ["SK_FIRE_10"])); // Feuer-Score wäre hier 0 → nur der Sockel
   });
   it("Brandmal: Sieg brandmarkt die geschlagene Gegnerkarte (nächster Durchlauf) + Asche", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_13"], heat: heat() }), noCrit);
     expect(s.brandPending[s.lastTrick.oCard.id]).toBe(C.BRAND_VALUE);
     expect(s.ash).toBe(C.BRAND_ASH);
   });
-  it("Flächenbrand (Konsument): Sieg ab 80 % Hitze verbrennt die ganze Hitze (+12/Punkt Burst)", () => {
+  it("Flächenbrand (Konsument): Sieg ab 80 % Hitze brennt bis auf den BODEN herunter, Satz bekenntnis-skaliert", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_11"], heat: heat({ value: 90 }) }), noCrit);
-    expect(s.heat.value).toBe(0);
+    expect(s.heat.value).toBe(C.CONFLAG_KEEP);           // #fire-balance: nicht mehr 0 — Feuerwalze/Klingen-Sockel überleben
+    expect(s.heat.value).toBeGreaterThanOrEqual(C.FIREROLL_MIN_HEAT);
     expect(s.lastTrick.scoreGain).toBeGreaterThan(B + 1000);
   });
   // #268 Asche-Ökonomie: einen vollen Durchlauf (40 Stiche) spielen → am Durchlauf-Ende greift die Ascheschmiede.

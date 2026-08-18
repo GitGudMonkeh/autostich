@@ -68,10 +68,10 @@ export const GUIDES = {
       steps: [
         `Gewinne mit **großem Vorsprung** → viel **Hitze** und sofort direkten Score (er zählt flach, ohne Umwege).`,
         `Gehaltene Hitze zahlt zusätzlich bei jedem Sieg die **Glutdividende** — Feuers Motor, der immer läuft.`,
-        `Mit Glühender Klinge schaltet hohe Hitze **Schwellen-Boni** frei → deine Karten bekommen Stichwert → du gewinnst noch klarer.`,
+        `Mit Glühender Klinge schaltet hohe Hitze **Schwellen-Boni** frei → deine Karten bekommen Stichwert → du gewinnst noch klarer. Die oberen Stufen musst du dir je Segment mit einem deutlichen Sieg neu verdienen.`,
         `Parallel: **Brände** schwächen Gegnerkarten und füllen die **Schmiede** → deine Karten werden dauerhaft stärker, die Margen wachsen mit.`,
       ],
-      valve: `Ist die Leiste **voll**, verfällt weiterer Hitzegewinn — es sei denn, du hältst den Skill **Weißglut**: dann läuft jeder weitere Punkt direkt in Score über. Und wann immer du willst, schüttest du die gesammelte Hitze aus: als einen großen Schlag oder als steten Tropf.`,
+      valve: `Ist die Leiste **voll**, verfällt weiterer Hitzegewinn — es sei denn, du hältst den Skill **Weißglut**: dann staut sich der Überschuss als **Überhitzung** auf und hebt deinen gesamten Feuer-Score, solange du sie fütterst. Und wann immer du willst, schüttest du die gesammelte Hitze aus: als einen großen Schlag oder als steten Tropf.`,
     },
     status: {
       label: `Wie heiß bist du?`,
