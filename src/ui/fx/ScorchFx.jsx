@@ -298,8 +298,17 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       drawLaser();
     }
 
+    // #perf-scorch (mobile): Bisher lief nur die Burn-FELD-Berechnung auf ~30 fps (computeBurn/lastBurnT), die ZEICHNUNG
+    //   aber jedes rAF (60/120 Hz) — ein hochskalierter Burn-Blit + bis zu ~550 additive Partikel-Sprites pro Frame. Auf
+    //   `lite` (Handy, balanced UND minimal) deckeln wir jetzt den ganzen Render auf 30 fps → halbe Füllarbeit im ~1,75-s-
+    //   Burst, genau die Rate der übrigen mobilen Effekte (mobileTier DRAW_HZ_COARSE). Halbframe-Toleranz `1000/30 − 8`
+    //   wie dort: sonst fällt der 33-ms-Frame knapp durch und die Rate wird UNGLEICHMÄSSIG statt langsamer. Full/Desktop
+    //   (lite=false) → 0 = ungedeckelt, voller Look. Physik läuft weiter über dt (nur je VERARBEITETEM Frame gestempelt →
+    //   dt ≈ 33 ms, sauber verarbeitet). Der Showcase-Loop (loop=true) auf Desktop bleibt damit unberührt.
     function frame(now) {
       if (disposed) return;
+      const minMs = p.current.lite ? (1000 / 30 - 8) : 0;
+      if (minMs && last && (now - last) < minMs) { raf = requestAnimationFrame(frame); return; } // Frame auslassen (nur lite)
       const dt = Math.min(0.05, (now - last) / 1000); last = now; clock = now / 1000;
       update(dt); render();
       // #perf: Im Spiel (kein Loop) den rAF stoppen, sobald alles fertig ist (Burn vorbei + keine Partikel mehr) → kein
