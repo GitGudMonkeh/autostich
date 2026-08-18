@@ -131,6 +131,9 @@ export default function PrismaKaskadePixi({ panelRef, cardRef = null, trigger = 
       try { flashTex.destroy(true); } catch { /* ignore */ }
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
+    // Bühne EINMAL bauen (nur an panelRef/cardRef gekeyt). Alle lebenden Werte — Farben, reduced/lite,
+    // loop/speed, die Rückrufe — liest der Effekt über den Ref-Spiegel `st.current`, der bei JEDEM Render
+    // frisch gesetzt wird. Stünden sie in den Deps, risse jede Farbumstellung die Pixi-App ab und baute sie neu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelRef, cardRef]);
 

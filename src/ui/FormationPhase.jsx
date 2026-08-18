@@ -101,8 +101,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   // [#229 T7] weiter memoisiert, damit nicht bei jeder Kachel-Auswahl neu gerechnet wird.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   const architectCover = useMemo(() => (hasArch ? architectCoverFor(state) : null), [hasArch, architect, playerOrder, deck]);
-  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
-  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
+  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
   const plantHeld = plantSkillCount(state.skills || []) > 0;
 

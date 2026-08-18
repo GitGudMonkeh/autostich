@@ -1286,7 +1286,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
     return (hi || pk.tiers[0]).deckId;
   };
   const [selDeck, setSelDeck] = useState(() => (tiered ? defaultTierDeck(pack) : null));
-  useEffect(() => { if (isTieredPack(pack)) setSelDeck(defaultTierDeck(pack)); }, [pack.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (isTieredPack(pack)) setSelDeck(defaultTierDeck(pack)); }, [pack.id]); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Pack-Wechsel; defaultTierDeck ist je Render neu und würde die Wahl überschreiben
   const selTier = tiered ? (tierByDeckId(pack, selDeck) || tiers[0]) : null;
   // „Ansichts-Pack" = Stufen-Sicht (eigene deckId/bfId/a1) oder das Pack selbst.
   const viewPack = tiered ? tierAsPack(pack, selTier) : pack;

@@ -58,8 +58,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   // Aufstellphase). [#229 T8] weiter memoisiert, damit die Berechnung nicht bei jeder Render (auch showArch=false) läuft.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   const architectCover = useMemo(() => (hasArch ? architectCoverFor(state) : null), [hasArch, state.architect, playerOrder, deck, archBuildings]);
-  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
-  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
+  const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
 
   return (
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}

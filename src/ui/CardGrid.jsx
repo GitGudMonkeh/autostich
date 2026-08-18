@@ -251,6 +251,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
     const ro = new ResizeObserver(measure);
     ro.observe(wrap);
     return () => ro.disconnect();
+    // archSig (s. o.) hält die Deps stabil: es wechselt genau dann, wenn sich die Gebäude-Belegung ändert.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archSig, cards.length]);
   return (

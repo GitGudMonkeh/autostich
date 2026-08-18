@@ -779,6 +779,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     if (!(bgFx || bgFinisher) || reduced || trickNo == null) return;
     const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if (now - lastSweepAt.current >= sweepDur - 20) { lastSweepAt.current = now; setSweepId((k) => k + 1); }
+    // Auslöser ist der STICH, nicht die Bedingungen: bgFx/bgFinisher/reduced/sweepDur sind Filter, keine Trigger.
+    // Als Deps würde ein Umschalten des Hintergrund-Effekts mitten im Stich einen zusätzlichen Sweep zünden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trickNo]);
   const fx = (a) => (reduced ? undefined : a);

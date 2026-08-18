@@ -251,6 +251,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const ro = new ResizeObserver(measure);
     ro.observe(wrap);
     return () => ro.disconnect();
+    // archSig ist die Signatur der Belegung (pos:bid …) und wechselt genau dann, wenn sich am Rahmen etwas
+    // ändert. Die übrigen Werte hängen daran — als Deps brächten sie nur zusätzliche Messläufe.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archSig]);
 
@@ -280,6 +282,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     setPlaceFlash((pf) => ({ key: (pf?.key || 0) + 1, structCells, distBids }));
     clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => setPlaceFlash(null), 900);
+    // flashSig fasst den Bau-Vorgang zusammen; structCells/distBids leiten sich daraus ab. Als Deps würde der
+    // Flash bei jedem Neuberechnen erneut zünden statt einmal je Platzierung.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flashSig]);
   useEffect(() => () => clearTimeout(flashTimerRef.current), []);
@@ -348,9 +352,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     if (!removeFor) return s;
     for (const b of committed) if (fitWithout(removeFor, b.id)) s.add(b.id);
     return s;
-  }, [removeFor, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [removeFor, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps -- fitWithout hängt allein an diesen dreien
   // #281: Reicht die aktuell markierte Abriss-Menge, um Platz zu schaffen? (Fußabdruck-Lage nach dem Abriss oder null.)
-  const demolishFit = useMemo(() => (removeFor && demolishIds.length ? fitWithoutSet(removeFor, demolishIds) : null), [removeFor, demolishIds, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps
+  const demolishFit = useMemo(() => (removeFor && demolishIds.length ? fitWithoutSet(removeFor, demolishIds) : null), [removeFor, demolishIds, committed, maxCover]); // eslint-disable-line react-hooks/exhaustive-deps -- fitWithoutSet hängt allein an diesen vieren
   // #261: Bauplan wählen = VERBINDLICH → das Gebäude wird SOFORT committet (kein „Bauen"-Button, kein Zurück ins
   // Auswahlfenster) und ist direkt Teil der einen kombinierten Platzier-/Verschiebe-Phase ("move"). Ein einziges
   // „Bestätigen" am Ende schließt ab. Kein Platz → Ersetzen-Menü (Skill-Stil, s. removeFor).
@@ -387,7 +391,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       onBuild?.({ familyId: removeFor.familyId, tier: removeFor.tier, footprint: fp, colorChoice: fam.colorLocked ? colorPick : null });
       setSelId(newId); setPhase("move"); setRemoveFor(null); setDemolishIds([]);
     }
-  }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [committed, removeFor]); // eslint-disable-line react-hooks/exhaustive-deps -- läuft NUR auf Abriss/Ersetzen; die Setter sind stabil
   useEffect(() => { setDemolishIds([]); }, [removeFor]); // #281: neuer/geschlossener Ersetzen-Vorgang → Markierungen zurücksetzen
   // #235: markiertes Gebäude wirklich abreißen (danach platziert der removeFor-Effekt den wartenden Bauplan automatisch).
   // #266: Der Dreh-Hinweis verfällt, sobald ein anderes Gebäude gewählt oder die Phase gewechselt wird (er gilt genau
@@ -575,7 +579,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const pFormGain = Math.max(0, sumStr(previewForms) - sumStr(formationsNoArch));
     const previewBoost = Math.round((pStructBonus + pFormGain) * 100);
     return { dVal: val2 - sumValue, dForm: form2 - formCount, dBoost: previewBoost - archBoostPct, valid: dragPrev.valid };
-  }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dragPrev]); // eslint-disable-line react-hooks/exhaustive-deps -- die Vorschau IST der Auslöser, alles andere liest sie nur aus
 
   const comboLit  = (pos) => (comboF[pos] || 1) > 1;    // #UI: Struktur-Kombi (Zeile/Spalte/Diagonale) → rote Fläche
   const distrLit  = (pos) => (districtF[pos] || 1) > 1; // #UI: Distrikt (gleiche Kategorie aneinander) → Typ-Farb-Glow
