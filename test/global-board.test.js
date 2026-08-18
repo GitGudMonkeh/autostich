@@ -139,7 +139,10 @@ describe("#global · Anti-Copy (#205) neu gezogen", () => {
     /* Der Kern der Änderung: Sechs Skills sind die Identität eines Laufs — ohne sie ist eine Bestenliste
        eine Namensliste mit Zahlen. Nachbauen lässt sich ein Lauf daran nicht; das hängt an den Perks und
        der Kartenreihenfolge, und genau die bleiben verdeckt. */
-    expect(stats).toMatch(/const showPerks = !anonymized && perks !== null && perks\.length > 0;/);
+    /* `showPerks` deckt seit dem Victory-Screen-Nachzug auch die FAMILIEN-Perks ab (#167 — sie sind der
+       größere Teil dessen, was ein Lauf wählt). Entscheidend für die Anti-Copy-Regel bleibt, dass BEIDE
+       Sorten hinter `!anonymized` hängen: hier steht deshalb der Anfang der Zeile, nicht mehr ihr Wortlaut. */
+    expect(stats).toMatch(/const showPerks = !anonymized && \(\(perks !== null && perks\.length > 0\) \|\| families\.length > 0\);/);
     expect(stats).toMatch(/const showSkills = skills !== null && skills\.length > 0;/);
     expect(stats).not.toMatch(/!anonymized && skills/);
   });

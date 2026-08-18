@@ -3,7 +3,8 @@ import { rarityOf, RARITY_META } from "../game/perks.js";
 
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
-import { archMeta, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
+import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Familien zur Anzeigezeit
+import { tierMeta, romanOf } from "../game/rarity.js"; // Familien-Perks: Stufenfarbe + römische Stufe (wie PerkList)
 import { TOTAL_NODES } from "../game/progression.js"; // #global: Nenner des Baumstands (x/27)
 import { t, fmtPct } from "../i18n/index.js";
 
@@ -103,6 +104,18 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   // null = unbekannt (Alt-Eintrag ohne die Spalte) → nicht rendern; [] = bekannt leer.
   const perks = Array.isArray(entry.perks) ? entry.perks : null;
   const skills = Array.isArray(entry.skills) ? entry.skills : null;
+  /* FAMILIEN-Perks (#167). Seit der Rarität-Umbau die Kategorie-A-Perks zu FAMILIEN gemacht hat, ist der
+     größte Teil dessen, was ein Spieler im Lauf wählt, gar kein Eintrag in `perks` mehr, sondern eine Stufe
+     in `familyTiers`. Der Block zeigte deshalb nur die flachen Perks und die Legendären — für den Spieler
+     „meine Perks fehlen". `entry.families` ist die Stufen-Map des Laufs ({ familyId: tier }), genau wie sie
+     im State steht; die Leaderboard-Detailansicht übergibt sie nicht (die Spalte gibt es in der Datenbank
+     nicht) und zeigt darum unverändert nur die flachen Perks. */
+  const families = entry.families && typeof entry.families === "object"
+    ? Object.entries(entry.families)
+        .filter(([id, tier]) => tier > 0 && familyDef(id))
+        .map(([id, tier]) => ({ id, tier }))
+        .sort((a, b) => b.tier - a.tier || familyDef(a.id).name.localeCompare(familyDef(b.id).name))
+    : [];
 
   // Archetyp-Zusammenfassung: Skills nach Archetyp gruppieren + zählen (z. B. Eis ×4 · Pflanze ×3).
   const archCounts = [];
@@ -115,17 +128,26 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
 
   const [sel, setSel] = useState(null); // { kind, id } | null
   const toggle = (kind, id) => setSel((s) => (s && s.kind === kind && s.id === id ? null : { kind, id }));
+  const famTier = (id) => (families.find((f) => f.id === id) || {}).tier;
   const selDetail = !sel ? null
     : sel.kind === "perk"
       ? (perkDef(sel.id) ? { title: perkDef(sel.id).label, desc: perkDef(sel.id).desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
-      : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
+      : sel.kind === "family"
+        // Beschreibung der GEHALTENEN Stufe (nicht der Familie insgesamt) — dieselbe Auflösung wie in PerkList.
+        ? (familyDef(sel.id) && famTier(sel.id)
+            ? { title: `${familyDef(sel.id).name} ${romanOf(famTier(sel.id))}`,
+                desc: (familyDef(sel.id).tiers[famTier(sel.id)] || {}).desc || "",
+                color: (tierMeta(famTier(sel.id)) || {}).color || perkCat(familyDef(sel.id).cat)?.color || "#8a8a95" }
+            : null)
+        : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
-  const showPerks = !anonymized && perks !== null && perks.length > 0;
+  const showPerks = !anonymized && ((perks !== null && perks.length > 0) || families.length > 0);
   const showSkills = skills !== null && skills.length > 0;
   // Der Hinweis erscheint nur, wenn wirklich etwas verdeckt WIRD — bei einem Alt-Eintrag ohne Perk-Spalte
   // (perks === null) gibt es nichts zu verbergen, da wäre er eine Lüge.
   const showHidden = anonymized && perks !== null && perks.length > 0;
   if (!archCounts.length && !showSkills && !showPerks && !showHidden) return null;
+  const perkTotal = (perks ? perks.length : 0) + families.length;
 
   return (
     <div>
@@ -143,9 +165,15 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
 
       {(showSkills || showPerks || showHidden) && (
         <div className="mt-3">
+          {/* Überschrift wie über den Skills — sie war hier nie da, weil die Zeile bis jetzt nur die paar flachen
+              Perks trug. Mit den Familien sind es zwei Dutzend Chips; ohne Beschriftung liest sich das als
+              namenlose Wolke über den Skills. Die Zahl ist die Antwort auf „wie viel habe ich genommen". */}
+          {showPerks && (
+            <div className="text-[10px] uppercase tracking-wider opacity-45 text-center mb-1">{t("runstats.perks", { n: perkTotal })}</div>
+          )}
           {showPerks && (
             <div className="flex flex-wrap gap-1.5 justify-center">
-              {perks.map((id) => {
+              {(perks || []).map((id) => {
                 const def = perkDef(id);
                 if (!def) return null;
                 const cc = perkCat(def.cat)?.color || "#8a8a95";
@@ -157,6 +185,22 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                     className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
                     style={{ background: `${cc}22`, color: cc, border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
                     {rm.mark ? `${rm.mark} ` : ""}{def.label}
+                  </button>
+                );
+              })}
+              {/* Familien in DERSELBEN Zeile wie die flachen Perks — für den Spieler ist beides „ein Perk, den
+                  ich genommen habe"; die Trennung ist eine Implementierungsgrenze (#167), keine Spielregel.
+                  Farbe kommt von der STUFE (grau/grün/blau/lila, wie in PerkList und im Angebot), nicht von der
+                  Kategorie: die Stufe ist die Information, die man in einer Chip-Wolke sucht. */}
+              {families.map((f) => {
+                const fd = familyDef(f.id);
+                const col = (tierMeta(f.tier) || {}).color || perkCat(fd.cat)?.color || "#8a8a95";
+                const on = sel && sel.kind === "family" && sel.id === f.id;
+                return (
+                  <button key={`fam:${f.id}`} onClick={() => toggle("family", f.id)} title={t("runstats.showDesc")}
+                    className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                    style={{ background: `${col}22`, color: col, border: `1px solid ${on ? col : `${col}66`}` }}>
+                    {fd.name} {romanOf(f.tier)}
                   </button>
                 );
               })}

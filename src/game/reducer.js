@@ -140,7 +140,7 @@ export function initialState(rng = Math.random, seed = null) {
     // denselben Fluss später für Karten-Ziele (Rollen).
     familyTarget: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
-    skills: [], skillOffer: null, legendaryOffer: null, activeArchetypes: [], lightning: initLightning(), // #272: legendaryOffer = Angebot der Legendär-Phase (Runde 29)
+    skills: [], skillOffer: null, skillOfferBonus: false, legendaryOffer: null, activeArchetypes: [], lightning: initLightning(), // #272: legendaryOffer = Angebot der Legendär-Phase (Runde 29) · skillOfferBonus: das Angebot stammt aus Meisterhand (PICK_PERK), nicht aus dem Rundenplan
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
@@ -465,11 +465,30 @@ export function reducer(state, action) {
         : state.architect;
       // Perks mit manueller Kartenauswahl öffnen die Zielauswahl (§22.5); sonst weiter.
       const goTarget = !!def.needsTarget;
+      // Meisterhand: der gewonnene Slot wird SOFORT gefüllt — der Pick öffnet direkt eine Skill-Wahl.
+      // Ohne das war der Perk in der Praxis wirkungslos: Skill-Phasen liegen fest im DECISION_SCHEDULE, und
+      // die Legendär-Phase (Runde 29) ist die LETZTE davon. Wer Meisterhand danach zieht — der übliche Fall,
+      // legendäre Perks häufen sich in der 2. Perk-Phase —, bekam einen Slot, für den nie wieder ein Angebot
+      // kam. Der Slot blieb leer bis zum Lauf-Ende. Dieselbe Naht wie DECLINE_LEGENDARY (dort: Legendär
+      // abgelehnt → normale Skill-Wahl), nur andersherum ausgelöst.
+      // Eigener Adress-Strom "meisterhand" statt "skill": in einer PERK-Phase ist der Skill-Strom dieses
+      // Durchlaufs zwar frei, aber ein eigener Name kann per Konstruktion nie mit einem kollidieren.
+      // Legendär-Chance 0 — der legendäre SKILL hat seine eigene Phase und seinen eigenen Slot (#272);
+      // ein Perk soll keinen zweiten nachliefern.
+      const bonusSkillOffer = (def.skillSlotBonus && !goTarget)
+        ? buildSkillOffer(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0),
+            hasWeekMod(state.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes)
+        : null;
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers)
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
-               phase: goTarget ? "target" : "play",
+               // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
+               // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
+               ...(bonusSkillOffer && bonusSkillOffer.length
+                 ? { skillOffer: bonusSkillOffer, skillOfferBonus: true, offerRerolls: 0 }
+                 : {}),
+               phase: goTarget ? "target" : (bonusSkillOffer && bonusSkillOffer.length ? "levelup" : "play"),
                targetPerk: goTarget ? perkId : null };
     }
 
@@ -665,12 +684,18 @@ export function reducer(state, action) {
                // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
                // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.
                phase: (arch === "ice" && hasFreeGlacierField(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length))
-                 ? "glacier-target" : "play", skillOffer: null };
+                 ? "glacier-target" : "play", skillOffer: null, skillOfferBonus: false };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
+      // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
+      // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
+      // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
+      // leer, die nächste reguläre Skill-Phase füllt ihn. Steht VOR dem Dev-Zweig, weil der Bonus auch im
+      // Dev-Run ein Bonus ist. Der Eis-Ablehn-Gletscher unten entfällt aus demselben Grund.
+      if (state.skillOfferBonus) return { ...state, skillOffer: null, skillOfferBonus: false, phase: "play" };
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —

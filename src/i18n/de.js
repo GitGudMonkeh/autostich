@@ -444,6 +444,11 @@ export default {
   "skill.reroll": "🎲 Neu würfeln · {n}",
   "skill.decline": "Ablehnen → Perk",
   "skill.skipCycle": "Runde überspringen",
+  // Meisterhand-Bonus (PICK_PERK): die Skill-Wahl kommt hier NICHT aus dem Rundenplan, sondern aus dem eben
+  // genommenen Perk. Deshalb ein eigener Hinweis — und ein eigener Ablehnen-Text: „→ Perk" wäre gelogen,
+  // ein Bonus-Angebot tauscht sich nicht gegen ein Perk-Angebot ein.
+  "skill.bonus.hint": "Zusatz-Slot aus deinem letzten Perk — wähle sofort einen weiteren Skill.",
+  "skill.declinePlain": "Ablehnen",
   "skill.nav.prev": "vorheriger Typ",
   "skill.nav.next": "nächster Typ",
   "skill.guide.title": "Leitfaden: {arch}",
@@ -762,6 +767,7 @@ export default {
   "runstats.critBonus": "Crit-Bonus",
   "runstats.critBonus.title": "Score-Anteil aus kritischen Treffern",
   "runstats.showDesc": "Beschreibung anzeigen",
+  "runstats.perks": "Perks — {n}",
   "runstats.skills": "Skills",
   "runstats.tree": "Upgrade-Baum",
   "runstats.tree.nodes": "{done} / {total} Knoten",

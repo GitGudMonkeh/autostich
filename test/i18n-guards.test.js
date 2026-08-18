@@ -157,6 +157,7 @@ describe("i18n · Katalog-Parität", () => {
     "board.tab.challenger",   // „Challenger" ist der Name des Modus
     "board.tab.global",       // „Global" — dasselbe Wort in beiden Sprachen
     "runstats.skills",        // „Skills" (§3.1, wie deckdetail.tab.skills)
+    "runstats.perks",         // „Perks — {n}" — „Perk" ist in beiden Sprachen der etablierte Begriff (§3.5)
     "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
     "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"
     "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text

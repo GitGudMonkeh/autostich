@@ -986,6 +986,55 @@ wie das Wort in ihm (**Stich → trick**), die Tabelle im Übersetzerpaket §3.1
 - **Nicht am Gerät gesehen** — Build, Lint und 1569 Tests grün, der Blick auf die englische Wortmarke im
   Hub steht aus (Orbitron, anderes Wortbild).
 
+### #meisterhand — der gewonnene Skill-Slot war nicht erreichbar (18.08.2026)
+Der legendäre Perk **Meisterhand** (`L_MEIS`) hebt `state.skillSlots` von 6 auf 7. Der Slot ließ sich aber nicht
+füllen — der Fehler lag an ZWEI Stellen, und jede allein hätte gereicht.
+- **Oberfläche:** `SkillSelect` rechnete `full = skills.length >= slots`. `skills` enthält den **legendären
+  Skill aus der Legendär-Phase mit** — der zählt laut Reducer (`PICK_SKILL`, `normalCount`) aber NICHT gegen den
+  Deckel, er hat seinen eigenen festen Slot (#272). 6 normale + 1 legendärer Skill galten damit schon bei
+  7 Slots als „voll". Der einzige angebotene Ausweg war das Ersetzen-Fenster, und das TAUSCHT nur.
+  Jetzt zählt die UI wie der Reducer (`normalHeld`). **Wer hier anfasst: die zwei Zählungen müssen
+  dieselbe sein, sonst widerspricht die Oberfläche der Regel.**
+- **Gleiche Stelle, zweiter Fehler:** die Ersetzen-Liste bot den legendären Skill mit an. Der Reducer weist ein
+  solches `replaceId` ab → das Fenster schloss sich und es passierte NICHTS. Legendäre sind jetzt herausgefiltert.
+- **Regel:** der Perk gibt den Slot, aber die Gelegenheit fehlte. Skill-Phasen liegen fest im
+  `DECISION_SCHEDULE`, und die Legendär-Phase (Runde 29) ist die **letzte** davon. Wer Meisterhand danach zieht —
+  der Normalfall, legendäre Perks häufen sich in der 2. Perk-Phase — bekam einen Slot, für den nie wieder ein
+  Angebot kam. **`PICK_PERK` öffnet bei `def.skillSlotBonus` deshalb sofort eine Skill-Wahl** (`skillOffer` +
+  `phase:"levelup"`), dieselbe Naht wie `DECLINE_LEGENDARY`, nur andersherum ausgelöst. Endstand nach der
+  Legendär-Phase: 7 gehaltene Skills → **8**.
+- **Das Bonus-Angebot ist als solches markiert** (`state.skillOfferBonus`), und das ist kein Schmuck:
+  `DECLINE_SKILL` gibt sonst nach der „nie verschwendet"-Regel ein PERK-Angebot als Ersatz — aus einem Perk
+  würden zwei. Beim Bonus heißt Ablehnen: Slot bleibt leer, die nächste reguläre Skill-Phase füllt ihn
+  (`normalCount < skillSlots` → hinzufügen statt ersetzen). Der Eis-Ablehn-Gletscher entfällt aus demselben Grund.
+  Der Ablehnen-Knopf trägt dort **„Ablehnen"** statt „Ablehnen → Perk" — sonst verspricht er etwas, das nicht kommt.
+- **Eigener RNG-Adress-Strom `"meisterhand"`** statt `"skill"`: in einer PERK-Phase ist der Skill-Strom dieses
+  Durchlaufs zwar frei, aber ein eigener Name kann per Konstruktion nie kollidieren. **Legendär-Chance 0** — der
+  legendäre SKILL hat seine eigene Phase und seinen eigenen Slot, ein Perk soll keinen zweiten nachliefern.
+- **Anzeige zieht mit**: „{gehalten}/{Slots}" rechnet den Legendär-Slot jetzt mit ein → **7/7** statt 7/6 (das
+  war schon vorher falsch), nach Meisterhand **7/8**.
+- Wächter: `test/legendaries-v03.test.js` (Reducer-Naht + Quelltext-Ratsche über `SkillSelect.jsx`).
+  Gegenprobe gemacht: alle drei sabotierten Nähte fallen.
+
+### #victory-perks — der Endscreen zeigte nur einen Bruchteil der genommenen Perks (18.08.2026)
+`GameOver` reichte `RunBuildChips` nur `state.perks`. Seit dem Rarität-Umbau (#167) sind die alten
+Kategorie-A-Perks aber **Familien** und stehen als Stufen-Map in `state.familyTiers` — also gerade NICHT in
+`perks`. Der Endscreen zeigte damit die paar flachen Perks und die Legendären, und der Rest eines Laufs fehlte.
+- Neu ist ein optionales `entry.families` (die Stufen-Map, unverändert wie im State). Die Chips stehen in
+  **derselben Zeile** wie die flachen Perks — für den Spieler ist beides „ein Perk, das ich genommen habe";
+  die Trennung ist eine Implementierungsgrenze, keine Spielregel. Farbe kommt von der **Stufe**
+  (grau/grün/blau/lila, wie in `PerkList`), Beschriftung ist „Name + römische Stufe".
+- Die Zeile hat jetzt eine Überschrift mit Gesamtzahl (`runstats.perks`) — mit den Familien sind es zwei Dutzend
+  Chips, ohne Beschriftung liest sich das als namenlose Wolke über den Skills.
+- **Die Bestenlisten-Detailansicht (`RunDetail`) bleibt unverändert, und das ist kein Vergessen:** die Board-Zeile
+  speichert `perks`/`skills`, **keine** Familien-Spalte — dort sind die Daten schlicht nicht da. Ein Wächter hält
+  das fest: kommt eine Spalte dazu, wird der Test rot und die Detailansicht ist nachzuziehen.
+- `showPerks` hängt nicht mehr allein an `perks` (ein Lauf kann 20 Familien und 0 flache Perks haben), bleibt aber
+  vollständig hinter `!anonymized` — die Anti-Copy-Regel (#205) gilt für Familien genauso.
+- Wächter: `test/victory-perks.test.js`; die Ratsche in `test/global-board.test.js` ist nachgezogen (sie pinnte
+  den alten Wortlaut der `showPerks`-Zeile).
+- **Nicht am Gerät gesehen** — Build, Lint und 1578 Tests grün, der Blick auf die Chip-Wolke steht aus.
+
 ### Merge `Autostich/pixi` → `Autostich_Test` (Health Check 2026-08-16)
 Geprüft: Tests 1263 grün (84 Dateien) · ESLint 0/0 (282 Dateien, CI-Gate `--max-warnings=0`) · Build grün, auch als
 Slot-Build (`DEPLOY_BASE=/autostich/test/ VITE_PREVIEW=1`) · `npm audit --omit=dev` 0 Funde (die 7 Funde stecken

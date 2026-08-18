@@ -438,6 +438,9 @@ export default {
   "skill.reroll": "🎲 Reroll · {n}",
   "skill.decline": "Decline → perk",
   "skill.skipCycle": "Skip cycle",
+  // Meisterhand bonus (PICK_PERK) — see the German catalogue for why this needs its own decline label.
+  "skill.bonus.hint": "Extra slot from your last perk — pick one more skill right away.",
+  "skill.declinePlain": "Decline",
   "skill.nav.prev": "previous type",
   "skill.nav.next": "next type",
   "skill.guide.title": "Guide: {arch}",
@@ -750,6 +753,7 @@ export default {
   "runstats.critBonus": "Crit bonus",
   "runstats.critBonus.title": "Score share from critical hits",
   "runstats.showDesc": "Show description",
+  "runstats.perks": "Perks — {n}",
   "runstats.skills": "Skills",
   "runstats.tree": "Upgrade tree",
   "runstats.tree.nodes": "{done} / {total} nodes",

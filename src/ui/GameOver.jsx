@@ -308,11 +308,16 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
             je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}
-        {((state.skills && state.skills.length) || (state.perks && state.perks.length) || motor.length > 0) && (
+        {((state.skills && state.skills.length) || (state.perks && state.perks.length)
+          || Object.values(state.familyTiers || {}).some((tier) => tier > 0) || motor.length > 0) && (
           <div className="go-build as-ring mt-5">
               <i className="as-ring-run" aria-hidden="true" />
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.build")}</div>
-            <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [] }} />
+            {/* `families` = die Familien-Stufen des Laufs (#167). Ohne sie zeigte der Endscreen nur die flachen
+                Perks und die Legendären — also einen Bruchteil dessen, was im Lauf gewählt wurde. Der Endscreen
+                hat den vollen State und kann sie liefern; die Bestenlisten-Detailansicht kann es nicht (die
+                Datenbank speichert `perks`/`skills`, keine Familien) und bleibt deshalb unverändert. */}
+            <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [], families: state.familyTiers || {} }} />
             {motor.length > 0 && (
               <>
                 <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">{t("gameover.engine")}</div>

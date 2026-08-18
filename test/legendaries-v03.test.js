@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
+import { readFileSync } from "node:fs";
 import { reducer, initialState } from "../src/game/reducer.js";
+import { isLegendarySkill } from "../src/game/skills.js";
 import { makeRng } from "../src/game/deck.js";
 import { PERK_DEFS } from "../src/game/perks.js";
 import { precomputeArchitect, structureFactorMap, posOf, ROWS, COLS } from "../src/game/architect.js";
@@ -30,6 +32,70 @@ describe("Legendäre v0.3 — Ausbau & Deck (Pick-Zeitpunkt)", () => {
     expect(s1.perks).toContain("L_MEIS");
     expect(s1.skillSlots).toBe(SKILL_SLOTS + MEISTERHAND_SLOTS);
     expect(PERK_DEFS.L_MEIS.skillSlotBonus).toBe(MEISTERHAND_SLOTS);
+  });
+
+  /* Der gewonnene Slot muss SOFORT füllbar sein. Vorher war Meisterhand in der Praxis wirkungslos:
+     Skill-Phasen liegen fest im DECISION_SCHEDULE und die Legendär-Phase ist die letzte davon — wer den
+     Perk danach zieht (der Normalfall, legendäre Perks häufen sich in der 2. Perk-Phase), bekam einen Slot,
+     für den nie wieder ein Angebot kam. */
+  it("L_MEIS öffnet SOFORT eine Skill-Wahl (der gewonnene Slot bleibt nicht leer)", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_MEIS"], seed: 4711,
+                 skills: ["SK_FIRE_01"], activeArchetypes: ["fire"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
+    expect(s1.phase).toBe("levelup");
+    expect(s1.skillOffer.length).toBeGreaterThan(0);
+    expect(s1.skillOfferBonus).toBe(true);
+    // Kein legendärer SKILL aus diesem Angebot — der hat seine eigene Phase und seinen eigenen Slot (#272).
+    expect(s1.skillOffer.some(isLegendarySkill)).toBe(false);
+    // Und der Skill landet auch wirklich im Build.
+    const s2 = reducer(s1, { type: "PICK_SKILL", skillId: s1.skillOffer[0], rng });
+    expect(s2.skills).toContain(s1.skillOffer[0]);
+    expect(s2.skillOffer).toBe(null);
+    expect(s2.skillOfferBonus).toBe(false);
+  });
+
+  /* Das Bonus-Angebot ist ein GESCHENK, kein Rundenplatz: die „nie verschwendet"-Regel (Skill abgelehnt →
+     stattdessen ein Perk) darf hier nicht greifen, sonst macht ein Perk zwei. */
+  it("L_MEIS: das Bonus-Angebot ablehnen gibt KEIN Perk-Angebot als Ersatz", () => {
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_MEIS"], seed: 4711,
+                 skills: ["SK_FIRE_01"], activeArchetypes: ["fire"] };
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
+    expect(s1.skillOffer.length).toBeGreaterThan(0); // sonst prüfte der Test unten ins Leere
+    const s2 = reducer(s1, { type: "DECLINE_SKILL", rng });
+    expect(s2.phase).toBe("play");
+    expect(s2.offer).toBe(null);
+    expect(s2.skillOffer).toBe(null);
+    expect(s2.skillOfferBonus).toBe(false);
+    expect(s2.perks).toEqual(["L_MEIS"]);
+  });
+
+  /* Der Endzustand, um den es dem Spieler geht: nach der Legendär-Phase hält man 6 normale + 1 legendären
+     Skill (= 7). Meisterhand macht daraus 8 — der Legendär zählt NICHT gegen den Deckel (#272). */
+  it("L_MEIS nach der Legendär-Phase: aus 7 gehaltenen Skills werden 8", () => {
+    const sixFire = ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06"];
+    const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_MEIS"], seed: 4711,
+                 skills: [...sixFire, "SK_FIRE_L01"], activeArchetypes: ["fire"] };
+    expect(s0.skills).toHaveLength(7);
+    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
+    expect(s1.skillSlots).toBe(SKILL_SLOTS + MEISTERHAND_SLOTS);
+    const s2 = reducer(s1, { type: "PICK_SKILL", skillId: s1.skillOffer[0], rng });
+    expect(s2.skills).toHaveLength(8);
+  });
+
+  /* Der zweite Teil desselben Bugs lag in der OBERFLÄCHE: `SkillSelect` verglich `skills.length` (inkl. des
+     legendären Skills) mit dem Deckel und hielt 6 normale + 1 legendären Skill schon bei 7 Slots für „voll" —
+     der gewonnene Slot war über die Oberfläche nicht erreichbar. Das Projekt hat kein Component-Test-Setup;
+     die Naht hängt deshalb an einer Quelltext-Ratsche (dieselbe Technik wie in global-board.test.js). */
+  it("SkillSelect zählt den legendären Skill NICHT gegen den Slot-Deckel", () => {
+    const src = readFileSync(new URL("../src/ui/SkillSelect.jsx", import.meta.url), "utf8");
+    expect(src).toMatch(/const\s+full\s*=\s*normalHeld\s*>=\s*slots/);
+    expect(src).not.toMatch(/skills\.length\s*>=\s*slots/);      // der alte, falsche Vergleich
+    expect(src).toMatch(/isLegendarySkill/);                      // dieselbe Erkennung wie im Reducer
+    expect(src).toMatch(/held\.filter\(\(s\) => !s\.legendary\)/); // Legendär steht nicht in der Ersetzen-Liste
+    /* Der Ablehnen-Knopf verspricht sonst „Ablehnen → Perk" — beim Bonus-Angebot gibt es aber kein
+       Ersatz-Perk (s. DECLINE_SKILL). Ein Knopf, der etwas anderes tut, als er sagt, ist ein Bug für sich. */
+    expect(src).toMatch(/bonusOffer \? "skill\.declinePlain" : "skill\.decline"/);
+    expect(src).toMatch(/const bonusOffer = !!state\.skillOfferBonus/);
   });
 
   it("L_OPFER Opfergang: senkt ALLE Kartenwerte dauerhaft, klemmt bei 1 (#34 kennt keine 0)", () => {

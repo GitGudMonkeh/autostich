@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
@@ -78,11 +78,23 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
-  const slots = state.skillSlots || SKILL_SLOTS; // #370 Skill-Fülle: erhöhtes Slot-Limit (sonst Basis)
-  const full = skills.length >= slots;
+  const slots = state.skillSlots || SKILL_SLOTS; // #370 Skill-Fülle / Meisterhand: erhöhtes Slot-Limit (sonst Basis)
+  /* #272: Der legendäre Skill sitzt in einem EIGENEN, festen Slot — er zählt nicht gegen `slots` und kann nie
+     ersetzt werden. Die Zählung hier muss dieselbe sein wie im Reducer (PICK_SKILL: `normalCount`), sonst laufen
+     UI und Regel auseinander. Genau das war der Meisterhand-Bug: `skills.length` schloss den Legendär mit ein,
+     also galten 6 normale + 1 legendärer Skill schon bei 7 Slots als „voll" — der gewonnene Slot war über die
+     Oberfläche nicht erreichbar, und der einzige Ausweg (Ersetzen-Fenster) tauschte nur, statt hinzuzufügen. */
+  const legendaryHeld = skills.filter(isLegendarySkill).length;
+  const normalHeld = skills.length - legendaryHeld;
+  const full = normalHeld >= slots;
+  // Anzeige: der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6", nach Meisterhand „7 / 8".
+  const slotsShown = slots + legendaryHeld;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
+  // Meisterhand: diese Skill-Wahl kommt aus dem eben genommenen Perk, nicht aus dem Rundenplan (Reducer:
+  // PICK_PERK). Sie braucht deshalb einen eigenen Ablehnen-Text — „Ablehnen → Perk" wäre hier eine Lüge.
+  const bonusOffer = !!state.skillOfferBonus;
   const [pendingConsumer, setPendingConsumer] = useState(null); // #93: Konsumenten-Ersatzdialog { id, replace, type }
   // Swipe-Pager (#12): die Archetyp-Kategorien sind horizontale Seiten; `page` = aktuelle Seite, `tx` merkt den Touch-Start.
   // Startwert null → die Startseite folgt dem zuletzt gewählten Skill-Typ (options.lastSkillArch); erst ein Swipe setzt eine Zahl.
@@ -173,8 +185,15 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots })}</div>
+          <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
           <h2 className="text-xl font-bold mt-1">{t("skill.title")}</h2>
+          {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
+              sonst den Fehler bei sich. */}
+          {bonusOffer && (
+            <div className="mt-2 mx-auto max-w-md rounded-lg px-3 py-1.5 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
+              {t("skill.bonus.hint")}
+            </div>
+          )}
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
 
@@ -193,7 +212,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             )}
             <button onClick={onDecline}
               className="as-edge-neutral flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80">
-              {t(devMode ? "skill.skipCycle" : "skill.decline")}
+              {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
             </button>
           </div>
 
@@ -262,7 +281,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* Bei vollen Slots: Hinweis, dass beim Wählen ein Ersetzen-Fenster erscheint (#234). */}
         {full && !pending && (
           <div className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
-            {t("skill.slotsFull.hint", { slots })}
+            {t("skill.slotsFull.hint", { slots: slotsShown })}
           </div>
         )}
 
@@ -279,7 +298,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </p>
               </div>
               <div className="grid gap-2">
-                {held.map((s) => {
+                {/* #272: Der legendäre Skill ist NICHT ersetzbar — der Reducer weist ein solches replaceId ab.
+                    Er stand hier trotzdem in der Liste: ein Tipp darauf schloss das Fenster und tat nichts. */}
+                {held.filter((s) => !s.legendary).map((s) => {
                   const arch = archetypeOf(s.id);
                   // #238b: Ersetzt man DIESEN Skill, wird sein Archetyp nur dann deaktiviert, wenn er der letzte
                   // seiner Art ist UND der NEUE Skill (pending) nicht selbst denselben Archetyp hat (dann bleibt er aktiv).
@@ -393,7 +414,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {held.length > 0 && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {t("skill.held", { held: held.length, slots })}
+              {t("skill.held", { held: held.length, slots: slotsShown })}
             </div>
             {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
                 Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
