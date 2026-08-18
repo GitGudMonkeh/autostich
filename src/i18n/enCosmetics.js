@@ -61,6 +61,13 @@ export default {
   "cosmetic.deck_glazius.name": "Glazius",
   "cosmetic.deck_voltaris.name": "Voltaris",
   "cosmetic.deck_pyrros.name": "Pyrros",
+  /* #deck-material — „Quecksilber" ist der einzige der drei, der etwas BESCHREIBT statt zu benennen, wird also
+     übersetzt. „Quicksilver" statt „Mercury": es meint hier den Werkstoff und dessen Look, nicht den Planeten
+     oder den Gott, und trägt dieselbe Bildhaftigkeit wie das deutsche Wort. Kintsugi (金継ぎ) und Salar
+     (Salzpfanne, Salar de Uyuni) sind Eigennamen und bleiben in beiden Sprachen gleich. */
+  "cosmetic.deck_quecksilber.name": "Quicksilver",
+  "cosmetic.deck_kintsugi.name": "Kintsugi",
+  "cosmetic.deck_salar.name": "Salar",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

@@ -87,6 +87,12 @@ export const DECK_DEFS = {
   deck_glazius:  { id: "deck_glazius",  name: "Glazius",  unlock: { kind: "buy", ownKey: "pack:glazius" } },
   deck_voltaris: { id: "deck_voltaris", name: "Voltaris", unlock: { kind: "buy", ownKey: "pack:voltaris" } },
   deck_pyrros:   { id: "deck_pyrros",   name: "Pyrros",   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
+  /* #deck-material drei DP-Kauf-Packs, deren Motiv ein MATERIAL ist statt einer Kreatur: flüssiges Metall,
+     goldgekittetes Porzellan, Salzkristall. Preise gestaffelt (30/40/20 DP) — anders als bei #deck40, wo alle
+     vier denselben Preis tragen; die Staffelung ist eine Vorgabe, keine Ableitung aus dem Motiv. */
+  deck_quecksilber: { id: "deck_quecksilber", name: "Quecksilber", unlock: { kind: "buy", ownKey: "pack:quecksilber" } },
+  deck_kintsugi:    { id: "deck_kintsugi",    name: "Kintsugi",    unlock: { kind: "buy", ownKey: "pack:kintsugi" } },
+  deck_salar:       { id: "deck_salar",       name: "Salar",       unlock: { kind: "buy", ownKey: "pack:salar" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -148,6 +154,10 @@ export const BATTLEFIELD_DEFS = {
   bf_glazius:  { id: "bf_glazius",  name: bfName("deck_glazius"),  unlock: { kind: "buy", ownKey: "pack:glazius" } },
   bf_voltaris: { id: "bf_voltaris", name: bfName("deck_voltaris"), unlock: { kind: "buy", ownKey: "pack:voltaris" } },
   bf_pyrros:   { id: "bf_pyrros",   name: bfName("deck_pyrros"),   unlock: { kind: "buy", ownKey: "pack:pyrros" } },
+  // #deck-material Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_quecksilber: { id: "bf_quecksilber", name: bfName("deck_quecksilber"), unlock: { kind: "buy", ownKey: "pack:quecksilber" } },
+  bf_kintsugi:    { id: "bf_kintsugi",    name: bfName("deck_kintsugi"),    unlock: { kind: "buy", ownKey: "pack:kintsugi" } },
+  bf_salar:       { id: "bf_salar",       name: bfName("deck_salar"),       unlock: { kind: "buy", ownKey: "pack:salar" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

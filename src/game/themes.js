@@ -282,6 +282,20 @@ export const THEME_DEFS = {
     deckId: "deck_voltaris", bfId: "bf_voltaris", els: ["deck", "bf"] },
   pyrros:   { id: "pyrros",   name: packName("deck_pyrros"),   emblem: "🐼", kind: "buy", price: 40, a1: "#ff5a2a", a2: "#ffb347",
     deckId: "deck_pyrros",   bfId: "bf_pyrros",   els: ["deck", "bf"] },
+
+  /* ---- #deck-material drei DP-Kauf-Packs über ein MATERIAL statt einer Kreatur ----
+     Die Farben sind aus den LEUCHTENDEN Stellen der Kartenmotive gemessen, nicht geschätzt (Farbton je Pack:
+     Quecksilber h≈210 · Kintsugi h≈35 · Salar h≈240). Zwei davon sind fast unbunt, und da wurde es eng: Obsidian
+     (a1 #e8edf5, s=0,05) besetzt bereits „neutrales Weiß". Quecksilber und Salar sind deshalb bewusst über den
+     FARBTON auseinandergezogen und leicht angehoben in der Sättigung — Quecksilber blau-chrom, Salar violett-eisig —
+     sonst hätte man drei kaum unterscheidbare Silberdecks. Wer hier nachdreht: die Deckfarbe treibt Knöpfe,
+     Wortmarke und alle Karten-/Feld-Effekte, sie muss also auch AUF dem Spielfeld noch als Farbe lesbar sein. */
+  quecksilber: { id: "quecksilber", name: packName("deck_quecksilber"), emblem: "💧", kind: "buy", price: 30, a1: "#b8d8f2", a2: "#6f93b8",
+    deckId: "deck_quecksilber", bfId: "bf_quecksilber", els: ["deck", "bf"] },
+  kintsugi:    { id: "kintsugi",    name: packName("deck_kintsugi"),    emblem: "🏺", kind: "buy", price: 40, a1: "#e49c30", a2: "#f0e2cc",
+    deckId: "deck_kintsugi",    bfId: "bf_kintsugi",    els: ["deck", "bf"] },
+  salar:       { id: "salar",       name: packName("deck_salar"),       emblem: "🌙", kind: "buy", price: 20, a1: "#c6c9f0", a2: "#8f93cc",
+    deckId: "deck_salar",       bfId: "bf_salar",       els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

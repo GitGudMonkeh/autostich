@@ -150,6 +150,13 @@ import voltarisFront from "../assets/cards/decks_player/deck_voltaris/front.webp
 import voltarisBack  from "../assets/cards/decks_player/deck_voltaris/back.webp";
 import pyrrosFront   from "../assets/cards/decks_player/deck_pyrros/front.webp";
 import pyrrosBack    from "../assets/cards/decks_player/deck_pyrros/back.webp";
+// #deck-material Quecksilber (30 DP) · Kintsugi (40 DP) · Salar (20 DP)
+import quecksilberFront from "../assets/cards/decks_player/deck_quecksilber/front.webp";
+import quecksilberBack  from "../assets/cards/decks_player/deck_quecksilber/back.webp";
+import kintsugiFront    from "../assets/cards/decks_player/deck_kintsugi/front.webp";
+import kintsugiBack     from "../assets/cards/decks_player/deck_kintsugi/back.webp";
+import salarFront       from "../assets/cards/decks_player/deck_salar/front.webp";
+import salarBack        from "../assets/cards/decks_player/deck_salar/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -184,6 +191,12 @@ import bfVoltarisDesktop from "../assets/battlefields/bf_voltaris/desktop.jpg";
 import bfVoltarisMobile  from "../assets/battlefields/bf_voltaris/mobile.jpg";
 import bfPyrrosDesktop   from "../assets/battlefields/bf_pyrros/desktop.jpg";
 import bfPyrrosMobile    from "../assets/battlefields/bf_pyrros/mobile.jpg";
+import bfQuecksilberDesktop from "../assets/battlefields/bf_quecksilber/desktop.jpg";
+import bfQuecksilberMobile  from "../assets/battlefields/bf_quecksilber/mobile.jpg";
+import bfKintsugiDesktop    from "../assets/battlefields/bf_kintsugi/desktop.jpg";
+import bfKintsugiMobile     from "../assets/battlefields/bf_kintsugi/mobile.jpg";
+import bfSalarDesktop       from "../assets/battlefields/bf_salar/desktop.jpg";
+import bfSalarMobile        from "../assets/battlefields/bf_salar/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -234,6 +247,9 @@ export const DECK_ASSETS = {
   deck_glazius:  { front: glaziusFront,  back: glaziusBack },
   deck_voltaris: { front: voltarisFront, back: voltarisBack },
   deck_pyrros:   { front: pyrrosFront,   back: pyrrosBack },
+  deck_quecksilber: { front: quecksilberFront, back: quecksilberBack },
+  deck_kintsugi:    { front: kintsugiFront,    back: kintsugiBack },
+  deck_salar:       { front: salarFront,       back: salarBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -286,6 +302,9 @@ export const BATTLEFIELD_ASSETS = {
   bf_glazius:  { desktop: bfGlaziusDesktop,  mobile: bfGlaziusMobile },
   bf_voltaris: { desktop: bfVoltarisDesktop, mobile: bfVoltarisMobile },
   bf_pyrros:   { desktop: bfPyrrosDesktop,   mobile: bfPyrrosMobile },
+  bf_quecksilber: { desktop: bfQuecksilberDesktop, mobile: bfQuecksilberMobile },
+  bf_kintsugi:    { desktop: bfKintsugiDesktop,    mobile: bfKintsugiMobile },
+  bf_salar:       { desktop: bfSalarDesktop,       mobile: bfSalarMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
