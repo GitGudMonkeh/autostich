@@ -8,6 +8,14 @@ import buyUrl from "../assets/sounds/buy_cashout.mp3";
 import deniedUrl from "../assets/sounds/muted_click.wav";
 // #295/#296 Sieg-Finisher-SFX (aufbereitet, an den Bestand angeglichen). fx_laser = Laser-Schnitt; Lasergitter hat seit
 // #: einen EIGENEN Sound (fx_lasergrid). fx_blackhole/fx_burnbeam laufen als persistente Loop-Betten (siehe loop/stopLoop).
+// #klinge-sfx (18.08.2026): fx_blade ist ein NEUER Schwerthieb (Quelle „swordattack"), aufbereitet wie der Bestand —
+// Vorspann-Stille auf 0 getrimmt (der Transient MUSS auf dem sichtbaren Schnitt liegen), Kompressor
+// (Schwelle −20 dB, Verhältnis 3:1, Attack 8 ms, Release 180 ms) und danach auf den Pegel des alten Hiebs
+// normalisiert: Körper-RMS −20,3 dB gegen −20,4 dB, Spitze −4,3 dBFS (True Peak −3,8). Der Pegel ist bewusst
+// GLEICH geblieben, damit `gain: 1.05` am Aufrufer und der Master-Kompressor unverändert stimmen.
+// STEREO (der Bestand ist meist mono): die beiden Kanäle der Quelle sind praktisch unkorreliert (r = 0,04) —
+// ein Mono-Downmix kostete 3 dB und die ganze Breite. Länge 0,88 s (vorher 0,58 s) — das deckt sich mit dem
+// längeren Nachhall der Klinge (KLINGE_TUNE.hallFade); bei Turbo zieht `rate` den Hieb ohnehin kürzer.
 import bladeUrl from "../assets/sounds/fx_blade.mp3";
 import laserUrl from "../assets/sounds/fx_laser.mp3";
 import lasergridUrl from "../assets/sounds/fx_lasergrid.mp3";
