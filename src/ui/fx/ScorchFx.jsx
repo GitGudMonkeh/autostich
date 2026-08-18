@@ -180,7 +180,7 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
     // getImageData, ohne den früheren Zwischen-Canvas + Scale-drawImage (spart Canvas-Alloc + Readback-Stall je Stich).
     // #perf A: Die Dissolve-Geometrie (burnmap) kommt aus dem modul-weiten Cache (fbm-Loop nur einmal je Größe).
     function buildBurn() {
-      bw = clamp(Math.round(cardW), 40, p.current.lite ? 72 : 96); bh = Math.max(2, Math.round(bw * cardH / Math.max(1, cardW))); // #perf: Auflösung gesenkt (war 130) — wird hochskaliert/geglättet
+      bw = clamp(Math.round(cardW), 40, p.current.lite ? 64 : 96); bh = Math.max(2, Math.round(bw * cardH / Math.max(1, cardW))); // #perf: Auflösung gesenkt (war 130; lite 72→64, #perf-scorch2) — wird hochskaliert/geglättet
       burnCv.width = bw; burnCv.height = bh; outImg = ctx.createImageData(bw, bh);
       cardCv = buildCardCanvas(bw, bh, { img: imgRef.current, value: p.current.value, suit: p.current.suit });
       cardData = cardCv.getContext("2d").getImageData(0, 0, bw, bh).data;
@@ -215,7 +215,7 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       if (burning) {
         bt += d; const dur = TUNE.DUR, prog = clamp(bt / dur, 0, 1);
         if (bt <= dur && !p.current.reduced) {
-          const lm = p.current.lite ? 0.5 : 1; const emit = (k) => Math.round(k * d * lm); // #perf-mobile: halbe Emissionsraten auf lite → halbe drawImage-Last
+          const lm = p.current.lite ? 0.4 : 1; const emit = (k) => Math.round(k * d * lm); // #perf-mobile: Emissionsrate auf lite gesenkt (0,5→0,4, #perf-scorch2) → weniger additive Sprite-Blits (der eigentliche Partikel-Hebel; die Caps unten sind auf lite nicht bindend)
           for (let i = 0; i < emit(TUNE.EMB_RATE); i++) { const q = spawnFront(prog); if (!q) continue;
             embers.push({ x: q.x, y: q.y, vx: (Math.random() - 0.5) * 40, vy: -(TUNE.EMB_RISE * (0.5 + Math.random() * 0.7)), age: 0, life: TUNE.EMB_LIFE * (0.6 + Math.random() * 0.6), sz: TUNE.EMB_SIZE * (0.6 + Math.random() * 0.8), seed: Math.random() * TAU }); }
           for (let i = 0; i < emit(TUNE.ASH_RATE); i++) { const q = spawnFront(prog); if (!q) continue;
@@ -230,7 +230,7 @@ export default function ScorchFx({ panelRef, cardRef, trigger = 0, frontImage = 
       for (let i = embers.length - 1; i >= 0; i--) { const s = embers[i]; s.age += d; if (s.age >= s.life) { embers.splice(i, 1); continue; } s.vy += (-30) * d; s.vx += Math.sin(clock * 3 + s.seed) * 8 * d; s.x += s.vx * d; s.y += s.vy * d; }
       for (let i = ash.length - 1; i >= 0; i--) { const s = ash[i]; s.age += d; if (s.age >= s.life) { ash.splice(i, 1); continue; } s.vy += 130 * d; s.vx = Math.sin(clock * 2 + s.seed) * 30; s.x += s.vx * d; s.y += s.vy * d; }
       for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.age += d; if (s.age >= s.life) { sparks.splice(i, 1); continue; } s.vy += 320 * d; s.vx -= s.vx * 0.7 * d; s.x += s.vx * d; s.y += s.vy * d; }
-      const cap = (a, n) => { if (a.length > n) a.splice(0, a.length - n); }; const cm = p.current.lite ? 0.45 : 1; cap(embers, Math.round(600 * cm)); cap(ash, Math.round(280 * cm)); cap(sparks, Math.round(360 * cm)); // #perf-mobile: Partikel-Caps auf lite ~halbiert
+      const cap = (a, n) => { if (a.length > n) a.splice(0, a.length - n); }; const cm = p.current.lite ? 0.35 : 1; cap(embers, Math.round(600 * cm)); cap(ash, Math.round(280 * cm)); cap(sparks, Math.round(360 * cm)); // #perf-mobile: Partikel-Caps auf lite (0,45→0,35, #perf-scorch2) — Sicherheits-Dach für Turbo/schnelle Geräte; die Rate darunter bindet zuerst
     }
 
     // #perf: NUR der teure Per-Pixel-Loop + putImageData (throttled auf ~30 fps). Das Zeichnen (drawImage) passiert
