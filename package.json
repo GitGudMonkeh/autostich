@@ -21,6 +21,9 @@
     "music:overview": "node maintenance/music-overview.mjs",
     "bf:helligkeit": "node scripts/bf-helligkeit.mjs"
   },
+  "engines": {
+    "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
+  },
   "dependencies": {
     "pixi.js": "^8.19.0",
     "react": "^18.3.1",
