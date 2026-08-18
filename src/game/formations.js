@@ -40,29 +40,37 @@ export function openSegmentInfo(familyTiers) {
   return { active: count > 0, all, count, isOpen: (g) => all || (g >= 0 && g < count) };
 }
 export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe leichter, kleinerer Nachbarabstand reicht] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
-const MAX_TREPPE_STEP  = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
+export const MAX_TREPPE_STEP = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
 // Anzeigenamen: EINE Quelle in constants.js (Sprachprüfung A12/E1) — hier nur die vier Basistypen davon,
 // damit die bestehenden Aufrufer (Zielauswahl Formationskern) unverändert bleiben.
 export const FORMATION_TYPE_LABELS = Object.fromEntries(FORMATION_TYPES.map((t) => [t, C_FORMATION_LABELS[t]]));
 
+/* #sprache: Die Faktoren sind EXPORTIERT, weil die Formations-Legende (ArchPanels) sie anzeigt. Vorher standen
+   dieselben Zahlen dort ein zweites Mal als deutscher Fließtext — beim Balancing wäre die Legende still
+   weggelaufen. Jetzt trägt der Katalog nur noch den Satz mit Platzhaltern, die Zahlen kommen von hier. */
+export const WIED_F2 = 1.25;   // [#Pass4: 1,30→1,25]
+export const WIED_F3 = 1.50;   // [#Pass4: 1,60→1,50]
+export const WIED_F4 = 1.80;   // [#Pass4: 2,00→1,80]
+export const WIED_STEP = 0.40; // ab der 5. Karte je weitere [#Pass4: Eskalation 0,50→0,40; kein Cap]
 // Shop „Verstärkte Wiederholung" (#164): secondBonus = 2. Karte, thirdBonus = 3. Karte, allMult = Faktor auf ALLE
 // Wiederholungsfaktoren (Stufe IV ×1,20; nur auf echte Faktoren > 1, nie auf die Einzelkarte).
 function wiederholungFactor(ordinal, secondBonus = 0, thirdBonus = 0, allMult = 1) {
   let f;
   if (ordinal <= 1) f = 1;
-  else if (ordinal === 2) f = 1.25 + secondBonus; // [#Pass4: 1,30→1,25]
-  else if (ordinal === 3) f = 1.50 + thirdBonus;  // [#Pass4: 1,60→1,50]
-  else f = 1.80 + (ordinal - 4) * 0.40;           // [#Pass4: 2,00→1,80, Eskalation 0,50→0,40; kein Cap]
+  else if (ordinal === 2) f = WIED_F2 + secondBonus;
+  else if (ordinal === 3) f = WIED_F3 + thirdBonus;
+  else f = WIED_F4 + (ordinal - 4) * WIED_STEP;
   return f > 1 ? f * allMult : f;
 }
+export const ESKALATION_STEP = 0.20; // je weitere Karte über der Mindestlänge (#95)
 function escalatingFactor(ordinal, base) {
-  return ordinal <= 2 ? 1 : base + (ordinal - 3) * 0.20; // je weitere Karte +0,20 (#95)
+  return ordinal <= 2 ? 1 : base + (ordinal - 3) * ESKALATION_STEP;
 }
 // Überlappungsbonus je Anzahl Formationen auf einer Karte (#95): 2→×1,5, 3→×2, 4→×3.
-const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
-const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // [#Pass4: Farbblock 1,30→1,35] [#161 FB-5: Treppe/Wechsel 1,25→1,35/1,40 — schwerer zu bauen, daher stärker belohnt (≥ Farbblock)]
+export const OVERLAP_BONUS = { 2: 1.5, 3: 2, 4: 3 };
+export const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // [#Pass4: Farbblock 1,30→1,35] [#161 FB-5: Treppe/Wechsel 1,25→1,35/1,40 — schwerer zu bauen, daher stärker belohnt (≥ Farbblock)]
 
 // Maximale Läufe über eine Paar-Bedingung, mit optional EINER erlaubten fremden Karte dazwischen (E1/E2).
 // `matches(refPos, k)` prüft, ob Position k zur Formation von refPos gehört. Fremde Karten sind keine Mitglieder.

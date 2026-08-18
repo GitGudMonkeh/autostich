@@ -126,15 +126,15 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {arch && arch.boost > 0 && (
         <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] sm:text-[9px] font-bold leading-none px-1 rounded-b-[3px] z-10"
           style={{ background: suitColor(arch.badgeSuit), color: "#fff" }}
-          title={`🏗 ${arch.name} · +${arch.boost} Wert`}>
+          title={t("cardgrid.arch.title", { name: arch.name, boost: arch.boost })}>
           +{arch.boost}
         </span>
       )}
       {((card.ionStacks || 0) > 0 || ripe || glacierForm) && (
         <span className="absolute top-0.5 right-1 flex items-center gap-0.5 text-[8px] leading-none">
-          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title="Teil einer aktiven Gletscher-Formation (2D)">❄</span>}
+          {glacierForm && <span className="font-bold" style={{ color: "#5ec8f0", textShadow: "0 0 3px #5ec8f0" }} title={t("cardgrid.glacier.title")}>❄</span>}
           {(card.ionStacks || 0) > 0 && <span className="inline-flex items-center gap-0.5" style={{ color: "#5ec8f0" }}><FactionIcon type="lightning" size={9} />{card.ionStacks}</span>}
-          {ripe && <span title="Grün (reif) — zählt für den Farbblock"><FactionIcon type="plant" size={9} /></span>}
+          {ripe && <span title={t("cardgrid.ripe.title")}><FactionIcon type="plant" size={9} /></span>}
         </span>
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),

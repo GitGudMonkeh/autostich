@@ -593,8 +593,26 @@ export default {
 
   /* ---- Board grid (CardGrid) · architect panels (ArchPanels) ---- */
   "cardgrid.openBoundary": "⇕ boundary open",
+  "cardgrid.arch.title": "🏗 {name} · +{boost} value",
+  "cardgrid.glacier.title": "Part of an active glacier formation (2D)",
+  "cardgrid.ripe.title": "Green (ripe) — counts towards the suit block",
+  "arch.buildingsN": "Buildings ({n})",
   "archpanels.tapHint": "Tapping shows where it sits on the board — and the other way round.",
   "archpanels.roleLegend": "● Role — target of a perk/family on this card",
+
+  /* Formation legend (ArchPanels): the factors arrive as placeholders from formations.js and are formatted
+     per language — no tuning number is spelled out here, or the legend would drift on the next balancing pass. */
+  "formlegend.wiederholung": "≥2 identical values next to each other (×{f2} / ×{f3} / ×{f4}, then +{step} for each further one)",
+  "formlegend.farbblock": "≥3 cards of the same suit (from ×{base}, +{step} for each further one)",
+  "formlegend.treppe": "≥3 strictly rising values, step ≤{max} (from ×{base}, +{step} for each further one)",
+  "formlegend.wechsel": "≥3 in a zigzag, neighbour difference ≥{diff} (from ×{base}, +{step} for each further one)",
+  "formlegend.anker": "a single position counts as a formation (factor depends on the source)",
+  "formlegend.nachhall": "the factor of an ending formation carries over to the next card",
+  "formlegend.formationskern": "your chosen formation type gets an extra factor",
+  "formlegend.grenzbonus": "a formation runs across a segment boundary and pays an extra ×{f}",
+  "formlegend.overlap": "⧉ Overlap — more formations = more multiplier: 2 ×{f2} · 3 ×{f3} · 4 ×{f4}",
+  "formlegend.frame": "Frame colour = number of formations",
+  "formlegend.frame.hint": "more frames = more multi · dashed = no multiplier",
 
   /* ---- Architect (ArchitectScreen) ---- */
   "arch.eyebrow": "Architect · build phase · cycle {cycle}",

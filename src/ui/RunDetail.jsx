@@ -98,7 +98,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
                 <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 Gebäude ({archBuildings.length})</div>
+                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.buildingsN", { n: archBuildings.length })}</div>
                   <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
                     {archBuildings.map((b) => {
@@ -114,7 +114,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                             <b>{fam.name}</b>
-                            <span className="opacity-55">{fam.legendary ? "Legendär" : `Stufe ${["", "I", "II", "III", "IV"][b.tier] || b.tier}`}</span>
+                            <span className="opacity-55">{fam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: ["", "I", "II", "III", "IV"][b.tier] || b.tier })}</span>
                           </span>
                           {eff && <span className="opacity-75">{eff}</span>}
                         </button>

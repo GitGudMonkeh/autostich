@@ -955,6 +955,25 @@ Autostich ist zweisprachig (DE/EN). **Jeder neue spieler-sichtbare Text gehört 
   Stufentexte aus ~120 Quellen (`MUSTER_DESC`-Templates + indizierte Präzisions-Konstanten) — `enFamilies.js`
   spiegelt beide Sparmechanismen, sonst hätte EN 292 Pflegestellen statt 120.
 
+#### #formlegend — die Ratsche hat einen blinden Fleck: String-Tabellen (2026-08-18)
+Gemeldet aus dem Spiel: die Legende „Formationen & Rahmenfarben" in der Aufstellungsphase stand auf Englisch
+mitten in einer sonst englischen Seite **auf Deutsch**. Die acht Erklärsätze lagen als `FORMATION_LEGEND`-Tabelle
+fest verdrahtet in `ArchPanels.jsx` — die i18n-Ratsche konnte sie nicht sehen: ihr Greifer fischt JSX-Textknoten
+(`>…<`) und Text-Props, **keine String-Literale in einer Konstanten-Tabelle**. Wer Anzeigetext in einer Tabelle
+sammelt (Legenden, Spaltenköpfe, Aufzählungen), bekommt von der Ratsche also keinen Schutz.
+- **Dieselbe Lücke, andere Form:** `CODEISH` wirft jeden Fund mit Klammern/Semikolon weg. Damit lief auch
+  `title="Teil einer aktiven Gletscher-Formation (2D)"` durch — die Klammer allein reichte. Beide Klassen sind in
+  ArchPanels/CardGrid/GameOver/RunDetail jetzt migriert (`formlegend.*`, `cardgrid.*`, `arch.buildingsN`).
+- **Die Faktoren stehen NICHT mehr im Katalog.** `formations.js` exportiert sie (`WIED_F2/F3/F4`, `WIED_STEP`,
+  `ESKALATION_STEP`, `FARBBLOCK_BASE`, `TREPPE_BASE`, `WECHSEL_BASE`, `MAX_TREPPE_STEP`, `OVERLAP_BONUS`), die
+  Legende formatiert sie je Sprache (`fmtNum`) — derselbe Aufbau wie `GlacierFormLegend`. Vorher hätte ein
+  Balancing-Schritt die Legende still falsch werden lassen. **Zwei Nachkommastellen** über `toFixed(2)`:
+  `fmtNum` kürzt die Nullen sonst weg und die Leiter ×1,25 / ×1,50 / ×1,80 liest sich nicht mehr als Reihe.
+- Der Grenzbonus-Faktor kommt aus `FAMILY_DEFS.E_SEGMENT.tiers[4].crossBonus` (die Familienstufe IST die Quelle).
+- Wächter: `test/formation-legend.test.js` — jede Zeile der Tabelle muss über `t()` kommen (unabhängig von der
+  Sprache des Literals), jeder Formationstyp aus `FORMATION_LABELS` braucht seinen Satz in BEIDEN Katalogen, und
+  keine der Tuning-Zahlen darf im Katalog stehen. Gegenprobe gemacht: der Wächter fällt bei jedem der drei Rückfälle.
+
 ### #marke — der Spieltitel ist sprachabhängig: DE „Autostich", EN „Autotrick" (18.08.2026)
 Der Titel war bis dahin von der Begriffstabelle ausgenommen (`genre-terminologie.md` §2: „Kein Grund zur
 Umbenennung — Balatro heißt auch Balatro"). **Die Entscheidung ist umgedreht**, mit derselben Beobachtung

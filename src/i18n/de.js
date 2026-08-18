@@ -605,8 +605,26 @@ export default {
 
   /* ---- Brett-Raster (CardGrid) · Architekt-Panels (ArchPanels) ---- */
   "cardgrid.openBoundary": "⇕ Grenze offen",
+  "cardgrid.arch.title": "🏗 {name} · +{boost} Wert",
+  "cardgrid.glacier.title": "Teil einer aktiven Gletscher-Formation (2D)",
+  "cardgrid.ripe.title": "Grün (reif) — zählt für den Farbblock",
+  "arch.buildingsN": "Gebäude ({n})",
   "archpanels.tapHint": "Antippen zeigt am Brett, wo es liegt — und umgekehrt.",
   "archpanels.roleLegend": "● Rolle — Ziel eines Perks/einer Familie an dieser Karte",
+
+  /* Formations-Legende (ArchPanels): die Faktoren kommen als Platzhalter aus formations.js und werden je
+     Sprache formatiert — hier steht KEINE Tuning-Zahl, sonst liefe die Legende beim Balancing weg. */
+  "formlegend.wiederholung": "≥2 gleiche Werte nebeneinander (×{f2} / ×{f3} / ×{f4}, dann +{step} je weitere)",
+  "formlegend.farbblock": "≥3 Karten gleicher Farbe (ab ×{base}, +{step} je weitere)",
+  "formlegend.treppe": "≥3 streng steigende Werte, Schritt ≤{max} (ab ×{base}, +{step} je weitere)",
+  "formlegend.wechsel": "≥3 im Zick-Zack, Nachbardifferenz ≥{diff} (ab ×{base}, +{step} je weitere)",
+  "formlegend.anker": "eine einzelne Position zählt als Formation (Faktor je Quelle)",
+  "formlegend.nachhall": "der Faktor einer endenden Formation wirkt auf die nächste Karte nach",
+  "formlegend.formationskern": "dein gewählter Formationstyp bekommt einen Zusatzfaktor",
+  "formlegend.grenzbonus": "eine Formation läuft über eine Segmentgrenze und zahlt zusätzlich ×{f}",
+  "formlegend.overlap": "⧉ Überlappung — mehr Formationen = mehr Multiplikator: 2 ×{f2} · 3 ×{f3} · 4 ×{f4}",
+  "formlegend.frame": "Rahmenfarbe = Anzahl Formationen",
+  "formlegend.frame.hint": "mehr Rahmen = mehr Multi · gestrichelt = ohne Multiplikator",
 
   /* ---- Architekt (ArchitectScreen) ---- */
   "arch.eyebrow": "Architekt · Bauphase · Durchlauf {cycle}",
