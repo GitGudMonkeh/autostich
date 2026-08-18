@@ -96,6 +96,9 @@ export const DECK_DEFS = {
   // #deck-neon zwei DP-Kauf-Packs: Nachtklinge (20 DP) · Paradox (10 DP).
   deck_nachtklinge: { id: "deck_nachtklinge", name: "Nachtklinge", unlock: { kind: "buy", ownKey: "pack:nachtklinge" } },
   deck_paradox:     { id: "deck_paradox",     name: "Paradox",     unlock: { kind: "buy", ownKey: "pack:paradox" } },
+  // #deck-nacht zwei DP-Kauf-Packs: Hanami (30 DP) · Nimbus (10 DP).
+  deck_hanami: { id: "deck_hanami", name: "Hanami", unlock: { kind: "buy", ownKey: "pack:hanami" } },
+  deck_nimbus: { id: "deck_nimbus", name: "Nimbus", unlock: { kind: "buy", ownKey: "pack:nimbus" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -164,6 +167,9 @@ export const BATTLEFIELD_DEFS = {
   // #deck-neon Battlefields (gleicher Besitz-Schlüssel wie das Deck):
   bf_nachtklinge: { id: "bf_nachtklinge", name: bfName("deck_nachtklinge"), unlock: { kind: "buy", ownKey: "pack:nachtklinge" } },
   bf_paradox:     { id: "bf_paradox",     name: bfName("deck_paradox"),     unlock: { kind: "buy", ownKey: "pack:paradox" } },
+  // #deck-nacht Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_hanami: { id: "bf_hanami", name: bfName("deck_hanami"), unlock: { kind: "buy", ownKey: "pack:hanami" } },
+  bf_nimbus: { id: "bf_nimbus", name: bfName("deck_nimbus"), unlock: { kind: "buy", ownKey: "pack:nimbus" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

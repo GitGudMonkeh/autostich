@@ -162,6 +162,11 @@ import nachtklingeFront from "../assets/cards/decks_player/deck_nachtklinge/fron
 import nachtklingeBack  from "../assets/cards/decks_player/deck_nachtklinge/back.webp";
 import paradoxFront     from "../assets/cards/decks_player/deck_paradox/front.webp";
 import paradoxBack      from "../assets/cards/decks_player/deck_paradox/back.webp";
+// #deck-nacht Hanami (30 DP) · Nimbus (10 DP)
+import hanamiFront      from "../assets/cards/decks_player/deck_hanami/front.webp";
+import hanamiBack       from "../assets/cards/decks_player/deck_hanami/back.webp";
+import nimbusFront      from "../assets/cards/decks_player/deck_nimbus/front.webp";
+import nimbusBack       from "../assets/cards/decks_player/deck_nimbus/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -206,6 +211,10 @@ import bfNachtklingeDesktop from "../assets/battlefields/bf_nachtklinge/desktop.
 import bfNachtklingeMobile  from "../assets/battlefields/bf_nachtklinge/mobile.jpg";
 import bfParadoxDesktop     from "../assets/battlefields/bf_paradox/desktop.jpg";
 import bfParadoxMobile      from "../assets/battlefields/bf_paradox/mobile.jpg";
+import bfHanamiDesktop      from "../assets/battlefields/bf_hanami/desktop.jpg";
+import bfHanamiMobile       from "../assets/battlefields/bf_hanami/mobile.jpg";
+import bfNimbusDesktop      from "../assets/battlefields/bf_nimbus/desktop.jpg";
+import bfNimbusMobile       from "../assets/battlefields/bf_nimbus/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -261,6 +270,8 @@ export const DECK_ASSETS = {
   deck_salar:       { front: salarFront,       back: salarBack },
   deck_nachtklinge: { front: nachtklingeFront, back: nachtklingeBack },
   deck_paradox:     { front: paradoxFront,     back: paradoxBack },
+  deck_hanami:      { front: hanamiFront,      back: hanamiBack },
+  deck_nimbus:      { front: nimbusFront,      back: nimbusBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -318,6 +329,8 @@ export const BATTLEFIELD_ASSETS = {
   bf_salar:       { desktop: bfSalarDesktop,       mobile: bfSalarMobile },
   bf_nachtklinge: { desktop: bfNachtklingeDesktop, mobile: bfNachtklingeMobile },
   bf_paradox:     { desktop: bfParadoxDesktop,     mobile: bfParadoxMobile },
+  bf_hanami:      { desktop: bfHanamiDesktop,      mobile: bfHanamiMobile },
+  bf_nimbus:      { desktop: bfNimbusDesktop,      mobile: bfNimbusMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
@@ -346,5 +359,11 @@ export const battlefieldAssets = (id) => BATTLEFIELD_ASSETS[id] || BATTLEFIELD_A
 const BATTLEFIELD_VEIL = {
   bf_gottgleich: 1.54, // gemessen 35,1 — Median +76 %, mit Abstand der hellste (goldener Lichtdom)
   bf_pflanze:    1.38, // gemessen 29,0 — Median +46 %, zweiter und letzter sichtbarer Ausreißer
+  /* #deck-nacht: bf_nimbus liegt mit 27,1 zwischen den beiden Gruppen der Messung — über den sechs Feldern bei
+     24,1–25,9 (0–8 % über dem Deckel, bewusst ohne Eintrag: das ist Rauschen) und unter bf_pflanze. Mit 13 % über
+     dem Deckel ist es kein Rauschen mehr: die Quallenglocke ist eine große, gleichmäßig helle Fläche genau dort,
+     wo die Kacheln stehen. Deshalb ein Eintrag. bf_hanami braucht keinen (22,5 — die Nacht darin ist wirklich
+     dunkel, es leuchten nur Blüten und Lampions). */
+  bf_nimbus:     1.28, // gemessen 27,1 — Median +13 %
 };
 export const battlefieldVeil = (id) => BATTLEFIELD_VEIL[id] || 1;

@@ -73,6 +73,11 @@ export default {
      identisch geschrieben und benennt das Prinzip des Motivs (Penrose-Dreieck, Möbiusband, endlose Treppe). */
   "cosmetic.deck_nachtklinge.name": "Nightblade",
   "cosmetic.deck_paradox.name": "Paradox",
+  /* #deck-nacht — both names are spelled identically in German and English. "Hanami" is the loanword for the
+     blossom-viewing festival and is already the English term for it; "Nimbus" carries the same two readings in
+     both languages (the rain cloud and the halo), which is exactly the picture: a glowing bell above the city. */
+  "cosmetic.deck_hanami.name": "Hanami",
+  "cosmetic.deck_nimbus.name": "Nimbus",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

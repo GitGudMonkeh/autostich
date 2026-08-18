@@ -317,6 +317,25 @@ export const THEME_DEFS = {
     deckId: "deck_nachtklinge", bfId: "bf_nachtklinge", els: ["deck", "bf"] },
   paradox:     { id: "paradox",     name: packName("deck_paradox"),     emblem: "♾️", kind: "buy", price: 10, a1: "#e0b83c", a2: "#16b8a4",
     deckId: "deck_paradox",     bfId: "bf_paradox",     els: ["deck", "bf"] },
+
+  /* ---- #deck-nacht zwei DP-Kauf-Packs ----
+     Zwei Nachtbilder, und genau darin lag die Arbeit: nach der Messung der Spitzlichter (hell UND farbig) sah
+     BEIDES zuerst nach Pink aus — Hanami 93 %, Nimbus 82 %. Ein zweiter Durchgang über die FLÄCHE (statt nur über
+     die Leuchtkerne) trennt sie: bei Hanami ist der Grund ein fast schwarzes Violett (#291039), es leuchtet dort
+     wirklich nur Pink und Bernstein; bei Nimbus ist das Violett eine echte Mittellage (43 % Fläche, #37214f/#4f3071)
+     und trägt Himmel und Stadt. Deshalb liegen die Rollen andersherum:
+     · Hanami — `a1` das Blüten-Pink (343°, Krone und obere Rahmenhälfte), `a2` der Laternen-Bernstein (26°, die
+       schwimmenden Lampions und der untere Rahmenverlauf). Nachbarn im Pinkband sind beach (334°) und nachtklinge
+       (327°); Hanami liegt darüber, ist also rosiger, und trennt sich zusätzlich hart am `a2` (Bernstein statt
+       Cyan/Türkis).
+     · Nimbus — `a1` das Nachtviolett (267°, Fläche), `a2` das Rosa der Qualle (335°, das einzige, was leuchtet).
+       Dieselbe Aufteilung wie bei nachtklinge: Fläche vor Motiv. Das Bernstein der Fenster bleibt AUSSEN vor, es
+       ist Streulicht ohne eigene Aufgabe — und Hanami hat den Ton schon. Enger Nachbar ist spacedog (259°, a2
+       Magenta #ff4dcb): Nimbus liegt 8° tiefer im Violett und sein `a2` ist das weichere Rosa, kein hartes Magenta. */
+  hanami: { id: "hanami", name: packName("deck_hanami"), emblem: "🌸", kind: "buy", price: 30, a1: "#ff4d80", a2: "#ff9a4d",
+    deckId: "deck_hanami", bfId: "bf_hanami", els: ["deck", "bf"] },
+  nimbus: { id: "nimbus", name: packName("deck_nimbus"), emblem: "🪼", kind: "buy", price: 10, a1: "#9558e0", a2: "#ff77b0",
+    deckId: "deck_nimbus", bfId: "bf_nimbus", els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
