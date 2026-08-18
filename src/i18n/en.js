@@ -493,6 +493,11 @@ export default {
   "perk.upgrade": "⬆ UPGRADE · {from}→{to}",
   "perk.onceHint": "Each perk can only be chosen once per run.",
   "perk.deckStrength": "Deck strength per suit",
+  // #lv-fluegel: the two side rails of the level-up card (1400 px and up).
+  "lv.wing.deck": "Deck",
+  "lv.wing.stats": "Metrics",
+  "lv.wing.expand": "Show {what}",
+  "lv.wing.collapse": "Hide {what}",
   "perk.formations": "Formations",
   "perk.build_one": "Your build — {count} perk",
   "perk.build_other": "Your build — {count} perks",

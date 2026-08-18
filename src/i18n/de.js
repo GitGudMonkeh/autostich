@@ -508,6 +508,11 @@ export default {
   "perk.upgrade": "⬆ AUFWERTEN · {from}→{to}",
   "perk.onceHint": "Jeder Perk ist pro Lauf nur einmal wählbar.",
   "perk.deckStrength": "Deck-Stärke je Farbe",
+  // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte (nur ab 1400 px).
+  "lv.wing.deck": "Deck",
+  "lv.wing.stats": "Kennzahlen",
+  "lv.wing.expand": "{what} einblenden",
+  "lv.wing.collapse": "{what} ausblenden",
   "perk.formations": "Formationen",
   "perk.build_one": "Dein Build — {count} Perk",
   "perk.build_other": "Dein Build — {count} Perks",

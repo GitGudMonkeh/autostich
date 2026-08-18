@@ -1338,6 +1338,11 @@ button { font-family: inherit; }
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
 
+/* #lv-fluegel: Auch die Level-up-Karte trägt eine Klammer — unterhalb von 1400 px ist sie KEINE Box, die
+   Karte bleibt also direktes Kind des zentrierenden Overlays und die Handy-Fassung damit unverändert.
+   Die Flügel und die Griffe darin werden dort ohnehin nicht gerendert (`useIsWide`-Gate). */
+.lv-rig { display: contents; }
+
 /* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
    im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
@@ -3308,6 +3313,81 @@ button { font-family: inherit; }
      `zoom` skaliert das ganze Koordinatensystem samt der absolut liegenden Gebäude-Kontur und verkleinert
      dabei auch die Layout-Box, anders als `transform` (dieselbe Begründung wie am Hub, s. `.hub-pair`). */
   .go-layout .cg-root, .rd-c3 .cg-root { width: 430px; zoom: .72; }
+
+  /* ═══ #lv-fluegel — die Level-up-Karte bekommt zwei ausklappbare Seitenleisten ═══
+     Perk-/Skill-Wahl bleiben eine KARTE ÜBER DEM BRETT (bewusste Ausnahme vom Desktop-Pass, s.
+     LevelupWings.jsx). Was fehlte, war Platz: links das eigene Deck, rechts die Kennzahlen.
+
+     Die Flügel sind Flex-GESCHWISTER der Karte, keine Überlagerung — sie können damit per Konstruktion
+     nichts verdecken. Wird das Fenster knapp, schrumpfen sie (flex-shrink), statt über die Karte zu
+     laufen; die Karte selbst ist `flex: 0 0 auto` und behält Breite UND Position, egal was auf- oder
+     zugeklappt ist (sonst bräche das Angebot mitten in der Entscheidung neu um). Rechnung für den
+     engsten Fall: 1400 px − 32 (Overlay-Polster) − 880 (Karte) − 44 (Griffbahn) = 444 px für zwei
+     Flügel, also 222 je Seite.
+     RASTER statt Flex, und das ist die eigentliche Pointe: mit drei Spuren (1fr · auto · 1fr) sitzt die Karte
+     in der MITTELSPUR und steht damit immer exakt in der Fenstermitte — auch wenn nur EIN Flügel offen ist.
+     Als Flex-Reihe mit `justify-content: center` wanderte sie beim Aufklappen um die halbe Flügelbreite zur
+     Seite; das ist genau das Springen, das dieser Screen nicht haben darf. Die Seitenspuren teilen sich den
+     Rest gleichmäßig, der Flügel darin ist `width: 320px; max-width: 100%` — er nimmt also seine Wunschbreite
+     oder das, was da ist, je nachdem, was kleiner ist. Ein leerer Flügel kostet nichts: die Spur bleibt, das
+     Element wird gar nicht gerendert.
+
+     Die Mittelspur ist FEST (924 = 880 Karte + 2 × 22 Griffbahn) und ausdrücklich nicht `auto`: eine
+     auto-Spur misst sich am Inhalt, und der Inhalt ist je Fraktion/Angebot verschieden — die Karte wurde
+     damit beim Zuklappen eines Flügels schmaler (gemessen: 880 → 784 px). Fest heißt: die Karte steht in
+     allen vier Zuständen (zu/zu · auf/zu · zu/auf · auf/auf) auf denselben Pixeln. */
+  .lv-rig {
+    display: grid; grid-template-columns: minmax(0, 1fr) 924px minmax(0, 1fr);
+    /* Oben BÜNDIG, nicht mittig: ein kurzer Flügel (die Kennzahlen sind ~300 px hoch, die Karte ~750)
+       schwebte sonst auf halber Höhe neben der Karte und wirkte, als gehörte er nicht dazu. */
+    align-items: start; width: 100%;
+  }
+  /* Der 22-px-Rand ist die Bahn für die Griffe. Dadurch liegen sie NEBEN dem Kartentext, nie darauf. */
+  /* Spuren AUSDRÜCKLICH zuweisen. Ohne das greift die Auto-Platzierung: fehlt der linke Flügel, rutscht die
+     Karte in Spur 1 und klebt am Fensterrand (gemessen: 360 → 38 px). Die Klasse allein sagt „ich gehöre in
+     die Mitte" — das Raster muss es auch wissen. */
+  .lv-wing-l { grid-column: 1; }
+  .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; }
+  .lv-wing-r { grid-column: 3; }
+  .lv-wing {
+    width: 320px; max-width: 100%; align-self: start;
+    max-height: min(92dvh, 760px); overflow: hidden auto;
+    border-radius: 14px; border: 1px solid #2c2a3a; padding: 13px;
+    background: linear-gradient(180deg, #17161f, #121017);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .45);
+  }
+  .lv-wing-l { justify-self: end; }
+  .lv-wing-r { justify-self: start; }
+  .lv-wing-sep { height: 1px; margin: 12px 0; }
+  /* Drei Angebote je Fraktion → drei Spalten. Auf 880 px brach `sm:grid-cols-2` die dritte Karte in eine
+     eigene Zeile und ließ daneben ein Loch — genau das Bild, das die Mitte „unattraktiv" gemacht hat. */
+  .sk-offers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Die StatusRail bringt ihre eigene Panel-Schale mit und setzt sie INLINE — im Flügel wäre das ein Panel
+     im Panel. Inline schlägt jede Stylesheet-Regel, deshalb hier `!important` (dieselbe Naht wie #perf-blur). */
+  .lv-wing .as-panel.as-panel-deck {
+    background: none !important; border: 0 !important; padding: 0 !important; border-radius: 0 !important;
+  }
+  .lv-grip {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    left: auto; right: auto; width: 22px; min-height: 76px; z-index: 4;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    font-size: 13px; line-height: 1; border: 1px solid;
+    background: linear-gradient(180deg, #1b1a24, #141019);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+  }
+  .lv-grip-l { left: -22px; border-right: 0; border-radius: 9px 0 0 9px; }
+  .lv-grip-r { right: -22px; border-left: 0; border-radius: 0 9px 9px 0; }
+  /* Senkrechte Beschriftung, sobald der Flügel offen ist: ein nackter Pfeil am Rand wird einmal aus
+     Neugier geklickt und nie wieder — der Name sagt, was dahinter liegt. */
+  .lv-grip-lbl { writing-mode: vertical-rl; text-orientation: mixed;
+    font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+
+  /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
+     `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist. */
+  .sk-tab {
+    border: 1px solid; border-bottom-width: 3px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(0, 0, 0, .2));
+  }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über

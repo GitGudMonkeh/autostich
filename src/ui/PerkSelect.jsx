@@ -12,6 +12,8 @@ import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
+import { useIsWide } from "./useIsWide.js";
+import { LevelupRig, deckWingOpen } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -42,9 +44,11 @@ function offerView(entry, familyTiers = {}) {
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {} }) {
+export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {},
+                             options = {}, onOption, currentTraj = [], recordTraj = [], best = 0 }) {
   // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
   // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
+  const deckInWing = deckWingOpen(options, useIsWide()); // #lv-fluegel: dann trägt der Flügel Deck + Formationen
   const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   const canReroll = !!onReroll && rerollTokens > 0;
@@ -58,7 +62,8 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active);
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-3xl">
+      <LevelupRig accent={PHASE_ACCENTS.red.c} state={state} deck={deck} options={options} onOption={onOption}
+                  currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
         <PhaseHairline />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
@@ -154,20 +159,25 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {/* data-tut: Der Build-Coach-Mark zeigt HIER hin, nicht auf das BuildPanel unter dem Brett — das läge
             hinter diesem Vollbild-Overlay und wäre nie zu sehen. */}
         <div className="mt-4" data-tut="perk-build">
-          <CollapsibleField title={tr("perk.deckStrength")}>
-            <DeckStrength deck={deck} />
-          </CollapsibleField>
+          {/* Deck-Stärke und Formationen NUR, solange der linke Flügel sie nicht schon zeigt (#lv-fluegel). */}
+          {!deckInWing && (
+            <CollapsibleField title={tr("perk.deckStrength")}>
+              <DeckStrength deck={deck} />
+            </CollapsibleField>
+          )}
           {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
-          <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
-            <FormationPanel state={state} title={tr("perk.formations")} collapsible defaultOpen={false} />
-          </div>
+          {!deckInWing && (
+            <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
+              <FormationPanel state={state} title={tr("perk.formations")} collapsible defaultOpen={false} />
+            </div>
+          )}
           <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
             return tr("perk.build", { count: n }); })()} defaultOpen={false}>
             <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty={tr("perk.build.empty")} />
           </CollapsibleField>
         </div>
         </div>
-      </div>
+      </LevelupRig>
     </div>
   ));
 }

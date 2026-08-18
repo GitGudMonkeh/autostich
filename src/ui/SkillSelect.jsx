@@ -14,6 +14,8 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
+import { LevelupRig, deckWingOpen } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
@@ -73,7 +75,10 @@ function KeywordGlossary({ tokens }) {
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
    Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
-export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption }) {
+export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
+                              currentTraj = [], recordTraj = [], best = 0 }) {
+  const wide = useIsWide();
+  const deckInWing = deckWingOpen(options, wide); // #lv-fluegel: Formationen stehen dann links im Flügel
   const held = skills.map((id) => skillDef(id)).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
@@ -141,7 +146,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const curG = groups[page];
   const prevG = nPages > 1 ? groups[(page - 1 + nPages) % nPages] : null;
   const nextG = nPages > 1 ? groups[(page + 1) % nPages] : null;
-  const detailOpen = !!curG && openArch === curG.arch;
+  /* #sk-reiter: Auf dem Desktop steht die Passiv-Beschreibung offen — dort ist der Platz da, und sie ist genau
+     der Kontext, der die Wahl entscheidet. `openArch === null` heißt „noch nicht angefasst"; ein bewusstes
+     Zuklappen schreibt `""` (nie ein Archetyp-Schlüssel), damit „zu" auf dem Desktop auch zu bleibt. Am Handy
+     ist `wide` false → identisches Verhalten wie vorher (`null` und `""` sind dort beide nur „kein Treffer"). */
+  const detailOpen = !!curG && (openArch === curG.arch || (wide && openArch === null));
   /* #kante: Der Rahmen der Auswahl trägt die Farbe des GEZEIGTEN Archetyps statt eines festen Violett — beim
      Blättern durch die Fraktionen wechselt er mit. Zusammen mit den Karten (die ihre Seltenheit tragen)
      ergibt das zwei Achsen ohne Konkurrenz: der Rahmen sagt „wo bin ich", die Karten „wie gut ist das".
@@ -177,7 +186,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
-      <div className="w-full max-w-3xl">
+      <LevelupRig accent={archAccent.c} state={state} deck={state.deck || []} options={options} onOption={onOption}
+                  currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
             Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
             bleibt die Karte konstant, nur der Inhalt darunter scrollt. */}
@@ -216,9 +226,44 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             </button>
           </div>
 
+          {/* #sk-reiter — ab 1400 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
+              nebeneinander, jede mit ihren Skillnamen als Vorschau. Der Zustand ist derselbe (`page`/`goTo`),
+              es ist nur eine zweite Darstellung desselben Pagers — kein neuer State, keine zweite Wahrheit.
+              Bewusst ein `wide`-Zweig statt zweier gerenderter Navigationen: zwei Bedienelemente für dieselbe
+              Sache hießen zwei Tab-Reihenfolgen und zwei Ziele für den Tutorial-Mark.
+              `repeat(n,1fr)` statt fester Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein. */}
+          {wide && nPages > 0 && curG && (
+            <div className="sk-tabs mt-2 grid gap-2" data-tut="skill-offer"
+                 style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
+              {groups.map((g, i) => {
+                const on = i === page;
+                return (
+                  <button key={g.arch} type="button" onClick={() => goTo(i)}
+                    className="sk-tab text-left rounded-xl px-3 py-2 transition-all hover:brightness-125"
+                    aria-current={on ? "true" : undefined}
+                    style={{ "--c": g.meta.color, borderColor: on ? `${g.meta.color}8a` : "#ffffff29",
+                             borderBottomColor: on ? g.meta.color : "transparent",
+                             background: on ? `linear-gradient(180deg,${g.meta.color}22,#12121a 72%)` : undefined,
+                             boxShadow: on ? `0 0 18px -10px ${g.meta.color}` : undefined }}>
+                    <div className="flex items-center gap-1.5">
+                      <ArchIcon meta={g.meta} size={14} />
+                      <span className="text-[13px] font-bold uppercase tracking-wide truncate"
+                            style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
+                      <span className="ml-auto text-[11px] opacity-45 tabular-nums">{g.ids.length}</span>
+                    </div>
+                    {/* Die Vorschau ist der eigentliche Gewinn: man sieht alle Angebote, OHNE durchzuklicken. */}
+                    <div className="text-[11.5px] mt-1 truncate" style={{ color: on ? "#9c9cae" : "#65656f" }}>
+                      {g.ids.map((id) => skillDef(id)?.name).filter(Boolean).join(" · ")}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Archetyp-Navi (Indikator): aktueller Typ mittig (mit i-Chip → passender Leitfaden), Nachbarn links/rechts
               im Endlos-Ring, Punkte für die Position (#12/#UI). */}
-          {nPages > 0 && curG && (
+          {!wide && nPages > 0 && curG && (
             <div className="mt-2" data-tut="skill-offer">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (
@@ -345,9 +390,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - tx.current; if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1); }}>
             <div key={page} className="px-0.5"
               style={{ animation: `${dir.current < 0 ? "as-page-in-left" : "as-page-in-right"} .26s cubic-bezier(.22,.61,.36,1)` }}>
-              {/* Passiv-Beschreibung — einklappbar (default zu). */}
-              <button type="button" onClick={() => setOpenArch(detailOpen ? null : curG.arch)}
-                className="w-full flex items-center gap-2 mb-2 text-left" aria-expanded={detailOpen}
+              {/* Passiv-Beschreibung — einklappbar (am Handy default zu, ab 1400 px offen).
+                  Die Zeile ist ein Flex-Behälter, weil der Leitfaden-Chip daneben ein EIGENER Knopf sein muss —
+                  verschachtelte <button> sind ungültiges HTML. Am Handy hat sie genau ein Kind (`flex-1`), das
+                  vorher `w-full` war: gleiche Breite, gleicher Abstand, gleiche Geometrie. */}
+              <div className="flex items-center gap-2 mb-2">
+              <button type="button" onClick={() => setOpenArch(detailOpen ? "" : curG.arch)}
+                className="flex-1 min-w-0 flex items-center gap-2 text-left" aria-expanded={detailOpen}
                 title={t(detailOpen ? "skill.passive.collapse" : "skill.passive.expand", { arch: curG.meta.label })}>
                 <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {t("skill.passive.head", { arch: curG.meta.label })}</span>
                 <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
@@ -357,6 +406,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </span>
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
+              {/* Der i-Chip saß am Pager-Badge — das gibt es ab 1400 px nicht mehr. Ohne diesen Ersatz wäre der
+                  Archetyp-Leitfaden auf dem Desktop von der Skill-Wahl aus gar nicht mehr erreichbar. */}
+              {wide && (
+                <button type="button" onClick={() => setGuideArch(curG.arch)}
+                  title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
+                  className="shrink-0 inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
+                  style={{ width: 18, height: 18, fontSize: 11, fontStyle: "italic", fontFamily: "Georgia, serif",
+                           color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
+              )}
+              </div>
               {detailOpen && (
                 <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
                   style={{ background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}44` }}>
@@ -367,7 +426,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               {/* Karten hängen an ihrer eigenen Inhaltshöhe (`items-start`, kein `gridAutoRows:1fr`/`h-full`).
                   Vorher zog `1fr` alle Karten auf die Höhe der GRÖSSTEN — kurze Skills bekamen viel Leerraum
                   darunter (Playtest-Beschwerde). Jetzt sitzt jede Karte eng an ihrem Text. */}
-              <div className="grid sm:grid-cols-2 gap-2 items-start">
+              <div className="sk-offers grid sm:grid-cols-2 gap-2 items-start">
                 {curG.ids.map((id) => {
                   const s = skillDef(id);
                   const sel = pending === id;
@@ -436,7 +495,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* #161 FB-1 / #UI: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung.
             Einklappbar (default zu), damit das Aufstellfeld nicht dauerhaft Platz frisst. */}
-        {showFormations && (
+        {showFormations && !deckInWing && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <button type="button" onClick={() => setOpenForms((o) => !o)} aria-expanded={openForms}
               className="w-full flex items-center gap-2 text-left" title={t(openForms ? "skill.forms.collapse" : "skill.forms.expand")}>
@@ -452,7 +511,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
         )}
         </div>
-      </div>
+      </LevelupRig>
       {/* Leitfaden-Overlay — vom i-Chip geöffnet, direkt auf der Seite des jeweiligen Archetyps (#UI). */}
       {guideArch && <GuideOverlay onClose={() => setGuideArch(null)} initial={guideArch} />}
     </div>

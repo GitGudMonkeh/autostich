@@ -1352,6 +1352,46 @@ die den Desktop-Pass nicht mitbekommen hat.
 - **Nicht am Gerät gesehen** — alles headless gemessen und nachgerendert (Chromium, echte Komponente, Brett aus
   einem laufenden Lauf). Der Blick auf einem physischen Monitor steht aus.
 
+### #lv-fluegel + #sk-reiter — Level-up-Karte mit zwei Seitenleisten, Skill-Wahl mit Fraktionsreitern (18.08.2026)
+Perk- und Skill-Wahl bleiben **eine Karte über dem Brett** — bewusste AUSNAHME vom Desktop-Pass: die anderen
+Screens ersetzen den Hub, diese hier unterbrechen einen laufenden Stich. Was auf dem Desktop fehlte, war nicht
+Rahmen, sondern Platz. Ab 1400 px ist die Karte **880 px** breit (vorher `max-w-3xl` = 768) und hat zwei
+ausklappbare Flügel (`src/ui/LevelupWings.jsx`): **links** das Deck (`FormationPanel` — Kartenraster + aktive
+Formationen + 🏗-Gebäude-Toggle — plus `DeckStrength`), **rechts** die `StatusRail`, also dieselbe Komponente wie
+neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen im Spiel weg.
+- **Drei-Spuren-Raster, Mittelspur FEST** (`minmax(0,1fr) 924px minmax(0,1fr)`; 924 = 880 + 2 × 22 Griffbahn).
+  Zwei Fallen, beide beim Bauen zugeschnappt und beide GEMESSEN: (1) mit `auto` als Mittelspur misst sich die
+  Spur am Inhalt → die Karte wurde beim Zuklappen eines Flügels **880 → 784 px** schmal; (2) ohne ausdrückliches
+  `grid-column: 1/2/3` greift die Auto-Platzierung → fehlt der linke Flügel, rutscht die Karte in Spur 1 und
+  klebt bei **38 px** am Fensterrand statt bei 360. Beides sieht mit beiden Flügeln offen völlig richtig aus.
+- **Nichts wird verdeckt** — die Flügel sind Geschwister im Raster, keine Überlagerung; sie schrumpfen mit ihrer
+  Spur (`width: 320px; max-width: 100%`). Nachgemessen 1600/1536/1400 px: Karte immer 880 px auf denselben
+  Pixeln, Lücke zu beiden Flügeln 22 px, **kein waagerechter Überlauf**. Die 22-px-Bahn hält der Kartenrand frei,
+  dort sitzen die Griffe — ein Wächter bindet Bahnbreite, Griffbreite und `left/right: -22px` aneinander.
+- **Zustand in den OPTIONEN, nicht in `useState`** (`lvWingDeck`/`lvWingStats`): die Karte wird bei JEDEM
+  Level-up neu gemountet, ein Komponenten-State wäre also jedes Mal wieder auf Default. Derselbe Weg wie
+  `lastSkillArch`. Beide Schlüssel brauchen einen Eintrag in `DEFAULT_OPTIONS` — sonst schluckt sie der
+  `{...DEFAULT_OPTIONS, ...o}`-Merge in `loadOptions`. Default **an**.
+- **Keine doppelten Daten**: zeigt der linke Flügel Deck und Formationen, lassen beide Karten ihre gleichnamigen
+  Klappfelder weg (`deckWingOpen`). Zuklappen holt sie zurück — der Flügel ersetzt sie, er verdrängt sie nicht.
+- **#sk-reiter**: ab 1400 px steht statt des Swipe-Pagers eine Reiterzeile — `groups.map` + `goTo(i)`, also
+  derselbe Zustand, nur zweite Darstellung. **Kein neuer State.** Jeder Reiter nennt seine drei Skillnamen als
+  Vorschau; damit sieht man alle zwölf Angebote (`SKILLS_OFFERED = 12` = 3 je Fraktion), OHNE durchzuklicken.
+  `repeat(n, 1fr)`, nicht feste Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein. Gerendert ist
+  immer nur EINE Navigation (`wide`-Zweig): zwei hießen zwei Tab-Reihenfolgen und zwei Tutorial-Ziele.
+  Das Angebot steht dreispaltig (`sm:grid-cols-2` ließ die dritte Karte allein in Zeile 2 mit Loch daneben).
+  Die Passiv-Beschreibung ist auf dem Desktop **offen** (`openArch === null` = „noch nicht angefasst"; bewusstes
+  Zuklappen schreibt `""`, damit „zu" auch zu bleibt). Der Leitfaden-i-Chip saß am Pager-Badge und wandert in
+  die Passiv-Zeile — sonst wäre der Archetyp-Leitfaden von der Skill-Wahl aus nicht mehr erreichbar.
+- **Handy nachweislich unangetastet**: Element-Geometrie bei 390 px vorher/nachher verglichen — Perk **0**
+  Abweichungen, Skill genau **eine** neue Box (der Flex-Behälter der Passiv-Zeile, weil der i-Chip ein eigener
+  Knopf sein muss — verschachtelte `<button>` sind ungültig) auf exakt demselben Rechteck wie der Knopf vorher.
+- Wächter: `test/levelup-wings.test.js` (14). Gegenprobe gemacht: `auto`-Spur, fehlendes `grid-column`,
+  verstellte Griffbahn und aufgehobene Entdopplung lassen ihn fallen.
+- **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
+- **Nebenbefund, NICHT gefixt**: `DeckStrength` trägt eine fest verdrahtete deutsche Fußzeile („Balken = Ø-Wert
+  · violett ◆ = unschlagbar …"). Fällt im englischen Build auf; die Datei steht noch nicht in der i18n-`MIGRATED`-Liste.
+
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
 ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort

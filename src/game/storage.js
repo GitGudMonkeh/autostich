@@ -526,6 +526,10 @@ const DEFAULT_OPTIONS = {
   // COSMETIC_OPTION_KEYS (überlebt den Dev-Reset, wie Ton/Haptik).
   telemetry: true,
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
+  // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte (Deck links, Kennzahlen rechts) — nur ab 1400 px
+  // sichtbar, Zustand über Läufe gemerkt. Default AN: sie sind der Grund für die breite Desktop-Fassung.
+  // Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben den Reset, wie Ton/Haptik).
+  lvWingDeck: true, lvWingStats: true,
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   // Stich-Aufschlüsselung (§17) unter dem Feld — Default SICHTBAR (false), wie die Floating-Text-Schalter.

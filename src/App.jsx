@@ -1202,10 +1202,12 @@ function AutostichGame() {
       )}
       {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state} />
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state}
+          options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && state.skillOffer && (
-        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions} />
+        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
+          currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "legendary" && state.legendaryOffer && (
         <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} onReroll={rerollLegendary} state={state} />
