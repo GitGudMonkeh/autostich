@@ -1392,6 +1392,38 @@ neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen
 - **Nebenbefund, NICHT gefixt**: `DeckStrength` trägt eine fest verdrahtete deutsche Fußzeile („Balken = Ø-Wert
   · violett ◆ = unschlagbar …"). Fällt im englischen Build auf; die Datei steht noch nicht in der i18n-`MIGRATED`-Liste.
 
+### #packsort + #herausforderungen — Sortier-Knopf in der Werkstatt, und der Reiter heißt jetzt deutsch (18.08.2026)
+Neben den drei Filtern (Alle · Besitz · Kaufbar) steht auf den Reitern **Packs** und **Herausforderungen** ein
+vierter Knopf, der die Kachel-Reihenfolge umschaltet. **Die Beschriftung ist der NÄCHSTE Klick**, nicht der
+Zustand: „Farbe" → sortiert nach Farbe und heißt danach „Preis" → sortiert zurück. Zwei Zustände, kein Menü.
+- **Der Gegenpol heißt je Reiter anders.** Eine Herausforderung hat keinen Preis (`packPrice` gibt für
+  cond-Packs `null`), dort steht **„Standard"** = die gewachsene Register-Reihenfolge. „Preis" wäre gelogen.
+- **Sortiert wird nach FARBTON der Pack-Akzentfarbe `a1`** (HSL-Hue, Rot → Gelb → Grün → Blau → Violett →
+  zurück zu Rot). Unbunte Packs (Sättigung < `NEUTRAL_S` = 0,12) und solche ohne lesbaren Hexwert wandern ans
+  ENDE — sie haben keinen Platz im Farbkreis und stünden sonst zufällig mitten im Regenbogen.
+  Die Rechnung liegt rein in **`src/ui/packSort.js`** (kein React) → der Wächter rechnet sie nach.
+- **Die Sortierung sitzt im SCREEN, nicht in `PacksView`** — und das ist die eigentliche Falle: `catList` ist
+  die eine Quelle für die Kacheln, den Index der Detailansicht (`packOv.idx`) UND das Blättern mit ‹ ›. Läge
+  sie in der Ansicht, zeigte das Detail nach dem Umschalten ein anderes Pack als die angetippte Kachel.
+  Beim Umschalten wird der offene Index über `indexOf` auf DASSELBE Pack umgerechnet statt zugeklappt — ab
+  1400 px steht das Detail dauerhaft daneben, ein Zuklappen sähe dort wie ein Fehler aus.
+- **Im Farbmodus entfällt das Vorziehen des ausgerüsteten Packs** (`orderPacks`): es risse ein Loch in den
+  Farbverlauf. Der Standardmodus gibt dieselbe Liste **unverändert** zurück (gleiche Referenz, kein Kopieren).
+- **Der Knopf trägt bewusst KEINE Aktiv-Kante** wie die Filter. Sie widerspräche der Beschriftung: es leuchtete
+  „Preis", während nach Farbe sortiert ist. Rückmeldung ist die Umsortierung selbst. Abgesetzt ist er über eine
+  **Haarlinie** — in der Filter-Optik läse sich „Farbe" neben „Kaufbar" als vierter Filter („zeige nur farbige").
+  Ein Icon dafür gibt es im System nicht, und eins einzuführen ist ohne Rückfrage verboten (s. #rahmen).
+- **„Challenges" heißt im Deutschen jetzt „Herausforderungen"** (Werkstatt-Reiter, Deck-Detail-Reiter, Hinweis-
+  text, Ranked-Badge). Englisch bleibt „Challenges"/„challenge". `shop.head.challenges` sagte das längst — die
+  Reiter waren die letzten Stellen mit dem englischen Wort. Nachgemessen: der lange Reiter passt auf 390 px in
+  beiden Zeilen (Werkstatt 126 px von 324 · Deck-Detail 140 px von 324, je einzeilig).
+  **Zwei Einträge sind aus `SAME_OK` geflogen** (`shop.tab.challenges`, `deckdetail.tab.challenges`) und die
+  Begriffstabelle hat eine Zeile mehr: *Herausforderung → challenge*. `Challenger` (Ranglisten-Archiv) ist
+  davon NICHT betroffen — das ist ein Modusname, kein übersetzbares Wort.
+- Wächter: `test/pack-sort.test.js` (Farbrechnung + Beschriftung + Verdrahtung als Quelltext-Ratsche).
+- **Am Gerät nicht abgenommen** — im Produktionsbuild über Playwright gerendert (390 px DE und 1600 px EN,
+  beide Reiter, beide Sortierungen) und die Reihenfolge aus den Kachel-Kantenfarben ausgelesen.
+
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
 ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort

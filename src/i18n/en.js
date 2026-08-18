@@ -1066,7 +1066,7 @@ export default {
   "shop.randomDeck.aria": "Random deck per run",
   "shop.noBattlefield": "No battlefield",
   "shop.emptyView": "Nothing in this view.",
-  "shop.hint.challenge": "A challenge deck is unlocked through a challenge (no purchase). Tap it → preview + unlock condition; once met you activate it directly.",
+  "shop.hint.challenge": "A challenge deck is not bought, it is unlocked through a challenge. Tap it → preview + unlock condition; once met you activate it directly.",
   "shop.hint.pack": "A pack bundles the card (front + back) and a battlefield. Tap a pack → detail view with a preview; buying activates the pack directly.",
   "shop.activeCheck": "Active ✓",
   "shop.activate": "Activate",
@@ -1079,6 +1079,12 @@ export default {
   "shop.filter.buyable": "Buyable",
   "shop.filter.free": "Free",
   "shop.filter.locked": "Locked",
+  /* #packsort: one button next to the filters, labelled with what the NEXT click does. On the
+     challenges tab the counterpart is "Default" instead of "Price" — cond packs have no price. */
+  "shop.sort.color": "Colour",
+  "shop.sort.price": "Price",
+  "shop.sort.default": "Default",
+  "shop.sort.hint": "Switch the order of the tiles",
   "shop.fx.hint": "Effects are global — bought once, available for every pack. Pick a category above, tap an effect → it runs on the stage; buy it there, or select / toggle it. Double-tapping in the list toggles it right away.",
   "shop.standardFree": "Standard — always active, no purchase needed",
   "shop.buy": "Buy · {price} DP",

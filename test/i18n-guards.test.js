@@ -77,7 +77,6 @@ describe("i18n · Katalog-Parität", () => {
     "upgrades.deckLead",     // „Deck" — dasselbe Wort in beiden Sprachen
     "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort
     "shop.tab.packs",        // „Packs" — dasselbe Wort in beiden Sprachen
-    "shop.tab.challenges",   // „Challenges" — dasselbe Wort in beiden Sprachen
     "tutorial.eyebrow",      // dito (Kopfzeile des Tutorial-Fensters)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A
@@ -127,7 +126,6 @@ describe("i18n · Katalog-Parität", () => {
     "upgrades.details",       // „Details ›"
     "deckdetail.deck",        // „Deck" ist in beiden Sprachen dasselbe Wort
     "deckdetail.tab.skills",  // „Skills" (§3.1)
-    "deckdetail.tab.challenges", // „Challenges" — im Deutschen etabliert
     "shop.color.standard",    // „Standard"
     "fxgroup.score.title",    // Score bleibt Score (§3.1)
     "fxsyn.standard.name", "fxsyn.gottStandard.name", // „Standard"
@@ -306,6 +304,10 @@ describe("i18n · Terminologie", () => {
     { de: /\bZiehreihenfolge\b/i, ok: /\bdraw order\b/i, never: null,                  name: "Ziehreihenfolge → draw order" },
     { de: /\bEpisch\b/,        ok: /\bepic\b/i,       never: /\blegendary\b/i,        name: "Episch → Epic (nie „legendary“ — das ist eine eigene Achse)" },
     { de: /Deck-Werkstatt/i,   ok: /deck workshop/i,  never: null,                     name: "Deck-Werkstatt → deck workshop" },
+    // 18.08.2026: „Challenges" heißt im Deutschen jetzt „Herausforderungen" (Entscheidung des Users);
+    // englisch bleibt es „challenge". Der Wächter hält beide Richtungen: die Vokabel bildet auf genau
+    // ein Wort ab, und der englische Katalog darf das deutsche Wort nirgends übernehmen.
+    { de: /Herausforderung/i,  ok: /\bchallenge/i,   never: null,                     name: "Herausforderung → challenge" },
     { de: /Stichpunkte?\b/i,   ok: /\bTrick Points?\b|\bTP\b/,  never: /\bSP\b/,        name: "Stichpunkte → Trick Points (TP, nie SP)" },
     // Der SPIELTITEL ist ab 18.08.2026 ebenfalls eine Vokabel der Tabelle: „Autostich" trägt „Stich"
     // sichtbar, englisch liest sich dasselbe Wort als Nähbegriff (stitch). Die Marke folgt deshalb

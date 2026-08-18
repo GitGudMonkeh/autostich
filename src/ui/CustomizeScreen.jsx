@@ -3,6 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
+import { sortPacks, sortLabelKey, nextSort, SORT_DEFAULT } from "./packSort.js"; // #packsort: Kachel-Reihenfolge
 // #vorschau-brett: gemessene Brettmaße + Szenen-Maßstab der Effekt-Vorschau (rein, ohne React → testbar).
 import { CARD_W, CARD_H, BOARD_RATIO_CSS, sceneScale } from "./fx/previewScale.js";
 import { setPreviewSceneScale } from "./fx/mobileTier.js"; // #perf-shopdpr: Vorschau-Deckel
@@ -1081,8 +1082,27 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("back");   // "back" | "front" | "bg" — Cover (Rücken) zuerst, dann Front
   const deckId = options?.deckId || "default";
+  /* #packsort: Die Sortierung liegt HIER, nicht in `PacksView` — `catList` ist die eine Quelle für die
+     Kacheln, den Index im Detail (`packOv.idx`) UND das Blättern mit ‹ ›. Läge sie in der Ansicht, zeigte
+     das Detail nach dem Umschalten auf ein anderes Pack als die angetippte Kachel. Ein Zustand für beide
+     Reiter: wer nach Farbe sucht, sucht auf beiden so. */
+  const [sort, setSort] = useState(SORT_DEFAULT);
   // #Shop-Reorg: Detail navigiert innerhalb seiner Kategorie; aktives Pack steht nach Standard vorn (orderPacks).
-  const catList = (cat) => orderPacks(cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB, deckId);
+  const listFor = (cat, mode) => sortPacks(orderPacks(cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB, deckId), mode);
+  const catList = (cat) => listFor(cat, sort);
+  /* Beim Umschalten wandert das offene Pack an eine andere Stelle. Statt das Detail zu schließen, wird sein
+     Index auf DASSELBE Pack in der neuen Reihenfolge umgerechnet — ab 1400 px steht es dauerhaft daneben,
+     ein Zuklappen sähe dort wie ein Fehler aus. */
+  const toggleSort = () => {
+    const next = nextSort(sort);
+    setPackOv((o) => {
+      if (!o) return o;
+      const cur = listFor(o.cat, sort)[o.idx];
+      const i = listFor(o.cat, next).indexOf(cur);
+      return i >= 0 ? { ...o, idx: i } : o;
+    });
+    setSort(next);
+  };
   const dpBal = Math.max(0, Math.floor(Number(p.deckPoints) || 0)); // #299 Deckpunkte — Währung der Packs (SP wird in der Werkstatt nicht gezeigt)
 
   // #fx-floater: Höhe des Sticky-Kopfs messen → die Effekt-Vorschau klebt exakt darunter (mitlaufender Floater, kein Überlappen).
@@ -1206,8 +1226,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             <div className="cz-main as-ring">
               <i className="as-ring-run" aria-hidden="true" />
               <div className="cz-mainscroll">
-                {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} />
-                  : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} />
+                {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
+                  : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
                   : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} wide={wide} />}
               </div>
             </div>
@@ -1244,7 +1264,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* `sel` = Index des Packs, das ab 1400 px rechts im Detail steht (bis dahin null). Die Kachel bekommt
    dafür einen eigenen Marker: `is-sel` ist schon vergeben — das trägt das AUSGERÜSTETE Deck, und die
    beiden Zustände müssen unterscheidbar bleiben (man betrachtet ja meist ein anderes als das eigene). */
-function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null, sel = null }) {
+function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null, sel = null,
+  sort = SORT_DEFAULT, onSort = null }) {
   const challenge = cat === "challenges";
   const wide = useIsWide();   // ab 1400 px steht die Vorschau dauerhaft daneben (s. Untertitel unten)
   const [filter, setFilter] = useState("alle");
@@ -1279,7 +1300,7 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
           </button>
         </div>
       )}
-      <div className="flex gap-1.5 mt-3 flex-wrap">
+      <div className="flex items-center gap-1.5 mt-3 flex-wrap">
         {chips.map(([k, label]) => (
           /* #kante: Filter in der Chip-Fassung der Kanten-Familie — der aktive trägt eine schmale Cyan-Kante
              statt einer gefüllten Cyan-Pille, die neben den ruhigen Kacheln als lauteste Fläche dastand. */
@@ -1287,6 +1308,23 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
             className={`as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-colors${filter === k ? " text-white" : ""}`}
             style={filter === k ? { borderLeftColor: "#26c6e6" } : undefined}>{t(label)}</button>
         ))}
+        {/* #packsort: Der Sortier-Knopf steht in DERSELBEN Zeile (Handy wie Desktop), aber hinter einer
+            Haarlinie: in der Chip-Optik der Filter sähe er sonst wie ein vierter Filter aus, und „Farbe"
+            neben „Kaufbar" läse sich als „zeige nur farbige". Die Linie ist Layout, kein neues Zeichen —
+            ein Icon dafür gäbe es im System nicht (Regel: keins ohne Rückfrage einführen).
+            Beschriftung = was der NÄCHSTE Klick tut (sortLabelKey), nicht der aktuelle Zustand. */}
+        {onSort && (
+          <>
+            <span aria-hidden className="self-stretch w-px mx-0.5 rounded" style={{ background: "#2a2a34" }} />
+            {/* KEINE Aktiv-Kante wie bei den Filtern: die trüge hier eine Lüge — sie säße neben der
+                Beschriftung des NÄCHSTEN Klicks („Preis" leuchtet, sortiert ist aber nach Farbe).
+                Die Rückmeldung ist die Umsortierung der Kacheln selbst. */}
+            <button type="button" onClick={onSort} title={t("shop.sort.hint")}
+              className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-colors">
+              {t(sortLabelKey(sort, challenge))}
+            </button>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-3">
