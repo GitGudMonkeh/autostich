@@ -27,8 +27,11 @@ export const HAIRLINE = { background: "linear-gradient(90deg, var(--deck-a1,#26c
 const PHASE_HAIRLINE_BG = "linear-gradient(90deg,#26c6e6,#9b82f0,#f2a83a)";
 
 // Die 3px-Gradient-Haarlinie als eigenes, nicht-scrollendes Element (als erstes Kind der Karte platzieren).
-export function ModalHairline() {
-  return <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />;
+// `className` ist die Andockstelle für den Desktop-Pass: dort wandert die Linie per `order` unter den
+// Kopf (Zeile 2 des Kopf-Rasters, wie `.up-hair` im Upgrade-Baum) — ohne dass die Handy-Fassung, in der
+// sie das erste Kind der Karte ist, dafür angefasst werden muss.
+export function ModalHairline({ className = "" }) {
+  return <div className={`h-[3px] w-full shrink-0 ${className}`} style={HAIRLINE} aria-hidden="true" />;
 }
 
 // Variante für scrollende Karten mit STICKY Kopf: die Haarlinie absolut an den oberen Rand des (relative gesetzten,

@@ -105,18 +105,23 @@ export function FeedbackModal({ onClose }) {
     : t("feedback.run.none");
 
   return overlayPortal((
-    <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
+    <div onClick={onClose} className="fb-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
+      <div onClick={(e) => e.stopPropagation()} className="fb-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         <ModalHairline />
-        <div className="p-6">
-          <ActionBar pad={6}>
+        <div className="fb-body p-6">
+          <ActionBar pad={6} className="fb-bar">
             <span className="flex-1" />
             <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
           </ActionBar>
 
-          <div className="text-center mb-4">
+          {/* #desktop: Auskunftszeile neben dem Titel (Spalte 2 des Kopf-Rasters, wie im Upgrade-Baum).
+              Sie sagt, wohin die Meldung geht und was automatisch mitgeht — auf dem Handy fehlt dafür
+              schlicht die Zeile, dort steht es am Lauf-Bezug weiter unten. */}
+          <div className="fb-readout hidden min-[1400px]:block">{t("feedback.desk.readout")}</div>
+
+          <div className="fb-head text-center mb-4">
             {/* #deckui: Eyebrow deck-getönt. */}
             <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("feedback.eyebrow")}</div>
             <h2 className="text-xl font-bold mt-1">{t("feedback.title")}</h2>
@@ -135,7 +140,11 @@ export function FeedbackModal({ onClose }) {
               {t("feedback.thanks")}
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="fb-form grid gap-3">
+              {/* #desktop — zwei Klammern für die beiden Spalten (links Art + Text, rechts Name, Lauf-Bezug
+                  und Absenden). Unter 1400 px sind beide `display: contents`; das Handy-Raster ordnet dann
+                  weiterhin alle Bausteine direkt, Reihenfolge und Abstände unverändert. */}
+              <div className="fb-left">
               {/* Art — vorausgewählt „Bug", aber die Idee steht gleichberechtigt daneben. */}
               <div>
                 <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.kind")}</div>
@@ -166,7 +175,9 @@ export function FeedbackModal({ onClose }) {
                   className="w-full rounded-lg px-3 py-2 text-sm leading-snug"
                   style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea", resize: "vertical" }} />
               </div>
+              </div>
 
+              <div className="fb-right">
               {/* Name — vorbefüllt, änderbar, optional. */}
               <div>
                 <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.name")}</div>
@@ -218,6 +229,7 @@ export function FeedbackModal({ onClose }) {
               {tooShort && (
                 <div className="text-[11px] text-center opacity-55">{t("feedback.tooShort", { n: MIN_LEN })}</div>
               )}
+              </div>
               {/* Kein GitHub-Zweitweg mehr (#397): Meldungen laufen ausschließlich über diesen Melder.
                   EIN Weg heißt EIN Posteingang — sonst liegt die Hälfte der Rückmeldungen in den Issues
                   und die andere in der Tabelle, und der Discord-Ping zeigt nur noch die halbe Wahrheit. */}

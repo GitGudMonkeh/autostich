@@ -41,24 +41,31 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
   useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
   return overlayPortal((
-    <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
+    <div onClick={onClose} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck"
+      {/* #desktop: `un-first` schaltet ab 1400 px die zweispaltige Fassung frei — und NUR beim Erststart.
+          „Name ändern" bleibt der schmale Dialog: das ist ein Umbenennen, kein Auftritt. */}
+      <div onClick={(e) => e.stopPropagation()} className={`un-card w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck ${firstTime ? "un-first" : ""}`}
         style={MODAL_CARD}>
         <ModalHairline />
-        <div className="p-6">
+        <div className="un-body p-6">
         {/* #362 Aktionsleiste OBEN — Abbrechen links, Speichern rechts. */}
-        <ActionBar pad={6} bg={STICKY_HEAD_BG}>
+        <ActionBar pad={6} bg={STICKY_HEAD_BG} className="un-bar">
           {!firstTime && <ActionButton kind="secondary" onClick={onClose}>{t("name.cancel")}</ActionButton>}
           <span className="flex-1" />
           <ActionButton kind="primary" disabled={!canSave} onClick={submit}>{t("name.save")}</ActionButton>
         </ActionBar>
-        <div className="text-center mb-4">
-          <div className="text-xs uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
+        <div className="un-head text-center mb-4">
+          <div className="un-eyebrow text-xs uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
             {t(firstTime ? "name.eyebrow.first" : "name.eyebrow.change")}
           </div>
+          {/* #desktop: In der breiten Fassung trägt die linke Spalte die MARKE — derselbe Text-Schlüssel und
+              dieselbe Klasse wie im Hub (`.as-wordmark`), also EINE Quelle für Verlauf, Schrift und Deckfarbe.
+              Unter 1400 px gibt es sie hier nicht: dort ist der Dialog 320 px breit und die Marke stand
+              zwei Sekunden vorher schon auf dem Startbildschirm. */}
+          <div className="un-wm as-wordmark select-none hidden">{t("start.logo.alt")}</div>
           {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett. */}
-          <h2 className="text-xl font-bold mt-1 ty-display"
+          <h2 className="un-title text-xl font-bold mt-1 ty-display"
             style={{ backgroundImage: `linear-gradient(90deg, var(--deck-a1,${CY}), var(--deck-a2,${VI}), var(--deck-a1,${CY}))`,
                      WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
@@ -66,6 +73,9 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           </h2>
         </div>
 
+        {/* #desktop — Klammer um die rechte Spalte (Feld · Hinweis · Sprache · Vorschau). Unter 1400 px ist
+            sie `display: contents`, die Handy-Reihenfolge bleibt damit unangetastet. */}
+        <div className="un-form">
         {/* Eingabefeld im pulsierenden Cyan-Glührahmen (wie der „Lauf fortsetzen"-Rahmen). */}
         <div className="as-guide-glow rounded-lg">
           <input autoFocus value={name} maxLength={MAX}
@@ -130,6 +140,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             </span>
             <span className="shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
           </div>
+        </div>
         </div>
 
         </div>

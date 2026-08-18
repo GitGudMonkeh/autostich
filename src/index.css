@@ -1322,6 +1322,12 @@ button { font-family: inherit; }
    bleiben damit exakt wie vorher — die Gruppen existieren allein für das Desktop-Raster. */
 .hub-pair, .hub-play, .hub-stand, .hub-foot { display: contents; }
 
+/* Dieselbe Klammer-Technik in den drei Menü-Overlays (#desktop-menues): `un-form` (Willkommen) sowie
+   `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
+   Unterhalb von 1400 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
+   Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
+.op-col2, .un-form, .fb-left, .fb-right { display: contents; }
+
 /* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
    im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
@@ -2494,6 +2500,218 @@ button { font-family: inherit; }
      erklärt; er bekommt hier die Breite, die er auf dem Handy nicht hat. */
   .gd-page .gd-loopgrid { grid-template-columns: minmax(0, 1fr) !important; gap: calc(14px * var(--gs)); }
   .gd-page .gd-ringbox { max-width: calc(334px * var(--gs)); }
+
+  /* ==========================================================================
+     #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px
+     --------------------------------------------------------------------------
+     Die drei letzten Menü-Overlays, die noch als schmale Handy-Karte mitten auf einem 1920er Schirm
+     standen (Optionen 512 px, Willkommen 320 px, Feedback 512 px). Sie bekommen KEINEN eigenen
+     Renderpfad: das JSX setzt in jeder Breite dieselben Klammern, und erst hier werden daraus Spalten.
+
+     Werte 1:1 von `.up-*` / `.cz-*` übernommen (Überzug, Kopf-Raster, Glas, Radius 14, Ring), damit die
+     fünf Desktop-Screens EINE Familie bleiben und nicht fünf ähnliche.
+
+     Reihenfolge bei `backdrop-filter`: PRÄFIX ZUERST, Standard zuletzt. lightningcss behandelt beide als
+     dieselbe Eigenschaft und behält beim Minifizieren nur die LETZTE — und nur der ungepräfixte Standard
+     überschreibt das inline gesetzte `backdropFilter` der Overlay-Wurzel (s. #overlay-portal).
+     ========================================================================== */
+
+  /* ---- Optionen: aus einer Scroll-Spalte werden drei Sektions-Panels -------
+     Der Gewinn ist derselbe wie beim Upgrade-Baum: alles gleichzeitig im Bild. Damit sind die beiden
+     Bedienhilfen der Handy-Fassung gegenstandslos — die Sprungleiste (nichts zu springen) und die
+     klebenden Überschriften (nichts scrollt an ihnen vorbei). Der IntersectionObserver im JSX läuft
+     weiter, seine Anzeige ist hier nur unsichtbar; ihn zu gaten hieße, den Renderpfad zu spalten. */
+  .op-root {
+    padding: 16px 48px 18px !important;
+    background: rgba(12, 12, 16, .82) !important;
+    /* #perf-blur: KEIN backdrop-filter, gleiche Begründung und gleiche Messung wie an `.up-root` —
+       er war der teuerste Posten des Desktop-Passes und optisch bei 82 % Überzug nicht auffindbar.
+       `none !important` statt Löschen, weil das Overlay seinen Blur INLINE setzt. */
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  /* Die Karte hört auf, eine Karte zu sein — sie ist nur noch das Raster (wie `.up-card`). Fläche,
+     Rahmen und Sweep wandern in die drei Sektions-Panels. */
+  .op-card {
+    width: min(1560px, 100%);
+    max-width: none;
+    /* Statt der 90 dvh der Handy-Karte: die volle Höhe INNERHALB des Screen-Randes. Auf 1080 px ändert
+       das nichts (der Inhalt ist kürzer), auf flachen Fenstern sind es die ~55 px, die sonst genau die
+       Fußzeile unter die Kante schieben. Reicht es trotzdem nicht, scrollt weiterhin der Rumpf. */
+    max-height: 100%;
+    border-radius: 0;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  /* #rahmen: DREI Klassen, nicht zwei — `[data-skin="crt"] .as-panel.as-panel-deck` wiegt (0,3,0)
+     und gewänne sonst; die Karte malte weiter einen 1-px-Verlauf um den ganzen Bildschirm.
+     Der Rahmen des Screens sind die PANELS (`as-ring`), nicht die Karte. */
+  .op-card.as-panel.as-panel-deck { background-image: none !important; animation: none !important; }
+  /* Die Haarlinie ist im DOM das erste Kind der Karte (Handy: bündig an der Oberkante). Hier gehört sie
+     UNTER den Kopf, wie `.up-hair` im Baum — `order` verschiebt sie, ohne dass das JSX zwei Fassungen
+     braucht. Die Karte ist bereits `flex flex-col`, `order` greift also unmittelbar. */
+  .op-head { order: 1; }
+  .op-hair { order: 2; margin-top: 10px; }
+  .op-body { order: 3; }
+
+  .op-head {
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    border-bottom: 0 !important;
+    padding: 10px 0 8px !important;
+  }
+  /* Titel · Auskunft · Schließen in EINER Zeile (Raster von `.up-head`). */
+  .op-headrow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 22px;
+  }
+  .op-title h2 { font-size: 27px; margin-top: 2px; }
+  .op-readout {
+    padding-left: 22px;
+    border-left: 1px solid rgba(150, 150, 170, .18);
+    font-size: 13px; line-height: 1.45; color: #8a8a95;
+  }
+  /* Gleiche Knopfgröße wie im Baum und in der Werkstatt (44-px-Klickziel des Desktop-Passes). */
+  .op-close { font-size: 15px !important; padding: 11px 18px !important; border-radius: 8px; }
+  .op-chips { display: none; }
+
+  .op-body { padding: 0 !important; }
+  /* Drei Spalten, feste Plätze. Die Aufteilung folgt dem INHALT, nicht der Zeilenzahl: „Grafik" und
+     „Ton" teilen sich eine Spalte, weil beide kurz sind und beide die Ausgabe des Spiels betreffen;
+     „Anzeige" steht allein, weil die drei eingerückten Float-Unterschalter als Block zusammenbleiben
+     müssen. Ausdrückliche Plätze statt `grid-auto-flow: column`: sonst entscheidet die Zeilenzahl
+     darüber, was wo landet, und die ändert sich mit jeder neuen Option. */
+  .op-cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    align-items: start;
+    margin-top: 14px;
+  }
+  .op-sec[data-sec="general"] { grid-column: 1; }
+  .op-col2 { display: flex; flex-direction: column; gap: 22px; grid-column: 2; }
+  .op-sec[data-sec="display"] { grid-column: 3; }
+
+  /* Die Sektion IST das Panel — Glas + Ring wie `.up-page` / `.cz-main`. Den Ring trägt sie über die
+     geteilte `.as-ring`-Konstruktion samt `.as-ring-run`-Kind (NICHT als kopiertes ::before, s. #perf-ring). */
+  .op-sec {
+    border-radius: 14px;
+    padding: 15px 17px 17px;
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  }
+  /* Die Überschrift klebt nicht mehr (nichts scrollt an ihr vorbei) und verliert damit auch ihren
+     deckenden Streifen — der lag sonst als Balken im Panel. `background` mit `!important`, weil er
+     inline aus dem JSX kommt. */
+  .op-sec > h3 {
+    position: static;
+    margin: 0;
+    padding: 0 0 11px;
+    background: none !important;
+    font-size: 11.5px;
+    letter-spacing: .2em;
+  }
+  .op-foot { margin-top: 18px !important; font-size: 13px; padding: 12px 16px; }
+  /* Die gestapelte Zeile („Effekte reduziert") lässt ihre Steuerung auf dem Handy über die volle Breite
+     laufen — dort sind das drei Fingerziele. In einer 460 px breiten Spalte wird daraus ein Kasten mit
+     einem Drittel Inhalt und zwei Dritteln Leere; hier bemisst er sich am Text. */
+  .op-sec .as-opt-stack > :last-child { align-self: start; }
+
+  /* Auch die beiden Dialog-Wurzeln geben ihren Inline-Blur ab: Die Filterfläche ist der VIEWPORT, nicht
+     der Dialog — hinter ihnen liegt der Hub mit laufender Wortmarke und Ringen, also genau die
+     Repaint-Falle aus #perf-blur. Der 80-%-Überzug trägt die Trennung allein. */
+  .un-root, .fb-root {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    /* Dafür dunkler: Ein Dialog deckt nur einen Bruchteil des Schirms, der Rest bleibt Hub — mit 80 % und
+       ohne Blur las sich dessen Wortmarke direkt neben der des Dialogs mit. Der Baum kommt mit 82 % aus,
+       weil er randverankert ohnehin fast alles verdeckt. */
+    background: rgba(12, 12, 16, .9) !important;
+  }
+
+  /* ---- Willkommen: Marke links, Formular rechts ----------------------------
+     Nur beim ERSTSTART (`.un-first`). Es ist der einzige Bildschirm, den jeder Spieler garantiert
+     einmal sieht, und mit 320 px war er auf 1920 px eine Briefmarke. Die linke Spalte trägt die
+     Ansprache (Marke + „Wähle deinen Namen"), die rechte die Arbeit — Feld, Sprache, Vorschau.
+     „Name ändern" behält bewusst den schmalen Dialog: gleiche Komponente, andere Aufgabe. */
+  .un-first { width: min(900px, 100%); max-width: none; }
+  .un-first .un-body {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    /* Die letzte Zeile ist leer und nimmt die Restluft auf. Ohne sie verteilt das Raster die Mehrhöhe des
+       rechten (spannenden) Formulars auf die Zeilen der linken Spalte — Augenbraue, Marke und Titel
+       trieben dann sichtbar auseinander. */
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: 34px;
+    align-items: start;
+    padding: 22px 30px 30px !important;
+  }
+  .un-first .un-bar  { grid-column: 1 / -1; grid-row: 1; }
+  /* Der Kopfblock reicht seine drei Kinder ins Raster durch (dieselbe Technik wie `.up-headrow`),
+     damit Augenbraue, Marke und Titel einzeln platzierbar sind, ohne die DOM-Ordnung anzufassen. */
+  .un-first .un-head { display: contents; }
+  .un-first .un-eyebrow { grid-column: 1; grid-row: 2; text-align: left; }
+  .un-first .un-wm {
+    display: block;
+    grid-column: 1; grid-row: 3;
+    --wm-size: 42px;
+    margin-top: 10px;
+    text-align: left;
+  }
+  .un-first .un-title {
+    grid-column: 1; grid-row: 4;
+    text-align: left;
+    font-size: 23px;
+    margin-top: 16px;
+  }
+  .un-first .un-form { display: block; grid-column: 2; grid-row: 2 / span 4; }
+  /* Feld und Sprachknöpfe wachsen mit der Fassung — auf 900 px Breite wirkt die 14-px-Handy-Eingabe
+     wie ein Suchfeld, nicht wie die eine Entscheidung dieses Bildschirms. */
+  .un-first .un-form input { padding: 13px 16px; font-size: 16.5px; }
+  .un-first .un-form [role="radio"] { padding: 11px 14px; font-size: 15px; }
+
+  /* ---- Feedback: Text links, Kontext und Absenden rechts -------------------
+     Das Textfeld ist der Zweck des Melders; es bekommt die gewonnene Breite UND Höhe. Rechts steht,
+     was die Meldung begleitet (Name, Lauf-Bezug) und der Absende-Knopf. */
+  .fb-card { width: min(1080px, 100%); max-width: none; }
+  .fb-body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 22px;
+    padding: 18px 30px 28px !important;
+  }
+  /* Die Aktionsleiste ist hier keine Leiste mehr, sondern die dritte Kopfspalte: Ein sticky Band über
+     die volle Breite, das nur einen „Schließen"-Knopf trägt, ist auf 1080 px verschenkte Höhe.
+     Fläche und Rand kommen inline aus `ActionBar` → `!important`. */
+  .fb-bar {
+    grid-column: 3; grid-row: 1;
+    position: static;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border-bottom: 0 !important;
+  }
+  .fb-head { grid-column: 1; grid-row: 1; text-align: left; margin-bottom: 0; }
+  .fb-head h2 { font-size: 24px; }
+  .fb-readout {
+    grid-column: 2; grid-row: 1;
+    padding-left: 22px;
+    border-left: 1px solid rgba(150, 150, 170, .18);
+    font-size: 13px; line-height: 1.45; color: #8a8a95;
+  }
+  /* Formular UND Danke-Zustand sitzen in derselben Rasterzelle — sonst spränge die Karte in dem
+     Moment, in dem die Bestätigung das Formular ersetzt. */
+  .fb-form, .fb-body > [role="status"] { grid-column: 1 / -1; grid-row: 2; margin-top: 18px; }
+  .fb-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 26px;
+    align-items: start;
+  }
+  .fb-left, .fb-right { display: flex; flex-direction: column; gap: 12px; }
+  /* 5 Zeilen sind die Handy-Vorgabe; hier ist Höhe da, und ein Melder, der drei Sätze zeigt, bekommt
+     drei Sätze. Feste Höhe statt `flex: 1`, weil die rechte Spalte kürzer ist und die linke sonst an
+     ihr hinge. Das `resize: vertical` des Feldes bleibt. */
+  .fb-left textarea { height: 268px; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
@@ -2530,6 +2748,17 @@ button { font-family: inherit; }
    Bei 864 px (1080p unter 125 % Windows-Skalierung — ein Hauptprüfpunkt des Zielbands) fehlten knapp
    20 px und die Seite fing an zu scrollen. Statt den Rhythmus überall zu kürzen, wird er nur dort enger,
    wo die Höhe es verlangt; die abgenommene Optik auf 1080 bleibt unberührt. */
+/* Flache Desktop-Fenster: Die Optionen stehen auf 1080 px Höhe locker, auf 791 px (1920x1200-Laptop
+   unter 125 % Skalierung) fehlen ~90 px. Statt den Rhythmus überall zu kürzen, wird hier nur der Rand
+   zusammengezogen; reicht auch das nicht, scrollt der Rumpf (die Karte behält `max-h-[90dvh]`), und der
+   Kopf mit dem Schließen-Knopf bleibt im Bild. */
+@media (min-width: 1400px) and (max-height: 950px) {
+  .op-root { padding: 10px 36px 12px !important; }
+  .op-cols { gap: 16px; margin-top: 10px; }
+  .op-sec { padding: 12px 15px 14px; }
+  .op-foot { margin-top: 12px !important; }
+}
+
 @media (min-width: 1400px) and (max-height: 950px) {
   .hub-root { gap: 18px; padding-top: 6px; }
   .hub-pair { column-gap: 56px; }

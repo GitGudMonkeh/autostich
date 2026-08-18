@@ -1181,6 +1181,8 @@ export default {
   "start.discord": "Discord öffnen",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Feedback senden",
+  /* #desktop: Auskunftszeile im Kopf (ab 1400 px) — sagt, wohin die Meldung geht und was mitgeht. */
+  "feedback.desk.readout": "Geht direkt an die Entwicklung. Seed und Durchlauf des letzten Laufs hängen automatisch mit dran.",
   "feedback.kind": "Art",
   "feedback.kind.bug": "Bug",
   "feedback.kind.idea": "Idee",
@@ -1317,6 +1319,10 @@ export default {
   "options.chip.display": "Anzeige",
   "options.eyebrow": "Optionen",
   "options.title": "Einstellungen",
+  /* #desktop: Auskunftszeile im Kopf — steht erst ab 1400 px neben dem Titel (dort, wo im Upgrade-Baum
+     das Guthaben steht). Sie beantwortet die Frage, die ein Einstellungs-Screen ohne „Übernehmen"-Knopf
+     zwangsläufig aufwirft. */
+  "options.desk.readout": "Alles sofort wirksam und gespeichert.",
   "options.footer": "Weitere Optionen (Tempo-Default …) folgen hier.",
 
   "options.language.title": "Sprache",

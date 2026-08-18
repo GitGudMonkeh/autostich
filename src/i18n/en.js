@@ -1154,6 +1154,7 @@ export default {
   "start.discord": "Open Discord",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Send feedback",
+  "feedback.desk.readout": "Goes straight to the developers. Seed and cycle of your last run are attached automatically.",
   "feedback.kind": "Type",
   "feedback.kind.bug": "Bug",
   "feedback.kind.idea": "Idea",
@@ -1278,6 +1279,7 @@ export default {
   "options.chip.display": "Display",
   "options.eyebrow": "Options",
   "options.title": "Settings",
+  "options.desk.readout": "Everything takes effect and is saved immediately.",
   "options.footer": "More options (default speed …) will appear here.",
 
   "options.language.title": "Language",

@@ -68,7 +68,7 @@ function Segmented({ value, options, onChange }) {
    in `children` (`.as-opt-row:has(…)`) — die Zeile selbst muss den Zustand gar nicht kennen. */
 function Row({ title, desc, children, stack = false }) {
   return (
-    <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
+    <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
       <div className="flex-1">
         <div className="font-bold text-sm">{title}</div>
         {desc && <div className="text-sm opacity-70 leading-snug">{desc}</div>}
@@ -98,7 +98,12 @@ const SECTIONS = [
    sauber darunter zu verschwinden. */
 function Section({ id, title, innerRef, children }) {
   return (
-    <section ref={innerRef} data-sec={id} className="pb-1">
+    <section ref={innerRef} data-sec={id} className="op-sec as-ring pb-1">
+      {/* #desktop: Ab 1400 px ist die Sektion das Panel des Screens und trägt den laufenden
+          Deckfarben-Ring. Das `<i>` ist die stehende Maske der kompositierten Fassung (#perf-ring) —
+          ohne dieses Kind fehlt der Rahmen. Unter 1400 px ist beides inert (`.as-ring-run` ist dort
+          `display: none`, `.as-ring` selbst greift erst im Desktop-Block). */}
+      <i className="as-ring-run" aria-hidden="true" />
       <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-xs font-bold uppercase tracking-widest"
         /* #deckui: Sektions-Überschrift zieht die Deckfarbe (Chrome-Akzent). */
         style={{ color: "var(--deck-a1, #8a7de0)", background: STICKY_HEAD_BG }}>{title}</h3>
@@ -155,23 +160,29 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
   };
 
   return overlayPortal((
-    <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+    <div onClick={onClose} className="op-root fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
-        <ModalHairline />
+      <div onClick={(e) => e.stopPropagation()} className="op-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
+        {/* #desktop: ab 1400 px wandert die Linie per `order` UNTER den Kopf (Zeile 2 des Kopf-Rasters). */}
+        <ModalHairline className="op-hair" />
 
         {/* FIXER KOPF (#395): Titel · Schließen · Sprung-Chips — scrollt NICHT mit, damit die
             Sektions-Überschriften darunter bei top:0 kleben können. */}
-        <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
-          <div className="flex items-start gap-3">
-            <div className="min-w-0">
+        <div className="op-head flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
+          <div className="op-headrow flex items-start gap-3">
+            <div className="op-title min-w-0">
               {/* #deckui: Eyebrow deck-getönt. */}
               <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.eyebrow")}</div>
               <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
             </div>
-            <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+            {/* #desktop: Auskunftszeile neben dem Titel — dieselbe Stelle wie das Guthaben im Upgrade-Baum
+                (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1400 px gibt es sie nicht: dort ist
+                der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
+            <div className="op-readout hidden min-[1400px]:block">{t("options.desk.readout")}</div>
+            <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
           </div>
-          <div className="flex flex-nowrap sm:flex-wrap gap-1.5 mt-3 overflow-x-auto sm:overflow-x-visible as-chiprow">
+          {/* #desktop: Die Sprungleiste ist ab 1400 px gegenstandslos (nichts scrollt mehr) und wird ausgeblendet. */}
+          <div className="op-chips flex flex-nowrap sm:flex-wrap gap-1.5 mt-3 overflow-x-auto sm:overflow-x-visible as-chiprow">
             {SECTIONS.map((sec) => (
               <JumpChip key={sec.id} label={t(sec.chipKey)} active={active === sec.id} onClick={() => jump(sec.id)} />
             ))}
@@ -179,8 +190,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
         </div>
 
         {/* SCROLL-BODY: nur die Sektionen scrollen. */}
-        <div ref={bodyRef} className="flex-1 overflow-y-auto px-6 pt-1 pb-6" style={{ overscrollBehavior: "contain" }}>
-        <div className="grid gap-1">
+        <div ref={bodyRef} className="op-body flex-1 overflow-y-auto px-6 pt-1 pb-6" style={{ overscrollBehavior: "contain" }}>
+        <div className="op-cols grid gap-1">
           <Section id="general" title={t("options.sec.general")}
             innerRef={(el) => { secRefs.current.general = el; }}>
           {/* #sprache: Sprachwahl ganz oben. Die Labels der Sprachen stehen bewusst in ihrer EIGENEN Sprache
@@ -216,6 +227,11 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
             <Toggle on={options.telemetry !== false} onClick={() => onChange({ telemetry: options.telemetry === false })} />
           </Row>
           </Section>
+          {/* #desktop — Klammer für die MITTLERE Spalte: „Grafik & Leistung" und „Ton" teilen sich dort eine
+              Spalte und müssen als EIN Rasterfeld stehen. Ohne die Klammer säßen sie in zwei Rasterzeilen,
+              deren Höhe die längste Spalte daneben bestimmt — zwischen den beiden klaffte dann deren
+              Restluft. Unter 1400 px ist sie `display: contents`, ändert dort also nichts. */}
+          <div className="op-col2">
           <Section id="graphics" title={t("options.sec.graphics")}
             innerRef={(el) => { secRefs.current.graphics = el; }}>
           {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
@@ -257,6 +273,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               style={{ width: 120, accentColor: "var(--deck-a1, #8a7de0)", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
           </Section>
+          </div>
           <Section id="display" title={t("options.sec.display")}
             innerRef={(el) => { secRefs.current.display = el; }}>
           {/* #389 Floating-Text: Master-Schalter + drei Einzel-Schalter (Score · Multiplier · Win/Lose). „An" = sichtbar
@@ -301,7 +318,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
         </div>
 
         {/* #deckui: Fußzeilen-Box zieht die Deckfarbe als leichte Fläche (~13 % Alpha); Text bleibt neutral-hell. */}
-        <div className="rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 13%, transparent)", color: "#c9c0f0" }}>
+        <div className="op-foot rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 13%, transparent)", color: "#c9c0f0" }}>
           {t("options.footer")}
         </div>
         </div>
