@@ -264,3 +264,16 @@ describe("#leerlauf — ein sofort beendeter Lauf sieht aus wie ein langer, nur 
     expect(rg).toMatch(/if \(!score \|\| !rows\.length\) \{\s*\n\s*return \(/);
   });
 });
+
+describe("#unlock-fenster — Freischaltungen als eigenes Fenster, nur auf dem Desktop", () => {
+  const jsx = src("ui/GameOver.jsx");
+  it("Fenster ODER Bahn — nie beides, und der Griff ist ein Bestätigen-Knopf", () => {
+    /* Die Bahn läuft über die volle Breite (1720 px) und trägt darin zwei 74-px-Kacheln: am Handy eine
+       gefüllte Karte, auf dem Desktop ein leeres Band mit einem Fleck in der Mitte. */
+    expect(jsx).toMatch(/\{wide && newUnlocks\.length > 0 && !unlockSeen && \(/);
+    expect(jsx).toMatch(/\{!wide && newUnlocks\.length > 0 && \(/);
+    expect(jsx).toMatch(/t\("common\.confirm"\)/);
+    // Goldener Funkel-Rahmen wie an den Meta-Freischaltungen — kein zweiter Rahmen-Look.
+    expect(jsx).toMatch(/ul-card as-legendary/);
+  });
+});

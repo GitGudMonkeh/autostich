@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1400 px steht die finale Aufstellung offen
+import { useEscape } from "./useEscape.js";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
@@ -75,6 +76,61 @@ function useDpRollup({ gross = 0, net = 0, raw = 0 }) {
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
+/* #unlock-fenster (18.08.2026): Frisch freigeschaltete Skins bekommen auf dem DESKTOP ein eigenes Fenster
+   statt einer Bahn im Screen. Grund ist das Format: die Bahn läuft über die volle Breite (1720 px) und trägt
+   darin zwei 74-px-Kacheln — am Handy ist das eine gefüllte Karte, auf dem Desktop ein leeres Band mit einem
+   Fleck in der Mitte. Als Fenster ist die Freischaltung das, was sie ist: eine Nachricht, die man einmal
+   ansieht und wegklickt. Der goldene Funkel-Rahmen ist derselbe wie an den Meta-Freischaltungen (as-legendary).
+   Das Bild steht groß — es ist der einzige Grund, warum jemand hinsieht. */
+function UnlockModal({ unlocks, onConfirm }) {
+  useEscape(onConfirm);
+  /* Groß steht das DECK-COVER — es ist das Bild, wegen dem man hinsieht. Ein Deck-Skin schaltet meist sein
+     Spielfeld gleich mit frei; das ist dieselbe Nachricht in klein und stünde als zweite große Kachel neben
+     dem Cover nur im Weg. Es wird deshalb NAMENTLICH genannt statt abgebildet — verschwiegen wird nichts.
+     Gibt es ausnahmsweise gar kein Deck (nur ein Spielfeld), zeigt das Fenster eben das. */
+  const covers = unlocks.filter((u) => u.type === "deck");
+  const shown = covers.length ? covers : unlocks;
+  const alsoNames = covers.length ? unlocks.filter((u) => u.type !== "deck").map((u) => u.name) : [];
+  return overlayPortal((
+    <div className="ul-root fixed inset-0 z-[60] flex items-center justify-center p-6"
+      style={{ background: "rgba(8, 8, 12, .82)" }} onClick={onConfirm}>
+      <div className="ul-card as-legendary rounded-2xl px-8 pt-7 pb-6 text-center"
+        style={{ background: "linear-gradient(180deg, #1c1708, #14110c)", maxWidth: "min(92vw, 760px)" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="text-sm uppercase tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
+          {t("gameover.skins.title")}
+        </div>
+        <div className="flex flex-wrap justify-center items-end gap-7 mt-6">
+          {shown.map((u) => {
+            const img = u.type === "deck" ? deckAssets(u.id).back : (battlefieldAssets(u.id) || {}).desktop;
+            return (
+              <div key={`${u.type}:${u.id}`} className="flex flex-col items-center gap-2.5" style={{ width: u.type === "deck" ? 240 : 380 }}>
+                {/* Ohne Bild KEINE leere Kachel — der Name allein sagt mehr als ein leerer Rahmen. */}
+                {img && (
+                  <div className="ul-img rounded-xl overflow-hidden w-full"
+                    style={{ aspectRatio: u.type === "deck" ? "3 / 4" : "16 / 9", background: "#0c0c10", border: "1px solid #d4a63a55" }}>
+                    <img src={img} alt="" decoding="async" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />
+                  </div>
+                )}
+                <span className="text-[15px] font-semibold leading-tight">{u.name}</span>
+              </div>
+            );
+          })}
+        </div>
+        {alsoNames.length > 0 && (
+          <div className="text-[13px] opacity-70 mt-4">+ {alsoNames.join(" · ")}</div>
+        )}
+        <div className="text-xs opacity-55 mt-5">{t("gameover.skins.hint")}</div>
+        <button onClick={onConfirm} autoFocus
+          className="as-edge-strong mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
+          style={{ "--c": "#d4a63a" }}>
+          {t("common.confirm")}
+        </button>
+      </div>
+    </div>
+  ));
+}
+
 export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   const [guideArch, setGuideArch] = useState(null); // #: Leitfaden-Overlay aus einem Archetyp-Freischalt-Button (Onboarding)
@@ -113,6 +169,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const hasTicks = Array.isArray(state.trickLog) && state.trickLog.some((c) => c && c.length);
   const architectCover = hasArch ? architectCoverFor(state) : null;
   const wide = useIsWide();   // #desktop: eigene Spalte für die Aufstellung → sie startet aufgeklappt
+  const [unlockSeen, setUnlockSeen] = useState(false);   // #unlock-fenster: einmal bestätigen, dann weg
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
@@ -269,8 +326,14 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         </div>
         </div>
 
+        {/* #unlock-fenster: auf dem Desktop als eigenes Fenster (s. UnlockModal), darunter als Bahn im Screen —
+            gerendert wird immer nur eins von beiden. */}
+        {wide && newUnlocks.length > 0 && !unlockSeen && (
+          <UnlockModal unlocks={newUnlocks} onConfirm={() => setUnlockSeen(true)} />
+        )}
+
         {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
-        {newUnlocks.length > 0 && (
+        {!wide && newUnlocks.length > 0 && (
           <div className="go-skins mt-4 rounded-xl p-3" style={{ background: "#1b1630", border: "1px solid #8a7de055" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#8a7de0" }}>{t("gameover.skins.title")}</div>
             <div className="flex flex-wrap justify-center gap-3">
