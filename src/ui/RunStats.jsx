@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { rarityOf, RARITY_META } from "../game/perks.js";
+import { rarityOf, RARITY_META, CATEGORIES } from "../game/perks.js";
 
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
@@ -98,6 +98,24 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
   );
 }
 
+/* #kategorien — Perks und Familien nach KATEGORIE bündeln.
+   Sortiert war die Wolke vorher nicht: die flachen Perks standen in ZUGRIFFS-Reihenfolge, die Familien nach
+   Stufe, und die Kategorie steckte allein in der Chipfarbe — also in einer Information, die man erst zuordnen
+   kann, wenn man die sieben Farben auswendig kennt. Gebündelt beantwortet die Zeile stattdessen die Frage,
+   die man an einen fremden (oder den eigenen alten) Build stellt: WORAUF lag der Schwerpunkt.
+   Reihenfolge der Gruppen = die des Registers (A Deck · B Stich · C Rolle · D Score · E Form · P Präzision ·
+   S Ausbau), nicht die Häufigkeit — sonst wechselt die Anordnung von Lauf zu Lauf und man sucht jedes Mal neu.
+   Innerhalb einer Gruppe bleibt es wie gehabt: erst die flachen Perks, dann die Familien nach Stufe. */
+function groupByCategory(perks, families) {
+  const groups = new Map();
+  const put = (cat, item) => { if (!groups.has(cat)) groups.set(cat, []); groups.get(cat).push(item); };
+  for (const id of perks || []) { const def = perkDef(id); if (def) put(def.cat, { kind: "perk", id, def }); }
+  for (const f of families) { const fd = familyDef(f.id); if (fd) put(fd.cat, { kind: "family", id: f.id, tier: f.tier, fd }); }
+  const order = Object.keys(CATEGORIES);
+  return [...groups.entries()].map(([cat, items]) => ({ cat, items }))
+    .sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
+}
+
 /* Victory-Redesign: die Build-Chips — Archetyp-Zusammenfassung (aus den Skills abgeleitet) + Perk-/Skill-Chips
    mit klickbarer Beschreibung. `anonymized` (fremder Board-Eintrag) verdeckt die Perks, nicht die Skills. */
 export function RunBuildChips({ entry = {}, anonymized = false }) {
@@ -148,6 +166,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   const showHidden = anonymized && perks !== null && perks.length > 0;
   if (!archCounts.length && !showSkills && !showPerks && !showHidden) return null;
   const perkTotal = (perks ? perks.length : 0) + families.length;
+  const perkGroups = groupByCategory(perks, families);
 
   return (
     <div>
@@ -172,36 +191,46 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
             <div className="text-[10px] uppercase tracking-wider opacity-45 text-center mb-1">{t("runstats.perks", { n: perkTotal })}</div>
           )}
           {showPerks && (
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {(perks || []).map((id) => {
-                const def = perkDef(id);
-                if (!def) return null;
-                const cc = perkCat(def.cat)?.color || "#8a8a95";
-                const rar = rarityOf(id);
-                const rm = RARITY_META[rar];
-                const on = sel && sel.kind === "perk" && sel.id === id;
+            <div className="grid gap-1.5">
+              {perkGroups.map((g) => {
+                const cm = perkCat(g.cat);
+                const cc = cm?.color || "#8a8a95";
                 return (
-                  <button key={id} onClick={() => toggle("perk", id)} title={t("runstats.showDesc")}
-                    className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
-                    style={{ background: `${cc}22`, color: cc, border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
-                    {rm.mark ? `${rm.mark} ` : ""}{def.label}
-                  </button>
-                );
-              })}
-              {/* Familien in DERSELBEN Zeile wie die flachen Perks — für den Spieler ist beides „ein Perk, den
-                  ich genommen habe"; die Trennung ist eine Implementierungsgrenze (#167), keine Spielregel.
-                  Farbe kommt von der STUFE (grau/grün/blau/lila, wie in PerkList und im Angebot), nicht von der
-                  Kategorie: die Stufe ist die Information, die man in einer Chip-Wolke sucht. */}
-              {families.map((f) => {
-                const fd = familyDef(f.id);
-                const col = (tierMeta(f.tier) || {}).color || perkCat(fd.cat)?.color || "#8a8a95";
-                const on = sel && sel.kind === "family" && sel.id === f.id;
-                return (
-                  <button key={`fam:${f.id}`} onClick={() => toggle("family", f.id)} title={t("runstats.showDesc")}
-                    className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
-                    style={{ background: `${col}22`, color: col, border: `1px solid ${on ? col : `${col}66`}` }}>
-                    {fd.name} {romanOf(f.tier)}
-                  </button>
+                  <div key={g.cat} className="flex flex-wrap items-center justify-center gap-1.5">
+                    {/* Die Kategorie steht als Wort vor ihren Chips — in ihrer Farbe, damit Beschriftung und
+                        Chipfarbe dasselbe sagen und die Farbe nicht mehr allein tragen muss. */}
+                    <span className="text-[10px] uppercase tracking-wider font-bold shrink-0" style={{ color: cc, opacity: 0.85 }}>
+                      {cm?.name || g.cat}
+                    </span>
+                    {g.items.map((it) => {
+                      if (it.kind === "perk") {
+                        const rar = rarityOf(it.id);
+                        const rm = RARITY_META[rar];
+                        const on = sel && sel.kind === "perk" && sel.id === it.id;
+                        return (
+                          <button key={it.id} onClick={() => toggle("perk", it.id)} title={t("runstats.showDesc")}
+                            className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                            style={{ background: `${cc}22`, color: cc, border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
+                            {rm.mark ? `${rm.mark} ` : ""}{it.def.label}
+                          </button>
+                        );
+                      }
+                      /* Familien in DERSELBEN Gruppe wie die flachen Perks — für den Spieler ist beides „ein Perk,
+                         das ich genommen habe"; die Trennung ist eine Implementierungsgrenze (#167), keine
+                         Spielregel. Farbe kommt weiter von der STUFE (grau/grün/blau/lila wie in PerkList): die
+                         Stufe ist die Information, die man an einer Familie sucht — die Kategorie sagt jetzt
+                         die Beschriftung. */
+                      const col = (tierMeta(it.tier) || {}).color || cc;
+                      const on = sel && sel.kind === "family" && sel.id === it.id;
+                      return (
+                        <button key={`fam:${it.id}`} onClick={() => toggle("family", it.id)} title={t("runstats.showDesc")}
+                          className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                          style={{ background: `${col}22`, color: col, border: `1px solid ${on ? col : `${col}66`}` }}>
+                          {it.fd.name} {romanOf(it.tier)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </div>

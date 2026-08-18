@@ -29,12 +29,25 @@ describe("Victory-Screen · Familien-Perks", () => {
   });
 
   it("RunBuildChips rendert die Familien als eigene Chips (Stufenfarbe + römische Stufe)", () => {
-    expect(stats).toMatch(/families\.map\(/);
-    expect(stats).toMatch(/romanOf\(f\.tier\)/);
-    expect(stats).toMatch(/tierMeta\(f\.tier\)/);
+    /* #kategorien: Die Chips laufen seit der Gruppierung nicht mehr über `families.map`, sondern über die
+       gebündelte Liste — die Aussage bleibt dieselbe: Familien sind Chips mit STUFENFARBE und römischer Stufe. */
+    expect(stats).toMatch(/for \(const f of families\)/);
+    expect(stats).toMatch(/romanOf\(it\.tier\)/);
+    expect(stats).toMatch(/tierMeta\(it\.tier\)/);
     // Die Zeile bekommt eine Überschrift mit Gesamtzahl — flache Perks + Familien.
     expect(stats).toMatch(/const perkTotal = \(perks \? perks\.length : 0\) \+ families\.length/);
     expect(stats).toMatch(/t\("runstats\.perks", \{ n: perkTotal \}\)/);
+  });
+
+  it("#kategorien: Perks und Familien stehen nach Kategorie gebündelt, in Register-Reihenfolge", () => {
+    /* Vorher standen die flachen Perks in Zugriffs- und die Familien in Stufen-Reihenfolge; die Kategorie
+       steckte allein in der Chipfarbe. Die Reihenfolge der GRUPPEN kommt aus dem Register (CATEGORIES) und
+       NICHT aus der Häufigkeit — sonst wechselt die Anordnung von Lauf zu Lauf. */
+    expect(stats).toMatch(/function groupByCategory\(perks, families\)/);
+    expect(stats).toMatch(/const order = Object\.keys\(CATEGORIES\)/);
+    expect(stats).toMatch(/order\.indexOf\(a\.cat\) - order\.indexOf\(b\.cat\)/);
+    // Die Beschriftung nennt die Kategorie und trägt ihre Farbe (sonst trüge die Farbe sie weiter allein).
+    expect(stats).toMatch(/cm\?\.name \|\| g\.cat/);
   });
 
   it("die Perk-Zeile erscheint auch ohne einen einzigen flachen Perk", () => {
