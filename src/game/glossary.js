@@ -225,7 +225,7 @@ export const GLOSSARY = {
   // Zwei getrennte Überlauf-Pfade, die früher beide „Weißglut" hießen (Sprachprüfung B1): HITZE über 100 %
   // (Skill Weißglut) und ASCHE über die Schmiede-Kapazität (Ascheglut). Ein Wort = eine Bedeutung.
   whiteheat: { category: "frak", group: "fire", label: "Weißglut", icon: "🔥", color: CLR.fire,
-    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, staut sich jeder weitere Hitzegewinn als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %) — je heißer, desto weniger davon kommt an. Jeder Punkt Überhitzung gibt +${Math.round(C.OVERHEAT_SCORE_STEP * 100)} % auf deinen gesamten Feuer-Score und baut sich je Stich wieder ab. Braucht den Skill Weißglut.`,
+    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, staut sich jeder weitere Hitzegewinn als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %) — je heißer, desto weniger davon kommt an. Jeder Punkt Überhitzung gibt +${Math.round(C.OVERHEAT_SCORE_STEP * 100)} % auf deinen Feuer-Score und baut sich je Stich wieder ab. Braucht den Skill Weißglut.`,
     match: ["Weißglut", "Überhitzung"] },
   ashglow: { category: "frak", group: "fire", label: "Ascheglut", icon: "🔥", color: CLR.fire,
     text: `Der Asche-Überlauf: Ist die Schmiede-Kapazität voll, wird restliche Asche am Durchlauf-Ende in Score-Häppchen verbrannt (+${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche) — Asche wird so jeden Durchlauf vollständig ausgegeben, kein toter Haufen mehr.`,

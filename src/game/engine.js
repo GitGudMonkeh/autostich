@@ -515,9 +515,10 @@ export function resolveTrick(state, rng) {
         if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { fireFlat += heat.sparkStore || 0; heat = { ...heat, sparkStore: 0 }; }
         else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + sparkBankFor(fireBaseFlat, skills) };
       }
-      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den GESAMTEN Feuer-Score dieses Stichs — Grund-Score,
-      // Schmelzpunkt-Tropf, Flächenbrand-Burst und die Funkenflug-Ausschüttung. Bewusst EIN Satz auf die ganze
-      // Hitze-Linie statt drei Sonderfälle; Glutstahl (Schmiede-Linie) kommt erst danach dazu und bleibt draußen.
+      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den Feuer-Score dieses Stichs — Grund-Score,
+      // Flächenbrand-Burst und die Funkenflug-Ausschüttung. NICHT den Schmelzpunkt-Tropf: der ist seit #fire-consumer
+      // Direkt-Score (post-stack) und liegt damit außerhalb dieser multiplizierten Basis. Glutstahl (Schmiede-Linie)
+      // kommt erst danach dazu und bleibt ebenfalls draußen.
       // Der Aufschlag ist der Weißglut-KANAL (#270.2) — fireBase bekommt unten den Rest.
       const wMult = overheatMult(heat.over || 0, skills);
       if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; }
