@@ -156,6 +156,34 @@ function useSettled(value, ms) {
   return shown;
 }
 
+/* #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt.
+   ---------------------------------------------------------------------------------------------
+   Ein Klick in der Effekt-Liste wechselt `sel`, das wechselt den `key` an GlobalFxScenePreview, und
+   die neue Szene ist damit im SELBEN Frame gemountet: `GottScene` reicht `trigger={1}` an den Prunk,
+   dessen `onFire` spielt sofort `fx_godlike` + Swell. Beim Durchtippen der Liste knallt also jede
+   Zeile im Moment des Tippens los — noch bevor der Blick von der Liste auf der Bühne angekommen ist.
+
+   Der Halt hängt am MOUNT der Szene, nicht an einem Prop: der Szenenwechsel IST der Remount, damit
+   trifft er genau den gemeinten Fall und keinen anderen. Ein Prop hätte durch alle sechs Szenen
+   gefädelt werden müssen und wäre beim Farbmodus-Toggle (der bewusst NICHT remountet, s. #perf-shop)
+   fälschlich noch einmal angesprungen.
+
+   Er greift NACH `useSettled` oben (#perf-shopmount): erst wartet der Mount, bis die Auswahl steht
+   (150 ms), dann hält die gemountete Szene ihren Effekt zurück. Zusammen rund 1,15 s — die beiden
+   lösen verschiedene Probleme (Bühnen-Aufbau beim Durchblättern gegen Knall im Klick-Moment) und
+   sind bewusst nicht zu einem Timer zusammengezogen.
+
+   Nur die Szenen mit echtem ABSPIEL-Moment tragen ihn (Sieg-Finisher + Gottgleich-Prunk). Die
+   Hintergrund-Effekte (Aurora, Würfel-Matrix, Glutfunken, Komet) und die Karten-Animationen laufen
+   weiter sofort an — sie haben keinen Knall, den man abwarten könnte, und eine Sekunde stehendes
+   Feldbild wäre dort kein Zugewinn, sondern eine Verzögerung. */
+export const FX_GRACE_MS = 1000;
+function useGrace(ms = FX_GRACE_MS) {
+  const [bereit, setBereit] = useState(false);
+  useEffect(() => { const id = setTimeout(() => setBereit(true), ms); return () => clearTimeout(id); }, [ms]);
+  return bereit;
+}
+
 /* Karten-Anker aller Vorschau-Szenen: der unsichtbare 104×144-Slot, an dem sich die Effekte ausrichten.
    Skaliert wird per `transform`, NICHT über width/height — und das ist die eigentliche Entscheidung hier:
    • Die DOM-Effekte (Klinge/SliceFx, Standard-Wegflug, die Vorschau-Karte selbst) rechnen in absoluten
@@ -459,25 +487,27 @@ function PanelChip({ corner = "tl", children, style }) {
 
 function FinisherScene({ variant, deckTint = false, look = null }) {
   const [tick, setTick] = useState(0);
+  const bereit = useGrace();   // #fx-grace: erst die Karte liegen lassen, dann schneiden
   // #klinge-deck: Standard = kühles Stahlweiß (bladeTint, wie in-game bladeColor=null); Deckfarbe = Deck-Beispielfarbe
   //   auf passendem Backdrop (nur im Deckfarbe-Modus), Standard bleibt auf dem neutralen SHOWCASE_BF.
   const bf = battlefieldAssets(deckTint && look?.bf ? look.bf : SHOWCASE_BF);
   const bladeCol = deckTint ? (look?.a1 || "#35e0ff") : "#bcd6ff";
   const kstep = KLINGE_SCHEDULE[tick % KLINGE_SCHEDULE.length];
   useEffect(() => {
+    if (!bereit) return undefined;
     const id = setInterval(() => setTick((t) => t + 1), FIN_TICK_MS); // Loop: Karte erscheint → wird zerteilt → Pause
     return () => clearInterval(id);
-  }, []);
+  }, [bereit]);
   // #312: Sound synchron zum sichtbaren Schnitt (bei FIN_DELAY). Der Z-Schnitt sind ZWEI Slashes → zwei schnelle Hits,
   // exakt auf die beiden Slash-Zeitpunkte (0 und zSlashStep × cutDur). Alle Zeiten sind bereits 3×-skaliert → Sound
   // zieht mit der Animation mit. Andere Richtungen: EIN Hit. Respektiert Mute/Volume über das audio-System.
   useEffect(() => {
     const sfx = FIN_SFX[variant];
-    if (!sfx) return undefined;
+    if (!sfx || !bereit) return undefined;   // #fx-grace: kein Hit-Sound während der Wartezeit
     const timers = [setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY)];
     if (kstep.d === "z") timers.push(setTimeout(() => audio.play(sfx, { gain: 1.0 }), FIN_DELAY + Math.round(KLINGE_TUNE.zSlashStep * FIN_CUT)));
     return () => timers.forEach(clearTimeout);
-  }, [tick, variant, kstep.d]);
+  }, [tick, variant, kstep.d, bereit]);
   const suitCol = suitColor(DEMO_SUIT);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   const seed = tick * 3 + 1;
@@ -492,7 +522,9 @@ function FinisherScene({ variant, deckTint = false, look = null }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
       <CardSlot>
-        <div key={tick} className="absolute inset-0">{fx}</div>
+        {/* #fx-grace: In der Wartezeit steht die blanke Karte im Slot — dasselbe Bild, das SliceFx zwischen
+            zwei Schnitten ohnehin zeigt (es rendert `cardEl` selbst). Kein zweiter Look, nur später. */}
+        <div key={tick} className="absolute inset-0">{bereit ? fx : cardEl}</div>
       </CardSlot>
       {/* #330 Kein Scene-Chrome mehr — Name/Status/Farbmodus zeichnet zentral die Bühne (FxStage). */}
     </div>
@@ -504,6 +536,7 @@ function FinisherScene({ variant, deckTint = false, look = null }) {
 function ScorchScene({ deckTint = false, look = null }) {
   const panelRef = useRef(null);
   const cardRef = useRef(null);
+  const bereit = useGrace();   // #fx-grace
   // #scorch-deck: Standard = warmes Feuer (ScorchFx-intern, deckTint=false); Deckfarbe = Deck-Beispielfarbe auf
   //   passendem Backdrop (nur im Deckfarbe-Modus), Standard bleibt auf dem neutralen SHOWCASE_BF.
   const bf = battlefieldAssets(deckTint && look?.bf ? look.bf : SHOWCASE_BF);
@@ -512,9 +545,9 @@ function ScorchScene({ deckTint = false, look = null }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <CardSlot slotRef={cardRef} />
-      <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
+      {bereit && <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
         value={8} suit={suitColor(DEMO_SUIT)} deckColor={look?.a1 || "#35e0ff"} speed={1.15}
-        onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
+        onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />}
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
@@ -532,16 +565,17 @@ function HologridScene({ deckTint = false, look = null }) {
   const dc1 = deckTint ? (look?.a1 || "#2ff0ff") : "#2ff0ff";
   const dc2 = deckTint ? (look?.a2 || look?.a1 || "#ff2d9b") : "#ff2d9b";
   const isMobile = useIsMobile();
+  const bereit = useGrace();   // #fx-grace
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <CardSlot slotRef={cardRef} />
-      <Suspense fallback={null}>
+      {bereit && <Suspense fallback={null}>
         <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
           value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1}
           onFire={() => audio.play("fx_lasergrid", { rate: 1.1, gain: 1.0 })} /* #378 Sound auch im Shop, getimt (rate = Showcase-Speed), gleicher Key wie in-game (#374) */ />
-      </Suspense>
+      </Suspense>}
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
@@ -557,7 +591,9 @@ function BlackholeScene({ deckTint = false }) {
   //   der Toggle auch am Hintergrund sichtbar ist. Der Backdrop bleibt bewusst schwach (opacity 0.35) → Weltraum-Look.
   const bf = battlefieldAssets(deckTint ? (PREVIEW_LOOK.blackhole.bf || SHOWCASE_BF) : SHOWCASE_BF);
   const [pulse, setPulse] = useState(null);
+  const bereit = useGrace();   // #fx-grace: Choreografie UND Sog-Bett warten
   useEffect(() => {
+    if (!bereit) return undefined;
     // Loop-Choreografie: das Loch wächst sichtbar bis zum MAXIMUM auf und implodiert dann. maxLevel ≈ 23
     //   ((MAX_R−BASE_R)/STEP_R), Siege erhöhen den Level je um 1 → der Wiederaufbau braucht so viele Sieg-Pulse, dass der
     //   Deckel WIRKLICH erreicht wird (die letzten paar Siege halten das Loch am Max — Vorbedingung für die Implosionsbombe).
@@ -586,7 +622,7 @@ function BlackholeScene({ deckTint = false }) {
     };
     timers.push(setTimeout(tick, 400));
     return () => { alive = false; timers.forEach(clearTimeout); };
-  }, []);
+  }, [bereit]);
   // #380 Loop-Bett (Sog/Drone) wie in-game: läuft durchgehend über die ganze Vorschau-Choreografie, Gain/Rate wachsen
   //   via onSize mit der Lochgröße → der Aufbau ist hörbar, nicht nur der Kollaps.
   const holeSndRef = useRef(null);
@@ -600,10 +636,11 @@ function BlackholeScene({ deckTint = false }) {
     audio.setLoopGain(h, gain); audio.setLoopRate(h, rate);
   };
   useEffect(() => {
+    if (!bereit) return undefined;   // #fx-grace: das Bett ist der erste hörbare Ton der Szene
     holeFillRef.current = 0; holeShudRef.current = 0;
     holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
-  }, []);
+  }, [bereit]);
   const look = PREVIEW_LOOK.blackhole;
   const c1 = deckTint ? look.a1 : "#4aa0ff";
   const c2 = deckTint ? (look.a2 || look.a1) : "#ff3ea8";
@@ -612,12 +649,12 @@ function BlackholeScene({ deckTint = false }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35 }} />}
       <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
       <CardSlot slotRef={oppRef} left="72%" />
-      <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */
+      {bereit && <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */
         /* #380 Sound wie in-game: Zusammenzieh-Impact · Nova-Flash → fx_supernova (nur großer Kollaps) · Bett-Pegel via onSize. */
         onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
         onNova={(big) => { if (big) audio.play("fx_supernova", { gain: 0.9 }); }}
         onSize={(level, maxL) => { holeFillRef.current = maxL > 0 ? level / maxL : 0; applyHoleSnd(); }}
-        onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} />
+        onShudder={(sh) => { holeShudRef.current = sh; applyHoleSnd(); }} />}
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
@@ -642,6 +679,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   // #perf: Auf Mobile die Vorschau im lite-Pfad laufen lassen (weniger DPR/FPS/Partikel) — dieselbe Stufe wie in-game
   // auf pointer:coarse. Ohne das lief der Loop-Showcase auf dem Handy in voller Auflösung → Jank.
   const isMobile = useIsMobile();
+  const bereit = useGrace();   // #fx-grace: Prunk, Ansage und Ton setzen gemeinsam eine Sekunde später ein
   const [annKey, setAnnKey] = useState(0);
   const pop = () => setAnnKey((k) => k + 1);
   // Jeder Prunk-„Fire": Ansage poppen + Prunk-Sound spielen. #379: Der Loop ist per `speed` so verlangsamt, dass seine
@@ -659,17 +697,17 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
   };
   // Ohne Prunk-Effekt (Standard) treibt ein Timer den Ansage-Loop; mit Prunk kommt der Takt aus dessen onFire.
   useEffect(() => {
-    if (Fx) return undefined;
+    if (Fx || !bereit) return undefined;
     pop();
     const id = setInterval(pop, cycleMs);
     return () => clearInterval(id);
-  }, [Fx, cycleMs]);
+  }, [Fx, cycleMs, bereit]);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <CardSlot slotRef={cardRef} />
-      {Fx && (
+      {Fx && bereit && (
         <Suspense fallback={null}>
           <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} speed={speed} loopGap={loopGap} onFire={fire} />
         </Suspense>
@@ -678,9 +716,9 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
           rein (key={annKey} → Neustart der Pop-Animation). idKey am Key → eindeutige Gradient-/Mask-IDs je Pop. */}
       {/* #335: Wortmarke folgt dem Prunk-Farbmodus — Deckfarbe-Modus → Deck-Zweiton (deckColor→deckColor2), sonst
           Chrome-Zweiton. Vorschau = In-Game (Battlefield tönt „Gottgleich" analog über gottDeck/deckA1/deckA2). */}
-      <GottChromeWord key={annKey} text={t("bf.big.godlike")} color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
+      {bereit && <GottChromeWord key={annKey} text={t("bf.big.godlike")} color={deckTint ? deckColor : null} color2={deckTint ? deckColor2 : null}
         gBig={isMobile ? 9 : 11} gMid={6} sheen="once" idKey={`sc${annKey}`}
-        style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />
+        style={{ left: "50%", top: "50%", width: "62%", zIndex: 20, animation: "ws-gott-word 1.5s ease-out both" }} />}
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status/Farbmodus zentral. */}
     </div>
   );
@@ -696,24 +734,28 @@ const STD_FIN_PITCH = 1.14;                            // Flip-Sound beim Sieg d
 function StandardFinisherScene() {
   const [tick, setTick] = useState(0);
   const bf = battlefieldAssets(SHOWCASE_BF);
+  const bereit = useGrace();   // #fx-grace
   useEffect(() => {
+    if (!bereit) return undefined;
     const id = setInterval(() => setTick((t) => t + 1), STD_FIN_TICK_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [bereit]);
   // Angehobener Aufdeck-Sound je Loop-Durchlauf (Sieg-Cue) — synchron zum Erscheinen der Karte.
   useEffect(() => {
+    if (!bereit) return undefined;   // #fx-grace: auch der Sieg-Cue wartet
     const to = setTimeout(() => audio.play("cardflip", { rate: STD_FIN_PITCH, gain: 0.95 }), 0);
     return () => clearTimeout(to);
-  }, [tick]);
+  }, [tick, bereit]);
   const cardEl = <Card suit={DEMO_SUIT} value={8} baseRank={8} ionStacks={2} />;
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       <CardSlot>
-        {/* key={tick} startet die Wegflug-Animation je Loop neu; erst REST liegen bleiben, dann as-flyaway-r zur Seite. */}
+        {/* key={tick} startet die Wegflug-Animation je Loop neu; erst REST liegen bleiben, dann as-flyaway-r zur Seite.
+            #fx-grace: bis dahin liegt die Karte einfach da (dasselbe Bild wie zwischen zwei Durchläufen). */}
         <div key={tick} className="absolute inset-0"
-          style={{ animation: `as-flyaway-r ${STD_FIN_FLY}ms ease-in ${STD_FIN_REST}ms both` }}>
+          style={bereit ? { animation: `as-flyaway-r ${STD_FIN_FLY}ms ease-in ${STD_FIN_REST}ms both` } : null}>
           {cardEl}
         </div>
       </CardSlot>

@@ -24,7 +24,13 @@ const TUNE = {
   // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
   // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
   SLOW: 0.5, SPEED_LO: 0.006, SPEED_HI: 0.020,
-  C_COLS: 18, C_ROWS: 6, C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1, // #343: gefüllte Würfel weniger transparent (0.65→0.80)
+  // #fx-dichte (18.08.2026): Desktop 18×6 = 108 → 13×4 = 52, also halbiert. 108 Türme auf einem Feld, das seit
+  // #fx-flaeche 80 % der Bühne einnimmt, standen als geschlossene Wand statt als Einzeltürme. Halbiert wurde über
+  // BEIDE Achsen (Spalten 18→13 UND Reihen 6→4) — je Achse allein hätte die andere unverändert dicht gelassen.
+  // Die lite-Werte stehen daneben statt als Abzug (war `C - 6` / `R - 2`): mit den neuen Desktop-Zahlen hätte
+  // derselbe Abzug 7×2 = 14 ergeben, und das Handy sollte ausdrücklich unangetastet bleiben.
+  C_COLS: 13, C_ROWS: 4, C_COLS_LITE: 12, C_ROWS_LITE: 4,
+  C_SIZE: 0.120, C_DEPTHGAP: 0.45, C_RISE: 1.25, C_MINGLOW: 0.14, CUBE_ALPHA: 0.80, GLOW: 1.1, // #343: gefüllte Würfel weniger transparent (0.65→0.80)
   C_TAPER: 0.30,   // #317: Feld verjüngt sich nach hinten (hinterste Reihe ~70% der Front-Breite) → Trichter/Fluchtpunkt
 
   // #317: Scheinwerfer kreuzen von den oberen Ecken über die Karten (X-Form): Apex weit außen (SPREAD 0.78) + stark
@@ -35,6 +41,38 @@ const TUNE = {
   // tiefer → das Feld schließt unten mit dem Panel-Rahmen ab statt in der Mitte zu schweben.
   D_PERSP: 205, NEIGUNG: 0.54, D_TILT: 2.20, FELD_HOEHE: 0.06, FELD_TIEFE: 0.68, D_SPREAD: 3.9, D_FLOOR: 1, FLOOR_ALPHA: 0.55,
 };
+/* #fx-flaeche — Das Feld füllt einen ANTEIL der Bühnenbreite, statt eine feste Pixelzahl zu belegen.
+   ---------------------------------------------------------------------------------------------
+   `proj()` rechnet mit `D_PERSP` als Brennweite in PIXELN. Die Feldbreite hing damit gar nicht an der
+   Canvasbreite — gemessen am 18.08.2026 waren es überall dieselben 437 px:
+     Vorschau 1244 px → 35 % · 1045 px → 42 % · 860 px → 51 % · Brett 668 px → 65 % · Handy-Brett 358 px → 122 %.
+   Genau daher der Eindruck „passt am Handy, ist am Desktop falsch": am Handy ist der Rahmen SCHMALER als das
+   Feld, auf jedem Desktop-Rahmen verliert es sich mittig. Dieselbe Sorte Fehler wie das 104 × 144-Kartenliteral
+   in #vorschau-brett — eine absolute Zahl, die den Desktop-Pass nicht mitbekommen hat.
+
+   Der Maßstab VERGRÖSSERT nur (`Math.max(1, …)`), dieselbe Regel wie `sceneScale` in previewScale.js: unterhalb
+   von BASIS_W / FUELLUNG ≈ 546 px bleibt alles auf 1. Das Handy-Brett (358 px) und die Handy-Vorschau (324 px)
+   liegen darunter und sind damit nachweislich unangetastet — die Grenze ist eine BREITE, kein Gerätetyp, also
+   trägt sie auch ein Tablet im Querformat richtig.
+
+   Weil der Maßstab uniform in die Projektion geht (Brennweite UND der Front-Offset NEAR_DY), ist die Werkstatt-
+   Vorschau danach ein echtes Modell des Bretts: beide stehen auf 1,93 : 1, Höhe und Maßstab wachsen beide linear
+   mit der Breite → dasselbe Bild, nur größer. */
+export const FELD_FUELLUNG = 0.80;   // Anteil der Bühnenbreite (am Gerät gewählt: 72 % / 80 % / 88 % verglichen)
+
+/* Breite des Feldes bei Maßstab 1, aus der Projektion ABGELEITET statt abgetippt: äußerster Würfelrand
+   (D_SPREAD + C_SIZE) auf der vordersten Kante (FELD_TIEFE − C_SIZE), mal zwei Seiten. Ändert jemand D_SPREAD,
+   D_PERSP oder C_SIZE, zieht der Anteil automatisch mit. */
+export const feldBasisBreite = () =>
+  2 * TUNE.D_PERSP * (TUNE.D_SPREAD + TUNE.C_SIZE) / (TUNE.FELD_TIEFE - TUNE.C_SIZE + 3.2);
+
+/** Maßstab der Projektion für eine gemessene Bühnenbreite. Vergrößert nur, nie kleiner als 1. */
+export function feldMassstab(breite) {
+  const w = Number(breite);
+  if (!Number.isFinite(w) || w <= 0) return 1;   // vor der ersten Messung / kaputter Wert → 1:1
+  return Math.max(1, w * FELD_FUELLUNG / feldBasisBreite());
+}
+
 const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#ffffff";
 // #343: weniger Weiß, mehr Deckfarbe. WIRE_HOT_MIX = Weiß-Anteil der Wireframe-Striche + Top-Glow (war 0.4 → zu weiß);
 //   FILL_HOT_MIX = Weiß-Anteil der gefüllten Würfel bei Musik-Ausschlag (war 0.5). Beide gelten für Standard UND Deckfarbe.
@@ -110,6 +148,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
        den Hebeln 01–05 überhaupt noch nennenswert Skriptlast steckt (alle übrigen Effekt-Schleifen messen ~0). */
     const COARSE = isCoarse();
     const liteOn = () => COARSE || !!propsRef.current.lite;
+    let SC = 1;   // #fx-flaeche: Maßstab der Projektion, in resize() aus der Bühnenbreite gerechnet
 
     let W = 0, H = 0, DPR = 1, raf = 0, disposed = false;
     const cubeV = new Float32Array(4096), baseB = new Float32Array(4096);
@@ -126,19 +165,22 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       // #perf: DPR gedeckelt (Vollflächen-Effekt) — auf Mobile (lite) auf 1.0 → ~halbe Fill-Kosten ggü. 1.5.
       DPR = Math.min(liteOn() ? 1.0 : 1.25, window.devicePixelRatio || 1);
       W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
+      SC = feldMassstab(W);   // #fx-flaeche: Feldbreite = FELD_FUELLUNG × Bühnenbreite (ab ~546 px, darunter 1:1)
       canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
     // #zone: `floorBottom` (0..1) dockt die VORDERSTE Bodenreihe fix an floorBottom·H an (1 = Panel-Unterkante,
     // bündig mit dem Rahmen) — HÖHENUNABHÄNGIG, weil der px-Abstand der Frontreihe unter baseY konstant ist. Ohne
     // floorBottom klassisch: NEIGUNG/FELD_HOEHE − yBias·H (Showcase/Default unverändert).
-    const NEAR_DY = TUNE.D_PERSP * TUNE.D_TILT / (TUNE.FELD_TIEFE + 3.2); // px: Frontreihe liegt so weit UNTER baseY
+    // px: Frontreihe liegt so weit UNTER baseY — bei Maßstab 1. #fx-flaeche: MUSS mit SC mitwachsen, sonst
+    // rutscht die vorderste Bodenreihe beim Vergrößern unter den Rahmen (der Offset ist Teil derselben Projektion).
+    const NEAR_DY_1 = TUNE.D_PERSP * TUNE.D_TILT / (TUNE.FELD_TIEFE + 3.2);
     const baseY = () => {
       const p = propsRef.current;
-      if (p.floorBottom != null) return p.floorBottom * H - NEAR_DY;
+      if (p.floorBottom != null) return p.floorBottom * H - NEAR_DY_1 * SC;
       return H * TUNE.NEIGUNG + TUNE.FELD_HOEHE * H - (p.yBias || 0) * H; // yBias hebt das Feld an
     };
-    const proj = (x, y, z) => { const d = z + 3.2, f = TUNE.D_PERSP, hy = baseY(); return { x: W / 2 + f * x / d, y: hy + f * (TUNE.D_TILT - y) / d }; };
+    const proj = (x, y, z) => { const d = z + 3.2, f = TUNE.D_PERSP * SC, hy = baseY(); return { x: W / 2 + f * x / d, y: hy + f * (TUNE.D_TILT - y) / d }; };
     const quad = (a, b, c, d, style) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fillStyle = style; ctx.fill(); };
 
     // ── Signal: jeder Würfel = eigenes log-Band, Beat-Betonung (Grundpegel-Abzug + Kontrast) + smooth Attack/Release ──
@@ -287,8 +329,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const demoOn = !!p.demo && !p.reduced && stilleS >= DEMO_SILENCE_S;
       if (demoOn) demoT += dt;
       if (drawField) {
-        // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
-        const C = Math.round(TUNE.C_COLS) - (liteOn() ? 6 : 0), R = Math.round(TUNE.C_ROWS) - (liteOn() ? 2 : 0), TC = C * R; // #perf-mobile: lite 14×5=70 → 12×4=48 Würfel
+        // #perf-mobile: lite hat eigene Werte (12×4 = 48) — s. TUNE. Desktop 13×4 = 52.
+        const C = liteOn() ? TUNE.C_COLS_LITE : TUNE.C_COLS, R = liteOn() ? TUNE.C_ROWS_LITE : TUNE.C_ROWS, TC = C * R;
         if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio, demoOn);
         const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP * (p.depthScale || 1), hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
         const taper = TUNE.C_TAPER;

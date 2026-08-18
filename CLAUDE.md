@@ -1260,3 +1260,58 @@ normiertem `uv.x`, nicht in Aspekt-Koordinaten.
   Das ist eine bewusste Showcase-Entscheidung (#359) und weiter gültig.
 - Wer die Lücken wirklich weghaben will, muss an die **Fleckigkeit** des Effekts (`PATCH_FL`/`PATCH_C`) — und
   das ändert das Spiel mit. Eigene Entscheidung, kein Vorschau-Fix.
+
+### #fx-flaeche + #fx-dichte — die Würfel-Matrix rechnete in absoluten Pixeln (18.08.2026)
+Gemeldet als „passt am Handy, am Desktop ist die Skalierung falsch". Ursache ist eine Zeile: `proj()` in
+`CubeMatrixField.jsx` benutzt `D_PERSP = 205` als Brennweite in **Pixeln** — die Feldbreite hing damit gar
+nicht an der Canvasbreite. Gemessen (deckende Pixel im unteren Band, Playwright im Produktionspfad):
+**überall dieselben 437 px.** Als ANTEIL des Rahmens sind das: Vorschau 1244 px → **35 %** · 1045 → 42 % ·
+860 → 51 % · Brett Desktop 668 → **65 %** · Brett Handy 358 → **122 %** (randvoll, angeschnitten).
+Genau daher der Eindruck: am Handy ist der Rahmen schmaler als das Feld, auf jedem Desktop-Rahmen verliert es
+sich mittig. **Dieselbe Sorte Fehler wie das 104 × 144-Kartenliteral in #vorschau-brett** — eine absolute Zahl,
+die den Desktop-Pass nicht mitbekommen hat.
+- **Die Regel ist jetzt ein Anteil**: `feldMassstab(W) = max(1, W × FELD_FUELLUNG / feldBasisBreite())`,
+  `FELD_FUELLUNG = 0,80`. Am Gerät entschieden (72 % / 80 % / 88 % nebeneinander gerendert, der User hat 80 %
+  gewählt — es entspricht seiner eingezeichneten Fläche). `feldBasisBreite()` ist aus der Projektion
+  ABGELEITET (`2·D_PERSP·(D_SPREAD+C_SIZE)/(FELD_TIEFE−C_SIZE+3,2)`), nicht abgetippt: wer an `D_SPREAD`,
+  `D_PERSP` oder `C_SIZE` dreht, zieht den Anteil automatisch mit.
+- **`max(1, …)` ist keine Vorsicht, sondern die Zusage „mobil fassen wir nicht an"** (dieselbe Regel wie
+  `sceneScale` in previewScale.js). Die Schwelle liegt bei ≈ 548 px; Handy-Brett (358) und Handy-Vorschau (324)
+  liegen darunter und sind damit **nachweislich** unangetastet. Die Grenze ist eine BREITE, kein Gerätetyp —
+  ein Tablet im Querformat trägt sie darum richtig.
+- **Der Maßstab muss in die Brennweite UND in `NEAR_DY` (Front-Offset).** Beides gehört zu derselben
+  Projektion; skaliert man nur die Brennweite, wächst das Feld, aber die vorderste Bodenreihe rutscht unter den
+  Rahmen und der Boden ist nicht mehr bündig. Ein Wächter bindet die zwei Stellen aneinander.
+- **Nachgemessen, dass die Vorschau danach ein Modell des Bretts ist** (gleicher Schwellwert, unteres Band):
+  Brett im laufenden Spiel **69,5 % → 86,3 %**, Werkstatt-Vorschau **86,5 %**. Beide Flächen stehen auf
+  1,93 : 1, Höhe und Maßstab wachsen linear mit der Breite → dasselbe Bild, nur größer.
+- **#fx-dichte: 18 × 6 = 108 → 13 × 4 = 52**, also halbiert, über BEIDE Achsen (je Achse allein hätte die
+  andere unverändert dicht gelassen). Auf einem Feld, das 80 % der Bühne einnimmt, standen 108 Türme als
+  geschlossene Wand statt als Einzeltürme.
+  **Die lite-Werte stehen jetzt ausgeschrieben daneben** (`C_COLS_LITE 12 · C_ROWS_LITE 4`) statt als Abzug
+  (`C − 6` / `R − 2`): derselbe Abzug hätte mit den neuen Desktop-Zahlen 7 × 2 = 14 ergeben. Das Handy bleibt
+  bei seinen 48.
+- **Nicht am Gerät gesehen** — alles headless gemessen und nachgerendert (Chromium, echte Komponente, Brett aus
+  einem laufenden Lauf). Der Blick auf einem physischen Monitor steht aus.
+
+### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
+Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
+ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort
+`fx_godlike` + Swell. Beim Durchtippen der Liste knallte also jede Zeile im Moment des Tippens los.
+- **`FX_GRACE_MS = 1000`, ein Hook (`useGrace`) je Szene.** Der Halt hängt am MOUNT, nicht an einem Prop: der
+  Szenenwechsel IST der Remount, damit trifft er genau den gemeinten Fall. Ein Prop hätte durch alle sechs
+  Szenen gefädelt werden müssen — und wäre beim Farbmodus-Toggle fälschlich noch einmal angesprungen, denn der
+  remountet bewusst NICHT (#perf-shop).
+- **Nur die Szenen mit echtem Abspiel-Moment**: `FinisherScene` · `ScorchScene` · `HologridScene` ·
+  `BlackholeScene` · `GottScene` · `StandardFinisherScene` (Sieg-Finisher + Gottgleich-Prunk). Hintergrund-
+  Effekte und Karten-Animationen laufen weiter sofort an — sie haben keinen Knall, den man abwarten könnte,
+  und eine Sekunde stehendes Feldbild wäre dort keine Ruhe, sondern eine Verzögerung.
+- **Der TON wartet mit, nicht nur das Bild** — er war der Anlass. Beim Schwarzen Loch heißt das ausdrücklich
+  auch das Sog-Bett (`audio.loop("fx_blackhole")`), sonst wäre der erste hörbare Ton wieder sofort da.
+- **Wo eine Karte im Spiel ohnehin liegt, liegt sie auch in der Wartezeit**: Klinge und Standard-Finisher zeigen
+  die blanke Karte (dasselbe Bild, das SliceFx zwischen zwei Schnitten selbst rendert), die Canvas-Szenen zeigen
+  ihren Backdrop. Kein zweiter Look, nur später.
+- Wächter: `test/cubematrix-flaeche.test.js` — rechnet den Maßstab NACH (`feldMassstab` ist rein) und hält
+  Dichte + Grace als Quelltext-Ratsche fest, inklusive der Gegenprobe „diese vier Szenen haben KEINE Grace".
+  Fünf Sabotagen durchgespielt, alle fünf fallen (Maßstab nicht in der Brennweite · Front-Offset nicht
+  mitskaliert · Spaltenzahl zurückgedreht · Grace aus einer Szene entfernt · Grace-Dauer auf 0).

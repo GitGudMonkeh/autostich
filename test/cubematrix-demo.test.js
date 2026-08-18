@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { demoKick, demoRaw, DEMO_BPM, DEMO_SILENCE_S, DEMO_PEAK_MIN } from "../src/ui/fx/CubeMatrixField.jsx";
 
 const src = (p) => readFileSync(new URL(`../src/ui/${p}`, import.meta.url), "utf8");
-const TC = 108;   // 18 Spalten × 6 Reihen — der Desktop-Fall
+const TC = 52;    // 13 Spalten × 4 Reihen — der Desktop-Fall (#fx-dichte, vorher 18 × 6 = 108)
 
 describe("#shop-demo — das Ersatzsignal", () => {
   it("bleibt in [0,1] — driveCube rechnet mit einem normierten Rohwert", () => {
