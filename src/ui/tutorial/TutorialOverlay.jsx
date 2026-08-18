@@ -18,7 +18,7 @@
    Der Spotlight richtet sich nach der Effekt-Stufe des Spielers (useFxLevel), nicht nur nach
    prefers-reduced-motion — sonst animiert das Tutorial munter weiter, während alles andere aus ist. */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { overlayPortal } from "../overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { MODAL_CARD, TopHairline, ActionButton } from "../modalStyle.jsx";
 import { useT } from "../../i18n/useLocale.js";
 import { displayVars } from "./tutorialVars.js";
@@ -271,7 +271,7 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
     </div>
   );
 
-  return createPortal(
+  return overlayPortal(
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={t("tutorial.aria.dialog")}>
       {showMark
         ? <Spotlight rect={rect} animate={animate} />

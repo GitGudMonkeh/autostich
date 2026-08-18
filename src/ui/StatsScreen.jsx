@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, MENU_PANEL, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { Sparkline } from "./Sparkline.jsx";
@@ -145,7 +146,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
   const hasFineOrigin = (r) => !!r && (["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite", "streakScore"]
     .reduce((a, k) => a + (Number(r[k]) || 0), 0) > 0);
 
-  return (
+  return overlayPortal((
     <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${detail ? "overflow-hidden" : "overflow-y-auto"}`}
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
@@ -302,5 +303,5 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
 
       {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
     </div>
-  );
+  ));
 }

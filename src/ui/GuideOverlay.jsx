@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createPortal } from "react-dom"; // #overlay-portal: raus aus blurrenden/scrollenden Vorfahren (s. GuideOverlay-Return)
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { ARCHETYPE_ORDER } from "../game/skills.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Archetyp-Wechsel per Swipe
 import { FactionIcon, ArchIcon, FACTION_GLOW } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -237,7 +237,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
   /* #overlay-portal: an document.body — wie RunDetail (dort steht die ausführliche Begründung). Aufrufer ist
      u. a. der Upgrade-Baum, dessen Wurzel `backdrop-filter` UND `overflow-y-auto` trägt; ohne Portal erschiene
      der Leitfaden um die Scroll-Position nach oben versetzt, sobald man vorher im Baum gescrollt hat. */
-  return createPortal((
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("guide.title")}>
       <div className="gd-dim absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="gd-frame absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
@@ -325,7 +325,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
         </div>
       </div>
     </div>
-  ), document.body);
+  ));
 }
 
 // Drop-in: der beschriftete Knopf + das selbstverwaltete Overlay. `onOpenChange` meldet den Zustand

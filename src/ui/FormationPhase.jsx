@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
@@ -183,7 +184,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
     segBaseline.current = { cycle: state.cycle, base: segStrength.slice() };
   const segDelta = segStrength.map((v, s) => v - (segBaseline.current.base[s] ?? v));
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl">
         <div className="relative w-full rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card"
@@ -302,5 +303,5 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         </div>
       </div>
     </div>
-  );
+  ));
 }

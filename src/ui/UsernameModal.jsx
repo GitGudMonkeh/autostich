@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
 import { LOCALES, fmtNum } from "../i18n/index.js";
@@ -39,7 +40,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
   const submit = () => { if (canSave) onSave(trimmed.slice(0, MAX)); };
   useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
-  return (
+  return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck"
@@ -134,5 +135,5 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         </div>
       </div>
     </div>
-  );
+  ));
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -25,7 +26,7 @@ export function GlacierPick({ state, onConfirm }) {
   const ready = sel != null && !blocked(sel);
   const pick = (pos) => { if (!blocked(pos)) setSel(pos); };
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.ice)}>
         <PhaseHairline />
@@ -54,5 +55,5 @@ export function GlacierPick({ state, onConfirm }) {
 
       </div>
     </div>
-  );
+  ));
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { FactionIcon, FACTION_GLOW } from "./FactionIcon.jsx";
@@ -78,7 +79,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
     { key: "challenges", label: t("deckdetail.tab.challenges") },
   ];
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: NUR die neutrale Modal-Schale zieht den Rahmen-Verlauf aus der Deckfarbe (Fallback Violett).
@@ -188,7 +189,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
         )}
       </div>
     </div>
-  );
+  ));
 }
 
 // Eine Skill-Gruppe (normal / legendär) — name + live-desc aus SKILL_DEFS.

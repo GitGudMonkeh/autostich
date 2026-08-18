@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useIsWide } from "./useIsWide.js"; // #desktop: Deck-Spalte statt Reiterzeile
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
@@ -404,7 +405,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
       onBack={() => setDetailArch(null)} onClose={onClose} />;
   }
 
-  return (
+  return overlayPortal((
    <>
     <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
@@ -629,5 +630,5 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         würde von innen heraus bis dorthin blubbern und den Baum mit schließen. */}
     {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
    </>
-  );
+  ));
 }

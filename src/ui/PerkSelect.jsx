@@ -1,4 +1,5 @@
 import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { hasCritFamily } from "../game/families.js";
 import { perkPhaseAt, LEG_PERK2_PHASE, DECISION_SCHEDULE } from "../game/constants.js"; // Legendär-Perk-Phase erkennen → eigener Reroll-Pool
@@ -55,7 +56,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const critPct = Math.round(Math.max(0, critRaw) * 100);
   const scoreMult = baseScoreMultFor(perks, { winStreak, wins, trickNo, pos });
   const showCrit = hasCritPerk(perks) || hasCritFamily(state.familyTiers) || crits > 0 || !!(lightning && lightning.active);
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
@@ -168,5 +169,5 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         </div>
       </div>
     </div>
-  );
+  ));
 }

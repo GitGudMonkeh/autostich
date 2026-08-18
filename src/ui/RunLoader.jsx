@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { MODAL_CARD, ModalHairline, HAIRLINE } from "./modalStyle.jsx"; // Hub-Bildsprache + Logo-Verlauf (Cyan→Violett→Amber) für den Ladebalken
 import { t } from "../i18n/index.js"; // #sprache
 
@@ -46,7 +47,7 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
   if (!visible) return null;
   const total = Math.max(1, [...new Set(images.filter(Boolean))].length);
   const pct = Math.min(100, Math.round((done / total) * 100));
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 z-50 overlay-root flex items-center justify-center p-4" style={{ background: "#0c0c10f2", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-xs rounded-2xl overflow-hidden overlay-card as-panel" style={MODAL_CARD}>
         <ModalHairline />
@@ -67,5 +68,5 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
         </div>
       </div>
     </div>
-  );
+  ));
 }

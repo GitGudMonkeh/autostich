@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { LOCALES, fmtPct } from "../i18n/index.js";
@@ -153,7 +154,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
     else if (bodyRef.current) bodyRef.current.scrollTop = 0;
   };
 
-  return (
+  return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
@@ -306,5 +307,5 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
         </div>
       </div>
     </div>
-  );
+  ));
 }

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { glossaryCategories, glossaryGroups, glossaryEntries, tokenizeGlossary } from "../i18n/glossaryText.js";
 import { useLocale } from "../i18n/useLocale.js"; // #sprache: Neuaufbau bei Sprachwechsel
 import { t } from "../i18n/index.js";
@@ -98,7 +99,7 @@ export function GlossaryOverlay({ onClose }) {
   const catOrder = ["all", ...glossaryCategories().map((c) => c.id)];
   const catSwipe = useTabSwipe(catOrder, activeCat, jump);
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("glossary.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className="absolute inset-0 overlay-safe flex items-start sm:items-center justify-center p-3 sm:p-6 pointer-events-none">
@@ -170,7 +171,7 @@ export function GlossaryOverlay({ onClose }) {
         </div>
       </div>
     </div>
-  );
+  ));
 }
 
 function Chip({ label, dot, active, onClick }) {

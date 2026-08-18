@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createPortal } from "react-dom"; // #overlay-portal: raus aus blurrenden/scrollenden Vorfahren (Begründung unten)
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { RunStats, RunTreeBlock } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
@@ -40,7 +40,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
      `document.body` ist farbsicher: `--deck-a1/a2` werden für genau diesen Fall zusätzlich auf `:root`
      gespiegelt (App.jsx). React-Events blubbern weiter durch den REACT-Baum, Escape/Klick-außen bleiben also
      unverändert — auch das Schließen über den Aufrufer. */
-  return createPortal((
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
@@ -115,5 +115,5 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         )}
       </div>
     </div>
-  ), document.body);
+  ));
 }

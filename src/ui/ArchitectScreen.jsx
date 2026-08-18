@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import {
   shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
@@ -608,7 +609,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const shownBoostDelta = dragDelta ? dragDelta.dBoost : phaseBoostDelta;
   const boostTone = boostToneOf(shownBoostDelta);
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-start sm:items-center justify-center p-2 sm:p-4"
       style={{ background: "#0c1017dd", backdropFilter: "blur(3px)" }}>
       {/* #kante: Der Architekt behält seine Blau-Petrol-Welt — er ist die Bauphase, ein anderer Ort. Damit
@@ -1255,7 +1256,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         </div>
       </div>
     </div>
-  );
+  ));
 }
 
 // Name eines Bauplan-Angebots (für die „kein Platz"-Meldung).

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
 import { RunGraphs, ScoreHerkunft } from "./RunGraphs.jsx"; // #251/Victory-Redesign: Fraktions-Herkunft + Durchlauf-Graph
@@ -111,7 +112,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div className="w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
@@ -399,5 +400,5 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
       </div>
     </div>
-  );
+  ));
 }

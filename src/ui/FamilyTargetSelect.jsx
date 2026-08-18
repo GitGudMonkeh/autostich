@@ -1,4 +1,5 @@
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { allianceGroups } from "../game/families.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
@@ -47,7 +48,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
   const curStrength = previewOn ? strengthFor(deck) : 0;
   const projStrength = (previewOn && ready) ? strengthFor(tierDef.onPick(deck, () => 0.5, { suits: sel })) : null;
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: PANEL_BG, border: `1px solid ${tm.color}55` }}>
         <div className="text-center mb-1">
@@ -142,5 +143,5 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
         )}
       </div>
     </div>
-  );
+  ));
 }

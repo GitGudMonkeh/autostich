@@ -1,4 +1,5 @@
 import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { overlayPortal } from "./ui/overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
 import { rarityLabel, deckDef, battlefieldDef } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
@@ -112,7 +113,7 @@ const FX_PREWARM = {
 // Suspense-Fallback = derselbe abgedunkelte Blur-Grund wie die Overlays selbst → beim (seltenen, weil vorgeladenen)
 // Nachladen kein weißer Blitz, sondern ein nahtloser Übergang. pointer-events blockt Klicks während des Ladens.
 function OverlayFallback() {
-  return <div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />;
+  return overlayPortal(<div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />);
 }
 
 // #telemetrie: der Spiel-Reducer plus Entscheidungs-Mitschrift. Modul-Ebene (nicht im Render) → die
@@ -1268,7 +1269,7 @@ function AutostichGame() {
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
       {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}
-      {confirmAbort && (
+      {confirmAbort && overlayPortal(
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmAbort(false)}>
           <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
@@ -1292,7 +1293,7 @@ function AutostichGame() {
       )}
 
       {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
-      {confirmRestart && (
+      {confirmRestart && overlayPortal(
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
           onClick={() => setConfirmRestart(false)}>
           <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>

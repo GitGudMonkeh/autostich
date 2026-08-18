@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { DISCORD_URL } from "./links.js";
@@ -56,7 +57,7 @@ export function PrivacyModal({ onClose }) {
 
   // z-50: liegt bewusst ÜBER Optionen (z-30) und Namens-Dialog (z-40) — der Hinweis wird aus beiden
   // heraus geöffnet und muss darüber landen, nicht dahinter verschwinden.
-  return (
+  return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       <div onClick={(e) => e.stopPropagation()}
@@ -117,5 +118,5 @@ export function PrivacyModal({ onClose }) {
         </div>
       </div>
     </div>
-  );
+  ));
 }

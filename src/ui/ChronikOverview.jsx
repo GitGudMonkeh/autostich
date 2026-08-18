@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
@@ -61,7 +62,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
   const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}
       onClick={onClose}>
       <div className="w-full max-w-4xl rounded-2xl px-5 pb-5 max-h-[95dvh] overflow-y-auto overlay-card as-panel" style={MODAL_CARD}
@@ -184,5 +185,5 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
         </CollapsibleField>
       </div>
     </div>
-  );
+  ));
 }

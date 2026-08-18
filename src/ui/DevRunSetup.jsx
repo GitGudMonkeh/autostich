@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { N_POS, MAX_COVER } from "../game/architect.js";
 import { FORMATION_ENERGY } from "../game/constants.js";
 import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
@@ -78,7 +79,7 @@ export function DevRunSetup({ onStart, onClose }) {
     color: active ? color : "#8a8a92",
   });
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-lg my-6 rounded-2xl px-5 pb-5 flex flex-col gap-4 as-panel" style={panel} onClick={(e) => e.stopPropagation()}>
@@ -180,5 +181,5 @@ export function DevRunSetup({ onStart, onClose }) {
         </button>
       </div>
     </div>
-  );
+  ));
 }

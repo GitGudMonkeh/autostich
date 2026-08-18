@@ -4,6 +4,7 @@
 //  · Challenger  — Hall of Champions: Platz 1 jeder abgelaufenen Woche (1 pro Woche).
 //  · Regeln      — Modus-Baseline + voller Modifikator-Katalog + Ausschluss-Paare.
 import { useState, useMemo, useEffect } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { GlobalLeaderboard } from "./GlobalLeaderboard.jsx";
@@ -172,7 +173,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
   const weekMods = useMemo(() => pickWeekMods(week.seed), [week.seed]); // #370 Wochen-Modifikatoren (seed-deterministisch)
   const canPlayRanked = rankedUnlocked(profile || {}); // #370: frei bei allen Decks + je ≥1 abgeschlossenem Lauf
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #385 FESTE Kartenhöhe (nicht nur maxHeight) → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher
@@ -261,5 +262,5 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
         </div>
       </div>
     </div>
-  );
+  ));
 }

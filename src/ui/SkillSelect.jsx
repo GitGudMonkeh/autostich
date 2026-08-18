@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -162,7 +163,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
     setPending((cur) => (cur === id ? null : id)); // volle Slots → Ersetzen-Fenster öffnet über `pending`
   };
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <div className="w-full max-w-3xl">
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
@@ -266,7 +267,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         )}
 
         {/* #234: Ersetzen-Fenster bei vollen Slots — zeigt alle gehaltenen Skills MIT Beschreibung; gilt für ALLE Archetypen. */}
-        {full && pending && (
+        {full && pending && overlayPortal(
           <div className="fixed inset-0 z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
             <div className="relative w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
               <PhaseHairline />
@@ -434,5 +435,5 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       {/* Leitfaden-Overlay — vom i-Chip geöffnet, direkt auf der Seite des jeweiligen Archetyps (#UI). */}
       {guideArch && <GuideOverlay onClose={() => setGuideArch(null)} initial={guideArch} />}
     </div>
-  );
+  ));
 }

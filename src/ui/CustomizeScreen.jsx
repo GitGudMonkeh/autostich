@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
-import { createPortal } from "react-dom";
+import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
@@ -1002,7 +1002,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   // Horizontaler Swipe → Reiterwechsel. Solange das Pack-Detail offen ist (eigene ‹ ›/Swipe-Geste), unterdrückt.
   const tabSwipe = useTabSwipe(["packs", "challenges", "fx"], tab, setTab, { guard: () => anyOverlay });
 
-  return (
+  return overlayPortal((
     <div className="fixed inset-0 overlay-root cz-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
@@ -1103,17 +1103,17 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
         </div>
       </div>
 
-      {/* Kauffenster via Portal an document.body: der Shop-Root trägt backdrop-filter und ist damit der
-          Containing-Block für `position:fixed` — das Portal löst das Overlay heraus → echtes Vollbild-Overlay.
-          Ab 1400 px entfällt das Overlay; das Detail steht dann oben im Raster (s. `cz-side`). */}
-      {!wide && packOv && createPortal(
+      {/* Kauffenster: das Portal sitzt seit #overlay-portal IN `PackDetail` (wie bei allen Vollbild-Overlays),
+          nicht mehr hier am Aufrufer — sonst stünde dieselbe Begründung an zwei Stellen und die Regel wäre
+          wieder eine Einzelfall-Entscheidung. Ab 1400 px entfällt das Overlay; das Detail steht dann oben im
+          Raster (s. `cz-side`) und rendert `inline`, also bewusst OHNE Portal. */}
+      {!wide && packOv && (
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
           deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
           options={options} onActivate={activate} onActivateTier={activateTier}
-          onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />,
-        document.body)}
+          onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />)}
     </div>
-  );
+  ));
 }
 
 /* ============================ Packs- / Challenges-Tab ============================ */
@@ -1276,7 +1276,11 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   const canBuy = pack.kind === "buy" && canBuyPack(p, pack);
   const unlock = pack.kind === "cond" ? packUnlock(p, pack) : null;
 
-  return (
+  /* #overlay-portal: NUR die Overlay-Fassung portalt. Ab 1400 px steht dieselbe Komponente `inline` als Spalte
+     IM Raster der Werkstatt (`cz-detail`) — die gehört dorthin, wo sie steht, und ein Portal würde sie aus dem
+     Layout reißen. Deshalb hier die einzige Ausnahme von der sonst ausnahmslosen Regel, und sie hängt an
+     genau dem Schalter, der auch über `position: fixed` entscheidet. */
+  const node = (
     <div className={inline ? "cz-detail h-full" : "fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"}
       style={inline ? undefined : { background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={inline ? undefined : onClose}>
       <div className={`w-full rounded-2xl overflow-hidden as-panel as-panel-deck ${inline ? "cz-detailcard h-full flex flex-col" : "max-w-sm my-auto"}`}
@@ -1415,6 +1419,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
       </div>
     </div>
   );
+  return inline ? node : overlayPortal(node);
 }
 
 /* ============================ Effekte-Tab (#fx-floater) ============================ */
