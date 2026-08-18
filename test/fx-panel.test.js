@@ -83,15 +83,31 @@ describe("#fx-panel — zwei Panels, beide enden am Inhalt", () => {
     expect(regel[1]).toMatch(/background:\s*linear-gradient/);
   });
 
-  it("die Spaltenbreite ist dieselbe 520 wie beim Pack-Detail", () => {
+  it("die Spaltenbreite ist dieselbe 520 wie beim Pack-Detail — und die schmale Spur steht LINKS", () => {
     // Die Aufteilung stimmte längst — es fehlte nur die Fassung. Läuft eine der beiden Zahlen weg,
     // stehen die zwei Reiter wieder unterschiedlich breit nebeneinander.
+    // #panelseite: die 520er Spur ist seit 18.08.2026 die ERSTE. Alle anderen gerahmten Screens setzen
+    // ihre schmale Spalte links; dreht eine der beiden Zeilen zurück, stehen die Reiter der Werkstatt
+    // wieder spiegelverkehrt zueinander — und einer davon gegen den Rest des Menüs.
     const fx = desktop.match(/\.cz-mainscroll:has\(\.cz-stage\)\s*\{([^}]*)\}/);
     const pack = desktop.match(/\.cz-split\s*\{([^}]*)\}/);
     expect(fx, "Effekte-Raster fehlt").toBeTruthy();
     expect(pack, "Pakete-Raster fehlt").toBeTruthy();
-    expect(fx[1]).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s*520px/);
-    expect(pack[1]).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s*520px/);
+    expect(fx[1]).toMatch(/grid-template-columns:\s*520px\s*minmax\(0,\s*1fr\)/);
+    expect(pack[1]).toMatch(/grid-template-columns:\s*520px\s*minmax\(0,\s*1fr\)/);
+  });
+
+  it("#panelseite — die schmale Spalte steht in Spur 1, und BEIDE Kinder nennen ihre Zeile", () => {
+    // `grid-row: 1` ist Pflicht, nicht Zierde: die Auto-Platzierung arbeitet vorwärts. Der Katalog steht
+    // im DOM zuerst und belegt Spur 2; die Detailspalte will danach in Spur 1 — das liegt hinter dem
+    // Cursor, also legt das Raster eine zweite ZEILE an und das Detail rutscht unter den Katalog.
+    // Genau so gemessen, bevor die Zeilen hier standen.
+    expect(desktop).toMatch(/\.cz-main\s*\{[^}]*grid-column:\s*2;\s*grid-row:\s*1/);
+    expect(desktop).toMatch(/\.cz-side\s*\{[^}]*grid-column:\s*1;\s*grid-row:\s*1/);
+    expect(desktop).toMatch(/\.cz-stage\s*\{[^}]*grid-column:\s*2/);
+    expect(desktop).toMatch(/\.cz-fxside\s*\{\s*grid-column:\s*1;\s*\}/);
+    // Ohne Detailspalte gibt es nur EINE Spur — sonst erfände `.cz-main { grid-column: 2 }` eine zweite.
+    expect(desktop).toMatch(/\.cz-split:not\(:has\(\.cz-side\)\)\s*>\s*\.cz-main\s*\{[^}]*grid-column:\s*1/);
   });
 
   it("der Wrapper gibt seine Panel-Optik ab — sonst läge ein dritter Rahmen um beide", () => {

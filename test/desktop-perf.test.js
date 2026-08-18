@@ -137,3 +137,58 @@ describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
     expect(css).toMatch(/\.up-chall \{[^}]*max-height:\s*100%/);
   });
 });
+
+/* ============================================================
+   #breite · #rd-scroll — die zwei Nähte vom 18.08.2026, die beide STUMM kaputtgehen.
+   ============================================================ */
+describe("#breite — alle gerahmten Screens stehen gleich breit im Bild", () => {
+  it("Baum und Werkstatt tragen denselben Deckel wie Statistik/Bestenliste/Sieg", () => {
+    /* Ohne den Deckel nehmen Baum und Werkstatt die volle Fensterbreite und lesen sich als Vollbild,
+       während Statistik, Bestenliste und Siegesbildschirm daneben als Block in der Mitte stehen.
+       Auffallen würde das erst auf einem Schirm über 1816 px (1720 + 2 × 48 Rand) — also auf keinem
+       der Messanker, die dieser Pass sonst benutzt. */
+    for (const sel of ["\\.st-card, \\.lb-card, \\.go-card", "\\.up-card", "\\.cz-card"]) {
+      expect(css, `${sel} ohne Breiten-Deckel`).toMatch(
+        new RegExp(`${sel} \\{[^}]*width:\\s*min\\(1720px,\\s*100%\\)`),
+      );
+    }
+  });
+});
+
+describe("#rd-scroll — die Lauf-Details müssen scrollen können", () => {
+  it("der Wurzelknoten hat den Scroller und verankert die Karte oben", () => {
+    /* Der Fehler, wie er ausgeliefert war: die Karte gab auf dem Desktop ihren eigenen Scroller ab
+       (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte nie einen.
+       Inhalt über der Fensterhöhe war damit unerreichbar. `align-items: flex-start` gehört dazu:
+       ein zentriertes Flex-Kind, das höher ist als sein Container, ragt nach OBEN heraus, und dorthin
+       kommt kein Scrollbalken. Statistik und Bestenliste tragen ihren Scroller im JSX. */
+    const rdRoot = css.match(/\.rd-root \{([^}]*)\}/);
+    expect(rdRoot, ".rd-root-Regel fehlt").toBeTruthy();
+    expect(rdRoot[1]).toMatch(/overflow-y:\s*auto/);
+    expect(rdRoot[1]).toMatch(/align-items:\s*flex-start/);
+    // Und die Karte darf sich NICHT wieder auf die Fensterhöhe klemmen — sonst scrollt gar nichts mehr.
+    expect(css).toMatch(/\.rd-card \{[^}]*max-height:\s*none/);
+  });
+
+  it("die vier Panels tragen den Ring wie die Statistik-Sektionen", () => {
+    const jsx = src("ui/RunDetail.jsx");
+    for (const k of ["rd-c1", "rd-c2", "rd-c3", "rd-c4"]) {
+      expect(jsx, `${k} ohne as-ring`).toMatch(new RegExp(`${k}[^"]*as-ring|as-ring[^"]*${k}`));
+    }
+    // Vier Panels, vier Bänder (das Paar prüft der Test ganz oben für alle Dateien zusammen).
+    expect(jsx.match(/as-ring-run/g) || []).toHaveLength(4);
+  });
+});
+
+describe("#kpi-kacheln — die Kennzahlen der Statistik sind Panels, keine Kästchen", () => {
+  it("Glas, Radius und Lichtkante — und KEINE zusätzliche Farbe", () => {
+    const kpi = css.match(/\.st-kpis > div \{([^}]*)\}/);
+    expect(kpi, ".st-kpis-Kachelregel fehlt").toBeTruthy();
+    expect(kpi[1]).toMatch(/background:\s*linear-gradient/);
+    expect(kpi[1]).toMatch(/border-radius:\s*14px/);
+    expect(kpi[1]).toMatch(/box-shadow:\s*inset/);
+    /* Auf diesem Schirm heißt Gold „deine Bestmarke" (s. #kante am Rekord-Lauf). Eine Kante in
+       Deckfarbe oder fünf farbige Ränder nähmen dem Gold genau diese Aussage. */
+    expect(kpi[1]).not.toMatch(/--deck-a[12]|--c\b/);
+  });
+});

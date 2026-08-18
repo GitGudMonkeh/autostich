@@ -1717,6 +1717,13 @@ button { font-family: inherit; }
      der wandernde Sweep wandern in die beiden Spalten. Die zweite Regel schlägt gezielt die
      CRT-Skin-Fassung von `.as-panel` (gleiche Spezifität, steht später → gewinnt). */
   .up-card {
+    /* #breite (18.08.2026): derselbe Deckel wie Statistik, Bestenliste und Siegesbildschirm
+       (`min(1720px, 100%)`, s. `.st-card`). Baum und Werkstatt nahmen als einzige Screens die volle
+       Fensterbreite und wirkten dadurch wie Vollbild, während der Rest als gerahmter Block in der Mitte
+       steht. Auf allem bis 1816 px (1720 + 2 × 48 Rand) ändert sich nichts — der Deckel greift erst
+       darüber, also genau dort, wo die Screens vorher auseinanderliefen. Zentriert wird über die Wurzel
+       (`justify-center`), die alle diese Screens ohnehin setzen. */
+    width: min(1720px, 100%);
     background: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -2138,6 +2145,7 @@ button { font-family: inherit; }
   /* Die Karte gibt ihre feste Höhe auf (die stammt aus der Handy-Fassung, wo alle Reiter gleich groß
      bleiben sollten) und füllt den Rahmen. `!important` schlägt das inline gesetzte `height`. */
   .cz-card {
+    width: min(1720px, 100%);   /* #breite: derselbe Deckel wie `.up-card` / `.st-card` */
     height: 100% !important;
     background: none !important;
     border-color: transparent !important;
@@ -2215,9 +2223,17 @@ button { font-family: inherit; }
   /* 430 → 520 px (Mockup-Abnahme 18.08.2026): In der Vorschau stehen Cover und Karte jetzt nebeneinander
      statt hintereinander. Bei 430 wären die beiden je 190 px breit; 520 gibt ihnen 234 und dem Spielfeld
      darunter 480 × 192. Der Katalog behält seine sechs Spalten. */
+  /* #panelseite (18.08.2026): die Detailspalte steht LINKS, der Katalog rechts. Alle anderen gerahmten
+     Screens setzen ihre schmale Spalte links (Upgrade-Baum: Fraktionen · Leitfaden: Archetypen ·
+     Glossar: Kategorien) — die Werkstatt war der einzige Screen mit der schmalen Spalte rechts, und
+     zwischen Baum und Werkstatt wechselt man im Menü ständig hin und her.
+     Umgesetzt über die SPUR, nicht über die DOM-Reihenfolge: unter 1400 px reicht `.cz-split` seine
+     Kinder unverändert durch (`display: contents`), dort steht der Katalog weiter oben und das Detail
+     darunter — genau so, wie eine Handy-Seite gelesen wird. Preis der Lösung: die Tabulator-Reihenfolge
+     folgt weiter dem DOM, läuft also rechts vor links. */
   .cz-split {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 520px;
+    grid-template-columns: 520px minmax(0, 1fr);
     gap: 26px;
     flex: 1;
     min-height: 0;
@@ -2225,7 +2241,10 @@ button { font-family: inherit; }
   }
   /* Im Reiter „Effekte" gibt es kein Pack-Detail. Ohne diese Regel bliebe die 430-px-Spalte leer
      stehen und die Effekt-Bühne wäre um 456 px schmaler, als sie sein könnte. */
+  /* Ohne Detailspalte gibt es nur EINE Spur — die Zuweisung `.cz-main { grid-column: 2 }` unten müsste
+     sonst eine zweite Spur erfinden und der Katalog stünde neben einem leeren Streifen. */
   .cz-split:not(:has(.cz-side)) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .cz-split:not(:has(.cz-side)) > .cz-main { grid-column: 1; }
   /* Die beiden Spalten SIND die Panels des Screens — genau wie `.up-nav` / `.up-page` im Upgrade-Baum.
      Die Karte darüber trägt keine Fläche mehr (s. `.cz-card` oben), sie ist nur noch das Raster.
      Werte an dessen Panels abgemessen: Glas, Radius 14, Schein in Deckfarbe. Den RING trugen die beiden
@@ -2261,7 +2280,12 @@ button { font-family: inherit; }
      Vorher standen Detail und Detailkarte auf `height: auto`, der Scroller hatte also nichts zu
      scrollen: Der Inhalt wuchs einfach ueber die Panelkante hinaus und wurde von der Karte
      weggeschnitten (auf 1536 x 791 traf das den Kaufen-/Ausruesten-Knopf, s. `cz-action`). */
-  .cz-side { min-height: 0; align-self: start; max-height: 100%; display: flex; flex-direction: column; }
+  /* `grid-row: 1` an BEIDEN, nicht nur die Spalte: die Auto-Platzierung arbeitet vorwärts. Der Katalog
+     steht im DOM zuerst und belegt mit `grid-column: 2` Zeile 1/Spalte 2; die Detailspalte will danach in
+     Spalte 1 — das liegt HINTER dem Cursor, also legt das Raster eine zweite Zeile an und das Panel
+     rutschte unter den Katalog (genau so gemessen, bevor die Zeile hier stand). */
+  .cz-main { grid-column: 2; grid-row: 1; }
+  .cz-side { grid-column: 1; grid-row: 1; min-height: 0; align-self: start; max-height: 100%; display: flex; flex-direction: column; }
   .cz-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .cz-detailcard { flex: 1; min-height: 0; }
   /* Die Detailkarte im Panel wird selbst flächenlos: sonst läge eine Karte in einer Karte, und der
@@ -2318,7 +2342,7 @@ button { font-family: inherit; }
   .cz-main:has(.cz-stage) > .as-ring-run { display: none; }
   .cz-mainscroll:has(.cz-stage) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 520px;
+    grid-template-columns: 520px minmax(0, 1fr);
     gap: 0 26px;               /* 26 wie die Lücke zwischen den beiden Pack-Panels (.cz-split) */
     align-items: start;
     padding: 0;
@@ -2340,7 +2364,7 @@ button { font-family: inherit; }
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
   }
   .cz-stage {
-    grid-column: 1;
+    grid-column: 2;   /* #panelseite: Bühne rechts, Liste links — wie in den Pack-Reitern */
     /* Das `sticky` der Handy-Fassung ergibt neben der Liste keinen Sinn — und `.as-ring` braucht
        `relative`, sonst säße der Rahmen am nächsten positionierten Vorfahren.
        FALLE: die Vorgängerfassung stand auf `static`, und `static` IGNORIERT das inline gesetzte
@@ -2352,7 +2376,7 @@ button { font-family: inherit; }
     margin: 0 !important;
     border-bottom: 0 !important;
   }
-  .cz-fxside { grid-column: 2; }
+  .cz-fxside { grid-column: 1; }
   /* Die Vorschau trägt das BRETT-Verhältnis (`--bf-ratio`, gesetzt in CustomizeScreen.jsx — dort stehen
      die gemessenen 668 × 347 des Battlefield-Panels). Vorher füllte sie die Spalte und stand damit auf
      1,62 : 1 — einem Format, das es weder beim Spielfeld-Bild (2,5 : 1) noch auf dem Brett (1,93 : 1)
@@ -3075,8 +3099,27 @@ button { font-family: inherit; }
     display: grid; grid-template-columns: minmax(0, 1fr) 620px; column-gap: 22px; align-items: center;
   }
   .st-sec[data-sec="overview"] > .st-sech { grid-column: 1 / -1; }
-  .st-kpis  { grid-column: 1; }
+  .st-kpis  { grid-column: 1; gap: 12px !important; }
   .st-trend { grid-column: 2; margin-top: 0 !important; }
+  /* #kpi-kacheln — die fünf Kennzahlen sind die Kernaussage des Screens und standen als flache Kästchen
+     (`MENU_PANEL`: eine Farbe, ein Rahmen) darin. Sie tragen jetzt dieselbe Fassung wie die Panels
+     ringsum: Glasverlauf, Radius 14, dazu eine Lichtkante oben — die drei Mittel, mit denen der ganze
+     Desktop-Pass „Panel" schreibt. Der Wert steht größer, die Beschriftung wird zur Versalzeile und
+     rückt nach links; mittig gesetzte Kurzwörter über einer Zahl lasen sich als Bildunterschrift.
+     KEINE Farbe dazu, und das ist Absicht: auf diesem Schirm heißt Gold „deine Bestmarke" (s. #kante am
+     Rekord-Lauf). Fünf farbige Kanten nähmen dem Gold genau diese Aussage. */
+  .st-kpis > div {
+    border-radius: 14px;
+    padding: 12px 15px 13px !important;
+    text-align: left !important;
+    background: linear-gradient(180deg, rgba(32, 31, 45, .95), rgba(20, 20, 29, .95)) !important;
+    border: 1px solid rgba(150, 150, 170, .17) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  }
+  .st-kpis > div > div:first-child {
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .42;
+  }
+  .st-kpis > div > div:last-child { font-size: 26px; line-height: 1.15; margin-top: 3px; }
   /* Links der Rekordlauf und die Auswertung, in der Mitte die Läufe, rechts das Wahlverhalten. Feste Plätze
      statt auto-flow: sonst entscheidet die Reihenfolge im JSX, was wo landet. */
   .st-sec[data-sec="best"]   { grid-column: 1; grid-row: 4; }
@@ -3209,11 +3252,20 @@ button { font-family: inherit; }
     /* KEIN Überzugs-Wert hier: die Detailansicht liegt über der Statistik/Bestenliste, nicht über dem Hub —
        ihr Grund ist deshalb deckend (inline `#0c0c10`) und bleibt es. Nur der Blur fällt (#perf-blur). */
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    /* Der Screen MUSS scrollen können. Die Karte scrollte auf dem Handy in sich; auf dem Desktop hat sie
+       das abgegeben (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte
+       nie einen Scroller. Die Statistik und die Bestenliste tragen ihn seit jeher im JSX, die Lauf-Details
+       nicht: Inhalt über der Fensterhöhe war damit schlicht unerreichbar.
+       `align-items: flex-start` gehört dazu und ist kein Beiwerk: das Overlay zentriert (`items-center`),
+       und ein zentriertes Flex-Kind, das höher ist als sein Container, ragt nach OBEN heraus — dort kommt
+       kein Scrollbalken hin, der Kopf wäre abgeschnitten statt erreichbar. */
+    overflow-y: auto;
+    align-items: flex-start !important;
   }
   .rd-card {
     width: min(1500px, 100%);
     max-width: none;
-    max-height: 100% !important;
+    max-height: none !important;
     margin-block: 0 !important;
     /* Die Handy-Karte scrollt in sich (`overflow-y: auto`) — als Raster ohne eigenes Polster (`padding: 0`)
        schnitt genau das die Kopfzeile an der linken Kante ab: die Kennung beginnt bei x = 49, geklemmt wurde
@@ -3288,7 +3340,8 @@ button { font-family: inherit; }
     font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #b9b3cf; margin-bottom: 12px;
   }
-  .rd-c1 > *:nth-child(2) { margin-top: 0 !important; }
+  /* Das erste Element NACH der Panel-Überschrift (nicht `nth-child`: seit dem Ring steht ein `<i>` davor). */
+  .rd-c1 > .rd-ph + * { margin-top: 0 !important; }
   .rd-c2 > .mt-4 { margin-top: 0 !important; }
   /* Der Aufklapp-Griff ist hier die Panel-Überschrift — offen (`open={wide}`) und ohne eigenen Kasten. */
   .rd-c3 > summary {
