@@ -304,11 +304,11 @@ export const THEME_DEFS = {
      FARBTON auseinandergezogen und leicht angehoben in der Sättigung — Quecksilber blau-chrom, Salar violett-eisig —
      sonst hätte man drei kaum unterscheidbare Silberdecks. Wer hier nachdreht: die Deckfarbe treibt Knöpfe,
      Wortmarke und alle Karten-/Feld-Effekte, sie muss also auch AUF dem Spielfeld noch als Farbe lesbar sein. */
-  quecksilber: { id: "quecksilber", name: packName("deck_quecksilber"), emblem: "💧", kind: "buy", price: 30, a1: "#b8d8f2", a2: "#6f93b8",
+  quecksilber: { id: "quecksilber", name: packName("deck_quecksilber"), emblem: "💧", kind: "buy", price: 30, a1: "#c9d2dc", a2: "#8e97a3",
     deckId: "deck_quecksilber", bfId: "bf_quecksilber", els: ["deck", "bf"] },
   kintsugi:    { id: "kintsugi",    name: packName("deck_kintsugi"),    emblem: "🏺", kind: "buy", price: 40, a1: "#e49c30", a2: "#f0e2cc",
     deckId: "deck_kintsugi",    bfId: "bf_kintsugi",    els: ["deck", "bf"] },
-  salar:       { id: "salar",       name: packName("deck_salar"),       emblem: "🌙", kind: "buy", price: 20, a1: "#c6c9f0", a2: "#8f93cc",
+  salar:       { id: "salar",       name: packName("deck_salar"),       emblem: "🌙", kind: "buy", price: 20, a1: "#d8dee6", a2: "#9aa2ad",
     deckId: "deck_salar",       bfId: "bf_salar",       els: ["deck", "bf"] },
 
   /* ---- #deck-neon zwei DP-Kauf-Packs ----
@@ -321,7 +321,7 @@ export const THEME_DEFS = {
      Paradox liegt mit 50° darüber und trennt sich zusätzlich am `a2` (Türkis statt Creme). */
   nachtklinge: { id: "nachtklinge", name: packName("deck_nachtklinge"), emblem: "🥷", kind: "buy", price: 20, a1: "#ff2ea0", a2: "#22c4dc",
     deckId: "deck_nachtklinge", bfId: "bf_nachtklinge", els: ["deck", "bf"] },
-  paradox:     { id: "paradox",     name: packName("deck_paradox"),     emblem: "♾️", kind: "buy", price: 10, a1: "#e0b83c", a2: "#16b8a4",
+  paradox:     { id: "paradox",     name: packName("deck_paradox"),     emblem: "♾️", kind: "buy", price: 10, a1: "#2bd0c8", a2: "#ffcf3a",
     deckId: "deck_paradox",     bfId: "bf_paradox",     els: ["deck", "bf"] },
 
   /* ---- #deck-nacht zwei DP-Kauf-Packs ----
