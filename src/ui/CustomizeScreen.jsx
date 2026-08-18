@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useContext, createContext, lazy, Suspense } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
 // #vorschau-brett: gemessene Brettmaße + Szenen-Maßstab der Effekt-Vorschau (rein, ohne React → testbar).
 import { CARD_W, CARD_H, BOARD_RATIO_CSS, sceneScale } from "./fx/previewScale.js";
+import { setPreviewSceneScale } from "./fx/mobileTier.js"; // #perf-shopdpr: Vorschau-Deckel
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
@@ -73,6 +74,21 @@ const FX_PREFETCH = [
 export const STATE_ON = "#54e08a";   // ausgerüstet / läuft gerade
 export const STATE_OFF = "#e0605a";  // vorhanden, aber nicht aktiv
 
+/* #perf-shopwarm — GEMESSEN UND VERWORFEN, bitte nicht nochmal probieren.
+   Das Vorladen unten nimmt den MODUL-Anteil des ersten Ruckels (#perf-shop Plan A). Naheliegend wäre,
+   zusätzlich den WebGL-Kontext vorzuwärmen (Präzedenz #perf-warm bei den Gottgleich-Prunks): eine
+   1×1-Wegwerf-Canvas, `getContext("webgl2")`, ein `clear`, Kontext wieder freigeben — die Treiber-
+   Initialisierung fiele dann an, während der Spieler noch den Katalog liest.
+   Gebaut, gemessen, wieder ausgebaut. Größter Aufbau-Task beim ERSTEN echten Effekt, je drei Läufe:
+     mit Vorwärmen   218 · 232 · 239 ms
+     ohne            243 · 247 · 226 ms
+   Der Median liegt 11 ms auseinander, die Streuung innerhalb einer Gruppe bei über 20 ms — das ist
+   nichts. Der Grund ist plausibel: was den ersten Effekt teuer macht, sind die Shader der EINZELNEN
+   Pixi-App, und die hängen an deren Instanz; ein fremder Kontext wärmt sie nicht.
+   Ebenfalls nichts zu holen beim ÖFFNEN des Reiters: dort mountet die statische Startszene
+   („Keine Animation"), gemessen null Long Tasks. Der erste Ruckler sitzt am ersten echten Effekt.
+   Vorbehalt: gemessen im Software-Renderer des Messstands. Wer es auf echter GPU erneut versucht,
+   misst zuerst und nimmt eine WARME PIXI-APP, keinen rohen Kontext. */
 let fxPrefetched = false;
 function prefetchFxChunks() {
   if (fxPrefetched || typeof window === "undefined") return;
@@ -118,6 +134,27 @@ const CARD_RATIO = "1066 / 1476";
    in SECHS Szenen; die Maßstabsfrage wäre damit sechsmal zu beantworten gewesen. */
 
 const SceneScaleCtx = createContext(1);
+
+/* #perf-shopmount — DIE SZENE MOUNTET ERST, WENN DIE AUSWAHL STEHT.
+   Jeder Effekt-Wechsel baut eine komplette Bühne auf (WebGL-Kontext, Texturen, Partikel). Beim
+   Durchklicken der Liste entstand damit je Klick eine Szene, die sofort wieder abgerissen wurde —
+   fünf schnelle Klicks = fünf Auf- und Abbauten, und genau das war das gemeldete „beim Auswählen
+   laggy". 150 ms sind unterhalb dessen, was man als Verzögerung liest, aber deutlich über der Zeit
+   zwischen zwei Klicks beim Durchblättern.
+   WICHTIG: Die ERSTE Szene kommt ohne Verzögerung (vorher stand nichts da, warten wäre eine leere
+   Bühne). Verzögert wird nur der WECHSEL. Name, Preis und Aktionsknopf folgen der Auswahl weiter
+   sofort — sie hängen an `fx`, nicht am hier zurückgegebenen Wert. */
+export const FX_MOUNT_DELAY_MS = 150;
+function useSettled(value, ms) {
+  const [shown, setShown] = useState(value);
+  useEffect(() => {
+    if (shown === value) return undefined;
+    if (shown == null) { setShown(value); return undefined; }   // erster Aufbau: sofort
+    const id = setTimeout(() => setShown(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms, shown]);
+  return shown;
+}
 
 /* Karten-Anker aller Vorschau-Szenen: der unsichtbare 104×144-Slot, an dem sich die Effekte ausrichten.
    Skaliert wird per `transform`, NICHT über width/height — und das ist die eigentliche Entscheidung hier:
@@ -1621,6 +1658,19 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     setPreviewW(Math.round(el.getBoundingClientRect().width));
     return () => ro.disconnect();
   }, []);
+  /* #perf-shopdpr: Der Auflösungsdeckel der Vorschau haengt am gemessenen Maßstab (Herleitung in
+     mobileTier.js). `useLayoutEffect` statt Render-Seiteneffekt, und die Reihenfolge stimmt trotz
+     „Kind-Effekte zuerst": Die Szene mountet erst in dem Commit NACH dem, in dem `previewW` gesetzt
+     wird (s. `sceneFx` unten) — der Deckel steht also, bevor eine Bühne ihn liest.
+     Ein spaeterer Breitenwechsel (Fenster ziehen) remountet die Szene nicht; sie behaelt dann ihre
+     Aufloesung. Das ist bewusst: ein Remount waere teurer als die paar Prozent Abweichung. */
+  useLayoutEffect(() => {
+    setPreviewSceneScale(previewW > 0 ? sceneScale(previewW) : 0);
+    return () => setPreviewSceneScale(0);
+  }, [previewW]);
+  /* #perf-shopmount: Die Szene wartet auf die Breitenmessung (sonst mountete sie im ersten Frame mit
+     Maßstab 1 und behielte die falsche Aufloesung) UND auf eine stehende Auswahl. */
+  const sceneFx = useSettled(previewW > 0 ? fx : null, FX_MOUNT_DELAY_MS);
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "neonsurf" ? "fxNeonsurfDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
@@ -1776,7 +1826,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         {/* #vorschau-brett: Der Maßstab kommt aus der GEMESSENEN Rahmenbreite, nicht aus einer Media-Query —
             der Rahmen hängt an der Panelbreite, und die hängt an Fensterbreite UND Reiterspalte. */}
         <SceneScaleCtx.Provider value={sceneScale(previewW)}>
-          <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+          {sceneFx && <GlobalFxScenePreview key={sceneFx.key} fx={sceneFx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />}
         </SceneScaleCtx.Provider>
         {/* #330 Verbindliches 4-Ecken-Template — hier zentral, EINMAL. Scenes bringen KEIN eigenes Chrome mehr mit.
             TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·

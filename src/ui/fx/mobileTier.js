@@ -48,9 +48,40 @@ function dprOverride() {
 }
 const DPR_OVERRIDE = dprOverride();
 
+/* #perf-shopdpr — DER DECKEL DER EFFEKT-VORSCHAU, hergeleitet statt geschätzt.
+   ---------------------------------------------------------------------------------------------
+   Die Werkstatt zeigt das Brett VERGRÖSSERT: die Vorschau ist `sceneScale` mal so breit wie die
+   668 px, die das Brett im Spiel hat (auf 1920 px sind das ~1,86). Ein Brett-Pixel belegt in der
+   Vorschau also `sceneScale` CSS-Pixel und `sceneScale × resolution` Gerätepixel — im Spiel dagegen
+   genau `dprCap()`. Bei voller Auflösung rendert die Vorschau den Effekt damit fast doppelt so fein
+   wie ihn irgendein Spieler je zu sehen bekommt, und bezahlt das quadratisch.
+
+   Der Deckel `DPR_CAP_DESKTOP / sceneScale` (= 2 / 1,86 ≈ 1,07) dreht das auf exakt die
+   Gerätepixel-Dichte zurück, die das Brett im Spiel hat. Das ist KEINE Look-Entscheidung, die ein
+   Bildschirm entscheiden müsste, sondern eine Identität: feiner als das Spiel selbst kann die
+   Vorschau nichts zeigen, was es zu beurteilen gäbe. Gemessen ~71 % weniger Füllarbeit.
+
+   Bewusst ein MODUL-Wert und kein Prop: Die zehn Vorschau-Szenen mounten dieselben In-Game-Bühnen
+   (Kompositor, PixiStage, die fünf Prunks, CardFxStage, Hologrid, die Canvas-2D-Effekte), und die
+   lesen `dprCap()` alle selbst. Ein Prop hätte durch alle zehn durchgereicht werden müssen. Sicher
+   ist das, weil die Werkstatt NUR im Menü erreichbar ist (App.jsx #190) — während sie offen ist,
+   existiert keine Lauf-Bühne, die den Deckel versehentlich mitnehmen könnte. Wer die Werkstatt je
+   im Lauf öffnet, muss das hier zu einem Prop machen.
+   Gesetzt wird er in `FxStage` (CustomizeScreen.jsx), zurückgesetzt beim Verlassen. */
+let PREVIEW_SCENE_SCALE = 0;
+export function setPreviewSceneScale(s) {
+  const v = Number(s);
+  PREVIEW_SCENE_SCALE = Number.isFinite(v) && v > 1 ? v : 0;
+}
+/** Der Vorschau-Deckel als reine Funktion — damit der Wächter ihn nachrechnen kann. */
+export function previewDprCap(scale = PREVIEW_SCENE_SCALE) {
+  const v = Number(scale);
+  return Number.isFinite(v) && v > 1 ? DPR_CAP_DESKTOP / v : Infinity;
+}
+
 export function dprCap(coarse = isCoarse()) {
   const cap = DPR_OVERRIDE ?? (coarse ? DPR_CAP_COARSE : DPR_CAP_DESKTOP);
-  return Math.min(cap, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
+  return Math.min(cap, previewDprCap(), (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 }
 
 /* Zeichenrate auf Mobile. **60 seit 18.08.2026** — und das ist die zweite Kehrtwende an dieser Zahl, deshalb

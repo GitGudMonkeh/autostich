@@ -1120,6 +1120,44 @@ Zelle die Höhe der ganzen Reihe bestimmt. Gemessen kostete das **5–6 von 21**
 - **Wer auf `grid` zurückstellt, muss die Klemme mitbringen** — sonst reißt ein langer Skill die Reihe auf.
   Wächter: `test/desktop-perf.test.js`.
 
+### #perf-shopdpr + #perf-shopmount — was die Effekt-Vorschau kostet (2026-08-18)
+Gemeldet: die Werkstatt verlangt der GPU ein Vielfaches dessen ab, was das Spielen kostet, und das
+Durchklicken der Effektliste ist zäh. Zwei Ursachen, beide behoben, eine dritte gemessen und verworfen.
+- **Die Vorschau rendert nicht mehr feiner als das Spiel** (`previewDprCap` in `mobileTier.js`). Die
+  Werkstatt zeigt das Brett VERGRÖSSERT: der Rahmen ist `sceneScale` mal so breit wie die 668 px des
+  Bretts (auf 1920 px ≈ 1,86). Ein Brett-Pixel bekam damit `1,86 × dpr` Gerätepixel statt `dpr` — fast
+  doppelt so fein wie ihn je ein Spieler sieht, und das quadratisch bezahlt. Der Deckel
+  `DPR_CAP_DESKTOP / sceneScale` (= 2 / 1,86 ≈ **1,07**) dreht das auf exakt die Dichte des Bretts
+  zurück. **Das ist eine Identität, keine Geschmacksfrage** — feiner als das Spiel kann die Vorschau
+  nichts zeigen, was es zu beurteilen gäbe; der Wächter rechnet `previewDprCap(s) × s = 2` nach.
+  Gemessen (Aurora, 1920 px Rahmen): DPR 2 → **−71 %** Gerätepixel · DPR 1,25 → **−26 %** ·
+  **DPR 1 → 0 %** (dort ist die Gerätedichte ohnehin die Grenze). Wer an einem 1×-Monitor misst, sieht
+  von diesem Hebel also nichts — das ist kein Fehler.
+- **Bewusst ein MODUL-Wert, kein Prop**: die zehn Vorschau-Szenen mounten dieselben In-Game-Bühnen
+  (Kompositor, PixiStage, fünf Prunks, CardFxStage, Hologrid, die Canvas-2D-Effekte) und lesen `dprCap()`
+  alle selbst. Sicher ist das nur, weil die Werkstatt **nur im Menü** erreichbar ist (App.jsx #190) —
+  während sie offen ist, existiert keine Lauf-Bühne, die den Deckel mitnehmen könnte. Wer die Werkstatt
+  je im Lauf öffnet, muss daraus ein Prop machen. Gesetzt in `FxStage`, zurückgesetzt beim Verlassen.
+- **Die Szene mountet erst, wenn die Auswahl steht** (`FX_MOUNT_DELAY_MS = 150`). Jeder Wechsel baut
+  eine komplette Bühne auf (WebGL-Kontext, Texturen, Partikel); beim Durchblättern entstand je Klick
+  eine, die sofort wieder abgerissen wurde. Gemessen: fünf Klicks im 40-ms-Takt bauen **2 statt 5–6**
+  Bühnen, bei 400 ms Abstand kommt weiter jede einzelne. Der ERSTE Aufbau wartet nicht (sonst stünde
+  beim Öffnen 150 ms lang eine leere Bühne — gemessen 15 ms bis zum ersten Bild). Name, Preis und
+  Aktionsknopf folgen der Auswahl weiter sofort; nur die teure Bühne wartet.
+  **Nebeneffekt, der den Deckel überhaupt erst wirksam macht**: die Szene wartet zusätzlich auf die
+  Breitenmessung. Vorher mountete sie im ersten Frame mit Maßstab 1 und behielt die falsche Auflösung.
+- **Verworfen: den WebGL-Kontext vorwärmen** (Präzedenz #perf-warm). Gebaut, gemessen, ausgebaut —
+  größter Aufbau-Task beim ersten echten Effekt, je drei Läufe: mit **218 · 232 · 239 ms**, ohne
+  **243 · 247 · 226 ms**. Der Median liegt 11 ms auseinander, die Streuung innerhalb einer Gruppe über
+  20 ms. Plausibler Grund: teuer sind die Shader der EINZELNEN Pixi-App, und die hängen an deren
+  Instanz — ein fremder Kontext wärmt sie nicht. Beim ÖFFNEN des Reiters ist ohnehin nichts zu holen:
+  dort mountet die statische Startszene („Keine Animation"), gemessen **null** Long Tasks. Der erste
+  Ruckler sitzt am ersten echten Effekt. Wer es auf echter GPU erneut versucht, misst zuerst und nimmt
+  eine warme PIXI-APP, keinen rohen Kontext. Die Begründung steht im Quelltext, damit sie niemand
+  zweimal bezahlt.
+- Wächter: `test/fx-preview-cost.test.js` (rechnet den Deckel nach, hält beide Verdrahtungen fest).
+- **Nicht am Gerät gesehen** — alles im Messstand (Playwright, Software-Renderer) gemessen.
+
 ### #fx-panel + #vorschau-brett — der Effekte-Reiter der Werkstatt (2026-08-18)
 Der letzte Screen des Desktop-Passes. Fünf Befunde, alle vor dem Bauen gemessen (Playwright im echten
 Produktionspfad, Anker 1920×1080 und 1536×791); zwei davon waren größer als vermutet, einer stimmte nicht.
