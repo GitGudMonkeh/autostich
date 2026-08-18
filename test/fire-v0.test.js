@@ -99,9 +99,9 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(glowingValueFor(100, ["SK_FIRE_06"], C.GLOWING_T3_MARGIN)).toBe(C.GLOWING_T3_VALUE);
     expect(glowingValueFor(70, ["SK_FIRE_06"], C.GLOWING_T3_MARGIN)).toBe(C.GLOWING_T2_VALUE); // Hitze deckelt weiter
   });
-  it("glowMarginFor: Fenster = größter Sieg des LAUFENDEN oder des vorigen Segments", () => {
-    expect(glowMarginFor({ glowSegBest: 3, glowPrevBest: 12 })).toBe(12);
-    expect(glowMarginFor({ glowSegBest: 12, glowPrevBest: 0 })).toBe(12);
+  it("glowMarginFor: Fenster = größter Sieg des LAUFENDEN Segments, kein Übertrag", () => {
+    expect(glowMarginFor({ glowSegBest: 12 })).toBe(12);
+    expect(glowMarginFor({ glowSegBest: 3 })).toBe(3);
     expect(glowMarginFor({})).toBe(0);
     expect(glowMarginFor(null)).toBe(0);
   });
@@ -140,7 +140,7 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
   });
   it("initHeat: frischer Substate", () => {
     expect(initHeat()).toMatchObject({ active: false, value: 0, fireRoll: 0, sparkStore: 0, phoenixUsed: false,
-      over: 0, glowSegBest: 0, glowPrevBest: 0 });
+      over: 0, glowSegBest: 0 });
   });
 });
 
@@ -156,23 +156,19 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01"], heat: heat({ value: 0 }) }), noCrit);
     expect(s.heat.value).toBe(6); // round((min(6,8)−2)×1 × 1,5)
   });
-  it("Glühende Klinge: +3 Wert bei 100 % Hitze macht einen Rückstand zum Sieg (Segment-Fenster erfüllt)", () => {
-    const s = resolveTrick(scen(8, 10, { skills: ["SK_FIRE_06"], heat: heat({ value: 100, glowSegBest: C.GLOWING_T3_MARGIN }) }), noCrit);
-    // glowSegBest, nicht glowPrevBest: der erste Stich eines Segments (hier actualPos 0) rückt das Fenster ZUERST
-    // nach — ein direkt gesetztes glowPrevBest würde dabei überschrieben.
-    expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.pValue).toBe(11); // 8 + 3
-  });
-  // #fire-balance: die Stufe wird JE SEGMENT einmal verdient und hält dann durch — erst ein Segment ohne passenden
-  // Stich lässt sie fallen. Ein einzelner knapper Sieg stuft NICHT sofort zurück (im Spielfluss nicht lesbar).
-  it("Glühende Klinge: obere Stufe hält ein Segment nach und fällt erst im übernächsten", () => {
-    // Start mit einem erfüllten Fenster; danach nur noch Siege mit Vorsprung 1 (unter beiden Schwellen).
-    let s = scen(3, 2, { skills: ["SK_FIRE_06"], heat: heat({ value: 100, glowSegBest: C.GLOWING_T3_MARGIN }) });
+  // #fire-balance: das Fenster ist NUR das laufende Segment. Jedes Segment beginnt auf der reinen Hitze-Stufe und
+  // hebt sich, sobald darin ein Sieg mit genug Vorsprung fällt — beim Segmentwechsel fällt es ohne Übertrag zurück.
+  it("Glühende Klinge: die obere Stufe wird in JEDEM Segment neu erspielt", () => {
+    // Dauerhaft Vorsprung 20 (über beiden Schwellen) bei voller Hitze: der ERSTE Stich eines Segments trägt noch
+    // die Sockelstufe (im neuen Fenster ist noch kein Sieg), ab dem zweiten die volle.
+    let s = scen(20, 0, { skills: ["SK_FIRE_06"], heat: heat({ value: 100 }) });
     const val = [];
-    for (let i = 0; i < 8; i++) { s = resolveTrick(s, noCrit); val.push(s.lastTrick.pValue); }
-    expect(val[0]).toBe(3 + C.GLOWING_T3_VALUE);          // Segment 1: Fenster aus dem Vorsegment trägt
-    expect(val[SEGMENT_SIZE - 1]).toBe(3 + C.GLOWING_T3_VALUE);
-    expect(val[SEGMENT_SIZE]).toBe(3 + C.GLOWING_T1_VALUE); // Segment 2: kein passender Stich mehr im Fenster
+    for (let i = 0; i < SEGMENT_SIZE + 2; i++) { s = resolveTrick(s, noCrit); val.push(s.lastTrick.pValue); }
+    expect(val[0]).toBe(20 + C.GLOWING_T1_VALUE);              // Segmentanfang: Fenster leer → Sockel
+    expect(val[1]).toBe(20 + C.GLOWING_T3_VALUE);              // im Segment erspielt
+    expect(val[SEGMENT_SIZE - 1]).toBe(20 + C.GLOWING_T3_VALUE);
+    expect(val[SEGMENT_SIZE]).toBe(20 + C.GLOWING_T1_VALUE);   // neues Segment → wieder Sockel
+    expect(val[SEGMENT_SIZE + 1]).toBe(20 + C.GLOWING_T3_VALUE);
   });
   it("Weißglut: Hitze über 100 % staut sich als Überhitzung und hebt den GESAMTEN Feuer-Score", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 98 }) }), noCrit);

@@ -93,7 +93,7 @@ export default {
   "ability.SK_FIRE_05.name": "Reignition",
   "ability.SK_FIRE_05.desc": `After a loss, the next win gives +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT}% heat per point of value deficit and gives the winning card +${C.RUECKZUENDUNG_VALUE} trick value.`,
   "ability.SK_FIRE_06.name": "Glowing Blade",
-  "ability.SK_FIRE_06.desc": `All your cards gain trick value from heat: +${C.GLOWING_T1_VALUE} from ${C.GLOWING_T1_HEAT}%, +${C.GLOWING_T2_VALUE} from ${C.GLOWING_T2_HEAT}%, +${C.GLOWING_T3_VALUE} at ${C.GLOWING_T3_HEAT}%. For +${C.GLOWING_T2_VALUE} and +${C.GLOWING_T3_VALUE} you also need a win at ${C.GLOWING_T2_MARGIN} resp. ${C.GLOWING_T3_MARGIN} margin in the current or previous segment.`,
+  "ability.SK_FIRE_06.desc": `All your cards gain trick value from heat: +${C.GLOWING_T1_VALUE} from ${C.GLOWING_T1_HEAT}%, +${C.GLOWING_T2_VALUE} from ${C.GLOWING_T2_HEAT}%, +${C.GLOWING_T3_VALUE} at ${C.GLOWING_T3_HEAT}%. For +${C.GLOWING_T2_VALUE} and +${C.GLOWING_T3_VALUE} you also need a win at ${C.GLOWING_T2_MARGIN} resp. ${C.GLOWING_T3_MARGIN} margin within the current segment.`,
   "ability.SK_FIRE_07.name": "White Heat",
   "ability.SK_FIRE_07.desc": `Heat above ${C.HEAT_MAX}% banks as overheat, up to ${C.HEAT_MAX + C.OVERHEAT_MAX}%. The higher it stands, the less of the excess arrives. Every point gives +${pct(C.OVERHEAT_SCORE_STEP)}% on your fire score; it decays by ${C.OVERHEAT_DECAY} points per trick, ${C.OVERHEAT_DECAY_LOSS} on a loss.`,
   "ability.SK_FIRE_08.name": "Fire Roll",

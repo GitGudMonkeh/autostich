@@ -127,7 +127,7 @@ export const SKILL_DEFS = {
     desc: `Nach einer Niederlage gibt der nächste Sieg +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % Hitze je Punkt Wert-Rückstand und der Siegkarte +${C.RUECKZUENDUNG_VALUE} Stichwert.`, rueckzuendung: true },
   // Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Für +${C.GLOWING_T2_VALUE} und +${C.GLOWING_T3_VALUE} braucht es zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Wertvorsprung im laufenden oder letzten Segment.`, glowingBlade: true },
+    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Für +${C.GLOWING_T2_VALUE} und +${C.GLOWING_T3_VALUE} braucht es zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Wertvorsprung im laufenden Segment.`, glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"],
     desc: `Hitze über ${C.HEAT_MAX} % staut sich als Überhitzung auf, bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %. Je höher sie steht, desto weniger vom Überschuss kommt an. Jeder Punkt gibt +${pct(C.OVERHEAT_SCORE_STEP)} % auf deinen Feuer-Score; je Stich baut sie ${C.OVERHEAT_DECAY} Punkte ab, bei einer Niederlage ${C.OVERHEAT_DECAY_LOSS}.`, whiteHeat: true },
   // Linie 4 — Wert-/Score-Motoren
@@ -341,12 +341,11 @@ export function initLightning() {
 
 // Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
 // fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
-// over = Überhitzung (Weißglut, #fire-balance) · glowSegBest/glowPrevBest = größter Wertvorsprung im LAUFENDEN bzw.
-// im vorigen Segment, gelesen von der Glühenden Klinge (s. glowMarginFor). Alle drei sind über `|| 0` abgesichert —
-// Altstände ohne die Felder laufen weiter.
+// over = Überhitzung (Weißglut, #fire-balance) · glowSegBest = größter Wertvorsprung im LAUFENDEN Segment, gelesen
+// von der Glühenden Klinge (s. glowMarginFor). Beide sind über `|| 0` abgesichert — Altstände laufen weiter.
 export function initHeat() {
   return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0,
-           over: 0, glowSegBest: 0, glowPrevBest: 0 };
+           over: 0, glowSegBest: 0 };
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
@@ -415,11 +414,11 @@ export function fireScoreFor(margin, skills, _heatValue = 0) {
   if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
   return Math.round(s);
 }
-// Maßgeblicher Wertvorsprung für die Glühende Klinge: der größte Sieg des LAUFENDEN oder des VORIGEN Segments.
-// Damit ist die Stufe je Segment EINMAL zu verdienen und hält dann durch — ein einzelner knapper Sieg oder eine
-// Niederlage stuft nicht sofort zurück (das wäre im Spielfluss nicht lesbar). Erst ein ganzes Segment ohne
-// passenden Stich lässt sie fallen: beim Segmentwechsel rückt `glowSegBest` auf `glowPrevBest` und beginnt bei 0.
-export const glowMarginFor = (heat) => Math.max(heat?.glowSegBest || 0, heat?.glowPrevBest || 0);
+// Maßgeblicher Wertvorsprung für die Glühende Klinge: der größte Sieg des LAUFENDEN Segments — kein Übertrag aus
+// dem vorigen. Jedes Segment beginnt damit auf der reinen Hitze-Stufe und hebt sich, sobald darin ein Sieg mit
+// genug Vorsprung fällt; bleiben alle fünf Karten darunter, steht die Klinge dieses Segment auf der Stufe, die der
+// beste Sieg darin hergibt. Ein einzelner knapper Sieg stuft NICHT zurück — der Beste des Segments zählt.
+export const glowMarginFor = (heat) => Math.max(0, heat?.glowSegBest || 0);
 
 // Glühende-Klinge-Wertbonus (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
 // #fire-balance: Stufe 1 hängt allein an der Hitze (verlässlicher Sockel), die OBEREN zusätzlich am Wertvorsprung —

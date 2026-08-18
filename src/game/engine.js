@@ -327,11 +327,9 @@ export function resolveTrick(state, rng) {
     (fireFlag(skills, "phoenix") && !h.phoenixUsed && (h.value <= 0 || burned >= C.PHOENIX_MIN_BURN))
       ? { ...h, value: Math.min(h.max, h.value + Math.round(C.PHOENIX_REIGNITE * h.max)), phoenixUsed: true } : h;
   if (heat && heat.active) {
-    // Glühende Klinge (#fire-balance): Segmentwechsel — der beste Sieg des abgelaufenen Segments rückt ins Fenster
-    // nach, das neue beginnt bei 0. Die Stufe ist damit je Segment EINMAL zu verdienen und hält dann durch; erst ein
-    // Segment ganz ohne passenden Stich lässt sie fallen. Muss VOR dem glowingValueFor-Lesen unten stehen.
-    if (actualPos % SEGMENT_SIZE === 0)
-      heat = { ...heat, glowPrevBest: heat.glowSegBest || 0, glowSegBest: 0 };
+    // Glühende Klinge (#fire-balance): Segmentwechsel — das Fenster beginnt bei 0, ohne Übertrag. Jedes Segment
+    // wird die Stufe darin neu erspielt. Muss VOR dem glowingValueFor-Lesen unten stehen.
+    if (actualPos % SEGMENT_SIZE === 0) heat = { ...heat, glowSegBest: 0 };
     // (Schmelzpunkt sitzt seit #fire-balance im SIEG-Block — er verbrennt nicht mehr vor jedem Stich, s. u.)
     // Glühende Klinge: +Wert je Hitze-Stufe; die OBEREN Stufen verlangen zusätzlich einen dominanten Sieg im
     // Segment-Fenster (#fire-balance). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
