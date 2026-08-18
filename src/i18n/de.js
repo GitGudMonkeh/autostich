@@ -755,6 +755,11 @@ export default {
   "runstats.critBonus": "Crit-Bonus",
   "runstats.critBonus.title": "Score-Anteil aus kritischen Treffern",
   "runstats.showDesc": "Beschreibung anzeigen",
+  "runstats.skills": "Skills",
+  "runstats.tree": "Upgrade-Baum",
+  "runstats.tree.nodes": "{done} / {total} Knoten",
+  "runstats.tree.note": "Der Baum wirkt dauerhaft in jedem Lauf außerhalb der Rangliste — zwei Scores lassen sich erst vergleichen, wenn man weiß, wie viel Meta-Fortschritt dahinterstand.",
+  "runstats.hidden": "Perks und Aufstellung bleiben bei fremden Läufen verdeckt: Die sechs Skills zeigen den Stil eines Laufs, nachbauen ließe er sich erst über die Perks.",
 
   /* ---- Score-Herkunft & Verlauf (RunGraphs) ---- */
   "graphs.src.formation": "Formation",
@@ -801,7 +806,9 @@ export default {
 
   /* ---- Bestenliste (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "🏆 Bestenliste",
+  "board.tab.global": "Global",
   "board.tab.week": "Diese Woche",
+  "board.tab.weekShort": "Woche",
   "board.tab.challenger": "🏆 Challenger",
   "board.tab.rules": "Regeln",
   "board.rules.intro": "Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat keine Wirkung ({rerolls} Rerolls je Phase, alle Raritäten, Legendär-Phase in Durchlauf {legCycle}). Jede Woche verändern 3–5 zufällige Modifikatoren (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.",
@@ -830,6 +837,13 @@ export default {
   "board.champions.intro": "Platz 1 jeder abgelaufenen Wochen-Rangliste landet hier — eine Person pro Woche.",
   "board.champions.loading": "Lädt Champions …",
   "board.champions.empty": "Noch keine Wochensieger — die erste Wochen-Rangliste muss erst abgeschlossen sein.",
+  "board.global.head": "Allzeit · Top {n}",
+  "board.global.sub": "alle Läufe",
+  "board.global.empty": "Noch kein Lauf im Global-Board — mach den Anfang.",
+  "board.row.cycle": "Durchlauf {n}",
+  "board.tree.title": "{done} von {total} Knoten im Upgrade-Baum freigeschaltet",
+  "board.tree.none.title": "Für diesen Lauf ist kein Baumstand gespeichert",
+  "board.week.viewOnly": "Die Platzierung dieser Woche. Gespielt wird über den Ranglisten-Knopf im Menü.",
   "weekmods.title": "Wochen-Modifikatoren",
   "weekmods.range": " ({from}–{to})",
 
@@ -1374,7 +1388,7 @@ export default {
   "privacy.sec.telemetry.title": "Anonyme Spieldaten (abschaltbar)",
   "privacy.sec.telemetry.body": "Nach jedem Lauf: Score, Durchläufe, Stiche, gewählte Perks, Skills und Gebäude, dein Fortschritt im Upgrade-Baum, gekaufte Kosmetik und der Seed. Dazu grober Gerätekontext: Browserkennung (auf {ua} Zeichen gekürzt), Prozessorkerne, Gerätespeicher, Sprache, Fenstergröße, Pixeldichte und ob das Gerät Touch hat. Plus eine zufällig gewürfelte Install-Kennung, damit mehrere Läufe desselben Geräts zusammengehören. Kein Name, keine E-Mail, keine Anmeldung. Abschalten: Optionen → „Anonyme Spieldaten senden“. Aus heißt wirklich aus — auch was noch in der Warteschlange liegt, wird gelöscht.",
   "privacy.sec.board.title": "Bestenliste (nur beim Veröffentlichen)",
-  "privacy.sec.board.body": "Wenn du einen Lauf in die Bestenliste stellst: dein selbst gewählter Nickname, Score, Durchläufe, Stiche, Archetypen, Perks, Skills und der Seed. Der Nickname ist für alle Spieler sichtbar — wähle also nichts, worüber man dich findet. Ohne Nickname wird nichts veröffentlicht.",
+  "privacy.sec.board.body": "Wenn du einen Lauf in die Bestenliste stellst: dein selbst gewählter Nickname, Score, Durchläufe, Stiche, Archetypen, Perks, Skills, der Seed, der Ausbaustand deines Upgrade-Baums (wie viele Knoten freigeschaltet waren) und die Kennzahlen des Laufs (beste Serie, Formationen, Crits, Siege, bester Stich, Score-Anteile). Der Nickname ist für alle Spieler sichtbar — wähle also nichts, worüber man dich findet. Ohne Nickname wird nichts veröffentlicht.",
   "privacy.sec.local.title": "Was auf deinem Gerät bleibt",
   "privacy.sec.local.body": "Profil, Lauf-Historie, Optionen und ein angefangener Lauf liegen im Speicher deines Browsers und verlassen das Gerät nicht. Es gibt keine Werbe-Cookies, keine fremden Skripte und keine Verfolgung über andere Seiten hinweg.",
   "privacy.sec.host.title": "Wohin es geht",

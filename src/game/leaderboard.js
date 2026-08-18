@@ -14,6 +14,7 @@ const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 // Spalten des Boards, gestufte Fallback-Kaskade — je nachdem, wie weit die Tabelle migriert ist.
 // Fehlt eine Spalte, antwortet PostgREST mit 400; dann fällt fetch/publish auf die nächste (kleinere) Stufe
 // zurück, statt den ganzen Block lahmzulegen. So ist die Deploy-Reihenfolge (Code vs. Schema) egal.
+//  - COLS_TREE: alles inkl. #global-Baumstand (`tree_nodes`) — die oberste Stufe.
 //  - COLS_FULL: alles inkl. #169-FB-8-Detailspalten (Run-Rückblick).
 //  - COLS_ARCH: nur bis `archetypes` (#139) — Zwischenstufe, damit die Icons NICHT ausfallen, solange nur die
 //    FB-8-Spalten noch fehlen.
@@ -24,19 +25,44 @@ const FB8_COLS = "best_streak,perks,skills,max_formations,formation_score,crits,
 const COLS_FULL = `id,name,score,level,tricks,cycles,archetypes,${FB8_COLS},seed,board,created_at`;
 const COLS_ARCH = "id,name,score,level,tricks,cycles,archetypes,created_at";
 const COLS_BASE = "id,name,score,level,tricks,cycles,created_at";
+// #global: NEUE oberste Stufe — `tree_nodes` (wie viele der 27 Upgrade-Baum-Knoten der Lauf hatte). Sie steht ganz
+// vorn statt in COLS_FULL, damit ein fehlendes `tree_nodes` NUR den Baumstand kostet und nicht die FB-8-Spalten
+// mit sich reißt (COLS_FULL bleibt exakt die Stufe, die es vorher war).
+const COLS_TREE = `${COLS_FULL},tree_nodes`;
+// Die Spalten-Kaskade als EINE Liste — vorher stand dieselbe Aufzählung in jedem Abruf einzeln, und eine neue
+// Stufe hätte an drei Stellen nachgetragen werden müssen.
+// Exportiert, weil der Datenschutz-Wächter (test/privacy.test.js) die oberste Stufe als DIE Liste dessen
+// liest, was das Board speichert — so erzwingt eine neue Spalte eine Entscheidung über den Hinweistext,
+// statt still an ihm vorbeizulaufen.
+export const COL_STAGES = [COLS_TREE, COLS_FULL, COLS_ARCH, COLS_BASE];
+// #global: Das Global-Board zeigt NUR Casual-Läufe. Ranglisten-Läufe fahren auf fixer Baseline (der Upgrade-Baum
+// ist dort wirkungslos) — mit einer Baum-Anzeige nebeneinander gestellt behaupteten sie einen Vorteil, den es
+// in ihrer Zeile gar nicht gab. Sie stehen im Wochen-Board (fetchBoardTop) und nur dort.
+const CASUAL_ONLY = "&board=is.null";
 // Payload-Felder, die es in COLS_FULL, aber nicht in COLS_ARCH gibt (zum Stripen beim publish, falls die Spalten fehlen):
 // #169 FB-8-Detailfelder + #205 seed + §7 board. Fehlt eine Spalte, wird das Feld beim publish still gestript (kein
 // Datenverlust am ganzen Insert) — so ist die Deploy-Reihenfolge Code↔Schema egal (wichtig fürs Main-Merge).
 const EXTRA_FIELDS = ["best_streak", "perks", "skills", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score", "seed", "board"];
+// #global: `tree_nodes` hat eine EIGENE Stufe und steckt bewusst NICHT in EXTRA_FIELDS — das ist eine Gruppe, die
+// als Ganzes fällt. Läge der Baumstand darin, verlöre eine fehlende `tree_nodes`-Spalte auch alle FB-8-Detailfelder.
+const TREE_FIELD = ["tree_nodes"];
 const omit = (obj, keys) => { const o = { ...obj }; for (const kk of keys) delete o[kk]; return o; };
 
 // Top-N global (ALLE Läufe, ungefiltert): Score↓, bei Gleichstand mehr Stiche, dann jünger. Fallback-Kaskade bei fehlenden Spalten.
 export async function fetchGlobalTop(limit = 10) {
-  const url = (cols) => `${REST}?select=${cols}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
+  const url = (cols, filter) => `${REST}?select=${cols}${filter}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
   let res;
-  for (const cols of [COLS_FULL, COLS_ARCH, COLS_BASE]) {
-    res = await fetch(url(cols), { headers });
-    if (res.status !== 400) break; // 400 = Spalte fehlt (Migration steht aus) → nächste Stufe
+  /* ZWEI unabhängige Degradationen, deshalb zwei Schleifen:
+       innen  — fehlende SPALTEN (die gewohnte Kaskade),
+       außen  — eine fehlende `board`-SPALTE, die den Casual-Filter unmöglich macht.
+     Ohne den zweiten Anlauf stünde das Global-Board auf einem nicht-migrierten Schema komplett LEER da (jede
+     innere Stufe 400t am Filter, nicht an den Spalten), statt einfach ungefiltert zu zeigen. */
+  for (const filter of [CASUAL_ONLY, ""]) {
+    for (const cols of COL_STAGES) {
+      res = await fetch(url(cols, filter), { headers });
+      if (res.status !== 400) break; // 400 = Spalte fehlt (Migration steht aus) → nächste Stufe
+    }
+    if (res.status !== 400) break;   // Spalten durch → der Filter war nicht das Problem
   }
   if (!res.ok) throw new Error(`fetchGlobalTop ${res.status}`);
   return res.json();
@@ -54,7 +80,7 @@ export async function fetchBoardTop(board, limit = 10, seed = null) {
   const seedFilter = (seed != null && Number.isFinite(Number(seed))) ? `&seed=eq.${Number(seed) >>> 0}` : "";
   const url = (cols) => `${REST}?select=${cols}&board=eq.${b}${seedFilter}&order=score.desc,tricks.desc,created_at.desc&limit=${limit}`;
   let res;
-  for (const cols of [COLS_FULL, COLS_ARCH, COLS_BASE]) {
+  for (const cols of COL_STAGES) {
     res = await fetch(url(cols), { headers });
     if (res.status !== 400) break;
   }
@@ -76,7 +102,7 @@ export async function fetchSeedTop(seed, limit = 3) {
 
 // Lauf veröffentlichen. entry: { name, score, level, tricks, cycles, archetypes?, + FB-8-Detailfelder? }.
 // Hinweis: `level` = Rundenzahl (= cycles); die Spalte bleibt aus Kompatibilität mit der bestehenden Tabelle befüllt.
-// Fallback-Kaskade beim Insert: volles Schema → ohne FB-8-Spalten → ohne `archetypes` (Basis).
+// Fallback-Kaskade beim Insert: volles Schema → ohne `tree_nodes` → ohne FB-8-Spalten → ohne `archetypes` (Basis).
 export async function publishRun(entry) {
   if (PREVIEW) return; // Preview-Build: kein Schreiben ins echte Leaderboard.
   // #241 Wurzelfix: die bigint-Spalten (score/formation_score/crit_bonus_score/best_trick_score/seed) dulden nur GANZE
@@ -92,9 +118,13 @@ export async function publishRun(entry) {
     headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
     body: JSON.stringify(body),
   });
-  const hasExtra = EXTRA_FIELDS.some((f) => entry[f] !== undefined);
-  const noExtra = hasExtra ? omit(entry, EXTRA_FIELDS) : entry;
+  // #global: Erste Rückfallstufe ist NUR der Baumstand — eine fehlende `tree_nodes`-Spalte darf nicht die
+  // FB-8-Detailfelder mitnehmen (dieselbe Trennung wie bei COLS_TREE/COLS_FULL im Abruf).
+  const noTree = entry.tree_nodes !== undefined ? omit(entry, TREE_FIELD) : entry;
+  const hasExtra = EXTRA_FIELDS.some((f) => noTree[f] !== undefined);
+  const noExtra = hasExtra ? omit(noTree, EXTRA_FIELDS) : noTree;
   const attempts = [entry];
+  if (noTree !== entry) attempts.push(noTree);
   if (hasExtra) attempts.push(noExtra);
   if (noExtra.archetypes !== undefined) attempts.push(omit(noExtra, ["archetypes"]));
   let res;

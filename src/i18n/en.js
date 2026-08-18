@@ -745,6 +745,11 @@ export default {
   "runstats.critBonus": "Crit bonus",
   "runstats.critBonus.title": "Score share from critical hits",
   "runstats.showDesc": "Show description",
+  "runstats.skills": "Skills",
+  "runstats.tree": "Upgrade tree",
+  "runstats.tree.nodes": "{done} / {total} nodes",
+  "runstats.tree.note": "The tree keeps working in every run outside ranked play — two scores only compare once you know how much meta progress was behind them.",
+  "runstats.hidden": "Perks and the final order stay hidden on other players\u2019 runs: the six skills show a run\u2019s style, rebuilding it would take the perks.",
 
   /* ---- Score sources & trend (RunGraphs) ---- */
   "graphs.src.formation": "Formation",
@@ -790,7 +795,9 @@ export default {
 
   /* ---- Leaderboard (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "🏆 Leaderboard",
+  "board.tab.global": "Global",
   "board.tab.week": "This week",
+  "board.tab.weekShort": "Week",
   "board.tab.challenger": "🏆 Challenger",
   "board.tab.rules": "Rules",
   "board.rules.intro": "Everyone plays the same weekly seed on a fair baseline — the upgrade tree has no effect ({rerolls} rerolls per phase, all rarities, legendary phase in cycle {legCycle}). Every week 3–5 random modifiers (≥2 positive, ≥1 negative) change the run — identically for everyone. Only completed runs count; at the end of the week first place moves into the Challenger archive and the board starts over.",
@@ -811,6 +818,13 @@ export default {
   "board.champions.intro": "First place of every finished weekly ranking lands here — one person per week.",
   "board.champions.loading": "Loading champions …",
   "board.champions.empty": "No weekly winners yet — the first weekly ranking has to finish first.",
+  "board.global.head": "All-time · Top {n}",
+  "board.global.sub": "all runs",
+  "board.global.empty": "No run on the global board yet — be the first.",
+  "board.row.cycle": "Cycle {n}",
+  "board.tree.title": "{done} of {total} upgrade tree nodes unlocked",
+  "board.tree.none.title": "No tree state was stored for this run",
+  "board.week.viewOnly": "This week\u2019s standings. Play via the ranked button in the menu.",
   "weekmods.title": "Weekly modifiers",
   "weekmods.range": " ({from}–{to})",
 
@@ -1323,7 +1337,7 @@ export default {
   "privacy.sec.telemetry.title": "Anonymous gameplay data (can be turned off)",
   "privacy.sec.telemetry.body": "After each run: score, cycles, tricks, the perks, skills and buildings you picked, your progress in the upgrade tree, cosmetics you own and the seed. Plus rough device context: browser identification (trimmed to {ua} characters), processor cores, device memory, language, window size, pixel density and whether the device has touch. And a randomly rolled install ID, so several runs from the same device belong together. No name, no email, no sign-in. To turn it off: Options → “Send anonymous gameplay data”. Off really means off — anything still queued is deleted too.",
   "privacy.sec.board.title": "Leaderboard (only when you publish)",
-  "privacy.sec.board.body": "When you put a run on the leaderboard: the nickname you chose, score, cycles, tricks, archetypes, perks, skills and the seed. The nickname is visible to every player — so pick something nobody can find you by. Without a nickname nothing is published.",
+  "privacy.sec.board.body": "When you put a run on the leaderboard: the nickname you chose, score, cycles, tricks, archetypes, perks, skills, the seed, how far your upgrade tree was built (how many nodes were unlocked) and the run\u2019s metrics (best streak, formations, crits, wins, best trick, score shares). The nickname is visible to every player — so pick something nobody can find you by. Without a nickname nothing is published.",
   "privacy.sec.local.title": "What stays on your device",
   "privacy.sec.local.body": "Your profile, run history, options and any run in progress live in your browser's storage and never leave the device. There are no advertising cookies, no third-party scripts and no tracking across other sites.",
   "privacy.sec.host.title": "Where it goes",

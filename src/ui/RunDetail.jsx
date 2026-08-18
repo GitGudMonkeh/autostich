@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEscape } from "./useEscape.js";
-import { RunStats } from "./RunStats.jsx";
+import { RunStats, RunTreeBlock } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
@@ -55,6 +55,9 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             </div>
           )}
         </div>
+        {/* #global: Baumstand VOR den Kennzahlen — er ist die Vorbedingung des Scores, nicht eine seiner
+            Kennzahlen. Fehlt der Wert (lokaler Lauf, Alt-Eintrag), rendert der Block gar nichts. */}
+        <RunTreeBlock treeNodes={entry.treeNodes} />
         <RunStats entry={entry} anonymized={anonymized} />
         {/* #201.8 Stufe B: finale Deck-Aufstellung, sofern der Lauf einen Snapshot hat (nur eigene/lokale Läufe;
             alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}

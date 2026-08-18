@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
@@ -62,6 +62,39 @@ describe("#datenschutz · der Hinweis kennt, was der Code sendet", () => {
     // Eine Datenschutz-Seite, die nur die anonyme Telemetrie erklärt, verschweigt die lautere Hälfte.
     expect(de["privacy.sec.board.body"]).toMatch(/Nickname/);
     expect(en["privacy.sec.board.body"]).toMatch(/nickname/i);
+  });
+
+  /* Dieselbe Gegenprobe wie für clientInfo(), nur für den zweiten Sender: Die oberste Stufe der
+     Spalten-Kaskade IST die Liste dessen, was das Board je Lauf speichert. Kommt dort eine Spalte dazu
+     (so wie `tree_nodes` für das Global-Board), wird dieser Test rot und erzwingt die Entscheidung —
+     in den Hinweis aufnehmen oder die Spalte wieder rausnehmen.
+
+     Der Anlass war real: bis zu dieser Runde nannte der Hinweis „Score, Durchläufe, Stiche, Archetypen,
+     Perks, Skills, Seed" — gespeichert wurden aber zusätzlich beste Serie, Formationen, Crits, Siege,
+     bester Stich und die Score-Anteile. Niemand hatte das verschwiegen, die Spalten kamen später dazu. */
+  const BOARD_DOKUMENTIERT = new Set([
+    // Im Hinweistext einzeln benannt:
+    "name", "score", "cycles", "tricks", "archetypes", "perks", "skills", "seed", "tree_nodes",
+    // …und als Gruppe „Kennzahlen des Laufs":
+    "best_streak", "max_formations", "formation_score", "crits", "wins", "crit_bonus_score", "best_trick_score",
+    /* Technische Spalten, kein Spielerdatum: `id` = Zeilenschlüssel · `created_at` = Zeitstempel der Zeile ·
+       `board` = auf welchem Board die Zeile hängt · `level` = Alt-Duplikat von `cycles` (bleibt befüllt,
+       damit die bestehende Tabelle kein Schema-Update braucht). */
+    "id", "created_at", "board", "level",
+  ]);
+
+  it("der Bestenlisten-Hinweis kennt jede Spalte, die das Board speichert", async () => {
+    // leaderboard.js liest BASE/KEY beim Modul-Laden aus import.meta.env → für den Import stubben.
+    vi.stubEnv("VITE_SUPABASE_URL", "https://db.test");
+    vi.stubEnv("VITE_SUPABASE_KEY", "anon-key");
+    const { COL_STAGES } = await import("../src/game/leaderboard.js");
+    const spalten = COL_STAGES[0].split(",").map((c) => c.trim()).filter(Boolean);
+    expect(spalten.length, "oberste Kaskadenstufe ist leer?").toBeGreaterThan(0);
+    const neu = spalten.filter((c) => !BOARD_DOKUMENTIERT.has(c));
+    expect(neu, `Neue Board-Spalte ohne Eintrag im Datenschutz-Hinweis: ${neu.join(", ")}\n`
+      + "→ entweder in privacy.sec.board.body (de.js UND en.js) aufnehmen und hier eintragen,\n"
+      + "  oder die Spalte wieder entfernen.").toEqual([]);
+    vi.unstubAllEnvs();
   });
 });
 

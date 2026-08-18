@@ -712,6 +712,73 @@ EIN wöchentlicher Ranked-Modus, fixe tree-unabhängige Baseline, seed-determini
   (spaltet sonst das Champions-Archiv) — offen/Infra-Entscheidung.
 - **Offen/Tuning** (Playtest): legTakt-Kadenz (aktuell 3–5 gerollt), exakte Cap-/Boost-Werte je Mod.
 
+### #global — Globale Bestenliste (2026-08-18)
+Die Hub-Kachel „Bestenliste" versprach im Untertitel „Globale Highscores", öffnete aber denselben Bildschirm wie
+der große Ranglisten-Knopf: `fetchGlobalTop` existierte seit #14 und wurde von der UI **nirgends** aufgerufen.
+Jetzt trennen sich die beiden Einstiege über EINEN neuen Prop `mode` an `LeaderboardScreen`:
+- **`mode="board"`** (Kachel + GameOver, `setShowLeaderboard("board")`) — **Global · Woche · Challenger**.
+  Nachschlagen. Der Wochen-Reiter zeigt dort NUR die Platzierung; Seed-Kasten, Modifikator-Chips und
+  Spielen-Knopf hängen an `!boardMode`, dazu eine Zeile, die auf den Ranglisten-Knopf verweist.
+- **`mode="ranked"`** (Ranglisten-Knopf, `setShowLeaderboard("ranked")`) — **unverändert**: Woche mit Seed,
+  Modifikatoren, Spielen, Regeln. Die Regeln bleiben bewusst dort — sie beschreiben, wie man Ranked spielt.
+- Der Wochen-Reiter behält in BEIDEN Sätzen die id `"meister"`: sie ist zugleich der Board-String der Datenbank
+  und der Wert, den App.jsx als `initialTab` hereinreicht. Umbenennen bräche beides still.
+
+#### Zwei neue Angaben je Zeile
+- **Die sechs Skills.** `anonymized` (#205 Anti-Copy) verdeckt ab jetzt nur noch **Perks + finale Aufstellung**,
+  nicht mehr die Skills. Begründung: Sechs Skills sind die Identität eines Laufs — ohne sie ist eine Bestenliste
+  eine Namensliste mit Zahlen. Nachbauen hängt an den ~20 Perks und der Kartenreihenfolge, und die bleiben weg.
+  Statt die Perk-Zeile ersatzlos fehlen zu lassen, sagt `runstats.hidden`, dass da absichtlich etwas fehlt —
+  aber nur, wenn wirklich etwas verdeckt wird (`perks !== null`), sonst wäre der Hinweis eine Lüge.
+- **Baumstand x/27** (`tree_nodes`, NEUE Spalte). In der ZEILE eine Pille, deren **Hintergrund auf den Anteil
+  gefüllt** ist — über zwanzig Zeilen liest man „viel Baum gegen wenig Baum", ohne Zahlen zu vergleichen.
+  In der DETAILANSICHT ein eigener Block mit Balken (`RunTreeBlock` in RunStats.jsx), platziert VOR den
+  Kennzahlen: der Baumstand ist keine Kennzahl des Laufs, sondern seine Vorbedingung.
+  **Bewusste Asymmetrie bei fehlendem Wert:** die Liste zeigt eine gestrichelte `–/27`-Pille (in einer Spalte
+  muss eine Lücke sichtbar bleiben, sonst vergleicht man Zeilen mit ungleicher Grundlage), die Einzelansicht
+  rendert gar nichts (dort gibt es nichts zu vergleichen, ein „kein Wert"-Kasten wäre nur Rauschen).
+  Der Nenner kommt aus `TOTAL_NODES` — nirgends abgetippt, ein Wächter prüft das.
+
+#### OFFEN: die Spalte muss noch angelegt werden
+`ALTER TABLE autostich_scores ADD COLUMN tree_nodes int;` — **noch nicht passiert.** Bis dahin zeigt die Pille
+überall `–/27`, sonst ändert sich nichts: `tree_nodes` hat im Abruf UND beim Insert eine **eigene** Kaskadenstufe
+(`COLS_TREE` vor `COLS_FULL`, `TREE_FIELD` vor `EXTRA_FIELDS`). Läge der Baumstand in `COLS_FULL`/`EXTRA_FIELDS`,
+nähme die fehlende Spalte alle FB-8-Detailfelder mit — der stille Datenverlust aus #197, eine Ebene höher.
+Deploy-Reihenfolge Code↔Schema ist damit egal.
+
+#### Global = nur Casual, ungefiltert nach Läufen
+`fetchGlobalTop` filtert `board=is.null`: Ranglisten-Läufe fahren auf fixer Baseline (Baum wirkungslos) und
+stünden mit einer Baum-Pille daneben für einen Vorteil, den es in ihrer Zeile nicht gab. Sie bleiben im
+Wochen-Board. **Der Filter ist die ZWEITE Achse, an der die Abfrage scheitern kann** — unabhängig von den
+Spalten. Fehlt die `board`-Spalte, 400t JEDE Spalten-Stufe am Filter; deshalb läuft die Kaskade danach noch
+einmal OHNE Filter, statt das Board leer zu lassen (äußere Schleife in `fetchGlobalTop`).
+Gezeigt werden **alle Läufe roh**, nicht der beste je Spieler (Entscheidung des Users) — der Kopf sagt das
+auch: „Allzeit · Top 20" links, „alle Läufe" rechts.
+
+#### Zwei Sachen, die erst das Nachmessen entschieden hat (Vite-Harnisch + Headless-Chromium, 390 px)
+- **`grid` allein sizet die implizite Spalte auf MAX-CONTENT.** Ein langer Nickname zog die ganze Liste über
+  das Panel hinaus (gemessen: Zeilen 313 statt 292 px → waagerechte Scrollleiste im `overflow-y-auto`-Panel).
+  **`truncate` hilft dagegen NICHT** — es kappt die Darstellung, nicht den max-content-Beitrag. Fix ist eine
+  Klasse: `grid-cols-1` (= `minmax(0, 1fr)`) deckelt die Spur. **Der Fehler bestand schon vorher**, die
+  zweizeilige Zeile hat ihn nur sichtbar gemacht. Merksatz für jede neue Liste: `grid` → `grid grid-cols-1`.
+- **`fmtScoreShort` in der Zeile: probiert und wieder rausgeflogen.** Es rundet auf EINE Nachkommastelle;
+  in einer Liste mit zwanzig Milliarden-Läufen lesen sich mehrere Zeilen dann als dasselbe „1,8 Mrd." — bei
+  einer RANGLISTE der eine Fehler, den man nicht machen darf. Der volle Score passt: die Zweizeiligkeit gibt
+  Zeile 1 allein an Name und Score, die volle Zahl braucht ~85 px von ~281.
+- **Warum überhaupt zweizeilig:** einzeilig gerechnet (390 px, Karte + Panel + Zeilenpolster ab) bleiben ~278 px:
+  Rang 24 · bis zu sieben Fraktions-Icons ~90 · Baum-Pille ~44 · Score ~85 · Abstände ~14 — für den NAMEN bliebe
+  fast nichts. Zeile 1 trägt die Identität (Rang · Name · Score), Zeile 2 die Einordnung (Icons · Baum · Durchlauf).
+
+#### Datenschutz-Naht mitgezogen
+Der Hinweis nannte „Score, Durchläufe, Stiche, Archetypen, Perks, Skills, Seed" — gespeichert wurden aber
+zusätzlich beste Serie, Formationen, Crits, Siege, bester Stich und die Score-Anteile. Text ergänzt (beide
+Sprachen) UND abgesichert: `test/privacy.test.js` liest jetzt `COL_STAGES[0]` aus `leaderboard.js` und verlangt
+für JEDE Board-Spalte einen Eintrag — dieselbe Gegenprobe, die es für `clientInfo()` schon gab. Eine neue Spalte
+erzwingt damit eine Entscheidung über den Hinweistext, statt still an ihm vorbeizulaufen.
+
+Wächter: `test/global-board.test.js` (Verdrahtung als Quelltext-Ratsche — das Projekt hat kein Component-Test-Setup),
+erweitert `test/leaderboard.test.js` (4-stufige Kaskade + Casual-Filter + Filter-Rückfall + Insert-Stufen).
+
 ### Medien / Deploy-Struktur (#F-01, QA-Durchsicht)
 Musik liegt in **`media/music/`** — bewusst AUSSERHALB von `src/` und `public/`, damit sie NICHT in jeden Slot-Build
 wandert. `src/ui/music.js` importiert die Dateien nicht mehr, sondern baut URLs über `VITE_MEDIA_BASE`

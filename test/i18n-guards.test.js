@@ -156,6 +156,8 @@ describe("i18n · Katalog-Parität", () => {
     "anchor.formation.label", // „Formation"
     "start.ranked.bonus",     // „Bonus {have}/{max}" — „Bonus" ist in beiden Sprachen dasselbe Wort
     "board.tab.challenger",   // „Challenger" ist der Name des Modus
+    "board.tab.global",       // „Global" — dasselbe Wort in beiden Sprachen
+    "runstats.skills",        // „Skills" (§3.1, wie deckdetail.tab.skills)
     "board.resetIn",          // „Reset in {time}" — „Reset" ist im Deutschen das englische Wort
     "weekmods.range",         // reine Zahlenspanne „ ({from}–{to})"
     "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text

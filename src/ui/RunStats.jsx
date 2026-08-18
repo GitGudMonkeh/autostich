@@ -4,7 +4,8 @@ import { rarityOf, RARITY_META } from "../game/perks.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { archMeta, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
-import { t } from "../i18n/index.js";
+import { TOTAL_NODES } from "../game/progression.js"; // #global: Nenner des Baumstands (x/27)
+import { t, fmtPct } from "../i18n/index.js";
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -37,8 +38,12 @@ function StatCard({ label, value, title, color }) {
   );
 }
 
-// #205 Anti-Copy: `anonymized` (fremder Board-Eintrag) blendet die konkreten Perk-/Skill-Chips aus — die
-// Archetyp-Zusammenfassung (nur Icons/Zahlen) bleibt, aber NICHT die einzelnen Perks/Skills (kein 1:1-Nachbau).
+/* #205 Anti-Copy, #global neu gezogen: `anonymized` (fremder Board-Eintrag) verdeckt nur noch die PERKS
+   (und, beim Aufrufer RunDetail, die finale Aufstellung). Die SKILLS sind seit dem Global-Board sichtbar.
+   Begründung für die verschobene Grenze: sechs Skills sind die Identität eines Laufs — ohne sie ist eine
+   Bestenliste eine Namensliste mit Zahlen. Nachbauen lässt sich ein Lauf daran nicht; das hängt an den
+   ~20 Perks und der Kartenreihenfolge, und genau die bleiben verdeckt. Statt die Perk-Zeile ersatzlos
+   fehlen zu lassen, sagt ein Hinweis, dass da etwas absichtlich fehlt. */
 
 /* Victory-Redesign: die reinen Kennzahl-Kacheln. `sourceCells` blendet die Score-Anteil-Kacheln
    (Form.-Score/Geb.-Score/Crit-Bonus) ein — im Victory-Screen aus (die Score-Herkunft deckt sie oben ab),
@@ -93,7 +98,7 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
 }
 
 /* Victory-Redesign: die Build-Chips — Archetyp-Zusammenfassung (aus den Skills abgeleitet) + Perk-/Skill-Chips
-   mit klickbarer Beschreibung. `anonymized` (fremder Board-Eintrag) zeigt nur die Archetyp-Zusammenfassung. */
+   mit klickbarer Beschreibung. `anonymized` (fremder Board-Eintrag) verdeckt die Perks, nicht die Skills. */
 export function RunBuildChips({ entry = {}, anonymized = false }) {
   // null = unbekannt (Alt-Eintrag ohne die Spalte) → nicht rendern; [] = bekannt leer.
   const perks = Array.isArray(entry.perks) ? entry.perks : null;
@@ -115,8 +120,12 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
       ? (perkDef(sel.id) ? { title: perkDef(sel.id).label, desc: perkDef(sel.id).desc, color: RARITY_META[rarityOf(sel.id)].color } : null)
       : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
-  const hasChips = (perks && perks.length > 0) || (skills && skills.length > 0);
-  if (!archCounts.length && !(!anonymized && hasChips)) return null;
+  const showPerks = !anonymized && perks !== null && perks.length > 0;
+  const showSkills = skills !== null && skills.length > 0;
+  // Der Hinweis erscheint nur, wenn wirklich etwas verdeckt WIRD — bei einem Alt-Eintrag ohne Perk-Spalte
+  // (perks === null) gibt es nichts zu verbergen, da wäre er eine Lüge.
+  const showHidden = anonymized && perks !== null && perks.length > 0;
+  if (!archCounts.length && !showSkills && !showPerks && !showHidden) return null;
 
   return (
     <div>
@@ -132,9 +141,9 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
         </div>
       )}
 
-      {!anonymized && hasChips && (
+      {(showSkills || showPerks || showHidden) && (
         <div className="mt-3">
-          {perks && perks.length > 0 && (
+          {showPerks && (
             <div className="flex flex-wrap gap-1.5 justify-center">
               {perks.map((id) => {
                 const def = perkDef(id);
@@ -153,8 +162,11 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
               })}
             </div>
           )}
-          {skills && skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
+          {showSkills && (
+            <div className="text-[10px] uppercase tracking-wider opacity-45 text-center mt-2.5">{t("runstats.skills")}</div>
+          )}
+          {showSkills && (
+            <div className="flex flex-wrap gap-1.5 justify-center mt-1">
               {skills.map((id) => {
                 const d = skillDef(id);
                 if (!d) return null;
@@ -176,8 +188,43 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
               <span className="opacity-80"> — {selDetail.desc}</span>
             </div>
           )}
+          {showHidden && (
+            <div className="mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug opacity-60" style={{ background: "#131318", border: "1px dashed #2f2f3b" }}>
+              {t("runstats.hidden")}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* #global: Der Baumstand, mit dem ein Lauf gespielt wurde (x von 27 Upgrade-Knoten).
+   Er steht hier und nicht in den Kennzahl-Kacheln, weil er KEINE Kennzahl des Laufs ist, sondern seine
+   Vorbedingung — die Antwort auf „wie viel Meta-Fortschritt steckte hinter diesem Score".
+
+   Rendert NICHTS, wenn der Wert fehlt (Alt-Eintrag, lokaler Lauf, noch nicht migriertes Schema). Das ist die
+   bewusste Asymmetrie zur Liste: dort zeigt die Pille ein gestricheltes „–/27", weil ein fehlender Wert in
+   einer Spalte sichtbar bleiben muss (sonst vergleicht man Zeilen mit ungleicher Grundlage). In der
+   Einzelansicht gibt es nichts zu vergleichen, da wäre ein „kein Wert gespeichert"-Kasten nur Rauschen. */
+export function RunTreeBlock({ treeNodes }) {
+  const n = num(treeNodes);
+  if (n == null) return null;
+  const frac = Math.max(0, Math.min(1, TOTAL_NODES > 0 ? n / TOTAL_NODES : 0));
+  return (
+    // Der Abstand nach unten gehört zum Block selbst: der Aufrufer kann ihn nicht setzen, ohne bei fehlendem
+    // Wert eine leere Lücke zu hinterlassen (die Komponente rendert dann null).
+    <div className="rounded-xl px-3 py-2.5 mb-4" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+      <div className="text-[10px] uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="ty-num text-[15px]">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>
+        <span className="ty-num-sm text-[11px]" style={{ color: "var(--deck-a1, #8a7de0)" }}>{fmtPct(frac)}</span>
+      </div>
+      {/* Der Balken ist die eigentliche Aussage — die Zahl daneben liest man erst, wenn der Balken auffällt. */}
+      <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: "#1e1e26" }}>
+        <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: "var(--deck-a1, #8a7de0)" }} />
+      </div>
+      <div className="text-[10.5px] opacity-45 leading-snug mt-2">{t("runstats.tree.note")}</div>
     </div>
   );
 }

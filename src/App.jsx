@@ -8,7 +8,7 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone, loadRunHistory } from "./game/storage.js";
-import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
+import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -186,7 +186,12 @@ function AutostichGame() {
   const [showOptions, setShowOptions] = useState(false);          // Optionen-Overlay offen? → pausiert den Run
   const [showStats, setShowStats] = useState(false);              // #172 FB-10: Statistik-Hub (nur im Menü)
   const [showCustomize, setShowCustomize] = useState(false);      // #190: Kollektion (Deck/Battlefield, nur im Menü)
-  const [showLeaderboard, setShowLeaderboard] = useState(false);  // #217: globale Bestenliste zog vom Startbildschirm in einen eigenen Screen
+  /* #217: globale Bestenliste zog vom Startbildschirm in einen eigenen Screen.
+     #global: Der Zustand trägt jetzt AUCH, in welcher Rolle der Bildschirm geöffnet wurde —
+     false = zu · "board" = Nachschlagen (Kachel „Bestenliste", GameOver) · "ranked" = Spiel-Einstieg
+     (der große Ranglisten-Knopf). Vorher stand hier `true` gegen `"meister"`, und der Unterschied
+     verschwand in einer typeof-Prüfung an der Rendering-Stelle. */
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showUpgrades, setShowUpgrades] = useState(false);        // Progression-Vorschau: Upgrade-Baum-Screen
   const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
@@ -658,6 +663,10 @@ function AutostichGame() {
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
       max_formations: state.maxFormations, formation_score: state.formationScore,
       crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
+      // #global: Baumstand, mit dem DIESER Lauf gespielt wurde → das Global-Board kann Scores einordnen (x/27).
+      // `prevProfile` (Stand VOR der Wertung), nicht `nextProfile`: Knoten kauft man zwar nur zwischen den Läufen,
+      // aber der Lauf gehört zu dem Baum, mit dem er lief — nicht zu dem, den die Wertung gerade mitfinanziert hat.
+      tree_nodes: ownedCount(prevProfile),
       // #370: Ranglisten-Läufe posten aufs Wochen-Board (Board-String bleibt vorerst "meister" = bestehendes
       //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
       ...(state.ranked ? { board: "meister" } : {}) };
@@ -1039,10 +1048,10 @@ function AutostichGame() {
           Breite des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen. */}
       <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "min-[1400px]:max-w-[1520px]" : ""}`}>
         {state.phase === "menu" ? (
-          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("meister")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
+          <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("ranked")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
-            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard(true)}
+            onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
             onUpgrades={() => setShowUpgrades(true)} profile={profile}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
@@ -1205,7 +1214,7 @@ function AutostichGame() {
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
           newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} earn={runEarn} onboarding={onboardingBanner}
-          onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard(true)} />
+          onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard("board")} />
       )}
 
       {/* #perf B1: gemeinsame Suspense-Grenze für die (sich gegenseitig ausschließenden) Menü-/Settings-Overlays. */}
@@ -1231,7 +1240,8 @@ function AutostichGame() {
             username={username}
             // Wochensiege aus dem Champions-Archiv ins Profil spiegeln → schaltet die gestuften Ranglisten-Decks frei.
             onChampionWeeks={(wins) => setProfile((prev) => { const np = recordChampionWeeks(wins); return np || prev; })}
-            initialTab={typeof showLeaderboard === "string" ? showLeaderboard : "mine"}
+            mode={showLeaderboard === "ranked" ? "ranked" : "board"}
+            initialTab={showLeaderboard === "ranked" ? "meister" : "global"}
             onPlaySeed={(seed) => { setShowLeaderboard(false); startRun(seed); }}
             onPlayRanked={() => { setShowLeaderboard(false); startRankedRun(); }}
             onClose={() => setShowLeaderboard(false)} />

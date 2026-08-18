@@ -26,11 +26,28 @@ const GOLD = "#d4a63a";  // Champion-Score (Wert-Signal, bleibt)
    Rang-Medaillen — die tragen Bedeutung. Vars kaskadieren von .app-root (auch außerhalb eines Laufs gesetzt). */
 const UI1 = "var(--deck-a1, #9b82f0)";
 const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, transparent)`;
-// Reiter-Akzent (aktiver Zustand) → alle drei auf Deckfarbe (nur der aktive Reiter zeigt ihn, einer zur Zeit).
-const TABS = [
+/* Reiter-Akzent (aktiver Zustand) → alle auf Deckfarbe (nur der aktive Reiter zeigt ihn, einer zur Zeit).
+
+   #global ZWEI REITERSÄTZE, ein Bildschirm. Die beiden Hub-Einstiege wollten dasselbe Fenster für zwei
+   verschiedene Aufgaben — bis hierher öffneten sie es sogar identisch:
+     mode="ranked"  Ranglisten-Knopf: hier SPIELT man. Woche mit Seed, Modifikatoren, Spielen-Knopf, Regeln.
+                    Unverändert gegenüber vorher.
+     mode="board"   Kachel „Bestenliste": hier SCHAUT man NACH. Global (allzeit, alle Casual-Läufe) ·
+                    Woche (nur die Platzierung) · Challenger. Kein Spielen-Knopf, keine Regeln — beides
+                    liegt einen Klick weiter beim Ranglisten-Knopf, wo es hingehört.
+   Der Wochen-Reiter behält in BEIDEN Sätzen die id "meister" — sie ist zugleich der Board-String der
+   Datenbank und der Wert, den App.jsx als `initialTab` hereinreicht. */
+const TABS_RANKED = [
   { id: "meister",    labelKey: "board.tab.week",       accent: UI1 },
   { id: "champions",  labelKey: "board.tab.challenger", accent: UI1 },
   { id: "regeln",     labelKey: "board.tab.rules",      accent: UI1 },
+];
+const TABS_BOARD = [
+  { id: "global",     labelKey: "board.tab.global",     accent: UI1 },
+  // Kurzform „Woche": vier Zeichen weniger als „Diese Woche" — bei drei gleich breiten Reitern auf einem
+  // 390-px-Handy bricht die lange Fassung neben „Challenger" um.
+  { id: "meister",    labelKey: "board.tab.weekShort",  accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1 },
 ];
 // #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
 //   positiv/negativ; darunter die Ausschluss-Paare.
@@ -134,10 +151,13 @@ function ChampionsList({ reloadToken, username, onChampionWeeks }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister", username = "", onChampionWeeks = null }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister", username = "", onChampionWeeks = null, mode = "ranked" }) {
   useEscape(onClose);
-  // #385 Default-Reiter „Diese Woche" (meister); „Meine Runs" ist entfernt (steht in der Statistik).
-  const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : "meister");
+  const boardMode = mode === "board";                 // #global: Nachschlage-Ansicht statt Spiel-Einstieg
+  const TABS = boardMode ? TABS_BOARD : TABS_RANKED;
+  // #385 Default-Reiter „Diese Woche" (meister); im Nachschlage-Modus führt „Global".
+  const fallbackTab = boardMode ? "global" : "meister";
+  const [tab, setTab] = useState(TABS.some((t) => t.id === initialTab) ? initialTab : fallbackTab);
   const tabSwipe = useTabSwipe(TABS.map((t) => t.id), tab, setTab); // horizontaler Swipe → Reiterwechsel
   const [now, setNow] = useState(() => Date.now()); // Live-Ticker für den Wochen-Countdown
 
@@ -186,6 +206,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
           </div>
 
           <div className="rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+            {/* #global Allzeit-Board: alle CASUAL-Läufe (die Abfrage filtert Ranglisten-Zeilen weg), Baum-Pille an.
+                Kein `board`-Prop → fetchGlobalTop statt fetchBoardTop. */}
+            {tab === "global" && (
+              leaderboardConfigured
+                ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} onPlaySeed={onPlaySeed} showTree />
+                : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
+            )}
+
             {tab === "meister" && (
               leaderboardConfigured ? (
                 <>
@@ -194,7 +222,13 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                     <span className="text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
                     <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
+                  {/* #global Nachschlage-Modus: nur die Platzierung. Seed, Modifikatoren und der Spielen-Knopf
+                      stehen beim Ranglisten-Knopf im Menü — ein Weg zum Spielen, nicht zwei. */}
+                  {boardMode && (
+                    <div className="text-[11px] opacity-45 leading-snug mb-3">{tr("board.week.viewOnly")}</div>
+                  )}
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
+                  {!boardMode && (
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
@@ -211,9 +245,10 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                       </div>
                     )}
                   </div>
+                  )}
                   {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
-                  <div className="mb-3"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
+                  {!boardMode && <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>}
+                  {!boardMode && <div className="mb-3"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>}
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
               ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
