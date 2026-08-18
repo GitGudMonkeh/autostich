@@ -121,7 +121,10 @@ export function ScoreSourceBar({ state, showTitle = true }) {
   );
 }
 
-export function RunGraphs({ state, sourceBar = true }) {
+/* `open` klappt den Durchlauf-Graph beim Rendern auf. Der Victory-Screen lässt ihn zu (der Screen ist ohnehin
+   lang), die Lauf-Details öffnen ihn auf dem Desktop: dort ist der Graph der INHALT eines eigenen Panels — ein
+   zugeklapptes `details` wäre eine Überschrift, hinter der die halbe Spalte leer bliebe. */
+export function RunGraphs({ state, sourceBar = true, open = false }) {
   const sh = sourceShares(state);
   const log = Array.isArray(state.trickLog) ? state.trickLog : [];
   const hasGraph = log.some((c) => c && c.length);
@@ -135,7 +138,7 @@ export function RunGraphs({ state, sourceBar = true }) {
 
       {/* (2) Durchlauf-Graph: Score je Stich, je Durchlauf getrennt (eigene Skala = „Reset je Durchlauf"). */}
       {hasGraph && (
-        <details className="mt-4 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+        <details className="rg-perTrick mt-4 rounded-xl overflow-hidden" open={open} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
           <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{tr("graphs.perTrick.open")}</summary>
           <div className="p-3 pt-1 flex flex-col gap-1.5">
             <div className="flex items-center gap-3 text-[10px] font-mono opacity-55 mb-1 flex-wrap">

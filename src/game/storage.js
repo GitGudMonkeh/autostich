@@ -373,7 +373,14 @@ function signalQuota(where) {
   if (_quotaWarned) return; _quotaWarned = true;
   try { console.warn(`[storage] Speicher voll (QuotaExceeded) bei ${where} — Lauf-Historie wird beschnitten; Fortschritt kann eingeschränkt persistiert werden.`); } catch (e) {}
 }
-const stripSnapshot = (r) => { if (!r || !r.deckSnapshot) return r; const { deckSnapshot, ...rest } = r; return rest; };
+/* Die schweren Felder eines Lauf-Eintrags. `deckSnapshot` ist mit Abstand der größte Posten; `trickLog` und `traj`
+   (#rd-verlauf) sind klein, gehören aber in dieselbe Klasse — reine Detailansicht-Daten, ohne die der Eintrag
+   seine Kennzahlen behält. Fallen sie weg, blendet RunDetail den jeweiligen Block aus. */
+const stripSnapshot = (r) => {
+  if (!r || (!r.deckSnapshot && !r.trickLog && !r.traj)) return r;
+  const { deckSnapshot, trickLog, traj, ...rest } = r;
+  return rest;
+};
 // Historie speichern; bei Quota-Fehler zunehmend beschneiden: erst deckSnapshots der ÄLTEREN Läufe fallenlassen (die
 // jüngsten behalten die volle Detailansicht), dann nur die jüngsten Läufe ganz ohne Snapshot. Nicht-Quota-Fehler still.
 const HISTORY_FULL_SNAPSHOTS = 6;

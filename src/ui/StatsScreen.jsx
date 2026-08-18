@@ -308,7 +308,12 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         )}
       </div>
 
-      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed} />}
+      {/* #rd-verlauf: Vergleichslinie = der beste ANDERE Lauf der Historie. Für den Rekordlauf selbst gibt es
+          keine — er ist die Bestmarke; eine Kurve gegen sich selbst wäre keine Auskunft. Deckungsgleich mit dem
+          Victory-Screen, der ebenfalls gegen den Rekord VOR diesem Lauf zeichnet. */}
+      {detail && <RunDetail entry={detail.entry} rank={detail.rank} onClose={() => setDetail(null)} onPlaySeed={onPlaySeed}
+        recordTraj={(history.filter((r) => r !== detail.entry && Array.isArray(r.traj) && r.traj.length >= 2)
+          .sort((a, b) => (b.score || 0) - (a.score || 0))[0] || {}).traj || []} />}
     </div>
   ));
 }

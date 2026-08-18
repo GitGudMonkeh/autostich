@@ -1333,7 +1333,7 @@ button { font-family: inherit; }
    `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
    Unterhalb von 1400 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
-.op-col2, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .go-col1 { display: contents; }
+.op-col2, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-left, .go-col1 { display: contents; }
 /* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1400 px keine
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
@@ -3196,6 +3196,10 @@ button { font-family: inherit; }
     max-width: none;
     max-height: 100% !important;
     margin-block: 0 !important;
+    /* Die Handy-Karte scrollt in sich (`overflow-y: auto`) — als Raster ohne eigenes Polster (`padding: 0`)
+       schnitt genau das die Kopfzeile an der linken Kante ab: die Kennung beginnt bei x = 49, geklemmt wurde
+       bei x = 48. Auf dem Desktop scrollt der Screen als Ganzes, der innere Scroller hat hier keine Aufgabe. */
+    overflow: visible !important;
     background: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -3227,7 +3231,18 @@ button { font-family: inherit; }
     background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
     opacity: .85;
   }
-  .rd-c1, .rd-c2, .rd-c3 {
+  /* Kopf-Kennzahlen rechts der Score-Zahl, auf deren Grundlinie: die Zahl sagt das Ergebnis, diese Reihe den
+     Rahmen (wie weit, wie viel, wie lange). Sie füllt damit die Kopfzeile, die vorher aus einer Zahl links und
+     einem Knopf rechts bestand. */
+  .rd-kpi {
+    grid-column: 2; grid-row: 2;
+    align-self: end; justify-content: flex-start !important;
+    margin: 0 0 4px !important;
+    gap: 26px !important;
+  }
+  .rd-kpi-i > div:first-child { font-size: 19px !important; }
+
+  .rd-c1, .rd-c2, .rd-c3, .rd-c4 {
     display: block;
     grid-row: 4;
     border-radius: 14px;
@@ -3236,9 +3251,19 @@ button { font-family: inherit; }
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
     border: 0 !important;
   }
-  .rd-c1 { grid-column: 1; }
-  .rd-c2 { grid-column: 2; }
-  .rd-c3 { grid-column: 3; overflow: visible !important; }
+  /* Linke Hälfte: eigenes Raster (Kennzahlen | Build, darunter der Verlauf über beide Spalten). Es ist EIN
+     Rasterfeld der Karte — die Aufstellung rechts steht damit einfach daneben, statt Zeilen zu überspannen. */
+  .rd-left {
+    display: grid; grid-column: 1 / span 2; grid-row: 4;
+    grid-template-columns: 1fr 1fr; grid-template-rows: min-content 1fr;
+    column-gap: 22px; align-self: stretch;
+  }
+  .rd-c1 { grid-column: 1; grid-row: 1; }
+  .rd-c2 { grid-column: 2; grid-row: 1; }
+  /* Der Verlauf füllt die untere linke Hälfte bis auf die Höhe der Aufstellung — beide Seiten enden damit auf
+     derselben Linie, statt dass rechts ein 200 px langer Panelrest allein steht. */
+  .rd-c4 { grid-column: 1 / span 2; grid-row: 2; align-self: stretch; }
+  .rd-c3 { grid-column: 3; grid-row: 4; overflow: visible !important; }
   /* Panel-Überschriften wie in den anderen Screens; die Texte kommen aus dem Victory-Katalog (kein neuer Text). */
   .rd-ph {
     font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
@@ -3252,6 +3277,20 @@ button { font-family: inherit; }
     padding: 0 0 12px !important;
   }
   .rd-c3 > div { padding: 0 !important; }
+
+  /* Verlauf-Panel: die zwei Auswertungen stehen NEBENEINANDER (Kurve links, Stich-Balken rechts) — untereinander
+     wäre das Panel doppelt so hoch wie der Platz, den es füllen soll. Die eigenen Kästen der beiden Komponenten
+     fallen weg; der Panel-Rahmen ist schon der Kasten (dieselbe Regel wie bei `.rd-c3 > summary`). */
+  /* Beide Auswertungen liegen UNTEREINANDER und nutzen die volle Panelbreite (~950 px). Nebeneinander wären es
+     zwei ~450-px-Graphen — und gerade die zwei hier gewinnen an Breite: die Score-Kurve wird gegen Ende steil
+     (der Score wächst exponentiell), und die Stich-Balken sind bis zu sechs Stiche je Zeile. Die Höhe der Kurve
+     steht als Inline-Stil an der SVG (Prop `height`) → `!important` ist Pflicht, nicht Nachlässigkeit. */
+  .rd-c4 > .rd-spark { margin-top: 14px !important; }
+  .rd-c4 > .rd-spark > svg { height: 170px !important; }
+  .rd-c4 > .mt-5 { margin-top: 18px !important; }
+  .rd-c4 .rg-perTrick { margin-top: 0 !important; background: none !important; border: 0 !important; }
+  .rd-c4 .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }
+  .rd-c4 .rg-perTrick > div { padding: 0 !important; }
 
   /* ---- Victory: zentrierter Block ---------------------------------------- */
   .go-card {
@@ -3307,12 +3346,20 @@ button { font-family: inherit; }
      statt zwei), so wie es der Upgrade-Baum dort auch tut. */
   /* Das BRETT steht vollständig im Panel (dafür der Breiten-Deckel darunter). Was darunter noch kommt — die
      Gebäudeliste — darf scrollen; ohne Deckel wäre die Spalte 940 px hoch und der ganze Screen scrollte. */
-  .go-layout > div, .rd-c3 > div { max-height: 530px; overflow-y: auto; }
+  .go-layout > div { max-height: 530px; overflow-y: auto; }
   /* `zoom`, nicht `max-width`: die Kartenhöhe hängt am INHALT (Zahl + Fähnchen), nicht an der Breite —
      ein schmaleres Raster wurde nur schmaler, nicht flacher (nachgemessen: 454 px hoch bei 513 wie bei 300).
      `zoom` skaliert das ganze Koordinatensystem samt der absolut liegenden Gebäude-Kontur und verkleinert
      dabei auch die Layout-Box, anders als `transform` (dieselbe Begründung wie am Hub, s. `.hub-pair`). */
-  .go-layout .cg-root, .rd-c3 .cg-root { width: 430px; zoom: .72; }
+  .go-layout .cg-root { width: 430px; zoom: .72; }
+  /* KEIN `zoom` in den Lauf-Details — und das ist ein Fehler, kein Geschmack: die Gebäude-Kontur ist ein SVG,
+     dessen Koordinaten `CardGrid` per `getBoundingClientRect()` misst. Der Rückgabewert ist bereits
+     zoom-skaliert, gezeichnet wird aber im UNskalierten Koordinatensystem → der Rahmen lag um exakt den
+     Zoomfaktor daneben (gemessen: Brett 310×454, Kontur 223×327 = 0,72). Seit #rd-verlauf steht die
+     Aufstellung neben dem Verlauf-Panel statt über der halben Seite und trägt das Brett in voller Größe
+     (451×663) — der Grund für die Verkleinerung entfällt damit gleich mit. Wer `zoom` hier wieder
+     einsetzt, holt den Versatz zurück. */
+  .rd-c3 .cg-root { width: 100%; }
 
   /* ═══ #lv-fluegel — die Level-up-Karte bekommt zwei ausklappbare Seitenleisten ═══
      Perk-/Skill-Wahl bleiben eine KARTE ÜBER DEM BRETT (bewusste Ausnahme vom Desktop-Pass, s.
@@ -3433,7 +3480,11 @@ button { font-family: inherit; }
   /* Flaches Fenster: das Brett wird KLEINER statt zu scrollen — 40 Karten sind acht Reihen, und die
      Übersicht ist der Zweck des Panels. Bei 260 px Rasterbreite ist eine Karte ~48 px breit; die Zahl bleibt
      lesbar, die Multiplikator-Fähnchen werden klein. */
-  .go-layout .cg-root, .rd-c3 .cg-root { width: 430px; zoom: .62; }
+  .go-layout .cg-root { width: 430px; zoom: .62; }
+  /* Lauf-Details: weiter ohne `zoom` (Begründung oben) — auf flachen Fenstern scrollt stattdessen der Screen,
+     genau wie es der Upgrade-Baum dort tut. Ein Brett mit versetzter Gebäude-Kontur ist kein Gegenwert für
+     einen gesparten Scrollbalken. */
+  .rd-c3 .cg-root { width: 100%; zoom: 1; }
 }
 
 /* Flache Desktop-Fenster: Die Optionen stehen auf 1080 px Höhe locker, auf 791 px (1920x1200-Laptop

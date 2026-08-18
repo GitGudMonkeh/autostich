@@ -801,6 +801,12 @@ export default {
   "runstats.critBonus": "Crit-Bonus",
   "runstats.critBonus.title": "Score-Anteil aus kritischen Treffern",
   "runstats.showDesc": "Beschreibung anzeigen",
+  /* #rd-verlauf: Kopf-Kennzahlen der Lauf-Details — der Rahmen des Laufs, nicht sein Ergebnis. */
+  "runstats.cycles": "Durchläufe",
+  "runstats.wins": "Siege",
+  "runstats.duration": "Dauer",
+  "runstats.avgTricks": "Ø Stiche",
+  "runstats.avgTricks.title": "Durchschnittliche Stiche je Durchlauf",
   "runstats.perks": "Perks — {n}",
   "runstats.skills": "Skills",
   "runstats.tree": "Upgrade-Baum",

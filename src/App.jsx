@@ -609,7 +609,15 @@ function AutostichGame() {
       buildings: archBuildingsSnap,
       challengeBlockForm: state.challengeBlockForm || [], // #301 C3: gesperrte Aufstell-Zellen → auch in der Chronik (RunDetail) rot markieren
     };
+    /* #rd-verlauf: die zwei Verlaufsreihen des Laufs mit in die Historie — bis hierher existierten sie nur im
+       Live-State und der Victory-Screen war der einzige Ort, an dem man sie je zu sehen bekam. Beide sind klein
+       (Trajektorie: ein Wert je GHOST_STEP Stiche; Stich-Log: ein Zahlenpaar je Stich) und liegen damit weit
+       unter dem deckSnapshot, dem größten Posten der Historie. `won` als 0/1 statt bool spart im JSON die Hälfte.
+       Bewusst NICHT in `localEntry`: Highscore-Liste und Telemetrie brauchen sie nicht und bleiben unverändert. */
+    const trajSnap = currentTraj.current.filter((v) => typeof v === "number");
+    const trickLogSnap = (state.trickLog || []).map((c) => (c || []).map((tk) => ({ gained: Math.round(tk.gained || 0), won: tk.won ? 1 : 0 })));
     const { profile: nextProfile, unlocks: metaUnlocks, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+      traj: trajSnap, trickLog: trickLogSnap, // #rd-verlauf: Score-Verlauf + Stich-Score je Durchlauf (Lauf-Details)
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
       ranked: state.ranked || null, // #303 Sparfuchs: Ranked-Wochen-Seed (Freischalt-Bedingung)
       completed, deckSnapshot }); // #382 Challenge-Modus entfernt
