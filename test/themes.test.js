@@ -110,7 +110,8 @@ describe("packs — Zustände & Besitz", () => {
   it("#303: die Challenge-Packs sind kind 'cond' (nicht kaufbar); alle übrigen Packs sind 'buy'", () => {
     const challenge = ["gottgleich", "peacock", "titan", "hirsch", "thron", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
-      "genesis"]; // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
+      "genesis", // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
+      "kataklysmus"]; // #tiered: zweites Score-Stufen-Deck (150/250/400 Mio), oberhalb von Titan
     for (const id of challenge) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("cond");
@@ -122,6 +123,45 @@ describe("packs — Zustände & Besitz", () => {
       if (challenge.includes(pack.id)) continue;
       expect(pack.kind).toBe("buy");
     }
+  });
+});
+
+/* #tiered Kataklysmus — das ZWEITE Score-Stufen-Deck. Gewacht wird hier vor allem die Naht zu Titan: beide
+   hängen am selben Profilwert (`bestScore`), und wer an einer der zwei Leitern dreht, muss die andere im Blick
+   behalten. Rutschte Kataklysmus unter Titans 100 Mio, gäbe es eine Score-Schwelle, an der zwei Stufen-Decks
+   gleichzeitig aufgehen — die Freischalt-Meldung zeigt aber nur eine. Deshalb steht die Reihenfolge im Test. */
+describe("#tiered — Stufen-Deck Kataklysmus (Score 150/250/400 Mio)", () => {
+  const KAT = THEME_DEFS.kataklysmus;
+  const TITAN = THEME_DEFS.titan;
+  it("ist ein Stufen-Pack aus genau den drei Kataklysmus-Decks", () => {
+    expect(isTieredPack(KAT)).toBe(true);
+    expect(KAT.kind).toBe("cond");
+    expect(packPrice(KAT)).toBe(null);
+    expect(KAT.tiers.map((t) => t.deckId)).toEqual(["deck_kataklysmus1", "deck_kataklysmus2", "deck_kataklysmus3"]);
+    expect(KAT.tiers.map((t) => t.bfId)).toEqual(["bf_kataklysmus1", "bf_kataklysmus2", "bf_kataklysmus3"]);
+    expect(KAT.tiers.map((t) => t.roman)).toEqual(["I", "II", "III"]);
+  });
+  it("Stufen schalten einzeln an 150/250/400 Mio Score frei", () => {
+    expect(unlockedTiers(prof({ bestScore: 149999999 }), KAT)).toEqual([]);
+    expect(unlockedTiers(prof({ bestScore: 150000000 }), KAT).map((t) => t.roman)).toEqual(["I"]);
+    expect(unlockedTiers(prof({ bestScore: 250000000 }), KAT).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(unlockedTiers(prof({ bestScore: 400000000 }), KAT).map((t) => t.roman)).toEqual(["I", "II", "III"]);
+    expect(coverTier(prof({ bestScore: 400000000 }), KAT).deckId).toBe("deck_kataklysmus3");
+  });
+  it("liegt vollständig ÜBER Titan — keine Score-Schwelle schaltet zwei Stufen-Decks gleichzeitig frei", () => {
+    const schwelle = (pack) => pack.tiers.map((t) => packUnlock(prof(), tierAsPack(pack, t)).target);
+    const titan = schwelle(TITAN), kat = schwelle(KAT);
+    expect(titan).toEqual([25000000, 50000000, 100000000]);
+    expect(kat).toEqual([150000000, 250000000, 400000000]);
+    expect(Math.min(...kat)).toBeGreaterThan(Math.max(...titan));
+    expect(new Set([...titan, ...kat]).size).toBe(6); // keine doppelte Schwelle
+  });
+  it("die Stufenfarben laufen ins Weiße aus — der Marker, der Kataklysmus von den vier Silber-Decks trennt", () => {
+    // Begründung steht in themes.js: das Motiv ist unbunt, unterscheidbar macht es die LEITER, nicht der Farbton.
+    expect(KAT.tiers.map((t) => t.a2)).toEqual(["#b9c6de", "#d5deef", "#ffffff"]);
+    expect(KAT.a1).toBe(KAT.tiers[0].a1); // Packfarbe = Stufe I (wie bei Titan/Hirsch/Thron)
+    const weiss = THEMES.filter((p) => (p.tiers || []).some((t) => t.a2 === "#ffffff") || p.a2 === "#ffffff");
+    expect(weiss.map((p) => p.id)).toEqual(["kataklysmus"]); // einziger Verlauf auf reines Weiß
   });
 });
 

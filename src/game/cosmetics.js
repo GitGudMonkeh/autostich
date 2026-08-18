@@ -82,6 +82,14 @@ export const DECK_DEFS = {
   deck_thron1: { id: "deck_thron1", name: "Thron · Anwärter",     unlock: { kind: "championWeek", n: 1 } },
   deck_thron2: { id: "deck_thron2", name: "Thron · Souverän",     unlock: { kind: "championWeek", n: 2 } },
   deck_thron3: { id: "deck_thron3", name: "Thron · Unsterblich",  unlock: { kind: "championWeek", n: 3 } },
+  /* #tiered Kataklysmus — zweites Stufen-Deck über Score, und zwar OBERHALB von Titan: das endet bei 100 Mio,
+     dieses fängt bei 150 an (150/250/400 Mio). Die drei Stufen erzählen einen Einschlag: der Blitz trifft die
+     Ebene · die Ebene zerbricht · der Bruch fällt in sich zusammen. Deshalb tragen die Stufen die Vorgänge als
+     Namen (Einschlag · Bruch · Singularität) und nicht Rangwörter wie bei Thron — hier steigt keiner auf,
+     hier geht etwas kaputt. */
+  deck_kataklysmus1: { id: "deck_kataklysmus1", name: "Kataklysmus · Einschlag",     unlock: { kind: "score", n: 150000000 } },
+  deck_kataklysmus2: { id: "deck_kataklysmus2", name: "Kataklysmus · Bruch",         unlock: { kind: "score", n: 250000000 } },
+  deck_kataklysmus3: { id: "deck_kataklysmus3", name: "Kataklysmus · Singularität",  unlock: { kind: "score", n: 400000000 } },
   // #deck40 vier DP-Kauf-Packs à 40 DP (Legendär): Gaia · Glazius · Voltaris · Pyrros
   deck_gaia:     { id: "deck_gaia",     name: "Gaia",     unlock: { kind: "buy", ownKey: "pack:gaia" } },
   deck_glazius:  { id: "deck_glazius",  name: "Glazius",  unlock: { kind: "buy", ownKey: "pack:glazius" } },
@@ -160,6 +168,10 @@ export const BATTLEFIELD_DEFS = {
   bf_thron1: { id: "bf_thron1", name: bfName("deck_thron1"), unlock: { kind: "championWeek", n: 1 } },
   bf_thron2: { id: "bf_thron2", name: bfName("deck_thron2"), unlock: { kind: "championWeek", n: 2 } },
   bf_thron3: { id: "bf_thron3", name: bfName("deck_thron3"), unlock: { kind: "championWeek", n: 3 } },
+  // #tiered Kataklysmus Battlefields (gleiche Score-Schwelle wie das jeweilige Deck):
+  bf_kataklysmus1: { id: "bf_kataklysmus1", name: bfName("deck_kataklysmus1"), unlock: { kind: "score", n: 150000000 } },
+  bf_kataklysmus2: { id: "bf_kataklysmus2", name: bfName("deck_kataklysmus2"), unlock: { kind: "score", n: 250000000 } },
+  bf_kataklysmus3: { id: "bf_kataklysmus3", name: bfName("deck_kataklysmus3"), unlock: { kind: "score", n: 400000000 } },
   // #deck40 Battlefields (gleicher Besitz-Schlüssel wie das Deck):
   bf_gaia:     { id: "bf_gaia",     name: bfName("deck_gaia"),     unlock: { kind: "buy", ownKey: "pack:gaia" } },
   bf_glazius:  { id: "bf_glazius",  name: bfName("deck_glazius"),  unlock: { kind: "buy", ownKey: "pack:glazius" } },

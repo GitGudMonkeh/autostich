@@ -56,6 +56,12 @@ export default {
   "cosmetic.deck_thron1.name": "Throne · Contender",
   "cosmetic.deck_thron2.name": "Throne · Sovereign",
   "cosmetic.deck_thron3.name": "Throne · Immortal",
+  /* #tiered Kataklysmus — „Kataklysmus" ist im Englischen „Cataclysm" (dasselbe griechische Wort, nur ohne
+     die deutsche Endung). Die drei Stufen benennen VORGÄNGE, keine Ränge, und werden deshalb übersetzt statt
+     stehengelassen: Einschlag → Impact · Bruch → Fracture · Singularität → Singularity. */
+  "cosmetic.deck_kataklysmus1.name": "Cataclysm · Impact",
+  "cosmetic.deck_kataklysmus2.name": "Cataclysm · Fracture",
+  "cosmetic.deck_kataklysmus3.name": "Cataclysm · Singularity",
   // #deck40 — Eigennamen, in beiden Sprachen gleich
   "cosmetic.deck_gaia.name": "Gaia",
   "cosmetic.deck_glazius.name": "Glazius",

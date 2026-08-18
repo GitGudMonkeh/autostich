@@ -230,6 +230,26 @@ export const THEME_DEFS = {
       { roman: "II",  name: "Souverän",    deckId: "deck_thron2", bfId: "bf_thron2", a1: "#b0122f", a2: "#ff5f7a" },
       { roman: "III", name: "Unsterblich", deckId: "deck_thron3", bfId: "bf_thron3", a1: "#d4143a", a2: "#ff9fb0" },
     ] },
+  /* #tiered Kataklysmus — Stufen-Deck über Score (150/250/400 Mio), also oberhalb von Titan (endet bei 100 Mio).
+     Weißer Blitz auf schwarzer Ebene; über die Stufen wird aus dem Einschlag ein Bruch und aus dem Bruch ein Sog.
+     FARBE war hier die eigentliche Arbeit, und die Messung sagt auch warum: das Motiv ist praktisch unbunt
+     (gemessen über alle drei Stufen h≈220–230 bei s=0,10–0,15) und wäre damit der FÜNFTE neutrale Satz neben
+     Obsidian, Salar, Quecksilber und Origami. Zwei Auswege nebeneinander gerendert:
+       · ins Elektrische ziehen (kräftiges Blau) — läuft aber in die Hirsch-Familie (228°) und ist außerdem
+         nicht das, was auf der Karte zu sehen ist;
+       · die LEITER nutzen, die ein Stufen-Deck ohnehin hat. Genommen wurde die.
+     Die drei anderen Neutralen sind statische Silbertöne bei L=0,83–0,94. Kataklysmus startet deutlich tiefer
+     (Stahlblau L=0,58) und läuft nach oben ins Weiße aus — Stufe III ist das einzige Deck im Register, dessen
+     Verlauf auf reinem #ffffff endet. Präzedenz ist Thron („bis die weiß-heiße Krone übernimmt"), nur in Kalt.
+     Die Packfarbe (= Stufe I) ist damit auch im Kachelrand von den vier Silbernen unterscheidbar; erst Stufe III
+     kommt ihnen nahe, und die hat man mit 400 Mio Score so gut wie nie neben ihnen stehen. */
+  kataklysmus: { id: "kataklysmus", name: "Kataklysmus", emblem: "💥", kind: "cond", a1: "#7e8ca8", a2: "#b9c6de",
+    deckId: "deck_kataklysmus1", bfId: "bf_kataklysmus1", els: ["deck", "bf"],
+    tiers: [
+      { roman: "I",   name: "Einschlag",     deckId: "deck_kataklysmus1", bfId: "bf_kataklysmus1", a1: "#7e8ca8", a2: "#b9c6de" },
+      { roman: "II",  name: "Bruch",         deckId: "deck_kataklysmus2", bfId: "bf_kataklysmus2", a1: "#9aabc9", a2: "#d5deef" },
+      { roman: "III", name: "Singularität",  deckId: "deck_kataklysmus3", bfId: "bf_kataklysmus3", a1: "#b6c6e2", a2: "#ffffff" },
+    ] },
   sparfuchs:  { id: "sparfuchs",  name: packName("deck_sparfuchs"),  emblem: "💰", kind: "cond", a1: "#2ee66a", a2: "#ffcf3a",
     deckId: "deck_sparfuchs",  bfId: "bf_sparfuchs",  els: ["deck", "bf"] },
 

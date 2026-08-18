@@ -139,6 +139,13 @@ import thron1Front from "../assets/cards/decks_player/deck_thron1/front.webp"; /
 import thron1Back  from "../assets/cards/decks_player/deck_thron1/back.webp";
 import thron2Front from "../assets/cards/decks_player/deck_thron2/front.webp";
 import thron2Back  from "../assets/cards/decks_player/deck_thron2/back.webp";
+// #tiered Kataklysmus (Score 150/250/400 Mio)
+import kata1Front from "../assets/cards/decks_player/deck_kataklysmus1/front.webp";
+import kata1Back  from "../assets/cards/decks_player/deck_kataklysmus1/back.webp";
+import kata2Front from "../assets/cards/decks_player/deck_kataklysmus2/front.webp";
+import kata2Back  from "../assets/cards/decks_player/deck_kataklysmus2/back.webp";
+import kata3Front from "../assets/cards/decks_player/deck_kataklysmus3/front.webp";
+import kata3Back  from "../assets/cards/decks_player/deck_kataklysmus3/back.webp";
 import thron3Front from "../assets/cards/decks_player/deck_thron3/front.webp";
 import thron3Back  from "../assets/cards/decks_player/deck_thron3/back.webp";
 // #deck40 Gaia · Glazius · Voltaris · Pyrros (je 40 DP)
@@ -195,6 +202,12 @@ import bfThron1Desktop from "../assets/battlefields/bf_thron1/desktop.jpg"; // #
 import bfThron1Mobile  from "../assets/battlefields/bf_thron1/mobile.jpg";
 import bfThron2Desktop from "../assets/battlefields/bf_thron2/desktop.jpg";
 import bfThron2Mobile  from "../assets/battlefields/bf_thron2/mobile.jpg";
+import bfKata1Desktop  from "../assets/battlefields/bf_kataklysmus1/desktop.jpg";
+import bfKata1Mobile   from "../assets/battlefields/bf_kataklysmus1/mobile.jpg";
+import bfKata2Desktop  from "../assets/battlefields/bf_kataklysmus2/desktop.jpg";
+import bfKata2Mobile   from "../assets/battlefields/bf_kataklysmus2/mobile.jpg";
+import bfKata3Desktop  from "../assets/battlefields/bf_kataklysmus3/desktop.jpg";
+import bfKata3Mobile   from "../assets/battlefields/bf_kataklysmus3/mobile.jpg";
 import bfThron3Desktop from "../assets/battlefields/bf_thron3/desktop.jpg";
 import bfThron3Mobile  from "../assets/battlefields/bf_thron3/mobile.jpg";
 import bfGaiaDesktop     from "../assets/battlefields/bf_gaia/desktop.jpg";
@@ -269,6 +282,9 @@ export const DECK_ASSETS = {
   deck_thron1: { front: thron1Front, back: thron1Back },
   deck_thron2: { front: thron2Front, back: thron2Back },
   deck_thron3: { front: thron3Front, back: thron3Back },
+  deck_kataklysmus1: { front: kata1Front, back: kata1Back },
+  deck_kataklysmus2: { front: kata2Front, back: kata2Back },
+  deck_kataklysmus3: { front: kata3Front, back: kata3Back },
   deck_gaia:     { front: gaiaFront,     back: gaiaBack },
   deck_glazius:  { front: glaziusFront,  back: glaziusBack },
   deck_voltaris: { front: voltarisFront, back: voltarisBack },
@@ -330,6 +346,9 @@ export const BATTLEFIELD_ASSETS = {
   bf_thron1: { desktop: bfThron1Desktop, mobile: bfThron1Mobile },
   bf_thron2: { desktop: bfThron2Desktop, mobile: bfThron2Mobile },
   bf_thron3: { desktop: bfThron3Desktop, mobile: bfThron3Mobile },
+  bf_kataklysmus1: { desktop: bfKata1Desktop, mobile: bfKata1Mobile },
+  bf_kataklysmus2: { desktop: bfKata2Desktop, mobile: bfKata2Mobile },
+  bf_kataklysmus3: { desktop: bfKata3Desktop, mobile: bfKata3Mobile },
   bf_gaia:     { desktop: bfGaiaDesktop,     mobile: bfGaiaMobile },
   bf_glazius:  { desktop: bfGlaziusDesktop,  mobile: bfGlaziusMobile },
   bf_voltaris: { desktop: bfVoltarisDesktop, mobile: bfVoltarisMobile },
