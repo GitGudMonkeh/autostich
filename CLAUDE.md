@@ -739,8 +739,13 @@ Jetzt trennen sich die beiden Einstiege über EINEN neuen Prop `mode` an `Leader
   rendert gar nichts (dort gibt es nichts zu vergleichen, ein „kein Wert"-Kasten wäre nur Rauschen).
   Der Nenner kommt aus `TOTAL_NODES` — nirgends abgetippt, ein Wächter prüft das.
 
-#### OFFEN: die Spalte muss noch angelegt werden
-`ALTER TABLE autostich_scores ADD COLUMN tree_nodes int;` — **noch nicht passiert.** Bis dahin zeigt die Pille
+#### OFFEN: die Migration muss noch auf Supabase laufen
+**`docs/global-board-migration.sql`** (Dashboard → SQL Editor → einfügen → Run, idempotent) — **noch nicht
+passiert.** Sie legt `tree_nodes integer` an (NULLABLE, **ohne Default**: ab PG 11 füllt ein Default auch alle
+BESTEHENDEN Zeilen, jeder Alt-Lauf behauptete dann „0 Knoten" — NULL heißt „unbekannt", darauf verlässt sich
+die gestrichelte Pille) plus einen partiellen Index `where board is null` für die Global-Abfrage. An den
+RLS-Policies ist nichts zu tun (`using (true)` / `with check (true)`, keine Spalten-Whitelist).
+`docs/supabase-schema.sql` (Schema für ein frisches Projekt) ist mitgezogen. Bis dahin zeigt die Pille
 überall `–/27`, sonst ändert sich nichts: `tree_nodes` hat im Abruf UND beim Insert eine **eigene** Kaskadenstufe
 (`COLS_TREE` vor `COLS_FULL`, `TREE_FIELD` vor `EXTRA_FIELDS`). Läge der Baumstand in `COLS_FULL`/`EXTRA_FIELDS`,
 nähme die fehlende Spalte alle FB-8-Detailfelder mit — der stille Datenverlust aus #197, eine Ebene höher.

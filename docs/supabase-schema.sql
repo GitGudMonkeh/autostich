@@ -10,6 +10,7 @@
 -- Idempotent: mehrfaches Ausführen ist gefahrlos.
 --
 -- Der Client (src/game/leaderboard.js) erwartet genau diese Spalten:
+--   COLS_TREE = <COLS_FULL>,tree_nodes                      (#global, oberste Kaskadenstufe)
 --   COLS_FULL = name,score,level,tricks,cycles,archetypes,<FB-8>,seed,board,created_at
 --   FB-8      = best_streak,perks,skills,max_formations,formation_score,crits,wins,crit_bonus_score,best_trick_score
 -- perks/skills werden als kompakte, komma-getrennte ID-Liste gespeichert (wie archetypes),
@@ -40,13 +41,18 @@ create table if not exists public.autostich_scores (
   seed              bigint,
   -- §7 (Schritt 6) Getrennte Ranglisten-Boards: 'standard' (feste Baseline) | 'meister' (voller Baum) | NULL (Casual-
   -- Lauf, kein Wettbewerbs-Board). Trennt die Boards: Standard = `board = 'standard'`, Meister = `board = 'meister'`;
-  -- ungefiltert (Global/alle) ohne board-Bedingung. (Das alte #217 mastery_grade/deck_snapshot-Master-Board ist entfernt.)
-  board             text
+  -- Global = `board is null` (#global: NUR Casual-Läufe — Ranked fährt auf fixer Baseline, dort ist der Upgrade-Baum
+  -- wirkungslos). (Das alte #217 mastery_grade/deck_snapshot-Master-Board ist entfernt.)
+  board             text,
+  -- #global: Baumstand, mit dem der Lauf gespielt wurde (wie viele der TOTAL_NODES Upgrade-Knoten der
+  -- Spieler besaß). NULLABLE ohne Default — NULL heißt „unbekannt" (Alt-Lauf), nicht „null Knoten".
+  tree_nodes        integer
 );
 
 -- Falls die Tabelle schon existiert (frühere Version ohne diese Spalten): additiv nachziehen (idempotent).
 alter table public.autostich_scores add column if not exists seed bigint;
 alter table public.autostich_scores add column if not exists board text;
+alter table public.autostich_scores add column if not exists tree_nodes integer;  -- #global (s. docs/global-board-migration.sql)
 -- Hinweis: die früheren #217-Spalten mastery_grade (smallint) + deck_snapshot (jsonb) werden nicht mehr genutzt.
 -- Auf bestehenden Tabellen bleiben sie (nullable) einfach liegen — kein destruktives DROP nötig. Wer aufräumen will:
 --   alter table public.autostich_scores drop column if exists mastery_grade;
@@ -79,3 +85,10 @@ create index if not exists autostich_scores_board_idx
 create index if not exists autostich_scores_seed_idx
   on public.autostich_scores (seed, score desc)
   where seed is not null;
+
+-- #global: Das Global-Board zeigt NUR Casual-Läufe (`board is null`), sortiert wie oben. Partieller Index
+-- über genau diese Zeilen → ein Scan bedient Filter UND Sortierung, und er enthält die Ranglisten-Zeilen
+-- gar nicht erst. Gleiches Muster wie die beiden Teil-Indizes darüber.
+create index if not exists autostich_scores_global_idx
+  on public.autostich_scores (score desc, tricks desc, created_at desc)
+  where board is null;
