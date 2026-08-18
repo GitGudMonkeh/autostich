@@ -1039,3 +1039,61 @@ Zelle die Höhe der ganzen Reihe bestimmt. Gemessen kostete das **5–6 von 21**
 - Bewusst bezahlt: die Lesereihenfolge läuft spaltenweise (runter, dann rechts) statt zeilenweise.
 - **Wer auf `grid` zurückstellt, muss die Klemme mitbringen** — sonst reißt ein langer Skill die Reihe auf.
   Wächter: `test/desktop-perf.test.js`.
+
+### #fx-panel + #vorschau-brett — der Effekte-Reiter der Werkstatt (2026-08-18)
+Der letzte Screen des Desktop-Passes. Fünf Befunde, alle vor dem Bauen gemessen (Playwright im echten
+Produktionspfad, Anker 1920×1080 und 1536×791); zwei davon waren größer als vermutet, einer stimmte nicht.
+- **Das Loch rechts war 568 px, nicht 280** — die Liste füllte 28 % ihrer Spalte (233 px Zeilen in 823 px
+  auf 1920 · 279 px / 52 % leer auf 1536). Und es konnte **nie zuwachsen**: die vier Reiter haben
+  `5 · 5 · 5 · 6` Zeilen, nicht „5–13". Der `overflow-y: auto` an `.cz-fxlist` hatte noch nie etwas zu scrollen.
+- **Ein Panel gegen zwei war nur eine Frage der FASSUNG.** Die Aufteilung stimmte längst: Pakete
+  `1276 + 520`, Effekte ein Panel `1822` mit innerem Raster `1246 + 520`. Der zweiten Spalte fehlten
+  Glas, Ring und Kante — sonst nichts. Jetzt tragen `.cz-stage` (links) und `.cz-fxside` (rechts) die
+  Panel-Optik, `.cz-main` gibt sie ab (`:has(.cz-stage)`), **beide enden am Inhalt** (`align-self: start`,
+  wie `.cz-side` und `.up-nav`). Rechte Spalte 823 → 413 px, leere Fläche 0.
+- **Die Kategorie-Reiter sind in den Kopf des rechten Panels gezogen.** Vorher klebten zwei Reiterzeilen
+  22 px übereinander, die kein einziges Maß teilten (210×48 / 16 px / Radius 12 / Rahmen rundum gegen
+  ~300×31 / 11 px / Radius 6-6-0-0 / Unterkante). Sie werden **einmal** gebaut und am `wide`-Schalter an
+  einer von zwei Stellen gerendert — DOM, nicht Anordnung, also nicht per CSS lösbar (dieselbe Entscheidung
+  wie die Nav-Spalte im Leitfaden). Zwei gerenderte Zeilen hießen zwei Fokus-Reihenfolgen im Baum.
+
+#### Die Vorschau IST das Brett — zwei Zahlen aus dem laufenden Spiel (`src/ui/fx/previewScale.js`)
+Gemessen am Battlefield-Panel (`[data-tut="bf-board"]`): **1920 → 668×347 · 1536 → 668×347 · Handy 390 →
+358×347.** Auf dem Desktop ist das Brett also FEST (1fr-Spalte eines `[1fr_340px]`-Rasters), und die Karte
+ist dort immer 104×144 — **41,5 % der Bretthöhe**. Daraus zwei Regeln, die die Vorschau beide verfehlt hatte:
+- **Brett-Verhältnis 1,93 : 1, NICHT die 2,5 : 1 des Spielfeld-JPGs.** Das Brett schneidet das 1600×640-Bild
+  bereits zu; eine Vorschau im BILDformat zeigt einen Ausschnitt, den es im Spiel nirgends gibt. Die alte
+  Vorschau stand auf 1,62 : 1 (1246×767) — also weder das eine noch das andere. Jetzt `aspect-ratio:
+  var(--bf-ratio)`; **die Zahl steht nur in previewScale.js**, index.css liest sie als Variable.
+- **Maßstab = Vorschaubreite ÷ 668.** `width: 104, height: 144` stand als Literal in **sechs** Szenen
+  („Demo-Karte im echten 104×144-Slot") — eine Handy-Zahl, die den Desktop-Pass nicht mitbekommen hat. Der
+  Rahmen wuchs von 186 px auf 767 px, die Karte nicht: **Kartenfläche 24,9 % → 1,6 %**, der 10-DP-Effekt war
+  anderthalb Prozent des Bildes. Jetzt ein `CardSlot` für alle sechs; nachgemessen landet die Karte auf
+  **41 %** der Rahmenhöhe — dem In-Game-Wert — auf jeder Breite (Identität, kein Zufallstreffer, s. Test).
+- **Skaliert wird per `transform`, NICHT über width/height.** Die DOM-Effekte rechnen in absoluten Pixeln
+  (SliceFx streut auf 46–116 px und schneidet 120 px weit) — ein größerer Slot allein ließe die Geometrie
+  stehen. Die Canvas-/Pixi-Effekte lesen den Slot per `getBoundingClientRect()`, und das liefert die
+  TRANSFORMIERTE Box → sie folgen **ohne eine einzige Änderung an ihnen**. Nicht mitskaliert werden ihre
+  internen Konstanten (Strichbreiten, Glow-Radien); bei Neonrand und Funkenkranz ist das unauffällig, wer
+  eine Ebene ergänzt, prüft es am Bild. `translate(-50%,-50%) scale(s)` zentriert weiter korrekt (Prozente
+  beziehen sich auf die UNskalierte Box, `transform-origin` sitzt in deren Mitte).
+- **Der Maßstab VERGRÖSSERT nur** (`Math.max(1, …)`). Am Handy ist der Rahmen 324 px breit; die reine Regel
+  ergäbe 0,49 und eine 70-px-Karte. **Nachgewiesen unangetastet:** Geometrie an sechs Messpunkten × vier
+  Reitern identisch, drei von vier Reitern **bitidentisch** (0,000 von 255), der vierte weicht um 0,177 ab —
+  das ist das laufende Pixi-Bild, kein Layout.
+
+#### Zwei Fallen, beide beim Bauen zugeschnappt
+- **`position: static` ignoriert `top`, `relative` nicht.** Die Vorgängerfassung stand auf `static`; für den
+  Ring braucht die Bühne aber `relative` — und dann greift plötzlich das INLINE gesetzte `top` (der
+  Sticky-Abstand unter dem Kopf, 135 px). Das Panel rutschte um genau diese 135 px nach unten und lief unten
+  aus dem Scroller (**gemessen: 62 px Überlauf auf 1536×791**). Fix ist `top: auto !important`.
+- **Der Ring-Wächter zählt Namen im Quelltext.** `test/desktop-perf.test.js` vergleicht die Vorkommen von
+  `as-ring` und seinem Laufband-Kind. Ein Kommentar, der beide Namen erwähnt, kippt die Bilanz — die
+  Begründung am `.cz-stage` schreibt sie deshalb bewusst NICHT aus.
+- Der Panel-Hintergrund braucht `!important`: `.cz-stage` setzt seine Sticky-Kopf-Fläche INLINE
+  (`STICKY_HEAD_BG`), und Inline schlägt jede Stylesheet-Regel. Genau dort stand vorher `background: none !important`.
+
+Wächter: `test/fx-panel.test.js` — rechnet den Maßstab NACH (previewScale.js ist rein, ohne React) und hält
+die vier Nähte als Quelltext-Ratsche fest (`align-self: start` · `display: contents` unter 1400 ·
+`top: auto` · `--bf-ratio` als Variable statt abgetippter Zahl). Gegenprobe gemacht: alle drei sabotierten
+Nähte fallen. **Nicht am Gerät abgenommen** — alles headless im Produktionsbuild gemessen und nachgerendert.

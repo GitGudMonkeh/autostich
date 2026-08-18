@@ -1343,8 +1343,11 @@ button { font-family: inherit; }
 
 /* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1399 px reichen `cz-split` und `cz-main` ihre
    Kinder unverändert an den Scroller durch — Katalog, Effekt-Bühne und Liste sitzen exakt wie bisher.
-   Ab 1400 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts). */
-.cz-split, .cz-main, .cz-mainscroll { display: contents; }
+   Ab 1400 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts).
+   `cz-fxside` gehört in dieselbe Familie: ab 1400 px ist es das rechte Panel des Effekte-Reiters
+   (Kategorien · Liste · Fußnote), darunter fällt die Klammer weg und die Reihenfolge Bühne → Liste →
+   Hinweis bleibt exakt die der Handy-Fassung. */
+.cz-split, .cz-main, .cz-mainscroll, .cz-fxside { display: contents; }
 
 /* Der Glossar-Knopf steht zweimal im Startbildschirm: oben rechts in der Ecke (bis 1399 px) und unten
    im Fußband hinter dem Discord-Zeichen (ab 1400 px). Zwei Instanzen statt einer wandernden, weil die
@@ -2255,32 +2258,81 @@ button { font-family: inherit; }
      dieser Marker muss davon unterscheidbar bleiben, also ein Ring statt einer Kante. */
   .cz-shown { box-shadow: 0 0 0 2px var(--c, #8a8a95), 0 0 18px -6px var(--c, #8a8a95); }
 
-  /* --- Reiter „Effekte": Bühne links, Liste rechts ---------------------------
-     Die drei Teile von FxView sind Geschwister in einem Fragment. Der Scroller wird für sie zum Raster;
-     die Bühne bekommt beide Zeilen, Liste und Fußnote stapeln sich rechts daneben.
-     Das Raster sitzt an `.cz-mainscroll` und nicht mehr an `.cz-main`: seit der Katalog innen scrollt
-     (s. o.), ist der Wrapper das Element, in dem die drei Teile liegen. */
+  /* --- #fx-panel — Reiter „Effekte": zwei Panels wie im Reiter „Pakete" ------
+     Bis 18.08.2026 war „Effekte" EIN Panel mit innerem Raster, während „Pakete" daneben zwei gerahmte
+     Panels zeigt. Die AUFTEILUNG war dabei längst dieselbe — gemessen Pakete 1276 + 520, Effekte
+     1246 + 520 —, nur trug die zweite Spalte kein Glas, keinen Ring und keine Kante. Die 520 stimmte
+     also schon; es fehlte die Fassung. Deshalb gibt `.cz-main` hier seine Panel-Optik ab und die zwei
+     Kinder tragen sie: `.cz-stage` links (Bühne), `.cz-fxside` rechts (Kategorien · Liste · Fußnote).
+
+     Beide Panels enden AN IHREM INHALT (`align-self: start`) statt auf Rasterhöhe — dieselbe Regel wie
+     bei `.cz-side` (Pakete) und `.up-nav` (Baum). Vorher stand allein rechts unter fünf Zeilen 568 px
+     leeres Panel (69 % der Spalte, gemessen auf 1920 · 279 px / 52 % auf 1536). Und das Loch konnte nie
+     zuwachsen: die vier Reiter haben 5 · 5 · 5 · 6 Zeilen, der `overflow-y: auto` der Liste hatte noch
+     nie etwas zu scrollen. */
+  .cz-main:has(.cz-stage) { background: none; box-shadow: none; }
+  /* Der Ring gehört an die zwei Panels; der des Wrappers zöge sonst einen dritten Rahmen um beide.
+     `as-ring` und `as-ring-run` sind ein PAAR (#perf-ring) — hier wird das KIND stumm geschaltet und
+     nicht die Klasse entfernt, weil `.cz-main` unter 1400 px und in den anderen Reitern derselbe
+     Knoten ist und seinen Rahmen dort behalten muss. */
+  .cz-main:has(.cz-stage) > .as-ring-run { display: none; }
   .cz-mainscroll:has(.cz-stage) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 520px;
-    grid-template-rows: 1fr auto;
-    gap: 0 24px;
+    gap: 0 26px;               /* 26 wie die Lücke zwischen den beiden Pack-Panels (.cz-split) */
+    align-items: start;
+    padding: 0;
     overflow: hidden;
   }
-  .cz-stage {
-    grid-column: 1; grid-row: 1 / span 2;
-    position: static !important;              /* sticky ergibt neben der Liste keinen Sinn mehr */
-    margin: 0 !important; padding: 0 !important;
-    border-bottom: 0 !important;
-    background: none !important;
-    display: flex; flex-direction: column; min-height: 0;
+  /* Glas, Radius und Schein sind an `.cz-main`/`.cz-side` ABGEMESSEN, nicht neu erfunden. */
+  .cz-stage, .cz-fxside {
+    grid-row: 1;
+    align-self: start;
+    max-height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 14px;
+    padding: 14px 16px 12px;
+    /* `!important`, weil `.cz-stage` seine Sticky-Kopf-Fläche INLINE setzt (STICKY_HEAD_BG) und Inline
+       jede Stylesheet-Regel schlägt — dieselbe Stelle, an der vorher `background: none !important` stand. */
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
   }
-  /* Die Vorschau selbst füllt, was Reiterzeile, Beschreibung und Aktionsknopf übrig lassen. Ohne das
-     bliebe sie auf ihren 208 px stehen und die gewonnene Höhe wäre leere Fläche — genau der Punkt,
-     um den es beim Umbau ging. */
-  .cz-fxpreview { flex: 1; min-height: 0; height: auto !important; }
-  .cz-fxlist { grid-column: 2; grid-row: 1; min-height: 0; overflow-y: auto; margin-top: 0 !important; padding-right: 6px; }
-  .cz-fxhint { grid-column: 2; grid-row: 2; }
+  .cz-stage {
+    grid-column: 1;
+    /* Das `sticky` der Handy-Fassung ergibt neben der Liste keinen Sinn — und `.as-ring` braucht
+       `relative`, sonst säße der Rahmen am nächsten positionierten Vorfahren.
+       FALLE: die Vorgängerfassung stand auf `static`, und `static` IGNORIERT das inline gesetzte
+       `top` (der Sticky-Abstand unter dem Kopf, hier 135 px). `relative` tut das nicht — ohne die
+       Zeile darunter rutschte die Bühne um genau diese 135 px nach unten und das Panel lief unten
+       aus dem Scroller (gemessen: Überlauf 62 px auf 1536 × 791). */
+    position: relative !important;
+    top: auto !important;
+    margin: 0 !important;
+    border-bottom: 0 !important;
+  }
+  .cz-fxside { grid-column: 2; }
+  /* Die Vorschau trägt das BRETT-Verhältnis (`--bf-ratio`, gesetzt in CustomizeScreen.jsx — dort stehen
+     die gemessenen 668 × 347 des Battlefield-Panels). Vorher füllte sie die Spalte und stand damit auf
+     1,62 : 1 — einem Format, das es weder beim Spielfeld-Bild (2,5 : 1) noch auf dem Brett (1,93 : 1)
+     gibt. `flex: 0 1 auto` lässt sie auf sehr flachen Fenstern schrumpfen, statt Beschreibung und
+     Aktionsknopf unter die Panelkante zu schieben (dieselbe Naht wie bei `.cz-action`). */
+  .cz-fxpreview {
+    height: auto !important;
+    width: 100%;
+    aspect-ratio: var(--bf-ratio);
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+  /* Die Kategorie-Reiter stehen ab hier IM Kopf des rechten Panels (FxView rendert sie am `wide`-
+     Schalter dorthin). Am Handy klebten sie 22 px unter den Haupt-Reitern und teilten mit ihnen kein
+     einziges Maß — 210 × 48 / 16 px / Radius 12 gegen 300 × 31 / 11 px / Radius 6-6-0-0. Neben der
+     Liste, die sie umschalten, sind sie das Inhaltsverzeichnis des Panels statt eine zweite Reiterzeile. */
+  .cz-fxcats { margin-bottom: 12px !important; gap: 4px !important; }
+  .cz-fxcats button { font-size: 12px !important; padding: 6px 6px !important; }
+  .cz-fxlist { min-height: 0; overflow-y: auto; margin-top: 0 !important; padding-right: 6px; }
+  .cz-fxhint { margin-top: 12px !important; flex: none; }
 
   /* ==========================================================================
      #desktop — Leitfaden ab 1400 px

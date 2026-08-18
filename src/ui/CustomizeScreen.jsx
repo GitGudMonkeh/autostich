@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
+// #vorschau-brett: gemessene Brettmaße + Szenen-Maßstab der Effekt-Vorschau (rein, ohne React → testbar).
+import { CARD_W, CARD_H, BOARD_RATIO_CSS, sceneScale } from "./fx/previewScale.js";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
 import {
@@ -107,6 +109,35 @@ const SHOWCASE_BF = THEME_DEFS.genesis.bfId; // = "bf_onboarding"
 // Echtes Seitenverhältnis der Deck-Bilder (1066×1476) → object-contain zeigt die Karte vollständig
 // (kein Anschnitt oben/unten), der bemalte Neon-Rahmen bleibt intakt und der Frame-Glow sitzt bündig.
 const CARD_RATIO = "1066 / 1476";
+/* #vorschau-brett: Kartenmaß, Brettmaß und Maßstab liegen in `fx/previewScale.js` — reine Zahlen ohne
+   React, damit der Wächter das Verhältnis NACHRECHNEN kann statt Quelltext zu vergleichen. Die volle
+   Begründung samt Messung steht dort im Dateikopf. Die vier Zahlen standen bis 18.08.2026 als Literale
+   in SECHS Szenen; die Maßstabsfrage wäre damit sechsmal zu beantworten gewesen. */
+
+const SceneScaleCtx = createContext(1);
+
+/* Karten-Anker aller Vorschau-Szenen: der unsichtbare 104×144-Slot, an dem sich die Effekte ausrichten.
+   Skaliert wird per `transform`, NICHT über width/height — und das ist die eigentliche Entscheidung hier:
+   • Die DOM-Effekte (Klinge/SliceFx, Standard-Wegflug, die Vorschau-Karte selbst) rechnen in absoluten
+     Pixeln — SliceFx streut seine Funken auf 46–116 px und schneidet 120 px weit. Ein größerer Slot allein
+     ließe die Geometrie stehen und den Schnitt zu kurz aussehen; `transform: scale` zieht sie mit.
+   • Die Canvas-/Pixi-Effekte (Scorch, Hologrid, Schwarzes Loch, die fünf Prunks, CardFxStage) lesen den
+     Slot per `getBoundingClientRect()` — und das liefert die TRANSFORMIERTE Box. Sie folgen also ohne eine
+     einzige Änderung an ihnen. Was NICHT mitskaliert, sind ihre internen Konstanten (Strichbreiten,
+     Glow-Radien); die bleiben in Gerätepixeln stehen. Bei einem Neonrand oder einem Funkenkranz ist das
+     unauffällig bis richtig — wer hier eine Ebene ergänzt, prüft es am Bild.
+   Zur Zentrierung: `translate(-50%,-50%) scale(s)` bleibt korrekt, weil die Prozentwerte sich auf die
+   UNskalierte Box beziehen und `transform-origin` in deren Mitte sitzt — der Mittelpunkt bleibt also stehen,
+   egal wie groß s ist. */
+function CardSlot({ slotRef = null, left = "50%", top = "50%", className = "", style = null, children = null }) {
+  const s = useContext(SceneScaleCtx);
+  return (
+    <div ref={slotRef} className={`absolute ${className}`}
+      style={{ left, top, width: CARD_W, height: CARD_H, transform: `translate(-50%,-50%) scale(${s})`, ...style }}>
+      {children}
+    </div>
+  );
+}
 // Demo-Farbe der Effekt-Vorschauen (in-game = Deck-/Suit-Farbe).
 const DEMO_C = "#35e0ff";
 /* #327 Showcase-Deckfarbe AUTOMATISCH aus dem Pack des gezeigten Hintergrunds ableiten (kohärente Pack-Einheit wie
@@ -420,9 +451,9 @@ function FinisherScene({ variant, deckTint = false, look = null }) {
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {/* Demo-Karte im echten 104×144-Slot, zentriert; die Finisher-Komponente rendert die Karte + Effekt darin. */}
-      <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+      <CardSlot>
         <div key={tick} className="absolute inset-0">{fx}</div>
-      </div>
+      </CardSlot>
       {/* #330 Kein Scene-Chrome mehr — Name/Status/Farbmodus zeichnet zentral die Bühne (FxStage). */}
     </div>
   );
@@ -440,7 +471,7 @@ function ScorchScene({ deckTint = false, look = null }) {
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <CardSlot slotRef={cardRef} />
       <ScorchFx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
         value={8} suit={suitColor(DEMO_SUIT)} deckColor={look?.a1 || "#35e0ff"} speed={1.15}
         onFire={() => audio.play("fx_scorch", { rate: 1.15, gain: 1.0 })} /* #319 Sound auch im Shop, getimt (rate = Showcase-Speed), Klinge-Pegel */ />
@@ -465,7 +496,7 @@ function HologridScene({ deckTint = false, look = null }) {
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <CardSlot slotRef={cardRef} />
       <Suspense fallback={null}>
         <HologridSlicePixi panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint}
           value={8} suit={suitColor(DEMO_SUIT)} deckColor={dc1} deckColor2={dc2} lite={isMobile} speed={1.1}
@@ -540,7 +571,7 @@ function BlackholeScene({ deckTint = false }) {
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#05060d" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.35 }} />}
       <div className="absolute inset-0" style={{ background: "radial-gradient(60% 60% at 72% 50%,#0b0c1866,#05060d)" }} />
-      <div ref={oppRef} className="absolute" style={{ left: "72%", top: "50%", width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <CardSlot slotRef={oppRef} left="72%" />
       <BlackholeFx active pulse={pulse} color={c1} color2={c2} scale={1} panelRef={panelRef} oppRef={oppRef} backSrc={deckAssets("default").back} /* #338-4: Vorschau zeigt die Deck-Rückseite der eingesogenen Karten */
         /* #380 Sound wie in-game: Zusammenzieh-Impact · Nova-Flash → fx_supernova (nur großer Kollaps) · Bett-Pegel via onSize. */
         onImplode={(big, spd) => audio.play("fx_blackhole_implode", { gain: big ? 1.2 : 1.0, bass: big ? 6 : 3, rate: Math.min(spd || 1, 2) })}
@@ -597,7 +628,7 @@ function GottScene({ Fx = null, deckTint = false, cycleMs = 2200, look = null, s
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div ref={cardRef} className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }} />
+      <CardSlot slotRef={cardRef} />
       {Fx && (
         <Suspense fallback={null}>
           <Fx panelRef={panelRef} cardRef={cardRef} trigger={1} loop deckTint={deckTint} deckColor={deckColor} deckColor2={deckColor2} lite={isMobile} speed={speed} loopGap={loopGap} onFire={fire} />
@@ -639,13 +670,13 @@ function StandardFinisherScene() {
     <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
       {bf && <img src={bf.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div className="absolute left-1/2 top-1/2" style={{ width: 104, height: 144, transform: "translate(-50%,-50%)" }}>
+      <CardSlot>
         {/* key={tick} startet die Wegflug-Animation je Loop neu; erst REST liegen bleiben, dann as-flyaway-r zur Seite. */}
         <div key={tick} className="absolute inset-0"
           style={{ animation: `as-flyaway-r ${STD_FIN_FLY}ms ease-in ${STD_FIN_REST}ms both` }}>
           {cardEl}
         </div>
-      </div>
+      </CardSlot>
       {/* #330 Kein Scene-Chrome mehr — die Bühne (FxStage) zeichnet Name/Status zentral. */}
     </div>
   );
@@ -886,11 +917,15 @@ function CardAnimPreview({ anim }) {
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
   const panelRef = useRef(null);
   const cardRef = useRef(null);
+  const scale = useContext(SceneScaleCtx);
   return (
     <div ref={panelRef} className="relative w-full h-full overflow-hidden rounded-lg grid place-items-center" style={{ background: "#0b0a16" }}>
       {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
-      <div ref={cardRef} className="relative" style={{ zIndex: 1 }}>
+      {/* #vorschau-brett: Diese Szene zentriert per Grid statt absolut — der Maßstab kommt deshalb direkt
+          als `transform` (kein CardSlot, der die Positionierung mitbrächte). `getBoundingClientRect` der
+          CardFxStage liefert die transformierte Box, der Effekt sitzt also weiter bündig auf der Karte. */}
+      <div ref={cardRef} className="relative" style={{ zIndex: 1, transform: `scale(${scale})` }}>
         <Card suit="B" value={7} />
       </div>
       {CARDFX_PREVIEW_ON && (
@@ -1086,7 +1121,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
               <div className="cz-mainscroll">
                 {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} />
                   : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} />
-                  : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} />}
+                  : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} wide={wide} />}
               </div>
             </div>
             {/* Ab 1400 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
@@ -1442,7 +1477,7 @@ function shortDesc(fx, group) {
   return short === key ? fx.desc : short;   // unbekannter Effekt → Langtext (wie vorher)
 }
 
-function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
+function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) {
   const finisherSel = finisherSelOf(options, p); // #klinge-kaufbar: „klinge" nur bei Besitz aktiv, sonst „standard"
   const bgSel = bgSelOf(options, p);   // #331 EIN exklusiver Hintergrund-Effekt (aurora/cubematrix/embers/starfield) oder „none"
   const cardAnimSel = cardAnimSelOf(options, p); // #331 EINE Karten-Animation (edgeglow/holo/glitch) oder „none"
@@ -1485,53 +1520,77 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     else if (g.mode === "bg") onChoose(bgFlags(fx.key === "none" ? "none" : (on ? "none" : fx.key))); // #331 EIN Hintergrund-Effekt
   };
 
+  /* #fx-panel: Die Kategorie-Reiter werden EINMAL gebaut und je nach Breite an einer von zwei Stellen
+     gerendert — am Handy im Sticky-Kopf über der Bühne (unverändert), ab 1400 px im Kopf des Listen-Panels.
+     Das ist DOM, keine Anordnung, also nicht per CSS lösbar; dieselbe Entscheidung wie beim Leitfaden, wo
+     die Nav-Spalte am `wide`-Schalter hängt. Ein zweites Rendern (beide Stellen + CSS-Umschalter) wäre die
+     Alternative gewesen — dann lägen zwei Reiterzeilen mit zwei Fokus-Reihenfolgen im Baum. */
+  const cats = (
+    <div className="cz-fxcats flex gap-1.5 mb-2.5">
+      {FX_GROUPS.map((g) => {
+        const on = g.key === sel.group;
+        return (
+          /* #kante: Kategorie-Reiter tragen ihr Signal wie die Haupt-Reiter an der Unterkante, inaktive sind
+             reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander.
+             #deckui: der Aktiv-Akzent ist Chrome → Deckfarbe (var(--deck-a1)), Gold nur noch als Fallback. */
+          <button key={g.key} onClick={() => pickCat(g.key)} role="tab" aria-selected={on}
+            className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-[11px] font-extrabold transition-colors"
+            style={on
+              ? { color: "#fff", borderBottom: "2px solid var(--deck-a1, #d4a63a)", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--deck-a1, #d4a63a) 14%, transparent))" }
+              : { color: "#9a97ab", borderBottom: "2px solid transparent", background: "transparent" }}>
+            {t(`fxgroup.${g.key}.title`)}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
-      {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar. */}
-      <div className="cz-stage sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
-        <div className="flex gap-1.5 mb-2.5">
-          {FX_GROUPS.map((g) => {
-            const on = g.key === sel.group;
-            return (
-              /* #kante: Kategorie-Reiter tragen ihr Signal wie die Haupt-Reiter an der Unterkante, inaktive sind
-                 reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander.
-                 #deckui: der Aktiv-Akzent ist Chrome → Deckfarbe (var(--deck-a1)), Gold nur noch als Fallback. */
-              <button key={g.key} onClick={() => pickCat(g.key)}
-                className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-[11px] font-extrabold transition-colors"
-                style={on
-                  ? { color: "#fff", borderBottom: "2px solid var(--deck-a1, #d4a63a)", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--deck-a1, #d4a63a) 14%, transparent))" }
-                  : { color: "#9a97ab", borderBottom: "2px solid transparent", background: "transparent" }}>
-                {t(`fxgroup.${g.key}.title`)}
-              </button>
-            );
-          })}
-        </div>
+      {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar.
+          #fx-panel: Ab 1400 px ist das hier das LINKE PANEL (Glas + Ring, endet an seinem Inhalt) und die
+          Reiter sind nach rechts gezogen — s. .cz-stage im 1400er Block. */}
+      <div className="cz-stage as-ring sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+        {/* Rahmenklasse und Laufband sind ein PAAR (#perf-ring) — die Klasse ohne dieses Kind ergäbe
+            keinen Rahmen. Beide sind unterhalb 1400 px wirkungslos (das Band steht global auf
+            `display: none`), die Handy-Fassung bleibt davon also unberührt.
+            Der Wächter in test/desktop-perf.test.js zählt die zwei Namen im Quelltext gegeneinander —
+            deshalb stehen sie hier bewusst NICHT ausgeschrieben in der Prosa. */}
+        <i className="as-ring-run" aria-hidden="true" />
+        {!wide && cats}
         <FxStage fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)} onChoose={onChoose} onBuyFx={onBuyFx} options={options} />
       </div>
 
-      {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten.
-          #desktop: ab 1400 px rückt sie neben die Bühne (s. .cz-fxlist), statt darunter wegzuscrollen. */}
-      <div className="cz-fxlist mt-3">
-        <div className={EYEBROW} style={{ color: "#9a97ab" }}>
-          {selGroup.title}
-          <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
-          <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          {selItems.map((fx) => (
-            <FxRow key={fx.key} fx={fx}
-              selected={sel.key === fx.key}
-              owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
-              active={isActive(selGroup, fx)}
-              onPick={() => setSel({ group: selGroup.key, key: fx.key })}
-              onToggle={() => toggleFx(selGroup, fx)} />
-          ))}
-        </div>
-      </div>
+      {/* #fx-panel: Ab 1400 px das RECHTE PANEL (Kategorien · Liste · Fußnote), darunter `display: contents` —
+          am Handy fällt die Klammer also weg und die Reihenfolge Bühne → Liste → Hinweis bleibt, wie sie war. */}
+      <div className="cz-fxside as-ring">
+        <i className="as-ring-run" aria-hidden="true" />
+        {wide && cats}
 
-      <p className="cz-fxhint text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
-        {t("shop.fx.hint")}
-      </p>
+        {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten.
+            #desktop: ab 1400 px rückt sie neben die Bühne (s. .cz-fxlist), statt darunter wegzuscrollen. */}
+        <div className="cz-fxlist mt-3">
+          <div className={EYEBROW} style={{ color: "#9a97ab" }}>
+            {selGroup.title}
+            <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+            <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {selItems.map((fx) => (
+              <FxRow key={fx.key} fx={fx}
+                selected={sel.key === fx.key}
+                owned={fx.standard || fx.alwaysOwned || globalFxOwned(p, fx)}
+                active={isActive(selGroup, fx)}
+                onPick={() => setSel({ group: selGroup.key, key: fx.key })}
+                onToggle={() => toggleFx(selGroup, fx)} />
+            ))}
+          </div>
+        </div>
+
+        <p className="cz-fxhint text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+          {t("shop.fx.hint")}
+        </p>
+      </div>
     </>
   );
 }
@@ -1540,6 +1599,20 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
    gemeinsam oben), zeigt den gewählten Effekt als ECHTE In-Game-Vorschau (GlobalFxScenePreview, key trägt Farbmodus →
    sauberer Remount beim Wechsel) + Name/Status + Kurzbeschreibung (nur der funktionale Bezug) + Kaufen/Wählen/Toggle. */
 function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
+  const previewRef = useRef(null);
+  const [previewW, setPreviewW] = useState(0);
+  /* #vorschau-brett: EIN ResizeObserver auf dem Rahmen — er ist die einzige Quelle des Szenen-Maßstabs.
+     Bewusst kein `getBoundingClientRect()` im Render und kein `resize`-Listener: der Rahmen ändert seine
+     Breite auch OHNE Fensteränderung (Reiterwechsel Pakete↔Effekte, Pack-Detail auf/zu), und ein Read im
+     Render erzwingt ein Layout je Durchlauf. */
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(([e]) => setPreviewW(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    setPreviewW(Math.round(el.getBoundingClientRect().width));
+    return () => ro.disconnect();
+  }, []);
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "neonsurf" ? "fxNeonsurfDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
@@ -1674,9 +1747,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     <>
       {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
       {/* Die Höhe ist auf dem Handy bewusst gedeckelt (die Liste soll darunter noch sichtbar sein). Ab
-          1400 px steht die Liste daneben statt darunter — dort füllt die Vorschau die ganze Spalte
-          (s. .cz-fxpreview in index.css; der Deckel hier ist inline und braucht deshalb `!important`). */}
-      <div className="cz-fxpreview relative w-full rounded-xl overflow-hidden" style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a" }}>
+          1400 px steht die Liste daneben statt darunter — dort trägt die Vorschau das BRETT-Verhältnis
+          (`--bf-ratio`, s. .cz-fxpreview in index.css); der Handy-Deckel hier ist inline und braucht
+          deshalb `!important` drüben. */}
+      <div ref={previewRef} className="cz-fxpreview relative w-full rounded-xl overflow-hidden"
+        style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", "--bf-ratio": BOARD_RATIO_CSS }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
             (frische Effekt-Bühne mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
@@ -1690,7 +1765,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
             FrostIce: stateRef + Sync-Effekt · MossGrow: Effekt-Deps [growth,nA,nB]). Der frühere `spezial:deck/std`-Key
             remountete die GANZE Bühne bei jedem Farb-Toggle → riss FireHeads Pixi/WebGL-Context + 700 Partikel ab und
             baute sie neu auf (spürbarer Ruckler). Jetzt stabiler Key → deckTint fließt als Live-Prop, kein Remount. */}
-        <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+        {/* #vorschau-brett: Der Maßstab kommt aus der GEMESSENEN Rahmenbreite, nicht aus einer Media-Query —
+            der Rahmen hängt an der Panelbreite, und die hängt an Fensterbreite UND Reiterspalte. */}
+        <SceneScaleCtx.Provider value={sceneScale(previewW)}>
+          <GlobalFxScenePreview key={fx.key} fx={fx} deckTint={deckTintOn} sun={false} wire={!!options?.fxCubeMatrixWire} />
+        </SceneScaleCtx.Provider>
         {/* #330 Verbindliches 4-Ecken-Template — hier zentral, EINMAL. Scenes bringen KEIN eigenes Chrome mehr mit.
             TL: Effekt-Name · TR: AKTIV (grün) / Preis (Rarity-Farbe) · BR: Standard/Deckfarbe (nur mit Farbmodus) ·
             BL: leer — reservierter Ausnahme-Slot (aktuell nur Deck-Glow zeichnet dort „mit/ohne" im PanelChip-Design). */}
