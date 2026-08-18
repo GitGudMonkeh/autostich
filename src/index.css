@@ -274,16 +274,17 @@ button { font-family: inherit; }
 }
 /* #klinge-laser/#360: NACHHALL der Laserklinge — die glühende Spur wächst mit dem Schnitt heraus (bis ~26 %, wenn die
    Klinge voll durch ist), bleibt dann am Einschlag STEHEN (kein Nachschwung) und glüht über den Rest der (deutlich
-   längeren, × 3.2) Dauer aus. #360: Spitze länger gehalten (bis ~60 %) und der Abfall in zwei Stufen langgezogen/weich
-   (60→84→100) → glühender Laserklingen-Nachhall statt schnellem Abriss. */
+   längeren — Faktor `hallFade` in KLINGE_TUNE) Dauer aus. Spitze wird bis ~50 % gehalten, der Abfall läuft in feinen
+   Stufen über die ganze zweite Hälfte → glühender Laserklingen-Nachhall statt schnellem Abriss. */
 @keyframes as-blade-hall {
   0%   { transform: rotate(var(--cut-rot, -24deg)) scaleX(0); opacity: 0; }
   10%  { opacity: 0.95; }
   20%  { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 1; }
-  40%  { opacity: 1; }     /* #klinge: Spitze halten, dann LANG + sanft ausfaden (Abfall über 60 % der Dauer) */
-  60%  { opacity: 0.62; }  /* langgezogener, gleichmäßiger Transparenz-Abfall … */
-  80%  { opacity: 0.32; }
-  92%  { opacity: 0.13; }  /* … in feinen Stufen, damit die haarfeine Glut sichtbar langsam verschwindet … */
+  50%  { opacity: 1; }     /* #klinge: Spitze LÄNGER halten (40 → 50 %), dann über die zweite Hälfte ausglühen */
+  68%  { opacity: 0.66; }  /* langgezogener, gleichmäßiger Transparenz-Abfall … */
+  82%  { opacity: 0.36; }
+  92%  { opacity: 0.17; }  /* … in feinen Stufen, damit die haarfeine Glut sichtbar langsam verschwindet … */
+  98%  { opacity: 0.05; }  /* … und der Abriss am Ende nicht als „Ausknipsen" liest … */
   100% { transform: rotate(var(--cut-rot, -24deg)) scaleX(1); opacity: 0; } /* … bis vollständig transparent */
 }
 /* #klinge: die früheren as-slice-top/-bottom (feste Zwei-Hälften-Bahnen) sind entfallen — die choreografierte Klinge

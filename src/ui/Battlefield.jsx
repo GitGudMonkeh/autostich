@@ -256,8 +256,16 @@ export const KLINGE_TUNE = {
   bladeTint: "#bcd6ff", // Glow-Ton der Klinge (kühles Stahlweiß); Kern bleibt weiß
   bladeTaper: true,     // Schwung-Form: Schnittlinie läuft zu beiden Enden spitz zu (Linse) statt Balken
   sparkMetal: true,     // Metall-Funken: weiß + warme orange (Stahl-auf-Stahl) statt suit-farbig
-  bladeThick: 1,        // #klinge: Strichstärke des Schnitts (px) — nochmals ~50 % dünner (haarfeine Klinge); der Glow trägt den Look [TUNING]
-  bladeThickZ: 1.5,     // Z-Einzelschlag minimal dicker, damit der blitzschnelle Durchzug klar registriert
+  bladeThick: 0.5,      // #klinge: Strichstärke des Schnitts (px) — nochmals um die HÄLFTE dünner (1 → 0,5): der Strich
+                        // selbst ist nur noch ein Haar, der LOOK kommt aus dem Glow (glowMul) [TUNING]
+  bladeThickZ: 0.75,    // Z-Einzelschlag minimal dicker (dasselbe Verhältnis 1,5× wie vorher), damit der blitzschnelle Durchzug klar registriert
+  hallExtra: 1,         // #klinge: die Glut-Spur ist um diesen Betrag (px) dicker als die Klinge — mitverdünnt (war fest +2),
+                        // sonst wäre der Nachhall bei halbierter Klinge plötzlich 5× so dick wie der Strich statt 3×.
+  hallFade: 10,         // #klinge: Nachhall-Dauer (× Schlag-Dauer) — noch langsamer verglühen (6,5 → 10). Deckel ist die
+                        // Ghost-Lebensdauer (sRest + max(sHalves,sSpark)); bei 10 endet die Glut auch im langsamsten
+                        // Stich-Takt noch vor dem Abräumen des Ghosts. Höher → der Nachhall wird abgeschnitten.
+  glowMul: 1.4,         // #klinge: gemeinsamer Faktor auf ALLE Glow-Radien (Klinge + Nachhall) — „mehr Glühen", ohne die
+                        // vier abgestimmten Stufen einzeln nachzuziehen. Der dünnere Strich braucht ihn, um zu tragen.
   followSwing: 42,      // #klinge: EINHEITLICHER Nachschwung/Überschlag — die Klinge schwingt nach JEDEM Schnitt gleich
                         // weit (px, entlang ihrer Längsachse) durch. Gilt identisch für rechts/links/oben/Z (Performance-Look).
 };
@@ -486,21 +494,25 @@ export function SliceFx({ cardEl, color, halvesDur, cutDur, sparkDur, seed, dela
     const dur = opts.fast ? Math.round(cutDur * KLINGE_TUNE.zSlashFactor) : cutDur; // Z-Einzelschlag fährt blitzschnell durch
     const stMs = Math.round((opts.stagger || 0) * cutDur);
     const startMs = delay + stMs;
-    const hallDur = Math.round(dur * 6.5);   // #klinge: Nachhall länger + langsamerer Transparenz-Abfall (× 5.0 → × 6.5) → haarfeine Klinge fadet sanfter aus [TUNING]
+    const hallDur = Math.round(dur * KLINGE_TUNE.hallFade);   // #klinge: Nachhall-Dauer (Begründung am Tuning-Set) [TUNING]
+    const hh = h + KLINGE_TUNE.hallExtra;                     // Dicke der Glut-Spur (mit der Klinge mitverdünnt)
+    // #klinge: EIN Faktor auf alle Glow-Radien (glowMul). `gr(basis, jeIntensity)` → gerundeter px-Wert; die Staffelung
+    // der vier Stufen (Kern → Halo) bleibt dieselbe, sie wird nur gemeinsam skaliert.
+    const gr = (base, per = 0) => Math.round((base + intensity * per) * KLINGE_TUNE.glowMul);
     const common = { position: "absolute", left: `${opts.cx ?? 50}%`, top: `${opts.cy ?? 50}%`, width: len, marginLeft: -len / 2,
       transformOrigin: "center", clipPath: KLINGE_TUNE.bladeTaper ? bladeLens : undefined, borderRadius: KLINGE_TUNE.bladeTaper ? undefined : 2 };
     return (
       // display:contents → der Wrapper erzeugt keine eigene Box; beide Linien positionieren sich relativ zur SliceFx-Bühne.
       <div key={key} style={{ display: "contents" }}>
         {/* NACHHALL/Glut-Spur (Deckfarbe): bleibt am Einschlag stehen (kein Nachschwung) und glüht SATT aus (verstärkt). */}
-        <div style={{ ...common, height: h + 2, marginTop: -(h + 2) / 2, filter: "blur(0.5px)",
+        <div style={{ ...common, height: hh, marginTop: -hh / 2, filter: "blur(0.5px)",
           background: `linear-gradient(90deg, transparent 0%, ${bladeGlow} 20%, #ffffff 50%, ${bladeGlow} 80%, transparent 100%)`,
-          boxShadow: `0 0 20px ${bladeGlow}, 0 0 ${(52 + intensity * 22).toFixed(0)}px ${bladeGlow}, 0 0 ${(96 + intensity * 34).toFixed(0)}px ${bladeGlow}, 0 0 ${(150 + intensity * 44).toFixed(0)}px ${bladeGlow}aa`, // #klinge: dünne Klinge → kräftigerer, weiter reichender Glow
+          boxShadow: `0 0 ${gr(20)}px ${bladeGlow}, 0 0 ${gr(52, 22)}px ${bladeGlow}, 0 0 ${gr(96, 34)}px ${bladeGlow}, 0 0 ${gr(150, 44)}px ${bladeGlow}cc`, // #klinge: dünne Klinge → kräftigerer, weiter reichender Glow (Halo-Alpha aa → cc)
           "--cut-rot": `${rot}deg`, animation: `as-blade-hall ${hallDur}ms ease-out ${startMs}ms both` }} />
         {/* Die Klinge selbst: weiß-heißer Kern + Deck-Glow, wächst heraus und schwingt einheitlich durch (--cut-swing). */}
         <div style={{ ...common, height: h, marginTop: -h / 2,
-          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow}aa 12%, #ffffff 50%, ${bladeGlow}aa 88%, transparent 100%)`,
-          boxShadow: `0 0 8px #ffffff, 0 0 ${(22 + intensity * 10).toFixed(0)}px ${bladeGlow}, 0 0 ${(42 + intensity * 16).toFixed(0)}px ${bladeGlow}, 0 0 ${(64 + intensity * 20).toFixed(0)}px ${bladeGlow}aa`,
+          background: `linear-gradient(90deg, transparent 0%, ${bladeGlow}cc 12%, #ffffff 50%, ${bladeGlow}cc 88%, transparent 100%)`,
+          boxShadow: `0 0 ${gr(8)}px #ffffff, 0 0 ${gr(22, 10)}px ${bladeGlow}, 0 0 ${gr(42, 16)}px ${bladeGlow}, 0 0 ${gr(64, 20)}px ${bladeGlow}cc`,
           "--cut-rot": `${rot}deg`, "--cut-swing": `${KLINGE_TUNE.followSwing}px`, animation: `as-cut-line ${dur}ms ease-out ${startMs}ms both` }} />
       </div>
     );
