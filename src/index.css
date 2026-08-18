@@ -1366,6 +1366,9 @@ button { font-family: inherit; }
    dort scrollt weiter das Panel selbst. */
 .lb-pagescroll { display: contents; }
 
+/* #go-stiche: die rechte Klammer der Aufstellung ist unter 1400 px ein schlichter Block — Gebäudeliste
+   und Graph stehen dort wie bisher im Fluss (der Graph selbst wird am Handy gar nicht hier gerendert). */
+
 /* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
    im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
@@ -3433,15 +3436,26 @@ button { font-family: inherit; }
     column-gap: 22px;
     align-items: start;
   }
+  /* Brett links, rechts daneben EIN Feld mit Gebäudeliste und Durchlauf-Graph. */
   .go-board { grid-column: 1; }
-  .go-blist { grid-column: 2; margin-top: 0 !important; }
+  .go-side  { grid-column: 2; display: block; min-width: 0; }
+  .go-blist { margin-top: 0 !important; }
+  .go-ticks { margin-top: 14px; }
+  /* Der Graph IST hier der Inhalt der Spalte — sein eigener Kasten und sein Aufklapp-Griff fallen weg
+     (dieselbe Regel wie im Verlauf-Panel der Lauf-Details). */
+  .go-ticks > .mt-5 { margin-top: 0 !important; }
+  .go-ticks .rg-perTrick { margin-top: 0 !important; background: none !important; border: 0 !important; }
+  .go-ticks .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }
+  .go-ticks .rg-perTrick > div { padding: 0 !important; }
   /* Die Gebäude stehen in der breiten Spalte NEBENEINANDER statt untereinander — drei Einzeiler in einer
      1 200 px breiten Spalte lesen sich sonst als drei fast leere Zeilen. */
   .go-blist > .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   /* Ohne Gebäude gibt es keine zweite Spalte: das Brett stünde sonst links an einem 1 200 px breiten
      Nichts. Dann EINE Spur, Brett mittig. */
-  .go-layout > div:not(:has(.go-blist)) { grid-template-columns: minmax(0, 1fr); justify-items: center; }
-  .go-layout > div:not(:has(.go-blist)) .go-board { width: var(--go-board-w, 440px); }
+  /* Ohne Gebäude UND ohne Graph gibt es keine zweite Spalte: das Brett stünde sonst links an einem
+     1 200 px breiten Nichts. Dann EINE Spur, Brett mittig. */
+  .go-layout > div:not(:has(.go-side > *)) { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .go-layout > div:not(:has(.go-side > *)) .go-board { width: var(--go-board-w, 440px); }
   /* Das Onboarding-Banner liegt seit #316 auf totem Zweig (jedes Profil startet fertig); es steht in der
      linken Klammer und wäre dort ein Panel in Spalte 1 statt über die volle Breite. */
   /* Die Aufstellung steht offen (`open={wide}` im JSX): zugeklappt war sie, weil der Screen als schmale Karte

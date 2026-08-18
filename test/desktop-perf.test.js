@@ -200,9 +200,12 @@ describe("#go-breit — der Siegesbildschirm hat kein Loch mehr, und das Brett k
     expect(css).toMatch(/\.go-layout \{[^}]*grid-column:\s*1\s*\/\s*-1/);
     expect(css).toMatch(/\.go-layout > div \{[^}]*grid-template-columns:\s*var\(--go-board-w/);
     expect(css).toMatch(/\.go-board \{[^}]*grid-column:\s*1/);
-    expect(css).toMatch(/\.go-blist \{[^}]*grid-column:\s*2/);
-    // Ohne Gebäude gibt es keine zweite Spur — sonst steht das Brett an einem 1200-px-Nichts.
-    expect(css).toMatch(/\.go-layout > div:not\(:has\(\.go-blist\)\)/);
+    /* Gebäudeliste UND Durchlauf-Graph liegen in EINEM Rasterfeld daneben. Als zwei Felder müsste das Brett
+       zwei Zeilen überspannen — und ein überspannendes Element verteilt seine Mehrhöhe auf beide, was
+       zwischen Liste und Graph eine 119-px-Lücke riss (gemessen). */
+    expect(css).toMatch(/\.go-side\s+\{[^}]*grid-column:\s*2/);
+    // Ohne Inhalt daneben gibt es keine zweite Spur — sonst steht das Brett an einem 1200-px-Nichts.
+    expect(css).toMatch(/\.go-layout > div:not\(:has\(\.go-side > \*\)\)/);
     // Die zwei kürzeren Panels der Zeile darüber werden gezogen: ein Panel mit Luft am Fuß ist kein Loch.
     expect(css).toMatch(/\.go-stats, \.go-build \{[^}]*align-self:\s*stretch/);
   });
@@ -235,5 +238,29 @@ describe("#lb-rahmen — die Bestenliste steht wie die anderen Screens im Bild",
 describe("#ueberzug — alle Overlays liegen gleich stark auf dem Hauptschirm", () => {
   it("auch die Lauf-Details, sie waren als einzige deckend", () => {
     expect(css).toMatch(/\.rd-root \{[^}]*background:\s*rgba\(12,\s*12,\s*16,\s*\.94\)/);
+  });
+});
+
+describe("#go-stiche — der Durchlauf-Graph steht unten, aufgeklappt, an EINER Stelle", () => {
+  const jsx = src("ui/GameOver.jsx");
+  it("oben nur schmal, unten nur breit — nie beides", () => {
+    /* Als zugeklappter Balken über die halbe Screenbreite sagte er im Stats-Panel nichts, während rechts
+       neben dem Brett über 400 px Panel leer standen. Gerendert wird immer genau einer der zwei Orte. */
+    expect(jsx).toMatch(/\{!wide && <RunGraphs state=\{state\} sourceBar=\{false\} \/>\}/);
+    expect(jsx).toMatch(/\{wide && hasTicks && \(/);
+    expect(jsx).toMatch(/<RunGraphs state=\{state\} sourceBar=\{false\} open \/>/);
+  });
+});
+
+describe("#leerlauf — ein sofort beendeter Lauf sieht aus wie ein langer, nur mit Nullen", () => {
+  it("Verdienst und Score-Herkunft bleiben stehen", () => {
+    const go = src("ui/GameOver.jsx");
+    const rg = src("ui/RunGraphs.jsx");
+    // Der Verdienst-Block hing an „irgendein Wert > 0" — bei 0 SP / 0 DP / 0 Score fiel er ganz weg.
+    expect(go).toMatch(/\{!onboarding && earn && \(/);
+    expect(go).not.toMatch(/earn\.sp > 0 \|\| earn\.dpGross > 0/);
+    /* ScoreHerkunft gab bei Score 0 `null` zurück — sein Panel im Victory-Screen wird trotzdem gerendert,
+       dort stand also ein leerer Kasten mit Rahmen. Jetzt zeigt es die Null. */
+    expect(rg).toMatch(/if \(!score \|\| !rows\.length\) \{\s*\n\s*return \(/);
   });
 });

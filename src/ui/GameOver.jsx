@@ -109,6 +109,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   // Architekt-Gebäude in der finalen Aufstellung — ein-/ausblendbar + Liste (Name · Form · Stufe), wie in der Chronik.
   const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
+  // #go-stiche: gibt es überhaupt einen Durchlauf-Graph? (RunGraphs gäbe sonst null zurück und die Klammer bliebe leer)
+  const hasTicks = Array.isArray(state.trickLog) && state.trickLog.some((c) => c && c.length);
   const architectCover = hasArch ? architectCoverFor(state) : null;
   const wide = useIsWide();   // #desktop: eigene Spalte für die Aufstellung → sie startet aufgeklappt
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
@@ -172,7 +174,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* #304 Verdienst-Rollup (direkt unter dem Score-Hero, wo früher die Münzen-Zeile saß): Meilensteinbalken läuft
             voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
             Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
-        {!onboarding && earn && (earn.sp > 0 || earn.dpGross > 0 || earn.dpNet > 0 || score > 0) && (
+        {/* Auch bei 0 SP / 0 DP: der Block bleibt stehen und zeigt die Nullen. Ein Lauf, den man sofort beendet,
+            soll denselben Screen sehen wie ein langer — nur mit anderen Zahlen. */}
+        {!onboarding && earn && (
           <div className="go-earn as-ring mt-4">
             <i className="as-ring-run" aria-hidden="true" />
             <div className="rounded-xl px-3 py-2.5" style={MENU_PANEL}>
@@ -370,7 +374,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
           {/* #251/Victory-Redesign: der generische Score-Quellen-Balken ist durch den Fraktions-Breakdown (ScoreHerkunft, oben)
               ersetzt → sourceBar={false}; hier bleibt nur der Durchlauf-Graph (Score je Stich, Sieg/Niederlage). */}
-          <RunGraphs state={state} sourceBar={false} />
+          {/* #go-stiche: auf dem Desktop steht der Durchlauf-Graph unten neben den Gebäuden (s. dort) — die
+              Aufstellung hat dort Platz frei, und als zugeklappter Balken über die halbe Screenbreite sagte er
+              hier nichts. Gerendert wird IMMER nur einer der beiden Orte. */}
+          {!wide && <RunGraphs state={state} sourceBar={false} />}
         </div>
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
@@ -393,6 +400,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   glowBid={hasArch && showArch ? inspectBid : null} quietTiles />
               </div>
 
+              {/* #go-stiche: Gebäudeliste und Durchlauf-Graph sind EIN Rasterfeld neben dem Brett. Als zwei
+                  getrennte Felder müsste das Brett zwei Zeilen überspannen — und ein überspannendes Element
+                  verteilt seine Mehrhöhe auf beide, was zwischen Liste und Graph eine Lücke von 119 px riss
+                  (gemessen). Unterhalb 1400 px ist die Klammer ein schlichter Block im Fluss. */}
+              <div className="go-side">
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
                 <div className="go-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
@@ -421,6 +433,17 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   </div>
                 </div>
               )}
+
+              {/* #go-stiche: Stich-Score je Durchlauf — hier unten ist der Platz. Rechts neben dem Brett stand
+                  unter der Gebäudeliste eine leere Fläche (bei einem Gebäude über 400 px hoch), und der Graph
+                  war oben ein zugeklappter Balken über die halbe Screenbreite. Aufgeklappt, weil er in einer
+                  eigenen Spalte nicht mehr den Screen verlängert. */}
+              {wide && hasTicks && (
+                <div className="go-ticks">
+                  <RunGraphs state={state} sourceBar={false} open />
+                </div>
+              )}
+              </div>
             </div>
           </details>
         )}

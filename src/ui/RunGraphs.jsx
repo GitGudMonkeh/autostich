@@ -54,7 +54,21 @@ export function factionShares(state) {
 /* Victory-Redesign: „Score-Herkunft" nach Fraktion — gestapelter Balken + Rangliste (absolute Werte + %). */
 export function ScoreHerkunft({ state }) {
   const { score, rows } = factionShares(state);
-  if (!score || !rows.length) return null;
+  /* Kein Score (sofort beendeter Lauf): der Block bleibt STEHEN und zeigt Null — vorher gab er `null` zurück,
+     und weil sein Panel im Victory-Screen trotzdem gerendert wird, stand dort ein leerer Kasten mit Rahmen.
+     „Das Design bleibt, die Werte sind halt 0" ist die Regel; ein Screen, der bei einem kurzen Lauf anders
+     GEBAUT ist als bei einem langen, liest sich als Fehler. */
+  if (!score || !rows.length) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
+          <span className="text-[11px] font-mono opacity-40">Σ {fmtScoreShort(0)}</span>
+        </div>
+        <div className="w-full h-[13px] rounded" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }} />
+      </div>
+    );
+  }
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
