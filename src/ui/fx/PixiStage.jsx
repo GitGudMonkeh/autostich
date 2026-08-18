@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Application } from "pixi.js";
 import { createStarfield } from "./starfieldPixi.js"; // #glutfunken-raus: embersPixi entfernt
-import { DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Zeichenrate
+import { DRAW_HZ_COARSE, dprCap, DPR_CAP_COARSE, DPR_CAP_DESKTOP } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für Rate UND Dichte
 
 /* Registry der Feld-Effekt-Emitter: key → Factory(app) → { setParams, erupt?, destroy }. Muss zur pixi-freien
    Key-Liste (fieldFxKeys.js) passen, die Battlefield fürs Gating nutzt. Neue Effekte docken hier an.
@@ -74,11 +74,21 @@ export function PixiStage({
       preference: "webgl",                // #: WebGL erzwingen — der Aurora-Custom-Shader ist GLSL-only (kein WGSL);
                                           //    auf WebGPU (z. B. Android-Chrome) würde er sonst nicht rendern.
       backgroundAlpha: 0,                 // transparent → ändert den bestehenden Look nicht
-      antialias: true,
+      /* #perf-aa: KEIN MSAA. Dieselbe Begründung wie bei den Gottgleich-Prunks (pixiGott.js, dort gemessen): die
+         Emitter bestehen aus weichen, VORGEBACKENEN Radialtexturen — MSAA hat daran nichts zu glätten, kostet aber
+         ein Full-Canvas-Resolve pro Frame. Und diese Bühne ist der teuerste Fall davon: vollflächig, additiv, und
+         sie läuft nicht 0,9 s wie ein Prunk, sondern den GANZEN Lauf. Stand vorher auf `true`, ohne Begründung —
+         vermutlich nie bewusst gesetzt, sondern aus der ersten Fassung mitgeschleppt.
+         Wenn Meteor-Schweife danach treppig wirken, ist der Ausgleich die LINIENBREITE, nicht MSAA (#perf-holo2). */
+      antialias: false,
       autoDensity: true,
-      // #perf-mobile: auf der lite-Stufe (Mobile/„balanced") die Feld-Bühne auf DPR 1.4 deckeln (Pixel ∝ DPR² →
-      //   ~40 % weniger Fill für die additiven Feld-Emitter). Desktop/full bleibt 2. (maxFPS s. .then + Params-Effekt.)
-      resolution: Math.min(paramsRef.current.lite ? 1.4 : 2, window.devicePixelRatio || 1),
+      /* #perf-mobile: Dichte aus mobileTier — EINE Wahrheit, und über `?dpr=` am Gerät regelbar.
+         ZWEI Deckel, beide binden: das GERÄT (`dprCap()`, auf grobem Zeiger 1,4) und die Options-Stufe
+         (`lite` → 1,4, sonst 2). Vorher hing hier nur die Options-Stufe — ein Handy auf „Effekte: aus" hat die
+         vollflächige Emitter-Bühne also in DPR 2 gerendert, während der Feld-Kompositor daneben bei 1,4 lag.
+         Das war keine Entscheidung, sondern eine Lücke: der teuerste Dauer-Effekt war der einzige, der den
+         Gerätedeckel nicht kannte. Pixel skalieren quadratisch — 2 gegen 1,4 ist doppelte Füllarbeit. */
+      resolution: Math.min(dprCap(), paramsRef.current.lite ? DPR_CAP_COARSE : DPR_CAP_DESKTOP),
       resizeTo: host,                     // Pixi hält die Canvas automatisch auf Container-Größe
       powerPreference: "high-performance",
     }).then(() => {
@@ -121,7 +131,10 @@ export function PixiStage({
   useEffect(() => {
     fieldRef.current?.setParams({ color, color2, score, reduced, lite, deckTint });
     // #perf-mobile: FPS-Deckel bei Laufzeit-Wechsel der Stufe nachziehen (DPR bleibt init-fest — Setting ändert sich selten).
-    if (appRef.current) appRef.current.ticker.maxFPS = lite ? 30 : 0;
+    // #perf-mobile: Rate aus mobileTier (wie im Init-Zweig). Hier stand die 30 als LITERAL — und weil diese Zeile
+    //   bei jedem Prop-Wechsel läuft, überschrieb sie den Init-Wert und `?hz=` blieb ausgerechnet an der
+    //   Vollbild-Bühne wirkungslos: dem einen Effekt, an dem man die Rate am Gerät beurteilen will.
+    if (appRef.current) appRef.current.ticker.maxFPS = lite ? DRAW_HZ_COARSE : 0;
   }, [color, color2, score, reduced, lite, deckTint]);
 
   // Stich-Wechsel (sweepId) → eine Eruption auslösen. Nur bei echtem Wechsel und sweepId>0.

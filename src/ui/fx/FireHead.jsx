@@ -193,7 +193,8 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
     };
 
     app.init({
-      canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
+      // #perf-aa: kein MSAA — Flammen sind weiche, vorgebackene Partikeltexturen (Begründung: pixiGott.js).
+      canvas, preference: "webgl", backgroundAlpha: 0, antialias: false, autoDensity: true,
       resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance",
     }).then(() => {
       if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }

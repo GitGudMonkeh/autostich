@@ -620,6 +620,31 @@ Jetzt zwei Schriften mit je einer Aufgabe: **Geist trägt Sprache, Geist Mono tr
   Blick darauf steht aus. Ebenso offen: Geist Mono setzt die **Null geschlitzt**; im Score-HUD fällt das auf,
   abschaltbar wäre es zentral über `font-feature-settings` an `.ty-num`.
 
+### #perf-aa + #perf-dpr — MSAA raus, Dichte-Regler rein (18.08.2026)
+Zwei Nachzügler aus dem Hitze-Durchgang, beide an derselben Stelle: der **Pixi-Emitter-Bühne** (`PixiStage.jsx`),
+also der zweiten vollflächigen Canvas, die den ganzen Lauf läuft (Komet/Sternenfeld).
+- **`antialias: false`** in `PixiStage`, `HologridSlicePixi`, `FireHead`. Die Begründung ist nicht neu — sie steht seit
+  den Prunks in `pixiGott.js` und ist dort GEMESSEN: MSAA kostet ein Full-Canvas-Resolve je Frame und hat an weichen,
+  vorgebackenen Radialtexturen nichts zu glätten. Diese drei standen trotzdem auf `true`, nicht als Entscheidung,
+  sondern aus der jeweils ersten Fassung mitgeschleppt. `CardFxStage` ist bewusst NICHT dabei: dort hängt es am
+  Gerätetyp (`antialias: !isCoarse()`), Desktop behält sein MSAA.
+  **Falls Meteor-Schweife danach treppig wirken: Ausgleich über die LINIENBREITE, nicht zurück auf MSAA (#perf-holo2).**
+- **`PixiStage` kannte den Gerätedeckel nicht.** Die Dichte hing dort allein an der Options-Stufe
+  (`lite ? 1.4 : 2`) — ein Handy auf „Effekte: aus" hat die vollflächige Emitter-Bühne also in **DPR 2** gerendert,
+  während der Feld-Kompositor daneben bei 1,4 lag. Pixel skalieren quadratisch, das war doppelte Füllarbeit am
+  teuersten Dauer-Effekt. Jetzt binden BEIDE Deckel: `Math.min(dprCap(), lite ? DPR_CAP_COARSE : DPR_CAP_DESKTOP)`.
+  Dieselbe Lücke steckt noch in `CardFxStage` und `HologridSlicePixi` (`lite ? 1.25 : 2`) — **offen**, dort ist die
+  Fläche kleiner bzw. die Laufzeit kurz.
+- **`?dpr=<zahl>`** (mobileTier.js) überschreibt den Auflösungsdeckel aller Effekte, die `dprCap()` lesen —
+  das Gegenstück zu `?hz=` und der Regler, mit dem am Gerät entschieden wird, ob `PixiStage` von 1,4 herunterkann.
+  Obergrenze bleibt die Gerätedichte. Ungültige Werte werden ignoriert statt den Effekt zu zerlegen.
+- **Der `maxFPS`-Literal-Rückfall**: `PixiStage` las die Rate im Init aus `DRAW_HZ_COARSE`, setzte sie im
+  Parameter-Effekt zwei Zeilen weiter aber als `lite ? 30 : 0`. Der läuft bei JEDEM Prop-Wechsel → das Literal gewann,
+  und `?hz=` war ausgerechnet an der Vollbild-Bühne wirkungslos. Der alte Wächter („importiert mobileTier?") konnte
+  das nicht sehen; er prüft jetzt, dass JEDE `maxFPS`-Zuweisung `DRAW_HZ_COARSE` liest. Gegengeprobe gemacht: der
+  Wächter fällt, wenn man das Literal wieder einsetzt.
+- **Nicht am Gerät gesehen** — Look-Abnahme (Aliasing an Meteor/Sternenfeld) steht aus.
+
 ### #perf-ansage — Groß-Ansage auf `lite`: nur noch die Basis-Glyphe (18.08.2026)
 Die nicht-epischen Ansagen (Stark/Brutal/Irre) bestehen aus ZWEI übereinanderliegenden Wortschichten: einer soliden
 Basis-Glyphe (near-white, 3 `drop-shadow`-Lagen) und darüber dem Chrome-Verlauf (`background-clip: text`, 3–4 Lagen).

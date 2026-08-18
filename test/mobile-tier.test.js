@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { DPR_CAP_COARSE, DPR_CAP_DESKTOP, DRAW_HZ_COARSE, frameMinMs } from "../src/ui/fx/mobileTier.js";
 
@@ -42,6 +42,44 @@ describe("mobileTier — Rechenwerte", () => {
   });
 });
 
+/* Die zwei Geräte-Regler (`?hz=`, `?dpr=`) werden BEIM IMPORT einmal ausgewertet — bewusst, ein Listener je Effekt
+   wäre teurer als der Nutzen. Genau das macht sie aber schwer prüfbar: das Modul muss mit gesetzter URL frisch
+   geladen werden. Der Aufwand lohnt trotzdem, denn ein still nicht greifender Regler ist schlimmer als keiner —
+   man misst dann am Gerät zwei Läufe, die in Wahrheit derselbe sind, und glaubt das Ergebnis. */
+describe("mobileTier — Geräte-Regler", () => {
+  const mitUrl = async (search) => {
+    vi.resetModules();
+    vi.stubGlobal("window", { location: { search }, devicePixelRatio: 3, matchMedia: () => ({ matches: true }) });
+    const m = await import("../src/ui/fx/mobileTier.js");
+    return m;
+  };
+  afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
+
+  it("?dpr= überschreibt den Deckel in beide Richtungen", async () => {
+    expect((await mitUrl("?dpr=1")).dprCap(true)).toBe(1);
+    expect((await mitUrl("?dpr=2")).dprCap(true)).toBe(2);      // über dem Handy-Deckel von 1,4 — der Regler gewinnt
+  });
+
+  it("ohne Parameter bleibt es beim Deckel der Stufe", async () => {
+    const m = await mitUrl("");
+    expect(m.dprCap(true)).toBe(m.DPR_CAP_COARSE);
+    expect(m.dprCap(false)).toBe(m.DPR_CAP_DESKTOP);
+  });
+
+  it("die Gerätedichte bleibt die Obergrenze — auch mit Regler", async () => {
+    vi.resetModules();
+    vi.stubGlobal("window", { location: { search: "?dpr=3" }, devicePixelRatio: 1.5, matchMedia: () => ({ matches: true }) });
+    const m = await import("../src/ui/fx/mobileTier.js");
+    expect(m.dprCap(true)).toBe(1.5);
+  });
+
+  it("Unsinn wird ignoriert statt den Effekt zu zerlegen", async () => {
+    for (const v of ["?dpr=abc", "?dpr=0", "?dpr=-2", "?dpr=99"]) {
+      expect((await mitUrl(v)).dprCap(true)).toBe(1.4);
+    }
+  });
+});
+
 describe("mobileTier — Verdrahtung (Quelltext-Ratsche)", () => {
   // Dauer-Effekte auf Canvas-2D: ihre Deckel gehören an die eine Wahrheit, nicht je Datei nachgebaut.
   for (const f of ["FrostIce.jsx", "MossGrow.jsx", "CardEdgeGlow.jsx", "CardIonStorm.jsx", "BlackholeFx.jsx", "CubeMatrixField.jsx"]) {
@@ -58,5 +96,41 @@ describe("mobileTier — Verdrahtung (Quelltext-Ratsche)", () => {
     // Kein direkter lite-Lesezugriff mehr an den Deckel-Stellen — sonst hätte eine davon den Gerätetyp wieder verloren.
     expect(s).not.toMatch(/propsRef\.current\.lite \?/);
     expect(s).not.toMatch(/\bp\.lite \?/);
+  });
+
+  /* #perf-mobile: Die Zeichenrate stand an fünf Stellen einzeln, bevor mobileTier sie eingesammelt hat — und genau
+     so ist sie auch zurückgekommen: `PixiStage` setzte sie im Init aus `DRAW_HZ_COARSE`, im Parameter-Effekt zwei
+     Zeilen weiter aber als LITERAL 30. Weil der Parameter-Effekt bei jedem Prop-Wechsel läuft, gewann das Literal,
+     und `?hz=` blieb ausgerechnet an der Vollbild-Bühne wirkungslos. Ein Wächter auf „importiert mobileTier"
+     hätte das nicht bemerkt: die Datei importierte es ja. Also auf das Muster prüfen. */
+  for (const f of ["PixiStage.jsx", "HologridSlicePixi.jsx", "CardFxStage.jsx"]) {
+    it(`${f} leitet JEDE maxFPS-Zuweisung aus DRAW_HZ_COARSE ab`, () => {
+      const zuweisungen = [...src(f).matchAll(/maxFPS\s*=\s*([^;]+);/g)].map((m) => m[1]);
+      expect(zuweisungen.length).toBeGreaterThan(0);   // sonst prüft der Test nichts mehr
+      for (const z of zuweisungen) expect(z).toMatch(/DRAW_HZ_COARSE/);
+      /* Bewusst NICHT „keine Literalzahl": `CardFxStage` deckelt Desktop-lite legitim auf eigene 40 fps
+         (`isCoarse() ? DRAW_HZ_COARSE : (st.lite ? 40 : 0)`). Verboten ist nur, die MOBILE Rate an mobileTier
+         vorbei zu setzen — und genau das erkennt man daran, dass die Zuweisung sie gar nicht erst liest. */
+    });
+  }
+
+  /* #perf-aa: MSAA auf einer vollflächigen Pixi-Bühne kostet ein Full-Canvas-Resolve je Frame und glättet an
+     vorgebackenen Weichtexturen nichts (gemessen für die Prunks, s. pixiGott.js). Die drei Bühnen unten standen
+     trotzdem jahrelang auf `antialias: true` — nicht als Entscheidung, sondern aus der jeweils ersten Fassung
+     mitgeschleppt. CardFxStage ist bewusst NICHT dabei: dort ist es am Gerätetyp gegated (`!isCoarse()`), Desktop
+     behält sein MSAA. Wer hier `true` einträgt, braucht eine Messung dazu. */
+  for (const f of ["PixiStage.jsx", "HologridSlicePixi.jsx", "FireHead.jsx", "FieldCompositor.jsx"]) {
+    it(`${f} fordert kein MSAA an`, () => {
+      expect(src(f)).not.toMatch(/antialias:\s*true/);
+    });
+  }
+
+  it("PixiStage deckelt die Dichte am GERÄT, nicht nur an der Options-Stufe", () => {
+    const s = src("PixiStage.jsx");
+    // Beide Deckel müssen binden: `dprCap()` (Zeigertyp) UND die Options-Stufe. Hing hier nur `lite`, rendert ein
+    // Handy auf „Effekte: aus" die vollflächige Emitter-Bühne in DPR 2 — doppelte Füllarbeit gegenüber dem
+    // Feld-Kompositor daneben, der bei 1,4 liegt.
+    expect(s).toMatch(/resolution:\s*Math\.min\(dprCap\(\)/);
+    expect(s).not.toMatch(/lite \? 1\.4 : 2/);   // die alte, gerätelose Fassung
   });
 });

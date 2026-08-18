@@ -365,7 +365,9 @@ export default function HologridSlicePixi({ panelRef, cardRef, trigger = 0, fron
     }
     recolorRef.current = recolor;
 
-    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: true, autoDensity: true,
+    /* #perf-aa: kein MSAA — Kacheln sind Sprites aus EINER vorgebackenen Kartentextur, daran glättet MSAA nichts,
+       kostet aber ein Full-Canvas-Resolve pro Frame über die ~2,5 s der Animation (dieselbe Rechnung wie pixiGott.js). */
+    app.init({ canvas, preference: "webgl", backgroundAlpha: 0, antialias: false, autoDensity: true,
       resolution: Math.min(p.current.lite ? 1.25 : 2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance" })
       .then(() => {
         if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }

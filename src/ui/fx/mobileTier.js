@@ -26,8 +26,21 @@ export function isCoarse() {
    Wert, auf dem die drei raw-WebGL-Felder schon stehen — bewusst derselbe, damit das Brett einheitlich aussieht. */
 export const DPR_CAP_COARSE = 1.4;
 export const DPR_CAP_DESKTOP = 2;
+
+/* `?dpr=<zahl>` überschreibt den Deckel — das Gegenstück zu `?hz=`, und aus demselben Grund da: die Frage
+   „ist 1,0 sichtbar zu weich oder spare ich hier gratis 50 % Füllarbeit?" beantwortet kein Schreibtisch,
+   sondern das Display. Ohne so einen Regler kostet jede Antwort einen eigenen Build.
+   Nach oben bleibt die Gerätedichte bindend (mehr als `devicePixelRatio` hat schlicht keinen Adressaten). */
+function dprOverride() {
+  try {
+    const v = parseFloat(new URLSearchParams(window.location.search).get("dpr"));
+    return Number.isFinite(v) && v >= 0.5 && v <= 3 ? v : null;
+  } catch { return null; }
+}
+const DPR_OVERRIDE = dprOverride();
+
 export function dprCap(coarse = isCoarse()) {
-  const cap = coarse ? DPR_CAP_COARSE : DPR_CAP_DESKTOP;
+  const cap = DPR_OVERRIDE ?? (coarse ? DPR_CAP_COARSE : DPR_CAP_DESKTOP);
   return Math.min(cap, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 }
 
