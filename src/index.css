@@ -1329,6 +1329,9 @@ button { font-family: inherit; }
    Unterhalb von 1400 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
 .op-col2, .un-form, .fb-left, .fb-right { display: contents; }
+/* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1400 px keine
+   Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
+.lb-cockpit { display: contents; }
 
 /* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
@@ -2766,6 +2769,242 @@ button { font-family: inherit; }
      drei Sätze. Feste Höhe statt `flex: 1`, weil die rechte Spalte kürzer ist und die linke sonst an
      ihr hinge. Das `resize: vertical` des Feldes bleibt. */
   .fb-left textarea { height: 268px; }
+
+  /* ==========================================================================
+     #desktop-screens — Statistik · Bestenliste · Ranked · Victory ab 1400 px
+     --------------------------------------------------------------------------
+     Vier Screens, dieselbe Familie wie Baum/Werkstatt/Optionen: Überzug 82 % OHNE Blur (#perf-blur),
+     Kopf als EINE Rasterzeile, Inhalt in Glas-Panels mit laufendem Deckfarben-Ring (`as-ring` + `.as-ring-run`).
+     Kein zweiter Renderpfad — das JSX setzt dieselben Klammern in jeder Breite, hier werden Spalten daraus.
+
+     Die drei ersten stehen RANDVERANKERT (ihr Inhalt ist immer ungefähr gleich viel), der Victory-Screen als
+     ZENTRIERTER BLOCK — seine Höhe schwankt stark mit dem Lauf (Rekord mit Freischaltung, Skins, Eis-Kachel und
+     drei Gebäuden gegen einen abgebrochenen Feuer-Lauf). Randverankert sammelt sich die Restluft unten und der
+     Screen liest sich abgeschnitten; zentriert verteilt sie sich oben UND unten. Beim vollen Lauf sind beide
+     identisch — der zentrierte kostet also nichts und hilft im mageren Fall.
+     ========================================================================== */
+
+  /* ---- gemeinsame Schale der drei randverankerten Screens ---------------- */
+  .st-root, .lb-root, .go-root {
+    padding: 16px 48px 18px !important;
+    background: rgba(12, 12, 16, .82) !important;
+    /* #perf-blur: kein backdrop-filter (gemessen der teuerste Posten des Desktop-Passes); `none !important`,
+       weil die Overlays ihren Blur INLINE setzen. Präfix zuerst, Standard zuletzt (lightningcss behält den letzten). */
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .st-root, .lb-root { align-items: stretch !important; }
+  /* Die Karten sind ab hier nur noch das Raster — Fläche, Rahmen und Sweep tragen die Panels. */
+  .st-card, .lb-card, .go-card {
+    width: min(1720px, 100%);
+    max-width: none;
+    /* Die Handy-Karte zentriert sich mit `my-auto` in ihrem Overlay. Randverankert soll der Kopf oben
+       stehen; der Victory-Screen holt sich die Zentrierung gleich wieder (s. dort). */
+    margin-block: 0 !important;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: grid;
+    column-gap: 22px;
+    align-items: start;
+    align-content: start;
+  }
+  /* #rahmen: DREI Klassen — `[data-skin="crt"] .as-panel.as-panel-deck` wiegt (0,3,0) und gewänne sonst. */
+  .st-card.as-panel.as-panel-deck, .lb-card.as-panel.as-panel-deck, .go-card.as-panel.as-panel-deck {
+    background-image: none !important; animation: none !important;
+  }
+  /* Die Haarlinie der Handy-Karte klebt an deren Oberkante (TopHairline, absolut). Ohne Karte hat sie dort
+     nichts zu suchen; die Linie unter dem Kopf kommt stattdessen als Rasterzeile aus dem ::before der Karte. */
+  .st-head > div[aria-hidden="true"]:first-child,
+  .lb-card > div[aria-hidden="true"]:first-child,
+  .go-actions > div[aria-hidden="true"]:first-child { display: none; }
+  .st-card::before, .lb-body::before, .go-card::before {
+    content: "";
+    grid-column: 1 / -1; grid-row: 2;
+    height: 3px; border-radius: 2px; margin-top: 2px;
+    background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
+    opacity: .85;
+  }
+  /* Kopf-Raster (Werte von `.up-head`): Titel · Auskunft · Aktionen. */
+  .st-head, .lb-head {
+    grid-column: 1 / -1; grid-row: 1;
+    margin: 0 !important;
+    padding: 10px 0 8px !important;
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 22px;
+    align-items: center;
+  }
+  .st-head > h2, .lb-head > h2 { font-size: 27px; font-weight: 600; }
+  .st-readout {
+    padding-left: 22px;
+    border-left: 1px solid rgba(150, 150, 170, .18);
+    font-size: 13px; line-height: 1.45; color: #8a8a95;
+  }
+  .st-close, .lb-head > button { font-size: 15px !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* Der Ranglisten-Kopf hat nur zwei Kinder (Titel · Schließen) — ohne festen Platz landete der Knopf in der
+     1fr-Spalte und zog sich über die halbe Breite. */
+  .lb-head > button { grid-column: 3; justify-self: end; }
+  /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
+  .st-sec, .lb-tabs, .lb-page, .go-earn, .go-origin, .go-build, .go-stats, .go-layout {
+    border-radius: 14px;
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  }
+
+  /* ---- Statistik: Band oben, darunter drei Spalten ----------------------- */
+  /* Die letzte Zeile ist `1fr` und nimmt die Restluft auf. Ohne sie verteilt das Raster die Mehrhöhe der
+     spannenden Spalten (Läufe, Wahlverhalten) auf die Zeilen 4 UND 5 — zwischen „Bestes Build" und
+     „Was am besten läuft" klaffte dann genau diese Differenz (derselbe Fall wie im Willkommen-Dialog). */
+  .st-card { grid-template-columns: 1fr 1.15fr 1fr; grid-template-rows: auto auto auto auto 1fr; }
+  .st-sec { margin-top: 22px !important; padding: 15px 17px 17px; }
+  /* Überblick über die volle Breite: Kennzahlen links, Score-Verlauf RECHTS DANEBEN statt darunter. Das ist
+     der eigentliche Gewinn der Breite — beides ist dieselbe Frage („wie läuft es gerade?") und wurde vorher
+     durch 90 px Abstand getrennt. */
+  .st-sec[data-sec="overview"] {
+    grid-column: 1 / -1; grid-row: 3;
+    display: grid; grid-template-columns: minmax(0, 1fr) 620px; column-gap: 22px; align-items: center;
+  }
+  .st-sec[data-sec="overview"] > .st-sech { grid-column: 1 / -1; }
+  .st-kpis  { grid-column: 1; }
+  .st-trend { grid-column: 2; margin-top: 0 !important; }
+  /* Links der Rekordlauf und die Auswertung, in der Mitte die Läufe, rechts das Wahlverhalten. Feste Plätze
+     statt auto-flow: sonst entscheidet die Reihenfolge im JSX, was wo landet. */
+  .st-sec[data-sec="best"]   { grid-column: 1; grid-row: 4; }
+  .st-sec[data-sec="works"]  { grid-column: 1; grid-row: 5; }
+  .st-sec[data-sec="runs"]   { grid-column: 2; grid-row: 4 / span 2; }
+  .st-sec[data-sec="picked"] { grid-column: 3; grid-row: 4 / span 2; }
+  /* In der Lauf-Liste ist Platz für alles: Serie und Crit-Quote sind am Handy `hidden sm:inline`, hier stehen
+     sie ohnehin. Nur die Zeilenhöhe wird etwas großzügiger, damit 10 Zeilen keine Tabelle werden. */
+  .st-sec[data-sec="runs"] button { padding-top: 7px; padding-bottom: 7px; }
+  /* In der ~500 px schmalen Spalte stehen Skills und Perks UNTEREINANDER — nebeneinander bleiben von den
+     Namen fünf Zeichen übrig. */
+  .st-picked2 { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* ---- Bestenliste / Ranked: Navigationsspalte statt Reiterzeile --------- */
+  .lb-card { grid-template-rows: auto auto minmax(0, 1fr); height: 100% !important; overflow: visible !important; }
+  .lb-body {
+    grid-column: 1 / -1; grid-row: 3;
+    /* Die Karte setzt `align-items: start` (Kopf und Haarlinie sollen nicht mitwachsen) — der Rumpf muss die
+       Resthöhe aber FÜLLEN, sonst endet das Listen-Panel am letzten Eintrag statt am Rahmen. */
+    align-self: stretch;
+    padding: 0 !important;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: start;
+    min-height: 0;
+  }
+  .lb-tabs {
+    grid-column: 1; grid-row: 3;
+    flex-direction: column;
+    gap: 8px !important;
+    margin-bottom: 0 !important;
+    padding: 13px 12px;
+  }
+  /* Aus dem Reiter wird die Navigationszeile des Baums (`.up-navrow`) — dieselbe Form, damit die Screens
+     dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
+  .lb-tabs [role="tab"] {
+    flex: none !important;
+    text-align: left;
+    padding: 12px 14px !important;
+    border-radius: 11px !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, #12121a) 0%, #12121a 46%) !important;
+    border: 1px solid rgba(150, 150, 170, .14) !important;
+    border-left: 4px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 70%, transparent) !important;
+    color: #c3c1d0 !important;
+  }
+  .lb-tabs [role="tab"][aria-selected="true"] {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #12121a) 0%, #12121a 52%) !important;
+    border-left-color: var(--deck-a1, #8a7de0) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 24px -14px var(--deck-a1, #8a7de0), 0 0 18px -10px var(--deck-a1, #8a7de0);
+  }
+  /* `span` statt `b`/`i`: die beiden Elemente existieren in JEDER Breite (der Reiter braucht seinen Text),
+     und ein `b` hätte die Handy-Reiter still auf Gewicht 700 gezogen — nachgemessen, drei Zeilen wurden breiter.
+     Gewicht und Größe stehen deshalb ausschließlich hier im Desktop-Block. */
+  /* `display: flex` statt `block`: das Label trägt seit dem Pokal-Umbau ein Icon neben dem Text
+     (`justify-center` im JSX) — in der linksbündigen Navigationsspalte gehört es an den Anfang. */
+  .lb-tab-l { display: flex; justify-content: flex-start; font-size: 16px; font-weight: 600; }
+  .lb-tab-s { display: block; font-size: 12.5px; color: #8a8a95; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .lb-page {
+    grid-column: 2; grid-row: 3;
+    border: 0 !important;
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
+    padding: 16px 18px !important;
+    min-height: 0;
+    align-self: stretch;
+  }
+  /* Top 20 als ZWEI Spalten à 10. Einzeilig wären es zwanzig 1 300 px breite Zeilen mit einem Loch in der
+     Mitte. Spaltenweise gefüllt (1–10 links, 11–20 rechts), damit die Rangfolge senkrecht lesbar bleibt.
+     Die Bindung an `.lb-page` ist Pflicht: dieselbe Komponente steht im Hub und im Victory-Screen in
+     schmalen Spalten — die dürfen NICHT zweispaltig werden. */
+  .lb-page .lb-rows {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(10, auto);
+    grid-auto-flow: column;
+    gap: 8px 22px;
+  }
+  /* Ranked: Cockpit (Seed · Spielen · Modifikatoren) als eigene Spalte NEBEN der Liste. */
+  .lb-page:has(.lb-cockpit) {
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: start;
+    align-content: start;
+  }
+  .lb-page:has(.lb-cockpit) > .lb-weekhead { grid-column: 1 / -1; }
+  .lb-cockpit { display: block; grid-column: 1; }
+  .lb-page:has(.lb-cockpit) > .gl-wrap { grid-column: 2; margin-top: 0 !important; }
+  /* Neben dem Cockpit steht die Liste EINSPALTIG — 420 px sind weg, für zwei Spalten bliebe zu wenig. */
+  .lb-page:has(.lb-cockpit) .lb-rows { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; }
+  .lb-modlist { grid-template-columns: minmax(0, 1fr); }
+
+  /* ---- Victory: zentrierter Block ---------------------------------------- */
+  .go-card {
+    grid-template-columns: 1fr 1.05fr 1fr;
+    max-height: 100% !important;
+  }
+  /* Der Score-Hero steht links, die beiden Aktionen rechts daneben — beide in der Kopfzeile. Die
+     Aktionsleiste war sticky, weil der Screen als schmale Karte scrollte; als Kopfspalte braucht sie das nicht. */
+  .go-actions {
+    grid-column: 3; grid-row: 1;
+    position: static;
+    justify-self: end;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+  .go-actions > button { font-size: 15px !important; padding: 11px 20px !important; }
+  .go-hero {
+    grid-column: 1 / 3; grid-row: 1;
+    text-align: left !important;
+    margin-top: 0 !important;
+    display: flex; align-items: center; flex-wrap: wrap; column-gap: 26px; row-gap: 4px;
+  }
+  .go-hero > div { margin-top: 0 !important; }
+  .go-score { font-size: 56px !important; line-height: 1; }
+  /* Freischaltungen, Skins und das Onboarding-Banner laufen über die VOLLE Breite unter dem Kopf: sie kommen
+     selten, und wenn sie kommen, sind sie die Nachricht des Bildschirms. In einer Spalte gingen sie zwischen
+     Kennzahlen unter. */
+  .go-onb     { grid-column: 1 / -1; grid-row: 3; }
+  .go-unlocks { grid-column: 1 / -1; grid-row: 4; }
+  .go-skins   { grid-column: 1 / -1; grid-row: 5; }
+  .go-earn, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
+  .go-earn   { grid-column: 1; grid-row: 6; }
+  .go-origin { grid-column: 1; grid-row: 7; }
+  .go-stats  { grid-column: 2; grid-row: 6 / span 2; }
+  .go-build  { grid-column: 3; grid-row: 6; }
+  .go-layout { grid-column: 3; grid-row: 7; }
+  /* Die Aufstellung steht offen (`open={wide}` im JSX): zugeklappt war sie, weil der Screen als schmale Karte
+     sonst zu lang wurde — in einer eigenen Spalte gibt es diesen Grund nicht mehr. Der Griff bleibt, man kann
+     sie also weiterhin zuklappen. */
+  .go-layout > summary { padding-left: 0 !important; padding-right: 0 !important; }
+  .go-layout > div { padding-left: 0 !important; padding-right: 0 !important; }
+  /* Das Brett ist 30 Karten hoch — aufgeklappt zöge es den ganzen Screen über den Schirm hinaus. Es scrollt
+     deshalb INNERHALB seines Panels; der Rest des Bildschirms bleibt stehen. */
+  .go-layout > div { max-height: 560px; overflow-y: auto; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
@@ -2802,6 +3041,15 @@ button { font-family: inherit; }
    Bei 864 px (1080p unter 125 % Windows-Skalierung — ein Hauptprüfpunkt des Zielbands) fehlten knapp
    20 px und die Seite fing an zu scrollen. Statt den Rhythmus überall zu kürzen, wird er nur dort enger,
    wo die Höhe es verlangt; die abgenommene Optik auf 1080 bleibt unberührt. */
+/* Flache Desktop-Fenster: dieselbe Straffung für die vier großen Screens — nur der Rand und die Abstände
+   zwischen den Panels, kein Inhalt. Reicht es nicht, scrollt der jeweilige Rumpf weiter. */
+@media (min-width: 1400px) and (max-height: 950px) {
+  .st-root, .lb-root, .go-root { padding: 10px 36px 12px !important; }
+  .st-sec, .go-earn, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
+  .st-card, .lb-card, .go-card { column-gap: 16px; }
+  .go-layout > div { max-height: 420px; }
+}
+
 /* Flache Desktop-Fenster: Die Optionen stehen auf 1080 px Höhe locker, auf 791 px (1920x1200-Laptop
    unter 125 % Skalierung) fehlen ~90 px. Statt den Rhythmus überall zu kürzen, wird hier nur der Rand
    zusammengezogen; reicht auch das nicht, scrollt der Rumpf (die Karte behält `max-h-[90dvh]`), und der

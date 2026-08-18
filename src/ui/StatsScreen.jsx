@@ -48,10 +48,14 @@ const fmtHours = (ms) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-function Section({ title, hint, children }) {
+/* #desktop: `id` ist der Platzhalter im Spaltenraster (data-sec), `st-sec` die Panel-Klammer und
+   `as-ring` + `<i>` der laufende Deckfarben-Rahmen (#perf-ring: Klasse und Band sind ein Paar).
+   Unter 1400 px ist beides inert — `.as-ring-run` ist dort `display: none`, `.st-sec` hat keine Regel. */
+function Section({ id, title, hint, children }) {
   return (
-    <div className="mt-5">
-      <div className="flex items-baseline justify-between mb-2">
+    <div className="st-sec as-ring mt-5" data-sec={id}>
+      <i className="as-ring-run" aria-hidden="true" />
+      <div className="st-sech flex items-baseline justify-between mb-2">
         {/* #deckui: generische Sektions-Überschrift zieht die Deckfarbe (Fallback = bisheriges Violett) */}
         <h3 className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{title}</h3>
         {hint && <span className="text-[11px] opacity-40">{hint}</span>}
@@ -147,16 +151,19 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
     .reduce((a, k) => a + (Number(r[k]) || 0), 0) > 0);
 
   return overlayPortal((
-    <div className={`fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${detail ? "overflow-hidden" : "overflow-y-auto"}`}
+    <div className={`st-root fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6 ${detail ? "overflow-hidden" : "overflow-y-auto"}`}
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
-      <div className="w-full max-w-2xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel as-panel-deck"
+      <div className="st-card w-full max-w-2xl rounded-2xl px-5 pb-5 sm:px-6 sm:pb-6 my-auto overlay-card as-panel as-panel-deck"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
-        <div className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
+        <div className="st-head sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <h2 className="text-lg font-bold flex items-center gap-2">{t("stats.title")}</h2>
-          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+          {/* #desktop: Auskunftszeile im Kopf (Spalte 3, wie im Upgrade-Baum). Unter 1400 px ist der Kopf
+              zweispaltig und hat dafür keinen Platz. */}
+          <div className="st-readout hidden min-[1400px]:block">{t("stats.desk.readout")}</div>
+          <ActionButton kind="secondary" className="st-close shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
 
         {empty ? (
@@ -166,15 +173,15 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* KPI-Band + Score-Verlauf. Score-Kacheln kompakt abgekürzt (fmtScoreShort) + voller Wert im Tooltip → kein Overflow. */}
             {/* KPI-Band: mobil 2 breite Score-Kacheln oben (damit „Mio." reinpasst) + Zeit·Spiele·Beste Serie darunter;
                 Desktop alle fünf in einer Reihe. 6-Spalten-Raster mobil (3+3 / 2+2+2), 5 Spalten ab sm. */}
-            <Section title={t("stats.overview")}>
-              <div className="grid grid-cols-6 sm:grid-cols-5 gap-2">
+            <Section id="overview" title={t("stats.overview")}>
+              <div className="st-kpis grid grid-cols-6 sm:grid-cols-5 gap-2">
                 <Kpi className="col-span-3 sm:col-span-1" label={t("stats.bestScore")} value={fmtScoreShort(profile.bestScore)} title={fmtScore(profile.bestScore)} color="#d4a63a" />
                 <Kpi className="col-span-3 sm:col-span-1" label={t("stats.avgScore")} value={fmtScoreShort(avgScore)} title={fmtScore(avgScore)} />
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.playtime")} value={fmtHours(profile.totalDurationMs)} title={fmtDuration(profile.totalDurationMs)} />
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.games")} value={games} />
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.bestStreak")} value={`${profile.bestStreak || 0}×`} />
               </div>
-              <div className="mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
+              <div className="st-trend mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
                 <div className="text-[11px] opacity-50 mb-1">{t("stats.trend", { n: trend.length })}</div>
                 <Sparkline current={trend} record={[]} height={70} />
               </div>
@@ -182,7 +189,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
 
             {/* Bestes Build — die EINZIGE Score-Herkunft im Screen (Fraktions-Aufschlüsselung des Rekord-Laufs). */}
             {best && (
-              <Section title={t("stats.bestBuild")} hint={t("stats.bestBuild.hint")}>
+              <Section id="best" title={t("stats.bestBuild")} hint={t("stats.bestBuild.hint")}>
                 {/* #kante: Der Rekordlauf ist das einzige Gold auf diesem Schirm. Statistiken haben sonst
                     keine Farbachse — Kategorien, Seltenheit oder Zustände gibt es hier nicht —, deshalb
                     bleibt alles andere neutral und die Farbe behält eine Aussage: „das ist deine Bestmarke". */}
@@ -205,7 +212,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             )}
 
             {/* Deine Läufe — overflow-fest: flexibles Grid (auto · 1fr · auto) statt fester Spaltenbreiten, Scores abgekürzt. */}
-            <Section title={t("stats.yourRuns")} hint={t("stats.yourRuns.hint", { n: Math.min(history.length, 10) })}>
+            <Section id="runs" title={t("stats.yourRuns")} hint={t("stats.yourRuns.hint", { n: Math.min(history.length, 10) })}>
               <div className="grid gap-1">
                 {history.slice(0, 10).map((r, i) => {
                   const delta = Math.floor((r.score || 0) - (profile.bestScore || 0));
@@ -234,8 +241,8 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             </Section>
 
             {/* Am häufigsten — was du wählst: Skills + Perks nebeneinander, darunter Archetyp-Nutzung (ersetzt „Analyse"). */}
-            <Section title={t("stats.mostPicked")} hint={t("stats.mostPicked.hint")}>
-              <div className="grid sm:grid-cols-2 gap-3">
+            <Section id="picked" title={t("stats.mostPicked")} hint={t("stats.mostPicked.hint")}>
+              <div className="st-picked2 grid sm:grid-cols-2 gap-3">
                 <div className="rounded-lg px-3 py-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topSkills")}</div>
                   <div className="grid gap-2.5">
@@ -265,7 +272,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             </Section>
 
             {/* Was am besten läuft — die belastbaren Insights als kompakte Highlight-Zeilen (ersetzt „Optimale Analyse"). */}
-            <Section title={t("stats.whatWorks")} hint={t("stats.whatWorks.hint", { n: MIN_SAMPLE })}>
+            <Section id="works" title={t("stats.whatWorks")} hint={t("stats.whatWorks.hint", { n: MIN_SAMPLE })}>
               {!enough ? (
                 <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
                   {t("stats.tooFew", { have: history.length, need: MIN_SAMPLE })}

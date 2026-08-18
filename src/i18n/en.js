@@ -696,6 +696,7 @@ export default {
 
   /* ---- Statistics (StatsScreen) ---- */
   "stats.title": "Statistics",
+  "stats.desk.readout": "All numbers live locally on this device. Click a row to open the full run.",
   "stats.empty": "No runs yet — play one and your statistics appear here.",
   "stats.overview": "Overview",
   "stats.bestScore": "Best score",
@@ -804,6 +805,9 @@ export default {
   "board.tab.weekShort": "Week",
   "board.tab.challenger": "Challenger",
   "board.tab.rules": "Rules",
+  "board.nav.global.sub": "All-time · every run",
+  "board.nav.champions.sub": "Rank 1 of every past week",
+  "board.nav.rules.sub": "Baseline and all modifiers",
   "board.rules.intro": "Everyone plays the same weekly seed on a fair baseline — the upgrade tree has no effect ({rerolls} rerolls per phase, all rarities, legendary phase in cycle {legCycle}). Every week 3–5 random modifiers (≥2 positive, ≥1 negative) change the run — identically for everyone. Only completed runs count; at the end of the week first place moves into the Challenger archive and the board starts over.",
   "board.rules.pos": "Positive modifiers",
   "board.rules.neg": "Negative modifiers",

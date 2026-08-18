@@ -73,8 +73,15 @@ describe("#global · Reitersätze", () => {
 describe("#global · im Nachschlage-Modus wird nicht gespielt", () => {
   it("Seed-Kasten, Spielen-Knopf und Modifikator-Chips hängen an `!boardMode`", () => {
     // Ein Weg zum Spielen, nicht zwei — sonst steht der Ranglisten-Knopf im Hub für nichts Eigenes mehr.
-    expect(screen).toMatch(/\{!boardMode && \(\n\s*<div className="rounded-xl px-3\.5 py-3 mb-3"/);
-    expect(screen).toMatch(/\{!boardMode && <div className="mb-3"><WeekModChips/);
+    /* Seit dem Desktop-Pass steckt ALLES zum Spielen in EINER Klammer (`lb-cockpit` — ab 1400 px die eigene
+       Spalte neben der Liste). Geprüft wird deshalb die Klammer und ihr Inhalt, nicht mehr jede Zeile
+       einzeln: Seed, Spielen-Knopf und BEIDE Darstellungen der Modifikatoren (Chips am Handy, ausgeschrieben
+       auf dem Desktop) müssen darin liegen — sonst tauchte eine davon im Nachschlage-Modus wieder auf. */
+    expect(screen).toMatch(/\{!boardMode && \(<div className="lb-cockpit">/);
+    const cockpit = /\{!boardMode && \(<div className="lb-cockpit">([\s\S]*?)<\/div>\)\}/.exec(screen);
+    expect(cockpit, "lb-cockpit-Klammer nicht gefunden").toBeTruthy();
+    for (const teil of [/board\.weekSeed/, /board\.play/, /<WeekModChips/, /lb-modlist/])
+      expect(cockpit[1], `gehört ins Cockpit: ${teil}`).toMatch(teil);
     // …und stattdessen ein Satz, der sagt, wo es langgeht.
     expect(screen).toMatch(/boardMode && \(\n\s*<div className="text-\[11px\] opacity-45 leading-snug mb-3">\{tr\("board\.week\.viewOnly"\)\}/);
   });

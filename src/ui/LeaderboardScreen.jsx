@@ -39,17 +39,19 @@ const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, tr
                     liegt einen Klick weiter beim Ranglisten-Knopf, wo es hingehört.
    Der Wochen-Reiter behält in BEIDEN Sätzen die id "meister" — sie ist zugleich der Board-String der
    Datenbank und der Wert, den App.jsx als `initialTab` hereinreicht. */
+/* `subKey` erscheint NUR ab 1400 px als Zweitzeile der Navigationsspalte (unter 1400 px sind es Reiter, dort
+   ist kein Platz). „week" ist der Sonderfall: die Zeile ist dynamisch und kommt aus `board.weekLabel`. */
 const TABS_RANKED = [
-  { id: "meister",    labelKey: "board.tab.week",       accent: UI1 },
-  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1, icon: true },
-  { id: "regeln",     labelKey: "board.tab.rules",      accent: UI1 },
+  { id: "meister",    labelKey: "board.tab.week",       subKey: "week",                    accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", subKey: "board.nav.champions.sub", accent: UI1, icon: true },
+  { id: "regeln",     labelKey: "board.tab.rules",      subKey: "board.nav.rules.sub",     accent: UI1 },
 ];
 const TABS_BOARD = [
-  { id: "global",     labelKey: "board.tab.global",     accent: UI1 },
+  { id: "global",     labelKey: "board.tab.global",     subKey: "board.nav.global.sub",    accent: UI1 },
   // Kurzform „Woche": vier Zeichen weniger als „Diese Woche" — bei drei gleich breiten Reitern auf einem
   // 390-px-Handy bricht die lange Fassung neben „Challenger" um.
-  { id: "meister",    labelKey: "board.tab.weekShort",  accent: UI1 },
-  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1, icon: true },
+  { id: "meister",    labelKey: "board.tab.weekShort",  subKey: "week",                    accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", subKey: "board.nav.champions.sub", accent: UI1, icon: true },
 ];
 // #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
 //   positiv/negativ; darunter die Ausschluss-Paare.
@@ -175,15 +177,15 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
   const canPlayRanked = rankedUnlocked(profile || {}); // #370: frei bei allen Decks + je ≥1 abgeschlossenem Lauf
 
   return overlayPortal((
-    <div className="fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
+    <div className="lb-root fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #385 FESTE Kartenhöhe (nicht nur maxHeight) → das Fenster bleibt beim Tab-Wechsel gleich groß & an gleicher
           Stelle; nur die innere Liste scrollt. */}
-      <div className="w-full max-w-lg rounded-2xl overlay-card as-panel as-panel-deck flex flex-col overflow-hidden"
+      <div className="lb-card w-full max-w-lg rounded-2xl overlay-card as-panel as-panel-deck flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
         <ModalHairline />
-        <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
-          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+        <div className="lb-body p-5 sm:p-6 flex flex-col min-h-0 flex-1">
+          <div className="lb-head flex items-center justify-between gap-3 mb-4 shrink-0">
             {/* #pokal-eins: der Pokal steht als VEKTOR im Markup, nicht mehr als 🏆 im Text. Grund wie am
                 Ranglisten-Knopf (RankIcon.jsx): ein Emoji bringt seine eigene Farbe mit und steht quer zu
                 einem Panel, das seine Töne aus dem aktiven Deck zieht. Nebeneffekt am Reiter unten: das
@@ -193,8 +195,10 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
           </div>
 
           {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
-          <div className="flex gap-1.5 mb-4 shrink-0" role="tablist">
-            {TABS.map(({ id, labelKey, accent, icon }) => {
+          {/* #desktop: Ab 1400 px wird aus der Reiterzeile eine Navigationsspalte (wie im Upgrade-Baum) —
+              dieselben Knöpfe, dieselbe Reihenfolge, nur untereinander und mit Zweitzeile. */}
+          <div className="lb-tabs flex gap-1.5 mb-4 shrink-0" role="tablist">
+            {TABS.map(({ id, labelKey, subKey, accent, icon }) => {
               const on = tab === id;
               return (
                 /* #kante: Signal an der Unterkante wie in Werkstatt und Upgrades — bei waagerechten
@@ -205,13 +209,16 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                     ? { color: "#fff", borderBottom: `2px solid ${accent}`,
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${accent} 14%, transparent))` }
                     : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
-                  <span className="flex items-center justify-center gap-1.5">{icon && <RankIcon />}{tr(labelKey)}</span>
+                  <span className="lb-tab-l flex items-center justify-center gap-1.5">{icon && <RankIcon />}{tr(labelKey)}</span>
+                  <span className="lb-tab-s hidden min-[1400px]:block">
+                    {subKey === "week" ? tr("board.weekLabel", { week: week.week, year: week.year }) : tr(subKey)}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          <div className="rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+          <div className="lb-page rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
             {/* #global Allzeit-Board: alle CASUAL-Läufe (die Abfrage filtert Ranglisten-Zeilen weg), Baum-Pille an.
                 Kein `board`-Prop → fetchGlobalTop statt fetchBoardTop. */}
             {tab === "global" && (
@@ -224,7 +231,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
               leaderboardConfigured ? (
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
-                  <div className="flex items-baseline justify-between gap-2 mb-2.5">
+                  <div className="lb-weekhead flex items-baseline justify-between gap-2 mb-2.5">
                     <span className="text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
                     <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
@@ -233,8 +240,10 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {boardMode && (
                     <div className="text-[11px] opacity-45 leading-snug mb-3">{tr("board.week.viewOnly")}</div>
                   )}
+                  {/* #desktop — Klammer um das „Cockpit" (Seed · Spielen · Modifikatoren). Ab 1400 px steht es als
+                      eigene Spalte NEBEN der Liste; unter 1400 px ist die Klammer `display: contents` und ändert nichts. */}
+                  {!boardMode && (<div className="lb-cockpit">
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
-                  {!boardMode && (
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
@@ -251,10 +260,17 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                       </div>
                     )}
                   </div>
-                  )}
-                  {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch) — als anklickbare Chips. */}
-                  {!boardMode && <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>}
-                  {!boardMode && <div className="mb-3"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>}
+                  {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch).
+                      Zwei Darstellungen, eine Quelle (`pickedDisplayMods`): am Handy die anklickbaren Chips,
+                      ab 1400 px dieselben Modifikatoren AUSGESCHRIEBEN in den Kästen des Regeln-Reiters. Auf
+                      420 px Spaltenbreite passt der volle Text — dann ist die Kurzform überflüssig, und man
+                      muss für „was heißt Knapper Bau?" nicht mehr in den Regeln nachsehen. */}
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
+                  <div className="mb-3 min-[1400px]:hidden"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
+                  <div className="lb-modlist mb-3 hidden min-[1400px]:grid gap-1.5">
+                    {pickedDisplayMods(weekMods).map((m) => <ModBox key={m.id} m={m} />)}
+                  </div>
+                  </div>)}
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
               ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>

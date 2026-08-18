@@ -707,6 +707,8 @@ export default {
 
   /* ---- Statistiken (StatsScreen) ---- */
   "stats.title": "Statistiken",
+  /* #desktop: Auskunftszeile im Kopf der Statistik (erst ab 1400 px, neben dem Titel). */
+  "stats.desk.readout": "Alle Zahlen liegen lokal auf diesem Gerät. Eine Zeile anklicken öffnet den vollständigen Lauf.",
   "stats.empty": "Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.",
   "stats.overview": "Übersicht",
   "stats.bestScore": "Bestscore",
@@ -816,6 +818,10 @@ export default {
   "board.tab.weekShort": "Woche",
   "board.tab.challenger": "Challenger",
   "board.tab.rules": "Regeln",
+  /* #desktop: Zweitzeilen der Navigationsspalte im Ranglisten-Screen (ab 1400 px; darunter sind es Reiter). */
+  "board.nav.global.sub": "Allzeit · alle Läufe",
+  "board.nav.champions.sub": "Platz 1 jeder abgelaufenen Woche",
+  "board.nav.rules.sub": "Baseline und alle Modifikatoren",
   "board.rules.intro": "Alle spielen wöchentlich denselben Seed unter fairer Baseline — der Upgrade-Baum hat keine Wirkung ({rerolls} Rerolls je Phase, alle Raritäten, Legendär-Phase in Durchlauf {legCycle}). Jede Woche verändern 3–5 zufällige Modifikatoren (≥2 positiv, ≥1 negativ) den Lauf — für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.",
   "board.rules.pos": "Positive Modifikatoren",
   "board.rules.neg": "Negative Modifikatoren",

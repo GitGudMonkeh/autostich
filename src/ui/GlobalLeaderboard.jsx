@@ -130,7 +130,10 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
            390 px: Zeilen 313 statt 292 px breit, waagerechte Scrollleiste). `truncate` hilft dagegen NICHT,
            es kappt nur die Darstellung, nicht den max-content-Beitrag. `grid-cols-1` = `minmax(0, 1fr)`
            deckelt die Spur. (Bestand schon vor der Zweizeiligkeit — die längere Zeile macht es nur sichtbar.) */
-        <div className="grid grid-cols-1 gap-1">
+        /* #desktop: `lb-rows` ist der Haken für die ZWEISPALTIGE Fassung im Ranglisten-Screen (10 + 10).
+           Die Regel hängt dort an `.lb-page .lb-rows` — dieselbe Komponente steht auch im Hub (framed) und im
+           Victory-Screen in schmalen Spalten, die dürfen NICHT mitgehen. */
+        <div className="lb-rows grid grid-cols-1 gap-1">
           {rows.map((r, i) => {
             const mineRow = isMine(r);
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
@@ -189,7 +192,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
           {body}
         </div>
       ) : (
-        <div className="mt-5">{body}</div>
+        <div className="gl-wrap mt-5">{body}</div>
       )}
       {/* #205 Anti-Copy, #global neu gezogen: fremde Board-Läufe zeigen Kennzahlen, Icons, Score, Baumstand
           UND die Skills — verdeckt bleiben die Perks und die finale Aufstellung (kein 1:1-Nachbau). */}

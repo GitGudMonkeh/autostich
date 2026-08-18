@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1400 px steht die finale Aufstellung offen
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
@@ -109,16 +110,17 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const archBuildings = (state.architectEnabled && state.architect && state.architect.buildings) || [];
   const hasArch = archBuildings.length > 0;
   const architectCover = hasArch ? architectCoverFor(state) : null;
+  const wide = useIsWide();   // #desktop: eigene Spalte für die Aufstellung → sie startet aufgeklappt
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
   return overlayPortal((
-    <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+    <div className="go-root fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
-      <div className="w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
+      <div className="go-card w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit. Abstand opak im
             Balken (pt/pb), kein negativer Margin/keine transparente Lücke → kein Durchscheinen der Kopfzeile. */}
-        <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-6 flex gap-2 relative" style={{ background: STICKY_HEAD_BG }}>
+        <div className="go-actions sticky top-0 z-20 -mx-6 px-6 pt-6 pb-6 flex gap-2 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           {/* #kante: „Menü" ist der Ausweg (neutral), „Neuer Lauf" das Ziel — starker Kanten-Knopf in Gold
               statt gefüllter Goldtaste. Er bleibt der lauteste Knopf des Screens, weil er als einziger
@@ -135,10 +137,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             {t("gameover.newRun")}
           </button>
         </div>
-        <div className="text-center mt-4">
+        <div className="go-hero text-center mt-4">
           <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
-          <div className="text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
+          <div className="go-score text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
           <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
@@ -164,7 +166,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
             Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
         {!onboarding && earn && (earn.sp > 0 || earn.dpGross > 0 || earn.dpNet > 0 || score > 0) && (
-          <div className="mt-4">
+          <div className="go-earn as-ring mt-4">
+            <i className="as-ring-run" aria-hidden="true" />
             <div className="rounded-xl px-3 py-2.5" style={MENU_PANEL}>
               <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
                 <span style={{ color: "#9a9aa6" }}>{t("gameover.milestones", { done: mb.reached, total: mb.total })}</span>
@@ -218,7 +221,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* #: Onboarding-Fortschritt — NACH JEDEM Onboarding-Lauf: golden funkelnder Rahmen mit dem Stand + gerade
             freigeschalteter Belohnung (progressUnlocks) bzw. der nächsten Freischaltung. Nur während des Onboardings. */}
         {onboarding && (
-          <div className="as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
+          <div className="go-onb as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>
               ✦ Onboarding {onboarding.step}/{onboarding.links}
             </div>
@@ -249,13 +252,14 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
 
         {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
-        <div className="mt-5">
+        <div className="go-origin as-ring mt-5">
+            <i className="as-ring-run" aria-hidden="true" />
           <ScoreHerkunft state={state} />
         </div>
 
         {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
         {newUnlocks.length > 0 && (
-          <div className="mt-4 rounded-xl p-3" style={{ background: "#1b1630", border: "1px solid #8a7de055" }}>
+          <div className="go-skins mt-4 rounded-xl p-3" style={{ background: "#1b1630", border: "1px solid #8a7de055" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#8a7de0" }}>{t("gameover.skins.title")}</div>
             <div className="flex flex-wrap justify-center gap-3">
               {newUnlocks.map((u) => {
@@ -278,7 +282,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             (as-legendary) + kontextpassender Ziel-Button je Freischaltung. Während des Onboardings zeigt das
             Onboarding-Banner oben die Freischaltungen (kein Ziel-Button nötig) → hier nur NACH dem Onboarding. */}
         {!onboarding && progressUnlocks.length > 0 && (
-          <div className="as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
+          <div className="go-unlocks as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
             <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>{t("gameover.unlocked.title")}</div>
             <div className="flex flex-col gap-2">
               {progressUnlocks.map((u) => {
@@ -305,7 +309,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
             je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}
         {((state.skills && state.skills.length) || (state.perks && state.perks.length) || motor.length > 0) && (
-          <div className="mt-5">
+          <div className="go-build as-ring mt-5">
+              <i className="as-ring-run" aria-hidden="true" />
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.build")}</div>
             <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [] }} />
             {motor.length > 0 && (
@@ -326,7 +331,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* Victory-Redesign · STATS & VERLAUF-Sektion: schlanke Kern-Kennzahlen (Score-Anteile stehen bereits in der
             Score-Herkunft → sourceCells={false}) + Score-Verlauf + Durchlauf-Graph. */}
-        <div className="mt-5">
+        <div className="go-stats as-ring mt-5">
+            <i className="as-ring-run" aria-hidden="true" />
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.stats")}</div>
           <RunStatCells entry={{
             bestStreak: state.bestStreak, crits: state.crits, wins: state.wins,
@@ -356,8 +362,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (
-          <details className="mt-5 rounded-xl overflow-hidden" style={MENU_PANEL}>
+          <details className="go-layout as-ring mt-5 rounded-xl overflow-hidden" open={wide} style={MENU_PANEL}>
+            {/* `summary` MUSS das erste Kind bleiben (sonst ist es nicht der Aufklapp-Griff); das Ringband
+                kommt deshalb danach. */}
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
+            <i className="as-ring-run" aria-hidden="true" />
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
               {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
