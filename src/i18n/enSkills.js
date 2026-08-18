@@ -105,7 +105,7 @@ export default {
   "ability.SK_FIRE_11.name": "Wildfire",
   "ability.SK_FIRE_11.desc": `From ${C.CONFLAG_MIN_HEAT}% heat, the next win burns your heat down to ${C.CONFLAG_KEEP}%: +${C.CONFLAG_PER_HEAT} score per burnt heat point, +${C.CONFLAG_PER_SKILL} per further fire skill (with ${C.SKILL_SLOTS} fire skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`,
   "ability.SK_FIRE_12.name": "Melting Point",
-  "ability.SK_FIRE_12.desc": `Every win burns ${C.MELT_COST}% heat and pays direct score for it: ${C.MELT_SCORE_BASE} per burnt point, +${num(C.MELT_SCORE_PER_HEAT)} per percent of heat you hold while doing it. The rate grows by ${pct(C.MELT_STREAK_STEP)}% per win in a row (up to ${C.MELT_STREAK_CAP} wins). At a full bar that is ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} per win, ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX) * (1 + C.MELT_STREAK_STEP * C.MELT_STREAK_CAP)))} on a full streak. Losses cost no heat — but they cost the streak.`,
+  "ability.SK_FIRE_12.desc": `Every win burns ${C.MELT_COST}% heat: ${C.MELT_SCORE_BASE} score per burnt point, +${num(C.MELT_SCORE_PER_HEAT)} per percent of heat you hold while doing it (${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} per win at a full bar). Losses cost no heat.`,
   "ability.SK_FIRE_13.name": "Brand",
   "ability.SK_FIRE_13.desc": `Every win brands an opponent card (−${C.BRAND_VALUE} value) and gives +${C.BRAND_ASH} ash.`,
   "ability.SK_FIRE_14.name": "Running Fire",
@@ -123,7 +123,7 @@ export default {
   "ability.SK_FIRE_L03.name": "Sun Wrath",
   "ability.SK_FIRE_L03.desc": `Your entire win score is multiplied by the highest heat you have ever held: +${num(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)}% per peak percent (peak 100 → ×${num(Math.round((1 + 100 * C.SUNWRATH_PEAK_STEP) * 100) / 100)}).`,
   "ability.SK_FIRE_L04.name": "Damascus Steel",
-  "ability.SK_FIRE_L04.desc": `Forges your lowest card every cycle without ash (+${C.FORGE_VALUE} value, up to ${C.DAMASCUS_MAX_FORGED} cards). Forged cards fight with +${C.DAMASCUS_COMBAT} value. Every win gives +${C.DAMASCUS_DIRECT} score per point of total forged value. No ash is consumed.`,
+  "ability.SK_FIRE_L04.desc": `Forges your lowest card every cycle without ash (+${C.FORGE_VALUE} value, up to ${C.DAMASCUS_MAX_FORGED} cards). Forged cards fight with +${C.DAMASCUS_COMBAT} value. Every win gives +${C.DAMASCUS_PER_VALUE} score per point of total forged value. No ash is consumed.`,
 
   /* ---- ❄️ Ice ---- */
   "ability.SK_ICE_01.name": "Freeze-On",

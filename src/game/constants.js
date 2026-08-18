@@ -515,18 +515,21 @@ export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 17);    // … 
 // bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
 export const MELT_COST           = envNum("SIM_MELT_COST", 4);   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
 export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
-// Der Tropf zahlt DIREKT (post-stack, s. engine.js) — deshalb sind die Zahlen groß: sie werden nicht mehr mit
-// Serie/Crit/Formation multipliziert. Gemessene Parität mit den zwei anderen Bauweisen bei 15 (700 Läufe):
-//   Satz  12 → Median 12,90 (p99 42,0) · 15 → 13,86 (46,7) · 17 → 14,71 (49,9) · 20 → 15,73 (54,7)
-export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 9); // … + je % gehaltener Hitze           // #fire-consumer — tunebar
+// Der Tropf geht in die MULTIPLIZIERTE Basis. Er lag zwischenzeitlich als Direkt-Score post-stack — das zähmt die
+// Decke sichtbar (p99/Median 3,3× gegen 4,5×), ist aber die falsche Bauform: ein fester Betrag verliert in einer
+// Ökonomie, deren Multiplikatoren über den Lauf davonziehen, laufend an Gewicht. Grundsatz: so wenig Direkt-Score
+// wie möglich. Der Preis ist gemessen und bewusst bezahlt — bei gleichem Median kostet der Wechsel rund ein Drittel
+// mehr Decke (Feuer p99 35,3 → 47,5). Gemessene Parität bei 6 (700 Läufe, Schmelzpunkt-Build / Feuer gesamt):
+//   Satz 5 → 10,17 / 10,88 · 6 → 10,86 / 11,06 · 7 → 11,64 / 11,22 · 8 → 12,26 / 11,35
+export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 6); // … + je % gehaltener Hitze           // #fire-consumer — tunebar
 // #fire-consumer: der Tropf hängt zusätzlich an der SIEGESSERIE. Ein Konsument, der jeden Sieg denselben Betrag
 // zahlt, hat keine eigene Kurve — Flächenbrand baut sichtbar eine Leiste auf und wirft sie ab, Schmelzpunkt tat
 // nichts dergleichen. Jetzt wächst sein Satz mit der Serie: dieselbe Auflade-Fantasie, nur kontinuierlich statt in
 // Bursts, und eine Niederlage kostet wirklich etwas (die Serie fällt). Der Deckel hält die Spitze endlich.
-// Die Kurve ist bewusst FLACH (×1,8 statt ×4): der Score wird über streakBaseMult ohnehin schon mit der Serie
-// multipliziert. Eine steile zweite Serien-Kurve darauf war ein Doppel-Dip — gemessen p99 100,6 Mio bei Median 11,8.
-export const MELT_STREAK_STEP = envNum("SIM_MELT_STREAK_STEP", 0.10); // +10 % auf den Satz je Sieg in Folge …
-export const MELT_STREAK_CAP  = envNum("SIM_MELT_STREAK_CAP", 8);    // … bis zu dieser Serienlänge (also bis ×1,8)
+// (Der zwischenzeitliche eigene SERIEN-Faktor am Tropf ist wieder entfallen. Er war als Gegenstück zu Flächenbrands
+//  Auflade-Leiste gedacht, ist aber redundant, seit der Tropf in der multiplizierten Basis liegt: dort skaliert er
+//  über streakBaseMult bereits mit der Serie. Ein zweiter Faktor darauf war ein Doppel-Dip und hat nur den Schwanz
+//  aufgebläht — gemessen p99/Median 5,8× mit gegen 4,5× ohne, bei gleichem Median.)
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
 export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
@@ -561,9 +564,23 @@ export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    //
 // verbrauch; der kleine Schmelzpunkt-Tropf (MELT_COST) liegt bewusst darunter, sonst verpuffte das 1×/Durchlauf sofort.
 export const PHOENIX_MIN_BURN      = 25;                                     // … oder: so viel Hitze auf einmal verbrannt
 // Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
-export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 4);    // Selbst-Schmiede deckelt auf so viele Karten (gegen 60-Runden-Compounding) [Legendär-Umbau]
+// #fire-nodirect 4 → 10: Damaststahl war mit -0,83 der schwaechste Feuer-Legendaer, und der Grund lag NICHT beim
+// Satz (4 → 14 bewegte sein Delta nur von -1,12 auf -0,83). Er lag hier: bei 4 Karten und FORGE_GROWTH = 0 ist der
+// Gesamt-Schmiedewert nach vier Durchlaeufen fuer immer 12 — die Damast-Dividende steht damit bei 12 x 14 = 168 je
+// Sieg, egal wie lange der Lauf noch geht. Der Deckel begrenzt seit dem Umbau auf GROWTH = 0 nur noch die BREITE,
+// nicht mehr das Compounding, gegen das er urspruenglich gesetzt wurde. Gemessen (700 Laeufe, Delta des Skills):
+//   4 Karten / kein Wachstum  -0,83  ·  10 / kein Wachstum  +2,16  ·  4 / +1 je Durchlauf  +2,29  ·  8 / +1  +6,81
+// 10 ohne Wachstum gewaehlt: Legendaer-Niveau (Sonnenzorn +1,63 · Sonnenkern +4,19), Decke unveraendert (p99 48,7),
+// und kein Compounding-Pfad zurueck.
+export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 10);   // Selbst-Schmiede deckelt auf so viele Karten (Breite, nicht Compounding) [#fire-nodirect]
 export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
-export const DAMASCUS_DIRECT       = envNum("SIM_DAMASCUS_DIRECT", 14);        // direkter Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende) [Legendär-Angleich: 11→14 — zaghaft (Sim unterschätzt Feuer)]
+// #fire-nodirect: war „DAMASCUS_DIRECT = 14", ein DIREKTER Score am Multiplikator-Stack vorbei. Umgestellt auf die
+// multiplizierte Basis (Name mitgezogen — „DIRECT" stimmte danach nicht mehr, und ein falscher Name ist schlimmer
+// als gar keiner). Grund ist derselbe wie beim Schmelzpunkt-Tropf: ein fester Betrag verliert gegen die über den
+// Lauf wachsenden Multiplikatoren. Gemessen am Feuer-Lauf: der Direkt-Anteil am Stich-Ertrag steigt bis Durchlauf
+// 20–29 auf 32,6 % und fällt danach auf 19,4 % — als kleiner Bonus (Glutdividende) trägt er, als Motor nicht.
+// Der Satz ist danach neu eingestellt, s. u. — multipliziert ist derselbe Zahlenwert ein Vielfaches wert.
+export const DAMASCUS_PER_VALUE    = envNum("SIM_DAMASCUS_PER_VALUE", 14);     // Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende), in der multiplizierten Basis
 export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
 // (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
 

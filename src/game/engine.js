@@ -468,7 +468,6 @@ export function resolveTrick(state, rng) {
     let fireFlat = 0;
     let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
-    let meltDirect = 0;        // Schmelzpunkt-Tropf — DIREKT (post-stack), s. u. beim Konsumenten
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
@@ -491,13 +490,11 @@ export function resolveTrick(state, rng) {
       // Weißglut gleich mit. Satz aus der Hitze VOR dem Abzug — der Skill zahlt für das, was du gehalten hast. Steht
       // bewusst VOR Flächenbrand: andersherum nähme er dessen Boden die letzten 4 % und risse die Feuerwalzen-Schwelle.
       if (hasHeatConsumer(skills, "melt") && heat.value >= C.MELT_COST) {
-        // serieStreak = effektive Serie NACH diesem Sieg (dieselbe Größe, die Feuersturm liest) → eine Wahrheit.
-        // DIREKT (post-stack), nicht in die multiplizierte Basis: der Tropf zahlt bei JEDEM Sieg, ritte also den
-        // vollen Serie×Crit×Form-Stack auf jedem einzelnen davon — gemessen sprengte das die Decke (p99 80–100 Mio
-        // gegen 36 bei Flächenbrand, dessen Takt die Hitze-Regeneration begrenzt). Zusätzlich doppelte die
-        // Serien-Kurve gegen streakBaseMult (derselbe Doppel-Dip, den Reihenhaus vermeidet). Post-stack löst beides:
-        // dieselbe Bauform wie Glutdividende/Blitz-/Pflanze-Dividende — hebt den Median, lässt die Decke in Ruhe.
-        meltDirect = Math.round(C.MELT_COST * meltRateFor(heat.value, serieStreak));
+        // Der Tropf geht in die MULTIPLIZIERTE Basis, nicht in den Direkt-Kanal. Er lag zwischenzeitlich post-stack
+        // (das zähmt die Decke, s. Konstanten-Block), aber Direkt-Score ist ein FESTER Betrag in einer Ökonomie,
+        // deren Multiplikatoren über den Lauf davonziehen: er hebt den Median früh und verschwindet spät im
+        // Rauschen. Grundsatzentscheidung — so wenig Direkt-Score wie möglich.
+        fireFlat += Math.round(C.MELT_COST * meltRateFor(heat.value));
         heat = reignite({ ...heat, value: heat.value - C.MELT_COST }, C.MELT_COST);
       }
       // Flächenbrand (Konsument, Burst): Sieg ab CONFLAG_MIN_HEAT brennt bis auf CONFLAG_KEEP herunter → Score je
@@ -515,16 +512,23 @@ export function resolveTrick(state, rng) {
         if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { fireFlat += heat.sparkStore || 0; heat = { ...heat, sparkStore: 0 }; }
         else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + sparkBankFor(fireBaseFlat, skills) };
       }
-      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den Feuer-Score dieses Stichs — Grund-Score,
-      // Flächenbrand-Burst und die Funkenflug-Ausschüttung. NICHT den Schmelzpunkt-Tropf: der ist seit #fire-consumer
-      // Direkt-Score (post-stack) und liegt damit außerhalb dieser multiplizierten Basis. Glutstahl (Schmiede-Linie)
-      // kommt erst danach dazu und bleibt ebenfalls draußen.
+      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den GESAMTEN Feuer-Score dieses Stichs — Grund-Score,
+      // Schmelzpunkt-Tropf, Flächenbrand-Burst und die Funkenflug-Ausschüttung. Bewusst EIN Satz auf die ganze
+      // Hitze-Linie statt drei Sonderfälle; Glutstahl (Schmiede-Linie) kommt erst danach dazu und bleibt draußen.
       // Der Aufschlag ist der Weißglut-KANAL (#270.2) — fireBase bekommt unten den Rest.
       const wMult = overheatMult(heat.over || 0, skills);
       if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; }
     }
     // Glutstahl: geschmiedete Siegkarte → +GLUTSTAHL_PER_VALUE Score je geschmiedetem Wert (fließt in die multiplizierte Basis). [#230 N10: war „+20", ist 12]
     if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
+    // Damaststahl (L): ∝ GESAMTEM geschmiedeten Wert im Deck — die „Damast-Dividende" zahlt die Schmiede-Investition
+    // bei JEDEM Sieg aus, nicht nur wenn die geschmiedete Karte gewinnt. #fire-nodirect: lief bis hierher am
+    // Multiplikator-Stack VORBEI und steht jetzt neben Glutstahl in der multiplizierten Basis — dieselbe Linie
+    // (Schmiede), dieselbe Bauform. Damit bleibt sie wie Glutstahl auch außerhalb des Weißglut-Hebels (Hitze-Linie).
+    if (fireFlag(skills, "damascus")) {
+      const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
+      if (totalForged > 0) fireFlat += totalForged * C.DAMASCUS_PER_VALUE;
+    }
     // Brand (Brandmal): jeder Sieg brandmarkt die geschlagene Gegnerkarte für den NÄCHSTEN Durchlauf (−Wert) + Asche.
     // Lauffeuer: der Brand greift auf einen oppDeck-Nachbarn über. Schmelzofen (≥50 % Hitze): −1 Wert & +1 Asche stärker.
     if (fireFlag(skills, "brandmal")) {
@@ -833,12 +837,6 @@ export function resolveTrick(state, rng) {
     const fireCommit = commitScale(activeFireCount(skills));
     let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
       ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
-    // Damaststahl (L): DIREKTER Score je Sieg ∝ GESAMTEM geschmiedeten Wert im Deck (am Stack vorbei) — eine „Damast-
-    // Dividende", die die Schmiede-Investition bei JEDEM Sieg auszahlt (nicht nur wenn die geschmiedete Karte gewinnt).
-    if (fireFlag(skills, "damascus")) {
-      const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
-      if (totalForged > 0) fireDirect += totalForged * C.DAMASCUS_DIRECT;
-    }
     // (#268: die per-Sieg-Asche-Dividende ist entfernt — ungenutzte Asche wird jetzt am Durchlauf-Ende über den
     //  Weißglut-Überlauf vollständig in Score verbrannt, statt als kleiner Dauer-Drip je Sieg zu tropfen.)
     // Blitz-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus dem GESÄTTIGTEN Ionisierungsfeld. Die Ionisierung flutet
@@ -862,7 +860,6 @@ export function resolveTrick(state, rng) {
     // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
     // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
-    fireDirect += meltDirect; // Schmelzpunkt-Tropf in den Feuer-Direkt-Kanal (post-stack, s. o.)
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     const fireDirectApplied = fireDirect * fireStructMult;
