@@ -110,3 +110,30 @@ describe("#shop-demo — die Verdrahtung", () => {
     }
   });
 });
+
+/* ============================================================
+   #cube-deckfarbe + #cube-flimmern (18.08.2026) — zwei Nähte am Würfel-Feld, beide still zerbrechlich.
+   ============================================================ */
+describe("Würfel-Matrix · Bodenraster und Rückflanke", () => {
+  const src = readFileSync(new URL("../src/ui/fx/CubeMatrixField.jsx", import.meta.url), "utf8");
+
+  it("der Bodenraster folgt der Deckfarbe, statt fest auf GRID_COL zu stehen", () => {
+    /* Er war das EINZIGE Element, das im Deckfarbe-Modus stehen blieb — Türme und Punkte färbten längst um.
+       Der Fehler sieht man nur mit eingeschaltetem Deckfarbe-Modus UND hellem Boden; der Wächter sieht ihn immer.
+       Gemessen nach dem Fix (Demo-Signal, Deck orange/grün): Standard rgb(83,49,85) violett gegen
+       Deckfarbe rgb(66,59,51) — also die Mischung der beiden Deckfarben. */
+    const fn = src.slice(src.indexOf("function drawFloor"), src.indexOf("function box3d"));
+    expect(fn, "drawFloor liest die Deckfarbe nicht mehr").toMatch(/deckColored\s*\?/);
+    expect(fn, "GRID_COL darf nur noch der STANDARD-Fall sein").toMatch(/:\s*rgb\(GRID_COL\)/);
+  });
+
+  it("die Rückflanke ist langsamer als die Anstiegsflanke (sonst flackert es)", () => {
+    /* Ein Hüllkurvenfolger will schnell rauf, langsam runter. RELEASE stand mit 0,20 ÜBER ATTACK (0,16) —
+       der Turm fiel zwischen zwei Schlägen steiler zurück, als er hochkam, und das liest sich als Flackern.
+       Die Spitzenhöhe hängt an GAIN/CONTRAST, nicht hieran; wer die Bewegung insgesamt dämpfen will, dreht
+       dort und nicht an dieser Ungleichung. */
+    const att = Number(src.match(/ATTACK:\s*([\d.]+)/)[1]);
+    const rel = Number(src.match(/RELEASE:\s*([\d.]+)/)[1]);
+    expect(rel, `RELEASE ${rel} muss unter ATTACK ${att} liegen`).toBeLessThan(att);
+  });
+});

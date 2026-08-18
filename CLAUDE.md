@@ -1494,6 +1494,28 @@ Zustand: „Farbe" → sortiert nach Farbe und heißt danach „Preis" → sorti
 - **Am Gerät nicht abgenommen** — im Produktionsbuild über Playwright gerendert (390 px DE und 1600 px EN,
   beide Reiter, beide Sortierungen) und die Reihenfolge aus den Kachel-Kantenfarben ausgelesen.
 
+### #cube-deckfarbe + #cube-flimmern — zwei Nachzügler am Würfel-Feld (18.08.2026)
+- **Der Bodenraster war das einzige Element, das den Farbmodus nicht mitgemacht hat.** `drawFloor` las ein festes
+  `GRID_COL` (`#7a2fff`), während Türme und Punkte längst über `deckColored` umfärbten. Im Deckfarbe-Modus ist er
+  jetzt die **Mischung der beiden Deckfarben** — dieselbe Rolle, die das Standard-Violett zwischen Cyan und Magenta
+  spielt: der Boden liegt farblich zwischen den zwei Enden der Turm-Skala, statt eine dritte Farbe einzuführen.
+  Gemessen (Demo-Signal, Deck orange/grün, nur die schwachen Rasterpixel gemittelt): Standard **rgb(83,49,85)**
+  gegen Deckfarbe **rgb(66,59,51)**. `drawFloor` liest `propsRef.current` selbst — das `p` der Zeichenschleife
+  reicht dort nicht hinein.
+  - **Vorbehalt**: bei KOMPLEMENTÄREN Deckpaaren (Orange/Grün) ist die Mischung ein Oliv. Auf ~20 % Deckkraft
+    unter den Türmen fällt das kaum auf; wenn doch, ist die Alternative eine Zeile — statt der Mischung die
+    Deck-PRIMÄRFARBE.
+- **Das Flackern war die Rückflanke.** `RELEASE: 0.20` lag ÜBER `ATTACK: 0.16` — der Turm fiel zwischen zwei
+  Schlägen also steiler zurück, als er hochgekommen war, und genau das liest sich als Flackern statt als Puls.
+  Ein Hüllkurvenfolger will es andersherum: schnell rauf, langsam runter. **0,20 → 0,09.** Die SPITZEN bleiben
+  unangetastet (die Höhe hängt an `GAIN`/`CONTRAST`), es fällt nur weicher ab. Trifft beide Enden der adaptiven
+  Skala, weil `SLOW` sie multipliziert — also auch die schnellen Lieder, um die es ging.
+  **Wer die Bewegung insgesamt dämpfen will, dreht an `CONTRAST`, nicht an dieser Ungleichung.**
+- Wächter: `test/cubematrix-demo.test.js` — `drawFloor` muss `deckColored` lesen, und `RELEASE < ATTACK`.
+  Gegenprobe gemacht: beide Rückfälle lassen ihn fallen.
+- **Nach Gehör nicht abgenommen** — die Rückflanke ist aus der Hüllkurven-Mathematik hergeleitet, nicht an einem
+  Lied gemessen (headless gibt es keine Wiedergabe).
+
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
 ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort

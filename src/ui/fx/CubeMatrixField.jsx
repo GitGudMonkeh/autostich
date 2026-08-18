@@ -19,7 +19,12 @@ import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/C
 // ── Cube-Matrix — TUNE (finale Zielwerte aus #317) ──
 const TUNE = {
   // #317: Empfindlichkeit gesenkt (war 1.95×6.2) → ruhige Lieder schlagen nicht mehr über.
-  GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.20,
+  // #cube-flimmern (18.08.2026): RELEASE war mit 0,20 SCHNELLER als ATTACK (0,16) — der Turm fiel also zwischen
+  // zwei Schlägen steiler zurück, als er hochgekommen war, und genau das liest sich als Flackern statt als Puls.
+  // Ein Hüllkurvenfolger will es andersherum: schnell rauf, langsam runter. 0,20 → 0,09 halbiert die Fallzeit
+  // und lässt die SPITZEN unangetastet (Höhe hängt an GAIN/CONTRAST, nicht an der Rückflanke). Trifft beide
+  // Enden der adaptiven Skala, weil SLOW sie multipliziert — also auch die schnellen Lieder, um die es geht.
+  GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.09,
   // #317 Adaptive Geschwindigkeit: aus der Song-Aktivität (Spektral-Fluss = Onset-Dichte, tracks sind alle −14 LUFS →
   // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
   // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
@@ -245,7 +250,13 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       ctx.save(); ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.clip(); ctx.fillStyle = sg; ctx.fillRect(sx - sr, sy - sr, 2 * sr, 2 * sr); ctx.restore();
     }
     function drawFloor(C, R, spread, z0, rowGap, alpha, taper) {
-      if (alpha <= 0) return; const gcol = rgb(GRID_COL);
+      /* Der Bodenraster hing als einziges Element fest auf GRID_COL (Violett) und blieb im Deckfarbe-Modus
+         stehen, während Türme und Punkte längst umgefärbt waren. Im Deckfarbe-Modus ist er jetzt die MISCHUNG
+         der beiden Deckfarben — dieselbe Rolle, die das Standard-Violett zwischen Cyan und Magenta spielt:
+         der Boden liegt farblich zwischen den zwei Enden der Turm-Skala, statt eine dritte Farbe einzuführen. */
+      if (alpha <= 0) return;
+      const pf = propsRef.current;
+      const gcol = pf.deckColored ? mix(rgb(pf.color), rgb(pf.color2 || pf.color), 0.5) : rgb(GRID_COL);
       const half = C > 1 ? spread / (C - 1) : spread;
       const zF = z0 - rowGap * 0.5, zB = z0 + (R - 0.5) * rowGap;
       const sprAt = (t) => (spread + half) * (1 - taper * t); // Halb-Breite an Tiefe t (0 vorn .. 1 hinten) → Verjüngung
