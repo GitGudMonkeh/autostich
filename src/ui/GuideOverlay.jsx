@@ -288,6 +288,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                    Höhe gezogen. Die zweite Zeile ist kein neuer Text, sondern der Kern des Kreislaufs
                    aus den Leitfaden-Daten (`loop.center`) — vier Zeilen, die den Archetyp benennen. */
                 <nav className="gd-nav as-ring" aria-label={t("guide.nav.archetypes")}>
+                  <i className="as-ring-run" aria-hidden="true" />
                   <div className="gd-navhead">{t("guide.nav.archetypes")}</div>
                   {ARCHETYPE_ORDER.map((k) => {
                     const m = archMeta(k);
@@ -305,6 +306,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                 </nav>
               )}
               <section className="gd-page as-ring">
+                <i className="as-ring-run" aria-hidden="true" />
                 {wide && (
                   <div className="gd-page-h" style={{ "--c": activeMeta.color }}>
                     <span className="gd-page-eyebrow"><ArchIcon meta={activeMeta} size={17} />{activeMeta.label}</span>

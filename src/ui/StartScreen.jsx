@@ -613,6 +613,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
           stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
       <div className="hidden min-[1400px]:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
+        <i className="as-ring-run" aria-hidden="true" />
         <div className="ty-screen-title text-[11px] opacity-45">
           {t("start.board.title")}
         </div>
@@ -694,6 +695,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
 
       <div className={`${LANE_TAIL} as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 min-[1400px]:grid-cols-1 min-[1400px]:gap-0`}>
+        <i className="as-ring-run" aria-hidden="true" />
         {/* Kachel-Basis: gleiche Höhe (justify-between), Stripe links absolut, keine Icons.
             #desktop: dieselben vier Ziele werden zur Liste — flex-row statt flex-col, kein eigener Rahmen
             je Kachel (Glas + Ring sitzen am Container), dafür ein Trenner (CSS `.as-hub-list`). Die Fläche

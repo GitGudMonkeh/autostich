@@ -153,6 +153,9 @@ button { font-family: inherit; }
    Gilt auch für die Deck-Detailansicht, die dieselbe GuideBody in einer schmalen Spalte zeigt: dort
    fehlt `.gd-page`, und ohne die greift die Desktop-Regel gar nicht erst (s. index.css, 1400er Block). */
 .gd-desk, .gd-page, .gd-cols, .gd-col { display: contents; }
+/* Das laufende Ringband (#perf-ring) gibt es nur auf dem Desktop — `.as-ring` selbst ist ebenfalls erst
+   ab 1400 px definiert. Unterhalb ist das Kind ein leeres, unsichtbares Element. */
+.as-ring-run { display: none; }
 /* Serienkette: voll → statisches violettes Glühen; am Serien-Mult-Deckel (×2,5) → pulsendes Glühen. */
 .as-streak-glow { box-shadow: 0 0 8px 1px rgba(155,140,255,0.40); }
 /* #305 2a: Der pulsende Glow animiert nicht mehr `box-shadow` (Repaint pro Frame), sondern die OPACITY eines
@@ -1574,20 +1577,42 @@ button { font-family: inherit; }
      derselbe Verlauf durch das ganze Panel und der Rahmen ist keiner mehr.
      Deshalb hier eine Ring-Konstruktion: ein Pseudo-Element trägt den Verlauf, seine Mitte wird per Maske
      ausgestanzt (`mask-composite: exclude`). Gleicher Look, Fläche bleibt frei. */
+  /* #perf-ring (18.08.2026) — DER VERLAUF WANDERT PER `transform`, NICHT PER `background-position`.
+     Das ist kein Stilfrage, sondern der Unterschied zwischen „einmal malen" und „jeden Frame neu malen":
+     `background-position` ist eine PAINT-Eigenschaft, der Browser rastert dafür das ganze Pseudo-Element
+     (bei `.up-page` rund 1500 x 970 px) sechzig Mal pro Sekunde neu. `transform` läuft dagegen auf dem
+     Kompositor, die Textur wird einmal gemalt und danach nur verschoben.
+     Gemessen im Produktionspfad (Werkstatt/Baum, 1723 x 1030): mit dem alten Sweep 26,1 / 22,8 fps,
+     mit stehendem Ring 31,8 / 47,4 fps — der Baum verlor also mehr als die Hälfte seiner Frames an
+     eine Verzierung. Diese Fassung behält den Look und zahlt den Preis nicht.
+     Dafür braucht es ZWEI Boxen: die Maske (der 1-px-Ausstanz) muss stehen bleiben, während der Verlauf
+     läuft — ein Pseudo-Element allein trägt beides und würde die Maske mitbewegen. Deshalb ein echtes
+     Kind `.as-ring-run` (die Maske) mit einem Pseudo darin (der laufende Verlauf). Wer `as-ring` an ein
+     neues Panel hängt, muss das Kind mitgeben, sonst fehlt der Rahmen — `test/ring-sweep.test.js` wacht. */
   .as-ring { position: relative; }
-  .as-ring::before {
-    content: "";
+  .as-ring > .as-ring-run {
+    display: block;
     position: absolute; inset: 0;
     border-radius: inherit;
     padding: 1px;
     pointer-events: none;
-    background: linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%);
-    background-size: 200% auto;
-    animation: as-ring-sweep 7s linear infinite;
+    z-index: 2;
+    overflow: hidden;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
+  }
+  /* Dreifache Breite mit dreifach gekacheltem Verlauf: eine Verschiebung um genau eine Kachel (33,333 %)
+     bringt das Band zurück in den Ausgangszustand — die Schleife springt dadurch nicht. */
+  .as-ring > .as-ring-run::before {
+    content: "";
+    position: absolute; top: 0; bottom: 0; left: -100%; width: 300%;
+    background-image: linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%);
+    background-size: 33.3333% 100%;
+    background-repeat: repeat-x;
+    animation: as-ring-slide 7s linear infinite;
+    will-change: transform;
   }
   .as-ring { box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent); }
 
@@ -1612,8 +1637,17 @@ button { font-family: inherit; }
      die Wörter dahinter sind weg. */
   .up-root {
     background: rgba(12, 12, 16, .82) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
+       Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
+       8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
+       darueber: jeder Repaint zwingt den Vollbild-Filter zur Neuberechnung (dieselbe Falle, die
+       `[data-reduced-fx]` weiter unten schon fuer Mobile entschaerft). Optisch kostet es fast nichts —
+       bei 82 % Ueberzug und 93-95 % deckenden Panels bleibt kaum etwas zu verwischen: die mittlere
+       Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
+       bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
+       die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     /* Knapp bemessen, und das ist gerechnet: Kopf (172) + der längere Zweig (808) + Legende (42) füllen
        auf 1080 px Höhe fast alles. Mit dem ursprünglichen 28/32er Rand lief der Screen um 31 px über und
        fing an zu scrollen — auf dem Design-Anker soll er ohne Scrollen stehen. */
@@ -1753,7 +1787,6 @@ button { font-family: inherit; }
     border-radius: 14px; padding: 14px 12px;
     display: flex; flex-direction: column; gap: 7px;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .up-navhead {
     font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
@@ -1787,11 +1820,20 @@ button { font-family: inherit; }
   .up-navpassive.is-soon { opacity: .55; border-left-style: dashed; }
   .up-navpassive.is-sel { box-shadow: 0 0 0 2px rgba(155, 130, 240, .5); }
 
+  /* #flach (18.08.2026) — DER INHALT BLEIBT IM RAHMEN.
+     Auf flachen Fenstern (gemeldet von einem Laptop mit 1920 x 1200 bei 125 % Skalierung = CSS-Viewport
+     1536 x 791) lief der Inhalt unten AUS dem Panel heraus: Die Karte ist auf `height: 100 %` geklemmt,
+     der Inhalt brauchte aber mehr, also standen Skill-Kacheln und Auswertung sichtbar unterhalb der
+     Rahmenkante und die ganze Seite scrollte 31-72 px. Gemessen 1536 x 791: Allgemein 85 px Überlauf,
+     Fraktionsseite 44 px. Zwei Ursachen, beide unten behoben (`.up-vgrid`, `.up-facbody` / `.up-chall`).
+     Hier klemmt das Panel selbst, damit ein künftiger dritter Fall nicht wieder nach draußen läuft;
+     gescrollt wird eine Ebene tiefer, sonst wanderte die Ringkante mitten durch den Inhalt.
+     Auf 1536 x 960 und 1920 x 1080 ändern die vier Regeln nichts (nachgemessen, identische Werte). */
   .up-page {
     border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
     display: flex; flex-direction: column;
+    overflow: hidden;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .up-page-eyebrow { font-size: 15px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
@@ -1799,7 +1841,9 @@ button { font-family: inherit; }
      weggeschoben zu werden — und er bricht nicht um, sondern endet mit Auslassungspunkten. */
   .up-page-hint { font-size: 13px; color: #71717c; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .up-vgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; align-items: start; }
+  /* #flach: Die Knotenspalten scrollen, der Auswertungskasten darunter bleibt stehen — er ist die
+     Antwort auf die Frage, die man im Baum stellt, und gehört nicht weggescrollt. */
+  .up-vgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; align-items: start; overflow-y: auto; min-height: 0; }
   .up-vlane { display: flex; flex-direction: column; min-width: 0; }
   .up-vlane-h {
     font-size: 14.5px; font-weight: 800; text-align: center;
@@ -1834,9 +1878,14 @@ button { font-family: inherit; }
   /* `stretch` statt `start`, damit die Skill-Spalte die Resthöhe FÜLLT statt sie zu überschreiten —
      nur so greift ihr `overflow-y: auto` und die 21 Skills scrollen in sich, statt die Seite zu
      verlängern. Die Challenge bleibt oben stehen (`align-self: start`), sie soll nicht mitwachsen. */
-  .up-facbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: stretch; }
+  /* #flach: `grid-template-rows: minmax(0, 1fr)` ist der Kern. Ohne die Angabe wächst die einzige
+     Rasterzeile nach ihrem höchsten Kind — und das ist die Challenge-Karte mit dem großen Deck-Bild,
+     die auf flachen Fenstern höher ist als der ganze Platz. Sie zog damit die komplette Zeile aus dem
+     Panel. Jetzt ist die Zeile so hoch wie der Platz; die Skill-Spalte scrollt wie bisher intern, die
+     Challenge-Karte bleibt an ihrem Inhalt (`align-self: start`) und scrollt nur im Notfall. */
+  .up-facbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr); gap: 20px; align-items: stretch; }
   .up-skills { min-width: 0; min-height: 0; overflow-y: auto; padding-right: 6px; }
-  .up-chall { align-self: start; }
+  .up-chall { align-self: start; max-height: 100%; overflow-y: auto; }
   .up-skills-h {
     display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px;
     font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf;
@@ -1999,8 +2048,17 @@ button { font-family: inherit; }
     padding: 16px 48px 18px !important;
     align-items: stretch !important;
     background: rgba(12, 12, 16, .82) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
+       Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
+       8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
+       darueber: jeder Repaint zwingt den Vollbild-Filter zur Neuberechnung (dieselbe Falle, die
+       `[data-reduced-fx]` weiter unten schon fuer Mobile entschaerft). Optisch kostet es fast nichts —
+       bei 82 % Ueberzug und 93-95 % deckenden Panels bleibt kaum etwas zu verwischen: die mittlere
+       Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
+       bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
+       die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   /* Die Karte gibt ihre feste Höhe auf (die stammt aus der Handy-Fassung, wo alle Reiter gleich groß
@@ -2090,28 +2148,13 @@ button { font-family: inherit; }
   .cz-split:not(:has(.cz-side)) { grid-template-columns: minmax(0, 1fr); gap: 0; }
   /* Die beiden Spalten SIND die Panels des Screens — genau wie `.up-nav` / `.up-page` im Upgrade-Baum.
      Die Karte darüber trägt keine Fläche mehr (s. `.cz-card` oben), sie ist nur noch das Raster.
-     Werte an dessen Panels abgemessen: Glas, Radius 14, Schein in Deckfarbe, dazu der Ring über
-     `.as-ring`-Konstruktion (hier direkt, weil die Klasse nicht am Element hängt). */
+     Werte an dessen Panels abgemessen: Glas, Radius 14, Schein in Deckfarbe. Den RING trugen die beiden
+     bis 18.08.2026 als wortgleiche Kopie der `.as-ring`-Regel in einem eigenen `::before` — seit dem
+     Umbau auf die kompositierte Fassung (#perf-ring) tragen sie stattdessen die Klasse selbst und das
+     Kind `.as-ring-run`. Zwei Fassungen desselben Rahmens hätten den Umbau sonst zur Hälfte verpasst. */
   .cz-main, .cz-side {
-    position: relative;
     border-radius: 14px;
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
-    box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent);
-  }
-  .cz-main::before, .cz-side::before {
-    content: "";
-    position: absolute; inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    pointer-events: none;
-    z-index: 2;
-    background: linear-gradient(90deg, #3a3a48 0%, var(--deck-a1, #8a7de0) 25%, var(--deck-a2, #b3a8ff) 50%, var(--deck-a1, #8a7de0) 75%, #3a3a48 100%);
-    background-size: 200% auto;
-    animation: as-ring-sweep 7s linear infinite;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
   }
   /* Der Rahmen gehört an die Box, das Scrollen nach INNEN. Lag beides am selben Element, lief die
      untere Ringkante beim Scrollen mitten durch die Kacheln — ein Pseudo-Element mit `inset: 0` sitzt
@@ -2211,8 +2254,17 @@ button { font-family: inherit; }
      Bildschirm dahinter noch mit. `!important`, weil beide Werte inline am Element stehen. */
   .gd-dim {
     background: rgba(12, 12, 16, .82) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
+       Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
+       8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
+       darueber: jeder Repaint zwingt den Vollbild-Filter zur Neuberechnung (dieselbe Falle, die
+       `[data-reduced-fx]` weiter unten schon fuer Mobile entschaerft). Optisch kostet es fast nichts —
+       bei 82 % Ueberzug und 93-95 % deckenden Panels bleibt kaum etwas zu verwischen: die mittlere
+       Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
+       bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
+       die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   /* Aus „Karte mittig ins Bild" wird „Screen am Rand verankert" — Randmaße von `.up-root`. */
   .gd-frame { padding: 16px 48px 18px !important; align-items: stretch !important; }
@@ -2288,7 +2340,6 @@ button { font-family: inherit; }
     border-radius: 14px; padding: 14px 12px;
     display: flex; flex-direction: column; gap: 7px;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .gd-navhead {
     font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
@@ -2324,7 +2375,6 @@ button { font-family: inherit; }
     display: flex; flex-direction: column;
     border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
   .gd-page-eyebrow {
@@ -2450,12 +2500,14 @@ button { font-family: inherit; }
 
 /* Eigene Keyframes: `as-panel-sweep` bewegt ZWEI Hintergrund-Ebenen (Füllung + Verlauf), der Ring hat nur
    eine — mit den alten Keyframes bliebe er stehen. Außerhalb der Media Query, weil @keyframes global sind. */
-@keyframes as-ring-sweep {
-  from { background-position: 0% center; }
-  to   { background-position: 200% center; }
+/* Eine Kachelbreite weiter — das Band ist dreifach gekachelt, danach steht es wieder wie am Anfang.
+   `translate3d` statt `translateX`, damit die Ebene sicher auf dem Kompositor landet (s. #perf-ring). */
+@keyframes as-ring-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(33.3333%, 0, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .as-ring::before { animation: none; }
+  .as-ring > .as-ring-run::before { animation: none; }
 }
 /* Effekt-Stufe „minimal": der Sweep friert ein, der Rahmen bleibt (Farbe trägt weiter die Deck-Identität). */
 :root[data-reduced-fx="1"] .as-ring::before { animation: none !important; }

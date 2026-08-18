@@ -496,6 +496,52 @@ Gemessen wird die mittlere Luma im **Handy-Ausschnitt** (nicht im ganzen Bild), 
   mit Innenabstand nichts zu retten. Am Handy steht deshalb nur noch **die Zahl** im goldenen Ring
   (Gold heißt dort bereits „Guthaben"), der volle Satz ab 1400 px und im `title`.
 
+### #perf-blur + #perf-ring — die Menü-Framerate auf dem Desktop (2026-08-18)
+Gemeldet: Werkstatt und Baum fallen auf 10–20 fps, **Mobile ist in Ordnung**. Es ist NICHT das Laden der Assets
+(gemessen 2,5 s nach dem Öffnen, alle Bilder dekodiert, Kosten bleiben) — es ist der Effekt-Stapel, den der
+Desktop-Pass selbst eingeführt hat. Gemessen im Produktionspfad bei 1723×1030, Werkstatt/Baum:
+`wie war 12,3 / 8,1` → `Blur weg 26,1 / 22,8` → `zusätzlich Ring still 31,8 / 47,4`.
+- **`backdrop-filter` ist der teuerste einzelne Posten** und lag DOPPELT: vollflächig am Wurzelknoten
+  (`.up-root` · `.cz-root` · `.gd-dim`) und noch einmal an jedem Panel (`.up-nav` · `.up-page` · `.gd-nav` ·
+  `.gd-page`). Jeder Repaint darüber zwingt den Filter zur Neuberechnung — dieselbe Falle, die
+  `:root[data-reduced-fx]` für Mobile längst entschärft. **Genau deshalb war Mobile nie betroffen**: dort
+  schaltet `@media (pointer: coarse)` den Overlay-Blur seit jeher ab.
+  Optischer Preis: **0,10 (Werkstatt) / 0,37 (Baum) von 255** mittlere Bildabweichung — bei 82 % Überzug und
+  93–95 % deckenden Panels bleibt nichts zu verwischen (zum Vergleich galten bei der Kompositor-Abnahme 0,56
+  als nicht unterscheidbar). Die Wurzelknoten brauchen `none !important`, sie setzen den Blur INLINE.
+  **NICHT angefasst**: `.as-glass` (Hub-Panels, 72–78 % über dem Deckbild — dort trägt der Blur wirklich) und
+  `.up-branch` (unter 1400 px, auf dem Desktop nicht gerendert).
+- **Der Ring wandert jetzt per `transform` statt `background-position`.** Letzteres ist eine PAINT-Eigenschaft:
+  der Browser rasterte das ganze Pseudo-Element (bei `.up-page` ~1500×970) sechzigmal pro Sekunde neu. Jetzt
+  zwei Boxen — `.as-ring-run` trägt die Maske und steht, sein `::before` ist ein dreifach gekacheltes Band und
+  wird um genau eine Kachel (33,333 %) verschoben (nahtlose Schleife). Die Animation kostet damit nur noch
+  ~3–4 fps statt ~14. **`as-ring` und `as-ring-run` sind ab jetzt ein PAAR** — Klasse ohne Kind = kein Rahmen.
+  Die Werkstatt-Panels trugen den Ring als wortgleiche Kopie in eigenem `::before`; sie teilen jetzt die Klasse.
+- **Was BLEIBT und eine Look-Entscheidung ist:** ein panelgroßes MASKIERTES Element kostet auch im Stillstand
+  (22,4 gegen 35,9 fps ohne Ring) — die Maske wird pro komponiertem Frame angewandt. Zwei gemessene Auswege,
+  beide offen: die zwei großen Panels (`.up-page`, `.cz-main`) auf einen statischen 1-px-Deckfarbenrand →
+  **27,6 / 32,0**, oder gar kein Ring → 35,9 / 51,1.
+  **Verworfen: die maskenfreie „Blende"** (Band ganzflächig, `::after` deckt alles außer 1 px). Bringt nur
+  25 / 26,4 fps UND ändert das Bild um **8,27 von 255** (die Panelfüllung liegt doppelt → Innenfläche dunkler).
+- **Messfalle, in die ich selbst getappt bin:** eine Ablation „ohne Maske" per `opacity: 0` misst *kein Ring*,
+  nicht *Ring ohne Maske*. Wer hier weitermisst: die Ablation muss den Ring SICHTBAR lassen.
+- Wächter: `test/desktop-perf.test.js`.
+
+### #flach — der Baum lief auf flachen Fenstern aus dem Rahmen (2026-08-18)
+Gemeldet von einem Laptop mit **1920×1200 bei 125 % Skalierung** — der CSS-Viewport ist damit **1536×791**, also
+FLACH, nicht hoch. (Erst in die falsche Richtung gemessen; der Perf-HUD nennt Viewport und DPR, das ist die
+Quelle der Wahrheit.) Dort standen Skill-Kacheln und Auswertung sichtbar UNTER der Panelkante und die Seite
+scrollte 31–72 px: `.up-card` ist auf `height: 100 %` geklemmt, der Inhalt brauchte mehr.
+- Zwei Ursachen: (1) auf der Fraktionsseite zieht die **Challenge-Karte mit dem großen Deck-Bild** die einzige
+  Rasterzeile von `.up-facbody` auf ihre Höhe → `grid-template-rows: minmax(0, 1fr)` + `max-height: 100%` an
+  der Karte. (2) Auf „Allgemein" passen Knotenspalten + Auswertung zusammen nicht → `.up-vgrid` scrollt, der
+  Auswertungskasten bleibt stehen (er ist die Antwort auf die Frage, die man im Baum stellt).
+- `.up-page` klemmt zusätzlich (`overflow: hidden`), gescrollt wird eine Ebene tiefer — sonst liefe die Ringkante
+  beim Scrollen durch den Inhalt (dieselbe Naht wie `.cz-main`/`.cz-mainscroll`).
+- Gemessen 1536×791: Überlauf 85 → 0 px (Allgemein) bzw. 44 → 0 px (Fraktion), Seiten-Scroll 72 → 0 px.
+  Auf 1536×960 und 1920×1080 ändern die vier Regeln **nichts** (identische Werte).
+- **Werkstatt und Leitfaden waren dort schon sauber** — beim Leitfaden greift das Ventil an `.gd-page .gd-cols`.
+
 ### #desktop-leitfaden — Leitfaden ab 1400 px gerahmt wie Baum und Werkstatt (2026-08-18)
 Der letzte große Screen, der noch als **672-px-Modal** in der Mitte eines 1920-px-Bildes stand (35 % der Breite
 genutzt, dafür ~2900 px Inhalt untereinander). Jetzt derselbe gerahmte Screen: Überzug `rgba(12,12,16,.82)` +

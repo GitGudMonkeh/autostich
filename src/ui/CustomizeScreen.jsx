@@ -1081,7 +1081,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 am Panel selbst — läge beides am gleichen Element, wanderte die untere Rahmenkante beim
                 Scrollen mitten durch die Kacheln. Bis 1399 px ist der Wrapper `display: contents`, dort
                 ändert sich also nichts. */}
-            <div className="cz-main">
+            <div className="cz-main as-ring">
+              <i className="as-ring-run" aria-hidden="true" />
               <div className="cz-mainscroll">
                 {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} />
                   : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} />
@@ -1090,7 +1091,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             </div>
             {/* Ab 1400 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
             {wide && packOv && tab !== "fx" && (
-              <div className="cz-side">
+              <div className="cz-side as-ring">
+                <i className="as-ring-run" aria-hidden="true" />
                 <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
                   deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
                   options={options} onActivate={activate} onActivateTier={activateTier} inline

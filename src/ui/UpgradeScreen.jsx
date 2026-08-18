@@ -460,6 +460,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         {wide ? (
           <div className="up-desk">
             <nav className="up-nav as-ring" aria-label={t("upgrades.nav.decks")}>
+              <i className="as-ring-run" aria-hidden="true" />
               <button type="button" onClick={() => { setPage("gen"); setSelNode(null); }}
                 className={`up-navrow${page === "gen" ? " is-on" : ""}`} style={{ "--c": CY }}>
                 <span className="up-navtext"><b>{t("upgrades.page.general")}</b><i>{genOwned} / {GEN_LANES.reduce((s, l) => s + l.ids.length, 0)}</i></span>
@@ -493,6 +494,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             </nav>
 
             <section className="up-page as-ring">
+              <i className="as-ring-run" aria-hidden="true" />
               {page === "gen" ? (
                 <>
                   <div className="up-page-h">
@@ -559,6 +561,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         ) : (
         <div className="up-branches">
         <div className={`up-branch as-ring${tab === "deck" ? "" : " is-off"}`}>
+        <i className="as-ring-run" aria-hidden="true" />
           <h3 className="up-branch-h" style={{ color: UI1 }}>{t("upgrades.tab.decks")}</h3>
           <div className="mt-4 grid gap-2.5">
             {ARCHETYPE_ORDER.map((arch) => {
@@ -588,6 +591,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         </div>
 
         <div className={`up-branch as-ring${tab === "gen" ? "" : " is-off"}`}>
+        <i className="as-ring-run" aria-hidden="true" />
           <h3 className="up-branch-h" style={{ color: UI2 }}>{t("upgrades.tab.gen")}</h3>
           <div className="mt-4 grid gap-2.5">
             {GEN_LANES.map((lane) => {
