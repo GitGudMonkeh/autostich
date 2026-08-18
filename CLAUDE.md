@@ -654,7 +654,7 @@ Text**, sondern `loop.center` aus den Leitfaden-Daten („STURM · nährt sich s
 
 ### #glossar-desktop — das Glossar als gerahmter Screen (2026-08-18)
 Der letzte Screen im 672-px-Modal: **109 Begriffe** in einer Spalte, die 42 % der Bildbreite nutzt. Ab 1400 px
-derselbe gerahmte Screen wie Baum, Werkstatt und Leitfaden — Überzug (82 %, **kein** Blur), Ränder 16/48/18,
+derselbe gerahmte Screen wie Baum, Werkstatt und Leitfaden — Überzug (94 % nach #ueberzug, **kein** Blur), Ränder 16/48/18,
 Kopf-Raster `auto 1fr auto` + eigene Haarlinie, Panelglas, Radius 14, `as-ring`: alles an `.up-*`/`.gd-*`
 **abgemessen, nicht neu erfunden**. Wie beim Leitfaden gibt es **keinen zweiten Renderpfad** — das JSX setzt die
 `gl-*`-Klammern in jeder Breite, unterhalb 1400 px sind sie `display: contents`.

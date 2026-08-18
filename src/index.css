@@ -2579,10 +2579,11 @@ button { font-family: inherit; }
      Die acht Kategorien werden zur Navigationsspalte statt zur Chip-Leiste, und sie FILTERN dort,
      statt zu springen (die Verhaltensnaht steht in Glossary.jsx, sie hängt an `useIsWide()`).
      ========================================================================== */
-  /* Der Dim wird zum Überzug: 82 % ohne Blur — die Begründung steht bei `.gd-dim` (#perf-blur).
-     `!important`, weil beide Werte inline am Element stehen. */
+  /* Der Dim wird zum Überzug — EIN Wert für alle Overlays (#ueberzug: 94 %, ohne Blur). Die 82 % der
+     ersten Fassung waren zusammen mit `blur(10px)` abgenommen; seit #perf-blur gibt es den Blur nicht
+     mehr und der Hub las sich durch die Panels. `!important`, weil beide Werte inline am Element stehen. */
   .gl-dim {
-    background: rgba(12, 12, 16, .82) !important;
+    background: rgba(12, 12, 16, .94) !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
   .gl-frame { padding: 16px 48px 18px !important; align-items: stretch !important; }
