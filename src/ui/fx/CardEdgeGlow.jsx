@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
+import { roundRectPath } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* Karten-Animation „Kantenglühen" (Edge-Glow, #318) als KIND der Kartenvorderseite — additiv gestapelte Rounded-Rect-
    Strokes um die Kartenkante (weicher Halo ohne Blur) + weiß-heiße Kern-Linie; der Deck-Verlauf färbt den Rand diagonal
@@ -21,7 +22,6 @@ const EDGE_TUNE = {
 const CARD_CORNER = 12;   // rounded-xl der Karte (echte Geometrie in CSS-px, NICHT sc-skaliert)
 const HREF = 360;         // Board-Referenz-Kartenhöhe
 
-function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 /* #perf-overlay: `active` = false, sobald das Brett von einem Vollbild-Overlay verdeckt ist (Auswahl-Phasen) oder
    der Lauf pausiert. Dann hält die rAF-Schleife an — vorher lief sie (zweimal, je Karte) mit voller Rate weiter,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
+import { mixRGB, clampRGB, satBoost, mulberry32, roundRectPath, fbm, clamp, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* Archetyp-Karteneffekt „Eis" als Neon-Kristall-Frost — Vereisung der eigenen Karte mit der Gletscher-Masse.
    Von UNTEN & den beiden SEITEN wächst kantiger Neon-Frost nach innen/oben zu (Akkretion: bestehende Kristalle bleiben,
@@ -43,17 +44,8 @@ const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.
 const CARD_R = 12;               // Karten-Eckenradius (rounded-xl) — für den strikten Composite-Clip
 const M = 20;                    // Rand ums Frost-Bitmap, in Referenz-px (wird beim Clip weggeschnitten → kein Überstand)
 
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 function hexRGB(h) { let s = String(h || "#4f78c8").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
-const mix = (a, b, t) => ({ r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t });
-const clampRGB = (c) => ({ r: Math.max(0, Math.min(255, c.r)), g: Math.max(0, Math.min(255, c.g)), b: Math.max(0, Math.min(255, c.b)) });
-const satBoost = (c, s) => { const L = 0.30 * c.r + 0.59 * c.g + 0.11 * c.b; return clampRGB({ r: L + (c.r - L) * (1 + s), g: L + (c.g - L) * (1 + s), b: L + (c.b - L) * (1 + s) }); };
-function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function vhash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
-function fbm(x, y) { return vhash(x * 0.05, y * 0.05) * 0.6 + vhash(x * 0.13, y * 0.13) * 0.28 + vhash(x * 0.31, y * 0.31) * 0.12; }
 
 const stageOf = (m) => { let s = 0; for (let i = 0; i < THRESHOLDS.length; i++) if (m >= THRESHOLDS[i]) s++; return s; };
 const frontOf = (m) => { if (m <= 0) return 0; const s = stageOf(m); if (s === 0) return TUNE.COVER * TUNE.BASE_FREEZE; return TUNE.COVER * (THRESHOLDS[s - 1] / MASS_MAX); };
@@ -123,23 +115,23 @@ function renderFrostBitmap(front, field, RDPR, nA, nB) {
   function drawShard(g, t, mat) {
     const rng = mulberry32(t.seed);
     const tAxis = clamp01(0.5 + ((t.x - REF_W / 2) * axc + (t.y - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-    const neon = clampRGB(mix(cNA, cNB, tAxis)), neonP = satBoost(neon, 0.45 + 0.9 * TUNE.NEON_PUNCH);
-    const neonHot = clampRGB(mix(neonP, { r: 255, g: 255, b: 255 }, 0.4 + 0.3 * clamp01(TUNE.NEON_PUNCH)));
+    const neon = clampRGB(mixRGB(cNA, cNB, tAxis)), neonP = satBoost(neon, 0.45 + 0.9 * TUNE.NEON_PUNCH);
+    const neonHot = clampRGB(mixRGB(neonP, { r: 255, g: 255, b: 255 }, 0.4 + 0.3 * clamp01(TUNE.NEON_PUNCH)));
     const len = TUNE.SHARD_LEN * (0.45 + 0.75 * t.size) * (0.4 + 0.6 * mat), wid = len * TUNE.SHARD_WIDTH * (0.42 + 0.5 * rng());
     const ja = (rng() - 0.5) * 1.5, ca = Math.cos(ja), sa = Math.sin(ja);
     const dx = t.gdx * ca - t.gdy * sa, dy = t.gdx * sa + t.gdy * ca, px = -dy, py = dx;
     const tipx = t.x + dx * len, tipy = t.y + dy * len, bx0 = t.x - dx * len * 0.32, by0 = t.y - dy * len * 0.32;
     const lx = t.x + px * wid, ly = t.y + py * wid, rx = t.x - px * wid, ry = t.y - py * wid;
-    let bodyBase = clampRGB(mix(cDark, cMid, 0.35 + 0.4 * mat)), bodyTip = clampRGB(mix(cMid, cEdge, 0.4 + 0.5 * mat));
+    let bodyBase = clampRGB(mixRGB(cDark, cMid, 0.35 + 0.4 * mat)), bodyTip = clampRGB(mixRGB(cMid, cEdge, 0.4 + 0.5 * mat));
     const washV = TUNE.NEON_BASE >= 0.5 ? TUNE.NEON_RIM * 0.55 : TUNE.NEON_RIM * 0.16;
-    bodyBase = clampRGB(mix(bodyBase, neonP, washV)); bodyTip = clampRGB(mix(bodyTip, neonP, washV * 0.7));
+    bodyBase = clampRGB(mixRGB(bodyBase, neonP, washV)); bodyTip = clampRGB(mixRGB(bodyTip, neonP, washV * 0.7));
     const grd = g.createLinearGradient(bx0, by0, tipx, tipy);
     grd.addColorStop(0, rgba(bodyBase, 0.80 * mat)); grd.addColorStop(1, rgba(bodyTip, 0.9 * mat)); g.fillStyle = grd;
     g.beginPath(); g.moveTo(bx0, by0); g.lineTo(lx, ly); g.lineTo(tipx, tipy); g.lineTo(rx, ry); g.closePath(); g.fill();
     if (TUNE.FACET > 0) {
-      g.fillStyle = rgba(clampRGB(mix(bodyBase, { r: 0, g: 0, b: 0 }, 0.35 * TUNE.FACET)), 0.5 * mat * TUNE.FACET);
+      g.fillStyle = rgba(clampRGB(mixRGB(bodyBase, { r: 0, g: 0, b: 0 }, 0.35 * TUNE.FACET)), 0.5 * mat * TUNE.FACET);
       g.beginPath(); g.moveTo(bx0, by0); g.lineTo(lx, ly); g.lineTo(tipx, tipy); g.closePath(); g.fill();
-      g.fillStyle = rgba(clampRGB(mix(bodyTip, { r: 255, g: 255, b: 255 }, 0.30 * TUNE.FACET)), 0.35 * mat * TUNE.FACET);
+      g.fillStyle = rgba(clampRGB(mixRGB(bodyTip, { r: 255, g: 255, b: 255 }, 0.30 * TUNE.FACET)), 0.35 * mat * TUNE.FACET);
       g.beginPath(); g.moveTo(bx0, by0); g.lineTo(rx, ry); g.lineTo(tipx, tipy); g.closePath(); g.fill();
     }
     if (TUNE.NEON_TIP > 0) {
@@ -178,7 +170,7 @@ function renderFrostBitmap(front, field, RDPR, nA, nB) {
         const dBot = REF_H - cy, dL = cx, dR = REF_W - cx, bi = Math.min(dBot / maxUp, dL / maxIn, dR / maxIn);
         const covv = clamp01((front - clamp01(bi)) / 0.16); if (covv <= 0.02) continue;
         const tAxis = clamp01(0.5 + ((cx - REF_W / 2) * axc + (cy - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-        const neon = satBoost(clampRGB(mix(cNA, cNB, tAxis)), 0.3 + 0.6 * TUNE.NEON_PUNCH);
+        const neon = satBoost(clampRGB(mixRGB(cNA, cNB, tAxis)), 0.3 + 0.6 * TUNE.NEON_PUNCH);
         g.strokeStyle = rgba(neon, TUNE.HEX * covv * 0.34); g.beginPath();
         for (let s = 0; s < 6; s++) { const a = Math.PI / 6 + s * Math.PI / 3, hx = cx + Math.cos(a) * R, hy = cy + Math.sin(a) * R; if (s === 0) g.moveTo(hx, hy); else g.lineTo(hx, hy); }
         g.closePath(); g.stroke();
@@ -193,7 +185,7 @@ function renderFrostBitmap(front, field, RDPR, nA, nB) {
   if (TUNE.GLAZE > 0) {                                     // milchige Glasur (radiale Puffs)
     for (i = 0; i < field.length; i++) { t = field[i]; mat = clamp01((front - t.birthF) / 0.14); if (mat <= 0) continue;
       const tAxis = clamp01(0.5 + ((t.x - REF_W / 2) * axc + (t.y - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-      const gcol = clampRGB(mix(clampRGB(mix(cDark, cMid, 0.5)), clampRGB(mix(cNA, cNB, tAxis)), TUNE.NEON_BASE >= 0.5 ? 0.4 * TUNE.NEON_RIM : 0.12 * TUNE.NEON_RIM));
+      const gcol = clampRGB(mixRGB(clampRGB(mixRGB(cDark, cMid, 0.5)), clampRGB(mixRGB(cNA, cNB, tAxis)), TUNE.NEON_BASE >= 0.5 ? 0.4 * TUNE.NEON_RIM : 0.12 * TUNE.NEON_RIM));
       const rad = t.size * 7 * (0.6 + 0.6 * mat), rg = fx.createRadialGradient(t.x, t.y, 0, t.x, t.y, rad);
       rg.addColorStop(0, rgba(gcol, 0.22 * TUNE.GLAZE * mat)); rg.addColorStop(1, rgba(gcol, 0)); fx.fillStyle = rg; fx.beginPath(); fx.arc(t.x, t.y, rad, 0, TAU); fx.fill();
     }
@@ -206,7 +198,7 @@ function renderFrostBitmap(front, field, RDPR, nA, nB) {
       if (mat < 0.6 || t.edgeProx < 0.25) continue; if (dr() > TUNE.DENDRITE * 0.5) continue;
       const ang = Math.atan2(t.gdy, t.gdx) + (dr() - 0.5) * 0.5, dlen = TUNE.SHARD_LEN * 1.1 * TUNE.DEND_LEN * (0.7 + 0.6 * dr());
       const tAxis = clamp01(0.5 + ((t.x - REF_W / 2) * axc + (t.y - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-      const dcol = clampRGB(mix(satBoost(clampRGB(mix(cNA, cNB, tAxis)), 0.5), { r: 220, g: 250, b: 255 }, 0.25));
+      const dcol = clampRGB(mixRGB(satBoost(clampRGB(mixRGB(cNA, cNB, tAxis)), 0.5), { r: 220, g: 250, b: 255 }, 0.25));
       drawDendrite(fx, t.x, t.y, ang, dlen, 3, dcol, 0.5 * TUNE.DENDRITE * mat);
     }
   }

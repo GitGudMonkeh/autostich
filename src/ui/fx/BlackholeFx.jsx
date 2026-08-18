@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
+import { lerp, mixRGB, mulberry32, roundRectPath, easeOut, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* Sieg-Finisher „Schwarzes Loch" (#320 Rework) — serien-getriebenes, persistentes Panel-Loch mit Akkretionsscheibe
    (außen deck → innen deck2 um einen soliden schwarzen Kern). Architektur wie der alte BlackholeFieldFx: eine
@@ -46,14 +47,8 @@ const TUNE = {
 const CARD_W = 104, CARD_H = 144;
 
 const PI2 = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function hexRGB(h) { let s = String(h || "#4aa0ff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
-const mixRGB = (a, b, t) => ({ r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t });
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
-function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-// Pfad eines abgerundeten Rechtecks in den gegebenen 2D-Context (modulweit → auch für den Offscreen-Rücken-Cache).
-function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 /* #perf-overlay-2: `boardVisible` NICHT `active` — `active` ist hier schon vergeben (= Schwarzes Loch als Finisher
    gewählt). Der Loop läuft sonst auch im Leerlauf weiter (`if (!busy) { raf = …; return; }`), also auch hinter
@@ -317,7 +312,6 @@ export function BlackholeFx({ active, pulse = null, color = "#4aa0ff", color2 = 
       //    opaken Kern gezeichnet → verdeckt), sin>0 → vorne (über dem Kern). Erst ab ORBIT_END spiralig in den Kern.
       const flyDurMs = TUNE.FLYIN_DUR * 1000;
       const orbitR = Math.max(TUNE.ORBIT_R * D, R * TUNE.ORBIT_TIGHT);   // #338-4: Bahn enger an R → skaliert stimmig mit der Loch-Größe
-      const easeOut = (t) => t * (2 - t);
       const backFlyers = [], frontFlyers = [];
       for (let i = sim.flyers.length - 1; i >= 0; i--) {
         const f = sim.flyers[i]; f.t += sdt / flyDurMs;

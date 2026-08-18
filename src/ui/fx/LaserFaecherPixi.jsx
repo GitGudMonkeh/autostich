@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
 import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
+import { mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* #323 Gottgleich-Prunk „Laser-Fächer" (Selten) — PIXI. Scharfe Neon-Laser fächern aus der Kartenmitte (hinter der
    Karte) auf: abwechselnd lange Haupt- und kurze Nebenstrahlen (Sonnenstrahl-Look), jeder ein Kegel (schmal an der
@@ -23,10 +25,7 @@ const TUNE = {
 const STD_A = "#2ff0ff", STD_B = "#ff2d9b";
 
 const TAU = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const intOf = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 const wrapPi = (a) => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
 
@@ -43,13 +42,9 @@ function envelope(prog) {
   return { alpha, lenScale, bundle };
 }
 
+// Kantenlänge der geteilten Radial-Textur (fxTextures.js). 128 statt 64 wie bei den Partikel-Effekten:
+// die Prunk-Sprites werden bildschirmfüllend skaliert, bei 64 würde der Halo sichtbar ausfransen.
 const RTX = 128;
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = RTX; const x = c.getContext("2d");
-  const g = x.createRadialGradient(RTX / 2, RTX / 2, 0, RTX / 2, RTX / 2, RTX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  x.fillStyle = g; x.fillRect(0, 0, RTX, RTX); return Texture.from(c);
-}
 // Kegel-Strahl-Textur (weiß, zur Laufzeit getönt): Apex links (Nabe, schmal) → breit rechts (Spitze), hell→transparent.
 const BW = 256, BH = 64;
 function makeBeamTexture() {
@@ -84,7 +79,7 @@ export default function LaserFaecherPixi({ panelRef, cardRef = null, trigger = 0
     const canvas = document.createElement("canvas");
     const app = new Application();
     const beamTex = makeBeamTexture();
-    const hubTex = makeRadial([[0, 1], [0.4, 0.55], [1, 0]]);
+    const hubTex = makeRadial([[0, 1], [0.4, 0.55], [1, 0]], RTX);
 
     // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
     const placer = createPlacer(() => {

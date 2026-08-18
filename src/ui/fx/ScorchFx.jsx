@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* #319 Scorch-Sieg-Finisher — organische Karten-Auflösung statt Rechteck-Raster.
    Ein Laser schießt EINMALIG aus zufälliger Richtung in die geschlagene (Gegner-)Karte; danach verglüht sie ORGANISCH
@@ -32,10 +33,7 @@ const CHAR_COL = "#666666";        // Kohle/Asche-Ton (Issue-COLORS.char)
 const ASH_COL = [36, 22, 17];      // dunkle Asche-Flocke
 
 const TAU = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 
 // Warme Feuer-Rampe (weiß→gold→orange→rot). Deck-Modus tönt zur Deckfarbe.
 const FIRE = [[0, [92, 14, 6]], [0.35, [214, 70, 18]], [0.65, [255, 168, 60]], [0.86, [255, 224, 150]], [1, [255, 248, 232]]];

@@ -1,3 +1,5 @@
+import { clamp, lerpCol } from "../fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+
 /* Karten-Effekt „Holo-Sweep" (Prisma-Band) · Layer 1 aus #318 — ein prismatisches Lichtband wandert diagonal
    über die Karte, additiv, auf die Kartenform maskiert (die Maske setzt die CardFxStage). Der Regenbogen ist auf
    der Karte „gemalt" (Hue = hueBasis + u·hueSpanne entlang der Sweep-Achse); das wandernde Band ist ein
@@ -24,15 +26,8 @@ export const HOLO_TUNE = {
 };
 
 const frac = (x) => x - Math.floor(x);
-const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
 // 24-bit-Farb-Interpolation a→b.
-const lerpCol = (a, b, t) => {
-  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
-  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
-  return ((Math.round(ar + (br - ar) * t) << 16) | (Math.round(ag + (bg - ag) * t) << 8) | Math.round(ab + (bb - ab) * t));
-};
-
 // HSL (h° / s% / l%) → 0xRRGGBB.
 function hslInt(h, s, l) {
   h = ((h % 360) + 360) % 360; s /= 100; l /= 100;

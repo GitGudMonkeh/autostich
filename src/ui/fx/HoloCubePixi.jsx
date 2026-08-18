@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Application, Graphics, Sprite, Texture } from "pixi.js";
+import { Application, Graphics, Sprite } from "pixi.js";
 import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
+import { lerp, mix, easeOut, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* #325 Gottgleich-Prunk „Holo-Würfel-Kollaps" (Rar) — PIXI. Ein Holowürfel aus N³ Wireframe-Blöcken baut sich aus der
    Ferne zusammen (Pop) → dreht sich frei → Kern-Blitz → zerspringt taumelnd nach außen und fadet. Pseudo-3D:
@@ -24,12 +26,8 @@ const STD_A = "#35e0ff", STD_B = "#ff5db1";
 const PASS_FULL = [0, 1];
 const PASS_LITE = [1];
 
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const intOf = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
-const easeOut = (t) => 1 - (1 - t) * (1 - t);
 function easeOutBack(t, s) { const inv = t - 1; return 1 + s * inv * inv * inv + s * 0.6 * inv * inv; }
 
 const CORNERS = [];
@@ -40,13 +38,9 @@ function rotX(v, c, s) { const y = v[1] * c - v[2] * s, z = v[1] * s + v[2] * c;
 function rotY(v, c, s) { const x = v[0] * c + v[2] * s, z = -v[0] * s + v[2] * c; v[0] = x; v[2] = z; }
 function rotZ(v, c, s) { const x = v[0] * c - v[1] * s, y = v[0] * s + v[1] * c; v[0] = x; v[1] = y; }
 
+// Kantenlänge der geteilten Radial-Textur (fxTextures.js). 128 statt 64 wie bei den Partikel-Effekten:
+// die Prunk-Sprites werden bildschirmfüllend skaliert, bei 64 würde der Halo sichtbar ausfransen.
 const RTX = 128;
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = RTX; const x = c.getContext("2d");
-  const g = x.createRadialGradient(RTX / 2, RTX / 2, 0, RTX / 2, RTX / 2, RTX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  x.fillStyle = g; x.fillRect(0, 0, RTX, RTX); return Texture.from(c);
-}
 
   /* #perf-warm: `warm` = Bühne aufbauen, aber NICHT abspielen. Der Prunk wurde bisher erst beim ersten
      gottgleichen Sieg gemountet — und weil `startPlay()` direkt in der Init steht, fielen Chunk-Laden und
@@ -73,7 +67,7 @@ export default function HoloCubePixi({ panelRef, cardRef = null, trigger = 0,
     let disposed = false;
     const canvas = document.createElement("canvas");
     const app = new Application();
-    const coreTex = makeRadial([[0, 1], [0.5, 0.4], [1, 0]]);
+    const coreTex = makeRadial([[0, 1], [0.5, 0.4], [1, 0]], RTX);
 
     function buildBlocks() {
       const blocks = [], n = TUNE.N, span = 2 / n, half = (span / 2) * TUNE.FILL * TUNE.SIZE;

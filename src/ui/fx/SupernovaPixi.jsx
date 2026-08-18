@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture, Container, ParticleContainer, Particle } from "pixi.js";
 import { gottAppOptions, gottMaxFPS, GOTT_RES_FULL, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
 import { SUPERNOVA_LIFE, SUPERNOVA_CHARGE, SUPERNOVA_TAIL } from "./supernovaTiming.js";
+import { lerp, mix, easeOut, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* #326 Gottgleich-Prunk „Supernova" (Legendär) — PIXI, der Showstopper. Mehrphasig: Kollaps (Sterne + Ring in den Kern
    gesogen) → Detonation (Weiß-Flash mit chromatischer Spaltung, Zoom-Punch) → Boom-Schockwelle + chromatische Ringe +
@@ -28,21 +30,13 @@ const TUNE = {
 const STD_A = "#ffd24a", STD_B = "#ff2d9b";
 
 const TAU = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const intOf = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
-const easeOut = (t) => 1 - (1 - t) * (1 - t);
 function hsl2rgb(h, s, l) { const a = s * Math.min(l, 1 - l); const f = (n) => { const k = (n + h * 12) % 12; return (l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)))) * 255; }; return [f(0), f(8), f(4)]; }
 
+// Kantenlänge der geteilten Radial-Textur (fxTextures.js). 128 statt 64 wie bei den Partikel-Effekten:
+// die Prunk-Sprites werden bildschirmfüllend skaliert, bei 64 würde der Halo sichtbar ausfransen.
 const RTX = 128;
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = RTX; const x = c.getContext("2d");
-  const g = x.createRadialGradient(RTX / 2, RTX / 2, 0, RTX / 2, RTX / 2, RTX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  x.fillStyle = g; x.fillRect(0, 0, RTX, RTX); return Texture.from(c);
-}
 // Streak-Textur für die Sterne: heller Kopf links → transparenter Schweif rechts (weiß, getönt zur Laufzeit).
 const SKX = 256, SKY = 32;
 function makeStreak() {
@@ -81,8 +75,8 @@ export default function SupernovaPixi({ panelRef, cardRef = null, trigger = 0,
     let disposed = false;
     const tCanvas = document.createElement("canvas"), nCanvas = document.createElement("canvas");
     const tApp = new Application(), nApp = new Application();
-    const coreTex = makeRadial([[0, 1], [0.4, 0.5], [1, 0]]);
-    const flashTex = makeRadial([[0, 1], [0.6, 0.3], [1, 0]]);
+    const coreTex = makeRadial([[0, 1], [0.4, 0.5], [1, 0]], RTX);
+    const flashTex = makeRadial([[0, 1], [0.6, 0.3], [1, 0]], RTX);
     const streakTex = makeStreak();
 
     // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.

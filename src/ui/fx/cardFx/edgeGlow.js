@@ -1,3 +1,5 @@
+import { lerpCol } from "../fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+
 /* Karten-Effekt „Kantenglühen" (Edge-Glow) · Layer 2 aus #318 — reiner RAHMEN-Effekt, dauerhaft an, OHNE
    jede Stich-/Event-Abhängigkeit (bewusst `stich.peak:0`, kein `erupt`). Additiv gestapelte Rounded-Rect-
    Strokes um die Kartenkante (KEIN Blur): mehrere Lagen mit steigender Breite und fallender Alpha bilden den
@@ -27,12 +29,6 @@ const CARD_CORNER = 12;   // rounded-xl der Karte (echte Geometrie in CSS-px, NI
 const GRAD_CHUNKS = 8;    // Farb-Stufen des diagonalen Verlaufs (Chunks statt Pro-Segment → additive Nähte, wenige Draws)
 
 // 24-bit-Farb-Interpolation (a→b, t∈0..1).
-const lerpCol = (a, b, t) => {
-  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
-  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
-  return ((Math.round(ar + (br - ar) * t) << 16) | (Math.round(ag + (bg - ag) * t) << 8) | Math.round(ab + (bb - ab) * t));
-};
-
 // Rounded-Rect-Perimeter (0,0)-(w,h) mit Eck-Radius cr in N Stützpunkte (im Uhrzeigersinn, offen — Schließen macht der Aufrufer).
 function buildPerim(w, h, cr, N) {
   cr = Math.max(0, Math.min(cr, w / 2, h / 2));

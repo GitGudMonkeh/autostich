@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Application, Graphics, Sprite, Texture } from "pixi.js";
 import { gottAppOptions, gottMaxFPS, createPlacer } from "./pixiGott.js"; // #perf-gott geteilte Init + Geometrie-Cache
+import { mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* #322 Gottgleich-Prunk „Sonnen-Puls" (Standard, freier Default) — PIXI-Fassung. Die Outrun-Sonne bloomt EINMALIG
    hinter der Gegnerkarte auf: Scheibe mit vertikalem Sunset-Verlauf + horizontalen Scanline-Lücken (nach unten dicker),
@@ -23,10 +25,7 @@ const TUNE = {
 const STD_TOP = "#ff3d81", STD_BOT = "#ffb43d";
 
 const TAU = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgbStr = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
 const intOf = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 
@@ -42,14 +41,9 @@ function envelope(prog) {
   return { alpha, scale };
 }
 
-// Weiche weiße Radial-Textur (Kern + Halo) — zur Laufzeit getönt (Korona/Kern).
+// Kantenlänge der geteilten Radial-Textur (fxTextures.js). 128 statt 64 wie bei den Partikel-Effekten:
+// die Prunk-Sprites werden bildschirmfüllend skaliert, bei 64 würde der Halo sichtbar ausfransen.
 const RTX = 128;
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = RTX; const x = c.getContext("2d");
-  const g = x.createRadialGradient(RTX / 2, RTX / 2, 0, RTX / 2, RTX / 2, RTX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  x.fillStyle = g; x.fillRect(0, 0, RTX, RTX); return Texture.from(c);
-}
 // Sonnen-Scheibe: vertikaler Verlauf (top→bottom) + Scanline-Lücken (per destination-out gestanzt, nach unten dicker).
 const STX = 256;
 function makeSunTexture(top, bot) {
@@ -89,8 +83,8 @@ export default function SonnenPulsPixi({ panelRef, cardRef = null, trigger = 0,
     let disposed = false;
     const canvas = document.createElement("canvas");
     const app = new Application();
-    const coronaTex = makeRadial([[0, 1], [0.5, 0.5], [1, 0]]);
-    const coreTex = makeRadial([[0, 1], [0.4, 0.6], [1, 0]]);
+    const coronaTex = makeRadial([[0, 1], [0.5, 0.5], [1, 0]], RTX);
+    const coreTex = makeRadial([[0, 1], [0.4, 0.6], [1, 0]], RTX);
 
     // #perf-gott: einmal je Abspielvorgang messen (createPlacer) statt zwei erzwungene Layouts pro Frame.
     const placer = createPlacer(() => {

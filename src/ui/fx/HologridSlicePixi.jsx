@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Application, Container, Graphics, Sprite, Texture, Rectangle } from "pixi.js";
 import { DRAW_HZ_COARSE } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Zeichenrate
+import { mix, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* #321 Sieg-Finisher „Hologrid-Slice" — PIXI. Beim Sieg fährt eine schlichte Laserlinie achsen-parallel über die
    geschlagene (Gegner-)Karte und deckt dabei im überfahrenen Bereich ein Nahtraster (COLS×ROWS) auf (Reveal). Danach
@@ -44,11 +45,8 @@ const TUNE = {
 const STD_A = "#2ff0ff", STD_B = "#ff2d9b"; // COLORS.deck / deck2 (Fallback ohne Deckfarbe)
 
 const TAU = Math.PI * 2;
-const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const intOf = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 
 function roundRect(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }

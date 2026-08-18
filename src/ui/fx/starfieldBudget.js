@@ -1,3 +1,5 @@
+import { clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+
 /* BUDGETS für den Meteor (Sternenfeld) — die drei Deckel gegen die Turbo-/Late-Game-Spitze auf dem Handy.
 
    Warum eine eigene, Pixi-freie Datei — wie schon bei gottTiming.js/supernovaTiming.js: `starfieldPixi.js`
@@ -16,7 +18,6 @@
    ALLE drei Deckel greifen nur auf `lite` — Desktop bleibt unangetastet (Entscheidung des Users). Und alle drei
    greifen nur bei Überlappung bzw. hohem Tempo: ein einzelner Meteor im Normalspiel sieht aus wie vorher. */
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 /* 1) Flugdauer folgt dem STICH-TAKT — der eigentliche Turbo-Deckel und der einzige, der keine Qualität kostet:
    der Meteor spielt seinen vollen Bogen samt Einschlag, nur schneller. Genau so koppeln `scorchSpeed`/`fxScale`

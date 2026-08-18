@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { getMusicAnalyser } from "../musicAnalyser.js";
 import { isCoarse } from "./mobileTier.js";
+import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* #317 Cube-Matrix — musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer von oben.
    Reiner Hintergrund-Effekt (bgfx): läuft KONTINUIERLICH zur laufenden Musik (nicht pro Stich). Jeder Würfel = ein
@@ -40,10 +41,7 @@ const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#
 const WIRE_HOT_MIX = 0.15, FILL_HOT_MIX = 0.30;
 
 const TAU = Math.PI * 2;
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const lerp = (a, b, t) => a + (b - a) * t;
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1)})`;
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter

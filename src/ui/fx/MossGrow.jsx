@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { dprCap } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
+import { mixRGB, clampRGB, satBoost, mulberry32, roundRectPath, fbm, clamp, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* Archetyp-Karteneffekt „Pflanze" als Neon-Moos — realistisches Moos überwächst die eigene Karte mit dem Wachstum.
    Von OBEN & den beiden SEITEN wächst es nach innen/unten zu (Akkretion: bestehendes Moos bleibt, neues kommt dazu).
@@ -41,8 +42,6 @@ const CARD_R = 12;            // Karten-Eckenradius (rounded-xl) — für den Co
 const M = 20;                 // Rand ums Moos-Bitmap (Überwuchs), in Referenz-px
 const LDX = -0.55, LDY = -0.83; // Lichtrichtung (oben-links)
 
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 // #352: Reduzierte Bewegung? Globales data-reduced-fx (App: alles ≠ „full", inkl. Mobile) ODER prefers-reduced-motion.
 // → dann Stufen-Wechsel OHNE Fade (Sofort-Draw wie bisher); Mobile-Perf/Barrierefreiheit bleiben unangetastet.
 function prefersReducedFx() {
@@ -53,13 +52,6 @@ function prefersReducedFx() {
 }
 function hexRGB(h) { let s = String(h || "#4f78c8").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }; }
 const rgba = (c, a) => "rgba(" + (c.r | 0) + "," + (c.g | 0) + "," + (c.b | 0) + "," + a + ")";
-const mix = (a, b, t) => ({ r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t });
-const clampRGB = (c) => ({ r: Math.max(0, Math.min(255, c.r)), g: Math.max(0, Math.min(255, c.g)), b: Math.max(0, Math.min(255, c.b)) });
-const satBoost = (c, s) => { const L = 0.30 * c.r + 0.59 * c.g + 0.11 * c.b; return clampRGB({ r: L + (c.r - L) * (1 + s), g: L + (c.g - L) * (1 + s), b: L + (c.b - L) * (1 + s) }); };
-function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-function roundRectPath(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function vhash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
-function fbm(x, y) { return vhash(x * 0.05, y * 0.05) * 0.6 + vhash(x * 0.13, y * 0.13) * 0.28 + vhash(x * 0.31, y * 0.31) * 0.12; }
 
 // ── Moos-Feld (fixe Referenzgröße, deterministisch seeded → einmal je Session gebaut, RDPR-unabhängig) ──
 let _field = null;
@@ -123,7 +115,7 @@ function renderMossBitmap(g, field, RDPR, nA, nB) {
   const nang = TUNE.NEON_ANGLE * Math.PI / 180, axc = Math.cos(nang), axs = Math.sin(nang);
   const cNA = hexRGB(nA), cNB = hexRGB(nB);
   const cDark = hexRGB(TUNE.MOSS_DARK), cMid = hexRGB(TUNE.MOSS_MID), cTip = hexRGB(TUNE.MOSS_TIP), cSpo = hexRGB(TUNE.SPORO_COLOR);
-  const cTipHi = clampRGB(mix(cTip, { r: 255, g: 255, b: 230 }, 0.55));
+  const cTipHi = clampRGB(mixRGB(cTip, { r: 255, g: 255, b: 230 }, 0.55));
   const cDark0 = { r: 0, g: 0, b: 0 };
   const neonTips = [];
 
@@ -131,7 +123,7 @@ function renderMossBitmap(g, field, RDPR, nA, nB) {
     let cd = cDark;
     if (TUNE.NEON_BASE >= 0.5 && TUNE.NEON_RIM > 0) {                                   // Base-Toggle: Schatten-Matte neon tönen
       const tA = clamp01(0.5 + ((t.x - REF_W / 2) * axc + (t.y - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-      cd = clampRGB(mix(cDark, clampRGB(mix(cNA, cNB, tA)), 0.4 * TUNE.NEON_RIM));
+      cd = clampRGB(mixRGB(cDark, clampRGB(mixRGB(cNA, cNB, tA)), 0.4 * TUNE.NEON_RIM));
     }
     mx.fillStyle = rgba(cd, (0.30 + 0.35 * TUNE.SHADOW) * mat);
     mx.beginPath(); mx.ellipse(t.x, t.y + 1, t.size * 2.0 * mat, t.size * 1.5 * mat, 0, 0, TAU); mx.fill();
@@ -144,8 +136,8 @@ function renderMossBitmap(g, field, RDPR, nA, nB) {
     const bx = t.x + Math.cos(t.outAng) * eo * 3.5 * mat, by = t.y + Math.sin(t.outAng) * eo * 3.5 * mat;
     const n = Math.max(2, Math.round(TUNE.FILA_PER * (0.45 + 0.55 * mat) * (0.6 + 0.7 * t.size)));
     const tAxis = clamp01(0.5 + ((t.x - REF_W / 2) * axc + (t.y - REF_H / 2) * axs) / (Math.max(REF_W, REF_H) * 0.62));
-    const neon = clampRGB(mix(cNA, cNB, tAxis)), neonP = satBoost(neon, 0.45 + 0.9 * TUNE.NEON_PUNCH);
-    const neonHot = clampRGB(mix(neonP, { r: 255, g: 255, b: 255 }, 0.35 + 0.25 * clamp01(TUNE.NEON_PUNCH)));
+    const neon = clampRGB(mixRGB(cNA, cNB, tAxis)), neonP = satBoost(neon, 0.45 + 0.9 * TUNE.NEON_PUNCH);
+    const neonHot = clampRGB(mixRGB(neonP, { r: 255, g: 255, b: 255 }, 0.35 + 0.25 * clamp01(TUNE.NEON_PUNCH)));
     for (let i = 0; i < n; i++) {
       const rr = rng();
       const len = TUNE.FILA_LEN * (0.45 + rr * 0.95) * (0.35 + 0.85 * mat) * (0.7 + 0.5 * t.size) * (1 + eo * 0.7);
@@ -153,10 +145,10 @@ function renderMossBitmap(g, field, RDPR, nA, nB) {
       const dirx = Math.cos(am), diry = Math.sin(am), x2 = bx + dirx * len, y2 = by + diry * len;
       const mpx = (bx + x2) / 2 + (rng() - 0.5) * len * 0.35, mpy = (by + y2) / 2 + (rng() - 0.5) * len * 0.25;
       const lightK = 0.66 + 0.5 * Math.max(0, dirx * LDX + diry * LDY), up = clamp01(Math.hypot(x2 - bx, y2 - by) / 10);
-      let col = clampRGB(mix(midT, tipT, (0.25 + 0.7 * rng()) * (0.4 + 0.6 * mat)));
+      let col = clampRGB(mixRGB(midT, tipT, (0.25 + 0.7 * rng()) * (0.4 + 0.6 * mat)));
       col = clampRGB({ r: col.r * lightK * (0.85 + 0.3 * up), g: col.g * lightK * (0.85 + 0.3 * up), b: col.b * lightK * (0.85 + 0.3 * up) });
       const washU = TUNE.NEON_BASE >= 0.5 ? (0.70 + 0.20 * up) : (0.26 + 0.36 * up);   // Base-Toggle: Wash zieht auch nach unten
-      if (TUNE.NEON_RIM > 0) { col = clampRGB(mix(col, neonP, TUNE.NEON_RIM * washU)); }  // Neon-Wash über den Halm
+      if (TUNE.NEON_RIM > 0) { col = clampRGB(mixRGB(col, neonP, TUNE.NEON_RIM * washU)); }  // Neon-Wash über den Halm
       mx.strokeStyle = rgba(col, 0.92); mx.lineWidth = TUNE.FILA_THICK * (0.6 + 0.7 * rng()); mx.lineCap = "round";
       mx.beginPath(); mx.moveTo(bx, by); mx.quadraticCurveTo(mpx, mpy, x2, y2); mx.stroke();
       if (TUNE.NEON_TIP > 0) {                                                          // additiver Neon-Saum an Spitze/Rand
@@ -180,15 +172,15 @@ function renderMossBitmap(g, field, RDPR, nA, nB) {
     if (TUNE.SPECK > 0) {                                                               // Samt-Körnung nahe Basis
       const sp = Math.round(TUNE.SPECK * 3);
       for (let s = 0; s < sp; s++) { const rx = t.x + (rng() - 0.5) * t.size * 3, ry = t.y + (rng() - 0.5) * t.size * 3;
-        mx.fillStyle = rgba(clampRGB(mix(midT, cDark0, 0.4)), 0.5 * TUNE.SPECK * mat); mx.fillRect(rx, ry, 1, 1); }
+        mx.fillStyle = rgba(clampRGB(mixRGB(midT, cDark0, 0.4)), 0.5 * TUNE.SPECK * mat); mx.fillRect(rx, ry, 1, 1); }
     }
   }
   function drawSporophyte(mx, t, mat) {
     const rng = mulberry32(t.seed ^ 0x9e3779b9); if (rng() >= TUNE.SPOROPHYTE * 0.05 * mat) return;
     const h = TUNE.FILA_LEN * (2.2 + rng() * 1.8) * mat, lean = (rng() - 0.5) * 0.5, tx = t.x + lean * h * 0.5, ty = t.y - h;
-    mx.strokeStyle = rgba(clampRGB(mix(cSpo, { r: 210, g: 190, b: 120 }, 0.15)), 0.9); mx.lineWidth = Math.max(0.8, TUNE.FILA_THICK * 0.8); mx.lineCap = "round";
+    mx.strokeStyle = rgba(clampRGB(mixRGB(cSpo, { r: 210, g: 190, b: 120 }, 0.15)), 0.9); mx.lineWidth = Math.max(0.8, TUNE.FILA_THICK * 0.8); mx.lineCap = "round";
     mx.beginPath(); mx.moveTo(t.x, t.y); mx.quadraticCurveTo(t.x + lean * h * 0.3, t.y - h * 0.5, tx, ty); mx.stroke();
-    mx.fillStyle = rgba(clampRGB(mix(cSpo, { r: 120, g: 70, b: 30 }, 0.2)), 0.95); mx.beginPath(); mx.ellipse(tx, ty, TUNE.FILA_THICK * 1.1, TUNE.FILA_THICK * 1.7, lean, 0, TAU); mx.fill();
+    mx.fillStyle = rgba(clampRGB(mixRGB(cSpo, { r: 120, g: 70, b: 30 }, 0.2)), 0.95); mx.beginPath(); mx.ellipse(tx, ty, TUNE.FILA_THICK * 1.1, TUNE.FILA_THICK * 1.7, lean, 0, TAU); mx.fill();
     mx.fillStyle = rgba({ r: 240, g: 225, b: 170 }, 0.5); mx.beginPath(); mx.arc(tx - 0.6, ty - 0.8, TUNE.FILA_THICK * 0.5, 0, TAU); mx.fill();
   }
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Application, ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
 import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: geteilte Feuer-Standard-Palette (auch Komet)
+import { lerp, mix } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* Archetyp-Karteneffekt „Feuer" — Brennender Kartenkopf (docs/archetyp-karteneffekte.md §5.2, Redesign).
    Der KOPF der eigenen Karte brennt: eine verankerte Flammenlinie lodert oben ÜBER dem Rahmen nach oben; optional
@@ -23,8 +25,6 @@ const TX = 64, MAX = 700, BASE_N = 28, SMOKE_N = 48;
 const NUMKEYS = ["FLAME_RATE","FLAME_RISE","FLAME_H","FLAME_SPREAD","FLAME_SWAY","FLAME_SIZE","FLAME_LIFE","FLAME_LEAN","GLOW_DOWN","GLOW_ALPHA","SMOKE"];
 
 const hexRGB = (h) => { const s = String(h || "#ff3d14").replace("#", ""); const f = s.length === 3 ? s.replace(/(.)/g, "$1$1") : s; const n = parseInt(f, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-const lerp = (a, b, t) => a + (b - a) * t;
-const lerpRGB = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 const rgbInt = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 
 // Phasen mit vorberechneten RGB-Farben.
@@ -37,7 +37,7 @@ const zeroPhase = () => ({ ...PH[20], FLAME_RATE: 0, GLOW_ALPHA: 0, SMOKE: 0 });
 // Weiß entsteht (wie bei der Seide) allein aus der additiven Überlappung vieler Partikel, nicht aus einem weißen Tint.
 const NEON_BOT = FIRE_NEON_BOT, NEON_MID = FIRE_NEON_MID, NEON_TOP = FIRE_NEON_TOP; // #357: aus geteilter firePalette (unten blau → magenta → oben rot)
 // Vertikaler Verlauf über die Flammenhöhe — Palette (bot/mid/top) kommt von außen: Standard-Neon ODER Deckfarben.
-const neonAt = (hf, bot, mid, top) => { const h = hf < 0 ? 0 : hf > 1 ? 1 : hf; return h < 0.5 ? lerpRGB(bot, mid, h / 0.5) : lerpRGB(mid, top, (h - 0.5) / 0.5); };
+const neonAt = (hf, bot, mid, top) => { const h = hf < 0 ? 0 : hf > 1 ? 1 : hf; return h < 0.5 ? mix(bot, mid, h / 0.5) : mix(mid, top, (h - 0.5) / 0.5); };
 
 // Interpolierte Parameter bei Hitze h (0..1).
 function paramsAt(h) {
@@ -47,21 +47,12 @@ function paramsAt(h) {
   const A = KF[i], B = KF[i + 1], t = (B.h - A.h) > 0 ? Math.max(0, Math.min(1, (h - A.h) / (B.h - A.h))) : 0;
   const out = {};
   for (const key of NUMKEYS) out[key] = lerp(A.p[key], B.p[key], t);
-  out.cCOLOR = lerpRGB(A.p.cCOLOR, B.p.cCOLOR, t);
-  out.cCORE = lerpRGB(A.p.cCORE, B.p.cCORE, t);
-  out.cEMBER = lerpRGB(A.p.cEMBER, B.p.cEMBER, t);
+  out.cCOLOR = mix(A.p.cCOLOR, B.p.cCOLOR, t);
+  out.cCORE = mix(A.p.cCORE, B.p.cCORE, t);
+  out.cEMBER = mix(A.p.cEMBER, B.p.cEMBER, t);
   return out;
 }
 
-// Weiche weiße Radial-Textur (Kern + Halo) — pro Sprite/Partikel getönt.
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = TX;
-  const cx = c.getContext("2d");
-  const g = cx.createRadialGradient(TX / 2, TX / 2, 0, TX / 2, TX / 2, TX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  cx.fillStyle = g; cx.fillRect(0, 0, TX, TX);
-  return Texture.from(c);
-}
 // Vertikaler Verlauf (oben deckend → unten transparent) für das Kanten-Glühen.
 function makeVGrad() {
   const c = document.createElement("canvas"); c.width = 8; c.height = 64;
@@ -79,7 +70,7 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
   // Farbmodus: Standard = feste Neon-Palette; Deckfarbe = deckColor→deckColor2 (Mitte = Mix) als vertikaler Verlauf.
   const palBot = deckTint && deckColor ? hexRGB(deckColor) : NEON_BOT;
   const palTop = deckTint && deckColor ? hexRGB(deckColor2 || deckColor) : NEON_TOP;
-  const palMid = deckTint && deckColor ? lerpRGB(palBot, palTop, 0.5) : NEON_MID;
+  const palMid = deckTint && deckColor ? mix(palBot, palTop, 0.5) : NEON_MID;
   const stateRef = useRef({ heat, palBot, palMid, palTop });
   stateRef.current = { heat, palBot, palMid, palTop };
 
@@ -210,8 +201,8 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
       canvas.style.width = "100%"; canvas.style.height = "100%"; canvas.style.display = "block";
       host.appendChild(canvas);
 
-      flameTex = makeRadial([[0, 0.7], [0.2, 0.36], [0.55, 0.11], [1, 0]]);   // weich → additiv kein Weiß-Blowout
-      glowTex = makeRadial([[0, 0.9], [0.5, 0.28], [1, 0]]);
+      flameTex = makeRadial([[0, 0.7], [0.2, 0.36], [0.55, 0.11], [1, 0]], TX);   // weich → additiv kein Weiß-Blowout
+      glowTex = makeRadial([[0, 0.9], [0.5, 0.28], [1, 0]], TX);
       gradTex = makeVGrad();
 
       glow = new Sprite(gradTex); glow.anchor.set(0.5, 0); glow.alpha = 0; glow.blendMode = "add"; app.stage.addChild(glow);

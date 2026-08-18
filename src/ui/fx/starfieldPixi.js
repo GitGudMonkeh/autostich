@@ -1,7 +1,9 @@
-import { ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
+import { ParticleContainer, Particle, Sprite, Container } from "pixi.js";
 import { EFFECT_ZONES, FLOOR_FRONT_AT_BOTTOM } from "./effectZones.js"; // #341: Einschlagfläche = gemeinsames fixes Effekt-Boden-Feld
 import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: Standard-Farbe = Feuer-Archetyp (FireHead)
 import { cometLifeS, trailSamples, sparkScale, cometStride, cometSize } from "./starfieldBudget.js"; // #perf-meteor: Deckel für Turbo/Late-Game (nur lite)
+import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { makeRadial } from "./fxTextures.js"; // #fx-helfer: geteilte Radial-Textur
 
 /* Sternenfeld als GPU-Emitter (Pixi) — #311-Umbau des alten, braven DOM-Ports. Statt 10 festen Ambiente-Sternen +
    einer Zickzack-Sternschnuppe liefert dieser Emitter:
@@ -22,7 +24,6 @@ import { cometLifeS, trailSamples, sparkScale, cometStride, cometSize } from "./
    Board-Größen auf On-Screen-Pixel; für Feinjustage bewusst gebündelt. */
 
 // ── deterministische Helfer ──────────────────────────────────────────────────
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // #341/#357: alle Kometen-Größen (Kopf/Schweif/Impact) über EINEN globalen Faktor — die Tier-Relationen (TIER_SIZE)
 //   bleiben unangetastet, nur die absolute Größe wächst. Ambiente-Sterne (K_AMB) sind KEINE Kometen → unverändert.
@@ -116,7 +117,6 @@ const AMB_COL  = [255, 234, 208]; // warm-weiße Ambiente-Sterne (Standard) — 
 const FIRE_SPARK = FIRE_NEON_TOP;  // #357: Einschlag-Funken in der Feuer-Palette (rot glühend) statt warmem Orange
 const FIRE_NEB   = FIRE_NEON_MID;  // #357: Nebel-Backdrop magenta (Feuer-Palette) statt warmem Orange
 
-const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 const rgbInt = (c) => ((c[0] & 255) << 16) | ((c[1] & 255) << 8) | (c[2] & 255);
 function hexToRGB(hex) {
   const h = (hex || "#7fb4ff").replace("#", "");
@@ -144,20 +144,10 @@ function readDeckDefault() {
   } catch { return false; }
 }
 
-// Weiche, weiße Radial-Textur (Kern + Halo) — zur Laufzeit pro Partikel getönt.
-function makeRadial(stops) {
-  const c = document.createElement("canvas"); c.width = c.height = TX;
-  const cx = c.getContext("2d");
-  const g = cx.createRadialGradient(TX / 2, TX / 2, 0, TX / 2, TX / 2, TX / 2);
-  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
-  cx.fillStyle = g; cx.fillRect(0, 0, TX, TX);
-  return Texture.from(c);
-}
-
 export function createStarfield(app) {
-  const starTex = makeRadial([[0, 1], [0.38, 1], [0.6, 0.2], [1, 0]]);  // Stern/Kopf/Schweif: solider Kern + Halo
-  const sparkTex = makeRadial([[0, 1], [0.5, 1], [0.66, 0.1], [1, 0]]); // #impact: Funken SCHÄRFER (großer Kern, kurzer Halo) → Partikel statt Ball
-  const nebTex  = makeRadial([[0, 0.5], [0.5, 0.22], [1, 0]]);          // Nebel: sehr weich, mittenschwach
+  const starTex = makeRadial([[0, 1], [0.38, 1], [0.6, 0.2], [1, 0]], TX);  // Stern/Kopf/Schweif: solider Kern + Halo
+  const sparkTex = makeRadial([[0, 1], [0.5, 1], [0.66, 0.1], [1, 0]], TX); // #impact: Funken SCHÄRFER (großer Kern, kurzer Halo) → Partikel statt Ball
+  const nebTex  = makeRadial([[0, 0.5], [0.5, 0.22], [1, 0]], TX);          // Nebel: sehr weich, mittenschwach
 
   // Schichten (Zeichenreihenfolge): Nebel (hinten) → Ambiente-Sterne → Schweif+Kopf → Funken → Blitz (vorn).
   const nebulaC = new Container();
@@ -294,7 +284,6 @@ export function createStarfield(app) {
     if (cometStride(params.lite, sweepDur, TUNE.SHOOT_DUR) > 1 && seq % 2 !== 0) return;
     // #317-artig: ZUFÄLLIGER Einschlagpunkt auf einer perspektivischen Fläche (Trapez): d=0 fern (hinten, hoch, schmal,
     // klein) .. d=1 nah (vorn, tief, breit, groß). Kopf/Schweif/Impact skalieren mit der Tiefe → 3D-Streuung übers Feld.
-    const lerp = (a, b, u) => a + (b - a) * u;
     const d = Math.random();
     const tyN = lerp(TUNE.PLANE_FAR_Y, TUNE.PLANE_NEAR_Y, d);
     const halfW = lerp(TUNE.PLANE_FAR_HALF, TUNE.PLANE_NEAR_HALF, d);
