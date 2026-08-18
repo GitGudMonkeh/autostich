@@ -74,7 +74,10 @@ for (const m of WEEK_MODS) {
 /* Glossar: Label, Text UND die Wortformen für die Auto-Fettung. Die `match`-Liste ist KEIN
    Anzeigetext — sie steuert, welche Wörter in Beschreibungen fett werden. Englisch braucht dafür
    eigene Formen (Plurale, Verbformen), keine Übersetzung der deutschen Flexionen. */
-for (const c of GLOSSARY_CATEGORIES) fromRegistries[`glossary.cat.${c.id}`] = c.label;
+for (const c of GLOSSARY_CATEGORIES) {
+  fromRegistries[`glossary.cat.${c.id}`] = c.label;
+  fromRegistries[`glossary.cathint.${c.id}`] = c.hint;
+}
 for (const [k, g] of Object.entries(GLOSSARY_GROUPS)) fromRegistries[`glossary.group.${k}`] = g.label;
 for (const [gid, e] of Object.entries(GLOSSARY)) {
   fromRegistries[`glossary.${gid}.label`] = e.label;
@@ -907,6 +910,13 @@ export default {
   "glossary.all": "Alle",
   "glossary.noHit.pre": "Kein Begriff zu",
   "glossary.noHit.post": "Andere Schreibweise probieren?",
+  /* Desktop-Fassung (#glossar-desktop): die Kategorien stehen als Spalte statt als Chip-Leiste. */
+  "glossary.nav.categories": "Kategorien",
+  "glossary.nav.note": "Die Suche greift über alle Kategorien — die Zähler zeigen, wo die Treffer liegen.",
+  "glossary.allTitle": "Alle Begriffe",
+  "glossary.hits": "Treffer für „{q}“",
+  "glossary.count_one": "{count} Begriff",
+  "glossary.count_other": "{count} Begriffe",
 
   /* ---- Leitfaden (GuideOverlay) ---- */
   "guide.title": "Leitfaden",

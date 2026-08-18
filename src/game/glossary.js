@@ -50,16 +50,20 @@ const CLR = {
   meta: "#5aa3a0",      // Fortschritt & Meta
 };
 
-// ---- Kategorien (Anzeige-Reihenfolge im Overlay) ----
+/* ---- Kategorien (Anzeige-Reihenfolge im Overlay) ----
+   `hint` ist ein Einzeiler, der die Kategorie einordnet. Auf dem Handy wird er nicht gezeigt (die
+   Chip-Leiste hat dafür keinen Platz), auf dem Desktop trägt ihn der Seitenkopf neben dem Titel —
+   dieselbe Stelle, an der der Leitfaden den Archetyp-Untertitel zeigt. Er gehört ins REGISTER und
+   nicht in die UI, weil er ein Text ÜBER die Kategorie ist, kein Text der Oberfläche. */
 export const GLOSSARY_CATEGORIES = [
-  { id: "grund", label: "Grundbegriffe",      color: CLR.grund },
-  { id: "deck",  label: "Deck & Karten",      color: CLR.deck },
-  { id: "form",  label: "Formationen",        color: CLR.neutral },
-  { id: "frak",  label: "Archetypen",         color: CLR.lightning },
-  { id: "praez", label: "Präzision · Crit",    color: CLR.lightning },
-  { id: "perk",  label: "Perks & Rarität",    color: CLR.perk },
-  { id: "arch",  label: "Der Architekt",      color: CLR.arch },
-  { id: "meta",  label: "Fortschritt & Meta", color: CLR.meta },
+  { id: "grund", label: "Grundbegriffe",      color: CLR.grund,   hint: "Stich, Serie, Kampfwert — die Vokabeln jedes Laufs." },
+  { id: "deck",  label: "Deck & Karten",      color: CLR.deck,    hint: "Woraus dein Deck besteht und wie es gelesen wird." },
+  { id: "form",  label: "Formationen",        color: CLR.neutral, hint: "Muster in der Kartenreihenfolge und was sie zahlen." },
+  { id: "frak",  label: "Archetypen",         color: CLR.lightning, hint: "Die vier Ressourcen — nach Fraktion gruppiert." },
+  { id: "praez", label: "Präzision · Crit",   color: CLR.lightning, hint: "Woher Crit-Chance und Crit-Multiplikator kommen." },
+  { id: "perk",  label: "Perks & Rarität",    color: CLR.perk,    hint: "Familien, Stufen, Raritäten, Legendäre." },
+  { id: "arch",  label: "Der Architekt",      color: CLR.arch,    hint: "Bauphase, Brett, Gebäude, Struktur." },
+  { id: "meta",  label: "Fortschritt & Meta", color: CLR.meta,    hint: "Was über den einzelnen Lauf hinaus zählt." },
 ];
 // ---- Untergruppen (nur Kategorie „frak"), feste Reihenfolge ----
 export const GLOSSARY_GROUPS = {

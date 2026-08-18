@@ -652,6 +652,45 @@ Text**, sondern `loop.center` aus den Leitfaden-Daten („STURM · nährt sich s
 - **Nicht am Gerät gesehen** — alles im Produktionspfad über Playwright gemessen und nachgerendert
   (Chromium, echte Komponente), aber nicht auf einem physischen Monitor abgenommen.
 
+### #glossar-desktop — das Glossar als gerahmter Screen (2026-08-18)
+Der letzte Screen im 672-px-Modal: **109 Begriffe** in einer Spalte, die 42 % der Bildbreite nutzt. Ab 1400 px
+derselbe gerahmte Screen wie Baum, Werkstatt und Leitfaden — Überzug (82 %, **kein** Blur), Ränder 16/48/18,
+Kopf-Raster `auto 1fr auto` + eigene Haarlinie, Panelglas, Radius 14, `as-ring`: alles an `.up-*`/`.gd-*`
+**abgemessen, nicht neu erfunden**. Wie beim Leitfaden gibt es **keinen zweiten Renderpfad** — das JSX setzt die
+`gl-*`-Klammern in jeder Breite, unterhalb 1400 px sind sie `display: contents`.
+- **Kategorien werden zur Navigationsspalte** (300 px, `align-self: start`) mit **Zähler je Kategorie**. Und sie
+  **FILTERN** dort, statt zu springen (eine Zeile, eine Seite — wie im Leitfaden). Die Sprungmarke bleibt die
+  richtige Antwort auf dem Handy, wo alles untereinander steht; die Naht hängt deshalb an `useIsWide()`, nicht an
+  CSS. Kategorien ohne Treffer bleiben **stehen** und werden nur blass — eine Spalte, deren Zeilen beim Tippen
+  wandern, kann man nicht lesen.
+- **Die Suche steht in der Kopfzeile**, in der Spalte, in der der Leitfaden seine Auskunft zeigt. Sie ist das
+  wichtigste Werkzeug des Glossars und hing bisher im mitscrollenden Kopf. **Tippen schaltet auf „Alle"** — im
+  Mockup lag „Serie" sonst als **1 von 6** Treffern da, die anderen fünf hinter einem selbst gesetzten und
+  vergessenen Filter. Die Zähler bleiben und laden zum Nachschärfen ein.
+- **Begriffe im SPALTENFLUSS** (`columns: 3 300px`), nicht im Raster — dieselbe Lehre wie #skilltext: im Raster
+  bestimmt die höchste Zelle die Reihenhöhe, und dagegen hilft nur eine Klemme, die mitten im Satz abschneidet.
+  „Archetypen" behält seine fünf Fraktions-Untergruppen, jede mit eigenem Fluss. Preis, bewusst bezahlt: die
+  Lesereihenfolge läuft spaltenweise.
+- **`display: block` an `.gl-body`/`.gl-cols` im 1400er Block ist PFLICHT, nicht Kosmetik.** Genau das hat beim
+  ersten Anlauf gefehlt: die Basisregel setzt beide auf `display: contents`, ein solches Element erzeugt gar keine
+  Box — `overflow` und `columns` hatten nichts, woran sie greifen konnten. Die Liste stand einspaltig und
+  ungescrollt da, während `getComputedStyle` brav `column-count: 3` meldete. **Der eine Fehler, den man dem
+  Quelltext nicht ansieht**, weil beide Regeln für sich richtig aussehen. Wächter hält ihn fest.
+- **Ventil innen**: `.gl-scroll` ist `overflow: hidden`, gescrollt wird in `.gl-body` — sonst liefe die Ringkante
+  (`as-ring`, `inset: 0`) beim Scrollen mitten durch den Inhalt (Naht wie `.cz-main`/`.gd-page .gd-cols`).
+- **KEIN `--gs`-Maßstab wie beim Leitfaden.** Der muss auf EINE Seite passen; das Glossar ist eine Liste und
+  scrollt ohnehin — Stufen hätten hier nichts zu regeln. Nur ein fester Schritt nach oben aus den Handy-Maßen
+  (Begriff 13 → 14,5 px, Beschreibung 11,5 → 12,8 px) und dieselbe Rand-Straffung auf flachen Fenstern.
+- **Neu im Register**: `GLOSSARY_CATEGORIES[].hint`, ein Einzeiler je Kategorie für den Seitenkopf (`de.js`
+  erzeugt daraus `glossary.cathint.*`, `enGlossary.js` übersetzt). Er gehört ins Register, weil er ein Text ÜBER
+  die Kategorie ist, kein Text der Oberfläche.
+- **Handy-Fassung nachgewiesen unberührt**: Produktionsbuild vor/nach, 390 und 820 px, Geometrie der ersten sechs
+  Begriffskarten identisch, Scrollhöhe identisch (12007 bzw. 8644 px), mittlere Bildabweichung **0,007 bzw. 0,003
+  von 255** (0,56 gilt hier als nicht unterscheidbar).
+- Gemessen 1920×1080 · 1536×791 · 1400×950: überall drei Spalten, **nirgends Seiten-Scrollen**.
+- Wächter: `test/glossary-desktop.test.js` (11 Prüfungen, Gegenprobe gemacht: alle sabotierten Nähte fallen).
+- **Nicht am Gerät abgenommen** — alles headless im Produktionsbuild gemessen und nachgerendert.
+
 ### #typo — Geist statt System-Mono, projektweit (2026-08-17)
 Bis hierher lief **alles** in `ui-monospace` (eine Zeile in index.css: `html, body`). Überschriften, Knöpfe,
 Beschreibungen und Zahlen trugen dieselbe Schrift — Typografie war damit als Ordnungsmittel gar nicht im Einsatz.

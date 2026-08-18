@@ -173,6 +173,16 @@ const out = {
   "glossary.cat.arch": "The Architect",
   "glossary.cat.meta": "Progress & meta",
 
+  /* ---- Category one-liners (desktop page head) ---- */
+  "glossary.cathint.grund": "Trick, streak, battle value — the vocabulary of every run.",
+  "glossary.cathint.deck": "What your deck is made of and how it is read.",
+  "glossary.cathint.form": "Patterns in the card order and what they pay.",
+  "glossary.cathint.frak": "The four resources — grouped by faction.",
+  "glossary.cathint.praez": "Where crit chance and crit multiplier come from.",
+  "glossary.cathint.perk": "Families, tiers, rarities, legendaries.",
+  "glossary.cathint.arch": "Build phase, board, buildings, structure.",
+  "glossary.cathint.meta": "What counts beyond the single run.",
+
   /* ---- Groups (archetype sub-headings) ---- */
   "glossary.group.gen": "General",
   "glossary.group.fire": "Fire",

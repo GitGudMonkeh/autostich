@@ -170,6 +170,10 @@ button { font-family: inherit; }
    Gilt auch für die Deck-Detailansicht, die dieselbe GuideBody in einer schmalen Spalte zeigt: dort
    fehlt `.gd-page`, und ohne die greift die Desktop-Regel gar nicht erst (s. index.css, 1400er Block). */
 .gd-desk, .gd-page, .gd-cols, .gd-col { display: contents; }
+/* Dieselben Klammern für das Glossar (#glossar-desktop): Rumpf, Seite, Scroller und der Spaltenfluss
+   der Begriffe. `.gl-cols` ist der Grund, warum die Begriffe auf dem Handy weiter untereinander im
+   Scroller stehen, obwohl der Desktop drei Spalten daraus macht. */
+.gl-desk, .gl-page, .gl-body, .gl-cols { display: contents; }
 /* Das laufende Ringband (#perf-ring) gibt es nur auf dem Desktop — `.as-ring` selbst ist ebenfalls erst
    ab 1400 px definiert. Unterhalb ist das Kind ein leeres, unsichtbares Element. */
 .as-ring-run { display: none; }
@@ -2565,6 +2569,179 @@ button { font-family: inherit; }
   .gd-page .gd-ringbox { max-width: calc(334px * var(--gs)); }
 
   /* ==========================================================================
+     #glossar-desktop — Glossar ab 1400 px
+     --------------------------------------------------------------------------
+     Der letzte Screen im 672-px-Modal: 109 Begriffe in einer Spalte, die 42 % der Bildbreite nutzt.
+     Ab hier derselbe gerahmte Screen wie Baum, Werkstatt und Leitfaden — Überzug, Ränder, Kopf-Raster,
+     Panelglas und Ring sind an `.up-*` / `.gd-*` ABGEMESSEN und nicht neu erfunden. Wer hier etwas
+     ändert, ändert es dort mit (oder begründet, warum das Glossar eine Ausnahme ist).
+
+     Die acht Kategorien werden zur Navigationsspalte statt zur Chip-Leiste, und sie FILTERN dort,
+     statt zu springen (die Verhaltensnaht steht in Glossary.jsx, sie hängt an `useIsWide()`).
+     ========================================================================== */
+  /* Der Dim wird zum Überzug: 82 % ohne Blur — die Begründung steht bei `.gd-dim` (#perf-blur).
+     `!important`, weil beide Werte inline am Element stehen. */
+  .gl-dim {
+    background: rgba(12, 12, 16, .82) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .gl-frame { padding: 16px 48px 18px !important; align-items: stretch !important; }
+  /* Die Karte hört auf, eine Karte zu sein: Fläche, Rahmen und Schlagschatten wandern in die zwei
+     Panels darunter, sie bleibt das Raster. `!important` schlägt die inline gesetzte MODAL_CARD. */
+  .gl-card {
+    max-width: none;
+    max-height: none !important;
+    height: 100%;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0;
+    overflow: visible;
+  }
+  /* #rahmen: DREI Klassen, nicht zwei — `[data-skin="crt"] .as-panel.as-panel-deck` wiegt (0,3,0) und
+     malte sonst weiter einen animierten 1-px-Verlauf um den GANZEN Bildschirm. Der Rahmen des Screens
+     sind die PANELS (`as-ring`), nicht die Karte. */
+  .gl-card.as-panel.as-panel-deck { background-image: none !important; animation: none !important; }
+  .gl-card > div[aria-hidden="true"]:first-child { display: none; }
+
+  /* --- Kopf: das Raster von `.up-head` / `.gd-head` ------------------------
+     Spalte 1 Titel · Spalte 2 SUCHE · Spalte 3 Schließen, Zeile 2 die Haarlinie über die volle Breite.
+     Aus drei gestapelten Bändern wird eine Zeile. Die Untertitel-Zeile entfällt: auf dem Desktop trägt
+     der Seitenkopf die Einordnung (und bei aktiver Suche die Trefferzeile). */
+  .gl-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 22px;
+    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    border-bottom: none !important;
+    padding: 10px 0 8px;
+  }
+  .gl-headrow { display: contents; }
+  .gl-title { grid-column: 1; grid-row: 1; }
+  .gl-title h2 { font-size: 15px; }
+  .gl-hint { display: none; }
+  .gl-search { grid-column: 2; grid-row: 1; margin-top: 0 !important; max-width: 520px; }
+  .gl-search input { font-size: 14.5px !important; padding-top: 11px; padding-bottom: 11px; }
+  /* Wie im Baum: Schließen liegt sonst unter dem 44-px-Mindestklickziel des Desktop-Passes. */
+  .gl-close { grid-column: 3; grid-row: 1; font-size: 15px !important; padding: 11px 18px !important; border-radius: 8px; }
+  .gl-hair {
+    grid-column: 1 / -1; grid-row: 2; margin-top: 10px;
+    height: 2px; border-radius: 99px; opacity: .7;
+    background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
+  }
+  /* Die Chip-Leiste hat nichts mehr zu schalten. */
+  .gl-tabs { display: none; }
+
+  /* --- Rumpf: Spalte + Seite, Raster von `.up-desk` / `.gd-desk` ----------- */
+  .gl-scroll {
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .gl-desk {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 22px;
+    align-items: stretch;
+    margin-top: 4px;
+    flex: 1;
+    min-height: 0;
+  }
+  /* `align-self: start` wie `.up-nav`/`.gd-nav`: die Spalte endet an ihrem letzten Eintrag statt bis
+     zum Fuß durchzulaufen. */
+  .gl-nav {
+    align-self: start;
+    border-radius: 14px; padding: 14px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  }
+  .gl-navhead {
+    font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
+    color: #82828f; padding: 2px 3px 4px;
+  }
+  .gl-navrow {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 10px 12px; border-radius: 11px; cursor: pointer;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, #12121a) 0%, #12121a 46%);
+    border: 1px solid rgba(150, 150, 170, .14);
+    border-left: 4px solid color-mix(in srgb, var(--c) 70%, transparent);
+    transition: background .14s ease, box-shadow .14s ease;
+  }
+  .gl-navrow:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 20%, #12121a) 0%, #12121a 50%); }
+  .gl-navrow.is-on {
+    border-left-color: var(--c);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 26%, #12121a) 0%, #12121a 52%);
+    box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
+  }
+  /* Eine Kategorie ohne Treffer bleibt STEHEN und wird nur blass. Sie auszublenden ließe die Spalte
+     bei jedem Tastendruck springen — und die Zeilenposition ist das, woran man sie liest. */
+  .gl-navrow.is-empty { opacity: .34; }
+  .gl-navdot { width: 9px; height: 9px; border-radius: 3px; background: var(--c); flex: none; }
+  .gl-navlabel {
+    flex: 1; min-width: 0; font-size: 15px; font-weight: 600; color: #e6e4ee;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .gl-navcount {
+    flex: none; font-size: 12px; color: #8a8a95;
+    background: #0e0e13; border: 1px solid #2a2a33;
+    border-radius: 7px; padding: 2px 7px; min-width: 34px; text-align: center;
+  }
+  .gl-navrow.is-on .gl-navcount { color: var(--c); border-color: color-mix(in srgb, var(--c) 40%, #2a2a33); }
+  .gl-navnote {
+    margin-top: 4px; padding: 10px 3px 2px;
+    border-top: 1px solid rgba(150, 150, 170, .14);
+    font-size: 12.5px; line-height: 1.45; color: #71717c;
+  }
+
+  .gl-page {
+    display: flex; flex-direction: column;
+    border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
+    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  }
+  .gl-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex: none; min-height: 36px; }
+  .gl-page-eyebrow {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 15px; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; color: var(--c);
+  }
+  .gl-page-eyebrow .gl-sq { width: 11px; height: 11px; border-radius: 3px; background: var(--c); flex: none; }
+  .gl-page-hint { font-size: 13px; color: #71717c; min-width: 0; line-height: 1.35; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gl-page-count { font-size: 13px; color: #8a8a95; flex: none; }
+
+  /* Das Ventil: gescrollt wird INNEN, nicht am Panel. Der Ring von `.as-ring` sitzt mit `inset: 0` im
+     Fluss und liefe sonst beim Scrollen mitten durch den Inhalt (dieselbe Naht wie `.cz-main` /
+     `.cz-mainscroll` und `.gd-page .gd-cols`). */
+  /* `display: block` ist hier PFLICHT, nicht Kosmetik: die Basisregel setzt beide Klammern auf
+     `display: contents`, und ein solches Element erzeugt gar keine Box — weder `overflow` noch
+     `columns` hätten dann etwas, woran sie greifen könnten. Beim ersten Anlauf stand die Liste
+     deshalb einspaltig und ungescrollt da, obwohl `column-count` berechnet 3 meldete. */
+  .gl-body { display: block; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; }
+  .gl-body > .gl-sec { padding-left: 0 !important; padding-right: 0 !important; }
+  .gl-body > .gl-sec:first-child { padding-top: 0 !important; }
+  .gl-body > .gl-sec + .gl-sec { padding-top: 22px !important; }
+  .gl-sechead { margin-bottom: 9px !important; }
+  .gl-sechead h3 { font-size: 11.5px !important; }
+  .gl-sechead .gl-sq { width: 10px !important; height: 10px !important; }
+  .gl-sechead .gl-secrule { max-width: none !important; }
+  .gl-grouphead { font-size: 11.5px !important; margin: 14px 0 7px !important; }
+
+  /* --- Die Begriffe im SPALTENFLUSS ---------------------------------------
+     `columns` statt `grid`, und das ist dieselbe Entscheidung wie bei den Skill-Texten im Baum
+     (#skilltext): im Raster bestimmt die höchste Zelle die Höhe der ganzen Reihe, und dagegen hilft
+     nur eine Klemme (`-webkit-line-clamp`), die mitten im Satz abschneidet. Im Spaltenfluss hat jede
+     Karte ihre eigene Höhe; die Spaltenzahl kommt aus der BREITE, nicht aus einer abgetippten Zahl.
+     Preis, bewusst bezahlt: die Lesereihenfolge läuft spaltenweise (runter, dann rechts). */
+  .gl-cols { display: block; columns: 3 300px; column-gap: 16px; }
+  .gl-cols > * { break-inside: avoid; }
+  /* Schriftgrößen einen Schritt nach oben aus den Handy-Maßen. Bewusst KEIN `--gs`-Maßstab wie beim
+     Leitfaden: der muss auf EINE Seite passen, das Glossar ist eine Liste und scrollt ohnehin —
+     Stufen hätten hier nichts zu regeln. */
+  .gl-cols .gloss-term-row { padding: 9px 11px; margin-bottom: 8px; }
+  .gl-cols .gl-tname { font-size: 14.5px; }
+  .gl-cols .gl-ttext { font-size: 12.8px; }
+
+  /* ==========================================================================
      #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px
      --------------------------------------------------------------------------
      Die drei letzten Menü-Overlays, die noch als schmale Handy-Karte mitten auf einem 1920er Schirm
@@ -3207,6 +3384,12 @@ button { font-family: inherit; }
   .gd-page { --gs: .9; padding: 12px 16px 10px; }
   .gd-page .gd-cols { gap: 18px; }
   .gd-nav { padding: 12px 10px; }
+  /* Glossar: dieselbe Straffung, aber OHNE Größenstufe. Der Leitfaden braucht seine, weil er auf eine
+     Seite passen muss; das Glossar scrollt — dort kauft eine kleinere Schrift nur kleinere Schrift. */
+  .gl-frame { padding: 10px 36px 12px !important; }
+  .gl-desk { gap: 18px; margin-top: 2px; }
+  .gl-page { padding: 12px 16px 10px; }
+  .gl-nav { padding: 12px 10px; }
 }
 
 /* Sehr flache Fenster (Laptop 1920x1200 bei 125 % Skalierung = CSS 1536x791, und alles darunter):

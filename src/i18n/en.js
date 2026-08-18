@@ -883,6 +883,12 @@ export default {
   "glossary.all": "All",
   "glossary.noHit.pre": "No entry for",
   "glossary.noHit.post": "Try a different spelling?",
+  "glossary.nav.categories": "Categories",
+  "glossary.nav.note": "Search covers every category — the counters show where the hits are.",
+  "glossary.allTitle": "All entries",
+  "glossary.hits": "Hits for “{q}”",
+  "glossary.count_one": "{count} entry",
+  "glossary.count_other": "{count} entries",
 
   /* ---- Guide (GuideOverlay) ---- */
   "guide.title": "Guide",

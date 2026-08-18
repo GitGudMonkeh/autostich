@@ -23,7 +23,7 @@ export function glossaryEntry(id) {
 export const glossaryEntries = () => Object.keys(GLOSSARY).map(glossaryEntry);
 
 export const glossaryCategories = () =>
-  GLOSSARY_CATEGORIES.map((c) => ({ ...c, label: t(`glossary.cat.${c.id}`) }));
+  GLOSSARY_CATEGORIES.map((c) => ({ ...c, label: t(`glossary.cat.${c.id}`), hint: t(`glossary.cathint.${c.id}`) }));
 export const glossaryGroups = () =>
   Object.fromEntries(Object.entries(GLOSSARY_GROUPS).map(([k, g]) => [k, { ...g, label: t(`glossary.group.${k}`) }]));
 
