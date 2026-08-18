@@ -1,0 +1,57 @@
+name: CI (Tests · Lint · Build)
+
+# Die vier Deploy-Workflows (main · Autostich_Test · Autostich/pixi · balancing) fahren `npm test`
+# und den Lint-Deckel schon selbst — auf JEDEM ANDEREN Branch lief bis hierher gar nichts. Ein
+# Feature-Branch konnte also beliebig lange rot sein, und auffallen wäre es erst beim Merge in einen
+# der vier. Genau die Lücke schließt dieser Workflow.
+#
+# Er ist bewusst KEIN Deploy: keine `contents: write`-Rechte, kein Pages-Push, und vor allem NICHT
+# in der Concurrency-Gruppe `gh-pages-publish`. Die hält nur EINEN wartenden Lauf pro Gruppe vor —
+# ein CI-Lauf darin würde einen wartenden Deploy verdrängen (der Fall ist im Kopf von
+# deploy-media.yml dokumentiert). Hier steht deshalb eine eigene Gruppe je Ref.
+on:
+  push:
+    # Die vier Deploy-Branches sind ausgenommen: dort prüft der jeweilige Deploy-Workflow denselben
+    # Commit bereits. Beides laufen zu lassen verdoppelt nur die Laufzeit, ohne mehr abzudecken.
+    branches-ignore: [main, Autostich_Test, Autostich/pixi, balancing]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Eigene Gruppe JE REF (nicht die Deploy-Gruppe!). Ein neuer Push auf denselben Branch bricht den
+# noch laufenden Lauf ab — beim CI zählt nur der jeweils letzte Stand.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # QA-Gate wie in den Deploy-Workflows: --max-warnings=0 — ohne Deckel wandert die
+      # Warnungszahl nur in eine Richtung.
+      - run: npm run lint -- --max-warnings=0
+
+      # Beide Build-Pfade, weil sie sich unterscheiden: der Produktions-Build gilt für main, die drei
+      # Slots bauen mit VITE_PREVIEW="1" und eigener Base. VITE_PREVIEW schaltet ganze Code-Zweige
+      # scharf (Pixi-Bühne, Perf-HUD, Dev-Run), die im Prod-Build wegoptimiert werden — ein Fehler
+      # darin wäre im Prod-Build unsichtbar und fiele erst beim Slot-Deploy auf.
+      - run: npm run build
+      - name: Build (Slot-Variante, wie test/pixi/balancing)
+        run: npm run build
+        env:
+          DEPLOY_BASE: /autostich/ci/
+          VITE_PREVIEW: "1"
+
+      # Läuft in jedem Deploy mit und importiert die echten Register aus src/game — eine kaputte
+      # Datenstruktur fällt hier auf, nicht erst im Deploy.
+      - run: npm run gen:db
