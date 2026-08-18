@@ -117,7 +117,7 @@ export default {
   "ability.SK_FIRE_17.name": "Smelter",
   "ability.SK_FIRE_17.desc": `From ${C.SCHMELZOFEN_MIN_HEAT}% heat, brands additionally burn −${C.SCHMELZOFEN_BRAND_BONUS} value and give +${C.SCHMELZOFEN_BRAND_BONUS} extra ash; forging costs ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)}% less ash.`,
   "ability.SK_FIRE_L01.name": "Sun Core",
-  "ability.SK_FIRE_L01.desc": `Every win against a branded opponent card gives +${grp(C.SONNENKERN_BRAND_SCORE)} score per brand on it. If a cycle ends at ${C.SONNENKERN_MIN_HEAT}% heat or more, your brands do not expire but stack up (to ${C.SONNENKERN_BRAND_CAP} per card), and every card of yours below value ${C.SONNENKERN_CARD_CAP} permanently gains +${C.SONNENKERN_VALUE} card value.`,
+  "ability.SK_FIRE_L01.desc": `Every win against a branded opponent card gives +${grp(C.SONNENKERN_BRAND_SCORE)} score per brand on it. If a cycle ends at ${C.SONNENKERN_MIN_HEAT}% heat or more, your brands stack up instead of being renewed (to ${C.SONNENKERN_BRAND_CAP} per card), and every card of yours below value ${C.SONNENKERN_CARD_CAP} permanently gains +${C.SONNENKERN_VALUE} card value.`,
   "ability.SK_FIRE_L02.name": "Phoenix Fire",
   "ability.SK_FIRE_L02.desc": `Losses cost no heat — they give +${C.PHOENIX_LOSS_HEAT}% heat per point of deficit instead. If consumption drops your heat to 0, it reignites once per cycle at ${Math.round(C.PHOENIX_REIGNITE * 100)}%.`,
   "ability.SK_FIRE_L03.name": "Sun Wrath",

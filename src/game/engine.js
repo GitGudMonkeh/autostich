@@ -1409,9 +1409,11 @@ export function resolveTrick(state, rng) {
       newGlacierBuffActive = newGlacierBuffPending;
       newGlacierBuffPending = {};
       // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
-      // Sonnenkern (L, #fire-leg): endet der Durchlauf HEISS, verfallen die alten Brände nicht, sondern die neuen
-      // stapeln sich darauf (verbrannte Erde, gedeckelt je Karte). Endet er kalt, gilt wieder die normale Regel —
-      // ein Brand hält genau einen Durchlauf. Damit hängt Sonnenkern an Brand UND Hitze statt an einem Schalter.
+      // Sonnenkern (L, #fire-leg): endet der Durchlauf HEISS, ERSETZEN die neuen Brandmarken die alten nicht, sondern
+      // stapeln sich darauf (verbrannte Erde, gedeckelt je Karte). Der Unterschied ist wirklich das STAPELN, nicht das
+      // Überleben: wer eine Karte jeden Durchlauf schlägt, brandmarkt sie ohnehin jedes Mal neu — normal endet sie
+      // deshalb immer bei genau einem Brand. Endet der Durchlauf kalt, gilt wieder diese Regel. Damit hängt Sonnenkern
+      // an Brand UND Hitze statt an einem Schalter.
       if (suncore && heat && heat.active && heat.value >= C.SONNENKERN_MIN_HEAT) {
         const stacked = { ...newBrandActive };
         for (const id of Object.keys(newBrandPending))
