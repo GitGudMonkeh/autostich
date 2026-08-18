@@ -1291,7 +1291,14 @@ button { font-family: inherit; }
   background: rgba(12, 12, 18, .5);
   border: 1px solid rgba(150, 150, 170, .18);
   border-left: 4px solid rgba(150, 150, 170, .35);
-  color: #b9b9c6;
+  /* #schriftdicke (18.08.2026): war #b9b9c6 und las sich neben `as-edge-strong` wie eine ANDERE, dünnere
+     Schrift — gemeldet, und zwar zu Recht sichtbar, obwohl beide Knöpfe dieselbe Familie, dasselbe Gewicht
+     und dieselbe Größe tragen (nachgemessen: Geist 600, 14 px, identische Glyphenbreiten). Der Unterschied
+     war allein die HELLIGKEIT: 0,49 gegen 0,72 relative Luminanz. Heller Text auf dunklem Grund wirkt
+     fetter (Irradiation) — der Ausweg-Knopf sah dadurch dünner gesetzt aus statt nur leiser.
+     Jetzt 0,65: gleiche wahrgenommene Strichstärke, und der Vorrang des Ziel-Knopfes hängt weiter an dem,
+     woran er hängen soll — Farbe, Kante und Schein, nicht an einer künstlich blassen Schrift. */
+  color: #d5d5df;
 }
 /* Kleine Elemente (Fuß-Chips): dieselbe Kante, nur schmaler — 4 px wirken an einem 14-px-Chip wie ein Balken. */
 .as-edge-thin { border-left-width: 3px; }

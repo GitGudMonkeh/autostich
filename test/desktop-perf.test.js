@@ -277,3 +277,20 @@ describe("#unlock-fenster — Freischaltungen als eigenes Fenster, nur auf dem D
     expect(jsx).toMatch(/ul-card as-legendary/);
   });
 });
+
+describe("#schriftdicke — Ausweg-Knopf und Ziel-Knopf tragen dieselbe Strichstärke", () => {
+  it("die neutrale Beschriftung ist hell genug, dass sie nicht dünner AUSSIEHT", () => {
+    /* Gemeldet als „andere Schriftdicke oder Font". Nachgemessen sind beide Knöpfe Geist 600 / 14 px mit
+       identischen Glyphenbreiten — der Unterschied war allein die Helligkeit (0,49 gegen 0,72 relative
+       Luminanz). Heller Text auf dunklem Grund wirkt fetter; der Ausweg sah dadurch dünner GESETZT aus
+       statt nur leiser. Der Wächter rechnet die Luminanz nach, statt einen Hexwert festzunageln — die
+       genaue Farbe darf sich ändern, die Lesbarkeit als „gleich dick" nicht. */
+    const regel = css.match(/\.as-edge-neutral \{([^}]*)\}/);
+    expect(regel, ".as-edge-neutral fehlt").toBeTruthy();
+    const hex = (regel[1].match(/color:\s*#([0-9a-f]{6})/i) || [])[1];
+    expect(hex, "keine Textfarbe an .as-edge-neutral").toBeTruthy();
+    const kanal = (i) => { const s = parseInt(hex.slice(i * 2, i * 2 + 2), 16) / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+    const lum = 0.2126 * kanal(0) + 0.7152 * kanal(1) + 0.0722 * kanal(2);
+    expect(lum, `#${hex} ist zu dunkel (${lum.toFixed(3)})`).toBeGreaterThan(0.6);
+  });
+});
