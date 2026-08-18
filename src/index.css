@@ -3416,12 +3416,29 @@ button { font-family: inherit; }
   .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; }
   .lv-wing-r { grid-column: 3; }
   .lv-wing {
-    width: 320px; max-width: 100%; align-self: start;
+    width: 356px; max-width: 100%; align-self: start;
     max-height: min(92dvh, 760px); overflow: hidden auto;
-    border-radius: 14px; border: 1px solid #2c2a3a; padding: 13px;
+    border-radius: 14px; border: 1px solid #2c2a3a; padding: 14px 16px;
     background: linear-gradient(180deg, #17161f, #121017);
     box-shadow: 0 14px 40px rgba(0, 0, 0, .45);
   }
+
+  /* Das Kartenraster im Flügel ist ~320 px breit — also so schmal wie am HANDY. Tailwinds `sm:`-Größen
+     greifen aber am VIEWPORT (≥ 640 px), nicht an der Panelbreite: das Raster trug damit die Desktop-
+     Schriftgrößen auf einer Handy-Breite, und Kartenzahl, Formationskürzel und ×-Faktor drängelten sich
+     in einer 50-px-Kachel. Diese Regeln setzen sie auf die Werte zurück, die die Handy-Fassung ohnehin
+     benutzt — es sind also keine neuen Größen, sondern die, für die das Raster gebaut ist.
+     (Container Queries wären das saubere Werkzeug; solange das Raster mit `sm:` arbeitet, ist der Griff
+     an genau diese Klassen die ehrlichste Fassung — deshalb stehen sie einzeln da und nicht als Pauschale.) */
+  .lv-wing .cg-root [class*="sm:text-2xl"] { font-size: 16px; line-height: 1.1; }
+  /* Der ×-Faktor steht MITTIG im Fluss, das Formationskürzel absolut unten rechts — auf einer 50-px-Kachel
+     stoßen die beiden zusammen. Deshalb sind sie hier verschieden groß (Faktor 8, Kürzel 7,5) statt beide
+     auf einem Wert; auf dem 668-px-Brett gibt es das Problem nicht. */
+  .lv-wing .cg-root [class*="sm:text-xs"] { font-size: 8px; }
+  .lv-wing .cg-root [class*="sm:text-[11px]"] { font-size: 7.5px; }
+  .lv-wing .cg-root [class*="sm:text-[10px]"],
+  .lv-wing .cg-root [class*="sm:text-[9px]"] { font-size: 8px; }
+  .lv-wing .cg-root [class*="sm:w-12"] { width: 2.25rem; }
   .lv-wing-l { justify-self: end; }
   .lv-wing-r { justify-self: start; }
   .lv-wing-sep { height: 1px; margin: 12px 0; }

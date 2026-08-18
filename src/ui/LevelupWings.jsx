@@ -1,6 +1,7 @@
 import { useIsWide } from "./useIsWide.js";
 import { FormationPanel } from "./FormationPanel.jsx";
-import { DeckStrength } from "./BuildSummary.jsx";
+import { DeckStrength, PerkList } from "./BuildSummary.jsx";
+import { zinsReadout } from "../game/perks.js";
 import { StatusRail } from "./StatusRail.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 
@@ -15,8 +16,13 @@ import { t } from "../i18n/index.js"; // #sprache
 
    LINKS  = das eigene Deck: `FormationPanel` (Kartenraster + aktive Formationen + 🏗-Gebäude-Toggle,
             alles bereits vorhanden) und `DeckStrength`.
-   RECHTS = `StatusRail` — dieselbe Komponente, die im Spiel rechts neben dem Brett steht. Kein
-            Nachbau: sonst driften die Kennzahlen im Overlay von denen auf dem Brett weg.
+   RECHTS = `StatusRail` — dieselbe Komponente, die im Spiel rechts neben dem Brett steht (kein Nachbau:
+            sonst driften die Kennzahlen im Overlay von denen auf dem Brett weg) — und darunter der eigene
+            Build (Perks + gehaltene Familien).
+
+   Die Karte selbst zeigt ab 1400 px KEINES dieser Felder mehr. Deck-Stärke, Formationen und Build lebten
+   dort als Klappfelder unter dem Angebot; sie sind jetzt in den Flügeln zu Hause. Der Grund ist nicht Platz,
+   sondern Rollenteilung: die Karte trägt die ENTSCHEIDUNG, die Flügel den KONTEXT, an dem man sie trifft.
 
    DREI REGELN, die den Entwurf tragen:
 
@@ -42,13 +48,6 @@ import { t } from "../i18n/index.js"; // #sprache
 export const WING_DECK = "lvWingDeck";
 export const WING_STATS = "lvWingStats";
 
-/* Liegt das Deck gerade im linken Flügel? Die Karte fragt das, um ihre EIGENEN Deck-Klappfelder
-   (Deck-Stärke, Formationen) dann wegzulassen — sonst stünden dieselben Daten zweimal im Bild, 20 cm
-   nebeneinander. Zugeklappt kommen sie zurück; der Flügel ersetzt sie, er verdrängt sie nicht. */
-export function deckWingOpen(options = {}, wide = false) {
-  return wide && (options[WING_DECK] ?? true);
-}
-
 /* Der Griff an der Kartenkante. Zugeklappt zeigt der Pfeil nach AUSSEN („da ist mehr"), aufgeklappt
    nach INNEN („zumachen") — und trägt dann zusätzlich senkrecht den Namen dessen, was man gerade sieht.
    Ohne Beschriftung ist ein Pfeil am Rand nur ein Pfeil: man klickt ihn einmal aus Neugier und nie wieder. */
@@ -65,6 +64,10 @@ function Grip({ side, open, label, onClick, color }) {
     </button>
   );
 }
+
+// Gehaltene Familien zählen wie Perks — für den Spieler ist beides „ein Perk, das ich genommen habe"
+// (dieselbe Zählung wie in der Überschrift der Perk-Karte, s. #victory-perks).
+const famCount = (state) => Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
 
 export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options = {}, onOption,
                              currentTraj = [], recordTraj = [], best = 0, children }) {
@@ -97,6 +100,13 @@ export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options 
         <aside className="lv-wing lv-wing-r" style={{ borderColor: `${accent}4d` }}>
           <StatusRail state={state} currentTraj={currentTraj} recordTraj={recordTraj}
                       options={options} onOption={onOption} best={best} />
+          {/* Der Build steht UNTER den Multiplikatoren: erst wodurch der Score entsteht, dann womit. */}
+          <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
+          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+            {t("perk.build", { count: (state.perks || []).length + famCount(state) })}
+          </div>
+          <PerkList perks={state.perks || []} familyTiers={state.familyTiers}
+                    zins={zinsReadout(state)} empty={t("perk.build.empty")} />
         </aside>
       )}
     </div>

@@ -14,7 +14,7 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
-import { LevelupRig, deckWingOpen } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
@@ -78,7 +78,7 @@ function KeywordGlossary({ tokens }) {
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
-  const deckInWing = deckWingOpen(options, wide); // #lv-fluegel: Formationen stehen dann links im Flügel
+  // #lv-fluegel: ab 1400 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
   const held = skills.map((id) => skillDef(id)).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
@@ -95,7 +95,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Anzeige: der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6", nach Meisterhand „7 / 8".
   const slotsShown = slots + legendaryHeld;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
-  const [openArch, setOpenArch] = useState(null);   // Archetyp, dessen Passiv-Beschreibung aufgeklappt ist (#201 P9)
   const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
   // Meisterhand: diese Skill-Wahl kommt aus dem eben genommenen Perk, nicht aus dem Rundenplan (Reducer:
   // PICK_PERK). Sie braucht deshalb einen eigenen Ablehnen-Text — „Ablehnen → Perk" wäre hier eine Lüge.
@@ -146,11 +145,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const curG = groups[page];
   const prevG = nPages > 1 ? groups[(page - 1 + nPages) % nPages] : null;
   const nextG = nPages > 1 ? groups[(page + 1) % nPages] : null;
-  /* #sk-reiter: Auf dem Desktop steht die Passiv-Beschreibung offen — dort ist der Platz da, und sie ist genau
-     der Kontext, der die Wahl entscheidet. `openArch === null` heißt „noch nicht angefasst"; ein bewusstes
-     Zuklappen schreibt `""` (nie ein Archetyp-Schlüssel), damit „zu" auf dem Desktop auch zu bleibt. Am Handy
-     ist `wide` false → identisches Verhalten wie vorher (`null` und `""` sind dort beide nur „kein Treffer"). */
-  const detailOpen = !!curG && (openArch === curG.arch || (wide && openArch === null));
+  /* Passiv-Beschreibung: der Zustand liegt in den OPTIONEN, nicht im Komponenten-State — die Skill-Wahl wird
+     je Phase neu gemountet, ein `useState` wäre also in JEDER Skill-Phase wieder zu und müsste jedes Mal neu
+     zugeklappt werden. Derselbe Weg wie `lastSkillArch`/`lvWing*`. Default ZU. Bewusst EIN Schalter für alle
+     Fraktionen statt einer je Archetyp: „aufgeklappt lassen" ist eine Lesegewohnheit, keine Eigenschaft der
+     gerade gezeigten Fraktion — beim Blättern soll er nicht wieder zufallen. */
+  const detailOpen = !!curG && !!options.lvPassive;
   /* #kante: Der Rahmen der Auswahl trägt die Farbe des GEZEIGTEN Archetyps statt eines festen Violett — beim
      Blättern durch die Fraktionen wechselt er mit. Zusammen mit den Karten (die ihre Seltenheit tragen)
      ergibt das zwei Achsen ohne Konkurrenz: der Rahmen sagt „wo bin ich", die Karten „wie gut ist das".
@@ -395,7 +395,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   verschachtelte <button> sind ungültiges HTML. Am Handy hat sie genau ein Kind (`flex-1`), das
                   vorher `w-full` war: gleiche Breite, gleicher Abstand, gleiche Geometrie. */}
               <div className="flex items-center gap-2 mb-2">
-              <button type="button" onClick={() => setOpenArch(detailOpen ? "" : curG.arch)}
+              <button type="button" onClick={() => onOption?.({ lvPassive: !detailOpen })}
                 className="flex-1 min-w-0 flex items-center gap-2 text-left" aria-expanded={detailOpen}
                 title={t(detailOpen ? "skill.passive.collapse" : "skill.passive.expand", { arch: curG.meta.label })}>
                 <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {t("skill.passive.head", { arch: curG.meta.label })}</span>
@@ -495,7 +495,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* #161 FB-1 / #UI: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung.
             Einklappbar (default zu), damit das Aufstellfeld nicht dauerhaft Platz frisst. */}
-        {showFormations && !deckInWing && (
+        {showFormations && !wide && (
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <button type="button" onClick={() => setOpenForms((o) => !o)} aria-expanded={openForms}
               className="w-full flex items-center gap-2 text-left" title={t(openForms ? "skill.forms.collapse" : "skill.forms.expand")}>

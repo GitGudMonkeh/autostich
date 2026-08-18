@@ -250,7 +250,15 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(wrap);
-    return () => ro.disconnect();
+    /* Nachmessen, sobald die Schriften da sind. Der ResizeObserver sieht nur die Größe des RASTERS; laden
+       Orbitron/Geist nach, ändern sich die Zellen INNEN (Zeilenhöhe, Kartenzahl-Breite), ohne dass das Raster
+       seine Außenmaße ändern muss — der Gebäude-Rahmen bliebe dann auf der Ersatzschrift stehen und säße
+       sichtbar versetzt. Dieselbe Falle wie bei der Gottgleich-Wortmarke (#ios-word, Punkt 2), nur an einer
+       anderen Stelle. Fällt im Spiel selten auf (Schrift steht längst), im schmalen Flügel der Level-up-Karte
+       dagegen sofort: dort ist die Zelle halb so breit, ein Versatz von 4 px also ein Achtel der Kachel. */
+    let alive = true;
+    document.fonts?.ready?.then(() => { if (alive) measure(); });
+    return () => { alive = false; ro.disconnect(); };
     // archSig (s. o.) hält die Deps stabil: es wechselt genau dann, wenn sich die Gebäude-Belegung ändert.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archSig, cards.length]);

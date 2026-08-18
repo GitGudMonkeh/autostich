@@ -1388,6 +1388,29 @@ neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen
   Knopf sein muss — verschachtelte `<button>` sind ungültig) auf exakt demselben Rechteck wie der Knopf vorher.
 - Wächter: `test/levelup-wings.test.js` (14). Gegenprobe gemacht: `auto`-Spur, fehlendes `grid-column`,
   verstellte Griffbahn und aufgehobene Entdopplung lassen ihn fallen.
+- **Nachjustiert am Bild (18.08.2026, zweite Runde):**
+  - **Die Karte trägt ab 1400 px KEINE Kontext-Klappfelder mehr.** Deck-Stärke, Formationen und Build sind in
+    den Flügeln zu Hause; der Build steht rechts UNTER den Multiplikatoren (erst wodurch der Score entsteht,
+    dann womit). Gebunden an die BREITE, nicht an den Auf-/Zu-Zustand der Flügel — andersherum wäre der Griff
+    kein Schalter, sondern nur eine zweite Anordnung derselben Inhalte.
+  - **Das Kartenraster im Flügel trug Desktop-Schriftgrößen auf Handy-Breite.** Tailwinds `sm:`-Varianten
+    greifen am VIEWPORT (≥ 640 px), nicht an der Panelbreite — auf einer 50-px-Kachel drängelten sich
+    24-px-Kartenzahl, 12-px-Faktor und 11-px-Formationskürzel. Die Regeln in index.css setzen sie auf die
+    Werte zurück, für die das Raster gebaut ist (16 / 8 / 7,5). Faktor und Kürzel sind dabei ABSICHTLICH
+    verschieden groß: der Faktor steht mittig im Fluss, das Kürzel absolut unten rechts — auf einer schmalen
+    Kachel stoßen sie sonst zusammen. Container Queries wären das saubere Werkzeug.
+  - **Der Gebäude-Rahmen saß versetzt — es war das Schriftladen.** `CardGrid` misst die Zellen in einem
+    `useLayoutEffect` und hält sie über einen `ResizeObserver` aktuell; der sieht aber nur die Größe des
+    RASTERS. Laden Orbitron/Geist nach, ändern sich die Zellen INNEN, ohne dass das Raster seine Außenmaße
+    ändern muss → der Rahmen bleibt auf der Ersatzschrift stehen. Jetzt misst er zusätzlich bei
+    `document.fonts.ready` nach (dieselbe Falle wie #ios-word Punkt 2). Im Spiel fiel das kaum auf, im
+    schmalen Flügel sofort: dort ist die Kachel halb so breit, ein Versatz von 4 px also ein Achtel davon.
+  - **Die Passiv-Beschreibung merkt sich ihren Zustand** (`options.lvPassive`, Default ZU) statt in einem
+    `useState` zu liegen — die Skill-Wahl wird je Phase neu gemountet, man musste sie also in JEDER Phase neu
+    zuklappen. Bewusst EIN Schalter für alle Fraktionen: „aufgeklappt lassen" ist eine Lesegewohnheit, keine
+    Eigenschaft der gerade gezeigten Fraktion. Damit ist auch die frühere „auf dem Desktop offen"-Regel weg.
+  - Flügelbreite 320 → 356 px (greift erst ab ~1670 px Fenster; darunter deckelt die Spur), Polster
+    14/16 px — „Bester 244.744" stand 1 px vor dem Innenrand.
 - **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
 - **Gleich mitgezogen (#sprache-Nachzügler)**: `BuildSummary.jsx` und `BuildPanel.jsx` sind jetzt migriert und
   stehen in der `MIGRATED`-Ratsche. Sieben neue Schlüssel (`build.*`). Anlass war die deutsche Fußzeile der

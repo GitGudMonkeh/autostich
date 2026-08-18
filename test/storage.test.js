@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS = {
   telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
   lvWingDeck: true, lvWingStats: true, // #lv-fluegel: Seitenleisten der Level-up-Karte (nur ab 1400 px)
+  lvPassive: false, // #lv-fluegel: Passiv-Beschreibung der Skill-Wahl — gemerkt, Default zu
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   hideBreakdown: false, // Stich-Aufschlüsselung (§17) unter dem Feld — Default sichtbar
   numScale: 0.75,

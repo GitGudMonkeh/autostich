@@ -13,7 +13,7 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
 import { useIsWide } from "./useIsWide.js";
-import { LevelupRig, deckWingOpen } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -48,7 +48,11 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                              options = {}, onOption, currentTraj = [], recordTraj = [], best = 0 }) {
   // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
   // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
-  const deckInWing = deckWingOpen(options, useIsWide()); // #lv-fluegel: dann trägt der Flügel Deck + Formationen
+  /* #lv-fluegel: Ab 1400 px zeigt die Karte KEINE Kontext-Klappfelder mehr — Deck-Stärke, Formationen und
+     Build sind in den Flügeln zu Hause. Gebunden an die BREITE, nicht an den Auf-/Zu-Zustand der Flügel:
+     „lebt nur noch im Reiter" heißt, dass die Karte sie auch bei zugeklapptem Flügel nicht zurückholt —
+     sonst wäre der Griff kein Schalter, sondern nur eine zweite Anordnung derselben Inhalte. */
+  const inWings = useIsWide();
   const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   const canReroll = !!onReroll && rerollTokens > 0;
@@ -160,21 +164,23 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             hinter diesem Vollbild-Overlay und wäre nie zu sehen. */}
         <div className="mt-4" data-tut="perk-build">
           {/* Deck-Stärke und Formationen NUR, solange der linke Flügel sie nicht schon zeigt (#lv-fluegel). */}
-          {!deckInWing && (
+          {!inWings && (
             <CollapsibleField title={tr("perk.deckStrength")}>
               <DeckStrength deck={deck} />
             </CollapsibleField>
           )}
           {/* #161 FB-1: aktive Formationen als Kontext (v. a. für Deck-/Formations-Perks) — mit 🏗 Gebäude-Toggle. */}
-          {!deckInWing && (
+          {!inWings && (
             <div className="mt-3 rounded-xl px-3 py-3" style={phasePanel(PHASE_ACCENTS.red)}>
               <FormationPanel state={state} title={tr("perk.formations")} collapsible defaultOpen={false} />
             </div>
           )}
-          <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
-            return tr("perk.build", { count: n }); })()} defaultOpen={false}>
-            <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty={tr("perk.build.empty")} />
-          </CollapsibleField>
+          {!inWings && (
+            <CollapsibleField title={(() => { const n = perks.length + Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
+              return tr("perk.build", { count: n }); })()} defaultOpen={false}>
+              <PerkList perks={perks} familyTiers={state.familyTiers} zins={zinsReadout(state)} empty={tr("perk.build.empty")} />
+            </CollapsibleField>
+          )}
         </div>
         </div>
       </LevelupRig>

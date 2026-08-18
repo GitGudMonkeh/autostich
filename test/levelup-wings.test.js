@@ -20,8 +20,9 @@ import { readFileSync } from "node:fs";
         passieren darf.
      4. Fehlende Defaults. Ohne Eintrag in `DEFAULT_OPTIONS` schluckt der `{...DEFAULT_OPTIONS, ...o}`-
         Merge in `loadOptions` die zwei Schlüssel — der gemerkte Zustand überlebt den Reload nicht.
-     5. Doppelte Deck-Daten. Zeigt der linke Flügel Deck und Formationen, müssen die gleichnamigen
-        Klappfelder IN der Karte weg (`deckWingOpen`), sonst steht dasselbe zweimal nebeneinander.
+     5. Doppelte Deck-Daten. Deck-Stärke, Formationen und Build leben ab 1400 px NUR in den Flügeln; die
+        gleichnamigen Klappfelder in der Karte hängen deshalb an der BREITE (`!wide`), nicht am Auf-/Zu-
+        Zustand der Flügel. Andersherum wäre der Griff kein Schalter, sondern eine zweite Anordnung.
 
    Dazu die Regel, die die Handy-Fassung schützt: `.lv-rig` ist unterhalb von 1400 px `display: contents`,
    und Flügel wie Griffe hängen am `wide`-Gate — sie werden dort gar nicht gerendert.
@@ -115,16 +116,30 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(wings).toMatch(/onOption\(\{\s*\[key\]:\s*!on\s*\}\)/);
   });
 
-  it("beide Screens lassen ihre Deck-Klappfelder weg, solange der Flügel sie zeigt", () => {
-    expect(wings).toMatch(/export function deckWingOpen/);
+  it("die Karte zeigt ab 1400 px keine Kontext-Klappfelder mehr — die leben in den Flügeln", () => {
     const perk = read("src/ui/PerkSelect.jsx");
-    expect(perk).toMatch(/deckWingOpen\(options, useIsWide\(\)\)/);
-    // Deck-Stärke UND Formationen hängen am Gate.
-    expect(perk).toMatch(/!deckInWing && \(\s*<CollapsibleField title=\{tr\("perk\.deckStrength"\)\}/);
-    expect(perk.match(/!deckInWing &&/g) || []).toHaveLength(2);
+    expect(perk).toMatch(/const inWings = useIsWide\(\);/);
+    // Deck-Stärke, Formationen UND Build hängen am Gate.
+    expect(perk).toMatch(/!inWings && \(\s*<CollapsibleField title=\{tr\("perk\.deckStrength"\)\}/);
+    expect(perk.match(/!inWings &&/g) || [], "Deck-Stärke · Formationen · Build").toHaveLength(3);
     const skill = read("src/ui/SkillSelect.jsx");
-    expect(skill).toMatch(/deckWingOpen\(options, wide\)/);
-    expect(skill).toMatch(/\{showFormations && !deckInWing && \(/);
+    expect(skill).toMatch(/\{showFormations && !wide && \(/);
+    // Und der Build steht im rechten Flügel, unter den Multiplikatoren.
+    const railAt = wings.indexOf("<StatusRail");
+    expect(railAt, "StatusRail nicht mehr im Flügel").toBeGreaterThan(0);
+    expect(wings.slice(railAt), "PerkList muss UNTER der StatusRail stehen").toMatch(/<PerkList/);
+  });
+
+  it("die Passiv-Beschreibung merkt sich ihren Zustand und startet zu", () => {
+    const skill = read("src/ui/SkillSelect.jsx");
+    // Kein Komponenten-State mehr: die Skill-Wahl wird je Phase neu gemountet.
+    expect(skill, "openArch war der State, der jede Phase wieder zufiel").not.toMatch(/openArch/);
+    expect(skill).toMatch(/const detailOpen = !!curG && !!options\.lvPassive;/);
+    expect(skill).toMatch(/onOption\?\.\(\{ lvPassive: !detailOpen \}\)/);
+    const storage = read("src/game/storage.js");
+    const defaults = storage.slice(storage.indexOf("const DEFAULT_OPTIONS = {"));
+    expect(defaults, "Default ZU — und ohne Eintrag verschluckt loadOptions den Schlüssel")
+      .toMatch(/\blvPassive:\s*false/);
   });
 });
 

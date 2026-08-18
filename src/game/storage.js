@@ -537,6 +537,9 @@ const DEFAULT_OPTIONS = {
   // sichtbar, Zustand über Läufe gemerkt. Default AN: sie sind der Grund für die breite Desktop-Fassung.
   // Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben den Reset, wie Ton/Haptik).
   lvWingDeck: true, lvWingStats: true,
+  // #lv-fluegel: Passiv-Beschreibung der Skill-Wahl aufgeklappt? Default ZU. Liegt hier statt im
+  // Komponenten-State, weil die Skill-Wahl je Phase neu gemountet wird — sonst müsste man sie jedes Mal neu zuklappen.
+  lvPassive: false,
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   // Stich-Aufschlüsselung (§17) unter dem Feld — Default SICHTBAR (false), wie die Floating-Text-Schalter.
