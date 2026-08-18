@@ -136,7 +136,15 @@ export const DRAW_HZ_COARSE = hzOverride() ?? HZ_DEFAULT_COARSE;
    (0,75 × Periode liefert 30/30/30 und 60/45/60 über 60/90/120 Hz, überschreitet also nie das Ziel).
    Bewusst NICHT nebenbei geändert: die 8 ms sind hergeleitet und testgesichert, das gehört in einen eigenen
    Schritt mit eigener Gegenprobe am Gerät. */
-export function frameMinMs(coarse = isCoarse()) {
+/* Die Toleranz-Formel als eigene Funktion — nicht aus Ordnungsliebe, sondern weil sie einen zweiten Aufrufer
+   bekommen hat: die Würfel-Matrix ist ein AMBIENTE-Effekt und zeichnet bewusst langsamer als der Geräte-Knopf
+   (s. AMBIENT_HZ in CubeMatrixField.jsx). Sie braucht damit dieselbe Rechnung für eine ANDERE Rate. Hätte sie
+   `1000 / hz - 8` selbst hingeschrieben, stünde die Herleitung oben und die Zahl unten in einer anderen Datei —
+   genau die Trennung, an der die 8 ms in diesem Projekt schon einmal verloren gingen. */
+export function hzMinMs(hz) {
   // Ohne Deckel (Rate ≥ Bildschirmrate) gar nicht erst bremsen — sonst fällt bei 60 Hz jeder zweite Frame durch.
-  return coarse && DRAW_HZ_COARSE < 90 ? 1000 / DRAW_HZ_COARSE - 8 : 0;
+  return hz > 0 && hz < 90 ? 1000 / hz - 8 : 0;
+}
+export function frameMinMs(coarse = isCoarse()) {
+  return coarse ? hzMinMs(DRAW_HZ_COARSE) : 0;
 }

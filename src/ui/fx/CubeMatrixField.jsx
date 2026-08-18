@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { getMusicAnalyser } from "../musicAnalyser.js";
-import { isCoarse } from "./mobileTier.js";
+import { isCoarse, hzMinMs, DRAW_HZ_COARSE } from "./mobileTier.js";
 import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 
 /* #317 Cube-Matrix — musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer von oben.
@@ -19,16 +19,41 @@ import { lerp, mix, clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/C
 // ── Cube-Matrix — TUNE (finale Zielwerte aus #317) ──
 const TUNE = {
   // #317: Empfindlichkeit gesenkt (war 1.95×6.2) → ruhige Lieder schlagen nicht mehr über.
-  // #cube-flimmern (18.08.2026): RELEASE war mit 0,20 SCHNELLER als ATTACK (0,16) — der Turm fiel also zwischen
-  // zwei Schlägen steiler zurück, als er hochgekommen war, und genau das liest sich als Flackern statt als Puls.
-  // Ein Hüllkurvenfolger will es andersherum: schnell rauf, langsam runter. 0,20 → 0,09 halbiert die Fallzeit
-  // und lässt die SPITZEN unangetastet (Höhe hängt an GAIN/CONTRAST, nicht an der Rückflanke). Trifft beide
-  // Enden der adaptiven Skala, weil SLOW sie multipliziert — also auch die schnellen Lieder, um die es geht.
-  GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96, ATTACK: 0.16, RELEASE: 0.09,
-  // #317 Adaptive Geschwindigkeit: aus der Song-Aktivität (Spektral-Fluss = Onset-Dichte, tracks sind alle −14 LUFS →
-  // Lautstärke taugt nicht als Maß) → Attack/Release skalieren. live=0 (ruhig) → ×SLOW (träger), live=1 (schnell) →
-  // volle Werte. SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren).
-  SLOW: 0.5, SPEED_LO: 0.006, SPEED_HI: 0.020,
+  GAIN: 1.55, FREQ_MAX: 16000, TILT: 1.45, CONTRAST: 5.0, BASE_SUB: 0.96,
+  /* #cube-takt (18.08.2026) — ZEITKONSTANTEN IN SEKUNDEN, nicht mehr Anteile je Frame.
+     ---------------------------------------------------------------------------------------------
+     Hier standen die zwei Hüllkurven-Koeffizienten (Anstieg 0,16 / Rückflanke 0,09) und wurden je
+     GEZEICHNETEM Frame einmal angewandt (`v += (ziel − v) · k`). Ein solcher Wert ist keine
+     Geschwindigkeit, sondern eine Geschwindigkeit GETEILT durch die Zeichenrate — und die stand auf dem
+     Handy bei effektiv 20/s (s. AMBIENT_HZ unten). Daraus wurden Zeitkonstanten von 0,31 s (Anstieg) und
+     0,56 s (Rückflanke), mit dem Trägheits-Faktor sogar 0,63 / 1,11 s. Bei einem Schlag alle 0,46–0,54 s
+     heißt das: die Spitze kommt eine knappe Zählzeit ZU SPÄT und der Turm ist zum nächsten Schlag noch
+     halb oben. Genau das war „läuft nicht mehr synchron mit der Musik, ist langsam und hat kaum Ausschlag".
+
+     Zwei Folgen, die man dem alten Code nicht ansah:
+       • Jeder fps-Einbruch machte den Effekt LANGSAMER statt nur ruckeliger — 60 → 50 fps kostete ein
+         Fünftel der Geschwindigkeit.
+       • Die Spitzenhöhe hing mit an der Rate. Ein Kick-Transient dauert im Spektrum ~150 ms; bei 50 ms
+         je Zeichnung sind das 3 Schritte, ein Tiefpass erreicht davon `1 − 0,84³ ≈ 41 %`. Der Kommentar
+         an dieser Stelle behauptete das Gegenteil („Höhe hängt an GAIN/CONTRAST, nicht an der Rückflanke").
+
+     Jetzt: `k = 1 − exp(−dt/τ)` (s. `glaettung`), τ in Sekunden. Damit ist das Verhalten von der Bildrate
+     ENTKOPPELT — bei 20, 30 oder 60 Zeichnungen/s steht der Turm zur selben Wanduhrzeit auf derselben Höhe,
+     nur feiner aufgelöst. Die Rate ist danach eine reine Glätte-Frage, keine Tempo-Frage mehr.
+
+     Werte: τ_auf 0,10 s (ein 150-ms-Kick erreicht 78 % statt 41 %), τ_ab 0,30 s (bei 0,54 s Schlagabstand
+     bleiben 17 % stehen statt 38–62 % → der Ausschlag ist wieder ein Ausschlag und kein Plateau). Die
+     Ungleichung τ_ab > τ_auf ist die Regel aus #cube-flimmern, unverändert: schnell rauf, langsam runter. */
+  TAU_UP: 0.10, TAU_DN: 0.30,
+  /* #317 Adaptive Geschwindigkeit: aus der Song-Aktivität (Spektral-Fluss = Onset-Dichte, tracks sind alle −14 LUFS →
+     Lautstärke taugt nicht als Maß). live=0 (ruhig) → Zeitkonstanten ×TAU_SLOW (träger), live=1 (schnell) → ×1.
+     TAU_SLOW ist der Kehrwert des alten Koeffizienten-Faktors (0,5) — halber Koeffizient = doppelte Zeit.
+     SPEED_LO/HI = Fluss-Schwellen des Mappings (blind gesetzt → nach Gehör justieren). */
+  TAU_SLOW: 2.0, SPEED_LO: 0.006, SPEED_HI: 0.020,
+  /* Grundpegel-Nachführung (war 0,04/Frame = τ 1,25 s auf dem Handy) und Song-Aktivität (war 0,01/Frame = τ 5 s,
+     eingeschwungen erst nach 10–15 s). Die zweite Zahl war der stille Zusatzschaden: bis `songAct` oben ankam,
+     lief das Feld auf den TRÄGEN Zeitkonstanten — also in den ersten Sekunden jedes Tracks doppelt zäh. */
+  TAU_BASE: 0.60, TAU_ACT: 1.5,
   // #fx-dichte (18.08.2026): Desktop 18×6 = 108 → 13×4 = 52, also halbiert. 108 Türme auf einem Feld, das seit
   // #fx-flaeche 80 % der Bühne einnimmt, standen als geschlossene Wand statt als Einzeltürme. Halbiert wurde über
   // BEIDE Achsen (Spalten 18→13 UND Reihen 6→4) — je Achse allein hätte die andere unverändert dicht gelassen.
@@ -99,6 +124,17 @@ export const DEMO_PEAK_MIN = 3;       // Byte-Pegel, unter dem der Analyser als 
 
 const TAU = Math.PI * 2;
 
+/* #cube-takt: Zielrate dieser Ambiente-Ebene. Exportiert, damit der Wächter den tatsächlichen Abstand nachrechnen
+   kann, statt eine Zahl im Quelltext zu suchen. Begründung für den eigenen Wert neben `DRAW_HZ_COARSE`: s. `frame()`. */
+export const AMBIENT_HZ = 30;
+
+/* #cube-takt — der Umrechner von Zeitkonstante nach Schrittanteil. Exportiert, damit der Wächter ihn nachrechnen
+   kann (rein, ohne Canvas). `1 − exp(−dt/τ)` ist die exakte Lösung des Tiefpasses über ein Zeitfenster dt: zwei
+   Schritte à dt ergeben denselben Wert wie ein Schritt à 2·dt, und genau das macht das Ergebnis bildratenfrei.
+   Die naheliegende Abkürzung `dt/τ` (lineare Näherung) tut das NICHT — sie überschießt bei großem dt und kann
+   über 1 laufen, also bei einem Frame-Aussetzer den Turm über sein Ziel hinauskatapultieren. */
+export const glaettung = (dt, tau) => (tau > 0 && dt > 0 ? 1 - Math.exp(-dt / tau) : tau > 0 ? 0 : 1);
+
 /* Der Anschlag: 4er-Takt, die 1 und die 3 betont. Scharf rein, weich raus — das ist die Hüllkurve, die eine
    Bassdrum im Spektrum hinterlässt, und genau darauf ist der Kontrast-Block in driveCube abgestimmt. */
 export const demoKick = (t) => {
@@ -161,7 +197,9 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     const audio = getMusicAnalyser(); // { analyser, freqData, ctx } oder null → Idle
     // #317 adaptive Geschwindigkeit: Song-Aktivität (Spektral-Fluss) → liveUp/liveDn (Attack/Release je Frame).
     const prevFreq = audio ? new Uint8Array(audio.freqData.length) : null;
-    let songAct = 0, fluxInit = false, liveUp = TUNE.ATTACK, liveDn = TUNE.RELEASE;
+    // #cube-takt: liveUp/liveDn/liveBase sind SCHRITTANTEILE, je Frame aus dt und der jeweiligen Zeitkonstante
+    // gerechnet (nicht mehr die Zeitkonstanten selbst). Startwerte für den ersten Frame, bevor computeSpeed lief.
+    let songAct = 0, fluxInit = false, liveUp = 1, liveDn = 1, liveBase = 1;
     // #shop-demo: Sekunden ohne Pegel + Zeitbasis des Ersatzsignals (beide nur vom Loop geschrieben).
     let stilleS = DEMO_SILENCE_S, demoT = 0;
 
@@ -190,14 +228,20 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
 
     // ── Signal: jeder Würfel = eigenes log-Band, Beat-Betonung (Grundpegel-Abzug + Kontrast) + smooth Attack/Release ──
     function driveCube(i, raw, up, dn) {
-      baseB[i] += (raw - baseB[i]) * 0.04;
+      baseB[i] += (raw - baseB[i]) * liveBase;
       const target = clamp((raw - baseB[i] * TUNE.BASE_SUB) * TUNE.CONTRAST * TUNE.GAIN, 0, 1);
       cubeV[i] += (target - cubeV[i]) * (target > cubeV[i] ? up : dn);
     }
+    // #cube-takt: setzt die Schrittanteile für DIESEN Frame. `traege` = 1 (knackig) … TAU_SLOW (träge).
+    function setTakt(dt, traege) {
+      liveUp = glaettung(dt, TUNE.TAU_UP * traege);
+      liveDn = glaettung(dt, TUNE.TAU_DN * traege);
+    }
     // Liest den Analyser EINMAL/Frame + leitet die adaptive Geschwindigkeit (liveUp/liveDn) aus dem Spektral-Fluss ab.
     // Beide Bühnen (field/spots) rufen das auf; freqData steht danach für computeCubes/computeSpotBass bereit.
-    function computeSpeed(dt) {
-      liveUp = TUNE.ATTACK; liveDn = TUNE.RELEASE;
+    function computeSpeed(dt, demoOn) {
+      liveBase = glaettung(dt, TUNE.TAU_BASE);
+      setTakt(dt, 1);   // Rückfall ohne Analyser: die knackigen Zeitkonstanten
       if (!(audio && audio.analyser)) { stilleS = DEMO_SILENCE_S; return false; }
       audio.analyser.getByteFrequencyData(audio.freqData);
       const bins = audio.freqData.length;
@@ -206,10 +250,15 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       let flux = 0, peak = 0;
       for (let b = 0; b < bins; b++) { const v = audio.freqData[b]; if (v > peak) peak = v; const d = v - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = v; }
       stilleS = peak <= DEMO_PEAK_MIN ? stilleS + dt : 0;
-      songAct += (flux / (bins * 255) - songAct) * 0.01;
+      songAct += (flux / (bins * 255) - songAct) * glaettung(dt, TUNE.TAU_ACT);
+      /* #shop-demo: Das Ersatzsignal liefert auch die AKTIVITÄT. Ohne diese Zeile misst der Fluss die STILLE,
+         hinter der das Ersatzsignal steht — songAct fiele auf 0, und die Werkstatt-Vorschau liefe dauerhaft auf
+         den trägen Zeitkonstanten, während dasselbe Feld im Spiel knackig läuft. Das wäre wieder eine Drift
+         Vorschau↔Spiel, und zwar eine, die man nur im Vergleich sieht. Der Wert ist die obere Mapping-Schwelle:
+         das Ersatzsignal IST ein lebhaftes Stück (112 BPM, Kick + Hats + Melodie). */
+      if (demoOn) songAct = TUNE.SPEED_HI;
       const live = clamp((songAct - TUNE.SPEED_LO) / Math.max(1e-4, TUNE.SPEED_HI - TUNE.SPEED_LO), 0, 1);
-      liveUp = lerp(TUNE.ATTACK * TUNE.SLOW, TUNE.ATTACK, live);   // ruhig → träger, schnell → knackig
-      liveDn = lerp(TUNE.RELEASE * TUNE.SLOW, TUNE.RELEASE, live);
+      setTakt(dt, lerp(TUNE.TAU_SLOW, 1, live));   // ruhig → träger, schnell → knackig
       return true;
     }
     function computeCubes(TC, hasAudio, demoOn) {
@@ -237,7 +286,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         let s = 0, nn = 0; for (let b = lo; b <= hi && b < bins; b++) { s += audio.freqData[b]; nn++; }
         raw = (nn ? s / nn : 0) / 255;
       }
-      spotBassBase += (raw - spotBassBase) * 0.04;
+      spotBassBase += (raw - spotBassBase) * liveBase;   // #cube-takt: dieselbe zeitbasierte Nachführung wie baseB
       const target = clamp((raw - spotBassBase * TUNE.BASE_SUB) * TUNE.CONTRAST * TUNE.GAIN, 0, 1);
       spotBass += (target - spotBass) * (target > spotBass ? liveUp : liveDn); // dieselbe adaptive Geschwindigkeit wie die Würfel
     }
@@ -336,8 +385,12 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       ctx.clearRect(0, 0, W, H); // transparente Bühne (BF-Bild/Karten bleiben sichtbar)
       // #shop-demo: `dt` treibt Stille-Fenster UND Ersatzsignal — beide brauchen echte Zeit, nicht Framezahlen
       // (die Schleife ist auf 24/40 ms gedrosselt und der Takt liefe sonst je nach Gerät unterschiedlich schnell).
-      const hasAudio = !p.reduced && computeSpeed(dt);
+      // Reihenfolge gedreht (#cube-takt): `demoOn` wird JETZT vor computeSpeed bestimmt, weil das Ersatzsignal
+      // dort seine eigene Aktivität setzen muss. Es liest damit `stilleS` aus dem Vorframe — bei einem Fenster
+      // von 0,35 s ist ein Frame Versatz bedeutungslos, und der erste Frame nach dem Umschalten läuft ohnehin
+      // noch mit den knackigen Rückfallwerten aus `setTakt(dt, 1)`.
       const demoOn = !!p.demo && !p.reduced && stilleS >= DEMO_SILENCE_S;
+      const hasAudio = !p.reduced && computeSpeed(dt, demoOn);
       if (demoOn) demoT += dt;
       if (drawField) {
         // #perf-mobile: lite hat eigene Werte (12×4 = 48) — s. TUNE. Desktop 13×4 = 52.
@@ -371,13 +424,25 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     }
 
-    // #perf: Ambiente-Effekt auf ~40 fps (Desktop) bzw. ~30 fps (Mobile/lite) drosseln — der rAF-Callback läuft jede
-    // Frame (billig), gerendert wird nur alle FRAME_MS. Halbiert die Renderlast ggü. 60 fps, die App bleibt flüssig.
+    /* #cube-takt — die Drossel hielt nicht, was ihr Kommentar versprach.
+       Hier stand eine feste Millisekunden-Schwelle (Handy 40, Desktop 24) und darüber „~40 fps (Desktop) bzw.
+       ~30 fps (Mobile)". Geliefert hat das weder das eine noch das andere, weil die Schwelle ohne die halbe
+       Frame-Toleranz auf dem Frame-Raster liegt (die Herleitung steht in mobileTier.js): auf einem 60-Hz-Schirm
+       fällt der Frame bei 33,3 ms durch die 40er-Schwelle, gezeichnet wird erst der bei 50 ms → **20/s statt 25**.
+       Desktop kam über seine Schwelle auf 30/s statt 40. Und unter Jitter kippte der Abstand hin und her.
+
+       Jetzt EINE Zielrate mit der geteilten Toleranz aus mobileTier (`hzMinMs`). AMBIENT_HZ ist bewusst ein
+       eigener, NIEDRIGERER Wert als der Geräte-Knopf `DRAW_HZ_COARSE` (60) — die Datei dort fordert für so einen
+       zweiten Wert eine Begründung, hier ist sie: dies ist eine vollflächige Canvas-2D-Ambiente-Ebene mit weichen
+       Verläufen (Strahlen, Bodenraster, Türme), kein Effekt mit harten schnellen Kanten. Seit die Hüllkurve
+       zeitbasiert läuft, entscheidet die Rate ohnehin nur noch über die GLÄTTE der Bewegung, nicht mehr über
+       Tempo oder Ausschlag — sie ist damit der billigste Knopf im Raum.
+       `?hz=` wirkt weiter nach UNTEN (min mit dem Geräte-Knopf), z. B. `?hz=20` für den Wärmevergleich am Gerät. */
     let lastT = 0;
     function frame(now) {
       if (disposed) return;
       raf = requestAnimationFrame(frame);
-      const FRAME_MS = liteOn() ? 40 : 24; // #perf-mobile: lite ~25fps (war ~30) — Ambiente verträgt das
+      const FRAME_MS = hzMinMs(liteOn() ? Math.min(AMBIENT_HZ, DRAW_HZ_COARSE) : AMBIENT_HZ);
       if (now - lastT < FRAME_MS) return;
       // Erster Durchlauf (lastT 0) hätte sonst ein dt von mehreren Sekunden; nach oben gedeckelt, damit ein
       // Tab-Wechsel den Takt nicht überspringt.

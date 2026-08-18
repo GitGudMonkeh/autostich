@@ -6,7 +6,8 @@
    gegen den der Schalter gebaut wurde. */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { demoKick, demoRaw, DEMO_BPM, DEMO_SILENCE_S, DEMO_PEAK_MIN } from "../src/ui/fx/CubeMatrixField.jsx";
+import { demoKick, demoRaw, DEMO_BPM, DEMO_SILENCE_S, DEMO_PEAK_MIN, glaettung, AMBIENT_HZ } from "../src/ui/fx/CubeMatrixField.jsx";
+import { hzMinMs } from "../src/ui/fx/mobileTier.js";
 
 const src = (p) => readFileSync(new URL(`../src/ui/${p}`, import.meta.url), "utf8");
 const TC = 52;    // 13 Spalten × 4 Reihen — der Desktop-Fall (#fx-dichte, vorher 18 × 6 = 108)
@@ -128,12 +129,114 @@ describe("Würfel-Matrix · Bodenraster und Rückflanke", () => {
   });
 
   it("die Rückflanke ist langsamer als die Anstiegsflanke (sonst flackert es)", () => {
-    /* Ein Hüllkurvenfolger will schnell rauf, langsam runter. RELEASE stand mit 0,20 ÜBER ATTACK (0,16) —
-       der Turm fiel zwischen zwei Schlägen steiler zurück, als er hochkam, und das liest sich als Flackern.
-       Die Spitzenhöhe hängt an GAIN/CONTRAST, nicht hieran; wer die Bewegung insgesamt dämpfen will, dreht
-       dort und nicht an dieser Ungleichung. */
-    const att = Number(src.match(/ATTACK:\s*([\d.]+)/)[1]);
-    const rel = Number(src.match(/RELEASE:\s*([\d.]+)/)[1]);
-    expect(rel, `RELEASE ${rel} muss unter ATTACK ${att} liegen`).toBeLessThan(att);
+    /* Ein Hüllkurvenfolger will schnell rauf, langsam runter. Die Ungleichung stammt aus #cube-flimmern und
+       gilt unverändert — sie steht seit #cube-takt nur in ZEITKONSTANTEN statt in Schrittanteilen, und dreht
+       sich damit um: langsamer heißt jetzt GRÖSSER, nicht kleiner. Wer die Bewegung insgesamt dämpfen will,
+       dreht an GAIN/CONTRAST und nicht hieran. */
+    const auf = Number(src.match(/TAU_UP:\s*([\d.]+)/)[1]);
+    const ab = Number(src.match(/TAU_DN:\s*([\d.]+)/)[1]);
+    expect(ab, `TAU_DN ${ab} s muss ÜBER TAU_UP ${auf} s liegen`).toBeGreaterThan(auf);
+  });
+});
+
+/* ============================================================
+   #cube-takt (18.08.2026) — die Hüllkurve rechnet in Zeit, nicht in Frames.
+   ------------------------------------------------------------
+   Der Fehler war unsichtbar: `v += (ziel − v) · 0.16` sieht wie eine Geschwindigkeit aus, ist aber eine
+   Geschwindigkeit geteilt durch die Zeichenrate. Auf dem Handy (effektiv 20 Zeichnungen/s) wurden daraus
+   Zeitkonstanten von 0,31 s / 0,56 s — die Türme hinkten der Musik um eine Zählzeit hinterher und kamen
+   zwischen zwei Schlägen nicht mehr herunter. Der Quelltext sah dabei völlig gesund aus.
+   Deshalb wird hier GERECHNET statt nach Schreibweisen gesucht: `glaettung` ist rein, der Wächter kann die
+   Bildratenfreiheit als Eigenschaft nachweisen. Nur die Verdrahtung bleibt Ratsche.
+   ============================================================ */
+describe("#cube-takt — die Hüllkurve ist bildratenfrei", () => {
+  const src = readFileSync(new URL("../src/ui/fx/CubeMatrixField.jsx", import.meta.url), "utf8");
+
+  it("zwei halbe Schritte kommen genauso weit wie ein ganzer", () => {
+    /* DIE Eigenschaft, um die es geht. Gilt sie, ist der Stand des Turms eine Funktion der WANDUHRZEIT und
+       nicht der Frame-Anzahl — ein fps-Einbruch macht die Bewegung dann gröber, aber nicht langsamer. */
+    const schritt = (v, dt, tau) => v + (1 - v) * glaettung(dt, tau);
+    for (const tau of [0.05, 0.1, 0.3, 1.5]) {
+      const ganz = schritt(0, 0.05, tau);
+      const halb = schritt(schritt(0, 0.025, tau), 0.025, tau);
+      expect(halb, `τ=${tau}`).toBeCloseTo(ganz, 12);
+    }
+  });
+
+  it("überschießt nie — auch nicht bei einem Frame-Aussetzer", () => {
+    // Die lineare Näherung dt/τ liefe bei dt > τ über 1 und katapultierte den Turm über sein Ziel hinaus.
+    for (const dt of [0, 0.016, 0.05, 0.25, 2, 60]) {
+      const k = glaettung(dt, 0.1);
+      expect(k, `dt=${dt}`).toBeGreaterThanOrEqual(0);
+      expect(k, `dt=${dt}`).toBeLessThanOrEqual(1);
+    }
+    expect(glaettung(0, 0.1), "ohne vergangene Zeit ändert sich nichts").toBe(0);
+  });
+
+  it("die Zeitkonstanten treffen den musikalischen Takt", () => {
+    /* Der Sinn der Zahlen, nicht die Zahlen selbst: Bei einem Schlagabstand von ~0,5 s muss ein Kick-Transient
+       den größten Teil seiner Zielhöhe erreichen (sonst „kaum Ausschlag") UND der Turm bis zum nächsten Schlag
+       weitgehend zurückfallen (sonst steht er auf einem Plateau und der Ausschlag verschwindet darin). */
+    const auf = Number(src.match(/TAU_UP:\s*([\d.]+)/)[1]);
+    const ab = Number(src.match(/TAU_DN:\s*([\d.]+)/)[1]);
+    expect(glaettung(0.15, auf), "150-ms-Kick muss über 70 % der Zielhöhe kommen").toBeGreaterThan(0.7);
+    expect(Math.exp(-0.5 / ab), "nach einem Schlagabstand darf höchstens ein Viertel stehen bleiben").toBeLessThan(0.25);
+    // …aber nicht so schnell, dass es wieder flackert (das war #cube-flimmern).
+    expect(Math.exp(-0.5 / ab), "ganz auf null fallen soll er auch nicht").toBeGreaterThan(0.02);
+  });
+
+  it("keine Schrittanteile je Frame mehr im Quelltext", () => {
+    /* Gegenprobe zur Umstellung: die alten Konstanten sind weg, und die drei Nachführungen lesen ihre
+       Schrittanteile aus `glaettung`. Ein einzelner zurückgedrehter Wert wäre am Bild kaum zu sehen — er
+       würde nur genau EINE der Größen wieder von der Bildrate abhängig machen. */
+    /* Gegen den KOMMENTARFREIEN Quelltext prüfen: die Begründung im Kopf der Datei nennt die alten Namen
+       wörtlich (das ist ihr Zweck), und eine Ratsche, die das mitliest, schlägt beim Dokumentieren an. */
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+    expect(code).not.toMatch(/\bATTACK:/);
+    expect(code).not.toMatch(/\bRELEASE:/);
+    expect(code).not.toMatch(/\bSLOW:/);                     // hieß der Koeffizienten-Faktor, jetzt TAU_SLOW
+    expect(code, "der Wächter muss die TUNE-Tabelle überhaupt noch sehen").toMatch(/TAU_UP:/);
+    expect(src).toMatch(/baseB\[i\] \+= \(raw - baseB\[i\]\) \* liveBase/);
+    expect(src).toMatch(/spotBassBase \+= \(raw - spotBassBase\) \* liveBase/);
+    expect(src).toMatch(/songAct \+= .*\* glaettung\(dt, TUNE\.TAU_ACT\)/);
+    expect(src).toMatch(/liveBase = glaettung\(dt, TUNE\.TAU_BASE\)/);
+  });
+
+  it("die Zeichenrate kommt aus der geteilten Toleranz-Formel, nicht aus einem Literal", () => {
+    /* Die alte Schwelle (`liteOn() ? 40 : 24`) lag ohne die halbe Frame-Toleranz auf dem 60-Hz-Frame-Raster:
+       der Frame bei 33,3 ms fiel durch die 40er-Schwelle → 20 Zeichnungen/s statt der im Kommentar
+       versprochenen 25. Genau die Falle, die mobileTier.js für die WebGL-Felder schon beschrieben hat. */
+    /* Nur den CODE ansehen, nicht die Begründung darüber: die nennt die alte Schwelle wörtlich, und eine
+       Ratsche, die ihren eigenen Kommentar liest, schlägt beim Dokumentieren an statt beim Rückfall. */
+    const fn = src.slice(src.indexOf("function frame(now)"));
+    expect(fn).not.toMatch(/\? 40 : 24/);
+    expect(fn).toMatch(/FRAME_MS = hzMinMs\(/);
+    expect(fn).toMatch(/Math\.min\(AMBIENT_HZ, DRAW_HZ_COARSE\)/);   // `?hz=` muss nach unten durchgreifen
+  });
+
+  it("die Zielrate ergibt auf einem 60-Hz-Schirm einen GLEICHMÄSSIGEN Abstand", () => {
+    // Der eigentliche Zweck der Toleranz. Ohne sie schwankt der Abstand (33/50/33/50) und der Effekt ruckelt,
+    // obwohl der FPS-Zähler 60 zeigt — er zählt rAF-Frames, nicht Zeichnungen.
+    const schwelle = hzMinMs(AMBIENT_HZ);
+    const abstaende = [];
+    let last = 0;
+    for (let i = 1; i <= 120; i++) {
+      const now = (i * 1000) / 60;
+      if (now - last < schwelle) continue;
+      abstaende.push(now - last); last = now;
+    }
+    const gezeichnet = abstaende.slice(1);   // der erste Abstand startet bei t = 0
+    expect(Math.max(...gezeichnet) - Math.min(...gezeichnet), "alle Abstände gleich").toBeLessThan(0.01);
+    expect(1000 / gezeichnet[0], "…und die Zielrate wird auch getroffen").toBeCloseTo(AMBIENT_HZ, 6);
+  });
+
+  it("das Ersatzsignal liefert auch seine Aktivität — sonst driftet die Vorschau vom Spiel weg", () => {
+    /* Ohne diese Zeile misst der Spektral-Fluss die STILLE, hinter der das Ersatzsignal steht: `songAct` fiele
+       auf 0, die Werkstatt liefe dauerhaft auf den trägen Zeitkonstanten (×TAU_SLOW), das Spiel auf den
+       knackigen. Zwei Tempi für dasselbe Feld — genau die Drift, gegen die #kompositor argumentiert. */
+    expect(src).toMatch(/if \(demoOn\) songAct = TUNE\.SPEED_HI/);
+    // …und dafür muss demoOn VOR dem AUFRUF von computeSpeed feststehen (nicht vor dessen Definition —
+    // die steht weiter oben in der Datei und wäre die falsche Fundstelle).
+    expect(src.indexOf("const demoOn =")).toBeLessThan(src.indexOf("&& computeSpeed(dt, demoOn)"));
   });
 });

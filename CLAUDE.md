@@ -1511,10 +1511,105 @@ Zustand: „Farbe" → sortiert nach Farbe und heißt danach „Preis" → sorti
   unangetastet (die Höhe hängt an `GAIN`/`CONTRAST`), es fällt nur weicher ab. Trifft beide Enden der adaptiven
   Skala, weil `SLOW` sie multipliziert — also auch die schnellen Lieder, um die es ging.
   **Wer die Bewegung insgesamt dämpfen will, dreht an `CONTRAST`, nicht an dieser Ungleichung.**
-- Wächter: `test/cubematrix-demo.test.js` — `drawFloor` muss `deckColored` lesen, und `RELEASE < ATTACK`.
-  Gegenprobe gemacht: beide Rückfälle lassen ihn fallen.
+- Wächter: `test/cubematrix-demo.test.js` — `drawFloor` muss `deckColored` lesen, und die Rückflanke muss
+  langsamer sein als die Anstiegsflanke. Gegenprobe gemacht: beide Rückfälle lassen ihn fallen.
 - **Nach Gehör nicht abgenommen** — die Rückflanke ist aus der Hüllkurven-Mathematik hergeleitet, nicht an einem
   Lied gemessen (headless gibt es keine Wiedergabe).
+- **NACHTRAG (#cube-takt, s. u.): die BEGRÜNDUNG oben ist an zwei Stellen falsch, die Ungleichung bleibt richtig.**
+  „0,20 → 0,09 halbiert die Fallzeit" ist umgedreht — ein halbierter Koeffizient **verdoppelt** sie. Und „die
+  Spitzen bleiben unangetastet" gilt nur, wenn man die Zeichenrate für unendlich hält; bei einem Tiefpass
+  entscheidet die Rate mit über die erreichte Höhe. Das gemeldete Flackern war real, saß aber in der Zeitbasis.
+
+### #cube-takt — die Würfel-Matrix rechnete in Frames statt in Zeit (18.08.2026)
+Gemeldet vom Handy: „die Würfel kommen nicht mehr hinterher, synchron mit der Musik zu laufen — obwohl die Frames
+nur auf ca. 50 fps droppen. Es ist langsam und kaum Ausschlag." Es waren nicht die fps. Es waren **zwei
+Konstruktionsfehler, die sich gegenseitig verstärkt haben** — und beide sahen im Quelltext gesund aus.
+- **Die Hüllkurve war frame-, nicht zeitbasiert.** `cubeV[i] += (ziel − cubeV[i]) * ATTACK` lief einmal je
+  GEZEICHNETEM Frame. Ein solcher Koeffizient ist keine Geschwindigkeit, sondern eine Geschwindigkeit geteilt
+  durch die Zeichenrate. `dt` wurde zwar berechnet und an `render()` gereicht — aber nur für Stille-Fenster und
+  Demo-Takt benutzt, nicht für die Hüllkurve.
+- **Die Drossel lieferte 20 Zeichnungen/s statt der im Kommentar versprochenen 25.** `FRAME_MS = liteOn() ? 40 : 24`
+  ohne die halbe Frame-Toleranz: auf einem 60-Hz-Schirm fällt der Frame bei 33,3 ms durch die 40er-Schwelle,
+  gezeichnet wird erst der bei 50 ms. Exakt die Falle, die `mobileTier.js` seit #perf-warm für die WebGL-Felder
+  beschreibt — die Datei hatte sie nur nie gelesen, sondern ein eigenes Literal geführt (zweite Wahrheit).
+- **Zusammen ergab das Zeitkonstanten von 0,31 s (Anstieg) und 0,56 s (Rückflanke)**, mit dem Trägheits-Faktor
+  0,63 / 1,11 s. Bei einem Schlag alle 0,46–0,54 s heißt das: die Spitze kommt eine knappe Zählzeit **zu spät**
+  und der Turm ist zum nächsten Schlag noch zu 38–62 % oben — der Ausschlag findet auf einem Plateau statt.
+  Das ist die vollständige Erklärung für „langsam" UND „kaum Ausschlag" aus EINER Ursache.
+- **Die Spitzenhöhe hing mit an der Rate — der Punkt, den die #cube-flimmern-Notiz bestreitet.** Ein
+  Kick-Transient dauert im Spektrum ~150 ms; bei 50 ms je Zeichnung sind das 3 Schritte, ein Tiefpass erreicht
+  davon `1 − 0,84³ ≈ 41 %` der Zielhöhe. Bei 60/s wären es 9 Schritte und ~79 %. **Weniger Zeichnungen =
+  niedrigere Türme**, ganz unabhängig von `GAIN`/`CONTRAST`.
+- **Ein fps-Einbruch machte den Effekt LANGSAMER, nicht nur ruckeliger** — 60 → 50 fps kostete ein Fünftel der
+  Geschwindigkeit. Genau deshalb passte die Beobachtung des Users („nur 50 fps, trotzdem völlig daneben") nicht
+  zu einer reinen Ruckel-Erklärung.
+
+**Der Umbau, in drei Teilen:**
+1. **Zeitkonstanten statt Schrittanteile.** `TAU_UP: 0.10` / `TAU_DN: 0.30` (Sekunden), umgerechnet über
+   `glaettung(dt, τ) = 1 − exp(−dt/τ)`. Ebenso `TAU_BASE` (Grundpegel, war `0.04`/Frame) und `TAU_ACT`
+   (Song-Aktivität, war `0.01`/Frame). `SLOW: 0.5` als Koeffizienten-Faktor wird zu `TAU_SLOW: 2.0` — halber
+   Koeffizient = doppelte Zeit. **Damit ist das Verhalten von der Bildrate entkoppelt**: bei 20, 30 oder 60
+   Zeichnungen/s steht der Turm zur selben Wanduhrzeit auf derselben Höhe, nur feiner aufgelöst.
+   - **Nicht `dt/τ` nehmen** (lineare Näherung): die läuft bei `dt > τ` über 1 und katapultiert bei einem
+     Frame-Aussetzer den Turm über sein Ziel. Die Exponentialform ist zugleich die, für die „zwei halbe
+     Schritte = ein ganzer" exakt gilt — und genau das ist die Eigenschaft, die der Wächter nachrechnet.
+   - **`TAU_ACT` war der stille Zusatzschaden**: `0.01`/Frame ergab bei 20/s eine Zeitkonstante von **5 s**
+     (eingeschwungen nach 10–15 s). Bis dahin stand `songAct` niedrig, also lief das Feld in den ersten
+     Sekunden JEDES Tracks auf den trägen Zeitkonstanten — doppelt zäh, ausgerechnet beim Einsetzen der Musik.
+2. **Zeichenrate aus der geteilten Formel.** `hzMinMs(hz)` ist aus `frameMinMs()` herausgezogen (mobileTier.js);
+   die Würfel-Matrix ruft sie mit ihrer eigenen `AMBIENT_HZ = 30`. Der eigene Wert neben `DRAW_HZ_COARSE` (60)
+   ist begründet, wie die Datei dort verlangt: vollflächige Canvas-2D-Ambiente-Ebene mit weichen Verläufen, und
+   **seit Teil 1 entscheidet die Rate nur noch über die Glätte, nicht mehr über Tempo oder Ausschlag**.
+   Ergebnis: Desktop 30/s (**unverändert** — die 24er-Schwelle ergab auch schon 30), **Handy 20 → 30/s** und
+   gleichmäßig statt unter Jitter zwischen 40 und 60 ms kippend. `?hz=20` greift weiter nach unten durch
+   (`Math.min(AMBIENT_HZ, DRAW_HZ_COARSE)`) — das ist der Regler für den Wärmevergleich am Gerät.
+   **Der Preis, ehrlich benannt: +50 % Zeichnungen auf dem Handy.** Wenn es warm wird, ist `AMBIENT_HZ` die
+   Stelle, und sie kostet seit Teil 1 nur Glätte.
+3. **Das Ersatzsignal liefert jetzt auch seine AKTIVITÄT** (`if (demoOn) songAct = TUNE.SPEED_HI`). Ohne das
+   misst der Spektral-Fluss die Stille, hinter der das Ersatzsignal steht → `songAct` fiele auf 0 und die
+   Werkstatt-Vorschau liefe dauerhaft träge, während dasselbe Feld im Spiel knackig läuft. Zwei Tempi für ein
+   Feld wäre wieder Drift Vorschau↔Spiel. Dafür musste `demoOn` VOR `computeSpeed` bestimmt werden; es liest
+   `stilleS` damit aus dem Vorframe — bei einem 0,35-s-Fenster bedeutungslos.
+- Wächter: `test/cubematrix-demo.test.js` (Abschnitt #cube-takt). Er **rechnet** die Bildratenfreiheit als
+  Eigenschaft nach (zwei halbe Schritte = ein ganzer), prüft, dass nichts überschießt, dass die Zeitkonstanten
+  den musikalischen Takt treffen, und dass die Zielrate auf 60 Hz einen GLEICHMÄSSIGEN Abstand ergibt.
+- **Zwei Fallen beim Schreiben der Wächter, beide zugeschnappt** (dieselbe Sorte wie beim `as-ring`-Zähler in
+  #fx-panel): die Ratsche „kein `ATTACK:` mehr im Quelltext" las den **eigenen Begründungs-Kommentar**, der die
+  alten Namen absichtlich nennt → sie prüft jetzt gegen den kommentarfreien Quelltext. Und `indexOf("computeSpeed(dt, demoOn)")`
+  fand die **Definition** statt des Aufrufs → jetzt `"&& computeSpeed(dt, demoOn)"`.
+- **Nicht am Gerät abgenommen** — alles aus dem Quelltext hergeleitet und im Wächter nachgerechnet; headless gibt
+  es keine Wiedergabe. Der Blick (und das Ohr) am Handy steht aus, ebenso die Wärme-Gegenprobe zu `AMBIENT_HZ`.
+
+### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
+#perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
+stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**
+- Gottgleich hatte mit `cool: 2500` den **kürzesten** Cooldown der ganzen Leiter (Stark 5600 · Brutal 4600 ·
+  Irre 3600) und zugleich `rank: 4` — es wird von `BIG_DOMINANCE_MS` nie unterdrückt, unterdrückt aber selbst
+  2 s lang alle anderen. Sobald der Stich-Score dauerhaft über `GOTT_FX_MIN` (500k) liegt, stand die teuerste
+  Ansage bei 1,9 s Lebensdauer auf **~76 % Einschaltdauer** — und die übrigen drei Stufen kamen gar nicht mehr vor.
+- **Der teuerste Posten ist der Sheen-Sweep, nicht das Chrome.** Er ist eine `<mask>` mit einer ZWEITEN vollen
+  Textinstanz plus ein per SMIL 0,95 s lang bewegtes `<rect>`. Weil die Maske eine Paint-Operation INNERHALB des
+  SVG ist, wird der ganze gefilterte Teilbaum samt der drei `drop-shadow`-Lagen fast eine Sekunde lang **je Frame
+  neu gerastert**. Die `willChange`-Promotion schützt davor nicht: sie verhindert Re-Raster durch die
+  TRANSFORMATION, nicht durch geänderten Inhalt.
+- **Er hing allein an `reduced`** — auf dem Handy ist das false (Default „ausgewogen" → `lite`), der Sweep lief
+  dort also mit. Jetzt `sheen={reduced || lite ? "off" : "once"}`. **Die Wortmarke bleibt unangetastet**
+  (Chrome-Verlauf, Kontur, Glow) — nur der Lichtstreifen fehlt. Gottgleich bleibt damit auf dem Handy als eigene
+  Stufe erkennbar, und die Shop-Vorschau (`sheen="loop"`) zeigt weiter denselben Aufbau.
+- **`willChange` gab es nur am epischen Zweig**, ohne Grund: die Konstruktion ist bei allen vier dieselbe (außen
+  die skalierende `as-bigscore`-Animation, innen die gefilterten Wortschichten). Der nicht-epische Wrapper trägt
+  es jetzt auch. Die #ios-word-Trennung bleibt heil — Promotion außen, Filter innen.
+- **`cool` 2500 → 4000** (Entscheidung des Users). Einschaltdauer ~76 % → **~47 %**, und die Leiter ist wieder
+  eine Leiter. Gottgleich ist damit nicht mehr der dichteste Takt der Leiter (Irre 3600 ist es) — genau das
+  hält der Wächter fest, und zwar **nur** das: die unteren Stufen haben absichtlich längere Cooldowns, weil sie
+  auf viel mehr Stichen auslösen.
+- **Verworfen: Gottgleich auf das DOM-Design der anderen Stufen umstellen.** Bringt nach dem Sweep-Ausbau nur
+  noch den kleinen Rest (SVG-Textlayout, 5-Stopp-Verlauf, 3-px-Kontur, `getBBox` + `fonts.ready`-Nachmessung),
+  kostet aber die Identität der höchsten Stufe (gleiche Schrift, gleiche Behandlung wie Irre) UND bräche die eine
+  Wahrheit mit der Shop-Vorschau, die dieselbe Komponente mountet.
+- Wächter: `test/announce-perf.test.js`. Er liest die Stufenleiter aus der Quelle, statt die Zahlen abzutippen,
+  und prüft zuerst, dass er sie überhaupt noch findet.
+- **GERECHNET, nicht am Gerät gemessen.**
 
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene

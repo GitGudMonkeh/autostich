@@ -166,7 +166,13 @@ const GOTT_SWELL = {
 };
 const GOTT_SWELL_DEFAULT = { snd: "fx_supernova", gain: 1.0, delay: supernovaSwellDelay(gottSpeedFor("sonnenPuls")) }; // sonnenPuls / gottStandard: generischer Swell
 const BIG_SCORE_TIERS = [
-  { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 2500 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
+  /* #perf-ansage2 (18.08.2026): `cool` 2500 → 4000. Gottgleich hatte den KÜRZESTEN Cooldown der ganzen Leiter
+     (Stark 5600 · Brutal 4600 · Irre 3600) und zugleich den höchsten Rang — es wird also von BIG_DOMINANCE_MS nie
+     unterdrückt, unterdrückt aber selbst 2 s lang alle anderen. Sobald der Stich-Score dauerhaft über 500k liegt
+     (im späten Lauf der Normalzustand), stand die teuerste Ansage bei 1,9 s Lebensdauer auf ~76 % Einschaltdauer:
+     ein Dauer-Effekt, genau in der Phase, in der das Handy am heißesten ist — und die anderen drei Stufen kamen
+     überhaupt nicht mehr vor. Mit 4000 sind es ~47 %, und die Leiter ist wieder eine Leiter. */
+  { min: GOTT_FX_MIN, key: "bf.big.godlike", size: 104, epic: true, rank: 4, cool: 4000 }, // epic = Sonder-Ansage: ~70 % Panelbreite, mittig, weiß
   { min: 150000, key: "bf.big.insane", size: 90, rank: 3, cool: 3600,
     chrome: { grad: "linear-gradient(100deg,#ffffff,#ffe4f5,#ff7ed4,#e2a9ff,#ff7ed4,#ffe4f5,#ffffff)", glow: "#ff2d95", aura: "#b14bff" } },
   { min: 50000,  key: "bf.big.brutal", size: 78, rank: 2, cool: 4600,
@@ -1681,7 +1687,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
               color2={!b.tier.color && gottDeck && deckA1 ? (deckA2 || deckA1) : null}
               gBig={gBig} gMid={gMid} reduced={reduced}
-              sheen={reduced ? "off" : "once"} idKey={b.id}
+              /* #perf-ansage2: Der Sheen-Sweep fällt auf `lite` weg — bis hierher hing er allein an `reduced`,
+                 lief auf dem Handy (Default „ausgewogen" → lite, nicht reduced) also mit. Er ist der teuerste
+                 Posten der epischen Ansage: eine `<mask>` mit einer ZWEITEN vollen Textinstanz plus ein per SMIL
+                 0,95 s lang bewegtes `<rect>`. Weil die Maske eine Paint-Operation INNERHALB des SVG ist, wird der
+                 gesamte gefilterte Teilbaum — samt der drei drop-shadow-Lagen — eine Sekunde lang JE FRAME neu
+                 gerastert. Die `willChange`-Promotion in GottChromeWord schützt davor nicht: sie verhindert
+                 Re-Raster durch die TRANSFORMATION, nicht durch geänderten Inhalt.
+                 Die Wortmarke selbst bleibt unangetastet (Chrome-Verlauf, Kontur, Glow) — nur der Lichtstreifen
+                 fehlt. Damit bleibt Gottgleich auf dem Handy als eigene Stufe erkennbar, und die Shop-Vorschau
+                 (`sheen="loop"`) zeigt weiter denselben Aufbau. */
+              sheen={reduced || lite ? "off" : "once"} idKey={b.id}
               style={{ left: "50%", top: "50%", width: "72%", zIndex: 31,
                        transform: reduced ? "translate(-50%, -50%)" : undefined,
                        animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }} />
@@ -1692,7 +1708,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           //   SVG-Text und darum neben dem Krit-Trubel leicht zu übersehen. Die Basis macht Stark/Brutal/Irre bei JEDEM Sieg
           //   (auch Krit) sicher lesbar; das Chrome (leicht durchscheinend) legt den Metallic-Look darüber. Exakt mittig.
           <div key={b.id} className="pointer-events-none absolute" aria-hidden="true"
-            style={{ left: "50%", top: "50%", zIndex: 30,
+            /* #perf-ansage2: `willChange` gab es bis hierher NUR am epischen Zweig (GottChromeWord.jsx) — ohne
+               Grund, die Konstruktion ist dieselbe: außen die skalierende `as-bigscore`-Animation, innen die
+               gefilterten Wortschichten. Ohne die Promotion muss der Browser die Blur-Lagen über die 1,9 s
+               möglicherweise je Frame neu rastern, statt die fertige Ebene auf dem Compositor zu skalieren.
+               Diese Stufen feuern häufiger als die epische — und seit `cool` oben auf 4000 steht, wieder deutlich
+               häufiger. Kostet eine Compositor-Ebene für 1,9 s; das ist bei einer Vollbild-Blur-Animation der
+               richtige Tausch. GERECHNET, nicht am Gerät gemessen. */
+            style={{ left: "50%", top: "50%", zIndex: 30, willChange: "transform, opacity",
                      transform: reduced ? "translate(-50%, -50%)" : undefined,
                      animation: fx(`as-bigscore ${BIG_ANNOUNCE_MS}ms ease-out forwards`) }}>
             {(() => {
