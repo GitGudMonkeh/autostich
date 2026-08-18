@@ -4,6 +4,7 @@
 //  · Challenger  — Hall of Champions: Platz 1 jeder abgelaufenen Woche (1 pro Woche).
 //  · Regeln      — Modus-Baseline + voller Modifikator-Katalog + Ausschluss-Paare.
 import { useState, useMemo, useEffect } from "react";
+import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, geteilt mit dem Startbildschirm
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
@@ -40,7 +41,7 @@ const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, tr
    Datenbank und der Wert, den App.jsx als `initialTab` hereinreicht. */
 const TABS_RANKED = [
   { id: "meister",    labelKey: "board.tab.week",       accent: UI1 },
-  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1, icon: true },
   { id: "regeln",     labelKey: "board.tab.rules",      accent: UI1 },
 ];
 const TABS_BOARD = [
@@ -48,7 +49,7 @@ const TABS_BOARD = [
   // Kurzform „Woche": vier Zeichen weniger als „Diese Woche" — bei drei gleich breiten Reitern auf einem
   // 390-px-Handy bricht die lange Fassung neben „Challenger" um.
   { id: "meister",    labelKey: "board.tab.weekShort",  accent: UI1 },
-  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1 },
+  { id: "champions",  labelKey: "board.tab.challenger", accent: UI1, icon: true },
 ];
 // #385 Regeln-Reiter — jeder Modifikator VOLL AUSGESCHRIEBEN in einem eigenen Rahmen (keine Chips), getrennt nach
 //   positiv/negativ; darunter die Ausschluss-Paare.
@@ -139,7 +140,7 @@ function ChampionsList({ reloadToken, username, onChampionWeeks }) {
           {champs.map((c) => (
             <div key={`${c.year}-${c.week}`} className="flex items-center gap-2.5 text-sm px-2.5 py-1.5 rounded-lg"
               style={{ background: "#20202a", border: `1px solid ${deckMix(20)}` }}>
-              <span className="shrink-0 text-[15px]">🏆</span>
+              <RankIcon className="as-rank-icon text-[15px]" />
               <span className="flex-1 min-w-0 truncate font-semibold">
                 {c.name || "—"}<span className="text-[10px] opacity-45 ml-1.5">{c.labelShort}</span>
               </span>
@@ -183,13 +184,17 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
         <ModalHairline />
         <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">{tr("board.title")}</h2>
+            {/* #pokal-eins: der Pokal steht als VEKTOR im Markup, nicht mehr als 🏆 im Text. Grund wie am
+                Ranglisten-Knopf (RankIcon.jsx): ein Emoji bringt seine eigene Farbe mit und steht quer zu
+                einem Panel, das seine Töne aus dem aktiven Deck zieht. Nebeneffekt am Reiter unten: das
+                Emoji zwang dort einen Umbruch und machte den Challenger-Reiter höher als seine Nachbarn. */}
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><RankIcon />{tr("board.title")}</h2>
             <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{tr("common.close")}</ActionButton>
           </div>
 
           {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
           <div className="flex gap-1.5 mb-4 shrink-0" role="tablist">
-            {TABS.map(({ id, labelKey, accent }) => {
+            {TABS.map(({ id, labelKey, accent, icon }) => {
               const on = tab === id;
               return (
                 /* #kante: Signal an der Unterkante wie in Werkstatt und Upgrades — bei waagerechten
@@ -200,7 +205,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                     ? { color: "#fff", borderBottom: `2px solid ${accent}`,
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${accent} 14%, transparent))` }
                     : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
-                  {tr(labelKey)}
+                  <span className="flex items-center justify-center gap-1.5">{icon && <RankIcon />}{tr(labelKey)}</span>
                 </button>
               );
             })}

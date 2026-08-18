@@ -794,11 +794,11 @@ export default {
   "seed.replay.title": "Replay this seed",
 
   /* ---- Leaderboard (LeaderboardScreen · GlobalLeaderboard) ---- */
-  "board.title": "🏆 Leaderboard",
+  "board.title": "Leaderboard",
   "board.tab.global": "Global",
   "board.tab.week": "This week",
   "board.tab.weekShort": "Week",
-  "board.tab.challenger": "🏆 Challenger",
+  "board.tab.challenger": "Challenger",
   "board.tab.rules": "Rules",
   "board.rules.intro": "Everyone plays the same weekly seed on a fair baseline — the upgrade tree has no effect ({rerolls} rerolls per phase, all rarities, legendary phase in cycle {legCycle}). Every week 3–5 random modifiers (≥2 positive, ≥1 negative) change the run — identically for everyone. Only completed runs count; at the end of the week first place moves into the Challenger archive and the board starts over.",
   "board.rules.pos": "Positive modifiers",

@@ -62,8 +62,12 @@ describe("#394 — Mainscreen: Rangliste-Schloss verschwindet bei Freischaltung"
     expect(src).toContain("const rankedFree = rankedUnlocked(prof);"); // aus dem live gereichten `profile`-Prop
     // EIN Zeichen am Knopf, und es hängt am Zustand.
     expect(src).toMatch(/<RankIcon free=\{rankedFree\} \/>/);
-    // Drinnen wählt derselbe Zustand zwischen genau zwei Formen — kein zweiter Pfad daneben.
-    expect(src).toMatch(/free \? RANK_PATHS\.cup : RANK_PATHS\.lock/);
+    /* Drinnen wählt derselbe Zustand zwischen genau zwei Formen — kein zweiter Pfad daneben.
+       Seit #pokal-eins wohnt das Zeichen in RankIcon.jsx statt im StartScreen: die Bestenliste trägt
+       denselben Pokal (Kopf, Challenger-Reiter, Wochensieger-Zeilen), und zweimal abzeichnen hätte
+       genau die Doppelpflege ergeben, vor der dieser Test an anderer Stelle warnt. Geprüft wird
+       weiterhin die ABSICHT, nur jetzt an ihrer neuen Adresse. */
+    expect(ui("RankIcon.jsx")).toMatch(/free \? RANK_PATHS\.cup : RANK_PATHS\.lock/);
     // Die Emoji-Fassung des Knopfes ist weg und soll nicht zurückkommen.
     expect(src).not.toMatch(/EMO_RANK/);
   });

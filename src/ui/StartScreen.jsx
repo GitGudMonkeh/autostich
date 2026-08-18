@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, geteilt mit der Bestenliste
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
@@ -109,35 +110,6 @@ const GLYPHS = {
    Als Konstanten und nicht als JSX-Text, aus demselben Grund wie bei GLYPHS oben. */
 const EMO_BONUS = "💠";
 const EMO_ONB = "🎓";
-
-/* Schloss/Pokal am Ranglisten-Knopf, ab 1400 px anstelle der Emoji. Pfaddaten wie bei GLYPHS:
-   als Konstanten, nicht als JSX-Text (Begründung dort). */
-const RANK_PATHS = {
-  // Zu: Bügel über geschlossenem Kasten.
-  lock: ["M8 10V7a4 4 0 0 1 8 0v3"],
-  /* Frei: der Pokal nach der Vorlage — zwei nach oben geschwungene Flügel, der Bogen darüber, die
-     Raute in der Mitte, der Stufensockel. Er ersetzt den klassischen Henkelpokal, weil die Vorlage
-     genau diese Form zeigt und weil er damit in derselben Strichsprache steht wie die vier
-     Kachel-Zeichen darunter (GLYPHS).
-     Der BOGEN ist der Teil, den man nicht weglassen darf: ohne ihn stehen zwei geschwungene Linien
-     nebeneinander, und die lesen sich bei 15 px als Blattpaar — also ausgerechnet wie das
-     Pflanzen-Icon des Spiels. Erst der geschlossene Rand macht daraus einen Kelch. Die Raute ist
-     klein gehalten, sonst läuft der Innenraum bei 13 px zu; der Funke über dem Pokal (die Vorlage
-     hat einen) ist entfallen, er verschmilzt auf dieser Größe mit dem Bogen. */
-  cup: ["M7.2 6.4a6.4 6.4 0 0 1 9.6 0", "M5.6 5.6c-.4 5.6 1.9 8.8 6.4 10.2",
-    "M18.4 5.6c.4 5.6-1.9 8.8-6.4 10.2", "M12 8l1.9 2.4-1.9 3.9-1.9-3.9z",
-    "M12 15.8V18.4", "M8.8 18.7h6.4", "M7 21.2h10"],
-};
-
-function RankIcon({ free }) {
-  return (
-    <svg className="as-rank-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
-      fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      {(free ? RANK_PATHS.cup : RANK_PATHS.lock).map((d) => <path key={d} d={d} />)}
-      {!free && <rect x="4.5" y="10" width="15" height="10.5" rx="2" />}
-    </svg>
-  );
-}
 
 /* Die Zeichen der drei Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1400 px
    sichtbar: am Handy steht die Reihe eng, dort kostet jedes Zeichen Breite, die die Wörter brauchen. */
