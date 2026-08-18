@@ -171,37 +171,42 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   return (
     <div>
       {/* Archetyp-Zusammenfassung — auch bei anonymized sichtbar (nur Icons/Zahlen, kein 1:1-Nachbau). */}
-      {archCounts.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 justify-center">
+      {/* #buildzeilen: Kopfreihe — Archetypen links, die Perk-Zahl rechts am Rand. Sie stand vorher als eigene
+          zentrierte Zeile über den Chips und teilte den Block in zwei Mitten; als rechter Anschlag derselben
+          Reihe beantwortet sie „wie viel habe ich genommen", ohne eine Zeile zu kosten. */}
+      {(archCounts.length > 0 || showPerks) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {archCounts.map((a) => (
             <span key={a.key} className="inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-0.5 rounded-full"
               style={{ background: `${a.color}1f`, color: a.color, border: `1px solid ${a.color}55` }}>
               <ArchIcon meta={a} size={13} /> {a.label} ×{a.n}
             </span>
           ))}
+          {showPerks && (
+            <span className="text-[10px] uppercase tracking-wider opacity-45 ml-auto">{t("runstats.perks", { n: perkTotal })}</span>
+          )}
         </div>
       )}
 
       {(showSkills || showPerks || showHidden) && (
-        <div className="mt-3">
-          {/* Überschrift wie über den Skills — sie war hier nie da, weil die Zeile bis jetzt nur die paar flachen
-              Perks trug. Mit den Familien sind es zwei Dutzend Chips; ohne Beschriftung liest sich das als
-              namenlose Wolke über den Skills. Die Zahl ist die Antwort auf „wie viel habe ich genommen". */}
+        <div className="rs-rows mt-3">
           {showPerks && (
-            <div className="text-[10px] uppercase tracking-wider opacity-45 text-center mb-1">{t("runstats.perks", { n: perkTotal })}</div>
-          )}
-          {showPerks && (
-            <div className="grid gap-1.5">
+            <div className="rs-groups">
               {perkGroups.map((g) => {
                 const cm = perkCat(g.cat);
                 const cc = cm?.color || "#8a8a95";
                 return (
-                  <div key={g.cat} className="flex flex-wrap items-center justify-center gap-1.5">
+                  /* #buildzeilen: eine Zeile je Kategorie — Beschriftung in einer eigenen linken Spalte, Chips
+                     links anschlagend daneben. Vorher lag beides in EINER zentrierten Flex-Reihe: die Zeilen
+                     hatten damit weder eine gemeinsame linke Kante noch eine gemeinsame Beschriftungsbreite,
+                     und je nach Chipzahl wanderte das Kategoriewort quer über den Block. */
+                  <div key={g.cat} className="rs-row">
                     {/* Die Kategorie steht als Wort vor ihren Chips — in ihrer Farbe, damit Beschriftung und
                         Chipfarbe dasselbe sagen und die Farbe nicht mehr allein tragen muss. */}
-                    <span className="text-[10px] uppercase tracking-wider font-bold shrink-0" style={{ color: cc, opacity: 0.85 }}>
+                    <span className="rs-lbl text-[10px] uppercase tracking-wider font-bold" style={{ color: cc, opacity: 0.85 }}>
                       {cm?.name || g.cat}
                     </span>
+                    <span className="rs-chips flex flex-wrap items-center gap-1.5">
                     {g.items.map((it) => {
                       if (it.kind === "perk") {
                         const rar = rarityOf(it.id);
@@ -230,16 +235,19 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                         </button>
                       );
                     })}
+                    </span>
                   </div>
                 );
               })}
             </div>
           )}
+          {/* Die Skills sind dieselbe Sorte Zeile wie eine Perk-Kategorie — also auch dieselbe Form: Beschriftung
+              links, Chips daneben. Als zentrierte Überschrift über einer zentrierten Wolke war sie die einzige
+              Zeile des Blocks, die aus der Reihe fiel. */}
           {showSkills && (
-            <div className="text-[10px] uppercase tracking-wider opacity-45 text-center mt-2.5">{t("runstats.skills")}</div>
-          )}
-          {showSkills && (
-            <div className="flex flex-wrap gap-1.5 justify-center mt-1">
+            <div className="rs-row rs-row-sep">
+              <span className="rs-lbl text-[10px] uppercase tracking-wider font-bold opacity-45">{t("runstats.skills")}</span>
+              <span className="rs-chips flex flex-wrap items-center gap-1.5">
               {skills.map((id) => {
                 const d = skillDef(id);
                 if (!d) return null;
@@ -253,6 +261,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                   </button>
                 );
               })}
+              </span>
             </div>
           )}
           {selDetail && (

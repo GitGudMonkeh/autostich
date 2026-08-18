@@ -1338,6 +1338,25 @@ button { font-family: inherit; }
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
 
+/* #buildzeilen — der Build-Block als Zeilenliste: Beschriftung links, Chips daneben.
+   Vorher lag jede Kategorie in EINER zentrierten Flex-Reihe zusammen mit ihren Chips. Damit hatte der Block
+   weder eine gemeinsame linke Kante noch eine gemeinsame Beschriftungsbreite — das Kategoriewort wanderte je
+   nach Chipzahl quer über den Block, und wer nach „was steht unter Score" suchte, musste jede Zeile neu
+   absuchen. Die Spalte ist `max-content` über ALLE Zeilen (Rasterspalte, nicht `min-width` je Zeile): sie ist
+   damit genau so breit wie das längste Kategoriewort der jeweiligen Sprache — kein abgemessener Pixelwert,
+   der bei EN oder einer neuen Kategorie kippt.
+   `align-items: baseline` statt `center`: die Beschriftung sitzt auf der Grundlinie der ERSTEN Chipzeile,
+   auch wenn die Chips daneben auf zwei Zeilen umbrechen (mittig wäre sie dann zwischen den Zeilen). */
+.rs-rows { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; row-gap: 6px; }
+.rs-rows > * { grid-column: 1 / -1; }        /* Detailkasten/Hinweis laufen über beide Spalten */
+.rs-groups, .rs-row { display: contents; }    /* Gruppen und Zeilen reichen ihre Teile ins Raster durch */
+.rs-lbl { grid-column: 1; justify-self: start; align-self: baseline; padding-top: 3px; white-space: nowrap; }
+.rs-chips { grid-column: 2; }
+/* Die Skill-Zeile bekommt etwas Luft nach oben — sie ist die einzige, die keine Perk-Kategorie ist.
+   Der Abstand muss an ihre TEILE, nicht an die Zeile: `display: contents` erzeugt keine Box, an der ein
+   Rand greifen könnte. */
+.rs-row-sep > * { margin-top: 7px; }
+
 /* #lv-fluegel: Auch die Level-up-Karte trägt eine Klammer — unterhalb von 1400 px ist sie KEINE Box, die
    Karte bleibt also direktes Kind des zentrierenden Overlays und die Handy-Fassung damit unverändert.
    Die Flügel und die Griffe darin werden dort ohnehin nicht gerendert (`useIsWide`-Gate). */
