@@ -570,8 +570,17 @@ Text**, sondern `loop.center` aus den Leitfaden-Daten („STURM · nährt sich s
 - **Ventil**: `.gd-scroll` ist auf dem Desktop `overflow: hidden` (wie die Werkstatt) — Überlauf würde
   ABGESCHNITTEN. Gescrollt wird deshalb INNEN an `.gd-page .gd-cols`, nicht am Panel: der `as-ring` sitzt mit
   `inset: 0` im Fluss und liefe sonst beim Scrollen mitten durch den Inhalt (dieselbe Naht wie `.cz-main`).
+- **Erreichbarkeit — war der blinde Fleck.** Der Screen hing anfangs nur an der Skill-Auswahl IM LAUF und am
+  GameOver; der „Leitfaden ›"-Knopf der Fraktionsseite öffnete `DeckDetail` auf dessen Reiter „Leitfaden"
+  (derselbe Inhalt, aber im schmalen Modal). In den Menüs kam man also gar nicht hin. Seit 18.08.2026 öffnet
+  der Knopf den gerahmten Screen. Zwei Fallstricke dabei, beide abgesichert: der Leitfaden rendert als
+  **Geschwister** des Baum-Wurzelknotens (der schließt bei `onClick`, ein Klick im Leitfaden blubberte sonst
+  dorthin und nähme den Baum mit), und `useEscape` bekommt `guideArch` als OBERSTE Stufe der Kette (beide
+  Handler hängen am selben `window`-Listener — ohne den Zweig schlösse ein Tastendruck beide Ebenen).
+- **Maßstab-Schwelle 1750 px ist gemessen, nicht gegriffen**: auf 1723×1030 (Fenster des Users) liefe schon
+  `--gs 1.1` über (100 %), `.95` liegt dort bei 79 %. Wer die Schwelle senken will, misst vorher.
 - Wächter: `test/guide-desktop.test.js` (Quelltext-Ratsche über beide Dateien: `display: contents`, die
-  `.gd-page`-Bindung, das Ventil, die drei Stufen, `align-self: start`).
+  `.gd-page`-Bindung, das Ventil, die drei Stufen, `align-self: start`, die Verdrahtung des Knopfs).
 - **Bewusst NICHT drin**: ein „Glossar ›"-Knopf im Seitenkopf (spiegelbildlich zum „Leitfaden ›" im Baum).
   Das wäre Overlay auf Overlay — `GlossaryOverlay` liegt wie `GuideOverlay` auf `z-[60]` und beide hängen an
   `useEscape`, ein Escape schlösse also beide. Eigener Schritt, kein Layout.

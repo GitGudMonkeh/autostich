@@ -88,6 +88,18 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     expect(deskBlock).toMatch(/\.gd-nav\s*\{[^}]*align-self:\s*start/);
   });
 
+  it("der Leitfaden-Knopf im Baum öffnet den gerahmten Screen, nicht die Deck-Detailansicht", () => {
+    // Bis 18.08.2026 landete man auf DeckDetail/Reiter „Leitfaden" — derselbe Inhalt im schmalen
+    // Modal, während dieser Screen praktisch unerreichbar war (nur Skill-Auswahl im Lauf + GameOver).
+    const up = readFileSync(new URL("../src/ui/UpgradeScreen.jsx", import.meta.url), "utf8");
+    expect(up).toMatch(/import \{ GuideOverlay \}/);
+    expect(up).toMatch(/className="up-page-guide"/);
+    expect(up).toMatch(/onClick=\{\(\) => setGuideArch\(page\)\}/);
+    expect(up).toMatch(/\{guideArch && <GuideOverlay initial=\{guideArch\}/);
+    // Escape muss den Leitfaden vor dem Baum schließen — sonst nimmt EIN Tastendruck beide mit.
+    expect(up).toMatch(/useEscape\(guideArch \?/);
+  });
+
   it("die Archetyp-Spalte erscheint erst oberhalb des Bruchpunkts", () => {
     // `useIsWide` ist der einzige Ort, an dem der Bruchpunkt in JS steht — ohne ihn stünde die
     // Spalte auch am Handy im DOM (und die Reiterzeile daneben).

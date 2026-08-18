@@ -13,6 +13,7 @@ import { unlockLabel } from "../i18n/unlockText.js";
 import { guideDef } from "../i18n/guideText.js"; // Einzeiler der Fraktion über der Skill-Liste
 import { rarityLabel, skillDef, themeDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
 import { DeckDetail } from "./DeckDetail.jsx";
+import { GuideOverlay } from "./GuideOverlay.jsx"; // #desktop: der Leitfaden ist ab 1400 px ein eigener gerahmter Screen
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
   TOTAL_NODES, COVER_FLOOR, ENERGY_FLOOR, REROLL_BASE, nodeEffects,
@@ -372,7 +373,15 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
      beim Alten (zwei Reiter, Fraktions-Ketten untereinander, Deck-Details als Ebene 2). */
   const wide = useIsWide();
   const [page, setPage] = useState("gen");   // "gen" | Fraktions-Key
-  useEscape(selNode ? () => setSelNode(null) : detailArch ? () => setDetailArch(null) : onClose);
+  /* #desktop: Der Leitfaden-Knopf der Fraktionsseite öffnet den GERAHMTEN Leitfaden-Screen, nicht mehr
+     die Deck-Detailansicht. Vorher landete man auf deren Reiter „Leitfaden" — derselbe Inhalt, aber im
+     schmalen Modal, während der eigentliche Leitfaden-Screen nur aus der Skill-Auswahl im Lauf und vom
+     Endscreen erreichbar war. Der Handy-Pfad behält seinen Details-Knopf in die Detailansicht. */
+  const [guideArch, setGuideArch] = useState(null);
+  /* Reihenfolge = Tiefe: Escape schließt immer nur die OBERSTE Ebene. Der Leitfaden bringt seinen
+     eigenen Escape-Handler mit; ohne diesen Zweig würde derselbe Tastendruck zusätzlich den Baum
+     schließen (beide Handler hängen am selben window-Listener). */
+  useEscape(guideArch ? () => setGuideArch(null) : selNode ? () => setSelNode(null) : detailArch ? () => setDetailArch(null) : onClose);
   const p = profile || emptyProfile();
   const sp = Math.max(0, Math.floor(Number(p.stichPoints) || 0));
   const owned = ownedCount(p);
@@ -396,6 +405,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   }
 
   return (
+   <>
     <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck up-card relative"
@@ -518,7 +528,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                     {/* Kein „Details" mehr daneben: Was dort lag — Skills, Leitfaden, Challenges — steht
                         jetzt auf dieser Seite bzw. hinter diesem Knopf. Ein zweiter Einstieg in denselben
                         Screen wäre nur noch ein Umweg. Der Handy-Pfad behält seinen Details-Knopf. */}
-                    <button type="button" onClick={() => setDetailArch({ arch: page, tab: "leitfaden" })}
+                    <button type="button" onClick={() => setGuideArch(page)}
                       className="up-page-guide" style={{ "--c": FACTION_GLOW[page] || VI }}>{t("guide.title")} ›</button>
                   </div>
                   {/* Die Kette läuft hier QUER: drei Knoten sind keine Säule, und quer bleibt der Platz
@@ -615,5 +625,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         <Legend where="outer" />
       </div>
     </div>
+    {/* Geschwister des Wurzelknotens: der Baum-Root schließt bei onClick, ein Klick im Leitfaden
+        würde von innen heraus bis dorthin blubbern und den Baum mit schließen. */}
+    {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
+   </>
   );
 }
