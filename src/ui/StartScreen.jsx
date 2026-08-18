@@ -404,20 +404,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           i18n-Katalog — der Key hieß zu PNG-Zeiten „alt", trägt jetzt die sichtbare Marke (in beiden
           Sprachen „AUTOSTICH", deshalb in der SAME_OK-Liste der i18n-Guards). */}
       <h1 className="as-wordmark select-none">{t("start.logo.alt")}</h1>
-      {/* #250 Versions-/Build-Stempel — steht seit 16.08.2026 HIER statt ganz unten. Vorher trug diese Zeile
-          den Untertitel („Roguelite-Autobattler-Stechspiel · Prototyp"); der erklärte niemandem etwas, der das
-          Spiel ohnehin schon offen hat, und der Stempel war unter Nickname, PWA-Link und Datenschutz-Zeile
-          faktisch unsichtbar. Genau ihn braucht man aber am häufigsten: nach jedem Push die Frage „ist mein
-          Stand drauf?". Direkt unter der Marke ist er ohne Scrollen lesbar.
-
-          Das goldene v-Banner an der Wortmarke ist ersatzlos weg. Es saß als absolutes Overlay über der
-          Unterkante der Marke, kostete den Kopf diesen Überhang — und nannte mit „v0.4" ohnehin nur den
-          Anfang dessen, was der Stempel daneben vollständig trägt. Eine Zeile, eine Versionsangabe.
-
-          #logo: Das frühere `-mt-3` ist raus. Es zog die Zeile in den transparenten Rand des PNG hinein;
-          die Text-Wortmarke hat diesen Rand nicht, dort saß die Zeile dann auf der Unterkante der Marke.
-          Höhe kostet das nichts — der Text baut ohnehin gut 30 px niedriger als das Bild. */}
-      <div className="ty-meta text-[10px] opacity-40 select-text mt-0.5 min-[1400px]:mt-1" title={t("start.version.title")}>{VERSION_FULL}</div>
+      {/* #kopf: Der Versions-/Build-Stempel ist von HIER (unter der Marke) in den Fuß gewandert — unter die
+          „angemeldet als"-Zeile. Das gibt der Wortmarke die Zeile darunter frei → größere Marke am Handy
+          (index.css `.hub-play .as-wordmark`), und der Stempel steht dort, wo die übrigen Fuß-/Meta-Infos sitzen. */}
 
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
@@ -885,6 +874,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         )}
       </div>
+      {/* #kopf: Versions-/Build-Stempel — jetzt UNTER der „angemeldet als"-Zeile (aus dem Kopf hierher gezogen).
+          Mobil zentriert wie die Fuß-Links darüber, ab 1400 px rechtsbündig zum restlichen Fuß-Band. */}
+      <div className="ty-meta text-[10px] opacity-40 select-text mt-1 text-center min-[1400px]:text-right" title={t("start.version.title")}>{VERSION_FULL}</div>
       {/* #desktop — Ende des Fuß-Bandes. */}
       </div>
     </div>
