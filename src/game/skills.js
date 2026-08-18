@@ -155,11 +155,11 @@ export const SKILL_DEFS = {
     desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze brennen Brände zusätzlich −${C.SCHMELZOFEN_BRAND_BONUS} Wert und geben +${C.SCHMELZOFEN_BRAND_BONUS} Asche extra; Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
   // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
+    desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert — und deine Brände verfallen nicht, sondern stapeln sich auf den Gegnerkarten (bis −${C.SONNENKERN_BRAND_CAP}).`, suncore: true },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: `Niederlagen kosten keine Hitze, sondern geben +${C.PHOENIX_LOSS_HEAT} % Hitze je Rückstandspunkt. Sinkt deine Hitze durch Verbrauch auf 0, entzündet sie sich 1×/Durchlauf auf ${Math.round(C.PHOENIX_REIGNITE * 100)} % neu.`, phoenix: true },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Dein gesamter Sieg-Score wird mit deiner höchsten je gehaltenen Hitze multipliziert: +${de(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)} % je Peak-Prozent (Peak 100 → ×${de(Math.round((1 + 100 * C.SUNWRATH_PEAK_STEP) * 100) / 100)}).`, sunwrath: true },
+    desc: `Dein gesamter Sieg-Score wird mit deinem höchsten je erreichten Hitzestand multipliziert: +${de(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)} % je Prozent bis ${C.HEAT_MAX} % (→ ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP) * 100) / 100)}), und +${de(Math.round(C.SUNWRATH_OVER_STEP * 1000) / 10)} % je Punkt Überhitzung darüber (mit Weißglut bis ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP + C.OVERHEAT_MAX * C.SUNWRATH_OVER_STEP) * 100) / 100)}).`, sunwrath: true },
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge", "ash"],
     desc: `Schmiedet ohne Asche jeden Durchlauf deine niedrigste Karte (+${C.FORGE_VALUE} Wert, bis ${C.DAMASCUS_MAX_FORGED} Karten). Geschmiedete Karten kämpfen mit +${C.DAMASCUS_COMBAT} Wert. Jeder Sieg gibt +${C.DAMASCUS_PER_VALUE} Score je Punkt Gesamt-Schmiedewert. Kein Ascheverbrauch.`, damascus: true },
 
@@ -449,6 +449,14 @@ export const overheatDecay = (over, amount) => Math.max(0, (over || 0) - amount)
 export function overheatMult(over, skills) {
   if (!fireFlag(skills, "whiteHeat")) return 1;
   return 1 + Math.min(Math.max(0, over || 0), C.OVERHEAT_MAX) * C.OVERHEAT_SCORE_STEP;
+}
+// Sonnenzorn: Score-Multiplikator aus dem Hitze-HÖCHSTSTAND. Zwei Sätze — bis HEAT_MAX der leichte Teil, darüber
+// die teuer erkaufte Überhitzung (#fire-leg, s. Konstanten-Block).
+export function sunwrathMultFor(peak, skills) {
+  if (!fireFlag(skills, "sunwrath")) return 1;
+  const p = Math.max(0, peak || 0);
+  return 1 + Math.min(p, C.HEAT_MAX) * C.SUNWRATH_PEAK_STEP
+           + Math.max(0, p - C.HEAT_MAX) * C.SUNWRATH_OVER_STEP;
 }
 // Flächenbrand: Score je verbranntem Hitzepunkt — bekenntnis-skaliert wie fireScoreFor (ein 2-Skill-Splash bekommt wenig).
 export const conflagRateFor = (skills) =>

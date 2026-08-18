@@ -551,11 +551,26 @@ export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 
 export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT", 0.25); // … Schmieden −25 % Kosten (FAKTOR, skaliert mit den Kosten: 20→15) [#268: flat 1 → Faktor]
 // Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
 // Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
-export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.013); // +GESAMT-Score je Peak-Hitze-% (Peak 100 → ×2,3) [Legendär-Angleich: 0,010→0,013 — zaghaft (Sim unterschätzt Feuer)]
+// #fire-leg: der Peak zählt jetzt Hitze + ÜBERHITZUNG (heat.peak liest `value + over`) — Sonnenzorn ist damit an
+// Weißglut gekoppelt. Grund: 100 % Peak erreicht JEDER Feuer-Build nebenbei, der Multiplikator war praktisch ein
+// Fixwert. Die Zone darüber ist dagegen teuer erkauft (gedrosselter Zufluss, Abbau je Stich) und trägt deshalb den
+// dreifachen Satz. Zwei Sätze bewusst: der leichte Teil wird billiger (×2,3 → ×2,0), der schwere ist der Preis.
+//   Peak 100 (ohne Weißglut) → ×2,0 · Peak 125 → ×2,75 · Peak 150 (volle Überhitzung) → ×3,5
+// (Dreht die frühere „isolierte Zone"-Entscheidung NUR für den Peak. Glutdividende und Glühende Klinge lesen
+//  heat.value und bleiben unberührt.)
+export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% bis HEAT_MAX
+export const SUNWRATH_OVER_STEP    = envNum("SIM_SUNWRATH_OVER_STEP", 0.030); // … je Punkt Peak DARÜBER (Überhitzung)
 // Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
 export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 60);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Angleich: 70→60 — häufiger auslösen]
 export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 2);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Angleich: 1→2]
 export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN [Legendär-Angleich: 7→9 — mehr Karten]
+// #fire-leg: Sonnenkern war ein SCHALTER ohne jede Interaktion — Hitze ≥ Schwelle am Durchlauf-Ende, alle Karten
+// unter dem Deckel +Wert, Hitze unangetastet, keine Entscheidung. Jetzt brennt die Sonne in BEIDE Decks: endet der
+// Durchlauf heiß, VERFALLEN die Brände dieses Durchlaufs nicht (normal hält ein Brand genau einen Durchlauf,
+// `brandActive = brandPending`), sondern stapeln sich auf den Gegnerkarten. Damit hängt er an der Brand-Linie
+// (Brandmal/Lauffeuer/Schmelzofen liefern das Material) UND weiter an der Hitze — endet ein Durchlauf kalt, fällt
+// der Stapel auf den normalen Ein-Durchlauf-Brand zurück. Der Deckel verhindert, dass ein Gegnerdeck auf 0 sinkt.
+export const SONNENKERN_BRAND_CAP  = envNum("SIM_SONNENKERN_BRAND_CAP", 4);   // max dauerhafter Brand je Gegnerkarte
 // Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
 export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
 export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf

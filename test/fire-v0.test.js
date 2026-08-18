@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, heatGainFor, heatLossFor, fireScoreFor, verbrennungMult,
-  glowingValueFor, glowMarginFor, forgeCostFor, initHeat,
+  glowingValueFor, glowMarginFor, forgeCostFor, initHeat, sunwrathMultFor,
   overheatGain, overheatDecay, overheatMult, conflagRateFor, meltRateFor, sparkBankFor } from "../src/game/skills.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
@@ -132,6 +132,16 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(sparkBankFor(0, ["SK_FIRE_10"])).toBe(C.SPARKFLIGHT_FLOOR_BASE);
     expect(sparkBankFor(100, ["SK_FIRE_10"])).toBe(100 * C.SPARKFLIGHT_BANK_MULT + C.SPARKFLIGHT_FLOOR_BASE);
   });
+  // #fire-leg: Sonnenzorn haengt jetzt an Weissglut — der Peak zaehlt Hitze + Ueberhitzung, mit zwei Saetzen.
+  it("sunwrathMultFor: zwei Saetze — leichter Teil bis HEAT_MAX, teure Ueberhitzung darueber", () => {
+    expect(sunwrathMultFor(100, [])).toBe(1);                                    // ohne den Legendaer kein Multiplikator
+    expect(sunwrathMultFor(0, ["SK_FIRE_L03"])).toBe(1);
+    expect(sunwrathMultFor(C.HEAT_MAX, ["SK_FIRE_L03"])).toBeCloseTo(1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP);
+    // ueber HEAT_MAX zaehlt der DREIFACHE Satz (nur mit Weissglut ueberhaupt erreichbar)
+    expect(sunwrathMultFor(C.HEAT_MAX + C.OVERHEAT_MAX, ["SK_FIRE_L03"]))
+      .toBeCloseTo(1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP + C.OVERHEAT_MAX * C.SUNWRATH_OVER_STEP);
+    expect(C.SUNWRATH_OVER_STEP).toBeGreaterThan(C.SUNWRATH_PEAK_STEP);
+  });
   it("forgeCostFor: FORGE_COST, Schmelzofen-Rabatt als Faktor ab 50 % (#268)", () => {
     expect(forgeCostFor(["SK_FIRE_15"], 0)).toBe(C.FORGE_COST);
     // #268: Rabatt ist ein FAKTOR (−25 %), skaliert mit den Kosten (20 → 15), ganzzahlig gerundet.
@@ -180,12 +190,30 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     expect(extra).toBeGreaterThan(0);
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + fs2 + extra) * 1.02 + Math.min(s.heat.value, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * Math.min(1, 2 / C.SKILL_SLOTS));
   });
-  // Die Zone ist bewusst ein ZWEITES Feld statt heat.max = 150: alles, was heat.value liest, bleibt bei 100 gedeckelt.
-  it("Weißglut: die Überhitzung ist ISOLIERT — Sonnenzorn-Peak bleibt bei HEAT_MAX", () => {
+  // Die Zone ist ein ZWEITES Feld statt heat.max = 150: die LEISTE bleibt bei 100 gedeckelt, alles was heat.value
+  // liest (Glutdividende, Glühende Klinge, Flächenbrand) ist unberührt. #fire-leg: EINE Ausnahme — der Sonnenzorn-
+  // Peak zählt die Überhitzung mit, das ist die gewollte Kopplung der beiden Legendär-/Skill-Linien.
+  it("Weißglut: die Leiste bleibt gedeckelt, aber der Peak zählt die Überhitzung mit", () => {
     const s = resolveTrick(scen(30, 0, { skills: ["SK_FIRE_01", "SK_FIRE_07"], heat: heat({ value: 100, over: 20 }) }), noCrit);
-    expect(s.heat.value).toBe(C.HEAT_MAX);
-    expect(s.heat.over).toBeGreaterThan(20);       // gefüttert
-    expect(s.heat.peak).toBe(C.HEAT_MAX);          // NICHT 100 + Überhitzung
+    expect(s.heat.value).toBe(C.HEAT_MAX);                        // die Leiste selbst: unverändert gedeckelt
+    expect(s.heat.over).toBeGreaterThan(20);                      // gefüttert
+    expect(s.heat.peak).toBeCloseTo(C.HEAT_MAX + s.heat.over);    // Peak = Hitze + Überhitzung
+    // Ohne Weißglut gibt es keine Überhitzung → der Peak bleibt bei ≤ HEAT_MAX wie vor der Kopplung.
+    const ohne = resolveTrick(scen(30, 0, { skills: ["SK_FIRE_01"], heat: heat({ value: 100 }) }), noCrit);
+    expect(ohne.heat.peak).toBe(C.HEAT_MAX);
+  });
+  // #fire-leg: Sonnenkern hängt jetzt an der Brand-Linie — ein heißes Durchlauf-Ende lässt die Brände stehen.
+  it("Sonnenkern: heißes Durchlauf-Ende lässt die Brände stapeln, kaltes nicht", () => {
+    // Ein Durchlauf mit vorbelegtem Brand auf X0 (zwei Durchläufe am Stück gehen nicht — dazwischen liegt eine
+    // Entscheidungsphase, die resolveTrick nicht bedient). Vorsprung unter HEAT_MIN_MARGIN, damit der kalte Lauf
+    // nicht von selbst heiß wird — genau daran ist der erste Anlauf dieses Tests gescheitert.
+    const play = (h) => { let s = scen(8, 7, { skills: ["SK_FIRE_13", "SK_FIRE_L01"], heat: heat({ value: h }),
+                                               brandActive: { X0: C.BRAND_VALUE } });
+      let g = 0; while (s.cycle === 0 && g++ < 100) s = resolveTrick(s, noCrit); return s; };
+    const hot = play(C.SONNENKERN_MIN_HEAT), cold = play(0);
+    expect(cold.brandActive.X0).toBe(C.BRAND_VALUE);      // kalt: ein Brand hält genau einen Durchlauf
+    expect(hot.brandActive.X0).toBe(2 * C.BRAND_VALUE);   // heiß: der alte bleibt liegen, der neue kommt drauf
+    expect(hot.brandActive.X0).toBeLessThanOrEqual(C.SONNENKERN_BRAND_CAP);
   });
   it("Weißglut: die Überhitzung baut sich je Stich ab — auch ohne Niederlage", () => {
     const won = resolveTrick(scen(3, 2, { skills: ["SK_FIRE_07"], heat: heat({ value: 100, over: 20 }) }), noCrit);

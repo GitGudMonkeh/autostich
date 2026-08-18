@@ -117,11 +117,11 @@ export default {
   "ability.SK_FIRE_17.name": "Smelter",
   "ability.SK_FIRE_17.desc": `From ${C.SCHMELZOFEN_MIN_HEAT}% heat, brands additionally burn −${C.SCHMELZOFEN_BRAND_BONUS} value and give +${C.SCHMELZOFEN_BRAND_BONUS} extra ash; forging costs ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)}% less ash.`,
   "ability.SK_FIRE_L01.name": "Sun Core",
-  "ability.SK_FIRE_L01.desc": `If a cycle ends at ${C.SONNENKERN_MIN_HEAT}% heat or more, every card below value ${C.SONNENKERN_CARD_CAP} permanently gains +${C.SONNENKERN_VALUE} card value.`,
+  "ability.SK_FIRE_L01.desc": `If a cycle ends at ${C.SONNENKERN_MIN_HEAT}% heat or more, every card below value ${C.SONNENKERN_CARD_CAP} permanently gains +${C.SONNENKERN_VALUE} card value — and your brands do not expire but stack up on the opponent cards (down to −${C.SONNENKERN_BRAND_CAP}).`,
   "ability.SK_FIRE_L02.name": "Phoenix Fire",
   "ability.SK_FIRE_L02.desc": `Losses cost no heat — they give +${C.PHOENIX_LOSS_HEAT}% heat per point of deficit instead. If consumption drops your heat to 0, it reignites once per cycle at ${Math.round(C.PHOENIX_REIGNITE * 100)}%.`,
   "ability.SK_FIRE_L03.name": "Sun Wrath",
-  "ability.SK_FIRE_L03.desc": `Your entire win score is multiplied by the highest heat you have ever held: +${num(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)}% per peak percent (peak 100 → ×${num(Math.round((1 + 100 * C.SUNWRATH_PEAK_STEP) * 100) / 100)}).`,
+  "ability.SK_FIRE_L03.desc": `Your entire win score is multiplied by the highest heat level you have ever reached: +${num(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)}% per percent up to ${C.HEAT_MAX}% (→ ×${num(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP) * 100) / 100)}), and +${num(Math.round(C.SUNWRATH_OVER_STEP * 1000) / 10)}% per point of overheat above that (with White Heat up to ×${num(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP + C.OVERHEAT_MAX * C.SUNWRATH_OVER_STEP) * 100) / 100)}).`,
   "ability.SK_FIRE_L04.name": "Damascus Steel",
   "ability.SK_FIRE_L04.desc": `Forges your lowest card every cycle without ash (+${C.FORGE_VALUE} value, up to ${C.DAMASCUS_MAX_FORGED} cards). Forged cards fight with +${C.DAMASCUS_COMBAT} value. Every win gives +${C.DAMASCUS_PER_VALUE} score per point of total forged value. No ash is consumed.`,
 

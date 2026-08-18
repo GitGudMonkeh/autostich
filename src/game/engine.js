@@ -10,7 +10,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasBlitzableiter, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
   hasDoubleDischarge, hasAreaIonize, hasDurchschlag, activeLightningCount, hasThunderGod, hasSerienschutz, // Blitz-Rework (v0/v0.5): Legendäre + Serienschutz
-  fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
+  fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, sunwrathMultFor, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
   glowingValueFor, forgeCostFor, // Feuer-Rework (v0): Schwellen/Schmiede
   overheatGain, overheatDecay, overheatMult, conflagRateFor, meltRateFor, sparkBankFor, glowMarginFor, // #fire-balance: Überhitzung + die drei Sätze + das Segment-Fenster der Klinge
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
@@ -472,12 +472,15 @@ export function resolveTrick(state, rng) {
       const gain = heatGainFor(fmargin, skills, { winStreak: serieStreak, lostLast: lastResult === "loss", deficit: heat.lastLossDeficit || 0 });
       const raw = heat.value + gain;
       const overflow = Math.max(0, raw - heat.max);
-      heat = { ...heat, value: Math.min(heat.max, raw), peak: Math.max(heat.peak || 0, Math.min(heat.max, raw)), // peak = Sonnenzorn (bleibt bei HEAT_MAX gedeckelt — die Überhitzung ist eine ISOLIERTE Zone)
+      heat = { ...heat, value: Math.min(heat.max, raw),
                glowSegBest: Math.max(heat.glowSegBest || 0, fmargin) }; // Glühende Klinge: größter Sieg dieses Segments
       // Weißglut → Überhitzung (#fire-balance): erst der kontinuierliche Abbau, dann der gedrosselte Zufluss aus dem
       // Überlauf. Reihenfolge zählt: andersherum bezahlte ein gefütterter Stich seinen eigenen Zufluss gleich wieder mit.
       if (fireFlag(skills, "whiteHeat"))
         heat = { ...heat, over: overheatGain(overheatDecay(heat.over || 0, C.OVERHEAT_DECAY), overflow, skills) };
+      // Sonnenzorn-Peak (#fire-leg): HÖCHSTSTAND aus Hitze + Überhitzung — deshalb erst HIER, nach dem
+      // Überhitzungs-Schritt. Ohne Weißglut ist `over` immer 0, der Peak bleibt also bei ≤ HEAT_MAX wie bisher.
+      heat = { ...heat, peak: Math.max(heat.peak || 0, heat.value + (heat.over || 0)) };
       fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
       // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
       const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
@@ -793,7 +796,7 @@ export function resolveTrick(state, rng) {
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
     // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
     // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
-    const sunwrathMult = (fireFlag(skills, "sunwrath") && heat && heat.active) ? (1 + (heat.peak || 0) * C.SUNWRATH_PEAK_STEP) : 1;
+    const sunwrathMult = (heat && heat.active) ? sunwrathMultFor(heat.peak, skills) : 1;
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
@@ -1110,9 +1113,10 @@ export function resolveTrick(state, rng) {
       const phoenixGain = fireFlag(skills, "phoenix") ? deficit * C.PHOENIX_LOSS_HEAT : 0;
       const loss = phoenixGain ? 0 : heatLossFor(deficit, skills, heat.value); // heat.value = Hitze VOR dem Verlust (Glutbett-Schwelle)
       const nv = Math.min(heat.max, Math.max(0, heat.value - loss) + phoenixGain);
-      heat = { ...heat, value: nv, peak: Math.max(heat.peak || 0, nv), fireRoll: 0,
+      const nextOver = overheatDecay(heat.over || 0, C.OVERHEAT_DECAY_LOSS); // Weißglut: Überhitzung kühlt schneller aus
+      heat = { ...heat, value: nv, peak: Math.max(heat.peak || 0, nv + nextOver), fireRoll: 0,
                sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
-               over: overheatDecay(heat.over || 0, C.OVERHEAT_DECAY_LOSS), // Weißglut: Überhitzung kühlt schneller aus
+               over: nextOver,
                lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
     }
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
@@ -1398,7 +1402,15 @@ export function resolveTrick(state, rng) {
       newGlacierBuffActive = newGlacierBuffPending;
       newGlacierBuffPending = {};
       // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
-      newBrandActive = newBrandPending;
+      // Sonnenkern (L, #fire-leg): endet der Durchlauf HEISS, verfallen die alten Brände nicht, sondern die neuen
+      // stapeln sich darauf (verbrannte Erde, gedeckelt je Karte). Endet er kalt, gilt wieder die normale Regel —
+      // ein Brand hält genau einen Durchlauf. Damit hängt Sonnenkern an Brand UND Hitze statt an einem Schalter.
+      if (suncore && heat && heat.active && heat.value >= C.SONNENKERN_MIN_HEAT) {
+        const stacked = { ...newBrandActive };
+        for (const id of Object.keys(newBrandPending))
+          stacked[id] = Math.min(C.SONNENKERN_BRAND_CAP, (stacked[id] || 0) + newBrandPending[id]);
+        newBrandActive = stacked;
+      } else newBrandActive = newBrandPending;
       newBrandPending = {};
       // Entscheidung VOR dem neuen Durchlauf nach dem Plan (Shop-Spec §2.2): schedule[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
