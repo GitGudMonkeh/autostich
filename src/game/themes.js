@@ -278,7 +278,15 @@ export const THEME_DEFS = {
     deckId: "deck_gaia",     bfId: "bf_gaia",     els: ["deck", "bf"] },
   glazius:  { id: "glazius",  name: packName("deck_glazius"),  emblem: "🦣", kind: "buy", price: 40, a1: "#4db3ff", a2: "#a8e6ff",
     deckId: "deck_glazius",  bfId: "bf_glazius",  els: ["deck", "bf"] },
-  voltaris: { id: "voltaris", name: packName("deck_voltaris"), emblem: "🦂", kind: "buy", price: 40, a1: "#9b5cff", a2: "#c9a0ff",
+  /* Voltaris ist ZWEIFARBIG — violette Figur, türkise Ruine. Die zweite Farbe stand bis 18.08.2026 nicht in der
+     Registry: `a2` war ein zweites Violett (#c9a0ff, 266°), obwohl Türkis im Motiv das GRÖSSTE Farbband stellt
+     (gemessen an den Spitzlichtern: 180–195° 31,9 % gegen 255–270° 25,4 %) und Rahmenfuß wie ganzes Spielfeld trägt.
+     `a2` ist deshalb der aus dem Bild abgeleitete Ton (Häufung bei 186–187°), nicht geschätzt.
+     Zweiter Grund, und der wiegt schwerer: `a1` liegt bei 263° und damit praktisch auf `blitz` (#9b6cff, 259°) —
+     die zwei Decks waren über ihre Hauptfarbe kaum zu unterscheiden. Das Türkis trennt sie jetzt am Verlauf.
+     Der 186°-Bereich ist bei anderen Decks besetzt (elementar a1, beach/arcade a2), das ist bewusst in Kauf
+     genommen: unterscheidbar macht ein Deck das PAAR, und Violett→Türkis kommt sonst nirgends vor. */
+  voltaris: { id: "voltaris", name: packName("deck_voltaris"), emblem: "🦂", kind: "buy", price: 40, a1: "#9b5cff", a2: "#2fdaed",
     deckId: "deck_voltaris", bfId: "bf_voltaris", els: ["deck", "bf"] },
   pyrros:   { id: "pyrros",   name: packName("deck_pyrros"),   emblem: "🐼", kind: "buy", price: 40, a1: "#ff5a2a", a2: "#ffb347",
     deckId: "deck_pyrros",   bfId: "bf_pyrros",   els: ["deck", "bf"] },
