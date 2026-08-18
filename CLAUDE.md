@@ -631,6 +631,19 @@ Text**, sondern `loop.center` aus den Leitfaden-Daten („STURM · nährt sich s
   Handler hängen am selben `window`-Listener — ohne den Zweig schlösse ein Tastendruck beide Ebenen).
 - **Maßstab-Schwelle 1750 px ist gemessen, nicht gegriffen**: auf 1723×1030 (Fenster des Users) liefe schon
   `--gs 1.1` über (100 %), `.95` liegt dort bei 79 %. Wer die Schwelle senken will, misst vorher.
+- **VIER Stufen, nicht drei** (18.08.2026 nachgezogen): `≤820 px` Höhe → `.82`. Ein Laptop mit 1920×1200 bei
+  125 % Skalierung ist CSS **1536×791**; dort liefen Blitz und Eis mit `.9` um 1–6 % über und der
+  Spaltenbereich fing an, intern zu scrollen. Mit `.82`: 1536×791 → 93 %, 1536×760 → 98 %, 1600×800 → 88 %.
+  **Reihenfolge ist Teil der Regel**: beide `max-height`-Blöcke treffen auf ein 791-px-Fenster zu, die
+  Spezifität ist gleich — der 820er MUSS nach dem 950er stehen. Andersherum ist er wirkungslos, und im
+  Browser sieht man davon nichts (genau so ist es beim ersten Anlauf passiert).
+- **Der Untertitel im Seitenkopf bricht um statt abzuschneiden** (anders als `.up-page-hint` im Baum, wo der
+  „Leitfaden ›"-Knopf die Ecke braucht). Blitz ist mit **913 px** der längste der vier und passte auf
+  1536 px CSS-Breite rechnerisch exakt, auf dem Gerät des Users nicht mehr. Zwei Zeilen als Deckel, die
+  Kopfreihe trägt die Höhe **fest** (`min-height: 36px`) — sonst verschöben sich die Spalten beim Wechsel
+  zwischen ein- und zweizeiligen Archetypen.
+- Gemessen über zehn Fenstergrößen (1400×950 bis 2560×1400) und alle vier Archetypen: Füllung 62–98 %,
+  **nirgends Scrollen**, Untertitel nirgends gekürzt.
 - Wächter: `test/guide-desktop.test.js` (Quelltext-Ratsche über beide Dateien: `display: contents`, die
   `.gd-page`-Bindung, das Ventil, die drei Stufen, `align-self: start`, die Verdrahtung des Knopfs).
 - **Bewusst NICHT drin**: ein „Glossar ›"-Knopf im Seitenkopf (spiegelbildlich zum „Leitfaden ›" im Baum).

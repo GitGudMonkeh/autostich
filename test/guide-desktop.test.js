@@ -66,7 +66,7 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     expect(deskBlock).toMatch(/\.gd-page \.gd-cols\s*\{[^}]*overflow-y:\s*auto/);
   });
 
-  it("die drei --gs-Stufen stehen an ihren gemessenen Fenster-Bedingungen", () => {
+  it("die vier --gs-Stufen stehen an ihren gemessenen Fenster-Bedingungen", () => {
     // Grundstufe im 1400er Block.
     expect(deskBlock).toMatch(/\.gd-page\s*\{\s*--gs:\s*\.95;\s*\}/);
     // Große, hohe Fenster: nur zusammen mit min-height, sonst liefe es auf flachen Fenstern über.
@@ -75,6 +75,21 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     const flat = css.match(/@media \(min-width: 1400px\) and \(max-height: 950px\) \{[\s\S]*?\n\}/g) || [];
     expect(flat.some((b) => /\.gd-page\s*\{[^}]*--gs:\s*\.9;/.test(b)),
       "Die flache Stufe (--gs: .9) fehlt im max-height-Block").toBe(true);
+    // Sehr flache Fenster (skalierte Laptops, CSS 1536x791 und darunter).
+    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 820px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*\.82;/);
+    // REIHENFOLGE: Beide max-height-Blöcke treffen auf ein 791-px-Fenster zu, die Spezifität ist
+    // gleich — also gewinnt der spätere. Steht 820 vor 950, ist die Stufe wirkungslos (genau so
+    // ist es beim ersten Anlauf passiert und im Browser gar nicht aufgefallen).
+    expect(css.indexOf("max-height: 820px"), "Der 820er Block muss NACH dem 950er stehen")
+      .toBeGreaterThan(css.lastIndexOf("and (max-height: 950px) {\n  .gd-frame"));
+  });
+
+  it("der Untertitel im Seitenkopf bricht um, statt abgeschnitten zu werden", () => {
+    // Der Blitz-Untertitel ist mit 913 px der längste und passte auf schmalen Fenstern knapp nicht.
+    // Feste Kopfhöhe, damit der Wechsel zwischen ein- und zweizeiligen Archetypen nichts verschiebt.
+    expect(deskBlock).toMatch(/\.gd-page-hint \{[^}]*-webkit-line-clamp:\s*2/);
+    expect(deskBlock).not.toMatch(/\.gd-page-hint \{[^}]*white-space:\s*nowrap/);
+    expect(deskBlock).toMatch(/\.gd-page-h \{[^}]*min-height/);
   });
 
   it("die Körper-Maße hängen alle am Maßstab statt an festen Pixeln", () => {
