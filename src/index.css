@@ -92,16 +92,33 @@ button { font-family: inherit; }
      • Reduzierte Effekte (`data-reduced-fx`, auch Desktop) → ebenso Blur weg (verdrahtet endlich das bisher tote Attribut).
      • Desktop (voll)              → unverändert (voller Blur).
    `!important`, weil der Blur inline gesetzt ist.
+
+   REIHENFOLGE NICHT UMDREHEN — `-webkit-` zuerst, Standard ZULETZT. Das ist hier keine Kosmetik, sondern die
+   Bedingung dafür, dass diese Regel überhaupt etwas tut, und sie stand bis 18.08.2026 falsch herum (Standard
+   zuerst) — der Deckel war damit **wirkungslos**, obwohl er im Quelltext richtig aussah:
+     1. lightningcss (Tailwind v4) behandelt `-webkit-backdrop-filter` und `backdrop-filter` als DIESELBE
+        Eigenschaft und behält beim Minifizieren nur die LETZTE. Aus dem Paar wurde also
+        `-webkit-backdrop-filter: none !important` — die Standard-Eigenschaft war im Build gar nicht mehr da.
+     2. Blink lässt ein wichtiges `-webkit-backdrop-filter` ein INLINE gesetztes `backdrop-filter` NICHT
+        überschreiben (nachgemessen: `-webkit-` → bleibt `blur(3px)`, unpräfixiert → `none`). Und inline wird
+        es überall gesetzt, weil React `style={{ backdropFilter }}` schreibt.
+   Folge dieser zwei stillen Schritte: auf dem Handy lief JEDES offene Overlay weiter mit Vollbild-Blur, und der
+   Statistik-Bildschirm hatte dadurch zusätzlich einen Layout-Fehler (`backdrop-filter` macht ein Element zum
+   Containing Block für `position: fixed` — s. #overlay-portal in RunDetail.jsx).
+   Prüfen lässt sich das nur am BUILD, nicht an dieser Datei: `grep backdrop-filter dist/assets/*.css`. Der
+   Wächter test/overlay-nesting.test.js hält beide Bedingungen fest. Sollte das Projekt einmal eine
+   `browserslist` bekommen, erzeugt lightningcss beide Formen von selbst und die Reihenfolge wird gleichgültig.
+
    Zusätzlich die In-Game-StatusBar (`.as-statusbar`): sie blurrt DAUERHAFT während des Spiels (blur(6px), pro
    Frame) — der teuerste Dauer-Posten. Ihr Hintergrund ist ohnehin fast deckend (Gradient f2 ≈ 95 %), der Blur
    trägt optisch kaum bei → auf Mobile/reduziert weg = spürbar mehr FPS im Spiel bei praktisch gleichem Look.
    StartScreen-Panel (nur im Menü, nicht perf-kritisch) bleibt unberührt. */
 @media (pointer: coarse) {
-  .fixed.inset-0, .absolute.inset-0, .as-statusbar { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  .fixed.inset-0, .absolute.inset-0, .as-statusbar { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
 :root[data-reduced-fx] .fixed.inset-0,
 :root[data-reduced-fx] .absolute.inset-0,
-:root[data-reduced-fx] .as-statusbar { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+:root[data-reduced-fx] .as-statusbar { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 
 /* Karten-Kachel (#101): mobil hochkant (3/4), auf Desktop kompakt-quadratisch → weniger Scrollen.
    Desktop-Override mit doppelter Klassen-Spezifität, damit er unabhängig von der Regel-Reihenfolge gewinnt. */
@@ -997,8 +1014,7 @@ button { font-family: inherit; }
    entfernbar. `!important` überstimmt die Inline-Styles; der Attribut-Selektor greift alle Backdrops
    ohne jede Modal-Komponente einzeln anzufassen. `data-reduced-fx` wird in App aus useReducedFx gesetzt. */
 :root[data-reduced-fx="1"] [style*="backdrop-filter"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
 }
 
 /* Perf: die Dauer-Sweeps stehen bei reduzierten Effekten STILL. as-panel-sweep animiert `background-position`
@@ -1045,8 +1061,7 @@ button { font-family: inherit; }
     color-mix(in srgb, var(--deck-a1, #8a8a95) 13%, rgba(16, 16, 23, .58)) 0%,
     color-mix(in srgb, var(--deck-a1, #8a8a95) 7%, rgba(13, 13, 19, .68)) 100%);
   border: 1px solid color-mix(in srgb, var(--deck-a1, #8a8a95) 24%, rgba(150, 150, 170, .16));
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
 }
 /* Das Seed-Feld war mit `#141419` der zweite deckende Block im Stapel und hatte damit dasselbe Problem
    wie die Kacheln. Chips, Ghost-Knopf und Discord-Kreis lagen schon vorher bei 50 % Deckkraft und
@@ -1055,8 +1070,7 @@ button { font-family: inherit; }
   background: color-mix(in srgb, var(--deck-a1, #8a8a95) 8%, rgba(16, 16, 22, .60));
   border: 1px solid color-mix(in srgb, var(--deck-a1, #8a8a95) 24%, rgba(150, 150, 170, .16));
   color: #cfcfd6;
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
 }
 .as-hub-field::placeholder { color: #8a8a96; }
 .as-hub-field.is-err { border-color: #e06a6a; }
@@ -1405,8 +1419,7 @@ button { font-family: inherit; }
      diese Regeln greifen dort ohnehin nicht, weil kein Handy 1400 px CSS-Pixel hat. */
   .as-glass {
     background: linear-gradient(180deg, rgba(27, 26, 36, 0.72), rgba(22, 22, 32, 0.78));
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     border: 0;
   }
 
@@ -1421,15 +1434,13 @@ button { font-family: inherit; }
     /* #deck-mobil: Die Grundregel gibt der Kachel seit dem Handy-Deckhintergrund getöntes Glas MIT Blur.
        Hier muss beides weg — die Zeilen sitzen auf der einen Glasscheibe des Containers (`.as-glass`),
        ein zweiter Blur je Zeile wäre Blur auf Blur und viermal dieselbe Fläche unschärfen. */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
   }
   /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war. */
   .as-hub-field {
     background: #141419;
     border: 1px solid #2a2a33;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
   }
   .as-hub-field.is-err { border-color: #e06a6a; }
   .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
@@ -1646,8 +1657,7 @@ button { font-family: inherit; }
        Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
        bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
        die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
     /* Knapp bemessen, und das ist gerechnet: Kopf (172) + der längere Zweig (808) + Legende (42) füllen
        auf 1080 px Höhe fast alles. Mit dem ursprünglichen 28/32er Rand lief der Screen um 31 px über und
        fing an zu scrollen — auf dem Design-Anker soll er ohne Scrollen stehen. */
@@ -1735,8 +1745,7 @@ button { font-family: inherit; }
     border-radius: 14px;
     padding: 16px 20px 20px;
     background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
   /* Spaltenüberschrift statt Reiter: dieselbe Schriftbehandlung wie das „Legendär-Phase"-Etikett im
      Screen (gesperrt, versal) — kein neues Typo-Vokabular für zwei Wörter. */
@@ -2063,8 +2072,7 @@ button { font-family: inherit; }
        Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
        bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
        die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
 
   /* Die Karte gibt ihre feste Höhe auf (die stammt aus der Handy-Fassung, wo alle Reiter gleich groß
@@ -2282,8 +2290,7 @@ button { font-family: inherit; }
        Bildabweichung mit/ohne liegt bei 0,10 (Werkstatt) bzw. 0,37 (Baum) von 255. Zum Vergleich galten
        bei der Kompositor-Abnahme 0,56 als nicht unterscheidbar. `none !important` statt Loeschen, weil
        die Overlays ihren Blur INLINE setzen und er sonst zurueckkaeme. */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
   /* Aus „Karte mittig ins Bild" wird „Screen am Rand verankert" — Randmaße von `.up-root`. */
   .gd-frame { padding: 16px 48px 18px !important; align-items: stretch !important; }

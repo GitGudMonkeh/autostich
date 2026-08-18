@@ -358,8 +358,9 @@ Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
   Messung nach kostet ein WIEDERHOLTES Layout desselben Screens nur 5–14 ms statt 55). Preis: dauerhaft gehaltener
   DOM + State, Risiko bei Fokus/Animation/Angebotswechsel. Beim Architekten war das Verhältnis schlecht — hier ist
   es offen und wäre ein eigener, sauber abzusichernder Umbau.
-- **Blur war es NICHT** (naheliegender Verdacht, geprüft): die `@media (pointer: coarse)`-Regel in index.css nutzt
-  `!important` und schlägt damit das inline gesetzte `backdropFilter`. Auf Mobile ist der Overlay-Blur aus.
+- **Blur war es NICHT** — der Befund zum Level-up-Mount bleibt gültig, die BEGRÜNDUNG war aber falsch und ist am
+  18.08.2026 widerlegt (s. #overlay-portal): die `(pointer: coarse)`-Regel griff bis dahin gar nicht, der
+  Overlay-Blur lief auf dem Handy die ganze Zeit mit. Seit dem Fix ist er dort wirklich aus.
 - **`contain: layout` am Overlay bringt NICHTS — gemessen, bitte nicht nochmal probieren (18.08.2026).** Die Idee
   war, die Layout-Invalidierung am Overlay abzuschneiden, damit der Mount nicht die Seite darunter mit-layoutet.
   Messstand: der ECHTE Overlay-Knoten wird als Klon in die laufende Seite eingehängt, Layout synchron erzwungen
@@ -374,6 +375,55 @@ Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
   Stil-Neuberechnung, Paint/Raster, oder die Effekt-Umschaltung, die am selben `boardVisible`-Wechsel hängt), ist
   offen — und die nächste Messung, bevor jemand den persistenten Mount baut. Der wäre sonst ein großer Umbau auf
   eine unbelegte Ursache.
+
+### Level-up-Auswahl (Perk/Skill): gemessen — dieselbe Familie wie der Architekt-Mount
+Aus drei Geräte-Reports fiel derselbe Befund: ALLE Ruckler und ALLE Long Tasks eines Laufs liegen in `phase:levelup`,
+zusammen 271–417 ms in einem 0,2-s-Fenster, schlimmster Frame 200–233 ms. Das Spielen selbst war in denselben
+Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
+- **Es ist kein Skript-Hotspot.** Im Produktionsbuild profiliert (dev-Build ist wertlos: `validateProperty`/
+  `warnInvalidARIAProps`/`jsxDEV` dominieren dort und existieren in Prod nicht) hat das ganze 11-s-Fenster nur
+  223 ms JS, größter Posten die GC mit 40 ms. Keine teure Funktion.
+- **Es ist der Mount selbst.** In 100-ms-Scheiben gemessen: die zwei Scheiben um das Erscheinen kosten 16 + 30 ms,
+  davon **18 ms in EINEM Layout-Durchgang**; davor und danach 1–4 ms je Scheibe. Gesamt ~46 ms im Messstand —
+  auf dem Handy passt das mit Faktor ~6 (ARM gegen Desktop-x86) genau auf die gemessenen 271–417 ms.
+- Das Overlay hat nur **107 DOM-Knoten** (Architekt: 421), die Seite 420. Es ist also nicht die Größe des Overlays,
+  sondern das erzwungene Layout der ganzen Seite beim Einfügen.
+- **Unterschied zum Architekten, und der einzige Grund, es überhaupt weiter zu erwägen:** der Architekt wird 3–4×
+  je Lauf besucht, die Level-up-Auswahl bis zu **50×**. In Summe also ~10 s blockierter Hauptthread pro Lauf statt
+  ~0,3 s. Der EINE Hebel mit Belegen wäre, den Bildschirm zwischen den Zyklen gemountet zu halten (der Architekt-
+  Messung nach kostet ein WIEDERHOLTES Layout desselben Screens nur 5–14 ms statt 55). Preis: dauerhaft gehaltener
+  DOM + State, Risiko bei Fokus/Animation/Angebotswechsel. Beim Architekten war das Verhältnis schlecht — hier ist
+  es offen und wäre ein eigener, sauber abzusichernder Umbau.
+- **Blur war es NICHT** — der Befund zum Level-up-Mount bleibt gültig, die BEGRÜNDUNG war aber falsch und ist am
+  18.08.2026 widerlegt (s. #overlay-portal): die `(pointer: coarse)`-Regel griff bis dahin gar nicht, der
+  Overlay-Blur lief auf dem Handy die ganze Zeit mit. Seit dem Fix ist er dort wirklich aus.
+
+### #overlay-portal — Overlay im Overlay: `backdrop-filter` bricht `position: fixed` (2026-08-18)
+Gemeldet als „alter Lauf in der Statistik sieht kaputt aus". Reproduktion: in der Statistik **runterscrollen**, dann
+einen Eintrag antippen — die Detailansicht erscheint um die Scroll-Strecke nach oben versetzt (Kopf mit dem Score
+abgeschnitten) und bleibt dort hängen. Gemessen in Chromium mit dem echten Stylesheet: scrollTop 600 → Overlay
+`top` = **−600 px**; mit Portal an `document.body` → **0 px**.
+- **Ursache:** `backdrop-filter` macht ein Element zum CONTAINING BLOCK für `position: fixed`-Nachfahren. Die
+  Statistik-Wurzel ist zugleich Blur-Ebene UND Scroll-Container (`overflow-y-auto`) → das Kind hängt am
+  Scroll-Ursprung statt am Viewport. Das Umschalten auf `overflow-hidden` beim Öffnen half nicht: `scrollTop`
+  bleibt erhalten. **Dieselbe Ursache stand schon am Kauffenster der Deck-Werkstatt** (CustomizeScreen, dort per
+  Portal gelöst) — es ist der dritte Auftritt derselben Naht, deshalb jetzt ein Wächter.
+- **Fix:** `RunDetail` und `GuideOverlay` rendern über `createPortal(…, document.body)`. Farbsicher, weil
+  `--deck-a1/a2` für genau diesen Fall zusätzlich auf `:root` gespiegelt werden (App.jsx). React-Events blubbern
+  weiter durch den REACT-Baum → Escape/Klick-außen unverändert.
+- **Kein Fehler, obwohl es so aussieht:** `UpgradeScreen` rendert `DeckDetail` per `return <DeckDetail/>` — das
+  ERSETZT den eigenen Baum, ist also keine Verschachtelung. Die Glossar-Wirte (Architekt, Aufstellung, Perk-/
+  Skill-Auswahl) scrollen nicht in der Wurzel; `GlossaryOverlay` ist dort latent, nicht aktiv betroffen.
+- **Zweiter, unabhängiger Fehler an derselben Stelle (#perf-C war wirkungslos):** der zentrale Blur-Deckel für
+  Mobile hat NIE funktioniert. Zwei stille Schritte: (1) lightningcss behandelt `-webkit-backdrop-filter` und
+  `backdrop-filter` als dieselbe Eigenschaft und behält beim Minifizieren nur die LETZTE — die Quelle schrieb den
+  Standard zuerst, also fiel er aus dem Build; (2) ein wichtiges `-webkit-backdrop-filter` überschreibt in Blink
+  ein INLINE gesetztes `backdrop-filter` NICHT (nachgemessen). Auf dem Handy lief damit jedes offene Overlay
+  weiter mit Vollbild-Blur. **Reihenfolge in index.css deshalb NICHT umdrehen: Präfix zuerst, Standard zuletzt.**
+  Prüfbar nur am BUILD, nicht an der Quelle: `grep backdrop-filter dist/assets/*.css`.
+- Wächter: `test/overlay-nesting.test.js` — hält beide Bedingungen fest und schickt die Regel durch das echte
+  lightningcss, statt Schreibweisen zu vergleichen. Er prüft zuerst, dass er die Naht überhaupt noch findet
+  (sonst wäre er still grün).
 
 ### Architekt-Mount: gemessen, NICHT lohnend (bitte nicht nochmal aufrollen)
 CPU-Profil des `ArchitectScreen`-Mounts mit einem ECHTEN Zyklus-47-Zustand (über `sim/run.js` + Policy-Spion

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom"; // #overlay-portal: raus aus blurrenden/scrollenden Vorfahren (Begründung unten)
 import { useEscape } from "./useEscape.js";
 import { RunStats, RunTreeBlock } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
@@ -29,7 +30,17 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
   const archCover = snap && snap.architectCover ? snap.architectCover : null;
   const archBuildings = snap && Array.isArray(snap.buildings) ? snap.buildings : [];
   const hasArch = archBuildings.length > 0 && !!archCover;
-  return (
+  /* #overlay-portal: an document.body statt in den Aufrufer-Baum. Der Statistik-Bildschirm ist der einzige
+     Aufrufer, dessen WURZEL zugleich Blur-Ebene (`backdrop-filter`) UND Scroll-Container (`overflow-y-auto`) ist.
+     `backdrop-filter` macht ein Element zum Containing Block für `position: fixed`-Nachfahren — dieses Overlay
+     hing damit nicht am Viewport, sondern am Scroll-Ursprung der Liste und erschien exakt `scrollTop` Pixel zu
+     hoch (gemessen: scrollTop 600 → top −600 px), wo es dann stehenblieb. Der Kopf mit dem Score war abgeschnitten.
+     Das Umschalten des Aufrufers auf `overflow-hidden` half nicht: `scrollTop` bleibt dabei erhalten.
+     Dieselbe Ursache und dieselbe Lösung stehen schon am Kauffenster der Deck-Werkstatt (CustomizeScreen).
+     `document.body` ist farbsicher: `--deck-a1/a2` werden für genau diesen Fall zusätzlich auf `:root`
+     gespiegelt (App.jsx). React-Events blubbern weiter durch den REACT-Baum, Escape/Klick-außen bleiben also
+     unverändert — auch das Schließen über den Aufrufer. */
+  return createPortal((
     <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
@@ -104,5 +115,5 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         )}
       </div>
     </div>
-  );
+  ), document.body);
 }
