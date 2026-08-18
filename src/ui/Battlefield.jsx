@@ -1081,16 +1081,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const bigSeq = useRef(0);
   const lawineShown = useRef(false); // Große Lawine feuert 1×/Lauf → nur der ERSTE Finale-Bruch zeigt „LAWINE" (kein Schwarm)
   const goennShown = useRef(false);  // „Gönn dir" nur EINMAL je 200er-Serie → Ref scharf, sobald die Serie wieder unter die Schwelle fällt
+  const goennPrunkPending = useRef(false); // #gott-goenn: Signal vom Ansage-Effekt an den Prunk-Effekt — „Gönn dir" zeigt an → denselben aktiven Prunk feuern (im selben Stich konsumiert)
   const bigCoolRef = useRef({});     // #315: letzter Anzeige-Zeitpunkt (ms) je Ansage-Stufe (text → ts) für den Cooldown
   useEffect(() => () => bigTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
+    if (!t) { setBigFloats([]); lawineShown.current = false; goennShown.current = false; goennPrunkPending.current = false; bigCoolRef.current = {}; return; }   // Menü/neuer Lauf → Pool leeren + Merker zurücksetzen
     if ((t.winStreak || 0) < STREAK_GOENN) goennShown.current = false;  // Serie unter der Schwelle (z. B. Niederlage) → nächster 200er darf wieder feiern
     // #355: Auswahl der anzuzeigenden Ansage ERST hier (nach dem Meilenstein-Once-Guard). Kann „Gönn dir" nicht (mehr)
     // gezeigt werden (schon gelaufen), fällt es auf die zugrunde liegende Stufe zurück — Lawine bzw. Score-Stufe
     // (Gottgleich/Irre/…) — statt die Ansage komplett zu verschlucken. Der Prunk-Trigger läuft separat → Text + Prunk synchron.
     let toShow;
-    if (goennMilestone && !goennShown.current) { toShow = GOENNDIR_TIER; goennShown.current = true; }
+    if (goennMilestone && !goennShown.current) { toShow = GOENNDIR_TIER; goennShown.current = true; goennPrunkPending.current = true; } // #gott-goenn: „Gönn dir" → auch den Prunk anstoßen (Konsum im Prunk-Effekt)
     else { toShow = (baseBigTier && t.grosseLawine) ? LAWINE_TIER : baseBigTier; } // Fallback: Lawine bzw. Score-Stufe
     if (!toShow) return;                      // nichts anzuzeigen (kein großer Sieg-Stich)
     if (toShow === LAWINE_TIER) {             // Große Lawine: die Groß-Ansage nur EINMAL pro Finale, danach still weiterzählen
@@ -1116,12 +1117,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // Ansagen sind vom Stich-Takt entkoppelt (feste Standzeit, eigener Pool) → einmaliger Trigger, KEINE rate-Kopplung.
     if (toShow.epic) {
       audio.play("fx_godlike", { gain: 1.2, bass: 4 }); // Punch (leiser gezogen, macht Platz für den Swell)
-      // Swell darüber — je gewähltem Prunk-Effekt (eigener Klang für Laser-Fächer/Holo-Würfel/Prisma-Kaskade),
-      // sonst der generische Supernova-Swell. Für Supernova das abgeleitete Timing (supernovaTiming.js, EINE Quelle
-      // mit dem Showcase), damit der Impuls auf dem Detonationsblitz sitzt; die übrigen laufen mit ihrem festen Versatz.
-      const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
-      audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
-
+      // #gott-standard-sound: Der Swell IST der Sound der Prunk-Animation. Ohne Prunk (gottStandard = „Gottgleich anzeigen
+      //   ohne Animation") bleibt es allein beim Bass-Punch (fx_godlike), KEIN Animations-Swell. Mit Prunk (sonnenPuls/
+      //   Laser-Fächer/Prisma/Holo/Supernova) legt sich der Swell wie bisher über den Punch — je gewähltem Effekt eigener
+      //   Klang (Supernova mit abgeleitetem Timing aus supernovaTiming.js), sonst der generische Supernova-Swell.
+      if (gottEffect !== "gottStandard") {
+        const sw = GOTT_SWELL[gottEffect] || GOTT_SWELL_DEFAULT;
+        audio.play(sw.snd, { gain: sw.gain, delay: sw.delay });
+      }
     }
     bigSeq.current += 1;
     // #345 Neon-Brandung: dieselbe Groß-Ansage treibt den Impact-Puls der Plasma-See. Magnitude je Stufe:
@@ -1185,12 +1188,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
        „GOTTGLEICH" rief. Genau das war im Playtest zu sehen: Wort ja, Effekt nie.
        Die Häufigkeit bremst weiterhin der 30-s-Cooldown unten, nicht ein zweiter Schwellenwert. */
     const gottBase = t.gained || 0;
+    // #gott-goenn: „Gönn dir" (200er-Serien-Höhepunkt) setzt im Ansage-Effekt oben ein Flag → feuert HIER denselben
+    //   aktiven Prunk. Einmal je Stich konsumiert (das Flag lebt nie über den Stich hinaus).
+    const goennFires = goennPrunkPending.current; goennPrunkPending.current = false;
     // #: Die Große Lawine löst denselben Gottgleich-Prunk aus wie ein gottgleicher Sieg — unabhängig vom Score (t.grosseLawine
-    //   ist der One-Shot-Finisher-Bruch). Gleicher 30-s-Cooldown/reduced-Gate wie Gottgleich.
-    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine) && gottEffect !== "gottStandard" && !reduced;
+    //   ist der One-Shot-Finisher-Bruch). Gleicher reduced-Gate wie Gottgleich. „Gönn dir" ebenso (goennFires).
+    const gottWin = win && (gottBase > GOTT_FX_MIN || !!t.grosseLawine || goennFires) && gottEffect !== "gottStandard" && !reduced;
     if (!gottWin) return;
     const now = Date.now();
-    if (now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return; // Cooldown: nur die Ansage, kein voller Effekt
+    // Cooldown gilt für die Score-getriebenen Gottgleich-Prunks (sonst nur die Ansage). „Gönn dir" ist ein seltener
+    //   Serien-Höhepunkt (200er-Serie, 1× je Serie) und umgeht ihn bewusst → der Prunk kommt dort verlässlich.
+    if (!goennFires && now - gottLastAt.current < GOTT_FX_COOLDOWN_MS) return;
     gottLastAt.current = now;
     setGottTrigger((n) => n + 1);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/isCrit/gained/gottEffect wechseln synchron mit t.trickNo
