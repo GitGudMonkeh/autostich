@@ -45,12 +45,11 @@ export default {
   "ability.SK_LIGHTNING_10.name": "Discharge",
   "ability.SK_LIGHTNING_10.desc": `Every full charge consumption permanently grants +${num(C.ENTLADUNG_MULT_STEP)}× crit multiplier (up to +${num(C.ENTLADUNG_MULT_CAP)}×).`,
   "ability.SK_LIGHTNING_02.name": "Ionization",
-  "ability.SK_LIGHTNING_02.desc": `At full charge: ${C.ION_BASE_COUNT} unplayed cards become ionized (+${C.ION_SPEED_PER_SKILL} per lightning skill beyond ${C.ION_SPEED_MIN_SKILLS}), then charge empties.
+  "ability.SK_LIGHTNING_02.desc": `At full charge: ${C.ION_BASE_COUNT} unplayed cards become ionized.
 
 ▸ Win with an ionized card: +${C.ION_SCORE_PER_STACK} score per stack.
-▸ Every stack in the deck: +${pct(C.ION_CRIT_PP_PER_STACK)}% crit chance for all cards (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)}%).
-▸ Once ~${pct(C.ION_SAT_BREADTH_FRAC)}% of the cards are ionized: all cards +${C.ION_SATURATION_VALUE} value.
-▸ Once ~${pct(C.ION_SAT_DEPTH_FRAC)}% are fully ionized: arc-over pulls twice as much charge out of surplus crit chance.`,
+▸ Every stack in the deck: +${pct(C.ION_CRIT_PP_PER_STACK)}% crit chance field-wide (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)}%).
+▸ Once ~${pct(C.ION_SAT_BREADTH_FRAC)}% of the cards are ionized: all cards +${C.ION_SATURATION_VALUE} value.`,
   "ability.SK_LIGHTNING_07.name": "Charge Streak",
   "ability.SK_LIGHTNING_07.desc": `Every streak point grants +${pct(C.SERIESCRIT_STEP)}% crit chance (up to +${pct(C.SERIESCRIT_CAP)}%). Consumes no charge.`,
   "ability.SK_LIGHTNING_03.name": "Chain Lightning",

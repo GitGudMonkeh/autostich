@@ -192,17 +192,15 @@
 "ability.SK_ICE_L04.name","i18n","Erstarrung","Rigor","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_LIGHTNING_01.desc","i18n","Jeder Crit erzeugt +1 zusätzliche Ladung (über die Grund-Ladung des Archetyps hinaus); zudem gibt jeder volle Ladungsverbrauch +1 Ladung zurück.","Every crit generates +1 extra charge (on top of the archetype's base charge); on top of that, every full charge consumption returns +1 charge.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_LIGHTNING_01.name","i18n","Blitzableiter","Lightning Rod","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_LIGHTNING_02.desc","i18n","Bei voller Ladung: 2 ungespielte Karten ionisieren (+1 je Blitz-Skill über 2), dann Ladung leeren.
+"ability.SK_LIGHTNING_02.desc","i18n","Bei voller Ladung: 2 ungespielte Karten ionisieren.
 
 ▸ Sieg mit ionisierter Karte: +12 Score je Stapel.
-▸ Jeder Stapel im Deck: +2 % Crit-Chance für alle Karten (max +18 %).
-▸ Sind ~85 % der Karten ionisiert: alle Karten +1 Wert.
-▸ Sind ~85 % voll ionisiert: Überschlag holt doppelt so viel Ladung aus überschüssiger Crit-Chance.","At full charge: 2 unplayed cards become ionized (+1 per lightning skill beyond 2), then charge empties.
+▸ Jeder Stapel im Deck: +2 % Crit-Chance feldweit (max +18 %).
+▸ Sind ~85 % der Karten ionisiert: alle Karten +1 Wert.","At full charge: 2 unplayed cards become ionized.
 
 ▸ Win with an ionized card: +12 score per stack.
-▸ Every stack in the deck: +2% crit chance for all cards (max +18%).
-▸ Once ~85% of the cards are ionized: all cards +1 value.
-▸ Once ~85% are fully ionized: arc-over pulls twice as much charge out of surplus crit chance.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+▸ Every stack in the deck: +2% crit chance field-wide (max +18%).
+▸ Once ~85% of the cards are ionized: all cards +1 value.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_LIGHTNING_02.name","i18n","Ionisierung","Ionization","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_LIGHTNING_03.desc","i18n","Verstärker: Jede Ionisierung erfasst +2 weitere Karten.","Amplifier: Every ionization catches +2 more cards.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_LIGHTNING_03.name","i18n","Kettenblitz","Chain Lightning","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -1554,7 +1552,7 @@
 "glossary.hits","i18n","Treffer für „{q}“","Hits for “{q}”","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "glossary.ionize.label","i18n","Ionisierung","Ionization","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "glossary.ionize.match","i18n","Ionisierung|ionisierte|ionisierten|ionisiert","ionization|ionized|ionize","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"glossary.ionize.text","i18n","Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +12 Score je Stapel und erhält danach +1 Stapel (max 5). Zusätzlich lädt das ionisierte Feld die Luft auf: jeder Ionisierungsstapel im Deck hebt die Crit-Chance JEDER Siegkarte um +2 % (feldweit, bis +18 %).","A permanent card marking: an ionized card gives +12 score per stack on a win and then gains +1 stack (max 5). On top of that the ionized field charges the air: every ionization stack in the deck raises the crit chance of EVERY winning card by +2% (field-wide, up to +18%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"glossary.ionize.text","i18n","Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +12 Score je Stapel und erhält danach +1 Stapel (max 5). Zusätzlich lädt das ionisierte Feld die Luft auf: jeder Ionisierungsstapel im Deck hebt die Crit-Chance JEDER Siegkarte um +2 % (feldweit, bis +18 %). Wie viele Karten je Ladungsverbrauch ionisieren, wächst mit dem Archetyp: +1 je Blitz-Skill über 2.","A permanent card marking: an ionized card gives +12 score per stack on a win and then gains +1 stack (max 5). On top of that the ionized field charges the air: every ionization stack in the deck raises the crit chance of EVERY winning card by +2% (field-wide, up to +18%). How many cards ionize per charge consumption grows with the archetype: +1 per lightning skill beyond 2.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "glossary.joker.label","i18n","Joker","Wild","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "glossary.joker.match","i18n","Joker","wild|wilds","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "glossary.joker.text","i18n","Eine Karte darf bei der Erkennung den benötigten Wert oder die Farbe annehmen. Bildet allein keine Formation.","A card may take on the value or suit required by the recognition. On its own it forms no formation.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

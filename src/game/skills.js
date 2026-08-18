@@ -47,12 +47,18 @@ export const SKILL_DEFS = {
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
   // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
-    desc: `Bei voller Ladung: ${C.ION_BASE_COUNT} ungespielte Karten ionisieren (+${C.ION_SPEED_PER_SKILL} je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS}), dann Ladung leeren.
+    /* #skilltext-ion: gekürzt. Drei Sachen sind bewusst RAUS, keine davon geht verloren:
+       · „+1 je Blitz-Skill über 2" — das skaliert mit dem ganzen ARCHETYP, nicht mit diesem Skill, und steht
+         jetzt im Glossar-Eintrag „Ionisierung" (den der Passiv-Aufklapper direkt darunter zeigt).
+       · „dann Ladung leeren" — implizit, und mit Reststrom sogar falsch: verbraucht wird auf den Boden, nicht auf 0.
+       · Der Voll-Tiefe-Satz — er beschreibt den Umrechnungskurs von ÜBERSCHLAG (10 → 5 Prozentpunkte je Ladung),
+         wirkt ohne diesen Skill also gar nicht, und Überschlag sagt ihn in seinem eigenen Text bereits wörtlich.
+       Score- und Crit-Zeile bleiben ausdrücklich stehen: sie entscheiden mit, ob man den Skill nimmt. */
+    desc: `Bei voller Ladung: ${C.ION_BASE_COUNT} ungespielte Karten ionisieren.
 
 ▸ Sieg mit ionisierter Karte: +${C.ION_SCORE_PER_STACK} Score je Stapel.
-▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} % Crit-Chance für alle Karten (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %).
-▸ Sind ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten ionisiert: alle Karten +${C.ION_SATURATION_VALUE} Wert.
-▸ Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % voll ionisiert: Überschlag holt doppelt so viel Ladung aus überschüssiger Crit-Chance.`,
+▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} % Crit-Chance feldweit (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %).
+▸ Sind ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten ionisiert: alle Karten +${C.ION_SATURATION_VALUE} Wert.`,
     critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
     desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} % Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} %). Verbraucht keine Ladung.`,

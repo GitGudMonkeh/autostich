@@ -1411,6 +1411,28 @@ neben dem Brett. Kein Nachbau: sonst driften die Kennzahlen im Overlay von denen
     Eigenschaft der gerade gezeigten Fraktion. Damit ist auch die frühere „auf dem Desktop offen"-Regel weg.
   - Flügelbreite 320 → 356 px (greift erst ab ~1670 px Fenster; darunter deckelt die Spur), Polster
     14/16 px — „Bester 244.744" stand 1 px vor dem Innenrand.
+- **Dritte Runde (18.08.2026) — Angebot aufgeräumt:**
+  - **Gleiche Kartenhöhen wie in der Legendär-Auswahl.** `LegendarySelect` löst das seit einem Playtest
+    („die Reihe wirkte zerrissen") mit `gridAutoRows: "1fr"`; dasselbe Mittel steht jetzt an `.sk-offers`.
+    **`align-items: stretch` muss mit** — das Angebotsraster trägt ein `items-start`, ohne die zweite Zeile
+    zöge sich die Karte INNERHALB der gleich hohen Zeile wieder auf Inhaltshöhe und die Regel täte sichtbar
+    nichts. Gemessen 1600 und 1400 px: 255 / 255 / 255 px. Bewusst NUR ab 1400 px — am Handy ist das Angebot
+    einspaltig, dort bläht `1fr` jede Karte einzeln auf und verlängert den Screen.
+  - **Die Namensvorschau im Reiter ist wieder raus.** Sie war das Argument für die Reiterzeile („alle zwölf
+    ohne Klick"), passt aber nicht: der längste Fall ist in BEIDEN Sprachen Blitz — 58 Zeichen DE
+    („Breitenbeschleuniger · Statische Aufladung · Blitzableiter") / 60 EN — auf ~181 px Textbreite, also
+    zweizeilig. Entscheidung des Users: weglassen, man klickt die Reiter ohnehin durch. Der Reiter ist
+    damit einzeilig (44 px). Nützliche Nebenzahl: die Reiterbreite ist von der Fenstergröße UNABHÄNGIG
+    (Karte fest 880 → Reiterzeile 846 → je Reiter ~205 px), eine Messung deckt also alle Desktop-Breiten ab.
+  - **Ionisierung gekürzt** (~330 → ~200 Zeichen). Raus sind drei Dinge, keins davon geht verloren:
+    „+1 je Blitz-Skill über 2" skaliert mit dem ARCHETYP statt mit dem Skill → wandert in den
+    Glossar-Eintrag *Ionisierung* (den der Passiv-Aufklapper direkt darunter zeigt); „dann Ladung leeren"
+    ist implizit und mit **Reststrom** sogar falsch (verbraucht wird auf den Boden 4, nicht auf 0); und der
+    Voll-Tiefe-Satz beschreibt den Umrechnungskurs von **Überschlag** (10 → 5 Prozentpunkte je Ladung),
+    wirkt ohne diesen Skill also gar nicht — und Überschlag sagt ihn in seinem eigenen Text bereits wörtlich.
+    **Score- und Crit-Zeile bleiben ausdrücklich stehen** (Entscheidung des Users: sie entscheiden mit, ob
+    man den Skill nimmt), obwohl sie auch im Glossar stehen.
+  - Offen/nicht angefasst: Überschlag und Reststrom bekommen denselben Durchgang später.
 - **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
 - **Gleich mitgezogen (#sprache-Nachzügler)**: `BuildSummary.jsx` und `BuildPanel.jsx` sind jetzt migriert und
   stehen in der `MIGRATED`-Ratsche. Sieben neue Schlüssel (`build.*`). Anlass war die deutsche Fußzeile der

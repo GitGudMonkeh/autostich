@@ -146,6 +146,17 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
 describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
   const skill = read("src/ui/SkillSelect.jsx");
 
+  it("der Reiter nennt Fraktion und Anzahl — keine Namensvorschau mehr", () => {
+    /* Die Reiter zeigten anfangs die drei Skillnamen. Der längste Fall (Blitz) braucht 58 Zeichen DE /
+       60 EN auf ~181 px Textbreite, wäre also zweizeilig — und war vor allem Unruhe. Bewusst entfernt;
+       dieser Wächter hält fest, dass er nicht unbemerkt zurückkommt. */
+    const skill = read("src/ui/SkillSelect.jsx");
+    const tabAt = skill.indexOf('className="sk-tab');
+    expect(tabAt).toBeGreaterThan(0);
+    const tab = skill.slice(tabAt, tabAt + 900);
+    expect(tab, "Namensvorschau ist zurück").not.toMatch(/skillDef\(id\)\?\.name/);
+  });
+
   it("die Spaltenzahl kommt aus dem Angebot, nicht als feste Vier", () => {
     // `groups` filtert leere Fraktionen weg — es können 1 bis 4 sein.
     expect(skill).toMatch(/gridTemplateColumns: `repeat\(\$\{nPages\}/);
@@ -170,6 +181,16 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
 
   it("das Angebot steht auf dem Desktop dreispaltig (drei Skills je Fraktion, kein Loch)", () => {
     expect(skill).toMatch(/className="sk-offers grid sm:grid-cols-2/);
-    expect(deskBlock).toMatch(/\.sk-offers\s*\{[^}]*grid-template-columns:\s*repeat\(3/);
+    const offers = deskBlock.match(/\.sk-offers\s*\{([^}]*)\}/);
+    expect(offers, ".sk-offers-Regel nicht mehr gefunden").toBeTruthy();
+    expect(offers[1]).toMatch(/grid-template-columns:\s*repeat\(3/);
+    /* Gleiche Kartenhöhen — dasselbe Mittel wie in der Legendär-Auswahl. BEIDE Zeilen sind nötig:
+       `1fr` macht die ZEILE gleich hoch, aber das Angebotsraster trägt ein `items-start`, das die KARTE
+       darin wieder auf Inhaltshöhe zöge. Wer nur eine der beiden entfernt, bekommt eine Regel, die
+       aussieht, als täte sie etwas, und nichts tut. */
+    expect(offers[1], "grid-auto-rows: 1fr fehlt (Legendär-Muster)").toMatch(/grid-auto-rows:\s*1fr/);
+    expect(offers[1], "align-items: stretch fehlt — items-start gewinnt sonst").toMatch(/align-items:\s*stretch/);
+    // Und die Legendär-Auswahl, von der das Muster stammt, muss es weiter benutzen.
+    expect(read("src/ui/LegendarySelect.jsx"), "Vorbild verloren").toMatch(/gridAutoRows: "1fr"/);
   });
 });

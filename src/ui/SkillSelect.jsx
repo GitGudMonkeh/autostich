@@ -227,11 +227,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
 
           {/* #sk-reiter — ab 1400 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
-              nebeneinander, jede mit ihren Skillnamen als Vorschau. Der Zustand ist derselbe (`page`/`goTo`),
+              nebeneinander. Der Zustand ist derselbe (`page`/`goTo`),
               es ist nur eine zweite Darstellung desselben Pagers — kein neuer State, keine zweite Wahrheit.
               Bewusst ein `wide`-Zweig statt zweier gerenderter Navigationen: zwei Bedienelemente für dieselbe
               Sache hießen zwei Tab-Reihenfolgen und zwei Ziele für den Tutorial-Mark.
-              `repeat(n,1fr)` statt fester Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein. */}
+              `repeat(n,1fr)` statt fester Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein.
+              Die Reiter zeigten anfangs die drei Skillnamen als Vorschau — bewusst wieder entfernt: der
+              längste Fall (Blitz) braucht 58 Zeichen DE / 60 EN auf ~181 px Textbreite, wäre also zweizeilig,
+              und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an. */}
           {wide && nPages > 0 && curG && (
             <div className="sk-tabs mt-2 grid gap-2" data-tut="skill-offer"
                  style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
@@ -239,7 +242,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 const on = i === page;
                 return (
                   <button key={g.arch} type="button" onClick={() => goTo(i)}
-                    className="sk-tab text-left rounded-xl px-3 py-2 transition-all hover:brightness-125"
+                    className="sk-tab text-left rounded-xl px-3 py-2.5 transition-all hover:brightness-125"
                     aria-current={on ? "true" : undefined}
                     style={{ "--c": g.meta.color, borderColor: on ? `${g.meta.color}8a` : "#ffffff29",
                              borderBottomColor: on ? g.meta.color : "transparent",
@@ -250,10 +253,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       <span className="text-[13px] font-bold uppercase tracking-wide truncate"
                             style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
                       <span className="ml-auto text-[11px] opacity-45 tabular-nums">{g.ids.length}</span>
-                    </div>
-                    {/* Die Vorschau ist der eigentliche Gewinn: man sieht alle Angebote, OHNE durchzuklicken. */}
-                    <div className="text-[11.5px] mt-1 truncate" style={{ color: on ? "#9c9cae" : "#65656f" }}>
-                      {g.ids.map((id) => skillDef(id)?.name).filter(Boolean).join(" · ")}
                     </div>
                   </button>
                 );

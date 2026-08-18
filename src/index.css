@@ -3496,8 +3496,21 @@ button { font-family: inherit; }
   .lv-wing-r { justify-self: start; }
   .lv-wing-sep { height: 1px; margin: 12px 0; }
   /* Drei Angebote je Fraktion → drei Spalten. Auf 880 px brach `sm:grid-cols-2` die dritte Karte in eine
-     eigene Zeile und ließ daneben ein Loch — genau das Bild, das die Mitte „unattraktiv" gemacht hat. */
-  .sk-offers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+     eigene Zeile und ließ daneben ein Loch — genau das Bild, das die Mitte „unattraktiv" gemacht hat.
+
+     `grid-auto-rows: 1fr` zieht ALLE Karten auf die Höhe der längsten — dasselbe Mittel, mit dem die
+     Legendär-Auswahl ihre Reihe zusammenhält (LegendarySelect.jsx, dort aus einem Playtest hergeleitet:
+     „die Reihe wirkte zerrissen"). `align-items: stretch` muss mit, weil das Angebotsraster ein
+     `items-start` trägt — ohne das zöge sich die Karte INNERHALB der gleich hohen Zeile wieder auf
+     Inhaltshöhe zusammen, und die Regel täte sichtbar nichts.
+
+     Bewusst NUR ab 1400 px: am Handy ist das Angebot einspaltig, dort bläht `1fr` jede einzelne Karte auf
+     die Höhe der längsten auf und verlängert den Screen, statt eine Reihe zu ordnen. */
+  .sk-offers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+  }
   /* Die StatusRail bringt ihre eigene Panel-Schale mit und setzt sie INLINE — im Flügel wäre das ein Panel
      im Panel. Inline schlägt jede Stylesheet-Regel, deshalb hier `!important` (dieselbe Naht wie #perf-blur). */
   .lv-wing .as-panel.as-panel-deck {
