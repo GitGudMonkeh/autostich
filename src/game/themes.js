@@ -267,7 +267,13 @@ export const THEME_DEFS = {
     deckId: "deck_arcade",     bfId: "bf_arcade",     els: ["deck", "bf"] },
   polarlicht: { id: "polarlicht", name: packName("deck_polarlicht"),     emblem: "🪲", kind: "buy", price: 20, a1: "#2ee0c0", a2: "#ffcf3a",
     deckId: "deck_polarlicht", bfId: "bf_polarlicht", els: ["deck", "bf"] },
-  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 20, a1: "#38b0ff", a2: "#8a6cff",
+  /* Eldritch hat neue Motive bekommen (#deck-nacht): dieselbe Szene, aber aufgeräumt — Tiefseetempel unter
+     Lichtschächten statt der alten Version mit den violetten Quallen. `a1` bleibt, weil die FLÄCHE dieselbe ist
+     (gemessen 197–203°, der Eintrag steht auf 204°); `a2` musste weichen: das Violett gehörte den Quallen, die es
+     nicht mehr gibt. An ihrer Stelle steht jetzt das Orange (32°), und es ist im neuen Bild kein Zufallslicht,
+     sondern gesetzt — die vier Eckkugeln des Rahmens, die Lavaschlote am Spielfeldrand und das Auge der Kreatur.
+     Damit ist Eldritch zweifarbig wie das Motiv: kaltes Blau als Grund, warme Glut als Gegenpunkt. */
+  seedrache:  { id: "seedrache",  name: packName("deck_seedrache"),   emblem: "🐙", kind: "buy", price: 20, a1: "#38b0ff", a2: "#ff9a2e",
     deckId: "deck_seedrache",  bfId: "bf_seedrache",  els: ["deck", "bf"] },
   // Obsidian — monochromes Kristall-Monolith-Pack (schwarz mit weiß glühenden Rissen).
   obsidian:   { id: "obsidian",   name: "Obsidian",   emblem: "🗿", kind: "buy", price: 30, a1: "#e8edf5", a2: "#9aa6bd",
