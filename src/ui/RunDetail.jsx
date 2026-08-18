@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1400 px derselbe gerahmte Screen wie nach einem Lauf
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
-import { RunStats, RunTreeBlock } from "./RunStats.jsx";
+import { RunStatCells, RunBuildChips, RunTreeBlock } from "./RunStats.jsx";
 import { CardGrid } from "./CardGrid.jsx"; // #201.8 Stufe B: finale Aufstellung aus dem Snapshot (schreibgeschützt)
 import { SeedChip } from "./SeedChip.jsx"; // #205 Challenger Mode: Seed kopieren / nachspielen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx";
@@ -20,6 +21,7 @@ import { t } from "../i18n/index.js";
    Eigene/lokale Läufe bleiben voll. `onPlaySeed` (optional) macht den Seed-Chip nachspielbar. */
 export function RunDetail({ entry, rank = null, onClose, anonymized = false, onPlaySeed = null }) {
   useEscape(onClose);
+  const wide = useIsWide();                          // #desktop: drei Spalten statt schmaler Karte
   const [showArch, setShowArch] = useState(true);     // Gebäude-Overlay auf dem Brett an/aus (wie im Victory-Screen)
   const [inspectBid, setInspectBid] = useState(null); // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
   if (!entry) return null;
@@ -41,23 +43,27 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
      gespiegelt (App.jsx). React-Events blubbern weiter durch den REACT-Baum, Escape/Klick-außen bleiben also
      unverändert — auch das Schließen über den Aufrufer. */
   return overlayPortal((
-    <div className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
+    <div className="rd-root fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10", backdropFilter: "blur(3px)" }} onClick={onClose}>
       {/* #deckui: äußerer Modal-Rahmen zieht die Deckfarbe (as-panel-deck) */}
-      <div className="w-full max-w-md rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck"
+      {/* #desktop: Ab 1400 px ist das kein Fenster mehr, sondern derselbe gerahmte Screen wie nach einem Lauf —
+          gleiche Kopfzeile (Score links, Schließen rechts) und dieselben drei Spalten. Ein gespeicherter Lauf
+          trägt weniger als ein laufender (kein Verlauf, kein Verdienst), die Panels sind deshalb die Schnittmenge:
+          Kennzahlen · Build · finale Aufstellung. */}
+      <div className="rd-card w-full max-w-md rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit Schließen-Knopf STICKY → bleibt beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
-        <div className="sticky top-0 z-20 -mx-6 px-6 pt-6 pb-4 flex items-start justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
+        <div className="rd-head sticky top-0 z-20 -mx-6 px-6 pt-6 pb-4 flex items-start justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
-          <div className="min-w-0">
+          <div className="rd-title min-w-0">
             {/* #deckui: generisches Sektions-Label zieht die Deckfarbe (Fallback = bisheriges Violett) */}
             <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
             {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}
           </div>
-          <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+          <ActionButton kind="secondary" className="rd-close shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
-        <div className="text-center my-3">
-          <div className="text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
+        <div className="rd-score text-center my-3">
+          <div className="rd-num text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
           <div className="text-xs opacity-50 mt-0.5">{t("hud.score")}</div>
           {/* #205: Seed dieses Laufs — kopieren & (optional) nachspielen. Alt-Läufe ohne Seed zeigen nichts. */}
           {entry.seedCode && (
@@ -68,12 +74,19 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         </div>
         {/* #global: Baumstand VOR den Kennzahlen — er ist die Vorbedingung des Scores, nicht eine seiner
             Kennzahlen. Fehlt der Wert (lokaler Lauf, Alt-Eintrag), rendert der Block gar nichts. */}
-        <RunTreeBlock treeNodes={entry.treeNodes} />
-        <RunStats entry={entry} anonymized={anonymized} />
+        <div className="rd-c1">
+          <div className="rd-ph hidden min-[1400px]:block">{t("gameover.stats")}</div>
+          <RunTreeBlock treeNodes={entry.treeNodes} />
+          <RunStatCells entry={entry} sourceCells />
+        </div>
+        <div className="rd-c2">
+          <div className="rd-ph hidden min-[1400px]:block">{t("gameover.build")}</div>
+          <div className="mt-4"><RunBuildChips entry={entry} anonymized={anonymized} /></div>
+        </div>
         {/* #201.8 Stufe B: finale Deck-Aufstellung, sofern der Lauf einen Snapshot hat (nur eigene/lokale Läufe;
             alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}
         {!anonymized && entry.deckSnapshot?.cards?.length > 0 && (
-          <details className="mt-4 rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+          <details className="rd-c3 mt-4 rounded-xl overflow-hidden" open={wide} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <div className="p-3 pt-0">
               {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie im Victory-Screen. */}

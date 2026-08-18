@@ -275,11 +275,5 @@ export function RunTreeBlock({ treeNodes }) {
 
 /* Kombinierter Wrapper — Kennzahlen dann Build-Chips. Genutzt von der Leaderboard-Detailansicht (RunDetail);
    der Victory-Screen platziert RunStatCells und RunBuildChips separat (Stats- vs. Build-Sektion). */
-export function RunStats({ entry = {}, anonymized = false }) {
-  return (
-    <>
-      <RunStatCells entry={entry} sourceCells />
-      <div className="mt-4"><RunBuildChips entry={entry} anonymized={anonymized} /></div>
-    </>
-  );
-}
+/* Den kombinierten Wrapper `RunStats` gibt es nicht mehr: sein einziger Aufrufer (RunDetail) setzt die zwei
+   Teile seit dem Desktop-Pass selbst, weil sie dort in ZWEI Spalten stehen. Beide Teile bleiben exportiert. */

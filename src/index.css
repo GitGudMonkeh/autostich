@@ -1328,7 +1328,7 @@ button { font-family: inherit; }
    `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
    Unterhalb von 1400 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
-.op-col2, .un-form, .fb-left, .fb-right { display: contents; }
+.op-col2, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .go-col1 { display: contents; }
 /* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1400 px keine
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
@@ -1661,7 +1661,13 @@ button { font-family: inherit; }
      zog den Blick vom Baum weg. 82 % plus kräftigerer Blur: das Deck bleibt als Farbe und Textur da,
      die Wörter dahinter sind weg. */
   .up-root {
-    background: rgba(12, 12, 16, .82) !important;
+    /* #ueberzug (18.08.2026): 94 % statt 82 %. Die 82 waren zusammen mit `blur(10px)` abgenommen — „das Deck
+       bleibt als Farbe und Textur da, die Wörter dahinter sind weg". Seit #perf-blur gibt es den Blur nicht
+       mehr, und ohne ihn liest sich der Hub durch: In der Statistik standen Kacheltexte („Bestenliste",
+       „Statistiken") lesbar hinter den Panels, weil dort mehr Überzug frei liegt als im dicht gefüllten Baum.
+       Gemessen sind die Panels beider Screens identisch (rgba(27,26,36,.93)→rgba(22,22,32,.95)) — der
+       Unterschied kam allein vom freien Überzug. EIN Wert für alle Overlays, die über dem Hauptschirm liegen. */
+    background: rgba(12, 12, 16, .94) !important;
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -2087,7 +2093,7 @@ button { font-family: inherit; }
   .cz-root {
     padding: 16px 48px 18px !important;
     align-items: stretch !important;
-    background: rgba(12, 12, 16, .82) !important;
+    background: rgba(12, 12, 16, .94) !important;
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -2351,10 +2357,10 @@ button { font-family: inherit; }
      Formalismus: Es sind dieselben vier Fraktionen, die im Baum schon als Spalte stehen — und
      genau von dort aus wird der Leitfaden geöffnet.
      ========================================================================== */
-  /* Der Dim wird zum Überzug des Baums: 82 % plus kräftiger Blur. Bei 66 % / 2 px las man den
-     Bildschirm dahinter noch mit. `!important`, weil beide Werte inline am Element stehen. */
+  /* Der Dim wird zum Überzug des Leitfadens — derselbe Wert wie an `.up-root` (s. #ueberzug dort: 94 %,
+     seit der Blur gefallen ist). `!important`, weil er inline am Element steht. */
   .gd-dim {
-    background: rgba(12, 12, 16, .82) !important;
+    background: rgba(12, 12, 16, .94) !important;
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -2580,7 +2586,7 @@ button { font-family: inherit; }
      weiter, seine Anzeige ist hier nur unsichtbar; ihn zu gaten hieße, den Renderpfad zu spalten. */
   .op-root {
     padding: 16px 48px 18px !important;
-    background: rgba(12, 12, 16, .82) !important;
+    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
     /* #perf-blur: KEIN backdrop-filter, gleiche Begründung und gleiche Messung wie an `.up-root` —
        er war der teuerste Posten des Desktop-Passes und optisch bei 82 % Überzug nicht auffindbar.
        `none !important` statt Löschen, weil das Overlay seinen Blur INLINE setzt. */
@@ -2682,7 +2688,7 @@ button { font-family: inherit; }
     /* Dafür dunkler: Ein Dialog deckt nur einen Bruchteil des Schirms, der Rest bleibt Hub — mit 80 % und
        ohne Blur las sich dessen Wortmarke direkt neben der des Dialogs mit. Der Baum kommt mit 82 % aus,
        weil er randverankert ohnehin fast alles verdeckt. */
-    background: rgba(12, 12, 16, .9) !important;
+    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
   }
 
   /* ---- Willkommen: Marke links, Formular rechts ----------------------------
@@ -2787,7 +2793,7 @@ button { font-family: inherit; }
   /* ---- gemeinsame Schale der drei randverankerten Screens ---------------- */
   .st-root, .lb-root, .go-root {
     padding: 16px 48px 18px !important;
-    background: rgba(12, 12, 16, .82) !important;
+    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
     /* #perf-blur: kein backdrop-filter (gemessen der teuerste Posten des Desktop-Passes); `none !important`,
        weil die Overlays ihren Blur INLINE setzen. Präfix zuerst, Standard zuletzt (lightningcss behält den letzten). */
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
@@ -2961,6 +2967,108 @@ button { font-family: inherit; }
   .lb-page:has(.lb-cockpit) .lb-rows { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; }
   .lb-modlist { grid-template-columns: minmax(0, 1fr); }
 
+  /* ---- Regeln: links positiv, rechts negativ — und deutlich größer -------
+     Der Reiter trägt den einzigen wirklich wichtigen Fließtext des Screens (was diese Woche anders ist).
+     Untereinander sind es 19 Kästen in 12-px-Schrift; nebeneinander passen sie ins Bild, und die Schrift
+     kann auf Lesegröße. Die Plätze stehen ausdrücklich — die Reihenfolge im DOM bleibt die der
+     Handy-Fassung (Überschrift · Liste · Überschrift · Liste · Paare). */
+  .lb-page .rg-root {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    column-gap: 24px;
+    align-items: start;
+    font-size: 14px;
+  }
+  .lb-page .rg-intro  { grid-column: 1 / -1; grid-row: 1; font-size: 15px; line-height: 1.6; margin-bottom: 18px !important; }
+  .lb-page .rg-h      { font-size: 12.5px !important; letter-spacing: .12em; margin-bottom: 10px !important; }
+  .lb-page .rg-h-pos  { grid-column: 1; grid-row: 2; }
+  .lb-page .rg-pos    { grid-column: 1; grid-row: 3; }
+  .lb-page .rg-h-neg  { grid-column: 2; grid-row: 2; margin-top: 0 !important; }
+  .lb-page .rg-neg    { grid-column: 2; grid-row: 3; }
+  .lb-page .rg-h-pairs { grid-column: 1 / -1; grid-row: 4; margin-top: 22px !important; }
+  .lb-page .rg-pairs  { grid-column: 1 / -1; grid-row: 4; margin-top: 48px; font-size: 13.5px !important; }
+  .lb-page .rg-pos, .lb-page .rg-neg { gap: 9px; }
+  /* Die Kästen selbst: Name auf Lesegröße, Beschreibung eine Spur darunter (statt 12,5 / 11,5). */
+  .lb-page .rg-pos > div > div:first-child,
+  .lb-page .rg-neg > div > div:first-child { font-size: 15px !important; }
+  .lb-page .rg-pos > div > div:last-child,
+  .lb-page .rg-neg > div > div:last-child { font-size: 13.5px !important; opacity: .9; }
+  .lb-page .rg-pos > div, .lb-page .rg-neg > div { padding: 11px 14px !important; }
+
+  /* ---- Lauf-Details: derselbe Screen wie nach einem Lauf ------------------
+     Eine gespeicherte Zeile aus Statistik oder Bestenliste öffnete bis hierher ein 448-px-Fenster, während der
+     Victory-Screen daneben den ganzen Schirm nutzt — dieselbe Sache, zwei Formate. Ab 1400 px ist es derselbe
+     zentrierte Block mit derselben Kopfzeile und denselben drei Spalten; die Panels sind die Schnittmenge der
+     Daten, die ein gespeicherter Lauf trägt (kein Punkteverlauf, kein Verdienst). */
+  .rd-root {
+    padding: 16px 48px 18px !important;
+    /* KEIN Überzugs-Wert hier: die Detailansicht liegt über der Statistik/Bestenliste, nicht über dem Hub —
+       ihr Grund ist deshalb deckend (inline `#0c0c10`) und bleibt es. Nur der Blur fällt (#perf-blur). */
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .rd-card {
+    width: min(1500px, 100%);
+    max-width: none;
+    max-height: 100% !important;
+    margin-block: 0 !important;
+    background: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 22px;
+    align-items: start;
+    align-content: start;
+  }
+  .rd-card.as-panel.as-panel-deck { background-image: none !important; animation: none !important; }
+  /* Der Kopf reicht seine Kinder ins Raster durch: Score links, Kennung daneben, Schließen rechts — dieselbe
+     Zeile wie im Victory-Screen. */
+  .rd-head { display: contents; }
+  .rd-head > div[aria-hidden="true"]:first-child { display: none; }   /* Haarlinie der Handy-Karte */
+  .rd-score { grid-column: 1; grid-row: 2; text-align: left !important; margin: 0 !important; }
+  .rd-num { font-size: 46px !important; line-height: 1; }
+  .rd-score > div:nth-child(2) { display: none; }        /* das Wort „Score" — die Zahl steht für sich */
+  .rd-score > div:nth-child(3) { justify-content: flex-start !important; }
+  /* Kennung über der Zahl (wie die Augenbraue über dem Score im Victory-Screen), nicht daneben: sonst steht
+     ein 11-px-Label allein in einer 480-px-Spalte neben einer 46-px-Zahl. */
+  .rd-title { grid-column: 1; grid-row: 1; align-self: end; }
+  .rd-close { grid-column: 3; grid-row: 1 / span 2; justify-self: end; align-self: center;
+    font-size: 15px !important; padding: 11px 18px !important; border-radius: 8px; }
+  .rd-card::before {
+    content: "";
+    grid-column: 1 / -1; grid-row: 3;
+    height: 3px; border-radius: 2px; margin-top: 10px;
+    background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
+    opacity: .85;
+  }
+  .rd-c1, .rd-c2, .rd-c3 {
+    display: block;
+    grid-row: 4;
+    border-radius: 14px;
+    padding: 15px 17px 17px;
+    margin-top: 22px !important;
+    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
+    border: 0 !important;
+  }
+  .rd-c1 { grid-column: 1; }
+  .rd-c2 { grid-column: 2; }
+  .rd-c3 { grid-column: 3; overflow: visible !important; }
+  /* Panel-Überschriften wie in den anderen Screens; die Texte kommen aus dem Victory-Katalog (kein neuer Text). */
+  .rd-ph {
+    font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
+    color: #b9b3cf; margin-bottom: 12px;
+  }
+  .rd-c1 > *:nth-child(2) { margin-top: 0 !important; }
+  .rd-c2 > .mt-4 { margin-top: 0 !important; }
+  /* Der Aufklapp-Griff ist hier die Panel-Überschrift — offen (`open={wide}`) und ohne eigenen Kasten. */
+  .rd-c3 > summary {
+    font-size: 11.5px; letter-spacing: .2em; font-weight: 600; color: #b9b3cf; opacity: 1 !important;
+    padding: 0 0 12px !important;
+  }
+  .rd-c3 > div { padding: 0 !important; }
+
   /* ---- Victory: zentrierter Block ---------------------------------------- */
   .go-card {
     grid-template-columns: 1fr 1.05fr 1fr;
@@ -2988,23 +3096,39 @@ button { font-family: inherit; }
   /* Freischaltungen, Skins und das Onboarding-Banner laufen über die VOLLE Breite unter dem Kopf: sie kommen
      selten, und wenn sie kommen, sind sie die Nachricht des Bildschirms. In einer Spalte gingen sie zwischen
      Kennzahlen unter. */
-  .go-onb     { grid-column: 1 / -1; grid-row: 3; }
-  .go-unlocks { grid-column: 1 / -1; grid-row: 4; }
-  .go-skins   { grid-column: 1 / -1; grid-row: 5; }
+  .go-unlocks { grid-column: 1 / -1; grid-row: 3; }
+  .go-skins   { grid-column: 1 / -1; grid-row: 4; }
   .go-earn, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
-  .go-earn   { grid-column: 1; grid-row: 6; }
-  .go-origin { grid-column: 1; grid-row: 7; }
-  .go-stats  { grid-column: 2; grid-row: 6 / span 2; }
-  .go-build  { grid-column: 3; grid-row: 6; }
-  .go-layout { grid-column: 3; grid-row: 7; }
+  /* Drei entkoppelte Spalten: links die EINE Klammer (Verdienst + Herkunft), in der Mitte die Kennzahlen,
+     rechts Build und darunter die Aufstellung. Nur Build und Aufstellung teilen sich eine Spalte — deshalb
+     schiebt eine aufgeklappte Beschreibung ausschließlich die Aufstellung nach unten. */
+  .go-col1   { display: block; grid-column: 1; grid-row: 5; }
+  .go-stats  { grid-column: 2; grid-row: 5; }
+  .go-build  { grid-column: 3; grid-row: 5; }
+  .go-layout { grid-column: 3; grid-row: 6; }
+  /* Das Onboarding-Banner liegt seit #316 auf totem Zweig (jedes Profil startet fertig); es steht in der
+     linken Klammer und wäre dort ein Panel in Spalte 1 statt über die volle Breite. */
   /* Die Aufstellung steht offen (`open={wide}` im JSX): zugeklappt war sie, weil der Screen als schmale Karte
      sonst zu lang wurde — in einer eigenen Spalte gibt es diesen Grund nicht mehr. Der Griff bleibt, man kann
      sie also weiterhin zuklappen. */
   .go-layout > summary { padding-left: 0 !important; padding-right: 0 !important; }
   .go-layout > div { padding-left: 0 !important; padding-right: 0 !important; }
-  /* Das Brett ist 30 Karten hoch — aufgeklappt zöge es den ganzen Screen über den Schirm hinaus. Es scrollt
-     deshalb INNERHALB seines Panels; der Rest des Bildschirms bleibt stehen. */
-  .go-layout > div { max-height: 560px; overflow-y: auto; }
+  /* Das Brett soll als GANZES im Panel stehen (Übersicht, nicht Ausschnitt). Der Hebel ist die Breite des
+     Kartenrasters: die Karten füllen ihre Spalte, ein Deckel macht sie kleiner und damit die Reihen flacher.
+     35 Karten sind sieben Reihen — bei 330 px Rasterbreite bleibt das Panel unter 500 px und braucht keinen
+     Scroller mehr. `max-height` bleibt als Ventil für noch längere Decks. */
+  /* Kein innerer Scroller mehr: das Brett steht als GANZES im Panel — das ist der Zweck der Übersicht.
+     Der Hebel ist die Rasterbreite; bei 260 px ist eine Karte ~48 px breit, 40 Karten sind acht Reihen und
+     das Panel bleibt unter 500 px. Auf flachen Fenstern scrollt dann der Screen als Ganzes (ein Scrollbalken
+     statt zwei), so wie es der Upgrade-Baum dort auch tut. */
+  /* Das BRETT steht vollständig im Panel (dafür der Breiten-Deckel darunter). Was darunter noch kommt — die
+     Gebäudeliste — darf scrollen; ohne Deckel wäre die Spalte 940 px hoch und der ganze Screen scrollte. */
+  .go-layout > div, .rd-c3 > div { max-height: 530px; overflow-y: auto; }
+  /* `zoom`, nicht `max-width`: die Kartenhöhe hängt am INHALT (Zahl + Fähnchen), nicht an der Breite —
+     ein schmaleres Raster wurde nur schmaler, nicht flacher (nachgemessen: 454 px hoch bei 513 wie bei 300).
+     `zoom` skaliert das ganze Koordinatensystem samt der absolut liegenden Gebäude-Kontur und verkleinert
+     dabei auch die Layout-Box, anders als `transform` (dieselbe Begründung wie am Hub, s. `.hub-pair`). */
+  .go-layout .cg-root, .rd-c3 .cg-root { width: 430px; zoom: .72; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
@@ -3047,7 +3171,10 @@ button { font-family: inherit; }
   .st-root, .lb-root, .go-root { padding: 10px 36px 12px !important; }
   .st-sec, .go-earn, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
   .st-card, .lb-card, .go-card { column-gap: 16px; }
-  .go-layout > div { max-height: 420px; }
+  /* Flaches Fenster: das Brett wird KLEINER statt zu scrollen — 40 Karten sind acht Reihen, und die
+     Übersicht ist der Zweck des Panels. Bei 260 px Rasterbreite ist eine Karte ~48 px breit; die Zahl bleibt
+     lesbar, die Multiplikator-Fähnchen werden klein. */
+  .go-layout .cg-root, .rd-c3 .cg-root { width: 430px; zoom: .62; }
 }
 
 /* Flache Desktop-Fenster: Die Optionen stehen auf 1080 px Höhe locker, auf 791 px (1920x1200-Laptop

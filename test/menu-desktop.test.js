@@ -43,9 +43,14 @@ const base = deskBlock ? css.replace(deskBlock, "") : css;
 
 describe("#desktop-menues — die Klammern sind unterhalb von 1400 px keine Boxen", () => {
   it("op-col2 · un-form · fb-left · fb-right stehen als `display: contents` in der BASIS", () => {
-    const rule = base.match(/^\.op-col2,\s*\.un-form,\s*\.fb-left,\s*\.fb-right\s*\{([^}]*)\}/m);
+    /* Die Regel sammelt inzwischen alle Klammern des Desktop-Passes (auch die der großen Screens) — geprüft
+       wird deshalb je Klasse, nicht die ganze Selektorliste am Stück. */
+    const rule = base.match(/^[^{}\n]*\.op-col2[^{}\n]*\{([^}]*)\}/m);
     expect(rule, "Basis-Regel für die Menü-Klammern nicht mehr gefunden").toBeTruthy();
     expect(rule[1]).toMatch(/display:\s*contents/);
+    const sel = rule[0].split("{")[0];
+    for (const cls of ["op-col2", "un-form", "fb-left", "fb-right"])
+      expect(sel, `${cls} fehlt in der Klammer-Regel`).toMatch(new RegExp(`\\.${cls}\\b`));
   });
 
   it("die Optionen legen Grafik UND Ton in dieselbe Klammer", () => {

@@ -162,6 +162,13 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </div>
         </div>
 
+        {/* #desktop — Klammer um die LINKE Spalte (Verdienst · Score-Herkunft). Sie ist der Grund, warum beim
+            Aufklappen einer Perk-/Skill-Beschreibung im Build nichts mehr springt: Ohne die Klammer liegen
+            Verdienst und Herkunft in ZWEI Rasterzeilen, und die zweite teilt sich ihre Höhe mit dem Build der
+            dritten Spalte — wächst dort die Beschreibung, rutscht hier die Herkunft mit nach unten. Als EINE
+            Zelle ist die Spalte von der Nachbarspalte entkoppelt; wachsen darf dann nur, was UNTER dem Build
+            steht (die finale Aufstellung). Unter 1400 px ist die Klammer `display: contents`. */}
+        <div className="go-col1">
         {/* #304 Verdienst-Rollup (direkt unter dem Score-Hero, wo früher die Münzen-Zeile saß): Meilensteinbalken läuft
             voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
             Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
@@ -255,6 +262,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         <div className="go-origin as-ring mt-5">
             <i className="as-ring-run" aria-hidden="true" />
           <ScoreHerkunft state={state} />
+        </div>
         </div>
 
         {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}

@@ -103,15 +103,36 @@ describe("#desktop-screens — Victory", () => {
   it("die Aufstellung steht offen und scrollt INNEN", () => {
     expect(jsx).toMatch(/const wide = useIsWide\(\)/);
     expect(jsx).toMatch(/className="go-layout as-ring[^"]*" open=\{wide\}/);
-    expect(deskBlock).toMatch(/\.go-layout > div\s*\{[^}]*max-height:\s*\d+px[^}]*overflow-y:\s*auto/);
+    // Ventil: das Panel bekommt einen Deckel (die Gebäudeliste unter dem Brett kann lang werden).
+    expect(deskBlock).toMatch(/\.go-layout > div[^{]*\{[^}]*max-height:\s*\d+px[^}]*overflow-y:\s*auto/);
   });
 
-  it("Freischaltungen, Skins und Onboarding laufen über die volle Breite", () => {
-    for (const cls of ["go-onb", "go-unlocks", "go-skins"]) {
+  it("Freischaltungen und Skins laufen über die volle Breite", () => {
+    for (const cls of ["go-unlocks", "go-skins"]) {
       const rule = deskBlock.match(new RegExp(`\\.${cls}\\s*\\{([^}]*)\\}`));
       expect(rule, `Platz für .${cls} fehlt`).toBeTruthy();
       expect(rule[1]).toMatch(/grid-column:\s*1 \/ -1/);
     }
+  });
+
+  it("die drei Spalten sind entkoppelt — nur die Aufstellung wandert", () => {
+    /* Der gemeldete Fehler: eine aufgeklappte Perk-/Skill-Beschreibung im Build (Spalte 3) schob die
+       Score-Herkunft in Spalte 1 mit nach unten, weil beide in derselben zweiten Rasterzeile lagen. Seit
+       `go-col1` ist die linke Spalte EINE Zelle; wachsen darf nur, was unter dem Build steht. Fällt die
+       Klammer weg, ist das Springen zurück — ohne dass etwas kaputtgeht. */
+    expect(jsx).toMatch(/<div className="go-col1">/);
+    const rule = deskBlock.match(/\.go-col1\s*\{([^}]*)\}/);
+    expect(rule, ".go-col1 hat keinen Platz im Raster").toBeTruthy();
+    expect(rule[1]).toMatch(/grid-column:\s*1/);
+    // Build und Aufstellung teilen sich als EINZIGE eine Spalte (dort ist das Verschieben gewollt).
+    expect(deskBlock).toMatch(/\.go-build\s*\{[^}]*grid-column:\s*3/);
+    expect(deskBlock).toMatch(/\.go-layout\s*\{[^}]*grid-column:\s*3/);
+  });
+
+  it("das Brett steht als Ganzes im Panel (verkleinert, nicht gescrollt)", () => {
+    // `zoom` und nicht `max-width`: die Kartenhöhe hängt am Inhalt, ein schmaleres Raster wurde nur schmaler.
+    expect(read("ui/CardGrid.jsx")).toMatch(/className="cg-root relative grid gap-2\.5"/);
+    expect(deskBlock).toMatch(/\.go-layout \.cg-root[^{]*\{[^}]*zoom:/);
   });
 
   it("der Screen steht als zentrierter Block, nicht randverankert", () => {
@@ -122,6 +143,37 @@ describe("#desktop-screens — Victory", () => {
     expect(jsx).toMatch(/className="go-root fixed inset-0 overlay-root[^"]*items-center/);
     const stretch = deskBlock.match(/^\s*([^{}\n]*)\{[^}]*align-items:\s*stretch\s*!important/gm) || [];
     for (const m of stretch) expect(m, "go-root darf nicht auf stretch").not.toMatch(/\.go-root/);
+  });
+});
+
+describe("#ueberzug — ein Wert für alle Overlays über dem Hauptschirm", () => {
+  it("kein Overlay-Wurzelknoten steht mehr auf den alten 82 %", () => {
+    /* Die 82 % waren zusammen mit `blur(10px)` abgenommen; seit #perf-blur gibt es den Blur nicht mehr und
+       der Hub las sich durch die Panels. Ein neuer Screen, der wieder 82 % setzt, fällt hier auf. */
+    expect(deskBlock, "alter Überzugswert ist zurück").not.toMatch(/rgba\(12, 12, 16, \.82\)/);
+    const werte = [...deskBlock.matchAll(/rgba\(12, 12, 16, (\.\d+)\) !important/g)].map((m) => m[1]);
+    expect(werte.length, "keine Überzugs-Regel gefunden").toBeGreaterThan(2);
+    expect([...new Set(werte)], "die Overlays sollen EINEN Wert teilen").toEqual([".94"]);
+  });
+});
+
+describe("#desktop-screens — Regeln und Lauf-Details", () => {
+  it("die Modifikatoren stehen nebeneinander: links positiv, rechts negativ", () => {
+    expect(read("ui/LeaderboardScreen.jsx")).toMatch(/className="rg-pos grid gap-1\.5"/);
+    expect(deskBlock).toMatch(/\.lb-page \.rg-pos\s*\{[^}]*grid-column:\s*1/);
+    expect(deskBlock).toMatch(/\.lb-page \.rg-neg\s*\{[^}]*grid-column:\s*2/);
+  });
+
+  it("die Lauf-Details sind derselbe Screen wie nach einem Lauf", () => {
+    const rd = read("ui/RunDetail.jsx");
+    // Drei Spalten-Klammern, und die Aufstellung steht offen — wie im Victory-Screen.
+    for (const cls of ["rd-c1", "rd-c2", "rd-c3"]) expect(rd).toMatch(new RegExp(`className="${cls}[ "]`));
+    expect(rd).toMatch(/open=\{wide\}/);
+    // Der Grund für die Klammern: jede Spalte ist EINE Zelle (sonst springt es wie im Victory-Screen).
+    for (const cls of ["rd-c1", "rd-c2", "rd-c3"]) {
+      const rule = deskBlock.match(new RegExp(`\\.${cls}\\s*\\{([^}]*)\\}`));
+      expect(rule, `${cls} hat keinen Platz im Raster`).toBeTruthy();
+    }
   });
 });
 

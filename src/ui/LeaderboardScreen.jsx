@@ -69,15 +69,18 @@ function RegelnPanel() {
   const pos = catalog.filter((m) => m.sign === "pos");
   const neg = catalog.filter((m) => m.sign === "neg");
   const head = "text-[10px] font-bold uppercase tracking-wider";
+  /* #desktop: Ab 1400 px stehen positive und negative Modifikatoren NEBENEINANDER (links/rechts) statt
+     untereinander — die Liste ist 19 Kästen lang und war sonst eine Rolle. Die Klassen sind unter 1400 px
+     tote Haken; die Reihenfolge im DOM bleibt die der Handy-Fassung. */
   return (
-    <div className="text-[12px] leading-relaxed">
-      <p className="opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
-      <div className={`${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
-      <div className="grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
-      <div className={`${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>
-      <div className="grid gap-1.5">{neg.map((m) => <ModBox key={m.id} m={m} />)}</div>
-      <div className={`${head} mt-3 mb-1.5 opacity-60`}>{tr("board.rules.pairs")}</div>
-      <div className="grid gap-1 text-[11.5px] opacity-75">
+    <div className="rg-root text-[12px] leading-relaxed">
+      <p className="rg-intro opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
+      <div className={`rg-h rg-h-pos ${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
+      <div className="rg-pos grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
+      <div className={`rg-h rg-h-neg ${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>
+      <div className="rg-neg grid gap-1.5">{neg.map((m) => <ModBox key={m.id} m={m} />)}</div>
+      <div className={`rg-h rg-h-pairs ${head} mt-3 mb-1.5 opacity-60`}>{tr("board.rules.pairs")}</div>
+      <div className="rg-pairs grid gap-1 text-[11.5px] opacity-75">
         {WEEK_MOD_PAIRS.map((p) => (
           <div key={p.key}><b style={{ color: MOD_POS }}>{WEEK_MOD_BY_ID[p.pos].name}</b> ↔ <b style={{ color: MOD_NEG }}>{WEEK_MOD_BY_ID[p.neg].name}</b></div>
         ))}
