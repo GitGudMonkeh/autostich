@@ -37,6 +37,6 @@
     "globals": "^17.9.0",
     "tailwindcss": "^4.3.3",
     "vite": "^6.0.7",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.10"
   }
 }

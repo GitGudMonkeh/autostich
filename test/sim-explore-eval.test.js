@@ -5,6 +5,12 @@ import { ucbPolicy } from "../sim/policies/ucb.js";
 import { fixedPolicy } from "../sim/policies/fixed.js";
 import { computeEval } from "../sim/eval.js";
 
+/* Zwei Tests hier fahren echte Sim-Läufe (12 bzw. mehrere Dutzend Durchläufe) — 5–14 s SYNCHRONE
+   Rechenzeit, über dem globalen Vitest-Limit von 5 s. Bis Vitest 2 scheiterte ein synchroner
+   Testkörper nie am Timeout, ab Vitest 4 wird er gemeldet. Das Limit steht deshalb nur an den
+   betroffenen Tests, damit die schnellen daneben weiter scharf nach 5 s auffliegen. */
+const SIM_TIMEOUT = 60_000;
+
 describe("sim memory (S2)", () => {
   it("bucht Reward auf gezogene Arme, peek persistiert nicht", () => {
     const mem = newMemory({ normalize: (x) => x }); // identity → einfach prüfbar
@@ -29,7 +35,7 @@ describe("sim memory (S2)", () => {
     const a = run();
     expect(run()).toEqual(a);
     expect(a.stat.length + a.perk.length + a.skill.length).toBeGreaterThan(0); // Auswahl-Arme werden als Arme erfasst (S5; Shop entfällt #229)
-  });
+  }, SIM_TIMEOUT);
 });
 
 describe("sim fixed policy (S3)", () => {
@@ -67,5 +73,5 @@ describe("sim eval / ablation (S3)", () => {
     for (let i = 1; i < a.marginals.length; i++) {
       expect(a.marginals[i - 1].marginal.median).toBeGreaterThanOrEqual(a.marginals[i].marginal.median);
     }
-  });
+  }, SIM_TIMEOUT);
 });
