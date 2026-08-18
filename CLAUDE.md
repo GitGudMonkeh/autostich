@@ -955,6 +955,37 @@ Autostich ist zweisprachig (DE/EN). **Jeder neue spieler-sichtbare Text gehört 
   Stufentexte aus ~120 Quellen (`MUSTER_DESC`-Templates + indizierte Präzisions-Konstanten) — `enFamilies.js`
   spiegelt beide Sparmechanismen, sonst hätte EN 292 Pflegestellen statt 120.
 
+### #marke — der Spieltitel ist sprachabhängig: DE „Autostich", EN „Autotrick" (18.08.2026)
+Der Titel war bis dahin von der Begriffstabelle ausgenommen (`genre-terminologie.md` §2: „Kein Grund zur
+Umbenennung — Balatro heißt auch Balatro"). **Die Entscheidung ist umgedreht**, mit derselben Beobachtung
+als Begründung: „Autostich" trägt „Stich" sichtbar, sagt also seinen Mechanismus im Namen; englisch geht
+genau das verloren und das Wort liest sich als Nähbegriff (stitch). Der Vergleich mit Balatro trug nicht —
+das ist ein reines Kunstwort, „Autostich" ein sprechender Name. Der Titel folgt jetzt derselben Abbildung
+wie das Wort in ihm (**Stich → trick**), die Tabelle im Übersetzerpaket §3.1 führt ihn als eigene Zeile.
+- **Geändert ist NUR `src/i18n/en.js`** (6 Texte): Wortmarke `start.logo.alt` „AUTOSTICH" → **„AUTOTRICK"**,
+  Tutorial-Kopf + -Text, drei Datenschutz-Texte. Der deutsche Katalog ist unberührt.
+- **Der Tab-Titel zieht mit, der PWA-Name NICHT.** Neuer Schlüssel `meta.title` (DE „Autostich — Prototyp",
+  EN „Autotrick — Prototype"); `App.jsx` setzt `document.title` in demselben Effekt, der schon
+  `<html lang>` mitzieht. `index.html` behält den deutschen Titel **statisch** — er steht im HTML, lange
+  bevor React die gewählte Sprache kennt, und ist damit nur die Anzeige bis zum ersten Render.
+  `public/manifest.webmanifest` bleibt einsprachig: ein Manifest kennt keine Sprachumschaltung, es wird
+  beim Installieren einmal gelesen. Wer das ändern will, braucht zwei Manifeste und einen Link-Tausch.
+- **`start.logo.alt` ist aus `SAME_OK` geflogen.** Die Liste führt Texte, die in beiden Sprachen gleich
+  lauten DÜRFEN — die Wortmarke tut das nicht mehr. Drei Wächter greifen jetzt bei einem Rückfall
+  (gegengeprobt): die Parität („englische Texte unterscheiden sich"), die Begriffstabelle und ein eigener
+  Test, der den ganzen Katalog in BEIDE Richtungen prüft (kein „Autostich" in en.js, kein „Autotrick"
+  in de.js). Der eigene Test ist nötig, weil die Tabelle nur Schlüssel sieht, in denen schon das deutsche
+  Wort steht — ein neuer englischer Text mit falscher Marke fiele ihr sonst nicht auf.
+- **Die Übersetzer-CSV ist mitgezogen** (`npm run loc:export`) — `test/loc-csv.test.js` bindet sie an den
+  Katalog, eine Textänderung ohne Export macht die Suite rot.
+- **Nicht angefasst** (Code-Innenleben, kein Anzeigetext): `export function Autostich()` in App.jsx, die
+  Supabase-Tabellen `autostich_scores`/`_telemetry`/`_reports`, der Deploy-Pfad `/autostich/`, der
+  Cache-Präfix im Service Worker und die Repo-/Branch-Namen.
+- **Deckel im Hub bleibt gültig**: die 52 px in `index.css` (`.hub-play .as-wordmark`) sind an der
+  DEUTSCHEN Marke gemessen — zehn Zeichen gegen neun, die englische bleibt darunter.
+- **Nicht am Gerät gesehen** — Build, Lint und 1569 Tests grün, der Blick auf die englische Wortmarke im
+  Hub steht aus (Orbitron, anderes Wortbild).
+
 ### Merge `Autostich/pixi` → `Autostich_Test` (Health Check 2026-08-16)
 Geprüft: Tests 1263 grün (84 Dateien) · ESLint 0/0 (282 Dateien, CI-Gate `--max-warnings=0`) · Build grün, auch als
 Slot-Build (`DEPLOY_BASE=/autostich/test/ VITE_PREVIEW=1`) · `npm audit --omit=dev` 0 Funde (die 7 Funde stecken

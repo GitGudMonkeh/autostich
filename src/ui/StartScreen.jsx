@@ -373,8 +373,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* #logo — Wortmarke als Text (Orbitron) statt logo-wordmark.png: das PNG hatte eine feste Palette und
           stand damit quer zu jeder Deckfarbe, seit der Desktop-Pass den Hub aus dem aktiven Deck einfärbt.
           Look, Größe und Verlauf stehen in index.css unter `.as-wordmark`. Der Text kommt weiter aus dem
-          i18n-Katalog — der Key hieß zu PNG-Zeiten „alt", trägt jetzt die sichtbare Marke (in beiden
-          Sprachen „AUTOSTICH", deshalb in der SAME_OK-Liste der i18n-Guards). */}
+          i18n-Katalog — der Key hieß zu PNG-Zeiten „alt", trägt jetzt die sichtbare Marke. Die ist
+          SPRACHABHÄNGIG: „AUTOSTICH" auf Deutsch, „AUTOTRICK" auf Englisch (der deutsche Name trägt
+          „Stich" sichtbar, englisch läse sich dasselbe Wort als Nähbegriff „stitch"). Deshalb steht der
+          Schlüssel NICHT mehr in der SAME_OK-Liste der i18n-Guards — dort stehen nur Texte, die in
+          beiden Sprachen gleich lauten dürfen. */}
       <h1 className="as-wordmark select-none">{t("start.logo.alt")}</h1>
       {/* #kopf: Der Versions-/Build-Stempel ist von HIER (unter der Marke) in den Fuß gewandert — unter die
           „angemeldet als"-Zeile. Das gibt der Wortmarke die Zeile darunter frei → größere Marke am Handy

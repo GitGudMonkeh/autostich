@@ -415,6 +415,11 @@ export default {
   "form.collapse.less": "weniger",
 
   /* ---- Allgemein ---- */
+  /* Browser-Tab-Titel. index.html trägt ihn statisch auf Deutsch (er steht im HTML, lange bevor
+     React die gewählte Sprache kennt); sobald die App läuft, schreibt App.jsx `document.title`
+     aus diesem Schlüssel nach. Der PWA-Name im manifest.webmanifest bleibt einsprachig — ein
+     Manifest kennt keine Sprachumschaltung, es wird beim Installieren einmal gelesen. */
+  "meta.title": "Autostich — Prototyp",
   "common.close": "Schließen",
   // #update: „Neue Version verfügbar"-Leiste (UpdateBanner)
   "update.available": "Neue Version verfügbar",

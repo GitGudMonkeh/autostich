@@ -95,6 +95,14 @@ ab hier ist sie Prüfregel, nicht Diskussionsgrundlage (`test/i18n-guards.test.j
 > 5. Deutsche Seite: Raritätsstufe IV heißt jetzt **„Episch"** statt „Rar" (im Code umgesetzt,
 >    `TIER_META` in `rarity.js`). Die englische Leiter bleibt Common · Uncommon · Rare · **Epic**.
 >
+> **Nachtrag 18.08.2026 — der SPIELTITEL ist jetzt Teil der Tabelle:** `Autostich` → **`Autotrick`**.
+> Er war bis dahin bewusst ausgenommen (`genre-terminologie.md` §2: „Balatro heißt auch Balatro"),
+> die Entscheidung ist umgedreht. Begründung ist dieselbe Beobachtung wie damals, nur anders
+> gewichtet: der deutsche Name trägt „Stich" sichtbar — das Spiel sagt seinen eigenen Mechanismus
+> im Titel. Englisch geht genau das verloren, „Autostich" liest sich dort als Nähbegriff (stitch).
+> Der Titel folgt damit derselben Abbildung wie das Wort in ihm (Stich → trick). **Deutsch bleibt
+> unverändert `Autostich`** — die Marke wechselt nur mit der Sprache, nicht insgesamt.
+>
 > **Woher die Vorschläge kommen:** Die Kernbegriffe sind gegen die Genre-Konvention geprüft
 > (Balatro, Slay the Spire, Hearthstone, Super Auto Pets, TFT, klassische Stichspiele) — die
 > Begründung je Begriff steht in `genre-terminologie.md`. Kurz: `cycle` und `trick` sind die
@@ -107,6 +115,7 @@ ab hier ist sie Prüfregel, nicht Diskussionsgrundlage (`test/i18n-guards.test.j
 
 | DE (kanonisch) | Vorschlag EN | Anmerkung |
 |---|---|---|
+| Autostich (Spieltitel) | **Autotrick** | Marke, aber sprachabhängig — s. Nachtrag 18.08.2026 oben |
 | Stich | **trick** | Kartenspiel-Fachbegriff, nicht „round" |
 | Durchlauf | **cycle** | ein kompletter Deck-Durchlauf = 40 Stiche · **das einzige Wort dafür** (im HUD als „Durchl." gekürzt) |
 | Position | **position** | fester Platz 1–40 in der Ziehreihenfolge — daran hängen Perks/Anker/Gebäude |

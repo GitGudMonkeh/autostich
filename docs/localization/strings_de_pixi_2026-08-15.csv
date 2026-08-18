@@ -1876,6 +1876,7 @@
 "leg.intro.slot","i18n","7. Slot","7th slot","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "leg.reroll","i18n","↻ Neu würfeln","↻ Reroll","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "leg.title","i18n","★ Legendärer Skill","★ Legendary skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"meta.title","i18n","Autostich — Prototyp","Autotrick — Prototype","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "milestone.label","i18n","💠 Meilensteine {n}/{total}","💠 Milestones {n}/{total}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "milestone.label.sp","i18n","💠 Meilensteine {n}/{total} · +{sp} SP","💠 Milestones {n}/{total} · +{sp} TP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "milestone.max","i18n","Maximum · +{sp} SP","Maximum · +{sp} TP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2084,11 +2085,11 @@
 "privacy.installId.copy","i18n","Kopieren","Copy","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.installId.hint","i18n","Nenne sie, wenn du eine Löschung deiner gesendeten Daten möchtest — ohne sie lassen sich deine Zeilen nicht finden. Sie steht nur auf diesem Gerät und sagt nichts darüber, wer du bist.","Quote it if you want the data you sent deleted — without it your rows cannot be found. It exists only on this device and says nothing about who you are.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.installId.label","i18n","Deine Install-Kennung","Your install ID","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"privacy.intro","i18n","Autostich läuft im Browser, ohne Konto und ohne Anmeldung. Zwei Dinge verlassen dein Gerät — beide stehen hier vollständig.","Autostich runs in your browser, with no account and no sign-in. Two things leave your device — both are listed here in full.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"privacy.intro","i18n","Autostich läuft im Browser, ohne Konto und ohne Anmeldung. Zwei Dinge verlassen dein Gerät — beide stehen hier vollständig.","Autotrick runs in your browser, with no account and no sign-in. Two things leave your device — both are listed here in full.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.link","i18n","Datenschutz","Privacy","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.board.body","i18n","Wenn du einen Lauf in die Bestenliste stellst: dein selbst gewählter Nickname, Score, Durchläufe, Stiche, Archetypen, Perks, Skills, der Seed, der Ausbaustand deines Upgrade-Baums (wie viele Knoten freigeschaltet waren) und die Kennzahlen des Laufs (beste Serie, Formationen, Crits, Siege, bester Stich, Score-Anteile). Der Nickname ist für alle Spieler sichtbar — wähle also nichts, worüber man dich findet. Ohne Nickname wird nichts veröffentlicht.","When you put a run on the leaderboard: the nickname you chose, score, cycles, tricks, archetypes, perks, skills, the seed, how far your upgrade tree was built (how many nodes were unlocked) and the run’s metrics (best streak, formations, crits, wins, best trick, score shares). The nickname is visible to every player — so pick something nobody can find you by. Without a nickname nothing is published.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.board.title","i18n","Bestenliste (nur beim Veröffentlichen)","Leaderboard (only when you publish)","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"privacy.sec.contact.body","i18n","Autostich ist ein privates Hobby-Projekt im offenen Playtest. Fragen, Widerspruch oder die Bitte, deine Daten zu löschen, gehen über den Discord des Projekts.","Autostich is a private hobby project in open playtest. Questions, objections or a request to delete your data go through the project's Discord.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"privacy.sec.contact.body","i18n","Autostich ist ein privates Hobby-Projekt im offenen Playtest. Fragen, Widerspruch oder die Bitte, deine Daten zu löschen, gehen über den Discord des Projekts.","Autotrick is a private hobby project in open playtest. Questions, objections or a request to delete your data go through the project's Discord.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.contact.title","i18n","Wer dahintersteht","Who is behind it","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.host.body","i18n","Beides landet in einer Supabase-Datenbank, getrennt in zwei Tabellen — eine volllaufende Telemetrie kann die Bestenliste also nicht beschädigen. Der Zugriff läuft über einen öffentlichen Schlüssel, der ausschließlich Lesen und Anlegen erlaubt.","Both end up in a Supabase database, split across two tables — so telemetry filling up can never damage the leaderboard. Access runs through a public key that only allows reading and inserting.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.host.title","i18n","Wohin es geht","Where it goes","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2096,7 +2097,7 @@
 "privacy.sec.local.title","i18n","Was auf deinem Gerät bleibt","What stays on your device","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.telemetry.body","i18n","Nach jedem Lauf: Score, Durchläufe, Stiche, gewählte Perks, Skills und Gebäude, dein Fortschritt im Upgrade-Baum, gekaufte Kosmetik und der Seed. Dazu grober Gerätekontext: Browserkennung (auf {ua} Zeichen gekürzt), Prozessorkerne, Gerätespeicher, Sprache, Fenstergröße, Pixeldichte und ob das Gerät Touch hat. Plus eine zufällig gewürfelte Install-Kennung, damit mehrere Läufe desselben Geräts zusammengehören. Kein Name, keine E-Mail, keine Anmeldung. Abschalten: Optionen → „Anonyme Spieldaten senden“. Aus heißt wirklich aus — auch was noch in der Warteschlange liegt, wird gelöscht.","After each run: score, cycles, tricks, the perks, skills and buildings you picked, your progress in the upgrade tree, cosmetics you own and the seed. Plus rough device context: browser identification (trimmed to {ua} characters), processor cores, device memory, language, window size, pixel density and whether the device has touch. And a randomly rolled install ID, so several runs from the same device belong together. No name, no email, no sign-in. To turn it off: Options → “Send anonymous gameplay data”. Off really means off — anything still queued is deleted too.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.sec.telemetry.title","i18n","Anonyme Spieldaten (abschaltbar)","Anonymous gameplay data (can be turned off)","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"privacy.title","i18n","Was Autostich sendet","What Autostich sends","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"privacy.title","i18n","Was Autostich sendet","What Autotrick sends","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "privacy.updated","i18n","Stand: 2026-08-16 · Beta-Playtest","As of 2026-08-16 · beta playtest","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "pwa.install","i18n","Installieren","Install","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "pwa.ios","i18n","Über das Teilen-Symbol → „Zum Home-Bildschirm“.","Via the share icon → “Add to Home Screen”.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2282,7 +2283,7 @@
 "start.board.week.val","i18n","{have}/{max}","{have}/{max}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.discord","i18n","Discord öffnen","Open Discord","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.feedback","i18n","Feedback","Feedback","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"start.logo.alt","i18n","AUTOSTICH","AUTOSTICH","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.logo.alt","i18n","AUTOSTICH","AUTOTRICK","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.change","i18n","Name ändern","change name","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.set","i18n","Namen festlegen für den globalen Highscore","Set a name for the global high score","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.signedIn","i18n","Angemeldet als","Signed in as","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
@@ -2396,12 +2397,12 @@
 
 Ein Lauf hat {cycles} Durchläufe. Jeder Durchlauf ist erst eine Entscheidung — ein Skill, ein Perk, deine Aufstellung oder ein Gebäude — und danach {cards} Stiche gegen ein Gegnerdeck. Dein Ziel ist ein möglichst hoher Score; verlieren kannst du nicht.
 
-Dieser geführte Lauf erklärt dir jede Phase einmal, sobald sie zum ersten Mal auftaucht.","Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.
+Dieser geführte Lauf erklärt dir jede Phase einmal, sobald sie zum ersten Mal auftaucht.","Autotrick is an autobattler: your deck plays the tricks by itself, you make the decisions in between.
 
 A run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.
 
 This guided run explains every phase once, the first time it comes up.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"tutorial.intro.title","i18n","Willkommen bei Autostich","Welcome to Autostich","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"tutorial.intro.title","i18n","Willkommen bei Autostich","Welcome to Autotrick","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.legendary.body","i18n","In Durchlauf {cycle} wählst du einen legendären Skill aus deinen aktiven Archetypen. Er belegt einen eigenen Slot und lässt sich später nicht tauschen.","In cycle {cycle} you pick a legendary skill from your active archetypes. It takes a slot of its own and cannot be swapped later.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.legendary.title","i18n","Legendär-Phase","The legendary phase","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "tutorial.outro.body","i18n","Ab hier läuft der Lauf ganz normal weiter und zählt für Statistik und Bestenliste.

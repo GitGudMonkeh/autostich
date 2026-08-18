@@ -653,7 +653,9 @@ button { font-family: inherit; }
    auf den Basis-Clamp-Boden (28 px) zurück — für die Kopfzone deutlich zu klein. Der Versionsstempel ist aus der
    Zeile darunter in den Fuß gewandert (StartScreen), die Marke bekommt den Platz. `.hub-play` grenzt bewusst gegen
    den Run-Kopf ab (der zieht seine 22 px aus `.as-wordmark-sm`). Ab 1400 px gewinnt die Desktop-Regel (88 px, in
-   der Media-Query weiter unten). Deckel 52 px: darüber stößt „AUTOSTICH" (nowrap) an die Mute-/Info-Knöpfe. */
+   der Media-Query weiter unten). Deckel 52 px: darüber stößt „AUTOSTICH" (nowrap) an die Mute-/Info-Knöpfe.
+   Gemessen an der DEUTSCHEN Marke — die ist mit zehn Zeichen die längere; „AUTOTRICK" (englisch, neun Zeichen)
+   bleibt darunter. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
 .hub-play .as-wordmark { --wm-size: clamp(40px, 11.5vw, 52px); margin-top: 3rem; }
 @media (prefers-reduced-motion: reduce) {
   .as-wordmark { animation: none; }

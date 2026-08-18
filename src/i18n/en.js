@@ -412,6 +412,10 @@ export default {
   "form.collapse.less": "less",
 
   /* ---- Common ---- */
+  /* Browser tab title. The brand is "Autotrick" in English — see the German catalogue for the
+     wiring (index.html carries the German title statically, App.jsx overwrites it once the
+     chosen language is known). */
+  "meta.title": "Autotrick — Prototype",
   "common.close": "Close",
   // #update: "new version available" banner (UpdateBanner)
   "update.available": "New version available",
@@ -956,8 +960,8 @@ export default {
   "tutorial.btn.finish": "Continue",
   "tutorial.btn.skipStep": "Skip",
 
-  "tutorial.intro.title": "Welcome to Autostich",
-  "tutorial.intro.body": "Autostich is an autobattler: your deck plays the tricks by itself, you make the decisions in between.\n\nA run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.\n\nThis guided run explains every phase once, the first time it comes up.",
+  "tutorial.intro.title": "Welcome to Autotrick",
+  "tutorial.intro.body": "Autotrick is an autobattler: your deck plays the tricks by itself, you make the decisions in between.\n\nA run has {cycles} cycles. Every cycle is a decision first — a skill, a perk, your order or a building — and then {cards} tricks against an opponent deck. Your goal is the highest score you can reach; you cannot lose.\n\nThis guided run explains every phase once, the first time it comes up.",
 
   "tutorial.play.title": "The trick play",
   "tutorial.play.body": "Both decks turn up their {cards} cards, trick by trick. The higher card wins; on a tie nobody scores.\n\nA won trick pays {win} base points. Factors pile on top of that: your win streak, crits, formations and your buildings — which is why your score climbs so steeply towards the end of a run.\n\nExample: at a streak of {exStreak} your streak factor sits at ×{exStreakMult} — {win} base points turn into {exTotal}. Formations, crits and buildings multiply on top of that.",
@@ -1178,7 +1182,7 @@ export default {
   "feedback.err.offline": "The reporter is not configured in this build — your text is not going anywhere right now.",
 
   /* ---- Start screen ---- */
-  "start.logo.alt": "AUTOSTICH",
+  "start.logo.alt": "AUTOTRICK",
 
   // Emoji siehe de.js — es steht seit 18.08.2026 im JSX, nicht mehr im String.
   "start.progress.onboarding": "Onboarding",
@@ -1333,8 +1337,8 @@ export default {
   /* Privacy notice (#datenschutz). {ua} comes from UA_MAX in game/telemetry.js — the same expression as
      the German side, never a typed-in number (guard: “both languages name the same numbers”). */
   "privacy.eyebrow": "Playtest",
-  "privacy.title": "What Autostich sends",
-  "privacy.intro": "Autostich runs in your browser, with no account and no sign-in. Two things leave your device — both are listed here in full.",
+  "privacy.title": "What Autotrick sends",
+  "privacy.intro": "Autotrick runs in your browser, with no account and no sign-in. Two things leave your device — both are listed here in full.",
 
   "privacy.sec.telemetry.title": "Anonymous gameplay data (can be turned off)",
   "privacy.sec.telemetry.body": "After each run: score, cycles, tricks, the perks, skills and buildings you picked, your progress in the upgrade tree, cosmetics you own and the seed. Plus rough device context: browser identification (trimmed to {ua} characters), processor cores, device memory, language, window size, pixel density and whether the device has touch. And a randomly rolled install ID, so several runs from the same device belong together. No name, no email, no sign-in. To turn it off: Options → “Send anonymous gameplay data”. Off really means off — anything still queued is deleted too.",
@@ -1345,7 +1349,7 @@ export default {
   "privacy.sec.host.title": "Where it goes",
   "privacy.sec.host.body": "Both end up in a Supabase database, split across two tables — so telemetry filling up can never damage the leaderboard. Access runs through a public key that only allows reading and inserting.",
   "privacy.sec.contact.title": "Who is behind it",
-  "privacy.sec.contact.body": "Autostich is a private hobby project in open playtest. Questions, objections or a request to delete your data go through the project's Discord.",
+  "privacy.sec.contact.body": "Autotrick is a private hobby project in open playtest. Questions, objections or a request to delete your data go through the project's Discord.",
 
   "privacy.installId.label": "Your install ID",
   "privacy.installId.copy": "Copy",

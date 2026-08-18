@@ -61,7 +61,6 @@ describe("i18n · Katalog-Parität", () => {
   /* Wörter, die in beiden Sprachen identisch sind (Eigennamen, Kürzel, Marken, reine Symbolzeilen).
      Nur DIESE dürfen unübersetzt bleiben — alles andere ist eine vergessene Übersetzung. */
   const SAME_OK = new Set([
-    "start.logo.alt",        // Wortmarke
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
     "options.float.score.title", // „↳ Score" — Score bleibt Score (Begriffstabelle §3.1)
@@ -306,6 +305,10 @@ describe("i18n · Terminologie", () => {
     { de: /\bEpisch\b/,        ok: /\bepic\b/i,       never: /\blegendary\b/i,        name: "Episch → Epic (nie „legendary“ — das ist eine eigene Achse)" },
     { de: /Deck-Werkstatt/i,   ok: /deck workshop/i,  never: null,                     name: "Deck-Werkstatt → deck workshop" },
     { de: /Stichpunkte?\b/i,   ok: /\bTrick Points?\b|\bTP\b/,  never: /\bSP\b/,        name: "Stichpunkte → Trick Points (TP, nie SP)" },
+    // Der SPIELTITEL ist ab 18.08.2026 ebenfalls eine Vokabel der Tabelle: „Autostich" trägt „Stich"
+    // sichtbar, englisch liest sich dasselbe Wort als Nähbegriff (stitch). Die Marke folgt deshalb
+    // derselben Abbildung wie das Wort darin (Stich → trick).
+    { de: /\bAutostich\b/i,   ok: /\bAutotrick\b/i,  never: /\bAutostich\b/i,  name: "Autostich → Autotrick (Spieltitel)" },
   ];
 
   it("kanonische Begriffe werden durchgängig verwendet", () => {
@@ -318,6 +321,20 @@ describe("i18n · Terminologie", () => {
       }
     }
     expect(bad, `Begriffsbruch gegen das Übersetzerpaket §3:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  /* Gegenprobe zur Marken-Zeile oben: die Tabelle prüft nur Schlüssel, in denen SCHON das deutsche
+     Wort steht. Ein neuer englischer Text darf den deutschen Titel aber auch dann nicht tragen, wenn
+     die deutsche Seite ihn gar nicht nennt (und umgekehrt) — deshalb hier über den ganzen Katalog. */
+  it("die Marke heißt auf Deutsch Autostich und auf Englisch Autotrick — nie über Kreuz", () => {
+    const enBad = KEYS_EN.filter((k) => /autostich/i.test(en[k]));
+    expect(enBad, `Deutscher Spieltitel im englischen Katalog:\n  ${enBad.join("\n  ")}`).toEqual([]);
+    const deBad = KEYS_DE.filter((k) => /autotrick/i.test(de[k]));
+    expect(deBad, `Englischer Spieltitel im deutschen Katalog:\n  ${deBad.join("\n  ")}`).toEqual([]);
+    // Die Wortmarke auf dem Startbildschirm ist der sichtbarste Träger — sie steht hier namentlich,
+    // damit ein Umbau des Hubs sie nicht still auf einen Schlüssel ohne Marke umhängt.
+    expect(de["start.logo.alt"]).toBe("AUTOSTICH");
+    expect(en["start.logo.alt"]).toBe("AUTOTRICK");
   });
 
   it("Stichpunkte heißen im Englischen TP (Trick Points), nicht SP", () => {

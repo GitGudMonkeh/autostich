@@ -356,9 +356,16 @@ function AutostichGame() {
   useEffect(() => { haptics.setEnabled(options.haptics !== false); }, [options.haptics]);
   // #sprache: Sprachwechsel in den i18n-Kern spiegeln und `<html lang>` mitziehen (Screenreader, Browser-Übersetzung,
   // Silbentrennung). Der Kern benachrichtigt alle Abonnenten (useLocale) → die UI rendert in der neuen Sprache neu.
+  // Der Tab-Titel zieht mit: index.html trägt den deutschen Titel statisch (er steht im HTML, bevor
+  // React lädt und die gewählte Sprache kennt) — hier wird er in der Spielsprache nachgesetzt. Die
+  // Marke heißt im Englischen „Autotrick": „Autostich" trägt „Stich" sichtbar, englisch liest sich
+  // dasselbe Wort als Nähbegriff (stitch). Nicht mitgezogen wird der PWA-Name im
+  // manifest.webmanifest — ein Manifest kennt keine Sprachumschaltung, es wird beim Installieren
+  // einmal gelesen.
   useEffect(() => {
     const loc = setLocale(options.lang || undefined);
     try { document.documentElement.lang = loc; } catch (e) {}
+    try { document.title = t("meta.title"); } catch (e) {}
   }, [options.lang]);
   // Kauf-Sound (#110): am Wachstum des Kauf-Logs (#127) → exakt 1× je ABGESCHLOSSENEM Kauf (immediate & Ziel-Items),
   // nie premature (Ziel-Flow öffnen) und nie bei no-op. Deshalb Cashout-Buttons via data-sfx="none" stummgeschaltet.

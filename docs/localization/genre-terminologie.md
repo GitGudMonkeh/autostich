@@ -53,9 +53,17 @@ Kein Genre-, sondern ein Fachbegriff: In Whist, Bridge, Skat und Oh Hell heißt 
 game" ist die englische Gattungsbezeichnung. Es gibt keine Alternative und keinen Grund für eine.
 
 Nebenprodukt: **„Autostich" ist im Englischen nicht selbsterklärend.** Der deutsche Name trägt
-„Stich" sichtbar; „Autostich" liest sich englisch wie ein Nähbegriff (stitch). Kein Grund zur
-Umbenennung — Balatro heißt auch Balatro —, aber der englische Untertitel sollte das Genre klar
-nennen: *„Roguelite autobattler trick-taking game"* (steht so im Katalog, `start.tagline`).
+„Stich" sichtbar; „Autostich" liest sich englisch wie ein Nähbegriff (stitch). Der englische
+Untertitel sollte das Genre deshalb klar nennen: *„Roguelite autobattler trick-taking game"*.
+
+> **Überholt am 18.08.2026.** An dieser Stelle stand „Kein Grund zur Umbenennung — Balatro heißt
+> auch Balatro". Entschieden ist das Gegenteil: der englische Titel heißt **`Autotrick`**, der
+> deutsche bleibt **`Autostich`**. Der Vergleich mit Balatro trug nicht — „Balatro" ist ein reines
+> Kunstwort ohne Bedeutung in irgendeiner Zielsprache, „Autostich" dagegen ist ein SPRECHENDER Name,
+> und ein sprechender Name, den nur eine Sprachhälfte lesen kann, ist in der anderen kein Kunstwort,
+> sondern ein falsches Wort. Der Titel folgt damit derselben Abbildung wie das Wort in ihm
+> (Stich → trick, §2 oben). Umsetzung: `src/i18n/en.js` (Wortmarke, Tutorial, Datenschutz-Hinweis)
+> und `meta.title` für den Tab-Titel; Wächter in `test/i18n-guards.test.js`.
 
 ## 3. Rarität → **Common · Uncommon · Rare · Epic** ✅ bestätigt, mit neuem Argument
 
