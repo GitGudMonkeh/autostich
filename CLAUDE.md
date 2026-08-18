@@ -360,27 +360,20 @@ Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
   es offen und wäre ein eigener, sauber abzusichernder Umbau.
 - **Blur war es NICHT** (naheliegender Verdacht, geprüft): die `@media (pointer: coarse)`-Regel in index.css nutzt
   `!important` und schlägt damit das inline gesetzte `backdropFilter`. Auf Mobile ist der Overlay-Blur aus.
-
-### Level-up-Auswahl (Perk/Skill): gemessen — dieselbe Familie wie der Architekt-Mount
-Aus drei Geräte-Reports fiel derselbe Befund: ALLE Ruckler und ALLE Long Tasks eines Laufs liegen in `phase:levelup`,
-zusammen 271–417 ms in einem 0,2-s-Fenster, schlimmster Frame 200–233 ms. Das Spielen selbst war in denselben
-Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
-- **Es ist kein Skript-Hotspot.** Im Produktionsbuild profiliert (dev-Build ist wertlos: `validateProperty`/
-  `warnInvalidARIAProps`/`jsxDEV` dominieren dort und existieren in Prod nicht) hat das ganze 11-s-Fenster nur
-  223 ms JS, größter Posten die GC mit 40 ms. Keine teure Funktion.
-- **Es ist der Mount selbst.** In 100-ms-Scheiben gemessen: die zwei Scheiben um das Erscheinen kosten 16 + 30 ms,
-  davon **18 ms in EINEM Layout-Durchgang**; davor und danach 1–4 ms je Scheibe. Gesamt ~46 ms im Messstand —
-  auf dem Handy passt das mit Faktor ~6 (ARM gegen Desktop-x86) genau auf die gemessenen 271–417 ms.
-- Das Overlay hat nur **107 DOM-Knoten** (Architekt: 421), die Seite 420. Es ist also nicht die Größe des Overlays,
-  sondern das erzwungene Layout der ganzen Seite beim Einfügen.
-- **Unterschied zum Architekten, und der einzige Grund, es überhaupt weiter zu erwägen:** der Architekt wird 3–4×
-  je Lauf besucht, die Level-up-Auswahl bis zu **50×**. In Summe also ~10 s blockierter Hauptthread pro Lauf statt
-  ~0,3 s. Der EINE Hebel mit Belegen wäre, den Bildschirm zwischen den Zyklen gemountet zu halten (der Architekt-
-  Messung nach kostet ein WIEDERHOLTES Layout desselben Screens nur 5–14 ms statt 55). Preis: dauerhaft gehaltener
-  DOM + State, Risiko bei Fokus/Animation/Angebotswechsel. Beim Architekten war das Verhältnis schlecht — hier ist
-  es offen und wäre ein eigener, sauber abzusichernder Umbau.
-- **Blur war es NICHT** (naheliegender Verdacht, geprüft): die `@media (pointer: coarse)`-Regel in index.css nutzt
-  `!important` und schlägt damit das inline gesetzte `backdropFilter`. Auf Mobile ist der Overlay-Blur aus.
+- **`contain: layout` am Overlay bringt NICHTS — gemessen, bitte nicht nochmal probieren (18.08.2026).** Die Idee
+  war, die Layout-Invalidierung am Overlay abzuschneiden, damit der Mount nicht die Seite darunter mit-layoutet.
+  Messstand: der ECHTE Overlay-Knoten wird als Klon in die laufende Seite eingehängt, Layout synchron erzwungen
+  (`offsetHeight`), wieder ausgehängt; A/B ist ausschließlich `contain`, verschränkt gemessen (A,B,A,B), 180 Zyklen
+  je Variante, Produktionsbuild in Chromium. **Handy-Viewport: 1,40 ms gegen 1,40 ms (−0,0 %) · Desktop-Viewport:
+  1,30 gegen 1,40 ms.** Der Grund ist strukturell und hätte vorher auffallen können: ein `position: fixed`-Element
+  ist vom Fluss seiner Vorfahren ohnehin abgekoppelt — die Aufwärts-Invalidierung, die Containment blockieren würde,
+  gibt es hier gar nicht. `contain: layout` liefert nur, was `position: fixed` schon liefert.
+- **Nebenbefund aus derselben Messung, und der ist der interessantere:** das Einfügen des 95-Knoten-Teilbaums samt
+  erzwungenem Layout kostet **1,4 ms** auf Desktop-x86 — bei ~6× ARM-Faktor also ~8 ms am Gerät. Die 271–417 ms
+  können damit NICHT überwiegend „das Layout des eingefügten Overlays" sein. Wo sie wirklich sitzen (React-Render,
+  Stil-Neuberechnung, Paint/Raster, oder die Effekt-Umschaltung, die am selben `boardVisible`-Wechsel hängt), ist
+  offen — und die nächste Messung, bevor jemand den persistenten Mount baut. Der wäre sonst ein großer Umbau auf
+  eine unbelegte Ursache.
 
 ### Architekt-Mount: gemessen, NICHT lohnend (bitte nicht nochmal aufrollen)
 CPU-Profil des `ArchitectScreen`-Mounts mit einem ECHTEN Zyklus-47-Zustand (über `sim/run.js` + Policy-Spion
@@ -626,6 +619,26 @@ Jetzt zwei Schriften mit je einer Aufgabe: **Geist trägt Sprache, Geist Mono tr
   Architekt, Werkstatt, Bestenliste, Statistiken, Upgrade-Baum, GameOver — die Klassen dort sind geändert, der
   Blick darauf steht aus. Ebenso offen: Geist Mono setzt die **Null geschlitzt**; im Score-HUD fällt das auf,
   abschaltbar wäre es zentral über `font-feature-settings` an `.ty-num`.
+
+### #perf-ansage — Groß-Ansage auf `lite`: nur noch die Basis-Glyphe (18.08.2026)
+Die nicht-epischen Ansagen (Stark/Brutal/Irre) bestehen aus ZWEI übereinanderliegenden Wortschichten: einer soliden
+Basis-Glyphe (near-white, 3 `drop-shadow`-Lagen) und darüber dem Chrome-Verlauf (`background-clip: text`, 3–4 Lagen).
+Auf `lite` fällt die Chrome-Schicht jetzt weg — **7 Blur-Lagen auf zwei Schichten → 3 Lagen auf einer.**
+- **Warum ausgerechnet die Ansage** und nicht die Kartenzahlen: sie ist das einzige gefilterte Element des Bretts, das
+  über seine ganze Lebensdauer (`BIG_ANNOUNCE_MS` = 1,9 s) SKALIERT animiert wird (`as-bigscore`, Überschwinger 1,2).
+  Filter + Skalierung = Neuraster je Frame. Kartenzahlen rastern einmal je Aufdecken, Floats gar nicht (die steigen
+  über transform/opacity, das komponiert der Browser ohne Neuraster).
+- **Die Kartenzahlen sind bewusst NICHT angefasst.** Am Handy laufen sie längst auf einer einzigen Blur-Lage à 1,5 px:
+  `pointer: coarse` kürzt die Radien (index.css), und der Mobil-Default `reducedFx:"mobile"` setzt `data-reduced-fx="1"`,
+  was die zweite Lage ganz wirft. Der Rest wäre ~5 400 px², neu gerastert je Flip — gegen 144 000 px² × 30/s beim
+  Feld-Shader. Dort ist Wärme nicht das Argument, sondern der Look.
+- **Basis bleibt, Chrome geht** — nicht umgekehrt: die Basis ist die lesbare Schicht (#354 hat sie genau deshalb
+  eingeführt). Ohne Chrome fehlt der Metallic-Verlauf, ohne Basis die Präsenz.
+- **Falle**: die Chrome-Schicht lag IM FLUSS und gab dem Wrapper seine Größe, die Basis absolut darüber. Fällt Chrome
+  weg, muss die Basis in den Fluss — sonst ist der Wrapper 0×0 und die Zentrierung sitzt auf nichts.
+- `lite` = alles außer „Effekte: aus" (Handy-Default UND Desktop-„ausgewogen") — derselbe Knopf wie `gBig/gMid` zwei
+  Zeilen darüber. Der epische Zweig (`GottChromeWord`, SVG) ist unberührt: eigene Komponente, feuert selten.
+- **Gerechnet, nicht am Gerät gemessen.**
 
 ### Tuning-Größen (bewusst kommentiert, bei Bedarf nachdrehen)
 - **Groß-Ansagen** (Battlefield `BIG_SCORE_TIERS`): je Stufe `rank` + `cool` (Stark 2800/Brutal 2200/Irre 1600/

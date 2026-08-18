@@ -1690,12 +1690,36 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                  Auf dieser Größe liest sich 600 nicht ruhiger, sondern dünn. Schriftfamilie erbt es (Geist). */
               const ws = { margin: 0, fontWeight: 800, whiteSpace: "nowrap", lineHeight: 1, textTransform: "uppercase", // Q2/Loc: Caps zentral über CSS
                 fontSize: `clamp(40px, 10vw, ${b.tier.size}px)`, letterSpacing: `${b.tier.rank}px` }; // höhere Stufe = luftiger
+              /* #perf-ansage: Auf `lite` fällt die CHROME-Schicht weg — es bleibt die solide Basis-Glyphe.
+
+                 Warum ausgerechnet hier: die Groß-Ansage ist das EINZIGE gefilterte Element des Bretts, das über
+                 seine ganze Lebensdauer (BIG_ANNOUNCE_MS = 1,9 s) SKALIERT animiert wird (`as-bigscore`, Überschwinger
+                 auf 1,2). Ein Filter auf einem skalierenden Element muss je Frame neu gerastert werden — bei den
+                 Kartenzahlen und Floats passiert das nur einmal je Aufdecken bzw. gar nicht (die steigen über
+                 transform/opacity, das komponiert der Browser ohne Neuraster). Zwei Wortschichten à 40–90 px mit
+                 zusammen SIEBEN drop-shadow-Lagen werden damit zu drei Lagen auf EINER Schicht.
+
+                 Warum die Basis bleibt und nicht das Chrome: die Basis ist die lesbare Schicht (#354 hat sie genau
+                 dafür eingeführt — das reine Chrome mit transparenter Füllung war neben dem Krit-Trubel zu blass).
+                 Ohne Chrome verliert das Wort den Metallic-Verlauf, nicht seine Präsenz; ohne Basis wäre es umgekehrt.
+
+                 `lite` ist bewusst derselbe Knopf wie bei gBig/gMid zwei Zeilen höher (= alles außer „Effekte: aus",
+                 also Handy-Default UND Desktop-„ausgewogen"). Genau das bedeutet die Einstellung: teure Schichten weg.
+                 NICHT angefasst ist der epische Zweig (GottChromeWord, SVG) — eigene Komponente, eigener Glow, und
+                 sie feuert selten statt bei jedem stärkeren Sieg. GERECHNET, nicht am Gerät gemessen.
+
+                 Falle beim Umschalten: die Chrome-Schicht war die IM FLUSS liegende (position: relative) und hat dem
+                 Wrapper seine Größe gegeben, die Basis lag absolut darüber. Fällt das Chrome weg, muss die Basis in den
+                 Fluss — sonst ist der Wrapper 0×0 und die Zentrierung (translate −50 %) sitzt auf nichts. */
+              const chromeOn = !lite;
               return (<>
-                <span style={{ ...ws, position: "absolute", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
+                <span style={{ ...ws, position: chromeOn ? "absolute" : "relative", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
                   filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{tr(b.tier.key)}</span>
-                <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
-                  WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
-                  filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
+                {chromeOn && (
+                  <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
+                    WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
+                    filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
+                )}
               </>);
             })()}
           </div>
