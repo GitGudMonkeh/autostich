@@ -1025,3 +1025,17 @@ bewusste Entscheidung; geändert hat sich der TEXT, der bisher weniger nannte, a
   `height: auto`, der Scroller hatte also nie eine definierte Höhe und wuchs einfach weiter.
   Gemessen 1536×791: Knopf sichtbar innerhalb des Panels, Bilderliste scrollt 104 px. Auf 1723×1030 und
   1920×1080 unverändert (Panel endet am Inhalt, kein Scrollen).
+
+### #skilltext — Skill-Beschreibungen im Baum: Spaltenfluss statt Raster (2026-08-18)
+Die Beschreibungen waren auf drei Zeilen geklemmt (`-webkit-line-clamp: 3`), weil im Raster die höchste
+Zelle die Höhe der ganzen Reihe bestimmt. Gemessen kostete das **5–6 von 21** gekürzten Texten auf
+1920×1080 und **14 von 21** auf 1536×791 — mitten im Satz, ohne Hinweis, dass noch etwas kommt.
+- **Der Denkfehler war die Annahme, die Klemme kaufe Übersicht.** Die Skill-Spalte SCROLLT in jeder Größe
+  ohnehin (1,1× auf 1920, 1,7× auf 1536). Sie sparte also kein Scrollen, sie versteckte nur Text.
+- Jetzt `columns: 320px` statt `grid`: jede Karte hat ihre eigene Höhe, es gibt keine Reihe, die reißen
+  könnte. **Spaltenzahl kommt aus der Breite**, nicht aus einer Zahl — drei Spalten auf 1920, zwei auf
+  1536, Textbreite überall ~340–425 px statt auf 217 px zu schrumpfen. Kosten: Inhalt 816 → 993 px
+  (2,1× statt 1,7× Scrollen auf 1536), dafür **0 gekürzte Texte** in allen vier Fraktionen × drei Größen.
+- Bewusst bezahlt: die Lesereihenfolge läuft spaltenweise (runter, dann rechts) statt zeilenweise.
+- **Wer auf `grid` zurückstellt, muss die Klemme mitbringen** — sonst reißt ein langer Skill die Reihe auf.
+  Wächter: `test/desktop-perf.test.js`.

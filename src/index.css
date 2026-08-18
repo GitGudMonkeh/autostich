@@ -1907,7 +1907,22 @@ button { font-family: inherit; }
   }
   .up-skills-h span { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600; color: #71717c; }
   .up-skills-h.is-leg { color: #d4a63a; margin-top: 14px; }
-  .up-skillgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  /* #skilltext (18.08.2026) — SPALTENFLUSS STATT RASTER.
+     Im Raster bestimmt die höchste Zelle die Höhe der ganzen Reihe; deshalb waren die Beschreibungen auf
+     drei Zeilen geklemmt, damit ein langer Skill die Reihe nicht auseinanderreißt. Der Preis war zu hoch:
+     gemessen 5–6 von 21 gekürzten Texten auf 1920×1080 und **14 von 21** auf 1536×791 (Laptop mit
+     Skalierung) — mitten im Satz, ohne Hinweis, dass da noch etwas kommt.
+     Der Denkfehler war die Annahme, die Klemme kaufe Übersicht: Die Liste SCROLLT in jeder Größe ohnehin
+     (1,1× auf 1920, 1,7× auf 1536). Sie sparte also kein Scrollen, sie versteckte nur Text.
+     Im Spaltenfluss hat jede Karte ihre eigene Höhe — es gibt keine Reihe, die reißen könnte. Kosten:
+     der Inhalt wächst von 816 auf 993 px (2,1× statt 1,7× Scrollen auf 1536), dafür 0 gekürzte Texte.
+     `columns: 320px` statt einer festen Zahl: der Browser legt so viele Spalten an, wie in ~365 px Breite
+     passen — drei auf 1920, zwei auf 1536. Eine Zahl weniger zum Nachpflegen, und die Textbreite bleibt
+     überall lesbar statt auf 217 px zu schrumpfen.
+     Preis, der bewusst bezahlt ist: die Lesereihenfolge läuft spaltenweise (runter, dann rechts) statt
+     zeilenweise. Für einen Katalog ist das die übliche Ordnung. */
+  .up-skillgrid { display: block; columns: 320px; column-gap: 8px; }
+  .up-skillgrid > * { break-inside: avoid; margin-bottom: 8px; }
   .up-skill {
     display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px;
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 9%, #12121a) 0%, #12121a 44%);
@@ -1915,13 +1930,9 @@ button { font-family: inherit; }
     border-left: 3px solid color-mix(in srgb, var(--c) 65%, transparent);
   }
   .up-skill-n { font-size: 13.5px; font-weight: 700; line-height: 1.2; }
-  /* Auf drei Zeilen geklemmt: Der Median liegt bei 177 Zeichen, die längste Beschreibung hat 628 —
-     und im Raster bestimmt die höchste Zelle die Höhe der ganzen Reihe. Ungeklemmt reißt ein
-     einzelner Skill die Zeile auseinander. Der volle Text steht weiter in der Detailansicht. */
-  .up-skill-d {
-    font-size: 11.5px; color: #8a8a95; line-height: 1.4;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  }
+  /* Ungeklemmt — Begründung am `.up-skillgrid` oben. (Die alte Fassung klemmte auf drei Zeilen, weil im
+     Raster die höchste Zelle die Reihenhöhe bestimmt; im Spaltenfluss gibt es keine Reihe mehr.) */
+  .up-skill-d { font-size: 11.5px; color: #8a8a95; line-height: 1.4; }
 
   .up-chall { border-radius: 12px; padding: 13px 15px; background: #12121a; border: 1px solid rgba(150, 150, 170, .1); }
   .up-chall-h { font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }

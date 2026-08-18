@@ -116,6 +116,18 @@ describe("#rahmen — die Karte traegt auf dem Desktop keinen Rahmen mehr", () =
   });
 });
 
+describe("#skilltext — die Skill-Beschreibungen stehen ganz da", () => {
+  it("Spaltenfluss statt Raster, keine Zeilen-Klemme", () => {
+    /* Die Klemme auf drei Zeilen kuerzte 5-6 von 21 Texten auf 1920x1080 und 14 von 21 auf 1536x791,
+       mitten im Satz. Sie war da, weil im RASTER die hoechste Zelle die Reihenhoehe bestimmt — im
+       Spaltenfluss gibt es keine Reihe mehr, also auch keinen Grund zu klemmen. Wer auf `grid`
+       zurueckstellt, MUSS die Klemme mitbringen, sonst reisst ein langer Skill die Reihe auf. */
+    expect(css).toMatch(/\.up-skillgrid \{[^}]*columns:\s*320px/);
+    expect(css).toMatch(/\.up-skillgrid > \* \{[^}]*break-inside:\s*avoid/);
+    expect(css).not.toMatch(/\.up-skill-d \{[^}]*-webkit-line-clamp/);
+  });
+});
+
 describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
   it("Panel klemmt, Knotenspalten scrollen, die Rasterzeile waechst nicht mit dem Bild", () => {
     expect(css).toMatch(/\.up-page \{[^}]*overflow:\s*hidden/);
