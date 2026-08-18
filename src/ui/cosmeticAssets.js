@@ -167,6 +167,10 @@ import hanamiFront      from "../assets/cards/decks_player/deck_hanami/front.web
 import hanamiBack       from "../assets/cards/decks_player/deck_hanami/back.webp";
 import nimbusFront      from "../assets/cards/decks_player/deck_nimbus/front.webp";
 import nimbusBack       from "../assets/cards/decks_player/deck_nimbus/back.webp";
+import solfataraFront   from "../assets/cards/decks_player/deck_solfatara/front.webp";
+import solfataraBack    from "../assets/cards/decks_player/deck_solfatara/back.webp";
+import origamiFront     from "../assets/cards/decks_player/deck_origami/front.webp";
+import origamiBack      from "../assets/cards/decks_player/deck_origami/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -215,6 +219,10 @@ import bfHanamiDesktop      from "../assets/battlefields/bf_hanami/desktop.jpg";
 import bfHanamiMobile       from "../assets/battlefields/bf_hanami/mobile.jpg";
 import bfNimbusDesktop      from "../assets/battlefields/bf_nimbus/desktop.jpg";
 import bfNimbusMobile       from "../assets/battlefields/bf_nimbus/mobile.jpg";
+import bfSolfataraDesktop   from "../assets/battlefields/bf_solfatara/desktop.jpg";
+import bfSolfataraMobile    from "../assets/battlefields/bf_solfatara/mobile.jpg";
+import bfOrigamiDesktop     from "../assets/battlefields/bf_origami/desktop.jpg";
+import bfOrigamiMobile      from "../assets/battlefields/bf_origami/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -272,6 +280,8 @@ export const DECK_ASSETS = {
   deck_paradox:     { front: paradoxFront,     back: paradoxBack },
   deck_hanami:      { front: hanamiFront,      back: hanamiBack },
   deck_nimbus:      { front: nimbusFront,      back: nimbusBack },
+  deck_solfatara:   { front: solfataraFront,   back: solfataraBack },
+  deck_origami:     { front: origamiFront,     back: origamiBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -331,6 +341,8 @@ export const BATTLEFIELD_ASSETS = {
   bf_paradox:     { desktop: bfParadoxDesktop,     mobile: bfParadoxMobile },
   bf_hanami:      { desktop: bfHanamiDesktop,      mobile: bfHanamiMobile },
   bf_nimbus:      { desktop: bfNimbusDesktop,      mobile: bfNimbusMobile },
+  bf_solfatara:   { desktop: bfSolfataraDesktop,   mobile: bfSolfataraMobile },
+  bf_origami:     { desktop: bfOrigamiDesktop,     mobile: bfOrigamiMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
@@ -346,7 +358,8 @@ export const battlefieldAssets = (id) => BATTLEFIELD_ASSETS[id] || BATTLEFIELD_A
        sie zieht dunkle Bilder hoch und helle herunter.
      · LESBARKEIT ist nirgends das Thema: der schlechteste Kacheltext-Kontrast über alle 40 Decks und
        alle Pixel liegt bei 10,6:1 (WCAG AAA verlangt 7:1). Diese Liste ist eine OPTIK-Entscheidung.
-     · 32 der 40 Decks liegen zwischen 15 und 24. Genau ZWEI fallen sichtbar heraus.
+     · 32 der 40 Decks liegen zwischen 15 und 24. Genau ZWEI fielen damals sichtbar heraus (die Liste
+       unten ist seither auf VIER gewachsen — jeder Zuwachs mit eigener Begründung, s. dort).
 
    Deshalb ein Deckel und keine Normalisierung: hier steht nur, was NACH OBEN begrenzt wird. Dunkle Decks
    bleiben dunkel. Alle Decks auf dieselbe Helligkeit zu ziehen nähme ihnen ihren Charakter — Ascension
@@ -355,15 +368,28 @@ export const battlefieldAssets = (id) => BATTLEFIELD_ASSETS[id] || BATTLEFIELD_A
 
    Der Faktor skaliert die Alpha-Stützstellen des Schleiers (`--vk` in `.as-hub-bg-veil`, index.css);
    die Werte hier bringen ihr Deck rechnerisch auf die Ziel-Helligkeit 24. Ein Eintrag ist eine AUSNAHME —
-   wer hier etwas einträgt, sollte die Messung dazu haben. Nicht eingetragen = Faktor 1. */
+   wer hier etwas einträgt, sollte die Messung dazu haben. Nicht eingetragen = Faktor 1.
+
+   NACHGEMESSEN am 18.08.2026 über 49 Spielfelder (Median 20,8; die Prozente in der Liste unten sind darauf
+   bezogen und darum minimal anders als in den Erstmessungen). Drei Felder sind aus zwei parallelen Sätzen
+   dazugekommen — alle drei nach dem Blick auf den echten Handy-Ausschnitt, nicht allein nach der Zahl:
+     · Origami ist mit 33,0 das zweithellste Feld überhaupt und der einzige fast weiße Hintergrund im
+       Register — ungedämpft blendet er wie Ascension, gedämpft steht er in einer Reihe mit dem Rest.
+     · Solfatara (27,3) und Nimbus (27,1) liegen nur ~30 % über dem Median und wären nach der reinen Zahl
+       Grenzfälle — die Liste hatte die sechs Felder bei 24,1–25,9 (0–8 % darüber) bewusst DRAUSSEN gelassen,
+       weil man dort Rauschen korrigiert. Beide sind trotzdem drin, und zwar wegen der LAGE der Helligkeit,
+       nicht wegen ihrer Höhe: bei Solfatara läuft das Schwefelband waagerecht durch die MITTE des Ausschnitts
+       — also genau durch die Kachelzone — und es ist goldgelb, damit exakt der Fall, den #deck-mobil als
+       offene Schwachstelle benannt hatte („goldener Guthaben-Stripe auf goldgetönter Kachel auf goldenem
+       Bild"); bei Nimbus steht die Quallenglocke als große, gleichmäßig helle Fläche an derselben Stelle.
+       Hanami braucht dagegen keinen Eintrag (22,5 — die Nacht darin ist wirklich dunkel, es leuchten nur
+       Blüten und Lampions). Merksatz: nicht die Höhe der Zahl entscheidet, sondern ob das Helle dort liegt,
+       wo die Kacheln stehen. */
 const BATTLEFIELD_VEIL = {
-  bf_gottgleich: 1.54, // gemessen 35,1 — Median +76 %, mit Abstand der hellste (goldener Lichtdom)
-  bf_pflanze:    1.38, // gemessen 29,0 — Median +46 %, zweiter und letzter sichtbarer Ausreißer
-  /* #deck-nacht: bf_nimbus liegt mit 27,1 zwischen den beiden Gruppen der Messung — über den sechs Feldern bei
-     24,1–25,9 (0–8 % über dem Deckel, bewusst ohne Eintrag: das ist Rauschen) und unter bf_pflanze. Mit 13 % über
-     dem Deckel ist es kein Rauschen mehr: die Quallenglocke ist eine große, gleichmäßig helle Fläche genau dort,
-     wo die Kacheln stehen. Deshalb ein Eintrag. bf_hanami braucht keinen (22,5 — die Nacht darin ist wirklich
-     dunkel, es leuchten nur Blüten und Lampions). */
-  bf_nimbus:     1.28, // gemessen 27,1 — Median +13 %
+  bf_gottgleich: 1.54, // gemessen 35,1 — Median +69 %, mit Abstand der hellste (goldener Lichtdom)
+  bf_origami:    1.57, // gemessen 33,0 — Median +59 %, zweithellster; einziger fast weißer Hintergrund
+  bf_pflanze:    1.38, // gemessen 29,0 — Median +39 %
+  bf_solfatara:  1.37, // gemessen 27,3 — Median +31 %, s. Begründung oben (Lage des hellen Bandes)
+  bf_nimbus:     1.28, // gemessen 27,1 — Median +30 %, s. Begründung oben (Fläche der Quallenglocke)
 };
 export const battlefieldVeil = (id) => BATTLEFIELD_VEIL[id] || 1;

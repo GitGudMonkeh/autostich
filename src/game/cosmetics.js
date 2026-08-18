@@ -99,6 +99,11 @@ export const DECK_DEFS = {
   // #deck-nacht zwei DP-Kauf-Packs: Hanami (30 DP) · Nimbus (10 DP).
   deck_hanami: { id: "deck_hanami", name: "Hanami", unlock: { kind: "buy", ownKey: "pack:hanami" } },
   deck_nimbus: { id: "deck_nimbus", name: "Nimbus", unlock: { kind: "buy", ownKey: "pack:nimbus" } },
+  /* #deck-papier zwei DP-Kauf-Packs: Solfatara (20 DP) · Origami (40 DP). „Solfatara" ist der geologische Name
+     für ein Schwefelfeld mit Fumarolen und heißen Becken (Solfatara di Pozzuoli) — dieselbe Sorte Name wie
+     „Salar" (Salzpfanne) und in beiden Sprachen identisch geschrieben. Das Motiv IST eine Solfatara. */
+  deck_solfatara:   { id: "deck_solfatara",   name: "Solfatara",   unlock: { kind: "buy", ownKey: "pack:solfatara" } },
+  deck_origami:     { id: "deck_origami",     name: "Origami",     unlock: { kind: "buy", ownKey: "pack:origami" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -170,6 +175,9 @@ export const BATTLEFIELD_DEFS = {
   // #deck-nacht Battlefields (gleicher Besitz-Schlüssel wie das Deck):
   bf_hanami: { id: "bf_hanami", name: bfName("deck_hanami"), unlock: { kind: "buy", ownKey: "pack:hanami" } },
   bf_nimbus: { id: "bf_nimbus", name: bfName("deck_nimbus"), unlock: { kind: "buy", ownKey: "pack:nimbus" } },
+  // #deck-papier Battlefields (gleicher Besitz-Schlüssel wie das Deck):
+  bf_solfatara:   { id: "bf_solfatara",   name: bfName("deck_solfatara"),   unlock: { kind: "buy", ownKey: "pack:solfatara" } },
+  bf_origami:     { id: "bf_origami",     name: bfName("deck_origami"),     unlock: { kind: "buy", ownKey: "pack:origami" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

@@ -78,6 +78,11 @@ export default {
      both languages (the rain cloud and the halo), which is exactly the picture: a glowing bell above the city. */
   "cosmetic.deck_hanami.name": "Hanami",
   "cosmetic.deck_nimbus.name": "Nimbus",
+  /* #deck-papier — beide Namen sind Eigennamen und bleiben in beiden Sprachen gleich. „Solfatara" ist der
+     geologische Fachbegriff für ein Schwefelfeld mit Fumarolen (nach der Solfatara di Pozzuoli) und wird
+     im Englischen genauso geschrieben — dieselbe Sorte Name wie „Salar". „Origami" (折り紙) ebenso. */
+  "cosmetic.deck_solfatara.name": "Solfatara",
+  "cosmetic.deck_origami.name": "Origami",
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

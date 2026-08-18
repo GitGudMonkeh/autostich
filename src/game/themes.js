@@ -342,6 +342,27 @@ export const THEME_DEFS = {
     deckId: "deck_hanami", bfId: "bf_hanami", els: ["deck", "bf"] },
   nimbus: { id: "nimbus", name: packName("deck_nimbus"), emblem: "🪼", kind: "buy", price: 10, a1: "#9558e0", a2: "#ff77b0",
     deckId: "deck_nimbus", bfId: "bf_nimbus", els: ["deck", "bf"] },
+  /* ---- #deck-papier zwei DP-Kauf-Packs ----
+     SOLFATARA stand bei der Wahl in einer echten FARBKOLLISION, und die ist beim Messen aufgefallen, nicht beim
+     Anschauen: das Motiv (Schwefelkrusten + türkiser Dampf) ergibt gemessen h≈45 + h≈175 — und genau dieses Paar
+     trug `paradox` damals (#e0b83c / #16b8a4). Als Verlauf nebeneinander gerendert waren die beiden nicht
+     auseinanderzuhalten. Aufgelöst wurde das über die HELLIGKEIT statt über den Farbton, weil der Farbton dem Bild
+     gehört: Solfatara nimmt das Gelb bei voller Sättigung — s=1,00, der schärfste Gelbton im ganzen Register
+     (gottgleich 0,77 · geometrie ebenfalls 1,00, aber als blasses Creme auf L=0,77) — und den Dampf als BLASSE
+     Minze (L=0,72). Der Verlauf läuft damit ins Helle.
+     NACHTRAG: Paradox ist inzwischen auf die Scarab-Palette gezogen (a1 Türkis, a2 Gold) und die Kollision damit
+     von der anderen Seite ohnehin aufgelöst — die zwei Verläufe laufen jetzt in entgegengesetzte Richtungen. Die
+     Werte hier bleiben trotzdem, wie sie sind: sie sind aus dem Bild begründet, nicht aus dem Ausweichen.
+     ORIGAMI ist der VIERTE fast unbunte Satz — nach Obsidian (217°), Quecksilber (210°) und Salar (213°), die
+     inzwischen alle drei auf kühlem Silber liegen. Er trennt sich als einziger über die WÄRME: Papierton, leicht
+     warmes Weiß (37°) — vom User so gewählt. Gemessen werden konnte hier nichts, das Motiv ist schwarzweiß; die
+     Farbe ist deshalb gesetzt und nicht abgeleitet. `a2` ist der Schattenton desselben Papiers, damit der Verlauf
+     wie eine Faltkante liest statt wie ein zweiter Farbwert. Wer nachdreht: unter L≈0,60 kippt `a2` von „Papier
+     im Schatten" nach „schmutziges Beige". */
+  solfatara:   { id: "solfatara",   name: packName("deck_solfatara"),   emblem: "🌋", kind: "buy", price: 20, a1: "#ffd400", a2: "#8fe0cf",
+    deckId: "deck_solfatara",   bfId: "bf_solfatara",   els: ["deck", "bf"] },
+  origami:     { id: "origami",     name: packName("deck_origami"),     emblem: "🕊️", kind: "buy", price: 40, a1: "#f4ecdd", a2: "#c9bda6",
+    deckId: "deck_origami",     bfId: "bf_origami",     els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);
