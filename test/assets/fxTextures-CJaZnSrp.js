@@ -1,0 +1,1 @@
+import{Texture as l}from"./pixi-CXkgVg_H.js";function f(c,t){const o=document.createElement("canvas");o.width=o.height=t;const a=o.getContext("2d"),r=a.createRadialGradient(t/2,t/2,0,t/2,t/2,t/2);for(const[n,e]of c)r.addColorStop(n,`rgba(255,255,255,${e})`);return a.fillStyle=r,a.fillRect(0,0,t,t),l.from(o)}export{f as m};
