@@ -421,7 +421,15 @@ export const FIRE_SCORE_SQRT_K  = envNum("SIM_FIRE_SCORE_SQRT_K", 1.0);
 // verschwindet relativ). ∝ gehaltener Hitze beim Sieg, gedeckelt bei FIRE_DIVIDEND_HEAT_CAP (Sättigung: Top-Runs
 // mit Vollhitze ziehen den Deckel nicht weiter hoch → floor-clean). Das ist Feuers fehlende „Immer-an-Engine".
 export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 44);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis. #268: 48→44 (Feuer-Floor leicht runter: 2,17×→2,05× Mix) [TUNING · Feuer-Floor]
-export const FIRE_DIVIDEND_HEAT_CAP = envNum("SIM_FIRE_DIVIDEND_HEAT_CAP", 45);  // Hitze-Deckel für die Dividende (Sättigung → floor-clean) [TUNING · Feuer-Floor]
+// #fire-balance 45 → 70: der Deckel machte die OBERE LEISTENHÄLFTE wertlos. Über 45 % zahlte die Dividende nichts
+// mehr, und oberhalb lagen nur noch bedingte Skills (Glühende Klinge 70/100 · Schmelzofen 50 · Sonnenkern 60 ·
+// Weißglut 100) — Hitze zu HALTEN lohnte also strukturell nicht, genau die Klage „niemand spielt es als
+// Halte-Mechanik". Gemessen (700 reine Feuer-Läufe je Stand): Median 8,20 → 9,32 Mio bei 70, 9,97 bei 100. 70
+// gewählt, weil Feuer damit auf Blitz-Niveau landet, statt es zu überholen — alle vier Fraktionen bei n=700:
+// Feuer 9,95 · Blitz 9,93 · Pflanze 11,07 · Eis 11,74 (Spread 1,18× statt 1,88× vor dem Feuer-Pass).
+// ACHTUNG bei Nachmessungen: mit n=120 las derselbe Feuer-Stand 7,07 statt 8,20 — der Median dieser
+// Verteilung ist unter ~500 Läufen nicht belastbar.
+export const FIRE_DIVIDEND_HEAT_CAP = envNum("SIM_FIRE_DIVIDEND_HEAT_CAP", 70);  // Hitze-Deckel für die Dividende (Sättigung → floor-clean) [TUNING · Feuer-Floor]
 // Linie 1 — Generation (Marge · Konstanz · Serie)
 export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5                            // v0 — tunebar
 export const ZUNDER_HEAT       = envNum("SIM_ZUNDER_HEAT", 2);    // Zunder: +2 % Hitze je Sieg (auch knappe Siege) [Sim-tunebar]
@@ -455,7 +463,8 @@ export const OVERHEAT_MAX        = 50;   // Überhitzung max (= Leiste bis 150 %
 export const OVERHEAT_COST_K     = 10;   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
 export const OVERHEAT_DECAY      = 2;    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
 export const OVERHEAT_DECAY_LOSS = 5;    // Abbau bei Niederlage
-export const OVERHEAT_SCORE_STEP = 0.02; // +2 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2)
+export const OVERHEAT_SCORE_STEP = 0.035; // +3,5 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2,75)
+// (#fire-balance, 2. Durchgang: 2 % gemessen zu wenig — der Zustand ist selten, also muss er sich lohnen, wenn er da ist.)
 // Linie 4 — Wert-/Score-Motoren
 export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
 export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
@@ -481,7 +490,7 @@ export const CONFLAG_PER_SKILL = 5;     // … + je weiterem Feuer-Skill (6 Skil
 // Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
 // Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
 // bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
-export const MELT_COST           = 4;   // Schmelzpunkt: −4 % Hitze je Stich                        // #fire-balance — tunebar
+export const MELT_COST           = 4;   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
 export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
 export const MELT_SCORE_PER_HEAT = 0.8; // … + je % gehaltener Hitze (bei 100 % also 90/Punkt = 360/Sieg) // #fire-balance — tunebar
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)

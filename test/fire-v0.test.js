@@ -199,9 +199,17 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     expect(lost.lastTrick.result).toBe("loss");
     expect(lost.heat.over).toBeCloseTo(20 - C.OVERHEAT_DECAY_LOSS); // Niederlage kühlt schneller aus
   });
-  it("Schmelzpunkt: kostet MELT_COST je Stich und zahlt nach GEHALTENER Hitze", () => {
+  it("Schmelzpunkt: kostet MELT_COST NUR bei Sieg und zahlt nach GEHALTENER Hitze", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_12"], heat: heat({ value: 50 }) }), noCrit);
-    expect(s.heat.value).toBe(50 - C.MELT_COST + heatGainFor(6, ["SK_FIRE_12"], {}));
+    expect(s.heat.value).toBe(50 + heatGainFor(6, ["SK_FIRE_12"], {}) - C.MELT_COST);
+    // #fire-balance: eine NIEDERLAGE verbrennt nichts mehr — der bedingungslose Abzug war der ganze Fehler.
+    const lost = resolveTrick(scen(2, 9, { skills: ["SK_FIRE_12"], heat: heat({ value: 50 }) }), noCrit);
+    expect(lost.lastTrick.result).toBe("loss");
+    expect(lost.heat.value).toBe(50 - heatLossFor(7, ["SK_FIRE_12"], 50)); // nur der normale Niederlage-Verlust
+    // Und er unterläuft den Flächenbrand-Boden nicht (er verbrennt VOR ihm, nicht nach ihm).
+    const both = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_11", "SK_FIRE_12"], heat: heat({ value: 90 }) }), noCrit);
+    expect(both.heat.value).toBe(C.CONFLAG_KEEP);
+    expect(both.heat.value).toBeGreaterThanOrEqual(C.FIREROLL_MIN_HEAT);
     // Isoliert gegen einen gleich großen Nicht-Konsumenten-Build bei identischer Hitze: die Differenz IST der Tropf.
     const withMelt = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_12"], heat: heat({ value: 100 }) }), noCrit);
     const without  = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_09"], heat: heat({ value: 100 }) }), noCrit);
