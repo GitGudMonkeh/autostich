@@ -92,19 +92,23 @@ function UnlockModal({ unlocks, onConfirm }) {
   const shown = covers.length ? covers : unlocks;
   const alsoNames = covers.length ? unlocks.filter((u) => u.type !== "deck").map((u) => u.name) : [];
   return overlayPortal((
-    <div className="ul-root fixed inset-0 z-[60] flex items-center justify-center p-6"
+    <div className="ul-root fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6"
       style={{ background: "rgba(8, 8, 12, .82)" }} onClick={onConfirm}>
-      <div className="ul-card as-legendary rounded-2xl px-8 pt-7 pb-6 text-center"
-        style={{ background: "linear-gradient(180deg, #1c1708, #14110c)", maxWidth: "min(92vw, 760px)" }}
+      {/* Die Maße sind auf beiden Seiten dieselbe Idee, nur andere Zahlen: das Bild so groß, wie der Schirm
+          es hergibt, drumherum nur so viel Rahmen wie nötig. Am Handy heißt das ein Cover über die halbe
+          Fensterbreite und knapperes Polster; auf dem Desktop ein gedeckeltes Fenster. */}
+      <div className="ul-card as-legendary rounded-2xl px-5 pt-6 pb-5 sm:px-8 sm:pt-7 sm:pb-6 text-center"
+        style={{ background: "linear-gradient(180deg, #1c1708, #14110c)", maxWidth: "min(92vw, 760px)", maxHeight: "90dvh", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="text-sm uppercase tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
+        <div className="text-xs sm:text-sm uppercase tracking-[.2em] sm:tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
           {t("gameover.skins.title")}
         </div>
-        <div className="flex flex-wrap justify-center items-end gap-7 mt-6">
+        <div className="flex flex-wrap justify-center items-end gap-5 sm:gap-7 mt-5 sm:mt-6">
           {shown.map((u) => {
             const img = u.type === "deck" ? deckAssets(u.id).back : (battlefieldAssets(u.id) || {}).desktop;
             return (
-              <div key={`${u.type}:${u.id}`} className="flex flex-col items-center gap-2.5" style={{ width: u.type === "deck" ? 240 : 380 }}>
+              <div key={`${u.type}:${u.id}`} className="ul-item flex flex-col items-center gap-2.5"
+                style={{ width: u.type === "deck" ? "min(240px, 64vw)" : "min(380px, 82vw)" }}>
                 {/* Ohne Bild KEINE leere Kachel — der Name allein sagt mehr als ein leerer Rahmen. */}
                 {img && (
                   <div className="ul-img rounded-xl overflow-hidden w-full"
@@ -122,7 +126,7 @@ function UnlockModal({ unlocks, onConfirm }) {
         )}
         <div className="text-xs opacity-55 mt-5">{t("gameover.skins.hint")}</div>
         <button onClick={onConfirm} autoFocus
-          className="as-edge-strong mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
+          className="as-edge-strong mt-5 sm:mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
           style={{ "--c": "#d4a63a" }}>
           {t("common.confirm")}
         </button>
@@ -326,31 +330,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         </div>
         </div>
 
-        {/* #unlock-fenster: auf dem Desktop als eigenes Fenster (s. UnlockModal), darunter als Bahn im Screen —
-            gerendert wird immer nur eins von beiden. */}
-        {wide && newUnlocks.length > 0 && !unlockSeen && (
+        {/* #unlock-fenster: EIN Fenster in jeder Breite (seit 18.08.2026 auch am Handy). Die Bahn im Screen
+            gibt es nicht mehr — sie war auf dem Desktop ein leeres Band und am Handy eine Karte, die man
+            beim Scrollen überliest. Als Fenster ist die Freischaltung das, was sie ist: eine Nachricht. */}
+        {newUnlocks.length > 0 && !unlockSeen && (
           <UnlockModal unlocks={newUnlocks} onConfirm={() => setUnlockSeen(true)} />
-        )}
-
-        {/* #190: in diesem Lauf frisch freigeschaltete Skins — kleine Vorschau + Hinweis aufs Deck-Menü. */}
-        {!wide && newUnlocks.length > 0 && (
-          <div className="go-skins mt-4 rounded-xl p-3" style={{ background: "#1b1630", border: "1px solid #8a7de055" }}>
-            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#8a7de0" }}>{t("gameover.skins.title")}</div>
-            <div className="flex flex-wrap justify-center gap-3">
-              {newUnlocks.map((u) => {
-                const img = u.type === "deck" ? deckAssets(u.id).back : (battlefieldAssets(u.id) || {}).desktop;
-                return (
-                  <div key={u.id} className="flex flex-col items-center gap-1" style={{ width: 74 }}>
-                    <div className="rounded-md overflow-hidden w-full" style={{ aspectRatio: u.type === "deck" ? "3 / 4" : "16 / 9", background: "#0c0c10", border: "1px solid #33333e" }}>
-                      {img && <img src={img} alt="" loading="lazy" decoding="async" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />}
-                    </div>
-                    <span className="text-[10px] text-center leading-tight opacity-90">{u.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="text-[10px] text-center opacity-50 mt-2">{t("gameover.skins.hint")}</div>
-          </div>
         )}
 
         {/* #299 Meta-Freischaltungen dieses Laufs (Onboarding-Abschluss/Archetyp/Rarität) — funkelnder Gold-Rahmen

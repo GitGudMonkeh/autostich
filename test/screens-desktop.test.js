@@ -111,8 +111,10 @@ describe("#desktop-screens — Victory", () => {
     expect(deskBlock).toMatch(/\.go-layout > div \{[^}]*grid-template-columns:\s*var\(--go-board-w/);
   });
 
-  it("Freischaltungen und Skins laufen über die volle Breite", () => {
-    for (const cls of ["go-unlocks", "go-skins"]) {
+  it("Meta-Freischaltungen laufen über die volle Breite", () => {
+    // `go-skins` steht hier nicht mehr: frisch freigeschaltete Skins sind seit #unlock-fenster ein
+    // eigenes Fenster in jeder Breite, keine Bahn im Screen.
+    for (const cls of ["go-unlocks"]) {
       const rule = deskBlock.match(new RegExp(`\\.${cls}\\s*\\{([^}]*)\\}`));
       expect(rule, `Platz für .${cls} fehlt`).toBeTruthy();
       expect(rule[1]).toMatch(/grid-column:\s*1 \/ -1/);

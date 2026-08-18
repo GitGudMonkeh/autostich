@@ -265,13 +265,14 @@ describe("#leerlauf — ein sofort beendeter Lauf sieht aus wie ein langer, nur 
   });
 });
 
-describe("#unlock-fenster — Freischaltungen als eigenes Fenster, nur auf dem Desktop", () => {
+describe("#unlock-fenster — Freischaltungen als eigenes Fenster, in jeder Breite", () => {
   const jsx = src("ui/GameOver.jsx");
-  it("Fenster ODER Bahn — nie beides, und der Griff ist ein Bestätigen-Knopf", () => {
-    /* Die Bahn läuft über die volle Breite (1720 px) und trägt darin zwei 74-px-Kacheln: am Handy eine
-       gefüllte Karte, auf dem Desktop ein leeres Band mit einem Fleck in der Mitte. */
-    expect(jsx).toMatch(/\{wide && newUnlocks\.length > 0 && !unlockSeen && \(/);
-    expect(jsx).toMatch(/\{!wide && newUnlocks\.length > 0 && \(/);
+  it("EIN Fenster in jeder Breite, und der Griff ist ein Bestätigen-Knopf", () => {
+    /* Die alte Bahn lief über die volle Breite (1720 px) und trug darin zwei 74-px-Kacheln — auf dem
+       Desktop ein leeres Band mit einem Fleck in der Mitte. Sie ist ersatzlos weg, auch am Handy: dort
+       war sie eine Karte, die man beim Scrollen überliest. Kein zweiter Renderpfad. */
+    expect(jsx).toMatch(/\{newUnlocks\.length > 0 && !unlockSeen && \(/);
+    expect(jsx).not.toMatch(/go-skins/);
     expect(jsx).toMatch(/t\("common\.confirm"\)/);
     // Goldener Funkel-Rahmen wie an den Meta-Freischaltungen — kein zweiter Rahmen-Look.
     expect(jsx).toMatch(/ul-card as-legendary/);

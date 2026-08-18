@@ -3420,7 +3420,8 @@ button { font-family: inherit; }
      selten, und wenn sie kommen, sind sie die Nachricht des Bildschirms. In einer Spalte gingen sie zwischen
      Kennzahlen unter. */
   .go-unlocks { grid-column: 1 / -1; grid-row: 3; }
-  .go-skins   { grid-column: 1 / -1; grid-row: 4; }
+  /* `.go-skins` gibt es nicht mehr: frisch freigeschaltete Skins sind seit #unlock-fenster ein eigenes
+     Fenster (in JEDER Breite), keine Bahn im Screen. */
   .go-earn, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
   /* Drei entkoppelte Spalten: links die EINE Klammer (Verdienst + Herkunft), in der Mitte die Kennzahlen,
      rechts Build und darunter die Aufstellung. Nur Build und Aufstellung teilen sich eine Spalte — deshalb
