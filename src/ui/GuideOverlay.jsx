@@ -247,8 +247,9 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
               (Titel · Auskunft · Schließen) — dasselbe Raster wie `.up-head`/`.cz-head`. */}
           <div className="gd-head px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
             <div className="gd-headrow flex items-center gap-2.5">
+              {/* Kein Zeichen vor dem Titel: Die anderen Screens (Baum, Werkstatt) tragen dort auch keins,
+                  und das Buch-Emoji war ein Fremdkörper im Zeichensatz des Spiels. */}
               <span className="gd-title flex items-center gap-2.5">
-                <span aria-hidden="true">📖</span>
                 <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
               </span>
               <ActionButton kind="secondary" className="gd-close ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>

@@ -1367,8 +1367,14 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             </div>
           )}
           {inline && <div className="mt-3" />}
+        </div>
 
-          {/* Aktion */}
+        {/* Aktion — BEWUSST ausserhalb des Scrollers (`cz-action`, `flex-none`). Auf flachen Fenstern
+            ist die Vorschau hoeher als die Spalte; lag der Knopf im Fluss darueber, rutschte er unter die
+            gedeckelte Panelkante und wurde von der Karte weggeschnitten — man sah nicht mehr, dass man
+            das Deck ueberhaupt kaufen oder ausruesten kann. Jetzt scrollen die Bilder, der Knopf steht.
+            Ohne `inline` (Handy-Overlay) ist es eine Klammer mit demselben Innenabstand wie vorher. */}
+        <div className={`p-3.5 pt-0 ${inline ? "cz-action flex-none" : ""}`}>
           {tiered ? (
             active ? (
               <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: STATE_ON, border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>

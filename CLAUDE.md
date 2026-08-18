@@ -820,3 +820,21 @@ bewusste Entscheidung; geändert hat sich der TEXT, der bisher weniger nannte, a
 - Bash-cwd persistiert zwischen Calls; nach `cd` in node_modules zurück nach `/home/user/autostich`.
 - Kein PR anlegen außer explizit gewünscht. GitHub-Issues #312–#316 sind abgearbeitet; #370 Phasen 1–3 fertig (Phase 4:
   DB-Rename + Playtest-Tuning offen).
+
+### #rahmen + #werkstatt-aktion — zwei Nachzügler des Desktop-Passes (2026-08-18)
+- **Die Karte trug die ganze Zeit einen Rahmen um den ganzen Bildschirm.** `.up-card`/`.cz-card`/`.gd-card`
+  sollten auf dem Desktop flächen- und rahmenlos sein (die Panels sind der Rahmen des Screens, nicht die
+  Karte) — die Regel stand da und wirkte nie: `[data-skin="crt"] .as-panel.as-panel-deck` wiegt (0,3,0),
+  `.up-card.as-panel` nur (0,2,0). Die Deck-Variante gewann und malte weiter einen animierten 1-px-Verlauf
+  seitlich UND über den Kopf hinweg. Fix: die Abräum-Regeln nennen jetzt **beide** Klassen. Wer sie kürzt,
+  holt den Rahmen zurück, ohne dass etwas rot wird — `test/desktop-perf.test.js` wacht.
+- **Kein Buch-Emoji mehr vor „Leitfaden".** Baum und Werkstatt tragen dort auch kein Zeichen.
+  **Regel des Users: NIE ein Icon einbauen, das nicht schon im System ist, ohne vorher zu fragen.**
+- **Werkstatt, rechte Spalte: der Kaufen-/Ausrüsten-Knopf war auf flachen Fenstern unsichtbar.** Die Vorschau
+  ist dort höher als die Spalte; der Knopf lag im Fluss hinter den Bildern und rutschte unter die gedeckelte
+  Panelkante (von `overflow-hidden` der Karte weggeschnitten). Zwei Hälften, beide nötig: der Aktionsblock ist
+  jetzt ein `flex-none`-Geschwister des Scrollers (`.cz-action`) UND die Spalte eine schrumpffähige Flex-Kette
+  (`.cz-side` flex-column, `.cz-detail`/`.cz-detailcard` `flex: 1; min-height: 0`) — vorher standen beide auf
+  `height: auto`, der Scroller hatte also nie eine definierte Höhe und wuchs einfach weiter.
+  Gemessen 1536×791: Knopf sichtbar innerhalb des Panels, Bilderliste scrollt 104 px. Auf 1723×1030 und
+  1920×1080 unverändert (Panel endet am Inhalt, kein Scrollen).

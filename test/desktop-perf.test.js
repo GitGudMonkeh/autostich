@@ -86,6 +86,36 @@ describe("#perf-blur — kein backdrop-filter auf dem Desktop", () => {
   });
 });
 
+describe("#werkstatt-aktion — Kaufen/Ausruesten steht ausserhalb des Scrollers", () => {
+  it("der Aktionsblock ist ein flex-none-Geschwister, die Spalte eine schrumpffaehige Flex-Kette", () => {
+    /* Auf flachen Fenstern (1536 x 791) ist die Vorschau hoeher als die Spalte. Lag der Knopf im Fluss
+       hinter den Bildern, rutschte er unter die gedeckelte Panelkante und wurde weggeschnitten — man sah
+       nicht mehr, dass man das Deck kaufen kann. Beides gehoert zusammen: der Knopf ausserhalb des
+       Scrollers UND eine Flex-Kette, die der Bilderliste eine definierte Hoehe gibt (sonst scrollt sie
+       gar nicht, sondern waechst einfach weiter). */
+    const cz = src("ui/CustomizeScreen.jsx");
+    expect(cz).toMatch(/cz-action flex-none/);
+    for (const rule of [/\.cz-side \{[^}]*display:\s*flex/, /\.cz-detail \{[^}]*min-height:\s*0/,
+                        /\.cz-detailcard \{[^}]*min-height:\s*0/])
+      expect(css, `Flex-Kette der Detailspalte unterbrochen: ${rule}`).toMatch(rule);
+  });
+});
+
+describe("#rahmen — die Karte traegt auf dem Desktop keinen Rahmen mehr", () => {
+  it("die Abraeum-Regel nennt beide Panel-Klassen, sonst gewinnt die Deck-Variante", () => {
+    /* Der eigentliche Fehler war Spezifitaet, nicht Absicht: `[data-skin="crt"] .as-panel.as-panel-deck`
+       wiegt (0,3,0), `.up-card.as-panel` nur (0,2,0). Die Regel stand da, wirkte nie, und die Karte malte
+       weiter einen 1-px-Verlauf um den ganzen Bildschirm — seitlich und ueber den Kopf hinweg. Wer die
+       Selektoren kuerzt, holt ihn zurueck, ohne dass irgendetwas rot wird. */
+    for (const sel of ["up-card", "cz-card", "gd-card"]) {
+      expect(css, `${sel}: die Regel muss BEIDE Klassen nennen`)
+        .toMatch(new RegExp(`\\.${sel}\\.as-panel\\.as-panel-deck`));
+      expect(css, `${sel}: die alte, wirkungslose Zwei-Klassen-Fassung ist zurueck`)
+        .not.toMatch(new RegExp(`\\.${sel}\\.as-panel \\{`));
+    }
+  });
+});
+
 describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
   it("Panel klemmt, Knotenspalten scrollen, die Rasterzeile waechst nicht mit dem Bild", () => {
     expect(css).toMatch(/\.up-page \{[^}]*overflow:\s*hidden/);

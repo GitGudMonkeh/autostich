@@ -1665,7 +1665,13 @@ button { font-family: inherit; }
     padding-right: 0 !important;
     padding-bottom: 0 !important;   /* das pb-6 der Karte; die Legende bringt ihren Abstand selbst mit */
   }
-  .up-card.as-panel {
+  /* #rahmen (18.08.2026) — DIE DREI KLASSEN, NICHT ZWEI. Die Regel darüber wollte den animierten
+     Verlaufs-Rahmen des CRT-Skins abräumen und hat es nie getan: `[data-skin="crt"] .as-panel.as-panel-deck`
+     wiegt (0,3,0), `.up-card.as-panel` nur (0,2,0) — die Deck-Variante gewann und malte weiter einen
+     1-px-Verlauf um den GANZEN Bildschirm, seitlich und über den Kopf hinweg. Auf dem Handy ist das der
+     Kartenrahmen und richtig so; als randverankerter Screen ist es ein Rahmen um nichts.
+     Der Rahmen des Screens sind die PANELS (`as-ring`), nicht die Karte. */
+  .up-card.as-panel.as-panel-deck {
     background-image: none !important;
     animation: none !important;
   }
@@ -2069,7 +2075,13 @@ button { font-family: inherit; }
     border-color: transparent !important;
     box-shadow: none !important;
   }
-  .cz-card.as-panel { background-image: none !important; animation: none !important; }
+  /* #rahmen (18.08.2026) — DIE DREI KLASSEN, NICHT ZWEI. Die Regel darüber wollte den animierten
+     Verlaufs-Rahmen des CRT-Skins abräumen und hat es nie getan: `[data-skin="crt"] .as-panel.as-panel-deck`
+     wiegt (0,3,0), `.cz-card.as-panel` nur (0,2,0) — die Deck-Variante gewann und malte weiter einen
+     1-px-Verlauf um den GANZEN Bildschirm, seitlich und über den Kopf hinweg. Auf dem Handy ist das der
+     Kartenrahmen und richtig so; als randverankerter Screen ist es ein Rahmen um nichts.
+     Der Rahmen des Screens sind die PANELS (`as-ring`), nicht die Karte. */
+  .cz-card.as-panel.as-panel-deck { background-image: none !important; animation: none !important; }
   .cz-scroll { overflow: hidden !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 0 !important; display: flex; flex-direction: column; }
 
   /* --- Kopfzeile: dasselbe Raster wie im Upgrade-Baum ----------------------
@@ -2176,7 +2188,14 @@ button { font-family: inherit; }
   /* Die Vorschau ist so hoch wie ihr Inhalt, nicht so hoch wie die Spalte — wie `.up-nav` im
      Upgrade-Baum, die nach ihrem letzten Eintrag endet statt bis zum Fuß durchzulaufen. Vorher stand
      unter „Aktivieren" ein knappes Drittel Panel leer. `max-height` hält lange Inhalte im Bild. */
-  .cz-side { min-height: 0; align-self: start; max-height: 100%; }
+  /* Gedeckelt UND schrumpffaehig: `max-height` klemmt die Spalte an die Rasterzeile, die Flex-Kette
+     darunter gibt der Bilderliste eine DEFINIERTE Hoehe — nur dann greift ihr `overflow-y: auto`.
+     Vorher standen Detail und Detailkarte auf `height: auto`, der Scroller hatte also nichts zu
+     scrollen: Der Inhalt wuchs einfach ueber die Panelkante hinaus und wurde von der Karte
+     weggeschnitten (auf 1536 x 791 traf das den Kaufen-/Ausruesten-Knopf, s. `cz-action`). */
+  .cz-side { min-height: 0; align-self: start; max-height: 100%; display: flex; flex-direction: column; }
+  .cz-detail { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .cz-detailcard { flex: 1; min-height: 0; }
   /* Die Detailkarte im Panel wird selbst flächenlos: sonst läge eine Karte in einer Karte, und der
      Rahmen des Panels bekäme einen zweiten, 6 px weiter innen. */
   .cz-detail, .cz-detailcard { max-width: none; }
@@ -2280,7 +2299,13 @@ button { font-family: inherit; }
     border-radius: 0;
     overflow: visible;
   }
-  .gd-card.as-panel { background-image: none !important; animation: none !important; }
+  /* #rahmen (18.08.2026) — DIE DREI KLASSEN, NICHT ZWEI. Die Regel darüber wollte den animierten
+     Verlaufs-Rahmen des CRT-Skins abräumen und hat es nie getan: `[data-skin="crt"] .as-panel.as-panel-deck`
+     wiegt (0,3,0), `.gd-card.as-panel` nur (0,2,0) — die Deck-Variante gewann und malte weiter einen
+     1-px-Verlauf um den GANZEN Bildschirm, seitlich und über den Kopf hinweg. Auf dem Handy ist das der
+     Kartenrahmen und richtig so; als randverankerter Screen ist es ein Rahmen um nichts.
+     Der Rahmen des Screens sind die PANELS (`as-ring`), nicht die Karte. */
+  .gd-card.as-panel.as-panel-deck { background-image: none !important; animation: none !important; }
   /* Die Haarlinie hing an der Kartenecke; ohne Karte hat sie dort nichts mehr zu suchen — der Kopf
      bringt ab hier seine eigene mit (`.gd-hair`). */
   .gd-card > div[aria-hidden="true"]:first-child { display: none; }
