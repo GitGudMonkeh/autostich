@@ -1,1 +1,0 @@
-import{l as u,au as i,t as o}from"./index-xFnLrmqB.js";function f(t){if(!t||!t.kind)return"";const{kind:l,vars:n={}}=t,a=`unlock.${l}`,e={...n};n.n!=null&&(e.n=u(n.n)),n.archetype&&(e.archetype=i(n.archetype));const c=o(a,e);return c===a?"":c}export{f as u};
