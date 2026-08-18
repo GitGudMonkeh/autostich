@@ -71,7 +71,9 @@ describe("toPixiFragment", () => {
 
 describe("Kompositor-Ebenen", () => {
   it("portieren alle sauber — jede Ebene erfüllt dieselben Regeln", () => {
-    expect(COMPOSITOR_LAYER_KEYS.length).toBeGreaterThanOrEqual(3);
+    // #deckglow-raus: waren DREI Ebenen (Brandung · Aurora · Leuchten), „Leuchten" ist entfallen. Die Untergrenze
+    // hält weiterhin fest, dass die Registry nicht unbemerkt leerläuft — mit dem Stand danach.
+    expect(COMPOSITOR_LAYER_KEYS.length).toBeGreaterThanOrEqual(2);
     for (const key of COMPOSITOR_LAYER_KEYS) {
       const frag = layerFragment(key);   // wirft, wenn eine Regel verletzt ist
       expect(frag.startsWith("#version 300 es"), key).toBe(true);

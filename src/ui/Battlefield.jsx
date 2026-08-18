@@ -655,7 +655,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
   deckA1 = null, deckA2 = null, bgFx = null, bgFinisher = null, auroraDeck = false, neonsurfDeck = false, starfieldDeck = false, cubematrixDeck = false, cubematrixWire = false, // #glutfunken-raus: emberDeck entfernt
-  deckGlow = false, // #deckglow: unabhängige, kombinierbare Glow-Ebene. #336: immer Deckfarbe (kein Farbmodus mehr)
   cardAnims = [], // #318 aktive Karten-Animationen (group "anim", stapelbar) — von App via activeCardAnims
 
   // #finisher: gewählter Sieg-Finisher — "standard" (Gratis-Default: Verliererkarte fliegt zur Seite weg + höherer
@@ -706,7 +705,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const auroraGL = bgFx === "aurora" && !!deckA1;
   const neonsurfGL = bgFx === "neonsurf" && !!deckA1;
   const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
-  const deckGlowOn = deckGlow && !!battlefield && !!deckA1;    // #deckglow: Glut auf den Konturen des BF-Bildes (kombinierbar)
   const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
@@ -1338,10 +1336,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Archetyp-Ambiente (Feuer-Glut / Blitz-Glow) ist zu den jeweiligen Fraktions-Panels gewandert (HeatBar/ChargeBar);
   // das Battlefield bleibt neutral, nur die Sieg-/Krit-Aura des aktuellen Stich-Ergebnisses liegt noch am Panel.
   /* #kompositor: die WebGL-Feld-Ebenen als DATEN statt als drei fast gleiche JSX-Blöcke — nur so lassen sie sich zu
-     EINER Bühne bündeln. `alt` ist jeweils die bisherige Einzel-Canvas; sie rendert ohne `?fx2=1` und als Rückfall.
-     Aurora und Brandung schließen einander aus (beide sind `bgFx`), Leuchten läuft unabhängig dazu. */
-  const glowProps = { srcDesktop: battlefield?.desktop, srcMobile: battlefield?.mobile,
-    color: deckA1 || "#7fdcff", on: true, animate: !reduced };
+     EINER Bühne bündeln. Aurora und Brandung schließen einander aus (beide sind `bgFx`) — seit #deckglow-raus gibt es
+     keine Ebene mehr, die gleichzeitig mit ihnen läuft, also liegt hier immer HÖCHSTENS EINE. */
   const bgLayer = auroraGL
     ? {
       key: "aurora",
@@ -1353,9 +1349,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         props: { color: deckA1, color2: deckA2 || deckA1, deckColored: neonsurfDeck, animate: !reduced, surge: surfSurge },
       }
       : null;
-  /* Zusammenlegen NUR, wenn beide laufen. Sonst bleibt Leuchten in seinem z-0-Container: dort liegt es unter dem
-     z-1-Ambiente, und das ist ohne Aurora/Brandung nicht unterdrückt — eine gemeinsame Bühne würde es darüberheben. */
-  const glowStacked = deckGlowOn && !!bgLayer;
 
   const panelBorder = `1px solid ${DECK_BORDER}`; // #365/#356: Nicht-CRT-Fallback deck-getönt (unter CRT übernimmt die .as-panel-deck-Regel)
   const outerParts = [];
@@ -1387,14 +1380,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           pointer-events:none. Baut je nach aktivem Feld-Effekt den passenden GPU-Emitter (Komet/Sternenfeld),
           sobald der Effekt portiert ist (PIXI_FIELD). Der Ticker pausiert im Hintergrund-Tab. #346: läuft auch in
           Produktion — Pixi lädt aber lazy und NUR, wenn der Spieler den Effekt tatsächlich aktiviert hat. */}
-      {/* Hintergrund-Effekt (reiner BG) — z-2 HINTER dem Finisher. Läuft Leuchten mit, hängt es als UNTERSTE Ebene
-          in DERSELBEN Bühne (`glowStacked`) statt in einer zweiten Canvas: das ist der Punkt des Kompositors.
-          Die z-Ordnung bleibt dabei erhalten — Leuchten lag als z-0-Kind unter dem Hintergrund, und genau dazwischen
-          liegt nichts, weil das z-1-Ambiente bei aktivem Aurora/Brandung ohnehin unterdrückt ist (suppressField). */}
+      {/* Hintergrund-Effekt (reiner BG) — z-2 HINTER dem Finisher. Seit #deckglow-raus trägt diese Bühne genau EINE
+          Ebene: Aurora und Brandung schließen einander aus, und „Leuchten" — die einzige Ebene, die je gleichzeitig
+          mit ihnen lief — gibt es nicht mehr. */}
       {bgLayer && (
         <div aria-hidden="true" className="absolute inset-0 z-[2] pointer-events-none">
-          <FieldLayer layer={bgLayer.key} stack={glowStacked ? [{ key: "deckglow", props: glowProps }, bgLayer] : null}
-            {...(glowStacked ? {} : bgLayer.props)} active={boardOn} />
+          <FieldLayer layer={bgLayer.key} {...bgLayer.props} active={boardOn} />
         </div>
       )}
       {/* #317 Cube-Matrix — zwei Ebenen: Würfelfeld/Boden/Sonne z-2 HINTER den Karten (Ambiente), Scheinwerfer als
@@ -1574,11 +1565,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
             <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
           </picture>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
-          {/* #deckglow: additive Glut-Ebene ÜBER Bild+Scrim (bleibt vivid), noch im z-0-Container → hinter Ambiente/Karten.
-              Sampelt dasselbe Battlefield-Bild; Farbmodus Standard-Neon ↔ Deckfarbe (deckA1). Unabhängig, kombinierbar. */}
-          {deckGlowOn && !glowStacked && (
-            <FieldLayer layer="deckglow" {...glowProps} active={boardOn} />
-          )}
         </div>
       )}
       {/* #cleanup: Der DOM-Hintergrund-Finisher entfällt — Glutfunken & Sternenfeld laufen nur noch über den

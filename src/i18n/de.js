@@ -1112,7 +1112,6 @@ export default {
   "fx.glitch.short": "Cyberpunk-Glitch mit gelegentlichen Bursts.",
   "fx.aurora.short": "Weiche Schleier; je Stich ein Bloom-Puls.",
   "fx.neonsurf.short": "Plasma-See am unteren Rand — starke Ansagen drücken das Wasser mittig ein, es steigt an den Rändern hoch.",
-  "fx.deckglow.short": "Konturen des Battlefields glühen — frei mit allen anderen Effekten kombinierbar.",
   "fx.cubematrix.short": "Neon-Würfelfeld — reagiert auf die Musik.",
   "fx.starfield.short": "Sternschnuppe je Stich — größer mit dem Score.",
   "fx.klinge.short": "Klingenschnitt — skaliert mit der Siegesserie.",

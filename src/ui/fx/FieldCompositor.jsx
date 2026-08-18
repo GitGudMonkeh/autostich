@@ -3,7 +3,6 @@ import { isCoarse, dprCap, DRAW_HZ_COARSE } from "./mobileTier.js";
 import { PIXI_FIELD_VERT, toPixiFragment, fieldQuadGeometry } from "./pixiFieldShader.js";
 import { NEONSURF_FRAG } from "./neonsurfShader.js";
 import { AURORA_FRAG_SRC } from "./auroraShader.js";
-import { DECKGLOW_FRAG_SRC } from "./deckglowShader.js";
 
 /* FELD-KOMPOSITOR — eine Bühne, viele Ebenen, Auflösung je Ebene.
 
@@ -25,14 +24,11 @@ import { DECKGLOW_FRAG_SRC } from "./deckglowShader.js";
    Was das NICHT ändert: den Shader selbst. Derselbe Shader durch Pixi ist nicht schneller — im Spike liefen der
    raw-WebGL- und der Pixi-Pfad beide bei 60 Zeichnungen/s. Der Gewinn kommt aus Bündelung und Auflösung.
 
-   Stand: DREI Ebenen (Neon-Brandung, Aurora, Leuchten), und seit `stack` liegen sie bei Bedarf in DERSELBEN Bühne.
-   Bis dahin war der Kompositor nur der gemeinsame PFAD, nicht die gemeinsame FLÄCHE: jede Ebene hatte ihre eigene
-   Bühne, und weil Brandung und Aurora einander ausschließen, lief ohnehin nie mehr als eine. Erst Leuchten läuft
-   gleichzeitig mit einem Hintergrund — deshalb ist es die Ebene, die das Bündeln überhaupt erst möglich macht.
-
-   Was das Bündeln NICHT ändert: die Füllarbeit. Es werden dieselben Pixel von denselben Shadern beschrieben. Weg
-   fallen der zweite WebGL-Kontext und der zweite Composite des Browsers — beides zahlt der Rahmen, nicht der
-   Effekt, und beides ist in einem Software-GL-Messstand NICHT sichtbar. Der Beleg gehört ans Gerät.
+   Stand: ZWEI Ebenen (Neon-Brandung, Aurora) — und sie schließen einander aus, es läuft also immer höchstens EINE.
+   „Leuchten" (deckglow) war die dritte und die einzige, die gleichzeitig mit einem Hintergrund lief; sie ist mit
+   #deckglow-raus entfallen (Begründung in themes.js). Damit ist der Kompositor derzeit wieder nur der gemeinsame
+   PFAD, nicht die gemeinsame FLÄCHE — das Bündeln (`stack`) ist mit seiner einzigen Aufruferin gegangen.
+   Der Wert, der bleibt: EINE Fassung je Shader, Auflösung je Ebene, und ein Ort, an dem die nächste Ebene landet.
 
    Wie eine portierte Ebene abgenommen wird: Bild gegen Bild, bei EINGEFRORENER Zeit (`animate={false}` friert beide
    Pfade auf dieselbe Sekunde), und der Unterschied wird GERECHNET statt begutachtet. Für Leuchten ist die mittlere
@@ -109,42 +105,6 @@ const LAYERS = {
       u.uBandShift = p.bandShift ?? 0;
     },
   },
-  /* #deckglow — die erste Ebene mit einer TEXTUR: sie sampelt das Battlefield-Bild, sucht dessen helle Linien und
-     lässt sie in der Deckfarbe glühen. Und die erste, die GLEICHZEITIG mit einem Hintergrund läuft — erst damit
-     ist „ein Composite statt vier bis fünf" überhaupt messbar (Aurora und Brandung schließen einander aus). */
-  deckglow: {
-    // `vUv` kommt hier aus einer eigenen varying statt aus gl_FragCoord — der Port legt sie auf dieselbe UV.
-    frag: () => toPixiFragment(DECKGLOW_FRAG_SRC, { varyingUv: "vUv" }),
-    /* KEINE Verkleinerung — als einzige Ebene. Meine erste Schätzung war 0,6 („Halo ist weich"), und sie war
-       falsch: der Effekt reitet auf den KONTUREN des Hintergrundbildes, und eine grob gerechnete Glut trifft die
-       feinen Linien nicht mehr. Das Urteil am Gerät war „lässt den Hintergrund pixelig wirken, die Details gehen
-       verloren", und die Messung gegen die Canvas-Fassung stützt es (mittlere Abweichung von 255, Handy-Viewport):
-         0,50 → 5,45 · 0,60 → 4,88 · 0,75 → 3,63 · 0,85 → 3,33 · 1,00 → 0,56
-       Kein Knick, an dem man billig davonkäme: von 0,85 auf 1,0 kostet 28 % Füllarbeit und halbiert die Abweichung
-       gleich sechsfach. Diese Ebene verdient ihren Platz im Kompositor also über die GETEILTE BÜHNE, nicht über die
-       Auflösung. Wer das Verhältnis anders bewerten will: `?fxs=0.75` am Gerät ansehen, es ist eine Zahl. */
-    scaleCoarse: 1,
-    scaleDesktop: 1,
-    blend: "normal",     // premultipliziert: vec4(deckCol*alpha, alpha)
-    texture: { name: "uTex", src: (p) => pickBfSrc(p) },
-    uniforms: (p, size) => ({
-      uRes: { value: [size.w, size.h], type: "vec2<f32>" },
-      uTime: { value: 0, type: "f32" },
-      uMix: { value: p.on === false ? 0 : 1, type: "f32" },
-      uImgAspect: { value: 16 / 9, type: "f32" },   // echter Wert kommt mit dem Bild (s. tick)
-      uDeck: { value: p.d1, type: "vec3<f32>" },
-    }),
-    tick: (u, p, tSec, size, mem) => {
-      u.uTime = tSec;
-      u.uRes = [size.w, size.h];
-      u.uDeck = p.d1;
-      if (mem.imgAspect) u.uImgAspect = mem.imgAspect;
-      // Weiche An/Aus-Überblendung wie in der Canvas-Fassung (Showcase schaltet damit ohne Sprung um).
-      const target = p.on === false ? 0 : 1;
-      mem.mix = (mem.mix ?? target) + (target - (mem.mix ?? target)) * 0.12;
-      u.uMix = mem.mix;
-    },
-  },
 };
 
 
@@ -189,54 +149,20 @@ function scaleOverride() {
   } catch { return null; }
 }
 
-/* Dieselbe Schwelle wie das `<picture media="(max-width: 640px)">` unter dem Effekt — die Glut muss auf DEM Bild
-   sitzen, das gerade angezeigt wird. Bewusst ohne Listener: `syncTexture()` läuft je Frame und merkt den Wechsel
-   von selbst (ein Stringvergleich pro Frame gegen eine zweite Abo-Verwaltung). */
-function pickBfSrc(p) {
-  const mobile = typeof window !== "undefined" && window.matchMedia
-    ? window.matchMedia("(max-width: 640px)").matches : false;
-  return (mobile && p.srcMobile) ? p.srcMobile : (p.srcDesktop || p.srcMobile);
-}
-
-/* Schwarzes 1×1 als Sampler-Platzhalter (s. Aufrufer). */
-function blankSource(TextureSource) {
-  const c = document.createElement("canvas");
-  c.width = 1; c.height = 1;
-  return new TextureSource({ resource: c, width: 1, height: 1 });
-}
-
-/* Bild als Pixi-Textur, MIT gedrehter Y-Achse — Gegenstück zum `UNPACK_FLIP_Y_WEBGL = true` der Canvas-Fassung.
-
-   Der Grund ist derselbe wie dort: die portierte UV zählt von UNTEN (nachgemessen, s. Falle 6 in pixiFieldShader.js),
-   Pixi lädt Bilder aber ungedreht hoch (`GlStateSystem` setzt UNPACK_FLIP_Y hart auf false und kein Uploader ändert
-   das). Ohne Dreher sampelt die Ebene das vertikal gespiegelte Bild.
-
-   WIE ICH ES GEPRÜFT HABE — und warum das nötig war: Das Hinsehen hat mich hier getäuscht. Die Glut ist additives
-   Magenta auf grünen Konturen; „sitzt sie drauf oder daneben" ist bei einem detailreichen Bild nicht zuverlässig zu
-   beurteilen, und ich hatte den gespiegelten Zustand zuerst für richtig gehalten. Entschieden hat es erst eine
-   Wegwerf-Ebene, die NUR `texture2D(uTex, vUv)` ausgibt, neben dasselbe Bild als DOM-`<img>` gestellt: gespiegelt
-   oder nicht, sieht man daran sofort. Wer diese Naht anfasst, prüft sie bitte genauso — nicht am fertigen Effekt. */
-async function loadFieldTexture(url, Texture, ImageSource) {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
-  const aspect = (img.naturalWidth || img.width) / Math.max(1, img.naturalHeight || img.height);
-  const res = typeof createImageBitmap === "function"
-    ? await createImageBitmap(img, { imageOrientation: "flipY" })
-    : img;   // sehr alte Browser: kein Dreher möglich → gespiegelte Glut statt gar keiner
-  return { texture: new Texture({ source: new ImageSource({ resource: res }) }), aspect };
-}
-
-export default function FieldCompositor({ layer = "neonsurf", stack = null, active = true, ...rest }) {
+export default function FieldCompositor({ layer = "neonsurf", active = true, ...rest }) {
   const hostRef = useRef(null);
-  /* Ebenen dieser Bühne, von UNTEN nach OBEN. `stack` ist die eigentliche Form (`[{ key, props }]`); die
-     Einzel-Ebenen-Schreibweise (`layer` + flache Props) bleibt als Abkürzung erhalten, weil die meisten Aufrufer
-     genau eine Ebene mounten. */
-  const entries = stack && stack.length ? stack : [{ key: layer, props: rest }];
-  const stackKey = entries.map((e) => e.key).join(",");
+  /* EINE Ebene je Bühne. Es gab hier einen `stack`-Prop (`[{ key, props }]`, von unten nach oben) — er existierte
+     ausschließlich für „Leuchten läuft gleichzeitig mit Aurora/Brandung". Mit #deckglow-raus hat er keinen Aufrufer
+     mehr, und ein ungenutzter zweiter Pfad ist in diesem Projekt schon einmal auseinandergelaufen.
+     Die Ebenen-LISTE unten bleibt trotzdem eine Liste: sie ist der Grund, aus dem der Kompositor existiert
+     (mehrere Shader in EINEM Kontext, EIN Composite). Eine zweite gleichzeitige Ebene kommt hier wieder rein —
+     dann zusammen mit ihrem Aufrufer, nicht auf Vorrat. */
+  const entries = [{ key: layer, props: rest }];
 
   // Live-Props für den Ticker spiegeln — die Bühne wird nur EINMAL gebaut (Muster wie PixiStage:
   // ein Prop-Wechsel darf den WebGL-Kontext nicht abreißen, sonst blitzt der Effekt bei jedem Farbwechsel weg).
+  const entriesKey = entries.map((e) => e.key).join(",");
+
   const pRef = useRef([]);
   pRef.current = entries.map((e) => normProps(e.props));
   const activeRef = useRef(active);
@@ -245,7 +171,7 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
 
   useEffect(() => {
     const host = hostRef.current;
-    const keys = stackKey.split(",");
+    const keys = entriesKey.split(",");
     if (!host || keys.some((k) => !LAYERS[k])) return undefined;
 
     let disposed = false, app = null;
@@ -260,8 +186,7 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
 
     (async () => {
       try {
-        const { Application, Shader, GlProgram, Mesh, MeshGeometry, RenderTexture, Sprite,
-          Texture, ImageSource, TextureSource } = await import("pixi.js");
+        const { Application, Shader, GlProgram, Mesh, MeshGeometry, RenderTexture, Sprite } = await import("pixi.js");
         const coarse = isCoarse();
         app = new Application();
         await app.init({
@@ -307,7 +232,6 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
              beim Programmaufbau vergeben, ein späteres Nachreichen allein genügt nicht. Platzhalter ist bewusst ein
              SCHWARZES Pixel — der Shader rechnet daraus Alpha 0, die Ebene ist also unsichtbar statt weiß zu
              blitzen, bis das Battlefield-Bild da ist. */
-          if (def.texture) resources[def.texture.name] = blankSource(TextureSource);
           const shader = Shader.from({
             gl: GlProgram.from({ vertex: PIXI_FIELD_VERT, fragment: def.frag() }),
             resources,
@@ -324,7 +248,7 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
           }
           return {
             key, def, direct, rtSize, size, rt, sprite, mesh, shader, i,
-            frozenT: null, texUrl: null, texObj: null,
+            frozenT: null,
             mem: { surgeId: null, surgeStart: null, surgeMag: 0 },   // Ebenen-Gedächtnis über Frames (s. tick)
           };
         });
@@ -332,30 +256,11 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
         const t0 = performance.now();
         let tickFails = 0;
 
-        /* Bildquelle in-place nachziehen. Wie in der Canvas-Fassung wird bei einem Bildwechsel NUR die Textur
-           getauscht — die Bühne bleibt stehen. Ein Neuaufbau je Deckwechsel kostete sonst einen WebGL-Kontext,
-           und davon hat iOS Safari sehr wenige. */
-        const syncTexture = (L, props) => {
-          if (!L.def.texture) return;
-          const url = L.def.texture.src(props);
-          if (!url || url === L.texUrl) return;
-          L.texUrl = url;
-          loadFieldTexture(url, Texture, ImageSource).then(({ texture, aspect }) => {
-            if (disposed || L.texUrl !== url) { try { texture.destroy(true); } catch { /* ignore */ } return; }
-            const old = L.texObj; L.texObj = texture;
-            L.mem.imgAspect = aspect;
-            L.shader.resources[L.def.texture.name] = texture.source;
-            if (old) { try { old.destroy(true); } catch { /* ignore */ } }
-          }).catch((e) => console.warn("[fx] Kompositor-Textur nicht geladen:", e));
-        };
-        layers.forEach((L) => syncTexture(L, pRef.current[L.i] || {}));
-
         app.ticker.add(() => {
           if (disposed || !app) return;
           try {
             for (const L of layers) {
               const p = pRef.current[L.i] || {};
-              syncTexture(L, p);   // Bildwechsel (anderes Deck/Viewport) zieht die Textur nach, Bühne bleibt stehen
               const s = L.rtSize();
               if (s.w !== L.size.w || s.h !== L.size.h) {
                 L.size = s;
@@ -388,7 +293,7 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
       } catch (e) {
         /* WebGL fehlt oder eine Ebene ist kaputt → Bühne bleibt leer, das Spiel läuft normal weiter. Der Log ist
            wichtig: ein Port-Fehler (s. pixiFieldShader.js) landet genau hier und wäre sonst spurlos. */
-        console.warn(`[fx] Kompositor "${stackKey}" nicht aufgebaut:`, e);
+        console.warn(`[fx] Kompositor "${entriesKey}" nicht aufgebaut:`, e);
       }
     })();
 
@@ -400,15 +305,14 @@ export default function FieldCompositor({ layer = "neonsurf", stack = null, acti
       const a = app; app = null;
       for (const L of layers) {
         if (L.rt) { try { L.rt.destroy(true); } catch { /* ignore */ } }
-        if (L.texObj) { try { L.texObj.destroy(true); } catch { /* ignore */ } }
       }
       layers = [];
       if (a) { try { a.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } }
     };
-  }, [stackKey]);
+  }, [entriesKey]);
 
   /* #perf-overlay: Ticker anhalten, sobald ein Vollbild-Overlay das Brett verdeckt. Bewusst ein EIGENER Effekt
-     ohne `stackKey` in den Deps — der Aufbau-Effekt oben darf bei einem `active`-Wechsel nicht neu laufen, sonst
+     ohne `entriesKey` in den Deps — der Aufbau-Effekt oben darf bei einem `active`-Wechsel nicht neu laufen, sonst
      kostete jeder Overlay-Wechsel eine komplette Pixi-Init. */
   useEffect(() => { applyRunRef.current?.(); }, [active]);
 

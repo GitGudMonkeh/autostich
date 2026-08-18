@@ -34,7 +34,7 @@ const DEFAULT_OPTIONS = {
   numScale: 0.75,
   randomDeckEachRun: false,
   tierSel: {},
-  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
+  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
   fxCubeMatrixSun: true, fxCubeMatrixWire: false,

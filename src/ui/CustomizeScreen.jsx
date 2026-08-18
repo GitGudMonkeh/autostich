@@ -211,11 +211,12 @@ const SPEZIAL = { key: "spezial", group: "spezial", alwaysOwned: true, preview: 
   get name() { return t("fxsyn.spezial.name"); }, get desc() { return t("fxsyn.spezial.desc"); } };
 
 // #331 Effekt-Reiter des „Effekte"-Tabs — auf 4 Reiter reduziert (Reihenfolge = Anzeige links→rechts):
-//   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahmen:
-//   • Leuchten (deckglow) — frei kombinierbar (freier Toggle, unabhängig vom Hintergrund-Set).
+//   Karten · Stich · Hintergrund · Score. Ein Effekt pro Kategorie aktiv (Einfachauswahl); Ausnahme:
 //   • Skill-Effekt (Archetyp, group "spezial") — immer aktiv, nur Farbwahl (zählt nicht in die Einfachauswahl).
-// mode: "cardanim" (Karten-Animationen einfach-exklusiv) | "finisher" (Stich) | "bg" (Hintergrund-Set einfach-exklusiv,
-//   Leuchten separat frei) | "gott" (Score). Die alten Gruppen (anim/bgfx/bgglow/bgfin/finisher/gott) bleiben als
+// #deckglow-raus: „Leuchten" war der einzige frei kombinierbare Effekt (eigener Toggle neben dem Hintergrund-Set) und
+//   ist entfallen → der Hintergrund-Reiter ist jetzt durchgehend einfach-exklusiv, ohne Sonderzweig.
+// mode: "cardanim" (Karten-Animationen einfach-exklusiv) | "finisher" (Stich) | "bg" (Hintergrund-Set einfach-exklusiv)
+//   | "gott" (Score). Die alten Gruppen (anim/bgfx/bgfin/finisher/gott) bleiben als
 //   DATEN-Gruppe (globalFxList().group) erhalten — nur die UI-Reiter werden hier zusammengefasst (fxGroupItems ordnet zu).
 const FX_GROUPS = [
   { key: "karten",      mode: "cardanim" },
@@ -246,13 +247,13 @@ const byFxPrice = (a, b) => globalFxPrice(a) - globalFxPrice(b); // #353 Seltenh
 const fxGroupBase = (group) => {
   if (group === "karten") return [SPEZIAL, ANIM_NONE, ...fxByGroup("anim")]; // #328 Skill-Effekt · Keine · (Neonrahmen/Holo/Glitch nach Preis)
   if (group === "stich")  return [FIN_STANDARD, ...[KLINGE, SCORCH, HOLOGRID_SLICE, BLACKHOLE].sort(byFxPrice)]; // Standard · Rest nach Preis
-  if (group === "hintergrund") return [fxKey("deckglow"), FIELD_NONE, ...[fxKey("aurora"), fxKey("neonsurf"), fxKey("cubematrix"), fxKey("starfield")].filter(Boolean).sort(byFxPrice)]; // Leuchten · Kein · Rest nach Preis
+  if (group === "hintergrund") return [FIELD_NONE, ...[fxKey("aurora"), fxKey("neonsurf"), fxKey("cubematrix"), fxKey("starfield")].filter(Boolean).sort(byFxPrice)]; // Kein · Rest nach Preis
   if (group === "score")  return [GOTT_STANDARD, ...fxByGroup("gott")]; // „Standard" (kein Prunk) voran, dann nach Preis
   return [];
 };
-// #353 Führungs-Kacheln, die IMMER oben bleiben (Standard/„Kein …"/Leuchten/Skill) — NICHT der aktive Effekt. sonnenPuls
+// #353 Führungs-Kacheln, die IMMER oben bleiben (Standard/„Kein …"/Skill) — NICHT der aktive Effekt. sonnenPuls
 // ist zwar alwaysOwned, aber ein echter (Preis-0-)Effekt → gehört in den nach Seltenheit sortierten Rest, nicht hierher.
-const LEADING_FX_KEYS = new Set(["standard", "gottStandard", "none", "spezial", "deckglow"]);
+const LEADING_FX_KEYS = new Set(["standard", "gottStandard", "none", "spezial"]);
 const isLeadingFx = (fx) => LEADING_FX_KEYS.has(fx.key);
 const activeFxKeyOf = (mode, options, p) =>
     mode === "finisher" ? finisherSelOf(options, p)
@@ -305,8 +306,7 @@ const finisherSelOf = (options, profile) => {
 /* #331 Hintergrund einfach-exklusiv (genau EINER aktiv, oder „none"): der frühere bgfx- (Aurora/Würfel-Matrix) UND
    bgfin-Slot (Glutfunken/Komet) sind zu EINEM exklusiven Set verschmolzen — es kann nur noch EIN Hintergrund-Effekt
    laufen (kein Stapeln Aurora + Glutfunken mehr). bgFlags(key) schreibt alle vier Optionen in einem Rutsch (genau eine
-   true, „none" = alle false). „Leuchten" (deckglow) bleibt ein UNABHÄNGIGER freier Toggle (fxDeckGlow) außerhalb dieses
-   Sets. bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
+   true, „none" = alle false). bgSelOf gated auf Besitz (ungekaufte Auswahl zählt nicht — parallel zu finisherSelOf/in-game globalFxActive). */
 const BG_EXCL_KEYS = ["aurora", "cubematrix", "neonsurf", "starfield"]; // feste Priorität (Aurora zuerst) — #glutfunken-raus: embers entfernt · #345 neonsurf
 const BG_EXCL_FX = BG_EXCL_KEYS.map((k) => globalFxDef(k)).filter(Boolean);
 const bgFlags = (key) => Object.fromEntries(BG_EXCL_FX.map((f) => [f.option, f.key === key]));
@@ -740,51 +740,6 @@ function SpezialScene({ deckTint = false }) {
   );
 }
 
-/* #deckglow 4-BG-Showcase: rotiert durch verschieden FARBIGE Battlefields und zeigt jeden erst OHNE, dann MIT dem
-   Deck-Glow (weiche Überblendung). Deckfarbe-Modus → jedes BG glüht in der Farbe seines Packs (a1); Standard → festes
-   Neon. Genau EINE WebGL-Canvas (pro BG frisch gekeyt), das darunterliegende <img> ist die „Ohne"-Referenz. */
-const DECKGLOW_BGS = [
-  { bf: "bf_eis", a1: "#46c6ff", name: "Eis" },
-  { bf: "bf_ronin", a1: "#ff2f4f", name: "Ronin" },
-  { bf: "bf_kosmos", a1: "#ff4dcb", name: "Schwarzes Loch" },
-  { bf: "bf_drache", a1: "#ffcf5a", name: "Laternenfest" },
-  { bf: "bf_polarlicht", a1: "#2ee0c0", name: "Scarab" },
-];
-function DeckGlowScene() { // #336: kein Farbmodus mehr — Glow ist immer Deckfarbe (Tint); die Vorschau tönt je BG in dessen Akzent
-  const [idx, setIdx] = useState(0);
-  const [on, setOn] = useState(false);
-  const isMobile = useIsMobile();
-  useEffect(() => {
-    let alive = true, to = null, i = 0, phase = "off";
-    setIdx(0); setOn(false);
-    const OFF_MS = 1100, ON_MS = 2200; // erst „ohne" (Referenz), dann „mit" (länger, damit man das Lauflicht sieht)
-    const run = () => {
-      if (!alive) return;
-      if (phase === "off") { setOn(true); phase = "on"; to = setTimeout(run, ON_MS); }
-      else { setOn(false); i = (i + 1) % DECKGLOW_BGS.length; setIdx(i); phase = "off"; to = setTimeout(run, OFF_MS); }
-    };
-    to = setTimeout(run, OFF_MS);
-    return () => { alive = false; if (to) clearTimeout(to); };
-  }, []);
-  const cur = DECKGLOW_BGS[idx];
-  const bf = battlefieldAssets(cur.bf);
-  const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
-  const accent = cur.a1; // Akzentfarbe des Labels = die Demo-Glutfarbe des jeweiligen Felds
-  return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: "#0b0a16" }}>
-      {src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
-      {bf && <FieldLayer layer="deckglow" srcDesktop={bf.desktop} srcMobile={bf.mobile} color={cur.a1} on={on} animate />}
-      <div className="absolute inset-x-0 top-0 h-14" style={{ background: "linear-gradient(180deg,#0b0a1699,transparent)" }} />
-      {/* #330 Ausnahme-Slot unten-links (bewusst reserviert): Deck-Glow zeigt „Feldname · mit/ohne Deck-Glow" im
-          einheitlichen PanelChip-Design. Der Farbmodus-Chip (BR) sowie Name/Status kommen zentral aus der Bühne. */}
-      <PanelChip corner="bl" style={{ color: on ? "#e8ecff" : "#9aa0c4" }}>
-        <span style={{ opacity: 0.7 }}>{cur.name}</span>{" "}
-        <span style={{ color: on ? accent : "#9aa0c4" }}>{on ? "· mit Deck-Glow" : "· ohne"}</span>
-      </PanelChip>
-    </div>
-  );
-}
-
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }) {
@@ -792,7 +747,6 @@ function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "neonsurf", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />; // #glutfunken-raus · #345 neonsurf
-  if (fx.preview === "deckglow") return <DeckGlowScene />; // #deckglow: mehrere farbige BGs, je erst ohne, dann mit (immer Deckfarbe)
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
   if (fx.preview === "gottStandard") return <GottScene Fx={null} look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
@@ -1480,7 +1434,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const bgSel = bgSelOf(options, p);   // #331 EIN exklusiver Hintergrund-Effekt (aurora/cubematrix/embers/starfield) oder „none"
   const cardAnimSel = cardAnimSelOf(options, p); // #331 EINE Karten-Animation (edgeglow/holo/glitch) oder „none"
   const gottSel = gottSelOf(options); // #322 aktiver Score-Prunk oder „gottStandard" (kein Prunk)
-  const deckGlowOn = !!options?.fxDeckGlow; // #331 Leuchten (freier Toggle, unabhängig vom Hintergrund-Set)
   const activeKeyOf = (g) => g.mode === "finisher" ? finisherSel : g.mode === "bg" ? bgSel : g.mode === "gott" ? gottSel : g.mode === "cardanim" ? cardAnimSel : null;
   // Auswahl-Status: { group (aktive Kategorie/Tab), key (Effekt in der Bühne) }. Default = erster Effekt der ersten Gruppe.
   const [sel, setSel] = useState(() => defaultSelFor(FX_GROUPS[0].key)); // #373 Karten-Reiter startet auf „Keine Animation" (kein Auto-Showcase)
@@ -1489,10 +1442,9 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
   const selFx = selItems.find((f) => f.key === sel.key) || selItems[0];
 
   // Ist ein Effekt in seiner Gruppe „aktiv"? (als Finisher/Prunk/Hintergrund/Animation gewählt bzw. Toggle an).
-  // Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion. Reihenfolge: Skill-Effekt & Leuchten sind Sonderfälle vor den Modi.
+  // Zentrale Wahrheit → Zeilen-Marker + Bühnen-Aktion. Reihenfolge: der Skill-Effekt ist der Sonderfall vor den Modi.
   const isActive = (g, fx) =>
       fx.group === "spezial" ? true                    // #328 Skill-Effekt ist IMMER aktiv (nur Farbwahl) → „AKTIV"-Badge korrekt
-    : fx.key === "deckglow" ? deckGlowOn              // #331 Leuchten: freier Toggle (unabhängig vom Hintergrund-Set)
     : g.mode === "finisher" ? finisherSel === fx.key
     : g.mode === "gott" ? gottSel === fx.key          // #322 Score-Prunk einfach-exklusiv (gottStandard = kein Prunk)
     : g.mode === "cardanim" ? (fx.key === "none" ? cardAnimSel === "none" : cardAnimSel === fx.key) // #331 einfach-exklusiv
@@ -1514,7 +1466,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
     const on = isActive(g, fx);
     if (!on && !(fx.alwaysOwned || globalFxOwned(p, fx))) return; // nicht im Besitz → erst über die Bühne kaufen
     if (fx.group === "spezial") return; // #328 Skill-Effekt: immer aktiv, Farbe NUR über den Toggle (Tile-Klick = no-op)
-    else if (fx.key === "deckglow") onChoose({ [fx.option]: !on }); // #331 Leuchten: freier Toggle
     else if (g.mode === "finisher") onChoose(finisherFlags(on ? "none" : fx.key));
     else if (g.mode === "gott") onChoose(gottFlags(on ? "gottStandard" : fx.key));
     else if (g.mode === "cardanim") onChoose(fx.key === "none" ? animNoneFlags() : cardAnimFlags(on ? "none" : fx.key)); // #331 einfach-exklusiv
@@ -1578,7 +1529,6 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0 }) {
 function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   const owned = fx.standard || fx.alwaysOwned || globalFxOwned(p, fx);
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
-  // #336: „deckglow" (Leuchten) hat KEINEN Farbmodus mehr — Glow ist immer Deckfarbe. Kein deckOpt → kein BR-Chip.
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "neonsurf" ? "fxNeonsurfDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
@@ -1633,14 +1583,10 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         </div>
       </div>
     );
-  } else if (fx.key === "deckglow") {
-    // #331 Leuchten: FREIER Toggle (unabhängig vom Hintergrund-Set). #336: KEINE Farbauswahl mehr — Glow ist immer
-    //   Deckfarbe. Nur noch An/Aus.
-    action = <button onClick={() => onChoose({ [fx.option]: !active })} {...act(active)}>{t(active ? "shop.on.tapOff" : "shop.turnOn")}</button>;
-  } else if (group.mode === "bg") {
+    } else if (group.mode === "bg") {
     // #331 Hintergrund: EIN exklusiver Effekt (Aurora/Würfel-Matrix/Glutfunken/Komet) ODER „Kein Effekt". „Als Hintergrund
     // wählen" schreibt bgFlags (genau einer an, „none" = keiner). Effekte mit Farbmodus zeigen zusätzlich Standard/Deckfarbe;
-    // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen. Leuchten (deckglow) läuft NICHT hier durch (eigener Toggle-Zweig oben).
+    // Würfel-Matrix zusätzlich Gefüllt/Nur Rahmen.
     if (fx.key === "none") {
       action = <button onClick={() => onChoose(bgFlags("none"))} {...act(active)}>{t(active ? "shop.bg.noneActive" : "shop.bg.none")}</button>;
     } else {

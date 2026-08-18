@@ -1087,7 +1087,6 @@ export default {
   "fx.glitch.short": "Cyberpunk glitch with occasional bursts.",
   "fx.aurora.short": "Soft veils; one bloom pulse per trick.",
   "fx.neonsurf.short": "A plasma sea along the bottom — strong call-outs push the water down in the middle and it rises at the edges.",
-  "fx.deckglow.short": "The battlefield contours glow — freely combinable with every other effect.",
   "fx.cubematrix.short": "A neon cube field — reacts to the music.",
   "fx.starfield.short": "A shooting star per trick — bigger with the score.",
   "fx.klinge.short": "A blade cut — scales with your winning streak.",

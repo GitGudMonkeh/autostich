@@ -70,7 +70,7 @@ Invalidiert wird in `startPlay()`; Screen-Shake ist ein `translate` und lässt B
 - **DOM-Fassungen gibt es nicht mehr.** Die Shader-Feldeffekte laufen über den Kompositor (Preview wie Prod), die
   Feld-FINISHER (Glutfunken/Sternenfeld) über den Pixi-Emitter `PixiStage`. Historie: früher war „Produktion = DOM"
   über `FX_RENDERER` gegated — dieser Schalter ist entfallen (s. #kompositor).
-- **Aurora/Neon-Brandung/Leuchten laufen über den Feld-Kompositor** — in Preview WIE in Produktion, ohne env-Verzweigung
+- **Aurora/Neon-Brandung laufen über den Feld-Kompositor** — in Preview WIE in Produktion, ohne env-Verzweigung
   (s. #kompositor). `FieldFxLayer`, `FX_RENDERER` und die DOM-Aurora sind entfallen.
 - **AUSNAHME #318 Karten-Animationen** (Edge-Glow/Holo/Glitch/Materialize, CardFxStage): das sind KAUFBARE Shop-Effekte
   und laufen daher **auch in Produktion** (`CARD_FX_ENABLED=true` in Battlefield.jsx, ersetzt das Preview/Dev-Gate der
@@ -141,11 +141,30 @@ und der Pixi-Pfad sieht aus wie die raw-WebGL-Referenz. Vermutlicher damaliger G
   (breite weiche Vorhänge) und Leuchten (Glow an Konturen) tragen vermutlich weniger, sind aber NICHT gemessen —
   wer sie in den Kompositor holt, lässt sie einzeln beurteilen.
 
+### #deckglow-raus — „Leuchten" ist ersatzlos entfernt (18.08.2026)
+Grund war **Hitze auf dem Handy, nicht der Look**. Leuchten war die einzige Kompositor-Ebene, die (a) keine
+Verkleinerung vertrug (Faktor 1,0 — sie reitet auf den Bildkonturen, s. #kompositor unten) und (b) GLEICHZEITIG mit
+einem Hintergrund lief. Sie füllte damit als einzige die volle Panelfläche in voller Auflösung, 30×/s, den ganzen Lauf
+— zusätzlich zu Aurora/Brandung. Ausgebaut wurden: Ebene + Shader (`deckglowShader.js` gelöscht), Registereintrag
+(`GLOBAL_FX`, 5 DP), Options-Toggle `fxDeckGlow`, Shop-Vorschau `DeckGlowScene`, i18n-Schlüssel, Tests.
+- **Mitgegangen, weil ohne Aufruferin tot:** der `stack`-Pfad in `FieldCompositor`/`FieldLayer` (mehrere Ebenen in
+  EINER Bühne) und die ganze **Textur-Maschinerie** (`pickBfSrc`/`blankSource`/`loadFieldTexture`/`def.texture`) —
+  Leuchten war die einzige Ebene mit `sampler2D`. Die Ebenen-LISTE im Kompositor bleibt eine Liste; eine zweite
+  gleichzeitige Ebene kommt zusammen mit ihrer Aufruferin zurück, nicht auf Vorrat.
+- **Besitz: gelöscht, NICHT erstattet** (Entscheidung des Users). Migration `v10 → v11` entfernt `fx:deckglow` aus
+  `ownedCosmetics`, `normalizeFxOptions` wirft `fxDeckGlow` aus gespeicherten Optionen (sonst schriebe der
+  `{...DEFAULT_OPTIONS, ...o}`-Merge in `loadOptions` den toten Schlüssel ewig weiter).
+- Wächter stehen jetzt auf dem Kopf: `test/themes.test.js` prüft, dass NICHTS zurückbleibt (Key, Gruppe `bgglow`,
+  Option) — ein versehentliches Wiedereinsetzen beim Merge eines älteren Branches fällt dort auf, nicht am Gerät.
+- Die Messwerte unten (Abweichung je Auflösungsfaktor) bleiben absichtlich stehen: sie sind die Begründung DAFÜR,
+  dass die Ebene nicht billiger zu haben war, und der Maßstab für die nächste konturen-nahe Ebene.
+
 ### #kompositor — EIN Renderpfad für die Shader-Feldeffekte (kein A/B mehr)
 `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry; jede Ebene rendert in eine eigene
 Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor 1 — direkt auf die Bühne. Ebenen:
-**Neon-Brandung** (mobil 0,75), **Aurora** (mobil 0,6), **Leuchten/DeckGlow** (mobil 1,0, s. u.). Aufrufer ist
-`src/ui/fx/FieldLayer.jsx` (`layer=` für eine Ebene, `stack=[{key,props}]` für mehrere in derselben Bühne).
+**Neon-Brandung** (mobil 0,75) und **Aurora** (mobil 0,6) — sie schließen einander aus, es läuft also immer
+höchstens EINE. (**Leuchten/DeckGlow** war die dritte, mobil 1,0 — entfallen, s. #deckglow-raus.) Aufrufer ist
+`src/ui/fx/FieldLayer.jsx` (`layer=` für die Ebene; den `stack=`-Pfad gibt es nicht mehr).
 - **Der A/B-Schalter `?fx2=1` ist WEG, und zwar ohne dass der Kompositor schneller wäre.** Am Gerät gemessen
   (5 Runden mit/ohne, sonst identisch): Spielphase 2 von 160 Stichen gegen 1 von 162 Ruckler, p50/p95/p99 in beiden
   Läufen 17/17/33 ms — weder Vorteil noch Nachteil. Entschieden wurde für den Kompositor, weil ein Schalter ZWEI

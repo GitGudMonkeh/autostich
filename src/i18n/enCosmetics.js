@@ -71,8 +71,6 @@ export default {
   "fx.cubematrix.desc": "A perspective field of neon cubes on a synthwave floor — each cube rises to its own frequency band of the music playing. Plus spotlights from above that pulse to the bass. In the deck colour.",
   "fx.neonsurf.name": "Neon Surf",
   "fx.neonsurf.desc": "A plasma sea along the bottom edge — a neon river with a bright waterline; on big announcements a pulse presses the water down in the middle and sends it climbing up the sides. In the deck colour.",
-  "fx.deckglow.name": "Deck Glow",
-  "fx.deckglow.desc": "The bright lines of the battlefield light up in the deck colour, and a running light travels along the contours. Its own layer — the ONLY effect that can be active alongside all the others (background, trick, score) at once.",
   "fx.starfield.name": "Starfield",
   "fx.starfield.desc": "A dense starfield drifts across three depth layers behind a veil of nebula; every trick a meteor shoots through the field — larger the higher the score tier, and from FIERCE upwards with an impact flash and sparks that scatter with trails. White-blue by default, in the deck colour if you prefer.",
   "fx.edgeglow.name": "Edge Glow",

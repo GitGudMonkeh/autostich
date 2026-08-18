@@ -10,8 +10,8 @@ import { FxBoundary } from "./FxBoundary.jsx";
    Wochen verloren (dieselbe Arbeit lag mehrfach als verschiedene Objekte vor, s. CLAUDE.md). Der Kompositor gewinnt
    also nicht über Zahlen, sondern weil eine Fassung besser ist als zwei gleich schnelle.
 
-   Entweder EINE Ebene (`layer` + flache Props) oder mehrere in EINER Bühne (`stack={[{ key, props }]}`, von unten
-   nach oben). Der Stapel spart den zweiten WebGL-Kontext und das zweite Composite des Browsers.
+   EINE Ebene je Bühne (`layer` + flache Props). Den Stapel-Pfad (`stack={[{ key, props }]}`) gab es für „Leuchten
+   läuft gleichzeitig mit Aurora/Brandung"; mit #deckglow-raus hat er keinen Aufrufer mehr und ist entfallen.
 
    `FxBoundary` bleibt Pflicht: der Kompositor hängt an `React.lazy`, und scheitert der Chunk, WIRFT `lazy` beim
    Rendern. Die App hat keine andere Error-Boundary — ohne diese hier riss ein fehlgeschlagener Chunk den ganzen
@@ -20,12 +20,11 @@ import { FxBoundary } from "./FxBoundary.jsx";
    wäre genau die Doppelung, die hier gerade verschwunden ist. */
 const FieldCompositor = lazy(() => import("./FieldCompositor.jsx"));
 
-export default function FieldLayer({ layer, stack = null, ...props }) {
-  const name = stack ? stack.map((e) => e.key).join("+") : layer;
+export default function FieldLayer({ layer, ...props }) {
   return (
-    <FxBoundary name={`Feld-Kompositor (${name})`} fallback={null}>
+    <FxBoundary name={`Feld-Kompositor (${layer})`} fallback={null}>
       <Suspense fallback={null}>
-        <FieldCompositor layer={layer} stack={stack} {...props} />
+        <FieldCompositor layer={layer} {...props} />
       </Suspense>
     </FxBoundary>
   );

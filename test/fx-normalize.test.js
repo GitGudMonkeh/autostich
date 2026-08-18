@@ -3,7 +3,7 @@ import { normalizeFxOptions } from "../src/game/storage.js";
 
 /* #331 Einfachauswahl-Migration: Hintergrund-Effekte (Aurora/Würfel-Matrix/Glutfunken/Komet) und Karten-Animationen
    (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände mit mehreren gleichzeitig an werden auf GENAU
-   EINEN reduziert (feste Priorität = Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) bleibt frei kombinierbar. */
+   EINEN reduziert (feste Priorität = Reihenfolge), Rest aus. */
 describe("#331 normalizeFxOptions — Einfachauswahl erzwingen", () => {
   it("reduziert mehrere gleichzeitige Hintergrund-Effekte auf einen (Priorität: Aurora zuerst)", () => {
     const o = normalizeFxOptions({ fxAurora: true, fxCubeMatrix: true, fxStarfield: true });
@@ -31,10 +31,13 @@ describe("#331 normalizeFxOptions — Einfachauswahl erzwingen", () => {
     expect(o.fxGlitch).toBe(false);
   });
 
-  it("Leuchten (fxDeckGlow) bleibt frei kombinierbar — unberührt neben einem Hintergrund-Effekt", () => {
+  /* #deckglow-raus: „Leuchten" gab es als frei kombinierbaren Toggle NEBEN dem exklusiven Hintergrund-Set; der
+     Effekt ist weg, der gespeicherte Schlüssel liegt aber noch in jedem Alt-Profil. Er muss beim Laden fallen,
+     sonst schriebe ihn der `{...DEFAULT_OPTIONS, ...o}`-Merge in loadOptions unbegrenzt weiter. */
+  it("#deckglow-raus: fxDeckGlow wird aus Alt-Optionen entfernt, der Hintergrund bleibt unberührt", () => {
     const o = normalizeFxOptions({ fxAurora: true, fxDeckGlow: true });
     expect(o.fxAurora).toBe(true);
-    expect(o.fxDeckGlow).toBe(true);
+    expect("fxDeckGlow" in o).toBe(false);
   });
 
   it("gültige Einzelauswahl bleibt unverändert; nichts an bleibt nichts an", () => {

@@ -47,7 +47,7 @@ import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, deckGlowActive, packOwned,
+import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, packOwned,
   isTieredPack, tierByDeckId, highestUnlockedTier, resolvePackByDeckId } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
@@ -736,8 +736,6 @@ function AutostichGame() {
     //   …Deck-Flags true). bgFx/Finisher/cardAnims/gottEffect hängen an unveränderten Toggles → vOpt ≡ options-Ergebnis.
     bgFx: activeBgFx(profile, vOpt),
     bgFinisher: activeBgFinisher(profile, vOpt),
-    // #deckglow: unabhängige, mit allem kombinierbare Glow-Ebene (gekauft + Option an); Farbmodus Standard ↔ Deckfarbe.
-    deckGlow: deckGlowActive(profile, vOpt), // #336: Glow ist immer Deckfarbe (kein Farbmodus mehr)
     cardAnims: activeCardAnims(profile, vOpt), // #318 aktive Karten-Animationen (group "anim", stapelbar)
     // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
     // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
@@ -780,7 +778,6 @@ function AutostichGame() {
   const activeFx = [];
   if (deckFx.bgFx) activeFx.push({ key: deckFx.bgFx });
   if (deckFx.bgFinisher) activeFx.push({ key: deckFx.bgFinisher });
-  if (deckFx.deckGlow) activeFx.push({ key: "deckglow" });
   for (const k of deckFx.cardAnims || []) activeFx.push({ key: k });
   if (deckFx.gottEffect && deckFx.gottEffect !== "gottStandard") activeFx.push({ key: deckFx.gottEffect });
   if (deckFx.finisher && deckFx.finisher !== "standard") activeFx.push({ key: deckFx.finisher, syn: true });
@@ -1114,7 +1111,6 @@ function AutostichGame() {
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} neonsurfDeck={deckFx.neonsurfDeck}
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
-                deckGlow={deckFx.deckGlow}
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
                 hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}

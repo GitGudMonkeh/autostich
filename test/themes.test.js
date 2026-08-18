@@ -4,7 +4,7 @@ import {
   packOwnKey, isBuyPack, hasBattlefield, packCond, packOwned, packState, packPrice, packUnlock,
   canBuyPack, buyPack, unlockAllCosmetics, BUYABLE_FINISHER_FX,
   GLOBAL_FX, GLOBAL_FX_BY_KEY, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-  auroraActive, activeBgFx, activeBgFinisher, deckGlowActive, BG_FX_KEYS, BG_FIN_KEYS,
+  auroraActive, activeBgFx, activeBgFinisher, BG_FX_KEYS, BG_FIN_KEYS,
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
   isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
@@ -244,24 +244,17 @@ describe("effekte — verbliebene Effekte nach dem #cleanup", () => {
   // Gottgleich-Kategorie bleibt im Shop (nur „Standard", ebenfalls synthetisch), enthält aber KEINE GLOBAL_FX-Einträge.
   it("GLOBAL_FX führt aurora, neonsurf, cubematrix, starfield, die Karten-Animationen edgeglow + holo + glitch (#318/#317) UND die 5 Gottgleich-Prunk-Effekte (#322–#326) — #glutfunken-raus: embers entfernt · #345 neonsurf", () => {
     expect(GLOBAL_FX.map((f) => f.key).sort()).toEqual(
-      ["aurora", "neonsurf", "cubematrix", "deckglow", "starfield", "edgeglow", "holo", "glitch",
+      ["aurora", "neonsurf", "cubematrix", "starfield", "edgeglow", "holo", "glitch",
        "sonnenPuls", "laserFaecher", "prismaKaskade", "holoCube", "supernova"].sort());
   });
-  it("#deckglow: Deck-Glow liegt in der eigenen bgglow-Gruppe (frei kombinierbar), 5 DP, korrekte Naht", () => {
-    const fx = GLOBAL_FX_BY_KEY.deckglow;
-    expect(fx.group).toBe("bgglow");
-    expect(fx.ownKey).toBe("fx:deckglow");
-    expect(fx.option).toBe("fxDeckGlow");
-    expect(globalFxPrice(fx)).toBe(5);
-    // Eigene Ebene → NICHT in den exklusiven Slots (kombiniert mit allem).
-    expect(BG_FX_KEYS.includes("deckglow")).toBe(false);
-    expect(BG_FIN_KEYS.includes("deckglow")).toBe(false);
-    // Aktiv = gekauft UND Option an — unabhängig davon, welcher bgfx-Effekt gewählt ist (kombinierbar).
-    const owned = { ...prof(), ownedCosmetics: { "fx:deckglow": true } };
-    expect(deckGlowActive(owned, { fxDeckGlow: true })).toBe(true);
-    expect(deckGlowActive(owned, { fxDeckGlow: true, fxAurora: true })).toBe(true); // parallel zu Aurora
-    expect(deckGlowActive(owned, { fxDeckGlow: false })).toBe(false);
-    expect(deckGlowActive(prof(), { fxDeckGlow: true })).toBe(false); // nicht gekauft → nicht aktiv
+  /* #deckglow-raus: „Leuchten“ (fx:deckglow) ist ersatzlos entfernt. Der Wächter steht auf dem Kopf des alten:
+     er prüft nicht mehr die Naht des Effekts, sondern dass NICHTS von ihm zurückbleibt — Registereintrag, Gruppe
+     und Options-Schlüssel. Ein versehentliches Wiedereinsetzen (z. B. beim Merge eines älteren Branches) fällt
+     damit hier auf und nicht erst am Gerät als wieder heiße Ebene. */
+  it("#deckglow-raus: „Leuchten“ ist vollständig aus dem Register verschwunden", () => {
+    expect(GLOBAL_FX_BY_KEY.deckglow).toBeUndefined();
+    expect(GLOBAL_FX.some((f) => f.group === "bgglow")).toBe(false);
+    expect(GLOBAL_FX.some((f) => f.option === "fxDeckGlow" || f.ownKey === "fx:deckglow")).toBe(false);
   });
   it("#318: Karten-Animationen liegen in der anim-Gruppe (stapelbar) mit korrekter Naht", () => {
     for (const [key, option] of [["edgeglow", "fxEdgeGlow"], ["holo", "fxHolo"], ["glitch", "fxGlitch"]]) {

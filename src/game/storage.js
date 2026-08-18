@@ -95,7 +95,7 @@ export function loadRunHistory() {
 // Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
-export const PROFILE_SCHEMA_VERSION = 10;
+export const PROFILE_SCHEMA_VERSION = 11;
 // #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
@@ -233,6 +233,18 @@ export function migrateProfile(p) {
     }
     delete out.welcomeSpPaid;
     v = 10;
+  }
+  if (v < 11) {
+    /* v10 → v11 (#deckglow-raus): „Leuchten" (fx:deckglow) ist ersatzlos entfernt. Der Besitz-Eintrag zeigt auf
+       einen Effekt, den es nicht mehr gibt → löschen, damit er nicht als toter Schlüssel durch jede weitere
+       Migration wandert und ein späterer Effekt gleichen Namens ihn nicht stillschweigend erbt.
+       BEWUSST OHNE DP-Erstattung (Entscheidung des Users): die Linie der Migrationen ist „keine Währung
+       verschenken" (v8/v10); der Gegenpol wäre v7 gewesen, wo für entfallene Baum-Knoten SP zurückflossen. */
+    if (out.ownedCosmetics && typeof out.ownedCosmetics === "object" && "fx:deckglow" in out.ownedCosmetics) {
+      out.ownedCosmetics = { ...out.ownedCosmetics };
+      delete out.ownedCosmetics["fx:deckglow"];
+    }
+    v = 11;
   }
   out.schemaVersion = v;
   return out;
@@ -529,12 +541,12 @@ const DEFAULT_OPTIONS = {
   //   der Zufalls-Modus dieselbe Stufe zieht. Kosmetik-Auswahl → in COSMETIC_OPTION_KEYS (Reset setzt zurück).
   tierSel: {},
   // Effekt-Toggles (Ein/Aus). fxSonnenPuls = freier Default an; alles andere aus.
-  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false, fxDeckGlow: false,
+  fxAurora: false, fxNeonsurf: false, fxStarfield: false, fxCubeMatrix: false,
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
   // Cube-Matrix-Optik (Sonne default an; Wire aus).
   fxCubeMatrixSun: true, fxCubeMatrixWire: false,
-  // Farbmodus-Flags Standard ↔ Deckfarbe (Default Standard = false). Karten-Anims (Edge/Holo/Glitch) + Deck-Glow sind
+  // Farbmodus-Flags Standard ↔ Deckfarbe (Default Standard = false). Karten-Anims (Edge/Holo/Glitch) sind
   // IMMER Deckfarbe → kein eigenes Flag.
   fxAuroraDeck: false, fxNeonsurfDeck: false, fxStarfieldDeck: false, fxCubeMatrixDeck: false,
   fxScorchDeck: false, fxBlackholeDeck: false, fxKlingeDeck: false, fxHologridDeck: false,
@@ -547,7 +559,7 @@ const DEFAULT_OPTIONS = {
 //   der Profil-Wipe setzt sie sauber auf DEFAULT_OPTIONS zurück. Nicht-Kosmetik-Prefs (Ton/Lautstärke/UI/Haptik) bleiben.
 export const COSMETIC_OPTION_KEYS = [
   "deckId", "battlefieldId", "finisher", "archColor", "tierSel",
-  "fxAurora", "fxNeonsurf", "fxStarfield", "fxCubeMatrix", "fxDeckGlow", "fxEdgeGlow", "fxHolo", "fxGlitch",
+  "fxAurora", "fxNeonsurf", "fxStarfield", "fxCubeMatrix", "fxEdgeGlow", "fxHolo", "fxGlitch",
   "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova",
   "fxCubeMatrixSun", "fxCubeMatrixWire",
   "fxAuroraDeck", "fxNeonsurfDeck", "fxStarfieldDeck", "fxCubeMatrixDeck", "fxScorchDeck", "fxBlackholeDeck",
@@ -556,7 +568,7 @@ export const COSMETIC_OPTION_KEYS = [
 /* #331 Einfachauswahl erzwingen (Migration/Normalisierung beim Laden): Hintergrund-Effekte (Aurora/Würfel-Matrix/
    Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
    denen mehrere gleichzeitig an waren (z. B. Aurora + Glutfunken), werden auf GENAU EINEN reduziert (feste Priorität =
-   Reihenfolge), Rest aus. „Leuchten" (fxDeckGlow) ist frei kombinierbar → unberührt. Besitz (ownedCosmetics) unberührt. */
+   Reihenfolge), Rest aus. Besitz (ownedCosmetics) unberührt. */
 // Exportiert, damit ein Test sie gegen themes.BG_FX_KEYS + BG_FIN_KEYS binden kann: die Kategorien stehen dort,
 // die Exklusivität wird hier durchgesetzt — wer einen Effekt ergänzt und diesen Eintrag vergisst, bräche sie still.
 export const BG_EXCL_OPTS = ["fxAurora", "fxCubeMatrix", "fxNeonsurf", "fxStarfield"]; // Priorität: Aurora zuerst — #glutfunken-raus: fxEmbers entfernt · #345 neonsurf
@@ -571,6 +583,9 @@ export function normalizeFxOptions(o) {
   if (!o || typeof o !== "object") return o;
   reduceExclusive(o, BG_EXCL_OPTS);
   reduceExclusive(o, CARD_ANIM_OPTS);
+  // #deckglow-raus: „Leuchten" gibt es nicht mehr. Der Schlüssel würde sonst über den `{...DEFAULT_OPTIONS, ...o}`-
+  // Merge in loadOptions ewig weitergeschrieben — ein toter Wert, den ein späterer Effekt mit gleichem Namen still erbt.
+  delete o.fxDeckGlow;
   return o;
 }
 /* #363 „Effekte reduziert" hat jetzt genau 3 Zustände: „aus" (full) · „mobile" (balanced/lite) · „an" (minimal).

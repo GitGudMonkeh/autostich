@@ -43,11 +43,13 @@ export const GLOBAL_FX = [
   // Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen (Gefäß/Rahmen). Reiner BG (bgfx).
   { key: "neonsurf", name: "Neon-Brandung", desc: "Eine Plasma-See am unteren Rand — Neon-Fluss mit heller Wasserlinie; bei starken Ansagen drückt ein Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen. In der Deckfarbe.",
     ownKey: "fx:neonsurf", option: "fxNeonsurf", preview: "neonsurf", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
-  // #deckglow: Deck-Glow — die hellen Linien/Kanten des Battlefield-Bildes glühen (rein additiv) in der Deck-/Standard-
-  // farbe auf, dazu ein „Lauflicht", das an den Konturen entlangwandert. EIGENE Ebene (WebGL-Canvas, mobil-sicher wie
-  // Aurora), NICHT im exklusiven bgfx-Slot → frei mit allen anderen Effekten kombinierbar (group "bgglow", mode toggle).
-  { key: "deckglow", name: "Leuchten", desc: "Die hellen Linien des Battlefields glühen in der Deckfarbe auf, und ein Lauflicht wandert an den Konturen entlang. Eigene Ebene — der EINZIGE Effekt, der gleichzeitig mit allen anderen (Hintergrund, Stich, Score) aktiv sein kann.",
-    ownKey: "fx:deckglow", option: "fxDeckGlow", preview: "deckglow", price: 5, group: "bgglow" }, // #deckglow: 5 DP · frei kombinierbar
+  /* #deckglow-raus (18.08.2026): „Leuchten" (deckglow) ist ERSATZLOS entfernt — Effekt, Shader, Vorschau, Toggle,
+     Besitz-Eintrag. Grund war Hitze auf dem Handy, nicht der Look: die Ebene ritt auf den KONTUREN des Battlefield-
+     Bildes und vertrug als EINZIGE Kompositor-Ebene keine Verkleinerung (gemessene Abweichung 0,50 → 5,45 von 255,
+     s. CLAUDE.md #kompositor). Sie lief damit als einzige in voller Auflösung über die volle Panelfläche, 30×/s, den
+     ganzen Lauf — und weil sie zusätzlich als einzige GLEICHZEITIG mit einem Hintergrund lief, war sie auch die
+     einzige Ebene, die den `stack`-Pfad des Kompositors überhaupt brauchte (der ist mit ihr entfallen).
+     Wer sie zurückholt, holt beides zurück: die volle Auflösung und den zweiten Stapelplatz. */
   // #glutfunken-raus: „Glutfunken" (embers) komplett entfernt (Effekt/Tile/Option/Sound/Vorschau). „Komet" bleibt.
   { key: "starfield", name: "Meteor", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich schießt ein Meteor durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken, die mit Schweif davonstieben. Standard weiß-blau, wahlweise in der Deckfarbe.",
     ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 20, group: "bgfin" }, // #311: Hintergrund-Finisher (Stich-Interaktion, Pixi)
@@ -103,9 +105,6 @@ export const globalFxActive = (profile, options, key) => {
    (Dauer-Effekt vs. Stich-Eruption) — aber es liefert per Konstruktion IMMER höchstens einer von beiden einen Key.
    Wer hier einen Effekt ergänzt, muss ihn auch in BG_EXCL_OPTS eintragen, sonst bricht die Exklusivität. */
 export const auroraActive = (profile, options) => globalFxActive(profile, options, "aurora");
-// #deckglow: Deck-Glow ist eine UNABHÄNGIGE Ebene (kein exklusiver Slot) → gekauft UND per Option an = aktiv,
-// unabhängig davon, welcher bgfx/bgfin-Effekt gewählt ist. So kombiniert es mit allen anderen Effekten.
-export const deckGlowActive = (profile, options) => globalFxActive(profile, options, "deckglow");
 export const BG_FX_KEYS  = ["aurora", "cubematrix", "neonsurf"];  // reiner Hintergrund (einfach-exklusiv)
 export const BG_FIN_KEYS = ["starfield"];  // Hintergrund-Finisher (reagiert je Stich; einfach-exklusiv) — #glutfunken-raus: embers entfernt
 export function activeBgFx(profile, options) {
