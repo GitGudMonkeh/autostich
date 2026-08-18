@@ -374,7 +374,10 @@ export function resolveTrick(state, rng) {
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
   const oppValueMod = (difficulty ? (difficulty.oppValue || 0) + rampMod : 0) + wmEnemyBonus;
   // Brand (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −Wert (nie < 0); sonst neutral (§12).
-  const oValue = Math.max(0, oCard.value + oppValueMod - (brandActive[oCard.id] || 0)); // Brand (Feuer)
+  // Brand (Feuer): der WERT-Abzug ist auf das normale Brandmaß gedeckelt — mit Sonnenkern stapeln sich Brände, aber
+  // der Stapel zahlt in Score (s. u.), nicht in noch tieferem Abzug.
+  const brandOnOpp = brandActive[oCard.id] || 0;
+  const oValue = Math.max(0, oCard.value + oppValueMod - Math.min(brandOnOpp, C.BRAND_VALUE_CAP));
   // Der temporäre Wertbonus dieser Karte ist mit ihrem Auftauchen verbraucht (Blitzfänger).
   let newIceTemp = { ...iceTemp };
   delete newIceTemp[pCard.id];
@@ -530,6 +533,10 @@ export function resolveTrick(state, rng) {
       const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
       if (totalForged > 0) fireFlat += totalForged * C.DAMASCUS_PER_VALUE;
     }
+    // Sonnenkern (L, #fire-leg): jeder Sieg gegen eine gebrandmarkte Karte zahlt je Brand darauf. Das ist der Ertrag
+    // des Stapels, den ein heißes Durchlauf-Ende stehen lässt — je länger du heiß bleibst, desto mehr Brände liegen
+    // auf dem Gegnerdeck und desto mehr wirft jeder Sieg dagegen ab.
+    if (suncore && brandOnOpp > 0) fireFlat += brandOnOpp * C.SONNENKERN_BRAND_SCORE;
     // Brand (Brandmal): jeder Sieg brandmarkt die geschlagene Gegnerkarte für den NÄCHSTEN Durchlauf (−Wert) + Asche.
     // Lauffeuer: der Brand greift auf einen oppDeck-Nachbarn über. Schmelzofen (≥50 % Hitze): −1 Wert & +1 Asche stärker.
     if (fireFlag(skills, "brandmal")) {

@@ -155,7 +155,7 @@ export const SKILL_DEFS = {
     desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze brennen Brände zusätzlich −${C.SCHMELZOFEN_BRAND_BONUS} Wert und geben +${C.SCHMELZOFEN_BRAND_BONUS} Asche extra; Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
   // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, erhält jede Karte unter Wert ${C.SONNENKERN_CARD_CAP} dauerhaft +${C.SONNENKERN_VALUE} Kartenwert — und deine Brände verfallen nicht, sondern stapeln sich auf den Gegnerkarten (bis −${C.SONNENKERN_BRAND_CAP}).`, suncore: true },
+    desc: `Jeder Sieg gegen eine gebrandmarkte Gegnerkarte gibt +${grp(C.SONNENKERN_BRAND_SCORE)} Score je Brand darauf. Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, verfallen deine Brände nicht, sondern stapeln sich (bis ${C.SONNENKERN_BRAND_CAP} je Karte), und jede eigene Karte unter Wert ${C.SONNENKERN_CARD_CAP} erhält dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: `Niederlagen kosten keine Hitze, sondern geben +${C.PHOENIX_LOSS_HEAT} % Hitze je Rückstandspunkt. Sinkt deine Hitze durch Verbrauch auf 0, entzündet sie sich 1×/Durchlauf auf ${Math.round(C.PHOENIX_REIGNITE * 100)} % neu.`, phoenix: true },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],

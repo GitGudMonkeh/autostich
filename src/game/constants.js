@@ -570,7 +570,19 @@ export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    //
 // `brandActive = brandPending`), sondern stapeln sich auf den Gegnerkarten. Damit hängt er an der Brand-Linie
 // (Brandmal/Lauffeuer/Schmelzofen liefern das Material) UND weiter an der Hitze — endet ein Durchlauf kalt, fällt
 // der Stapel auf den normalen Ein-Durchlauf-Brand zurück. Der Deckel verhindert, dass ein Gegnerdeck auf 0 sinkt.
-export const SONNENKERN_BRAND_CAP  = envNum("SIM_SONNENKERN_BRAND_CAP", 4);   // max dauerhafter Brand je Gegnerkarte
+export const SONNENKERN_BRAND_CAP   = envNum("SIM_SONNENKERN_BRAND_CAP", 4);   // max gestapelte Brände je Gegnerkarte
+// Der Stapel zahlt in SCORE, nicht in Wert: ein −4-Abzug würde die Gegnerkarte praktisch ausradieren (zusammen mit
+// dem +2 auf der eigenen Seite doppelt). Der Wert-Abzug bleibt deshalb auf dem normalen Brandmaß gedeckelt
+// (BRAND_VALUE_CAP), und die ANZAHL der Brände wird zur Score-Quelle: jeder Sieg gegen eine gebrandmarkte Karte
+// zahlt je Brand darauf. Das macht den Stapel sichtbar wertvoll, ohne den Gegner zu entwerten.
+// Gemessen (Halte-Build, 700 Laeufe je Punkt): Satz 100 -> Sonnenkern 16,63 Mio · 200 -> 17,90 · 350 -> 19,13.
+// 100 gewaehlt: das ist praktisch das Niveau der verworfenen −4-Fassung (16,20), also gleiche Staerke bei besserer
+// Mechanik. Nebenbefund derselben Messung: SONNENKERN_VALUE von 2 auf 1 bewegt nur 0,04 Mio — die alte
+// „+Kartenwert"-Passive ist fast wirkungslos, der Brand-Score traegt den Skill.
+export const SONNENKERN_BRAND_SCORE = envNum("SIM_SONNENKERN_BRAND_SCORE", 100); // Score je Brand auf der geschlagenen Karte
+// Deckel des WERT-Abzugs durch Brände — genau das bisherige Maximum (Brandmal + Schmelzofen-Bonus). Ohne Sonnenkern
+// stapeln Brände ohnehin nicht; der Deckel greift also nur für den Stapel und hält den Gegner spielbar.
+export const BRAND_VALUE_CAP        = BRAND_VALUE + SCHMELZOFEN_BRAND_BONUS;
 // Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
 export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
 export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
