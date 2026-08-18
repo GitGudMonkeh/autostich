@@ -17,6 +17,9 @@ import {
 // unlockText.js zum Satz — Zahlen darin über fmtNum, nicht über einen eigenen Tausenderpunkt-Helfer.
 import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js";
 import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js";
+// #vorschau-brett: DER Boden aller Boden-Effekte — die Werkstatt-Vorschau konsumiert ihn jetzt wie das Spiel,
+// statt ihre eigene Platzierung zu erfinden (die Datei sagt ausdrücklich: durchreichen, nicht hart kodieren).
+import { floorEffectPlacement } from "./fx/effectZones.js";
 import { SliceFx, KLINGE_TUNE } from "./Battlefield.jsx";
 // Pixi-Umbau: GPU-Emitter für die Feld-Effekt-Vorschau (lazy → Pixi bleibt aus dem main-Bundle; Mount ist env-gegatet).
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-frei: welche Feld-Effekte im Showcase auf die GPU-Bühne gehen
@@ -697,12 +700,17 @@ function CubeMatrixPreview({ deckTint = false, wire = false }) {
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0c0c10aa,#0c0c1055 45%,#0c0c10cc)" }} />
       {on && (
         <Suspense fallback={null}>
-          {/* #317: Showcase soll den Effekt WIE IM SPIEL zeigen — gedämpft, nicht überzeichnet (visuell am echten Modul
-              in shop-großer Box abgestimmt). riseBase 1.2 (statt 2.2) → Türme stehen NIEDRIG in Ruhe wie in-game (kein
-              Dauer-Hochstand); riseScale 0.55 → Musik-Ausschlag proportional zur flacheren Kachel wie im Spiel; yBias 0.32
-              → das Hologrid schließt unten mit dem Rahmen ab (vorher lief die Front-Kante unter den Rahmen); depthScale 0.8
-              → Feld flach genug für die Kachel. */}
-          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false} riseBase={1.2} riseScale={0.55} yBias={0.32} depthScale={0.8} sun={false} wire={wire} />
+          {/* #vorschau-brett: Die vier Sonderwerte der Werkstatt sind ENTFALLEN (riseBase 1.2 · riseScale 0.55 ·
+              yBias 0.32 · depthScale 0.8). Sie waren „visuell in shop-großer Box abgestimmt" — auf eine Box mit
+              1,62 : 1. Seit die Vorschau das Brettformat trägt (1,93 : 1, gemessen 668 × 347), stimmen sie nicht
+              mehr: der Boden hängt an der HÖHE (`baseY` = 0,28 · H), das Spielfeld-Bild darunter wird per
+              `object-cover` beschnitten — beide wandern bei einer Formatänderung unterschiedlich, und das Feld
+              schwebte über dem Horizont des Bildes.
+              Statt die vier Zahlen neu abzustimmen, benutzt die Vorschau jetzt DENSELBEN Boden wie das Spiel:
+              `floorEffectPlacement()` ist laut effectZones.js genau dafür da („nicht selbst hart kodieren").
+              Das ist auch inhaltlich richtig — die Vorschau IST das Brett, nur größer. */}
+          <CubeMatrixField color={look.a1} color2={look.a2} deckColored={deckTint} reduced={false}
+            sun={false} wire={wire} demo {...floorEffectPlacement()} />
         </Suspense>
       )}
     </div>

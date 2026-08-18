@@ -155,5 +155,11 @@ describe("effectZones · der gemeinsame Feld-Boden", () => {
     expect(sf).toContain("FLOOR_FRONT_AT_BOTTOM");
     expect(sf).toContain("EFFECT_ZONES.desktop");
     expect(srcUi("Battlefield.jsx")).toContain("floorEffectPlacement()");
+    /* #vorschau-brett: Die Werkstatt-Vorschau ist seit 18.08.2026 ebenfalls Konsument. Sie hatte ihre
+       Platzierung mit `yBias: 0.32` selbst hingeschrieben — genau das „Handanlegen pro Effekt", vor dem
+       der Kopf von effectZones.js warnt. Aufgefallen ist es erst, als die Vorschau das Brettformat bekam:
+       der Boden hängt an der HÖHE, das Spielfeld-Bild darunter wird per `object-cover` beschnitten, und
+       bei einer Formatänderung wandern beide unterschiedlich — das Würfelfeld schwebte über dem Horizont. */
+    expect(srcUi("CustomizeScreen.jsx")).toContain("floorEffectPlacement()");
   });
 });

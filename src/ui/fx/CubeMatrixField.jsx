@@ -40,13 +40,49 @@ const STD_LO = "#2ff0ff", STD_HI = "#ff2d9b", GRID_COL = "#7a2fff", HOT_COL = "#
 //   FILL_HOT_MIX = Weiß-Anteil der gefüllten Würfel bei Musik-Ausschlag (war 0.5). Beide gelten für Standard UND Deckfarbe.
 const WIRE_HOT_MIX = 0.15, FILL_HOT_MIX = 0.30;
 
+/* #shop-demo — Ersatzsignal, wenn keine Musik läuft.
+   Im SPIEL ist ein stilles Feld bei stiller Musik die richtige Antwort. In der WERKSTATT ist es unbrauchbar:
+   dort steht man vor der Kaufentscheidung und sähe ein totes Feld — man müsste erst die Musik anschalten, um zu
+   erkennen, wofür man 40 DP ausgibt. Der `demo`-Schalter speist deshalb ein synthetisches Signal in DIESELBE
+   Pipeline (driveCube → Grundpegel-Abzug, Kontrast, adaptive Attack/Release). Nur die Quelle ist anders, das
+   Verhalten identisch — es ist also keine zweite Animation, die vom Original abdriften könnte.
+
+   Umgeschaltet wird über eine PEGELMESSUNG, nicht über ein Mute-Flag: der Analyser existiert auch bei
+   stummgeschalteter Wiedergabe und liefert dann konstant 0. Das Fenster trifft damit auch „pausiert",
+   „Track zu Ende" und „Lautstärke auf 0" — und geht echter Musik automatisch aus dem Weg, sobald sie einsetzt. */
+export const DEMO_BPM = 112;          // ruhiger Synthwave-Takt, im Bereich der Spielmusik
+export const DEMO_SILENCE_S = 0.35;   // so lange muss Stille anliegen, bevor das Ersatzsignal übernimmt
+export const DEMO_PEAK_MIN = 3;       // Byte-Pegel, unter dem der Analyser als „still" gilt (Rauschboden)
+
 const TAU = Math.PI * 2;
+
+/* Der Anschlag: 4er-Takt, die 1 und die 3 betont. Scharf rein, weich raus — das ist die Hüllkurve, die eine
+   Bassdrum im Spektrum hinterlässt, und genau darauf ist der Kontrast-Block in driveCube abgestimmt. */
+export const demoKick = (t) => {
+  const beat = t * (DEMO_BPM / 60);
+  const imSchlag = beat - Math.floor(beat);
+  const stelle = Math.floor(beat) & 3;
+  const wucht = stelle === 0 ? 1 : stelle === 2 ? 0.8 : 0.5;
+  return wucht * Math.pow(1 - imSchlag, 3);
+};
+/* Ersatz-Spektrum je Band. Bewusst KEIN Sinus über alle Würfel — das läse sich als Welle, die durchs Feld
+   läuft, nicht als Musik. Stattdessen die drei Anteile, die ein echtes Spektrum hat: Kick unten, Hi-Hats oben,
+   eine wandernde Melodie dazwischen. Rein aus der Zeit gerechnet, ohne Zustand: der Effekt kann doppelt leben
+   (Spiel + Werkstatt-Vorschau) und beide sehen gleich aus. */
+export const demoRaw = (i, TC, t) => {
+  const u = TC > 1 ? i / (TC - 1) : 0;                                   // 0 = tiefstes Band … 1 = höchstes
+  const kick = Math.exp(-u * 5.5) * demoKick(t);                          // Bass nur in den untersten Bändern
+  const achtel = t * (DEMO_BPM / 30);
+  const hats = Math.max(0, u - 0.6) * 0.9 * Math.pow(1 - (achtel - Math.floor(achtel)), 5);
+  const mel = 0.26 * Math.max(0, Math.sin(TAU * (u * 3.1 - t * 0.19))) * Math.exp(-Math.abs(u - 0.42) * 2.6);
+  return clamp(kick + hats + mel, 0, 1);
+};
 function rgb(hex) { let s = String(hex || "#fff").replace("#", ""); if (s.length === 3) s = s.replace(/(.)/g, "$1$1"); const n = parseInt(s, 16) || 0; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${clamp(a, 0, 1)})`;
 
 /* mode: "all" (Feld + Scheinwerfer auf einer Bühne — für die Showcase) | "field" (nur Würfel/Boden/Sonne, z-2 hinter
    den Karten) | "spots" (nur Scheinwerfer, additive Overlay-Bühne z-11 ÜBER den Karten → leuchtet sie von oben an). */
-export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, depthScale = 1, floorBottom = null, sun = true, wire = false, active = true }) {
+export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff", deckColored = false, reduced = false, lite = false, mode = "all", riseScale = 1, riseBase = 1, yBias = 0, depthScale = 1, floorBottom = null, sun = true, wire = false, active = true, demo = false }) {
   const hostRef = useRef(null);
   // Live-Props für den rAF-Loop spiegeln (Canvas wird nur EINMAL gebaut). riseScale = Musik-Ausschlag (Höhen-Delta je
   // Ausschlag). riseBase = RUHE-Höhe der Türme (unabhängig vom Ausschlag). yBias = Feld nach OBEN schieben (0..1 × H),
@@ -54,8 +90,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
   // depthScale = Reihen-Abstand-Faktor (< 1 = flacheres Feld, zieht die hinteren Reihen nach vorn; Showcase < 1,
   // In-Game = 1 → unverändert).
   const syncRef = useRef(null); // #perf-overlay-2: start/stop aus dem Mount-Effekt nach außen (Muster wie FrostIce)
-  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active });
-  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active };
+  const propsRef = useRef({ color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active, demo });
+  propsRef.current = { color, color2, deckColored, reduced, lite, mode, riseScale, riseBase, yBias, depthScale, floorBottom, sun, wire, active, demo };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -82,6 +118,8 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     // #317 adaptive Geschwindigkeit: Song-Aktivität (Spektral-Fluss) → liveUp/liveDn (Attack/Release je Frame).
     const prevFreq = audio ? new Uint8Array(audio.freqData.length) : null;
     let songAct = 0, fluxInit = false, liveUp = TUNE.ATTACK, liveDn = TUNE.RELEASE;
+    // #shop-demo: Sekunden ohne Pegel + Zeitbasis des Ersatzsignals (beide nur vom Loop geschrieben).
+    let stilleS = DEMO_SILENCE_S, demoT = 0;
 
     function resize() {
       const r = host.getBoundingClientRect();
@@ -111,21 +149,28 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     }
     // Liest den Analyser EINMAL/Frame + leitet die adaptive Geschwindigkeit (liveUp/liveDn) aus dem Spektral-Fluss ab.
     // Beide Bühnen (field/spots) rufen das auf; freqData steht danach für computeCubes/computeSpotBass bereit.
-    function computeSpeed() {
+    function computeSpeed(dt) {
       liveUp = TUNE.ATTACK; liveDn = TUNE.RELEASE;
-      if (!(audio && audio.analyser)) return false;
+      if (!(audio && audio.analyser)) { stilleS = DEMO_SILENCE_S; return false; }
       audio.analyser.getByteFrequencyData(audio.freqData);
       const bins = audio.freqData.length;
       if (!fluxInit) { prevFreq.set(audio.freqData); fluxInit = true; }
-      let flux = 0; for (let b = 0; b < bins; b++) { const d = audio.freqData[b] - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = audio.freqData[b]; }
+      // #shop-demo: Der Spitzenpegel faellt im selben Durchlauf ab, in dem ohnehin ueber alle Baender gelaufen wird.
+      let flux = 0, peak = 0;
+      for (let b = 0; b < bins; b++) { const v = audio.freqData[b]; if (v > peak) peak = v; const d = v - prevFreq[b]; if (d > 0) flux += d; prevFreq[b] = v; }
+      stilleS = peak <= DEMO_PEAK_MIN ? stilleS + dt : 0;
       songAct += (flux / (bins * 255) - songAct) * 0.01;
       const live = clamp((songAct - TUNE.SPEED_LO) / Math.max(1e-4, TUNE.SPEED_HI - TUNE.SPEED_LO), 0, 1);
       liveUp = lerp(TUNE.ATTACK * TUNE.SLOW, TUNE.ATTACK, live);   // ruhig → träger, schnell → knackig
       liveDn = lerp(TUNE.RELEASE * TUNE.SLOW, TUNE.RELEASE, live);
       return true;
     }
-    function computeCubes(TC, hasAudio) {
-      if (hasAudio) {
+    function computeCubes(TC, hasAudio, demoOn) {
+      // Reihenfolge: Der Demo-Zweig steht VOR dem Audio-Zweig. `hasAudio` sagt nur, dass ein Analyser da ist —
+      // bei stummer Wiedergabe liefert der Nullen, und die wuerden die Tuerme absenken statt sie zu treiben.
+      if (demoOn) {
+        for (let i = 0; i < TC; i++) driveCube(i, demoRaw(i, TC, demoT) * (1 + TUNE.TILT * (i / TC)), liveUp, liveDn);
+      } else if (hasAudio) {
         const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length;
         for (let i = 0; i < TC; i++) {
           const f0 = 30 * Math.pow(TUNE.FREQ_MAX / 30, i / TC), f1 = 30 * Math.pow(TUNE.FREQ_MAX / 30, (i + 1) / TC);
@@ -135,9 +180,11 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         }
       } else { for (let i = 0; i < TC; i++) cubeV[i] += (0 - cubeV[i]) * liveDn; } // Idle → in Ruhe sinken
     }
-    function computeSpotBass(hasAudio) {
+    function computeSpotBass(hasAudio, demoOn) {
       let raw = 0;
-      if (hasAudio) {
+      if (demoOn) {
+        raw = demoKick(demoT);   // Scheinwerfer pulsen auf demselben Anschlag wie die Bass-Tuerme
+      } else if (hasAudio) {
         const nyq = audio.ctx.sampleRate / 2, bins = audio.freqData.length; // freqData in computeSpeed bereits gelesen
         const lo = Math.max(1, Math.floor(40 / nyq * bins)), hi = Math.max(lo + 1, Math.ceil(150 / nyq * bins));
         let s = 0, nn = 0; for (let b = lo; b <= hi && b < bins; b++) { s += audio.freqData[b]; nn++; }
@@ -225,7 +272,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       ctx.globalCompositeOperation = "source-over";
     }
 
-    function render() {
+    function render(dt) {
       const p = propsRef.current;
       const lo = p.deckColored ? rgb(p.color) : rgb(STD_LO);
       const hi = p.deckColored ? rgb(p.color2) : rgb(STD_HI);
@@ -234,11 +281,15 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       const drawField = p.mode !== "spots", drawSpots = p.mode !== "field";
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, W, H); // transparente Bühne (BF-Bild/Karten bleiben sichtbar)
-      const hasAudio = !p.reduced && computeSpeed();
+      // #shop-demo: `dt` treibt Stille-Fenster UND Ersatzsignal — beide brauchen echte Zeit, nicht Framezahlen
+      // (die Schleife ist auf 24/40 ms gedrosselt und der Takt liefe sonst je nach Gerät unterschiedlich schnell).
+      const hasAudio = !p.reduced && computeSpeed(dt);
+      const demoOn = !!p.demo && !p.reduced && stilleS >= DEMO_SILENCE_S;
+      if (demoOn) demoT += dt;
       if (drawField) {
         // #perf: auf Mobile (lite) zusätzlich weniger Spalten/Reihen (14×5 statt 18×6) → ~35% weniger Würfel.
         const C = Math.round(TUNE.C_COLS) - (liteOn() ? 6 : 0), R = Math.round(TUNE.C_ROWS) - (liteOn() ? 2 : 0), TC = C * R; // #perf-mobile: lite 14×5=70 → 12×4=48 Würfel
-        if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio);
+        if (p.reduced) { for (let i = 0; i < TC; i++) cubeV[i] = 0.12; } else computeCubes(TC, hasAudio, demoOn);
         const spread = TUNE.D_SPREAD, z0 = TUNE.FELD_TIEFE, rowGap = TUNE.C_DEPTHGAP * (p.depthScale || 1), hw0 = TUNE.C_SIZE, alpha = TUNE.CUBE_ALPHA * (p.reduced ? 0.6 : 1);
         const taper = TUNE.C_TAPER;
         if (p.sun) drawSun(lo, hi);
@@ -261,7 +312,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
         }
       }
       if (drawSpots) {
-        if (p.reduced) spotBass = 0; else computeSpotBass(hasAudio);
+        if (p.reduced) spotBass = 0; else computeSpotBass(hasAudio, demoOn);
         drawSpotlights(spotCol);
       }
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
@@ -275,15 +326,18 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       raf = requestAnimationFrame(frame);
       const FRAME_MS = liteOn() ? 40 : 24; // #perf-mobile: lite ~25fps (war ~30) — Ambiente verträgt das
       if (now - lastT < FRAME_MS) return;
+      // Erster Durchlauf (lastT 0) hätte sonst ein dt von mehreren Sekunden; nach oben gedeckelt, damit ein
+      // Tab-Wechsel den Takt nicht überspringt.
+      const dt = lastT ? Math.min(0.25, (now - lastT) / 1000) : FRAME_MS / 1000;
       lastT = now;
-      render();
+      render(dt);
     }
     // #perf-overlay-2: `active` false = Brett von einem Vollbild-Overlay verdeckt → Loop gar nicht erst starten.
     function start() { if (!raf && !disposed && propsRef.current.active !== false && document.visibilityState !== "hidden") raf = requestAnimationFrame(frame); }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
 
     resize();
-    const ro = new ResizeObserver(() => { resize(); if (propsRef.current.reduced) render(); });
+    const ro = new ResizeObserver(() => { resize(); if (propsRef.current.reduced) render(0); });
     ro.observe(host);
     const onVis = () => { if (document.visibilityState === "hidden") stop(); else start(); };
     // #perf-overlay-2: derselbe Schalter für „Brett verdeckt". Der Mount-Effekt hat keine Prop-Deps, also muss der
@@ -291,7 +345,7 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
     syncRef.current = () => { if (propsRef.current.active === false) stop(); else start(); };
     document.addEventListener("visibilitychange", onVis);
 
-    if (propsRef.current.reduced) render();  // Standbild — kein Loop
+    if (propsRef.current.reduced) render(0);  // Standbild — kein Loop (dt bedeutungslos, muss aber Zahl sein)
     else start();
 
     return () => {

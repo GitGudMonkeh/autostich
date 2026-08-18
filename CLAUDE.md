@@ -1128,3 +1128,48 @@ Wächter: `test/fx-panel.test.js` — rechnet den Maßstab NACH (previewScale.js
 die vier Nähte als Quelltext-Ratsche fest (`align-self: start` · `display: contents` unter 1400 ·
 `top: auto` · `--bf-ratio` als Variable statt abgetippter Zahl). Gegenprobe gemacht: alle drei sabotierten
 Nähte fallen. **Nicht am Gerät abgenommen** — alles headless im Produktionsbuild gemessen und nachgerendert.
+
+### #shop-demo + #vorschau-boden — Würfel-Matrix in der Werkstatt (2026-08-18)
+Zwei Meldungen aus derselben Ecke, mit derselben Wurzel: die Vorschau hatte ihre eigenen Zahlen statt der
+gemeinsamen. Beide fielen erst auf, als die Vorschau mit #vorschau-brett das Brettformat bekam.
+- **„Liegt nicht sauber": Das Würfelfeld schwebte über dem Horizont.** Die Vorschau schrieb ihre Platzierung
+  mit vier Sonderwerten selbst hin (`riseBase 1.2 · riseScale 0.55 · yBias 0.32 · depthScale 0.8`, laut
+  Kommentar „visuell in shop-großer Box abgestimmt" — auf **1,62 : 1**). Der Boden hängt an der HÖHE
+  (`baseY` = 0,28 · H), das Spielfeld-Bild darunter wird per `object-cover` beschnitten; bei einer
+  Formatänderung wandern beide **unterschiedlich**. Statt die vier Zahlen neu abzustimmen benutzt die
+  Vorschau jetzt `floorEffectPlacement()` — genau das, wozu `effectZones.js` im Kopf auffordert
+  („nicht selbst hart kodieren"). Inhaltlich ist das ohnehin richtig: die Vorschau IST das Brett, nur größer.
+  Der Wächter in `test/fx-seams.test.js` zählt die Werkstatt ab jetzt zu den Konsumenten.
+- **„Soll auch bei stummer Musik laufen."** Ohne Signal sinken die Türme in Ruhe — im SPIEL richtig, in der
+  Werkstatt unbrauchbar: dort steht die Kaufentscheidung an, und man müsste erst die Musik anschalten, um zu
+  sehen, wofür man 40 DP ausgibt. Neuer Prop **`demo`** (nur die Vorschau setzt ihn) speist ein synthetisches
+  Signal in **dieselbe** Pipeline (`driveCube` → Grundpegel-Abzug, Kontrast, adaptive Attack/Release). Nur die
+  Quelle ist anders, das Verhalten identisch — kein zweiter Zeichenpfad, der driften könnte (#kompositor-Regel).
+  - **Umgeschaltet wird über eine PEGELMESSUNG, nicht über ein Mute-Flag**: der Analyser existiert auch bei
+    stummgeschalteter Wiedergabe und liefert dann konstant 0. Das Fenster (`DEMO_SILENCE_S` 0,35 s über
+    `DEMO_PEAK_MIN` 3) trifft damit auch „pausiert", „Track zu Ende" und „Lautstärke 0" — und geht echter
+    Musik automatisch aus dem Weg, sobald sie einsetzt.
+  - **Reihenfolge ist Teil der Regel**: der Demo-Zweig steht VOR dem Audio-Zweig. Andersherum fütterte der
+    Audio-Zweig bei stummer Wiedergabe Nullen und senkte die Türme ab, bevor das Ersatzsignal drankäme.
+  - Das Signal ist **kein Sinus über alle Würfel** (das läse sich als Welle durchs Feld, nicht als Musik),
+    sondern die drei Anteile eines echten Spektrums: Kick unten (4er-Takt, 1 und 3 betont), Hi-Hats oben,
+    wandernde Melodie dazwischen. Rein aus der Zeit gerechnet, ohne Zustand — der Effekt kann doppelt leben.
+  - Gemessen (Handy-Viewport-unabhängig, 1536 × 791 @ DPR 1,25, Ton stumm): mittlere Bildabweichung zwischen
+    Frames im Abstand 0,7 s **2,1–2,5 von 255** — zum Vergleich gilt in diesem Projekt 0,56 als nicht
+    unterscheidbar. Das Feld lebt also sichtbar.
+- Wächter: `test/cubematrix-demo.test.js` — rechnet das Signal NACH (Wertebereich, Bewegung je Band, Takt,
+  Bass-unten-Verteilung) und hält die Verdrahtung als Ratsche fest (Pegel statt Flag · Demo vor Audio ·
+  dieselbe Pipeline · im Spiel AUS · Sonderwerte weg).
+
+#### Aurora: nachgemessen, KEIN Platzierungsfehler
+Gemeldet als „nicht mittig, links ist eine Lücke". Über **18 Frames** den Schwerpunkt des Grün-Überschusses
+gemessen: im Mittel **45,2 %** der Breite, Einzelframes schwanken zwischen **18,7 % und 68,3 %**. Die Aurora
+ist also nicht schief montiert — sie **wandert** (Patch-Rauschen × `t*DRIFT`), und ein Screenshot zeigt eine
+Drei-Sekunden-Scheibe davon. Horizontal ist der Shader ohnehin formatunabhängig: Bogen und Strahlen rechnen in
+normiertem `uv.x`, nicht in Aspekt-Koordinaten.
+- **`bandScale 1.12` / `bandShift 0.2` bleiben.** Sie sind VERTIKAL und wären der Kandidat gewesen (dieselbe
+  Sorte Shop-Sonderwert wie oben), aber gegengerendert: mit den In-Game-Werten (1/0) wird der Bogen oben
+  abgeschnitten — der Scheitel liegt über dem Rahmen. Die Sonderwerte zeigen MEHR vom Effekt, nicht weniger.
+  Das ist eine bewusste Showcase-Entscheidung (#359) und weiter gültig.
+- Wer die Lücken wirklich weghaben will, muss an die **Fleckigkeit** des Effekts (`PATCH_FL`/`PATCH_C`) — und
+  das ändert das Spiel mit. Eigene Entscheidung, kein Vorschau-Fix.
