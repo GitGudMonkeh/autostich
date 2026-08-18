@@ -22,10 +22,10 @@ export function isCoarse() {
 }
 
 /* Auflösungs-Deckel. Die Kosten eines Effekts hängen fast nur an „Canvas-Pixel pro Sekunde" (im Prunk-Messstand
-   nachgemessen) und skalieren damit QUADRATISCH mit der Dichte: 2,0 → 1,4 sind gut 51 % weniger Fläche. 1,4 ist der
-   Wert, auf dem die drei raw-WebGL-Felder schon stehen — bewusst derselbe, damit das Brett einheitlich aussieht. */
-/* AM GERÄT ENTSCHIEDEN (18.08.2026): 1,4 → 1,0. Der Wert stand seit den raw-WebGL-Feldern auf 1,4, ohne dass je
-   jemand 1,0 ausprobiert hätte — er war eine Schätzung, kein Messergebnis. Über `?dpr=1` am echten Handy
+   nachgemessen) und skalieren damit QUADRATISCH mit der Dichte — das ist der Hebel mit dem besten Verhältnis
+   überhaupt, weil das Auge Dichte weit schlechter auflöst als Bildrate.
+
+   AM GERÄT ENTSCHIEDEN (18.08.2026): 1,4 → 1,0. Die 1,4 stammten aus der Zeit der raw-WebGL-Felder; niemand hatte je 1,0 ausprobiert, es war eine Schätzung, kein Messergebnis. Über `?dpr=1` am echten Handy
    nachgesehen: **50–60 fps, unter 10 % Akku über die Sitzung, Gerät nur noch lauwarm** (Urteil des Users), und
    optisch unauffällig. Pixel skalieren quadratisch: 1,4 → 1,0 ist **49 % weniger Füllarbeit** für alles, was
    diesen Deckel liest.
@@ -53,23 +53,31 @@ export function dprCap(coarse = isCoarse()) {
   return Math.min(cap, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 }
 
-/* Zeichenrate auf Mobile. Bleibt bei 30 — AUSPROBIERT UND VERWORFEN, das ist der Punkt dieses Kommentars.
+/* Zeichenrate auf Mobile. **60 seit 18.08.2026** — und das ist die zweite Kehrtwende an dieser Zahl, deshalb
+   steht die ganze Geschichte hier statt nur der aktuelle Wert.
 
-   Die Ausgangslage sprach für mehr: der Deckel stammt aus der Zeit von vier bis fünf eigenen Vollbild-Canvas, und
-   nach dem Umbau liegen am Gerät p50 UND p95 auf 17 ms (ein 60-Hz-Frame), 1 Ruckler in 66 s, keine Long Tasks. Es
-   war also Luft da, und den Gewinn auszugeben war erklärtes Ziel. Der Standard stand deshalb kurzzeitig auf 60.
+   Runde 1: der Deckel stammte aus der Zeit von vier bis fünf eigenen Vollbild-Canvas. Nach dem Kompositor-Umbau
+   war Luft da, der Standard stand kurz auf 60 — am Gerät gegen `?hz=30` verglichen war **kein Unterschied zu
+   sehen**, also zurück auf 30. Diese Entscheidung war richtig: doppelte Füllarbeit ohne Gegenwert ist reiner
+   Verlust in Akku und Wärme.
 
-   Am Gerät verglichen (derselbe Build, nur `?hz=30` dagegen): **kein sichtbarer Unterschied.** Damit ist die
-   Verdopplung ein reiner Verlust — doppelte Füllarbeit für jeden Dauer-Effekt, bezahlt in Akku und Wärme, ohne
-   Gegenwert. Entscheidung des Users, und die richtige.
+   Runde 2 (jetzt): der Unterschied IST inzwischen zu sehen (Urteil des Users am Gerät), und das ist kein
+   Widerspruch, sondern eine Folge des Umbaus dazwischen. Vorher lief das Brett auf einer heißen, gedrosselten
+   GPU — ein Deckel von 60 hätte dort ohnehin nie 60 Zeichnungen ergeben, sondern nur unregelmäßige. Nach
+   Deckglow-Ausbau, MSAA-Ausbau und `DPR_CAP_COARSE` 1,4 → 1,0 hält das Gerät die Rate tatsächlich durch.
 
-   Wichtig für den nächsten, der hier nachdenkt: das frühere „ruckelt trotz 60 FPS" lag NICHT an der Rate, sondern
-   an ihrer Ungleichmäßigkeit (s. `frameMinMs` — die Schwelle lag exakt auf zwei 60-Hz-Frames). Nach der
-   Halbframe-Toleranz war das Problem weg, und 60 hatte nichts mehr zu holen. Wer die Rate wieder anheben will,
-   braucht dafür einen Effekt, dem man den Unterschied ANSIEHT — die weichen Ambiente-Ebenen sind es nicht.
+   WAS DAS KOSTET, in einer Zeile: die Füllarbeit pro Sekunde ist wieder da, wo sie vor dem DPR-Schritt war
+   (1,0² × 60 = 60 gegen vorher 1,4² × 30 = 58,8). Das gemessene „lauwarm, unter 10 % Akku" stammt aus einem
+   Lauf bei 30 Hz. Wenn das Gerät bei 60 wieder warm wird, ist DIESE Zeile die Stelle — nicht die Auflösung,
+   denn die trägt jetzt nachweislich mehr Bild pro Watt als die Rate.
 
-   `?hz=<zahl>` überschreibt sie am Gerät (Preview/Dev), damit so eine Frage messbar bleibt statt geglaubt. */
-const HZ_DEFAULT_COARSE = 30;
+   Der Knopf gilt für ALLE, die ihn lesen: Kompositor, PixiStage, CardFxStage, Hologrid-Slice UND die fünf
+   Gottgleich-Prunks (`gottMaxFPS`). Die Prunks sind dabei der schwerste Posten — die Supernova zieht zwei
+   Vollbild-Canvas auf. Wer die Rate nur für die Ambiente-Ebenen will, braucht dort einen eigenen Wert und
+   damit eine zweite Wahrheit; das wäre gegen die Linie dieser Datei und will begründet sein.
+
+   `?hz=<zahl>` überschreibt sie am Gerät (Preview/Dev), damit die Frage messbar bleibt statt geglaubt. */
+const HZ_DEFAULT_COARSE = 60;
 function hzOverride() {
   try {
     const v = parseFloat(new URLSearchParams(window.location.search).get("hz"));
@@ -84,7 +92,19 @@ export const DRAW_HZ_COARSE = hzOverride() ?? HZ_DEFAULT_COARSE;
    Abstand springt auf 50 ms. Simuliert ergibt das 33/50/33/50 statt gleichmäßig 33 — also ~26 statt 30 Zeichnungen
    pro Sekunde und vor allem UNGLEICHMÄSSIG. Das ist der Grund, warum Effekte auf dem Handy ruckelig wirken, obwohl
    der FPS-Zähler 60 zeigt: der zählt rAF-Frames, nicht Zeichnungen. Mit der halben Frame-Toleranz passt jeder
-   zweite Frame sicher durch, auch bei 90 Hz. (Herkunft: #perf-warm, dort für die WebGL-Felder hergeleitet.) */
+   zweite Frame sicher durch, auch bei 90 Hz. (Herkunft: #perf-warm, dort für die WebGL-Felder hergeleitet.)
+
+   OFFEN seit der Umstellung auf 60 (18.08.2026) — die feste 8-ms-Toleranz ist auf einen 60-Hz-SCHIRM gerechnet,
+   und bei einem Deckel von 60 trägt sie nicht mehr überall:
+     • 60-Hz-Schirm  → Schwelle 8,67 ms, Frames alle 16,7 ms → jeder passt → 60 Zeichnungen/s. Richtig.
+     • 120-Hz-Schirm → Frames alle 8,3 ms → jeder zweite fällt durch → 60/s. Richtig.
+     • 90-Hz-Schirm  → Frames alle 11,1 ms → JEDER passt → **90/s statt 60**. Der Deckel leckt um 50 %.
+   Bei 30 gab es das Leck nicht (Schwelle 25,3 ms fängt auch 22,2 ms ab). Ein 90-Hz-Handy zieht damit mehr
+   Füllarbeit, als hier bestellt ist — und merkt es nur an der Wärme, weil der FPS-Zähler rAF-Frames zählt und
+   ohnehin die Schirmrate zeigt. Sauber wäre eine Toleranz als ANTEIL der Zielperiode statt fester 8 ms
+   (0,75 × Periode liefert 30/30/30 und 60/45/60 über 60/90/120 Hz, überschreitet also nie das Ziel).
+   Bewusst NICHT nebenbei geändert: die 8 ms sind hergeleitet und testgesichert, das gehört in einen eigenen
+   Schritt mit eigener Gegenprobe am Gerät. */
 export function frameMinMs(coarse = isCoarse()) {
   // Ohne Deckel (Rate ≥ Bildschirmrate) gar nicht erst bremsen — sonst fällt bei 60 Hz jeder zweite Frame durch.
   return coarse && DRAW_HZ_COARSE < 90 ? 1000 / DRAW_HZ_COARSE - 8 : 0;

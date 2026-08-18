@@ -206,12 +206,21 @@ höchstens EINE. (**Leuchten/DeckGlow** war die dritte, mobil 1,0 — entfallen,
   #perf-overlay, nur die andere Achse. Bewusst `IntersectionObserver` statt `scroll`-Listener: ein Handler mit
   `getBoundingClientRect()` erzwingt je Scroll-Frame ein synchrones Layout, verursacht also genau die Kosten, die
   er sparen soll. `rootMargin: 200px` startet die Effekte VOR dem Einscrollen (sonst sieht man das Anlaufen).
-- **`DRAW_HZ_COARSE` bleibt 30 — 60 wurde probiert und verworfen.** Nach dem Umbau war Luft da (p50/p95 = 17 ms),
-  also stand der Standard kurz auf 60. Am Gerät verglichen (`?hz=30` im selben Build): **kein sichtbarer
-  Unterschied** → die Verdopplung ist reiner Verlust, doppelte Füllarbeit in Akku und Wärme ohne Gegenwert.
-  Merksatz für den nächsten Anlauf: das frühere „ruckelt trotz 60 FPS" lag NICHT an der Rate, sondern an ihrer
-  Ungleichmäßigkeit (`frameMinMs`, Halbframe-Toleranz) — das ist längst behoben. Wer erhöhen will, braucht einen
-  Effekt, dem man es ANSIEHT; die weichen Ambiente-Ebenen sind es nicht. **`?hz=<zahl>`** hält die Frage messbar.
+- **`DRAW_HZ_COARSE` steht seit 18.08.2026 auf 60 — zweite Kehrtwende, beide Male am Gerät entschieden.**
+  Runde 1 (nach dem Kompositor-Umbau): 60 probiert, gegen `?hz=30` verglichen, **kein sichtbarer Unterschied** →
+  zurück auf 30, weil doppelte Füllarbeit ohne Gegenwert reiner Verlust ist. Runde 2 (nach Deckglow-Ausbau,
+  MSAA-Ausbau und `DPR_CAP_COARSE` 1,4 → 1,0): der Unterschied IST jetzt zu sehen. Das ist kein Widerspruch —
+  vorher lief das Brett auf einer heißen, gedrosselten GPU und hätte 60 Zeichnungen ohnehin nie gehalten,
+  sondern nur unregelmäßige geliefert.
+  - **Der Preis, ausgerechnet:** die Füllarbeit pro Sekunde ist damit wieder da, wo sie vor dem DPR-Schritt war
+    (1,0² × 60 = 60 gegen 1,4² × 30 = 58,8). Das gemessene „lauwarm, unter 10 % Akku" stammt aus einem Lauf bei
+    **30 Hz** — der Wärmetest bei 60 steht aus. Wird es wieder warm, ist DIESE Zahl die Stelle, nicht die
+    Auflösung: die trägt nachweislich mehr Bild pro Watt.
+  - **Nebenwirkung, offen:** die feste 8-ms-Toleranz in `frameMinMs` ist auf einen 60-Hz-SCHIRM gerechnet. Bei
+    einem Deckel von 60 stimmt sie für 60- und 120-Hz-Schirme, **auf einem 90-Hz-Schirm lässt sie jeden Frame
+    durch → 90 statt 60 Zeichnungen/s** (bei Deckel 30 gab es das Leck nicht). Sauber wäre eine Toleranz als
+    ANTEIL der Zielperiode (0,75 × Periode ergibt 30/30/30 bzw. 60/45/60 über 60/90/120 Hz). Bewusst nicht
+    nebenbei geändert — die 8 ms sind hergeleitet und testgesichert.
 - **EINE Wahrheit:** Kompositor, Prunks (`gottMaxFPS`), `CardFxStage`, Hologrid-Slice und `PixiStage` holen die Rate
   jetzt alle aus `mobileTier`. Vorher stand die 30 an fünf Stellen einzeln. Rangiert ein Effekt bei 60, ist DIESER
   Knopf die Stelle — kein zweiter Wert daneben.
