@@ -53,6 +53,21 @@ const FX_PREFETCH = [
   () => import("./fx/FireHead.jsx"), () => import("./fx/MossGrow.jsx"), () => import("./fx/FrostIce.jsx"),
   () => import("./fx/CardIonStorm.jsx"), () => import("./fx/CubeMatrixField.jsx"),
 ];
+/* #deckui-status: EIN Farbpaar für den Zustand „ausgerüstet/läuft gerade" ↔ „noch nicht aktiv".
+
+   Der Aktionsknopf trug im Aus-Zustand die DECKFARBE („das Angebot"). Das las sich so lange gut, wie
+   die Deckfarbe nichts mit Zustand zu tun hatte — bei einem grünen Deck sah der Knopf „Als Hintergrund
+   wählen" aber praktisch identisch aus wie die grüne Bestätigung „Ausgewählt". Genau die Verwechslung,
+   die ein Zustands-Signal nicht produzieren darf.
+
+   Zustand ist deshalb jetzt deckunabhängig und immer dasselbe Paar: Grün = an, Rot = noch nicht. Rot ist
+   der Ton, der im Rest des Spiels ohnehin die Gegenrichtung zu Grün besetzt (Score-Deltas, Zinseszins-
+   Hürde, FPS-Anzeige). Die Deckfarbe bleibt, wo sie hingehört — Reiter, Punkte, Umschalter.
+
+   Wer einen neuen Zustands-Knopf baut: diese beiden nehmen, keine dritte Nuance erfinden. */
+export const STATE_ON = "#54e08a";   // ausgerüstet / läuft gerade
+export const STATE_OFF = "#e0605a";  // vorhanden, aber nicht aktiv
+
 let fxPrefetched = false;
 function prefetchFxChunks() {
   if (fxPrefetched || typeof window === "undefined") return;
@@ -1207,13 +1222,13 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
           const active = tiered ? packHasTierDeck(pack, deckId) : deckId === pack.deckId;
           // Ausgegraut = noch nicht im Besitz (kaufbar ODER gesperrt) — einheitlich wie die Challenges. Nur besessene/aktive Packs bleiben farbig.
           const owned = s === "own";
-          const badge = active ? [t("shop.activeChip"), "#123a25", "#54e08a", "#2f7a4f"]
+          const badge = active ? [t("shop.activeChip"), "#123a25", STATE_ON, "#2f7a4f"]
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
           /* #werkstatt: „tippen → Details" führt ab 1400 px zu etwas, das schon im Bild steht — die
              Vorschau liegt dort dauerhaft daneben. Dann sagt die Zeile den Zustand statt der Geste. */
-          const sub = active ? [t("shop.tile.sub.active"), "#54e08a"]
+          const sub = active ? [t("shop.tile.sub.active"), STATE_ON]
             : s === "own" ? [tiered
                 ? t(wide ? "shop.tile.sub.ownedTier" : "shop.tile.sub.detailsTier", { roman: cover?.roman || "I" })
                 : t(wide ? "shop.tile.sub.owned" : "shop.tile.sub.details"), "#9a97ab"]
@@ -1400,11 +1415,11 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
           {/* Aktion */}
           {tiered ? (
             active ? (
-              <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
+              <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: STATE_ON, border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
             ) : selTierUnlocked ? (
               <button onClick={() => { onActivateTier(pack, selTier); if (!inline) onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
                 /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
-                style={{ background: "#20202c", border: `1px solid var(--deck-a1, #9b82f0)`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
+                style={{ background: "#20202c", border: `1px solid ${STATE_OFF}`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
             ) : (
               <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
                 {t("shop.unlock", { cond: unlockLabel(selTierLock) })}
@@ -1413,12 +1428,12 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             )
           ) : active ? (
             /* #kante: „läuft gerade" ist eine Auskunft, kein Knopf — Kanten-Karte in Grün. */
-            <div className="as-edge-card w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ "--c": "#54e08a", color: "#54e08a" }}>{t("shop.activeCheck")}</div>
+            <div className="as-edge-card w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ "--c": STATE_ON, color: STATE_ON }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
             /* #kante: Ausrüsten ist das Angebot dieser Ansicht — violette Kante. */
             <button onClick={() => { onActivate(pack); if (!inline) onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
               /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
-              style={{ "--c": "var(--deck-a1, #9b82f0)" }}>{t("shop.activate")}</button>
+              style={{ "--c": STATE_OFF }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             /* #kante: Kaufen — starker Kanten-Knopf in DP-Cyan, gedimmt-neutral wenn das Guthaben nicht
                reicht (gleiche Fassung wie der Kaufen-Knopf der Effekt-Bühne). */
@@ -1583,7 +1598,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   // `act(active)` liefert Klasse UND Farbe in einem Rutsch — die acht Aufrufstellen unten spreizen es
   // einfach in den Knopf (<button {...act(active)}>), statt className und style getrennt zu führen.
   // #deckui: „Angebot" (off) zieht die Deckfarbe (war Violett); „läuft gerade" (on) bleibt Grün (Zustands-Signal).
-  const act = (on) => ({ className: `${actBtn} ${on ? "as-edge-strong" : "as-edge"}`, style: { "--c": on ? "#54e08a" : "var(--deck-a1, #9b82f0)" } });
+  const act = (on) => ({ className: `${actBtn} ${on ? "as-edge-strong" : "as-edge"}`, style: { "--c": on ? STATE_ON : STATE_OFF } });
 
   let action;
   if (fx.standard) {
@@ -1723,7 +1738,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         <PanelChip corner="tl">{fx.name}</PanelChip>
         {/* (Der Zustand wird vorab bestimmt, statt zwei Ternäre über die JSX zu ziehen — sonst liest der
             i18n-Textgreifer das „> … <" zwischen den Zweigen als Anzeigetext.) */}
-        {active && <PanelChip corner="tr" style={{ background: "#123a25", color: "#54e08a", border: "1px solid #2f7a4f" }}>{t("shop.activeChip")}</PanelChip>}
+        {active && <PanelChip corner="tr" style={{ background: "#123a25", color: STATE_ON, border: "1px solid #2f7a4f" }}>{t("shop.activeChip")}</PanelChip>}
         {!active && !owned && <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip>}
         {hasColorMode && <PanelChip corner="br">{t(deckTintOn ? "shop.color.deck" : "shop.color.standard")}</PanelChip>}
       </div>
@@ -1747,7 +1762,7 @@ const rarityTint = (fx) => RARITY_COLOR[globalFxPrice(fx)] || RARITY_COLOR.defau
    Tippen wählt den Effekt in die Bühne (onPick), Doppeltippen schaltet direkt um (onToggle). */
 function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
   const tint = rarityTint(fx); // #farbsystem: Rarity-Farbe nach Preis-Stufe (grau/grün/blau/lila/gelb)
-  const status = active ? { c: "#54e08a", label: t("shop.status.active"), dot: "#54e08a" }
+  const status = active ? { c: STATE_ON, label: t("shop.status.active"), dot: STATE_ON }
     : !owned ? { c: tint, label: `${globalFxPrice(fx)} DP`, dot: tint } // Preis in der Rarity-Farbe
     : { c: "#6d6a80", label: t("shop.status.owned"), dot: null };
   // Doppel-TIPP/-Klick SCHALTET UM (Touch-sicher über eigene Zeitmessung: zwei Taps < 320 ms). Einzeltipp wählt.
