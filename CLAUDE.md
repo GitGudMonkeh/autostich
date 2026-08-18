@@ -162,7 +162,7 @@ einem Hintergrund lief. Sie füllte damit als einzige die volle Panelfläche in 
 ### #kompositor — EIN Renderpfad für die Shader-Feldeffekte (kein A/B mehr)
 `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry; jede Ebene rendert in eine eigene
 Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor 1 — direkt auf die Bühne. Ebenen:
-**Neon-Brandung** (mobil 0,75) und **Aurora** (mobil 0,6) — sie schließen einander aus, es läuft also immer
+**Neon-Brandung** (mobil 1,0) und **Aurora** (mobil 0,85 — beide gegengerechnet, s. #perf-dpr) — sie schließen einander aus, es läuft also immer
 höchstens EINE. (**Leuchten/DeckGlow** war die dritte, mobil 1,0 — entfallen, s. #deckglow-raus.) Aufrufer ist
 `src/ui/fx/FieldLayer.jsx` (`layer=` für die Ebene; den `stack=`-Pfad gibt es nicht mehr).
 - **Der A/B-Schalter `?fx2=1` ist WEG, und zwar ohne dass der Kompositor schneller wäre.** Am Gerät gemessen
@@ -685,6 +685,24 @@ also der zweiten vollflächigen Canvas, die den ganzen Lauf läuft (Komet/Sterne
   teuersten Dauer-Effekt. Jetzt binden BEIDE Deckel: `Math.min(dprCap(), lite ? DPR_CAP_COARSE : DPR_CAP_DESKTOP)`.
   Dieselbe Lücke steckt noch in `CardFxStage` und `HologridSlicePixi` (`lite ? 1.25 : 2`) — **offen**, dort ist die
   Fläche kleiner bzw. die Laufzeit kurz.
+- **ERGEBNIS AM GERÄT (18.08.2026): `DPR_CAP_COARSE` 1,4 → 1,0.** Über `?dpr=1` am echten Handy gegengeprüft:
+  **50–60 fps, unter 10 % Akku über die Sitzung, Gerät nur noch lauwarm**, optisch unauffällig. Pixel skalieren
+  quadratisch → **49 % weniger Füllarbeit** für alles, was den Deckel liest. Die 1,4 stammten aus der Zeit der
+  raw-WebGL-Felder und waren nie gemessen, nur nie hinterfragt.
+  - **Erfasst**: `PixiStage` (vollflächig, ganzer Lauf), der Feld-Kompositor und die vier Canvas-2D-Karteneffekte
+    (Kantenglühen · Ionensturm · Frost · Moos).
+  - **Nicht erfasst, weil eigene `resolution`**: `CardFxStage` + `HologridSlicePixi` (je 1,25) und die fünf
+    Gottgleich-Prunks (`pixiGott.js`, 1,25 — dort mit eigener Messung begründet). **Offen.**
+  - **Die Kompositor-Faktoren mussten gegengerechnet werden**, sonst hätte diese Änderung zwei Geräte-Urteile
+    lautlos mitgerissen: die Faktoren sind RELATIV zur Bühne. Brandung lag effektiv bei 1,4 × 0,75 = **1,05**,
+    unverändert übernommen wären es 0,75 gewesen — und ×0,5 der alten Bühne (= 0,70) war am Gerät als „sichtbar
+    zu weich" verworfen (harte Wasserlinie). Jetzt **1,0 × 1,0 = 1,00** (Brandung, dabei zusätzlich ohne
+    Render-Textur-Umweg) und **1,0 × 0,85 = 0,85** (Aurora, vorher 0,84). Wächter `test/mobile-tier.test.js`
+    prüft das PRODUKT, nicht den Faktor.
+  - **Noch zu holen, aber nur mit Blick am Gerät**: sah die Brandung bei `?dpr=1` gut aus (dort lief sie
+    effektiv auf 0,75), sind weitere 44 % ihrer Füllarbeit frei — dann Faktor zurück auf 0,75.
+  - `FireHead` kannte als einzige Pixi-Bühne GAR KEINEN Gerätedeckel (DPR 2 auf dem Handy). Fiel nicht auf, weil
+    sie noch Preview/Dev-gegatet ist; jetzt ebenfalls aus `dprCap()`.
 - **`?dpr=<zahl>`** (mobileTier.js) überschreibt den Auflösungsdeckel aller Effekte, die `dprCap()` lesen —
   das Gegenstück zu `?hz=` und der Regler, mit dem am Gerät entschieden wird, ob `PixiStage` von 1,4 herunterkann.
   Obergrenze bleibt die Gerätedichte. Ungültige Werte werden ignoriert statt den Effekt zu zerlegen.

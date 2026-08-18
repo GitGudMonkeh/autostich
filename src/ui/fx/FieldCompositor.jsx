@@ -42,7 +42,17 @@ import { AURORA_FRAG_SRC } from "./auroraShader.js";
 const LAYERS = {
   neonsurf: {
     frag: () => toPixiFragment(NEONSURF_FRAG),
-    scaleCoarse: 0.75,   // am Gerät bestimmt: 0,5 war sichtbar zu weich (harte Wasserlinie)
+    /* #dpr-1: 0,75 → 1,0 — das ist KEINE Schärfungs-Aktion, sondern hält die Ebene auf ihrer gemessenen Dichte.
+       Der Faktor ist RELATIV zur Bühnen-Auflösung, und die ist mit `DPR_CAP_COARSE` 1,4 → 1,0 gefallen. Effektiv
+       lag die Brandung bei 1,4 × 0,75 = 1,05 Geräte-Pixel je CSS-Pixel; unverändert übernommen wären es 0,75.
+       Genau dort liegt aber die am Gerät bestimmte Grenze: ×0,5 der alten Bühne (= 0,70 effektiv) war „sichtbar
+       zu weich" — die harte, helle Wasserlinie verzeiht Hochskalieren nicht. 1,0 × 1,0 = 1,00 effektiv landet
+       innerhalb von 5 % der alten Dichte, kostet also gegenüber vorher praktisch nichts und riskiert nichts.
+       Nebeneffekt, der hier zufällig hilft: bei Faktor 1 rendert die Ebene OHNE Render-Textur direkt auf die
+       Bühne (s. Kommentar unten) — der Resample-Umweg entfällt, gemessen 1,81 → 0,56 Abweichung von 255.
+       Wenn die Brandung am Gerät auch bei 0,75 gut aussieht, ist das hier die Stelle: zurück auf 0,75 sind
+       44 % Füllarbeit weniger. Nur eben mit Blick, nicht auf Verdacht. */
+    scaleCoarse: 1,
     scaleDesktop: 1,
     blend: "normal",     // der Shader gibt PREMULTIPLIZIERTES Alpha aus (vec4(col*a, a))
     uniforms: (p, size) => ({
@@ -82,7 +92,11 @@ const LAYERS = {
      wie die 0,75, bevor man sie stehen lässt. Zu weich → hochsetzen, das ist eine Zahl. */
   aurora: {
     frag: () => toPixiFragment(AURORA_FRAG_SRC),
-    scaleCoarse: 0.6,
+    /* #dpr-1: 0,6 → 0,85, aus demselben Grund wie bei der Brandung — die Bühne ist von 1,4 auf 1,0 gefallen,
+       und 1,4 × 0,6 = 0,84 effektiv bleibt so erhalten (1,0 × 0,85). Aurora ist weicher und verträgt vermutlich
+       mehr, aber „vermutlich" ist genau das, was hier bisher NICHT gemessen wurde (s. Kommentar oben) — die
+       Gelegenheit, es zu senken, ist `?fxs=` am Gerät, nicht ein stiller Mitzieheffekt einer anderen Änderung. */
+    scaleCoarse: 0.85,
     scaleDesktop: 1,
     blend: "normal",
     uniforms: (p, size) => ({
@@ -110,6 +124,14 @@ const LAYERS = {
 
 
 export const COMPOSITOR_LAYER_KEYS = Object.keys(LAYERS);
+
+/* Nur für den Wächter (test/mobile-tier.test.js): die Auflösungsfaktoren sind RELATIV zur Bühnen-Auflösung
+   (`dprCap()`), die effektive Dichte ist also erst das Produkt aus beiden. Genau dieses Produkt trägt die
+   Geräte-Urteile („×0,5 der Brandung war sichtbar zu weich"), und genau das rutscht weg, wenn jemand den
+   Deckel senkt, ohne hier nachzuziehen. Deshalb liegt es offen statt im Modul verschlossen. */
+export const LAYERS_TEST_VIEW = Object.fromEntries(
+  Object.entries(LAYERS).map(([k, v]) => [k, { scaleCoarse: v.scaleCoarse, scaleDesktop: v.scaleDesktop }]),
+);
 
 /* Für den Wächter (test/pixi-field-shader.test.js): den portierten Fragment-Shader einer Ebene bauen, ohne WebGL.
    Der Port ist die Stelle, an der zwei stille Fehler saßen (uv-Ersetzung, reserviertes Wort) — beide hätten hier

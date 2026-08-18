@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { dprCap } from "./mobileTier.js"; // #perf-mobile: EINE Wahrheit für die Dichte
 import { Application, ParticleContainer, Particle, Sprite, Texture, Container } from "pixi.js";
 import { FIRE_NEON_BOT, FIRE_NEON_MID, FIRE_NEON_TOP } from "./firePalette.js"; // #357: geteilte Feuer-Standard-Palette (auch Komet)
 import { lerp, mix } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
@@ -195,7 +196,11 @@ export function FireHead({ heat = 0, panelRef, cardRef, deckTint = false, deckCo
     app.init({
       // #perf-aa: kein MSAA — Flammen sind weiche, vorgebackene Partikeltexturen (Begründung: pixiGott.js).
       canvas, preference: "webgl", backgroundAlpha: 0, antialias: false, autoDensity: true,
-      resolution: Math.min(2, window.devicePixelRatio || 1), resizeTo: host, powerPreference: "high-performance",
+      // #dpr-1: kannte als einzige Pixi-Bühne GAR KEINEN Gerätedeckel — auf dem Handy lief der Flammenkopf in
+      //   DPR 2, also in vierfacher Füllarbeit gegenüber dem Rest des Bretts. Fällt nur deshalb nicht auf, weil
+      //   FireHead noch Preview/Dev-gegatet ist (Rollout offen); vor dem Rollout wäre es genau die Falle, die
+      //   PixiStage gerade hatte. Deckel jetzt aus mobileTier (eine Wahrheit, `?dpr=` greift).
+      resolution: dprCap(), resizeTo: host, powerPreference: "high-performance",
     }).then(() => {
       if (disposed) { try { app.destroy(true, { children: true, texture: true }); } catch { /* ignore */ } return; }
       appRef.current = app;

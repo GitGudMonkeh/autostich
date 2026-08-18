@@ -34,7 +34,23 @@ describe("mobileTier — Rechenwerte", () => {
 
   it("deckelt die Auflösung auf dem Handy schärfer als am Desktop", () => {
     expect(DPR_CAP_COARSE).toBeLessThan(DPR_CAP_DESKTOP);
-    expect(DPR_CAP_COARSE).toBe(1.4); // derselbe Wert wie in den drei raw-WebGL-Feldern — bewusst einheitlich
+    /* 1,0 ist AM GERÄT entschieden (50–60 fps, <10 % Akku, lauwarm) und nicht mehr die alte Schätzung 1,4.
+       Der Test hält die Zahl fest, weil an ihr die Auflösungsfaktoren des Kompositors hängen: die sind RELATIV
+       zur Bühne, und beim letzten Wechsel mussten sie gegengerechnet werden (0,75 → 1,0 · 0,6 → 0,85), damit die
+       am Gerät bestimmte Dichte der Brandung erhalten bleibt. Wer diese Zahl anfasst, ohne dort nachzuziehen,
+       verschiebt zwei Ebenen mit, die eigene Messungen hinter sich haben. */
+    expect(DPR_CAP_COARSE).toBe(1.0);
+  });
+
+  it("die Kompositor-Ebenen behalten ihre am Gerät bestimmte EFFEKTIVE Dichte", async () => {
+    /* Der eigentliche Wächter zur Zeile darüber: nicht der Faktor zählt, sondern Faktor × Bühnen-Auflösung.
+       Brandung lag bei 1,4 × 0,75 = 1,05 und liegt jetzt bei 1,0 × 1,0; Aurora bei 1,4 × 0,6 = 0,84 und jetzt
+       bei 1,0 × 0,85. Fällt der Deckel weiter, ohne dass die Faktoren steigen, rutscht die Brandung unter die
+       am Gerät als „sichtbar zu weich" verworfene Grenze von 0,70 — und zwar lautlos. */
+    const { LAYERS_TEST_VIEW } = await import("../src/ui/fx/FieldCompositor.jsx");
+    const eff = (k) => LAYERS_TEST_VIEW[k].scaleCoarse * DPR_CAP_COARSE;
+    expect(eff("neonsurf")).toBeGreaterThan(0.95);   // Wasserlinie: unter ~0,7 war am Gerät zu weich
+    expect(eff("aurora")).toBeGreaterThan(0.8);
   });
 
   it("nimmt ohne window den Desktop an (SSR-sicher, kein Absturz beim Import)", () => {
@@ -75,7 +91,7 @@ describe("mobileTier — Geräte-Regler", () => {
 
   it("Unsinn wird ignoriert statt den Effekt zu zerlegen", async () => {
     for (const v of ["?dpr=abc", "?dpr=0", "?dpr=-2", "?dpr=99"]) {
-      expect((await mitUrl(v)).dprCap(true)).toBe(1.4);
+      expect((await mitUrl(v)).dprCap(true)).toBe(DPR_CAP_COARSE);
     }
   });
 });

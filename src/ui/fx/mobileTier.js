@@ -24,7 +24,16 @@ export function isCoarse() {
 /* Auflösungs-Deckel. Die Kosten eines Effekts hängen fast nur an „Canvas-Pixel pro Sekunde" (im Prunk-Messstand
    nachgemessen) und skalieren damit QUADRATISCH mit der Dichte: 2,0 → 1,4 sind gut 51 % weniger Fläche. 1,4 ist der
    Wert, auf dem die drei raw-WebGL-Felder schon stehen — bewusst derselbe, damit das Brett einheitlich aussieht. */
-export const DPR_CAP_COARSE = 1.4;
+/* AM GERÄT ENTSCHIEDEN (18.08.2026): 1,4 → 1,0. Der Wert stand seit den raw-WebGL-Feldern auf 1,4, ohne dass je
+   jemand 1,0 ausprobiert hätte — er war eine Schätzung, kein Messergebnis. Über `?dpr=1` am echten Handy
+   nachgesehen: **50–60 fps, unter 10 % Akku über die Sitzung, Gerät nur noch lauwarm** (Urteil des Users), und
+   optisch unauffällig. Pixel skalieren quadratisch: 1,4 → 1,0 ist **49 % weniger Füllarbeit** für alles, was
+   diesen Deckel liest.
+   Was das erfasst: die Pixi-Emitter-Bühne (Komet/Sternenfeld, vollflächig, läuft den ganzen Lauf), den
+   Feld-Kompositor und die vier Canvas-2D-Karteneffekte (Kantenglühen, Ionensturm, Frost, Moos).
+   Was es NICHT erfasst, weil es eigene `resolution`-Werte führt: CardFxStage und Hologrid-Slice (je 1,25) sowie
+   die fünf Gottgleich-Prunks (`pixiGott.js`, 1,25 — dort mit eigener Messung begründet). Offen. */
+export const DPR_CAP_COARSE = 1.0;
 export const DPR_CAP_DESKTOP = 2;
 
 /* `?dpr=<zahl>` überschreibt den Deckel — das Gegenstück zu `?hz=`, und aus demselben Grund da: die Frage
