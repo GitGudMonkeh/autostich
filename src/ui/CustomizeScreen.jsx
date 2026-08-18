@@ -1283,7 +1283,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   return (
     <div className={inline ? "cz-detail h-full" : "fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"}
       style={inline ? undefined : { background: "#05050ad0", backdropFilter: "blur(4px)" }} onClick={inline ? undefined : onClose}>
-      <div className={`w-full rounded-2xl overflow-hidden ${inline ? "cz-detailcard h-full flex flex-col" : "max-w-sm my-auto"}`}
+      <div className={`w-full rounded-2xl overflow-hidden as-panel as-panel-deck ${inline ? "cz-detailcard h-full flex flex-col" : "max-w-sm my-auto"}`}
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
         onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
@@ -1336,7 +1336,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               <div className="flex gap-1.5 justify-center mt-2.5">
                 {segs.map(([k, label]) => (
                   <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
-                    style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "#9b82f0" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
+                    style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
                 ))}
               </div>
             </>
@@ -1354,7 +1354,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
                 return (
                   <button key={ti.deckId} onClick={() => setSelDeck(ti.deckId)}
                     className="flex-1 max-w-[96px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
-                    style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "#9b82f0" : "#2a2836"}`,
+                    style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`,
                       color: on ? "#e8e6ff" : (free ? "#c9c6dd" : "#8b88a0") }}>
                     {free ? "" : "🔒 "}{ti.roman}{isEq ? " ✓" : ""}
                   </button>
@@ -1367,7 +1367,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               zählen sie eine Liste ab, die vollständig danebensteht. */}
           {!inline && (
             <div className="flex gap-1.5 justify-center my-2.5">
-              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#9b82f0" : "#3a3947" }} />)}
+              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "var(--deck-a1, #9b82f0)" : "#3a3947" }} />)}
             </div>
           )}
           {inline && <div className="mt-3" />}

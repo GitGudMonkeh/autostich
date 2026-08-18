@@ -762,6 +762,15 @@ function AutostichGame() {
     cubematrixWire: !!vOpt.fxCubeMatrixWire, // #317 Cube-Matrix Optik: false = gefüllt, true = nur leuchtende Rahmen
   };
 
+  // #deckui: --deck-a1/--deck-a2 zusätzlich auf :root spiegeln → Body-Portale (Pack-Detail der Werkstatt, Tutorial-
+  //   Overlay u. a.) hängen AUSSERHALB von .app-root und erbten die Vars sonst nicht (Effekte fielen auf den Violett-
+  //   Fallback zurück). Gleicher kontextabhängiger Wert wie am .app-root (Menü-Deck bzw. Run-Deck).
+  useEffect(() => {
+    const el = document.documentElement;
+    if (deckFx.deckA1) el.style.setProperty("--deck-a1", deckFx.deckA1); else el.style.removeProperty("--deck-a1");
+    if (deckFx.deckA2) el.style.setProperty("--deck-a2", deckFx.deckA2); else el.style.removeProperty("--deck-a2");
+  }, [deckFx.deckA1, deckFx.deckA2]);
+
   /* #desktop — Welche Effekte gerade ausgerüstet sind, für die Status-Tafel des Startbildschirms.
      Hier werden nur die SCHLÜSSEL gesammelt; die Namen löst der Startbildschirm auf, damit ein
      Sprachwechsel sie neu rendert. Zwei Registerquellen: die Katalog-Effekte (GLOBAL_FX → globalFxDef)
