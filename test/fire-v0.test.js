@@ -127,6 +127,11 @@ describe("Feuer-Rework v0 — reine Helfer", () => {
     expect(conflagRateFor(["SK_FIRE_11", "SK_FIRE_01", "SK_FIRE_02"])).toBe(C.CONFLAG_PER_HEAT + 2 * C.CONFLAG_PER_SKILL);
     expect(meltRateFor(0)).toBe(C.MELT_SCORE_BASE);                                                   // Satz ∝ gehaltener Hitze
     expect(meltRateFor(C.HEAT_MAX)).toBeCloseTo(C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX);
+    // #fire-consumer: … und ∝ der Siegesserie (eigene Auflade-Kurve statt Fixbetrag je Sieg), mit Deckel.
+    const full = C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX;
+    expect(meltRateFor(C.HEAT_MAX, 0)).toBeCloseTo(full);
+    expect(meltRateFor(C.HEAT_MAX, 4)).toBeCloseTo(full * (1 + 4 * C.MELT_STREAK_STEP));
+    expect(meltRateFor(C.HEAT_MAX, C.MELT_STREAK_CAP + 50)).toBeCloseTo(full * (1 + C.MELT_STREAK_CAP * C.MELT_STREAK_STEP));
     // Der Sockel ist der Punkt: ein Sieg unter HEAT_MIN_MARGIN hat Feuer-Score 0 und legte damit früher NICHTS ein.
     expect(fireScoreFor(2, ["SK_FIRE_10"], 0)).toBe(0);
     expect(sparkBankFor(0, ["SK_FIRE_10"])).toBe(C.SPARKFLIGHT_FLOOR_BASE);

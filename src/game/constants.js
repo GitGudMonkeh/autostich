@@ -420,7 +420,14 @@ export const FIRE_SCORE_SQRT_K  = envNum("SIM_FIRE_SCORE_SQRT_K", 1.0);
 // Mults → der flache Aufschlag ist relativ groß) deutlich stärker als das Ceiling (riesige Mults → der Aufschlag
 // verschwindet relativ). ∝ gehaltener Hitze beim Sieg, gedeckelt bei FIRE_DIVIDEND_HEAT_CAP (Sättigung: Top-Runs
 // mit Vollhitze ziehen den Deckel nicht weiter hoch → floor-clean). Das ist Feuers fehlende „Immer-an-Engine".
-export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 44);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis. #268: 48→44 (Feuer-Floor leicht runter: 2,17×→2,05× Mix) [TUNING · Feuer-Floor]
+// #fire-consumer 44 → 32: FRAKTIONS-Trimm, nachdem die drei Bauweisen gleichgezogen waren. Die Parität hatte Feuer
+// insgesamt auf 13,69 Mio gehoben (über Eis 11,74) — sie ist aber eine ANDERE Schraube als das Niveau, und beide
+// mussten gemeinsam gedreht werden: die Dividende allein zu senken bricht die Parität sofort (Spanne 1,02× → 1,31×
+// bei 22), weil der Halte-Build von ihr lebt und die Konsumenten nicht. FIRE_SCORE_BASE taugt dafür NICHT — 25 → 10
+// bewegt Feuer nur von 13,69 auf 13,10, der Grund-Score ist inzwischen ein kleiner Posten. Gefittet wurde deshalb
+// das Tripel Dividende/Flächenbrand/Schmelzpunkt gemeinsam (700 Läufe je Punkt):
+//   44/25/15 → 13,69 (Spanne 1,02×) · 32/17/9 → 11,02 (1,07×) · 30/15/8 → 10,54 (1,10×) · 28/13/7 → 10,01 (1,14×)
+export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 32);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis. #268: 48→44 (Feuer-Floor leicht runter: 2,17×→2,05× Mix) [TUNING · Feuer-Floor]
 // #fire-balance 45 → 70: der Deckel machte die OBERE LEISTENHÄLFTE wertlos. Über 45 % zahlte die Dividende nichts
 // mehr, und oberhalb lagen nur noch bedingte Skills (Glühende Klinge 70/100 · Schmelzofen 50 · Sonnenkern 60 ·
 // Weißglut 100) — Hitze zu HALTEN lohnte also strukturell nicht, genau die Klage „niemand spielt es als
@@ -492,14 +499,34 @@ export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Fläc
 // Wiederaufbau von 0 auf 80 dauert ~10 Siege. Jetzt: BODEN statt Totalverbrennung + bekenntnis-skalierter Satz.
 export const CONFLAG_KEEP     = envNum("SIM_CONFLAG_KEEP", 40);     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
 export const CONFLAG_PER_HEAT = 20;     // Flächenbrand: Score je verbranntem Hitzepunkt (erster Feuer-Skill)
-export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 5);     // … + je weiterem Feuer-Skill (6 Skills → 45/Punkt), Muster wie FIRE_SCORE_PER_SKILL
+// #fire-consumer: 5 → 25. GEMESSENE Parität — der Konsumenten-Weg war nicht „etwas schwach", er war schlechter als
+// GAR KEIN Konsument (700 Läufe: ohne Konsument 13,73 Mio · nur Flächenbrand 10,65 · nur Schmelzpunkt 8,07), und die
+// Angebots-Garantie (needsConsumer, s. buildSkillOffer) drückt ihn 93 % aller Feuer-Builds auf. Satz-Sweep über
+// dieselben 700 Seeds: 45/Punkt → 10,65 · 95 → 12,13 · 145 → 13,65 · 195 → 15,09. Bei 145 (= 20 + 25×5) sitzt der
+// Median auf dem Halte-Build. Die Decke läuft dabei NICHT davon — im Gegenteil: p99 36,3 gegen 56,3 des
+// Halte-Builds. Der Halte-Weg skaliert über Weißglut und den Sonnenzorn-Peak mit der Siegquote und hat deshalb die
+// extremen Läufe; der Burst zahlt gleichmäßig. Zwei Wege mit verschiedenem Risikoprofil statt zweier Kurvenvarianten.
+// 25 → 17 im Fraktions-Trimm (s. FIRE_HEAT_DIVIDEND): die Parität wurde bei 25 gemessen, das NIVEAU danach gemeinsam
+// gesenkt. Wer einen der drei Werte allein dreht, verschiebt nicht das Niveau, sondern die Wahl zwischen den Bauweisen.
+export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 17);    // … + je weiterem Feuer-Skill (6 Skills → 105/Punkt), Muster wie FIRE_SCORE_PER_SKILL
 // #fire-balance Schmelzpunkt: kostete 10 %/Stich — MEHR, als ein durchschnittlicher Sieg erzeugt (~16 % bei vollem
 // Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
 // Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
 // bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
 export const MELT_COST           = envNum("SIM_MELT_COST", 4);   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
 export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
-export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 0.8); // … + je % gehaltener Hitze (bei 100 % also 90/Punkt = 360/Sieg) // #fire-balance — tunebar
+// Der Tropf zahlt DIREKT (post-stack, s. engine.js) — deshalb sind die Zahlen groß: sie werden nicht mehr mit
+// Serie/Crit/Formation multipliziert. Gemessene Parität mit den zwei anderen Bauweisen bei 15 (700 Läufe):
+//   Satz  12 → Median 12,90 (p99 42,0) · 15 → 13,86 (46,7) · 17 → 14,71 (49,9) · 20 → 15,73 (54,7)
+export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 9); // … + je % gehaltener Hitze           // #fire-consumer — tunebar
+// #fire-consumer: der Tropf hängt zusätzlich an der SIEGESSERIE. Ein Konsument, der jeden Sieg denselben Betrag
+// zahlt, hat keine eigene Kurve — Flächenbrand baut sichtbar eine Leiste auf und wirft sie ab, Schmelzpunkt tat
+// nichts dergleichen. Jetzt wächst sein Satz mit der Serie: dieselbe Auflade-Fantasie, nur kontinuierlich statt in
+// Bursts, und eine Niederlage kostet wirklich etwas (die Serie fällt). Der Deckel hält die Spitze endlich.
+// Die Kurve ist bewusst FLACH (×1,8 statt ×4): der Score wird über streakBaseMult ohnehin schon mit der Serie
+// multipliziert. Eine steile zweite Serien-Kurve darauf war ein Doppel-Dip — gemessen p99 100,6 Mio bei Median 11,8.
+export const MELT_STREAK_STEP = envNum("SIM_MELT_STREAK_STEP", 0.10); // +10 % auf den Satz je Sieg in Folge …
+export const MELT_STREAK_CAP  = envNum("SIM_MELT_STREAK_CAP", 8);    // … bis zu dieser Serienlänge (also bis ×1,8)
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
 export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar

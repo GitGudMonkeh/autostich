@@ -468,6 +468,7 @@ export function resolveTrick(state, rng) {
     let fireFlat = 0;
     let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
+    let meltDirect = 0;        // Schmelzpunkt-Tropf — DIREKT (post-stack), s. u. beim Konsumenten
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
       // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
@@ -490,7 +491,13 @@ export function resolveTrick(state, rng) {
       // Weißglut gleich mit. Satz aus der Hitze VOR dem Abzug — der Skill zahlt für das, was du gehalten hast. Steht
       // bewusst VOR Flächenbrand: andersherum nähme er dessen Boden die letzten 4 % und risse die Feuerwalzen-Schwelle.
       if (hasHeatConsumer(skills, "melt") && heat.value >= C.MELT_COST) {
-        fireFlat += Math.round(C.MELT_COST * meltRateFor(heat.value));
+        // serieStreak = effektive Serie NACH diesem Sieg (dieselbe Größe, die Feuersturm liest) → eine Wahrheit.
+        // DIREKT (post-stack), nicht in die multiplizierte Basis: der Tropf zahlt bei JEDEM Sieg, ritte also den
+        // vollen Serie×Crit×Form-Stack auf jedem einzelnen davon — gemessen sprengte das die Decke (p99 80–100 Mio
+        // gegen 36 bei Flächenbrand, dessen Takt die Hitze-Regeneration begrenzt). Zusätzlich doppelte die
+        // Serien-Kurve gegen streakBaseMult (derselbe Doppel-Dip, den Reihenhaus vermeidet). Post-stack löst beides:
+        // dieselbe Bauform wie Glutdividende/Blitz-/Pflanze-Dividende — hebt den Median, lässt die Decke in Ruhe.
+        meltDirect = Math.round(C.MELT_COST * meltRateFor(heat.value, serieStreak));
         heat = reignite({ ...heat, value: heat.value - C.MELT_COST }, C.MELT_COST);
       }
       // Flächenbrand (Konsument, Burst): Sieg ab CONFLAG_MIN_HEAT brennt bis auf CONFLAG_KEEP herunter → Score je
@@ -854,6 +861,7 @@ export function resolveTrick(state, rng) {
     // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
     // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
     // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
+    fireDirect += meltDirect; // Schmelzpunkt-Tropf in den Feuer-Direkt-Kanal (post-stack, s. o.)
     const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
     const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
     const fireDirectApplied = fireDirect * fireStructMult;

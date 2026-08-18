@@ -105,7 +105,7 @@ export default {
   "ability.SK_FIRE_11.name": "Wildfire",
   "ability.SK_FIRE_11.desc": `From ${C.CONFLAG_MIN_HEAT}% heat, the next win burns your heat down to ${C.CONFLAG_KEEP}%: +${C.CONFLAG_PER_HEAT} score per burnt heat point, +${C.CONFLAG_PER_SKILL} per further fire skill (with ${C.SKILL_SLOTS} fire skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`,
   "ability.SK_FIRE_12.name": "Melting Point",
-  "ability.SK_FIRE_12.desc": `Every win burns ${C.MELT_COST}% heat for ${C.MELT_SCORE_BASE} score per burnt point, +${num(C.MELT_SCORE_PER_HEAT)} per percent of heat you hold while doing it (${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} score at a full bar). Losses cost nothing.`,
+  "ability.SK_FIRE_12.desc": `Every win burns ${C.MELT_COST}% heat for ${C.MELT_SCORE_BASE} score per burnt point, +${num(C.MELT_SCORE_PER_HEAT)} per percent of heat you hold while doing it. The rate grows by ${pct(C.MELT_STREAK_STEP)}% per win in a row (up to ${C.MELT_STREAK_CAP}). At a full bar that is ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} score, ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX) * (1 + C.MELT_STREAK_STEP * C.MELT_STREAK_CAP)))} on a full streak. Losses cost no heat — but they cost the streak.`,
   "ability.SK_FIRE_13.name": "Brand",
   "ability.SK_FIRE_13.desc": `Every win brands an opponent card (−${C.BRAND_VALUE} value) and gives +${C.BRAND_ASH} ash.`,
   "ability.SK_FIRE_14.name": "Running Fire",

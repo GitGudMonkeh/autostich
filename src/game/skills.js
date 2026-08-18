@@ -141,7 +141,7 @@ export const SKILL_DEFS = {
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
     desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze brennt der nächste Sieg deine Hitze bis auf ${C.CONFLAG_KEEP} % herunter: +${C.CONFLAG_PER_HEAT} Score je verbranntem Hitzepunkt, +${C.CONFLAG_PER_SKILL} je weiterem Feuer-Skill (mit ${C.SKILL_SLOTS} Feuer-Skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`, heatConsumer: "conflagration" },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Jeder Sieg verbrennt ${C.MELT_COST} % Hitze für ${C.MELT_SCORE_BASE} Score je verbranntem Punkt, +${de(C.MELT_SCORE_PER_HEAT)} je Prozent Hitze, die du dabei hältst (bei voller Leiste ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} Score). Niederlagen kosten nichts.`, heatConsumer: "melt" },
+    desc: `Jeder Sieg verbrennt ${C.MELT_COST} % Hitze für ${C.MELT_SCORE_BASE} Score je verbranntem Punkt, +${de(C.MELT_SCORE_PER_HEAT)} je Prozent Hitze, die du dabei hältst. Der Satz wächst um ${pct(C.MELT_STREAK_STEP)} % je Sieg in Folge (bis ${C.MELT_STREAK_CAP}). Bei voller Leiste sind das ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} Score, mit voller Serie ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX) * (1 + C.MELT_STREAK_STEP * C.MELT_STREAK_CAP)))}. Niederlagen kosten keine Hitze — aber die Serie.`, heatConsumer: "melt" },
   // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand", "ash"],
     desc: `Jeder Sieg brandmarkt eine Gegnerkarte (−${C.BRAND_VALUE} Wert) und gibt +${C.BRAND_ASH} Asche.`, brandmal: true },
@@ -454,9 +454,11 @@ export function overheatMult(over, skills) {
 // Flächenbrand: Score je verbranntem Hitzepunkt — bekenntnis-skaliert wie fireScoreFor (ein 2-Skill-Splash bekommt wenig).
 export const conflagRateFor = (skills) =>
   C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * Math.max(0, activeFireCount(skills) - 1);
-// Schmelzpunkt: Score je verbranntem Punkt — steigt mit der GEHALTENEN Hitze (Halte-Mechanik, s. Konstanten-Block).
-export const meltRateFor = (heatValue) =>
-  C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * Math.max(0, heatValue || 0);
+// Schmelzpunkt: Score je verbranntem Punkt — steigt mit der GEHALTENEN Hitze UND mit der Siegesserie
+// (#fire-consumer: eigene Auflade-Kurve statt eines Fixbetrags je Sieg, s. Konstanten-Block).
+export const meltRateFor = (heatValue, streak = 0) =>
+  (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * Math.max(0, heatValue || 0))
+  * (1 + C.MELT_STREAK_STEP * Math.min(Math.max(0, streak || 0), C.MELT_STREAK_CAP));
 // Funkenflug: Einlage je kleinem Sieg — Vielfaches des Feuer-Scores + bekenntnis-skalierter Sockel (damit auch ein
 // Sieg mit 1–2 Vorsprung einzahlt; dessen Feuer-Score ist unter HEAT_MIN_MARGIN exakt 0).
 export const sparkBankFor = (fireScore, skills) =>
