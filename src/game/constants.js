@@ -459,12 +459,19 @@ export const GLOWING_T3_MARGIN = 12;    // Glühende Klinge: +3 erst mit letztem
 // Die Zone ist strukturell isoliert, nicht per Ausnahme. Die Leiste zeigt sie als 0–150 %.
 // Alt war „+10 Score je überlaufendem Hitzepunkt“ — ein flacher Betrag, der bei exakt 100 % Hitze ~160 Score gab und
 // mit dem Build nicht mitwuchs. Jetzt ist der Überlauf ein ZUSTAND mit steigenden Zuflusskosten und einem Hebel.
-export const OVERHEAT_MAX        = 50;   // Überhitzung max (= Leiste bis 150 %)                    // #fire-balance — tunebar
-export const OVERHEAT_COST_K     = 10;   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
-export const OVERHEAT_DECAY      = 2;    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
+export const OVERHEAT_MAX        = envNum("SIM_OVERHEAT_MAX", 50);   // Überhitzung max (= Leiste bis 150 %)                    // #fire-balance — tunebar
+export const OVERHEAT_COST_K     = envNum("SIM_OVERHEAT_COST_K", 10);   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
+export const OVERHEAT_DECAY      = envNum("SIM_OVERHEAT_DECAY", 2);    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
 export const OVERHEAT_DECAY_LOSS = 5;    // Abbau bei Niederlage
-export const OVERHEAT_SCORE_STEP = 0.035; // +3,5 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2,75)
-// (#fire-balance, 2. Durchgang: 2 % gemessen zu wenig — der Zustand ist selten, also muss er sich lohnen, wenn er da ist.)
+export const OVERHEAT_SCORE_STEP = envNum("SIM_OVERHEAT_SCORE_STEP", 0.02); // +2 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2)
+// #fire-balance, 3. Durchgang — die 2 % waren richtig, mein Zwischenschritt auf 3,5 % beruhte auf einer FALSCHEN
+// MESSUNG: gemessen wurde in zufälligen Feuer-Builds, und in 46/47 % davon steckte Flächenbrand bzw. Schmelzpunkt.
+// Beide leeren genau die Leiste, von der Weißglut lebt — der Skill konnte dort per Konstruktion nicht wirken.
+// In SEINER Umgebung (reines Feuer OHNE Konsumenten, 700 Läufe) steigt sein Wert monoton mit der Siegquote:
+//   Siegquote 52–67 % → −0,4 Mio · 67–74 % → −0,6 · 74–79 % → +2,0 · 79–92 % → +5,2 · oberste 10 % → +11,8
+// Das ist die gewollte Bekenntnis-Wette: unten kostet der Slot, oben zahlt er groß. Mit 3,5 % wären es +3,7/+7,8/
+// +17,1 — dramatischer, aber der Skill braucht die Hilfe nicht, und es hob nur die Decke (p99 40,4 → 45,6).
+// NEBENBEI: pct() rundet für die Anzeige, 0,035 stand in der Beschreibung als „+4 %" statt 3,5 — bei 0,02 exakt.
 // Linie 4 — Wert-/Score-Motoren
 export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
 export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
@@ -483,16 +490,16 @@ export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Fläc
 // #fire-balance: Flächenbrand verbrannte die GANZE Leiste für einen flachen Satz. Der Verbrauch war nicht bezahlbar —
 // unten liegen VIER Dinge (Feuerwalze ≥40, Glühende Klinge 40/70/100, Glutdividende, Weißglut-Zufluss), und der
 // Wiederaufbau von 0 auf 80 dauert ~10 Siege. Jetzt: BODEN statt Totalverbrennung + bekenntnis-skalierter Satz.
-export const CONFLAG_KEEP     = 40;     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
+export const CONFLAG_KEEP     = envNum("SIM_CONFLAG_KEEP", 40);     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
 export const CONFLAG_PER_HEAT = 20;     // Flächenbrand: Score je verbranntem Hitzepunkt (erster Feuer-Skill)
-export const CONFLAG_PER_SKILL = 5;     // … + je weiterem Feuer-Skill (6 Skills → 45/Punkt), Muster wie FIRE_SCORE_PER_SKILL
+export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 5);     // … + je weiterem Feuer-Skill (6 Skills → 45/Punkt), Muster wie FIRE_SCORE_PER_SKILL
 // #fire-balance Schmelzpunkt: kostete 10 %/Stich — MEHR, als ein durchschnittlicher Sieg erzeugt (~16 % bei vollem
 // Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
 // Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
 // bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
-export const MELT_COST           = 4;   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
+export const MELT_COST           = envNum("SIM_MELT_COST", 4);   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
 export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
-export const MELT_SCORE_PER_HEAT = 0.8; // … + je % gehaltener Hitze (bei 100 % also 90/Punkt = 360/Sieg) // #fire-balance — tunebar
+export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 0.8); // … + je % gehaltener Hitze (bei 100 % also 90/Punkt = 360/Sieg) // #fire-balance — tunebar
 // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
 export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
 export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
