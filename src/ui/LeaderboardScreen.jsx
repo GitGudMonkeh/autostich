@@ -57,10 +57,19 @@ const TABS_BOARD = [
 //   positiv/negativ; darunter die Ausschluss-Paare.
 function ModBox({ m }) {
   const c = m.sign === "pos" ? MOD_POS : MOD_NEG;
+  /* #lb-premium: Der Spannenwert steht in fast jedem Modifikator-Text am Ende in Klammern („… +1 Wert (1–3)").
+     Genau danach sucht man beim Vergleichen, deshalb zieht die breite Fassung ihn nach rechts an den Rand.
+     Rein darstellend: greift die Klammer nicht, bleibt der Text unangetastet. */
+  const spanne = /\s*\((\d+(?:\s*[–—-]\s*\d+)?)\)\s*$/.exec(m.text);
+  const text = spanne ? m.text.slice(0, spanne.index) : m.text;
   return (
-    <div className="rounded-lg px-3 py-2" style={{ background: "#17161f", border: `1px solid ${c}44` }}>
-      <div className="text-[12.5px] font-bold" style={{ color: c }}>{m.name}</div>
-      <div className="text-[11.5px] opacity-80 leading-snug mt-0.5">{m.text}</div>
+    <div className="lb-mod rounded-lg px-3 py-2" style={{ background: "#17161f", border: `1px solid ${c}44`, "--c": c }}>
+      <span className="lb-modicon as-deskonly" aria-hidden="true">{m.sign === "pos" ? "✚" : "⊘"}</span>
+      <div className="lb-modtext">
+        <div className="text-[12.5px] font-bold" style={{ color: c }}>{m.name}</div>
+        <div className="text-[11.5px] opacity-80 leading-snug mt-0.5">{text}</div>
+      </div>
+      {spanne && <span className="lb-modspan as-deskonly ty-num-sm">{spanne[1]}</span>}
     </div>
   );
 }
@@ -243,9 +252,22 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="lb-weekhead flex items-baseline justify-between gap-2 mb-2.5">
-                    <span className="text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
-                    <span className="text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
+                    <span className="lb-weektitle text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
+                    <span className="lb-weekcount text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
+                  {/* #lb-premium: Drei Kontext-Kacheln — was diesen Lauf ausmacht, in einem Blick. Sie stehen NUR
+                      im Wochen-Reiter (dort fällt die Entscheidung mitzuspielen) und nur ab 1400 px; darunter
+                      trägt der Regeln-Reiter dieselbe Auskunft im Fließtext. */}
+                  {!boardMode && (
+                    <div className="lb-ctx as-deskonly">
+                      {[["⌗", "seed"], ["⚖", "base"], ["♔", "arch"]].map(([g, k]) => (
+                        <div key={k} className="lb-ctxtile">
+                          <span className="lb-ctxicon" aria-hidden="true">{g}</span>
+                          <span><b>{tr(`board.ctx.${k}.t`)}</b><i>{tr(`board.ctx.${k}.s`)}</i></span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {/* #global Nachschlage-Modus: nur die Platzierung. Seed, Modifikatoren und der Spielen-Knopf
                       stehen beim Ranglisten-Knopf im Menü — ein Weg zum Spielen, nicht zwei. */}
                   {boardMode && (
@@ -257,8 +279,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
-                      <span className="font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: UI1, background: "#1c1b24", border: `1px solid ${deckMix(45)}` }}>{prettySeed(week.seed)}</span>
+                      <span className="lb-seedlabel text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
+                      <span className="lb-seed font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: UI1, background: "#1c1b24", border: `1px solid ${deckMix(45)}` }}>{prettySeed(week.seed)}</span>
                     </div>
                     {/* #kante: war als einziger Knopf hier noch die volle Deckfarbe mit dunkler Schrift — die
                         Fassung von vor „Kante statt Fläche". Er ist das Ziel dieses Screens, also trägt er

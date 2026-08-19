@@ -137,7 +137,6 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
           {rows.map((r, i) => {
             const mineRow = isMine(r);
             const icons = archetypeIcons(r.archetypes); // #139: ein Icon je Skill (leer bei Alt-Einträgen)
-            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null; // Medaillen für die Top 3
             /* #kante: Die Kante trägt den Rang — Gold, Silber, Bronze fürs Podium, Grün für den eigenen
                Eintrag (der zusätzlich den Schein bekommt, damit man ihn beim Scrollen sofort wiederfindet),
                neutral für den Rest. Vorher waren alle Zeilen gleich grau und das Podium hing allein an den
@@ -159,7 +158,10 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 title={t("stats.showDetails")}
                 className={`as-edge-card as-edge-thin${mineRow ? " is-sel" : ""} flex items-center gap-2 px-2 py-1.5 rounded text-left w-full transition-all hover:brightness-125`}
                 style={{ "--c": rankTone }}>
-                <span className="w-6 shrink-0 text-center ty-num-sm" style={medal ? { fontSize: "14px" } : { opacity: 0.5 }}>{medal || `#${i + 1}`}</span>
+                {/* #lb-podest: Die Rangzahl IST die Auszeichnung — sie steht ab 1400 px in einer Kante aus
+                    Gold/Silber/Bronze (`--c`, dieselbe Farbe wie die Zeilenkante). Emoji-Medaillen sind draußen:
+                    sie bringen ihre eigene Farbe mit und stehen quer zur Deckfarbe (s. RankIcon.jsx). */}
+                <span className="lb-rank w-6 shrink-0 text-center ty-num-sm" style={{ opacity: 0.5 }}>{`#${i + 1}`}</span>
                 <span className="flex-1 min-w-0">
                   <span className="flex items-baseline gap-2 min-w-0">
                     <span className="flex-1 truncate text-sm" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
