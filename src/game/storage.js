@@ -100,6 +100,10 @@ export const PROFILE_SCHEMA_VERSION = 11;
 const START_DECK_POINTS = 50;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
+  // #go-ruhe: bester EINZELSTICH als All-Time-Rekord. Er stand bisher nur je Lauf in der Highscore-Liste —
+  // das Bestleistungs-Panel des Endscreens braucht ihn aber profilweit, sonst vergleicht es gegen die Top-20
+  // statt gegen die eigene Bestmarke. Additiv: loadProfile mergt über DEFAULT_PROFILE, kein Schema-Sprung nötig.
+  bestTrickScore: 0,
   hadNoRerollRun: false, // #214: sticky Challenge-Flag (einmal true → bleibt); noReroll = Sparfuchs deck_c3. (#267: hadMonoStatRun entfernt — die Stat-Phase ist weg.)
   monoArchetypeRuns: {}, hadAllArchetypesRun: false, // #215: Mono-Archetyp-Läufe je Fraktion (Map) + Element-Bund (alle 4) → deck_c5..c9
   // #370 Ranked-Rework: „Archetyp X war in einem ABGESCHLOSSENEN Lauf dabei" (Map Archetyp→Anzahl) → Ranked-Freischaltung
@@ -454,6 +458,7 @@ export function recordRun(record) {
     bestScore: Math.max(p.bestScore, n0(record.score)),
     bestStreak: Math.max(p.bestStreak, n0(record.bestStreak)),
     maxCrits: Math.max(p.maxCrits, n0(record.crits)),
+    bestTrickScore: Math.max(n0(p.bestTrickScore), n0(record.bestTrickScore)),
     archetypesEver: [...arch],
     firstTs: p.firstTs || n0(record.ts),
     // #214: sticky Challenge-Flag — einmal erfüllt, bleibt es true. noReroll schaltet deck_c3 „Sparfuchs" frei.

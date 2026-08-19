@@ -47,10 +47,14 @@ function Toggle({ on, onClick }) {
   );
 }
 
-/* 3-Wege-Auswahl (z. B. Auto/An/Aus) im Stil der übrigen UI. */
+/* 3-Wege-Auswahl (z. B. Auto/An/Aus) im Stil der übrigen UI.
+   `self-start`: In der gestapelten Zeile („Effekte reduziert") ist der Elternteil eine Spalte, und deren
+   Kinder werden quer GESTRECKT — der Rahmen lief dann über die ganze Zeilenbreite, während die drei Knöpfe
+   im linken Drittel standen. Die Auswahl bemisst sich an ihrem Inhalt, nicht am Kasten. Gilt für BEIDE
+   Fassungen: die schmale hatte denselben Fehler. */
 function Segmented({ value, options, onChange }) {
   return (
-    <div className="flex rounded-lg overflow-hidden shrink-0" style={{ border: "1px solid #3a3a44" }}>
+    <div className="flex rounded-lg overflow-hidden shrink-0 self-start" style={{ border: "1px solid #3a3a44" }}>
       {options.map((o) => {
         const on = value === o.v;
         return (

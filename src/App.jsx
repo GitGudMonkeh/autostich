@@ -198,6 +198,10 @@ function AutostichGame() {
   const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
   const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
   const [runEarn, setRunEarn] = useState(null);                   // #304: Lauf-Ertrag (SP/DP) für den Victory-Rollup
+  /* #go-ruhe: die All-Time-Bestmarken, wie sie VOR diesem Lauf standen. Der Endscreen kann sie nicht selbst
+     laden — wenn er rendert, hat recordRun das Profil längst überschrieben und jeder Vergleich ergäbe
+     „gleich hoch", also nie ein NEU. Der Schnappschuss entsteht deshalb hier, eine Zeile vor der Wertung. */
+  const [prevBests, setPrevBests] = useState(null);
   const [onboardingBanner, setOnboardingBanner] = useState(null); // #: Onboarding-Fortschritt/Belohnung fürs Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const [runVisual, setRunVisual] = useState(null);               // #393: Zufalls-Deck-Override für DIESEN Lauf ({deckId,battlefieldId}) oder null (gewähltes Deck)
@@ -623,6 +627,9 @@ function AutostichGame() {
       completed, deckSnapshot }); // #382 Challenge-Modus entfernt
     setProfile(nextProfile);
     setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
+    // #go-ruhe: Vorher-Stand der vier All-Time-Rekorde fürs Bestleistungs-Panel (prevProfile = Profil vor recordRun).
+    setPrevBests({ score: prevProfile.bestScore || 0, streak: prevProfile.bestStreak || 0,
+      crits: prevProfile.maxCrits || 0, trick: prevProfile.bestTrickScore || 0 });
     // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
     const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
     // Sprachprüfung C1: EIN Vokabular für die Raritätsstufen — die Namen kommen aus rarity.js (TIER_META),
@@ -1234,7 +1241,7 @@ function AutostichGame() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} earn={runEarn} onboarding={onboardingBanner}
+          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} earn={runEarn} onboarding={onboardingBanner} prevBests={prevBests}
           onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard("board")} />
       )}
 

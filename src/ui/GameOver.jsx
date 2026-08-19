@@ -135,7 +135,7 @@ function UnlockModal({ unlocks, onConfirm }) {
   ));
 }
 
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], earn = null, onboarding = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], earn = null, onboarding = null, prevBests = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
   const [guideArch, setGuideArch] = useState(null); // #: Leitfaden-Overlay aus einem Archetyp-Freischalt-Button (Onboarding)
   // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
@@ -218,11 +218,31 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             ) : null}
           </div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
-          <div className="text-xs opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
-            {timeStr && <span>{timeStr}</span>}
-            {perTrick > 0 && <><span className="opacity-30">·</span><span title={t("gameover.perTrick.title")}>{t("gameover.perTrick", { score: fmtScoreShort(perTrick) })}</span></>}
-            <span className="opacity-30">·</span><span>{t("gameover.cycles", { count: cyclesDone })}</span>
-          </div>
+          {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile die Kennzahlenreihe neben der Score-Zahl
+              (Bauform `.rd-kpi` aus den Lauf-Details): die Zahl sagt das Ergebnis, die Reihe den Rahmen — wie
+              lange, wie viele Stiche, wie viele Durchläufe. Sie stand hier als 55-%-opake Zeile UNTER dem Score
+              und war damit auf 1720 px die leiseste Stelle des Screens, während der halbe Kopf daneben leer blieb.
+              Am HANDY bleibt die kompakte Zeile: neben einer 40-px-Zahl ist für vier beschriftete Werte kein Platz,
+              und mittig unter dem Score ist sie dort richtig. Zwei Fassungen statt einer per CSS umgebogenen —
+              die Inhalte sind dieselben, die FORM ist eine andere. */}
+          {wide ? (
+            <div className="go-kpi">
+              {timeStr && <div><span>{t("gameover.kpi.duration")}</span><b className="ty-num">{timeStr}</b></div>}
+              <div><span>{t("gameover.kpi.tricks")}</span><b className="ty-num">{state.trickNo}</b></div>
+              <div><span>{t("gameover.kpi.cycles")}</span><b className="ty-num">{cyclesDone}</b></div>
+              {perTrick > 0 && (
+                <div title={t("gameover.perTrick.title")}>
+                  <span>{t("gameover.kpi.perTrick")}</span><b className="ty-num">{fmtScoreShort(perTrick)}</b>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
+              {timeStr && <span>{timeStr}</span>}
+              {perTrick > 0 && <><span className="opacity-30">·</span><span title={t("gameover.perTrick.title")}>{t("gameover.perTrick", { score: fmtScoreShort(perTrick) })}</span></>}
+              <span className="opacity-30">·</span><span>{t("gameover.cycles", { count: cyclesDone })}</span>
+            </div>
+          )}
         </div>
 
         {/* #desktop — Klammer um die LINKE Spalte (Verdienst · Score-Herkunft). Sie ist der Grund, warum beim
@@ -238,9 +258,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* Auch bei 0 SP / 0 DP: der Block bleibt stehen und zeigt die Nullen. Ein Lauf, den man sofort beendet,
             soll denselben Screen sehen wie ein langer — nur mit anderen Zahlen. */}
         {!onboarding && earn && (
-          <div className="go-earn as-ring mt-4">
+          <div className="go-earn as-ring as-ring-quiet mt-4">
             <i className="as-ring-run" aria-hidden="true" />
-            <div className="rounded-xl px-3 py-2.5" style={MENU_PANEL}>
+            <div className="go-box rounded-xl px-3 py-2.5" style={MENU_PANEL}>
               <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
                 <span style={{ color: "#9a9aa6" }}>{t("gameover.milestones", { done: mb.reached, total: mb.total })}</span>
                 <span style={{ color: "#8a8896" }}>{mb.atMax ? t("gameover.milestones.max") : t("gameover.milestones.next", { n: Math.round(mb.next.at / 1_000_000) })}</span>
@@ -323,8 +343,54 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* #: Leitfaden-Overlay — vom „📖 Leitfaden"-Button eines Archetyp-Unlocks geöffnet, direkt auf dessen Fraktions-Seite. */}
         {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
 
+        {/* #go-ruhe: BESTLEISTUNGEN — welche persönlichen Bestmarken sind in DIESEM Lauf gefallen.
+            Der Rekord-Chip im Kopf sagt bisher nur „neuer Rekord, +55 %" und meint dabei allein den Score;
+            dass nebenbei die längste Serie oder der beste Einzelstich gefallen ist, stand nirgends — obwohl
+            das Profil es weiß. Verglichen wird gegen `prevBests` (Schnappschuss aus App.jsx, VOR recordRun);
+            ohne den Schnappschuss ist das Profil beim Rendern längst überschrieben und jede Zeile hieße „neu".
+
+            NUR ab 1400 px (`wide`): am Handy ist der Screen ohnehin eine lange Kolonne, und ein viertes Panel
+            zwischen Verdienst und Herkunft macht sie länger, ohne etwas zu lösen. Der Platz, den das Panel hier
+            füllt, ist ein DESKTOP-Platz. Es steht in Spalte 1 unter dem Verdienst — beide beantworten dieselbe
+            Frage („was hat der Lauf gebracht"), und die Klammer `go-col1` hält die Spalte von der Nachbarspalte
+            entkoppelt (s. oben). Im Entwurf stand es in Spalte 2; das hätte die drei gewachsenen Spalten neu
+            aufgeteilt und damit genau die Sprung-Entkopplung aufgelöst, für die `go-col1` gebaut wurde. */}
+        {wide && prevBests && (() => {
+          const rows = [
+            { key: "streak", label: t("gameover.best.streak"), now: state.bestStreak || 0, was: prevBests.streak || 0, fmt: (v) => v },
+            { key: "trick",  label: t("gameover.best.trick"),  now: state.bestTrickScore || 0, was: prevBests.trick || 0, fmt: fmtScoreShort },
+            { key: "crits",  label: t("gameover.best.crits"),  now: state.crits || 0, was: prevBests.crits || 0, fmt: (v) => v },
+          ].filter((r) => r.now > 0 || r.was > 0);
+          // Ohne jede Bestmarke (allererster Lauf, alles 0) hat das Panel nichts zu sagen → es kommt gar nicht.
+          if (!rows.length && !(prevBests.score > 0)) return null;
+          return (
+            <div className="go-best as-ring as-ring-quiet mt-5">
+              <i className="as-ring-run" aria-hidden="true" />
+              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.best")}</div>
+              {rows.map((r) => {
+                const isNew = r.now > r.was;
+                return (
+                  <div key={r.key} className="go-bestrow">
+                    <b>{r.label}</b>
+                    <span className="go-bestval ty-num">{r.fmt(Math.max(r.now, r.was))}</span>
+                    {isNew && <span className="go-bestnew">{t("gameover.best.new")}</span>}
+                  </div>
+                );
+              })}
+              {/* Der bisherige Höchstwert ist der VERGLEICHSWERT, nicht das Ergebnis — deshalb leiser und
+                  ohne Marker. Bei einem neuen Rekord steht die neue Zahl schon groß im Kopf. */}
+              {prevBests.score > 0 && (
+                <div className="go-bestrow is-prev">
+                  <b>{t("gameover.best.score")}</b>
+                  <span className="go-bestval ty-num">{fmtScoreShort(prevBests.score)}</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
-        <div className="go-origin as-ring mt-5">
+        <div className="go-origin as-ring as-ring-quiet mt-5">
             <i className="as-ring-run" aria-hidden="true" />
           <ScoreHerkunft state={state} />
         </div>
@@ -369,7 +435,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}
         {((state.skills && state.skills.length) || (state.perks && state.perks.length)
           || Object.values(state.familyTiers || {}).some((tier) => tier > 0) || motor.length > 0) && (
-          <div className="go-build as-ring mt-5">
+          <div className="go-build as-ring as-ring-quiet mt-5">
               <i className="as-ring-run" aria-hidden="true" />
             <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.build")}</div>
             {/* `families` = die Familien-Stufen des Laufs (#167). Ohne sie zeigte der Endscreen nur die flachen
@@ -382,7 +448,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">{t("gameover.engine")}</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {motor.map((m) => (
-                    <div key={m.label} className="rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}` }}>
+                    /* #go-ruhe: `--gob` trägt den Kantenton für die Desktop-Kachelform; die INLINE gesetzte
+                       borderLeft bleibt stehen und ist weiter die Handy-Fassung. */
+                    <div key={m.label} className="go-box go-box-c rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}`, "--gob": m.color }}>
                       <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
                       <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
                     </div>
@@ -395,7 +463,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* Victory-Redesign · STATS & VERLAUF-Sektion: schlanke Kern-Kennzahlen (Score-Anteile stehen bereits in der
             Score-Herkunft → sourceCells={false}) + Score-Verlauf + Durchlauf-Graph. */}
-        <div className="go-stats as-ring mt-5">
+        <div className="go-stats as-ring as-ring-quiet mt-5">
             <i className="as-ring-run" aria-hidden="true" />
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.stats")}</div>
           <RunStatCells entry={{
@@ -432,7 +500,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
         {/* #201.8 Stufe A: finale Deck-Aufstellung schreibgeschützt — bestehendes CardGrid (rendert Formationsrahmen). Aufklappbar, um den Screen kurz zu halten. */}
         {finalOrder.length > 0 && (
-          <details className="go-layout as-ring mt-5 rounded-xl overflow-hidden" open={wide} style={MENU_PANEL}>
+          <details className="go-layout as-ring as-ring-quiet mt-5 rounded-xl overflow-hidden" open={wide} style={MENU_PANEL}>
             {/* `summary` MUSS das erste Kind bleiben (sonst ist es nicht der Aufklapp-Griff); das Ringband
                 kommt deshalb danach. */}
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
