@@ -2335,6 +2335,21 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #brett-luft — die Legendenzeile bekommt Luft zum Brett (19.08.2026)
+Zwischen der Gebäude-/Legendenzeile („🏗 Gebäude an · Wert · Score · Formation") und dem Brett standen
+**8 px**. Auf dem Desktop stoßen dort zwei sehr verschiedene Dinge aneinander: eine Zeile aus Knopf und
+Farbmarken und ein Raster aus 40 gerahmten Kacheln — bei 8 px liest sich die Zeile wie die erste
+Brettreihe. Jetzt **14 px**, der Schritt, den dieser Durchgang auch sonst für „gehört zusammen, ist
+aber nicht dasselbe" benutzt.
+- **Die Zeile ist GETEILT** (Aufstellungsphase · Chronik · Victory · Lauf-Details) — es gibt genau eine
+  Stelle, an der der Abstand steht, und die Regel trifft alle vier gleich. `ArchToggle` bekommt dafür
+  nur einen Haken (`arch-toggle`), gestellt wird im Desktop-Block.
+- **Am Handy bleiben die 8 px** (gemessen 390 px: unverändert): dort ist der Platz knapp und die Zeile
+  bricht ohnehin um, was die Trennung selbst schon leistet.
+- Wächter: `test/rd-ruhe.test.js` (Abschnitt #brett-luft) — er prüft, dass der Desktop-Wert GRÖSSER ist
+  als die Handy-Fassung, statt eine Zahl zu vergleichen. Gegenprobe gemacht: alle vier sabotierten
+  Nähte fallen (Regel weg · gleicher Wert wie am Handy · Haken weg · `mb-2` weg).
+
 ### #lv-anker — die Flügel-Griffe stehen fest, und zwar auf der Karte (19.08.2026)
 Dritte Runde an derselben Naht, gemeldet: „wenn ich die gehaltenen Skills ein- und ausklappe, wandern
 die Griffe mit — sicherlich auch bei der Skill-Auswahl." Stimmt beides. Seit `HeldSkills` als Klappfeld

@@ -39,7 +39,7 @@ const formationRules = () => [
    Quelle: Knopf UND Legende, durchgehend über t(). Der Aufrufer entscheidet weiter, OB er ihn zeigt (`hasArch`). */
 export function ArchToggle({ on, onToggle }) {
   return (
-    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+    <div className="arch-toggle flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
       <button onClick={onToggle}
         className={`${on ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
         style={on ? { "--c": ARCH_CAT.value.color } : undefined}>

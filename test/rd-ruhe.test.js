@@ -101,3 +101,25 @@ describe("#rd-ruhe — Schließen ist ein Werkzeug am Rand", () => {
     expect(deskBlock, "das Klickziel ist geschrumpft").toMatch(/\.rd-close \{[^}]*padding: 11px 18px/);
   });
 });
+
+/* ============================================================
+   #brett-luft (19.08.2026) — die Gebäude-/Legendenzeile bekommt auf dem Desktop Luft zum Brett.
+
+   Die Zeile ist GETEILT (Aufstellungsphase · Chronik · Victory · Lauf-Details), es gibt also genau eine
+   Stelle, an der der Abstand steht — und genau eine, an der er verloren gehen kann. Am Handy bleibt er
+   bei den abgestimmten 8 px, deshalb steht die Regel im Desktop-Block.
+   ============================================================ */
+describe("#brett-luft — Abstand zwischen Legendenzeile und Brett", () => {
+  it("die Zeile trägt den Haken und ihre Handy-Klasse", () => {
+    const src = read("src/ui/ArchPanels.jsx");
+    expect(src, "der Haken fehlt — die Desktop-Regel greift ins Leere").toMatch(/className="arch-toggle /);
+    expect(src, "die Handy-Fassung hat ihren Abstand verloren").toMatch(/className="arch-toggle[^"]*\bmb-2\b/);
+  });
+
+  it("auf dem Desktop ist der Abstand größer als am Handy", () => {
+    const m = deskBlock.match(/\.arch-toggle \{[^}]*margin-bottom:\s*(\d+)px/);
+    expect(m, "die Desktop-Regel fehlt").toBeTruthy();
+    expect(Number(m[1]), "der Desktop-Abstand ist nicht größer als die 8 px der Handy-Fassung")
+      .toBeGreaterThan(8);
+  });
+});

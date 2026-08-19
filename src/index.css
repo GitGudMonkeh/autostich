@@ -4127,6 +4127,16 @@ button { font-family: inherit; }
   }
   .rd-close:hover { color: #e8e6ff; }
 
+  /* #brett-luft (19.08.2026) — zwischen der Gebäude-/Legendenzeile und dem Brett standen 8 px. Auf dem
+     Desktop stoßen dort zwei sehr verschiedene Dinge aneinander: eine Zeile aus Knopf und Farbmarken
+     und ein Raster aus 40 gerahmten Kacheln — bei 8 px liest sich die Zeile wie die erste Brettreihe.
+     14 px sind der Schritt, den dieser Durchgang auch sonst als „gehört zusammen, ist aber nicht
+     dasselbe" benutzt (Panel-Innenabstände 12–18 px).
+     Die Zeile ist geteilt (Aufstellungsphase · Chronik · Victory · Lauf-Details) — die Regel trifft
+     also alle vier gleich. Am Handy bleiben die 8 px: dort ist der Platz knapp und die Zeile bricht
+     ohnehin um, was die Trennung selbst schon leistet. */
+  .arch-toggle { margin-bottom: 14px; }
+
   /* ---- Victory: zentrierter Block ---------------------------------------- */
   .go-card {
     grid-template-columns: 1fr 1.05fr 1fr;
