@@ -280,7 +280,7 @@ function TermRow({ e }) {
   return (
     <div className="as-edge-card as-edge-thin flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row mb-1"
       style={{ "--c": e.color }}>
-      <span className="flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}><GlossaryIcon e={e} size={14} textClass="text-[15px]" /></span>
+      <span className="gl-ticon flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}><GlossaryIcon e={e} size={14} textClass="text-[15px]" /></span>
       <div className="min-w-0">
         <div className="gl-tname font-bold text-[13px] leading-tight" style={{ color: e.color }}>{e.label}</div>
         <div className="gl-ttext text-[11.5px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{e.text}</div>

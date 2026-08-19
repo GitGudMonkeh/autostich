@@ -55,7 +55,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           <span className="flex-1" />
           {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1400 px `display: none`) —
               im 320-px-Dialog nimmt es dem kurzen Wort mehr Platz weg, als es an Klarheit bringt. */}
-          <ActionButton kind="primary" disabled={!canSave} onClick={submit}>
+          <ActionButton kind="primary" className="un-save" disabled={!canSave} onClick={submit}>
             <span className="as-deskonly un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
           </ActionButton>
         </ActionBar>

@@ -107,7 +107,7 @@ const SECTIONS = [
    sauber darunter zu verschwinden. */
 function Section({ id, title, innerRef, children }) {
   return (
-    <section ref={innerRef} data-sec={id} className="op-sec as-ring pb-1">
+    <section ref={innerRef} data-sec={id} className="op-sec as-ring as-ring-quiet pb-1">
       {/* #desktop: Ab 1400 px ist die Sektion das Panel des Screens und trägt den laufenden
           Deckfarben-Ring. Das `<i>` ist die stehende Maske der kompositierten Fassung (#perf-ring) —
           ohne dieses Kind fehlt der Rahmen. Unter 1400 px ist beides inert (`.as-ring-run` ist dort

@@ -2939,6 +2939,77 @@ button { font-family: inherit; }
   .gl-cols .gl-ttext { font-size: 12.8px; }
 
   /* ==========================================================================
+     #gl-ruhe — das Glossar als Codex statt als Oberfläche (19.08.2026, Entwurf des Users)
+
+     Der Befund war: zu viele gleichwertige Umrandungen. Drei Ebenen trugen dieselbe Kontur — das Panel,
+     jede Spaltenzeile links und jede der ~110 Begriffskarten. Nebeneinander ergibt das ein Gitter, in
+     dem nichts führt; ein Nachschlagewerk soll sich aber lesen wie eine Seite, nicht wie ein Formular.
+
+     Die Regel dieses Passes: EIN Rahmen je Ebene. Der trägt das Panel. Darin sagen Fläche, Farbe und
+     Abstand, was zusammengehört — Kontur nur noch als Haarlinie, wo wirklich getrennt werden muss.
+     Werte 1:1 aus dem laufenden Pass (Optionen · Willkommen · Melder): Fläche rgba(15,15,21,.72),
+     Haarlinie rgba(150,150,170,.12), gedämpfter Text #8a8a95.
+
+     NICHT angefasst (Regel 5, wie in #up-ruhe): die Kategorie-FARBE. Sie ist die Ordnung des Glossars —
+     sie wandert nur von der Kante auf das Zeichen und den Punkt, wo sie weniger Fläche braucht. */
+
+  /* Navigationsspalte: Zeilen statt Knöpfe. Der farbige Punkt trägt die Kategorie, die aktive Zeile
+     eine ruhige Fläche in derselben Farbe — kein Rahmen, kein Verlauf, kein Halo. */
+  .gl-navrow {
+    background: none;
+    border: 0;
+    border-radius: 9px;
+    padding: 9px 10px;
+  }
+  .gl-navrow:hover { background: rgba(255, 255, 255, .035); }
+  .gl-navrow.is-on {
+    background: color-mix(in srgb, var(--c) 13%, transparent);
+    box-shadow: none;
+  }
+  .gl-navlabel { font-size: 14px; font-weight: 500; }
+  .gl-navrow.is-on .gl-navlabel { color: #f2f0fa; }
+  /* Der Zähler war ein Kästchen im Kästchen. Er ist eine Zahl am Rand — mehr muss er nicht sein. */
+  .gl-navcount {
+    background: none; border: 0; padding: 0;
+    min-width: 24px; font-size: 12.5px; color: #71717c;
+  }
+  .gl-navrow.is-on .gl-navcount { color: var(--c); }
+  .gl-navhead { font-size: 10.5px; letter-spacing: .2em; color: #71717c; padding-bottom: 8px; }
+
+  /* Suche: dieselbe ruhige Fläche wie die Felder der anderen Screens (Inline-Optik → `!important`). */
+  .gl-search input {
+    background: rgba(15, 15, 21, .72) !important;
+    border-color: rgba(150, 150, 170, .14) !important;
+  }
+
+  /* Begriffe: eine Karte, die nur so viel Kontur trägt, wie zum Abgrenzen nötig ist. Die Kategoriefarbe
+     sitzt jetzt im Zeichen (wie in den Optionen-Zeilen), nicht mehr als 4-px-Kante an der Karte. */
+  .gl-cols { column-gap: 22px; }
+  .gl-cols .gloss-term-row {
+    background: rgba(255, 255, 255, .014) !important;
+    border: 1px solid rgba(150, 150, 170, .10) !important;
+    border-left-width: 1px !important;
+    border-radius: 11px;
+    box-shadow: none !important;
+    padding: 11px 13px 12px;
+    margin-bottom: 10px;
+    gap: 11px;
+  }
+  .gl-cols .gloss-term-row::before, .gl-cols .gloss-term-row::after { display: none !important; }
+  .gl-ticon {
+    width: 27px !important; height: 27px;
+    display: grid !important; place-items: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid color-mix(in srgb, var(--c, #3a3a48) 38%, transparent);
+  }
+  .gl-cols .gl-tname { font-weight: 600; letter-spacing: .005em; }
+  .gl-cols .gl-ttext { color: #8a8a95 !important; line-height: 1.5; margin-top: 3px !important; }
+  /* Gruppen-Überschrift innerhalb einer Kategorie (Feuer, Eis …) bekommt Luft nach oben, damit die
+     Spalten beim Umbruch nicht als eine Wand aus Karten lesen. */
+  .gl-grouphead { margin: 20px 0 9px !important; }
+
+  /* ==========================================================================
      #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px
      --------------------------------------------------------------------------
      Die drei letzten Menü-Overlays, die noch als schmale Handy-Karte mitten auf einem 1920er Schirm
@@ -3235,6 +3306,17 @@ button { font-family: inherit; }
     border: 1px solid #6a5426;
     font-size: 14px !important;
   }
+  /* Speichern zieht mit dem Melder gleich (#feedback-ton): Auf den drei Menü-Bildschirmen gibt es genau
+     EINEN Knopf, der etwas abschickt — der trägt den Verlauf der Wortmarke (Deckfarbe a1 → a2) und
+     damit dieselbe Bauform wie „Absenden". Alles andere im Kopf bleibt Werkzeug am Rand.
+     `!important` durchgehend: `ActionButton` setzt Fläche und Farbe inline. */
+  .un-first .un-save:not(:disabled) {
+    background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0)) !important;
+    color: #10101a !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .un-first .un-save { padding: 11px 20px !important; border-radius: 12px !important; font-size: 15px !important; }
   .un-first .un-prevname { color: #e4e4ee !important; }
   .un-first .un-prevscore { opacity: 1 !important; color: #a8dcc0 !important; font-size: 14px; }
 
