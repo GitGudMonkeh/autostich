@@ -209,7 +209,10 @@ describe("#ansage-deck — die Verdrahtung im Battlefield", () => {
 describe("#fx-deckdefault — Deckfarbe ist vorausgewählt", () => {
   it("alle Farbmodus-Flags stehen auf Deckfarbe", () => {
     const opt = loadOptions();   // ohne localStorage = frisches Profil
-    expect(FX_DECK_KEYS.length, "die dreizehn Effekte mit Farbmodus").toBe(13);
+    /* 13 → 14 am 19.08.2026: „Gottgleich · Standard" hat seinen eigenen Farbmodus bekommen
+       (`fxGottStandardDeck`, #vorschau-deck). Die Zahl steht hier bewusst als Literal — ein NEUES
+       Farbmodus-Flag soll eine bewusste Handlung sein und nicht still durch die Regex rutschen. */
+    expect(FX_DECK_KEYS.length, "die vierzehn Effekte mit Farbmodus").toBe(14);
     for (const key of FX_DECK_KEYS) expect(opt[key], key).toBe(true);
   });
 

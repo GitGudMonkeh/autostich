@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useContext, createContext, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useContext, createContext, lazy, Suspense, useMemo } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
@@ -10,12 +10,7 @@ import { CARD_W, CARD_H, BOARD_RATIO_CSS, sceneScale } from "./fx/previewScale.j
 import { setPreviewSceneScale } from "./fx/mobileTier.js"; // #perf-shopdpr: Vorschau-Deckel
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion.js"; // #328 Showcase-Loop (Eis/Pflanze) bei Reduced-Motion aussetzen
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, HAIRLINE } from "./modalStyle.jsx";
-import {
-  THEMES, THEME_DEFS, showcaseLook,
-  packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield,
-  isTieredPack, coverTier, highestUnlockedTier, tierByDeckId, tierAsPack, packHasTierDeck,
-  globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx,
-} from "../game/themes.js";
+import { THEMES, THEME_DEFS, showcaseLook, packState, packPrice, packUnlock, canBuyPack, buyPack, hasBattlefield, isTieredPack, coverTier, highestUnlockedTier, tierByDeckId, tierAsPack, packHasTierDeck, globalFxPrice, globalFxOwned, canBuyGlobalFx, buyGlobalFx, activeLook } from "../game/themes.js";
 // #tiered: Stufen-Freischaltung je Stufe. Die Bedingung kommt als `kind`/`vars` und wird erst in
 // unlockText.js zum Satz — Zahlen darin über fmtNum, nicht über einen eigenen Tausenderpunkt-Helfer.
 import { DECK_DEFS, isUnlocked, unlockProgress } from "../game/cosmetics.js";
@@ -278,6 +273,16 @@ export const LOOK_REFS = { // #327 exportiert für den Drift-Guard-Test (kein Ef
   // Override: Standard-Prunk zeigt nur die Chrome-Wortmarke (kein Pack-Farbmodus) → Sonnen-Backdrop, Farbe neutral.
   gottStandard:  { pack: "sonne", a1: "#cbd3ff", a2: "#cbd3ff" },
 };
+/* #vorschau-deck — der Look des AKTIVEN Decks, per Kontext an alle Vorschau-Szenen.
+
+   Bewusst ein Kontext und kein Prop: `look` wird an DREIZEHN Stellen gelesen (neun `look={}`-Aufrufe plus
+   vier Szenen, die es sich selbst holen), und die Kette dorthin führt durch Komponenten, die mit dem Deck
+   sonst nichts zu tun haben. Dieselbe Bauart wie `SceneScaleCtx` zwei Bildschirme weiter unten.
+
+   `null` heißt „kein aktives Deck bekannt" (kommt in der Werkstatt nicht vor, aber die Szenen werden auch
+   in Tests und Messständen gemountet) — dann gilt weiter die feste Tabelle. */
+export const DeckLookCtx = createContext(null);
+
 const PREVIEW_LOOK = Object.fromEntries(
   Object.entries(LOOK_REFS).map(([key, ref]) => [key, showcaseLook(ref.pack, ref)])
 );
@@ -685,7 +690,9 @@ function BlackholeScene({ deckTint = false }) {
     holeSndRef.current = audio.loop("fx_blackhole", { gain: holeSound(0, 0).gain, loopStart: 1.5, loopEnd: 31.0 });
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
   }, [bereit]);
-  const look = PREVIEW_LOOK.blackhole;
+  // #vorschau-deck: Deckfarbe-Modus → DEIN Deck (Farben + Spielfeld); Standard-Modus → feste Tabelle.
+  const deckLook = useContext(DeckLookCtx);
+  const look = (deckTint && deckLook) || PREVIEW_LOOK.blackhole;
   const c1 = deckTint ? look.a1 : "#4aa0ff";
   const c2 = deckTint ? (look.a2 || look.a1) : "#ff3ea8";
   return (
@@ -811,7 +818,9 @@ function StandardFinisherScene() {
 // #317 Cube-Matrix-Showcase: das ECHTE In-Game-Modul (CubeMatrixField) über dem neutralen BF-Bild. Reagiert live auf
 // die laufende (Menü-)Musik. deckTint → Deckfarbe statt Standard-Cyan/Magenta. Nur Preview/Dev (wie die anderen GL-FX).
 function CubeMatrixPreview({ deckTint = false, wire = false }) {
-  const look = PREVIEW_LOOK.cubematrix;
+  // #vorschau-deck: Deckfarbe-Modus → DEIN Deck (Farben + Spielfeld); Standard-Modus → feste Tabelle.
+  const deckLook = useContext(DeckLookCtx);
+  const look = (deckTint && deckLook) || PREVIEW_LOOK.cubematrix;
   // #327: Standard-Modus = Genesis (SHOWCASE_BF); nur Deckfarbe-Modus zeigt den Pack-BG (look.bf = bf_arcade).
   const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);
   const isMobile = useIsMobile();
@@ -913,29 +922,34 @@ function SpezialScene({ deckTint = false }) {
 // Große In-Game-Vorschau eines Effekts im Kauffenster. Karten-Animationen → Karte/BF-Demo; Finisher/Krit →
 // echte In-Game-Komponente; Gottgleich (inkl. Standard) → das komplette Ereignis nachgespielt.
 function GlobalFxScenePreview({ fx, deckTint = false, sun = true, wire = false }) {
+  /* #vorschau-deck: Im Deckfarbe-Modus zeigt die Bühne DEIN Deck (Farben + Spielfeld), im Standard-Modus
+     weiter die feste Tabelle. Der Kontext wird EINMAL gelesen — die Auswahl unten ist eine if-Kette, ein
+     Hook je Zweig wäre ein bedingter Hook-Aufruf. */
+  const deckLook = useContext(DeckLookCtx);
+  const look = (key) => (deckTint && deckLook ? deckLook : PREVIEW_LOOK[key]);
   // #kategorien: Hintergrund-Effekt (Aurora) / Hintergrund-Finisher (Glutfunken) / „Kein Feld-Effekt": echte
   // In-Game-Komponente (FieldFxLayer bzw. GPU-Emitter) über dem BF-Bild.
   if (fx.preview === "cubematrix") return <CubeMatrixPreview deckTint={deckTint} sun={sun} wire={wire} />; // #317 musik-reaktives Würfelfeld
   if (["aurora", "neonsurf", "starfield", "none"].includes(fx.preview)) return <FieldFxPreview effect={fx.preview} deckTint={deckTint} />; // #glutfunken-raus · #345 neonsurf
   if (ANIM_LAYER[fx.preview]) return <CardAnimPreview anim={fx.preview} />; // #318 Karten-Animation über echter Vorschau-Karte
-  if (fx.preview === "gottStandard") return <GottScene Fx={null} look={PREVIEW_LOOK.gottStandard} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
+  if (fx.preview === "gottStandard") return <GottScene Fx={null} deckTint={deckTint} look={look("gottStandard")} />; // #322 „Gottgleich · Standard" = nur der Chrome-Schriftzug (kein Prunk)
   if (fx.preview === "standard") return <StandardFinisherScene />;
-  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={PREVIEW_LOOK.klinge} />;
-  if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={PREVIEW_LOOK.scorch} />; // #319 Scorch-Finisher (Laser + organischer Burn)
-  if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={PREVIEW_LOOK.hologrid} />; // #321 Hologrid-Slice-Finisher (Pixi)
+  if (fx.preview === "klinge") return <FinisherScene variant={fx.preview} deckTint={deckTint} look={look("klinge")} />;
+  if (fx.preview === "scorch") return <ScorchScene deckTint={deckTint} look={look("scorch")} />; // #319 Scorch-Finisher (Laser + organischer Burn)
+  if (fx.preview === "hologrid") return <HologridScene deckTint={deckTint} look={look("hologrid")} />; // #321 Hologrid-Slice-Finisher (Pixi)
   if (fx.preview === "spezial") return <SpezialScene deckTint={deckTint} />; // #328 4-Karten-Showcase (Feuer/Blitz/Eis/Pflanze) — Farbmodus aus archColor (deckTint)
   if (fx.preview === "blackhole") return <BlackholeScene deckTint={deckTint} />; // #320 Schwarzes-Loch-Finisher (persistentes Serien-Loch)
   // #gott-showcase: je Effekt eigener Backdrop + eigene Deckfarbe (look) fürs Deckfarbe-Beispiel (Name/Status/Farbmodus
   //   zeichnet zentral die Bühne, #330).
   // #379 Showcase-Loop verlangsamen (speed<1), damit die Loop-Periode ≥ Soundlänge ist → Ton bei JEDEM Loop synchron.
   //   Periode = Basis-Loop-Länge (LIFE/TOTAL + TAIL) / speed. Ziel: ≥ ~2,4 s (fx_godlike 1,8 s); Supernova ≈ Swell (~11 s).
-  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={PREVIEW_LOOK.sonnenPuls} speed={0.45} />; // Basis 1,15 s → ~2,6 s
-  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={PREVIEW_LOOK.laserFaecher} sfx="fx_laserfan" speed={0.48} />; // Basis 1,2 s → ~2,5 s · eigener Swell
-  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={PREVIEW_LOOK.prismaKaskade} sfx="fx_prisma" speed={0.85} />; // Basis 2,11 s → ~2,5 s · eigener Swell
+  if (fx.preview === "sonnenPuls") return <GottScene Fx={SonnenPulsPixi} deckTint={deckTint} look={look("sonnenPuls")} speed={0.45} />; // Basis 1,15 s → ~2,6 s
+  if (fx.preview === "laserFaecher") return <GottScene Fx={LaserFaecherPixi} deckTint={deckTint} look={look("laserFaecher")} sfx="fx_laserfan" speed={0.48} />; // Basis 1,2 s → ~2,5 s · eigener Swell
+  if (fx.preview === "prismaKaskade") return <GottScene Fx={PrismaKaskadePixi} deckTint={deckTint} look={look("prismaKaskade")} sfx="fx_prisma" speed={0.85} />; // Basis 2,11 s → ~2,5 s · eigener Swell
   // #: loopGap 5,5 s → Periode ~8 s: der ~11-s-Swell (fx_holocube) läuft weitgehend durch, bevor die nächste Animation
   //    startet — ohne Gap schluckte der 3-s-Cooldown jeden zweiten Ton. [TUNING: höher = kein Überlappen, niedriger = flotter]
-  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={PREVIEW_LOOK.holoCube} sfx="fx_holocube" speed={0.72} loopGap={5.5} />; // Basis 1,8 s → ~2,5 s · eigener Swell
-  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={PREVIEW_LOOK.supernova} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
+  if (fx.preview === "holoCube") return <GottScene Fx={HoloCubePixi} deckTint={deckTint} look={look("holoCube")} sfx="fx_holocube" speed={0.72} loopGap={5.5} />; // Basis 1,8 s → ~2,5 s · eigener Swell
+  if (fx.preview === "supernova") return <GottScene Fx={SupernovaPixi} deckTint={deckTint} look={look("supernova")} sfx="fx_supernova" speed={SUPERNOVA_SHOWCASE_SPEED} sfxDelay={supernovaSwellDelay(SUPERNOVA_SHOWCASE_SPEED)} />; // Basis 2,05 s → ~11 s (voller Swell) · #377/#379
   // Fallback (kein bekannter Vorschautyp): schlichte Battlefield-Szene.
   const bf = battlefieldAssets(SHOWCASE_BF);
   return (
@@ -956,7 +970,9 @@ const EMBER_TIER_LABELS = ["Schwach", "Stark", "Brutal", "Irre", "Gottgleich"];
 // Vorschau, die etwas anderes zeigt als das Spiel, ist schlimmer als gar keine.
 const auroraGLActive = (effect) => effect === "aurora";
 function FieldFxPreview({ effect, deckTint = false }) {
-  const look = PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
+  // #vorschau-deck: Deckfarbe-Modus → DEIN Deck (Farben + Spielfeld); Standard-Modus → feste Tabelle.
+  const deckLook = useContext(DeckLookCtx);
+  const look = (deckTint && deckLook) || PREVIEW_LOOK[effect] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   // #327: Standard-Modus = einheitlich Genesis (SHOWCASE_BF); nur der Deckfarbe-Modus zeigt den Pack-BG (look.bf).
   //   Die Effektfarbe (look.a1/a2) bleibt davon unberührt — Standard nutzt weiter den festen Standard-Look des Effekts.
   const bf = battlefieldAssets(deckTint ? look.bf : SHOWCASE_BF);
@@ -1050,7 +1066,11 @@ function FieldFxPreview({ effect, deckTint = false }) {
 // Preview/Dev-Build; sonst zeigt die Vorschau die reine Karte (die Effekte laufen in Produktion ohnehin nicht).
 const CARDFX_PREVIEW_ON = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV);
 function CardAnimPreview({ anim }) {
-  const look = PREVIEW_LOOK[anim] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
+  /* #vorschau-deck: Karten-Animationen haben KEINEN Standard/Deckfarbe-Schalter — sie laufen im Spiel
+     immer in der Deckfarbe (CLAUDE.md #318). Die Vorschau nimmt deshalb ohne Gate das aktive Deck, samt
+     seinem Spielfeld als Grund; die feste Tabelle (neutraler Genesis-Grund) bleibt nur der Rückfall. */
+  const deckLook = useContext(DeckLookCtx);
+  const look = deckLook || PREVIEW_LOOK[anim] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };
   const bf = battlefieldAssets(look.bf);
   const isMobile = useIsMobile();
   const src = bf ? (isMobile ? bf.mobile : bf.desktop) : null;
@@ -1198,7 +1218,11 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   // Horizontaler Swipe → Reiterwechsel. Solange das Pack-Detail offen ist (eigene ‹ ›/Swipe-Geste), unterdrückt.
   const tabSwipe = useTabSwipe(["packs", "challenges", "fx"], tab, setTab, { guard: () => anyOverlay });
 
+  /* #vorschau-deck: EIN Provider am Wurzelknoten. Der Look hängt allein an der ausgerüsteten deckId — er
+     wird deshalb hier gemerkt statt in jeder Szene neu abgeleitet (dreizehn Lesestellen, s. DeckLookCtx). */
+  const deckLook = useMemo(() => activeLook(deckId), [deckId]);
   return overlayPortal((
+    <DeckLookCtx.Provider value={deckLook}>
     <div className="fixed inset-0 overlay-root cz-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
@@ -1309,6 +1333,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           options={options} onActivate={activate} onActivateTier={activateTier}
           onBuy={(pack) => { buy((pf) => buyPack(pf, pack)); activate(pack); }} />)}
     </div>
+    </DeckLookCtx.Provider>
   ));
 }
 
@@ -1870,6 +1895,9 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   // #: Effekte mit Farbmodus (Standard/Deckfarbe): Aurora + Glutfunken. deckOpt = das zugehörige Options-Flag.
   const deckOpt = fx.key === "aurora" ? "fxAuroraDeck" : fx.key === "neonsurf" ? "fxNeonsurfDeck" : fx.key === "starfield" ? "fxStarfieldDeck" : fx.key === "cubematrix" ? "fxCubeMatrixDeck" : fx.key === "scorch" ? "fxScorchDeck" : fx.key === "blackhole" ? "fxBlackholeDeck" : fx.key === "klinge" ? "fxKlingeDeck" : fx.key === "hologridSlice" ? "fxHologridDeck"
     // #322–#326 Gottgleich-Prunk-Farbmodus (Standard-Palette ↔ Deckfarbe) je Effekt.
+    // #vorschau-deck: „Gottgleich · Standard" hat seit 19.08.2026 einen eigenen Farbmodus — vorher war der
+    // Chrome-Schriftzug dort auf den festen Synthwave-Zweiton festgelegt, während jeder Prunk daneben umfärben konnte.
+    : fx.key === "gottStandard" ? "fxGottStandardDeck"
     : fx.key === "sonnenPuls" ? "fxSonnenPulsDeck" : fx.key === "laserFaecher" ? "fxLaserFaecherDeck" : fx.key === "prismaKaskade" ? "fxPrismaKaskadeDeck" : fx.key === "holoCube" ? "fxHoloCubeDeck" : fx.key === "supernova" ? "fxSupernovaDeck" : null;
   // #328 Skill-Effekt hat KEIN eigenes …Deck-Flag → Farbmodus kommt aus archColor (spezialSel); sonst aus deckOpt.
   const spezialSel = options?.archColor === "deck" ? "deck" : "standard";
@@ -2076,7 +2104,7 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
        markiert den in die Bühne gewählten. Das frühere Violett für „gewählt" entfällt — es hatte mit
        keinem Effekt etwas zu tun. Ob ein Effekt LÄUFT, sagt weiterhin der grüne Status rechts. */
     <button type="button" onClick={handleTap} title={active ? t("shop.dblTap.off") : owned ? t("shop.dblTap.on") : undefined}
-      className={`as-edge-card${selected ? " is-sel" : ""}${owned ? "" : " opacity-75"} relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3`}
+      className={`cz-fxrow as-edge-card${selected ? " is-sel" : ""}${owned ? "" : " opacity-75"} relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3`}
       style={{ padding: "11px 13px", "--c": tint }}>
       <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
       <span className="flex items-center gap-1.5 text-[10px] font-bold shrink-0" style={{ color: status.c }}>

@@ -47,6 +47,7 @@ const DEFAULT_OPTIONS = {
   fxAuroraDeck: true, fxNeonsurfDeck: true, fxStarfieldDeck: true, fxCubeMatrixDeck: true,
   fxScorchDeck: true, fxBlackholeDeck: true, fxKlingeDeck: true, fxHologridDeck: true,
   fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
+  fxGottStandardDeck: true, // #vorschau-deck: Farbmodus für „Gottgleich · Standard“
   fxDeckDefaultLift: false,
 };
 

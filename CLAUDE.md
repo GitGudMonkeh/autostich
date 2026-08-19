@@ -1735,6 +1735,55 @@ Klassennamen und eine Box mit 0×0, die neue Klammer).
   den exakten Klassenstring — der Modifikator ist eine Ergänzung, kein Ersatz der Konstruktion.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (2046×979 bei DPR 1,25).
 
+### #vorschau-deck — die Effekt-Vorschau zeigt DEIN Deck (19.08.2026)
+Im Deckfarbe-Modus zog die Bühne bis hierher das je Effekt **handverlesene** Pack aus `LOOK_REFS` (#327):
+Aurora auf Moonwhale, Glutfunken auf Kosmos, Klinge auf Drache. Der Zweck war, den Umschalter
+Standard↔Deckfarbe sichtbar zu machen. Jetzt zieht sie **das gerade ausgerüstete Deck** — Akzentfarben UND
+Spielfeld. Die Vorschau beantwortet damit die Frage, die vor einem Kauf zählt („wie sieht das in MEINEM
+Spiel aus") statt „was ist der Unterschied zwischen den zwei Modi".
+- **Der Preis ist bekannt und wurde angenommen** (Entscheidung des Users): liegt dein Deck farblich nah am
+  Standard-Look eines Effekts, zeigt der Umschalter dort fast nichts mehr. Genau dagegen war `LOOK_REFS`
+  gebaut. **Die Tabelle bleibt trotzdem und ist kein toter Code** — sie ist der STANDARD-Modus.
+- **Standard-Modus bleibt Genesis als Basislinie.** Fiele auch er auf das aktive Deck, gäbe es keinen
+  neutralen Bezug mehr, gegen den man vergleicht. Nachgemessen: Aurora/Deckfarbe → `bf_sunset`,
+  Aurora/Standard → `bf_onboarding`, und zurück.
+- **`activeLook(deckId)` steht in `themes.js`, nicht in der Werkstatt**, und baut auf `resolvePackByDeckId`:
+  das löst **Stufen-Decks auf ihre eigene Stufenfarbe** auf (Stufe II hat andere a1/a2 als Stufe I) — dieselbe
+  Auflösung, die das Spiel benutzt. Ein Nachbau über `deckId` liefe genau daran vorbei. Rückfall ist Genesis,
+  nicht `null` — sonst müsste jede der dreizehn Lesestellen es einzeln abfangen.
+- **Ein Kontext (`DeckLookCtx`), kein Prop.** `look` wird an **dreizehn** Stellen gelesen (neun `look={}` plus
+  vier Szenen, die es sich selbst holen), und die Kette dorthin führt durch Komponenten, die mit dem Deck
+  nichts zu tun haben. Gleiche Bauart wie `SceneScaleCtx` in derselben Datei.
+  **In `GlobalFxScenePreview` wird der Kontext EINMAL oben gelesen** und die Auswahl läuft über einen lokalen
+  Wähler `look(key)` — die Szenen-Auswahl ist eine `if`-Kette, ein Hook je Zweig wäre ein bedingter Hook.
+- **Karten-Animationen ohne Modus-Gate**: Neonrahmen/Holo/Glitch laufen im Spiel *immer* in der Deckfarbe
+  (#318), haben also gar keinen Umschalter. Ihre Vorschau nimmt das aktive Deck deshalb ohne `deckTint`-Prüfung
+  — ein Gate wäre dort eine Bedingung, die nie umschaltet.
+- **„Gottgleich · Standard" hat jetzt einen eigenen Farbmodus** (`fxGottStandardDeck`). Vorher war er der
+  einzige Gottgleich-Eintrag ohne: der Chrome-Schriftzug stand fest auf dem Synthwave-Zweiton, während jeder
+  Prunk daneben umfärben konnte. Der Fehler saß in `App.jsx`: die `gottDeck`-Zuordnung kannte nur die fünf
+  Prunks, `activeGottFx(...) || ""` fiel auf `vOpt[""]` = undefined. **Beide Enden lesen dasselbe Flag** —
+  ein Schalter, der nur die Vorschau umfärbt, wäre eine Lüge; ein Wächter hält das fest.
+  Der Schlüssel passt auf die `/^fx.+Deck$/`-Regex und hängt sich damit von selbst in `FX_DECK_KEYS`
+  (Anhebung + Dev-Reset) ein. Der Zähler in `test/announce-deck.test.js` ist 13 → **14**; die Zahl steht dort
+  bewusst als Literal, damit ein neues Farbmodus-Flag eine bewusste Handlung bleibt.
+- **Kein Remount, keine Laufzeitkosten**: `deckTint` ist längst ein Live-Prop (#345-perf). Die einzige neue
+  Arbeit ist ein anderes Hintergrundbild beim Umschalten.
+- Wächter: `test/showcase-look.test.js` (die #327-Prüfungen bleiben — sie sichern jetzt den STANDARD-Modus).
+- **Nicht am Gerät gesehen** — headless im Produktionspfad über zwei Decks (Sunset rot/orange, Moonwhale
+  blau) gemessen und nachgerendert.
+
+#### #cz-ruhe, zweite Runde — die Effekt-Liste sind flache Zeilen
+Am Handy ist jede Zeile eine eigene Kanten-KARTE (Fläche, Radius, 8 px Luft dazwischen) — richtig dort, wo
+man mit dem Daumen ein Ziel treffen muss. Auf dem Desktop stehen fünf bis sechs davon in einer schmalen
+Spalte und lesen sich als Stapel Kacheln statt als Liste. Ab 1400 px deshalb: keine Fläche, kein Radius, kein
+Abstand — Haarlinien trennen, gewählt = hellere Fläche.
+- **Die Rarity-Kante links bleibt.** Sie ist das einzige Farbsignal der Zeile (grau/grün/blau/lila/gold nach
+  Preisstufe) und kommt aus `.as-edge-card` über `--c` — `border-left` darf beim Abräumen NICHT mitfallen.
+- **`gap: 0` am Behälter ist Pflicht, nicht Kosmetik**: er trägt `gap-2` als Utility, ohne das Zurücknehmen
+  hingen die Haarlinien in der Luft, statt zwei Zeilen zu trennen.
+- Handy nachgemessen unberührt: Element-Geometrie bei 390 px vorher/nachher **0 Abweichungen von 62**.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

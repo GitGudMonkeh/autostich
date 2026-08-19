@@ -573,6 +573,11 @@ const DEFAULT_OPTIONS = {
   fxAuroraDeck: true, fxNeonsurfDeck: true, fxStarfieldDeck: true, fxCubeMatrixDeck: true,
   fxScorchDeck: true, fxBlackholeDeck: true, fxKlingeDeck: true, fxHologridDeck: true,
   fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
+  // #vorschau-deck: „Gottgleich · Standard" (kein Prunk gekauft) hatte als einziger Gottgleich-Eintrag KEINEN
+  // Farbmodus — der Chrome-Schriftzug stand dort fest auf dem Synthwave-Zweiton, während jeder Prunk daneben
+  // umfärben konnte. Der Schlüssel passt auf die `/^fx.+Deck$/`-Regex und hängt sich damit von selbst in
+  // FX_DECK_KEYS (Anhebung + Dev-Reset) ein — nichts weiter einzutragen.
+  fxGottStandardDeck: true,
   /* Marker der EINMALIGEN Anhebung bestehender Stände (s. `liftFxDeckDefaults`). Muss `false` sein: der
      Merge in `loadOptions` legt DEFAULT_OPTIONS UNTER den gespeicherten Stand — stünde hier `true`, käme
      der Marker für Alt-Profile aus den Defaults und die Anhebung liefe nie. */

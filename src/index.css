@@ -3744,6 +3744,26 @@ button { font-family: inherit; }
   /* (Die Reiter selbst stehen weiter oben in DIESEM Block — `.cz-head [role="tab"]`. Bewusst dort und
      nicht hier noch einmal: zwei Regelsätze für dieselben drei Knöpfe wären genau die Doppelpflege,
      vor der die Datei sonst überall warnt.) */
+  /* Die Effekt-Liste sind flache Zeilen, keine Kacheln (#cz-ruhe, zweite Runde).
+     Am Handy ist jede Zeile eine eigene Kanten-KARTE (Fläche, Radius, 8 px Luft dazwischen) — richtig dort,
+     wo man mit dem Daumen ein Ziel treffen muss. Auf dem Desktop stehen fünf bis sechs davon untereinander
+     in einer schmalen Spalte und lesen sich als Stapel Kacheln statt als Liste. Hier deshalb: keine Fläche,
+     kein Radius, kein Abstand — getrennt wird durch Haarlinien, und das EINE Farbsignal bleibt die
+     Rarity-Kante links (`--c`, kommt aus `.as-edge-card`). Die letzte Zeile trägt keine Linie.
+     `!important` an der Fläche, weil `.as-edge-card` sie im selben Ungeschichteten setzt. */
+  .cz-fxlist .cz-fxrow {
+    border-radius: 0 !important;
+    border-top: 0 !important; border-right: 0 !important;
+    border-bottom: 1px solid rgba(150, 150, 170, .13) !important;
+    background: none !important;
+    padding: 12px 12px 12px 13px !important;
+  }
+  .cz-fxlist .cz-fxrow:last-child { border-bottom: 0 !important; }
+  /* Der Behälter setzt `gap-2` als Utility — hier zusammenrücken, sonst hängen die Haarlinien in der Luft. */
+  .cz-fxlist .flex.flex-col { gap: 0; }
+  /* Gewählt = hellere Fläche statt eines zweiten Rahmens; die Kante links sagt bereits, welcher es ist. */
+  .cz-fxlist .cz-fxrow.is-sel { background: rgba(255, 255, 255, .045) !important; }
+
   /* Luftigeres Kachelraster (der Katalog ist das einzige Raster im Panel — der Greifer darf so grob sein). */
   .cz-mainscroll .grid { gap: 16px; }
   /* Fußzeile der Bühne: Beschreibung links, Knopf rechts. */

@@ -398,6 +398,26 @@ export function showcaseLook(packId, override = {}) {
   const a2 = override.a2 || (t ? t.a2 : a1);
   return { bf, a1, a2 };
 }
+/* #vorschau-deck — der Look des GERADE AUSGERÜSTETEN Decks, in derselben Form wie `showcaseLook`.
+
+   Die Effekt-Vorschau im Shop zeigt im Deckfarbe-Modus ab 19.08.2026 nicht mehr das je Effekt handverlesene
+   Pack (`LOOK_REFS`), sondern DEIN Deck: seine Akzentfarben UND sein Spielfeld. Die Vorschau beantwortet
+   damit die Frage, die vor einem Kauf zählt („wie sieht das in MEINEM Spiel aus") statt „was ist der
+   Unterschied zwischen den zwei Modi".
+
+   Bewusst hier und nicht in der Werkstatt: `resolvePackByDeckId` löst auch STUFEN-Decks auf ihre eigene
+   Stufenfarbe auf (Stufe II eines Packs hat andere a1/a2 als Stufe I) — dieselbe Auflösung, die das Spiel
+   selbst benutzt. Ein Nachbau in der UI würde genau daran vorbeilaufen.
+
+   Rückfall ist Genesis, nicht `null`: Genesis IST das Start-Deck und hat kein eigenes Pack in THEMES mit
+   passender deckId-Zuordnung — ein `null` müsste jeder der dreizehn Lesestellen einzeln abfangen. */
+export function activeLook(deckId) {
+  const hit = resolvePackByDeckId(deckId);
+  if (hit && hit.pack) return { bf: hit.pack.bfId, a1: hit.a1, a2: hit.a2 || hit.a1 };
+  const g = THEME_DEFS.genesis;
+  return { bf: g.bfId, a1: g.a1, a2: g.a2 || g.a1 };
+}
+
 export const PACKS = THEMES; // Sprechender Alias fürs neue Modell
 
 // Pack + passende Akzentfarben zu einer equippten deckId — löst bei Stufen-Decks die konkrete Stufe (eigene a1/a2) auf.

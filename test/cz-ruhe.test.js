@@ -82,3 +82,29 @@ describe("#cz-ruhe — flache Reiter, luftiges Raster, kompakter Knopf", () => {
     expect(basis).toMatch(/\.cz-fxfoot\s*\{\s*display:\s*contents/);
   });
 });
+
+describe("#cz-ruhe — die Effekt-Liste sind flache Zeilen, keine Kacheln", () => {
+  it("die Zeile verliert ab 1400 px Fläche, Radius und Abstand — getrennt wird durch Haarlinien", () => {
+    const r = deskBlock.match(/\.cz-fxlist \.cz-fxrow\s*\{([^}]*)\}/);
+    expect(r, ".cz-fxrow-Regel nicht mehr gefunden").toBeTruthy();
+    expect(r[1]).toMatch(/border-radius:\s*0\s*!important/);
+    expect(r[1]).toMatch(/background:\s*none\s*!important/);
+    expect(r[1], "ohne Haarlinie verschwimmen die Zeilen ineinander").toMatch(/border-bottom:\s*1px solid/);
+    expect(deskBlock, "die letzte Zeile braucht KEINE Linie").toMatch(/\.cz-fxrow:last-child\s*\{[^}]*border-bottom:\s*0/);
+    /* Der Behälter trägt `gap-2` als Utility. Ohne das Zurücknehmen hingen die Haarlinien in der Luft
+       statt zwei Zeilen zu trennen — die Regel sieht dann aus, als täte sie etwas, und tut es halb. */
+    expect(deskBlock).toMatch(/\.cz-fxlist \.flex\.flex-col\s*\{[^}]*gap:\s*0/);
+  });
+
+  it("die Rarity-Kante links bleibt — sie ist das einzige Farbsignal der Zeile", () => {
+    const r = deskBlock.match(/\.cz-fxlist \.cz-fxrow\s*\{([^}]*)\}/);
+    // border-top/right dürfen fallen, border-LEFT nicht: die trägt `--c` aus `.as-edge-card`.
+    expect(r[1]).toMatch(/border-top:\s*0/);
+    expect(r[1], "die Farbkante ist mit abgeräumt worden").not.toMatch(/border-left:\s*0/);
+    expect(jsx, "die Zeile trägt den Klassenhaken nicht mehr").toMatch(/className=\{`cz-fxrow as-edge-card/);
+  });
+
+  it("gewählt = hellere Fläche, kein zweiter Rahmen", () => {
+    expect(deskBlock).toMatch(/\.cz-fxlist \.cz-fxrow\.is-sel\s*\{[^}]*background:/);
+  });
+});

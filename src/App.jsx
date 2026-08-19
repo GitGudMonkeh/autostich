@@ -775,7 +775,10 @@ function AutostichGame() {
     // #322–#326 Gottgleich-Prunk (PIXI): aktiver Effekt (besessen + Option an) oder „gottStandard" (kein Prunk), plus
     // dessen Farbmodus-Flag (Standard vs. Deckfarbe). gottFlags in CustomizeScreen hält die Exklusivität (genau einer an).
     gottEffect: activeGottFx(profile, vOpt) || "gottStandard",
-    gottDeck: !!(vOpt[{ sonnenPuls: "fxSonnenPulsDeck", laserFaecher: "fxLaserFaecherDeck", prismaKaskade: "fxPrismaKaskadeDeck", holoCube: "fxHoloCubeDeck", supernova: "fxSupernovaDeck" }[activeGottFx(profile, vOpt)] || ""]),
+    /* #vorschau-deck: „gottStandard" ist hier KEIN Sonderfall mehr, sondern ein Eintrag wie die fünf Prunks.
+       Vorher fiel der Rückfall `|| ""` auf `vOpt[""]` = undefined → der Chrome-Schriftzug stand ohne gekauften
+       Prunk fest auf dem Synthwave-Zweiton, obwohl daneben jeder Prunk umfärben konnte. */
+    gottDeck: !!(vOpt[{ gottStandard: "fxGottStandardDeck", sonnenPuls: "fxSonnenPulsDeck", laserFaecher: "fxLaserFaecherDeck", prismaKaskade: "fxPrismaKaskadeDeck", holoCube: "fxHoloCubeDeck", supernova: "fxSupernovaDeck" }[activeGottFx(profile, vOpt) || "gottStandard"] || ""]),
     archDeckColor: vOpt.archColor === "deck", // #spezial Archetyp-Effekte (Hitze/Moos/Blitz/Eis): Standard-Neon vs. Deckfarbe
     auroraDeck: !!vOpt.fxAuroraDeck, // Aurora-Farbmodus: false = Standard-Palette, true = Deckfarbe
     neonsurfDeck: !!vOpt.fxNeonsurfDeck, // #345 Neon-Brandung-Farbmodus: false = Standard (violett→cyan), true = Deckfarbe
