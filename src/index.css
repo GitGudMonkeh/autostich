@@ -2687,9 +2687,25 @@ button { font-family: inherit; }
     font-size: 12.5px; line-height: 1.45; color: #71717c;
   }
 
+  /* #gd-rahmen (19.08.2026): Die Seite lief bis zum Fuß des Bildschirms — auf 1990 × 1030 stand unter dem
+     letzten Kasten ein Drittel leeres Panel. Sie endet jetzt an ihrem Inhalt.
+
+     Damit der Rahmen beim Blättern zwischen den vier Fraktionen aber nicht springt, tragen alle dieselbe
+     Mindesthöhe: die des LÄNGSTEN. Gemessen als REINE Inhaltshöhe (Blitz/Feuer/Eis/Pflanze):
+       1400 px → 713 / 690 / 699 / 715     (Spanne 25, am längsten Pflanze)
+       1920 px → 589 / 590 / 616 / 589     (Spanne 27, am längsten Eis)
+     Messen muss man das in einem NIEDRIGEN Fenster: steht mehr Höhe zur Verfügung, streckt sich der
+     Inhalt mit (der Kreislauf-Ring skaliert), und man misst den Platz statt des Bedarfs — der erste
+     Anlauf lag deshalb 100 px zu hoch.
+
+     Der Inhalt wird mit der Breite kürzer (die drei Spalten brechen weniger um), deshalb ist die
+     Mindesthöhe keine feste Zahl, sondern die Gerade durch die beiden Messpunkte: 1400 px → 715,
+     1920 px → 616. Der `max()`-Boden fängt sehr breite Schirme ab; dort entscheidet wieder der Inhalt. */
   .gd-page {
     display: flex; flex-direction: column;
-    border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
+    align-self: start;
+    border-radius: 14px; padding: 16px 20px 14px;
+    min-height: max(560px, calc(985px - 19.04vw));
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
