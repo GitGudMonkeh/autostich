@@ -10,8 +10,8 @@ Einbau ist NICHT gemacht: Issue #402.
 | | Name | Bedeutung | Farbe | Familien | Perks | Motiv | Silhouette |
 |---|---|---|---|---|---|---|---|
 | A | Deck | Dauerhafte Kartenwerte | `#8a7de0` | 11 | 3 | Kartenstapel von der Seite, jede Kante glüht | liegender Block ✅ |
-| B | Stich | Stich-Effekte | `#e0605a` | 11 | 3 | zwei Karten prallen frontal aufeinander | gespiegeltes Paar |
-| C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ein anderes Mal | Fächer |
+| B | Stich | Stich-Effekte | `#e0605a` | 11 | 3 | zwei blanke Karten, dazwischen die weißglühende Naht | gespiegeltes Paar ✅ |
+| C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ANDERS beleuchtet (Umriss · Ecken · eine Kante) | Fächer |
 | D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe |
 | E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug |
 | P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz |
@@ -30,6 +30,24 @@ Vier der sieben Farben bedeuten im Spiel längst etwas anderes:
 Bei den Skills konnte die Farbe die Fraktion tragen — es waren vier gut getrennte. Hier muss die FORM die
 Arbeit machen, und sie muss zusätzlich gegen die 21 vergebenen Blitz-Silhouetten stehen.
 
+## Zwei Verbote, beide aus einem Fehlversuch
+
+**Die Karten tragen KEINE Zeichen.** `SUITS` in `constants.js` sind vier FARBEN (Rot · Blau · Grün · Gelb)
+plus ein Wert 1–10 — Pik, Herz, Kreuz, Karo gibt es im ganzen Spiel nicht. Der erste Stich-Versuch kam mit
+Pik und Herz zurück. In den Prompt gehört: *„a card is a blank dark rectangle whose identity comes from its
+glowing outline alone."*
+
+**Keine erfundene Ikonografie.** Der erste Rollen-Versuch malte Schild, Fadenkreuz und Funkel auf die drei
+Karten — Symbole, die es im Spiel nirgends gibt (das Fadenkreuz ist obendrein das Motiv der Kategorie P).
+Die Rollen des Spiels (Vorhut, Leibwache, Anführer, Staffelläufer, Finisher, Eckpfeiler, Joker, Bindeglied)
+werden im Spiel über **Rahmen und Kanten** markiert, nicht über Zeichen. Genau das benutzt das Motiv jetzt:
+drei Karten, die sich nur darin unterscheiden, WIE sie leuchten (voller Umriss · nur die Ecken · nur eine
+Kante). Bedeutung durch Licht und Anordnung, nie durch ein Symbol.
+
+**Und damit ist die Farbfrage endgültig entschieden:** die vier Kartenfarben sind `#e0605a` · `#5a8ade` ·
+`#5ab87a` · `#d4a63a` — identisch mit den Kategoriefarben von Stich, Form, Rolle und Score. Vier der sieben
+Kategorien tragen also die Farbe einer KARTENFARBE. Farbe kann in diesem Satz gar nichts identifizieren.
+
 ## Sprache: Zustand statt Ereignis
 
 Skills sind Ereignisse (ein Einschlag, ein Ausbruch, ein Moment). Perks sind **Zustände**: Gegenstände in
@@ -42,6 +60,11 @@ Helligkeitsbänder, schwarzer Grund, quadratisch, `mix-blend-mode: screen`).
 |---|---|---|---|---|---|---|
 | Blitz-Skill (Referenz des anderen Satzes) | 10,9 % | 4,5 % | 2,0 % | 0,60 % | 1,98 | 259° |
 | **A Deck** | 23,5 % | 10,3 % | 1,6 % | 0,44 % | 1,95 | 261° |
+| **B Stich** | 23,2 % | 5,7 % | 2,0 % | 0,38 % | 1,99 | 2° |
+
+Der Unterschied im mittleren Band (5,7 gegen 10,3 %) ist kein Mangel, sondern der Motivunterschied: Deck
+leuchtet **flächig** (die große Deckfläche des obersten Blattes), Stich **linear** (Naht und Kanten). Genau
+deshalb werden mehrere Schwellen gemessen und nicht nur eine.
 
 **Der Perk-Satz muss zu SICH SELBST passen, nicht zu den Skills** — Perk- und Skill-Kacheln erscheinen nie
 auf demselben Bildschirm. Deck trägt doppelt so viel Licht wie ein Blitz-Emblem (das Licht ist hier flächig
