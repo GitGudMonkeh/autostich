@@ -103,7 +103,7 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     // EIN Block, zwei Einhängepunkte — nicht zwei Fassungen der Zeile.
     expect(src.match(/const kette = \(/g) || [], "die Zeile darf nur EINMAL gebaut werden").toHaveLength(1);
     const oben = src.indexOf("{ketteOben && kette}");
-    const karten = src.indexOf('className="relative z-10 mt-8 flex');
+    const karten = src.indexOf("} flex items-center justify-center gap-4 sm:gap-8`}");
     const unten = src.indexOf("{!ketteOben && kette}");
     expect(oben, "oberer Einhängepunkt fehlt").toBeGreaterThan(-1);
     expect(unten, "unterer Einhängepunkt fehlt").toBeGreaterThan(-1);
@@ -111,11 +111,20 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     expect(unten, "der untere Block muss NACH der Kartenreihe stehen").toBeGreaterThan(karten);
 
     // Die Ansage bleibt, wo sie war: genau EINE Renderstelle, und die liegt hinter den Karten.
-    const ansageAlle = [...src.matchAll(/className="relative z-10 h-8 mt-4 flex/g)].map((m) => m.index);
+    const ansageAlle = [...src.matchAll(/className=\{`relative z-10 h-8 \$\{ketteOben \? "mt-\d+" : "mt-\d+"\} flex/g)].map((m) => m.index);
     expect(ansageAlle, "die Ansage darf nur EINMAL gerendert werden").toHaveLength(1);
     expect(ansageAlle[0], "die Ansage bleibt unter den Karten").toBeGreaterThan(karten);
     const ketteBlock = src.slice(src.indexOf("const kette = ("), src.indexOf("{ketteOben && kette}"));
     expect(ketteBlock, "die Ansage gehört NICHT in den wandernden Block").not.toMatch(/hideFloatWinLose/);
+
+    /* Die drei Abstände werden UMVERTEILT, nicht gekürzt — sonst schrumpft das Panel, und weil das
+       Effekt-Band ein PROZENTSATZ der Panelhöhe ist, wandert der Boden dann einfach mit nach oben und die
+       Karten sind ihm genauso nah wie vorher. Beide Seiten müssen also dieselbe Summe ergeben. */
+    const paare = [...src.matchAll(/ketteOben \? "mt-(\d+)" : "mt-(\d+)"/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    expect(paare, "erwartet drei umschaltende Abstände: Zeile · Kartenreihe · Ansage").toHaveLength(3);
+    const summe = (i) => paare.reduce((a, p) => a + p[i], 0);
+    expect(summe(0), `Abstände oben ${summe(0)} ≠ unten ${summe(1)} — die Panelhöhe würde springen`)
+      .toBe(summe(1));
   });
 
   it("alle Texte der Zeile stehen in BEIDEN Katalogen", () => {

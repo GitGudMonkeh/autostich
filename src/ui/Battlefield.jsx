@@ -740,6 +740,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      BODEN-Effekten: Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher (kurz, kein Dauerbild). */
   const bodenFx = bgFx === "cubematrix" || bgFx === "neonsurf";
   const ketteOben = useMediaQuery(MOBILE_MQ) && bodenFx;
+  /* Die drei Abstände der Spalte (Zeile · Kartenreihe · Ansage) werden dabei UMVERTEILT, nicht gekürzt:
+     4+32+16 = 52 px im Normalfall, 0+24+28 = 52 px mit der Zeile oben. Die Panelhöhe bleibt damit gleich —
+     und das ist hier keine Kosmetik, sondern die Bedingung, unter der die Verschiebung überhaupt etwas
+     bringt: das Effekt-Band ist ein PROZENTSATZ der Panelhöhe (`EFFECT_ZONES.mobile.y` = 86 %). Ein kürzeres
+     Panel zöge den Boden mit nach oben, die Karten kämen ihm also genauso nah wie vorher. Wer an einem der
+     drei Werte dreht, muss einen anderen gegenrechnen — der Wächter addiert beide Seiten. */
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -1404,7 +1410,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
      flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
   const kette = (
-    <div className="relative z-10 min-h-5 mt-1 flex items-center justify-center">
+    <div className={`relative z-10 min-h-5 ${ketteOben ? "mt-0" : "mt-1"} flex items-center justify-center`}>
       {!hideBreakdown && <TrickBreakdown trick={t} />}
     </div>
   );
@@ -1620,7 +1626,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
       {ketteOben && kette}
-      <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
+      <div className={`relative z-10 ${ketteOben ? "mt-6" : "mt-8"} flex items-center justify-center gap-4 sm:gap-8`}>
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
         {isCrit && !hideFloatMult && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -1798,7 +1804,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
       {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
-      <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
+      <div className={`relative z-10 h-8 ${ketteOben ? "mt-7" : "mt-4"} flex items-center justify-center`}>
         {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
             kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
         {banner && hideFloatWinLose ? null : banner ? (

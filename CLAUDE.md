@@ -2229,13 +2229,15 @@ Nachgemessen (390×844, Produktionsbuild): Brett **358×347**, der Boden beginnt
   zwei falschen Anläufen: erst hatte ich die zwei Zeilen getauscht, dann beide nach oben geschoben, dann der
   Zeile eine Trägerfläche gegeben — alles drei war nicht gefragt). Die Ansage ist großer, fetter, farbiger
   Text und über dem Effekt weiterhin lesbar; die feine Faktorenkette ist es nicht.
-- Gemessen danach: Zeile **29–49** (statt 302–322), Karten 81–274, Ansage 290–322. **Die Panelhöhe bleibt
-  347 px** — der Block kostet oben wie unten `mt-1` + `min-h-5` = 24 px, die Klassen sind in beiden Fassungen
-  dieselben. Es wird nur umgehängt, nichts umgerechnet.
-- **Preis, bewusst so:** weil die Zeile ihren Platz unten räumt, rutschen Karten und Ansage um genau diese
-  24 px nach unten (Ansage 266–298 → 290–322). Die Alternative wäre, den Platz unten leer zu reservieren —
-  dann stünden Karten und Ansage auf ihrem alten Pixel, das Panel würde aber 24 px höher, und mit ihm wandert
-  das Effekt-Band (es rechnet in Prozent der Panelhöhe). Konstante Panelhöhe war mir das wichtigere Gut.
+- Gemessen danach: Zeile **25–45** (statt 302–322). **Die Panelhöhe bleibt 347 px.**
+- **Die drei Abstände werden UMVERTEILT, nicht gekürzt** (Zeile · Kartenreihe · Ansage): `4+32+16 = 52 px`
+  im Normalfall, `0+24+28 = 52 px` mit der Zeile oben. Damit bleibt die Panelhöhe gleich — **und das ist die
+  Bedingung, unter der die Verschiebung überhaupt etwas bringt.** Das Effekt-Band ist ein PROZENTSATZ der
+  Panelhöhe (86 %); ein kürzeres Panel zöge den Boden mit nach oben und die Karten kämen ihm genauso nah wie
+  vorher. Wer an einem der drei Werte dreht, muss einen anderen gegenrechnen — der Wächter addiert beide
+  Seiten und fällt bei jeder einseitigen Änderung.
+- Endstand gemessen: Zeile **25–45** · Karten **69–262** · Ansage 290–322 · Boden ab 298. Die Karten haben
+  damit **36 px Abstand** zum Bandbeginn (vorher 24, im ersten Wurf dieser Fassung ebenfalls 24).
 - **EIN Block, zwei Einhängepunkte** (`const kette`, `{ketteOben && kette}` vor der Kartenreihe,
   `{!ketteOben && kette}` dahinter). Zwei Fassungen wären die Doppelpflege, vor der die Datei überall warnt.
 - **Nur `cubematrix` + `neonsurf`.** Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher
