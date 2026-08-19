@@ -50,11 +50,20 @@ und der wandert mit jedem neuen Bild.
 kamen als 1536 × 1024). Unter `mix-blend-mode: screen` ist der schwarze Rand unsichtbar — Beschneiden
 würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmachen.
 
-## Stand Blitz — alle 21 Motive stehen, 19 liegen als Datei
+## Stand Blitz — VOLLSTÄNDIG, 21 von 21
 
-Fehlt noch **als Datei** (Motiv ist abgenommen, der Upload kam nur nicht durch): `05` Reststrom ·
-`10` Entladung. **Der Farbangleich wartet auf diese zwei** — er zieht auf den Median des Satzes, und der
-wandert mit jedem fehlenden Bild.
+Alle Master liegen. Gemessen über den ganzen Satz streut die **Lichtmenge** (Leuchtfläche ×
+Spitzenhelligkeit) von **5,0 bis 51,2 — Faktor 10**, Median 17,5.
+
+**Angeglichen wird per Deckel, nicht per Normalisierung** (dieselbe Entscheidung wie beim Schleier-Deckel
+der Spielfelder, `BATTLEFIELD_VEIL`): über 24 wird heruntergezogen, darunter bleibt alles unberührt. Das
+trifft genau **vier** Bilder — `L03` Flächenionisation (0,63) · `L01` Donnergott (0,81) · `04` Überspannung
+(0,79) · `08` Statische Aufladung (0,78).
+
+**Alle auf den Median zu ziehen wurde probiert und verworfen:** die vier schlanken Motive (`05` Reststrom,
+`14` Überschlag, `01` Blitzableiter, `03` Kettenblitz) erreichen ihn selbst bei Faktor 1,6 nicht. Aufhellen
+kann fehlende **Fläche** nicht ersetzen — es macht nur den vorhandenen Strich heller und hebt das Rauschen
+im Grund mit an.
 
 | Skill | ID | Motiv | Datei |
 |---|---|---|---|
@@ -62,12 +71,12 @@ wandert mit jedem fehlenden Bild.
 | Ionisierung | `SK_LIGHTNING_02` | zwei Karten, Lichtbogen dazwischen | ✅ |
 | Kettenblitz | `SK_LIGHTNING_03` | waagerechte Zickzack-Kette, vier Einschlagsterne | ✅ |
 | Überspannung | `SK_LIGHTNING_04` | Fontäne aus dem Raster, drei Strahlen | ✅ |
-| Reststrom | `SK_LIGHTNING_05` | Blitzkanal mit vier Knoten | offen (Upload) |
+| Reststrom | `SK_LIGHTNING_05` | Blitzkanal mit vier Knoten | ✅ |
 | Gewitterfront | `SK_LIGHTNING_06` | Wolkenwand über Raster | ✅ |
 | Ladungsserie | `SK_LIGHTNING_07` | aufziehende Spirale | ✅ |
 | Statische Aufladung | `SK_LIGHTNING_08` | Plasmakugel, unten gefüllt | ✅ |
 | Kurzschluss | `SK_LIGHTNING_09` | zwei Splitter, Bogen über die Lücke | ✅ |
-| Entladung | `SK_LIGHTNING_10` | Blitz + Schockring auf dem Raster | offen (Upload) |
+| Entladung | `SK_LIGHTNING_10` | Blitz + Schockring auf dem Raster | ✅ |
 | Blitzfänger | `SK_LIGHTNING_11` | offene Steinschale fängt den Blitz auf | ✅ |
 | Breitenbeschleuniger | `SK_LIGHTNING_12` | Kartenreihe, langer Bogen von links nach rechts | ✅ |
 | Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | ✅ |
