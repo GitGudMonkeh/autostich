@@ -498,7 +498,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* #201 P1 / #UI: gehaltene Skills mit voller Beschreibung — man liest seinen Build auf einen Blick.
             Seit 19.08.2026 in HeldSkills.jsx, weil die Perk-Auswahl dieselbe Liste zeigt; von dort kommt
             auch das Ein-/Ausklappen (geteiltes `CollapsibleField`, offen als Standard). */}
-        <HeldSkills skills={skills} state={state} />
+        <HeldSkills skills={skills} state={state}
+          open={options.lvHeld ?? true} onToggle={(v) => onOption?.({ lvHeld: v })} />
 
         {/* #161 FB-1 / #UI: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung.
             Einklappbar (default zu), damit das Aufstellfeld nicht dauerhaft Platz frisst. */}

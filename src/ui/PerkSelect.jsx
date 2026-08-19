@@ -164,7 +164,8 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {/* Was der Lauf schon trägt. Ein Perk, der Ladung verbraucht, ist ohne Blitz-Skill eine andere
             Entscheidung — die Liste beantwortet genau diese Frage und steht deshalb auf BEIDEN
             Auswahl-Bildschirmen (eine Quelle: HeldSkills.jsx). */}
-        <HeldSkills skills={state.skills || []} state={state} className="mt-4" />
+        <HeldSkills skills={state.skills || []} state={state} className="mt-4"
+          open={options.lvHeld ?? true} onToggle={(v) => onOption?.({ lvHeld: v })} />
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
             Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}

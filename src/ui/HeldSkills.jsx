@@ -15,19 +15,22 @@ import { t } from "../i18n/index.js";
 
    Ein-/ausklappbar über das geteilte `CollapsibleField` (dieselbe Bauform wie „Deck-Stärke" und
    „Dein Build" darunter) — offen als Standard, weil die Liste die Wahl begründet und nicht sucht.
+   #held-merken: Reicht der Aufrufer `open`/`onToggle` herein, merkt er den Zustand (Perk- und
+   Skill-Wahl tun das über `options.lvHeld`); ohne die beiden hält das Feld ihn wie bisher selbst.
    NEUTRAL gehalten (grau), damit die Zeilen nicht wie ein wählbares Angebot aussehen. */
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral, wie in der Skill-Auswahl.
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
 
-export function HeldSkills({ skills = [], state = {}, className = "mt-5" }) {
+export function HeldSkills({ skills = [], state = {}, className = "mt-5", open = null, onToggle = null }) {
   const held = skills.map((id) => skillDef(id)).filter(Boolean);
   if (!held.length) return null;
   /* Dieselbe Zählung wie in der Skill-Auswahl: Der legendäre Skill bringt seinen eigenen Slot mit,
      die Anzeige nennt deshalb `slots + legendär` (sonst stünde „7 / 6"). */
   const slotsShown = (state.skillSlots || SKILL_SLOTS) + skills.filter(isLegendarySkill).length;
   return (
-    <CollapsibleField title={t("skill.held", { held: held.length, slots: slotsShown })} className={className}>
+    <CollapsibleField title={t("skill.held", { held: held.length, slots: slotsShown })} className={className}
+      open={open} onToggle={onToggle}>
       <div className="flex flex-col gap-2">
         {held.map((s) => (
           <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"

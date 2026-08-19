@@ -2468,6 +2468,27 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #held-merken — „Deine Skills" merkt sich, ob es offen war (19.08.2026)
+Das Klappfeld stand in Perk- UND Skill-Wahl auf `useState` im `CollapsibleField` — und die Karte wird je
+Level-up neu gemountet. Wer es zuklappte, fand es in der nächsten Phase wieder offen. Dieselbe Naht, die
+`lvPassive`, `lvWingDeck`/`lvWingStats` und `lvWingBuildings` schon haben.
+- **Ein SCHALTER an derselben Komponente, keine zweite Fassung** (Regel 1): `CollapsibleField` nimmt
+  jetzt optional `open` + `onToggle`. Reicht ein Aufrufer beide herein, ist das Feld GESTEUERT; ohne sie
+  hält es seinen Zustand weiter selbst — Chronik, „Deck-Stärke" und „Dein Build" bleiben unberührt. Ein
+  Wächter hält BEIDE Pfade fest: fiele der interne weg, ließen sich diese drei gar nicht mehr klappen.
+- **`lvHeld: true` in `DEFAULT_OPTIONS`** (Default AUF, wie bisher). Ohne den Eintrag schluckt der
+  `{...DEFAULT_OPTIONS, ...o}`-Merge in `loadOptions` den Schlüssel — die bekannte Falle, die auch
+  `fxDeckGlow` und die Flügel-Schlüssel getroffen hätte. `test/storage.test.js` führt die Defaults als
+  eigene Kopie und ist damit die Ratsche darauf.
+- **EIN Schlüssel für beide Bildschirme**, nicht je einer: „aufgeklappt lassen" ist eine Lesegewohnheit,
+  keine Eigenschaft der gerade offenen Karte (dieselbe Entscheidung wie bei `lvPassive`).
+- Nachgemessen im Messstand (Karte je Klick neu gemountet, wie im Spiel): zu → bleibt zu über den
+  Remount, wieder auf → bleibt auf; auf 1536 und 390 px, in Perk- und Skill-Wahl.
+- Handy-Geometrie unverändert (390 px, beide Bildschirme, 273 Boxen ohne eine Abweichung). Der
+  Pixelvergleich weicht dort minimal ab — das ist der animierte Goldrahmen der legendären Angebotskarten
+  (nachgewiesen: zwei Läufe DERSELBEN Fassung weichen genauso ab).
+- Wächter: `test/levelup-wings.test.js`. Gegenprobe gemacht: alle sechs sabotierten Nähte fallen.
+
 ### #brett-luft — die Legendenzeile bekommt Luft zum Brett (19.08.2026)
 Zwischen der Gebäude-/Legendenzeile („🏗 Gebäude an · Wert · Score · Formation") und dem Brett standen
 **8 px**. Auf dem Desktop stoßen dort zwei sehr verschiedene Dinge aneinander: eine Zeile aus Knopf und

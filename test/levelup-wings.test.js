@@ -166,6 +166,32 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(defaults, "Default ZU — und ohne Eintrag verschluckt loadOptions den Schlüssel")
       .toMatch(/\blvPassive:\s*false/);
   });
+
+  /* #held-merken (19.08.2026) — „Deine Skills" merkt sich auf BEIDEN Auswahl-Bildschirmen, ob es offen
+     war. Dieselbe Naht wie die Passiv-Beschreibung darüber: die Karte wird je Phase neu gemountet, ein
+     `useState` im Klappfeld stünde also bei jeder Wahl wieder auf Default. */
+  it("„Deine Skills“ merkt sich seinen Zustand — in Perk- UND Skill-Wahl", () => {
+    for (const f of ["src/ui/PerkSelect.jsx", "src/ui/SkillSelect.jsx"]) {
+      const src = read(f);
+      expect(src, `${f}: die Liste hängt nicht an den Optionen`)
+        .toMatch(/open=\{options\.lvHeld \?\? true\} onToggle=\{\(v\) => onOption\?\.\(\{ lvHeld: v \}\)\}/);
+    }
+    const defaults = read("src/game/storage.js").slice(read("src/game/storage.js").indexOf("const DEFAULT_OPTIONS = {"));
+    expect(defaults, "Default AUF — und ohne Eintrag verschluckt loadOptions den Schlüssel")
+      .toMatch(/\blvHeld:\s*true/);
+  });
+
+  it("das Klappfeld bleibt EINE Fassung — gesteuert nur, wenn der Aufrufer es will", () => {
+    /* Chronik, „Deck-Stärke" und „Dein Build" reichen die zwei Props NICHT herein und müssen ihren
+       Zustand weiter selbst halten. Ein Feld, das den internen Pfad verliert, fiele dort bei jedem
+       Rendern zu (bzw. ließe sich gar nicht mehr klappen). */
+    const cf = read("src/ui/CollapsibleField.jsx");
+    expect(cf, "der gesteuerte Pfad fehlt").toMatch(/const gesteuert = openProp != null && !!onToggle;/);
+    expect(cf, "der interne Pfad ist weg — die ungesteuerten Aufrufer klappen nicht mehr")
+      .toMatch(/setInnen\(\(o\) => !o\)/);
+    const held = read("src/ui/HeldSkills.jsx");
+    expect(held, "HeldSkills reicht die Steuerung nicht durch").toMatch(/open=\{open\} onToggle=\{onToggle\}/);
+  });
 });
 
 describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {

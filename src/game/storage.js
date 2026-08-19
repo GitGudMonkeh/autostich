@@ -552,6 +552,9 @@ const DEFAULT_OPTIONS = {
   // #lv-fluegel: Passiv-Beschreibung der Skill-Wahl aufgeklappt? Default ZU. Liegt hier statt im
   // Komponenten-State, weil die Skill-Wahl je Phase neu gemountet wird — sonst müsste man sie jedes Mal neu zuklappen.
   lvPassive: false,
+  // #held-merken: „Deine Skills" in Perk- UND Skill-Wahl aufgeklappt? Default AUF (die Liste begründet die
+  // Wahl). Steht aus demselben Grund hier wie `lvPassive`: die Karte wird je Phase neu gemountet.
+  lvHeld: true,
   // #lv-gebaeude: Gebäude-Liste im linken Flügel aufgeklappt? Default ZU — die Liste ist Nachschlagewerk,
   // nicht Entscheidungsgrundlage, und der Flügel trägt darüber schon Brett und Deck-Stärke.
   lvWingBuildings: false,
