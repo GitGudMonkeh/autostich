@@ -2298,6 +2298,47 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #st-ruhe — die Statistik im Desktop-Ton (19.08.2026)
+
+Vierter Screen nach der Liste („Desktop-Umbau: die ENTSCHEIDUNGSREGELN", oben). Vorgabe des Users:
+**„informationen und layout ist gut"** — also ausdrücklich nur die Lautstärke, kein Inhalt, keine
+Anordnung. Alles ab 1400 px; Handy **bitidentisch** nachgewiesen (Pixelvergleich 390 px, mittlere
+Abweichung **0,0000 von 255**, größte Einzelabweichung **0**, dazu 253 Elemente Geometrie ohne eine
+einzige Abweichung).
+- **Der Ring steht still** (`as-ring-quiet` an den fünf `st-sec`, gesetzt im JSX). Fünf wandernde
+  Deckfarben-Bänder um Zahlenblöcke sind Bewegung ohne Aussage — derselbe Modifikator wie in Werkstatt,
+  Baum, Leitfaden und Glossar (Regel 1). Damit trägt den laufenden Ring projektweit nur noch, wer nicht
+  nachgezogen wurde.
+- **EINE Kachelform für alles im Panel.** Der Screen hatte **fünf** Radien nebeneinander: 14 (Panel) ·
+  14 (Kennzahl) · 12 (Rekordlauf) · 8 (Kästen) · 4 (Lauf-Zeilen). Jetzt tragen alle Inhaltskacheln 6 px
+  wie im Baum; die PANELS behalten ihre 14 — sie sind der Rahmen, nicht der Inhalt.
+- **Flache Haarlinien-Fassung statt gefüllter Kästen** (`.st-box`, Werte von `.up-stat`). Betroffen sind
+  die acht `MENU_PANEL`-Kästen: fünf Kennzahlen, Score-Verlauf, Skills/Perks/Archetyp-Nutzung, die
+  Auswertungszeilen und die zwei Hinweiskästen.
+  - **Die Kennzahlen-Kacheln hatten ihre eigene Panel-Fassung** (#kpi-kacheln: Glasverlauf, Radius 14,
+    Lichtkante). Sie ist ersatzlos in `.st-box` aufgegangen — `.st-kpis > div` setzt jetzt nur noch
+    KPI-Eigenes (Polster, Ausrichtung, Schriftgrößen). Zwei Fassungen derselben Kachel wären genau die
+    Doppelpflege aus Regel 2; ein Wächter hält fest, dass dort keine Fläche zurückkommt.
+  - **`!important` an Fläche und Rahmen ist die Ausnahme mit Grund** (Regel 3, 9): die acht Kästen setzen
+    `MENU_PANEL` **inline**, und die Konstante liegt in `modalStyle.jsx` — ein Parameter an der Quelle
+    träfe jeden Menü-Screen des Spiels statt dieses einen. Denselben Weg ging `.st-kpis > div` schon.
+- **Schließen wird Text-Knopf**, wie „Zurücksetzen/Schließen" im Baum (#up-ruhe): Werkzeug am Rand, kein
+  Angebot. **Das Klickziel bleibt** — die 11/18 px Polster stehen in einer eigenen, früheren Regel und
+  sind unangetastet; der Wächter prüft beides zusammen.
+- **BEWUSST NICHT angefasst** (Regel 5, 6): das Gold der Kanten-Familie. Der Rekordlauf und die Zeile,
+  die ihn hält, tragen es an der Linkskante — es ist das **einzige** Farbsignal des Screens („deine
+  Bestmarke"), die übrigen neun Zeilen stehen neutral. Nur ihr RADIUS zieht mit, nicht ihre Kante.
+  Ebenso unberührt: die Balken-Tracks der Pick-Raten und der Fraktionsbalken des Rekordlaufs — das sind
+  Daten, keine Dekoration.
+- Wächter: `test/st-ruhe.test.js` (10). Gegenprobe gemacht: **alle sieben** sabotierten Nähte fallen
+  (Modifikator weg · ein Kasten ohne `st-box` · Radius zurückgedreht · Fläche ohne `!important` ·
+  Schließen-Knopf wieder gefüllt · zweite Fassung an der KPI-Regel · Klickziel geschrumpft). Der alte
+  #kpi-kacheln-Wächter in `test/desktop-perf.test.js` ist auf die neue Entscheidung UMGESCHRIEBEN, nicht
+  gelöscht — die Farbregel („kein Deck-Ton an den fünf Kennzahlen") steht weiter dort und gilt jetzt für
+  `.st-kpis > div` UND `.st-box`.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080 und
+  390×844, echte Komponente mit gesetzter Lauf-Historie).
+
 ### #graph-knapp — die zwei übrigen Score-Verläufe bekommen Zahlen (19.08.2026)
 Gemeldet: „das in der Statistik ohne Beschriftung aussagelos" (Lauf-Details) und „same here, hier aber nur
 minimal Beschriftung" (Trend-Kachel). #graph-achsen hatte die beschriftete Fassung im Victory-Screen

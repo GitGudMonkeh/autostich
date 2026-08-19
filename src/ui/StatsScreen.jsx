@@ -34,7 +34,7 @@ const pct = (x) => `${Math.round((x || 0) * 100)}%`;
 // `className` erlaubt Spalten-Spans (mobil bekommen die Score-Kacheln eine ganze halbe Reihe, damit „Mio." nicht abgeschnitten wird).
 function Kpi({ label, value, color, title, className = "" }) {
   return (
-    <div title={title} className={`rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={MENU_PANEL}>
+    <div title={title} className={`st-box rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={MENU_PANEL}>
       <div className="opacity-50 text-[11px] truncate">{label}</div>
       <div className="ty-num text-lg whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
     </div>
@@ -49,11 +49,13 @@ const fmtHours = (ms) => {
 };
 
 /* #desktop: `id` ist der Platzhalter im Spaltenraster (data-sec), `st-sec` die Panel-Klammer und
-   `as-ring` + `<i>` der laufende Deckfarben-Rahmen (#perf-ring: Klasse und Band sind ein Paar).
-   Unter 1400 px ist beides inert — `.as-ring-run` ist dort `display: none`, `.st-sec` hat keine Regel. */
+   `as-ring` + `<i>` der Deckfarben-Rahmen (#perf-ring: Klasse und Band sind ein Paar).
+   Unter 1400 px ist beides inert — `.as-ring-run` ist dort `display: none`, `.st-sec` hat keine Regel.
+   #st-ruhe: `as-ring-quiet` stellt das wandernde Band still — derselbe Modifikator wie in Werkstatt,
+   Baum, Leitfaden und Glossar. Fünf laufende Rahmen um Zahlenblöcke sind Bewegung ohne Aussage. */
 function Section({ id, title, hint, children }) {
   return (
-    <div className="st-sec as-ring mt-5" data-sec={id}>
+    <div className="st-sec as-ring as-ring-quiet mt-5" data-sec={id}>
       <i className="as-ring-run" aria-hidden="true" />
       <div className="st-sech flex items-baseline justify-between mb-2">
         {/* #deckui: generische Sektions-Überschrift zieht die Deckfarbe (Fallback = bisheriges Violett) */}
@@ -110,7 +112,7 @@ function BarRow({ label, color, frac, right }) {
 // rechts. So bleibt es auch auf schmalen Screens sauber lesbar (statt Tag/Text/Wert in einer engen Zeile zu quetschen).
 function WinRow({ tag, children, val }) {
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={MENU_PANEL}>
+    <div className="st-box rounded-lg px-3 py-2 text-xs" style={MENU_PANEL}>
       <div className="text-[10px] font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{children}</span>
@@ -181,7 +183,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.games")} value={games} />
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.bestStreak")} value={`${profile.bestStreak || 0}×`} />
               </div>
-              <div className="st-trend mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
+              <div className="st-trend st-box mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
                 <div className="text-[11px] opacity-50 mb-1">{t("stats.trend", { n: trend.length })}</div>
                 {/* #graph-knapp: knappe Beschriftung — waagerechte Marken auf runden Score-Werten, sonst
                     nichts. KEINE x-Achse: die zaehlt hier LAEUFE, nicht Stiche; die ausfuehrliche Fassung
@@ -246,14 +248,14 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Am häufigsten — was du wählst: Skills + Perks nebeneinander, darunter Archetyp-Nutzung (ersetzt „Analyse"). */}
             <Section id="picked" title={t("stats.mostPicked")} hint={t("stats.mostPicked.hint")}>
               <div className="st-picked2 grid sm:grid-cols-2 gap-3">
-                <div className="rounded-lg px-3 py-3" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topSkills")}</div>
                   <div className="grid gap-2.5">
                     {skillRates.length === 0 ? <span className="text-xs opacity-40">{t("stats.noSkills")}</span> :
                       skillRates.map((s) => <BarRow key={s.id} label={skillLabel(s.id)} color={skillColor(s.id)} frac={s.rate} right={pct(s.rate)} />)}
                   </div>
                 </div>
-                <div className="rounded-lg px-3 py-3" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topPerks")}</div>
                   <div className="grid gap-2.5">
                     {perkRates.length === 0 ? <span className="text-xs opacity-40">–</span> :
@@ -262,7 +264,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 </div>
               </div>
               {archUse.length > 0 && (
-                <div className="rounded-lg px-3 py-3 mt-3" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3 mt-3" style={MENU_PANEL}>
                   <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.archUse")}</div>
                   <div className="grid gap-2.5">
                     {archUse.map((a) => (
@@ -277,7 +279,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Was am besten läuft — die belastbaren Insights als kompakte Highlight-Zeilen (ersetzt „Optimale Analyse"). */}
             <Section id="works" title={t("stats.whatWorks")} hint={t("stats.whatWorks.hint", { n: MIN_SAMPLE })}>
               {!enough ? (
-                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
                   {t("stats.tooFew", { have: history.length, need: MIN_SAMPLE })}
                 </div>
               ) : (bestArch[0] || skillLift[0] || perkLift[0]) ? (
@@ -302,7 +304,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
                   {t("stats.noPatterns")}
                 </div>
               )}

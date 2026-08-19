@@ -184,16 +184,26 @@ describe("#rd-scroll — die Lauf-Details müssen scrollen können", () => {
   });
 });
 
-describe("#kpi-kacheln — die Kennzahlen der Statistik sind Panels, keine Kästchen", () => {
-  it("Glas, Radius und Lichtkante — und KEINE zusätzliche Farbe", () => {
+describe("#kpi-kacheln — die Kennzahlen der Statistik", () => {
+  /* Die Kacheln trugen bis #st-ruhe (19.08.2026) ihre eigene Panel-Fassung (Glasverlauf, Radius 14,
+     Lichtkante). Sie teilen sie sich jetzt mit den übrigen sieben Kästen des Screens über `.st-box`;
+     diese Regel darf deshalb NUR noch KPI-Eigenes setzen — die Form prüft `test/st-ruhe.test.js`.
+     Was unverändert gilt, ist die Farbregel, und die steht bewusst weiter hier. */
+  it("Polster und Ausrichtung bleiben, die Fläche liegt woanders", () => {
     const kpi = css.match(/\.st-kpis > div \{([^}]*)\}/);
     expect(kpi, ".st-kpis-Kachelregel fehlt").toBeTruthy();
-    expect(kpi[1]).toMatch(/background:\s*linear-gradient/);
-    expect(kpi[1]).toMatch(/border-radius:\s*14px/);
-    expect(kpi[1]).toMatch(/box-shadow:\s*inset/);
+    expect(kpi[1]).toMatch(/padding:/);
+    expect(kpi[1]).toMatch(/text-align:\s*left/);
+    expect(kpi[1], "zweite Fassung der Kachel — Fläche gehört an .st-box")
+      .not.toMatch(/background|border|box-shadow/);
+  });
+
+  it("KEINE zusätzliche Farbe an den fünf Kennzahlen", () => {
     /* Auf diesem Schirm heißt Gold „deine Bestmarke" (s. #kante am Rekord-Lauf). Eine Kante in
        Deckfarbe oder fünf farbige Ränder nähmen dem Gold genau diese Aussage. */
-    expect(kpi[1]).not.toMatch(/--deck-a[12]|--c\b/);
+    const kpi = css.match(/\.st-kpis > div \{([^}]*)\}/)[1];
+    const box = css.match(/\.st-box \{([^}]*)\}/)[1];
+    expect(kpi + box).not.toMatch(/--deck-a[12]|--c\b/);
   });
 });
 

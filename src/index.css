@@ -3573,20 +3573,16 @@ button { font-family: inherit; }
   .st-sec[data-sec="overview"] > .st-sech { grid-column: 1 / -1; }
   .st-kpis  { grid-column: 1; gap: 12px !important; }
   .st-trend { grid-column: 2; margin-top: 0 !important; }
-  /* #kpi-kacheln — die fünf Kennzahlen sind die Kernaussage des Screens und standen als flache Kästchen
-     (`MENU_PANEL`: eine Farbe, ein Rahmen) darin. Sie tragen jetzt dieselbe Fassung wie die Panels
-     ringsum: Glasverlauf, Radius 14, dazu eine Lichtkante oben — die drei Mittel, mit denen der ganze
-     Desktop-Pass „Panel" schreibt. Der Wert steht größer, die Beschriftung wird zur Versalzeile und
-     rückt nach links; mittig gesetzte Kurzwörter über einer Zahl lasen sich als Bildunterschrift.
+  /* #kpi-kacheln — die fünf Kennzahlen sind die Kernaussage des Screens. Der Wert steht größer, die
+     Beschriftung wird zur Versalzeile und rückt nach links; mittig gesetzte Kurzwörter über einer Zahl
+     lasen sich als Bildunterschrift.
      KEINE Farbe dazu, und das ist Absicht: auf diesem Schirm heißt Gold „deine Bestmarke" (s. #kante am
-     Rekord-Lauf). Fünf farbige Kanten nähmen dem Gold genau diese Aussage. */
+     Rekord-Lauf). Fünf farbige Kanten nähmen dem Gold genau diese Aussage.
+     Fläche, Rahmen und Radius stehen NICHT hier, sondern EINMAL an `.st-box` (#st-ruhe unten) — die
+     Kacheln teilen sie sich mit den übrigen sieben Kästen des Screens. */
   .st-kpis > div {
-    border-radius: 14px;
     padding: 12px 15px 13px !important;
     text-align: left !important;
-    background: linear-gradient(180deg, rgba(32, 31, 45, .95), rgba(20, 20, 29, .95)) !important;
-    border: 1px solid rgba(150, 150, 170, .17) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
   }
   .st-kpis > div > div:first-child {
     font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .42;
@@ -4536,6 +4532,49 @@ button { font-family: inherit; }
     padding-left: 4px !important;
     padding-right: 4px !important;
   }
+
+  /* ==========================================================================
+     #st-ruhe — die Statistik im Desktop-Ton (19.08.2026)
+
+     Vierter Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Information und Anordnung bleiben unangetastet — geändert wird nur, wie laut der Screen spricht.
+
+     1. **Der Ring steht still** (`as-ring-quiet` an den fünf `st-sec`, gesetzt im JSX). Fünf wandernde
+        Deckfarben-Bänder um Zahlenblöcke sind Bewegung, die nichts sagt; derselbe Schalter wie in
+        Werkstatt, Baum, Leitfaden und Glossar.
+     2. **EINE Kachelform für alles im Panel** (`.st-box`): Radius 6 wie im Baum, dazu die flache
+        Haarlinien-Fassung von `.up-stat` statt der gefüllten `MENU_PANEL`-Kästen. Vorher standen auf
+        diesem Screen vier Radien nebeneinander (14 Panel · 14 KPI · 12 Rekordlauf · 8 Kästen · 4 Zeilen)
+        — verschiedene Radien lesen sich als verschiedene BAUTEILE, auch wenn sonst alles gleich ist.
+        Die PANELS behalten ihre 14 px: sie sind der Rahmen, nicht der Inhalt.
+     3. **Schließen wird Text-Knopf**, wie „Zurücksetzen/Schließen" im Baum (#up-ruhe). Werkzeug am Rand,
+        kein Angebot. Das Klickziel bleibt — die Polsterung darüber ist unangetastet.
+
+     `!important` an Fläche und Rahmen ist hier die Ausnahme mit Grund (Regel 3): die acht Kästen setzen
+     `MENU_PANEL` INLINE, und die Konstante liegt in modalStyle.jsx — ein Parameter an der Quelle träfe
+     jeden Menü-Screen des Spiels, nicht diesen einen. Derselbe Weg, den `.st-kpis > div` schon ging.
+
+     NICHT angefasst (Regel 5): die Kanten-Familie. Der Rekordlauf und die Zeile, die ihn hält, tragen
+     Gold an der Linkskante — das einzige Farbsignal des Screens („deine Bestmarke"); die übrigen Zeilen
+     stehen neutral. Nur ihr RADIUS zieht mit, nicht ihre Kante. */
+  .st-box,
+  /* Rekordlauf-Karte (`rounded-xl`) und die zehn Lauf-Zeilen (`rounded`) tragen ihren Radius als
+     Tailwind-Utility; index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt sie
+     deshalb ohne `!important`. */
+  .st-sec[data-sec="best"] button, .st-sec[data-sec="runs"] button { border-radius: 6px; }
+
+  .st-box {
+    background: rgba(255, 255, 255, .012) !important;
+    border: 1px solid rgba(150, 150, 170, .12) !important;
+    box-shadow: none;
+  }
+
+  .st-close {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .st-close:hover { color: #e8e6ff; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
