@@ -164,7 +164,7 @@ Silhouetten-Matrix und Messwerte; Zielbild ist die Blitz-Referenz (Leuchtfläche
 |---|---|---|---|---|---|
 | Glut | `SK_FIRE_01` | Glutbett, das aufatmet | flaches Band unten | 28,1 % | 1,39 |
 | Zunder | `SK_FIRE_02` | Funkenschlag an dunklem Stein | Funkenfächer | 18,5 % | 2,33 |
-| Feuersturm | `SK_FIRE_03` | gedrehte Feuersäule mit weißem Kern | Wirbel | 20,3 % | 2,34 |
+| Feuersturm | `SK_FIRE_03` | Feuertrichter, oben offen | Trichter (Krone 62 %, Fuß 27 %) | 21,9 % | 2,35 |
 | Glutbett | `SK_FIRE_04` | aufgebrochener Brocken, Kohlen im Spalt | Brocken mit Diagonalspalt | 20,7 % | 2,10 |
 | Rückzündung | `SK_FIRE_05` | Stichflamme aus sterbender Glut | senkrechter Strahl | 10,0 % | 3,37 |
 | Glühende Klinge | `SK_FIRE_06` | glühend geschmiedete Klinge | Klinge, diagonal | 25,0 % | 2,19 |
@@ -197,7 +197,15 @@ erkennbar. `04` Glutbett brauchte **drei Anläufe**, und alle drei sind lehrreic
 
 Endstand: 20,7 % Fläche, Streuung 2,10 — halb so viel Licht wie Versuch 1, aber mit Form.
 
+**Feuersturm brauchte drei Fassungen, und keine davon war ein Helligkeitsproblem:** gleichmäßige Säule
+(zu beherrscht) → Trichter mit Trümmern bis in alle vier Ecken (Form ging in der Unruhe unter, Krone 72 %
+der Breite) → Trichter mit gedeckelter Krone. Der Prompt-Satz, der es löste, war eine **Obergrenze**:
+„the crown opens to about half the frame width". Ohne so eine Grenze füllt ein solches Motiv immer das
+ganze Bild. Gemessen: Krone 62 %, Fuß 27 % — und die Lichtwerte sind mit 21,9 % gegen 20,3 % praktisch
+unverändert. Die drei Fassungen unterscheiden sich rein geometrisch.
+
 **Werkzeug-Lehre am Rande:** beim Messen greift das Skript „die neueste Datei". Kommt ein Upload nicht durch,
 misst es damit still das VORHERIGE Bild und speichert es unter dem neuen Namen — einmal passiert und nur
-aufgefallen, weil die Zahlen auf drei Nachkommastellen mit dem Vorgänger übereinstimmten. Seitdem läuft eine
-Gegenprobe gegen den zuletzt gemessenen Wert mit.
+aufgefallen, weil die Zahlen auf drei Nachkommastellen mit dem Vorgänger übereinstimmten. Eine Gegenprobe gegen EINEN Zahlenwert reichte nicht (sie schlug beim
+nächsten Bild wieder fehl); jetzt führt das Skript eine Liste der bereits verarbeiteten Upload-Hashes und
+bricht ab, bevor gemessen wird.
