@@ -1207,6 +1207,11 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const activateTier = (pack, tier) => onChoose({ deckId: tier.deckId, battlefieldId: tier.bfId,
     tierSel: { ...((options && options.tierSel) || {}), [pack.id]: tier.deckId } });
 
+  /* Doppelklick auf eine Kachel = ausrüsten (die Kachel entscheidet, WAS sie anbietet — s. PacksView).
+     Bewusst dieselben zwei Wege wie die Knöpfe im Detail, damit „doppelt geklickt" und „im Detail
+     ausgerüstet" nicht auseinanderlaufen können; ein Mehrstufen-Pack merkt sich dabei seine Stufe. */
+  const equipFromTile = (pack, tier) => (tier ? activateTier(pack, tier) : activate(pack));
+
   const openPack = (cat, i) => { setPackOv({ cat, idx: i }); setPackSel("back"); };
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
 
@@ -1304,8 +1309,8 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             <div className="cz-main as-ring as-ring-quiet">
               <i className="as-ring-run" aria-hidden="true" />
               <div className="cz-mainscroll">
-                {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
-                  : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
+                {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} onEquip={equipFromTile} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
+                  : tab === "challenges" ? <PacksView p={p} deckId={deckId} list={catList("challenges")} cat="challenges" onOpen={openPack} onEquip={equipFromTile} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
                   : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} wide={wide} />}
               </div>
             </div>
@@ -1343,7 +1348,12 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* `sel` = Index des Packs, das ab 1400 px rechts im Detail steht (bis dahin null). Die Kachel bekommt
    dafür einen eigenen Marker: `is-sel` ist schon vergeben — das trägt das AUSGERÜSTETE Deck, und die
    beiden Zustände müssen unterscheidbar bleiben (man betrachtet ja meist ein anderes als das eigene). */
-function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = null, sel = null,
+/* `onEquip(pack, tier)` — Doppelklick auf eine Kachel rüstet direkt aus, ohne Umweg über das Detail.
+   Nur für Packs im BESITZ, die nicht ohnehin aktiv sind; bei Mehrstufen-Packs die Stufe, die die Kachel
+   auch zeigt (das Cover = höchste freigeschaltete). Der einfache Klick bleibt unberührt — er öffnet
+   weiter das Detail, und genau deshalb ist der zweite Klick auf dem Handy folgenlos: dort liegt danach
+   das Detail-Overlay über der Kachel, die Kachel sieht ihn gar nicht. */
+function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = null, onOption = null, sel = null,
   sort = SORT_DEFAULT, onSort = null }) {
   const challenge = cat === "challenges";
   const wide = useIsWide();   // ab 1400 px steht die Vorschau dauerhaft daneben (s. Untertitel unten)
@@ -1434,6 +1444,8 @@ function PacksView({ p, deckId, list, cat, onOpen, options = null, onOption = nu
                Packs (a1 aus themes.js) — dieselbe Farbe, in der das Deck später den ganzen Bildschirm tönt.
                `is-sel` = ausgerüstet; das frühere Grün am Rahmen ist damit frei für den Badge, wo es hingehört. */
             <button key={pack.id} type="button" onClick={() => onOpen(cat, gi)}
+              onDoubleClick={onEquip && owned && !active ? () => onEquip(pack, tiered ? cover : null) : undefined}
+              title={onEquip && owned && !active ? t("shop.tile.dblEquip") : undefined}
               className={`as-edge-card${active ? " is-sel" : ""}${sel === gi ? " cz-shown" : ""} relative rounded-xl overflow-hidden text-left transition-transform hover:-translate-y-0.5`}
               style={{ "--c": pack.a1 || "#8a8a95" }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>

@@ -2295,6 +2295,7 @@
 "shop.tab.packs","i18n","Packs","Packs","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.tier.activate","i18n","Stufe {roman} aktivieren","Activate tier {roman}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.tier.active","i18n","Stufe {roman} aktiv ✓","Tier {roman} active ✓","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"shop.tile.dblEquip","i18n","Doppelklick rüstet direkt aus","Double-click to equip right away","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.tile.sub.active","i18n","aktiv","active","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.tile.sub.buyable","i18n","kaufbar","available","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.tile.sub.details","i18n","tippen → Details","tap → details","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

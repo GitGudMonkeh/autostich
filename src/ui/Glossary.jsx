@@ -61,9 +61,10 @@ const GROUP_ORDER = ["gen", "fire", "lightning", "ice", "plant"];
    Begriffe im Spaltenfluss. Die `gl-*`-Klassen sind reine HAKEN — unterhalb von 1400 px tragen sie
    keine Darstellung (`display: contents` in index.css), die Handy-Fassung bleibt DOM- und pixelgleich.
 
-   Der EINE Verhaltensunterschied hängt an `wide` und nicht an CSS: auf dem Handy ist eine Kategorie
-   eine SPRUNGMARKE (alles steht untereinander, man scrollt hin), neben einer stehenden Spalte ist sie
-   ein FILTER (eine Zeile, eine Seite — dieselbe Mechanik wie im Leitfaden). */
+   #gl-sprung (19.08.2026): Eine Kategorie ist jetzt auf BEIDEN Breiten dasselbe — eine SPRUNGMARKE.
+   Zwischenzeitlich filterte die stehende Spalte (eine Zeile, eine Seite, wie im Leitfaden); das nahm
+   dem Glossar aber genau das, was ein Nachschlagewerk ausmacht: an einer Stelle landen und weiterlesen,
+   auch über die Kategoriegrenze hinaus. Unterschiedlich bleibt nur, WELCHER Scroller bewegt wird. */
 export function GlossaryOverlay({ onClose }) {
   const [q, setQ] = useState("");
   const [activeCat, setActiveCat] = useState("all");
@@ -100,22 +101,33 @@ export function GlossaryOverlay({ onClose }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [entries, query, locale]);
 
-  /* Gefiltert wird NUR auf dem Desktop (s. Kopfkommentar). Auf dem Handy bleiben alle Sektionen
-     stehen und die Kategorie ist ein Sprungziel — sonst änderte dieser Umbau das Verhalten einer
-     Fassung, an der er gar nichts zu suchen hat. */
-  const filtered = wide && activeCat !== "all";
-  const shown = filtered ? sections.filter((s) => s.cat.id === activeCat) : sections;
+  /* #gl-sprung (19.08.2026): Eine Kategorie ist auf BEIDEN Breiten ein Sprungziel, kein Filter mehr.
+     Der Filter nahm dem Glossar genau das, was ein Nachschlagewerk ausmacht — man landet an einer
+     Stelle und liest weiter, auch über die Kategorie hinaus. Wer nur eine Kategorie sehen will, hat
+     dafür die Suche. Die Spalte markiert jetzt, wohin zuletzt gesprungen wurde. */
+  const shown = sections;
   const hitCount = (catId) => entries.filter((e) => e.category === catId && match(e)).length;
   const shownCount = shown.reduce((n, s) => n + s.items.length, 0);
-  const activeMeta = filtered ? glossaryCategories().find((c) => c.id === activeCat) : null;
+  const activeMeta = activeCat === "all" ? null : glossaryCategories().find((c) => c.id === activeCat) || null;
+  // Der Zähler im Kopf zählt, was die Überschrift daneben verspricht: die Sprungmarke oder alles.
+  const headCount = activeMeta ? hitCount(activeCat) : shownCount;
 
   const jump = (catId) => {
     setActiveCat(catId);
     if (q) setQ("");
-    if (wide) { if (deskBodyRef.current) deskBodyRef.current.scrollTop = 0; return; }
     const el = catId === "all" ? null : secRefs.current[catId];
-    if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: "smooth" });
-    else if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    const scroller = wide ? deskBodyRef.current : bodyRef.current;
+    if (!el) { if (scroller) scroller.scrollTop = 0; return; }
+    /* Auf dem Desktop scrollt der EIGENE Scroller (`.gl-body` im Panel), nicht der nächste beliebige
+       Vorfahr: `scrollIntoView` würde zusätzlich das Panel und den Rahmen darunter verschieben. Auf dem
+       Handy bleibt es bei `scrollIntoView` — dort ist der Scroller der Kartenrumpf, und die Fassung
+       wird in diesem Umbau nicht angefasst. */
+    if (wide && scroller) {
+      const ziel = scroller.scrollTop + el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+      scroller.scrollTo({ top: Math.max(0, ziel), behavior: "smooth" });
+    } else if (el.scrollIntoView) {
+      el.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
   };
   /* Tippen schaltet auf „Alle": sonst liegt ein Treffer hinter einem Filter, den man selbst gesetzt
      und vergessen hat (im Mockup lag „Serie" als 1 von 6 Treffern vor mir). Die Zähler in der Spalte
@@ -202,7 +214,7 @@ export function GlossaryOverlay({ onClose }) {
                     <span className="gl-page-hint">
                       {query ? t("glossary.hits", { q: q.trim() }) : (activeMeta ? activeMeta.hint : t("glossary.subtitle"))}
                     </span>
-                    <span className="gl-page-count ty-num-sm">{t("glossary.count", { count: shownCount })}</span>
+                    <span className="gl-page-count ty-num-sm">{t("glossary.count", { count: headCount })}</span>
                   </div>
                 )}
                 <div ref={deskBodyRef} className="gl-body">
@@ -214,17 +226,17 @@ export function GlossaryOverlay({ onClose }) {
                   )}
                   {shown.map(({ cat, items, groups }) => (
                     <section key={cat.id} ref={(el) => (secRefs.current[cat.id] = el)} className="gl-sec px-4 pt-3.5" style={{ scrollMarginTop: "6px" }}>
-                      {/* Im gefilterten Zustand nennt der Seitenkopf die Kategorie bereits — eine zweite
-                          Überschrift mit demselben Wort darunter ist Wiederholung, keine Gliederung. */}
-                      {!filtered && (
-                        <div className="gl-sechead flex items-center gap-2 mb-0.5">
-                          <span className="gl-sq w-2.5 h-2.5 rounded-sm" style={{ background: cat.color }} />
-                          {/* #deckui: Sektions-Titel-Akzent → Deckfarbe. Die Bedeutung trägt der Kategorie-Punkt (cat.color) daneben, der bleibt. */}
-                          <h3 className="text-[10px] tracking-[0.24em] uppercase font-bold" style={{ color: "var(--deck-a1, #b9b3cf)" }}>{cat.label}</h3>
-                          <span className="gl-secrule flex-1 h-px max-w-[54px]" style={{ background: "linear-gradient(90deg,#33333e,transparent)" }} />
-                          <span className="text-[10px] tabular-nums" style={{ color: "#71717c" }}>{items.length}</span>
-                        </div>
-                      )}
+                      {/* #gl-sprung: Die Überschrift steht IMMER. Sie war früher im gefilterten Zustand
+                          Wiederholung des Seitenkopfs; seit die Kategorie nur noch ein Sprungziel ist,
+                          stehen alle Sektionen untereinander und brauchen jede ihre eigene Marke —
+                          sonst weiß man nach dem Scrollen nicht mehr, wo man gelandet ist. */}
+                      <div className="gl-sechead flex items-center gap-2 mb-0.5">
+                        <span className="gl-sq w-2.5 h-2.5 rounded-sm" style={{ background: cat.color }} />
+                        {/* #deckui: Sektions-Titel-Akzent → Deckfarbe. Die Bedeutung trägt der Kategorie-Punkt (cat.color) daneben, der bleibt. */}
+                        <h3 className="text-[10px] tracking-[0.24em] uppercase font-bold" style={{ color: "var(--deck-a1, #b9b3cf)" }}>{cat.label}</h3>
+                        <span className="gl-secrule flex-1 h-px max-w-[54px]" style={{ background: "linear-gradient(90deg,#33333e,transparent)" }} />
+                        <span className="text-[10px] tabular-nums" style={{ color: "#71717c" }}>{items.length}</span>
+                      </div>
                       {groups
                         ? groups.map(({ g, meta, items: gi }) => (
                             <div key={g}>

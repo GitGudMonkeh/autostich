@@ -98,10 +98,15 @@ describe("#glossar-desktop — Glossar ab 1400 px", () => {
     expect(deskBlock).toMatch(/\.gl-tabs \{\s*display:\s*none/);
   });
 
-  it("die Kategorie filtert NUR auf dem Desktop — am Handy bleibt sie ein Sprungziel", () => {
-    // Sonst änderte der Desktop-Pass das Verhalten einer Fassung, an der er nichts zu suchen hat.
-    expect(jsx).toMatch(/const filtered = wide && activeCat !== "all"/);
+  it("die Kategorie ist auf BEIDEN Breiten ein Sprungziel, kein Filter (#gl-sprung)", () => {
+    // Der Filter nahm dem Glossar, was ein Nachschlagewerk ausmacht: an einer Stelle landen und
+    // weiterlesen. Wer wirklich nur eine Kategorie sehen will, hat dafür die Suche.
+    expect(jsx).toMatch(/const shown = sections;/);
+    expect(jsx).not.toMatch(/sections\.filter\(\(s\) => s\.cat\.id === activeCat\)/);
+    // Handy: der Kartenrumpf scrollt über scrollIntoView. Desktop: der EIGENE Panel-Scroller —
+    // scrollIntoView würde dort zusätzlich Panel und Rahmen darunter verschieben.
     expect(jsx).toMatch(/scrollIntoView/);
+    expect(jsx).toMatch(/scroller\.scrollTo\(\{ top: Math\.max\(0, ziel\), behavior: "smooth" \}\)/);
   });
 
   it("Tippen schaltet auf „Alle“ (sonst liegt ein Treffer hinter dem eigenen Filter)", () => {
@@ -110,9 +115,11 @@ describe("#glossar-desktop — Glossar ab 1400 px", () => {
     expect(jsx).toMatch(/onChange=\{\(e\) => search\(e\.target\.value\)\}/);
   });
 
-  it("die Sektionsüberschrift entfällt im gefilterten Zustand", () => {
-    // Der Seitenkopf nennt die Kategorie dort bereits — zweimal dasselbe Wort ist keine Gliederung.
-    expect(jsx).toMatch(/\{!filtered && \(/);
+  it("jede Sektion trägt ihre Überschrift — sie ist die Landemarke des Sprungs (#gl-sprung)", () => {
+    // Früher entfiel sie im gefilterten Zustand (der Seitenkopf nannte die Kategorie schon). Seit alle
+    // Sektionen untereinander stehen, ist sie das Einzige, woran man nach dem Scrollen erkennt, wo man ist.
+    expect(jsx).toMatch(/<div className="gl-sechead flex items-center gap-2 mb-0\.5">/);
+    expect(jsx).not.toMatch(/!filtered/);
   });
 
   it("jede Kategorie hat ihren Einzeiler — in beiden Sprachen", () => {

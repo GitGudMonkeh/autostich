@@ -1130,6 +1130,7 @@ export default {
   "shop.head.challenges": "{n} Herausforderungen · {own} freigeschaltet",
   "shop.head.hint": "Karte antippen zeigt Rücken, Front und Spielfeld.",
   // Untertitel der Pack-Kachel.
+  "shop.tile.dblEquip": "Doppelklick rüstet direkt aus",
   "shop.tile.sub.active": "aktiv",
   "shop.tile.sub.details": "tippen → Details",
   "shop.tile.sub.detailsTier": "Stufe {roman} · tippen → Details",

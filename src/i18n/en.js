@@ -1098,6 +1098,7 @@ export default {
   "shop.head.challenges": "{n} challenges · {own} unlocked",
   "shop.head.hint": "Tap a card to see back, front and battlefield.",
   // Pack tile subtitle.
+  "shop.tile.dblEquip": "Double-click to equip right away",
   "shop.tile.sub.active": "active",
   "shop.tile.sub.details": "tap → details",
   "shop.tile.sub.detailsTier": "Tier {roman} · tap → details",
