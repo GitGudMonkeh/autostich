@@ -156,7 +156,7 @@ gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Ri
 trennt heute nur der Splitterkranz — wenn eine der beiden im Angebot neben der anderen steht und man
 stutzt, ist `13` die, die eckiger werden muss.
 
-## Stand Feuer (5 von 21, Sammlung läuft)
+## Stand Feuer (6 von 21, Sammlung läuft)
 
 Silhouetten-Matrix und Messwerte; Zielbild ist die Blitz-Referenz (Leuchtfläche ~11 %, Streuung > 1,7).
 
@@ -164,11 +164,12 @@ Silhouetten-Matrix und Messwerte; Zielbild ist die Blitz-Referenz (Leuchtfläche
 |---|---|---|---|---|---|
 | Glut | `SK_FIRE_01` | Glutbett, das aufatmet | flaches Band unten | 28,1 % | 1,39 |
 | Zunder | `SK_FIRE_02` | Funkenschlag an dunklem Stein | Funkenfächer | 18,5 % | 2,33 |
+| Feuersturm | `SK_FIRE_03` | gedrehte Feuersäule mit weißem Kern | Wirbel | 20,3 % | 2,34 |
 | Glutbett | `SK_FIRE_04` | Glut unter Ascheschicht | Kruste (zu flächig, s. u.) | 42,3 % | 1,23 |
 | Rückzündung | `SK_FIRE_05` | Stichflamme aus sterbender Glut | senkrechter Strahl | 10,0 % | 3,37 |
 | Glühende Klinge | `SK_FIRE_06` | glühend geschmiedete Klinge | Klinge, diagonal | 25,0 % | 2,19 |
 
-Offen: `03` Feuersturm · `07`–`17` · `L01`–`L04`.
+Offen: `04` Glutbett (Neuversuch, s. u.) · `07`–`17` · `L01`–`L04`.
 
 **Zwei Lehren aus dieser Runde:**
 
