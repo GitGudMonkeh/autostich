@@ -79,38 +79,6 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     expect(read("src/game/storage.js"), "Default AN = Flag false").toMatch(/hideBreakdown: false/);
   });
 
-  /* #boden-zeile: Läuft ein BODEN-Effekt, tauschen Aufschlüsselung und Sieg/Niederlage-Ansage auf dem Handy
-     die Plätze — sonst liegt die feine Faktorenkette im Effekt-Band (gemessen: Zeile 302–322, Boden ab 298)
-     und ist über Würfeln/Brandung nicht mehr zu lesen. Zwei Dinge hält dieser Wächter fest, und beide sind
-     unsichtbar kaputtzumachen: (1) die Abstände müssen an der POSITION hängen (erste Zeile mt-4, zweite mt-1),
-     sonst ändert der Tausch die Blockhöhe und die Karten springen; (2) der Tausch gilt NUR mobil und NUR für
-     Boden-Effekte — Aurora ist ein Himmels-Effekt, Sternenfeld/Komet sind Finisher. */
-  it("Boden-Effekt schiebt die Zeile mobil nach oben, ohne die Blockhöhe zu ändern", () => {
-    const src = read("src/ui/Battlefield.jsx");
-    expect(src, "Breite kommt aus derselben Quelle wie die Zonen-Wahl").toMatch(/MOBILE_MQ.*from ".\/fx\/effectZones\.js"/);
-    expect(src).toMatch(/useMediaQuery\(MOBILE_MQ\)/);
-
-    const floor = src.match(/const floorFx = ([^;]+);/);
-    expect(floor, "floorFx muss es geben").toBeTruthy();
-    expect(floor[1]).toMatch(/"cubematrix"/);
-    expect(floor[1]).toMatch(/"neonsurf"/);
-    expect(floor[1], "Aurora ist ein Himmels-Effekt, kein Boden").not.toMatch(/aurora/i);
-    expect(floor[1], "Sternenfeld/Komet sind Finisher").not.toMatch(/starfield|embers/i);
-
-    expect(src, "Tausch nur mobil UND nur bei Boden-Effekt")
-      .toMatch(/const breakdownFirst = useMediaQuery\(MOBILE_MQ\) && floorFx;/);
-
-    // Beide Reihenfolgen: erste Zeile mt-4, zweite mt-1 → gleiche Blockhöhe, kein Sprung.
-    const order = src.match(/return breakdownFirst \? \[([^\]]+)\] : \[([^\]]+)\];/);
-    expect(order, "die zwei Zeilen müssen über EINE Reihenfolge-Entscheidung laufen").toBeTruthy();
-    for (const seite of [order[1], order[2]]) {
-      const mts = [...seite.matchAll(/"(mt-\d)"/g)].map((m) => m[1]);
-      expect(mts, `Abstände positionsgebunden, nicht an der Zeile: ${seite}`).toEqual(["mt-4", "mt-1"]);
-    }
-    expect(order[1]).toMatch(/^kette\(/);
-    expect(order[2]).toMatch(/^ansage\(/);
-  });
-
   it("alle Texte der Zeile stehen in BEIDEN Katalogen", () => {
     const keys = ["bf.bd.base", "bf.bd.streak", "bf.bd.perks", "bf.bd.form", "bf.bd.crit",
                   "bf.bd.direct", "bf.bd.total", "bf.bd.aria",

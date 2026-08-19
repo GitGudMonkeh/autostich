@@ -2221,29 +2221,6 @@ bleibt als Wahl erhalten, er ist nur nicht mehr die Vorauswahl.
   Vorauswahl soll ein bewusster Akt sein, kein Nebeneffekt.
 - Wächter: `test/announce-deck.test.js`, Abschnitt #fx-deckdefault.
 
-### #boden-zeile — die Stich-Aufschlüsselung lag mobil IM Boden-Effekt (19.08.2026)
-Gemeldet: „bei Bodeneffekten, wie Neonbrandung und Cubes kann man die Score-Zusammensetzung nicht mehr lesen."
-Nachgemessen im Produktionsbuild (390×844, DPR 2, echter Lauf): Brett **358×347**, Boden beginnt laut
-`EFFECT_ZONES.mobile.y` (86 %) bei **298 px** — die Aufschlüsselungszeile lag bei **302–322 px**, also
-**komplett darin**. Die Sieg/Niederlage-Ansage darüber (266–298) ist großer, fetter, leuchtender Text und über
-dem Effekt weiterhin lesbar; die feine Faktorenkette ist es nicht.
-- **Gelöst durch TAUSCH der zwei Zeilen**, nicht durch einen Versatz: Aufschlüsselung nach oben (266–286, also
-  12 px über dem Boden), Ansage nach unten (290–322). Blockhöhe unverändert — die Abstände hängen an der
-  **Position** (erste Zeile `mt-4`, zweite `mt-1`), nicht an der Zeile. Andersherum änderte der Tausch die Höhe
-  und die Karten sprängen, genau der Grund, aus dem die alte Fassung der Zeile damals rausflog.
-- **Nur `cubematrix` + `neonsurf`.** Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher
-  (kurz, kein Dauerbild). Wer eine Boden-Ebene ergänzt, trägt sie in `floorFx` ein.
-- **Nur mobil** (`MOBILE_MQ`, dieselbe 640-px-Grenze wie die Zonen-Wahl) — ausdrückliche Entscheidung des Users.
-  **Der Desktop ist damit nicht sauber, sondern unangetastet:** das Brett ist dort breiter, aber gleich hoch
-  (gemessen 668×347 bei 1400 px), und sein Band beginnt schon bei 82 % = **285 px** — die Zeile liegt also auch
-  dort im Boden. Wer das angeht, hängt `floorFx` allein ans Effekt-Flag statt zusätzlich an die Breite.
-- `useMediaQuery` ist aus `useIsWide.js` herausgezogen (`useIsWide` ist jetzt der Sonderfall darauf) — vierte
-  Stelle im Projekt, die dieselben vier `matchMedia`-Zeilen gebraucht hätte.
-- Kontrollmessungen: ohne Boden-Effekt (mobil) und auf 1400 px steht die alte Reihenfolge unverändert
-  (Ansage 266–298 · Zeile 302–322), Blockende in allen vier Fällen **322**.
-- Wächter: `test/trick-breakdown.test.js`. Gegenprobe gemacht: Abstände an der Zeile statt an der Position ·
-  Tausch ohne Boden-Effekt · Aurora fälschlich als Boden — alle drei fallen.
-
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
 ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort

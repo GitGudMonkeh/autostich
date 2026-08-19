@@ -66,8 +66,7 @@ const GLITCH_FORCE = cardAnimForce("glitch");
 const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
-import { floorEffectPlacement, MOBILE_MQ } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
-import { useMediaQuery } from "./useIsWide.js";
+import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
@@ -729,19 +728,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const neonsurfGL = bgFx === "neonsurf" && !!deckA1;
   const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
   const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
-  /* #boden-zeile: Läuft ein BODEN-Effekt, wandert die Stich-Aufschlüsselung über die Sieg/Niederlage-Ansage.
-     Der Boden beginnt laut EFFECT_ZONES.mobile bei 86 % der Panelhöhe; auf dem Handy-Brett (358×347 gemessen)
-     sind das 298 px — die Aufschlüsselungszeile lag mit 302–322 px KOMPLETT darin und war über Würfeln/Brandung
-     nicht mehr zu lesen. Die Ansage verträgt denselben Platz (großer, fetter, leuchtender Text), die feine
-     Faktorenkette nicht. Getauscht werden nur die zwei Zeilen; die Abstände bleiben an der POSITION (erste Zeile
-     mt-4, zweite mt-1), der Block ist also pixelgleich hoch und nichts springt.
-     Nur mobil (MOBILE_MQ = dieselbe 640-px-Grenze, an der auch die Zonen-Wahl hängt) — ausdrückliche Entscheidung
-     des Users. Der Desktop ist damit NICHT sauber, sondern unangetastet: das Brett ist dort zwar breiter, aber
-     gleich hoch (gemessen 668×347 bei 1400 px), und sein Band beginnt schon bei 82 % = 285 px — die Zeile liegt
-     also auch dort im Boden. Wer das angeht, hängt `floorFx` allein ans Effekt-Flag statt an die Breite.
-     Aurora ist bewusst NICHT dabei (Himmels-Effekt, oben), Sternenfeld/Komet ebenso wenig (Finisher, kurz). */
-  const floorFx = bgFx === "cubematrix" || bgFx === "neonsurf";
-  const breakdownFirst = useMediaQuery(MOBILE_MQ) && floorFx;
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -1783,33 +1769,26 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         })}
       </div>
 
-      {/* Sieg/Niederlage-Ansage + Stich-Aufschlüsselung (§17) — die Reihenfolge hängt am Boden-Effekt (s. #boden-zeile
-          oben). Die Abstände sind POSITIONS-gebunden (erste Zeile mt-4, zweite mt-1), damit der Block in beiden
-          Reihenfolgen exakt gleich hoch bleibt.
-          Ansage: sitzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand) — die Karten rücken per mt-8 nach
-          unten, wodurch die Ansage mitwandert und auf der alten Multiplikator-Höhe landet. Feste Höhe (h-8), damit
-          #389 (Text per hideFloatWinLose ausblendbar) keinen Layout-Sprung erzeugt; der Ausgang zählt unabhängig weiter.
-          Aufschlüsselung: MINDEST-Höhe (min-h-5) — bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der
-          Platz reserviert, damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog).
-          Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per flex-wrap auf
-          eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */}
-      {(() => {
-        const ansage = (mt) => (
-          <div key="ansage" className={`relative z-10 h-8 ${mt} flex items-center justify-center`}>
-            {banner && hideFloatWinLose ? null : banner ? (
-              <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{tr(banner.key)}</span>
-            ) : (
-              <span className="opacity-40 text-sm">{tr("bf.ready")}</span>
-            )}
-          </div>
-        );
-        const kette = (mt) => (
-          <div key="kette" className={`relative z-10 min-h-5 ${mt} flex items-center justify-center`}>
-            {!hideBreakdown && <TrickBreakdown trick={t} />}
-          </div>
-        );
-        return breakdownFirst ? [kette("mt-4"), ansage("mt-1")] : [ansage("mt-4"), kette("mt-1")];
-      })()}
+      {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
+          rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
+      <div className="relative z-10 h-8 mt-4 flex items-center justify-center">
+        {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
+            kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
+        {banner && hideFloatWinLose ? null : banner ? (
+          <span className="text-lg font-extrabold tracking-wide uppercase" style={{ color: banner.color }}>{tr(banner.key)}</span>
+        ) : (
+          <span className="opacity-40 text-sm">{tr("bf.ready")}</span>
+        )}
+      </div>
+
+      {/* Stich-Aufschlüsselung (§17) — die Faktorenkette des laufenden Stichs, unter der Sieg/Niederlage-Ansage.
+          MINDEST-Höhe (min-h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz reserviert,
+          damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog). Kein
+          overflow-hidden mehr: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per flex-wrap
+          auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */}
+      <div className="relative z-10 min-h-5 mt-1 flex items-center justify-center">
+        {!hideBreakdown && <TrickBreakdown trick={t} />}
+      </div>
     </div>
     {/* #: Krit-Vollbild-Flash/Vignette (CritScreenFx) entfernt — Krit-Finisher-Animationen raus. Der Screen-Shake bleibt
         (für große Siege, gemeinsam mit normalen Siegen); die „Kritisch!"-Anzeige + Lila bleiben unverändert. */}
