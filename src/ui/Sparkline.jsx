@@ -7,8 +7,28 @@ import { t, fmtNum } from "../i18n/index.js"; // #sprache
    das Max BEIDER Linien, x auf die LÄNGERE Reihe → funktioniert auch, wenn der Lauf über dem
    Rekord liegt). Kompakt in der StatusRail, größer im GameOver (#35) — height parametrisiert.
 
-   #graph-achsen: `axes` schaltet die ausführliche Fassung ein (Gitter, beschriftete y-Achse in Score,
-   x-Achse in Stichen). Zwei Dinge unterscheiden sie technisch von der kompakten Linie, und beide sind
+   #graph-achsen: `axes` hat DREI Stufen, nicht zwei — eine Komponente, damit keine zweite Fassung
+   danebenläuft:
+     `false`    kompakte Linie (StatusRail).
+     `true`     ausführlich: Gitter, beschriftete y-Achse in Score, x-Achse in Stichen (Victory-Screen
+                und Lauf-Details ab 1400 px).
+     `"knapp"`  nur die Höhenmarken: waagerechte Linien auf runden Werten, ihre Zahlen daneben, KEINE
+                x-Beschriftung (Statistik-Trend).
+
+   #graph-knapp (19.08.2026): Der Trend in der Statistik zeigt die letzten Läufe — seine x-Achse zählt
+   also LÄUFE, nicht Stiche. Die ausführliche Fassung hier einzuschalten hieße, sie mit „Stiche" zu
+   beschriften und damit etwas Falsches zu behaupten; deshalb beschriftet `"knapp"` nur die Höhe. Das
+   ist zugleich das, was dort fehlte: ohne einen einzigen Zahlenwert sagt eine steigende Linie nur
+   „irgendwie mehr".
+
+   **Die Zahlen der knappen Fassung sind HTML, kein `<text>`** — und das ist der Grund, warum sie
+   überhaupt eine eigene Stufe ist: die kompakte Linie streckt sich mit `preserveAspectRatio="none"` auf
+   jede Kachelbreite, ein `<text>` darin würde mitverzerrt (genau die Falle, wegen der die ausführliche
+   Fassung ihr festes Seitenverhältnis hat). Waagerechte LINIEN verzerren nicht, die bleiben im SVG.
+   Weil die Zeichenfläche über `viewBox="0 0 300 H"` und die feste Höhe H 1 : 1 auf Pixel abbildet,
+   sitzen die HTML-Marken exakt auf ihren Linien.
+
+   Zwei Dinge unterscheiden die ausführliche Fassung technisch von der kompakten Linie, und beide sind
    der Grund, warum es EIN Schalter und keine zweite Komponente ist:
 
    · **`preserveAspectRatio` muss weg.** Die kompakte Linie zieht sich mit `none` auf jede Kachelgröße —
@@ -16,10 +36,16 @@ import { t, fmtNum } from "../i18n/index.js"; // #sprache
      rechnet deshalb in einem festen Seitenverhältnis und skaliert gleichmäßig.
    · **Der Rand wird gebraucht.** Ohne Achsen genügen 3 px; mit Beschriftung braucht es links Platz für
      die Score-Werte und unten für die Stichzahlen. */
+/* Breite der Zahlenspalte der knappen Fassung (CSS-Pixel, rechtsbündig). Das Stylesheet kennt sie
+   nicht — sie steht als Polster am SVG UND als Breite der Marken, damit beide nicht auseinanderlaufen. */
+const KNAPP_LAB = 46;
+
 export function Sparkline({ current = [], record = [], height = 40, axes = false }) {
-  const W = axes ? 620 : 300;
-  const H = axes ? 250 : height;
-  const padL = axes ? 56 : 3, padR = axes ? 10 : 3, padT = axes ? 10 : 3, padB = axes ? 38 : 3;
+  const voll = axes === true;
+  const knapp = axes === "knapp";
+  const W = voll ? 620 : 300;
+  const H = voll ? 250 : height;
+  const padL = voll ? 56 : 3, padR = voll ? 10 : 3, padT = voll ? 10 : 3, padB = voll ? 38 : 3;
   const maxLen = Math.max(current.length, record.length);
   const maxVal = Math.max(1, ...current, ...record);
   const x = (i) => padL + (maxLen > 1 ? (i / (maxLen - 1)) * (W - padL - padR) : (W - padL - padR) / 2 + padL);
@@ -36,29 +62,45 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e;
   };
   const yTicks = [];
-  if (axes) { const st = niceStep(maxVal / 3); for (let v = 0; v <= maxVal * 1.0001; v += st) yTicks.push(v); }
-  const xTicks = axes ? [0, Math.floor((maxLen - 1) / 2), maxLen - 1] : [];
-  return (
+  // Drei bis fünf Marken in der ausführlichen Fassung, zwei bis drei in der knappen — sie ist nur
+  // 70 px hoch, dort stünden vier Linien als Schraffur.
+  if (voll || knapp) { const st = niceStep(maxVal / (voll ? 3 : 2)); for (let v = 0; v <= maxVal * 1.0001; v += st) yTicks.push(v); }
+  const xTicks = voll ? [0, Math.floor((maxLen - 1) / 2), maxLen - 1] : [];
+  const graph = (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img"
-      style={axes ? { height: "auto" } : { height: H }}
-      preserveAspectRatio={axes ? "xMidYMid meet" : "none"}>
-      {axes && yTicks.map((v, i) => (
+      style={voll ? { height: "auto" } : { height: H, paddingLeft: knapp ? KNAPP_LAB : undefined }}
+      preserveAspectRatio={voll ? "xMidYMid meet" : "none"}>
+      {(voll || knapp) && yTicks.map((v, i) => (
         <g key={`y${i}`}>
           <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="#ffffff" strokeOpacity={i === 0 ? 0.18 : 0.07} strokeWidth="1" />
-          <text x={padL - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10" fill="#8a8a95">{fmtScoreShort(v)}</text>
+          {voll && <text x={padL - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10" fill="#8a8a95">{fmtScoreShort(v)}</text>}
         </g>
       ))}
-      {axes && xTicks.map((i) => (
+      {voll && xTicks.map((i) => (
         <text key={`x${i}`} x={x(i)} y={H - 21} textAnchor={i === 0 ? "start" : i === maxLen - 1 ? "end" : "middle"}
           fontSize="10" fill="#8a8a95">{fmtNum((i + 1) * GHOST_STEP)}</text>
       ))}
       {record.length >= 2 && <path d={path(record)} fill="none" stroke="#8a7de0" strokeWidth="1.5" strokeOpacity="0.55" vectorEffect="non-scaling-stroke" />}
       {current.length >= 2 && <path d={path(current)} fill="none" stroke="#d4a63a" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />}
       {/* Achsenbeschriftung: die y-Werte sind Score, die x-Werte Stiche — ohne die Angabe sind es nur Zahlen. */}
-      {axes && <text x={(W + padL) / 2} y={H - 4} textAnchor="middle" fontSize="9.5"
+      {voll && <text x={(W + padL) / 2} y={H - 4} textAnchor="middle" fontSize="9.5"
         letterSpacing="0.08em" fill="#5f5f70">{t("sparkline.axis.x")}</text>}
-      {axes && <text x={13} y={(H - padB + padT) / 2} textAnchor="middle" fontSize="9.5"
+      {voll && <text x={13} y={(H - padB + padT) / 2} textAnchor="middle" fontSize="9.5"
         letterSpacing="0.08em" fill="#5f5f70" transform={`rotate(-90 13 ${(H - padB + padT) / 2})`}>{t("sparkline.axis.y")}</text>}
     </svg>
+  );
+  if (!knapp) return graph;
+  /* Die Marken liegen ÜBER der Zeichenfläche, nicht daneben in einer eigenen Spalte: so bleibt der
+     Graph selbst unverändert (dieselbe gestreckte Linie wie in der StatusRail) und die Höhe der Kachel
+     ändert sich nicht. `y(v)` rechnet in denselben Einheiten wie die feste Pixelhöhe. */
+  return (
+    <div className="relative" style={{ height: H }}>
+      {yTicks.map((v, i) => (
+        <span key={`k${i}`} className="absolute text-[9px] tabular-nums pointer-events-none"
+          style={{ left: 0, width: KNAPP_LAB - 6, textAlign: "right",
+            top: Math.max(0, Math.min(H - 11, y(v) - 5.5)), color: "#65656f" }}>{fmtScoreShort(v)}</span>
+      ))}
+      {graph}
+    </div>
   );
 }

@@ -1,72 +1,115 @@
 /* #shop-skalieren + #shop-luft — die Pack-Vorschau der Deck-Werkstatt ab 1400 px (19.08.2026).
    -------------------------------------------------------------------------------------------------
-   Gemessen im Produktionsbuild (Playwright, echte Komponente): der Detail-Scroller braucht 662 px.
-   Auf 1920 × 1080 und 1723 × 1030 hat er 662 — dort passte es. Auf 1536 × 791 hat er 558, also
-   104 px Überhang: Kartenrückseite, Spielfeld und der Aktivieren-Knopf standen nie zusammen im Bild,
-   man musste in einer Spalte scrollen, die selbst schon in einem gedeckelten Panel sitzt.
+   Gemessen im Produktionsbuild (Playwright, echte Komponente): der Inhalt der Detailspalte braucht
+   662 px. Auf 1920 × 1080 und 1723 × 1030 hat er sie — dort passte es. Auf 1536 × 791 stehen ihm 558
+   zur Verfügung, also 104 px Überhang: Kartenrückseite, Spielfeld und der Aktivieren-Knopf standen nie
+   zusammen im Bild.
 
-   Behoben über die normale Flex-Schrumpfung — kein Maßstab-Faktor, keine abgetippte Zahl. Nachgemessen
-   nach dem Umbau: Überhang 0 auf allen fünf geprüften Fenstern (1920 × 1080 · 1723 × 1030 · 1536 × 791 ·
-   1400 × 760 · 1400 × 700), und die Bilder behalten ihr Verhältnis zueinander (auf 1536 schrumpfen
-   Karten und Spielfeld auf 80,4 % bzw. 79,6 %).
+   Geschrumpft wird über die BREITE des ganzen Vorschau-Blocks. Der erste Anlauf schrumpfte die HÖHEN
+   (Flexbox + `min-height: 0`) — dabei bleibt der Kasten breit und das Bild steht mittig darin, und
+   genau das kam vom Gerät zurück: „auf der Laptop-Auflösung sind die Karten- und Hintergrundbilder
+   nicht mehr ausgerichtet". Die Bilder leiten ihre Höhe aus der Breite ab (`aspect-ratio`), also ist
+   der Breitenfaktor die einzige Schrumpfung, bei der die flache Fassung eine echte VERKLEINERUNG der
+   hohen bleibt. Nachgemessen: Beschriftungen und Bilder stehen auf 1920 × 1080 · 1723 × 1030 ·
+   1536 × 791 · 1400 × 760 · 1400 × 700 auf derselben Kante, Überhang überall 0.
 
-   Geprüft wird als Quelltext-Ratsche über CustomizeScreen.jsx + index.css — das Projekt hat kein
-   Component-Test-Setup (s. test/fx-panel.test.js, test/guide-desktop.test.js). Jede der Nähte fällt
-   lautlos aus, wenn jemand sie kürzt: dann kommt entweder der Scroller zurück, oder es schrumpft der
-   KASTEN statt des BILDES (dunkle Balken bzw. ein beschnittenes Spielfeld). */
+   Zwei Sorten Prüfung, bewusst getrennt:
+   1. Die RECHNUNG wird nachgerechnet (`shopScale.js` ist rein, ohne React).
+   2. Die VERDRAHTUNG als Quelltext-Ratsche über CustomizeScreen.jsx + index.css — das Projekt hat kein
+      Component-Test-Setup (s. test/fx-panel.test.js, test/guide-desktop.test.js). */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
 // Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.
 const desktop = css.slice(css.indexOf("@media (min-width: 1400px)"));
-// Die Regel ohne ihre Begründungen: die Kommentare nennen die alten Werte absichtlich beim Namen
-// (dieselbe Falle wie beim `as-ring`-Zähler in #fx-panel und beim `ATTACK:`-Greifer in #cube-takt).
+// Ohne die Begründungen: die Kommentare nennen die verworfene Fassung absichtlich beim Namen (dieselbe
+// Falle wie beim `as-ring`-Zähler in #fx-panel und beim `ATTACK:`-Greifer in #cube-takt).
 const desktopBlank = desktop.replace(/\/\*[\s\S]*?\*\//g, "");
 
-describe("#shop-skalieren — die Vorschau schrumpft, statt zu scrollen", () => {
-  it("die drei Klassenhaken stehen in der INLINE-Fassung (Handy-Overlay bleibt unberührt)", () => {
-    // Der Umbau darf die Handy-Fassung nicht mitnehmen: sie ist ein Overlay ohne Katalog daneben und
-    // scrollt dort zu Recht. Deshalb hängen alle drei Haken im `inline`-Zweig.
-    const inlineZweig = jsx.slice(jsx.indexOf("{inline ? ("), jsx.indexOf("Stufen-Wähler I / II / III"));
-    expect(inlineZweig).toContain("cz-shots grid grid-cols-2");
-    expect(inlineZweig.match(/cz-shot flex flex-col/g)).toHaveLength(2);   // Kartenpaar + Spielfeld
-    expect(inlineZweig.match(/cz-shotimg w-full/g)).toHaveLength(2);       // CardPreview + BfPreview
-    // Der Scroller trägt seine Klammer nur, wenn er auch `inline` ist.
-    expect(jsx).toMatch(/inline \? "cz-body flex-1 min-h-0 overflow-y-auto" : ""/);
+describe("#shop-skalieren — der Breitenfaktor, nachgerechnet", () => {
+  it("passt alles, bleibt die Vorschau unangetastet", () => {
+    expect(shotFactor(527, 0)).toBe(1);     // gemessen 1920 × 1080: kein Überhang
+    expect(shotFactor(527, -20)).toBe(1);   // Panel endet am Inhalt → negative „Überhänge" sind kein Auftrag
   });
 
-  it("`overflow-y: auto` bleibt als VENTIL stehen — Flexbox schrumpft zuerst, gescrollt wird danach", () => {
-    // `overflow: hidden` wäre die Alternative, und die SCHNEIDET AB statt erreichbar zu bleiben.
-    expect(jsx).toContain("cz-body flex-1 min-h-0 overflow-y-auto");
-    expect(desktopBlank).not.toMatch(/\.cz-body\s*\{[^}]*overflow:\s*hidden/);
+  it("der Faktor nimmt dem Bild GENAU den Überhang ab", () => {
+    // 527 px Bildhöhe (Karte 331 + Spielfeld 196, gemessen), 104 px Überhang (1536 × 791).
+    const f = shotFactor(527, 104);
+    expect(f).toBeCloseTo(1 - 104 / 527, 10);
+    expect(527 * f).toBeCloseTo(527 - 104, 6);   // die Kernaussage: danach passt es auf den Pixel
   });
 
-  it("der Scroller ist eine Flex-Spalte und darf unter seine Inhaltshöhe", () => {
-    // Ohne `min-height: 0` ist die automatische Mindestgröße eines Flex-Kindes seine Inhaltshöhe —
-    // dann schrumpft gar nichts und der Scroller kommt zurück.
-    expect(desktopBlank).toMatch(/\.cz-body\s*\{[^}]*display:\s*flex/);
-    expect(desktopBlank).toMatch(/\.cz-body\s*\{[^}]*flex-direction:\s*column/);
-    expect(desktopBlank).toMatch(/\.cz-body\s*\{[^}]*min-height:\s*0/);
+  it("Beschriftungen und Abstände kürzen sich heraus — deshalb zählt NUR die Bildhöhe", () => {
+    // Die Formel kennt weder Überschriften noch den Aktivieren-Knopf: was nicht mit der Breite skaliert,
+    // steht auf beiden Seiten der Gleichung und fällt weg. Sonst bräuchte sie eine Liste der festen
+    // Posten — und die wäre bei jedem neuen Element in der Spalte still falsch.
+    for (const [h, u] of [[527, 104], [300, 50], [1000, 1]]) {
+      expect(shotFactor(h, u)).toBeCloseTo((h - u) / h, 10);
+    }
   });
 
-  it("die Rasterzeile des Kartenpaars gibt mit — `auto` bliebe auf der Bildhöhe stehen", () => {
-    expect(desktopBlank).toMatch(/\.cz-shots\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/);
-    expect(desktopBlank).toMatch(/\.cz-shots\s*\{[^}]*min-height:\s*0/);
-    expect(desktopBlank).toMatch(/\.cz-shot\s*\{[^}]*min-height:\s*0/);
-    expect(desktopBlank).toMatch(/\.cz-shotimg\s*\{[^}]*min-height:\s*0/);
+  it("es gibt eine Untergrenze, und darüber übernimmt der Scroller", () => {
+    expect(shotFactor(200, 190)).toBe(SHOT_F_MIN);
+    expect(SHOT_F_MIN).toBeGreaterThan(0);
+    expect(SHOT_F_MIN).toBeLessThan(1);
   });
 
-  it("es schrumpft das BILD, nicht der Kasten — contain + durchsichtige Fläche gehören zusammen", () => {
-    // 1. `BfPreview` malt mit `object-cover`: ein schrumpfender Kasten würde das Spielfeld oben und
-    //    unten BESCHNEIDEN statt es zu verkleinern.
-    expect(desktopBlank).toMatch(/\.cz-shotimg\s*>\s*img\s*\{[^}]*object-fit:\s*contain\s*!important/);
-    // 2. Beide Vorschauen setzen ihre Fläche INLINE (#0b0a16) — ohne `!important` bliebe sie stehen und
-    //    man sähe sie als dunkle Balken neben dem verkleinerten Bild.
-    expect(desktopBlank).toMatch(/\.cz-shotimg\s*\{[^}]*background:\s*transparent\s*!important/);
-    expect(jsx).toMatch(/background:\s*"#0b0a16"/);   // die Naht, gegen die das `!important` steht
+  it("unbrauchbare Messwerte lassen die Vorschau in Ruhe, statt sie zu zerlegen", () => {
+    // Vor dem ersten Layout steht die Bildhöhe auf 0.
+    for (const bad of [0, -5, NaN, null, undefined, "hoch"]) expect(shotFactor(bad, 104)).toBe(1);
+    for (const bad of [NaN, null, undefined, "viel"]) expect(shotFactor(527, bad)).toBe(1);
+  });
+});
+
+describe("#shop-skalieren — die Verdrahtung", () => {
+  it("der Faktor sitzt an EINEM Wrapper um alle drei Bilder", () => {
+    // Getrennte Faktoren je Bild wären wieder drei Maßstäbe statt einem — genau der Fehler, den die
+    // Höhen-Schrumpfung hatte.
+    expect(jsx).toContain('ref={shotWrapRef} className="cz-shotwrap"');
+    expect(jsx).toMatch(/shotF < 1 \? \{ width: `\$\{\(shotF \* 100\)/);
+    expect(jsx).toMatch(/import \{ shotFactor \} from "\.\/shopScale\.js"/);
+  });
+
+  it("gemessen wird an der UNGESCHRUMPFTEN Fassung — sonst läuft der Faktor mit jedem Durchgang weiter runter", () => {
+    const eff = jsx.slice(jsx.indexOf("useLayoutEffect(() => {\n    const body = shotBodyRef.current"));
+    const rumpf = eff.slice(0, eff.indexOf("}, ["));
+    expect(rumpf).toContain('wrap.style.width = "100%"');
+    // Mit sichtbarer Leiste misst man eine schmalere Spalte; der Faktor liesse danach ein paar Pixel
+    // überstehen und die Leiste käme zurück.
+    expect(rumpf).toContain('body.style.overflowY = "hidden"');
+    // Und beides wird wieder zurückgestellt, bevor React neu rendert.
+    expect(rumpf).toContain("wrap.style.width = breiteVorher");
+    expect(rumpf).toContain("body.style.overflowY = ueberlaufVorher");
+  });
+
+  it("die Messung liegt VOR dem Zeichnen (useLayoutEffect), nicht danach", () => {
+    // Mit `useEffect` sähe man den ungeschrumpften Zwischenzustand aufblitzen.
+    expect(jsx).toMatch(/useLayoutEffect\(\(\) => \{\s*const body = shotBodyRef\.current/);
+  });
+
+  it("das Kartenpaar zählt EINMAL in die Höhe — es steht nebeneinander", () => {
+    expect(jsx).toContain('wrap.querySelector(".cz-shots .cz-shotimg")');
+    expect(jsx).toContain('wrap.querySelector(".cz-shotbg .cz-shotimg")');
+  });
+
+  it("`overflow-y: auto` bleibt als VENTIL stehen (Untergrenze erreicht)", () => {
+    expect(jsx).toContain('inline ? "flex-1 min-h-0 overflow-y-auto" : ""');
+  });
+
+  it("die verworfene Höhen-Schrumpfung ist WEG und darf nicht zurückkommen", () => {
+    // Gegenprobe zur gemeldeten Regression: `min-height: 0` an den Bildkästen liesse den Kasten breit
+    // und das Bild mittig darin stehen — die Beschriftungen stünden wieder neben ihren Bildern.
+    expect(desktopBlank).not.toMatch(/\.cz-shotimg\s*\{[^}]*min-height/);
+    expect(desktopBlank).not.toMatch(/\.cz-shots\s*\{[^}]*minmax\(0,\s*1fr\)/);
+    expect(desktopBlank).not.toMatch(/\.cz-shotimg\s*>\s*img\s*\{[^}]*object-fit/);
+  });
+
+  it("der geschrumpfte Block steht mittig in der Spalte", () => {
+    expect(desktopBlank).toMatch(/\.cz-shotwrap\s*\{[^}]*margin-inline:\s*auto/);
   });
 });
 

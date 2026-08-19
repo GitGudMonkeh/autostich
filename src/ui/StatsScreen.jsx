@@ -183,7 +183,10 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
               </div>
               <div className="st-trend mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
                 <div className="text-[11px] opacity-50 mb-1">{t("stats.trend", { n: trend.length })}</div>
-                <Sparkline current={trend} record={[]} height={70} />
+                {/* #graph-knapp: knappe Beschriftung — waagerechte Marken auf runden Score-Werten, sonst
+                    nichts. KEINE x-Achse: die zaehlt hier LAEUFE, nicht Stiche; die ausfuehrliche Fassung
+                    wuerde sie mit „Stiche" beschriften und damit etwas Falsches behaupten. */}
+                <Sparkline current={trend} record={[]} height={70} axes="knapp" />
               </div>
             </Section>
 

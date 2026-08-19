@@ -2349,42 +2349,31 @@ button { font-family: inherit; }
     color: #75758a;
   }
 
-  /* --- #shop-skalieren — die Vorschau schrumpft, statt zu scrollen ---------
-     Gemessen im Produktionsbuild (Playwright, echte Komponente): der Detail-Scroller braucht 662 px.
-     Auf 1920 x 1080 und 1723 x 1030 stehen ihm 662 px zur Verfuegung — dort passte es schon. Auf
-     1536 x 791 sind es 558, also **104 px Ueberhang**, und genau die musste man sich bisher
-     herunterscrollen: Kartenrueckseite, Spielfeld und der Aktivieren-Knopf standen nie zusammen im Bild.
-     Ein Scroller in einer Spalte, die selbst schon in einem gedeckelten Panel sitzt, ist die falsche
-     Antwort — die drei Bilder sind eine VORSCHAU, sie muessen nicht gross sein, sie muessen vollstaendig
-     sein.
+  /* --- #shop-skalieren — die Vorschau passt sich der Fensterhoehe an -------
+     Gemessen im Produktionsbuild (Playwright, echte Komponente): der Inhalt der Detailspalte braucht
+     662 px. Auf 1920 x 1080 und 1723 x 1030 hat er sie — dort passte es. Auf 1536 x 791 stehen ihm 558
+     zur Verfuegung, also **104 px Ueberhang**: Kartenrueckseite, Spielfeld und der Aktivieren-Knopf
+     standen nie zusammen im Bild. Ein Scroller in einer Spalte, die selbst schon in einem gedeckelten
+     Panel sitzt, ist die falsche Antwort — die drei Bilder sind eine VORSCHAU: sie muessen nicht gross
+     sein, sie muessen vollstaendig sein.
 
-     Der Hebel ist die normale Flex-Schrumpfung, kein Massstab-Faktor und keine gemessene Zahl:
-     `cz-body` wird zur Flex-Spalte, die drei Bildkaesten bekommen `min-height: 0` und schrumpfen damit
-     ANTEILIG ihrer Grundhoehe (Flexbox gewichtet die Schrumpfung mit der Basis) — 104 px Ueberhang
-     heissen also fuer jedes Bild denselben Prozentsatz, das Verhaeltnis der drei zueinander bleibt.
-     Ist Platz genug, schrumpft nichts: die Kaesten behalten ihre aus der Breite abgeleitete Hoehe,
-     1920 x 1080 bleibt Pixel fuer Pixel wie vorher.
+     Die Rechnung steht in `shopScale.js`, gemessen wird sie in `PackDetail` (Layout-Effekt). HIER steht
+     nur, was der Faktor braucht: der Block darf schmaler werden als die Spalte und steht dann mittig.
+     Warum ueber die BREITE und nicht ueber die Hoehe: die drei Kaesten tragen ein `aspect-ratio` und
+     leiten ihre Hoehe aus der Breite ab. Schrumpft man stattdessen die Hoehe (`min-height: 0` + Flex),
+     bleibt der KASTEN breit, das Bild steht mittig darin — die Bilder stehen dann nicht mehr buendig
+     unter ihren Beschriftungen. Genau so war der erste Anlauf gebaut und genau so kam er zurueck
+     („auf der Laptop-Aufloesung sind die Karten- und Hintergrundbilder nicht mehr ausgerichtet").
+     Ueber die Breite ist die flache Fassung eine echte Verkleinerung der hohen.
 
-     ZWEI Dinge gehoeren zwingend dazu, sonst schrumpft der KASTEN und nicht das BILD:
-     1. `object-fit: contain` — `BfPreview` malt mit `cover` und wuerde beim Schrumpfen oben und unten
-        beschneiden statt zu verkleinern. Ein beschnittenes Spielfeld ist keine Vorschau des Spielfelds.
-     2. `background: transparent !important` — beide Vorschauen setzen ihre Flaeche INLINE (`#0b0a16`),
-        und Inline schlaegt jedes Stylesheet ohne `!important`. Sobald der Kasten flacher ist als das
-        Bildformat, steht das Bild mittig darin; ohne diesen Griff saehe man die Restflaeche als dunkle
-        Balken links und rechts. Bei ungeschrumpften Kaesten deckt das Bild die Flaeche ohnehin
-        vollstaendig ab — die Zeile aendert dort also nichts.
-
-     `overflow-y: auto` am Scroller bleibt bewusst stehen: es ist das VENTIL fuer den Fall, dass selbst
-     die geschrumpfte Fassung nicht passt (Flexbox schrumpft zuerst, gescrollt wird erst danach). Ohne
-     das Ventil waere die Alternative `overflow: hidden` — und die schneidet ab, statt erreichbar zu
-     bleiben. */
-  .cz-body { display: flex; flex-direction: column; min-height: 0; }
-  /* Die Zeile des Rasters muss mitgeben duerfen — `auto` bliebe auf der Bildhoehe stehen und liefe
-     unten aus dem geschrumpften Behaelter heraus. */
-  .cz-shots { grid-template-rows: minmax(0, 1fr); min-height: 0; }
-  .cz-shot { min-height: 0; }
-  .cz-shotimg { min-height: 0; background: transparent !important; }
-  .cz-shotimg > img { object-fit: contain !important; }
+     Der `overflow-y: auto` des Scrollers bleibt bewusst stehen: er ist das VENTIL, falls der Faktor
+     seine Untergrenze (`SHOT_F_MIN`) erreicht. `overflow: hidden` waere die Alternative — und die
+     schneidet ab, statt erreichbar zu bleiben. */
+  /* Mittig, nicht linksbuendig: beide Fassungen gerendert und verglichen. Linksbuendig teilt sich der
+     Block zwar eine Kante mit Titel und Aktionsknopf, laesst aber rechts eine tote Spalte stehen
+     (auf 1536 x 791 rund 110 px), die sich wie ein fehlendes Bild liest. Mittig steht der geschrumpfte
+     Block als ein Ganzes im Panel. */
+  .cz-shotwrap { margin-inline: auto; }
 
   /* Der Katalog: sechs Spalten. Die Tailwind-Vorgabe `grid-cols-2 sm:grid-cols-3` friert bei 640 px
      ein, deshalb hier explizit — `!important`, weil Tailwinds Utility dieselbe Spezifität hat. */
@@ -3466,7 +3455,12 @@ button { font-family: inherit; }
      (der Score wächst exponentiell), und die Stich-Balken sind bis zu sechs Stiche je Zeile. Die Höhe der Kurve
      steht als Inline-Stil an der SVG (Prop `height`) → `!important` ist Pflicht, nicht Nachlässigkeit. */
   .rd-c4 > .rd-spark { margin-top: 14px !important; }
-  .rd-c4 > .rd-spark > svg { height: 170px !important; }
+  /* #graph-achsen (19.08.2026): `height: auto`, nicht 170 px. Die feste Höhe stammt aus der Zeit, als
+     hier die KOMPAKTE Linie stand — die streckt sich mit `preserveAspectRatio: none` auf jede Kachel.
+     Die beschriftete Fassung bringt ihr eigenes Seitenverhältnis mit (620 × 250) und skaliert
+     gleichmäßig: unter einem Höhendeckel stünde sie mittig mit leeren Rändern links und rechts und
+     einer Beschriftung, die nur noch halb so groß ist. */
+  .rd-c4 > .rd-spark > svg { height: auto !important; }
   .rd-c4 > .mt-5 { margin-top: 18px !important; }
   .rd-c4 .rg-perTrick { margin-top: 0 !important; background: none !important; border: 0 !important; }
   .rd-c4 .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }

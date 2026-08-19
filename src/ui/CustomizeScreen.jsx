@@ -4,6 +4,7 @@ import { useEscape } from "./useEscape.js";
 import { useTabSwipe } from "./useSwipeTabs.js"; // Reiterwechsel per Swipe (nur Funktion, keine Optik)
 import { useIsWide } from "./useIsWide.js"; // #desktop: Pack-Detail als Spalte statt als Portal-Overlay
 import { sortPacks, sortLabelKey, nextSort, SORT_DEFAULT } from "./packSort.js"; // #packsort: Kachel-Reihenfolge
+import { shotFactor } from "./shopScale.js"; // #shop-skalieren: Breitenfaktor der Pack-Vorschau
 // #vorschau-brett: gemessene Brettmaße + Szenen-Maßstab der Effekt-Vorschau (rein, ohne React → testbar).
 import { CARD_W, CARD_H, BOARD_RATIO_CSS, sceneScale } from "./fx/previewScale.js";
 import { setPreviewSceneScale } from "./fx/mobileTier.js"; // #perf-shopdpr: Vorschau-Deckel
@@ -1489,6 +1490,58 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
   const canBuy = pack.kind === "buy" && canBuyPack(p, pack);
   const unlock = pack.kind === "cond" ? packUnlock(p, pack) : null;
 
+  /* #shop-skalieren (19.08.2026) — die Vorschau passt sich der Fensterhöhe an, statt zu scrollen.
+     Gemessen im Produktionsbuild: der Inhalt der Detailspalte braucht 662 px. Auf 1920 × 1080 hat er
+     sie; auf 1536 × 791 stehen ihm 558 zur Verfügung. Die fehlenden 104 px musste man sich bisher
+     herunterscrollen — in einer Spalte, die selbst schon in einem gedeckelten Panel sitzt, und ohne dass
+     der Aktivieren-Knopf je gleichzeitig mit den Bildern im Bild stand.
+
+     Geschrumpft wird über die BREITE des ganzen Vorschau-Blocks, nicht über die Höhe der einzelnen
+     Kästen. Die Bilder leiten ihre Höhe aus der Breite ab (`aspect-ratio`), also ist die flache Fassung
+     damit eine echte VERKLEINERUNG der hohen: alle drei bleiben bündig unter ihren Beschriftungen.
+     Der erste Anlauf schrumpfte die Höhen (Flexbox) — dabei bleibt der Kasten breit und das Bild steht
+     mittig darin, und genau das kam als „auf der Laptop-Auflösung sind die Bilder nicht mehr
+     ausgerichtet" zurück.
+
+     Gemessen wird IMMER an der ungeschrumpften Fassung (Breite 100 %), sonst wäre der Überhang schon
+     wegskaliert und der Faktor liefe mit jedem Durchgang weiter nach unten. Zwei Griffe dafür:
+       · Der Scroller steht während der Messung auf `overflow-y: hidden` — mit sichtbarer Leiste misst
+         man eine um deren Breite schmalere Spalte, und der daraus errechnete Faktor ließe nach dem
+         Anwenden wieder ein paar Pixel überstehen (die Leiste käme zurück).
+       · Beides passiert in einem `useLayoutEffect`, also VOR dem Zeichnen — zu sehen ist der
+         Zwischenzustand nie.
+     Das Kartenpaar steht NEBENeinander und zählt deshalb einmal in die Höhe. */
+  const shotBodyRef = useRef(null);
+  const shotWrapRef = useRef(null);
+  const [shotF, setShotF] = useState(1);
+  const [shotMess, setShotMess] = useState(0);
+
+  // Anlässe für eine Neumessung, die nicht am Pack hängen: Fenstergröße und das Nachladen der Schrift
+  // (die Beschriftungen tragen Höhe bei — dieselbe Falle wie bei der Zellenmessung in `CardGrid`).
+  useEffect(() => {
+    if (!inline) return undefined;
+    const neu = () => setShotMess((n) => n + 1);
+    window.addEventListener("resize", neu);
+    let lebt = true;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (lebt) neu(); });
+    return () => { lebt = false; window.removeEventListener("resize", neu); };
+  }, [inline]);
+
+  useLayoutEffect(() => {
+    const body = shotBodyRef.current, wrap = shotWrapRef.current;
+    if (!inline || !body || !wrap) return;
+    const breiteVorher = wrap.style.width, ueberlaufVorher = body.style.overflowY;
+    wrap.style.width = "100%";
+    body.style.overflowY = "hidden";
+    const karte = wrap.querySelector(".cz-shots .cz-shotimg");
+    const feld = wrap.querySelector(".cz-shotbg .cz-shotimg");
+    const bildHoehe = (karte ? karte.offsetHeight : 0) + (feld ? feld.offsetHeight : 0);
+    const ueberhang = body.scrollHeight - body.clientHeight;
+    wrap.style.width = breiteVorher;
+    body.style.overflowY = ueberlaufVorher;
+    setShotF(shotFactor(bildHoehe, ueberhang));
+  }, [inline, shotMess, pack.id, viewPack.deckId, viewPack.bfId, hasBf]);
+
   /* #overlay-portal: NUR die Overlay-Fassung portalt. Ab 1400 px steht dieselbe Komponente `inline` als Spalte
      IM Raster der Werkstatt (`cz-detail`) — die gehört dorthin, wo sie steht, und ein Portal würde sie aus dem
      Layout reißen. Deshalb hier die einzige Ausnahme von der sonst ausnahmslosen Regel, und sie hängt an
@@ -1501,7 +1554,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
         onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
         <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
-        <div className={`p-3.5 ${inline ? "cz-body flex-1 min-h-0 overflow-y-auto" : ""}`}>
+        <div ref={shotBodyRef} className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[15px] min-[1400px]:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
@@ -1517,24 +1570,29 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               zum selben Ziel wären Rauschen. */}
           {inline ? (
             <>
-              {/* #shop-skalieren (19.08.2026): `cz-shots` / `cz-shot` / `cz-shotimg` sind die Griffe, an
-                  denen die Vorschau in der Hoehe SCHRUMPFT, statt den Spaltenscroller anzuwerfen — die
-                  Regeln dazu stehen in index.css. Ohne die Klassen faellt nur die Schrumpfung weg, das
-                  Layout bleibt dasselbe. */}
-              <div className="cz-shots grid grid-cols-2 gap-3">
-                {[["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]].map(([face, label]) => (
-                  <div key={face} className="cz-shot flex flex-col gap-1.5">
-                    <span className="cz-shotlab">{label}</span>
-                    <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={face} className="cz-shotimg w-full" />
-                  </div>
-                ))}
-              </div>
-              {hasBf && (
-                <div className="cz-shot flex flex-col gap-1.5 mt-3">
-                  <span className="cz-shotlab">{t("shop.packSel.bg")}</span>
-                  <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="cz-shotimg w-full" ratio="1600 / 640" />
+              {/* #shop-skalieren (19.08.2026): Die drei Bilder sind BREITEN-getrieben (`aspect-ratio`),
+                  also schrumpft der ganze Block ueber EINE Breite, wenn er sonst nicht ins Panel passt —
+                  gerechnet in `shopScale.js`, gemessen im Layout-Effekt oben. Damit ist die flache
+                  Fassung eine echte Verkleinerung der hohen: alle drei Bilder bleiben buendig unter
+                  ihren Beschriftungen. Ohne den Faktor (Fallback 1) steht hier exakt das Layout von
+                  vorher. */}
+              <div ref={shotWrapRef} className="cz-shotwrap"
+                style={shotF < 1 ? { width: `${(shotF * 100).toFixed(3)}%` } : undefined}>
+                <div className="cz-shots grid grid-cols-2 gap-3">
+                  {[["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]].map(([face, label]) => (
+                    <div key={face} className="cz-shot flex flex-col gap-1.5">
+                      <span className="cz-shotlab">{label}</span>
+                      <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={face} className="cz-shotimg w-full" />
+                    </div>
+                  ))}
                 </div>
-              )}
+                {hasBf && (
+                  <div className="cz-shot cz-shotbg flex flex-col gap-1.5 mt-3">
+                    <span className="cz-shotlab">{t("shop.packSel.bg")}</span>
+                    <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="cz-shotimg w-full" ratio="1600 / 640" />
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>

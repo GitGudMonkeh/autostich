@@ -150,7 +150,11 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                     {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>{t("gameover.chart.record")}</span> : <span className="opacity-40">{t("gameover.chart.first")}</span>}
                   </span>
                 </div>
-                <Sparkline current={traj} record={recordTraj} height={110} />
+                {/* #graph-achsen: ab 1400 px dieselbe beschriftete Fassung wie im Victory-Screen — es ist
+                    derselbe Graph mit derselben x-Achse (Stiche). Ohne sie standen hier zwei Linien ohne
+                    einen einzigen Zahlenwert. Am Handy bleibt die kompakte Linie: dort ist die Karte zu
+                    schmal fuer eine beschriftete Achse. */}
+                <Sparkline current={traj} record={recordTraj} height={110} axes={wide} />
               </div>
             )}
             {hasLog && <RunGraphs state={entry} sourceBar={false} open={wide} />}

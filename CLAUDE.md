@@ -1827,40 +1827,84 @@ ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, de
 Gemeldet: „im Shop die Anzeigen im Fenster skalieren, damit man dort nicht scrollen muss, um alles zu sehen" —
 und „die Shop-Panels sind zu nah am Rahmen". Zwei getrennte Nähte, beide nur ab 1400 px (Desktop-Fassung);
 die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inline`-Zweig von `PackDetail`).
-- **Gemessen zuerst** (Produktionsbuild, Playwright, echte Komponente): der Detail-Scroller braucht **662 px**.
-  Auf 1920 × 1080 und 1723 × 1030 hat er genau 662 — dort passte es und niemand hätte etwas gesehen. Auf
-  **1536 × 791** hat er 558, also **104 px Überhang**: Kartenrückseite, Spielfeld und der Aktivieren-Knopf
-  standen nie zusammen im Bild. Ein Scroller in einer Spalte, die selbst schon in einem gedeckelten Panel
-  sitzt, ist die falsche Antwort — die drei Bilder sind eine VORSCHAU: sie müssen nicht groß sein, sie müssen
-  vollständig sein.
-- **Der Hebel ist die normale Flex-Schrumpfung, kein Maßstab-Faktor und keine abgemessene Zahl.** `cz-body`
-  (der Scroller) wird zur Flex-Spalte, die drei Bildkästen bekommen `min-height: 0`. Flexbox gewichtet die
-  Schrumpfung mit der GRUNDHÖHE — 104 px Überhang heißen also für jedes Bild denselben Prozentsatz, das
-  Verhältnis der drei zueinander bleibt (gemessen 1536: Karten 331 → 266 = 80,4 %, Spielfeld 196 → 156 =
-  79,6 %). Ist Platz genug, schrumpft nichts: 1920 × 1080 bleibt Pixel für Pixel wie vorher.
-- **ZWEI Zeilen gehören zwingend dazu, sonst schrumpft der KASTEN statt des BILDES:**
-  1. `object-fit: contain !important` — `BfPreview` malt mit `cover` und würde beim Schrumpfen oben und unten
-     BESCHNEIDEN statt zu verkleinern. Ein beschnittenes Spielfeld ist keine Vorschau des Spielfelds.
-  2. `background: transparent !important` — beide Vorschauen setzen ihre Fläche INLINE (`#0b0a16`), und Inline
-     schlägt jedes Stylesheet ohne `!important`. Ohne die Zeile sähe man die Restfläche neben dem
-     verkleinerten Bild als dunkle Balken. Bei ungeschrumpften Kästen deckt das Bild die Fläche vollständig
-     ab — dort ändert sie also nichts.
-- **`overflow-y: auto` bleibt bewusst stehen**: es ist das VENTIL für den Fall, dass selbst die geschrumpfte
-  Fassung nicht passt (Flexbox schrumpft zuerst, gescrollt wird erst danach). `overflow: hidden` wäre die
-  Alternative — und die schneidet ab, statt erreichbar zu bleiben.
-- **Preis, bewusst bezahlt**: die Beschriftungen (`KARTE HINTEN` …) bleiben linksbündig, während das
-  geschrumpfte Bild mittig im Kasten steht — auf 1536 sind das 23 px Versatz, auf 1400 × 700 rund 43. Die
-  Alternative wäre, den Kasten aus der HÖHE zu bemaßen (`width: auto` + `aspect-ratio`); dann hat er als
-  Flex-Kind aber keine Grundhöhe mehr (der Inhalt ist absolut positioniert) und fällt auf 0 zusammen.
+- **Gemessen zuerst** (Produktionsbuild, Playwright, echte Komponente): der Inhalt der Detailspalte braucht
+  **662 px**. Auf 1920 × 1080 und 1723 × 1030 hat er genau 662 — dort passte es und niemand hätte etwas
+  gesehen. Auf **1536 × 791** hat er 558, also **104 px Überhang**: Kartenrückseite, Spielfeld und der
+  Aktivieren-Knopf standen nie zusammen im Bild. Ein Scroller in einer Spalte, die selbst schon in einem
+  gedeckelten Panel sitzt, ist die falsche Antwort — die drei Bilder sind eine VORSCHAU: sie müssen nicht
+  groß sein, sie müssen vollständig sein.
+- **Geschrumpft wird die BREITE des ganzen Blocks — und der erste Anlauf hat genau das falsch gemacht.**
+  Fassung 1 schrumpfte die HÖHEN über Flexbox (`min-height: 0` an den Bildkästen). Das passte rechnerisch
+  und kam vom Gerät sofort zurück: *„auf der Laptop-Auflösung sind die Karten- und Hintergrundbilder nicht
+  mehr ausgerichtet."* Der Grund ist strukturell und hätte vorher auffallen können — die Kästen sind
+  BREITEN-getrieben (`aspect-ratio`): schrumpft man die Höhe, bleibt der KASTEN breit und das Bild steht
+  mittig darin. Damit stehen die drei Bilder weder bündig unter ihren Beschriftungen noch bündig
+  zueinander, und je flacher das Fenster, desto weiter laufen sie auseinander (gemessen 23 px Versatz auf
+  1536 × 791, 43 px auf 1400 × 700). Über die BREITE ist die flache Fassung eine echte VERKLEINERUNG der
+  hohen: alles bleibt an seiner Kante.
+- **Die Rechnung ist eine Zeile** (`src/ui/shopScale.js`, rein, ohne React): `f = 1 − Überhang / Bildhöhe`.
+  Beschriftungen, Abstände und der Aktivieren-Knopf skalieren NICHT mit der Breite, stehen also auf beiden
+  Seiten der Gleichung und kürzen sich heraus — die Formel braucht deshalb keine Liste der festen Posten
+  (die wäre bei jedem neuen Element in der Spalte still falsch). Das Kartenpaar steht NEBENeinander und
+  zählt einmal in die Bildhöhe.
+- **Gemessen wird IMMER an der ungeschrumpften Fassung** (Breite auf 100 %), sonst ist der Überhang schon
+  wegskaliert und der Faktor liefe mit jedem Durchgang weiter nach unten. Zwei Griffe gehören dazu:
+  1. Der Scroller steht während der Messung auf `overflow-y: hidden`. Mit sichtbarer Leiste misst man eine
+     um deren Breite schmalere Spalte; der daraus errechnete Faktor ließe nach dem Anwenden wieder rund
+     15 px überstehen — die Leiste käme zurück.
+  2. Beides passiert in einem `useLayoutEffect`, also VOR dem Zeichnen. Den Zwischenzustand sieht man nie.
+- **`overflow-y: auto` bleibt bewusst stehen**: das Ventil, falls der Faktor seine Untergrenze
+  (`SHOT_F_MIN` = 0,45) erreicht. Realistisch nie — auf dem flachsten sinnvollen Desktop-Fenster
+  (1400 × 700) liegt er bei rund 0,62.
+- **Der Block steht mittig, nicht linksbündig.** Beide Fassungen gerendert und verglichen: linksbündig
+  teilt er sich zwar eine Kante mit Titel und Aktionsknopf, lässt aber rechts eine tote Spalte stehen
+  (auf 1536 × 791 rund 110 px), die sich wie ein fehlendes Bild liest.
+- **Nebenrechnung, die zugunsten der Sicherheit ausgeht**: der 12-px-Spalt zwischen den zwei Karten
+  skaliert NICHT mit, die Kartenbreite ist also `(f·W − 12)/2` statt `f·(W − 12)/2` — die Bilder werden
+  eine Spur kleiner als nötig. Überhang bleibt damit garantiert bei 0.
 - **#shop-luft**: zwischen Reiter-Unterkante (y = 144) und Panel-Oberkante (y = 152) standen **8 px**. Beide
   sind LEUCHTENDE Kanten (aktiver Reiter mit Deckfarben-Strich, Panels mit `as-ring`) — zwei helle Linien in
   8 px Abstand lesen sich als eine gedoppelte Kante statt als Kopf und Inhalt. Jetzt `padding-bottom: 18px`
   an `.cz-head`, also am KOPF und nicht als `margin-top` am Raster: der Kopf ist sticky, sein Polster gehört
   zu ihm und fährt mit. **Der Upgrade-Baum behält seine 8** — dort ist die Reiterzeile ausgeblendet, es
   stoßen also gar keine zwei Leuchtkanten aufeinander.
-- Nachgemessen nach dem Umbau: Überhang **0** auf 1920 × 1080 · 1723 × 1030 · 1536 × 791 · 1400 × 760 ·
-  1400 × 700, Aktivieren-Knopf überall im Panel, auch beim Stufen-Deck (I/II/III kostet eine Zeile mehr und
-  wird von den Bildern mitbezahlt). Reiter „Herausforderungen" und „Effekte" laufen ebenfalls nirgends über.
-- Wächter: `test/shop-scale.test.js` (Quelltext-Ratsche über beide Dateien). Vier Sabotagen durchgespielt,
-  alle vier fallen (`min-height` weg · `contain` weg · Luft zurück auf 8 · Klassenhaken weg).
+- Nachgemessen nach dem Umbau: Überhang **0** und Beschriftungen **bündig zu ihren Bildern** auf
+  1920 × 1080 · 1723 × 1030 · 1536 × 791 · 1400 × 760 · 1400 × 700; Aktivieren-Knopf überall im Panel, auch
+  beim Stufen-Deck (I/II/III kostet eine Zeile mehr und wird von den Bildern mitbezahlt). Beim Durchklicken
+  mehrerer Packs und beim Fenster-Resize stellt sich der Faktor sauber neu ein (nachgemessen hin und
+  zurück), Reiter „Herausforderungen" und „Effekte" laufen nirgends über.
+- Wächter: `test/shop-scale.test.js` — rechnet den Faktor NACH und hält die Verdrahtung als Ratsche fest,
+  **inklusive der Gegenprobe, dass die Höhen-Schrumpfung nicht zurückkommt**. Sechs Sabotagen durchgespielt,
+  alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
+
+### #graph-knapp — die zwei übrigen Score-Verläufe bekommen Zahlen (19.08.2026)
+Gemeldet: „das in der Statistik ohne Beschriftung aussagelos" (Lauf-Details) und „same here, hier aber nur
+minimal Beschriftung" (Trend-Kachel). #graph-achsen hatte die beschriftete Fassung im Victory-Screen
+eingeführt — die zwei anderen Fundstellen DESSELBEN Graphen blieben bei der kompakten Linie und zeigten
+zwei Kurven ohne einen einzigen Zahlenwert.
+- **`axes` hat jetzt DREI Stufen** statt zwei (weiter EIN Schalter, keine zweite Komponente):
+  `false` kompakte Linie (StatusRail) · `true` ausführlich (Victory + **Lauf-Details**, je ab 1400 px) ·
+  **`"knapp"`** nur die Höhenmarken (Statistik-Trend).
+- **Warum der Trend NICHT die volle Fassung bekommt, und das ist der eigentliche Punkt:** seine x-Achse
+  zählt **LÄUFE, nicht Stiche**. Die volle Fassung würde sie mit „Stiche" beschriften (sie rechnet
+  `(i+1)·GHOST_STEP`) und damit etwas Falsches behaupten. `"knapp"` beschriftet deshalb ausschließlich die
+  Höhe — und genau die fehlte: ohne einen Zahlenwert sagt eine steigende Linie nur „irgendwie mehr".
+- **Die Zahlen der knappen Fassung sind HTML, kein `<text>`** — der Grund, warum sie überhaupt eine eigene
+  Stufe ist: die kompakte Linie streckt sich mit `preserveAspectRatio="none"` auf jede Kachelbreite, ein
+  `<text>` darin würde mitverzerrt (dieselbe Falle, wegen der die volle Fassung ihr festes Seitenverhältnis
+  hat). Waagerechte LINIEN verzerren nicht, die bleiben im SVG. Weil `viewBox="0 0 300 H"` mit der festen
+  Höhe H 1 : 1 auf Pixel abbildet, sitzen die HTML-Marken exakt auf ihren Linien (dieselbe `y(v)`-Rechnung,
+  keine zweite Formel daneben). Die Kachelhöhe ändert sich dadurch nicht.
+- **Zwei Marken statt vier**: `niceStep(max/2)` statt `/3`. Auf 70 px Höhe stünden vier Linien als Schraffur.
+- **Ein Höhendeckel musste weg**: `.rd-c4 > .rd-spark > svg` stand auf `height: 170px !important` — richtig
+  für die gestreckte Linie, falsch für die beschriftete: die skaliert gleichmäßig und stand unter dem Deckel
+  mittig mit leeren Rändern links und rechts (gemessen 917 × 170 statt 917 × 370), die Beschriftung halb so
+  groß. Jetzt `height: auto`. `.rd-root` scrollt, der höhere Graph ist also erreichbar.
+- **Merksatz**: ein fester Höhenwert an einem Sparkline-Container gehört zur KOMPAKTEN Fassung. Wer dort
+  Achsen einschaltet, muss ihn mit aufheben — sonst sieht man nicht „zu klein", sondern „mittig in einem zu
+  breiten Kasten", und sucht den Fehler in der Komponente.
+- Wächter: `test/graph-labels.test.js` (sechs Sabotagen durchgespielt, alle fallen);
+  `test/rahmen-huelle.test.js` ist nachgezogen — es pinnte `preserveAspectRatio={axes ? …}` und die Aussage
+  „nur der Victory-Screen schaltet die Achsen ein".
+- **Nicht am Gerät gesehen** — headless im Produktionsbuild mit einer gesetzten Lauf-Historie nachgerendert.

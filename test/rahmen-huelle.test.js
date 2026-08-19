@@ -108,7 +108,9 @@ describe("#graph-achsen — der Score-Verlauf mit Achsen", () => {
   it("die Achsen-Fassung skaliert GLEICHMÄSSIG (sonst verzerrt die Beschriftung)", () => {
     /* Die kompakte Linie zieht sich mit `preserveAspectRatio="none"` auf jede Kachelgröße. Mit
        Beschriftung geht das nicht: x und y skalieren dann unabhängig und die Buchstaben werden breit. */
-    expect(sp).toMatch(/preserveAspectRatio=\{axes \? "xMidYMid meet" : "none"\}/);
+    // #graph-knapp (19.08.2026): der Schalter heißt jetzt `voll` — `axes` hat drei Stufen, und die
+    // knappe darf dieses feste Seitenverhältnis ausdrücklich NICHT bekommen (s. test/graph-labels.test.js).
+    expect(sp).toMatch(/preserveAspectRatio=\{voll \? "xMidYMid meet" : "none"\}/);
   });
 
   it("die Achsenwerte sind runde Zahlen, nicht Drittel des Maximums", () => {
@@ -121,7 +123,10 @@ describe("#graph-achsen — der Score-Verlauf mit Achsen", () => {
     expect(sp).toMatch(/\(i \+ 1\) \* GHOST_STEP/);
   });
 
-  it("nur der Victory-Screen schaltet die Achsen ein, und nur auf dem Desktop", () => {
+  /* #graph-knapp (19.08.2026): die Lauf-Details schalten die volle Fassung inzwischen ebenfalls ein und
+     der Statistik-Trend die knappe — wer das bekommt, steht in test/graph-labels.test.js. Hier bleibt die
+     Aussage, die sich NICHT geändert hat: der Victory-Screen erst ab 1400 px, die StatusRail nie. */
+  it("Victory nur auf dem Desktop, StatusRail bleibt die kompakte Linie", () => {
     expect(read("src/ui/GameOver.jsx")).toMatch(/<Sparkline current=\{currentTraj\} record=\{recordTraj\} height=\{110\} axes=\{wide\} \/>/);
     // Die StatusRail bleibt die kompakte Linie — dort ist die Kachel ~300 px breit.
     expect(read("src/ui/StatusRail.jsx")).toMatch(/<Sparkline current=\{currentTraj\} record=\{recordTraj\} \/>/);
