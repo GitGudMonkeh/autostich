@@ -497,6 +497,11 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/TrickBreakdown.jsx",
     "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",
     "src/ui/CardGrid.jsx", "src/ui/ArchPanels.jsx",
+    // #arch-eff: die Effektzeile unter jedem Gebäude. Baute ihre Sätze bis 19.08.2026 aus deutschen
+    // Vorlagen zusammen — im englischen Build stand damit Deutsch in Aufstellungsphase, Chronik,
+    // Endscreen und Level-up-Flügel. Die Ratsche konnte es nicht sehen (Template-Literale in einer
+    // Hilfsdatei, kein JSX-Text); ab hier hält sie es fest.
+    "src/ui/archEffects.js",
     // Der Architekt — der größte Einzelbildschirm des Spiels.
     "src/ui/ArchitectScreen.jsx",
     // Nach dem Lauf: Statistik, Chronik, Bestenliste und ihre Bausteine.

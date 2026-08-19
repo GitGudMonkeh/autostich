@@ -1738,12 +1738,7 @@ das Brett, auf das sie zeigt, steht darüber.
   aufgeklappter Liste kann das Brett aus dem sichtbaren Bereich gescrollt sein, das Leuchten passiert dann
   außerhalb des Blickfelds. Platzierung ist so gewünscht; wer es näher haben will, schiebt den Reiter über die
   Deck-Stärke.
-- **Dabei aufgefallen, NICHT behoben (eigener Schritt): `src/ui/archEffects.js` ist nicht migriert.** Die
-  Effektzeile unter jedem Gebäude wird dort aus deutschen Vorlagen zusammengesetzt (`+N Stichwert`,
-  `+N Score bei {Farbe}`, `×N Score`, `+N Score je Serienpunkt`, `+N Score alle N Siege`) — im englischen Build
-  steht damit Deutsch, und zwar überall, wo die Liste steht: Aufstellungsphase, Chronik, Endscreen und jetzt
-  dieser Reiter. **Die i18n-Ratsche kann es nicht sehen** — dieselbe Lücke wie bei #formlegend: ihr Greifer
-  fischt JSX-Textknoten und Text-Props, keine Template-Literale in einer Hilfsdatei.
+- **Dabei aufgefallen und am 19.08.2026 behoben: `src/ui/archEffects.js` war nicht migriert** (s. #arch-eff).
 - Wächter: `test/levelup-wings.test.js` (Abschnitt #lv-gebaeude). Gegenprobe gemacht: alle vier sabotierten
   Nähte fallen.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
@@ -2078,6 +2073,26 @@ an den Panels von Baum, Werkstatt und Leitfaden).
   will, definiert zuerst die Zahl, dann das Layout.**
 - **Offen**: die Überschrift der Vorlage lautet „BAUM-EFFEKT · AKTUELLE LAUF-WIRKUNG", im Spiel steht
   „Was der Baum gerade bewirkt" — eine Zeile in beiden Katalogen, wenn gewünscht.
+
+### #arch-eff — die Effektzeile unter jedem Gebäude ist migriert (19.08.2026)
+`src/ui/archEffects.js` baute seine zehn Sätze aus deutschen Vorlagen zusammen (`+${vb} Stichwert`,
+`+${sc.amount} Score bei ${suit}`, `Struktur ×${f}` …). Im englischen Build stand damit **überall Deutsch**,
+wo die Gebäude-Liste erscheint: Aufstellungsphase, Chronik, Endscreen und der Level-up-Flügel (#lv-gebaeude).
+- **Die i18n-Ratsche konnte es nicht sehen** — dieselbe Lücke wie bei #formlegend: ihr Greifer fischt
+  JSX-Textknoten und Text-Props, keine Template-Literale in einer HILFSDATEI. Die Datei steht jetzt in der
+  `MIGRATED`-Liste, ab da hält die Ratsche sie fest.
+- **Der Wortlaut ist ÜBERNOMMEN, nicht neu erfunden**: „Stichwert"/„trick value" und „Serienpunkt"/„streak
+  point" stehen so schon im `building.eff.*`-Block, „Struktur"/„structure" in `arch.cell.struct`. Derselbe
+  Effekt darf nicht zweimal verschieden heißen — ein Wächter prüft genau diese vier Formulierungen.
+- **Das Dezimalzeichen hing an einem hart gesetzten Komma** (`toFixed(2).replace(".", ",")`) — im englischen
+  Build also ein deutsches Trennzeichen mitten in der Zahl. Jetzt `fmtNum(x.toFixed(2))`, genau wie `dfmt2`
+  in ArchPanels.jsx: **beide Teile sind nötig** — `fmtNum` allein kürzt die Null weg (×1,40 würde ×1,4) und
+  die Faktoren lesen sich nicht mehr als Reihe.
+- Wächter: `test/arch-eff.test.js` (5). Er prüft die AUSGABE in beiden Sprachen, nicht nur die Schreibweise
+  im Quelltext — bei einer Datei, die ihre Sätze zusammenbaut, ist das der einzige belastbare Nachweis.
+  Die Negativ-Prüfung läuft gegen den kommentarfreien Quelltext (der Dateikopf nennt die alten Vorlagen
+  absichtlich beim Namen). Gegenprobe gemacht: alle vier sabotierten Nähte fallen.
+- Die Übersetzer-CSV ist mitgezogen (`npm run loc:export`, 2653 → 2663 Zeilen).
 
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
