@@ -47,7 +47,12 @@ describe("#graph-knapp — die drei Stufen von `axes`", () => {
     // Die kompakte Linie streckt sich mit `preserveAspectRatio="none"` auf jede Kachelbreite — ein
     // `<text>` darin würde mitverzerrt. Waagerechte LINIEN verzerren nicht, die bleiben im SVG.
     expect(spark).toMatch(/preserveAspectRatio=\{voll \? "xMidYMid meet" : "none"\}/);
-    expect(spark).toMatch(/\{voll && <text x=\{padL - 8\}/);           // y-Werte als <text> NUR voll
+    /* y-Werte als <text> NUR in der vollen Fassung. Der Abstand zur Achse ist seit #achsen-luft 10 px
+       statt 8 und `padL` 76 statt 56: die Zahlen sind bei sechsstelligen Scores rund 48 px breit und
+       liefen damit bis x = 0 — mitten durch die gedrehte Achsenbeschriftung bei x = 13. */
+    expect(spark).toMatch(/\{voll && <text x=\{padL - 10\}/);
+    expect(spark, "die Achsenbeschriftung steht wieder im Weg der Zahlen")
+      .toMatch(/const padL = voll \? 76 : 3/);
     expect(spark).toMatch(/if \(!knapp\) return graph;/);               // Overlay nur für die knappe
     expect(spark).toMatch(/<span key=\{`k\$\{i\}`\}/);
   });

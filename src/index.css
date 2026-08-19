@@ -4133,14 +4133,19 @@ button { font-family: inherit; }
   }
   /* Größe und Polster der zwei Knöpfe stehen seit #go-ruhe zusammen mit ihrer Kachelform (s. dort) —
      zwei Fassungen derselben Taste wären genau die Doppelpflege, die Regel 2 verbietet. */
-  .go-hero {
-    grid-column: 1 / 3; grid-row: 1;
-    text-align: left !important;
-    margin-top: 0 !important;
-    display: flex; align-items: center; flex-wrap: wrap; column-gap: 26px; row-gap: 4px;
-  }
-  .go-hero > div { margin-top: 0 !important; }
-  .go-score { font-size: 56px !important; line-height: 1; }
+  /* #go-kopf (19.08.2026) — der Kopf reicht seine Kinder ins Raster durch.
+     `display: contents` löst die Hülle auf, damit Augenbraue und Kennzahlenreihe eigene Rasterfelder
+     werden: die Augenbraue steht als Titel links (wie das `<h2>` von Baum, Werkstatt und Glossar), die
+     Kennzahlen MITTIG über ihrem Panel. Vorher war der Kopf eine Flex-Zeile über zwei Spalten, in der
+     Augenbraue, Zahl, Chip und Kennzahlen linksbündig aneinanderklebten. */
+  .go-hero { display: contents; }
+  .go-eyebrow { grid-column: 1; grid-row: 1; align-self: center; margin-top: 0 !important; }
+  /* Die Score-Zahl steht UNTER der Haarlinie als Kopf der linken Spalte — sie ist die Aussage des
+     Screens und ging oben zwischen vier Kennzahlen und zwei Knöpfen unter. Linksbündig wie alles
+     andere in der Spalte; die zentrierte Fassung am Element ist die des Handys. */
+  .go-heroblock { text-align: left !important; margin-bottom: 6px; }
+  .go-heroblock > .go-rec { justify-content: flex-start; }
+  .go-score { font-size: 56px !important; line-height: 1; margin-top: 0 !important; }
   /* Freischaltungen, Skins und das Onboarding-Banner laufen über die VOLLE Breite unter dem Kopf: sie kommen
      selten, und wenn sie kommen, sind sie die Nachricht des Bildschirms. In einer Spalte gingen sie zwischen
      Kennzahlen unter. */
@@ -4190,6 +4195,26 @@ button { font-family: inherit; }
      obere von zwei Panels seiner Spalte. Gezogen schöbe er die Herkunft an den Fuß und risse genau das
      Loch wieder auf, das der Umbau schließt — nur eine Zeile tiefer. */
   .go-stats { align-self: stretch; }
+  /* #graph-fuellt (19.08.2026) — der Score-Verlauf nimmt den Rest der Spalte.
+     Das Panel wird zur Flex-Spalte, der Verlaufs-Block ist ihr dehnbares Kind. `min-height: 0` gehört
+     dazu und ist kein Beiwerk: ohne die Zeile nimmt ein Flex-Kind mindestens seine Inhaltsgröße ein und
+     kann nicht schrumpfen — die Messung im JSX bekäme dann immer die Inhaltshöhe zurück, nie den freien
+     Platz, und der Graph wüchse bei jedem Frame ein Stück weiter. */
+  .go-stats { display: flex; flex-direction: column; }
+  .go-chart { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  /* Der Kasten ist der MESSPUNKT (s. useFuellHoehe): seine Hoehe kommt vom Panel, die des Graphen
+     darin aus der gemessenen viewBox. Kein Flex-Strecken am SVG — zwei Mechanismen fuer dieselbe
+     Hoehe wuerden sich beim ersten Frame widersprechen (gestreckt, aber viewBox noch 250 → der
+     Graph staende mit Rand oben und unten). */
+  .go-chartbox { flex: 1; min-height: 0; }
+
+  /* #go-luecke: Die linke Spalte ist die kürzeste (Score · Verdienst · Bestleistungen) und ihr Rest
+     stand als Loch unter dem letzten Panel — durch das der Hauptschirm schien. Gezogen wird das LETZTE
+     Panel der Spalte: sein Inhalt bleibt oben stehen, der Rest ist Luft am Fuß einer Fläche. Das ist
+     dieselbe Entscheidung wie an `.go-stats` (#go-breit): ein Panel mit Luft am Fuß ist eine Fläche,
+     ein Loch ist keine. */
+  .go-col1 { display: flex; flex-direction: column; align-self: stretch; }
+  .go-col1 > .go-best { flex: 1; }
   .go-layout > div {
     display: grid;
     grid-template-columns: var(--go-board-w, 440px) minmax(0, 1fr);
@@ -4849,8 +4874,11 @@ button { font-family: inherit; }
      UNTER dem Score und war damit auf 1720 px die leiseste Zeile des Screens. */
   .go-kpi {
     grid-column: 2; grid-row: 1;
-    align-self: end; justify-self: start;
-    display: flex; gap: 26px; margin: 0 0 6px !important;
+    /* MITTIG in ihrer Spur (#go-kopf): die Reihe gehoert zum Panel darunter — Kennzahlen und Verlauf —
+       und steht damit ueber dessen Mitte, nicht an seiner linken Kante. Senkrecht mittig, seit die
+       Score-Zahl nicht mehr daneben steht, an deren Grundlinie sie sich vorher ausrichtete. */
+    align-self: center; justify-self: center;
+    display: flex; gap: 26px; margin: 0 !important;
     opacity: 1 !important;
   }
   .go-kpi > div > span {

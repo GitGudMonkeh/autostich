@@ -110,8 +110,12 @@ describe("#go-ruhe — die Kennzahlenreihe im Kopf ist Desktop-only", () => {
   it("die Handy-Fassung steht als eigener Zweig daneben", () => {
     /* Die Reihe ersetzt die 55-%-opake Zeile NUR ab 1400 px; am Handy bleibt die kompakte Zeile.
        Ohne die Verzweigung stünden vier beschriftete Werte neben einer 40-px-Zahl. */
-    expect(goBare).toMatch(/\{wide \? \(\s*<div className="go-kpi">/);
-    expect(goBare, "die kompakte Handy-Zeile ist verschwunden").toMatch(/text-xs opacity-55 mt-2 flex items-center justify-center/);
+    /* #go-kopf: Die zwei Fassungen stehen seit dem Kopfumbau an VERSCHIEDENEN Stellen im DOM — die
+       Kennzahlenreihe oben im Kopf, die kompakte Zeile unten beim Score. Deshalb zwei Bedingungen
+       statt eines Ternärs. */
+    expect(goBare).toMatch(/\{wide && \(\s*<div className="go-kpi">/);
+    expect(goBare, "die kompakte Handy-Zeile ist verschwunden")
+      .toMatch(/\{!wide && \(\s*<div className="text-xs opacity-55 mt-2 flex items-center justify-center/);
   });
 
   it("die Reihe steht nur im Desktop-Block", () => {
@@ -340,5 +344,84 @@ describe("#stiche-breite — ein Ein-Stich-Durchlauf ist ein Balken, kein Block"
     expect(cssBare.replace(desk, ""), "die Breitenrechnung steht auch außerhalb — das trifft das Handy")
       .not.toMatch(/--rg-max/);
     expect(graphs, "die Handy-Fassung hat ihr flex-1 verloren").toMatch(/rg-bar \$\{[^}]*\} flex-1/);
+  });
+});
+
+describe("#go-kopf — die Score-Zahl steht unter der Haarlinie", () => {
+  it("sie liegt in der linken KLAMMER, nicht in einer eigenen Rasterzeile", () => {
+    /* Rasterzeilen gelten über alle drei Spalten: eine Zeile für den Score allein hätte in Spalte 2
+       und 3 dieselbe Höhe leer gelassen und die Panels dort um die Höhe der Zahl nach unten geschoben.
+       In der Klammer gehört sie zur Spalte und schiebt nur, was darunter in DIESER Spalte steht. */
+    const marke = goBare.indexOf('className="go-col1"');
+    const zu = schliesstBei(goBare, goBare.lastIndexOf("<div", marke));
+    const block = goBare.indexOf('className="go-heroblock');
+    expect(block, "der Score-Block gibt es nicht mehr").toBeGreaterThan(-1);
+    expect(block, "der Score-Block steht außerhalb der linken Klammer").toBeLessThan(zu);
+    expect(block, "der Score-Block steht vor der Klammer").toBeGreaterThan(marke);
+    expect(desk, "die Klammer streckt sich nicht — dann hat das letzte Panel nichts zu füllen")
+      .toMatch(/\.go-col1 \{[^}]*align-self:\s*stretch/);
+  });
+
+  it("der Kopf reicht seine Kinder ins Raster durch", () => {
+    /* Sonst wären Augenbraue und Kennzahlenreihe Flex-Kinder EINER Hülle und ließen sich nicht auf
+       zwei Spalten verteilen. Am Handy bleibt `go-hero` ein normaler Block. */
+    expect(desk).toMatch(/\.go-hero \{ display: contents; \}/);
+    expect(cssBare.replace(desk, ""), "display:contents steht auch außerhalb — das trifft das Handy")
+      .not.toMatch(/\.go-hero \{ display: contents/);
+    expect(desk).toMatch(/\.go-eyebrow \{[^}]*grid-column:\s*1/);
+  });
+
+  it("die Kennzahlen stehen mittig über ihrem Panel", () => {
+    const kpi = desk.match(/\.go-kpi \{[^}]*\}/)[0];
+    expect(kpi).toMatch(/justify-self:\s*center/);
+    expect(kpi, "zwei Fassungen derselben Regel — die spätere gewinnt still")
+      .not.toMatch(/justify-self:\s*start/);
+    expect((desk.match(/\.go-kpi \{/g) || []).length, "es gibt mehr als EINE .go-kpi-Regel").toBe(1);
+  });
+
+  it("am Handy bleibt der Score zentriert und in derselben Reihenfolge", () => {
+    /* `go-col1` ist unterhalb 1400 px `display: contents` — die Kinder des Blocks stehen dort im Fluss
+       genau da, wo sie vorher im zentrierten `go-hero` standen. */
+    expect(cssBare).toMatch(/\.go-col1 \{ display: contents; \}|, \.go-col1 \{ display: contents; \}/);
+    expect(goBare).toMatch(/className="go-heroblock text-center"/);
+    const block = goBare.slice(goBare.indexOf('className="go-heroblock'));
+    const score = block.indexOf("go-score"), rec = block.indexOf("go-rec"), klein = block.indexOf("text-xs opacity-55");
+    expect(score).toBeLessThan(rec);
+    expect(rec, "die Kleinschrift-Zeile steht nicht mehr unter dem Chip").toBeLessThan(klein);
+  });
+});
+
+describe("#graph-fuellt — der Score-Verlauf nimmt den Rest der Spalte", () => {
+  it("gemessen wird der Kasten, nicht geraten", () => {
+    /* `preserveAspectRatio` kann den Graphen unten verankern oder verzerren, aber nicht wachsen
+       lassen — wachsen kann er nur über eine höhere viewBox, und die steht im Markup. */
+    expect(go).toMatch(/function useFuellHoehe/);
+    expect(go, "die Umrechnung Breite→viewBox fehlt").toMatch(/Math\.round\(\(620 \* h\) \/ w\)/);
+    expect(sparkline, "die Sparkline nimmt die gemessene Höhe nicht an").toMatch(/vh = 0 \}\)/);
+    expect(sparkline).toMatch(/Math\.round\(vh\) \|\| 250/);
+  });
+
+  it("der Messkasten kann schrumpfen — sonst wächst der Graph bei jedem Frame", () => {
+    /* Ohne `min-height: 0` nimmt ein Flex-Kind mindestens seine Inhaltsgröße ein; die Messung bekäme
+       dann immer die Inhaltshöhe zurück statt des freien Platzes. */
+    for (const sel of ["\.go-chart", "\.go-chartbox"])
+      expect(desk.match(new RegExp(`${sel} \{[^}]*\}`))[0], `${sel} ohne min-height: 0`)
+        .toMatch(/min-height:\s*0/);
+  });
+
+  it("die Höhe kommt aus EINER Quelle", () => {
+    /* Gestreckt UND gemessen wäre doppelt: beim ersten Frame steht die viewBox noch auf 250, das
+       gestreckte SVG stünde dann mit Rand oben und unten. */
+    expect(desk).not.toMatch(/\.go-chartbox > svg/);
+  });
+});
+
+describe("#achsen-luft — Achsenwerte und Achsentitel überlappen nicht mehr", () => {
+  it("der linke Rand trägt beide Spalten", () => {
+    /* Gemessen: „200.000" ist in 10-px-Mono 42 px breit und endet rechtsbündig bei padL−10 = 66,
+       beginnt also bei 24. Der gedrehte Titel belegt die Spalte 4,5–17,5. */
+    expect(sparkline).toMatch(/const padL = voll \? 76 : 3/);
+    expect(sparkline).toMatch(/<text x=\{padL - 10\}/);
+    expect(sparkline).toMatch(/x=\{11\}[\s\S]{0,200}rotate\(-90 11 /);
   });
 });

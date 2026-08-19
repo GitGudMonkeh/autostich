@@ -41,7 +41,7 @@ import { t, fmtNum } from "../i18n/index.js"; // #sprache
    nicht — sie steht als Polster am SVG UND als Breite der Marken, damit beide nicht auseinanderlaufen. */
 const KNAPP_LAB = 46;
 
-export function Sparkline({ current = [], record = [], height = 40, axes = false }) {
+export function Sparkline({ current = [], record = [], height = 40, axes = false, vh = 0 }) {
   /* Eigene Verlaufs-Kennung je Instanz. Der Endscreen und die Lauf-Details koennen gleichzeitig im DOM
      stehen (die Bestenliste laesst sich aus dem Endscreen oeffnen), und zwei gleich benannte <defs> im
      selben Dokument sind eine Falle: heute sind beide Verlaeufe identisch, also faellt nichts auf —
@@ -50,8 +50,14 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
   const voll = axes === true;
   const knapp = axes === "knapp";
   const W = voll ? 620 : 300;
-  const H = voll ? 250 : height;
-  const padL = voll ? 56 : 3, padR = voll ? 10 : 3, padT = voll ? 10 : 3, padB = voll ? 38 : 3;
+  /* #graph-fuellt: Die Zeichenflaeche der ausfuehrlichen Fassung ist nicht mehr fest 250 hoch. Sie
+     skaliert mit `width: 100%` und festem Seitenverhaeltnis — in einem Panel, das hoeher ist als das, was
+     die Breite hergibt, blieb darunter Luft stehen (im Spiel gemessen: ueber 200 px unter der Kurve).
+     Der AUFRUFER misst seinen freien Platz und reicht die passende viewBox-Hoehe durch (`vh`); ohne
+     Angabe bleibt es bei 250, also bei genau dem Bild wie vorher. Gedeckelt, damit ein Messfehler oder
+     ein extremes Fenster keine absurden Seitenverhaeltnisse erzeugt. */
+  const H = voll ? Math.min(900, Math.max(180, Math.round(vh) || 250)) : height;
+  const padL = voll ? 76 : 3, padR = voll ? 10 : 3, padT = voll ? 10 : 3, padB = voll ? 38 : 3;
   const maxLen = Math.max(current.length, record.length);
   const maxVal = Math.max(1, ...current, ...record);
   const x = (i) => padL + (maxLen > 1 ? (i / (maxLen - 1)) * (W - padL - padR) : (W - padL - padR) / 2 + padL);
@@ -97,7 +103,7 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
           <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} strokeWidth="1"
             stroke={voll ? "rgba(150, 150, 170, .12)" : "#ffffff"}
             strokeOpacity={voll ? 1 : (i === 0 ? 0.18 : 0.07)} />
-          {voll && <text x={padL - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10" fill="#8a8a95">{fmtScoreShort(v)}</text>}
+          {voll && <text x={padL - 10} y={y(v) + 3.5} textAnchor="end" fontSize="10" fill="#8a8a95">{fmtScoreShort(v)}</text>}
         </g>
       ))}
       {voll && xTicks.map((i) => (
@@ -124,8 +130,8 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
       {/* Achsenbeschriftung: die y-Werte sind Score, die x-Werte Stiche — ohne die Angabe sind es nur Zahlen. */}
       {voll && <text x={(W + padL) / 2} y={H - 4} textAnchor="middle" fontSize="9.5"
         letterSpacing="0.08em" fill="#5f5f70">{t("sparkline.axis.x")}</text>}
-      {voll && <text x={13} y={(H - padB + padT) / 2} textAnchor="middle" fontSize="9.5"
-        letterSpacing="0.08em" fill="#5f5f70" transform={`rotate(-90 13 ${(H - padB + padT) / 2})`}>{t("sparkline.axis.y")}</text>}
+      {voll && <text x={11} y={(H - padB + padT) / 2} textAnchor="middle" fontSize="9.5"
+        letterSpacing="0.08em" fill="#5f5f70" transform={`rotate(-90 11 ${(H - padB + padT) / 2})`}>{t("sparkline.axis.y")}</text>}
     </svg>
   );
   if (!knapp) return graph;

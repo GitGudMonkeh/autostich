@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1400 px steht die finale Aufstellung offen
 import { useEscape } from "./useEscape.js";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
@@ -19,6 +19,39 @@ import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Ro
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
+
+/* #graph-fuellt (19.08.2026) — die freie Höhe eines Kastens als viewBox-Höhe.
+
+   Der Score-Verlauf skaliert mit `width: 100%` und festem Seitenverhältnis (620 : 250). In einem Panel,
+   das höher ist als das, was die Breite hergibt, blieb darunter Luft stehen — im Spiel gemessen über
+   200 px. Reine CSS-Mittel helfen dabei nicht: `preserveAspectRatio` kann den Graphen unten verankern
+   oder verzerren, aber nicht wachsen lassen; wachsen kann er nur, wenn die viewBox höher wird, und die
+   steht im Markup.
+
+   Also messen. Zurück kommt die viewBox-Höhe, bei der die gerenderte Höhe genau den freien Platz füllt:
+   die Breite skaliert 620 → `w`, dieselbe Skala auf `h` angewandt ergibt `620 * h / w`.
+
+   Kein Rückkopplungs-Ringelreihen: der gemessene Kasten ist `flex: 1; min-height: 0`, seine Höhe kommt
+   also vom Panel und nicht vom Inhalt — ein höherer Graph macht ihn nicht höher. Der 2-px-Filter unten
+   fängt trotzdem das Zittern ab, das Sub-Pixel-Breiten sonst erzeugen. */
+function useFuellHoehe(ref, aktiv) {
+  const [vh, setVh] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !aktiv || typeof ResizeObserver === "undefined") { setVh(0); return undefined; }
+    const messen = () => {
+      const w = el.clientWidth, h = el.clientHeight;
+      if (w < 40 || h < 40) return;
+      const next = Math.round((620 * h) / w);
+      setVh((prev) => (Math.abs(prev - next) > 2 ? next : prev));
+    };
+    const ro = new ResizeObserver(messen);
+    ro.observe(el);
+    messen();
+    return () => ro.disconnect();
+  }, [ref, aktiv]);
+  return vh;
+}
 
 // #304 Count-up-/Rollup-Helfer (requestAnimationFrame, easeOutCubic; respektiert prefers-reduced-motion → Endwert sofort).
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -173,6 +206,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const hasTicks = Array.isArray(state.trickLog) && state.trickLog.some((c) => c && c.length);
   const architectCover = hasArch ? architectCoverFor(state) : null;
   const wide = useIsWide();   // #desktop: eigene Spalte für die Aufstellung → sie startet aufgeklappt
+  // #graph-fuellt: der Score-Verlauf fuellt die freie Hoehe seiner Spalte (nur ab 1400 px gemessen).
+  const chartRef = useRef(null);
+  const chartVh = useFuellHoehe(chartRef, wide);
   const [unlockSeen, setUnlockSeen] = useState(false);   // #unlock-fenster: einmal bestätigen, dann weg
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
@@ -200,12 +236,56 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             {t("gameover.newRun")}
           </button>
         </div>
+        {/* #go-kopf (19.08.2026) — der Kopf trägt nur noch Augenbraue, Kennzahlen und Aktionen.
+            Die SCORE-ZAHL steht ab 1400 px UNTER der Haarlinie, als Kopf der linken Spalte über dem
+            Verdienst (s. `.go-heroblock` weiter unten). Oben stand sie in einer Zeile mit vier
+            Kennzahlen und zwei Knöpfen und ging darin unter — sie ist aber die Aussage des Screens.
+            Unter der Linie beginnt der INHALT mit ihr, und das ist ihr Platz.
+
+            Am HANDY ändert sich nichts: `go-hero` bleibt der zentrierte Block, `go-col1` ist dort
+            `display: contents`, und die Reihenfolge im DOM ist unverändert Augenbraue → Zahl →
+            Rekord-Chip → Kleinschrift-Zeile. */}
         <div className="go-hero text-center mt-4">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
+          <div className="go-eyebrow text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
+          {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile unter dem Score die Kennzahlenreihe
+              im Kopf (Bauform `.rd-kpi` aus den Lauf-Details): die Zahl sagt das Ergebnis, die Reihe den
+              Rahmen — wie lange, wie viele Stiche, wie viele Durchläufe. Am HANDY bleibt die kompakte
+              Zeile, dort steht sie unter dem Score (s. `go-heroblock`): neben einer 40-px-Zahl ist für
+              vier beschriftete Werte kein Platz. Zwei Fassungen, dieselben Inhalte, verschiedene FORM —
+              deshalb stehen sie auch an verschiedenen Stellen im DOM. */}
+          {wide && (
+            <div className="go-kpi">
+              {timeStr && <div><span>{t("gameover.kpi.duration")}</span><b className="ty-num">{timeStr}</b></div>}
+              <div><span>{t("gameover.kpi.tricks")}</span><b className="ty-num">{state.trickNo}</b></div>
+              <div><span>{t("gameover.kpi.cycles")}</span><b className="ty-num">{cyclesDone}</b></div>
+              {perTrick > 0 && (
+                <div title={t("gameover.perTrick.title")}>
+                  <span>{t("gameover.kpi.perTrick")}</span><b className="ty-num">{fmtScoreShort(perTrick)}</b>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* #desktop — Klammer um die LINKE Spalte (Verdienst · Score-Herkunft). Sie ist der Grund, warum beim
+            Aufklappen einer Perk-/Skill-Beschreibung im Build nichts mehr springt: Ohne die Klammer liegen
+            Verdienst und Herkunft in ZWEI Rasterzeilen, und die zweite teilt sich ihre Höhe mit dem Build der
+            dritten Spalte — wächst dort die Beschreibung, rutscht hier die Herkunft mit nach unten. Als EINE
+            Zelle ist die Spalte von der Nachbarspalte entkoppelt; wachsen darf dann nur, was UNTER dem Build
+            steht (die finale Aufstellung). Unter 1400 px ist die Klammer `display: contents`. */}
+        <div className="go-col1">
+        {/* #go-kopf: Score-Zahl, Rekord-Chip und (am Handy) die Kleinschrift-Zeile. Sie liegen in der
+            linken KLAMMER, nicht als eigene Rasterzeile — Rasterzeilen gelten über alle drei Spalten,
+            eine Zeile für den Score allein hätte in Spalte 2 und 3 dieselbe Höhe leer gelassen und die
+            Panels dort um die Höhe der Zahl nach unten geschoben. In der Klammer gehört sie zur Spalte
+            und schiebt nur, was darunter in DIESER Spalte steht.
+            `text-center` ist die Handy-Fassung (der Block sass bis hierher im zentrierten `go-hero`);
+            ab 1400 px stellt `.go-heroblock` auf linksbündig. */}
+        <div className="go-heroblock text-center">
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
           <div className="go-score text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
-          <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
+          <div className="go-rec mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
               /* #deckui: „neuer Rekord"-Chip zieht die Deckfarbe (generischer Violett-Akzent, kein Gold-Rekordwert). */
               <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "var(--deck-a1, #8a7de0)", background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 33%, transparent)" }}>
@@ -218,25 +298,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             ) : null}
           </div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
-          {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile die Kennzahlenreihe neben der Score-Zahl
-              (Bauform `.rd-kpi` aus den Lauf-Details): die Zahl sagt das Ergebnis, die Reihe den Rahmen — wie
-              lange, wie viele Stiche, wie viele Durchläufe. Sie stand hier als 55-%-opake Zeile UNTER dem Score
-              und war damit auf 1720 px die leiseste Stelle des Screens, während der halbe Kopf daneben leer blieb.
-              Am HANDY bleibt die kompakte Zeile: neben einer 40-px-Zahl ist für vier beschriftete Werte kein Platz,
-              und mittig unter dem Score ist sie dort richtig. Zwei Fassungen statt einer per CSS umgebogenen —
-              die Inhalte sind dieselben, die FORM ist eine andere. */}
-          {wide ? (
-            <div className="go-kpi">
-              {timeStr && <div><span>{t("gameover.kpi.duration")}</span><b className="ty-num">{timeStr}</b></div>}
-              <div><span>{t("gameover.kpi.tricks")}</span><b className="ty-num">{state.trickNo}</b></div>
-              <div><span>{t("gameover.kpi.cycles")}</span><b className="ty-num">{cyclesDone}</b></div>
-              {perTrick > 0 && (
-                <div title={t("gameover.perTrick.title")}>
-                  <span>{t("gameover.kpi.perTrick")}</span><b className="ty-num">{fmtScoreShort(perTrick)}</b>
-                </div>
-              )}
-            </div>
-          ) : (
+          {!wide && (
             <div className="text-xs opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
               {timeStr && <span>{timeStr}</span>}
               {perTrick > 0 && <><span className="opacity-30">·</span><span title={t("gameover.perTrick.title")}>{t("gameover.perTrick", { score: fmtScoreShort(perTrick) })}</span></>}
@@ -244,14 +306,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             </div>
           )}
         </div>
-
-        {/* #desktop — Klammer um die LINKE Spalte (Verdienst · Score-Herkunft). Sie ist der Grund, warum beim
-            Aufklappen einer Perk-/Skill-Beschreibung im Build nichts mehr springt: Ohne die Klammer liegen
-            Verdienst und Herkunft in ZWEI Rasterzeilen, und die zweite teilt sich ihre Höhe mit dem Build der
-            dritten Spalte — wächst dort die Beschreibung, rutscht hier die Herkunft mit nach unten. Als EINE
-            Zelle ist die Spalte von der Nachbarspalte entkoppelt; wachsen darf dann nur, was UNTER dem Build
-            steht (die finale Aufstellung). Unter 1400 px ist die Klammer `display: contents`. */}
-        <div className="go-col1">
         {/* #304 Verdienst-Rollup (direkt unter dem Score-Hero, wo früher die Münzen-Zeile saß): Meilensteinbalken läuft
             voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
             Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
@@ -493,7 +547,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           {/* Punkteverlauf: aktueller Lauf vs. (vorheriger) Rekord (#35). recordTraj ist der Snapshot
               VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
           {currentTraj.length >= 2 && (
-            <div className="mt-4">
+            <div className="go-chart mt-4">
               <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
                 <span>{t("gameover.chart.title")}</span>
                 <span className="flex gap-2 normal-case tracking-normal">
@@ -503,8 +557,12 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               </div>
               {/* #graph-achsen: Auf dem Desktop ist Platz für die ausführliche Fassung — beschriftete Achsen
                   (Score links, Stiche unten) statt einer nackten Linie. Am Handy bleibt die kompakte Linie:
-                  dort wäre die Beschriftung breiter als der Graph. */}
-              <Sparkline current={currentTraj} record={recordTraj} height={110} axes={wide} />
+                  dort wäre die Beschriftung breiter als der Graph.
+                  #graph-fuellt: `vh` ist die gemessene freie Höhe dieser Spalte, umgerechnet in die
+                  viewBox (s. `useFuellHoehe`). Ohne Messung (Handy, erster Frame) bleibt es bei 250. */}
+              <div ref={chartRef} className="go-chartbox">
+                <Sparkline current={currentTraj} record={recordTraj} height={110} axes={wide} vh={chartVh} />
+              </div>
             </div>
           )}
 
