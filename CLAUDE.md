@@ -2329,6 +2329,37 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #kpi-passt — die Zahl der Status-Tafel passt sich der Kachel an (19.08.2026)
+Gemeldet vom Gerät: „Letzter Lauf **179.077.04**…" — der Score lief aus seiner Kachel und wurde vom
+`overflow: hidden` des Rahmens mitten in der Zahl abgeschnitten. Nachgemessen: elf Zeichen brauchen bei
+27 px rund **175 px**, die Kachel hat innen **117 px** (bei 1400) bis **141 px** (ab 1920) — also
+32–34 px Überlauf, und zwar auf JEDER Desktop-Breite.
+- **Die Regel rechnet, statt zu raten.** `ty-num` ist Geist Mono, der Vorschub ist damit für jedes
+  Zeichen gleich — **gemessen 0,59 × Schriftgrad**, Ziffern wie Trennzeichen (headless über drei
+  Längen gegengeprüft, exakt derselbe Wert). Mit der Zeichenzahl aus dem JSX (`--kpi-n`) und `cqw`
+  (100 cqw = Innenbreite der Kachel) ergibt sich der größte Grad, der noch hineinpasst:
+  `max(14px, min(27px, 100cqw / (n × 0,6)))`. Keine Schwelle, kein Messen im JavaScript, und die Regel
+  folgt jeder Fensterbreite von selbst. Der Teiler 0,6 ist die Sicherheitsmarge auf die 0,59.
+- **`container-type: inline-size` ist Pflicht, nicht Kosmetik**: ohne Container beziehen sich `cqw` auf
+  ein Containment weiter oben und die Rechnung wäre **stumm falsch**. Die Kachel ist ein Rasterfeld
+  (`grid-cols-4`), ihre Breite hängt also nicht am Inhalt — die Bedingung des Containments ist ohnehin
+  erfüllt. Ein Wächter hält beides fest (Container vorhanden · Teiler ≥ gemessener Vorschub).
+- **Der Deckel bleibt der bisherige Grad**: kurze Werte (SP, DP, „0/1") ändern sich um **kein Pixel**
+  (nachgemessen 27 px in allen Fällen). Nur was nicht passt, wird kleiner — 179 Mio. auf 21,1/21,6 px
+  mit 3–4 px Luft, ein 12-stelliger Score noch auf 15,5 px.
+- **Die Wertzeile behält die Höhe des vollen Grades** (`min-height: 27px` + `align-items: flex-end`).
+  Ohne das rückt die kleinere Zahl ihre Unterzeile mit nach oben — gemessen 4 px, und die vier Kacheln
+  stehen nicht mehr auf einer Linie. Nach dem Umbau: Wertzeile 208–231 und Unterzeile 232 in ALLEN vier.
+- **Messfalle**: der Hub ist ab 1400 px gezoomt (0,848 auf 1400–1600). `getBoundingClientRect` liefert
+  die SICHTBARE Größe, CSS-Längen im Inneren sind unzoomt — wer beides mischt (Rect-Breite minus
+  Polster aus dem Stylesheet), misst 5 px Überlauf, die es nicht gibt. Vergleich deshalb über
+  `offsetWidth`, oder die Rect-Breite durch den Zoom teilen.
+- Der Hub-Zoom ist auch der Grund, warum die 27 px am Gerät kleiner ankommen als am Schreibtisch.
+- Handy unberührt: die Tafel ist ab 1400 px sichtbar (`hidden min-[1400px]:flex`), und beide Regeln
+  stehen im Desktop-Block. Pixelvergleich 390 px: **0,0000 von 255**.
+- Wächter: `test/hub-panels.test.js` (Abschnitt #kpi-passt). Gegenprobe gemacht: alle fünf sabotierten
+  Nähte fallen.
+
 ### #rd-ruhe — die Lauf-Details im Desktop-Ton (19.08.2026)
 Sechster Screen nach der Liste („Desktop-Umbau: die ENTSCHEIDUNGSREGELN", oben). Vorgabe des Users:
 **„layout passt erstmal"** — also nur die Lautstärke. Es ist derselbe Screen wie der Siegesbildschirm,

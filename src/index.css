@@ -1610,6 +1610,33 @@ button { font-family: inherit; }
   /* Kennzahl-Raster der Status-Tafel: Haarlinie zwischen den Zellen statt freigelegter Container-Fläche
      (Begründung an der Fundstelle in StartScreen.jsx). */
   .as-kpi + .as-kpi { border-left: 1px solid rgba(60, 58, 78, .5); }
+  /* #kpi-passt (19.08.2026) — die Zahl passt sich der Kachel an, statt aus ihr herauszulaufen.
+     Gemeldet mit „Letzter Lauf 179.077.04…": elf Zeichen brauchen bei 27 px rund 175 px, die Kachel
+     hat innen 117 px (bei 1400) bis 141 px (ab 1920) — der Rest wurde vom `overflow: hidden` des
+     Rahmens abgeschnitten, mitten in der Zahl.
+
+     Die Regel rechnet, statt zu raten: `ty-num` ist Geist Mono, der Vorschub ist also für JEDES Zeichen
+     gleich (gemessen 0,59 × Schriftgrad, Ziffern wie Trennzeichen — 0,6 hier als Sicherheitsmarge).
+     Mit der Zeichenzahl aus dem JSX (`--kpi-n`) und `cqw` (100 cqw = Innenbreite der Kachel) ergibt sich
+     der größte Grad, der noch hineinpasst. Keine Schwelle, kein Messen im JavaScript, und die Regel
+     folgt jeder Fensterbreite von selbst.
+
+     `container-type: inline-size` ist dafür Pflicht — ohne einen Container beziehen sich `cqw` auf das
+     nächste Vorfahren-Containment (im Zweifel den Viewport) und die Rechnung wäre stumm falsch. Die
+     Kachel ist ein Rasterfeld (`grid-cols-4`), ihre Breite hängt also nicht am Inhalt: die Bedingung,
+     die `inline-size`-Containment stellt, ist hier ohnehin erfüllt.
+
+     Der Deckel 27 px ist der bisherige Grad — kurze Werte (SP, DP, „0/1") ändern sich um kein Pixel.
+     Der Boden 14 px ist die Notbremse für absurde Längen (ab ~17 Zeichen); dort schneidet wieder der
+     Rahmen ab, aber erst jenseits jedes erreichbaren Scores. */
+  .as-kpi { container-type: inline-size; }
+  .as-kpi-v {
+    font-size: max(14px, min(27px, calc(100cqw / (var(--kpi-n, 6) * 0.6))));
+    /* Die Zeile behält die Höhe des vollen Grades und der Wert sitzt an ihrer Unterkante: sonst rückt
+       die kleinere Zahl ihre Unterzeile mit nach oben (gemessen 4 px) und die vier Kacheln stehen
+       nicht mehr auf einer Linie — genau das, was dieser Durchgang sonst überall geradezieht. */
+    min-height: 27px; display: flex; align-items: flex-end;
+  }
 
   /* Die Raute vor der Bonus-/Onboarding-Zeile (ersetzt ab hier das Emoji, s. `Lead` in StartScreen.jsx).
      `currentColor`, damit sie den Zustandston der Zeile mitnimmt — Gold für das Guthaben, Violett für

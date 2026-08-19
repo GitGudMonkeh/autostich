@@ -192,3 +192,45 @@ describe("#bonus-benennen — Betrag aus der Quelle, nicht aus dem Katalog", () 
     expect(RANKED_WEEK_DP_FULL).toBe(RANKED_WEEK_SP + RANKED_WEEK_DP);
   });
 });
+
+/* ============================================================
+   #kpi-passt (19.08.2026) — die Zahl der Status-Tafel passt sich der Kachel an.
+
+   Gemeldet mit „Letzter Lauf 179.077.04…": elf Zeichen brauchen bei 27 px rund 175 px, die Kachel hat
+   innen 117–141 px — der Rest wurde vom `overflow: hidden` abgeschnitten, mitten in der Zahl.
+
+   Die Regel rechnet statt zu raten, und genau das prüft dieser Wächter nach: der Teiler im CSS muss
+   mindestens der gemessene Vorschub von Geist Mono sein (0,59 × Schriftgrad, für JEDES Zeichen gleich),
+   sonst läuft die Zahl trotz Regel über. Und `container-type` muss stehen — ohne Container beziehen sich
+   `cqw` auf einen Vorfahren weiter oben, die Rechnung wäre STUMM falsch.
+   ============================================================ */
+describe("#kpi-passt — der Wert bleibt in seiner Kachel", () => {
+  const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+  const VORSCHUB = 0.59; // gemessen (Geist Mono, alle Zeichen, headless im Produktionsbuild)
+
+  it("die Kachel ist ein Container — sonst zeigt cqw woandershin", () => {
+    expect(css).toMatch(/\.as-kpi \{ container-type: inline-size; \}/);
+  });
+
+  it("der Teiler hat Luft gegenüber dem gemessenen Vorschub", () => {
+    const m = css.match(/\.as-kpi-v \{[\s\S]*?calc\(100cqw \/ \(var\(--kpi-n[^)]*\) \* ([\d.]+)\)\)/);
+    expect(m, "die Fit-Regel ist nicht mehr auffindbar").toBeTruthy();
+    expect(Number(m[1]), "der Teiler liegt unter dem Vorschub — die Zahl läuft weiter über")
+      .toBeGreaterThanOrEqual(VORSCHUB);
+  });
+
+  it("der Deckel ist der bisherige Grad — kurze Werte ändern sich nicht", () => {
+    expect(css).toMatch(/\.as-kpi-v \{[\s\S]*?min\(27px,/);
+    expect(ui("StartScreen.jsx"), "der Grad steht nicht mehr am Element").toMatch(/as-kpi-v text-\[27px\]/);
+  });
+
+  it("die Zeichenzahl kommt aus dem JSX, nicht aus einer Schwelle", () => {
+    expect(ui("StartScreen.jsx")).toMatch(/"--kpi-n": String\(s\.v \?\? ""\)\.length/);
+  });
+
+  it("die Wertzeile behält die Höhe des vollen Grades", () => {
+    /* Sonst rückt die kleinere Zahl ihre Unterzeile mit nach oben (gemessen 4 px) und die vier
+       Kacheln stehen nicht mehr auf einer Linie. */
+    expect(css).toMatch(/\.as-kpi-v \{[\s\S]*?min-height: 27px;[\s\S]*?align-items: flex-end;/);
+  });
+});

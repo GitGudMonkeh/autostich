@@ -686,7 +686,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           ].map((s, i) => (
             <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
               <span className="text-[12px] font-medium opacity-45">{s.k}</span>
-              <span className="ty-num text-[27px] leading-none" style={{ color: s.c }}>{s.v}</span>
+              {/* #kpi-passt: die ZEICHENZAHL ist alles, was die Regel braucht — `ty-num` ist Geist Mono,
+                  jedes Zeichen also gleich breit (gemessener Vorschub 0,59 × Schriftgrad, Ziffern wie
+                  Trennzeichen). Damit rechnet index.css die Größe selbst aus, ohne dass hier gemessen
+                  oder eine Schwelle geraten werden müsste. Nur bei einem Wert, der ohnehin passt,
+                  ändert sich nichts. */}
+              <span className="ty-num as-kpi-v text-[27px] leading-none"
+                style={{ color: s.c, "--kpi-n": String(s.v ?? "").length }}>{s.v}</span>
               <span className="text-[11px] opacity-40">{s.s}</span>
             </div>
           ))}
