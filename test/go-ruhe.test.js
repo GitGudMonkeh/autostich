@@ -53,8 +53,16 @@ describe("#go-ruhe — der Ring steht still", () => {
   });
 
   it("jedes Ring-Panel bringt sein Maskenkind mit", () => {
-    /* #perf-ring: `.as-ring` allein malt nichts — der Rahmen entsteht erst durch `.as-ring-run`. */
-    expect((go.match(/className="as-ring-run"/g) || []).length).toBe(6);
+    /* #perf-ring: `.as-ring` allein malt nichts — der Rahmen entsteht erst durch `.as-ring-run`.
+       SIEBEN, nicht sechs: Das Score-Panel (#go-score-panel) ist das siebte Ring-Panel. In der Zählung
+       darüber taucht es nicht auf, weil seine Klasse dynamisch ist (Rekord → Gold) und deshalb aus einer
+       Zeichenkette mit Platzhalter kommt statt aus einem festen `className="…"`. */
+    expect((go.match(/className="as-ring-run"/g) || []).length).toBe(7);
+  });
+
+  it("das Score-Panel trägt denselben stillen Ring wie die anderen", () => {
+    /* Eigener Test, weil seine Klasse dynamisch ist (s. oben) und die Zählung darüber sie nicht sieht. */
+    expect(goBare).toMatch(/go-heroblock as-ring as-ring-quiet/);
   });
 });
 
@@ -354,7 +362,9 @@ describe("#go-kopf — die Score-Zahl steht unter der Haarlinie", () => {
        In der Klammer gehört sie zur Spalte und schiebt nur, was darunter in DIESER Spalte steht. */
     const marke = goBare.indexOf('className="go-col1"');
     const zu = schliesstBei(goBare, goBare.lastIndexOf("<div", marke));
-    const block = goBare.indexOf('className="go-heroblock');
+    /* Ohne Anführungszeichen gesucht: Die Klasse steht seit #go-score-panel in einer Zeichenkette mit
+       Platzhalter (Rekord → Gold), nicht mehr in einem festen `className="…"`. */
+    const block = goBare.indexOf("go-heroblock");
     expect(block, "der Score-Block gibt es nicht mehr").toBeGreaterThan(-1);
     expect(block, "der Score-Block steht außerhalb der linken Klammer").toBeLessThan(zu);
     expect(block, "der Score-Block steht vor der Klammer").toBeGreaterThan(marke);
@@ -383,8 +393,10 @@ describe("#go-kopf — die Score-Zahl steht unter der Haarlinie", () => {
     /* `go-col1` ist unterhalb 1400 px `display: contents` — die Kinder des Blocks stehen dort im Fluss
        genau da, wo sie vorher im zentrierten `go-hero` standen. */
     expect(cssBare).toMatch(/\.go-col1 \{ display: contents; \}|, \.go-col1 \{ display: contents; \}/);
-    expect(goBare).toMatch(/className="go-heroblock text-center"/);
-    const block = goBare.slice(goBare.indexOf('className="go-heroblock'));
+    /* `text-center` MUSS bleiben: Es ist die Handy-Fassung des Blocks (ab 1400 px stellt `.go-heroblock`
+       auf linksbündig). Die Ring-Klassen dazwischen tragen unter 1400 px keine Darstellung. */
+    expect(goBare).toMatch(/go-heroblock[^`"]*text-center/);
+    const block = goBare.slice(goBare.indexOf("go-heroblock"));
     const score = block.indexOf("go-score"), rec = block.indexOf("go-rec"), klein = block.indexOf("text-xs opacity-55");
     expect(score).toBeLessThan(rec);
     expect(rec, "die Kleinschrift-Zeile steht nicht mehr unter dem Chip").toBeLessThan(klein);

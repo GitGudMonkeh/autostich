@@ -3623,7 +3623,7 @@ button { font-family: inherit; }
      1fr-Spalte und zog sich über die halbe Breite. */
   .lb-head > button { grid-column: 3; justify-self: end; }
   /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
-  .st-sec, .lb-tabs, .lb-page, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
+  .st-sec, .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
     border-radius: 14px;
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
@@ -4143,8 +4143,19 @@ button { font-family: inherit; }
   /* Die Score-Zahl steht UNTER der Haarlinie als Kopf der linken Spalte — sie ist die Aussage des
      Screens und ging oben zwischen vier Kennzahlen und zwei Knöpfen unter. Linksbündig wie alles
      andere in der Spalte; die zentrierte Fassung am Element ist die des Handys. */
+  /* #go-score-panel (19.08.2026): Der Score ist jetzt ein Panel wie die anderen — dieselbe Schale, dasselbe
+     Polster, derselbe obere Abstand (er steht in den beiden Listen oben mit drin, keine zweite Fassung).
+     Vorher trug ihn `.go-hero` mit einem `mt-4` aus dem JSX; die Hülle ist hier aber `display: contents`
+     und reicht ihre Marge nicht durch — die Zahl saß dadurch 22 px höher als die Panels daneben und die
+     Kopfzeile begann in jeder Spalte woanders. */
   .go-heroblock { text-align: left !important; margin-bottom: 6px; }
   .go-heroblock > .go-rec { justify-content: flex-start; }
+  /* Neuer Höchststand: Gold und Puls — geliehen von der Legendär-Auszeichnung (`@keyframes as-legendary`),
+     nicht nachgebaut. Es ist im ganzen Spiel dieselbe Geste für „selten und wertvoll", und sie ist die
+     ausdrücklich benannte Ausnahme vom stillen Ring (s. #kante-anlauf weiter unten): kein Dauerzustand,
+     sondern der eine Moment, für den man spielt. Sonst trägt das Panel den Deckfarben-Ring der Nachbarn. */
+  .go-heroblock.is-record { animation: as-legendary 1.9s ease-in-out infinite; }
+  .go-heroblock.is-record > .as-ring-run::before { background-color: #d4a63a; }
   .go-score { font-size: 56px !important; line-height: 1; margin-top: 0 !important; }
   /* Freischaltungen, Skins und das Onboarding-Banner laufen über die VOLLE Breite unter dem Kopf: sie kommen
      selten, und wenn sie kommen, sind sie die Nachricht des Bildschirms. In einer Spalte gingen sie zwischen
@@ -4152,7 +4163,7 @@ button { font-family: inherit; }
   .go-unlocks { grid-column: 1 / -1; grid-row: 3; }
   /* `.go-skins` gibt es nicht mehr: frisch freigeschaltete Skins sind seit #unlock-fenster ein eigenes
      Fenster (in JEDER Breite), keine Bahn im Screen. */
-  .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
+  .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
   /* #go-spalten (19.08.2026) — je ZWEI Panels pro Spalte statt drei / eins / eins.
 
      Vorher: links die Klammer (Verdienst · Bestleistungen · Herkunft), Mitte Kennzahlen, rechts Build.
@@ -4195,6 +4206,17 @@ button { font-family: inherit; }
      obere von zwei Panels seiner Spalte. Gezogen schöbe er die Herkunft an den Fuß und risse genau das
      Loch wieder auf, das der Umbau schließt — nur eine Zeile tiefer. */
   .go-stats { align-self: stretch; }
+  /* #go-fuss (19.08.2026, Entwurf des Users): Die dritte Spalte endete an ihrem Inhalt, während die beiden
+     anderen bis zum Fuß der Zeile liefen — rechts unten stand dadurch eine Treppe. Die HERKUNFT (das untere
+     Panel der Spalte) nimmt jetzt den Rest auf, damit alle drei Spalten auf EINER Kante abschließen. Eine
+     feste Zahl braucht das nicht: Die Zeilenhöhe ist ohnehin die der längsten Spalte.
+     Der Build darüber bleibt ungezogen (Begründung im Absatz oben) — gezogen schöbe er die Herkunft an den
+     Fuß und risse das Loch eine Zeile höher wieder auf.
+
+     Das ist die bewusste Ausnahme von `#rahmen-huelle` („ein Panel endet am Inhalt"): Der Endbildschirm ist
+     ein Abschlussbild, das man als Ganzes ansieht — keine Arbeitsfläche, auf der man einzelne Panels liest.
+     Wer hier später „aufräumt", nimmt dem Bild seine Unterkante. */
+  .go-origin { align-self: stretch; }
   /* #graph-fuellt (19.08.2026) — der Score-Verlauf nimmt den Rest der Spalte.
      Das Panel wird zur Flex-Spalte, der Verlaufs-Block ist ihr dehnbares Kind. `min-height: 0` gehört
      dazu und ist kein Beiwerk: ohne die Zeile nimmt ein Flex-Kind mindestens seine Inhaltsgröße ein und

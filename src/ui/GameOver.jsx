@@ -281,7 +281,12 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             und schiebt nur, was darunter in DIESER Spalte steht.
             `text-center` ist die Handy-Fassung (der Block sass bis hierher im zentrierten `go-hero`);
             ab 1400 px stellt `.go-heroblock` auf linksbündig. */}
-        <div className="go-heroblock text-center">
+        {/* #go-score-panel: Ab 1400 px ist der Score ein Panel wie die daneben — mit denselben Ring-Klassen
+            und derselben Maske wie die übrigen Panels dieses Bildschirms. Unter 1400 px tragen sie keine
+            Darstellung, die schmale Fassung bleibt unberührt. `is-record` schaltet den Rahmen auf Gold und
+            lässt ihn pulsen (Legendär-Geste), sonst steht dort die Deckfarbe der Nachbarn. */}
+        <div className={`go-heroblock as-ring as-ring-quiet text-center${isRecord ? " is-record" : ""}`}>
+          <i className="as-ring-run" aria-hidden="true" />
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
           <div className="go-score text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
