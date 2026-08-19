@@ -2966,6 +2966,18 @@ button { font-family: inherit; }
     background: color-mix(in srgb, var(--c) 13%, transparent);
     box-shadow: none;
   }
+  /* Die Kategoriefarbe steht als BALKEN an der Kante, nicht als Punkt davor: Ein Punkt vor dem Wort liest
+     sich als Knopf („hier drücken"), ein Balken an der Kante als Register — und genau das ist die Spalte.
+     Es bleibt derselbe Punkt im DOM, nur anders geschnitten; die Höhe ist fest, damit alle neun Balken
+     gleich lang sind (bei `stretch` wären sie es nur, solange kein Label umbricht). */
+  .gl-navrow { padding-left: 0; gap: 11px; }
+  .gl-navdot {
+    width: 3px; height: 20px;
+    border-radius: 0 3px 3px 0;
+    opacity: .5;
+  }
+  .gl-navrow:hover .gl-navdot { opacity: .75; }
+  .gl-navrow.is-on .gl-navdot { opacity: 1; height: 24px; }
   .gl-navlabel { font-size: 14px; font-weight: 500; }
   .gl-navrow.is-on .gl-navlabel { color: #f2f0fa; }
   /* Der Zähler war ein Kästchen im Kästchen. Er ist eine Zahl am Rand — mehr muss er nicht sein. */
