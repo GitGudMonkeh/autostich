@@ -67,7 +67,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement, MOBILE_MQ } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
-import { useMediaQuery } from "./useIsWide.js";
+import { useMediaQuery, useIsWide } from "./useIsWide.js";
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
@@ -866,18 +866,54 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
   const flyDur   = clamp(flipMs * 0.7, 320, 900);    // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
+  const flipDur  = clamp(flipMs * 0.55, 220, 460);   // Flug vom Stapel + Flip der einlaufenden Karte
+  /* #deckzug: Ab 1400 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
+     danach wird AUFGELÖST (Sieger kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben
+     Frame: der Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten Bild —
+     und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER nur eine Seite (die
+     Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte die Gegnerkarte gar nicht, und nur
+     beim Unentschieden zogen beide. Genau das las sich als „mal ziehen beide Decks, mal nur eines".
+     `zugMs` ist die Zugdauer (= Flug/Flip); unterhalb 1400 px, bei reduzierter Bewegung und bei hohem Turbo ist
+     sie 0 — dort bleibt alles wie bisher, die Handy-Fassung ist unberührt.
+     Der Zustand hängt an der STICH-NUMMER, nicht an einem Flag: `drawnNo !== t.trickNo` ist schon im ERSTEN Render
+     des neuen Stichs falsch. Ein `setState(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung für
+     ein Bild aufblitzen. */
+  const wide = useIsWide();
+  const zugMs = wide && !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
+  const [drawnNo, setDrawnNo] = useState(null);
+  const gezogen = !zugMs || drawnNo === trickNo;   // trickNo: oben aus lastTrick (= t) abgeleitet
+  useEffect(() => {
+    if (!zugMs || trickNo == null) return undefined;
+    const id = setTimeout(() => setDrawnNo(trickNo), zugMs);
+    return () => clearTimeout(id);
+  }, [trickNo, zugMs]);
+  /* „Erst nach dem Zug": die Finisher, die ihren eigenen Effekt-Trigger am Stich hängen (Klinge-Ghost,
+     Hologrid-Sweep, Loch-Puls), müssen mit derselben Verzögerung starten wie die Karten-Auflösung — sonst
+     schneidet/saugt der Effekt eine Karte, die noch flippt. Ohne Zug-Takt läuft `fn` SOFORT, also exakt wie
+     bisher. Rückgabewert ist die Aufräumfunktion für den aufrufenden Effekt. */
+  const zugRef = useRef(0); zugRef.current = zugMs;   // über ein Ref, damit `nachZug` STABIL bleibt: als Dependency
+  // würde ein Turbo-Wechsel mitten im Stich die Effekte erneut laufen lassen → zweiter Ghost auf demselben Stich.
+  const nachZug = useCallback((fn) => {
+    const ms = zugRef.current;
+    if (!ms) { fn(); return undefined; }
+    const id = setTimeout(fn, ms);
+    return () => clearTimeout(id);
+  }, []);
   // Der Klingenschnitt trifft NUR die Gegnerkarte, und NUR wenn WIR gewinnen (Wunsch). Die eigene Karte wird nie
   // geschnitten: bei einer Niederlage fliegt sie einfach weg (as-flyaway). Sieg: Gegnerkarte in-place geschnitten
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
-  const flyAway      = sliceOn && lost;                       // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
+  // #deckzug: `aufOn` ist `sliceOn` NACH dem Zug — alles, was die Verliererkarte betrifft, hängt daran. `sliceOn`
+  // selbst bleibt das Gate „dieser Stich wird überhaupt animiert" (Ghost-Spawn, Loch-Puls); die verzögern über nachZug.
+  const aufOn = sliceOn && gezogen;
+  const flyAway      = aufOn && lost;                         // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   // #finisher: Der Sieg-Finisher ist wählbar. „klinge" → Gegnerkarte wird in-place vom Klinge-Ghost geschnitten.
   // „standard" (Default) → die Gegnerkarte fliegt einfach zur Seite weg (spiegelbildlich zum eigenen Wegflug bei
   // Niederlage), kein Schnitt. Beide Fälle gelten auch für Krits (nur „Kritisch!"-Anzeige + Lila bleiben zusätzlich).
-  const oppSliced    = sliceOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
-  const oppScorched  = sliceOn && win && scorch;              // #319 Sieg + Scorch → Gegnerkarte verglüht IN-PLACE (Laser + Burn); kein Wegflug
-  const oppHologrid  = sliceOn && win && hologrid;            // #321 Sieg + Hologrid-Slice → Gegnerkarte zerfällt IN-PLACE (Laser-Reveal + Kachel-Zerfall)
-  const oppBlackholed = sliceOn && win && blackhole;          // #320 Sieg + Schwarzes Loch → Gegnerkarte wird ins Loch gesogen (Canvas-Flyer); kein Wegflug
-  const oppFlyAway   = sliceOn && win && !klinge && !scorch && !hologrid && !blackhole;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn/Slice/Sog)
+  const oppSliced    = aufOn && win && klinge;              // Sieg + Klinge → Gegnerkarte in-place vom Klinge-Ghost übernommen
+  const oppScorched  = aufOn && win && scorch;              // #319 Sieg + Scorch → Gegnerkarte verglüht IN-PLACE (Laser + Burn); kein Wegflug
+  const oppHologrid  = aufOn && win && hologrid;            // #321 Sieg + Hologrid-Slice → Gegnerkarte zerfällt IN-PLACE (Laser-Reveal + Kachel-Zerfall)
+  const oppBlackholed = aufOn && win && blackhole;          // #320 Sieg + Schwarzes Loch → Gegnerkarte wird ins Loch gesogen (Canvas-Flyer); kein Wegflug
+  const oppFlyAway   = aufOn && win && !klinge && !scorch && !hologrid && !blackhole;  // Sieg + Standard → Gegnerkarte fliegt zur Seite weg (kein Schnitt/Burn/Slice/Sog)
   // #320 Persistentes Serien-Loch: aktiv solange der Finisher „blackhole" gewählt ist (nicht reduced, echter Stich).
   const holeActive   = !reduced && blackhole && flipMs > 170 && !!t;
   const holeFinish   = sliceOn && win && blackhole;           // dieser Sieg meldet einen „Sog-Puls" ans Loch
@@ -905,8 +941,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     return () => { audio.stopLoop(holeSndRef.current, { fade: 0.3 }); holeSndRef.current = null; };
   }, [blackhole, reduced, holeGrown]);
   const [surfSurge, setSurfSurge] = useState(null);           // #345 Puls-Kanal an die Neon-Brandung (Groß-Ansage → Impact-Welle); { id, mag }
-  const playerWinner = sliceOn && win;    // Spielerkarte gewinnt → kippt an
-  const oppWinner    = sliceOn && lost;   // Gegnerkarte gewinnt → kippt an
+  const playerWinner = aufOn && win;    // Spielerkarte gewinnt → kippt an
+  const oppWinner    = aufOn && lost;   // Gegnerkarte gewinnt → kippt an
   const winnerTilt = (dur) => ({ animation: `as-slice-winner ${dur}ms ease-out`, willChange: "transform" });
   // #180 Flip-Reveal der Spielerkarte: nur bei normaler Bewegung, echtem Stich, nicht beim Wegflug (Niederlage)
   // und nicht bei sehr hohem Turbo. Dauer an den Flip-Takt gekoppelt.
@@ -915,7 +951,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // wird/explodiert (dort übernimmt der entkoppelte Ghost) und NICHT beim Standard-Wegflug (sie fliegt dann einfach
   // weg, wie die eigene Karte bei Niederlage — ohne Flip). Bei Gegner-Sieg (oppWinner) darf sie flippen + ankippen.
   const oppFlipOn = !reduced && !!t && !oppSliced && !oppHologrid && !oppBlackholed && !oppFlyAway && flipMs > 170;
-  const flipDur = clamp(flipMs * 0.55, 220, 460);
   const useFlip    = flipOn;      // #180 3D-Flip-Reveal der eigenen Karte
   const useOppFlip = oppFlipOn;   // #186 3D-Flip-Reveal der Gegnerkarte
 
@@ -1076,11 +1111,15 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     // #320 Schwarzes Loch: Sieg → „Sog-Puls" (Loch wächst + Gegnerkarte einsaugen); Niederlage bei aktivem Loch →
     // „Schrumpf-Puls" (heat-artig verkleinern, kein Sofort-Kollaps). Persistentes Panel-Loch verarbeitet die Pulse.
     if (blackhole) {
+      // #deckzug: Der Sog-Puls wartet auf den Zug — sonst saugt das Loch eine Karte, die noch flippt. Der Timer
+      // läuft über `floatTimers` (Unmount-Aufräumung); er feuert immer VOR dem nächsten Stich, weil zugMs
+      // (= flipDur ≤ 0,55 × flipMs) kürzer ist als der Stich-Takt.
+      const pulsZug = (fn) => { if (!zugMs) { fn(); return; } floatTimers.current.push(setTimeout(fn, zugMs)); };
       // #320: Die eingesogene Karte IST die verlorene Stich-Karte des Gegners → echter Kartenwert (t.oValue) UND echte
       //   Suit-Farbe (suitColor(t.oCard.suit)). Vorher zwang „deckA1 ||" jede Karte in die Deckfarbe → alle gleich/gleiche
       //   Farbe. Jetzt variiert Farbe je nach Suit der tatsächlich verlorenen Karte (auch im Deck-Farbmodus des Lochs).
-      if (holeFinish) { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); } // #: Sieg → Loch aktiv → Loop-Bett an
-      else if (holeActive && lost) setHolePulse({ id: t.trickNo, kind: "loss" });
+      if (holeFinish) { pulsZug(() => { setHolePulse({ id: t.trickNo, kind: "win", num: t.oValue, col: suitColor(t.oCard.suit) }); setHoleGrown(true); }); } // #: Sieg → Loch aktiv → Loop-Bett an
+      else if (holeActive && lost) pulsZug(() => setHolePulse({ id: t.trickNo, kind: "loss" }));
     }
     // #312: Der Klingen-Sound (fx_blade) wird NICHT mehr hier gespielt, sondern richtungs-abhängig im Ghost-Spawn-Block
     // unten — dort ist die Einfahrrichtung (sliceDir) bekannt. So kann der Z-Schnitt seine ZWEI Slashes mit zwei
@@ -1267,13 +1306,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const [hologridTrigger, setHologridTrigger] = useState(0);
   useEffect(() => {
     if (t && win && hologrid && !reduced && flipMs > 170) {
+      // #deckzug: erst ziehen, dann zerlegen — sonst läuft der Laser-Sweep über eine noch flippende Karte.
+      return nachZug(() => {
       setHologridTrigger((n) => n + 1);
       // #374 Laser-Sweep vertonen (war stumm): rate an die Sweep-Geschwindigkeit gekoppelt — der Effekt läuft mit
       //   speed={scorchSpeed}, also denselben Turbo-Faktor nehmen und (wie fx_scorch) bei 2× deckeln (scorchSndRate) →
       //   Ton bleibt bei schnellen Stichen synchron, hängt nicht nach. gain wie Klinge/Scorch. flipMs>170-Gate +
       //   Cooldown (audio.js 0,08 s) verhindern Stapeln/„MG" bei Max-Turbo.
       audio.play("fx_lasergrid", { rate: scorchSndRate, gain: 1.05 });
+      });
     }
+    return undefined;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- gekeyt am Stich; win/hologrid wechseln synchron mit t.trickNo
   }, [t?.trickNo]);
 
@@ -1289,8 +1332,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sliceSeq = useRef(0);   // #klinge: per-Stich-Zähler der Klingen-Einfahrrichtung (mod aktueller Zyklus-Länge, s. sliceMove)
   useEffect(() => () => ghostTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (!t) { setSlashGhosts([]); return; }        // Menü/neuer Lauf → Pool leeren
-    if (!sliceOn) return;                           // nur bei einem echten (animierten) Sieg/Niederlage-Stich
+    if (!t) { setSlashGhosts([]); return undefined; }   // Menü/neuer Lauf → Pool leeren
+    if (!sliceOn) return undefined;                     // nur bei einem echten (animierten) Sieg/Niederlage-Stich
+    // #deckzug: Der Schnitt setzt erst ein, wenn die Karten LIEGEN — auf dem Desktop also um die Zugdauer
+    // verzögert. Ohne das slasht der Ghost eine Gegnerkarte, die noch vom Stapel herüberfliegt und flippt.
+    return nachZug(() => {
     // #188: Effekt-Intensität aus dem Per-Stich-Score. Niederlage → t.gained 0 → Base (kein Skalieren).
     const { p: fxP, tier: fxTier } = fxIntensity(t.gained || 0);
     const base = { rest: sRest, halves: sHalves, cut: sCut, spark: sSpark, boom: sBoom, float: sFloat, streak: t.winStreak || 0, fxP, fxTier, scale: fxScale, flipMs };
@@ -1336,6 +1382,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     }
     // #cleanup: GOTTGLEICH-Prunk-Overlays (Feuerwerk/Goldregen/Prisma-Welle) entfernt — die „gott"-Kategorie bleibt
     // im Shop (nur „Standard"), neuer Prunk kommt später.
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst gekeyt/eingefroren, Werte wechseln synchron mit den Deps — #292 geprüft
   }, [t?.trickNo]);
   const playerGhosts = slashGhosts.filter((g) => g.side === "player");

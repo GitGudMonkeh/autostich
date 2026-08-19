@@ -118,14 +118,15 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
   });
 
   it("die Flugstrecke ist im Kartenmaßstab konstant", () => {
-    // Lücke (9,25 % der Bühne) + Kartenbreite (11 %) geteilt durch den Maßstab (11 % / 104 px)
-    // ergibt IMMER 191,45 px — die Animation läuft innerhalb des skalierten Wrappers.
-    const erwartet = (0.0925 + 0.11) * 104 / 0.11;
-    expect(erwartet).toBeCloseTo(191.45, 1);
-    expect(desktop).toMatch(/\.bf-side\.is-left\s+\.bf-fly-in \{ --bf-fly-x: -191\.45px; \}/);
-    expect(desktop).toMatch(/\.bf-side\.is-right \.bf-fly-in \{ --bf-fly-x: 191\.45px; \}/);
-    // Die Lücke im Raster muss zu dieser Zahl passen, sonst fliegt die Karte an der Fläche vorbei.
-    expect(desktop).toMatch(/column-gap: calc\(var\(--bf-w\) \* 0\.0925\)/);
+    // Die Zahl wird aus der LÜCKE gerechnet, nicht abgetippt: Lücke + Kartenbreite (11 %), geteilt
+    // durch den Maßstab (11 % / 104 px). Wer die Lücke ändert und die Strecke vergisst, lässt die Karte
+    // an ihrer Fläche vorbeifliegen — genau das fängt diese Prüfung.
+    const gap = Number(desktop.match(/column-gap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
+    const erwartet = Math.round((gap + 0.11) * 104 / 0.11 * 100) / 100;
+    const links = Number(desktop.match(/\.bf-side\.is-left\s+\.bf-fly-in \{ --bf-fly-x: -([\d.]+)px; \}/)[1]);
+    const rechts = Number(desktop.match(/\.bf-side\.is-right \.bf-fly-in \{ --bf-fly-x: ([\d.]+)px; \}/)[1]);
+    expect(links, "Flugstrecke links passt nicht zur Lücke").toBeCloseTo(erwartet, 1);
+    expect(rechts, "Flugstrecke rechts passt nicht zur Lücke").toBeCloseTo(erwartet, 1);
   });
 
   it("bei reduzierter Bewegung fliegt nichts", () => {
@@ -135,6 +136,59 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
   it("das Feuer haengt am Stapel", () => {
     // Entscheidung: der Vorrat glueht, die Karte traegt die Glut in den Stich hinaus.
     expect(bf).toMatch(/<div ref=\{slotRef\} className="bf-deck bf-slot relative">/);
+  });
+});
+
+describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
+  it("der Zug-Takt greift nur ab 1400 px, nicht am Handy", () => {
+    // `wide` ist die einzige Stelle, an der der zweite Takt haengt — faellt sie weg, bekommt auch die
+    // Handy-Fassung eine Verzoegerung, die sie nie hatte.
+    expect(bf, "zugMs muss an useIsWide haengen").toMatch(/const zugMs = wide && !reduced && !!t && flipMs > 170/);
+    expect(bf, "useIsWide muss importiert sein").toMatch(/import \{ useMediaQuery, useIsWide \} from "\.\/useIsWide\.js"/);
+  });
+
+  it("der Zustand haengt an der STICH-NUMMER, nicht an einem Flag", () => {
+    // Ein `setState(false)` im Effekt kaeme einen Frame zu spaet — die Aufloesung blitzte fuer ein Bild auf.
+    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo;/);
+    expect(bf, "kein setState(false) beim Stichwechsel").not.toMatch(/setDrawnNo\(null\)/);
+  });
+
+  it("ALLES, was die Verliererkarte betrifft, haengt am Zug — nicht mehr direkt an sliceOn", () => {
+    // Genau diese sieben Zeilen waren der Grund, warum immer nur EINE Seite gezogen hat: sie stehen im
+    // ersten Frame des Stichs schon fest, und `flipOn`/`oppFlipOn` schliessen die wegfliegende Seite aus.
+    for (const n of ["flyAway", "oppSliced", "oppScorched", "oppHologrid", "oppBlackholed", "oppFlyAway", "playerWinner", "oppWinner"]) {
+      const m = bf.match(new RegExp(`const ${n}\\s*=\\s*([^;]+);`));
+      expect(m, `${n} nicht gefunden — der Waechter greift ins Leere`).toBeTruthy();
+      expect(m[1], `${n} loest noch im Zug-Takt auf`).toContain("aufOn");
+    }
+    expect(bf, "aufOn ist sliceOn NACH dem Zug").toMatch(/const aufOn = sliceOn && gezogen;/);
+  });
+
+  it("die Finisher mit eigenem Trigger warten mit", () => {
+    // Klinge-Ghost, Hologrid-Sweep und Loch-Puls haengen am Stichwechsel, nicht an einer Render-Bedingung —
+    // ohne eigene Verzoegerung schneiden/saugen sie eine Karte, die noch flippt.
+    // Der Ghost-Effekt wird als ABSCHNITT gegriffen — ein `return nachZug(` irgendwo sonst in der Datei
+    // (der Hologrid-Zweig steht davor) darf diese Pruefung nicht gruen faerben.
+    const ghostEffekt = bf.slice(bf.indexOf("const [slashGhosts"), bf.indexOf("const playerGhosts"));
+    expect(ghostEffekt.length, "der Ghost-Effekt ist nicht mehr zu finden").toBeGreaterThan(500);
+    expect(ghostEffekt, "Klinge-Ghost").toMatch(/return nachZug\(\(\) => \{/);
+    expect(bf, "Hologrid-Sweep").toMatch(/return nachZug\(\(\) => \{\s*setHologridTrigger/);
+    expect(bf, "Loch-Puls").toMatch(/pulsZug\(\(\) => \{ setHolePulse/);
+  });
+
+  it("nachZug ist STABIL — sonst spawnt ein Turbo-Wechsel einen zweiten Ghost", () => {
+    // zugMs als Dependency liesse die gekeyten Effekte mitten im Stich erneut laufen.
+    // Bis zur ERSTEN Dependency-Liste nach `const nachZug` schneiden — sonst faende ein lazy `[\s\S]*?`
+    // einfach den naechsten leeren Dependency-Array irgendwo weiter unten in der Datei.
+    const nz = bf.slice(bf.indexOf("const nachZug = useCallback"));
+    const deps = nz.slice(0, nz.indexOf("]);") + 3);
+    expect(deps, "nachZug hat Dependencies — dann laeuft der Effekt bei Turbo-Wechsel erneut").toMatch(/\}, \[\]\);$/);
+    expect(bf, "zugMs kommt ueber ein Ref herein").toMatch(/const zugRef = useRef\(0\); zugRef\.current = zugMs;/);
+  });
+
+  it("ohne Zug-Takt laeuft alles SOFORT — die Handy-Fassung ist unveraendert", () => {
+    expect(bf).toMatch(/const ms = zugRef\.current;\s*if \(!ms\) \{ fn\(\); return undefined; \}/);
+    expect(bf).toMatch(/if \(!zugMs\) \{ fn\(\); return; \}/);   // pulsZug
   });
 });
 

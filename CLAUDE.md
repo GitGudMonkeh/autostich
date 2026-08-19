@@ -1197,8 +1197,44 @@ dabei **23 %** auf dem Schirm: gequetscht auf 668 × 347 UND seitlich um 46 % be
   archetyp-gegatet) — er wird über den **Simulator** erzeugt und als Fortsetzungs-Snapshot in
   `localStorage["as_activerun"]` geladen (Schema 2). Derselbe Weg wie beim Architekt-Profil (#Architekt-Mount).
   Gemessen damit: vier Spuren à 237 px, je 270 px hoch bei 268 px Inhalt.
-- Wächter: `test/buehne-desktop.test.js` (18 Prüfungen, Gegenprobe gemacht: Einheiten-Division und
+- Wächter: `test/buehne-desktop.test.js` (27 Prüfungen, Gegenprobe gemacht: Einheiten-Division und
   `static` statt `relative` lassen ihn beide fallen).
+
+#### #deckzug — der Stich läuft ab 1400 px in ZWEI Takten (19.08.2026)
+Gemeldet: „das Ziehverhalten wirkt sehr asynchron — manchmal ziehen beide Decks gleichzeitig, manchmal nur
+eines." Am Messstand nachgesehen (`getAnimations()` je Seite, 30-ms-Takt): je Stich lief auf EINER Seite
+`bf-fly-in` + `as-flip-reveal`, auf der anderen `as-flyaway`. **Beide zogen nur beim Unentschieden.**
+- **Ursache, und sie ist eine Reihenfolge, kein Timing:** der Stich ist beim Rendern längst entschieden.
+  `flyAway`/`oppFlyAway` standen damit im ERSTEN Bild fest — und `flipOn`/`oppFlipOn` schließen die
+  wegfliegende Seite ausdrücklich aus (`!flyAway`). Die Verliererkarte ist also nie eingeflogen. Bei einem
+  gewählten Finisher (Klinge/Scorch/Hologrid/Loch) flippte die Gegnerkarte gar nicht: sie wird in-place
+  unsichtbar gerendert, der Effekt zeichnet sie. **Vor #deckflug fiel das nicht auf** — da lagen Stapel und
+  Spielfläche übereinander, es gab keinen sichtbaren Zug.
+- **Der Umbau ist ein zweiter Takt, keine zweite Animation.** `zugMs` (= `flipDur`) ist die Zugdauer;
+  `aufOn = sliceOn && gezogen` ist „aufgelöst wird erst, wenn die Karten liegen". Daran hängen ALLE acht
+  Auflösungs-Nähte (`flyAway` · die vier Finisher-Zweige · `oppFlyAway` · `playerWinner` · `oppWinner`).
+  Solange `gezogen` false ist, ist keine davon wahr → beide Seiten fliegen ein und flippen, immer.
+- **Der Zustand hängt an der STICH-NUMMER** (`drawnNo === trickNo`), nicht an einem Flag. Ein
+  `setDrawnNo(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung des neuen Stichs für ein
+  Bild aufblitzen; `drawnNo !== trickNo` ist schon im ersten Render richtig.
+- **Die drei Finisher mit EIGENEM Trigger müssen mitwarten** (`nachZug`): Klinge-Ghost, Hologrid-Sweep und
+  Loch-Puls hängen am Stichwechsel, nicht an einer Render-Bedingung — ohne Verzögerung schneidet bzw. saugt
+  der Effekt eine Karte, die noch flippt. Scorch braucht nichts: `ScorchFx` wird an `oppScorched` gerendert,
+  mountet also von selbst erst nach dem Zug.
+- **`nachZug` ist STABIL** (`useCallback([])`, `zugMs` über ein Ref): als Dependency ließe ein Turbo-Wechsel
+  mitten im Stich die gekeyten Effekte erneut laufen → zweiter Ghost auf demselben Stich.
+- **Unterhalb 1400 px, bei reduzierter Bewegung und ab hohem Turbo (`flipMs ≤ 170`) ist `zugMs` 0** — dann
+  läuft `nachZug` synchron und jede Naht rechnet wie vorher. Die Handy-Fassung ist damit per Konstruktion
+  unberührt; nachgemessen (390 px, Brett-Geometrie vorher/nachher): die sechs Abweichungen von 61 Elementen
+  treten **auch zwischen zwei Läufen derselben Fassung** auf — es ist der Abtastzeitpunkt innerhalb des
+  Flips, keine Änderung.
+- **Nachgemessen am laufenden Brett** (1920×1080): beide Seiten starten `bf-fly-in` und `as-flip-reveal` auf
+  **derselben `startTime`**, der Wegflug beginnt 467–583 ms später (Zugdauer 460 ms). Vorher stand in jeder
+  Zeile genau eine Seite.
+- **Die Deck-Lücke ist von 9,25 % auf 3,25 % der Bühnenbreite herunter** (Wunsch: Stapel näher an die
+  Spielkarten) — gemessen 52 px auf 1920, 33 px auf 1536. Die Flugstrecke zieht mit: 191,45 → **134,73 px**
+  im Kartenmaßstab. Der Wächter RECHNET sie aus der Lücke, statt sie zu vergleichen — wer die eine ändert
+  und die andere vergisst, lässt die Karte an ihrer Fläche vorbeifliegen.
 - **Offen / nicht am Gerät gesehen**: alles headless über Playwright im laufenden Dev-Server gemessen und
   nachgerendert, kein Blick auf einem physischen Monitor. Ebenfalls offen: eine echte **Desktop-Fassung der
   vier Fraktions-Leisten** (sie sind für 358 px Handy-Breite gebaut; in einer 237-px-Spur bricht mehr um, als

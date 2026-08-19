@@ -5442,7 +5442,11 @@ button { font-family: inherit; }
      Stapel. `bf-sidebox` reicht dafuer nur durch (display: contents), damit beide Kaesten direkte
      Rasterfelder werden; unter 1400 px ist sie die Box, in der beide aufeinanderliegen. */
   .bf-side { display: grid; grid-template-columns: auto auto; align-items: start; justify-items: center;
-    column-gap: calc(var(--bf-w) * 0.0925); row-gap: 8px; }
+    /* #deckflug (19.08.2026, am Bild nachgezogen): Lücke Stapel <-> Spielfläche 9,25 % -> 3,25 % der Bühne
+       (148 -> 52 px bei 1600). Der Stapel gehört sichtbar ZU seiner Seite; auf Armeslänge las er sich als
+       viertes, unabhängiges Ding. Die gespielten Karten bleiben dabei, wo sie sind — die Reihe ist zentriert,
+       also rücken nur die Stapel nach innen (nachgemessen: Karte 576 vorher, 576 nachher). */
+    column-gap: calc(var(--bf-w) * 0.0325); row-gap: 8px; }
   .bf-sidebox { display: contents; }
   /* `relative`, NICHT `static`: der Nachziehstapel liegt als absolut positionierte Karten IM Deck-Kasten.
      Ohne Bezugspunkt haengen sie am naechsten positionierten Vorfahren — also an der Sidebox, deren Ecke
@@ -5458,14 +5462,16 @@ button { font-family: inherit; }
   .bf-side.is-right .bf-play    { grid-column: 1; }
   .bf-side.is-right > .bf-count { grid-column: 2; }
 
-  /* Die Flugstrecke ist im KARTENMASSSTAB konstant: Luecke (9,25 % der Buehne)
-     + Kartenbreite (11 %) = 20,25 % der Buehne, geteilt durch den Massstab
-     (11 % / 104 px) ergibt immer 191,45 px — unabhaengig von der Fenstergroesse.
+  /* Die Flugstrecke ist im KARTENMASSSTAB konstant: Luecke (3,25 % der Buehne)
+     + Kartenbreite (11 %) = 14,25 % der Buehne, geteilt durch den Massstab
+     (11 % / 104 px) ergibt immer 134,73 px — unabhaengig von der Fenstergroesse.
      Genau deshalb steht hier eine feste Zahl und keine Rechnung mit --bf-w:
-     die Animation laeuft INNERHALB des skalierten Wrappers. */
+     die Animation laeuft INNERHALB des skalierten Wrappers. Wer die Luecke oben
+     aendert, MUSS diese Zahl mitziehen — sonst fliegt die Karte an ihrer Flaeche
+     vorbei oder setzt zu frueh auf (der Waechter rechnet beides gegeneinander). */
   .bf-fly-in { animation: bf-fly-in var(--bf-fly-ms, 380ms) cubic-bezier(.2, .7, .3, 1) both; }
-  .bf-side.is-left  .bf-fly-in { --bf-fly-x: -191.45px; }
-  .bf-side.is-right .bf-fly-in { --bf-fly-x: 191.45px; }
+  .bf-side.is-left  .bf-fly-in { --bf-fly-x: -134.73px; }
+  .bf-side.is-right .bf-fly-in { --bf-fly-x: 134.73px; }
 
   /* --- Die Instrumentenbank --------------------------------------------- */
   /* Flex statt Grid, und das ist der Punkt: die Zahl der Fraktions-Leisten
