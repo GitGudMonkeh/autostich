@@ -29,10 +29,13 @@ const num = (v) => {
   return typeof n === "number" && !Number.isNaN(n) ? n : null;
 };
 
-/* Kennzahl-Kachel im Karten-Stil (Victory-Redesign) — Rahmen + Label + Wert, nowrap+truncate gegen Overflow. */
+/* Kennzahl-Kachel im Karten-Stil (Victory-Redesign) — Rahmen + Label + Wert, nowrap+truncate gegen Overflow.
+   `rs-cell` (wie `rs-note`/`rs-tree`) ist nur ein HAKEN: die Komponente wird von Victory, Lauf-Details und
+   Chronik geteilt, und der Desktop-Ton eines Screens darf die anderen nicht mitziehen. Wer ihn stumpf
+   stellt, tut das deshalb SCOPED (`.rd-card .rs-cell`, s. #rd-ruhe in index.css). */
 function StatCard({ label, value, title, color }) {
   return (
-    <div title={title} className="rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+    <div title={title} className="rs-cell rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
       <div className="opacity-50 text-[11px] uppercase tracking-wide truncate">{label}</div>
       <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" style={color ? { color } : undefined}>{value == null ? "–" : value}</div>
     </div>
@@ -265,13 +268,13 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
             </div>
           )}
           {selDetail && (
-            <div className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
+            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
               <span className="font-bold" style={{ color: selDetail.color }}>{selDetail.title}</span>
               <span className="opacity-80"> — {selDetail.desc}</span>
             </div>
           )}
           {showHidden && (
-            <div className="mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug opacity-60" style={{ background: "#131318", border: "1px dashed #2f2f3b" }}>
+            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug opacity-60" style={{ background: "#131318", border: "1px dashed #2f2f3b" }}>
               {t("runstats.hidden")}
             </div>
           )}
@@ -296,7 +299,7 @@ export function RunTreeBlock({ treeNodes }) {
   return (
     // Der Abstand nach unten gehört zum Block selbst: der Aufrufer kann ihn nicht setzen, ohne bei fehlendem
     // Wert eine leere Lücke zu hinterlassen (die Komponente rendert dann null).
-    <div className="rounded-xl px-3 py-2.5 mb-4" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+    <div className="rs-tree rounded-xl px-3 py-2.5 mb-4" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
       <div className="text-[10px] uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="ty-num text-[15px]">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>

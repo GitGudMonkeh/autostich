@@ -122,13 +122,13 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         <div className="rd-left">
         {/* #global: Baumstand VOR den Kennzahlen — er ist die Vorbedingung des Scores, nicht eine seiner
             Kennzahlen. Fehlt der Wert (lokaler Lauf, Alt-Eintrag), rendert der Block gar nichts. */}
-        <div className="rd-c1 as-ring">
+        <div className="rd-c1 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
           <div className="rd-ph hidden min-[1400px]:block">{t("gameover.stats")}</div>
           <RunTreeBlock treeNodes={entry.treeNodes} />
           <RunStatCells entry={entry} sourceCells />
         </div>
-        <div className="rd-c2 as-ring">
+        <div className="rd-c2 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
           <div className="rd-ph hidden min-[1400px]:block">{t("gameover.build")}</div>
           <div className="mt-4"><RunBuildChips entry={entry} anonymized={anonymized} /></div>
@@ -137,7 +137,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             je Durchlauf. Auf dem Desktop füllt dieses Panel die untere linke Hälfte (Spalte 1+2), die bis hierher
             leer blieb, weil die Aufstellung rechts doppelt so hoch baut wie Kennzahlen und Build zusammen. */}
         {(hasTraj || hasLog) && (
-          <div className="rd-c4 as-ring">
+          <div className="rd-c4 as-ring as-ring-quiet">
             <i className="as-ring-run" aria-hidden="true" />
             <div className="rd-ph hidden min-[1400px]:block">{t("gameover.chart.title")}</div>
             {hasTraj && (
@@ -164,7 +164,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         {/* #201.8 Stufe B: finale Deck-Aufstellung, sofern der Lauf einen Snapshot hat (nur eigene/lokale Läufe;
             alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}
         {!anonymized && entry.deckSnapshot?.cards?.length > 0 && (
-          <details className="rd-c3 as-ring mt-4 rounded-xl overflow-hidden" open={wide} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+          <details className="rd-c3 as-ring as-ring-quiet mt-4 rounded-xl overflow-hidden" open={wide} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             {/* Das Ringband steht NACH dem Griff: `summary` muss das erste Kind bleiben, sonst ist es keiner. */}
             <i className="as-ring-run" aria-hidden="true" />
@@ -177,7 +177,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
 
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
-                <div className="mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                <div className="rd-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
                   <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.buildingsN", { n: archBuildings.length })}</div>
                   <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">

@@ -4041,6 +4041,50 @@ button { font-family: inherit; }
   .rd-c4 .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }
   .rd-c4 .rg-perTrick > div { padding: 0 !important; }
 
+  /* ==========================================================================
+     #rd-ruhe — die Lauf-Details im Desktop-Ton (19.08.2026)
+
+     Sechster Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Anordnung und Inhalt bleiben unangetastet — geändert wird nur, wie laut der Screen spricht. Die
+     Werte sind 1 : 1 die von `.st-box` (#st-ruhe) und `.go-box` (#go-ruhe): es ist derselbe Screen in
+     einer anderen Herkunft, er darf nicht anders aussehen.
+
+     1. **Die vier Ringe stehen still** (`as-ring-quiet` an `rd-c1…c4`, im JSX gesetzt).
+     2. **EINE Kachelform** (Radius 6, flache Haarlinie) für alles im Panel. Vorher lagen hier fünf
+        Radien nebeneinander: 14 (Panel) · 12 (Baumstand) · 8 (Kennzahlen, Gebäudeliste, Hinweise) ·
+        4 (Chips) · 16 (Kopf-Karte). Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der
+        Inhalt.
+     3. **Schließen wird Text-Knopf**, wie in Baum und Statistik. Das Klickziel bleibt.
+
+     `!important` an Fläche und Rahmen ist die Ausnahme mit Grund: die Kästen setzen ihre Farben INLINE
+     (RunStats.jsx), und die Komponente wird von Victory, Chronik und Lauf-Details geteilt — ein Griff
+     an der Quelle träfe alle drei. Deshalb ist JEDE Regel hier auf `.rd-card` eingegrenzt.
+
+     NICHT angefasst (Regel 5, 6): das Brett der finalen Aufstellung. Seine Kartenrahmen tragen Wert,
+     Score und Formation als FARBE — das ist die Aussage des Panels, nicht seine Verzierung. Ebenso der
+     blaue Rahmen der Gebäudeliste: er ist das Signal des Architekten (gleiche Entscheidung wie an
+     `.go-blist`), nur seine Fläche gibt er ab. */
+  .rd-card .rs-cell, .rd-card .rs-tree, .rd-card .rs-note, .rd-card .rd-blist {
+    background: rgba(255, 255, 255, .012) !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+  }
+  /* Rahmen NUR dort abräumen, wo er nichts sagt. Die Gebäudeliste behält ihren blauen (Architekt) und
+     die Hinweiszeilen ihre farbige bzw. gestrichelte Kante — die trägt dort die Aussage. */
+  .rd-card .rs-cell, .rd-card .rs-tree { border: 1px solid rgba(150, 150, 170, .12) !important; }
+  /* Der Rest des Radien-Zoos: Perk-/Skill-Chips und die Einträge der Gebäudeliste. Kein `!important`
+     nötig — index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt die Utilities. */
+  .rd-card .rs-chips > *, .rd-card .rd-blist button { border-radius: 6px; }
+
+  /* Schließen ist ein Werkzeug am Rand, kein Angebot (dieselbe Entscheidung wie `.st-close`,
+     `.up-actions > *`). Die Polsterung darüber bleibt — flach heißt leiser, nicht kleiner. */
+  .rd-close {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .rd-close:hover { color: #e8e6ff; }
+
   /* ---- Victory: zentrierter Block ---------------------------------------- */
   .go-card {
     grid-template-columns: 1fr 1.05fr 1fr;

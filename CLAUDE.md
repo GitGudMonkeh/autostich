@@ -2321,6 +2321,28 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #rd-ruhe — die Lauf-Details im Desktop-Ton (19.08.2026)
+Sechster Screen nach der Liste („Desktop-Umbau: die ENTSCHEIDUNGSREGELN", oben). Vorgabe des Users:
+**„layout passt erstmal"** — also nur die Lautstärke. Es ist derselbe Screen wie der Siegesbildschirm,
+nur aus anderer Herkunft (gespeicherte Zeile statt laufendes Spiel); die Werte sind deshalb **1 : 1**
+die von `.st-box` (#st-ruhe) und `.go-box` (#go-ruhe), und der Wächter rechnet das nach, statt sie
+noch einmal abzutippen.
+- **Die vier Ringe stehen still** (`as-ring-quiet` an `rd-c1…c4`, im JSX). In der Meldung des Users war
+  genau das der lauteste Posten: vier wandernde Deckfarben-Bänder um vier Panels.
+- **EINE Kachelform.** Vorher fünf Radien nebeneinander: 14 (Panel) · 12 (Baumstand) · 8 (Kennzahlen,
+  Gebäudeliste, Hinweise) · 4 (Chips) · 16 (Kopf-Karte). Jetzt 6 px innen, 14 am Panel.
+- **Schließen wird Text-Knopf**, wie in Baum und Statistik; das Klickziel bleibt (11/18 px).
+- **`RunStats.jsx` teilen sich DREI Screens** (Victory · Chronik · Lauf-Details). Die Kästen bekommen
+  dort nur HAKEN (`rs-cell` · `rs-tree` · `rs-note`), gestellt wird ausschließlich `.rd-card`-eingegrenzt
+  — ein Griff an der Quelle träfe die anderen beiden mit. Ein Wächter prüft die Eingrenzung für jeden
+  der vier Haken.
+- **NICHT angefasst** (Regel 5, 6): das Brett der finalen Aufstellung — seine Kartenrahmen tragen Wert,
+  Score und Formation als FARBE, das ist die Aussage des Panels. Und der blaue Rahmen der Gebäudeliste
+  (Architekt-Signal, gleiche Entscheidung wie an `.go-blist`); nur ihre Fläche gibt sie ab.
+- Handy bitidentisch (Pixelvergleich 390 px: 0,0000 von 255).
+- Wächter: `test/rd-ruhe.test.js` (9). Gegenprobe gemacht: alle sieben sabotierten Nähte fallen.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080).
+
 ### #ecke — Glossar und Ton in JEDEM Menü, oben links (19.08.2026)
 Beide hingen am Startbildschirm: der Mute-Knopf in dessen linker oberer Ecke, das Glossar rechts oben
 (unter 1400 px) bzw. im Fußband neben Discord (darüber). Sobald ein Menü-Screen offen war — Werkstatt,
