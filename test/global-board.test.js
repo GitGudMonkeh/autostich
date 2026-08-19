@@ -21,11 +21,11 @@ import { TOTAL_NODES, ownedCount, emptyProfile } from "../src/game/progression.j
    noch an den richtigen Bildschirm gehängt ist, entscheidet dieser Test.
    ============================================================ */
 
-/* Zeilenenden beim Lesen vereinheitlichen: Die Ratschen unten greifen teils ÜBER einen Zeilenumbruch
-   (`boardMode && \(\n\s*<div …`). Auf einem Windows-Checkout mit `core.autocrlf=true` steht dort `\r\n`,
-   der Greifer findet nichts, und der Test meldet einen Umbau, den es nie gab — die geprüfte Zeile steht
-   wortwörtlich im Code. Im Repository liegt die Datei mit LF; das `\r` entsteht erst beim Auschecken und
-   ist damit eine Eigenschaft des Arbeitsplatzes, nicht des Codes (gleiche Naht in shop-scale.test.js). */
+/* Zeilenenden beim Lesen vereinheitlichen (Gürtel und Hosenträger): Seit .gitattributes (`* text=auto eol=lf`)
+   liegt der Quelltext auch auf Windows mit LF in der Arbeitskopie. Eine Arbeitskopie, die davor ausgecheckt
+   wurde, hat aber noch CRLF — und die Ratschen unten greifen teils ÜBER einen Zeilenumbruch
+   (`boardMode && \(\n\s*<div …`), finden dann nichts und melden einen Umbau, den es nie gab.
+   Gleiche Naht wie in shop-scale.test.js. */
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 /* Für die „nicht abgetippt"-Prüfung unten: Kommentare erklären die Zahl (und dürfen sie nennen),
    Code darf sie nicht enthalten. Ohne das Strippen schlüge der Wächter am eigenen Fließtext an. */

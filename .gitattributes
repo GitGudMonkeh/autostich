@@ -1,3 +1,41 @@
+# Alle Textdateien mit LF im ARBEITSBAUM — auch auf Windows.
+#
+# Warum: Das Projekt prüft einen großen Teil seiner Verdrahtung als QUELLTEXT-RATSCHE (kein
+# Component-Test-Setup, s. test/desktop-perf.test.js). Diese Ratschen greifen teils über einen
+# Zeilenumbruch hinweg, etwa `boardMode && \(\n\s*<div …`. Mit `core.autocrlf=true` steht in der
+# Arbeitskopie `\r\n`, das Muster findet nichts, und der Test meldet einen Umbau, den es nie gab —
+# die geprüfte Zeile steht wortwörtlich im Code. Gemessen an einem Tag: zweimal derselbe Fehlalarm
+# (test/shop-scale.test.js, test/global-board.test.js), beide Male mit Suche am falschen Ende.
+# 47 Testdateien lesen Quelltext, gut zwanzig davon mit `\n` im Muster — die übrigen sind stille
+# Blindgänger, die beim nächsten Umbau an der falschen Stelle losgehen.
+#
+# Es ist dieselbe Fehlerfamilie, die weiter unten schon `*.mjs` (Shebang + `\r`) und `*.sql`
+# (Byte-Vergleich gegen den Generator) immunisiert hat: grüne CI, roter lokaler Lauf. Statt sie ein
+# drittes Mal einzeln zu behandeln, gilt LF jetzt für alles, was Git als Text erkennt.
+#
+# Im Repository lagen die Dateien ohnehin schon mit LF; diese Regel ändert also nur die Arbeitskopie.
+* text=auto eol=lf
+
+# CSV/TSV NICHT anfassen: Die Loc-Tabellen werden von scripts/export-strings.mjs mit CRLF
+# geschrieben (RFC 4180) und enthalten LF INNERHALB zitierter Felder — test/loc-csv.test.js liest sie
+# mit einem Zustandsautomaten, der beides auseinanderhält. Eine Umwandlung beim Auschecken würde die
+# 2653 Datenzeilen umschreiben und den Vergleich mit der Generator-Ausgabe brechen. `-text` heißt:
+# Bytes bleiben, wie sie erzeugt wurden.
+*.csv -text
+*.tsv -text
+
+# Binärdateien ausdrücklich benannt. Git erkennt sie zwar selbst an NUL-Bytes; hier steht es
+# schwarz auf weiß, damit `text=auto` oben nie zur Interpretationsfrage wird.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.mp3 binary
+*.m4a binary
+*.wav binary
+*.woff2 binary
+*.pdf binary
+
 # Node-Hilfsskripte IMMER mit LF auschecken — auch auf Windows.
 #
 # Warum: Diese Dateien beginnen mit einer Shebang-Zeile (`#!/usr/bin/env node`). Vites/Vitests

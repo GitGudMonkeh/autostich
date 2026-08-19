@@ -21,11 +21,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
 
-/* Zeilenenden beim Lesen vereinheitlichen: Die Ratsche unten greift mit `"…{\n    const body …"` über einen
-   ZEILENUMBRUCH hinweg. Auf einem Windows-Checkout mit `core.autocrlf=true` steht dort `\r\n` — der Greifer
-   findet nichts, `slice` liefert Leerstring und der Test fällt mit „expected '' to contain …", obwohl die
-   geprüfte Zeile wortwörtlich im Code steht. Im Repository liegt die Datei mit LF; das `\r` entsteht erst
-   beim Auschecken und ist damit eine Eigenschaft des Arbeitsplatzes, nicht des Codes. */
+/* Zeilenenden beim Lesen vereinheitlichen (Gürtel und Hosenträger): Seit .gitattributes (`* text=auto eol=lf`)
+   liegt der Quelltext auch auf Windows mit LF in der Arbeitskopie. Eine Arbeitskopie, die davor ausgecheckt
+   wurde, hat aber noch CRLF — und die Ratsche unten greift ÜBER einen Zeilenumbruch, findet dann nichts und
+   meldet einen Umbau, den es nie gab. Das Normalisieren hier kostet nichts und macht den Test unabhängig
+   davon, wann und mit welcher Git-Einstellung jemand ausgecheckt hat. */
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
