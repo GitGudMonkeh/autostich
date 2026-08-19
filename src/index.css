@@ -3627,6 +3627,13 @@ button { font-family: inherit; }
     column-gap: 22px;
     align-items: start;
     min-height: 0;
+    /* Der DECKEL zum `align-self: start` darüber. Ohne ihn endet der Rumpf zwar am Inhalt (gewollt), wächst
+       aber auch über die gedeckelte Karte hinaus — und weil die Karte den Überhang nicht kappt, war der
+       Regeln-Reiter unten schlicht abgeschnitten: 1161 px Inhalt in einer 928 px hohen Karte, ohne dass
+       irgendwo ein Scroller ansprang (gemessen auf 1500 × 950). Mit dem Deckel greift die Kette wieder wie
+       gedacht: Rumpf → Panel → `.lb-pagescroll` scrollt (804 sichtbar von 1038). Kurze Reiter merken davon
+       nichts — Challenger steht mit und ohne Deckel auf denselben 345 px. */
+    max-height: 100%;
   }
   /* #lb-rahmen: Die zwei Panels klebten an der Haarlinie unter dem Kopf — als einzige des Desktop-Passes.
      22 px ist der Wert, mit dem `.st-sec`, `.up-*` und die Lauf-Details ihre Panels absetzen. */
