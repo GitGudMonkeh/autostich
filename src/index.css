@@ -3742,15 +3742,23 @@ button { font-family: inherit; }
 
   /* Kopf: die Woche wird zur Auszeichnung, der Countdown zum Chip. */
   .lb-weektitle { font-size: 15px !important; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+  /* Der Countdown ist die einzige Zahl des Kopfes, die sich BEWEGT — er darf heller stehen als die übrige
+     Chrome: heller Rahmen statt Haarlinie, eine Stufe größer. Er beantwortet die Frage, mit der man diesen
+     Bildschirm öffnet: wie lange läuft die Woche noch? */
   .lb-weekcount {
-    font-size: 12px !important; opacity: 1 !important; color: #8a8a95;
-    border: 1px solid rgba(150, 150, 170, .14); background: rgba(15, 15, 21, .72);
-    border-radius: 9px; padding: 5px 10px;
+    font-size: 13.5px !important; opacity: 1 !important; color: #eceaf4;
+    border: 1px solid rgba(255, 255, 255, .62); background: rgba(15, 15, 21, .72);
+    border-radius: 10px; padding: 7px 13px;
   }
   .lb-weekhead { align-items: center !important; margin-bottom: 14px !important; }
 
-  /* Drei Kontext-Kacheln: was diesen Lauf ausmacht, bevor man auf Spielen drückt. */
+  /* Drei Kontext-Kacheln: was diesen Lauf ausmacht, bevor man auf Spielen drückt.
+     Sie gehören über die VOLLE Breite, nicht in die 420-px-Cockpitspalte — dort stand jedes zweite Wort in
+     einer eigenen Zeile („Der / Upgrade- / Baum / hat / keine / Wirkung"). Dieselbe Zuweisung wie an
+     `.lb-weekhead` darüber: beide sind Kopf, nicht Cockpit. */
   .lb-ctx { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .lb-pagescroll:has(.lb-cockpit) > .lb-ctx { grid-column: 1 / -1; }
+  .lb-ctxtile b { line-height: 1.3; }
   .lb-ctxtile {
     display: flex; align-items: flex-start; gap: 11px;
     background: rgba(15, 15, 21, .72);
@@ -3797,6 +3805,25 @@ button { font-family: inherit; }
     font-size: 12px; color: #8a8a95;
     border: 1px solid rgba(150, 150, 170, .14); border-radius: 8px; padding: 3px 8px;
   }
+
+  /* Kopf der Liste: Umfang als Auszeichnung, die Auswahlregel als Chip daneben. */
+  .lb-page .lb-listhead { align-items: center !important; margin-bottom: 12px !important; }
+  .lb-page .lb-listtitle { font-size: 13px !important; letter-spacing: .16em; font-weight: 800; opacity: 1 !important; color: var(--deck-a1, #9b82f0); }
+  .lb-page .lb-listsub {
+    font-size: 11.5px !important; opacity: 1 !important; color: #8a8a95;
+    border: 1px solid rgba(150, 150, 170, .14); border-radius: 999px; padding: 3px 10px;
+  }
+  /* Spaltenköpfe: dieselbe Aufteilung wie die Zeile darunter (Rang · Pilot · Punkte). Die Zeile ist
+     zweizeilig aufgebaut (Name+Score oben, Fraktionen+Durchlauf unten) — die Köpfe beschriften deshalb
+     die OBERE Zeile; „Details" aus dem Entwurf fiele mit der unteren zusammen und stünde doppelt. */
+  .lb-page .lb-cols {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 0 6px 9px;
+    font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: #71717c; font-weight: 700;
+  }
+  .lb-page .lb-cols > :last-child { text-align: right; }
 
   /* Die Liste: Zeilen mit Haarlinie statt Karten, das Podest an der Rangzahl. */
   .lb-page .lb-rows { gap: 0 !important; }

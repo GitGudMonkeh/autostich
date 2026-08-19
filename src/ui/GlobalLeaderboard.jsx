@@ -113,9 +113,9 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
       {/* #global: Der Kopf nennt links den Umfang, rechts die Auswahlregel — „Top 20" allein beantwortet nicht,
           Top 20 WOVON. Vorher stand hier ein fest verdrahtetes „Global — Top N". */}
       {!hideHeader && (
-        <div className="flex items-baseline justify-between gap-2 mb-2">
-          <span className="text-[11px] uppercase tracking-wide opacity-50">{t("board.global.head", { n: limit })}</span>
-          <span className="text-[10px] opacity-35">{t("board.global.sub")}</span>
+        <div className="lb-listhead flex items-baseline justify-between gap-2 mb-2">
+          <span className="lb-listtitle text-[11px] uppercase tracking-wide opacity-50">{t("board.global.head", { n: limit })}</span>
+          <span className="lb-listsub text-[10px] opacity-35">{t("board.global.sub")}</span>
         </div>
       )}
       {error ? (
@@ -133,6 +133,14 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
         /* #desktop: `lb-rows` ist der Haken für die ZWEISPALTIGE Fassung im Ranglisten-Screen (10 + 10).
            Die Regel hängt dort an `.lb-page .lb-rows` — dieselbe Komponente steht auch im Hub (framed) und im
            Victory-Screen in schmalen Spalten, die dürfen NICHT mitgehen. */
+        /* Spaltenköpfe und Zeilen sind zwei Geschwister an einer Stelle, an der ein Ausdruck steht — die
+           Klammer ist deshalb Pflicht, nicht Geschmack. */
+        <>
+        {/* #lb-premium: Spaltenköpfe NUR ab 1400 px (`as-deskonly`). Auf dem Handy stehen die Zeilen
+            zweizeilig und die Köpfe hätten nichts, worüber sie stehen könnten. */}
+        <div className="lb-cols as-deskonly" aria-hidden="true">
+          <span>{t("board.col.rank")}</span><span>{t("board.col.pilot")}</span><span>{t("board.col.score")}</span>
+        </div>
         <div className="lb-rows grid grid-cols-1 gap-1">
           {rows.map((r, i) => {
             const mineRow = isMine(r);
@@ -183,6 +191,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
             );
           })}
         </div>
+        </>
       )}
     </>
   );

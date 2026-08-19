@@ -61,6 +61,7 @@ describe("i18n · Katalog-Parität", () => {
   /* Wörter, die in beiden Sprachen identisch sind (Eigennamen, Kürzel, Marken, reine Symbolzeilen).
      Nur DIESE dürfen unübersetzt bleiben — alles andere ist eine vergessene Übersetzung. */
   const SAME_OK = new Set([
+    "board.col.pilot",       // Spaltenkopf „Pilot" — in beiden Sprachen dasselbe Wort
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
     "options.float.score.title", // „↳ Score" — Score bleibt Score (Begriffstabelle §3.1)
