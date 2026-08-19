@@ -213,3 +213,64 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
     expect(read("src/ui/LegendarySelect.jsx"), "Vorbild verloren").toMatch(/gridAutoRows: "1fr"/);
   });
 });
+
+describe("#lv-fest — die Oberkante der Karte steht fest, sie wächst nur nach unten", () => {
+  /* Gemeldet als zwei getrennte Fehler („springt beim Aufklappen links", „springt beim Archetyp-Wechsel"),
+     es ist einer: das Overlay zentriert senkrecht, also hängt die OBERKANTE an der HÖHE des Inhalts.
+     Gemessen bei 1536×791 (DPR 1,25), Skill-Wahl:
+       Karte 540 px hoch, Flügel zu ................. y = 126
+       linker Flügel auf (605 px, höher als die Karte) y =  93
+       Passiv-Block auf (Karte 671 px) .............. y =  60
+     Nach der Regel: y = 32 in ALLEN Kombinationen (4 Fraktionen × 4 Flügel-Zustände × Passiv auf/zu),
+     Perk-Wahl ebenso. Der rechte Flügel war nie auffällig — er ist mit ~365 px kürzer als die Karte und
+     ändert die Rasterhöhe darum gar nicht. */
+
+  it("das Raster hat eine KONSTANTE Höhe — sonst wandert die Oberkante mit dem Inhalt", () => {
+    const rig = deskBlock.match(/\.lv-rig\s*\{([^}]*)\}/);
+    expect(rig, ".lv-rig-Regel im Desktop-Block nicht mehr gefunden").toBeTruthy();
+    expect(rig[1], "min-height fehlt — die Zentrierung rechnet dann wieder mit der Inhaltshöhe")
+      .toMatch(/min-height:\s*var\(--lv-h\)/);
+    /* `align-items: start` ist die zweite Hälfte: ohne sie streckt sich die Karte auf die volle
+       konstante Höhe, statt oben zu sitzen und nach unten zu wachsen. */
+    expect(rig[1]).toMatch(/align-items:\s*start/);
+  });
+
+  it("der Höhen-Deckel steht EINMAL da (Karte, Flügel und Anker dürfen nicht auseinanderlaufen)", () => {
+    expect(css, "--lv-h ist nicht mehr definiert").toMatch(/\.lv-rig\s*\{[^}]*--lv-h:\s*min\(92dvh,\s*760px\)/);
+    const wing = deskBlock.match(/\.lv-wing\s*\{([^}]*)\}/);
+    expect(wing, ".lv-wing-Regel nicht mehr gefunden").toBeTruthy();
+    expect(wing[1], "der Flügel tippt den Deckel wieder selbst ab").toMatch(/max-height:\s*var\(--lv-h\)/);
+  });
+
+  it("die Regel steht im Desktop-Block — am Handy gibt es kein Raster, das sie tragen könnte", () => {
+    /* Unterhalb 1400 px ist `.lv-rig` `display: contents`; ein min-height dort wäre wirkungslos und
+       gleichzeitig irreführend. Die Handy-Karte hat ihre eigene feste Höhe (`min(92dvh, 760px)` inline). */
+    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    expect(basis.match(/\.lv-rig\s*\{([^}]*)\}/)[1]).not.toMatch(/min-height/);
+  });
+});
+
+describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () => {
+  const skill = read("src/ui/SkillSelect.jsx");
+
+  it("beide Knöpfe sind derselbe ActionButton wie in der Perk-Wahl, nicht nachgebaut", () => {
+    expect(skill).toMatch(/<ActionButton kind="reroll" flex className="sk-actbtn"/);
+    expect(skill).toMatch(/<ActionButton kind="decline" flex className="sk-actbtn"/);
+    // Gegenprobe: keine handgeschriebene Kopie der Kanten-Optik mehr in der Aktionszeile.
+    expect(skill, "as-edge-* von Hand — genau das war der sichtbare Unterschied")
+      .not.toMatch(/className="as-edge-(strong|neutral) flex-1/);
+    expect(read("src/ui/PerkSelect.jsx"), "das Vorbild benutzt die Sorten nicht mehr")
+      .toMatch(/<ActionButton kind="decline" flex/);
+  });
+
+  it("unterhalb 1400 px sind nur die MASSE kleiner, nicht die Optik", () => {
+    /* „Ablehnen → Perk" ist länger als das „Alle ablehnen" der Perk-Wahl: in den Standardmaßen braucht es
+       gemessen 158 px, auf 375 px stehen 151 zur Verfügung — mit `whitespace-nowrap` liefe der Text aus
+       dem Knopf. Mit dieser Regel: 133/151. Sie darf deshalb nur Größen setzen, keine Farben/Gewichte. */
+    const m = css.match(/@media \(max-width: 1399\.98px\) \{\s*\.sk-actbtn\s*\{([^}]*)\}/);
+    expect(m, ".sk-actbtn-Regel nicht mehr gefunden").toBeTruthy();
+    expect(m[1]).toMatch(/font-size:\s*12px/);
+    expect(m[1]).toMatch(/padding:/);
+    expect(m[1], "Farbe/Gewicht gehören in die Sorte, nicht hierher").not.toMatch(/color|font-weight|background|border/);
+  });
+});

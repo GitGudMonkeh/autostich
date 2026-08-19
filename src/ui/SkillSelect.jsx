@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
-import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
+import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
 import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
@@ -219,20 +219,24 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* Reroll + Ablehnen: direkt unter dem Kopf, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
         <div className="sticky top-0 z-20 -mx-4 px-4 pt-1.5 pb-2 mb-1" style={{ background: PANEL_BG }}>
-          <div className="flex items-stretch gap-2">
-            {/* #kante: gleiche Optik wie die zentrale ActionButton-Leiste (index.css) — Reroll ist das Ziel
-                (Gold, voller Anlauf), Ablehnen der Ausweg (neutral, ohne Farbsignal). */}
+          {/* Dieselben KNÖPFE wie die Perk-Wahl (`ActionButton`), nicht nur dieselbe Absicht. Vorher standen
+              hier zwei handgeschriebene Kästen mit eigenen Maßen (`text-xs px-3 py-2`, Ablehnen ohne
+              `font-bold`, Hover über `opacity` statt `brightness`) — nebeneinander gehalten las sich das
+              Ablehnen der Skill-Wahl sichtbar anders als das der Perk-Wahl, obwohl es dieselbe Handlung ist.
+              Die Klassen der Sorten (`reroll` Gold / `decline` neutral) sind unverändert dieselben.
+              Der STICKY-Rahmen bleibt handgeschrieben: `ActionBar` ist selbst der Sticky-Behälter, hier
+              gehört aber die Reiterzeile mit unter dasselbe Dach.
+              `sk-actbtn` nimmt die MASSE unterhalb 1400 px zurück (nicht die Optik): „Ablehnen → Perk" ist
+              länger als das „Alle ablehnen" der Perk-Wahl, und in den Standardmaßen läuft es auf 375 px
+              gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
+              derselbe Knopf. */}
+          <div className="flex flex-wrap items-stretch gap-2">
             {!devMode && canReroll && (
-              <button onClick={onReroll}
-                className="as-edge-strong flex-1 text-xs px-3 py-2 rounded-lg font-bold transition-all hover:brightness-110"
-                style={{ "--c": "#d4a63a" }}>
-                {t("skill.reroll", { n: rerollTokens })}
-              </button>
+              <ActionButton kind="reroll" flex className="sk-actbtn" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
             )}
-            <button onClick={onDecline}
-              className="as-edge-neutral flex-1 text-xs px-3 py-2 rounded-lg transition-all hover:opacity-80">
+            <ActionButton kind="decline" flex className="sk-actbtn" onClick={onDecline}>
               {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
-            </button>
+            </ActionButton>
           </div>
 
           {/* #sk-reiter — ab 1400 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen

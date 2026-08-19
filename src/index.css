@@ -1367,7 +1367,19 @@ button { font-family: inherit; }
 /* #lv-fluegel: Auch die Level-up-Karte trägt eine Klammer — unterhalb von 1400 px ist sie KEINE Box, die
    Karte bleibt also direktes Kind des zentrierenden Overlays und die Handy-Fassung damit unverändert.
    Die Flügel und die Griffe darin werden dort ohnehin nicht gerendert (`useIsWide`-Gate). */
-.lv-rig { display: contents; }
+/* #sk-ablehnen — Reroll/Ablehnen der Skill-Wahl sind seit 19.08. dieselben `ActionButton`s wie in der
+   Perk-Wahl (vorher zwei handgeschriebene Kästen mit eigenen Maßen — sichtbar anders bei gleicher Handlung).
+   Auf schmalen Geräten sind die Standardmaße aber zu groß: „Ablehnen → Perk" ist länger als das
+   „Alle ablehnen" der Perk-Wahl und braucht mit `text-sm px-4` 158 px, wo auf 375 px nur 151 zur Verfügung
+   stehen (gemessen, DE; EN ist kürzer). `whitespace-nowrap` ließe den Text aus dem Knopf laufen. Diese Regel
+   nimmt deshalb die MASSE zurück, nicht die Optik — Kantenfarbe, Gewicht und Hover bleiben identisch. */
+@media (max-width: 1399.98px) {
+  .sk-actbtn { font-size: 12px; line-height: 1rem; padding: 8px 12px; }
+}
+
+/* Der Höhen-Deckel der Level-up-Karte, EINMAL. Er steht sonst an vier Stellen (Karte inline, Flügel,
+   Perk-Karte) — und #lv-fest bindet die feste Oberkante daran, das darf nicht auseinanderlaufen. */
+.lv-rig { display: contents; --lv-h: min(92dvh, 760px); }
 
 /* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1400 px keine Box,
    dort scrollt weiter das Panel selbst. */
@@ -3554,6 +3566,22 @@ button { font-family: inherit; }
     /* Oben BÜNDIG, nicht mittig: ein kurzer Flügel (die Kennzahlen sind ~300 px hoch, die Karte ~750)
        schwebte sonst auf halber Höhe neben der Karte und wirkte, als gehörte er nicht dazu. */
     align-items: start; width: 100%;
+    /* #lv-fest — die Oberkante der Karte steht FEST, und das ist der Zweck dieser einen Zeile.
+
+       Das Overlay zentriert senkrecht (`flex items-center`). Damit hängt die OBERKANTE an der HÖHE des
+       Inhalts: jede Änderung schiebt sie um die halbe Differenz. Gemessen bei 1536×791 (DPR 1,25):
+       Karte 540 px hoch → y = 126 · linker Flügel auf (605 px, also höher als die Karte) → y = 93 ·
+       Passiv-Block aufgeklappt (Karte 671 px) → y = 60. Beim Durchklicken der Fraktionsreiter passiert
+       dasselbe, weil jedes Angebot anders lang ist — die Karte springt bei JEDER Entscheidung.
+       Der rechte Flügel fiel nie auf: er ist mit ~365 px kürzer als die Karte und ändert die Höhe des
+       Rasters darum gar nicht. Genau deshalb war der Fehler „nur links".
+
+       `min-height` gibt dem Raster eine KONSTANTE Höhe — dieselbe Obergrenze, die Karte und Flügel
+       ohnehin als Deckel tragen. Der Block ist damit immer gleich hoch, die Zentrierung hat nichts mehr
+       zu variieren, und die Karte sitzt (`align-items: start`) auf einem festen Pixel und wächst nur noch
+       nach UNTEN. Ein tieferer Anker geht nicht: eine Karte darf bis `--lv-h` hoch werden, also muss oben
+       genau der Rest übrig bleiben. */
+    min-height: var(--lv-h);
   }
   /* Der 22-px-Rand ist die Bahn für die Griffe. Dadurch liegen sie NEBEN dem Kartentext, nie darauf. */
   /* Spuren AUSDRÜCKLICH zuweisen. Ohne das greift die Auto-Platzierung: fehlt der linke Flügel, rutscht die
@@ -3564,7 +3592,7 @@ button { font-family: inherit; }
   .lv-wing-r { grid-column: 3; }
   .lv-wing {
     width: 356px; max-width: 100%; align-self: start;
-    max-height: min(92dvh, 760px); overflow: hidden auto;
+    max-height: var(--lv-h); overflow: hidden auto;
     border-radius: 14px; border: 1px solid #2c2a3a; padding: 14px 16px;
     background: linear-gradient(180deg, #17161f, #121017);
     box-shadow: 0 14px 40px rgba(0, 0, 0, .45);

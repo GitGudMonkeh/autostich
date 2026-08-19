@@ -84,6 +84,16 @@ describe("#run-dialoge — Beenden und Neustarten", () => {
     expect(rc.match(/app\.abort\.help/g) || []).toHaveLength(1);
   });
 
+  it("keine Tastatur-Kürzel im Knopf — und dann auch kein stiller Enter-Handler", () => {
+    /* Die zwei Chips („↵" / „Esc") waren die einzigen Zeichen auf dem Dialog und zogen den Blick auf die
+       Mechanik statt auf die Wahl (Entscheidung des Users, 19.08.). Mit ihnen MUSS der Enter-Handler
+       fallen: ein unangekündigter Tastendruck, der einen laufenden Lauf beendet, ist schlechter als gar
+       keiner. Escape schließt weiter über den `useEscape`-Pfad des Aufrufers — Systemverhalten, unbeschriftet. */
+    expect(rc, "Kbd-Chip wieder da").not.toMatch(/Kbd|kbd=/);
+    expect(rc, "Enter-Handler ohne sichtbares Kürzel").not.toMatch(/useEnter|"Enter"/);
+    expect(rc, "useEffect wird ohne den Handler nicht mehr gebraucht").not.toMatch(/useEffect/);
+  });
+
   it("die zwei Breiten stehen in der CSS, nicht als Zahl im JSX", () => {
     expect(deskBlock).toMatch(/\.rc-wide\s*\{[^}]*max-width:\s*\d+px/);
     expect(deskBlock).toMatch(/\.rc-narrow\s*\{[^}]*max-width:\s*\d+px/);

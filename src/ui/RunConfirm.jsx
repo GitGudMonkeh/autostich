@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { useIsWide } from "./useIsWide.js";
@@ -22,6 +21,12 @@ import { t } from "../i18n/index.js"; // #sprache
    · NEUSTARTEN hat zwei Wege und nichts zu verwechseln. Dort reicht Breite, Reihenfolge und die
      Warnung, dass es endgültig ist.
 
+   KEINE Tastatur-Kürzel im Knopf (17.08. eingebaut, 19.08. wieder raus): die zwei Chips („↵" / „Esc")
+   waren die einzigen Zeichen auf dem ganzen Dialog und zogen den Blick auf die Mechanik statt auf die
+   Wahl. Mit ihnen ist auch der Enter-Handler entfallen — ein unangekündigter Tastendruck, der einen
+   laufenden Lauf beendet, ist schlechter als gar keiner. Escape schließt weiter über den bestehenden
+   `useEscape`-Pfad des Aufrufers, das ist Systemverhalten und braucht keine Beschriftung.
+
    Unterhalb 1400 px bleibt beides Knoten für Knoten wie vorher — die Handy-Fassung ist gegen ein
    390-px-Gerät abgestimmt.
 
@@ -30,44 +35,23 @@ import { t } from "../i18n/index.js"; // #sprache
    Screen, über den dauernd neu gemalt wird — das ist hier nicht der Fall.
    ============================================================ */
 
-// Kürzel im Knopf, sonst weiß sie niemand. Nur auf dem Desktop — am Handy gibt es keine Tastatur.
-function Kbd({ children }) {
-  return <span className="ml-auto text-[10px] leading-tight px-1.5 py-[1px] rounded border opacity-55"
-    style={{ fontFamily: "var(--font-mono, ui-monospace)", borderColor: "currentColor" }}>{children}</span>;
-}
-
 /* Eine Wahl als Zeile: Name + Folge. `c` ist die Kantenfarbe (Gold = primär, Rot = gefährlich,
    Grau = Ausstieg) — dieselbe Leiter, die `.as-edge-card` überall im Spiel benutzt. */
-function OptionRow({ c, name, sub, kbd, onClick }) {
+function OptionRow({ c, name, sub, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      className="as-edge-card w-full text-left rounded-xl px-3.5 py-3 flex items-center gap-3 transition-all hover:brightness-110"
+      className="as-edge-card w-full text-left rounded-xl px-3.5 py-3 transition-all hover:brightness-110"
       style={{ "--c": c }}>
-      <span className="min-w-0">
-        <span className="block text-[14.5px] font-bold" style={{ color: c }}>{name}</span>
-        <span className="block text-[12.5px] leading-snug opacity-65 mt-0.5">{sub}</span>
-      </span>
-      {kbd && <Kbd>{kbd}</Kbd>}
+      <span className="block text-[14.5px] font-bold" style={{ color: c }}>{name}</span>
+      <span className="block text-[12.5px] leading-snug opacity-65 mt-0.5">{sub}</span>
     </button>
   );
 }
 
 const GOLD = "#d4a63a", RED = "#e0605a", GREY = "#8a8a95";
 
-/* Enter löst die primäre Wahl aus (Desktop). Escape schließt bereits über den Aufrufer/`useEscape`-Pfad;
-   hier wird nur die Bestätigung ergänzt, damit die zwei Kürzel im Knopf nicht lügen. */
-function useEnter(on, enabled) {
-  useEffect(() => {
-    if (!enabled) return undefined;
-    const h = (e) => { if (e.key === "Enter") { e.preventDefault(); on(); } };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [on, enabled]);
-}
-
 export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
   const wide = useIsWide();
-  useEnter(onSave, wide);
   return overlayPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
@@ -80,9 +64,9 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
           {wide ? (
             /* Jede Option sagt ihre Folge — die Verwechslung ist damit strukturell weg, nicht nur erklärt. */
             <div className="grid gap-2.5 mt-4">
-              <OptionRow c={GOLD} name={t("app.abort.save")} sub={t("app.abort.save.sub")} kbd="↵" onClick={onSave} />
+              <OptionRow c={GOLD} name={t("app.abort.save")} sub={t("app.abort.save.sub")} onClick={onSave} />
               <OptionRow c={RED} name={t("app.end")} sub={t("app.abort.end.sub")} onClick={onEnd} />
-              <OptionRow c={GREY} name={t("app.keepPlaying")} sub={t("app.keepPlaying.sub")} kbd="Esc" onClick={onKeepPlaying} />
+              <OptionRow c={GREY} name={t("app.keepPlaying")} sub={t("app.keepPlaying.sub")} onClick={onKeepPlaying} />
             </div>
           ) : (
             <>

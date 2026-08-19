@@ -1627,6 +1627,46 @@ Konstruktionsfehler, die sich gegenseitig verstärkt haben** — und beide sahen
 - **Nicht am Gerät abgenommen** — alles aus dem Quelltext hergeleitet und im Wächter nachgerechnet; headless gibt
   es keine Wiedergabe. Der Blick (und das Ohr) am Handy steht aus, ebenso die Wärme-Gegenprobe zu `AMBIENT_HZ`.
 
+### #lv-fest + #sk-ablehnen — die Level-up-Karte sprang, weil das Overlay zentriert (19.08.2026)
+Zweimal getrennt gemeldet („springt, wenn ich links aufklappe" und „springt beim Archetyp-Wechsel"), **es ist
+EIN Fehler**: Perk- und Skill-Wahl liegen in einem `fixed inset-0 flex items-center` — die OBERKANTE hängt damit
+an der HÖHE des Inhalts, jede Änderung verschiebt sie um die halbe Differenz.
+- **Gemessen bei 1536×791 (DPR 1,25), Skill-Wahl**: Karte 540 px hoch → y = **126** · linker Flügel auf (605 px,
+  also höher als die Karte) → y = **93** · Passiv-Block aufgeklappt (Karte 671 px) → y = **60**. Der Archetyp-
+  Wechsel macht dasselbe, weil jedes Angebot anders lang ist.
+- **Der rechte Flügel fiel nie auf** — er ist mit ~365 px KÜRZER als die Karte und ändert die Rasterhöhe darum
+  gar nicht. Genau daher las sich der Fehler als „nur links".
+- **Fix ist eine Zeile**: `.lv-rig { min-height: var(--lv-h) }`. Das Raster ist damit immer gleich hoch (derselbe
+  Deckel `min(92dvh, 760px)`, den Karte und Flügel ohnehin tragen), die Zentrierung hat nichts mehr zu variieren,
+  und die Karte sitzt über `align-items: start` auf einem festen Pixel und wächst nur noch nach UNTEN.
+  Nachgemessen: **y = 32 in allen Kombinationen** (4 Fraktionen × 4 Flügel-Zustände × Passiv auf/zu), Perk-Wahl
+  ebenso (sie teilt sich `.lv-rig`).
+- **Ein tieferer Anker ist nicht zu haben**: eine Karte darf bis `--lv-h` hoch werden, also muss oben genau der
+  Rest übrig bleiben. Wer die Karte optisch tiefer setzen will, muss den DECKEL senken, nicht den Anker.
+- **Warum es die erste Messung nicht gefunden hat**: ich hatte nur `left`/`width` über sechs Fensterbreiten
+  gemessen und daraus „steht stabil" gemeldet. Der Sprung war die ganze Zeit auf der ANDEREN Achse. Merksatz für
+  jede Positionsmeldung: **beide Achsen messen, nicht die vermutete.**
+- **`--lv-h` steht jetzt EINMAL** (an `.lv-rig` in der Basis) statt an Karte, Flügel und Anker je einzeln — die
+  drei müssen denselben Wert tragen, sonst ist die feste Oberkante entweder zu tief oder verschenkt Platz.
+
+#### #sk-ablehnen — Reroll/Ablehnen der Skill-Wahl waren nachgebaut
+Zwei handgeschriebene Kästen (`text-xs px-3 py-2`, Ablehnen ohne `font-bold`, Hover über `opacity` statt
+`brightness`) statt der `ActionButton`s, die die Perk-Wahl benutzt — dieselbe Handlung, sichtbar anderes Bild.
+Jetzt dieselbe Komponente. Der STICKY-Rahmen bleibt handgeschrieben: `ActionBar` ist selbst der Sticky-Behälter,
+hier gehört aber die Reiterzeile mit unter dasselbe Dach.
+- **Unterhalb 1400 px nimmt `.sk-actbtn` die MASSE zurück, nicht die Optik.** „Ablehnen → Perk" ist länger als das
+  „Alle ablehnen" der Perk-Wahl: in den Standardmaßen braucht es gemessen **158 px, auf 375 px stehen 151** zur
+  Verfügung — mit `whitespace-nowrap` liefe der Text aus dem Knopf. Mit der Regel 133/151, geprüft auf 430 · 390 ·
+  375 · 360 px in DE (EN ist kürzer). Eine Zeile CSS statt eines zweiten JSX-Zweigs.
+- **Die Tastatur-Kürzel der Run-Dialoge sind wieder raus** (`↵`/`Esc`-Chips in `RunConfirm.jsx`): sie waren die
+  einzigen Zeichen auf dem Dialog und zogen den Blick auf die Mechanik statt auf die Wahl. **Der Enter-Handler ist
+  mitgegangen** — ein unangekündigter Tastendruck, der einen laufenden Lauf beendet, ist schlechter als gar keiner.
+  Escape schließt weiter über den bestehenden `useEscape`-Pfad des Aufrufers.
+- Wächter: `test/levelup-wings.test.js` (Abschnitte #lv-fest + #sk-ablehnen), `test/rahmen-huelle.test.js`.
+  Gegenprobe gemacht: alle fünf sabotierten Nähte fallen.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen (Chromium, echte Komponenten, 1536×791 bei
+  DPR 1,25 wie im Perf-HUD des Users).
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**
