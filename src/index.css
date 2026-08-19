@@ -2163,6 +2163,11 @@ button { font-family: inherit; }
   /* Eckiger, wie alles andere ab 1400 px (6 px). Die Knöpfe tragen ihren Radius als Tailwind-Utility
      (`rounded-xl` = 12 px); index.css steht ungelayert dahinter und schlägt sie ohne `!important`. */
   .as-cta-primary, .as-cta-ghost, .as-tut-btn, .as-ranked-btn, .as-seed-play { border-radius: 6px; }
+  /* Die Zweitzeile der Fortsetzen-Taste („Durchlauf 1/50 · Score 544") klebte am Titel: der Knopf ist
+     `flex-col` mit `leading-tight` und ohne Abstand dazwischen. Beide Werte gehören zusammen — nur die
+     Luft zu erhöhen schöbe die Zeile an den unteren Rahmen, nur das Polster ließe sie oben kleben. */
+  .as-cta-sub { margin-top: 5px; }
+  .as-cta-primary:has(.as-cta-sub) { padding-bottom: 18px; }
   /* Die drei ruhigen Zeilen. `as-cta-ghost` ist schon flach — sie bekommt hier nur dieselbe Haarlinie,
      damit die drei nebeneinander nicht doch wieder drei Töne zeigen. */
   .as-tut-btn,

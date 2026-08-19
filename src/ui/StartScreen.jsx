@@ -450,7 +450,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           <button onClick={onResume}
             className="as-cta-primary w-full px-5 py-3 min-[1400px]:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-[20px] min-[1400px]:text-[24px]">{t("start.resume")}</span>
-            <span className="ty-num-sm text-[11px] min-[1400px]:text-[14px] opacity-80">
+            {/* `as-cta-sub`: die Zweitzeile klebte am Titel (`leading-tight` ohne Abstand dazwischen).
+                Luft und Fußpolster stehen ab 1400 px in index.css — beides zusammen, sonst rutscht die
+                Zeile nur von oben weg und dafür an den unteren Rahmen. */}
+            <span className="as-cta-sub ty-num-sm text-[11px] min-[1400px]:text-[14px] opacity-80">
               {t("start.resume.sub", {
                 cycle: Math.min((resume.cycle || 0) + 1, resume.totalCycles),
                 total: resume.totalCycles,

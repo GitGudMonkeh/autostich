@@ -1948,7 +1948,11 @@ sie ergeben eine Leiter, auf der keine Stufe heraussticht.
   die Hub-Knöpfe gehören nicht dazu; sie haben eigene Klassen. Kein Eingriff in ein geteiltes Signal.
 - **Handy bitidentisch nachgewiesen**: Pixelvergleich 390 px vorher/nachher, mittlere Abweichung
   **0,0000 von 255**, größte Einzelabweichung **0**.
-- Wächter: `test/hub-knopf.test.js` (4). Gegenprobe gemacht: alle drei sabotierten Nähte fallen.
+- **Die Zweitzeile der Fortsetzen-Taste hat Luft bekommen** („Durchlauf 1/50 · Score 544"). Sie klebte am
+  Titel: der Knopf ist `flex-col` mit `leading-tight` und ohne Abstand dazwischen. **Beide Werte gehören
+  zusammen** — nur die Luft zu erhöhen schöbe die Zeile an den unteren Rahmen, nur das Fußpolster ließe sie
+  oben kleben. Gemessen 1920×1080: **17 px über dem Titel · 5 px Titel→Zeile · 19 px Zeile→Rahmen.**
+- Wächter: `test/hub-knopf.test.js` (6). Gegenprobe gemacht: alle sabotierten Nähte fallen.
 - **Nicht am Gerät gesehen** — headless in beiden Zuständen (mit und ohne laufenden Lauf) nachgerendert.
 
 ### #up-form — eine Kachelform für Baum, Leitfaden und Glossar (19.08.2026, Nachjustierung)

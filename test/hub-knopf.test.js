@@ -60,6 +60,16 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
     expect(deskBlock).toMatch(/\.as-cta-primary,\s*\.as-cta-ghost,\s*\.as-tut-btn,\s*\.as-ranked-btn,\s*\.as-seed-play\s*\{[^}]*border-radius:\s*6px/);
   });
 
+  it("die Zweitzeile der Fortsetzen-Taste hat Luft — oben UND unten", () => {
+    /* Sie klebte am Titel (`flex-col` + `leading-tight`, kein Abstand dazwischen). Beide Werte gehören
+       zusammen: nur die Luft zu erhöhen schöbe die Zeile an den unteren Rahmen, nur das Polster ließe sie
+       oben kleben. Gemessen 1920×1080: 17 px über dem Titel · 5 px Titel→Zeile · 19 px Zeile→Rahmen. */
+    expect(deskBlock).toMatch(/\.as-cta-sub\s*\{[^}]*margin-top:\s*\d+px/);
+    expect(deskBlock, "ohne mehr Fußpolster rutscht die Zeile an den Rahmen")
+      .toMatch(/\.as-cta-primary:has\(\.as-cta-sub\)\s*\{[^}]*padding-bottom:\s*\d+px/);
+    expect(start, "die Zweitzeile trägt den Haken nicht").toMatch(/className="as-cta-sub /);
+  });
+
   it("die Handy-Fassung bleibt unberührt", () => {
     /* Die Basis-Regeln der vier Knöpfe stehen weiter oben und dürfen die Desktop-Werte nicht kennen —
        nachgemessen ist der Hub bei 390 px vorher/nachher bitidentisch (0,0000 von 255). */
