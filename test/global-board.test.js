@@ -21,7 +21,12 @@ import { TOTAL_NODES, ownedCount, emptyProfile } from "../src/game/progression.j
    noch an den richtigen Bildschirm gehängt ist, entscheidet dieser Test.
    ============================================================ */
 
-const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+/* Zeilenenden beim Lesen vereinheitlichen: Die Ratschen unten greifen teils ÜBER einen Zeilenumbruch
+   (`boardMode && \(\n\s*<div …`). Auf einem Windows-Checkout mit `core.autocrlf=true` steht dort `\r\n`,
+   der Greifer findet nichts, und der Test meldet einen Umbau, den es nie gab — die geprüfte Zeile steht
+   wortwörtlich im Code. Im Repository liegt die Datei mit LF; das `\r` entsteht erst beim Auschecken und
+   ist damit eine Eigenschaft des Arbeitsplatzes, nicht des Codes (gleiche Naht in shop-scale.test.js). */
+const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 /* Für die „nicht abgetippt"-Prüfung unten: Kommentare erklären die Zahl (und dürfen sie nennen),
    Code darf sie nicht enthalten. Ohne das Strippen schlüge der Wächter am eigenen Fließtext an. */
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
