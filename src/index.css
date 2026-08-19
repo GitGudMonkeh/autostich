@@ -4448,7 +4448,20 @@ button { font-family: inherit; }
     background: none !important; border: 0 !important; padding: 0 !important; border-radius: 0 !important;
   }
   .lv-grip {
-    position: absolute; top: 50%; transform: translateY(-50%);
+    /* #lv-anker (19.08.2026) — die Griffe stehen FEST, sitzen aber weiter auf der Karte.
+
+       `top: 50%` allein hieß: Kartenmitte. Das sah richtig aus, solange die Karte ihre Höhe nur mit dem
+       Angebot änderte — seit die gehaltenen Skills als Klappfeld darin stehen, ändert sie der SPIELER,
+       und der Griff wanderte gemessen 103 px, während man ihn ansah.
+
+       Beides zugleich geht nicht: die Karte hat eine feste Oberkante (#lv-fest) und eine Höhe zwischen
+       381 px (Feuer, nichts gehalten) und 760 px (Deckel `92dvh`) — ihre MITTE muss also wandern. Der
+       Deckel hier ist die Auflösung: 190 px ist die Mitte der KLEINSTEN Karte. Damit ist der Griff auf
+       ihr exakt mittig und rührt sich auf jeder größeren nicht mehr — er sitzt dort zwischen 25 % und
+       50 % der Höhe, also immer im oberen Mittelfeld und nie unter der Kante.
+       `min(50%, …)` statt einer nackten Zahl, damit eine noch kürzere Karte (andere Sprache, weniger
+       Angebot) ihn nicht unterhalb ihrer Mitte stehen ließe. */
+    position: absolute; top: min(50%, var(--lv-grip-y, 190px)); transform: translateY(-50%);
     left: auto; right: auto; width: 22px; min-height: 76px; z-index: 4;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
     font-size: 13px; line-height: 1; border: 1px solid;

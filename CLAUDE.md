@@ -2335,6 +2335,29 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #lv-anker — die Flügel-Griffe stehen fest, und zwar auf der Karte (19.08.2026)
+Dritte Runde an derselben Naht, gemeldet: „wenn ich die gehaltenen Skills ein- und ausklappe, wandern
+die Griffe mit — sicherlich auch bei der Skill-Auswahl." Stimmt beides. Seit `HeldSkills` als Klappfeld
+IN der Karte steht (Parallel-Session), ändert der SPIELER ihre Höhe — und der auf die Kartenmitte
+gesetzte Griff (#lv-mitte) wanderte **gemessen 103 px**, während man ihn ansieht.
+- **Die drei Fassungen und ihre Meldungen**: an die Rasterhöhe geheftet (#lv-griff) hingen die Griffe
+  unter der Karte · auf die Kartenmitte gesetzt (#lv-mitte) wandern sie mit jedem Angebot · jetzt
+  gedeckelt.
+- **Der Deckel ist die Auflösung des Widerspruchs.** `top: min(50%, 190px)`: 190 px ist die Mitte der
+  **kleinsten** Karte (gemessen 381 px — Skill/Feuer, nichts gehalten; breitenunabhängig über
+  1536 · 1920 · 2047). Auf ihr sitzt der Griff damit exakt mittig, auf jeder größeren steht er still.
+  Nachgemessen über 2 Bildschirme × 5 Angebote × 2 Klappzustände × 3 Fenster: **eine einzige Position
+  je Fensterhöhe**, Anteil 25–44 % der Kartenhöhe, kleinster Abstand zur Kartenkante **152 px**.
+- **`min(50%, …)` statt einer nackten Zahl**: eine noch kürzere Karte (andere Sprache, kleineres
+  Angebot) ließe den Griff sonst unterhalb ihrer Mitte stehen. Die Form ist die Zusage, die Zahl nur
+  der Deckel.
+- **Warum nicht die Karte stabilisieren**: eine feste Kartenhöhe brächte die Leere zurück, die
+  #lv-fluegel entfernt hat (kleinste Karte 381, Deckel 760 → bis zu 379 px Loch).
+- Wächter: `test/up-ruhe.test.js` — er RECHNET nach, dass der Deckel die halbe kleinste Karte nicht
+  überschreitet, statt die Zahl zu vergleichen. Gegenprobe gemacht: nackte 50 %, nackte Pixelzahl, zu
+  hoher Deckel und der wieder gestreckte Kasten fallen alle vier.
+- Handy unberührt (Griffe werden unter 1400 px gar nicht gerendert; Pixelvergleich 390 px im Rauschen).
+
 ### #kpi-passt — die Zahl der Status-Tafel passt sich der Kachel an (19.08.2026)
 Gemeldet vom Gerät: „Letzter Lauf **179.077.04**…" — der Score lief aus seiner Kachel und wurde vom
 `overflow: hidden` des Rahmens mitten in der Zahl abgeschnitten. Nachgemessen: elf Zeichen brauchen bei

@@ -145,18 +145,30 @@ describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
     expect(deskBlock).toMatch(/\.up-stat > \.up-stat-b,\s*\.up-stat > \.up-stat-max\s*\{[^}]*min-height:[^}]*margin-top:/);
   });
 
-  it("#lv-mitte: die Griffe sitzen auf der Kartenmitte, nicht auf der Rastermitte", () => {
-    /* Die Griffe hängen mit `top: 50%` an `.lv-cardwrap`. Auf die Rasterhöhe GESTRECKT (die
-       Vorgängerfassung) saßen sie bei 396 px, während die Kartenmitte je nach Angebot bei 222–289 px
-       liegt — auf dem kürzesten Angebot ragten sie unter die Kartenkante hinaus. Der Kasten hört jetzt
-       wieder an der Karte auf.
-       Die feste Rasterhöhe bleibt: sie hält die OBERKANTE der Karte fest (#lv-fest), das ist eine andere
-       Aufgabe als die Griffposition. Eine geratene Pixelzahl am Griff bleibt verboten. */
+  it("#lv-anker: die Griffe stehen fest — gedeckelte Kartenmitte, keine nackte Pixelzahl", () => {
+    /* Drei Fassungen, drei Meldungen: an die Rasterhöhe geheftet hingen die Griffe unter der Karte
+       (#lv-griff), auf die Kartenmitte gesetzt wanderten sie mit jedem Angebot — und seit die
+       gehaltenen Skills als Klappfeld IN der Karte stehen, wandern sie, während der Spieler zusieht
+       (gemessen 103 px beim Zuklappen).
+
+       Beides zugleich geht nicht: feste Oberkante (#lv-fest) plus angebotsabhängige Höhe heißt, dass
+       die Mitte wandern MUSS. Der Deckel ist die Auflösung — er liegt auf der Mitte der KLEINSTEN
+       Karte, also ist der Griff dort exakt mittig und steht auf jeder größeren still.
+
+       Der Wächter RECHNET das nach, statt die Zahl zu vergleichen: der Deckel darf die halbe kleinste
+       Karte nicht überschreiten, sonst wandert der Griff wieder. */
+    const KLEINSTE_KARTE = 381; // gemessen (Skill/Feuer, nichts gehalten) über 1536 · 1920 · 2047 px
     expect(deskBlock).toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*start/);
     expect(deskBlock, "der Kasten ist wieder auf die Rasterhöhe gestreckt")
       .not.toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*stretch/);
-    expect(deskBlock, "ohne feste Rasterhöhe wandert die Oberkante der Karte wieder").toMatch(/\.lv-rig\s*\{[^}]*min-height:\s*var\(--lv-h\)/);
-    expect(deskBlock, "eine geratene Pixelzahl statt der Konstruktion").not.toMatch(/\.lv-grip\s*\{[^}]*top:\s*\d+px/);
+    expect(deskBlock, "ohne feste Rasterhöhe wandert die Oberkante der Karte wieder")
+      .toMatch(/\.lv-rig\s*\{[^}]*min-height:\s*var\(--lv-h\)/);
+
+    const m = deskBlock.match(/\.lv-grip\s*\{[^}]*top:\s*min\(50%,\s*var\(--lv-grip-y,\s*(\d+)px\)\)/);
+    expect(m, "die gedeckelte Mitte ist weg — entweder nackte 50 % (wandert) oder feste Zahl (kann herausragen)")
+      .toBeTruthy();
+    expect(Number(m[1]), "der Deckel liegt über der halben kleinsten Karte — der Griff wandert wieder")
+      .toBeLessThanOrEqual(Math.floor(KLEINSTE_KARTE / 2));
   });
 
   it("die Update-Leiste folgt derselben Sprache (eckig, kein Schein)", () => {
