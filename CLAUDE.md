@@ -2231,13 +2231,17 @@ Nachgemessen (390×844, Produktionsbuild): Brett **358×347**, der Boden beginnt
   Text und über dem Effekt weiterhin lesbar; die feine Faktorenkette ist es nicht.
 - Gemessen danach: Zeile **25–45** (statt 302–322). **Die Panelhöhe bleibt 347 px.**
 - **Die drei Abstände werden UMVERTEILT, nicht gekürzt** (Zeile · Kartenreihe · Ansage): `4+32+16 = 52 px`
-  im Normalfall, `0+24+28 = 52 px` mit der Zeile oben. Damit bleibt die Panelhöhe gleich — **und das ist die
+  im Normalfall, `−12+24+40 = 52 px` mit der Zeile oben. Der negative Abstand holt die Zeile in das obere
+  Panel-Polster (`p-6` = 24 px): die Hälfte davon war über ihr ungenutzte Luft, und jedes Pixel, das sie dort
+  gewinnt, ist ein Pixel Abstand der Karten zum Effekt. Damit bleibt die Panelhöhe gleich — **und das ist die
   Bedingung, unter der die Verschiebung überhaupt etwas bringt.** Das Effekt-Band ist ein PROZENTSATZ der
   Panelhöhe (86 %); ein kürzeres Panel zöge den Boden mit nach oben und die Karten kämen ihm genauso nah wie
   vorher. Wer an einem der drei Werte dreht, muss einen anderen gegenrechnen — der Wächter addiert beide
   Seiten und fällt bei jeder einseitigen Änderung.
-- Endstand gemessen: Zeile **25–45** · Karten **69–262** · Ansage 290–322 · Boden ab 298. Die Karten haben
-  damit **36 px Abstand** zum Bandbeginn (vorher 24, im ersten Wurf dieser Fassung ebenfalls 24).
+- Endstand gemessen: Zeile **13–33** · Karten **57–250** · Ansage 290–322 · Boden ab 298. Die Karten haben
+  damit **48 px Abstand** zum Bandbeginn (vorher 24) — und stehen auf **exakt denselben Pixeln wie ohne
+  Boden-Effekt**. Die Zeile kostet die Karten damit gar nichts mehr; bezahlt wird sie allein aus dem Polster
+  oben und dem größeren Abstand der Ansage unten.
 - **EIN Block, zwei Einhängepunkte** (`const kette`, `{ketteOben && kette}` vor der Kartenreihe,
   `{!ketteOben && kette}` dahinter). Zwei Fassungen wären die Doppelpflege, vor der die Datei überall warnt.
 - **Nur `cubematrix` + `neonsurf`.** Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher

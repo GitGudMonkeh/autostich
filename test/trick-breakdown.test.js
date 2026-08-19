@@ -120,7 +120,8 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     /* Die drei Abstände werden UMVERTEILT, nicht gekürzt — sonst schrumpft das Panel, und weil das
        Effekt-Band ein PROZENTSATZ der Panelhöhe ist, wandert der Boden dann einfach mit nach oben und die
        Karten sind ihm genauso nah wie vorher. Beide Seiten müssen also dieselbe Summe ergeben. */
-    const paare = [...src.matchAll(/ketteOben \? "mt-(\d+)" : "mt-(\d+)"/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    const paare = [...src.matchAll(/ketteOben \? "(-?)mt-(\d+)" : "(-?)mt-(\d+)"/g)]
+      .map((m) => [Number(m[1] + m[2]), Number(m[3] + m[4])]);
     expect(paare, "erwartet drei umschaltende Abstände: Zeile · Kartenreihe · Ansage").toHaveLength(3);
     const summe = (i) => paare.reduce((a, p) => a + p[i], 0);
     expect(summe(0), `Abstände oben ${summe(0)} ≠ unten ${summe(1)} — die Panelhöhe würde springen`)

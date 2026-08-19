@@ -741,7 +741,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const bodenFx = bgFx === "cubematrix" || bgFx === "neonsurf";
   const ketteOben = useMediaQuery(MOBILE_MQ) && bodenFx;
   /* Die drei Abstände der Spalte (Zeile · Kartenreihe · Ansage) werden dabei UMVERTEILT, nicht gekürzt:
-     4+32+16 = 52 px im Normalfall, 0+24+28 = 52 px mit der Zeile oben. Die Panelhöhe bleibt damit gleich —
+     4+32+16 = 52 px im Normalfall, −12+24+40 = 52 px mit der Zeile oben. Der negative Abstand holt die Zeile
+     in das obere Panel-Polster hinein (`p-6` = 24 px) — die Hälfte davon war über ihr ungenutzte Luft, und
+     jedes Pixel, das sie dort gewinnt, ist ein Pixel, das die Karten weiter vom Effekt weg stehen. Die Panelhöhe bleibt damit gleich —
      und das ist hier keine Kosmetik, sondern die Bedingung, unter der die Verschiebung überhaupt etwas
      bringt: das Effekt-Band ist ein PROZENTSATZ der Panelhöhe (`EFFECT_ZONES.mobile.y` = 86 %). Ein kürzeres
      Panel zöge den Boden mit nach oben, die Karten kämen ihm also genauso nah wie vorher. Wer an einem der
@@ -1410,7 +1412,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
      flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
   const kette = (
-    <div className={`relative z-10 min-h-5 ${ketteOben ? "mt-0" : "mt-1"} flex items-center justify-center`}>
+    <div className={`relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}>
       {!hideBreakdown && <TrickBreakdown trick={t} />}
     </div>
   );
@@ -1804,7 +1806,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
       {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
-      <div className={`relative z-10 h-8 ${ketteOben ? "mt-7" : "mt-4"} flex items-center justify-center`}>
+      <div className={`relative z-10 h-8 ${ketteOben ? "mt-10" : "mt-4"} flex items-center justify-center`}>
         {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
             kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
         {banner && hideFloatWinLose ? null : banner ? (
