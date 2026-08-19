@@ -11,7 +11,7 @@ Einbau ist NICHT gemacht: Issue #402.
 |---|---|---|---|---|---|---|---|
 | A | Deck | Dauerhafte Kartenwerte | `#8a7de0` | 11 | 3 | Kartenstapel von der Seite, jede Kante glüht | liegender Block ✅ |
 | B | Stich | Stich-Effekte | `#e0605a` | 11 | 3 | zwei blanke Karten, dazwischen die weißglühende Naht | gespiegeltes Paar ✅ |
-| C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ANDERS beleuchtet (Umriss · Ecken · eine Kante) | Fächer |
+| C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ANDERS beleuchtet (Umriss · Ecken · eine Kante) | Fächer ✅ |
 | D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe |
 | E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug |
 | P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz |
@@ -61,6 +61,7 @@ Helligkeitsbänder, schwarzer Grund, quadratisch, `mix-blend-mode: screen`).
 | Blitz-Skill (Referenz des anderen Satzes) | 10,9 % | 4,5 % | 2,0 % | 0,60 % | 1,98 | 259° |
 | **A Deck** | 23,5 % | 10,3 % | 1,6 % | 0,44 % | 1,95 | 261° |
 | **B Stich** | 23,2 % | 5,7 % | 2,0 % | 0,38 % | 1,99 | 2° |
+| **C Rolle** | 31,4 % | 7,6 % | 3,6 % | 1,56 % | 1,81 | 132° |
 
 Der Unterschied im mittleren Band (5,7 gegen 10,3 %) ist kein Mangel, sondern der Motivunterschied: Deck
 leuchtet **flächig** (die große Deckfläche des obersten Blattes), Stich **linear** (Naht und Kanten). Genau
@@ -72,7 +73,10 @@ statt linear: die große Deckfläche des obersten Blattes), und das ist in Ordnu
 Referenzwert für die sechs anderen.**
 
 Weicht später eine Kategorie stark ab, wird sie beim Backen angeglichen (`scripts/skill-art-build.py`) —
-eine Zahl in einer Tabelle statt eines neuen Bildversuchs.
+eine Zahl in einer Tabelle statt eines neuen Bildversuchs. **C Rolle ist der erste Fall**: ein durchgehend
+heller Kartenumriss ist schlicht mehr Licht als eine Naht oder ein paar Kartenkanten (31,4 % Fläche, 1,56 %
+fast weiß gegen 0,4 % bei A und B). Faktor nach Messung rund **0,85** — endgültig gerechnet wird über alle
+sieben, sobald der Satz steht, denn der Zielwert ist der Median und der wandert noch.
 
 ## Komposition
 
