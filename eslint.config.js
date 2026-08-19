@@ -7,7 +7,25 @@ import react from "eslint-plugin-react";
 // genau der Ballast, der bei den Reworks anfällt. Bewusst minimal: recommended + React-Hooks, keine Style-Regeln
 // (kein Prettier-Zwang). Zahlen/Verhalten prüfen weiterhin die Tests, ESLint nur die Code-Hygiene.
 export default [
-  { ignores: ["dist/**", "node_modules/**", "sim/out/**", "coverage/**", ".claude/**", "**/*.scratch.mjs"] },
+  /* Was ERZEUGT wird, wird nicht gelintet. Die Liste ist bewusst die „Build output"-Gruppe aus
+     .gitignore plus die Test- und Sim-Ausgaben — wer dort etwas ergänzt, ergänzt es hier mit.
+
+     Warum das mehr als Kosmetik ist: `.vite/` (der Dependency-Cache des Dev-Servers) fehlte, und darin
+     liegen vorgebündelte Fremdpakete. `npm run lint` meldete dadurch lokal 419 Probleme, davon 159
+     Fehler — alle aus fremdem Code. Die eigenen gingen darin unter, und weil CI mit frischem `npm ci`
+     und ohne je gelaufenen Dev-Server baut, sah man dort ein ganz anderes Bild als auf dem eigenen
+     Rechner: genau die Konstellation, in der man aufhört, lokal zu linten. Am 19.08.2026 ist deshalb
+     ein Push an vier `no-useless-escape` in einer Testdatei gescheitert, die lokal niemand gesehen
+     hatte — die Pipeline fährt `lint --max-warnings=0`, Tests und Build waren grün. */
+  {
+    ignores: [
+      "node_modules/**",
+      "dist/**", "build/**", "out/**", ".cache/**", ".vite/**",
+      "coverage/**", ".nyc_output/**",
+      "sim/out/**", "logs/**",
+      ".claude/**", "**/*.scratch.mjs",
+    ],
+  },
   js.configs.recommended,
   {
     files: ["**/*.{js,jsx,mjs}"],
