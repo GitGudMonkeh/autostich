@@ -1454,6 +1454,15 @@ button { font-family: inherit; }
    Luft steht (fluid gedeckelt, s. .hub-pair).
    ============================================================================ */
 @media (min-width: 1400px) {
+  /* Die obere linke Ecke soll ausgeglichen wirken: Der Rahmen der Bühne ist oben 1,5 rem breit, seitlich
+     aber nur 1 rem — der Ton-Knopf saß dadurch sichtbar näher an der linken Kante als an der oberen
+     (gemessen: 16 statt 24 px). Auf dem Desktop bekommen alle vier Seiten denselben Wert.
+     Unter 1400 px bleibt es bei 1 rem: dort ist Breite knapp, und jeder Rand geht vom Inhalt ab. */
+  .app-root {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+
   /* Das Spaltenpaar: Spielen links, Stand rechts. Fluid bis 1520 px gedeckelt — auf Ultrawide läuft es
      NICHT weiter auseinander, sondern bleibt als Paar zusammen (Verankerungs-Regel: Wichtiges gehört nicht
      an die äußersten Bildschirmränder). */
