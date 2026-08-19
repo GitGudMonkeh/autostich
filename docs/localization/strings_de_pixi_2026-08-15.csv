@@ -310,6 +310,7 @@
 "arch.buffSuit","i18n","🎨 Bufft Farbe","🎨 Buffs suit","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.buildingCount","i18n","{n} Gebäude","{n} buildings","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.buildingFallback","i18n","Gebäude","Building","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"arch.buildings","i18n","Gebäude","Buildings","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.buildingsN","i18n","Gebäude ({n})","Buildings ({n})","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.buildNothing","i18n","Nichts bauen · Fortfahren →","Build nothing · continue →","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "arch.cancel","i18n","Abbrechen","Cancel","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

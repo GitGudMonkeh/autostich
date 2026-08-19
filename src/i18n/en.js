@@ -622,6 +622,7 @@ export default {
   "cardgrid.arch.title": "🏗 {name} · +{boost} value",
   "cardgrid.glacier.title": "Part of an active glacier formation (2D)",
   "cardgrid.ripe.title": "Green (ripe) — counts towards the suit block",
+  "arch.buildings": "Buildings",
   "arch.buildingsN": "Buildings ({n})",
   "archpanels.tapHint": "Tapping shows where it sits on the board — and the other way round.",
   "archpanels.roleLegend": "● Role — target of a perk/family on this card",

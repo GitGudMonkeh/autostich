@@ -14,7 +14,7 @@ const fmt = (x) => fmtNum(x.toFixed(2));
    Optional `pickedIds`/`pickedPos`, um eine laufende Auswahl im Kontext der Formationen zu markieren.
    #UI: `collapsible` macht die Kopfzeile zum Ein-/Ausklapp-Trigger. Der 🏗 Gebäude-Toggle blendet — wie in der
    Aufstellungsphase — die platzierten Architekt-Bauten als Rahmen über dem Brett ein (nur wenn Bauten vorhanden). */
-export function FormationPanel({ state = {}, title = null, pickedIds = [], pickedPos, className = "", collapsible = false, defaultOpen = true }) {
+export function FormationPanel({ state = {}, title = null, pickedIds = [], pickedPos, className = "", collapsible = false, defaultOpen = true, glowBid = null }) {
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const formations = state.formations || [];
@@ -30,7 +30,10 @@ export function FormationPanel({ state = {}, title = null, pickedIds = [], picke
   const glacierPos = iceActive && state.glacierLocked
     ? new Set(state.glacierLocked.map((v, i) => (v ? i : -1)).filter((i) => i >= 0)) : null;
   // #UI: Architekt-Bauten als Rahmen einblenden (Gebäude-Toggle), wie in der Aufstellungsphase.
-  const archOn = hasArch && showArch;
+  /* Ein gesetztes `glowBid` blendet die Bauten MIT ein, auch wenn der 🏗-Schalter aus ist: der Zeiger kommt
+     aus einer Gebäude-Liste (#lv-gebaeude), und ein Antippen, das sichtbar nichts tut, ist schlimmer als kein
+     Antippen. Dieselbe Regel, die der Kommentar an `ArchBuildingList` vom Aufrufer verlangt. */
+  const archOn = hasArch && (showArch || !!glowBid);
   const cover = archOn ? architectCoverFor(state) : null;
   const structPos = archOn ? structLitPosOf(state) : null;
   const distrPos = archOn ? distrLitPosOf(state) : null;
@@ -59,7 +62,7 @@ export function FormationPanel({ state = {}, title = null, pickedIds = [], picke
           anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
           lockedPos={state.challengeBlockForm || []}
           glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null} firnStackByPos={iceActive ? (state.firnStack || []) : null}
-          architectCover={cover} structPos={structPos} distrPos={distrPos}
+          architectCover={cover} structPos={structPos} distrPos={distrPos} glowBid={archOn ? glowBid : null}
           pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
       )}
     </div>

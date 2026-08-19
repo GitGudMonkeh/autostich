@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { useIsWide } from "./useIsWide.js";
 import { FormationPanel } from "./FormationPanel.jsx";
+import { ArchBuildingList } from "./ArchPanels.jsx"; // #lv-gebaeude: dieselbe Liste wie Aufstellung/Chronik
+import { architectBuildings, architectCoverFor } from "./architectCover.js";
 import { DeckStrength, PerkList } from "./BuildSummary.jsx";
 import { zinsReadout } from "../game/perks.js";
 import { StatusRail } from "./StatusRail.jsx";
@@ -47,6 +50,7 @@ import { t } from "../i18n/index.js"; // #sprache
 
 export const WING_DECK = "lvWingDeck";
 export const WING_STATS = "lvWingStats";
+export const WING_BUILDINGS = "lvWingBuildings"; // #lv-gebaeude: Ausklapp-Zustand der Gebäude-Liste
 
 /* Der Griff an der Kartenkante. Zugeklappt zeigt der Pfeil nach AUSSEN („da ist mehr"), aufgeklappt
    nach INNEN („zumachen") — und trägt dann zusätzlich senkrecht den Namen dessen, was man gerade sieht.
@@ -65,6 +69,36 @@ function Grip({ side, open, label, onClick, color }) {
   );
 }
 
+/* #lv-gebaeude — die gewählten Gebäude als Ausklapp-Reiter am Fuß des linken Flügels.
+
+   Die Liste ist NICHT neu: `ArchBuildingList` steht so schon in der Aufstellungsphase und in der Chronik,
+   samt ihrer eigentlichen Eigenschaft — Antippen lässt den Gebäude-Rahmen am Brett cyan leuchten. Genau
+   deshalb gehört sie in DIESEN Flügel und nicht in den rechten: das Brett, auf das sie zeigt, steht
+   darüber. Ein `bare`-Schalter nimmt ihr Kasten und Überschrift ab; die trägt hier der Reiter.
+
+   Der Zeiger (`inspectBid`) liegt bewusst in `useState` und nicht in den Optionen — anders als der Auf-/
+   Zu-Zustand ist er keine Gewohnheit, sondern eine flüchtige Frage („wo liegt das?"), die mit der Karte
+   endet. Der Zustand des REITERS liegt dagegen in den Optionen (`lvWingBuildings`), wie alles andere hier:
+   die Karte wird bei jedem Level-up neu gemountet.
+
+   Vorbehalt, den der Aufbau nicht auflösen kann: der Reiter sitzt unter der Deck-Stärke, das Brett ganz
+   oben — bei aufgeklappter Liste kann das Brett aus dem sichtbaren Bereich des Flügels gescrollt sein, und
+   das Leuchten passiert dann außerhalb des Blickfelds. Platzierung ist so gewünscht; wer es näher haben
+   will, schiebt den Reiter über die Deck-Stärke. */
+function WingFold({ open, label, count, color, onToggle, children }) {
+  return (
+    <>
+      <button type="button" onClick={onToggle} aria-expanded={open}
+        className="w-full flex items-center gap-1.5 text-left mb-2">
+        <span className="text-[10px] opacity-50" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
+        <span className="text-[11px] uppercase tracking-wide opacity-50 truncate">{label}</span>
+        <span className="ml-auto text-[11px] font-bold shrink-0" style={{ color }}>{count}</span>
+      </button>
+      {open && children}
+    </>
+  );
+}
+
 // Gehaltene Familien zählen wie Perks — für den Spieler ist beides „ein Perk, das ich genommen habe"
 // (dieselbe Zählung wie in der Überschrift der Perk-Karte, s. #victory-perks).
 const famCount = (state) => Object.values(state.familyTiers || {}).filter((lv) => lv > 0).length;
@@ -77,14 +111,29 @@ export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options 
   const deckOpen = wide && (options[WING_DECK] ?? true);
   const statsOpen = wide && (options[WING_STATS] ?? true);
   const flip = (key, on) => onOption && onOption({ [key]: !on });
+  // #lv-gebaeude — Liste am Fuß des linken Flügels. Zeiger flüchtig, Auf-/Zu-Zustand gemerkt (s. Kommentar).
+  const [inspectBid, setInspectBid] = useState(null);
+  const buildings = architectBuildings(state);
+  const buildOpen = !!options[WING_BUILDINGS];
+  const archCover = buildings.length ? architectCoverFor(state) : null;
   return (
     <div className="lv-rig">
       {deckOpen && (
         <aside className="lv-wing lv-wing-l" style={{ borderColor: `${accent}4d` }}>
-          <FormationPanel state={state} />
+          <FormationPanel state={state} glowBid={inspectBid} />
           <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("perk.deckStrength")}</div>
           <DeckStrength deck={deck} />
+          {buildings.length > 0 && (
+            <>
+              <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
+              <WingFold open={buildOpen} color="#6f9bec" count={buildings.length}
+                label={`🏗 ${t("arch.buildings")}`} onToggle={() => flip(WING_BUILDINGS, buildOpen)}>
+                <ArchBuildingList bare buildings={buildings} cover={archCover} inspectBid={inspectBid}
+                  onInspect={(next) => setInspectBid(next)} />
+              </WingFold>
+            </>
+          )}
         </aside>
       )}
 

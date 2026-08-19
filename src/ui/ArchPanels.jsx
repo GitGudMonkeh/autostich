@@ -57,11 +57,21 @@ export function ArchToggle({ on, onToggle }) {
 /* Gebäude-Liste „🏗 Deine Gebäude": antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (inspectBid) — und
    umgekehrt markiert das Antippen einer Karte im Gebäude den Eintrag. Geteilt von FormationPhase & ChronikOverview.
    `onInspect(nextBid)` bekommt die neue Auswahl (oder null); der Aufrufer blendet dabei die Gebäude ein (showArch). */
-export function ArchBuildingList({ buildings = [], cover = null, inspectBid = null, onInspect }) {
+export function ArchBuildingList({ buildings = [], cover = null, inspectBid = null, onInspect, bare = false }) {
   if (!buildings.length) return null;
+  /* `bare` lässt Kasten und Überschrift weg: im linken Flügel der Level-up-Karte (#lv-gebaeude) trägt der
+     Ausklapp-Reiter beides bereits, ein eigener Rahmen darin wäre ein Panel im Panel. Die EINTRÄGE bleiben
+     identisch — die Liste ist damit weiter eine Fassung, keine zweite. */
+  const Schale = bare
+    ? ({ children }) => <div>{children}</div>
+    : ({ children }) => (
+      <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+        <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: buildings.length })}</div>
+        {children}
+      </div>
+    );
   return (
-    <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-      <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: buildings.length })}</div>
+    <Schale>
       <div className="text-[10px] opacity-45 mb-1.5">{t("archpanels.tapHint")}</div>
       <div className="grid gap-1">
         {buildings.map((b) => {
@@ -84,7 +94,7 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
           );
         })}
       </div>
-    </div>
+    </Schale>
   );
 }
 

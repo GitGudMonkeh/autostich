@@ -637,6 +637,7 @@ export default {
   "cardgrid.arch.title": "🏗 {name} · +{boost} Wert",
   "cardgrid.glacier.title": "Teil einer aktiven Gletscher-Formation (2D)",
   "cardgrid.ripe.title": "Grün (reif) — zählt für den Farbblock",
+  "arch.buildings": "Gebäude",
   "arch.buildingsN": "Gebäude ({n})",
   "archpanels.tapHint": "Antippen zeigt am Brett, wo es liegt — und umgekehrt.",
   "archpanels.roleLegend": "● Rolle — Ziel eines Perks/einer Familie an dieser Karte",

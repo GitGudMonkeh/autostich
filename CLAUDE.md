@@ -1667,6 +1667,37 @@ hier gehört aber die Reiterzeile mit unter dasselbe Dach.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen (Chromium, echte Komponenten, 1536×791 bei
   DPR 1,25 wie im Perf-HUD des Users).
 
+### #lv-gebaeude — die gewählten Gebäude als Ausklapp-Reiter im linken Flügel (19.08.2026)
+Am Fuß des Deck-Flügels, unter der Deck-Stärke. **Die Liste ist NICHT neu**: `ArchBuildingList` steht so schon
+in der Aufstellungsphase und in der Chronik — samt ihrer eigentlichen Eigenschaft, dass Antippen den
+Gebäude-Rahmen am Brett cyan leuchten lässt. Genau deshalb gehört sie in DIESEN Flügel und nicht in den rechten:
+das Brett, auf das sie zeigt, steht darüber.
+- **`bare`-Schalter statt zweiter Fassung**: er nimmt der Liste Kasten und Überschrift ab (die trägt hier der
+  Reiter), die EINTRÄGE bleiben dieselbe eine `buildings.map` — ein Wächter zählt sie.
+- **Antippen erreicht das Brett auch bei ausgeschaltetem 🏗-Schalter.** `FormationPanel` rechnet jetzt
+  `archOn = hasArch && (showArch || !!glowBid)`. Ohne das täte ein Antippen bei ausgeschaltetem Schalter
+  sichtbar nichts — genau das, was der Kommentar an `ArchBuildingList` vom Aufrufer verlangt.
+- **Zwei Zustände, zwei verschiedene Orte, und das ist die Entscheidung**: der REITER (auf/zu) ist eine
+  Gewohnheit und liegt in den Optionen (`lvWingBuildings`, Default ZU, Eintrag in `DEFAULT_OPTIONS` — sonst
+  schluckt ihn der `{...DEFAULT_OPTIONS, ...o}`-Merge). Der ZEIGER (`inspectBid`) ist eine flüchtige Frage
+  („wo liegt das?") und liegt in `useState`, endet also mit der Karte. Der alte Wächter „kein `useState` in
+  LevelupWings" ist entsprechend auf „genau einer, und zwar dieser" verschärft statt aufgeweicht.
+- Gemessen 1536×791: Flügel zu 655 px · aufgeklappt 728 (Deckel) mit innerem Scroll 1037 px. **Die Karte bleibt
+  bei y = 32 und h = 548** — der Anker aus #lv-fest trägt auch das.
+- **Vorbehalt, den der Aufbau nicht auflöst**: der Reiter sitzt unter der Deck-Stärke, das Brett ganz oben — bei
+  aufgeklappter Liste kann das Brett aus dem sichtbaren Bereich gescrollt sein, das Leuchten passiert dann
+  außerhalb des Blickfelds. Platzierung ist so gewünscht; wer es näher haben will, schiebt den Reiter über die
+  Deck-Stärke.
+- **Dabei aufgefallen, NICHT behoben (eigener Schritt): `src/ui/archEffects.js` ist nicht migriert.** Die
+  Effektzeile unter jedem Gebäude wird dort aus deutschen Vorlagen zusammengesetzt (`+N Stichwert`,
+  `+N Score bei {Farbe}`, `×N Score`, `+N Score je Serienpunkt`, `+N Score alle N Siege`) — im englischen Build
+  steht damit Deutsch, und zwar überall, wo die Liste steht: Aufstellungsphase, Chronik, Endscreen und jetzt
+  dieser Reiter. **Die i18n-Ratsche kann es nicht sehen** — dieselbe Lücke wie bei #formlegend: ihr Greifer
+  fischt JSX-Textknoten und Text-Props, keine Template-Literale in einer Hilfsdatei.
+- Wächter: `test/levelup-wings.test.js` (Abschnitt #lv-gebaeude). Gegenprobe gemacht: alle vier sabotierten
+  Nähte fallen.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

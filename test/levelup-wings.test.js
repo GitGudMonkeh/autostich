@@ -111,8 +111,14 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
   });
 
   it("der Zustand liegt in den OPTIONEN, nicht in useState (die Karte wird je Level-up neu gemountet)", () => {
-    // Auf den AUFRUF prüfen, nicht auf das Wort — der Dateikopf erklärt genau diese Entscheidung.
-    expect(wings, "ein useState wäre bei jeder Wahl wieder auf Default").not.toMatch(/useState\(/);
+    /* Auf den AUFRUF prüfen, nicht auf das Wort — der Dateikopf erklärt genau diese Entscheidung.
+       Der EINE erlaubte `useState` ist der Gebäude-Zeiger (#lv-gebaeude): der ist eine flüchtige Frage
+       („wo liegt das?") und soll mit der Karte enden. Alles, was eine Gewohnheit ist, gehört in die
+       Optionen — ein `useState` dafür wäre bei jeder Wahl wieder auf Default. */
+    expect(wings.match(/useState\(/g) || [], "nur der Gebäude-Zeiger darf Komponenten-State sein").toHaveLength(1);
+    expect(wings).toMatch(/const \[inspectBid, setInspectBid\] = useState\(null\)/);
+    for (const k of ["WING_DECK", "WING_STATS", "WING_BUILDINGS"])
+      expect(wings, `${k} liest nicht aus den Optionen`).toMatch(new RegExp(`options\\[${k}\\]`));
     expect(wings).toMatch(/onOption\(\{\s*\[key\]:\s*!on\s*\}\)/);
   });
 
@@ -272,5 +278,56 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
     expect(m[1]).toMatch(/font-size:\s*12px/);
     expect(m[1]).toMatch(/padding:/);
     expect(m[1], "Farbe/Gewicht gehören in die Sorte, nicht hierher").not.toMatch(/color|font-weight|background|border/);
+  });
+});
+
+describe("#lv-gebaeude — die gewählten Gebäude als Ausklapp-Reiter im linken Flügel", () => {
+  const wings = read("src/ui/LevelupWings.jsx");
+  const panel = read("src/ui/FormationPanel.jsx");
+  const arch = read("src/ui/ArchPanels.jsx");
+
+  it("es ist DIESELBE Liste wie in Aufstellung und Chronik, kein Nachbau", () => {
+    expect(wings).toMatch(/import \{ ArchBuildingList \} from "\.\/ArchPanels\.jsx"/);
+    expect(wings).toMatch(/<ArchBuildingList bare buildings=\{buildings\}/);
+    // Und die beiden Vorbilder müssen sie weiter benutzen — sonst hätte der Flügel die einzige Fassung.
+    for (const f of ["src/ui/FormationPhase.jsx", "src/ui/ChronikOverview.jsx"])
+      expect(read(f), `${f} rendert die geteilte Liste nicht mehr`).toMatch(/<ArchBuildingList /);
+  });
+
+  it("`bare` nimmt nur Kasten und Überschrift weg, nicht die EINTRÄGE", () => {
+    /* Der Reiter trägt Titel und Zahl bereits — ein eigener Rahmen darin wäre ein Panel im Panel.
+       Die Einträge liegen deshalb außerhalb der Schale, sie dürfen sich nicht verzweigen. */
+    expect(arch).toMatch(/bare = false/);
+    expect(arch.match(/buildings\.map\(/g) || [], "die Einträge sind dupliziert statt geteilt").toHaveLength(1);
+  });
+
+  it("Antippen erreicht das Brett — auch wenn der 🏗-Schalter aus ist", () => {
+    /* Der Zweck der Liste ist der Zeiger aufs Brett. Läge das Einblenden allein am 🏗-Schalter, täte ein
+       Antippen bei ausgeschaltetem Schalter sichtbar nichts — genau das, was der Kommentar an
+       `ArchBuildingList` vom Aufrufer verlangt. */
+    expect(wings).toMatch(/<FormationPanel state=\{state\} glowBid=\{inspectBid\} \/>/);
+    expect(panel).toMatch(/const archOn = hasArch && \(showArch \|\| !!glowBid\)/);
+    expect(panel, "das Brett bekommt den Zeiger nicht").toMatch(/glowBid=\{archOn \? glowBid : null\}/);
+  });
+
+  it("der REITER merkt sich seinen Zustand, der Zeiger nicht", () => {
+    /* Auf/zu ist eine Gewohnheit und muss den Remount je Level-up überleben → Optionen (mit Eintrag in
+       DEFAULT_OPTIONS, sonst schluckt der Merge in `loadOptions` den Schlüssel). `inspectBid` ist eine
+       flüchtige Frage („wo liegt das?") und endet mit der Karte → useState. */
+    expect(wings).toMatch(/export const WING_BUILDINGS = "lvWingBuildings"/);
+    expect(wings).toMatch(/const buildOpen = !!options\[WING_BUILDINGS\]/);
+    expect(wings).toMatch(/const \[inspectBid, setInspectBid\] = useState\(null\)/);
+    expect(read("src/game/storage.js"), "ohne DEFAULT_OPTIONS-Eintrag wird der Schlüssel nie zurückgeschrieben")
+      .toMatch(/lvWingBuildings:\s*false/);
+  });
+
+  it("ohne Gebäude gibt es den Reiter gar nicht", () => {
+    expect(wings).toMatch(/\{buildings\.length > 0 && \(/);
+  });
+
+  it("die Beschriftung kommt aus dem Katalog, in beiden Sprachen", () => {
+    expect(wings).toMatch(/t\("arch\.buildings"\)/);
+    for (const cat of ["src/i18n/de.js", "src/i18n/en.js"])
+      expect(read(cat), `arch.buildings fehlt in ${cat}`).toMatch(/"arch\.buildings":/);
   });
 });

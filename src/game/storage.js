@@ -540,6 +540,9 @@ const DEFAULT_OPTIONS = {
   // #lv-fluegel: Passiv-Beschreibung der Skill-Wahl aufgeklappt? Default ZU. Liegt hier statt im
   // Komponenten-State, weil die Skill-Wahl je Phase neu gemountet wird — sonst müsste man sie jedes Mal neu zuklappen.
   lvPassive: false,
+  // #lv-gebaeude: Gebäude-Liste im linken Flügel aufgeklappt? Default ZU — die Liste ist Nachschlagewerk,
+  // nicht Entscheidungsgrundlage, und der Flügel trägt darüber schon Brett und Deck-Stärke.
+  lvWingBuildings: false,
   // #389 Floating-Text ausblenden (Default sichtbar = false). Reine UI-Prefs → NICHT in COSMETIC_OPTION_KEYS (überleben Reset).
   hideFloatScore: false, hideFloatMult: false, hideFloatWinLose: false,
   // Stich-Aufschlüsselung (§17) unter dem Feld — Default SICHTBAR (false), wie die Floating-Text-Schalter.
