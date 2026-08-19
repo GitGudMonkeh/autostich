@@ -375,35 +375,42 @@ function laserPieces(lines, W, H) {
 /* Eine Seite: gespielte Karte MIT Nachziehstapel dahinter (ragt nur nach außen).
    `overlay` = entkoppelter Layer im Karten-Slot (z. B. Niederlage-Ghosts), der NICHT pro Stich remountet
    (steht nach `children`, also im selben `relative`-Slot, aber außerhalb des trickNo-gekeyten Karten-Wrappers). */
-function Side({ label, remaining, position = 0, deckLen = 0, children, overlay = null, backImage = null, slotRef = null, baseCard = false }) {
+function Side({ label, remaining, position = 0, deckLen = 0, children, overlay = null, backImage = null, slotRef = null, baseCard = false, dealFrom = "left" }) {
   const behind = Math.min(3, Math.max(0, remaining - 1));
   return (
-    <div className="flex flex-col items-center gap-2 shrink-0">
-      <div className="text-[11px] uppercase tracking-wide opacity-55">{label}</div>
-      {/* #feuer: STABILER Karten-Slot (Deck-Stapel dahinter + gespielte Karte). slotRef zeigt auf DIESE Box — sie
-          remountet NICHT pro Stich und fliegt nicht weg → das Feuer (an slotRef verankert) brennt durchgängig weiter,
-          statt bei jedem Sieg/Niederlage neu zu starten (die gespielte Karte darin flippt/fliegt, der Slot bleibt). */}
-      {/* #buehne: Größe als KLASSE (`bf-slot` in index.css, 104 × 144), nicht mehr inline. Ab 1400 px wächst der
-          Slot auf `--card-s` und skaliert seinen Inhalt per transform — inline gesetzt käme die Desktop-Regel
-          nicht dagegen an. */}
-      <div ref={slotRef} className="bf-slot relative">
-        {/* #feuer: PERMANENTER Deck-Rücken als Sockel — liegt IMMER da (auch bei leerem Deck / nach 40 Stichen), damit der
-            an den Slot verankerte Effekt (Feuer) auf einer sichtbaren Karte sitzt statt in der Luft zu hängen. Wird von
-            der gespielten Front-Karte / dem Nachziehstapel überdeckt, solange etwas oben liegt. */}
-        {baseCard && (
-          <div className="absolute top-0 left-0"><CardBack label="" image={backImage} /></div>
-        )}
-        {/* #feuer: Nachziehstapel EXAKT unter der gespielten/geflippten Karte (kein seitlicher Versatz mehr) → Karte,
-            Deck und das an den Slot verankerte Feuer liegen genau aufeinander. */}
-        {Array.from({ length: behind }, (_, i) => (
-          <div key={i} className="absolute top-0 left-0">
-            <CardBack label="" image={backImage} />
-          </div>
-        ))}
-        {children}
-        {overlay}
+    <div className={`bf-side flex flex-col items-center gap-2 shrink-0 ${dealFrom === "right" ? "is-right" : "is-left"}`}>
+      <div className="bf-label text-[11px] uppercase tracking-wide opacity-55">{label}</div>
+      {/* #deckflug: Deck-Stapel und Spielfläche sind ZWEI Kästen im selben Rahmen. Unterhalb von 1400 px liegen
+          sie exakt aufeinander (beide absolut, `bf-sidebox` gibt das Maß vor) — das ist der Aufbau, den es immer
+          gab. Ab 1400 px rückt der Stapel an den Rand und die Karte fliegt von dort auf die Fläche (index.css). */}
+      <div className={`bf-sidebox relative ${dealFrom === "right" ? "is-right" : "is-left"}`}>
+        {/* #feuer: STABILER Deck-Slot. slotRef zeigt auf DIESE Box — sie remountet NICHT pro Stich und fliegt nicht
+            weg → das Feuer (an slotRef verankert) brennt durchgängig weiter, statt bei jedem Sieg/Niederlage neu zu
+            starten. Seit der Trennung brennt damit der STAPEL, nicht die gespielte Karte: der Vorrat glüht, und die
+            Karte trägt die Glut in den Stich hinaus (Entscheidung, s. #deckflug). */}
+        <div ref={slotRef} className="bf-deck bf-slot relative">
+          {/* #feuer: PERMANENTER Deck-Rücken als Sockel — liegt IMMER da (auch bei leerem Deck / nach 40 Stichen), damit der
+              an den Slot verankerte Effekt (Feuer) auf einer sichtbaren Karte sitzt statt in der Luft zu hängen. Wird von
+              dem Nachziehstapel überdeckt, solange etwas oben liegt. */}
+          {baseCard && (
+            <div className="absolute top-0 left-0"><CardBack label="" image={backImage} /></div>
+          )}
+          {Array.from({ length: behind }, (_, i) => (
+            <div key={i} className="absolute top-0 left-0">
+              <CardBack label="" image={backImage} />
+            </div>
+          ))}
+        </div>
+        {/* Spielfläche: hier landet die gespielte Karte. `bf-scale` trägt ab 1400 px den Kartenmaßstab, damit die
+            Karte darin ihre eigene Bewegung (Flug/Flip/Wegfliegen) behält — Maßstab außen, Bewegung innen. */}
+        <div className="bf-play bf-slot relative">
+          <div className="bf-scale bf-cardbox">{children}</div>
+          {overlay}
+        </div>
       </div>
-      <div className="text-[11px] opacity-55">{tr("bf.trickCount", { n: position, total: deckLen })}</div>
+      {/* #deckflug: Ab 1400 px steht der Zähler unter dem STAPEL („wie weit ist das Deck") und das Label über
+          der Spielfläche — beides gehört dorthin, wo die Sache liegt, über die es spricht. */}
+      <div className="bf-count text-[11px] opacity-55">{tr("bf.trickCount", { n: position, total: deckLen })}</div>
     </div>
   );
 }
@@ -969,9 +976,13 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
-    <div key={`p${t.trickNo}`} ref={playerCardRef} className="relative"
+    /* #deckflug: Ab 1400 px kommt die Karte vom Deck-Stapel herübergeflogen, während sie flippt — `bf-fly-in`
+       trägt die Bewegung, der Flip sitzt eine Ebene tiefer im `as-flip3d-inner`. Beides auf EINEM Knoten würde
+       sich überschreiben und die Perspektive mitkippen (dieselbe Regel wie Animation/Filter, #ios-word).
+       Ohne Flip (reduzierte Bewegung, Turbo) bleibt es beim kurzen Einschieben von früher. */
+    <div key={`p${t.trickNo}`} ref={playerCardRef} className={`relative${useFlip ? " bf-fly-in" : ""}`}
       style={flyAway ? { animation: `as-flyaway ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : useFlip ? undefined : dealStyle("as-deal-left")}>
+           : useFlip ? { "--bf-fly-ms": `${flipDur}ms` } : dealStyle("as-deal-left")}>
       {/* #ui: Ergebnis-Puls (grün bei Sieg / rot bei Niederlage) auf Wunsch ENTFERNT. */}
       {useFlip ? (
         <FlipReveal front={playerFront} backImage={deckBack} dur={flipDur} />   /* #180: Rücken → Front */
@@ -982,9 +993,10 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an; im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const oppFront = oppWinner ? <div style={winnerTilt(sWinner)}>{oCardEl}</div> : oCardEl;
   const oppCard = t ? (
-    <div key={`o${t.trickNo}`} ref={oppCardRef} className="relative"
+    <div key={`o${t.trickNo}`} ref={oppCardRef} className={`relative${useOppFlip ? " bf-fly-in" : ""}`}
       style={oppFlyAway ? { animation: `as-flyaway-r ${flyDur}ms ease-in forwards`, willChange: "transform, opacity" }
-           : (oppSliced || oppScorched || oppHologrid || oppBlackholed || useOppFlip) ? undefined : dealStyle("as-deal-right")}>
+           : useOppFlip ? { "--bf-fly-ms": `${flipDur}ms` }
+           : (oppSliced || oppScorched || oppHologrid || oppBlackholed) ? undefined : dealStyle("as-deal-right")}>
       {(oppSliced || oppScorched || oppHologrid || oppBlackholed) ? (
         <div style={{ opacity: 0 }} aria-hidden="true">{oCardEl}</div>   /* in-place unsichtbar — Klinge-Ghost / Scorch-Canvas / Hologrid-Pixi / Schwarzes-Loch-Flyer zeichnet die Karte darüber (#186/#319/#321/#320) */
       ) : useOppFlip ? (

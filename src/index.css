@@ -5277,6 +5277,10 @@ button { font-family: inherit; }
    Inline gesetzt kaeme die Desktop-Regel nicht dagegen an (Inline schlaegt
    jedes Stylesheet) — dieselbe Falle wie beim Overlay-Blur (#overlay-portal). */
 .bf-slot, .bf-cardbox { width: 104px; height: 144px; }
+/* #deckflug: Unterhalb von 1400 px liegen Deck-Stapel und Spielflaeche exakt aufeinander — genau der
+   Aufbau, den es immer gab (Stapel unter der gespielten Karte, gemeinsamer Anker fuer das Feuer). */
+.bf-sidebox { width: 104px; height: 144px; }
+.bf-sidebox > .bf-deck, .bf-sidebox > .bf-play { position: absolute; inset: 0; }
 /* Die Instrumentenbank ist unterhalb von 1400 px KEINE Box: ihre vier Bloecke
    (Fraktions-Leisten, Analyse, Build, Wochen-Mods) bleiben direkte Felder des
    lg-Rasters und tragen dort ihre eigene order-/Spalten-Platzierung. */
@@ -5393,6 +5397,44 @@ button { font-family: inherit; }
   .bf-slot { width: calc(104px * var(--card-s)); height: calc(144px * var(--card-s)); }
   .bf-slot > * { transform: scale(var(--card-s)); transform-origin: top left; }
 
+  /* --- Deck am Rand, Karte fliegt ---------------------------------------
+     Der Nachziehstapel liegt nicht mehr UNTER der gespielten Karte, sondern
+     am aeusseren Ende der Seite; dazwischen liegt die Strecke, die die Karte
+     fliegt. Vier Kaesten auf der Buehne (Deck · Karte · Karte · Deck), Mitten
+     bei 21,25 / 41,5 / 58,5 / 78,75 % — die aeusseren 15,75 % bleiben auf
+     beiden Seiten frei. Das ist Absicht: die Spielfeldbilder haben ihr Motiv
+     am RAND und die Mitte bewusst leer (dort lagen bisher die Karten). Ein
+     Deck ganz aussen haette genau das Motiv zugestellt. */
+  /* Die Seite wird zum Raster: Stapel und Spielflaeche nebeneinander, und die Beschriftung steht je an
+     dem Kasten, ueber den sie spricht — das Label ueber der Spielflaeche, der Stich-Zaehler unter dem
+     Stapel. `bf-sidebox` reicht dafuer nur durch (display: contents), damit beide Kaesten direkte
+     Rasterfelder werden; unter 1400 px ist sie die Box, in der beide aufeinanderliegen. */
+  .bf-side { display: grid; grid-template-columns: auto auto; align-items: start; justify-items: center;
+    column-gap: calc(var(--bf-w) * 0.0925); row-gap: 8px; }
+  .bf-sidebox { display: contents; }
+  /* `relative`, NICHT `static`: der Nachziehstapel liegt als absolut positionierte Karten IM Deck-Kasten.
+     Ohne Bezugspunkt haengen sie am naechsten positionierten Vorfahren — also an der Sidebox, deren Ecke
+     auf der Gegnerseite die KARTENposition ist. Der Stapel sass dadurch auf der Karte. */
+  .bf-side .bf-deck, .bf-side .bf-play { position: relative; inset: auto; }
+  .bf-side > .bf-label { grid-row: 1; grid-column: 2; }
+  .bf-side .bf-deck    { grid-row: 2; grid-column: 1; }
+  .bf-side .bf-play    { grid-row: 2; grid-column: 2; }
+  .bf-side > .bf-count { grid-row: 3; grid-column: 1; }
+  /* Die Gegnerseite ist die Spiegelung: sein Stapel liegt aussen, also rechts. */
+  .bf-side.is-right > .bf-label { grid-column: 1; }
+  .bf-side.is-right .bf-deck    { grid-column: 2; }
+  .bf-side.is-right .bf-play    { grid-column: 1; }
+  .bf-side.is-right > .bf-count { grid-column: 2; }
+
+  /* Die Flugstrecke ist im KARTENMASSSTAB konstant: Luecke (9,25 % der Buehne)
+     + Kartenbreite (11 %) = 20,25 % der Buehne, geteilt durch den Massstab
+     (11 % / 104 px) ergibt immer 191,45 px — unabhaengig von der Fenstergroesse.
+     Genau deshalb steht hier eine feste Zahl und keine Rechnung mit --bf-w:
+     die Animation laeuft INNERHALB des skalierten Wrappers. */
+  .bf-fly-in { animation: bf-fly-in var(--bf-fly-ms, 380ms) cubic-bezier(.2, .7, .3, 1) both; }
+  .bf-side.is-left  .bf-fly-in { --bf-fly-x: -191.45px; }
+  .bf-side.is-right .bf-fly-in { --bf-fly-x: 191.45px; }
+
   /* --- Die Instrumentenbank --------------------------------------------- */
   /* Flex statt Grid, und das ist der Punkt: die Zahl der Fraktions-Leisten
      wechselt im Lauf (0 bis 4, je nach gewaehlten Archetypen). Eine feste
@@ -5410,4 +5452,15 @@ button { font-family: inherit; }
   .rn-bank > .rn-rail  { flex: 0 0 296px; order: -1; }
   .rn-bank > .rn-build { flex: 0 0 296px; order: 1; }
   .rn-bank > .rn-week  { flex: 0 0 296px; order: 2; }
+}
+
+
+/* #deckflug: Die Karte kommt vom Stapel auf die Spielflaeche. Nur die BEWEGUNG — der Flip dreht eine Ebene
+   tiefer (as-flip-reveal im as-flip3d-inner), das Wegfliegen nach verlorenem Stich eine Ebene hoeher. */
+@keyframes bf-fly-in {
+  from { transform: translateX(var(--bf-fly-x, 0)); }
+  to   { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-fly-in { animation: none; }
 }
