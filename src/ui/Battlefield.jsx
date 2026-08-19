@@ -865,8 +865,24 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
-  const flyDur   = clamp(flipMs * 0.7, 320, 900);    // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
-  const flipDur  = clamp(flipMs * 0.55, 220, 460);   // Flug vom Stapel + Flip der einlaufenden Karte
+  const wide = useIsWide();
+  /* #turbo-takt: Ab 1400 px muss die ganze Choreografie IN den Stich passen — sonst schneidet der nächste
+     Stich sie ab, und genau das las sich als „bei Turbo werden die Animationen verkürzt oder übersprungen".
+     Gemessen am laufenden Brett (1920 px, Zug + Wegflug gegen den Stich-Takt): 1× 1360 von 1750 ms ✔ ·
+     ×2 1060 von 880 ✗ · ×4 540 von 440 ✗ · MAX 540 von 300 ✗. Schuld sind die festen UNTERGRENZEN
+     (220 / 320 ms): sie halten die Dauer, wenn der Takt längst darunter liegt — der Zug frisst dann den
+     halben Stich und für den Wegflug bleibt nichts.
+     Die zwei Anteile sind deshalb ZUSÄTZLICHE Deckel, keine neuen Werte: bei 1× greifen sie nicht
+     (0,40 × 1750 = 700 > 460 · 0,52 × 1750 = 910 > 900), das Normaltempo ist unverändert. Ab ×2 skalieren
+     sie beide Takte mit dem Tempo mit — jede Animation läuft dann VOLLSTÄNDIG, nur schneller. Zusammen
+     92 %; die restlichen 8 % sind der Atemzug zwischen zwei Stichen.
+     Es gibt bewusst KEINE Untergrenze mehr: eine wäre genau der Fehler, den diese Zeilen beheben.
+     Nur oberhalb 1400 px — die Handy-Fassung hat keinen Zug-Takt und bleibt bei ihren Rohwerten. */
+  const ZUG_ANTEIL = 0.40, WEG_ANTEIL = 0.52;
+  const flyDurRoh  = clamp(flipMs * 0.7, 320, 900);   // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
+  const flipDurRoh = clamp(flipMs * 0.55, 220, 460);  // Flug vom Stapel + Flip der einlaufenden Karte
+  const flyDur   = wide ? Math.min(flyDurRoh, flipMs * WEG_ANTEIL) : flyDurRoh;
+  const flipDur  = wide ? Math.min(flipDurRoh, flipMs * ZUG_ANTEIL) : flipDurRoh;
   /* #deckzug: Ab 1400 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
      danach wird AUFGELÖST (Sieger kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben
      Frame: der Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten Bild —
@@ -878,7 +894,6 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Der Zustand hängt an der STICH-NUMMER, nicht an einem Flag: `drawnNo !== t.trickNo` ist schon im ERSTEN Render
      des neuen Stichs falsch. Ein `setState(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung für
      ein Bild aufblitzen. */
-  const wide = useIsWide();
   const zugMs = wide && !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
   const [drawnNo, setDrawnNo] = useState(null);
   const gezogen = !zugMs || drawnNo === trickNo;   // trickNo: oben aus lastTrick (= t) abgeleitet

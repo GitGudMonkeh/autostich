@@ -5335,6 +5335,15 @@ button { font-family: inherit; }
        fällt die ganze Deklaration aus und der Slot bleibt bei seinen 104 × 144 — das Layout hält,
        nur die Karte wächst nicht mit. */
     --card-s: calc(var(--bf-w) * 0.11 / 104 / 1px);
+    /* #kartenreihe (19.08.2026, am Bild nachgezogen): EINE Lücke für alle drei Abstände der Reihe
+       (Stapel–Karte · Karte–Karte · Karte–Stapel). Vorher waren es zwei Werte — aussen 3,25 %, in der
+       Mitte 6 % — und die vier Karten lasen sich als zwei getrennte Paare mit einem Loch dazwischen.
+       Mit einem Wert ist es EINE Reihe: 52 px bei 1600, jedes Paar rückt 22 px nach innen.
+       Die Paarung geht dabei nicht verloren, sie hängt an anderen Zeichen: der Stapel zeigt Rücken,
+       die Spielkarte ihr Gesicht; „DU"/„GEGNER" steht über der Spielkarte, der Stich-Zähler unter
+       dem Stapel. Wer den Wert ändert, muss die Flugstrecke unten mitziehen (der Wächter rechnet
+       beides gegeneinander). */
+    --bf-gap: calc(var(--bf-w) * 0.0325);
     max-width: none;
     /* Zeile 1 ist die Kopfzeile: Marke links, Steuerung rechts daneben, Glossar aussen. Alles Weitere
        spannt ueber alle drei Spuren. `max-content` fuer die zwei rechten Spuren ist Pflicht, nicht Kosmetik:
@@ -5414,7 +5423,7 @@ button { font-family: inherit; }
   }
   /* Die Kartenreihe nimmt die Resthoehe und zentriert darin — statt mit einem
      festen mt-8 von oben zu haengen (das war auf 347 px Bretthoehe gerechnet). */
-  .bf-cards { margin-top: 0; flex: 1; min-height: 0; gap: calc(var(--bf-w) * 0.06); }
+  .bf-cards { margin-top: 0; flex: 1; min-height: 0; gap: var(--bf-gap); }
   .bf-result { margin-top: 0; flex: none; }
   .bf-kette { flex: none; margin-bottom: 14px; }
 
@@ -5442,11 +5451,7 @@ button { font-family: inherit; }
      Stapel. `bf-sidebox` reicht dafuer nur durch (display: contents), damit beide Kaesten direkte
      Rasterfelder werden; unter 1400 px ist sie die Box, in der beide aufeinanderliegen. */
   .bf-side { display: grid; grid-template-columns: auto auto; align-items: start; justify-items: center;
-    /* #deckflug (19.08.2026, am Bild nachgezogen): Lücke Stapel <-> Spielfläche 9,25 % -> 3,25 % der Bühne
-       (148 -> 52 px bei 1600). Der Stapel gehört sichtbar ZU seiner Seite; auf Armeslänge las er sich als
-       viertes, unabhängiges Ding. Die gespielten Karten bleiben dabei, wo sie sind — die Reihe ist zentriert,
-       also rücken nur die Stapel nach innen (nachgemessen: Karte 576 vorher, 576 nachher). */
-    column-gap: calc(var(--bf-w) * 0.0325); row-gap: 8px; }
+    column-gap: var(--bf-gap); row-gap: 8px; }
   .bf-sidebox { display: contents; }
   /* `relative`, NICHT `static`: der Nachziehstapel liegt als absolut positionierte Karten IM Deck-Kasten.
      Ohne Bezugspunkt haengen sie am naechsten positionierten Vorfahren — also an der Sidebox, deren Ecke
@@ -5462,7 +5467,7 @@ button { font-family: inherit; }
   .bf-side.is-right .bf-play    { grid-column: 1; }
   .bf-side.is-right > .bf-count { grid-column: 2; }
 
-  /* Die Flugstrecke ist im KARTENMASSSTAB konstant: Luecke (3,25 % der Buehne)
+  /* Die Flugstrecke ist im KARTENMASSSTAB konstant: Luecke (--bf-gap, 3,25 % der Buehne)
      + Kartenbreite (11 %) = 14,25 % der Buehne, geteilt durch den Massstab
      (11 % / 104 px) ergibt immer 134,73 px — unabhaengig von der Fenstergroesse.
      Genau deshalb steht hier eine feste Zahl und keine Rechnung mit --bf-w:

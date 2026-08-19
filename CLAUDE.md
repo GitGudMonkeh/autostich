@@ -1197,7 +1197,7 @@ dabei **23 %** auf dem Schirm: gequetscht auf 668 × 347 UND seitlich um 46 % be
   archetyp-gegatet) — er wird über den **Simulator** erzeugt und als Fortsetzungs-Snapshot in
   `localStorage["as_activerun"]` geladen (Schema 2). Derselbe Weg wie beim Architekt-Profil (#Architekt-Mount).
   Gemessen damit: vier Spuren à 237 px, je 270 px hoch bei 268 px Inhalt.
-- Wächter: `test/buehne-desktop.test.js` (27 Prüfungen, Gegenprobe gemacht: Einheiten-Division und
+- Wächter: `test/buehne-desktop.test.js` (29 Prüfungen, Gegenprobe gemacht: Einheiten-Division und
   `static` statt `relative` lassen ihn beide fallen).
 
 #### #deckzug — der Stich läuft ab 1400 px in ZWEI Takten (19.08.2026)
@@ -1235,6 +1235,41 @@ eines." Am Messstand nachgesehen (`getAnimations()` je Seite, 30-ms-Takt): je St
   Spielkarten) — gemessen 52 px auf 1920, 33 px auf 1536. Die Flugstrecke zieht mit: 191,45 → **134,73 px**
   im Kartenmaßstab. Der Wächter RECHNET sie aus der Lücke, statt sie zu vergleichen — wer die eine ändert
   und die andere vergisst, lässt die Karte an ihrer Fläche vorbeifliegen.
+
+#### #kartenreihe — EINE Lücke für alle drei Abstände (19.08.2026, am Bild nachgezogen)
+Die Reihe hatte zwei Werte: aussen 3,25 %, in der Mitte 6 % (`.bf-cards`). Die vier Karten lasen sich damit
+als zwei getrennte Paare mit einem Loch dazwischen. Jetzt trägt `--bf-gap` alle drei Abstände — gemessen
+**52 / 52 / 52 px** bei 1600, **33 / 34 / 33** bei 1028; jedes Paar rückt 22 px nach innen, die Reihe wird
+904 → **860 px** breit.
+- **Die Paarung geht dabei nicht verloren, sie hängt an anderen Zeichen:** der Stapel zeigt Rücken, die
+  Spielkarte ihr Gesicht; „DU"/„GEGNER" steht über der Spielkarte, der Stich-Zähler unter dem Stapel.
+- **Die Flugstrecke hängt jetzt an derselben Variable** — der Wächter liest den Faktor aus `--bf-gap` und
+  rechnet die 134,73 px daraus nach. Wer die Lücke ändert und die Strecke vergisst, fällt dort auf.
+
+#### #turbo-takt — bei Turbo passte die Choreografie nicht mehr in den Stich (19.08.2026)
+Gemeldet: „die Animationen werden verkürzt oder geskippt, wenn ich auf einen der Turbos gehe — wie am Handy
+sollten alle spielen, egal ob normal, ×2, ×4 oder MAX." Am laufenden Brett nachgemessen (`getAnimations()`,
+Zug + Wegflug gegen den Stich-Takt): **1× 1360 von 1750 ms ✔ · ×2 1060 von 880 ✗ · ×4 540 von 440 ✗ ·
+MAX 540 von 300 ✗**. Der nächste Stich schnitt sie ab.
+- **Es war NICHT das Überspringen einer Seite** — der Zug lief auf allen vier Stufen beidseitig (#deckzug
+  wirkt). Es waren die festen **Untergrenzen** in `clamp(flipMs × f, MIN, MAX)`: 220 ms für den Zug,
+  320 ms für den Wegflug. Sie halten die Dauer, wenn der Takt längst darunter liegt — bei MAX frisst der
+  Zug damit 73 % des Stichs und für den Wegflug bleibt nichts.
+- **Zwei Anteile als ZUSÄTZLICHE Deckel** (`ZUG_ANTEIL 0,40` · `WEG_ANTEIL 0,52`), keine neuen Werte: bei
+  1× greifen sie nicht (0,40 × 1750 = 700 > 460 · 0,52 × 1750 = 910 > 900), das **Normaltempo ist
+  unverändert**. Ab ×2 skalieren sie beide Takte mit dem Tempo mit — jede Animation läuft dann
+  VOLLSTÄNDIG, nur schneller. Nachgemessen: ×2 783 von 880 · ×4 366 von 420 · MAX 255 von 310 ms.
+- **Zusammen 92 %** — die restlichen 8 % sind der Atemzug zwischen zwei Stichen. Der Wächter rechnet die
+  Summe für ×2/×4/MAX nach und verlangt zugleich, dass bei 1× KEIN Deckel greift.
+- **Eine neue Untergrenze wäre genau der Fehler, den das behebt.** Bei MAX plus voller Rundenbeschleunigung
+  (`dynamicSpeed`) wird der Zug rechnerisch bis auf ~78 ms kurz. Das ist gewollt: MAX heisst schnell, und
+  eine vollständige kurze Animation ist besser als eine abgeschnittene lange.
+- **Nur ab 1400 px** (`wide`): die Handy-Fassung hat keinen Zug-Takt und behält ihre Rohwerte. Nachgewiesen
+  über einen Pixelvergleich des Bretts bei 390 px (Lauf angehalten, Effekte aus): **0,0000 von 255**,
+  größte Einzelabweichung **0**.
+- **Nicht angefasst**: die Ghost-Timings des Klingenschnitts (`sHalves`/`sSpark`/`sFloat`). Der Ghost ist
+  bewusst vom Stich-Takt entkoppelt und darf mit dem nächsten Stich überlappen — er liegt als eigene Ebene
+  über dem Brett, nicht auf der Karte.
 - **Offen / nicht am Gerät gesehen**: alles headless über Playwright im laufenden Dev-Server gemessen und
   nachgerendert, kein Blick auf einem physischen Monitor. Ebenfalls offen: eine echte **Desktop-Fassung der
   vier Fraktions-Leisten** (sie sind für 358 px Handy-Breite gebaut; in einer 237-px-Spur bricht mehr um, als

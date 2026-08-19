@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));   // wie in Battlefield.jsx
+
 /* #buehne / #deckflug / #skillheim — der Spielbildschirm ab 1400 px.
    Das Projekt hat kein Component-Test-Setup, die Nähte hängen deshalb als Quelltext-Ratsche hier.
    Jede Prüfung sichert eine Stelle, an der der Umbau beim Bauen tatsächlich gestolpert ist —
@@ -121,12 +123,20 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
     // Die Zahl wird aus der LÜCKE gerechnet, nicht abgetippt: Lücke + Kartenbreite (11 %), geteilt
     // durch den Maßstab (11 % / 104 px). Wer die Lücke ändert und die Strecke vergisst, lässt die Karte
     // an ihrer Fläche vorbeifliegen — genau das fängt diese Prüfung.
-    const gap = Number(desktop.match(/column-gap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
+    const gap = Number(desktop.match(/--bf-gap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
     const erwartet = Math.round((gap + 0.11) * 104 / 0.11 * 100) / 100;
     const links = Number(desktop.match(/\.bf-side\.is-left\s+\.bf-fly-in \{ --bf-fly-x: -([\d.]+)px; \}/)[1]);
     const rechts = Number(desktop.match(/\.bf-side\.is-right \.bf-fly-in \{ --bf-fly-x: ([\d.]+)px; \}/)[1]);
     expect(links, "Flugstrecke links passt nicht zur Lücke").toBeCloseTo(erwartet, 1);
     expect(rechts, "Flugstrecke rechts passt nicht zur Lücke").toBeCloseTo(erwartet, 1);
+  });
+
+  it("#kartenreihe · alle DREI Luecken der Reihe sind dieselbe", () => {
+    // Zwei Werte (aussen 3,25 %, Mitte 6 %) liessen die vier Karten als zwei Paare mit einem Loch
+    // dazwischen lesen. Eine Variable haelt sie zusammen — und bindet zugleich die Flugstrecke daran.
+    expect(desktop, "die Luecke der Seite").toMatch(/column-gap: var\(--bf-gap\)/);
+    expect(desktop, "die Luecke zwischen den zwei Spielkarten").toMatch(/\.bf-cards \{[^}]*gap: var\(--bf-gap\)/);
+    expect(desktop, "kein zweiter, abgetippter Abstand daneben").not.toMatch(/\.bf-cards \{[^}]*gap: calc\(var\(--bf-w\)/);
   });
 
   it("bei reduzierter Bewegung fliegt nichts", () => {
@@ -184,6 +194,25 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
     const deps = nz.slice(0, nz.indexOf("]);") + 3);
     expect(deps, "nachZug hat Dependencies — dann laeuft der Effekt bei Turbo-Wechsel erneut").toMatch(/\}, \[\]\);$/);
     expect(bf, "zugMs kommt ueber ein Ref herein").toMatch(/const zugRef = useRef\(0\); zugRef\.current = zugMs;/);
+  });
+
+  it("#turbo-takt · die Choreografie passt in JEDEN Stich, auch bei MAX", () => {
+    // Die festen Untergrenzen (220/320 ms) hielten die Dauer, wenn der Takt schon darunter lag —
+    // gemessen ×2 1060 von 880 ms, MAX 540 von 300. Der naechste Stich schnitt sie ab.
+    const zug = Number(bf.match(/const ZUG_ANTEIL = ([\d.]+)/)[1]);
+    const weg = Number(bf.match(/WEG_ANTEIL = ([\d.]+)/)[1]);
+    expect(zug + weg, "kein Atemzug zwischen zwei Stichen").toBeLessThanOrEqual(0.95);
+    // Bei 1× duerfen die Anteile NICHT greifen — das Normaltempo bleibt, wie es war.
+    const t1 = 1750;
+    expect(zug * t1, "der Deckel wuerde den Zug bei 1× verkuerzen").toBeGreaterThan(460);
+    expect(weg * t1, "der Deckel wuerde den Wegflug bei 1× verkuerzen").toBeGreaterThan(900);
+    // Ab ×2 muessen sie greifen, sonst ist die Aenderung wirkungslos.
+    for (const t of [1750 / 2, 1750 / 4, 1750 / 5]) {
+      expect(Math.min(clamp(t * 0.55, 220, 460), t * zug) + Math.min(clamp(t * 0.7, 320, 900), t * weg),
+        `bei Takt ${Math.round(t)} ms laeuft die Choreografie ueber`).toBeLessThan(t);
+    }
+    expect(bf, "beide Deckel haengen an der Breite").toMatch(/const flyDur\s+= wide \? Math\.min\(flyDurRoh, flipMs \* WEG_ANTEIL\) : flyDurRoh;/);
+    expect(bf, "beide Deckel haengen an der Breite").toMatch(/const flipDur\s+= wide \? Math\.min\(flipDurRoh, flipMs \* ZUG_ANTEIL\) : flipDurRoh;/);
   });
 
   it("ohne Zug-Takt laeuft alles SOFORT — die Handy-Fassung ist unveraendert", () => {
