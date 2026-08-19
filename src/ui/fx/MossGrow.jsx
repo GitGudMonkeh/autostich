@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { dprCap } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 import { mixRGB, clampRGB, satBoost, mulberry32, roundRectPath, fbm, clamp, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { createStageBlend } from "./stageBlend.js"; // #382 akkretives Stufen-Blenden (eine Wahrheit mit dem Eis)
 
 /* Archetyp-Karteneffekt „Pflanze" als Neon-Moos — realistisches Moos überwächst die eigene Karte mit dem Wachstum.
    Von OBEN & den beiden SEITEN wächst es nach innen/unten zu (Akkretion: bestehendes Moos bleibt, neues kommt dazu).
@@ -36,11 +37,14 @@ const TUNE = {
 
 const TAU = Math.PI * 2;
 const STAGE_MAX = 8;          // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
-const STAGE_FADE_MS = 300;    // #352: Cross-Fade-Dauer beim Stufen-Wechsel (weiches Ein-/Ausblenden statt hartem Pop)
+// #382: Blenddauer/Kurve wohnen in stageBlend.js (geteilt mit dem Eis) — hier gibt es keinen zweiten Wert mehr.
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3: 300*1.3=390, 390*104/144≈282)
 const CARD_R = 12;            // Karten-Eckenradius (rounded-xl) — für den Composite-Clip
 const M = 20;                 // Rand ums Moos-Bitmap (Überwuchs), in Referenz-px
 const LDX = -0.55, LDY = -0.83; // Lichtrichtung (oben-links)
+// Wachstum → Reifestufe → Deckung. Modul-weit, weil auch das Vorwärmen genau diese Stufen trifft (eine Wahrheit).
+const stageOf = (g) => clamp(Math.round(g || 0), 0, STAGE_MAX);
+const covOf = (stage) => (stage / STAGE_MAX) * TUNE.REIF_COV;
 
 // #352: Reduzierte Bewegung? Globales data-reduced-fx (App: alles ≠ „full", inkl. Mobile) ODER prefers-reduced-motion.
 // → dann Stufen-Wechsel OHNE Fade (Sofort-Draw wie bisher); Mobile-Perf/Barrierefreiheit bleiben unangetastet.
@@ -103,6 +107,19 @@ export function prewarmMoss({ deckTint = false, deckColor = null, deckColor2 = n
     getMossBitmap(cov, TUNE.NEON_A, TUNE.NEON_B);                                   // Standard-Palette
     if (deckTint && deckColor) getMossBitmap(cov, deckColor, deckColor2 || deckColor); // Deckfarbe-Modus
   } catch { /* Prewarm ist nie kritisch */ }
+}
+
+/* #382 ALLE Stufen vorwärmen — als Liste einzelner Aufgaben, nicht als ein Block.
+   Die Deck-Werkstatt spielt in der Skill-Effekt-Bühne binnen Sekunden das ganze Wachstum durch; ohne Vorwärmen fällt
+   der (teure) Erst-Aufbau jedes Stufen-Bitmaps mitten in eine Blende — also genau in die Frames, die flüssig sein
+   sollen. Der Aufrufer verteilt die Aufgaben auf Idle-Slots (eine je Slot), damit nie zwei Renderings in einem Frame
+   liegen. Bereits gecachte Stufen sind ein Map-Treffer und kosten nichts. */
+export function mossPrewarmTasks({ deckTint = false, deckColor = null, deckColor2 = null } = {}) {
+  // Genau EINE Palette — die gezeigte. Jedes Bitmap belegt Speicher; der andere Farbmodus wird erst beim Umschalten gebraucht.
+  const [a, b] = deckTint && deckColor ? [deckColor, deckColor2 || deckColor] : [TUNE.NEON_A, TUNE.NEON_B];
+  const tasks = [() => getField()];
+  for (let s = 1; s <= STAGE_MAX; s++) tasks.push(() => getMossBitmap(covOf(s), a, b));
+  return tasks;
 }
 
 // nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
@@ -215,7 +232,7 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
   const nB = deckTint && deckColor ? (deckColor2 || deckColor) : TUNE.NEON_B;
   // #352: Über Re-Renders/Effekt-Läufe STABILER Zustand — die Canvas bleibt bestehen (kein Neuaufbau je Stufe), damit
   // der Cross-Fade von der zuletzt gezeigten Stufe auf die neue laufen kann (statt gegen eine frische, leere Canvas).
-  const S = useRef({ growth, nA, nB, prevStage: null, drawStatic: null, fadeTo: null });
+  const S = useRef({ growth, nA, nB, drawStatic: null, fadeTo: null });
   S.current.growth = growth; S.current.nA = nA; S.current.nB = nB;
 
   // Setup: Canvas + Zeichen-Funktionen EINMAL aufbauen (Deps []). growth/Farbe kommen über S.current rein → das teure
@@ -228,9 +245,7 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
     const ctx = canvas.getContext("2d");
     const st = S.current;
     let disposed = false, raf = 0;
-
-    const stageOf = (g) => clamp(Math.round(g || 0), 0, STAGE_MAX);
-    const covOf = (stage) => (stage / STAGE_MAX) * TUNE.REIF_COV;
+    const blend = createStageBlend();   // #382 Stufen-Blende (Reifestufen als Schlüssel), siehe stageBlend.js
 
     // Canvas an die Kartenbox (inkl. Überwuchs-Rand) anpassen; liefert Geometrie oder null (zu klein).
     function computeGeo() {
@@ -246,65 +261,67 @@ export function MossGrow({ growth = 0, deckTint = false, deckColor = null, deckC
       return { cw, ch, cwF, chF, sx, sy, mLeft, mTop, DPR };
     }
 
-    // Ein Stufen-Bitmap (Moos + additiver Bloom) mit Alpha in die geclippte Kartenbox blitten.
-    function paintStage(cov, alpha, geo) {
-      if (cov <= 0 || alpha <= 0) return;
+    /* Ein Stufen-Bitmap (Moos + additiver Bloom) mit Gewicht in die geclippte Kartenbox blitten.
+       #382: BEIDE Ebenen additiv (`lighter`). Die Fläche ist frisch gelöscht und die Gewichte addieren sich zu 1
+       → das Ergebnis ist die exakte Interpolation der Stufen; das schon gewachsene Moos bleibt beim Stufen-Wechsel
+       konstant, nur der Zuwachs blendet auf (mit `source-over` sackte der Bewuchs mitten in der Blende weg).
+       Einzelne Ebene mit w=1 auf leerer Fläche = pixelgleich zu vorher. */
+    function paintStage(cov, w, geo) {
+      if (cov <= 0 || w <= 0.002) return;
       const { moss, glow } = getMossBitmap(cov, st.nA, st.nB);
       const { cw, ch, cwF, chF, sx, sy, mLeft, mTop } = geo;
       const growX = M * TUNE.OVERHANG * sx, growY = M * TUNE.OVERHANG * sy, grow = Math.min(growX, growY);
       ctx.save();
       roundRectPath(ctx, mLeft - growX, mTop - growY, cw + 2 * growX, ch + 2 * growY, CARD_R + grow); ctx.clip();
-      ctx.globalAlpha = alpha;
+      ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = w;
       ctx.drawImage(moss, 0, 0, moss.width, moss.height, 0, 0, cwF, chF);
       if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * clamp01(TUNE.NEON_BLOOM);
+        ctx.globalAlpha = w * clamp01(TUNE.NEON_BLOOM);
         ctx.drawImage(glow, 0, 0, glow.width, glow.height, 0, 0, cwF, chF);
-        ctx.globalCompositeOperation = "source-over";
       }
-      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       ctx.restore();
+    }
+
+    // Alle gerade sichtbaren Ebenen zeichnen (unterste zuerst). Rückgabe: läuft noch eine Blende?
+    function paintNow(geo, now) {
+      ctx.setTransform(geo.DPR, 0, 0, geo.DPR, 0, 0);
+      ctx.clearRect(0, 0, geo.cwF, geo.chF);
+      const layers = blend.weights(now);
+      for (let i = 0; i < layers.length; i++) paintStage(covOf(layers[i].stage), layers[i].w, geo);
+      return blend.active;
     }
 
     // Statischer Sofort-Draw einer Stufe (kein Fade) — Erststart, Resize, reduzierte Bewegung, Farbwechsel.
     st.drawStatic = (g) => {
       if (disposed) return;
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      const stage = stageOf(g), cov = covOf(stage), geo = computeGeo();
+      blend.set(stageOf(g));
+      const geo = computeGeo();
       if (!geo) { canvas.style.display = "none"; return; }
-      ctx.setTransform(geo.DPR, 0, 0, geo.DPR, 0, 0);
-      ctx.clearRect(0, 0, geo.cwF, geo.chF);
-      paintStage(cov, 1, geo);
-      st.prevStage = stage;
+      paintNow(geo, performance.now());
     };
 
-    // Cross-Fade von der zuletzt gezeigten Stufe auf die neue über ~STAGE_FADE_MS. Beide Bitmaps sind gecacht → nur
-    // 2 drawImage/Frame für ~300 ms; danach wieder komplett statisch (kein Dauer-rAF). Springt growth mehrere Stufen,
-    // wird direkt von „zuletzt gezeigt" auf „neu" geblendet (kein Zwischenschritt).
+    /* #382 Weich auf die neue Stufe blenden. Beide Bitmaps sind gecacht → während der Blende nur ein paar drawImage
+       pro Frame, danach wieder komplett statisch (kein Dauer-rAF). Wächst das Moos WÄHREND einer laufenden Blende
+       weiter (im Spiel gut möglich), setzt sich die neue Stufe als weitere Ebene obendrauf, statt die laufende
+       abzuschneiden — der Zuwachs bleibt dadurch auch bei schnellen Serien lückenlos. */
     st.fadeTo = (g) => {
       if (disposed) return;
       const toStage = stageOf(g);
-      const fromStage = st.prevStage == null ? toStage : st.prevStage;
-      if (toStage === fromStage) { st.drawStatic(g); return; }   // gleiche Stufe (z. B. growth 3.2→3.4) → kein Fade nötig
-      if (raf) cancelAnimationFrame(raf);
+      if (toStage === blend.target) return;    // gleiche Stufe (z. B. growth 3.2→3.4) → nichts zu tun
+      blend.to(toStage, performance.now());
+      if (raf) return;                          // Blende läuft bereits → die neue Ebene fährt einfach mit
       const geo = computeGeo();
       if (!geo) { canvas.style.display = "none"; return; }
-      const fromCov = covOf(fromStage), toCov = covOf(toStage), t0 = performance.now();
       const tick = (now) => {
         if (disposed) return;
-        const f = clamp01((now - t0) / STAGE_FADE_MS);
-        ctx.setTransform(geo.DPR, 0, 0, geo.DPR, 0, 0);
-        ctx.clearRect(0, 0, geo.cwF, geo.chF);
-        paintStage(fromCov, 1 - f, geo);
-        paintStage(toCov, f, geo);
-        if (f < 1) { raf = requestAnimationFrame(tick); return; }
-        ctx.clearRect(0, 0, geo.cwF, geo.chF);                    // Abschluss: sauber statisch, rAF aus
-        paintStage(toCov, 1, geo);
-        st.prevStage = toStage; raf = 0;
+        raf = paintNow(geo, now) ? requestAnimationFrame(tick) : 0;
       };
       raf = requestAnimationFrame(tick);
     };
 
-    st.drawStatic(st.growth);   // Erststart: aktuelle Stufe sofort statisch (setzt prevStage)
+    st.drawStatic(st.growth);   // Erststart: aktuelle Stufe sofort statisch (setzt die Basis der Blende)
     let ro = null;
     try { ro = new ResizeObserver(() => st.drawStatic(st.growth)); ro.observe(host); } catch { /* ignore */ }
     return () => {

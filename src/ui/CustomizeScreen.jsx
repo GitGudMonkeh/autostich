@@ -91,12 +91,33 @@ export const STATE_OFF = "#e0605a";  // vorhanden, aber nicht aktiv
    Vorbehalt: gemessen im Software-Renderer des Messstands. Wer es auf echter GPU erneut versucht,
    misst zuerst und nimmt eine WARME PIXI-APP, keinen rohen Kontext. */
 let fxPrefetched = false;
-function prefetchFxChunks() {
+function prefetchFxChunks(spezialDeckTint = false) {
   if (fxPrefetched || typeof window === "undefined") return;
   fxPrefetched = true;
   const run = () => { for (const imp of FX_PREFETCH) { try { imp().catch(() => {}); } catch { /* ignore */ } } };
   if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(run, { timeout: 1500 });
   else setTimeout(run, 300);
+  prewarmSpezialStages(spezialDeckTint);
+}
+
+/* #382 Stufen-Bitmaps der Skill-Effekt-Bühne im Leerlauf aufbauen.
+   Moos und Frost halten je Reifestufe ein gecachtes Bitmap; der ERSTE Aufbau einer Stufe ist teuer. Die Bühne spielt
+   Wachstum und Vereisung binnen Sekunden komplett durch — ohne Vorwärmen fällt jeder Erst-Aufbau also mitten in eine
+   Stufen-Blende und macht genau die Frames kaputt, die weich sein sollen. Eine Aufgabe je Idle-Slot: nie zwei
+   Renderings im selben Frame. Nur die Palette, die die Bühne gerade zeigt — jedes Bitmap kostet Speicher, und der
+   andere Farbmodus wird erst beim Umschalten gebraucht (dann wärmt der Umschalter ihn hier erneut nicht: er läuft
+   dann live, aber nur noch für EINE Palette). */
+function prewarmSpezialStages(deckTint) {
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 60));
+  const drain = (tasks) => {
+    let i = 0;
+    const step = () => { if (i >= tasks.length) return; try { tasks[i++](); } catch { /* Vorwärmen ist nie kritisch */ } idle(step, { timeout: 1500 }); };
+    idle(step, { timeout: 1500 });
+  };
+  const opts = { deckTint, deckColor: SPEZIAL_DECK_A, deckColor2: SPEZIAL_DECK_B };
+  Promise.all([import("./fx/MossGrow.jsx"), import("./fx/FrostIce.jsx")])
+    .then(([moss, frost]) => drain([...moss.mossPrewarmTasks(opts), ...frost.frostPrewarmTasks(opts)]))
+    .catch(() => { /* Vorwärmen ist nie kritisch */ });
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
 import { audio } from "./audio.js"; // Showcase-Panel spielt den Klinge-Sound mit
@@ -804,7 +825,9 @@ const SPEZIAL_DECK_A = "#ff7a3a", SPEZIAL_DECK_B = "#e01234"; // Deckfarbe-Beisp
 // #328 Showcase-Loop-Stufen: Eis läuft durch die FrostIce-Schwellen (MASS_MAX=12: 0→4→8→12), Pflanze durch das
 // MossGrow-Wachstum (STAGE_MAX=8: 0→8). Beide Bitmaps sind pro Stufe modulweit gecacht → diskretes Stepping ist billig.
 const ICE_MASS_SEQ  = [0, 4, 8, 12, 12]; // Halt auf Max (12 doppelt) vor dem Reset auf 0
-const MOSS_GROW_SEQ = [0, 2, 4, 6, 8, 8]; // Halt auf „reif" (8 doppelt) vor dem Reset
+// #382 Moos Stufe für Stufe (statt in Zweier-Sprüngen): mit der weichen Stufen-Blende liest sich das als echtes
+//   Wachsen statt als Diaschau. Alle Stufen sind ohnehin gecacht (und beim Öffnen vorgewärmt) → kostet nichts extra.
+const MOSS_GROW_SEQ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 8]; // Halt auf „reif" (8 doppelt) vor dem Reset
 const ICE_MASS_MAX = 12, MOSS_STAGE_MAX = 8; // Reduced-Motion → statisch auf Max
 function SpezialScene({ deckTint = false }) {
   const panelRef = useRef(null);
@@ -818,11 +841,12 @@ function SpezialScene({ deckTint = false }) {
   const [mossGrowth, setMossGrowth] = useState(reducedMotion ? MOSS_STAGE_MAX : MOSS_GROW_SEQ[0]);
   useEffect(() => {
     if (reducedMotion) { setIceMass(ICE_MASS_MAX); setMossGrowth(MOSS_STAGE_MAX); return undefined; }
-    // Getrennte, unabhängige Timer (am einfachsten): je Stufe ~0,8 s bzw. ~0,72 s, dann von vorn (Reset auf 0).
+    // Getrennte, unabhängige Timer (am einfachsten): je Stufe ~0,8 s bzw. ~0,62 s, dann von vorn (Reset auf 0).
+    // #382 Beide Takte liegen ÜBER der Stufen-Blende (STAGE_FADE_MS) → jede Stufe ist auch wirklich fertig geblendet.
     let iceI = 0, mossI = 0;
     setIceMass(ICE_MASS_SEQ[0]); setMossGrowth(MOSS_GROW_SEQ[0]);
     const iceT = setInterval(() => { iceI = (iceI + 1) % ICE_MASS_SEQ.length; setIceMass(ICE_MASS_SEQ[iceI]); }, 820);
-    const mossT = setInterval(() => { mossI = (mossI + 1) % MOSS_GROW_SEQ.length; setMossGrowth(MOSS_GROW_SEQ[mossI]); }, 720);
+    const mossT = setInterval(() => { mossI = (mossI + 1) % MOSS_GROW_SEQ.length; setMossGrowth(MOSS_GROW_SEQ[mossI]); }, 620);
     return () => { clearInterval(iceT); clearInterval(mossT); };
   }, [reducedMotion]);
   const CARDS = [
@@ -1075,7 +1099,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   useEscape(onClose);
   // #perf-shop (Plan A): beim Öffnen der Werkstatt alle Effekt-Chunks idle vorladen → kein Lade-Hitch beim ersten
   //   Anzeigen eines Effekts. Läuft nur einmal pro Session (interner Guard).
-  useEffect(() => { prefetchFxChunks(); }, []);
+  // #382: dabei auch die Stufen-Bitmaps der Skill-Effekt-Bühne im Farbmodus, den sie gerade zeigt (options.archColor).
+  //   Der Farbmodus darf ruhig in den Deps stehen — der Guard in prefetchFxChunks macht jeden weiteren Lauf zum No-op.
+  const spezialDeckTint = options?.archColor === "deck";
+  useEffect(() => { prefetchFxChunks(spezialDeckTint); }, [spezialDeckTint]);
   const p = profile || {};
   const wide = useIsWide();                          // #desktop: ab 1400 px steht das Pack-Detail fest daneben
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"

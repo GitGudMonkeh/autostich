@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { dprCap, frameMinMs } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 import { mixRGB, clampRGB, satBoost, mulberry32, roundRectPath, fbm, clamp, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
+import { createStageBlend } from "./stageBlend.js"; // #382 akkretives Stufen-Blenden (eine Wahrheit mit dem Moos)
 
 /* Archetyp-Karteneffekt „Eis" als Neon-Kristall-Frost — Vereisung der eigenen Karte mit der Gletscher-Masse.
    Von UNTEN & den beiden SEITEN wächst kantiger Neon-Frost nach innen/oben zu (Akkretion: bestehende Kristalle bleiben,
@@ -39,7 +40,7 @@ const TUNE = {
 const TAU = Math.PI * 2;
 const THRESHOLDS = [4, 8, 12];   // glacier.js — Schwellen; Stufe = #Schwellen ≤ Masse (0..3)
 const MASS_MAX = 12;             // glacier.js TOP / BURST_AT
-const STAGE_FADE_MS = 300;       // #352: Cross-Fade-Dauer beim Front-Stufen-Wechsel (weich statt hartem Swap)
+// #382: Blenddauer/Kurve wohnen in stageBlend.js (geteilt mit dem Moos) — hier gibt es keinen zweiten Wert mehr.
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3), identisch zu MossGrow
 const CARD_R = 12;               // Karten-Eckenradius (rounded-xl) — für den strikten Composite-Clip
 const M = 20;                    // Rand ums Frost-Bitmap, in Referenz-px (wird beim Clip weggeschnitten → kein Überstand)
@@ -98,6 +99,18 @@ export function prewarmFrost({ deckTint = false, deckColor = null, deckColor2 = 
     getFrostBitmap(front, TUNE.NEON_A, TUNE.NEON_B);                                   // Standard-Palette
     if (deckTint && deckColor) getFrostBitmap(front, deckColor, deckColor2 || deckColor); // Deckfarbe-Modus
   } catch { /* Prewarm ist nie kritisch */ }
+}
+
+/* #382 ALLE Front-Stufen vorwärmen — als Liste einzelner Aufgaben (Begründung wie bei mossPrewarmTasks: die
+   Skill-Effekt-Bühne der Deck-Werkstatt spielt die Vereisung in Sekunden durch; ein Erst-Aufbau mitten in der
+   Blende ist genau der Ruckler, den die Blende beseitigen soll). Der Aufrufer verteilt sie auf Idle-Slots. */
+export function frostPrewarmTasks({ deckTint = false, deckColor = null, deckColor2 = null } = {}) {
+  // Genau EINE Palette — die gezeigte (Begründung wie beim Moos: jedes Bitmap kostet Speicher).
+  const [a, b] = deckTint && deckColor ? [deckColor, deckColor2 || deckColor] : [TUNE.NEON_A, TUNE.NEON_B];
+  const fronts = [1, ...THRESHOLDS].map(frontOf);   // Grundvereisung + je Schwelle eine Stufe (0..3)
+  const tasks = [() => getField()];
+  for (const f of fronts) tasks.push(() => getFrostBitmap(f, a, b));
+  return tasks;
 }
 
 // nA/nB = Neon-Bühnenlicht-Farben: Standard-Palette (TUNE.NEON_A/B) ODER die Deckfarben (Deckfarbe-Modus).
@@ -242,8 +255,8 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
     host.appendChild(canvas);
     const ctx = canvas.getContext("2d");
     let cw = 0, ch = 0, DPR = 1, clockT = 0, last = 0, raf = 0, disposed = false;
-    // #352 Cross-Fade-Zustand: zuletzt gezeigte Front-Stufe + laufende Transition (alte → neue Front über STAGE_FADE_MS).
-    let prevFront = null, fadeFrom = 0, fadeStart = 0, fading = false;
+    // #382 Stufen-Blende (Front-Anteile als Stufen-Schlüssel) — ersetzt den alten Kreuz-Fade, siehe stageBlend.js.
+    const blend = createStageBlend();
 
     function size() {
       const w = host.clientWidth, h = host.clientHeight;
@@ -253,40 +266,44 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       return true;
     }
 
-    // Ein Front-Stufen-Bitmap (Frost + additiver Bloom) mit Alpha strikt in die geclippte Kartenbox blitten.
-    function blitFront(front, alpha, pulse, mLeft, mTop) {
+    /* Ein Front-Stufen-Bitmap (Frost + additiver Bloom) mit Gewicht strikt in die geclippte Kartenbox blitten.
+       #382: BEIDE Ebenen additiv (`lighter`). Die Fläche ist frisch gelöscht, die Gewichte addieren sich zu 1 →
+       das Ergebnis ist die exakte Interpolation der Stufen; bestehender Frost bleibt beim Wechsel konstant
+       (mit `source-over` sackte er in der Mitte der Blende sichtbar weg). Einzelne Ebene mit w=1 = wie vorher. */
+    function blitFront(front, w, pulse, mLeft, mTop) {
       const { frost, glow } = getFrostBitmap(front, stateRef.current.nA, stateRef.current.nB);
-      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = alpha;
+      ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = w;
       ctx.drawImage(frost, 0, 0, frost.width, frost.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
       if (TUNE.NEON_BLOOM > 0) {
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * clamp01(TUNE.NEON_BLOOM * pulse);
+        ctx.globalAlpha = w * clamp01(TUNE.NEON_BLOOM * pulse);
         ctx.drawImage(glow, 0, 0, glow.width, glow.height, -mLeft, -mTop, cw + 2 * mLeft, ch + 2 * mTop);
-        ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
       }
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     }
 
     function compose() {
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
-      const front = frontOf(mass);
-      if (front <= 0 || !size()) { canvas.style.display = "none"; return; }
+      // #382 Die sichtbaren Ebenen kommen aus der Blende, NICHT aus der Masse — sonst schnitte ein Rückfall auf 0
+      //   (Gletscher-Ausbruch) die Blende ab und der Frost verschwände schlagartig statt abzuschmelzen.
+      const layers = blend.weights(performance.now()).filter((l) => l.stage > 0 && l.w > 0.002);
+      if (!layers.length || !size()) { canvas.style.display = "none"; return; }
       canvas.style.display = "block";
       const sx = cw / REF_W, sy = ch / REF_H, mLeft = M * sx, mTop = M * sy;
       const anim = !stateRef.current.reduced;
       const pulse = (anim && TUNE.SHIMMER > 0 && stageOf(mass) >= 3) ? 1 + TUNE.SHIMMER * 0.35 * Math.sin(clockT * 0.004) : 1;
-      // #352 Cross-Fade: während der Transition die alte Front-Stufe aus- (1−f), die neue einblenden (f). Beide Bitmaps gecacht.
-      let f = 1;
-      if (fading) { f = clamp01((performance.now() - fadeStart) / STAGE_FADE_MS); if (f >= 1) fading = false; }
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.clearRect(0, 0, cw, ch);
       ctx.save();
       roundRectPath(ctx, 0, 0, cw, ch, CARD_R); ctx.clip();                     // STRIKT: exaktes Karten-RoundRect
-      if (fading && f < 1) { blitFront(fadeFrom, 1 - f, pulse, mLeft, mTop); blitFront(front, f, pulse, mLeft, mTop); }
-      else blitFront(front, 1, pulse, mLeft, mTop);
+      for (let i = 0; i < layers.length; i++) blitFront(layers[i].stage, layers[i].w, pulse, mLeft, mTop);
       if (anim && TUNE.SPARKLE > 0) {                                           // Funkeln (live über dem Frost)
         ctx.globalCompositeOperation = "lighter"; const { sparks } = getField();
-        for (let s = 0; s < sparks.length; s++) { const sp = sparks[s]; if (front <= sp.birthF) continue;
+        for (let s = 0; s < sparks.length; s++) { const sp = sparks[s];
+          // #382 Ein Funken gehört zu allen Ebenen, deren Front ihn schon geboren hat → er blendet mit ihnen auf/ab.
+          let born = 0; for (let i = 0; i < layers.length; i++) if (layers[i].stage > sp.birthF) born += layers[i].w;
+          if (born <= 0.002) continue;
           const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(clockT * 0.005 + sp.ph));
-          ctx.fillStyle = rgba({ r: 210, g: 240, b: 255 }, 0.6 * TUNE.SPARKLE * tw);
+          ctx.fillStyle = rgba({ r: 210, g: 240, b: 255 }, 0.6 * TUNE.SPARKLE * tw * born);
           ctx.beginPath(); ctx.arc(sp.x * sx, sp.y * sy, (0.9 + 0.7 * tw) * sx, 0, TAU); ctx.fill();
         }
         ctx.globalCompositeOperation = "source-over";
@@ -305,7 +322,11 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
       // #perf-overlay-2: `active` false = Brett von einem Vollbild-Overlay verdeckt (Architekt/Perk/Skill/Formation).
       //   Wie „reduced": einmal statisch zeichnen, rAF anhalten. Der Architekt allein sind 13 von 50 Runden.
-      if (mass <= 0 || stateRef.current.reduced || stateRef.current.active === false || document.visibilityState === "hidden") { lastDraw = -1e9; compose(); raf = 0; return; } // statisch/aus → rAF anhalten
+      // #382 Eine laufende Blende hält den rAF am Leben, auch bei Masse 0 (Ausbruch schmilzt aus statt zu poppen).
+      if ((mass <= 0 && !blend.active) || stateRef.current.reduced || stateRef.current.active === false || document.visibilityState === "hidden") {
+        if (blend.active) blend.set(blend.target);   // verdeckt/reduziert → Blende sofort abschließen, nicht einfrieren
+        lastDraw = -1e9; compose(); raf = 0; return; // statisch/aus → rAF anhalten
+      }
       compose();
       raf = requestAnimationFrame(frame);
     }
@@ -315,16 +336,11 @@ export function FrostIce({ mass = 0, reduced = false, deckTint = false, deckColo
       if (disposed) return;
       const mass = clamp(stateRef.current.mass || 0, 0, MASS_MAX);
       const front = frontOf(mass);
-      const anim = !stateRef.current.reduced && document.visibilityState !== "hidden";
-      // #352 Front-Stufen-Wechsel → Cross-Fade von der zuletzt gezeigten Front auf die neue starten (nur animiert &
-      // sichtbar & Masse > 0; sonst hart/sofort, kein Fade — Barrierefreiheit/Mobile bleiben wie bisher).
-      if (prevFront !== null && front !== prevFront && anim && mass > 0) {
-        fadeFrom = prevFront; fadeStart = performance.now(); fading = true;
-      } else if (front !== prevFront) {
-        fading = false;   // reduced/verdeckt oder erster Draw → kein Fade
-      }
-      prevFront = front;
-      const run = mass > 0 && !stateRef.current.reduced && stateRef.current.active !== false && document.visibilityState !== "hidden";
+      const anim = !stateRef.current.reduced && stateRef.current.active !== false && document.visibilityState !== "hidden";
+      // #382 Front-Stufen-Wechsel → weich auf die neue Stufe blenden (auch auf 0: der Ausbruch schmilzt ab).
+      //   Ohne Animation (reduced/verdeckt/Tab weg) hart setzen — Barrierefreiheit/Mobile bleiben wie bisher.
+      if (anim) blend.to(front, performance.now()); else blend.set(front);
+      const run = (mass > 0 || blend.active) && anim;
       if (run) { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
       else { if (raf) { cancelAnimationFrame(raf); raf = 0; } compose(); }   // reduced/aus → einmal statisch zeichnen
     }
