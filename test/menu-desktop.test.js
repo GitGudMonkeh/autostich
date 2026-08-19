@@ -118,6 +118,20 @@ describe("#desktop-menues — die geerbten Fallen des Desktop-Passes", () => {
     expect(deskBlock).toMatch(/\.un-root,\s*\.fb-root\s*\{/);
   });
 
+  it("#op-oben: die Optionen ankern oben statt mittig im Fenster", () => {
+    /* Das JSX zentriert (`flex items-center`) — richtig für die Handy-Sprechblase, falsch für drei
+       Panels, die kürzer sind als jeder Desktop-Schirm: gemessen 1920 x 1080 standen 206 px Leere
+       über dem Titel. Baum, Statistik und Bestenliste tragen dieselbe Zeile längst. */
+    const r = deskBlock.match(/\.op-root[^{]*\{([^}]*)\}/);
+    expect(r, ".op-root nicht mehr gefunden").toBeTruthy();
+    expect(r[1], "die Optionen hängen wieder mittig im Fenster")
+      .toMatch(/align-items:\s*start\s*!important/);
+    /* Gegenprobe: der Deckel muss bleiben. Ohne ihn wächst die oben verankerte Karte auf flachen
+       Fenstern aus dem Bild, statt dass ihr Rumpf scrollt. */
+    expect(deskBlock.match(/\.op-card \{([^}]*)\}/)[1], "der Höhendeckel der Karte ist weg")
+      .toMatch(/max-height:\s*100%/);
+  });
+
   it("die drei Overlays tragen im Desktop-Block keinen eigenen backdrop-filter mit Radius", () => {
     for (const m of deskBlock.matchAll(/^\s*(\.(?:op|un|fb)-[^{}\n]*)\{([^}]*)\}/gm)) {
       expect(m[2], `${m[1].trim()} hat wieder einen Blur`).not.toMatch(/backdrop-filter:\s*blur/);

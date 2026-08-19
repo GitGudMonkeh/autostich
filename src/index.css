@@ -3048,6 +3048,13 @@ button { font-family: inherit; }
      weiter, seine Anzeige ist hier nur unsichtbar; ihn zu gaten hieße, den Renderpfad zu spalten. */
   .op-root {
     padding: 16px 48px 18px !important;
+    /* #op-oben: Der Screen hing MITTIG im Fenster (`items-center` aus der Handy-Fassung, wo die Karte
+       eine Sprechblase ist). Die drei Panels sind aber kürzer als jeder Desktop-Schirm — gemessen
+       1920 x 1080: 206 px Leere über dem Titel, ebenso viel darunter. Damit fing der Screen tiefer an
+       als Baum, Werkstatt, Statistik und Bestenliste, die alle am oberen Rand ankern. `start` ist
+       genau die Zeile, die `.st-root`/`.lb-root` dafür schon tragen. Der Deckel bleibt `max-height`
+       an der Karte: auf flachen Fenstern scrollt weiter der Rumpf. */
+    align-items: start !important;
     background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
     /* #perf-blur: KEIN backdrop-filter, gleiche Begründung und gleiche Messung wie an `.up-root` —
        er war der teuerste Posten des Desktop-Passes und optisch bei 82 % Überzug nicht auffindbar.

@@ -2298,6 +2298,22 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #op-oben — die Optionen hingen mittig statt oben (19.08.2026)
+Gemeldet: „Optionen-Screen etwas weiter nach oben, ist zu weit unten." Ursache ist eine Zeile aus der
+Handy-Fassung, die der Desktop-Pass nie überschrieben hat: `.op-root` ist `flex items-center` — richtig
+für eine Sprechblase, falsch für drei Panels, die kürzer sind als jeder Desktop-Schirm. Gemessen
+1920 × 1080: **206 px Leere über dem Titel** (und ebenso viel darunter), 157 px auf 2047 × 983.
+- **Fix ist `align-items: start !important` an der BESTEHENDEN `.op-root`-Regel** — dieselbe Zeile, die
+  `.st-root`/`.lb-root` seit #rahmen-huelle tragen. Der Screen fängt damit auf demselben Pixel an wie
+  Baum, Werkstatt, Statistik und Bestenliste (16 px, auf flachen Fenstern 10).
+- **Der Höhendeckel an `.op-card` muss bleiben** (`max-height: 100%`): oben verankert ohne Deckel
+  wüchse die Karte auf flachen Fenstern aus dem Bild, statt dass ihr Rumpf scrollt. Der Wächter prüft
+  beides zusammen — die Ankerung allein wäre die halbe Regel.
+- Gemessen nach dem Umbau: Oberkante 16 px auf 2047 × 983 und 1920 × 1080, 10 px auf 1536 × 791,
+  nirgends Scrollen. **Handy bitidentisch** (Pixelvergleich 390 px, 0,0000 von 255; Karte weiter
+  mittig bei 42/42 px).
+- Wächter: `test/menu-desktop.test.js`. Gegenprobe gemacht: beide sabotierten Nähte fallen.
+
 ### #st-ruhe — die Statistik im Desktop-Ton (19.08.2026)
 
 Vierter Screen nach der Liste („Desktop-Umbau: die ENTSCHEIDUNGSREGELN", oben). Vorgabe des Users:
