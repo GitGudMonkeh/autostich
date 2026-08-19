@@ -51,8 +51,11 @@ describe("#perf-ring — der Ring ist ein Paar aus zwei Boxen", () => {
   it("die Werkstatt-Panels teilen die Konstruktion, statt sie zu kopieren", () => {
     // `.cz-main`/`.cz-side` trugen den Ring bis 18.08.2026 als wortgleiches eigenes ::before.
     expect(css).not.toMatch(/\.cz-main::before,\s*\.cz-side::before/);
-    expect(src("ui/CustomizeScreen.jsx")).toMatch(/className="cz-main as-ring"/);
-    expect(src("ui/CustomizeScreen.jsx")).toMatch(/className="cz-side as-ring"/);
+    /* Seit #cz-ruhe tragen die Werkstatt-Panels zusätzlich `as-ring-quiet` (stehender, angedeuteter Ring).
+       Das ist ein MODIFIKATOR derselben Konstruktion — die zwei Boxen bleiben, nur die Animation fällt.
+       Deshalb hier auf „beginnt mit cz-main as-ring" prüfen statt auf den exakten Klassenstring. */
+    expect(src("ui/CustomizeScreen.jsx")).toMatch(/className="cz-main as-ring\b/);
+    expect(src("ui/CustomizeScreen.jsx")).toMatch(/className="cz-side as-ring\b/);
   });
 });
 

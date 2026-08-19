@@ -1381,6 +1381,10 @@ button { font-family: inherit; }
    Perk-Karte) — und #lv-fest bindet die feste Oberkante daran, das darf nicht auseinanderlaufen. */
 .lv-rig { display: contents; --lv-h: min(92dvh, 760px); }
 
+/* #cz-ruhe — Klammer der Bühnen-Fußzeile in der Werkstatt. Unterhalb 1400 px erzeugt sie keine Box, die
+   Handy-Fassung ist damit DOM- und pixelgleich (dieselbe Technik wie `.gd-cols` / `.gl-body`). */
+.cz-fxfoot { display: contents; }
+
 /* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1400 px keine Box,
    dort scrollt weiter das Panel selbst. */
 .lb-pagescroll { display: contents; }
@@ -2225,32 +2229,36 @@ button { font-family: inherit; }
   .cz-hair { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
   .cz-tabs { grid-column: 1 / -1; grid-row: 3; }
 
-  /* --- Die Reiter werden Knöpfe -------------------------------------------
+  /* --- Die Reiter sind flache Text-Reiter (#cz-ruhe, 19.08.2026) -----------
      Bis 1399 px sind es Karteikartenreiter über die volle Breite (drei gleich breite Flächen mit
-     Unterkante). Auf 1824 px Breite wurde daraus eine 600 px breite Fläche je Reiter — ein Rahmen-
-     element, kein Bedienelement. Hier sind es Knöpfe der Kanten-Familie, links ausgerichtet, in der
-     Breite am Text bemessen. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
+     Unterkante) — auf 1824 px wurde daraus eine 600 px breite Fläche je Reiter, ein Rahmenelement statt
+     eines Bedienelements. Die erste Desktop-Antwort darauf waren Knöpfe der Kanten-Familie (Fläche,
+     Rahmen, Radius, farbige Linkskante). Sie hat das Problem gelöst und ein zweites gemacht: die
+     Werkstatt besteht aus BILDERN, und drei gerahmte Flächen über ihnen sind das Lauteste im Bild.
+
+     Jetzt reine Text-Reiter mit EINEM Signal — der Unterstreichung in der Deckfarbe. Breite am Text
+     (kein `min-width`), keine Fläche, kein Rahmen, kein Radius. `!important` bleibt durchgehend nötig:
+     die Reiter tragen ihre Optik inline aus dem JSX, und Inline schlägt jedes Stylesheet.
+     Die inline gesetzte Unterkante (2 px in der Deckfarbe) ist genau das gewünschte Signal und wird
+     deshalb NICHT überschrieben — der Verlauf darüber schon (`background: none`). */
   .cz-head [role="tab"] {
     flex: none !important;
-    min-width: 210px;
-    padding: 11px 22px !important;
-    border-radius: 12px !important;
-    background: rgba(12, 12, 18, .5) !important;
-    border: 1px solid rgba(150, 150, 170, .16) !important;
-    border-left: 3px solid rgba(150, 150, 170, .3) !important;
-    color: #a9a9b8 !important;
-    font-size: 16px !important;
+    padding: 8px 4px 9px !important;
+    margin-right: 14px;
+    border-radius: 0 !important;
+    background: none !important;
+    border: 0 !important;
+    color: #8a8a95 !important;
+    font-size: 15px !important;
     font-weight: 500 !important;
     letter-spacing: -.005em !important;
     text-align: left;
   }
   .cz-head [role="tab"][aria-selected="true"] {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #0e0e14) 0%, #0e0e14 34%) !important;
-    border-left: 4px solid var(--deck-a1, #8a7de0) !important;
-    color: color-mix(in srgb, var(--deck-a2, #b3a8ff) 40%, #ffffff) !important;
-    box-shadow: 0 0 16px -8px var(--deck-a1, #8a7de0);
+    color: #f0eefc !important;
+    border-bottom: 2px solid var(--deck-a1, #8a7de0) !important;
   }
-  .cz-head [role="tablist"], .cz-head .flex.gap-1\.5 { gap: 10px !important; }
+  .cz-head [role="tablist"], .cz-head .flex.gap-1\.5 { gap: 0 !important; }
   .cz-head > div[aria-hidden="true"]:first-child { display: none; }   /* Haarlinie: hing an der Kartenecke */
 
   /* Katalog | Detail. Die Detailspalte ist fest — eine mitwachsende Spalte würde die Kartenvorschau
@@ -3698,6 +3706,55 @@ button { font-family: inherit; }
      Neugier geklickt und nie wieder — der Name sagt, was dahinter liegt. */
   .lv-grip-lbl { writing-mode: vertical-rl; text-orientation: mixed;
     font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+
+  /* ==========================================================================
+     #cz-ruhe — ruhigere Werkstatt ab 1400 px (19.08.2026, Entwurf des Users)
+
+     Vier kleine Griffe, alle nur oberhalb der Desktop-Schwelle. Die Handy-Fassung ist per Konstruktion
+     unberührt: `cz-fxfoot` ist unten `display: contents`, alles andere steht in diesem Block.
+
+     1. **Der Ring steht still und ist nur noch angedeutet.** `.as-ring` malt sonst ein wanderndes
+        Deckfarben-Band (`as-ring-slide`, 7 s) und dazu einen Schein. Auf einem Screen, der aus Bildern
+        besteht, zieht eine dauernd laufende Kante den Blick von genau den Bildern ab, um die es geht.
+        Es ist NICHT die Regel gelöscht, sondern ein Modifikator gesetzt (`as-ring-quiet`): der Ring
+        bleibt EINE Fassung mit einem Schalter, und Baum/Leitfaden/Glossar behalten ihren laufenden Ring,
+        bis jemand sie ausdrücklich nachzieht (dann ist es dort eine Klasse, kein zweiter Rahmen).
+        Nebenwirkung, willkommen: die Animation kostete gemessen ~3–4 fps (#perf-ring).
+     2. **Reiter flach.** Sie trugen zusätzlich zur Unterstreichung einen Farbverlauf als Fläche und waren
+        über die volle Breite gestreckt (`flex-1`). Jetzt Textbreite, linksbündig, EIN Signal (der Strich).
+     3. **Kachelraster luftiger** (10 → 16 px). Auf 1400+ px stehen sechs Kacheln je Zeile; bei 10 px
+        Abstand las sich das als zusammenhängende Fläche statt als einzelne Karten.
+     4. **Der Aktionsknopf der Effekt-Bühne ist kein Vollbreiten-Balken mehr**, sondern steht rechts neben
+        der Beschreibung. Ein Knopf über die ganze Panelbreite ist eine Handy-Geste (Daumen); auf dem
+        Desktop ist er dort das lauteste Element des Screens.
+
+     BEWUSST NICHT angefasst: die Deck-Linie am Kopf (bleibt, wie sie ist — ausdrücklich so gewünscht) und
+     die farbige linke Kante der Pack-Kacheln (`.as-edge-card`). Die ist ein projektweites Signal (#kante),
+     kein Werkstatt-Detail — sie hier allein zu dämpfen ließe die Werkstatt aus dem System fallen.
+     ========================================================================== */
+  .as-ring-quiet { box-shadow: none !important; }
+  /* Kein wanderndes Band mehr: EIN stehender, schwacher Deckfarben-Ton. `background-image: none` muss mit,
+     sonst bliebe der dreifach gekachelte Verlauf stehen und stünde nur still. */
+  .as-ring-quiet > .as-ring-run::before {
+    animation: none;
+    left: 0; width: 100%;
+    background-image: none;
+    background-color: color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #2b2a36);
+    will-change: auto;
+  }
+  /* (Die Reiter selbst stehen weiter oben in DIESEM Block — `.cz-head [role="tab"]`. Bewusst dort und
+     nicht hier noch einmal: zwei Regelsätze für dieselben drei Knöpfe wären genau die Doppelpflege,
+     vor der die Datei sonst überall warnt.) */
+  /* Luftigeres Kachelraster (der Katalog ist das einzige Raster im Panel — der Greifer darf so grob sein). */
+  .cz-mainscroll .grid { gap: 16px; }
+  /* Fußzeile der Bühne: Beschreibung links, Knopf rechts. */
+  .cz-fxfoot {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 10px;
+  }
+  .cz-fxdesc { flex: 1; min-width: 0; text-align: left !important; margin: 0 !important; }
+  .cz-fxfoot > :not(.cz-fxdesc) { flex: 0 0 auto; margin-left: auto; }
+  .cz-actbtn { width: auto !important; min-width: 210px; padding-left: 22px; padding-right: 22px; }
 
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
      `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist. */

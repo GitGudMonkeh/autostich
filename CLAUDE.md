@@ -1698,6 +1698,43 @@ das Brett, auf das sie zeigt, steht darüber.
   Nähte fallen.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
 
+### #cz-ruhe — ruhigere Deck-Werkstatt ab 1400 px (19.08.2026, Entwurf des Users)
+Vier kleine Griffe, alle oberhalb der Desktop-Schwelle; die Handy-Fassung ist **nachgemessen unberührt**
+(Element-Geometrie bei 390 px vorher/nachher identisch, beide Reiter — die einzigen Unterschiede sind
+Klassennamen und eine Box mit 0×0, die neue Klammer).
+- **Der Ring steht still und ist nur noch angedeutet.** `.as-ring` malt sonst ein wanderndes Deckfarben-Band
+  (`as-ring-slide`, 7 s) plus Schein. Auf einem Screen, der aus BILDERN besteht, zieht eine dauernd laufende
+  Kante den Blick von genau den Bildern ab. **Es ist NICHT die Regel gelöscht, sondern ein Modifikator gesetzt**
+  (`as-ring-quiet` an den vier Werkstatt-Panels): der Ring bleibt EINE Fassung mit einem Schalter, Baum,
+  Leitfaden und Glossar behalten ihren laufenden Ring, bis jemand sie ausdrücklich nachzieht — dann ist es
+  dort eine Klasse, kein zweiter Rahmen. Nebenwirkung, willkommen: die Animation kostete gemessen ~3–4 fps
+  (#perf-ring). **`background-image: none` muss mit** — sonst bliebe der dreifach gekachelte Verlauf stehen
+  und stünde nur still.
+- **Die Reiter sind flache Text-Reiter.** Eine Parallel-Session hatte sie am selben Tag zu Knöpfen der
+  Kanten-Familie gemacht (Fläche, Rahmen, Radius, farbige Linkskante, `min-width: 210px`) — das löste das
+  alte Problem („600 px breite Fläche je Reiter") und schuf ein zweites: drei gerahmte Flächen über den
+  Deckbildern sind das Lauteste im Bild. Jetzt EIN Signal, die Unterstreichung in der Deckfarbe; Breite am
+  Text (gemessen 50 / 86 / 58 px statt 3 × 210). **Geändert wurde die BESTEHENDE Regel**
+  (`.cz-head [role="tab"]`), nicht eine zweite danebengestellt — zwei Regelsätze für dieselben drei Knöpfe
+  wären genau die Doppelpflege, vor der die Datei sonst überall warnt.
+- **Kachelraster luftiger** (10 → 16 px). Auf 1400+ px stehen sechs Kacheln je Zeile; bei 10 px las sich das
+  als zusammenhängende Fläche statt als einzelne Karten.
+- **Der Aktionsknopf der Effekt-Bühne ist kein Vollbreiten-Balken mehr**, sondern steht rechts neben der
+  Beschreibung (`cz-fxfoot`: Beschreibung links im Fluss, Knopf 210 px rechts). Ein Knopf über die ganze
+  Panelbreite ist eine Handy-Geste (Daumen); auf dem Desktop ist er dort das lauteste Element.
+  **Beide Fassungen der Aktion tragen `cz-actbtn`** — der Knopf UND die „im Standard enthalten"-Auskunft,
+  die ihre Maße selbst baut; sonst spränge die Fußzeile je nach Effekt.
+- **`cz-fxfoot` ist unterhalb 1400 px `display: contents`** — dieselbe Klammer-Technik wie `.gd-cols`/`.gl-body`.
+  Ohne sie bekäme die Handy-Fassung eine zusätzliche Box zwischen Bühne und Knopf.
+- **BEWUSST NICHT angefasst**: die Deck-Linie am Kopf (bleibt, wie sie ist — ausdrücklich so gewünscht) und
+  die farbige linke Kante der Pack-Kacheln (`.as-edge-card`). Die ist ein projektweites Signal (#kante), kein
+  Werkstatt-Detail — sie hier allein zu dämpfen ließe die Werkstatt aus dem System fallen. Der Mockup zeigt
+  die Kacheln ohne sie; das wäre ein eigener, systemweiter Schritt.
+- Wächter: `test/cz-ruhe.test.js` (6). Gegenprobe gemacht: alle sechs sabotierten Nähte fallen. Der
+  #perf-ring-Wächter in `test/desktop-perf.test.js` prüft die Panel-Klassen jetzt mit Wortgrenze statt auf
+  den exakten Klassenstring — der Modifikator ist eine Ergänzung, kein Ersatz der Konstruktion.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (2046×979 bei DPR 1,25).
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

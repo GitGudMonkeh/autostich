@@ -1277,7 +1277,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 am Panel selbst — läge beides am gleichen Element, wanderte die untere Rahmenkante beim
                 Scrollen mitten durch die Kacheln. Bis 1399 px ist der Wrapper `display: contents`, dort
                 ändert sich also nichts. */}
-            <div className="cz-main as-ring">
+            <div className="cz-main as-ring as-ring-quiet">
               <i className="as-ring-run" aria-hidden="true" />
               <div className="cz-mainscroll">
                 {tab === "packs" ? <PacksView p={p} deckId={deckId} list={catList("packs")} cat="packs" onOpen={openPack} options={options} onOption={onChoose} sel={wide ? packOv?.idx : null} sort={sort} onSort={toggleSort} />
@@ -1287,7 +1287,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             </div>
             {/* Ab 1400 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
             {wide && packOv && tab !== "fx" && (
-              <div className="cz-side as-ring">
+              <div className="cz-side as-ring as-ring-quiet">
                 <i className="as-ring-run" aria-hidden="true" />
                 <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
                   deckId={deckId} sel={packSel} setSel={setPackSel} onStep={stepPack} onClose={() => setPackOv(null)}
@@ -1790,7 +1790,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
       {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar.
           #fx-panel: Ab 1400 px ist das hier das LINKE PANEL (Glas + Ring, endet an seinem Inhalt) und die
           Reiter sind nach rechts gezogen — s. .cz-stage im 1400er Block. */}
-      <div className="cz-stage as-ring sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+      <div className="cz-stage as-ring as-ring-quiet sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
         {/* Rahmenklasse und Laufband sind ein PAAR (#perf-ring) — die Klasse ohne dieses Kind ergäbe
             keinen Rahmen. Beide sind unterhalb 1400 px wirkungslos (das Band steht global auf
             `display: none`), die Handy-Fassung bleibt davon also unberührt.
@@ -1803,7 +1803,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
 
       {/* #fx-panel: Ab 1400 px das RECHTE PANEL (Kategorien · Liste · Fußnote), darunter `display: contents` —
           am Handy fällt die Klammer also weg und die Reihenfolge Bühne → Liste → Hinweis bleibt, wie sie war. */}
-      <div className="cz-fxside as-ring">
+      <div className="cz-fxside as-ring as-ring-quiet">
         <i className="as-ring-run" aria-hidden="true" />
         {wide && cats}
 
@@ -1883,7 +1883,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   /* #kante: Der Aktionsknopf der Bühne („Als Hintergrund wählen" / „Ausgewählt" / „Anschalten") in der
      Kanten-Familie. AUS = violette Kante (das Angebot), AN = grüne Kante mit Schein (läuft gerade) — dieselbe
      Zuordnung wie am Status rechts oben in der Bühne. Die Klassen kommen zum `actBtn` dazu, der nur Maße hält. */
-  const actBtn = "w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
+  const actBtn = "cz-actbtn w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
   // `act(active)` liefert Klasse UND Farbe in einem Rutsch — die acht Aufrufstellen unten spreizen es
   // einfach in den Knopf (<button {...act(active)}>), statt className und style getrennt zu führen.
   // #deckui: „Angebot" (off) zieht die Deckfarbe (war Violett); „läuft gerade" (on) bleibt Grün (Zustands-Signal).
@@ -1892,7 +1892,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   let action;
   if (fx.standard) {
     // #kante: „im Standard enthalten" ist kein Knopf, sondern eine Auskunft — Kanten-Karte, nicht anklickbar.
-    action = <div className="as-edge-card w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ "--c": "#7fb4ff", color: "#7fb4ff" }}>{t("shop.standardFree")}</div>;
+    action = <div className="cz-actbtn as-edge-card w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ "--c": "#7fb4ff", color: "#7fb4ff" }}>{t("shop.standardFree")}</div>;
   } else if (!owned) {
     /* #kante: Kaufen ist das Ziel der Bühne — starker Kanten-Knopf in DP-Cyan. Reicht das Guthaben nicht,
        bleibt er neutral und gedimmt: kein Farbsignal für etwas, das gerade nicht geht. */
@@ -2033,9 +2033,14 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         {!active && !owned && <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip>}
         {hasColorMode && <PanelChip corner="br">{t(deckTintOn ? "shop.color.deck" : "shop.color.standard")}</PanelChip>}
       </div>
-      {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
-      <div className="text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
-      {action}
+      {/* #cz-ruhe: `cz-fxfoot` ist unterhalb 1400 px eine reine KLAMMER (`display: contents`) — die
+          Handy-Fassung bleibt damit Knoten für Knoten dieselbe. Ab 1400 px wird daraus die Fußzeile der
+          Bühne: Beschreibung links im Fluss, Aktionsknopf rechts daneben statt über die ganze Breite. */}
+      <div className="cz-fxfoot">
+        {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
+        <div className="cz-fxdesc text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
+        {action}
+      </div>
     </>
   );
 }
