@@ -19,6 +19,7 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
+import { useIsWide } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1400 px in die Leiste (DOM-Umzug)
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
@@ -158,6 +159,9 @@ export function Autostich() {
 function AutostichGame() {
   const [state, dispatch] = useReducer(gameReducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
+  // #buehne: ab 1400 px trägt die Vitalleiste Musik und Meilenstein (statt eigener Reihen darüber und
+  // darunter). Das ist ein DOM-Umzug, keine Anordnung — deshalb hier und nicht in CSS.
+  const wide = useIsWide();
   // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang die
   // falsche Sprache auf. Deshalb direkt im Initializer (idempotent, StrictMode-fest) statt im Effekt.
   // `lang: null` = noch nie gewählt → DEFAULT_LOCALE (Englisch). Beim ersten Start wählt der Spieler
@@ -1087,10 +1091,12 @@ function AutostichGame() {
         <CornerTools muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           onGlossaryOpenChange={setGlossaryOpen} />
       )}
-      {/* #desktop: Der Lauf behält seinen 1024er-Deckel (max-w-5xl) — dort ist die Breite an das Kartenfeld
-          gebunden. Nur der Startbildschirm bekommt ab 1400 px mehr Bühne, gedeckelt bei 1520 px: das ist die
-          Breite des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen. */}
-      <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "min-[1400px]:max-w-[1520px]" : ""}`}>
+      {/* #desktop: Der Startbildschirm bekommt ab 1400 px mehr Bühne, gedeckelt bei 1520 px: das ist die Breite
+          des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen.
+          #buehne (19.08.2026): Der LAUF hat seinen 1024er-Deckel verloren. Er war an das alte Kartenfeld gebunden
+          (668 × 347) und ließ auf jedem Desktop-Fenster fast die halbe Breite leer — vom Spielfeldbild (1600 × 640)
+          landeten dadurch nur 23 % auf dem Schirm. Ab 1400 px trägt `rn-shell` das Bühnen-Layout (index.css). */}
+      <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "min-[1400px]:max-w-[1520px]" : "rn-shell"}`}>
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("ranked")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}
@@ -1108,9 +1114,12 @@ function AutostichGame() {
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +
               Pause/Tempo in der schwebenden StatusBar. */}
-          <header className="flex items-center justify-between gap-2">
+          {/* #buehne: `rn-head` ist ab 1400 px `display: contents` — Wortmarke und Glossar-ⓘ werden dann direkte
+              Felder des Shell-Rasters und stehen in EINER Zeile mit der Steuerung (Marke links, Knöpfe rechts),
+              statt drei Reihen zu stapeln. Unterhalb bleibt der Kopf die Box, die er heute ist. */}
+          <header className="rn-head flex items-center justify-between gap-2">
             {/* Wortmarke + Seed in EINER Zeile (spart eine Zeile) — Seed ist jederzeit kopierbar zum Teilen/Herausfordern (#205). */}
-            <div className="flex items-center gap-3 flex-wrap min-w-0">
+            <div className="rn-brand flex items-center gap-3 flex-wrap min-w-0">
               {/* #UI: Wortmarke im Run-Kopf, mit Ambient-Glow dahinter wie am Mainscreen. */}
               <div className="relative isolate shrink-0">
                 {/* Fläche großzügig größer als die Marke + früher Transparenz-Auslauf + Blur → weicher
@@ -1125,17 +1134,17 @@ function AutostichGame() {
               </div>
               {/* Seed-Chip entfällt hier — der Seed steht in der Statistik & im Endscreen. */}
             </div>
-            <GlossaryPanel onOpenChange={setGlossaryOpen} className="shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
+            <GlossaryPanel onOpenChange={setGlossaryOpen} className="rn-glossary shrink-0" style={{ width: 36, height: 36, fontSize: "1.05rem" }} />
           </header>
 
           {/* Sekundär-Controls als eigene Reihe, gleichmäßig über die Breite verteilt: Optionen · Neustart · Beenden · Ton. */}
-          <Controls
+          <Controls className="rn-ctrl"
             onRestart={() => setConfirmRestart(true)} onAbort={() => setConfirmAbort(true)} onOptions={() => setShowOptions(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           />
 
           {/* Phase 1: schwebende Kompakt-Leiste — Vitalwerte (Score+Δ · Mult · Serie · Fortschritt · Zeit) + Pause/Tempo/Karten. */}
-          <StatusBar
+          <StatusBar className="rn-bar"
             score={state.score} ghost={ghost}
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
@@ -1144,15 +1153,26 @@ function AutostichGame() {
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
+            milestone={wide && (profile?.onboarding || 0) >= ONBOARDING_LINKS
+              ? <div data-tut="bf-milestone" className="sb-ms"><ScoreMilestoneBar score={state.score} /></div>
+              : null}
+            music={wide && state.phase !== "gameover"
+              ? <MusicBar className="sb-music" title={musicTitle} onNext={() => music.next()} />
+              : null}
           />
 
-          {/* #UI: Mobil-Reihenfolge Battlefield → Stats → Perks (order-1/2/3). Desktop bleibt 2-spaltig via
-              explizite lg-Grid-Platzierung: Battlefield+Bars (links oben) + Perks (links unten), Stats-Sidebar rechts. */}
-          <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
-            <div className="grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
-              {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine). */}
-              {(profile?.onboarding || 0) >= ONBOARDING_LINKS && (
-                <div data-tut="bf-milestone">{/* Tutorial-Anker (Plan §5 nennt den Meilensteinbalken ausdrücklich) */}
+          {/* #UI: Mobil-Reihenfolge Battlefield → Bars → Stats → Perks (order-1…4). Bis 1400 px bleibt das
+              2-spaltige lg-Raster via expliziter Grid-Platzierung: Battlefield+Bars links, Stats-Sidebar rechts.
+              #buehne: Ab 1400 px reichen `rn-body` und `rn-main` ihre Kinder durch (display: contents) und
+              `rn-bank` wird die Instrumentenbank unter der Bühne — eine Spur je Archetyp, Analyse links,
+              Build rechts. Die vier Blöcke stehen dafür als GESCHWISTER im DOM (vorher steckten die Bars in
+              der linken Spalte); die order-/lg-Klassen halten die Reihenfolge darunter unverändert. */}
+          <div className="rn-body grid lg:grid-cols-[1fr_340px] gap-4 items-start">
+            <div className="rn-main grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
+              {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine).
+                  Ab 1400 px steht er IN der Vitalleiste (s. `milestone`-Prop der StatusBar oben). */}
+              {!wide && (profile?.onboarding || 0) >= ONBOARDING_LINKS && (
+                <div data-tut="bf-milestone" className="rn-milestone">{/* Tutorial-Anker (Plan §5 nennt den Meilensteinbalken ausdrücklich) */}
                   <ScoreMilestoneBar score={state.score} />
                 </div>
               )}
@@ -1168,9 +1188,14 @@ function AutostichGame() {
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
                 hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
+            </div>
+            {/* #buehne: Bank aus Bars · Analyse · Build · Wochen-Mods. Unter 1400 px ist sie `display: contents`,
+                die vier Blöcke sind also weiterhin direkte Felder des lg-Rasters und tragen ihre eigene
+                Platzierung. Ab 1400 px wird sie die Flex-Reihe unter der Bühne. */}
+            <div className="rn-bank">
               {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
                   Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}
-              <div data-tut="bf-bars" className="grid gap-4">
+              <div data-tut="bf-bars" className="rn-bars grid gap-4 order-2 lg:col-start-1 lg:row-start-2">
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
                 critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={manyFac} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
@@ -1193,27 +1218,28 @@ function AutostichGame() {
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
                 grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={manyFac} />
               </div>
-            </div>
-            {/* Stats — Mobil direkt nach dem Battlefield (order-2), Desktop rechte Sidebar. */}
-            <div className="order-2 lg:col-start-2 lg:row-start-1">
-              <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} best={best} />
-            </div>
-            {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
-            <div className="order-3 lg:col-start-1 lg:row-start-2">
-              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat} />
-            </div>
-            {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
-            {state.weekMods?.length > 0 && (
-              <div className="order-4 lg:col-start-1 lg:row-start-3">
-                <WeekModPanel mods={state.weekMods} />
+              {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1400 px rechte Sidebar, darüber die
+                  linke Spur der Bank. */}
+              <div className="rn-rail order-3 lg:col-start-2 lg:row-start-1">
+                <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} best={best} />
               </div>
-            )}
+              {/* Perks/Skills — Mobil unter den Stats (order-4), bis 1400 px links unter dem Battlefield. */}
+              <div className="rn-build order-4 lg:col-start-1 lg:row-start-3">
+                <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat} />
+              </div>
+              {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
+              {state.weekMods?.length > 0 && (
+                <div className="rn-week order-5 lg:col-start-1 lg:row-start-4">
+                  <WeekModPanel mods={state.weekMods} />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* #218: Der Kartenübersicht-Einstieg sitzt jetzt als klickbare Kopf-Zelle „Kartenübersicht" (🎴, nach Mult)
               → der untere Panel-Balken entfällt, die UI ist schlanker. */}
           {/* Musik-Panel (#111): aktueller Track + „nächster Track"-Button (rechtsbündig) — ganz unten im Run. */}
-          {state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
+          {!wide && state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
       </div>
 

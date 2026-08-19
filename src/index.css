@@ -5252,3 +5252,162 @@ button { font-family: inherit; }
 }
 /* Effekt-Stufe „minimal": der Sweep friert ein, der Rahmen bleibt (Farbe trägt weiter die Deck-Identität). */
 :root[data-reduced-fx="1"] .as-ring::before { animation: none !important; }
+
+
+/* ==========================================================================
+   #buehne — der Spielbildschirm ab 1400 px (Desktop-Pass, 19.08.2026)
+   --------------------------------------------------------------------------
+   Der Lauf war der letzte Screen ohne Desktop-Pass: 1024er Deckel (`max-w-5xl`)
+   mit einem lg-Umbruch bei 1024 px. Auf einem 1920er Fenster blieben links und
+   rechts je 448 px leer, und vom Spielfeldbild (1600 x 640) landeten nur 23 %
+   auf dem Schirm — es wurde auf 668 x 347 gequetscht UND seitlich um 46 %
+   beschnitten (object-cover auf 1,93:1 statt 2,5:1).
+
+   Ab hier ist das Brett die BUEHNE: 2,5:1 wie die Quelle, also nie wieder
+   Beschnitt, und so gross, wie das Fenster es zulaesst. Alles andere ordnet
+   sich darum: Kopfzeile, Vitalleiste, Buehne, Instrumentenbank.
+
+   KEIN zweiter Renderpfad: `rn-head`, `rn-body`, `rn-main` und `rn-bars`
+   reichen ihre Kinder hier nur durch (`display: contents`), die Handy- und
+   lg-Fassung bleibt damit DOM-gleich. Dieselbe Klammer-Technik wie beim
+   Leitfaden (#desktop-leitfaden) und beim Glossar (#glossar-desktop).
+   ========================================================================== */
+
+/* Basis (jede Breite): Der Kartenslot traegt sein Mass als Klasse statt inline.
+   Inline gesetzt kaeme die Desktop-Regel nicht dagegen an (Inline schlaegt
+   jedes Stylesheet) — dieselbe Falle wie beim Overlay-Blur (#overlay-portal). */
+.bf-slot, .bf-cardbox { width: 104px; height: 144px; }
+/* Die Instrumentenbank ist unterhalb von 1400 px KEINE Box: ihre vier Bloecke
+   (Fraktions-Leisten, Analyse, Build, Wochen-Mods) bleiben direkte Felder des
+   lg-Rasters und tragen dort ihre eigene order-/Spalten-Platzierung. */
+.rn-bank { display: contents; }
+
+@media (min-width: 1400px) {
+  .rn-shell {
+    /* Die eine Zahl, aus der alles folgt. DREI Deckel, und der dritte ist der
+       entscheidende: 2,5:1 heisst, dass 1600 px Breite 640 px HOEHE kosten —
+       auf flachen Fenstern (ein 1920x1200-Laptop bei 125 % ist CSS 1536x791)
+       ist die Hoehe die knappe Groesse, nicht die Breite. Ohne den dritten
+       Deckel liefe die Buehne dort aus dem Bild.
+         1. die native Bildbreite  (mehr waere Hochskalieren)
+         2. die Fensterbreite abzueglich der Raender
+         3. was die Hoehe uebrig laesst, mal 2,5
+       `--rn-chrome` ist alles ausser der Buehne (Kopf + Leiste + Bank + Luft). */
+    /* Gemessen im Produktionspfad (1920 x 1080): Kopfzeile + Vitalleiste + Bank + Abstaende +
+       Aussenrand des app-root = 430 px. Damit bleiben 650 px Hoehe fuer die Buehne, die 1600 px
+       Breite also erreichbar — der Deckel greift ab hier ueber die BREITE, nicht ueber die Hoehe. */
+    --rn-chrome: 430px;
+    --bf-w: min(1600px, calc(100vw - 80px), calc((100dvh - var(--rn-chrome)) * 2.5));
+    --bf-h: calc(var(--bf-w) / 2.5);
+    /* Kartenbreite = 11 % der Buehnenbreite (176 px bei 1600). Als MASSSTAB auf
+       die 104 px der Karte gerechnet, nicht als zweites Kartenmass: die sieben
+       104x144-Fundstellen (Card, Klingenschnitt, Laser-Stuecke, previewScale)
+       bleiben damit unangetastet und skalieren mit. */
+    /* Einheitenlos, deshalb die Division durch 1px: `transform: scale()` nimmt eine ZAHL, und
+       `--bf-w` ist eine Länge. Kann eine Engine das nicht (calc()-Einheitendivision, Baseline 2023),
+       fällt die ganze Deklaration aus und der Slot bleibt bei seinen 104 × 144 — das Layout hält,
+       nur die Karte wächst nicht mit. */
+    --card-s: calc(var(--bf-w) * 0.11 / 104 / 1px);
+    max-width: none;
+    /* Zeile 1 ist die Kopfzeile: Marke links, Steuerung rechts daneben, Glossar
+       aussen. Alles Weitere spannt ueber alle drei Spuren. */
+    grid-template-columns: 1fr auto auto;
+    justify-items: center;
+    align-content: start;
+    gap: 12px;
+  }
+
+  /* Klammern: hier keine Boxen, nur Durchreichen (s. Kopf dieses Blocks). */
+  .rn-head, .rn-body, .rn-main, .rn-bars { display: contents; }
+
+  .rn-brand    { grid-column: 1; grid-row: 1; justify-self: start; align-self: center; }
+  .rn-ctrl     { grid-column: 2; grid-row: 1; align-self: center; }
+  .rn-glossary { grid-column: 3; grid-row: 1; align-self: center; }
+
+  /* Alles unter der Kopfzeile ist auf die Buehnenbreite geklemmt und zentriert.
+     So fluchten Leiste, Buehne und Bank auf denselben zwei Kanten — der Screen
+     liest als EIN Block statt als drei verschieden breite Streifen. */
+  .rn-bar, .rn-milestone, .bf-panel, .rn-bank, .rn-music {
+    grid-column: 1 / -1; width: var(--bf-w); max-width: 100%;
+  }
+
+  /* --- Die Vitalleiste ---------------------------------------------------
+     Aus zwei gestapelten Zeilen (Steuerung oben, Score unten) wird EINE Leiste,
+     und sie nimmt zwei Reihen mit auf, die vorher eigene Streifen waren: die
+     Musik (stand ganz unten im Lauf) und den Meilensteinbalken (stand ueber dem
+     Brett). Beides ist hier naeher an dem, was man damit tut — und der Screen
+     spart die Hoehe, die die Buehne braucht.
+     `sb-row1`/`sb-row2` reichen ihre Zellen dafuer nur durch. */
+  .as-statusbar { flex-direction: row; align-items: stretch; }
+  .sb-row1, .sb-row2 { display: contents; }
+  /* Die Trennlinie lag zwischen den zwei Zeilen; in einer Reihe traegt sie jede
+     Zelle links von sich selbst (die erste bleibt ohne). */
+  .sb-music, .sb-score, .sb-chronik, .sb-ms, .sb-streak, .sb-mult, .sb-mini {
+    border-left: 1px solid var(--deck-border);
+  }
+  .sb-ctl     { order: 0; padding: 0 12px; align-self: center; }
+  .sb-music   { order: 1; width: 230px; padding: 0 12px; border-radius: 0;
+                background: none !important; box-shadow: none !important; }
+  .sb-score   { order: 2; flex: 1 1 auto; }
+  .sb-chronik { order: 3; align-self: stretch; border-radius: 0; padding: 0 14px; }
+  .sb-ms      { order: 4; width: 250px; display: flex; align-items: center; padding: 0 14px; }
+  .sb-streak  { order: 5; }
+  .sb-mult    { order: 6; }
+  .sb-mini    { order: 7; margin-left: 0; }
+  /* Musik- und Meilenstein-Panel geben ihre eigene Schale ab: in der Leiste sind
+     sie Zellen, keine Karten. Der animierte Deck-Rahmen des CRT-Skins muss dafuer
+     ausdruecklich mit weg (dieselbe Naht wie bei `.up-card`, s. #rahmen) — sonst
+     laeuft mitten in der Leiste ein zweiter Verlauf. */
+  .sb-music.as-panel, .sb-ms > .as-panel,
+  [data-skin="crt"] .sb-music.as-panel.as-panel-deck, [data-skin="crt"] .sb-ms > .as-panel.as-panel-deck {
+    background: none !important; background-image: none !important;
+    border: 0 !important; box-shadow: none !important; animation: none !important; padding: 0 !important;
+  }
+  .sb-ms > * { flex: 1; }
+  /* Die Chronik ist hier eine kleine KARTE, kein Zeichen: das Deck-Bild des Laufs
+     ist wiedererkennbar, ein 🎴 waere es nicht. */
+  .sb-chronik img { height: 42px; border-radius: 4px; }
+
+  /* --- Die Buehne ------------------------------------------------------- */
+  .bf-panel {
+    height: var(--bf-h);
+    /* Das p-6 der Handy-Fassung entfaellt: die Karten sitzen hier ueber eine
+       eigene Verteilung, und das Bild soll bis an die Kante laufen. */
+    padding: 0;
+    display: flex; flex-direction: column;
+  }
+  /* Die Kartenreihe nimmt die Resthoehe und zentriert darin — statt mit einem
+     festen mt-8 von oben zu haengen (das war auf 347 px Bretthoehe gerechnet). */
+  .bf-cards { margin-top: 0; flex: 1; min-height: 0; gap: calc(var(--bf-w) * 0.06); }
+  .bf-result { margin-top: 0; flex: none; }
+  .bf-kette { flex: none; margin-bottom: 14px; }
+
+  /* --- Die Karten ------------------------------------------------------- */
+  /* Der Slot waechst auf sein Mass, sein INHALT wird skaliert. Warum nicht die
+     Karte selbst groesser setzen: ihre Geometrie steckt an sieben Stellen in
+     Pixeln (Klingenschnitt, Laser-Stuecke, Ghost-Flug), und die kaeme nicht mit.
+     Ueber transform folgt alles davon von selbst — und die Canvas-/Pixi-Effekte
+     ebenso, weil sie ihre Geometrie per getBoundingClientRect lesen (CardFxStage
+     misst sogar je Frame neu). Dieselbe Technik wie die Werkstatt-Vorschau
+     (#vorschau-brett, previewScale.js). */
+  .bf-slot { width: calc(104px * var(--card-s)); height: calc(144px * var(--card-s)); }
+  .bf-slot > * { transform: scale(var(--card-s)); transform-origin: top left; }
+
+  /* --- Die Instrumentenbank --------------------------------------------- */
+  /* Flex statt Grid, und das ist der Punkt: die Zahl der Fraktions-Leisten
+     wechselt im Lauf (0 bis 4, je nach gewaehlten Archetypen). Eine feste
+     Spaltenzahl muesste jede Kombination kennen; eine Flex-Reihe verteilt den
+     Platz von selbst, waehrend Analyse und Build ihre 296 px behalten. */
+  /* FESTE Hoehe, und das ist die tragende Entscheidung dieses Entwurfs: die Zahl der Fraktions-Leisten
+     wechselt im Lauf (0 bis 4). Waechst die Bank mit ihrem Inhalt, schoebe der vierte Archetyp die Buehne
+     aus dem Bild — der Bildschirm saehe bei jedem Lauf anders aus. So steht die Buehne fest, und die Spuren
+     teilen sich die Breite. Was in einer Spur nicht aufgeht, scrollt IN ihr. */
+  .rn-bank { display: flex; gap: 12px; align-items: stretch; height: 240px; }
+  /* `.rn-bars` ist `display: contents`, seine Kinder sind also Flex-Items der Bank — im SELEKTOR
+     bleiben sie aber Enkel. Ohne die zweite Zeile bekämen die Fraktions-Leisten kein `flex: 1` und
+     die Bank stünde halb leer da. */
+  .rn-bank > *, .rn-bars > * { flex: 1 1 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .rn-bank > .rn-rail  { flex: 0 0 296px; order: -1; }
+  .rn-bank > .rn-build { flex: 0 0 296px; order: 1; }
+  .rn-bank > .rn-week  { flex: 0 0 296px; order: 2; }
+}

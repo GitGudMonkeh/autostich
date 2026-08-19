@@ -5,9 +5,11 @@ import { t } from "../i18n/index.js"; // #sprache
 /* Musik-Panel (#111) — ganz unten im Run: aktueller Track-Titel + „Nächster Track"-Button (⏭) rechtsbündig.
    Der Skip-Button sitzt wieder hier im Panel (vorher im Header, #133). Langer Titel läuft durch (Marquee),
    sobald er nicht in den Rahmen passt. `onNext` fehlt → Button entfällt (z. B. wenn kein Handler gesetzt ist). */
-export function MusicBar({ title, onNext }) {
+/* #buehne: `className` ist die Andockstelle für den Desktop-Pass — ab 1400 px sitzt die Leiste als Zelle
+   IN der Vitalleiste des Laufs (`sb-music`) statt als eigene Reihe unter dem Brett. */
+export function MusicBar({ title, onNext, className = "" }) {
   return (
-    <div className="rounded-xl p-3 flex items-center gap-2 as-panel as-panel-deck" style={{ background: "#17171c", border: `1px solid ${DECK_BORDER}` }}>
+    <div className={`rounded-xl p-3 flex items-center gap-2 as-panel as-panel-deck ${className}`} style={{ background: "#17171c", border: `1px solid ${DECK_BORDER}` }}>
       <span className="text-base" aria-hidden>🎵</span>
       <div className="min-w-0 flex-1">
         <div className="text-[10px] uppercase tracking-wide opacity-50">{t("music.title")}</div>

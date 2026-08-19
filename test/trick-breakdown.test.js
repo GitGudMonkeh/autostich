@@ -103,7 +103,9 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     // EIN Block, zwei Einhängepunkte — nicht zwei Fassungen der Zeile.
     expect(src.match(/const kette = \(/g) || [], "die Zeile darf nur EINMAL gebaut werden").toHaveLength(1);
     const oben = src.indexOf("{ketteOben && kette}");
-    const karten = src.indexOf("} flex items-center justify-center gap-4 sm:gap-8`}");
+    // #buehne: Die Kartenreihe trägt seit dem Desktop-Pass die Klasse `bf-cards` (index.css klemmt sie
+    // ab 1400 px auf die Bühnenhöhe); die Abstände darin bleiben am `ketteOben`-Zweig (#boden-effekt).
+    const karten = src.indexOf("`bf-cards relative z-10 ${ketteOben");
     const unten = src.indexOf("{!ketteOben && kette}");
     expect(oben, "oberer Einhängepunkt fehlt").toBeGreaterThan(-1);
     expect(unten, "unterer Einhängepunkt fehlt").toBeGreaterThan(-1);
@@ -111,7 +113,7 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     expect(unten, "der untere Block muss NACH der Kartenreihe stehen").toBeGreaterThan(karten);
 
     // Die Ansage bleibt, wo sie war: genau EINE Renderstelle, und die liegt hinter den Karten.
-    const ansageAlle = [...src.matchAll(/className=\{`relative z-10 h-8 \$\{ketteOben \? "mt-\d+" : "mt-\d+"\} flex/g)].map((m) => m.index);
+    const ansageAlle = [...src.matchAll(/className=\{`bf-result relative z-10 h-8 \$\{ketteOben \? "mt-\d+" : "mt-\d+"\} flex/g)].map((m) => m.index);
     expect(ansageAlle, "die Ansage darf nur EINMAL gerendert werden").toHaveLength(1);
     expect(ansageAlle[0], "die Ansage bleibt unter den Karten").toBeGreaterThan(karten);
     const ketteBlock = src.slice(src.indexOf("const kette = ("), src.indexOf("{ketteOben && kette}"));

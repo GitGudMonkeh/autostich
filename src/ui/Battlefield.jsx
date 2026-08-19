@@ -383,7 +383,10 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
       {/* #feuer: STABILER Karten-Slot (Deck-Stapel dahinter + gespielte Karte). slotRef zeigt auf DIESE Box — sie
           remountet NICHT pro Stich und fliegt nicht weg → das Feuer (an slotRef verankert) brennt durchgängig weiter,
           statt bei jedem Sieg/Niederlage neu zu starten (die gespielte Karte darin flippt/fliegt, der Slot bleibt). */}
-      <div ref={slotRef} className="relative" style={{ width: 104, height: 144 }}>
+      {/* #buehne: Größe als KLASSE (`bf-slot` in index.css, 104 × 144), nicht mehr inline. Ab 1400 px wächst der
+          Slot auf `--card-s` und skaliert seinen Inhalt per transform — inline gesetzt käme die Desktop-Regel
+          nicht dagegen an. */}
+      <div ref={slotRef} className="bf-slot relative">
         {/* #feuer: PERMANENTER Deck-Rücken als Sockel — liegt IMMER da (auch bei leerem Deck / nach 40 Stichen), damit der
             an den Slot verankerte Effekt (Feuer) auf einer sichtbaren Karte sitzt statt in der Luft zu hängen. Wird von
             der gespielten Front-Karte / dem Nachziehstapel überdeckt, solange etwas oben liegt. */}
@@ -409,9 +412,11 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
    (`front` = fertige Karte mit Zahl/Effekten). 3D-rotateY, Dauer an den Flip-Takt gekoppelt. Zwei Faces mit
    `backface-visibility: hidden`: erst die Rückseite, ab der Mitte die Front. Position:relative → malt (wie die
    Karte sonst) über die Ergebnis-Welle. Nur für die Spielerseite; bei reduzierter Bewegung nicht gerendert. */
+/* `bf-cardbox` ist die KARTENGRÖSSE (104 × 144) — sie wächst ab 1400 px NICHT selbst, sondern wird vom
+   `transform: scale()` des Slots mitgenommen (s. #buehne in index.css). Beides zu skalieren hieße quadrieren. */
 function FlipReveal({ front, backImage, dur }) {
   return (
-    <div className="as-flip3d" style={{ width: 104, height: 144 }}>
+    <div className="as-flip3d bf-cardbox">
       <div className="as-flip3d-inner" style={{ animation: `as-flip-reveal ${dur}ms ease-out both`, willChange: "transform" }}>
         <div className="as-flip3d-face as-flip3d-back"><CardBack label="" image={backImage} /></div>
         <div className="as-flip3d-face as-flip3d-front">{front}</div>
@@ -1412,14 +1417,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
      flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
   const kette = (
-    <div className={`relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}>
+    <div className={`bf-kette relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}>
       {!hideBreakdown && <TrickBreakdown trick={t} />}
     </div>
   );
 
   return (
    <>
-    <div ref={panelRef} data-tut="bf-board" className="rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
+    <div ref={panelRef} data-tut="bf-board" className="bf-panel rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
       style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
                // #296: eigener Stacking-Context → die Panel-Overlays (Schwarzes Loch/BounceBurst/PrunkFx mit hohem
                // zIndex) bleiben INNERHALB des Battlefields und liegen nie über anderen Screens (z. B. Perk-Auswahl).
@@ -1628,7 +1633,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
       {ketteOben && kette}
-      <div className={`relative z-10 ${ketteOben ? "mt-6" : "mt-8"} flex items-center justify-center gap-4 sm:gap-8`}>
+      <div className={`bf-cards relative z-10 ${ketteOben ? "mt-6" : "mt-8"} flex items-center justify-center gap-4 sm:gap-8`}>
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
         {isCrit && !hideFloatMult && (
           <div key={`krit${t.trickNo}`} className="pointer-events-none absolute font-extrabold whitespace-nowrap z-10"
@@ -1806,7 +1811,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
       {/* Sieg/Niederlage-Ansage — sitzt jetzt tiefer (etwa dort, wo früher die Multiplikator-Leiste stand): die Karten
           rücken per mt-8 nach unten, wodurch diese Ansage mitwandert und auf der alten Multiplikator-Höhe landet. */}
-      <div className={`relative z-10 h-8 ${ketteOben ? "mt-10" : "mt-4"} flex items-center justify-center`}>
+      <div className={`bf-result relative z-10 h-8 ${ketteOben ? "mt-10" : "mt-4"} flex items-center justify-center`}>
         {/* #389: Sieg/Niederlage-Text per hideFloatWinLose ausblendbar. Die feste Höhe (h-8) bleibt reserviert →
             kein Layout-Sprung; nur der Text verschwindet. Ausgang zählt unabhängig weiter. */}
         {banner && hideFloatWinLose ? null : banner ? (
