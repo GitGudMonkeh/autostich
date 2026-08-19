@@ -113,7 +113,7 @@ export function FeedbackModal({ onClose }) {
         <div className="fb-body p-6">
           <ActionBar pad={6} className="fb-bar">
             <span className="flex-1" />
-            <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
+            <ActionButton kind="secondary" onClick={onClose}><span className="as-deskonly fb-closeicon" aria-hidden="true">✕</span>{t("common.close")}</ActionButton>
           </ActionBar>
 
           {/* #desktop: Auskunftszeile neben dem Titel (Spalte 2 des Kopf-Rasters, wie im Upgrade-Baum).
@@ -147,12 +147,12 @@ export function FeedbackModal({ onClose }) {
               <div className="fb-left">
               {/* Art — vorausgewählt „Bug", aber die Idee steht gleichberechtigt daneben. */}
               <div>
-                <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.kind")}</div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="fb-slabel text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.kind")}</div>
+                <div className="fb-kinds flex flex-wrap gap-1.5">
                   {KINDS.map((kk) => (
                     /* #kante: gewählte Kategorie mit violetter Kante statt gefüllter Fläche. */
                     <button key={kk} type="button" onClick={() => setKind(kk)}
-                      className={`${kind === kk ? "as-edge" : "as-edge-neutral"} as-edge-thin ${chipCls}`}
+                      className={`fb-kind ${kind === kk ? "as-edge" : "as-edge-neutral"} as-edge-thin ${chipCls}`}
                       /* #deckui: aktive Kategorie-Kante zieht die Deckfarbe. */
                       style={kind === kk ? { "--c": "var(--deck-a1, #8a7de0)" } : undefined}>
                       {t(`feedback.kind.${kk}`)}
@@ -162,25 +162,27 @@ export function FeedbackModal({ onClose }) {
               </div>
 
               {/* Was ist passiert — das einzige Pflichtfeld. Jedes weitere kostet Reports. */}
-              <div>
-                <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                  <span className="text-[11px] uppercase tracking-wide opacity-55">{t("feedback.message")}</span>
-                  <span className="text-[10px] tabular-nums" style={{ color: text.length > MAX_LEN - 100 ? "#e0a05a" : "#6d6a80" }}>
+              <div className="fb-msgbox">
+                <div className="fb-msghead flex items-baseline justify-between gap-2 mb-1.5">
+                  <span className="fb-slabel text-[11px] uppercase tracking-wide opacity-55">{t("feedback.message")}</span>
+                  <span className="fb-count text-[10px] tabular-nums" style={{ color: text.length > MAX_LEN - 100 ? "#e0a05a" : "#6d6a80" }}>
                     {text.length}/{MAX_LEN}
                   </span>
                 </div>
                 <textarea value={message} maxLength={MAX_LEN} rows={5}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={t("feedback.message.placeholder")}
-                  className="w-full rounded-lg px-3 py-2 text-sm leading-snug"
+                  className="fb-msg w-full rounded-lg px-3 py-2 text-sm leading-snug"
                   style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea", resize: "vertical" }} />
+                {/* #feedback-ton: Der Melder lebt von Details — auf der breiten Fassung ist Platz, das einmal zu sagen. */}
+                <div className="as-deskonly fb-hint"><span aria-hidden="true">ⓘ</span> {t("feedback.detailHint")}</div>
               </div>
               </div>
 
               <div className="fb-right">
               {/* Name — vorbefüllt, änderbar, optional. */}
               <div>
-                <div className="text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.name")}</div>
+                <div className="fb-slabel text-[11px] uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.name")}</div>
                 <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
                   placeholder={t("feedback.name.placeholder")}
                   className="w-full rounded-lg px-3 py-2 text-sm"
@@ -192,14 +194,15 @@ export function FeedbackModal({ onClose }) {
                 aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} />
 
               {/* Lauf-Bezug — sichtbar ausgewiesen und abwählbar. */}
-              <label className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer" style={{ background: "#20202a" }}>
+              <label className="fb-run flex items-start gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer" style={{ background: "#20202a" }}>
                 <input type="checkbox" checked={useRun && !!run} disabled={!run}
                   onChange={(e) => setUseRun(e.target.checked)}
                   /* #deckui: generischer Akzent der Checkbox → Deckfarbe. */
                   style={{ marginTop: 2, accentColor: "var(--deck-a1, #8a7de0)" }} />
+                <span className="as-deskonly fb-runicon" aria-hidden="true">☁</span>
                 <span className="min-w-0">
-                  <span className="text-[12px] font-bold block">{runLabel}</span>
-                  <span className="text-[11px] opacity-60 leading-snug block">{t("feedback.run.hint")}</span>
+                  <span className="fb-runtitle text-[12px] font-bold block">{runLabel}</span>
+                  <span className="fb-runhint text-[11px] opacity-60 leading-snug block">{t("feedback.run.hint")}</span>
                 </span>
               </label>
 
@@ -220,14 +223,14 @@ export function FeedbackModal({ onClose }) {
               )}
 
               <button type="button" onClick={send} disabled={!canSend}
-                className="w-full rounded-lg py-2.5 text-sm font-bold transition-all"
+                className="fb-send w-full rounded-lg py-2.5 text-sm font-bold transition-all"
                 /* #deckui: Primär-Senden-Button zieht im aktiven Zustand die Deckfarbe (deaktiviert bleibt neutral). */
                 style={{ background: canSend ? "var(--deck-a1, #8a7de0)" : "#2a2733", color: canSend ? "#141419" : "#6d6a80",
                          cursor: canSend ? "pointer" : "not-allowed" }}>
-                {t(state === "sending" ? "feedback.sending" : "feedback.send")}
+                {t(state === "sending" ? "feedback.sending" : "feedback.send")}<span className="as-deskonly fb-sendicon" aria-hidden="true">➤</span>
               </button>
               {tooShort && (
-                <div className="text-[11px] text-center opacity-55">{t("feedback.tooShort", { n: MIN_LEN })}</div>
+                <div className="fb-short text-[11px] text-center opacity-55"><span className="as-deskonly fb-shorticon" aria-hidden="true">⊘</span>{t("feedback.tooShort", { n: MIN_LEN })}</div>
               )}
               </div>
               {/* Kein GitHub-Zweitweg mehr (#397): Meldungen laufen ausschließlich über diesen Melder.

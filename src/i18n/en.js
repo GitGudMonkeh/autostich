@@ -1251,6 +1251,7 @@ export default {
   "feedback.send": "Send",
   "feedback.sending": "Sending …",
   "feedback.thanks": "Thanks — it arrived.",
+  "feedback.detailHint": "The more detail, the faster we can help.",
   "feedback.tooShort": "At least {n} more characters.",
   "feedback.draftSent": "Your last stuck report has now gone out.",
   "feedback.err.send": "Could not be sent. Your text is saved (and in the clipboard) and goes out automatically next time you open this.",

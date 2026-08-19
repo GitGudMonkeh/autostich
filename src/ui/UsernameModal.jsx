@@ -56,7 +56,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1400 px `display: none`) —
               im 320-px-Dialog nimmt es dem kurzen Wort mehr Platz weg, als es an Klarheit bringt. */}
           <ActionButton kind="primary" disabled={!canSave} onClick={submit}>
-            <span className="un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
+            <span className="as-deskonly un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
           </ActionButton>
         </ActionBar>
         <div className="un-head text-center mb-4">
@@ -84,7 +84,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             gehört zur Ansprache — das Feld rechts braucht deshalb eine eigene Beschriftung. Auf dem Handy
             steht der Titel direkt darüber, dort wäre sie doppelt (`display: none`). Kein neuer Textschlüssel:
             `name.title.change` IST „Dein Name". */}
-        <div className="un-flabel un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
+        <div className="as-deskonly un-flabel un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
         {/* Eingabefeld im pulsierenden Cyan-Glührahmen (wie der „Lauf fortsetzen"-Rahmen). */}
         <div className="as-guide-glow rounded-lg">
           <input autoFocus value={name} maxLength={MAX}

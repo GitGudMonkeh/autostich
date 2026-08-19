@@ -1289,6 +1289,7 @@ export default {
   "feedback.send": "Absenden",
   "feedback.sending": "Wird gesendet …",
   "feedback.thanks": "Danke — ist angekommen.",
+  "feedback.detailHint": "Je mehr Details, desto schneller können wir helfen.",
   "feedback.tooShort": "Noch mindestens {n} Zeichen.",
   "feedback.draftSent": "Dein zuletzt hängengebliebener Report ist jetzt rausgegangen.",
   "feedback.err.send": "Konnte nicht gesendet werden. Dein Text ist gespeichert (und in der Zwischenablage) und geht beim nächsten Öffnen automatisch raus.",

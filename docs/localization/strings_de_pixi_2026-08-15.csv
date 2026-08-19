@@ -1168,6 +1168,7 @@
 "famtarget.pickType","i18n","Wähle einen Formationstyp","Choose a formation type","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "famtarget.strength","i18n","Formations-Stärke:","Formation strength:","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "feedback.desk.readout","i18n","Geht direkt an die Entwicklung. Seed und Durchlauf des letzten Laufs hängen automatisch mit dran.","Goes straight to the developers. Seed and cycle of your last run are attached automatically.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"feedback.detailHint","i18n","Je mehr Details, desto schneller können wir helfen.","The more detail, the faster we can help.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "feedback.draftSent","i18n","Dein zuletzt hängengebliebener Report ist jetzt rausgegangen.","Your last stuck report has now gone out.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "feedback.err.dailyCap","i18n","Für heute ist genug gemeldet. Morgen geht es weiter.","That is enough for today. Tomorrow it continues.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "feedback.err.offline","i18n","Der Melder ist in diesem Build nicht konfiguriert — dein Text geht hier gerade nirgendwohin.","The reporter is not configured in this build — your text is not going anywhere right now.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

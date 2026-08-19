@@ -77,7 +77,7 @@ function Segmented({ value, options, onChange }) {
 function Row({ icon, title, desc, children, stack = false }) {
   return (
     <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
-      {icon && <span className="op-rowicon" aria-hidden="true">{icon}</span>}
+      {icon && <span className="as-deskonly op-rowicon" aria-hidden="true">{icon}</span>}
       <div className="op-rowtext flex-1">
         <div className="op-rowtitle font-bold text-sm">{title}</div>
         {desc && <div className="op-rowdesc text-sm opacity-70 leading-snug">{desc}</div>}
@@ -189,7 +189,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
                 der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
             <div className="op-readout hidden min-[1400px]:block">{t("options.desk.readout")}</div>
             <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>
-              <span className="op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
+              <span className="as-deskonly op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
             </ActionButton>
           </div>
           {/* #desktop: Die Sprungleiste ist ab 1400 px gegenstandslos (nichts scrollt mehr) und wird ausgeblendet. */}
