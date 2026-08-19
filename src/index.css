@@ -3039,7 +3039,11 @@ button { font-family: inherit; }
        weil die Overlays ihren Blur INLINE setzen. Präfix zuerst, Standard zuletzt (lightningcss behält den letzten). */
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
-  .st-root, .lb-root { align-items: stretch !important; }
+  /* #rahmen-huelle (18.08.2026): Die Karte füllte die volle Fensterhöhe (`stretch` + `height: 100%`) — bei drei
+     Ranglisten-Einträgen stand damit ein 1000-px-Rahmen um 200 px Inhalt. Jetzt umschließt sie den INHALT und
+     wächst nur bis zur Fensterhöhe; ab da übernimmt wie bisher der innere Scroller. `start` statt `center`, weil
+     der Kopf oben stehen bleiben soll — sonst wanderte der ganze Screen beim Reiterwechsel. */
+  .st-root, .lb-root { align-items: start !important; }
   /* Die Karten sind ab hier nur noch das Raster — Fläche, Rahmen und Sweep tragen die Panels. */
   .st-card, .lb-card, .go-card {
     width: min(1720px, 100%);
@@ -3148,12 +3152,20 @@ button { font-family: inherit; }
   .st-picked2 { grid-template-columns: minmax(0, 1fr) !important; }
 
   /* ---- Bestenliste / Ranked: Navigationsspalte statt Reiterzeile --------- */
-  .lb-card { grid-template-rows: auto auto minmax(0, 1fr); height: 100% !important; overflow: visible !important; }
+  /* Die Karte setzt ihre Höhe INLINE (`min(88vh, 760px)`, aus der Handy-Fassung) — `max-height` allein
+     überstimmt eine explizite `height` nicht, deshalb hier `auto !important`. Ohne das blieb der Rahmen bei
+     760 px stehen, auch wenn drei Einträge darin standen (gemessen: 414 px leer). */
+  .lb-card {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    height: auto !important; max-height: 100%;
+    overflow: visible !important;
+  }
   .lb-body {
     grid-column: 1 / -1; grid-row: 3;
-    /* Die Karte setzt `align-items: start` (Kopf und Haarlinie sollen nicht mitwachsen) — der Rumpf muss die
-       Resthöhe aber FÜLLEN, sonst endet das Listen-Panel am letzten Eintrag statt am Rahmen. */
-    align-self: stretch;
+    /* Der Rumpf endet am INHALT (#rahmen-huelle): „das Listen-Panel endet am letzten Eintrag statt am Rahmen"
+       war vorher als Fehler gelesen und mit `align-self: stretch` erzwungen — es ist aber genau das gewünschte
+       Verhalten. Bei langen Listen deckelt `max-height` an der Karte, dann greift der innere Scroller. */
+    align-self: start;
     padding: 0 !important;
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
@@ -3164,6 +3176,10 @@ button { font-family: inherit; }
   }
   /* #lb-rahmen: Die zwei Panels klebten an der Haarlinie unter dem Kopf — als einzige des Desktop-Passes.
      22 px ist der Wert, mit dem `.st-sec`, `.up-*` und die Lauf-Details ihre Panels absetzen. */
+  /* #run-dialoge: die zwei Rückfragen des Laufs. 320 px (`max-w-xs`) sind auf 1920 px eine Handy-Sprechblase;
+     der Beenden-Dialog trägt drei Optionszeilen mit Folgentext, der Neustart-Dialog nur eine Warnung. */
+  .rc-wide   { max-width: 560px; }
+  .rc-narrow { max-width: 440px; }
   .lb-tabs, .lb-page { margin-top: 22px !important; }
   .lb-tabs {
     grid-column: 1; grid-row: 3;
@@ -3437,6 +3453,9 @@ button { font-family: inherit; }
      Die zwei kürzeren Panels der Zeile darüber werden auf die Höhe der Spalte gezogen — ein Panel mit etwas
      Luft am Fuß ist eine Fläche, ein Loch ist keine. */
   .go-layout { grid-column: 1 / -1; grid-row: 6; }
+  /* Die zwei kürzeren Panels der Zeile werden gezogen: ein Panel mit Luft am Fuß ist kein Loch (#go-breit,
+     gemessen). Kurz auf `start` gestellt und wieder zurück — die Luft unter dem Score-Verlauf ist nicht das
+     Problem, sie ist der PLATZ, den die Achsen-Fassung des Graphen jetzt füllt (#graph-achsen). */
   .go-stats, .go-build { align-self: stretch; }
   .go-layout > div {
     display: grid;
@@ -3457,7 +3476,13 @@ button { font-family: inherit; }
   .go-ticks .rg-perTrick > div { padding: 0 !important; }
   /* Die Gebäude stehen in der breiten Spalte NEBENEINANDER statt untereinander — drei Einzeiler in einer
      1 200 px breiten Spalte lesen sich sonst als drei fast leere Zeilen. */
-  .go-blist > .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  /* #rahmen-huelle: `auto-fill` legte LEERE Spuren an — bei EINEM Gebäude stand ein 1220 px breiter Rahmen
+     um eine 300-px-Karte. Die Spaltenzahl kommt jetzt aus der ANZAHL (`--gob-cols`, in GameOver.jsx auf max 3
+     gedeckelt); mit `width: fit-content` endet der Rahmen an der letzten Karte. Gemessen: 1 Gebäude 1220 → 322 px,
+     7 Gebäude weiter dreispaltig. `auto-fit` statt der Zahl klappt zusammen mit `fit-content` auf EINE Spalte
+     zusammen — sieht plausibel aus, ist aber falsch, und genau das ist beim Bauen passiert. */
+  .go-blist { width: fit-content; max-width: 100%; }
+  .go-blist > .grid { grid-template-columns: repeat(var(--gob-cols, 1), minmax(300px, 1fr)); }
   /* Ohne Gebäude gibt es keine zweite Spalte: das Brett stünde sonst links an einem 1 200 px breiten
      Nichts. Dann EINE Spur, Brett mittig. */
   /* Ohne Gebäude UND ohne Graph gibt es keine zweite Spalte: das Brett stünde sonst links an einem

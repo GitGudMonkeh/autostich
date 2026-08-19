@@ -823,6 +823,8 @@ export default {
   "graphs.cycleAbbr": "C{n}",
   "graphs.cycle.title": "Cycle {n}: {score}",
   "sparkline.empty": "The trend appears after the first tricks…",
+  "sparkline.axis.x": "Tricks",
+  "sparkline.axis.y": "Score",
 
   /* ---- Chronicle (ChronikOverview) ---- */
   "chronik.eyebrow": "Chronicle",
@@ -891,6 +893,10 @@ export default {
   "app.abort.save": "End & save",
   "app.keepPlaying": "Keep playing",
   "app.end": "End",
+  // #run-dialoge: on the desktop every option carries its own consequence (instead of one shared paragraph).
+  "app.abort.save.sub": "The run is remembered — you continue it later from the menu.",
+  "app.abort.end.sub": "The run is scored and the end screen appears.",
+  "app.keepPlaying.sub": "Back into the game, nothing happens.",
   "app.restart.title": "Really restart?",
   "app.restart": "Restart",
   "app.restart.help": "The current run is discarded and a new one starts immediately. This cannot be undone.",

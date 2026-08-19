@@ -1494,6 +1494,53 @@ Zustand: „Farbe" → sortiert nach Farbe und heißt danach „Preis" → sorti
 - **Am Gerät nicht abgenommen** — im Produktionsbuild über Playwright gerendert (390 px DE und 1600 px EN,
   beide Reiter, beide Sortierungen) und die Reihenfolge aus den Kachel-Kantenfarben ausgelesen.
 
+### #rahmen-huelle + #run-dialoge + #graph-achsen — Nachzügler des Desktop-Passes (19.08.2026)
+Ein Muster zog sich durch den Pass: Panels füllten die verfügbare FLÄCHE statt ihren INHALT zu umschließen.
+Bei vollen Screens fällt das nicht auf — genau dann nicht, wenn man es baut.
+- **Bestenliste/Ranked**: die Karte setzt ihre Höhe INLINE (`min(88vh, 760px)`, aus der Handy-Fassung), und
+  `.lb-root` zog sie zusätzlich auf `stretch`. Bei drei Einträgen stand damit ein 760-px-Rahmen um 350 px
+  Inhalt. **`height: auto !important` + `max-height: 100%`** — `max-height` allein überstimmt eine explizite
+  `height` NICHT, das war die Falle. Dazu `.lb-root` auf `align-items: start` und `.lb-body` auf
+  `align-self: start` (der alte Kommentar dort las „endet am letzten Eintrag statt am Rahmen" als Fehler —
+  es ist das gewünschte Verhalten). Gemessen 1920×1080: Global 760 → **347 px**, Ranked 760 → **505 px**,
+  je 1 px Rest.
+- **Victory · Gebäude-Liste**: `repeat(auto-fill, minmax(300px, 1fr))` legt LEERE Spuren an → bei EINEM
+  Gebäude ein 1220 px breiter Rahmen um eine 300-px-Karte. Die Spaltenzahl kommt jetzt aus der ANZAHL
+  (`--gob-cols`, in GameOver.jsx auf max 3 gedeckelt) plus `width: fit-content`. Gemessen: 1 Gebäude
+  1220 → 322 px, 7 Gebäude weiter dreispaltig (930 px).
+  **`auto-fit` ist NICHT die Lösung** — zusammen mit `fit-content` klappt es auf EINE Spalte zusammen und
+  macht aus sieben Gebäuden eine Liste. Sieht im Quelltext plausibel aus, ist beim Bauen passiert.
+- **NICHT angefasst: `.go-stats`/`.go-build` bleiben `align-self: stretch`.** Kurz auf `start` gestellt und
+  wieder zurück: das ist die gemessene Entscheidung aus #go-breit („ein Panel mit Luft am Fuß ist kein Loch"),
+  und die Luft unter dem Score-Verlauf ist nicht das Problem — sie ist der PLATZ für den Graphen.
+
+#### #run-dialoge — Beenden und Neustarten (`src/ui/RunConfirm.jsx`, neu)
+Beide Rückfragen waren auf jeder Breite `max-w-xs` (320 px) und fragten in der Reihenfolge „Titel → Knöpfe →
+Erklärung, was die Knöpfe tun". Am Handy ist genau das richtig (#362 zieht die Aktionsleiste nach oben, damit
+man zum Bestätigen nicht scrollen muss); auf dem Desktop gibt es kein Scrollen, dort kostet es nur eins.
+- **Beenden (560 px): Optionszeilen statt Knopfreihe.** Drei Wege, zwei davon fast gleich benannt
+  („Beenden" / „Beenden & speichern") — jede Zeile trägt ihre Folge jetzt SELBST (Kanten-Karte wie bei
+  Perks/Skills/Packs), der gemeinsame `app.abort.help` entfällt dort. Drei neue Schlüssel (`*.sub`).
+- **Neustarten (440 px): dieselbe Karte, nur breiter** — zwei Wege, nichts zu verwechseln; die Warnung steht
+  auf dem Desktop VOR den Knöpfen.
+- **`Enter` löst die primäre Wahl aus** (nur Desktop, nur solange der Dialog offen ist); `Esc` schließt über
+  den bestehenden Pfad. Die Kürzel stehen im Knopf — sonst weiß sie niemand.
+- **Der Überzug behält seinen Blur**, anders als die großen Screens (#perf-blur): was dort gemessen wurde, war
+  ein vollflächiger Filter unter einem Screen, über den dauernd neu gemalt wird. Diese Dialoge stehen still.
+- Handy-Fassung nachgewiesen unverändert: Element-Geometrie bei 390 px vorher/nachher **identisch**, beide Dialoge.
+
+#### #graph-achsen — der Score-Verlauf mit Achsen
+`Sparkline` bekommt einen Schalter `axes` statt einer zweiten Komponente (eine zweite Fassung driftet).
+Der Victory-Screen schaltet ihn ab 1400 px ein, die StatusRail bleibt bei der kompakten Linie.
+- **`preserveAspectRatio` muss dafür weg.** Die kompakte Linie zieht sich mit `none` auf jede Kachelgröße —
+  mit Beschriftung verzerrt das die Buchstaben mit (x und y skalieren unabhängig). Die Achsen-Fassung rechnet
+  in einem festen Seitenverhältnis (620 × 250) und skaliert gleichmäßig.
+- **Runde Achsenwerte, keine Drittel**: `niceStep` (1 · 2 · 5 × 10^k) unter einem Drittel des Maximums →
+  0 / 1M / 2M statt 0 / 754.978 / 1,5M / 2,3M.
+- Die x-Achse rechnet in STICHEN (`(i+1) × GHOST_STEP`), nicht in Stützstellen — die Zahl an der Achse ist
+  sonst ein Index, den niemand kennt.
+- **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
+
 ### #cube-deckfarbe + #cube-flimmern — zwei Nachzügler am Würfel-Feld (18.08.2026)
 - **Der Bodenraster war das einzige Element, das den Farbmodus nicht mitgemacht hat.** `drawFloor` las ein festes
   `GRID_COL` (`#7a2fff`), während Türme und Punkte längst über `deckColored` umfärbten. Im Deckfarbe-Modus ist er

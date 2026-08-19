@@ -69,6 +69,7 @@ describe("i18n · Katalog-Parität", () => {
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
     "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "lv.wing.deck",          // „Deck" ist in beiden Sprachen dasselbe Wort (Begriffstabelle §3.1)
+    "sparkline.axis.y",      // Achsenbeschriftung „Score" — Score bleibt Score (§3.1)
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)

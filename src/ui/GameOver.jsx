@@ -415,7 +415,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>{t("gameover.chart.record")}</span> : <span className="opacity-40">{t("gameover.chart.first")}</span>}
                 </span>
               </div>
-              <Sparkline current={currentTraj} record={recordTraj} height={110} />
+              {/* #graph-achsen: Auf dem Desktop ist Platz für die ausführliche Fassung — beschriftete Achsen
+                  (Score links, Stiche unten) statt einer nackten Linie. Am Handy bleibt die kompakte Linie:
+                  dort wäre die Beschriftung breiter als der Graph. */}
+              <Sparkline current={currentTraj} record={recordTraj} height={110} axes={wide} />
             </div>
           )}
 
@@ -454,7 +457,12 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               <div className="go-side">
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
-                <div className="go-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                /* #rahmen-huelle: Die Spaltenzahl kommt aus der ANZAHL (max 3), nicht aus der verfügbaren
+                   Breite — sonst legt `auto-fill` leere Spuren an und der Rahmen steht 1220 px breit um EIN
+                   Gebäude. `auto-fit` allein reicht nicht: zusammen mit `width: fit-content` klappt es auch
+                   bei sieben Gebäuden auf eine Spalte zusammen (gemessen). */
+                <div className="go-blist mt-3 rounded-lg p-2.5"
+                  style={{ background: "#17171c", border: "1px solid #5a8ade", "--gob-cols": Math.min(3, archBuildings.length) }}>
                   <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: archBuildings.length })}</div>
                   <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">

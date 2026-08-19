@@ -841,6 +841,8 @@ export default {
   "graphs.cycleAbbr": "D{n}",
   "graphs.cycle.title": "Durchlauf {n}: {score}",
   "sparkline.empty": "Verlauf erscheint nach den ersten Stichen…",
+  "sparkline.axis.x": "Stiche",
+  "sparkline.axis.y": "Score",
 
   /* ---- Chronik (ChronikOverview) ---- */
   "chronik.eyebrow": "Chronik",
@@ -919,6 +921,10 @@ export default {
   "app.abort.save": "Beenden & speichern",
   "app.keepPlaying": "Weiterspielen",
   "app.end": "Beenden",
+  // #run-dialoge: Auf dem Desktop trägt jede Option ihre Folge selbst (statt eines gemeinsamen Absatzes).
+  "app.abort.save.sub": "Der Lauf wird gemerkt — du setzt ihn später im Menü fort.",
+  "app.abort.end.sub": "Der Lauf wird gewertet und der Endscreen erscheint.",
+  "app.keepPlaying.sub": "Zurück ins Spiel, nichts passiert.",
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",

@@ -18,7 +18,6 @@ import * as telemetry from "./game/telemetry.js";        // #telemetrie: anonyme
 import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
-import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./ui/modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben (Rückfrage-Dialoge)
 import { StatusRail } from "./ui/StatusRail.jsx";
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
@@ -32,6 +31,7 @@ import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
+import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
@@ -1285,47 +1285,17 @@ function AutostichGame() {
           onLang={(id) => changeOptions({ lang: id })} onPrivacy={() => setShowPrivacy(true)}
           onSave={onSaveUsername} onClose={() => setShowUsername(false)} />
       )}
-      {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust. */}
-      {confirmAbort && overlayPortal(
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
-          onClick={() => setConfirmAbort(false)}>
-          <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
-            <ModalHairline />
-            <div className="p-5">
-            <div className="text-base font-bold">{t("app.abort.title")}</div>
-            {/* #362 Aktionsleiste OBEN: primär (Beenden & speichern) obenauf, darunter Weiterspielen/Beenden. */}
-            <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
-              <div className="flex flex-col gap-2 w-full">
-                <ActionButton kind="primary" onClick={suspendRun}>{t("app.abort.save")}</ActionButton>
-                <div className="flex gap-2">
-                  <ActionButton kind="secondary" flex onClick={() => setConfirmAbort(false)}>{t("app.keepPlaying")}</ActionButton>
-                  <ActionButton kind="danger" flex onClick={() => { setConfirmAbort(false); endRun(); }}>{t("app.end")}</ActionButton>
-                </div>
-              </div>
-            </ActionBar>
-            <div className="text-sm opacity-70">{t("app.abort.help")}</div>
-            </div>
-          </div>
-        </div>
+      {/* #254: Abbruch-Rückfrage — vom „Beenden"-Button ODER von der Zurück-Geste im aktiven Lauf. Kein Ein-Tap-Verlust.
+          #run-dialoge: die Desktop-Fassung (Optionszeilen statt Knopfreihe) steckt in RunConfirm.jsx. */}
+      {confirmAbort && (
+        <AbortConfirm onKeepPlaying={() => setConfirmAbort(false)} onSave={suspendRun}
+          onEnd={() => { setConfirmAbort(false); endRun(); }} />
       )}
 
       {/* Komfort: Neustart-Rückfrage — der laufende Lauf ist noch nicht gewertet; kein Ein-Tap-Verlust bei Fettfingern. */}
-      {confirmRestart && overlayPortal(
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}
-          onClick={() => setConfirmRestart(false)}>
-          <div className="w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck" style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
-            <ModalHairline />
-            <div className="p-5">
-            <div className="text-base font-bold">{t("app.restart.title")}</div>
-            {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
-            <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-3">
-              <ActionButton kind="secondary" flex onClick={() => setConfirmRestart(false)}>{t("app.keepPlaying")}</ActionButton>
-              <ActionButton kind="danger" flex onClick={() => { setConfirmRestart(false); restartRun(); }}>{t("app.restart")}</ActionButton>
-            </ActionBar>
-            <div className="text-sm opacity-70">{t("app.restart.help")}</div>
-            </div>
-          </div>
-        </div>
+      {confirmRestart && (
+        <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)}
+          onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
     </div>
   );
