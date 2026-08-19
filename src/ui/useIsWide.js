@@ -20,15 +20,22 @@ import { useState, useEffect } from "react";
    `addListener`-Rückfall für Browser ohne `addEventListener` am MediaQueryList. */
 export const DESKTOP_MIN = 1400;
 
-export function useIsWide() {
-  const q = `(min-width: ${DESKTOP_MIN}px)`;
-  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
+/* Eine Media Query als React-State. `useIsWide` ist der Sonderfall darauf — andere Aufrufer, die eine
+   DOM-Entscheidung an einer Breite treffen müssen (nicht nur eine Anordnung), nehmen diesen hier statt
+   die vier Zeilen zu kopieren. Der `addListener`-Rückfall ist für Browser ohne addEventListener am
+   MediaQueryList. */
+export function useMediaQuery(q) {
+  const [on, setOn] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
   useEffect(() => {
     const mq = window.matchMedia(q);
-    const on = () => setWide(mq.matches);
-    on(); // Falls sich die Breite zwischen erstem Render und Effekt geändert hat.
-    mq.addEventListener ? mq.addEventListener("change", on) : mq.addListener(on);
-    return () => (mq.removeEventListener ? mq.removeEventListener("change", on) : mq.removeListener(on));
+    const upd = () => setOn(mq.matches);
+    upd(); // Falls sich die Breite zwischen erstem Render und Effekt geändert hat.
+    mq.addEventListener ? mq.addEventListener("change", upd) : mq.addListener(upd);
+    return () => (mq.removeEventListener ? mq.removeEventListener("change", upd) : mq.removeListener(upd));
   }, [q]);
-  return wide;
+  return on;
+}
+
+export function useIsWide() {
+  return useMediaQuery(`(min-width: ${DESKTOP_MIN}px)`);
 }
