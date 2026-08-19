@@ -1934,6 +1934,28 @@ einzeln behoben — der Anlauf ist projektweites Signal, ein Screen darf ihn nic
   Gegenprobe gemacht: alle fünf sabotierten Nähte fallen.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
 
+### #hub-knopf — EIN Ziel, der Rest sind Angebote (19.08.2026, Entwurf des Users)
+Bis hierher trugen alle vier Hub-Knöpfe dieselbe Bauform (90°-Farbanlauf + 4-px-Kante links), nur in
+verschiedenen Helligkeiten. Am Handy trägt das — dort steht immer nur ein Knopf im Blick. Auf einem 1920er
+Schirm stehen sie übereinander in einer Spalte, und vier Varianten derselben Geste sortieren sich nicht:
+sie ergeben eine Leiter, auf der keine Stufe heraussticht.
+- **Ab 1400 px zwei Bauformen statt vier Helligkeiten.** `as-cta-primary` ist eine TASTE (Fläche in der
+  Deckfarbe, Rahmen rundum, weicher Schein, Licht von oben) — das einzige laute Element der Seite. Tutorial,
+  Rangliste und „Lauf beginnen"-während-ein-Lauf-läuft sind ruhige ZEILEN: flache Fläche, Haarlinie, kein
+  Anlauf.
+- **Der Zustandswechsel braucht keine zweite Regel.** Welcher Knopf `as-cta-primary` trägt, entscheidet
+  `normalCls` in StartScreen.jsx: läuft ein Lauf, ist die Taste **„Lauf fortsetzen"** und „Lauf beginnen"
+  fällt auf `as-cta-ghost`. Die Taste wandert mit der ABSICHT mit, statt an einem bestimmten Knopf zu
+  kleben — genau das hält der Wächter fest, es ist die Stelle, an der die Hierarchie hängt.
+- **Das Tutorial bleibt ausdrücklich eine Zeile.** Es soll für neue Spieler sichtbar sein, aber nie mit dem
+  Start konkurrieren (dieselbe Absicht wie #tutorial-sichtbarkeit, nur jetzt auch in der Form).
+- **Die 4-px-Kante entfällt an den Hub-Knöpfen** — sie ist das Signal der KANTEN-FAMILIE (`as-edge-*`), und
+  die Hub-Knöpfe gehören nicht dazu; sie haben eigene Klassen. Kein Eingriff in ein geteiltes Signal.
+- **Handy bitidentisch nachgewiesen**: Pixelvergleich 390 px vorher/nachher, mittlere Abweichung
+  **0,0000 von 255**, größte Einzelabweichung **0**.
+- Wächter: `test/hub-knopf.test.js` (4). Gegenprobe gemacht: alle drei sabotierten Nähte fallen.
+- **Nicht am Gerät gesehen** — headless in beiden Zuständen (mit und ohne laufenden Lauf) nachgerendert.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

@@ -2110,6 +2110,50 @@ button { font-family: inherit; }
                 inset 0 0 26px -14px var(--deck-a1, #26c6e6);
   }
 
+  /* ==========================================================================
+     #hub-knopf — EIN Ziel, der Rest sind Angebote (19.08.2026, Entwurf des Users)
+
+     Bis hierher trugen alle vier Hub-Knöpfe dieselbe Bauform (90°-Farbanlauf + 4-px-Kante links), nur in
+     verschiedenen Helligkeiten. Auf dem Handy trägt das: dort steht immer nur ein Knopf im Blick. Auf
+     einem 1920er Schirm stehen sie übereinander in einer Spalte, und vier Varianten derselben Geste
+     sortieren sich nicht — sie ergeben eine Leiter, auf der keine Stufe heraussticht.
+
+     Ab 1400 px deshalb ZWEI Bauformen statt vier Helligkeiten:
+     · `as-cta-primary` ist eine TASTE — Fläche in der Deckfarbe, Rahmen rundum, weicher Schein, Licht
+       von oben. Sie ist das einzige laute Element der Seite.
+     · Alles andere (Tutorial, Rangliste, „Lauf beginnen" solange ein Lauf läuft) ist eine ruhige ZEILE:
+       flache Fläche, Haarlinie, kein Farbanlauf.
+
+     Das löst zugleich die Frage nach dem Zustandswechsel, ohne eine zweite Regel zu brauchen: welcher
+     Knopf `as-cta-primary` trägt, entscheidet StartScreen.jsx (`normalCls`) — läuft ein Lauf, ist es
+     „Lauf fortsetzen" und „Lauf beginnen" fällt auf `as-cta-ghost` zurück. Die Taste wandert also mit
+     der Absicht mit, statt an einem bestimmten Knopf zu kleben. Das TUTORIAL bleibt bewusst eine Zeile:
+     es soll für neue Spieler sichtbar sein, aber nie mit dem Start konkurrieren.
+
+     Die 4-px-Kante links entfällt an den Hub-Knöpfen — sie ist das Signal der KANTEN-FAMILIE
+     (`as-edge-*`, #kante), und die Hub-Knöpfe gehören nicht dazu; sie haben eigene Klassen. Am Handy
+     bleibt alles, wie es war. */
+  .as-cta-primary {
+    background:
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 26%, #0d1016) 0%,
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 11%, #0a0c11) 100%);
+    border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 46%, transparent);
+    color: color-mix(in srgb, var(--deck-a2, #7ceafb) 22%, #ffffff);
+    box-shadow:
+      0 0 30px -12px var(--deck-a1, #26c6e6),
+      inset 0 1px 0 color-mix(in srgb, var(--deck-a1, #26c6e6) 34%, transparent);
+  }
+  /* Die drei ruhigen Zeilen. `as-cta-ghost` ist schon flach — sie bekommt hier nur dieselbe Haarlinie,
+     damit die drei nebeneinander nicht doch wieder drei Töne zeigen. */
+  .as-tut-btn,
+  .as-ranked-btn,
+  .as-cta-ghost {
+    background: rgba(255, 255, 255, .022);
+    border: 1px solid rgba(150, 150, 170, .13);
+    box-shadow: none;
+  }
+
   /* Die Verwaltungsliste: Fläche hellt auf, der Farbanlauf zieht an und die Kante wächst von 4 auf
      6 px. KEIN Schein am Rahmen — die Liste sitzt in EINEM Glasrahmen, ein Leuchten je Zeile würde
      gegen diesen Rahmen arbeiten. Angehoben wird hier auch nicht (steht schon im JSX als
