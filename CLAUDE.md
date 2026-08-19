@@ -1791,3 +1791,45 @@ ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, de
   Dichte + Grace als Quelltext-Ratsche fest, inklusive der Gegenprobe „diese vier Szenen haben KEINE Grace".
   Fünf Sabotagen durchgespielt, alle fünf fallen (Maßstab nicht in der Brennweite · Front-Offset nicht
   mitskaliert · Spaltenzahl zurückgedreht · Grace aus einer Szene entfernt · Grace-Dauer auf 0).
+
+### #shop-skalieren + #shop-luft — die Pack-Vorschau passt jetzt ins Fenster (19.08.2026)
+Gemeldet: „im Shop die Anzeigen im Fenster skalieren, damit man dort nicht scrollen muss, um alles zu sehen" —
+und „die Shop-Panels sind zu nah am Rahmen". Zwei getrennte Nähte, beide nur ab 1400 px (Desktop-Fassung);
+die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inline`-Zweig von `PackDetail`).
+- **Gemessen zuerst** (Produktionsbuild, Playwright, echte Komponente): der Detail-Scroller braucht **662 px**.
+  Auf 1920 × 1080 und 1723 × 1030 hat er genau 662 — dort passte es und niemand hätte etwas gesehen. Auf
+  **1536 × 791** hat er 558, also **104 px Überhang**: Kartenrückseite, Spielfeld und der Aktivieren-Knopf
+  standen nie zusammen im Bild. Ein Scroller in einer Spalte, die selbst schon in einem gedeckelten Panel
+  sitzt, ist die falsche Antwort — die drei Bilder sind eine VORSCHAU: sie müssen nicht groß sein, sie müssen
+  vollständig sein.
+- **Der Hebel ist die normale Flex-Schrumpfung, kein Maßstab-Faktor und keine abgemessene Zahl.** `cz-body`
+  (der Scroller) wird zur Flex-Spalte, die drei Bildkästen bekommen `min-height: 0`. Flexbox gewichtet die
+  Schrumpfung mit der GRUNDHÖHE — 104 px Überhang heißen also für jedes Bild denselben Prozentsatz, das
+  Verhältnis der drei zueinander bleibt (gemessen 1536: Karten 331 → 266 = 80,4 %, Spielfeld 196 → 156 =
+  79,6 %). Ist Platz genug, schrumpft nichts: 1920 × 1080 bleibt Pixel für Pixel wie vorher.
+- **ZWEI Zeilen gehören zwingend dazu, sonst schrumpft der KASTEN statt des BILDES:**
+  1. `object-fit: contain !important` — `BfPreview` malt mit `cover` und würde beim Schrumpfen oben und unten
+     BESCHNEIDEN statt zu verkleinern. Ein beschnittenes Spielfeld ist keine Vorschau des Spielfelds.
+  2. `background: transparent !important` — beide Vorschauen setzen ihre Fläche INLINE (`#0b0a16`), und Inline
+     schlägt jedes Stylesheet ohne `!important`. Ohne die Zeile sähe man die Restfläche neben dem
+     verkleinerten Bild als dunkle Balken. Bei ungeschrumpften Kästen deckt das Bild die Fläche vollständig
+     ab — dort ändert sie also nichts.
+- **`overflow-y: auto` bleibt bewusst stehen**: es ist das VENTIL für den Fall, dass selbst die geschrumpfte
+  Fassung nicht passt (Flexbox schrumpft zuerst, gescrollt wird erst danach). `overflow: hidden` wäre die
+  Alternative — und die schneidet ab, statt erreichbar zu bleiben.
+- **Preis, bewusst bezahlt**: die Beschriftungen (`KARTE HINTEN` …) bleiben linksbündig, während das
+  geschrumpfte Bild mittig im Kasten steht — auf 1536 sind das 23 px Versatz, auf 1400 × 700 rund 43. Die
+  Alternative wäre, den Kasten aus der HÖHE zu bemaßen (`width: auto` + `aspect-ratio`); dann hat er als
+  Flex-Kind aber keine Grundhöhe mehr (der Inhalt ist absolut positioniert) und fällt auf 0 zusammen.
+- **#shop-luft**: zwischen Reiter-Unterkante (y = 144) und Panel-Oberkante (y = 152) standen **8 px**. Beide
+  sind LEUCHTENDE Kanten (aktiver Reiter mit Deckfarben-Strich, Panels mit `as-ring`) — zwei helle Linien in
+  8 px Abstand lesen sich als eine gedoppelte Kante statt als Kopf und Inhalt. Jetzt `padding-bottom: 18px`
+  an `.cz-head`, also am KOPF und nicht als `margin-top` am Raster: der Kopf ist sticky, sein Polster gehört
+  zu ihm und fährt mit. **Der Upgrade-Baum behält seine 8** — dort ist die Reiterzeile ausgeblendet, es
+  stoßen also gar keine zwei Leuchtkanten aufeinander.
+- Nachgemessen nach dem Umbau: Überhang **0** auf 1920 × 1080 · 1723 × 1030 · 1536 × 791 · 1400 × 760 ·
+  1400 × 700, Aktivieren-Knopf überall im Panel, auch beim Stufen-Deck (I/II/III kostet eine Zeile mehr und
+  wird von den Bildern mitbezahlt). Reiter „Herausforderungen" und „Effekte" laufen ebenfalls nirgends über.
+- Wächter: `test/shop-scale.test.js` (Quelltext-Ratsche über beide Dateien). Vier Sabotagen durchgespielt,
+  alle vier fallen (`min-height` weg · `contain` weg · Luft zurück auf 8 · Klassenhaken weg).
+- **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.

@@ -1501,7 +1501,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
         onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 45) onStep(dx < 0 ? 1 : -1); }}>
         <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
-        <div className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
+        <div className={`p-3.5 ${inline ? "cz-body flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[15px] min-[1400px]:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
@@ -1517,18 +1517,22 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               zum selben Ziel wären Rauschen. */}
           {inline ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              {/* #shop-skalieren (19.08.2026): `cz-shots` / `cz-shot` / `cz-shotimg` sind die Griffe, an
+                  denen die Vorschau in der Hoehe SCHRUMPFT, statt den Spaltenscroller anzuwerfen — die
+                  Regeln dazu stehen in index.css. Ohne die Klassen faellt nur die Schrumpfung weg, das
+                  Layout bleibt dasselbe. */}
+              <div className="cz-shots grid grid-cols-2 gap-3">
                 {[["back", t("shop.packSel.back")], ["front", t("shop.packSel.front")]].map(([face, label]) => (
-                  <div key={face} className="flex flex-col gap-1.5">
+                  <div key={face} className="cz-shot flex flex-col gap-1.5">
                     <span className="cz-shotlab">{label}</span>
-                    <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={face} className="w-full" />
+                    <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={face} className="cz-shotimg w-full" />
                   </div>
                 ))}
               </div>
               {hasBf && (
-                <div className="flex flex-col gap-1.5 mt-3">
+                <div className="cz-shot flex flex-col gap-1.5 mt-3">
                   <span className="cz-shotlab">{t("shop.packSel.bg")}</span>
-                  <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" ratio="1600 / 640" />
+                  <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="cz-shotimg w-full" ratio="1600 / 640" />
                 </div>
               )}
             </>

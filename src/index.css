@@ -2204,7 +2204,16 @@ button { font-family: inherit; }
     background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
     margin-left: 0 !important; margin-right: 0 !important;
     padding-left: 0 !important; padding-right: 0 !important;
-    padding-top: 10px !important; padding-bottom: 8px !important;
+    padding-top: 10px !important;
+    /* #shop-luft (19.08.2026): 8 -> 18 px. Zwischen der Unterkante der Reiter und der Oberkante der
+       beiden Panels standen 8 px — gemessen Reiter bis y = 144, Panel ab y = 152. Beide Kanten sind
+       LEUCHTENDE Kanten (der aktive Reiter traegt seinen Deckfarben-Strich, die Panels ihren `as-ring`),
+       und zwei helle Linien in 8 px Abstand lesen sich als EINE gedoppelte Kante statt als Kopf und
+       Inhalt. Die Luft haengt bewusst am KOPF und nicht als `margin-top` am Raster: der Kopf ist sticky,
+       sein Polster gehoert zu ihm und faehrt beim Scrollen mit. Der Upgrade-Baum hat dieselbe 8 an
+       `.up-head` — dort stossen aber keine zwei Leuchtkanten aufeinander (die Reiterzeile ist dort
+       ausgeblendet), deshalb bleibt er bewusst unangetastet. */
+    padding-bottom: 18px !important;
     flex: none;
   }
   /* Die beiden Flex-Container der Handy-Fassung reichen ihre Kinder ins Raster durch. */
@@ -2339,6 +2348,43 @@ button { font-family: inherit; }
     text-transform: uppercase;
     color: #75758a;
   }
+
+  /* --- #shop-skalieren — die Vorschau schrumpft, statt zu scrollen ---------
+     Gemessen im Produktionsbuild (Playwright, echte Komponente): der Detail-Scroller braucht 662 px.
+     Auf 1920 x 1080 und 1723 x 1030 stehen ihm 662 px zur Verfuegung — dort passte es schon. Auf
+     1536 x 791 sind es 558, also **104 px Ueberhang**, und genau die musste man sich bisher
+     herunterscrollen: Kartenrueckseite, Spielfeld und der Aktivieren-Knopf standen nie zusammen im Bild.
+     Ein Scroller in einer Spalte, die selbst schon in einem gedeckelten Panel sitzt, ist die falsche
+     Antwort — die drei Bilder sind eine VORSCHAU, sie muessen nicht gross sein, sie muessen vollstaendig
+     sein.
+
+     Der Hebel ist die normale Flex-Schrumpfung, kein Massstab-Faktor und keine gemessene Zahl:
+     `cz-body` wird zur Flex-Spalte, die drei Bildkaesten bekommen `min-height: 0` und schrumpfen damit
+     ANTEILIG ihrer Grundhoehe (Flexbox gewichtet die Schrumpfung mit der Basis) — 104 px Ueberhang
+     heissen also fuer jedes Bild denselben Prozentsatz, das Verhaeltnis der drei zueinander bleibt.
+     Ist Platz genug, schrumpft nichts: die Kaesten behalten ihre aus der Breite abgeleitete Hoehe,
+     1920 x 1080 bleibt Pixel fuer Pixel wie vorher.
+
+     ZWEI Dinge gehoeren zwingend dazu, sonst schrumpft der KASTEN und nicht das BILD:
+     1. `object-fit: contain` — `BfPreview` malt mit `cover` und wuerde beim Schrumpfen oben und unten
+        beschneiden statt zu verkleinern. Ein beschnittenes Spielfeld ist keine Vorschau des Spielfelds.
+     2. `background: transparent !important` — beide Vorschauen setzen ihre Flaeche INLINE (`#0b0a16`),
+        und Inline schlaegt jedes Stylesheet ohne `!important`. Sobald der Kasten flacher ist als das
+        Bildformat, steht das Bild mittig darin; ohne diesen Griff saehe man die Restflaeche als dunkle
+        Balken links und rechts. Bei ungeschrumpften Kaesten deckt das Bild die Flaeche ohnehin
+        vollstaendig ab — die Zeile aendert dort also nichts.
+
+     `overflow-y: auto` am Scroller bleibt bewusst stehen: es ist das VENTIL fuer den Fall, dass selbst
+     die geschrumpfte Fassung nicht passt (Flexbox schrumpft zuerst, gescrollt wird erst danach). Ohne
+     das Ventil waere die Alternative `overflow: hidden` — und die schneidet ab, statt erreichbar zu
+     bleiben. */
+  .cz-body { display: flex; flex-direction: column; min-height: 0; }
+  /* Die Zeile des Rasters muss mitgeben duerfen — `auto` bliebe auf der Bildhoehe stehen und liefe
+     unten aus dem geschrumpften Behaelter heraus. */
+  .cz-shots { grid-template-rows: minmax(0, 1fr); min-height: 0; }
+  .cz-shot { min-height: 0; }
+  .cz-shotimg { min-height: 0; background: transparent !important; }
+  .cz-shotimg > img { object-fit: contain !important; }
 
   /* Der Katalog: sechs Spalten. Die Tailwind-Vorgabe `grid-cols-2 sm:grid-cols-3` friert bei 640 px
      ein, deshalb hier explizit — `!important`, weil Tailwinds Utility dieselbe Spezifität hat. */
