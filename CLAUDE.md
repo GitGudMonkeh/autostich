@@ -2094,6 +2094,26 @@ wo die Gebäude-Liste erscheint: Aufstellungsphase, Chronik, Endscreen und der L
   absichtlich beim Namen). Gegenprobe gemacht: alle vier sabotierten Nähte fallen.
 - Die Übersetzer-CSV ist mitgezogen (`npm run loc:export`, 2653 → 2663 Zeilen).
 
+### #eckig + #up-untertitel — ein Radius für alle Knöpfe, kein abgeschnittener Untertitel (19.08.2026)
+- **ALLE Bestätigen-/Schließen-Knöpfe stehen ab 1400 px auf 6 px**, über EINE Regel. Hub-Knöpfe,
+  Baum-Kacheln, Angebotskarten und die Run-Dialoge waren schon dort; die Schließen-Knöpfe der Screens, die
+  `ActionButton`-Sorte und die drei handgebauten Knöpfe des Endscreens (Menü · Neuer Lauf · „Bestätigen"
+  der Freischalt-Karte) liefen mit 8 px daneben. Acht gegen sechs sieht man einzeln nicht — nebeneinander
+  schon, und genau das ist der Punkt: verschiedene Radien lesen sich als verschiedene Bauteile.
+- **`as-actbtn` ist der neue, stabile Haken der Sorte** (`ACTIONBTN_BASE` in modalStyle.jsx). Er trifft
+  JEDEN ActionButton im Spiel auf einmal — ohne ihn müsste die Klasse an dreißig Fundstellen einzeln
+  stehen, und die nächste neue Fundstelle vergisst sie. Die übrigen Klassen der Sorte sind Utilities und
+  stehen genauso an fremden Knöpfen, taugen also nicht als Greifer.
+- **Der Archetyp-Untertitel im Baum bricht jetzt UM statt abzuschneiden.** Er stand auf `nowrap` + Ellipse,
+  weil der „Leitfaden ›"-Knopf die rechte Ecke braucht — der Blitz-Text ist der längste und wurde damit auf
+  jedem realen Fenster mitten im Satz gekürzt. Zwei Zeilen sind der Deckel (wie im Leitfaden), und die
+  **Kopfreihe trägt ihre Höhe FEST** (`min-height`): sonst springen die Knotenspalten beim Archetyp-Wechsel.
+  Gemessen 1920×1080 · 1536×791 · 1400×950 über alle vier Fraktionen: **nirgends gekürzt**, Kopfreihe
+  überall 41 px, das Raster darunter startet je Breite auf demselben y.
+- **Handy bitidentisch** (Pixelvergleich 390 px, 0,0000 von 255). Der neue Klassenname wandert zwar in die
+  Handy-DOM, aber keine Regel unterhalb 1400 px greift ihn ab.
+- Wächter: `test/up-ruhe.test.js`. Gegenprobe gemacht: alle fünf sabotierten Nähte fallen.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

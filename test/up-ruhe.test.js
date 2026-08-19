@@ -161,3 +161,32 @@ describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
     expect(read("src/ui/UpdateBanner.jsx")).toMatch(/className="up-banner pointer-events-auto/);
   });
 });
+
+describe("#eckig + #up-untertitel — ein Radius für alle Knöpfe, kein abgeschnittener Untertitel", () => {
+  it("ALLE Bestätigen-/Schließen-Knöpfe stehen auf 6 px, über EINE Regel", () => {
+    /* `as-actbtn` ist der stabile Haken der ActionButton-Sorte — er trifft jeden dieser Knöpfe im Spiel
+       auf einmal. Ohne ihn müsste die Klasse an dreißig Fundstellen einzeln stehen, und die nächste neue
+       Fundstelle vergisst sie. */
+    expect(read("src/ui/modalStyle.jsx"), "der Haken fehlt an der Sorte").toMatch(/ACTIONBTN_BASE = "as-actbtn /);
+    const r = deskBlock.match(/\.as-actbtn,[\s\S]{0,180}?\{([^}]*)\}/);
+    expect(r, "die Sammelregel des Radius fehlt").toBeTruthy();
+    expect(r[1]).toMatch(/border-radius:\s*6px/);
+    for (const k of ["up-close", "gd-close", "gl-close", "cz-close", "st-close"])
+      expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
+    /* Der Endscreen baut seine drei Knöpfe von Hand (Menü, Neuer Lauf, „Bestätigen" der Freischalt-Karte)
+       — sie tragen den Haken deshalb einzeln. */
+    expect((read("src/ui/GameOver.jsx").match(/as-actbtn/g) || []).length).toBe(3);
+  });
+
+  it("der Archetyp-Untertitel bricht um statt abzuschneiden — und der Kopf trägt seine Höhe fest", () => {
+    /* Gemessen 1920×1080, 1536×791 und 1400×950 über alle vier Fraktionen: nirgends gekürzt, Kopfreihe
+       überall 41 px, das Raster darunter startet auf demselben y. Ohne die feste Höhe sprängen die
+       Knotenspalten beim Archetyp-Wechsel (dieselbe Regel wie im Leitfaden, #desktop-leitfaden). */
+    const h = deskBlock.match(/\.up-page-hint\s*\{([^}]*)\}[\s\S]*?\.up-page-hint\s*\{([^}]*)\}/);
+    const letzte = h ? h[2] : (deskBlock.match(/\.up-page-hint\s*\{([^}]*)\}/) || [])[1];
+    expect(letzte, ".up-page-hint-Regel nicht mehr gefunden").toBeTruthy();
+    expect(letzte, "die Ellipse ist zurück").toMatch(/white-space:\s*normal/);
+    expect(letzte).toMatch(/-webkit-line-clamp:\s*2/);
+    expect(deskBlock).toMatch(/\.up-page-h\s*\{[^}]*min-height:\s*\d+px/);
+  });
+});

@@ -126,7 +126,7 @@ function UnlockModal({ unlocks, onConfirm }) {
         )}
         <div className="text-xs opacity-55 mt-5">{t("gameover.skins.hint")}</div>
         <button onClick={onConfirm} autoFocus
-          className="as-edge-strong mt-5 sm:mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
+          className="as-actbtn as-edge-strong mt-5 sm:mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
           style={{ "--c": "#d4a63a" }}>
           {t("common.confirm")}
         </button>
@@ -190,12 +190,12 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               Glow trägt. */}
           {/* #deckui: Aktions-Buttons ziehen die Deckfarbe (hier = Mainscreen-Deck, s. GameOver-Kontext). */}
           {onMenu && (
-            <button onClick={onMenu} className="as-edge as-edge-thin py-2.5 px-4 rounded-lg font-bold transition-all"
+            <button onClick={onMenu} className="as-actbtn as-edge as-edge-thin py-2.5 px-4 rounded-lg font-bold transition-all"
               style={{ "--c": "var(--deck-a1, #8a7de0)" }}>
               {t("gameover.menu")}
             </button>
           )}
-          <button onClick={onRestart} className="as-edge-strong flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
+          <button onClick={onRestart} className="as-actbtn as-edge-strong flex-1 py-2.5 rounded-lg font-bold transition-all hover:brightness-110"
             style={{ "--c": "var(--deck-a1, #d4a63a)" }}>
             {t("gameover.newRun")}
           </button>

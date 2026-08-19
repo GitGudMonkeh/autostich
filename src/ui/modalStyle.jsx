@@ -162,7 +162,10 @@ export function ActionBar({ pad = 5, bg = PANEL_BG, top = 0, border = true, clas
      danger         → as-edge (Rot), leiser  = die Abrissbirne, kein Angebot
      secondary/decline → as-edge-neutral     = Ausweg, ohne Farbsignal
    Deaktiviert bleibt bewusst flach grau: kein Signal, keine Kante, nichts zu holen. */
-const ACTIONBTN_BASE = "rounded-lg font-bold text-sm px-4 py-2.5 whitespace-nowrap transition-all";
+/* `as-actbtn` ist der stabile Haken der Sorte — ohne ihn ist ein `ActionButton` im Stylesheet nicht
+   adressierbar (die übrigen Klassen sind Utilities und stehen genauso an fremden Knöpfen). Gebraucht
+   seit #eckig, das den Radius aller Bestätigen-/Schließen-Knöpfe an EINER Stelle setzt. */
+const ACTIONBTN_BASE = "as-actbtn rounded-lg font-bold text-sm px-4 py-2.5 whitespace-nowrap transition-all";
 const ACTIONBTN_KIND = {
   primary: { cls: "as-edge-strong", c: "#d4a63a" },
   reroll:  { cls: "as-edge-strong", c: "#d4a63a" },

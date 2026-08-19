@@ -4383,6 +4383,28 @@ button { font-family: inherit; }
   .up-banner { border-radius: 6px !important; }
   .up-banner .as-edge-strong { border-radius: 6px; box-shadow: none; }
 
+  /* #eckig — ALLE Bestätigen-/Schließen-Knöpfe auf denselben Radius (19.08.2026)
+     Hub-Knöpfe, Baum-Kacheln, Angebotskarten und die Run-Dialoge stehen auf 6 px; die Schließen-Knöpfe der
+     Screens, die `ActionButton`-Sorte und die zwei Knöpfe des Endscreens liefen mit 8 px daneben. Acht
+     gegen sechs sieht man einzeln nicht — nebeneinander schon, und genau das ist der Punkt: verschiedene
+     Radien lesen sich als verschiedene Bauteile.
+     `as-actbtn` ist der neue, stabile Haken der Sorte (modalStyle.jsx) — er trifft JEDEN ActionButton im
+     Spiel auf einmal, statt die Klasse an dreißig Fundstellen einzeln zu setzen. */
+  .as-actbtn,
+  .up-close, .gd-close, .gl-close, .cz-close, .st-close, .lb-head > button { border-radius: 6px; }
+
+  /* #up-untertitel — der Archetyp-Untertitel im Baum bricht UM statt abzuschneiden.
+     Er stand auf `white-space: nowrap` + Ellipse, weil der „Leitfaden ›"-Knopf die rechte Ecke braucht.
+     Der Blitz-Text ist mit Abstand der längste und wurde damit auf jedem realen Fenster gekürzt — mitten
+     im Satz, ohne Hinweis. Zwei Zeilen sind der Deckel (wie im Leitfaden, #desktop-leitfaden), und die
+     Kopfreihe trägt ihre Höhe FEST: sonst springen die Knotenspalten beim Archetyp-Wechsel. */
+  .up-page-hint {
+    white-space: normal;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    line-height: 1.32;
+  }
+  .up-page-h { min-height: 40px; align-items: center; }
+
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
      `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist.
 
