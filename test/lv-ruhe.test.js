@@ -119,3 +119,48 @@ describe("#lv-ruhe — die Fraktionsreiter sind flach", () => {
       .toMatch(/border-bottom:\s*2px solid\s*!important/);
   });
 });
+
+describe("#wing-ruhe — der linke Flügel: dünnere Rahmen, Fokus auf Zustand", () => {
+  const grid = read("src/ui/CardGrid.jsx");
+
+  it("der Schalter sitzt am Raster, nicht als zweite Kachel-Fassung", () => {
+    /* EINE Kachel mit einem Schalter (Regel 1). Auf dem Brett ändert sich nichts — Default false. */
+    expect(grid).toMatch(/quietFrames = false/);
+    expect(grid, "der Rahmen hängt nicht am Schalter").toMatch(/border: `\$\{quietFrames \? 1 : 2\}px/);
+    expect(read("src/ui/FormationPanel.jsx")).toMatch(/quietFrames=\{quietFrames\}/);
+    expect(read("src/ui/LevelupWings.jsx"), "der Flügel setzt den Schalter nicht").toMatch(/<FormationPanel state=\{state\} glowBid=\{inspectBid\} quietFrames \/>/);
+  });
+
+  it("nur der FORMATIONS-Schein fällt — die Zustands-Scheine bleiben", () => {
+    /* Gewählt · getippt · Gletscher · Gebäude sind selten und genau das, was man im Flügel sucht.
+       Fiele der Schein pauschal, wäre die Kachel im Flügel zustandslos. */
+    expect(grid).toMatch(/\(fb\.color && !fb\.dashed && !quietFrames\)/);
+    // Reine Textsuche statt Regex — die Zeile enthält `?` und `"`; als Muster geschrieben erzeugte das
+    // beim ersten Anlauf still den Fragezeichen-Quantifier, statt das Zeichen zu suchen.
+    for (const zustand of ['picked ? "0 0 10px', 'selected ? "0 0 10px', 'glacier ? "0 0 8px'])
+      expect(grid.includes(zustand), `Zustands-Schein ${zustand} ist mitgefallen`).toBe(true);
+  });
+});
+
+describe("#lv-ruhe — Punkt 5: Haarlinie, kleinere Knöpfe, Stufung", () => {
+  it("die Angebotskarte hat drei Haarlinien und EINE Farbkante", () => {
+    const r = deskBlock.match(/\.lv-offercard\s*\{([^}]*border-top-color[^}]*)\}/);
+    expect(r, "die Haarlinien-Regel fehlt").toBeTruthy();
+    for (const seite of ["top", "right", "bottom"])
+      expect(r[1], `border-${seite}-color fehlt`).toMatch(new RegExp(`border-${seite}-color`));
+    /* `border-color` als Sammelangabe wäre der Fehler: sie griffe auch links durch und löschte das Signal. */
+    expect(r[1], "border-color löscht die Farbkante links mit").not.toMatch(/border-color:/);
+  });
+
+  it("die Aktionsknöpfe sind so breit wie ihr Text, nicht halbe Kartenbreite", () => {
+    /* Gemessen 1920 px: 113/132 px (Skill) und 113/102 px (Perk) statt zweier ~420-px-Balken. */
+    expect(deskBlock).toMatch(/\.lv-actbtn\s*\{[^}]*flex:\s*0 1 auto\s*!important/);
+  });
+
+  it("die Stufung kommt aus dem NAMEN, nicht aus gekürztem Text", () => {
+    /* Den Beschreibungstext zu kürzen oder zu klemmen wäre der Fehler aus #skilltext (14 von 21 Texten
+       mitten im Satz abgeschnitten). Gestuft wird deshalb nach oben. */
+    expect(deskBlock).toMatch(/\.lv-cardname\s*\{[^}]*letter-spacing/);
+    expect(deskBlock, "die Beschreibung wird geklemmt").not.toMatch(/\.lv-offercard[^{]*\{[^}]*line-clamp/);
+  });
+});

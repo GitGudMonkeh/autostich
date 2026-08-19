@@ -71,6 +71,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
+                   quietFrames = false,
                    glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
@@ -109,12 +110,17 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
       className={`as-tile relative rounded-lg flex flex-col items-center justify-center transition-all${structLit ? " arch-struct-lit" : ""}`}
-      style={{ background: tileBg, border: `2px ${borderStyle} ${borderColor}`,
+      /* #wing-ruhe: `quietFrames` ist die Fassung für den linken Flügel der Level-up-Karte. Dort stehen
+         40 Kacheln auf 356 px Breite; 2-px-Rahmen plus ein Formations-Schein je Kachel sind dann keine
+         Auszeichnung mehr, sondern eine Flimmerfläche. Der Rahmen wird dünner UND der FORMATIONS-Schein
+         fällt weg — die ZUSTANDS-Scheine (gewählt · getippt · Gletscher · Gebäude) bleiben, sie sind
+         selten und genau das, was man dort sucht. Auf dem Brett ändert sich nichts (Default false). */
+      style={{ background: tileBg, border: `${quietFrames ? 1 : 2}px ${borderStyle} ${borderColor}`,
                // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher
                // ebenso ausgrauen → Signal „starr, nicht tauschbar". picked(gold)/selected(weiß) haben Vorrang; disabled (0,45) sticht durch.
                opacity: disabled ? 0.45 : ((dimmed || glacier) && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : fb.color && !fb.dashed ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : (fb.color && !fb.dashed && !quietFrames) ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* #301 C3: fixierte Aufstell-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss (wie beim Architekten). */}
       {locked && (
@@ -200,7 +206,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
                           segStrength = [], segDelta = [], flashPos = null, flashKey = 0, architectCover = null, structPos = null, distrPos = null, glowBid = null,
-                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [] }) {
+                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [], quietFrames = false }) {
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
@@ -312,7 +318,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
                   anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
-                  disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles}
+                  disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles} quietFrames={quietFrames}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}

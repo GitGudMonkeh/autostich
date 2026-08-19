@@ -120,7 +120,7 @@ export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options 
     <div className="lv-rig">
       {deckOpen && (
         <aside className="lv-wing lv-wing-l" style={{ borderColor: `${accent}4d` }}>
-          <FormationPanel state={state} glowBid={inspectBid} />
+          <FormationPanel state={state} glowBid={inspectBid} quietFrames />
           <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("perk.deckStrength")}</div>
           <DeckStrength deck={deck} />

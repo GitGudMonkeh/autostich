@@ -1990,6 +1990,37 @@ ist die FLÄCHE in der Deckfarbe plus das Licht von oben (`inset 0 1px 0`), und 
 6 px** für alle fünf Hub-Knöpfe — sie trugen ihn als Tailwind-Utility (`rounded-xl` = 12 px), und index.css
 steht ungelayert dahinter, schlägt sie also ohne `!important`.
 
+### #wing-ruhe + #lv-ruhe (Punkt 5) — die zwei letzten Griffe am Level-up (19.08.2026)
+Aus fünf Vorschlägen des Users hat er zwei ausgewählt; die übrigen drei sind bewusst nicht gemacht
+(Begründung am Ende). Alles ab 1400 px, Handy **bitidentisch** (Pixelvergleich 390 px, Perk und Skill je
+0,0000 von 255).
+- **Der linke Flügel: dünnere Rahmen, Fokus auf Zustand.** Dort stehen 40 Kacheln auf 356 px Breite;
+  2-px-Rahmen plus ein FORMATIONS-Schein je Kachel sind dann keine Auszeichnung mehr, sondern eine
+  Flimmerfläche. `CardGrid` bekommt deshalb `quietFrames` (Default false, auf dem Brett ändert sich
+  nichts): Rahmen 2 → 1 px, und der Formations-Schein fällt.
+  **Die ZUSTANDS-Scheine bleiben** — gewählt · getippt · Gletscher · Gebäude. Sie sind selten und genau
+  das, was man im Flügel sucht; fielen sie mit, wäre die Kachel dort zustandslos. Genau diese Trennung
+  hält der Wächter fest.
+- **Haarlinie statt Rahmen** an der Angebotskarte: die drei nicht-farbigen Kanten treten auf 7 %
+  Deckkraft zurück, damit die FARBKANTE links die einzige sichtbare Kante bleibt. **Bewusst je Seite
+  gesetzt und nicht als `border-color`** — die Sammelangabe griffe auch links durch und löschte das Signal.
+- **Die Aktionsknöpfe sind so breit wie ihr Text** statt auf halbe Kartenbreite gestreckt. Gemessen
+  1920 px: 113/132 px (Skill) und 113/102 px (Perk) statt zweier ~420-px-Balken. `flex-1` steht als
+  Utility im JSX; index.css schlägt es ungelayert, beide Bildschirme brauchen keinen zweiten Zweig.
+- **Stufung nach OBEN**: der Kartenname bekommt etwas Laufweite, der Beschreibungstext bleibt unangetastet.
+  Ihn zu kürzen oder zu klemmen wäre der Fehler aus #skilltext (14 von 21 Texten mitten im Satz).
+
+#### Aus dem Vorschlag NICHT übernommen — und warum
+- **„Details ›" auf der Skill-Karte** (Kurzfassung mit Häkchen-Bullets, Rest hinter einem Link): versteckt
+  genau den Text, auf dem die Entscheidung beruht, im Moment der Entscheidung. Denselben Fehler hat das
+  Projekt schon einmal korrigiert (#skilltext). Dazu wären es 84 Skills in zwei Sprachen — ein Text-Projekt,
+  kein Layout-Schritt.
+- **Rechtes Panel umsortieren**: inhaltlich richtig, aber `StatusRail` ist DIESELBE Komponente wie neben
+  dem Brett — eine Umsortierung trifft das laufende Spiel mit. Das ist eine Spiel-Entscheidung, keine
+  Layout-Entscheidung, und wartet auf eine ausdrückliche Ansage.
+- **Ein-/Ausklappen**: gibt es seit #lv-fluegel samt gemerktem Zustand. Offen wäre nur der Default, und der
+  steht bewusst auf „auf" — die Flügel sind der Grund für die breite Fassung.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

@@ -3854,7 +3854,17 @@ button { font-family: inherit; }
   .lv-offercard { box-shadow: none !important; border-radius: 6px; }
   /* Kurze Trennlinie unter dem Namen: sie ordnet Kopf (Badges + Name) und Text, ohne einen Kasten zu
      ziehen. `currentColor` = die Akzentfarbe der Karte, die der Name ohnehin trägt. */
-  .lv-cardname { position: relative; padding-bottom: 7px; margin-bottom: 1px; }
+  /* Haarlinie statt Rahmen: die drei nicht-farbigen Kanten der Angebotskarte treten zurück, damit die
+     FARBKANTE links die einzige sichtbare Kante bleibt. Bewusst je Seite gesetzt und nicht als
+     `border-color` — das griffe auch auf die linke Kante durch und löschte genau das Signal. */
+  .lv-offercard {
+    border-top-color: rgba(150, 150, 170, .07);
+    border-right-color: rgba(150, 150, 170, .07);
+    border-bottom-color: rgba(150, 150, 170, .07);
+  }
+  /* Mehr Stufung zwischen Name und Text: der Name trägt ab hier etwas mehr Gewicht und Laufweite,
+     der Beschreibungstext bleibt unangetastet (Kürzen wäre der Fehler aus #skilltext). */
+  .lv-cardname { position: relative; padding-bottom: 7px; margin-bottom: 1px; letter-spacing: .006em; }
   .lv-cardname::after {
     content: ""; position: absolute; left: 0; bottom: 0;
     width: 26px; height: 1px; background: currentColor; opacity: .38;
@@ -3867,6 +3877,15 @@ button { font-family: inherit; }
     border: 0 !important;
     box-shadow: none !important;
   }
+  /* #lv-ruhe, dritte Runde (Punkt 5 „Feine Details") — die zwei Knöpfe sind nicht mehr auf halbe
+     Kartenbreite gestreckt, sondern so breit wie ihr Text. Ein 420-px-Knopf für „Alle ablehnen" ist eine
+     Handy-Geste (Daumenziel über die volle Breite); auf 880 px liest er sich als Balken. `flex-1` steht
+     als Utility im JSX — index.css schlägt es ungelayert, ohne dass beide Bildschirme einen zweiten
+     Zweig brauchen. Zentriert, weil die Leiste unter einer zentrierten Überschrift sitzt. */
+  .lv-actbtn { flex: 0 1 auto !important; }
+  .lv-cardwrap .sticky > .flex.flex-wrap,
+  .lv-cardwrap [class*="ACTIONBAR"], .lv-cardwrap .sticky.z-20 { justify-content: center; }
+
   .lv-actbtn-reroll {
     border: 1px solid color-mix(in srgb, #d4a63a 42%, transparent) !important;
     border-radius: 10px;

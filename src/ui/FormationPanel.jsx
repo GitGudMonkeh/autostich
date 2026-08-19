@@ -14,7 +14,7 @@ const fmt = (x) => fmtNum(x.toFixed(2));
    Optional `pickedIds`/`pickedPos`, um eine laufende Auswahl im Kontext der Formationen zu markieren.
    #UI: `collapsible` macht die Kopfzeile zum Ein-/Ausklapp-Trigger. Der 🏗 Gebäude-Toggle blendet — wie in der
    Aufstellungsphase — die platzierten Architekt-Bauten als Rahmen über dem Brett ein (nur wenn Bauten vorhanden). */
-export function FormationPanel({ state = {}, title = null, pickedIds = [], pickedPos, className = "", collapsible = false, defaultOpen = true, glowBid = null }) {
+export function FormationPanel({ state = {}, title = null, pickedIds = [], pickedPos, className = "", collapsible = false, defaultOpen = true, glowBid = null, quietFrames = false }) {
   const deck = state.deck || [];
   const order = state.playerOrder || [];
   const formations = state.formations || [];
@@ -63,7 +63,7 @@ export function FormationPanel({ state = {}, title = null, pickedIds = [], picke
           lockedPos={state.challengeBlockForm || []}
           glacierPos={glacierPos} glacierMassByPos={iceActive ? (state.glacierMass || []) : null} firnStackByPos={iceActive ? (state.firnStack || []) : null}
           architectCover={cover} structPos={structPos} distrPos={distrPos} glowBid={archOn ? glowBid : null}
-          pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles />
+          pickedIds={pickedIds} pickedPos={pickedPos} onTilePick={() => {}} quietTiles quietFrames={quietFrames} />
       )}
     </div>
   );

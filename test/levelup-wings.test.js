@@ -307,7 +307,9 @@ describe("#lv-gebaeude — die gewählten Gebäude als Ausklapp-Reiter im linken
     /* Der Zweck der Liste ist der Zeiger aufs Brett. Läge das Einblenden allein am 🏗-Schalter, täte ein
        Antippen bei ausgeschaltetem Schalter sichtbar nichts — genau das, was der Kommentar an
        `ArchBuildingList` vom Aufrufer verlangt. */
-    expect(wings).toMatch(/<FormationPanel state=\{state\} glowBid=\{inspectBid\} \/>/);
+    /* Auf den ZEIGER prüfen, nicht auf den ganzen Aufruf: seit #wing-ruhe steht dort zusätzlich
+       `quietFrames`, und weitere Props sind zu erwarten. Wichtig ist, dass `glowBid` gesetzt wird. */
+    expect(wings).toMatch(/<FormationPanel state=\{state\} glowBid=\{inspectBid\}/);
     expect(panel).toMatch(/const archOn = hasArch && \(showArch \|\| !!glowBid\)/);
     expect(panel, "das Brett bekommt den Zeiger nicht").toMatch(/glowBid=\{archOn \? glowBid : null\}/);
   });
