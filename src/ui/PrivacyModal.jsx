@@ -101,7 +101,12 @@ export function PrivacyModal({ onClose }) {
           {/* #kante: die Abschnitte waren gefüllte Kästen (#20202a) — die Fassung von vor „Kante statt Fläche"
               und ohne jede Rangordnung: „Was bleibt auf dem Gerät" sah aus wie „Was wird gesendet". Jetzt
               Kantenkarten, und die Kante sagt, worum es hier geht (s. SENDERS oben). */}
-          <div className="grid gap-2.5 mt-4 min-[1400px]:grid-cols-2 min-[1400px]:items-start">
+          {/* `grid-cols-1` ist PFLICHT, nicht Kosmetik: `grid` allein sizet die implizite Spalte auf MAX-CONTENT.
+              Die breiteste Zelle ist der Install-ID-Kasten (UUID mit `white-space: nowrap` aus `truncate`, dazu der
+              Kopier-Knopf) — gemessen 364,8 px Spur in einem 356 px breiten Scroller, alle sechs Abschnitte erben
+              die Breite und der Hinweis scrollt seitwärts. `truncate` hilft dagegen NICHT, es kappt die DARSTELLUNG,
+              nicht den max-content-Beitrag. Dieselbe Naht wie in der Bestenlisten-Zeile (#global). */}
+          <div className="grid grid-cols-1 gap-2.5 mt-4 min-[1400px]:grid-cols-2 min-[1400px]:items-start">
             {SECTIONS.map((sec) => {
               const c = SENDERS.has(sec) ? ACC : NEUTRAL;
               return (

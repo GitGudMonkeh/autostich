@@ -139,4 +139,20 @@ describe("#datenschutz · der Hinweis ist von überall erreichbar", () => {
       }
     }
   });
+
+  // #privacy-breite: `grid` OHNE Spaltenangabe sizet die implizite Spur auf MAX-CONTENT. Die breiteste Zelle
+  // ist der Install-ID-Kasten (UUID mit `white-space: nowrap` aus `truncate`, dazu der Kopier-Knopf) — gemessen
+  // 364,8 px Spur in einem 356 px breiten Scroller auf einem 390-px-Gerät. Alle Abschnitte erbten die Breite,
+  // der Hinweis scrollte seitwärts. `truncate` hilft dagegen NICHT: es kappt die Darstellung, nicht den
+  // max-content-Beitrag. Dieselbe Naht wie in der Bestenlisten-Zeile (#global) — deshalb hier ein Wächter,
+  // damit sie nicht ein drittes Mal auffällt.
+  it("das Abschnitts-Raster deckelt seine Spalte (sonst scrollt der Hinweis am Handy seitwärts)", () => {
+    const src = read("src/ui/PrivacyModal.jsx");
+    const cls = /<div className="(grid[^"]*)"/.exec(src);
+    expect(cls, "Abschnitts-Raster nicht gefunden").toBeTruthy();
+    expect(cls[1], "`grid` braucht ein explizites grid-cols-1 — sonst ist die Spur max-content")
+      .toMatch(/\bgrid-cols-1\b/);
+    // Ab 1400 px stehen die Abschnitte zweispaltig; das muss die Handy-Regel überschreiben, nicht ersetzen.
+    expect(cls[1]).toMatch(/min-\[1400px\]:grid-cols-2/);
+  });
 });
