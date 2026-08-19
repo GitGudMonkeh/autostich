@@ -404,9 +404,12 @@ describe("#graph-fuellt — der Score-Verlauf nimmt den Rest der Spalte", () => 
   it("der Messkasten kann schrumpfen — sonst wächst der Graph bei jedem Frame", () => {
     /* Ohne `min-height: 0` nimmt ein Flex-Kind mindestens seine Inhaltsgröße ein; die Messung bekäme
        dann immer die Inhaltshöhe zurück statt des freien Platzes. */
-    for (const sel of ["\.go-chart", "\.go-chartbox"])
-      expect(desk.match(new RegExp(`${sel} \{[^}]*\}`))[0], `${sel} ohne min-height: 0`)
-        .toMatch(/min-height:\s*0/);
+    /* Regex-LITERALE: in einem Template-String wäre `\.` nur ein Punkt (also ein Platzhalter) und
+       `\{` nur eine Klammer — der Test liefe dann grün, ohne die richtige Regel gelesen zu haben. */
+    for (const treffer of [desk.match(/\.go-chart \{[^}]*\}/), desk.match(/\.go-chartbox \{[^}]*\}/)]) {
+      expect(treffer, "die Regel fehlt ganz").not.toBeNull();
+      expect(treffer[0], "ohne min-height: 0 misst der Kasten die Inhaltshöhe").toMatch(/min-height:\s*0/);
+    }
   });
 
   it("die Höhe kommt aus EINER Quelle", () => {
@@ -423,5 +426,47 @@ describe("#achsen-luft — Achsenwerte und Achsentitel überlappen nicht mehr", 
     expect(sparkline).toMatch(/const padL = voll \? 76 : 3/);
     expect(sparkline).toMatch(/<text x=\{padL - 10\}/);
     expect(sparkline).toMatch(/x=\{11\}[\s\S]{0,200}rotate\(-90 11 /);
+  });
+});
+
+describe("#karten-skala — die Kartenbeschriftung misst sich an der Kachel", () => {
+  const grid = read("src/ui/CardGrid.jsx");
+
+  it("Wert, ×-Faktor und Kürzel haben einen Haken", () => {
+    /* Ohne Klassen ließe sich die Größe nur über Tailwinds `sm:` steuern — und das misst am
+       VIEWPORT, nicht an der Kachel. Genau daher kam die Überlappung. */
+    for (const cls of ["cg-val", "cg-mult", "cg-lab"])
+      expect(grid, `${cls} fehlt im Markup`).toMatch(new RegExp(`className="${cls}[ "]`));
+  });
+
+  /* Regex-LITERALE statt `new RegExp` aus einem Template-String — dort wäre `\s` nur ein `s`. */
+  const regeln = {
+    "cg-val": desk.match(/\.cg-root \.cg-val\s+\{[^}]*\}/),
+    "cg-mult": desk.match(/\.cg-root \.cg-mult\s+\{[^}]*\}/),
+    "cg-lab": desk.match(/\.cg-root \.cg-lab\s+\{[^}]*\}/),
+  };
+
+  it("die Kachel ist der Bezugsrahmen, die Größen rechnen in cqw", () => {
+    expect(desk).toMatch(/\.cg-root \.as-tile \{ container-type: inline-size; \}/);
+    for (const [cls, treffer] of Object.entries(regeln)) {
+      expect(treffer, `${cls} hat gar keine Regel`).not.toBeNull();
+      expect(treffer[0], `${cls} rechnet nicht in cqw`).toMatch(/font-size:\s*clamp\([^)]*cqw[^)]*\)/);
+    }
+  });
+
+  it("nach oben gedeckelt auf die bisherigen Desktop-Größen — größer wird nichts", () => {
+    /* Die Klammer ist der Punkt: die Schrift wird kleiner, wo die Kachel eng ist, aber nie größer als
+       das, was vorher stand (24 / 12 / 11). Gemessen bei 67 px Kachelbreite (Brett 360 px auf flachen
+       Fenstern, fünf Spalten): alt standen ×-Faktor und Kürzel 0,9 px INEINANDER, jetzt 9 px auseinander. */
+    const deckel = { "cg-val": 24, "cg-mult": 12, "cg-lab": 11 };
+    for (const [cls, max] of Object.entries(deckel))
+      expect(Number(regeln[cls][0].match(/,\s*([\d.]+)px\)/)[1]), `${cls} darf höchstens ${max}px werden`).toBe(max);
+  });
+
+  it("am Handy greift nichts davon", () => {
+    /* Dort ist die Kachel ~64 px breit und trägt seit jeher die kleinen Tailwind-Werte — die
+       Container-Rechnung würde daran nichts verbessern und wäre nur ein zweiter Weg zum selben Ziel. */
+    expect(cssBare.replace(desk, ""), "die Skala steht auch außerhalb des Desktop-Blocks")
+      .not.toMatch(/container-type: inline-size|\.cg-val|\.cg-mult|\.cg-lab/);
   });
 });

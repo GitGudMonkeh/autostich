@@ -4930,6 +4930,29 @@ button { font-family: inherit; }
   .go-blist ~ .go-ticks:has(.rg-perTrick[open]) { margin-top: auto; padding-top: 18px; }
 
   /* ==========================================================================
+     #karten-skala (19.08.2026) — Wert, ×-Faktor und Formationskürzel messen sich an der KACHEL
+
+     Tailwinds `sm:` greift am VIEWPORT (≥ 640 px), nicht an dem Kasten, in dem etwas steht. Auf dem
+     Desktop bekam damit JEDE Kachel die großen Größen — auch die rund 82 px breite im Brett des
+     Siegesbildschirms. Dort stoßen der ×-Faktor (mittig im Fluss) und das Formationskürzel (absolut
+     unten rechts) zusammen; auf einem 1400-px-Laptop überlappen sie sichtbar.
+
+     Dieselbe Falle ist am Level-up-Flügel schon beschrieben und dort mit Handwerten erschlagen
+     („Container Queries wären das saubere Werkzeug"). Hier ist es das saubere Werkzeug: die Kachel
+     wird zum Container, die drei Beschriftungen rechnen in `cqw`.
+
+     Die Klammern sind der Punkt — nach oben deckeln sie auf die BISHERIGEN Desktop-Größen, nach unten
+     auf die Handy-Größen. Größer als vorher wird nichts, kleiner nur dort, wo die Kachel es verlangt.
+     `container-type: inline-size` macht die Kachel zum Bezugsrahmen für absolut gesetzte Kinder — sie
+     stehen ohnehin schon relativ zu ihr (`.as-tile` ist `relative`), es ändert sich also nichts.
+     Der Gebäude-Rahmen liegt als SVG an `.cg-root`, nicht in einer Kachel, und bleibt unberührt.
+     Die Handwerte des Flügels (`.lv-wing .cg-root …`) wiegen schwerer und bleiben, wie sie sind. */
+  .cg-root .as-tile { container-type: inline-size; }
+  .cg-root .cg-val  { font-size: clamp(16px, 24cqw, 24px); }
+  .cg-root .cg-mult { font-size: clamp(8px, 12cqw, 12px); }
+  .cg-root .cg-lab  { font-size: clamp(7px, 11cqw, 11px); }
+
+  /* ==========================================================================
      #graph-gold — der Durchlauf-Graph im Ton der Score-Kurve (19.08.2026)
 
      Gilt für JEDE `.rg-perTrick` ab 1400 px, also Siegesbildschirm UND Lauf-Details. Absichtlich nicht
