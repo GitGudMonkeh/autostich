@@ -155,3 +155,33 @@ gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Ri
 **Die eine Kollision, die zu beobachten ist:** `08` (Kugel) und `13` (Stachelkugel) sind beide rund. Sie
 trennt heute nur der Splitterkranz — wenn eine der beiden im Angebot neben der anderen steht und man
 stutzt, ist `13` die, die eckiger werden muss.
+
+## Stand Feuer (5 von 21, Sammlung läuft)
+
+Silhouetten-Matrix und Messwerte; Zielbild ist die Blitz-Referenz (Leuchtfläche ~11 %, Streuung > 1,7).
+
+| Skill | ID | Motiv | Silhouette | > 10 | Streuung |
+|---|---|---|---|---|---|
+| Glut | `SK_FIRE_01` | Glutbett, das aufatmet | flaches Band unten | 28,1 % | 1,39 |
+| Zunder | `SK_FIRE_02` | Funkenschlag an dunklem Stein | Funkenfächer | 18,5 % | 2,33 |
+| Glutbett | `SK_FIRE_04` | Glut unter Ascheschicht | Kruste (zu flächig, s. u.) | 42,3 % | 1,23 |
+| Rückzündung | `SK_FIRE_05` | Stichflamme aus sterbender Glut | senkrechter Strahl | 10,0 % | 3,37 |
+| Glühende Klinge | `SK_FIRE_06` | glühend geschmiedete Klinge | Klinge, diagonal | 25,0 % | 2,19 |
+
+Offen: `03` Feuersturm · `07`–`17` · `L01`–`L04`.
+
+**Zwei Lehren aus dieser Runde:**
+
+- **Holz gibt es in dieser Welt nicht.** Der erste Zunder-Versuch war ein fotorealistisches Reisigbündel —
+  Rinde und Zweige fallen sofort aus dem Neon-Ton der Fraktion. Feuer lebt hier in Glut, Asche, Rauch,
+  glühendem Stahl und Funken; alles glüht von innen oder ist schwarz verkohlt. „Photographic" im Prompt
+  meint ein gerendertes Energie-Phänomen, kein Foto eines Alltagsgegenstands.
+- **Ein Motiv aus dem WORT statt aus der MECHANIK wird schwach.** „Zunder" als Anfeuerholz war klein und
+  unspektakulär; die Mechanik sagt „jeder Sieg zündet zuverlässig" — daraus wurde der Funkenschlag am Stein,
+  und der trägt. Bei jedem weiteren Skill zuerst die Wirkung lesen, dann das Bild suchen.
+
+**Fläche schlägt keine Silhouette.** `01` Glut und `04` Glutbett sind Texturen statt Formen (Streuung 1,39
+bzw. 1,23 — die niedrigsten Werte des ganzen Projekts). Bei 277 px Kachelbreite bleibt davon „dunkle Fläche
+mit etwas Rot". Das ist der eine Fall, den der Helligkeits-Angleich NICHT rettet: fehlende Form lässt sich
+nicht wegskalieren. `04` wird deshalb neu gemacht (eine einzelne gekippte Ascheplatte mit einem hellen Riss,
+drumherum Schwarz), `01` bleibt — sein Band unten ist als Form erkennbar.
