@@ -50,28 +50,27 @@ und der wandert mit jedem neuen Bild.
 kamen als 1536 × 1024). Unter `mix-blend-mode: screen` ist der schwarze Rand unsichtbar — Beschneiden
 würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmachen.
 
-## Stand Blitz — alle 21 Motive stehen, 13 liegen als Datei
+## Stand Blitz — alle 21 Motive stehen, 19 liegen als Datei
 
-Fehlt noch **als Datei** (Motiv ist abgenommen, der Upload kam nur nicht durch): `02` Ionisierung ·
-`03` Kettenblitz · `05` Reststrom · `07` Ladungsserie · `09` Kurzschluss · `10` Entladung ·
-`12` Breitenbeschleuniger · `13` Spannungsstau. **Der Farbangleich wartet auf diese acht** — er zieht auf
-den Median des Satzes, und der wandert mit jedem fehlenden Bild.
+Fehlt noch **als Datei** (Motiv ist abgenommen, der Upload kam nur nicht durch): `05` Reststrom ·
+`10` Entladung. **Der Farbangleich wartet auf diese zwei** — er zieht auf den Median des Satzes, und der
+wandert mit jedem fehlenden Bild.
 
 | Skill | ID | Motiv | Datei |
 |---|---|---|---|
 | Blitzableiter | `SK_LIGHTNING_01` | Spitze auf Fels, Einschlag von oben | ✅ |
-| Ionisierung | `SK_LIGHTNING_02` | zwei Karten, Lichtbogen dazwischen | offen (Upload) |
-| Kettenblitz | `SK_LIGHTNING_03` | waagerechte Zickzack-Kette, vier Einschlagsterne | offen (Upload) |
+| Ionisierung | `SK_LIGHTNING_02` | zwei Karten, Lichtbogen dazwischen | ✅ |
+| Kettenblitz | `SK_LIGHTNING_03` | waagerechte Zickzack-Kette, vier Einschlagsterne | ✅ |
 | Überspannung | `SK_LIGHTNING_04` | Fontäne aus dem Raster, drei Strahlen | ✅ |
 | Reststrom | `SK_LIGHTNING_05` | Blitzkanal mit vier Knoten | offen (Upload) |
 | Gewitterfront | `SK_LIGHTNING_06` | Wolkenwand über Raster | ✅ |
-| Ladungsserie | `SK_LIGHTNING_07` | aufziehende Spirale | offen (Upload) |
+| Ladungsserie | `SK_LIGHTNING_07` | aufziehende Spirale | ✅ |
 | Statische Aufladung | `SK_LIGHTNING_08` | Plasmakugel, unten gefüllt | ✅ |
-| Kurzschluss | `SK_LIGHTNING_09` | zwei Splitter, Bogen über die Lücke | offen (Upload) |
+| Kurzschluss | `SK_LIGHTNING_09` | zwei Splitter, Bogen über die Lücke | ✅ |
 | Entladung | `SK_LIGHTNING_10` | Blitz + Schockring auf dem Raster | offen (Upload) |
 | Blitzfänger | `SK_LIGHTNING_11` | offene Steinschale fängt den Blitz auf | ✅ |
-| Breitenbeschleuniger | `SK_LIGHTNING_12` | Kartenreihe, langer Bogen von links nach rechts | offen (Upload) |
-| Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | offen (Upload) |
+| Breitenbeschleuniger | `SK_LIGHTNING_12` | Kartenreihe, langer Bogen von links nach rechts | ✅ |
+| Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | ✅ |
 | Überschlag | `SK_LIGHTNING_14` | Bogen über eine dunkle Kante, Funkenregen rechts | ✅ |
 | Blitzschlag | `SK_LIGHTNING_15` | eine stehende Karte, Einschlag mittig | ✅ |
 | Dauerstrom | `SK_LIGHTNING_16` | waagerechtes Band über dem Raster | ✅ |
