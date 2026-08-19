@@ -577,11 +577,17 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
 
               {/* #go-stiche: Stich-Score je Durchlauf — hier unten ist der Platz. Rechts neben dem Brett stand
                   unter der Gebäudeliste eine leere Fläche (bei einem Gebäude über 400 px hoch), und der Graph
-                  war oben ein zugeklappter Balken über die halbe Screenbreite. Aufgeklappt, weil er in einer
-                  eigenen Spalte nicht mehr den Screen verlängert. */}
+                  war oben ein zugeklappter Balken über die halbe Screenbreite.
+
+                  #stiche-zu (19.08.2026): ZUGEKLAPPT als Voreinstellung — `open` fällt weg. Die Annahme
+                  davor war, der Graph verlängere „in einer eigenen Spalte nicht mehr den Screen". Am
+                  echten Lauf gemessen stimmt sie nicht: eine Zeile je Durchlauf, und ein langer Lauf hat
+                  zwölf und mehr — mit 40 px Zeilenhöhe (#graph-gold) sind das über 600 px, die den ganzen
+                  Screen nach unten ziehen. Wer den Verlauf sehen will, klappt ihn auf; das ist genau die
+                  Rolle, für die `details` da ist, und am Handy war er ohnehin nie offen. */}
               {wide && hasTicks && (
                 <div className="go-ticks">
-                  <RunGraphs state={state} sourceBar={false} open />
+                  <RunGraphs state={state} sourceBar={false} />
                 </div>
               )}
               </div>

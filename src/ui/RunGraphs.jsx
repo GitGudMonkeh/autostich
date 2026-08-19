@@ -145,6 +145,15 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
   // Bezugsgroesse des Anteilsbalkens (#graph-gold): die Summe ALLER Durchlaeufe, nicht state.score —
   // der Graph soll sich auf das beziehen, was in ihm steht.
   const runScore = log.reduce((a, c) => a + (c || []).reduce((b, t) => b + (t.gained || 0), 0), 0);
+  /* #stiche-breite: Der laengste Durchlauf gibt die Bahnbreite vor, alle anderen bekommen ihren Anteil
+     daran. Ohne das streckt `flex-1` JEDE Zeile auf die volle Breite — ein Durchlauf mit einem einzigen
+     Stich wurde damit zu EINEM Balken ueber die ganze Zeile (im Spiel gesehen: C12, 716 Punkte, ein Stich).
+     Nebenwirkung, und der eigentliche Gewinn: die Balken sind ueber alle Zeilen gleich breit, die
+     Zeilenlaenge sagt damit etwas (wie viele Stiche der Durchlauf hatte). Als CSS-Variable, weil die
+     Breite nur ab 1400 px greift — am Handy bleibt es bei `flex-1`. Uebergeben wird die ZAHL, nicht der
+     Anteil: der einzelne Balken rechnet sich daraus seinen Bruchteil der Bahn aus (s. index.css), und
+     damit stimmt die Breite auch, wenn die Bahn selbst noch die Restbreite der Zeile fuellt. */
+  const maxTricks = Math.max(1, ...log.map((c) => (c || []).length));
   if ((!sourceBar || !sh.score) && !hasGraph) return null;
 
   return (
@@ -168,9 +177,9 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
               const cmax = Math.max(1, ...tricks.map((t) => t.gained || 0));
               const cycleScore = tricks.reduce((a, t) => a + (t.gained || 0), 0);
               return (
-                <div key={ci} className="flex items-center gap-2">
+                <div key={ci} className="rg-row flex items-center gap-2">
                   <span className="rg-cyc text-[9px] font-mono opacity-45 w-7 shrink-0 text-right">{tr("graphs.cycleAbbr", { n: ci + 1 })}</span>
-                  <div className="rg-bars flex items-end gap-[1px] h-7 flex-1 min-w-0" title={tr("graphs.cycle.title", { n: ci + 1, score: fmtScore(cycleScore) })}>
+                  <div className="rg-bars flex items-end gap-[1px] h-7 flex-1 min-w-0" style={{ "--rg-max": maxTricks }} title={tr("graphs.cycle.title", { n: ci + 1, score: fmtScore(cycleScore) })}>
                     {tricks.map((t, i) => {
                       const h = Math.max(6, Math.round(((t.gained || 0) / cmax) * 100));
                       return (

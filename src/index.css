@@ -4205,7 +4205,34 @@ button { font-family: inherit; }
      (dieselbe Regel wie im Verlauf-Panel der Lauf-Details). */
   .go-ticks > .mt-5 { margin-top: 0 !important; }
   .go-ticks .rg-perTrick { margin-top: 0 !important; background: none !important; border: 0 !important; }
-  .go-ticks .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }
+  /* #stiche-zu (19.08.2026) — der Griff ist wieder ein GRIFF.
+     Er stand auf `cursor: default` und ohne Marke, weil der Graph hier immer offen war. Seit er
+     zugeklappt startet (s. GameOver.jsx), wäre das eine Überschrift, die nicht verrät, dass etwas
+     dahinter liegt. Jetzt dieselbe Kachelform wie jeder andere Kasten im Panel, mit einer Marke,
+     die sich beim Aufklappen dreht. Das Zeichen ist eine Text-Glyphe, kein Bildchen — dieselbe
+     Regel wie im Glossar-Zeichensatz. */
+  .go-ticks .rg-perTrick > summary {
+    padding: 8px 11px !important;
+    list-style: none;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 9px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid rgba(150, 150, 170, .12);
+    color: #b9b3cf;
+    opacity: 1 !important;
+    transition: background .14s ease, color .14s ease;
+  }
+  .go-ticks .rg-perTrick > summary:hover { background: rgba(255, 255, 255, .045); color: #e8e6ff; }
+  .go-ticks .rg-perTrick > summary::-webkit-details-marker { display: none; }
+  .go-ticks .rg-perTrick > summary::before {
+    content: "\25B8";
+    font-size: 11px; line-height: 1;
+    color: var(--deck-a1, #26c6e6);
+    transition: transform .14s ease;
+  }
+  .go-ticks .rg-perTrick[open] > summary::before { transform: rotate(90deg); }
+  .go-ticks .rg-perTrick[open] > summary { margin-bottom: 12px; }
   .go-ticks .rg-perTrick > div { padding: 0 !important; }
   /* Die Gebäude stehen in der breiten Spalte NEBENEINANDER statt untereinander — drei Einzeiler in einer
      1 200 px breiten Spalte lesen sich sonst als drei fast leere Zeilen. */
@@ -4867,7 +4894,12 @@ button { font-family: inherit; }
   .go-side { display: flex; flex-direction: column; align-self: stretch; }
   /* NUR mit Gebäudeliste. Ohne sie ist der Graph das einzige Kind der Spalte — er stünde dann am Fuß
      eines sonst leeren Streifens, also genau das Loch, das die Regel beseitigen soll, nur oben. */
-  .go-blist ~ .go-ticks { margin-top: auto; padding-top: 18px; }
+  /* Der Graph sitzt am FUSS der Spalte, damit sie auf derselben Linie endet wie das Brett — aber nur
+     AUFGEKLAPPT. Zugeklappt ist er eine 35 px hohe Zeile; an den Fuß gedrückt stünde sie allein unter
+     einem Loch, also genau das, was die Regel beseitigen soll, nur andersherum. `:has()` ist hier schon
+     das Werkzeug der Wahl (s. `.go-layout > div:not(:has(…))` weiter oben). */
+  .go-blist ~ .go-ticks { margin-top: 18px; }
+  .go-blist ~ .go-ticks:has(.rg-perTrick[open]) { margin-top: auto; padding-top: 18px; }
 
   /* ==========================================================================
      #graph-gold — der Durchlauf-Graph im Ton der Score-Kurve (19.08.2026)
@@ -4894,7 +4926,19 @@ button { font-family: inherit; }
     height: 40px;
     border-bottom: 1px solid rgba(150, 150, 170, .18);
   }
-  .rg-perTrick .rg-bar { border-radius: 2px 2px 0 0; }
+  /* #stiche-breite: Ein Balken ist EIN Bruchteil der Bahn — der Nenner ist der LÄNGSTE Durchlauf des
+     Laufs (`--rg-max` aus dem JSX), nicht die Zahl der Balken in dieser Zeile. Mit `flex-1` streckte
+     sich jede Zeile auf die volle Breite, und ein Durchlauf mit einem EINZIGEN Stich wurde damit zu
+     einem Block über die ganze Zeile (im Spiel gesehen: C12, 716 Punkte, ein Stich).
+     Der eigentliche Gewinn ist aber ein anderer: so sind die Balken über ALLE Zeilen gleich breit, und
+     die Zeilenlänge sagt etwas — wie viele Stiche der Durchlauf hatte. Vorher hatte ein Durchlauf mit
+     20 Stichen doppelt so breite Balken wie einer mit 40 und sah dadurch gewichtiger aus.
+     Die Rechnung ist die exakte Umkehrung der Flex-Verteilung mit 1 px Lücke: n · b + (n−1) · 1px
+     = 100 % → b = (100 % + 1px) / n − 1px. */
+  .rg-perTrick .rg-bar {
+    flex: 0 0 calc((100% + 1px) / var(--rg-max, 1) - 1px);
+    border-radius: 2px 2px 0 0;
+  }
   .rg-perTrick .rg-w {
     background: linear-gradient(180deg, #d4a63a, color-mix(in srgb, #d4a63a 55%, transparent)) !important;
     opacity: 1 !important;

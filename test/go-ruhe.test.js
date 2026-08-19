@@ -149,7 +149,9 @@ describe("#go-ruhe — der Stich-Graph sitzt am Fuß der Spalte", () => {
   });
 
   it("nur MIT Gebäudeliste — sonst wäre das Loch nur oben statt unten", () => {
-    expect(desk).toMatch(/\.go-blist ~ \.go-ticks\s*\{[^}]*margin-top:\s*auto/);
+    /* #stiche-zu: an den Fuß gedrückt wird er nur AUFGEKLAPPT. Zugeklappt ist er eine 35-px-Zeile, die
+       dort allein unter einem Loch stünde — dasselbe Problem, nur andersherum. */
+    expect(desk).toMatch(/\.go-blist ~ \.go-ticks:has\(\.rg-perTrick\[open\]\)\s*\{[^}]*margin-top:\s*auto/);
   });
 });
 
@@ -297,5 +299,46 @@ describe("#graph-gold — der Durchlauf-Graph", () => {
       .toMatch(/^\.rg-share \{ display: none; \}/m);
     expect(desk).toMatch(/\.rg-perTrick \.rg-share\s*\{[^}]*display:\s*block/);
     expect(graphs).toMatch(/cycleScore \/ runScore/);
+  });
+});
+
+describe("#stiche-zu — der Durchlauf-Graph startet zugeklappt", () => {
+  it("der Endscreen erzwingt das Aufklappen nicht mehr", () => {
+    /* Die Annahme davor war, der Graph verlängere „in einer eigenen Spalte nicht mehr den Screen".
+       Am echten Lauf stimmt sie nicht: eine Zeile je Durchlauf, ein langer Lauf hat zwölf und mehr,
+       mit 40 px Zeilenhöhe sind das über 600 px. */
+    const ticks = goBare.slice(goBare.indexOf('className="go-ticks"'));
+    const tag = ticks.slice(0, ticks.indexOf("/>") + 2);
+    expect(tag, "die Ticks rendern gar kein RunGraphs mehr").toMatch(/<RunGraphs/);
+    expect(tag, "`open` erzwingt den offenen Zustand wieder").not.toMatch(/\bopen\b/);
+  });
+
+  it("der Griff sieht aus wie einer", () => {
+    /* Zugeklappt ist der Griff das EINZIGE, was von dem Panel zu sehen ist — ohne Zeiger und Marke
+       wäre er eine Überschrift, die nicht verrät, dass etwas dahinter liegt. */
+    const s = desk.match(/\.go-ticks \.rg-perTrick > summary\s*\{[^}]*\}/)[0];
+    expect(s).toMatch(/cursor:\s*pointer/);
+    expect(s, "der Griff ist keine Kachel mehr").toMatch(/border-radius:\s*6px/);
+    expect(desk, "die Marke fehlt").toMatch(/\.go-ticks \.rg-perTrick > summary::before\s*\{[^}]*content:/);
+    expect(desk, "die Marke dreht sich beim Aufklappen nicht")
+      .toMatch(/\.go-ticks \.rg-perTrick\[open\] > summary::before\s*\{[^}]*rotate\(90deg\)/);
+  });
+});
+
+describe("#stiche-breite — ein Ein-Stich-Durchlauf ist ein Balken, kein Block", () => {
+  it("die Balkenbreite rechnet gegen den LÄNGSTEN Durchlauf", () => {
+    /* Mit `flex-1` streckte sich jede Zeile auf die volle Breite: ein Durchlauf mit einem einzigen
+       Stich wurde zu einem Block über die ganze Zeile (im Spiel gesehen: C12, 716 Punkte).
+       Der Nenner ist bewusst der längste Durchlauf des LAUFS, nicht die Zahl der Balken dieser Zeile —
+       nur so sind die Balken über alle Zeilen gleich breit und die Zeilenlänge sagt etwas. */
+    expect(graphs, "der Nenner wird nicht mehr berechnet").toMatch(/const maxTricks = Math\.max\(1, \.\.\.log\.map/);
+    expect(graphs, "die Bahn reicht den Nenner nicht durch").toMatch(/"--rg-max": maxTricks/);
+    expect(desk).toMatch(/\.rg-perTrick \.rg-bar\s*\{[^}]*flex:\s*0 0 calc\(\(100% \+ 1px\) \/ var\(--rg-max/);
+  });
+
+  it("am Handy bleibt es bei flex-1", () => {
+    expect(cssBare.replace(desk, ""), "die Breitenrechnung steht auch außerhalb — das trifft das Handy")
+      .not.toMatch(/--rg-max/);
+    expect(graphs, "die Handy-Fassung hat ihr flex-1 verloren").toMatch(/rg-bar \$\{[^}]*\} flex-1/);
   });
 });

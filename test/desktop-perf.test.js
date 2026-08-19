@@ -260,14 +260,22 @@ describe("#ueberzug — alle Overlays liegen gleich stark auf dem Hauptschirm", 
   });
 });
 
-describe("#go-stiche — der Durchlauf-Graph steht unten, aufgeklappt, an EINER Stelle", () => {
+describe("#go-stiche — der Durchlauf-Graph steht unten, an EINER Stelle", () => {
   const jsx = src("ui/GameOver.jsx");
   it("oben nur schmal, unten nur breit — nie beides", () => {
     /* Als zugeklappter Balken über die halbe Screenbreite sagte er im Stats-Panel nichts, während rechts
        neben dem Brett über 400 px Panel leer standen. Gerendert wird immer genau einer der zwei Orte. */
     expect(jsx).toMatch(/\{!wide && <RunGraphs state=\{state\} sourceBar=\{false\} \/>\}/);
     expect(jsx).toMatch(/\{wide && hasTicks && \(/);
-    expect(jsx).toMatch(/<RunGraphs state=\{state\} sourceBar=\{false\} open \/>/);
+  });
+
+  it("und er startet ZUGEKLAPPT (#stiche-zu)", () => {
+    /* Bis 19.08.2026 stand hier `open` — mit der Begründung, der Graph verlängere „in einer eigenen
+       Spalte nicht mehr den Screen". Am echten Lauf stimmt das nicht: eine Zeile je Durchlauf, ein
+       langer Lauf hat zwölf und mehr, und seit #graph-gold ist eine Zeile 40 px hoch. Das sind über
+       600 px, die den ganzen Screen nach unten ziehen. Die genaue Prüfung steht in go-ruhe.test.js. */
+    const ticks = jsx.slice(jsx.indexOf('className="go-ticks"'));
+    expect(ticks.slice(0, ticks.indexOf("/>") + 2)).not.toMatch(/\bopen\b/);
   });
 });
 
