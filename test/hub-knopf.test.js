@@ -33,7 +33,11 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
     const r = m[m.length - 1][1];
     expect(r, "ohne Fläche in der Deckfarbe ist es keine Taste").toMatch(/--deck-a1/);
     expect(r, "der Rahmen rundum fehlt").toMatch(/border:\s*1px solid/);
-    expect(r, "ohne Schein hebt sie sich nicht von den Zeilen ab").toMatch(/box-shadow:[^;]*--deck-a1/);
+    /* Das Licht von oben (inset) bleibt und macht die Fläche zur Taste. Ein Schein NACH AUSSEN ist
+       ausdrücklich raus (Nachjustierung 19.08.): der Halo legte sich als Wolke um den Knopf und war
+       dasselbe Mittel, das an Ring, Knoten und Angebotskarten gerade gefallen ist. */
+    expect(r, "das Licht von oben fehlt").toMatch(/box-shadow:\s*inset[^;]*--deck-a1/);
+    expect(r, "der Halo nach außen ist zurück").not.toMatch(/box-shadow:[^;]*\n?[^;]*0 0 \d+px/);
   });
 
   it("die drei Angebote sind flach — kein Farbanlauf, kein Schein", () => {
@@ -50,6 +54,10 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
        weiter die lauteste Fläche, obwohl „Fortsetzen" darüber die Primär-Aktion ist. */
     expect(start).toMatch(/const normalCls = hasResume \? "as-cta-ghost" : "as-cta-primary"/);
     expect(start, "die Fortsetzen-Taste trägt die Primär-Klasse nicht").toMatch(/onClick=\{onResume\}\s*\n?\s*className="as-cta-primary/);
+  });
+
+  it("die Hub-Knöpfe sind ab 1400 px eckiger (6 px, wie alles andere)", () => {
+    expect(deskBlock).toMatch(/\.as-cta-primary,\s*\.as-cta-ghost,\s*\.as-tut-btn,\s*\.as-ranked-btn,\s*\.as-seed-play\s*\{[^}]*border-radius:\s*6px/);
   });
 
   it("die Handy-Fassung bleibt unberührt", () => {

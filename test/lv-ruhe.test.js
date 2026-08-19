@@ -103,3 +103,19 @@ describe("#lv-ruhe — Angebotskarten, Aktionsleiste, Score", () => {
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}\\s*\\{`));
   });
 });
+
+describe("#lv-ruhe — die Fraktionsreiter sind flach", () => {
+  it("EIN Signal: die Unterstreichung in der Fraktionsfarbe", () => {
+    /* Vorher trug jeder Reiter Fläche, Rahmen rundum, Radius und (aktiv) einen Schein — vier gerahmte
+       Kästen über einem Angebot aus drei gerahmten Karten. `!important` durchgehend, weil Fläche,
+       Rahmenton und Schein INLINE aus dem JSX kommen (`g.meta.color`) und Inline jedes Stylesheet schlägt. */
+    const r = deskBlock.match(/\.sk-tab\s*\{([^}]*)\}/);
+    expect(r, ".sk-tab-Regel nicht mehr gefunden").toBeTruthy();
+    expect(r[1]).toMatch(/background:\s*none\s*!important/);
+    expect(r[1]).toMatch(/box-shadow:\s*none\s*!important/);
+    expect(r[1]).toMatch(/border-radius:\s*0\s*!important/);
+    /* Die Unterkante bleibt ausgenommen — sie IST das Signal und trägt die Farbe der Fraktion. */
+    expect(r[1], "ohne Unterkante ist gar nicht mehr zu sehen, welche Fraktion offen ist")
+      .toMatch(/border-bottom:\s*2px solid\s*!important/);
+  });
+});

@@ -1956,6 +1956,40 @@ sie ergeben eine Leiter, auf der keine Stufe heraussticht.
 - Wächter: `test/hub-knopf.test.js` (4). Gegenprobe gemacht: alle drei sabotierten Nähte fallen.
 - **Nicht am Gerät gesehen** — headless in beiden Zuständen (mit und ohne laufenden Lauf) nachgerendert.
 
+### #up-form — eine Kachelform für Baum, Leitfaden und Glossar (19.08.2026, Nachjustierung)
+Nachschlag zu #up-ruhe, nach dem Bild des Users. Alles ab 1400 px; Handy **bitidentisch** nachgewiesen
+(Pixelvergleich 390 px, mittlere Abweichung 0,0000 von 255).
+- **Radius 6 px, überall.** Die Angebotskarten der Perk-/Skill-Wahl stehen seit #lv-ruhe auf 6 px; Baum,
+  Leitfaden und Glossar liefen mit 9/11/12 px daneben. Das ist keine Feinheit — nebeneinander gestellt lesen
+  sich verschiedene Radien als verschiedene BAUTEILE, auch wenn sonst alles gleich ist. Die PANELS behalten
+  ihre 14 px: sie sind der Rahmen, nicht der Inhalt.
+- **Gleiche Kachelhöhe je Reihe** (Allgemein-Seite) über **`subgrid`**. Die sechs Kategorien sind eigene
+  Spalten und brachen bis hierher jede für sich um. Jetzt teilen sich alle Spalten DIESELBEN Zeilen: Reihe 1
+  ist so hoch wie ihr höchster Knoten, alle sechs füllen sie, und die Pfeile stehen auf einer Linie.
+  Gemessen 1920×1080: Reihe 1+2 je sechs Kacheln à 96 px, Reihe 3 drei à 81 px. Die Zeilenzahl steht als
+  `--up-rows` an EINER Stelle (längste Kette 4 Knoten + 3 Pfeile + Überschrift).
+  **`align-items: stretch` am Raster ist Pflicht** — mit `start` zöge sich jede Spalte wieder auf
+  Inhaltshöhe und das subgrid hätte Zeilen, die niemand füllt.
+- **Die Navigationsspalte verliert ihren Farbanlauf.** Fünf Zeilen mit je eigenem Verlauf sind fünf Flächen;
+  die Farbe gehört an die Kante. Gewählt = hellere Fläche, wie in der Effekt-Liste der Werkstatt.
+- **Die legendären Skills bekommen eine eigene Reihe** unter einer Trennlinie, statt im Spaltenfluss der
+  übrigen 21 zu treiben. Spaltenzahl aus der ANZAHL (`--leg-cols`), nicht aus der Breite — `auto-fill` legt
+  leere Spuren an, `auto-fit` klappt auf eine zusammen (beides gemessen, #rahmen-huelle). Gemessen: vier
+  Karten à 244×168 px auf einer Linie.
+- **Die Fraktionsreiter der Skill-Wahl sind flach** (`.sk-tab`): keine Fläche, kein Rahmen, kein Radius,
+  kein Schein — EIN Signal, die Unterstreichung in der Fraktionsfarbe. `!important` durchgehend, weil
+  Fläche, Rahmenton und Schein inline aus `g.meta.color` kommen; die Unterkante bleibt ausgenommen.
+- **Bewusst NICHT übernommen** (Mockup-Inhalte, die es im Spiel nicht gibt): thematische Skill-Gruppen,
+  „Aktive Effekte 7/7", die „Maximiert"-Zeilen, der „BEREICH"-Eyebrow.
+- Wächter: `test/up-ruhe.test.js` (11) + `test/lv-ruhe.test.js`. Gegenprobe gemacht.
+
+#### #hub-knopf, Nachjustierung: eckiger, kein Halo
+Die Taste hatte einen Schein NACH AUSSEN (`0 0 30px -12px`) — dasselbe Mittel, das an Ring, Knoten und
+Angebotskarten in denselben Durchgängen gerade gefallen ist. Er ist raus; was die Taste zur Taste macht,
+ist die FLÄCHE in der Deckfarbe plus das Licht von oben (`inset 0 1px 0`), und beides bleibt. Dazu **Radius
+6 px** für alle fünf Hub-Knöpfe — sie trugen ihn als Tailwind-Utility (`rounded-xl` = 12 px), und index.css
+steht ungelayert dahinter, schlägt sie also ohne `!important`.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

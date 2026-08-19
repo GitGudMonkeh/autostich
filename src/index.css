@@ -2140,10 +2140,14 @@ button { font-family: inherit; }
         color-mix(in srgb, var(--deck-a1, #26c6e6) 11%, #0a0c11) 100%);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 46%, transparent);
     color: color-mix(in srgb, var(--deck-a2, #7ceafb) 22%, #ffffff);
-    box-shadow:
-      0 0 30px -12px var(--deck-a1, #26c6e6),
-      inset 0 1px 0 color-mix(in srgb, var(--deck-a1, #26c6e6) 34%, transparent);
+    /* KEIN Schein nach außen (Nachjustierung 19.08.): der Halo legte sich als Wolke um den ganzen Knopf und
+       war damit dasselbe Mittel, das an Ring, Knoten und Angebotskarten gerade gefallen ist. Was die Taste
+       zur Taste macht, ist die FLÄCHE in der Deckfarbe plus das Licht von oben — beides bleibt. */
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--deck-a1, #26c6e6) 34%, transparent);
   }
+  /* Eckiger, wie alles andere ab 1400 px (6 px). Die Knöpfe tragen ihren Radius als Tailwind-Utility
+     (`rounded-xl` = 12 px); index.css steht ungelayert dahinter und schlägt sie ohne `!important`. */
+  .as-cta-primary, .as-cta-ghost, .as-tut-btn, .as-ranked-btn, .as-seed-play { border-radius: 6px; }
   /* Die drei ruhigen Zeilen. `as-cta-ghost` ist schon flach — sie bekommt hier nur dieselbe Haarlinie,
      damit die drei nebeneinander nicht doch wieder drei Töne zeigen. */
   .as-tut-btn,
@@ -3944,11 +3948,75 @@ button { font-family: inherit; }
     --edge-wash-sel-w: 30%;
   }
 
+  /* ==========================================================================
+     #up-form — Baum, Leitfaden und Glossar bekommen dieselbe Kachelform (19.08.2026)
+
+     Nachjustierung zu #up-ruhe, nach dem Bild des Users. Vier Griffe, alle ab 1400 px:
+
+     1. **Radius 6 px, überall.** Die Angebotskarten der Perk-/Skill-Wahl stehen seit #lv-ruhe auf 6 px;
+        Baum, Leitfaden und Glossar liefen mit 9/11/12/14 px daneben. Das ist keine Feinheit: nebeneinander
+        gestellt lesen sich verschiedene Radien als verschiedene BAUTEILE, auch wenn sonst alles gleich ist.
+        Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt.
+     2. **Gleiche Kachelhöhe je Reihe** (Allgemein-Seite). Die sechs Kategorien sind eigene Spalten; ihre
+        Knoten standen deshalb auf verschiedenen Höhen, weil jede Spalte für sich umbrach. `subgrid` gibt
+        allen Spalten DIESELBEN Zeilen: Reihe 1 ist so hoch wie ihr höchster Knoten, und alle sechs Knoten
+        dieser Reihe füllen sie. Damit stehen auch die Pfeile auf einer Linie.
+        Die Reihenzahl (`--up-rows`) ist die längste Kette (4 Knoten + 3 Pfeile) plus die Überschrift.
+     3. **Die Navigationsspalte verliert ihren Farbanlauf.** Fünf Zeilen mit je eigenem Farbverlauf sind
+        fünf Flächen; die Farbe gehört an die Kante, nicht in die Zeile. Gewählt = hellere Fläche, wie in
+        der Effekt-Liste der Werkstatt (#cz-ruhe).
+     4. **Die legendären Skills bekommen ihre eigene Reihe** statt im Spaltenfluss der übrigen zu treiben,
+        dazu eine Trennlinie darüber. Sie sind vier Stück und die Ausnahme — im gemeinsamen Fluss standen
+        sie irgendwo mittendrin. Die Spaltenzahl kommt aus der ANZAHL (`--leg-cols`), nicht aus der Breite:
+        `auto-fill` legte leere Spuren an, `auto-fit` klappte auf eine zusammen (beides gemessen, #rahmen-huelle). */
+
+  /* 1 — eine Form für alle Kacheln */
+  .up-vnode, .up-navrow, .up-navpassive, .up-skill, .up-stat, .up-dropbox,
+  .gd-navrow, .gl-navrow,
+  /* Die Inhaltskacheln des Leitfadens tragen ihren Radius als Tailwind-Utility (`rounded-xl`); index.css
+     steht ungelayert hinter `@import "tailwindcss"` und schlägt sie deshalb ohne `!important`. */
+  .gd-bar, .gd-pillar, .gd-valve, .gd-princ, .gloss-term-row { border-radius: 6px; }
+  .up-impact, .up-chall { border-radius: 8px; }
+
+  /* 2 — gleiche Kachelhöhe je Reihe */
+  .up-vgrid { --up-rows: 8; grid-template-rows: repeat(var(--up-rows), auto); align-items: stretch; }
+  .up-vlane { display: grid; grid-template-rows: subgrid; grid-row: span var(--up-rows); align-content: start; }
+  .up-vchain { display: grid; grid-template-rows: subgrid; grid-row: 2 / span calc(var(--up-rows) - 1); }
+
+  /* 3 — die Navigationsspalte ohne Farbanlauf */
+  .up-navrow { background: rgba(255, 255, 255, .018); }
+  .up-navrow:hover { background: rgba(255, 255, 255, .045); }
+  .up-navrow.is-on { background: rgba(255, 255, 255, .07); }
+
+  /* 4 — legendäre Skills als eigene Reihe */
+  .up-skills-h.is-leg {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid rgba(150, 150, 170, .14);
+  }
+  .up-skillgrid.is-leg {
+    display: grid; columns: auto;
+    grid-template-columns: repeat(var(--leg-cols, 4), minmax(0, 1fr));
+    gap: 8px;
+  }
+  .up-skillgrid.is-leg > * { margin-bottom: 0; }
+
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
-     `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist. */
+     `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist.
+
+     #lv-ruhe, zweite Runde: FLACH. Vorher trug jeder Reiter Fläche, Rahmen rundum, Radius und (aktiv)
+     einen Schein — vier gerahmte Kästen über einem Angebot aus drei gerahmten Karten. Jetzt EIN Signal,
+     die Unterstreichung in der Fraktionsfarbe; dieselbe Entscheidung wie an den Werkstatt-Reitern
+     (#cz-ruhe) und an der Effekt-Liste. `!important` durchgehend, weil Fläche, Rahmenton und Schein
+     INLINE aus dem JSX kommen und Inline jedes Stylesheet schlägt — die Unterkante bleibt ausgenommen,
+     sie IST das Signal und trägt die Farbe der Fraktion. */
   .sk-tab {
-    border: 1px solid; border-bottom-width: 3px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(0, 0, 0, .2));
+    border: 0 !important;
+    border-bottom: 2px solid !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
   }
 }
 

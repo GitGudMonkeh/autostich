@@ -258,7 +258,9 @@ function SkillGrid({ arch }) {
       <div className="up-skills-h">{t("upgrades.skills.title")}<span>{alle.length}</span></div>
       <div className="up-skillgrid">{normal.map((s) => karte(s, false))}</div>
       <div className="up-skills-h is-leg">{t("upgrades.skills.legendary")}<span>{leg.length}</span></div>
-      <div className="up-skillgrid">{leg.map((s) => karte(s, true))}</div>
+      {/* #up-form: eigene Reihe statt Spaltenfluss — die Spaltenzahl kommt aus der ANZAHL, nicht aus der
+          Breite (`auto-fill` legte leere Spuren an, `auto-fit` klappte auf eine zusammen; s. #rahmen-huelle). */}
+      <div className="up-skillgrid is-leg" style={{ "--leg-cols": Math.max(1, leg.length) }}>{leg.map((s) => karte(s, true))}</div>
     </div>
   );
 }

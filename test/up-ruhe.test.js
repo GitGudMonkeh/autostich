@@ -86,3 +86,40 @@ describe("#up-ruhe — der Schein nach außen fällt, die Aussage bleibt", () =>
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}[\\s.,{]`));
   });
 });
+
+describe("#up-form — eine Kachelform, gleiche Reihen, eigene Legendär-Reihe", () => {
+  it("alle Kacheln tragen denselben Radius wie die Perk-/Skill-Angebote (6 px)", () => {
+    const r = deskBlock.match(/\.up-vnode,[^{]*\{([^}]*)\}/);
+    expect(r, "die Sammelregel der Kachelform fehlt").toBeTruthy();
+    expect(r[1]).toMatch(/border-radius:\s*6px/);
+    for (const k of ["up-navrow", "up-navpassive", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
+      expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
+    /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. */
+    expect(deskBlock).toMatch(/\.up-page\s*\{[^}]*border-radius:\s*14px/);
+  });
+
+  it("die Knoten einer Reihe sind gleich hoch (subgrid über alle sechs Spalten)", () => {
+    /* Gemessen 1920×1080: Reihe 1 und 2 je 6 Kacheln à 96 px, Reihe 3 drei à 81 px — vorher liefen die
+       Spalten unabhängig um. Die Reihenzahl steht als Variable, nicht als Zahl in drei Regeln. */
+    expect(deskBlock).toMatch(/\.up-vgrid\s*\{[^}]*--up-rows:\s*\d+/);
+    expect(deskBlock).toMatch(/\.up-vlane\s*\{[^}]*grid-template-rows:\s*subgrid/);
+    expect(deskBlock).toMatch(/\.up-vchain\s*\{[^}]*grid-template-rows:\s*subgrid/);
+    /* `align-items: start` am Raster würde die Spalten wieder auf Inhaltshöhe ziehen — dann hätte das
+       subgrid Zeilen, die niemand füllt, und die Regel täte sichtbar nichts. */
+    expect(deskBlock).toMatch(/\.up-vgrid\s*\{[^}]*align-items:\s*stretch/);
+  });
+
+  it("die Navigationsspalte hat keinen Farbanlauf mehr", () => {
+    const alle = [...deskBlock.matchAll(/\.up-navrow\s*\{([^}]*)\}/g)];
+    expect(alle[alle.length - 1][1], "der 90°-Anlauf ist zurück").not.toMatch(/linear-gradient/);
+  });
+
+  it("die legendären Skills stehen in einer eigenen Reihe, unter einer Trennlinie", () => {
+    expect(deskBlock).toMatch(/\.up-skills-h\.is-leg\s*\{[^}]*border-top:\s*1px solid/);
+    const g = deskBlock.match(/\.up-skillgrid\.is-leg\s*\{([^}]*)\}/);
+    expect(g, "die Legendär-Reihe fehlt").toBeTruthy();
+    expect(g[1], "die Spaltenzahl kommt nicht aus der Anzahl").toMatch(/repeat\(var\(--leg-cols/);
+    expect(g[1], "auto-fill/auto-fit sind beide falsch (s. #rahmen-huelle)").not.toMatch(/auto-fi(ll|t)/);
+    expect(read("src/ui/UpgradeScreen.jsx")).toMatch(/"--leg-cols": Math\.max\(1, leg\.length\)/);
+  });
+});
