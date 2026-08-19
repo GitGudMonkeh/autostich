@@ -1904,6 +1904,36 @@ Dritter Screen nach der Liste („Desktop-Umbau: die Entscheidungsregeln", oben)
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080, DPR 1,25),
   Allgemein-Seite und Fraktionsseite.
 
+### #kante-anlauf — der Farbanlauf der Auswahlkarten, nur auf dem Desktop leiser (19.08.2026)
+Der offene Punkt aus #up-ruhe, jetzt als eigener Schritt. Die Kanten-Karte (#kante) lässt ihre
+Signaturfarbe von der linken Kante in die Fläche auslaufen. EINE Karte liest sich damit richtig — der
+Desktop zeigt aber Rudel davon (27 Knoten im Baum, 18 Kacheln in der Werkstatt, drei Angebote plus
+gehaltene Skills in der Level-up-Karte), und in der Summe wird aus dem Signal eine Farbwolke. **An DREI
+Screens kam dieselbe Beobachtung auf** (#cz-ruhe, #lv-ruhe, #up-ruhe) und wurde jedes Mal bewusst nicht
+einzeln behoben — der Anlauf ist projektweites Signal, ein Screen darf ihn nicht allein ändern.
+- **Vier Variablen statt vier Literale, und die Rückfälle SIND die Handy-Werte.** `.as-edge-card` rechnet
+  jetzt über `var(--edge-wash, 14%)` / `var(--edge-wash-w, 42%)` (gewählt: 24 % / 46 %). Steht keine
+  Variable, rechnet die Regel exakt wie vorher. Der 1400er Block setzt sie um: **Mischung 14 → 9 %,
+  Auslauf 42 → 26 %** (gewählt 24 → 16 % / 46 → 30 %).
+- **Bewusst so herum und nicht als zweite Regel im Desktop-Block**: es bleibt EINE Definition des Anlaufs,
+  und man liest an der Fundstelle, dass es einen Schalter gibt. Eine Kopie unten hätte die Familie
+  gespalten — genau das, was Regel 2 verbietet.
+- **Falle**: die Prozentzeichen gehören IN die Variable. `color-mix(… var(--x)%, …)` ist ungültig und
+  fällt lautlos auf die ganze Deklaration zurück.
+- **Die 4-px-KANTE ist unberührt.** Sie ist das Signal; der Anlauf war immer nur ihr Nachhall. Ebenso
+  unberührt: `.as-edge` / `.as-edge-strong` (Knöpfe) — die tragen ihren Anlauf als Handlungs-Vorrang, und
+  die Screens stellen sie ohnehin je Fall flach (`lv-actbtn`, `cz-actbtn`, `up-actions`).
+- **Handy bitidentisch nachgewiesen**: Pixelvergleich 390 px vorher/nachher, mittlere Abweichung
+  **0,0000 von 255**, größte Einzelabweichung **0**. (Bei einer reinen FARB-Änderung ist der Pixelvergleich
+  der richtige Nachweis — eine Geometrie-Messung hätte hier nichts gesehen.)
+- **Mitgenommen, weil dieselbe Stelle**: die Angebotskarten der Perk-/Skill-Wahl sind ab 1400 px weniger
+  rund (12 → 6 px). Drei Karten in einer Reihe unter einem 14-px-Panel lesen sich mit 12-px-Ecken als
+  Pillen statt als Felder. Am Handy bleiben die 12 px — dort ist die Karte ein einzelnes Tippziel.
+- Wächter: `test/kante-anlauf.test.js` (5). Er RECHNET nach, dass beide Achsen kleiner sind als der
+  Handy-Rückfall — ein Zahlendreher (62 statt 26) sähe im Quelltext sonst weiter „geändert" aus.
+  Gegenprobe gemacht: alle fünf sabotierten Nähte fallen.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

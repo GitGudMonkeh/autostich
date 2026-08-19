@@ -53,6 +53,12 @@ describe("#lv-ruhe — die Karte ist EINE Fassung mit einem Schalter", () => {
 describe("#lv-ruhe — Angebotskarten, Aktionsleiste, Score", () => {
   it("der Halo der Angebotskarten fällt weg — die Information bleibt im Badge und an der Kante", () => {
     expect(deskBlock).toMatch(/\.lv-offercard\s*\{[^}]*box-shadow:\s*none\s*!important/);
+    /* Und weniger rund als am Handy: drei Karten in einer Reihe unter einem 14-px-Panel lesen sich mit
+       12-px-Ecken als Pillen statt als Felder (Entscheidung des Users am Bild). */
+    const r = deskBlock.match(/\.lv-offercard\s*\{([^}]*)\}/);
+    const rad = (r[1].match(/border-radius:\s*(\d+)px/) || [])[1];
+    expect(rad, "border-radius an der Angebotskarte fehlt").toBeTruthy();
+    expect(Number(rad), "nicht eckiger als die Handy-Fassung (12 px)").toBeLessThan(12);
     for (const [f, src] of [["PerkSelect", perk], ["SkillSelect", skill]])
       expect(src, `${f}: die Angebotskarte trägt den Haken nicht`).toMatch(/lv-offercard as-edge-card/);
     /* `as-legendary` ist ausdrücklich NICHT stumm geschaltet: der animierte Goldrahmen IST die

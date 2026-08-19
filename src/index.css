@@ -1303,14 +1303,23 @@ button { font-family: inherit; }
 /* Kleine Elemente (Fuß-Chips): dieselbe Kante, nur schmaler — 4 px wirken an einem 14-px-Chip wie ein Balken. */
 .as-edge-thin { border-left-width: 3px; }
 /* Auswahlkarte: ruhiger als jeder Knopf — der Text ist hier die Hauptsache, die Kante nur
-   die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein. */
+   die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein.
+
+   #kante-anlauf (19.08.2026): Der Anlauf hängt an VIER Variablen statt an vier Literalen. Die Defaults
+   in den `var()`-Rückfällen SIND die Handy-Werte — steht keine Variable, rechnet die Regel exakt wie
+   vorher. Der Desktop-Block setzt sie um (s. dort). Bewusst so herum und nicht als zweite Regel im
+   1400er Block: es bleibt EINE Definition des Anlaufs, und man liest an dieser Stelle, dass es einen
+   Schalter gibt — eine Kopie unten hätte die Familie gespalten.
+   ACHTUNG: die Prozentzeichen gehören IN die Variablen. `color-mix(… var(--x)%, …)` ist ungültig. */
 .as-edge-card {
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--c, #8a8a95) 14%, var(--edge-bg, #12121a)) 0%, var(--edge-bg, #12121a) 42%);
+    color-mix(in srgb, var(--c, #8a8a95) var(--edge-wash, 14%), var(--edge-bg, #12121a)) 0%,
+    var(--edge-bg, #12121a) var(--edge-wash-w, 42%));
 }
 .as-edge-card.is-sel {
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--c, #8a8a95) 24%, var(--edge-bg, #12121a)) 0%, var(--edge-bg, #12121a) 46%);
+    color-mix(in srgb, var(--c, #8a8a95) var(--edge-wash-sel, 24%), var(--edge-bg, #12121a)) 0%,
+    var(--edge-bg, #12121a) var(--edge-wash-sel-w, 46%));
   border-left-color: var(--c, #8a8a95);
   box-shadow: inset 0 0 22px -14px var(--c, #8a8a95), 0 0 18px -12px var(--c, #8a8a95);
 }
@@ -3791,7 +3800,10 @@ button { font-family: inherit; }
      bleibt vollständig: sie steht im Stufen-/Raritäts-BADGE und in der Farbkante links.
      `.as-legendary` ist ausdrücklich NICHT dabei — der animierte Goldrahmen ist die Seltenheits-Ansage
      selbst und kommt ein-, zweimal je Lauf vor. */
-  .lv-offercard { box-shadow: none !important; }
+  /* Weniger rund als am Handy (12 → 6 px): auf dem Desktop stehen drei Karten in einer Reihe unter einem
+     Panel mit 14-px-Ecken — je runder die Karte, desto mehr liest sie sich als Pille statt als Feld.
+     Am Handy bleiben die 12 px: dort ist die Karte ein einzelnes Tippziel, keine Spalte in einem Raster. */
+  .lv-offercard { box-shadow: none !important; border-radius: 6px; }
   /* Kurze Trennlinie unter dem Namen: sie ordnet Kopf (Badges + Name) und Text, ohne einen Kasten zu
      ziehen. `currentColor` = die Akzentfarbe der Karte, die der Name ohnehin trägt. */
   .lv-cardname { position: relative; padding-bottom: 7px; margin-bottom: 1px; }
@@ -3858,6 +3870,34 @@ button { font-family: inherit; }
   .up-stat, .up-dropbox {
     background: rgba(255, 255, 255, .012);
     border: 1px solid rgba(150, 150, 170, .12);
+  }
+
+  /* ==========================================================================
+     #kante-anlauf — der Farbanlauf der Auswahlkarten, nur auf dem Desktop leiser
+
+     Die Kanten-Karte trägt links die Signaturfarbe (Rarität, Kategorie, Zustand) und lässt sie als
+     90°-Verlauf in die Fläche auslaufen. EINE Karte liest sich damit richtig. Der Desktop zeigt aber
+     Rudel davon nebeneinander — 27 Knoten im Baum, 18 Kacheln in der Werkstatt, drei Angebote plus
+     gehaltene Skills in der Level-up-Karte — und in der Summe wird aus dem Signal eine Farbwolke.
+     Genau das ist die „zu starker Glow"-Beobachtung, die an DREI Screens nacheinander aufkam
+     (#cz-ruhe, #lv-ruhe, #up-ruhe); dort wurde sie jedes Mal bewusst NICHT einzeln behoben, weil der
+     Anlauf projektweites Signal ist (#kante) und ein Screen ihn nicht allein ändern darf.
+
+     Hier ist er einmal an der Familie geändert — und ausdrücklich nur ab 1400 px:
+     · Mischung  14 % → 9 %   (gewählt 24 % → 16 %)
+     · Auslauf   42 % → 26 %  (gewählt 46 % → 30 %)
+     Am Handy bleibt alles, wie es war: dort steht selten mehr als eine Karte im Blick, der Anlauf hilft
+     beim Zuordnen statt zu summieren — und die Handy-Fassung wird in diesem Umbau grundsätzlich nicht
+     angefasst.
+
+     Die 4-px-KANTE selbst ist unberührt. Sie ist das Signal; der Anlauf war immer nur ihr Nachhall.
+     Ebenso unberührt: `.as-edge` / `.as-edge-strong` (Knöpfe) — die tragen ihren Anlauf als
+     Handlungs-Vorrang, und die Screens stellen sie ohnehin je Fall flach (`lv-actbtn`, `cz-actbtn`). */
+  :root {
+    --edge-wash: 9%;
+    --edge-wash-w: 26%;
+    --edge-wash-sel: 16%;
+    --edge-wash-sel-w: 30%;
   }
 
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
