@@ -30,6 +30,56 @@ voraus" — und die Dateibäume waren dabei die ganze Zeit **byte-identisch**.
 **Zum Vergleichen darum Tree-Hashes nehmen, nicht Commit-Zähler:** `git rev-parse <branch>^{tree}`.
 Gleicher Tree = gleiche Daten, egal was der Zähler sagt.
 
+## Desktop-Umbau: die ENTSCHEIDUNGSREGELN (vom User abgenommen, 19.08.2026)
+
+Der Screen-für-Screen-Umbau auf den ruhigen Desktop-Ton (#cz-ruhe → #lv-ruhe → Baum → …) läuft nach diesen
+elf Regeln. Sie sind an Werkstatt und Level-up-Karten erprobt und ausdrücklich abgenommen („auch die
+richtigen Entscheidungen getroffen, merke dir das für den weiteren Umbau"). **Wer den nächsten Screen
+nachzieht, arbeitet sie ab — sie ersetzen das Raten.**
+
+**Wie geändert wird**
+1. **Modifikator statt Löschung.** Eine laute Fassung wird nicht entfernt, sondern bekommt einen Schalter:
+   `as-ring-quiet` (Klasse), `phaseCard(…, { quiet })` (Parameter). EINE Fassung mit einem Schalter statt
+   zweier Fassungen, die auseinanderlaufen. Screens, die noch nicht dran waren, behalten die laute Fassung,
+   bis sie ausdrücklich nachgezogen werden — dann ist es dort ein Wort, kein zweiter Rahmen.
+2. **Die BESTEHENDE Regel ändern, nie eine zweite danebenstellen.** Als eine Parallel-Session die
+   Werkstatt-Reiter zu Kanten-Knöpfen gemacht hatte, wurde genau diese Regel umgeschrieben — zwei Regelsätze
+   für dieselben drei Knöpfe wären die Doppelpflege, vor der die Datei sonst überall warnt.
+3. **Inline schlägt Stylesheet.** Setzt ein Element seinen Stil inline (Karten, Reiter, Sticky-Köpfe), ist
+   ein PARAMETER an der Quelle besser als `!important` an drei Eigenschaften. `!important` nur, wo die Naht
+   sonst nicht erreichbar ist — und dann mit Begründung im Kommentar.
+4. **Klammer-Technik für neue Struktur.** Ein neuer Wrapper ist unterhalb 1400 px `display: contents` —
+   dann ist die Handy-Fassung DOM- und pixelgleich (`cz-fxfoot`, `gd-cols`, `gl-body`, `lv-rig`).
+
+**Was IMMER unangetastet bleibt**
+5. **Projektweite Signale.** Die farbige Linkskante der Kanten-Karten (#kante), der animierte Goldrahmen
+   `as-legendary`, die Deck-Linie am Kopf. Sie in EINEM Screen zu dämpfen ließe ihn aus dem System fallen.
+   Auffallen, benennen, den systemweiten Schritt anbieten — nicht ungefragt tun.
+6. **Bedeutung überlebt das Leiserstellen.** Der Halo der Angebotskarten durfte fallen, WEIL dieselbe
+   Information im Stufen-/Raritäts-Badge und an der Farbkante steht. Fällt mit der Optik auch die Aussage,
+   ist es kein Leiserstellen, sondern ein Datenverlust.
+7. **Die Handy-Fassung bewegt sich nicht** — und das wird GEMESSEN, nicht behauptet: Element-Geometrie bei
+   390 px vorher/nachher. Bisher überall 0 Abweichungen. Am Handy bleibt die laute Fassung bewusst: kleiner
+   Schirm, Daumenziele, die Karte braucht ihre Ablösung vom Brett.
+
+**Wie entschieden wird**
+8. **Ein Signal je Element.** Unterstreichung ODER Fläche, Kante ODER Rahmen — nie beides für denselben
+   Zustand. Der Werkstatt-Reiter hat deshalb nur noch den Strich, die gewählte Listenzeile nur die Fläche.
+9. **Ausnahmen brauchen einen Grund, keinen Geschmack.** „Neu würfeln" behält seinen Rahmen, weil es die
+   einzige Handlung der Leiste ist, die etwas KOSTET (ein Token). Steht der Grund im Kommentar, überlebt die
+   Ausnahme den nächsten Aufräumdurchgang.
+10. **Nichts erfinden, was es nicht gibt.** Ein Mockup zeigt gelegentlich Knöpfe oder Icons, die das Spiel
+    nicht hat (der „▷ Vorschau"-Knopf). Die werden NICHT nebenbei gebaut — und ein Icon, das nicht schon im
+    System ist, kommt nie ohne Rückfrage dazu.
+
+**Absicherung**
+11. **Wächter, die RECHNEN statt Schreibweisen zu vergleichen** (`phaseCard`-Fassungen gegeneinander,
+    `feldMassstab`, `previewDprCap`), plus die Gegenprobe: jede Naht einzeln sabotieren und nachweisen, dass
+    der Wächter fällt. Ein Wächter, der nur grün ist, ist kein Beleg.
+
+**Nebenregel aus einem Fehlgriff:** Wird eine Positions-Meldung untersucht, BEIDE Achsen messen. Der
+Level-up-Sprung lag senkrecht; die erste Messung hatte nur `left`/`width` geprüft und „steht stabil" gemeldet.
+
 ## Arbeitsstand `Autostich/pixi` (Session bis 2026-08-11)
 
 Gearbeitet wird ausschließlich auf `Autostich/pixi`. **Vor jedem Arbeitsbeginn UND vor jedem Push**
