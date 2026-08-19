@@ -68,7 +68,10 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <LevelupRig accent={PHASE_ACCENTS.red.c} state={state} deck={deck} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
-        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red)}>
+        {/* #lv-ruhe: ab 1400 px die leise Fassung derselben Karte (schwächerer Rahmen, kein farbiger Schein) —
+            dieselbe Entscheidung wie an den Werkstatt-Panels (#cz-ruhe). Am Handy bleibt der kräftige Rahmen:
+            dort steht die Karte auf einem kleinen Schirm über dem Brett und braucht die Ablösung. */}
+        <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red, undefined, { quiet: inWings })}>
         <PhaseHairline accent={PHASE_ACCENTS.red} />
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="text-center mb-1">
@@ -76,13 +79,13 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>
           <h2 className="text-xl font-bold mt-1">{tr("perk.title")}</h2>
-          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
+          {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} className="lv-score" /></div>}
         </div>
 
         {!state.devMode && (onDecline || canReroll) && (
           <ActionBar pad={6}>
-            {canReroll && <ActionButton kind="reroll" flex onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
-            {onDecline && <ActionButton kind="decline" flex onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
+            {canReroll && <ActionButton kind="reroll" flex className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
+            {onDecline && <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
           </ActionBar>
         )}
 
@@ -109,7 +112,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                    Perk = Raritätsfarbe aus RARITY_META). Die Kategorie bleibt im Badge oben — sie sagt, WAS der
                    Perk anfasst, die Kante sagt, WIE GUT er ist, und das ist die Achse, nach der man sortiert.
                    Hohe Stufen bekommen zusätzlich einen dezenten Halo in derselben Farbe. */
-                className={`as-edge-card text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                className={`lv-offercard as-edge-card text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ "--c": v.accent,
                          // Legendär (flach): animierter Gold-Rahmen über .as-legendary (#201.3) → dort KEIN eigener Schein.
                          boxShadow: (!v.isFamily && v.leg) ? undefined
@@ -143,7 +146,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                     )
                   )}
                 </div>
-                <div className="font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
+                <div className="lv-cardname font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
                 <div className="text-[13px] opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );

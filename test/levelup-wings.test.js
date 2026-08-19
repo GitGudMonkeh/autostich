@@ -260,8 +260,10 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
   const skill = read("src/ui/SkillSelect.jsx");
 
   it("beide Knöpfe sind derselbe ActionButton wie in der Perk-Wahl, nicht nachgebaut", () => {
-    expect(skill).toMatch(/<ActionButton kind="reroll" flex className="sk-actbtn"/);
-    expect(skill).toMatch(/<ActionButton kind="decline" flex className="sk-actbtn"/);
+    /* `sk-actbtn` ist seit #lv-ruhe nicht mehr die einzige Klasse am Knopf (die flache Desktop-Optik
+       kommt über `lv-actbtn` dazu) — deshalb auf den ANFANG des Klassenstrings prüfen, nicht auf ihn ganz. */
+    expect(skill).toMatch(/<ActionButton kind="reroll" flex className="sk-actbtn\b/);
+    expect(skill).toMatch(/<ActionButton kind="decline" flex className="sk-actbtn\b/);
     // Gegenprobe: keine handgeschriebene Kopie der Kanten-Optik mehr in der Aktionszeile.
     expect(skill, "as-edge-* von Hand — genau das war der sichtbare Unterschied")
       .not.toMatch(/className="as-edge-(strong|neutral) flex-1/);

@@ -1784,6 +1784,37 @@ Abstand — Haarlinien trennen, gewählt = hellere Fläche.
   hingen die Haarlinien in der Luft, statt zwei Zeilen zu trennen.
 - Handy nachgemessen unberührt: Element-Geometrie bei 390 px vorher/nachher **0 Abweichungen von 62**.
 
+### #lv-ruhe — Perk- und Skill-Wahl im Desktop-Ton (19.08.2026, Entwurf des Users)
+Dieselbe Kur wie an der Werkstatt (#cz-ruhe), an den zwei Karten, die einen laufenden Stich unterbrechen.
+Alles ab 1400 px; Handy nachgemessen **0 Abweichungen** (Element-Geometrie 390 px vorher/nachher, 113 bzw.
+102 Elemente).
+- **Die Karte selbst wird über `phaseCard(accent, base, { quiet })` leiser gestellt, nicht über CSS.** Drei
+  Griffe in dieselbe Richtung: farbiger Außenschein weg (der dunkle Schlagschatten bleibt — er trägt die
+  Ablösung vom Brett), Rahmen 42 % → 18 %, Lichtkegel am Kopf 14 % → 6 %. Bewusst ein PARAMETER: die Karte
+  setzt ihren Stil inline, eine Regel bräuchte `!important` an drei Eigenschaften. Es ist derselbe Schalter-
+  Gedanke wie `as-ring-quiet` — EINE Fassung mit einem Schalter statt zweier Karten, die auseinanderlaufen.
+  **Gebunden an die BREITE (`useIsWide`), nicht an den Flügel-Zustand** — sonst änderte Aufklappen die Optik.
+- **Der Halo der Angebotskarten fällt weg.** Er stand auf hohen Familienstufen und seltenen Perks und war
+  auf einem großen Schirm nebeneinander gestellt das lauteste Element. Die Information geht nicht verloren:
+  sie steht im Stufen-/Raritäts-BADGE und in der Farbkante links. **`.as-legendary` ist ausdrücklich NICHT
+  dabei** — der animierte Goldrahmen IST die Seltenheits-Ansage und kommt ein-, zweimal je Lauf vor.
+- **Kurze Trennlinie unter dem Kartennamen** (`.lv-cardname::after`, 26 px, `currentColor`): sie ordnet Kopf
+  und Text, ohne einen Kasten zu ziehen. Über die volle Breite wäre sie wieder einer.
+- **Die Aktionsleiste wird flach — mit einer Ausnahme.** Keine Fläche, kein Verlauf, keine Kante; „Neu
+  würfeln" behält einen leichten Rahmen (ausdrücklicher Wunsch des Users, und er hat eine Begründung: es ist
+  die einzige Handlung der Leiste, die etwas KOSTET — ein Reroll-Token — und darf sich vom Ausweg daneben
+  abheben).
+- **Die Durchlauf-Score-Pille verliert ihre Fläche**: sie ist eine Auskunft über die letzte Runde, keine
+  Handlung, und stand als gefüllte Kapsel zwischen Titel und Angebot wie ein Bedienelement.
+- **BEWUSST NICHT angefasst**: (1) die Haarlinie am Kartenkopf — sie trägt seit #lv-fluegel die
+  Identitätsfarbe der Phase, das war eine eigene Entscheidung; im Mockup fehlt sie, das wäre ein eigener
+  Schritt. (2) Der Farbverlauf der Angebotskarten (`.as-edge-card` mischt `--c` in die Fläche) — dasselbe
+  Argument wie bei den Pack-Kacheln: projektweites Signal (#kante), nicht hier allein zu dämpfen.
+- Wächter: `test/lv-ruhe.test.js` (7) — er RECHNET die zwei `phaseCard`-Fassungen gegeneinander nach, statt
+  Schreibweisen zu vergleichen. Gegenprobe gemacht: alle sechs sabotierten Nähte fallen. Der #sk-ablehnen-
+  Wächter prüft die Knopf-Klasse jetzt mit Wortgrenze — `lv-actbtn` kommt dort als Ergänzung dazu.
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080, DPR 1,25).
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

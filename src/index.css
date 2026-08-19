@@ -3775,6 +3775,46 @@ button { font-family: inherit; }
   .cz-fxfoot > :not(.cz-fxdesc) { flex: 0 0 auto; margin-left: auto; }
   .cz-actbtn { width: auto !important; min-width: 210px; padding-left: 22px; padding-right: 22px; }
 
+  /* ==========================================================================
+     #lv-ruhe — Perk- und Skill-Wahl im Desktop-Ton (19.08.2026, Entwurf des Users)
+
+     Dieselbe Kur wie an der Werkstatt (#cz-ruhe), nur an den zwei Karten, die einen laufenden Stich
+     unterbrechen: weniger Kontur, weniger Schein, klarere Rangfolge. Der Rahmen der KARTE selbst wird
+     nicht hier, sondern in `phaseCard(..., { quiet })` leiser gestellt — sie setzt ihren Stil inline,
+     eine Regel bräuchte `!important` an drei Eigenschaften.
+
+     Alles hier gilt NUR ab 1400 px. Am Handy bleibt jede Angebotskarte eine kräftige Kanten-Karte: dort
+     ist sie das Ziel eines Daumens auf kleinem Schirm, hier eine von drei Spalten auf 880 px.
+
+     Der Halo der Angebotskarten fällt weg (`box-shadow`) — er stand auf hohen Familienstufen und seltenen
+     Perks und war auf einem großen Schirm nebeneinander gestellt das lauteste Element. Die Information
+     bleibt vollständig: sie steht im Stufen-/Raritäts-BADGE und in der Farbkante links.
+     `.as-legendary` ist ausdrücklich NICHT dabei — der animierte Goldrahmen ist die Seltenheits-Ansage
+     selbst und kommt ein-, zweimal je Lauf vor. */
+  .lv-offercard { box-shadow: none !important; }
+  /* Kurze Trennlinie unter dem Namen: sie ordnet Kopf (Badges + Name) und Text, ohne einen Kasten zu
+     ziehen. `currentColor` = die Akzentfarbe der Karte, die der Name ohnehin trägt. */
+  .lv-cardname { position: relative; padding-bottom: 7px; margin-bottom: 1px; }
+  .lv-cardname::after {
+    content: ""; position: absolute; left: 0; bottom: 0;
+    width: 26px; height: 1px; background: currentColor; opacity: .38;
+  }
+  /* Die Aktionsleiste wird flach: keine Fläche, kein Farbverlauf, keine Kante — nur Text.
+     AUSNAHME: „Neu würfeln" behält einen leichten Rahmen (ausdrücklicher Wunsch). Es ist die einzige
+     Handlung der Leiste, die etwas KOSTET (ein Reroll-Token) — sie darf sich vom Ausweg daneben abheben. */
+  .lv-actbtn {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .lv-actbtn-reroll {
+    border: 1px solid color-mix(in srgb, #d4a63a 42%, transparent) !important;
+    border-radius: 10px;
+  }
+  /* Die Durchlauf-Score-Pille verliert ihre Fläche — sie ist eine Auskunft über die letzte Runde, keine
+     Handlung, und stand als gefüllte Kapsel zwischen Titel und Angebot wie ein Bedienelement. */
+  .lv-score { background: none !important; border: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
+
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
      `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist. */
   .sk-tab {

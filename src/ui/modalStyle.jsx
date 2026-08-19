@@ -76,14 +76,21 @@ export const PHASE_ACCENTS = {
 };
 // Schalen-Style: Akzent-Glow oben + Verlaufsfläche + Akzent-Rahmen + weicher Außenschein. `base` = Verlaufs-
 // Grundtöne (Default = Menü-Familienton; der Architekt reicht seinen blauen Grund durch).
-export function phaseCard(accent, base = ["#1b1a24", "#141019"]) {
+export function phaseCard(accent, base = ["#1b1a24", "#141019"], { quiet = false } = {}) {
   const rgb = accent.rgb;
+  /* #lv-ruhe: `quiet` ist die Desktop-Fassung — dieselbe Karte, leiser gestellt. Drei Griffe, alle in
+     dieselbe Richtung: der farbige Außenschein fällt ganz weg (der dunkle Schlagschatten bleibt, er trägt
+     die Ablösung vom Brett), der Rahmen geht von 42 % auf 18 % Deckkraft, und der Lichtkegel am Kopf von
+     14 % auf 6 %. Es ist derselbe Schalter wie `as-ring-quiet` in der Werkstatt (#cz-ruhe): EINE Fassung
+     mit einem Schalter statt zweier Karten, die auseinanderlaufen.
+     Bewusst ein Parameter und keine CSS-Regel: die Karte setzt ihren Stil INLINE, eine Regel bräuchte
+     `!important` an drei Eigenschaften und würde beim nächsten Blick wie ein Notnagel aussehen. */
   return {
     background:
-      `radial-gradient(360px 150px at 50% 0%, rgba(${rgb},.14), transparent 70%),` +
+      `radial-gradient(360px 150px at 50% 0%, rgba(${rgb},${quiet ? ".06" : ".14"}), transparent 70%),` +
       `linear-gradient(180deg,${base[0]},${base[1]})`,
-    border: `1px solid rgba(${rgb},.42)`,
-    boxShadow: `0 0 26px rgba(${rgb},.12), 0 14px 44px rgba(0,0,0,.42)`,
+    border: `1px solid rgba(${rgb},${quiet ? ".18" : ".42"})`,
+    boxShadow: quiet ? "0 18px 48px rgba(0,0,0,.5)" : `0 0 26px rgba(${rgb},.12), 0 14px 44px rgba(0,0,0,.42)`,
   };
 }
 // Inneres Struktur-Panel in der Phasen-Identitätsfarbe rahmen (Gegenstück zu UpgradeScreen.panelStyle, hier

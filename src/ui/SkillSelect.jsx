@@ -198,7 +198,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             gehaltene Skills dazukommen. Bleibt die feste Höhe, steht unter dem Angebot in der ersten
             Skill-Runde ein halber Bildschirm Leere. `max-height` bleibt als Deckel, der Inhalt scrollt. */}
         <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card"
-          style={{ ...phaseCard(archAccent),
+          style={{ ...phaseCard(archAccent, undefined, { quiet: wide }),
                    height: wide ? undefined : "min(92dvh, 760px)",
                    maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
         <PhaseHairline accent={archAccent} />
@@ -232,9 +232,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               derselbe Knopf. */}
           <div className="flex flex-wrap items-stretch gap-2">
             {!devMode && canReroll && (
-              <ActionButton kind="reroll" flex className="sk-actbtn" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
+              <ActionButton kind="reroll" flex className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
             )}
-            <ActionButton kind="decline" flex className="sk-actbtn" onClick={onDecline}>
+            <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>
               {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
             </ActionButton>
           </div>
@@ -450,7 +450,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                        als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
                        Die Fraktion steht weiterhin im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`as-edge-card${sel ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      className={`lv-offercard as-edge-card${sel ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
@@ -471,7 +471,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         )}
                         {sel && <span className="text-[10px] font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
                       </div>
-                      <div className="font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
+                      <div className="lv-cardname font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>
