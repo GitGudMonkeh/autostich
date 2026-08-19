@@ -1354,6 +1354,8 @@ button { font-family: inherit; }
    Speichern-Knopf und die Beschriftung über dem Namensfeld (auf dem Handy steht der Titel schon darüber).
    Sie stehen im DOM, damit die breite Fassung ohne zweiten Renderpfad auskommt — hier sind sie aus. */
 .un-btnicon, .un-flabel { display: none; }
+/* Dasselbe in den Optionen: Zeilen-Zeichen und das ✕ am Schließen-Knopf gehören der breiten Fassung. */
+.op-rowicon, .op-closeicon { display: none; }
 /* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1400 px keine
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
@@ -3049,6 +3051,76 @@ button { font-family: inherit; }
      laufen — dort sind das drei Fingerziele. In einer 460 px breiten Spalte wird daraus ein Kasten mit
      einem Drittel Inhalt und zwei Dritteln Leere; hier bemisst er sich am Text. */
   .op-sec .as-opt-stack > :last-child { align-self: start; }
+
+  /* ---- Optionen, ruhiger gestellt (#optionen-ton) --------------------------
+     Die drei Spalten standen, trugen aber weiter die Signale der Handy-Liste: je Zeile eine farbige
+     Kante, eine gefüllte Gold-Auswahl und eine Beschreibung so groß wie ihr Titel. Nebeneinander
+     ergibt das drei Spalten voller Konturen, in denen nichts hervorsticht, weil alles hervorsticht.
+
+     Der Umbau folgt dem, was Baum und Werkstatt schon tun: Fläche und Ring trägt das PANEL, nicht die
+     Zeile darin; eine Auswahl ist flacher Text mit Unterkante in der Deckfarbe (`.cz-head [role=tab]`),
+     keine gefüllte Taste; gedämpfte Beschreibungen stehen in `#8a8a95`.
+     Der Zustand geht dabei nicht verloren — er wandert von der Kante auf das Zeichen: `--c` färbt jetzt
+     den runden Chip vorn (grün = an), gesetzt von derselben `:has()`-Regel wie bisher. */
+  .op-sec > h3 { font-size: 12.5px; letter-spacing: .18em; padding-bottom: 13px; }
+  .op-sec .grid { gap: 11px !important; }
+  .op-sec { padding: 16px 18px 18px; }
+
+  /* Die Zeile wird zur ruhigen Fläche: keine linke Kante, nur eine feine Kontur auf dunklerem Grund. */
+  .op-sec .as-opt-row {
+    background: rgba(15, 15, 21, .72) !important;
+    border: 1px solid rgba(150, 150, 170, .12) !important;
+    border-left-width: 1px !important;
+    box-shadow: none !important;
+    padding: 11px 13px;
+    gap: 13px;
+  }
+  .op-sec .as-opt-row::before, .op-sec .as-opt-row::after { display: none !important; }
+  .op-rowicon {
+    display: grid; place-items: center;
+    flex: none;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--c, #6c6c7e);
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid color-mix(in srgb, var(--c, #3a3a48) 42%, transparent);
+  }
+  /* Titel und Beschreibung endlich zwei Stufen statt einer: der Titel führt, die Erklärung ordnet sich unter. */
+  .op-rowtitle { font-size: 13.5px; }
+  .op-rowdesc { font-size: 12px !important; opacity: 1 !important; color: #8a8a95; margin-top: 2px; }
+  /* Die gestapelte Zeile bekommt das Zeichen NEBEN den Titel statt darüber (sonst stünde es allein in
+     der ersten Zeile) — Raster statt Spalte, die Steuerung rutscht unter den Text. */
+  .op-sec .as-opt-stack {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 9px 13px !important;
+  }
+  .op-sec .as-opt-stack > :last-child { grid-column: 2; }
+
+  /* Auswahl (Sprache · Effekte) wie die Reiter der Werkstatt: flach, geteilte Kontur, die aktive
+     Hälfte hell mit Unterkante in der Deckfarbe — statt gefülltem Gold, das lauter war als der Inhalt. */
+  .op-sec [role="radio"] {
+    background: rgba(19, 19, 26, .9) !important;
+    color: #8a8a95 !important;
+    font-weight: 600 !important;
+    padding: 7px 14px !important;
+  }
+  .op-sec [role="radio"][aria-checked="true"] {
+    background: rgba(32, 32, 44, .95) !important;
+    color: #f0eefc !important;
+    box-shadow: inset 0 -2px 0 var(--deck-a1, #8a7de0);
+  }
+  .op-sec [role="radio"] + [role="radio"] { border-left: 1px solid rgba(150, 150, 170, .14); }
+
+  /* Regler: schmalere Spur, kleinerer Griff, mehr Länge — die Feineinstellung soll sich fein anfühlen. */
+  .op-sec input[type="range"] { width: 148px !important; height: 4px; }
+
+  /* Kopf: der Einzeiler steht als Unterzeile am Titel, nicht hinter einem Trennstrich — eine Kontur
+     weniger, und die Ansage gehört ohnehin zum Titel. */
+  .op-readout { padding-left: 0; border-left: 0; }
+  .op-closeicon { display: inline-block; margin-right: 8px; opacity: .7; font-size: 13px; }
 
   /* Auch die beiden Dialog-Wurzeln geben ihren Inline-Blur ab: Die Filterfläche ist der VIEWPORT, nicht
      der Dialog — hinter ihnen liegt der Hub mit laufender Wortmarke und Ringen, also genau die

@@ -13,7 +13,11 @@ import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte 
    FIXER Kopf (Titel · Schließen · Sprung-Chips), der nicht mitscrollt: nur so kann die Sektions-
    Überschrift sauber bei `top: 0` des Scroll-Bodys kleben. Vorher lag die Aktionsleiste selbst sticky IM
    Scroll-Fluss — zwei sticky-Ebenen im selben Container hätten sich gegenseitig überlagert.
-   Bewusst ohne Icons (nur Text), wie im Rest der UI. */
+
+   #optionen-ton (19.08.2026): Die schmale Fassung bleibt bewusst reiner Text. Ab 1400 px stehen drei
+   Panels nebeneinander, und dort trägt jede Zeile ein Zeichen — nicht als Schmuck, sondern weil in
+   drei Spalten gesucht statt gelesen wird. Es sind einfarbige Text-Glyphen wie im Glossar, keine
+   Emoji, und sie führen den Zustand der Zeile (grün = an) weiter, den auf dem Handy die Kante trägt. */
 
 /* Ein/Aus-Schalter im Stil der übrigen UI. */
 function Toggle({ on, onClick }) {
@@ -66,12 +70,17 @@ function Segmented({ value, options, onChange }) {
    Breiten weder Text noch die Knöpfe gequetscht werden. */
 /* #kante: Kanten-Zeile mit schmaler Kante. Ob sie grün wird, entscheidet index.css anhand des Schalters
    in `children` (`.as-opt-row:has(…)`) — die Zeile selbst muss den Zustand gar nicht kennen. */
-function Row({ title, desc, children, stack = false }) {
+/* #optionen-ton (19.08.2026): `icon` ist ein reines DESKTOP-Zeichen. Ab 1400 px trägt es den Zustand
+   der Zeile (`--c`, dieselbe Variable, die auf dem Handy die linke Kante färbt) und macht die Spalte
+   scanbar — man findet eine Einstellung am Zeichen, bevor man die Zeile liest. Unter 1400 px ist es
+   `display: none`: dort ist die Liste schmal, und ein Zeichen je Zeile nähme dem Text die Breite. */
+function Row({ icon, title, desc, children, stack = false }) {
   return (
     <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
-      <div className="flex-1">
-        <div className="font-bold text-sm">{title}</div>
-        {desc && <div className="text-sm opacity-70 leading-snug">{desc}</div>}
+      {icon && <span className="op-rowicon" aria-hidden="true">{icon}</span>}
+      <div className="op-rowtext flex-1">
+        <div className="op-rowtitle font-bold text-sm">{title}</div>
+        {desc && <div className="op-rowdesc text-sm opacity-70 leading-snug">{desc}</div>}
       </div>
       {children}
     </div>
@@ -179,7 +188,9 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
                 (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1400 px gibt es sie nicht: dort ist
                 der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
             <div className="op-readout hidden min-[1400px]:block">{t("options.desk.readout")}</div>
-            <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
+            <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>
+              <span className="op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
+            </ActionButton>
           </div>
           {/* #desktop: Die Sprungleiste ist ab 1400 px gegenstandslos (nichts scrollt mehr) und wird ausgeblendet. */}
           <div className="op-chips flex flex-nowrap sm:flex-wrap gap-1.5 mt-3 overflow-x-auto sm:overflow-x-visible as-chiprow">
@@ -196,17 +207,17 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
             innerRef={(el) => { secRefs.current.general = el; }}>
           {/* #sprache: Sprachwahl ganz oben. Die Labels der Sprachen stehen bewusst in ihrer EIGENEN Sprache
               („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem. */}
-          <Row title={t("options.language.title")} desc={t("options.language.desc")}>
+          <Row icon="⊕" title={t("options.language.title")} desc={t("options.language.desc")}>
             <Segmented value={locale}
               options={LOCALES.map((l) => ({ v: l.id, label: l.label }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
-          <Row title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
+          <Row icon="≋" title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
             <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
           </Row>
           {/* Ruhiger Modus: kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks (Default aus). */}
-          <Row title={t("options.calm.title")} desc={t("options.calm.desc")}>
+          <Row icon="☾" title={t("options.calm.title")} desc={t("options.calm.desc")}>
             <Toggle on={!!options.calmMusic} onClick={() => onChange({ calmMusic: !options.calmMusic })} />
           </Row>
           {/* #telemetrie: anonyme Lauf-Daten (Beta-Playtest) — Default an, hier abschaltbar. Bewusst mit klarer
@@ -214,7 +225,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               #datenschutz: Der Kurztext kann die vollständige Liste nicht tragen (Gerätekontext, Install-Kennung,
               Bestenliste) — deshalb der Link zum Hinweis direkt HIER. Das ist der Punkt, an dem entschieden wird;
               ein Hinweis, den man erst im Menü suchen muss, kommt für diese Entscheidung zu spät. */}
-          <Row title={t("options.telemetry.title")}
+          <Row icon="⇢" title={t("options.telemetry.title")}
             desc={<>
               {t("options.telemetry.desc")}
               {onPrivacy && (
@@ -236,7 +247,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
             innerRef={(el) => { secRefs.current.graphics = el; }}>
           {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
               auf schmalen Breiten. Beschreibung wechselt mit dem gewählten Zustand. Handy-Default „Mobile", Desktop „Aus". */}
-          <Row stack title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
+          <Row stack icon="✶" title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
             <Segmented value={rfx}
               options={RFX_VALUES.map((v) => ({ v, label: t(`options.rfx.${v}`) }))}
               onChange={(v) => onChange({ reducedFx: v })} />
@@ -244,7 +255,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
               FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
           {import.meta.env.VITE_PREVIEW === "1" && (
-            <Row title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
+            <Row icon="▥" title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
               <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
             </Row>
           )}
@@ -253,10 +264,10 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
             innerRef={(el) => { secRefs.current.sound = el; }}>
           {/* Retro-Skin (CRT) ist jetzt der feste Look des Spiels — immer an, kein Toggle mehr. */}
           {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
-          <Row title={t("options.mute.title")} desc={t("options.mute.desc")}>
+          <Row icon="⊘" title={t("options.mute.title")} desc={t("options.mute.desc")}>
             <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
           </Row>
-          <Row title={t("options.sfx.title")} desc={t("options.sfx.desc")}>
+          <Row icon="✧" title={t("options.sfx.title")} desc={t("options.sfx.desc")}>
             <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.4}
               disabled={!!options.muted}
               onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
@@ -264,7 +275,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               style={{ width: 120, accentColor: "#5ab87a", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
           </Row>
           {/* #111 Musik: eigener Lautstärke-Slider (Default 0,2). */}
-          <Row title={t("options.music.title")} desc={t("options.music.desc")}>
+          <Row icon="♪" title={t("options.music.title")} desc={t("options.music.desc")}>
             <input type="range" min="0" max="1" step="0.05" value={options.musicVol ?? 0.2}
               disabled={!!options.muted}
               onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
@@ -280,7 +291,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               (Flag false). Master spiegelt „alle sichtbar" und setzt beim Umschalten alle drei zugleich. Score/Werte
               zählen unabhängig weiter — nur die aufsteigenden Popups verschwinden. Die großen Ansagen (Stark/Brutal/
               Irre/Gottgleich) sind bewusst NICHT ausblendbar und bleiben immer sichtbar. */}
-          <Row title={t("options.float.title")} desc={t("options.float.desc")}>
+          <Row icon="⇡" title={t("options.float.title")} desc={t("options.float.desc")}>
             <Toggle
               on={!(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose)}
               onClick={() => {
@@ -291,24 +302,24 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           </Row>
           {/* #deckui: Einrück-Kante der Float-Unterschalter deck-getönt (~27 % Alpha). */}
           <div className="flex flex-col gap-2.5 pl-3 ml-1" style={{ borderLeft: "2px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 27%, transparent)" }}>
-            <Row title={t("options.float.score.title")} desc={t("options.float.score.desc")}>
+            <Row icon="◆" title={t("options.float.score.title")} desc={t("options.float.score.desc")}>
               <Toggle on={!options.hideFloatScore} onClick={() => onChange({ hideFloatScore: !options.hideFloatScore })} />
             </Row>
-            <Row title={t("options.float.mult.title")} desc={t("options.float.mult.desc")}>
+            <Row icon="✕" title={t("options.float.mult.title")} desc={t("options.float.mult.desc")}>
               <Toggle on={!options.hideFloatMult} onClick={() => onChange({ hideFloatMult: !options.hideFloatMult })} />
             </Row>
-            <Row title={t("options.float.winlose.title")} desc={t("options.float.winlose.desc")}>
+            <Row icon="⚔" title={t("options.float.winlose.title")} desc={t("options.float.winlose.desc")}>
               <Toggle on={!options.hideFloatWinLose} onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
             </Row>
           </div>
           {/* Stich-Aufschlüsselung (§17): die Faktorenkette unter dem Feld (Basis × Serie × Perks × Form × Crit
               (+ Direkt) = Summe). Eigener Schalter, NICHT unter dem Floating-Text-Master — die Zeile steht fest
               im Layout statt aufzusteigen. „An" = sichtbar (Flag false); der Platz bleibt so oder so reserviert. */}
-          <Row title={t("options.breakdown.title")} desc={t("options.breakdown.desc")}>
+          <Row icon="▤" title={t("options.breakdown.title")} desc={t("options.breakdown.desc")}>
             <Toggle on={!options.hideBreakdown} onClick={() => onChange({ hideBreakdown: !options.hideBreakdown })} />
           </Row>
           {/* Zahlengröße — skaliert Kartenzahlen + aufsteigende Score-Zahlen (Orbitron) gemeinsam. 1 = Standard. */}
-          <Row title={t("options.numScale.title")} desc={t("options.numScale.desc", { pct: fmtPct(Number(options.numScale) || 1) })}>
+          <Row icon="⌗" title={t("options.numScale.title")} desc={t("options.numScale.desc", { pct: fmtPct(Number(options.numScale) || 1) })}>
             <input type="range" min="0.75" max="1.25" step="0.05" value={options.numScale ?? 1}
               onChange={(e) => onChange({ numScale: Number(e.target.value) })}
               aria-label={t("options.numScale.aria")}
