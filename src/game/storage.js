@@ -5,6 +5,13 @@ import { onboardingAfter, isSpRun, spCreditForRun, dpForRun, treeComplete, onboa
 //   Challenge-DP-Quelle (#301). Ranked hat seinen eigenen Wochenbonus (rankedDpBonus).
 export const RUN_COMPLETE_DP = 5;
 
+/* #370 Ranked-Wochenbonus, exportiert statt inline: der Hub NENNT ihn („+5 SP · +5 DP Bonus noch offen"),
+   und ein Balancing-Schritt hier ließe die Anzeige sonst still falsch werden. Bei vollem Baum sind SP
+   nutzlos → der SP-Anteil wird zu DP (s. Rechnung in `recordRun`). */
+export const RANKED_WEEK_SP = 5;
+export const RANKED_WEEK_DP = 5;
+export const RANKED_WEEK_DP_FULL = 10;
+
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
    echten Geist/Highscore nicht überschreiben. Produktions-/Dev-Build: kein Präfix (P=""). */
@@ -434,8 +441,8 @@ export function recordRun(record) {
   //   verhindert Mehrfach-Bonus. Seed-basiert → deterministisch/testbar (kein new Date() in recordRun).
   const rankedSeed = isRankedMode(record) && record.completed === true && record.seed != null ? (record.seed >>> 0) : null;
   const firstRankedThisWeek = rankedSeed != null && rankedSeed !== (p.lastRankedWeekSeed ?? null);
-  const rankedSpBonus = firstRankedThisWeek && !treeDone ? 5 : 0;
-  const rankedDpBonus = firstRankedThisWeek ? (treeDone ? 10 : 5) : 0;
+  const rankedSpBonus = firstRankedThisWeek && !treeDone ? RANKED_WEEK_SP : 0;
+  const rankedDpBonus = firstRankedThisWeek ? (treeDone ? RANKED_WEEK_DP_FULL : RANKED_WEEK_DP) : 0;
   // Willkommensbonus: einmalig nach dem ERSTEN abgeschlossenen Lauf, in DECKPUNKTEN (s. progression.js).
   // Er hängt deshalb NICHT am SP-Guthaben und wird vom spSweep unten nicht angefasst.
   const welcomeDp = record.completed === true && !p.welcomeBonusPaid ? WELCOME_DP : 0;

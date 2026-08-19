@@ -1402,6 +1402,12 @@ export default {
   // Reine Zahlenzeile: die Kennzahl der Wochen-Kachel trägt nur noch das Verhältnis. Das Wort „Bonus"
   // stand vorher IN der großen Zahl und wiederholte, was die Unterzeile darunter ohnehin sagt.
   "start.board.week.val": "{have}/{max}",
+  /* #bonus-benennen: Über „Bonus noch offen" steht jetzt, WAS es zu holen gibt. Zwei Fassungen, weil
+     der Bonus zwei Gestalten hat: normal +SP und +DP, bei vollem Baum stattdessen der doppelte
+     DP-Betrag (SP sind dort nutzlos, s. `recordRun`). Die Zahlen kommen aus storage.js.
+     Eigene Zeile, weil beides zusammen gemessen nicht in die 118 px der Kachel passt. */
+  "start.board.week.bonus": "+{sp} SP · +{dp} DP",
+  "start.board.week.bonus.full": "+{dp} DP",
   "start.board.week.open": "Bonus noch offen",
   "start.board.week.done": "Bonus geholt",
   "start.board.last": "Letzter Lauf",

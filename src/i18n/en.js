@@ -1352,6 +1352,8 @@ export default {
   "start.board.dp.sub": "Workshop balance",
   "start.board.week": "Week {n}",
   "start.board.week.val": "{have}/{max}",
+  "start.board.week.bonus": "+{sp} TP · +{dp} DP",
+  "start.board.week.bonus.full": "+{dp} DP",
   "start.board.week.open": "Bonus still open",
   "start.board.week.done": "Bonus claimed",
   "start.board.last": "Last run",

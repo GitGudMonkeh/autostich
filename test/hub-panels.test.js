@@ -159,3 +159,36 @@ describe("#370 — Freischalt-Text und Freischalt-Regel bleiben synchron", () =>
     expect(en["board.locked"]).toMatch(/Abandoned runs/i);
   });
 });
+
+/* ============================================================
+   #bonus-benennen (19.08.2026) — die Wochen-Kachel nennt den Betrag.
+
+   „Bonus noch offen" sagte nicht, was es zu holen gibt. Die zwei Beträge stehen in storage.js und
+   werden interpoliert — stünden sie im Katalog, ließe ein Balancing-Schritt die Tafel still falsch
+   werden (dieselbe Naht wie bei der Formations-Legende, s. #formlegend).
+   ============================================================ */
+describe("#bonus-benennen — Betrag aus der Quelle, nicht aus dem Katalog", () => {
+  it("die Tafel rechnet mit den exportierten Konstanten", () => {
+    const src = ui("StartScreen.jsx");
+    expect(src).toMatch(/RANKED_WEEK_SP.*RANKED_WEEK_DP.*RANKED_WEEK_DP_FULL/s);
+    expect(src).toMatch(/start\.board\.week\.bonus", \{ sp: RANKED_WEEK_SP, dp: RANKED_WEEK_DP \}/);
+    expect(src).toMatch(/start\.board\.week\.bonus\.full", \{ dp: RANKED_WEEK_DP_FULL \}/);
+  });
+
+  it("keine der drei Zahlen steht in einem der beiden Kataloge", () => {
+    for (const k of ["start.board.week.bonus", "start.board.week.bonus.full"])
+      for (const cat of [de, en])
+        expect(cat[k], `${k} hat eine feste Zahl`).not.toMatch(/\d/);
+  });
+
+  it("die Konstanten sind die, mit denen `recordRun` gutschreibt", async () => {
+    /* Gegenprobe gegen ein Auseinanderlaufen von Anzeige und Gutschrift: die Rechnung im Profil
+       darf keine eigenen Literale mehr führen. */
+    const st = readFileSync(new URL("../src/game/storage.js", import.meta.url), "utf8");
+    expect(st).toMatch(/rankedSpBonus = firstRankedThisWeek && !treeDone \? RANKED_WEEK_SP : 0/);
+    expect(st).toMatch(/rankedDpBonus = firstRankedThisWeek \? \(treeDone \? RANKED_WEEK_DP_FULL : RANKED_WEEK_DP\) : 0/);
+    const { RANKED_WEEK_SP, RANKED_WEEK_DP, RANKED_WEEK_DP_FULL } = await import("../src/game/storage.js");
+    // Bei vollem Baum wird der SP-Anteil zu DP — der volle Betrag ist die Summe der beiden.
+    expect(RANKED_WEEK_DP_FULL).toBe(RANKED_WEEK_SP + RANKED_WEEK_DP);
+  });
+});

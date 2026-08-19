@@ -2389,6 +2389,8 @@
 "start.board.sp.sub","i18n","{done} / {total} Knoten","{done} / {total} nodes","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.board.title","i18n","Dein Stand","Your standing","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.board.week","i18n","Woche {n}","Week {n}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.board.week.bonus","i18n","+{sp} SP · +{dp} DP","+{sp} TP · +{dp} DP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.board.week.bonus.full","i18n","+{dp} DP","+{dp} DP","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.board.week.done","i18n","Bonus geholt","Bonus claimed","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.board.week.open","i18n","Bonus noch offen","Bonus still open","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.board.week.val","i18n","{have}/{max}","{have}/{max}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

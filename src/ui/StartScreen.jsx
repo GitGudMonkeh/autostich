@@ -3,6 +3,7 @@ import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, g
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
+import { RANKED_WEEK_SP, RANKED_WEEK_DP, RANKED_WEEK_DP_FULL } from "../game/storage.js"; // #bonus-benennen: die Tafel NENNT den Wochenbonus — Zahlen aus der Quelle
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import { GlossaryPanel } from "./Glossary.jsx";
 import { battlefieldVeil } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder
@@ -659,7 +660,24 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             /* Nur das Verhältnis als Kennzahl — das Wort „Bonus" stand vorher IN der großen Zahl und
                wiederholte damit, was die Unterzeile ohnehin sagt („Bonus noch offen"). Die Zeile darüber
                nennt die Woche, die darunter den Zustand; in der Mitte gehört die Zahl allein. */
-            { k: t("start.board.week", { n: week.week }), v: t("start.board.week.val", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI, s: t(weekBonusOpen ? "start.board.week.open" : "start.board.week.done") },
+            /* #bonus-benennen: „Bonus noch offen" sagte nicht, was es zu holen gibt. Der Betrag steht
+               jetzt darüber — und er hat zwei Gestalten: normal +SP und +DP, bei vollem Baum der
+               doppelte DP-Betrag statt beidem (SP sind dann nutzlos). Zahlen aus storage.js, nicht
+               abgetippt: ein Balancing-Schritt dort ließe die Tafel sonst still falsch werden.
+               EIGENE ZEILE, nicht davorgestellt: gemessen braucht „+5 SP · +5 DP Bonus noch offen"
+               131 px, die Kachel hat 118–140 — es bräche also ohnehin um, nur an zufälliger Stelle.
+               Der Betrag trägt die Ranglisten-Farbe, der Zustand darunter bleibt die stille Zeile. */
+            { k: t("start.board.week", { n: week.week }), v: t("start.board.week.val", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI,
+              s: weekBonusOpen
+                ? (<>
+                    <span className="block" style={{ color: `${VI}c0` }}>
+                      {progLigaFree
+                        ? t("start.board.week.bonus.full", { dp: RANKED_WEEK_DP_FULL })
+                        : t("start.board.week.bonus", { sp: RANKED_WEEK_SP, dp: RANKED_WEEK_DP })}
+                    </span>
+                    {t("start.board.week.open")}
+                  </>)
+                : t("start.board.week.done") },
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (

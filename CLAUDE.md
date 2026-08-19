@@ -2298,6 +2298,24 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #bonus-benennen — die Wochen-Kachel sagt jetzt, was es zu holen gibt (19.08.2026)
+„Bonus noch offen" nannte den Betrag nicht. Nachgesehen: der Ranked-Wochenbonus ist **+5 SP UND +5 DP**
+für die erste abgeschlossene Ranked-Runde der Woche — bei **vollem Baum stattdessen +10 DP** (SP wären
+dort nutzlos, deshalb wandert der SP-Anteil in DP). Die Kachel zeigt beide Fassungen.
+- **Eigene Zeile über dem Zustand, nicht davorgestellt.** Gemessen: „+5 SP · +5 DP Bonus noch offen"
+  braucht 131 px, die Kachel hat 118 (bei 1400 px) bis 140 (bei 2047). Es bräche also ohnehin um — dann
+  lieber an der gewählten Stelle. Der Betrag trägt die Ranglisten-Farbe, „Bonus noch offen" bleibt die
+  stille Zeile darunter. **Die Kachelhöhe ändert sich dadurch NICHT** (110 px bei 2047, 93 bei 1400,
+  alle vier Zellen gleich) — die Zeile passt in die Luft, die die Zahl darüber ohnehin freilässt.
+- **Die Zahlen sind aus `storage.js` exportiert** (`RANKED_WEEK_SP` · `RANKED_WEEK_DP` ·
+  `RANKED_WEEK_DP_FULL`) statt im Katalog zu stehen — sonst ließe ein Balancing-Schritt die Tafel still
+  falsch werden (dieselbe Naht wie bei der Formations-Legende, #formlegend). `recordRun` rechnet mit
+  denselben Konstanten; ein Wächter prüft beide Enden UND die Beziehung `DP_FULL = SP + DP`.
+- **Nicht angefasst**: die Bonus-Zeile am Ranglisten-Knopf unterhalb 1400 px (`start.ranked.bonus`,
+  „Bonus {have}/{max}"). Sie hat dasselbe Thema, ist aber die HANDY-Fassung — und die wird in diesem
+  Umbau grundsätzlich nicht angefasst. Wenn sie mitziehen soll, ist es dort dieselbe Zeile.
+- Wächter: `test/hub-panels.test.js` (Abschnitt #bonus-benennen).
+
 ### #op-oben — die Optionen hingen mittig statt oben (19.08.2026)
 Gemeldet: „Optionen-Screen etwas weiter nach oben, ist zu weit unten." Ursache ist eine Zeile aus der
 Handy-Fassung, die der Desktop-Pass nie überschrieben hat: `.op-root` ist `flex items-center` — richtig
