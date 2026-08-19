@@ -21,7 +21,12 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
 
-const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+/* Zeilenenden beim Lesen vereinheitlichen: Die Ratsche unten greift mit `"…{\n    const body …"` über einen
+   ZEILENUMBRUCH hinweg. Auf einem Windows-Checkout mit `core.autocrlf=true` steht dort `\r\n` — der Greifer
+   findet nichts, `slice` liefert Leerstring und der Test fällt mit „expected '' to contain …", obwohl die
+   geprüfte Zeile wortwörtlich im Code steht. Im Repository liegt die Datei mit LF; das `\r` entsteht erst
+   beim Auschecken und ist damit eine Eigenschaft des Arbeitsplatzes, nicht des Codes. */
+const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
 // Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.

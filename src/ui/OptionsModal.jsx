@@ -317,10 +317,10 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           </Section>
         </div>
 
-        {/* #deckui: Fußzeilen-Box zieht die Deckfarbe als leichte Fläche (~13 % Alpha); Text bleibt neutral-hell. */}
-        <div className="op-foot rounded-lg p-3 mt-3 text-xs text-center leading-snug" style={{ background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 13%, transparent)", color: "#c9c0f0" }}>
-          {t("options.footer")}
-        </div>
+        {/* Hier stand die Fußzeile „Weitere Optionen (Tempo-Default …) folgen hier." — ein Aushang an den
+            Spieler, der eigentlich eine Notiz an die Entwicklung war. Die Optionen sind inzwischen gefüllt;
+            ein Platzhalter, der auf nichts Bestimmtes zeigt, kostet nur Zeile und Aufmerksamkeit. Raus auf
+            beiden Breiten, mitsamt Text (`options.footer`) und Klasse (`.op-foot`). */}
         </div>
       </div>
     </div>

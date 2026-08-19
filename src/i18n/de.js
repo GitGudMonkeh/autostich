@@ -1413,7 +1413,6 @@ export default {
      das Guthaben steht). Sie beantwortet die Frage, die ein Einstellungs-Screen ohne „Übernehmen"-Knopf
      zwangsläufig aufwirft. */
   "options.desk.readout": "Alles sofort wirksam und gespeichert.",
-  "options.footer": "Weitere Optionen (Tempo-Default …) folgen hier.",
 
   "options.language.title": "Sprache",
   "options.language.desc": "Sprache der Spieltexte.",

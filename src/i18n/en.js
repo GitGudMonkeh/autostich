@@ -1360,7 +1360,6 @@ export default {
   "options.eyebrow": "Options",
   "options.title": "Settings",
   "options.desk.readout": "Everything takes effect and is saved immediately.",
-  "options.footer": "More options (default speed …) will appear here.",
 
   "options.language.title": "Language",
   "options.language.desc": "Language of the in-game texts.",

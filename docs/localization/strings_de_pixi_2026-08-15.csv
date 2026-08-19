@@ -2040,7 +2040,6 @@
 "options.float.title","i18n","Floating-Text anzeigen","Show floating text","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "options.float.winlose.desc","i18n","Gewonnen/Verloren-Text am Stich-Ausgang.","Won/lost text at the end of a trick.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "options.float.winlose.title","i18n","↳ Sieg / Niederlage","↳ Win / loss","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"options.footer","i18n","Weitere Optionen (Tempo-Default …) folgen hier.","More options (default speed …) will appear here.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "options.haptics.desc","i18n","Kurzes Vibrieren bei Bestätigungen. Nur auf Touch-Geräten (Handy) spürbar; System-Einstellung „reduzierte Bewegung“ wird respektiert.","A short vibration on confirmations. Only noticeable on touch devices (phones); the system setting “reduce motion” is respected.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "options.haptics.title","i18n","Haptik (Vibration)","Haptics (vibration)","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "options.language.desc","i18n","Sprache der Spieltexte.","Language of the in-game texts.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
