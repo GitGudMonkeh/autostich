@@ -389,11 +389,29 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           );
         })()}
 
-        {/* Victory-Redesign: Fraktions-Score-Herkunft direkt unter dem Hero — die für Spieler wichtigste Frage „welche Fraktion trägt den Score?". */}
+        </div>
+
+        {/* Victory-Redesign: Fraktions-Score-Herkunft — die für Spieler wichtigste Frage „welche Fraktion
+            trägt den Score?".
+
+            #go-spalten (19.08.2026): Sie steht ab 1400 px in Spalte 3 UNTER dem Build, nicht mehr in der
+            linken Klammer. Zwei Gründe, ein Effekt:
+            · Inhaltlich sind Build und Herkunft zwei Hälften derselben Frage — der Build sagt, was gewählt
+              wurde (Feuer ×3, drei Feuer-Skills), die Herkunft, was dabei herauskam (Feuer 27 %). Sie standen
+              auf gegenüberliegenden Spalten, also 1 100 px auseinander.
+            · Höhenmäßig ist der Build das EINZIGE Panel des Screens, das mit der Lauflänge wirklich wächst
+              (Perks, Skills, Fraktionsstufen, Motor). Die Herkunft hat feste vier bis fünf Zeilen. Ein
+              wachsendes Panel mit einem festen zu paaren hält die Spalte berechenbar; die linke Klammer trug
+              nach dem Bestleistungs-Panel drei Panels und bestimmte damit die Zeilenhöhe für alle — gemessen
+              740 px, wovon in Spalte 3 rund 555 leer blieben.
+
+            Sie liegt DESHALB hier im DOM und nicht unten beim Build: die Platzierung macht allein das Raster
+            (`grid-column: 3`), die Reihenfolge bleibt die der Handy-Fassung. Ein Umhängen im JSX hätte am
+            Handy die Lesereihenfolge geändert — und das Handy ist in diesem Durchgang unangetastet. Aus der
+            Klammer `go-col1` MUSS sie raus, weil ein Rasterkind ein direktes Kind des Rasters sein muss. */}
         <div className="go-origin as-ring as-ring-quiet mt-5">
             <i className="as-ring-run" aria-hidden="true" />
           <ScoreHerkunft state={state} />
-        </div>
         </div>
 
         {/* #unlock-fenster: EIN Fenster in jeder Breite (seit 18.08.2026 auch am Handy). Die Bahn im Screen

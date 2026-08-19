@@ -166,3 +166,136 @@ describe("#go-ruhe — was ausdrücklich NICHT angefasst ist", () => {
     for (const r of blist) expect(r, "der Desktop-Block überschreibt den Architekt-Rahmen").not.toMatch(/border(-color)?:/);
   });
 });
+
+/* ============================================================
+   #go-spalten / #graph-gold (19.08.2026) — Nachtrag zum selben Screen.
+
+   Der Screen hatte nach dem Bestleistungs-Panel drei Panels links und je eines in der Mitte und
+   rechts; `align-self: stretch` zog die kurzen auf die Höhe der langen und riss dabei an einem
+   echten Lauf gemessen 340 bzw. 555 px Loch. Drei Nähte halten die Lösung zusammen, und alle drei
+   reißen still — der Screen sieht danach weiter plausibel aus, nur wieder leer.
+   ============================================================ */
+const sparkline = read("src/ui/Sparkline.jsx");
+const graphs = read("src/ui/RunGraphs.jsx");
+
+/* Findet zu dem `<div` an `von` den Index seines `</div>`. Bewusst ein kleiner Scanner und kein
+   Regex: die Tags dieser Datei tragen JSX-Ausdrücke mit `>` darin (`onClick={() => …}`), an denen
+   jedes `[^>]*` zerbricht, und es gibt selbstschließende `<div … />` (die Meilenstein-Marken), die
+   ein reiner Tag-Zähler als Öffner mitzählen würde. Beides führt zu einem Test, der grün ist, weil
+   er falsch zählt. */
+function schliesstBei(src, von) {
+  let i = von, tiefe = 0;
+  while (i < src.length) {
+    if (src.startsWith("</div>", i)) { if (--tiefe === 0) return i; i += 6; continue; }
+    if (src.startsWith("<div", i)) {
+      let j = i + 4, klammern = 0, selbst = false;
+      for (; j < src.length; j++) {
+        const c = src[j];
+        if (c === "{") klammern++;
+        else if (c === "}") klammern--;
+        else if (c === ">" && klammern === 0) { selbst = src[j - 1] === "/"; break; }
+      }
+      if (!selbst) tiefe++;
+      i = j + 1; continue;
+    }
+    i++;
+  }
+  return -1;
+}
+
+describe("#go-spalten — je zwei Panels pro Spalte", () => {
+  it("die Herkunft steht in Spalte 3 unter dem Build", () => {
+    expect(desk).toMatch(/\.go-build\s*\{[^}]*grid-column:\s*3;\s*grid-row:\s*5/);
+    expect(desk).toMatch(/\.go-origin\s*\{[^}]*grid-column:\s*3;\s*grid-row:\s*6/);
+  });
+
+  it("die zwei linken Spalten spannen beide Zeilen — sonst sitzt die Herkunft in einer eigenen", () => {
+    expect(desk).toMatch(/\.go-col1\s*\{[^}]*grid-row:\s*5\s*\/\s*span 2/);
+    expect(desk).toMatch(/\.go-stats\s*\{[^}]*grid-row:\s*5\s*\/\s*span 2/);
+    // Die Aufstellung rutscht damit eine Rasterzeile tiefer.
+    expect(desk).toMatch(/\.go-layout\s*\{[^}]*grid-row:\s*7/);
+  });
+
+  it("die Herkunft ist DIREKTES Kind des Rasters, nicht Kind der Klammer", () => {
+    /* Ein Rasterkind muss direktes Kind des Rasters sein — läge die Herkunft weiter in `go-col1`,
+       wäre `grid-column: 3` wirkungslos und sie stünde still wieder links, ohne dass irgendwo
+       etwas fehlt. Geprüft wird deshalb strukturell: die Klammer muss VOR ihr schließen.
+       (Tags zählen genügt nicht — die Zahl der `<div` sagt nichts über die Verschachtelung.) */
+    const marke = goBare.indexOf('className="go-col1"');
+    expect(marke, "go-col1 gibt es nicht mehr").toBeGreaterThan(-1);
+    const zu = schliesstBei(goBare, goBare.lastIndexOf("<div", marke));
+    expect(zu, "die Klammer go-col1 schließt nirgends").toBeGreaterThan(-1);
+    expect(goBare.indexOf('className="go-origin'), "die Herkunft steckt noch in go-col1")
+      .toBeGreaterThan(zu);
+  });
+
+  it("der Build wird NICHT mehr gezogen", () => {
+    /* Als oberes von zwei Panels seiner Spalte schöbe er die Herkunft sonst an den Fuß — dasselbe
+       Loch, eine Zeile tiefer. */
+    expect(desk).toMatch(/\.go-stats\s*\{[^}]*align-self:\s*stretch/);
+    expect(desk).not.toMatch(/\.go-build[^{]*\{[^}]*align-self:\s*stretch/);
+  });
+});
+
+describe("#graph-gold — die Score-Kurve", () => {
+  it("Fläche, Endpunkt und Gitterton hängen ALLE an der Achsen-Fassung", () => {
+    /* `voll` ist die Desktop-Fassung. Fällt eine der Bedingungen weg, bekommt die 40 px hohe
+       Kachel-Linie am Handy eine Fläche, die sie zudeckt. */
+    expect(sparkline).toMatch(/\{voll && \(\s*<defs>/);
+    expect(sparkline).toMatch(/\{voll && current\.length >= 2 && \(/);
+    expect(sparkline).toMatch(/stroke=\{voll \? "rgba\(150, 150, 170, \.12\)" : "#ffffff"\}/);
+  });
+
+  it("nur der LAUF bekommt die Fläche, nicht der Rekord", () => {
+    /* Zwei Flächen übereinander wären Matsch, und der Rekord ist ausdrücklich der leisere
+       (55 % Deckkraft seit jeher). */
+    expect(sparkline).toMatch(/fill=\{`url\(#\$\{gid\}\)`\}/);
+    /* Der Rekord bleibt eine reine Linie. Geprüft wird beides ausdrücklich: `fill="none"` steht dran,
+       und nirgends im Rekord-Pfad taucht ein Verlauf auf. (Ein blosses „kein fill=" wäre falsch — er
+       TRÄGT ein fill, nämlich none.) */
+    expect(sparkline).toMatch(/d=\{path\(record\)\} fill="none"/);
+    expect(sparkline).not.toMatch(/path\(record\)[^>]*url\(#/);
+    expect(sparkline).toMatch(/stroke="#8a7de0" strokeWidth="1\.5" strokeOpacity="0\.55"/);
+    /* Eigene Verlaufs-Kennung je Instanz: Endscreen und Lauf-Details können gleichzeitig im DOM stehen
+       (die Bestenliste lässt sich aus dem Endscreen öffnen), und bei zwei gleich benannten <defs>
+       gewinnt still das erste. Heute sind beide identisch — die Falle schnappt erst zu, wenn einer
+       von ihnen die Deckfarbe zieht. */
+    expect(sparkline, "feste Verlaufs-ID — zwei Instanzen teilen sie sich").not.toMatch(/id="sl-run"/);
+    expect(sparkline).toMatch(/useId\(\)/);
+  });
+});
+
+describe("#graph-gold — der Durchlauf-Graph", () => {
+  it("Sieg und kein Sieg sind KLASSEN, nicht nur Inline-Farben", () => {
+    /* Ohne die Klassen ließe sich die Farbe nur an `WIN`/`LOSS` ändern — und die IST die
+       Handy-Fassung. */
+    expect(graphs).toMatch(/rg-bar \$\{t\.won \? "rg-w" : "rg-l"\}/);
+    expect(graphs, "die Inline-Farbe fehlt — dann ist das Handy mit umgefärbt")
+      .toMatch(/background: t\.won \? WIN : LOSS/);
+  });
+
+  it("die Balkenfarbe schlägt die INLINE gesetzte", () => {
+    /* Regex-LITERALE, kein `new RegExp` aus einem Template-String: dort wäre `\s` nur ein `s` und
+       `\.` nur ein Punkt — der Test liefe grün, ohne irgendetwas zu prüfen. */
+    const w = desk.match(/\.rg-perTrick \.rg-w\s*\{[^}]*\}/);
+    const l = desk.match(/\.rg-perTrick \.rg-l\s*\{[^}]*\}/);
+    expect(w, "die Sieg-Regel fehlt").not.toBeNull();
+    expect(l, "die Kein-Sieg-Regel fehlt").not.toBeNull();
+    for (const [sel, rule] of [["rg-w", w[0]], ["rg-l", l[0]]])
+      expect(rule, `${sel} ohne !important — die Inline-Farbe gewänne`).toMatch(/background:[^;]*!important/);
+  });
+
+  it("die Balken stehen auf einer Grundlinie und sind 40 px hoch", () => {
+    expect(desk).toMatch(/\.rg-perTrick \.rg-bars\s*\{[^}]*height:\s*40px/);
+    expect(desk).toMatch(/\.rg-perTrick \.rg-bars\s*\{[^}]*border-bottom:\s*1px solid/);
+  });
+
+  it("der Anteilsbalken ist am Handy unsichtbar, nicht weggelassen", () => {
+    /* Er trägt die zweite Lesart (Gewicht des Durchlaufs im Lauf); unterhalb 1400 px ist die Zahl
+       daneben 9 px gesetzt und es gibt keinen Platz dafür. */
+    expect(cssBare.replace(desk, ""), "die Grundregel fehlt — der Balken erschiene am Handy")
+      .toMatch(/^\.rg-share \{ display: none; \}/m);
+    expect(desk).toMatch(/\.rg-perTrick \.rg-share\s*\{[^}]*display:\s*block/);
+    expect(graphs).toMatch(/cycleScore \/ runScore/);
+  });
+});

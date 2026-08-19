@@ -142,6 +142,9 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
   const sh = sourceShares(state);
   const log = Array.isArray(state.trickLog) ? state.trickLog : [];
   const hasGraph = log.some((c) => c && c.length);
+  // Bezugsgroesse des Anteilsbalkens (#graph-gold): die Summe ALLER Durchlaeufe, nicht state.score —
+  // der Graph soll sich auf das beziehen, was in ihm steht.
+  const runScore = log.reduce((a, c) => a + (c || []).reduce((b, t) => b + (t.gained || 0), 0), 0);
   if ((!sourceBar || !sh.score) && !hasGraph) return null;
 
   return (
@@ -166,17 +169,26 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
               const cycleScore = tricks.reduce((a, t) => a + (t.gained || 0), 0);
               return (
                 <div key={ci} className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono opacity-45 w-7 shrink-0 text-right">{tr("graphs.cycleAbbr", { n: ci + 1 })}</span>
-                  <div className="flex items-end gap-[1px] h-7 flex-1 min-w-0" title={tr("graphs.cycle.title", { n: ci + 1, score: fmtScore(cycleScore) })}>
+                  <span className="rg-cyc text-[9px] font-mono opacity-45 w-7 shrink-0 text-right">{tr("graphs.cycleAbbr", { n: ci + 1 })}</span>
+                  <div className="rg-bars flex items-end gap-[1px] h-7 flex-1 min-w-0" title={tr("graphs.cycle.title", { n: ci + 1, score: fmtScore(cycleScore) })}>
                     {tricks.map((t, i) => {
                       const h = Math.max(6, Math.round(((t.gained || 0) / cmax) * 100));
                       return (
                         <div key={i} title={tr("graphs.trick.title", { n: i + 1, score: fmtScore(t.gained || 0), result: tr(t.won ? "graphs.win" : "graphs.noWin") })}
-                          className="flex-1 rounded-t-[1px]" style={{ height: `${h}%`, minWidth: 1, background: t.won ? WIN : LOSS, opacity: t.won ? 1 : 0.55 }} />
+                          className={`rg-bar ${t.won ? "rg-w" : "rg-l"} flex-1 rounded-t-[1px]`} style={{ height: `${h}%`, minWidth: 1, background: t.won ? WIN : LOSS, opacity: t.won ? 1 : 0.55 }} />
                       );
                     })}
                   </div>
-                  <span className="text-[9px] font-mono opacity-45 w-14 shrink-0 text-right tabular-nums truncate" title={fmtScore(cycleScore)}>{fmtScoreShort(cycleScore)}</span>
+                  <span className="rg-cycsum text-[9px] font-mono opacity-45 w-14 shrink-0 text-right tabular-nums truncate" title={fmtScore(cycleScore)}>
+                    {/* #graph-gold: Anteil dieses Durchlaufs am Gesamtscore als Flaeche HINTER der Zahl.
+                        Jede Zeile hat ihre eigene Skala (cmax je Durchlauf) — ein Balken in D1 und ein gleich
+                        hoher in D9 bedeuten damit voellig verschiedene Punktzahlen (gemessen an einem echten
+                        Lauf: Faktor 35). Der Hinweistext sagt das, steht aber klein ueber neun Zeilen, die
+                        gleich aussehen. Die Flaeche traegt die zweite Lesart nach: Form INNERHALB des
+                        Durchlaufs oben, Gewicht IM Lauf hier. Nur ab 1400 px sichtbar. */}
+                    <i className="rg-share" aria-hidden="true" style={{ width: `${runScore > 0 ? Math.round((cycleScore / runScore) * 100) : 0}%` }} />
+                    <b className="rg-cycnum">{fmtScoreShort(cycleScore)}</b>
+                  </span>
                 </div>
               );
             })}

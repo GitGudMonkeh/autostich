@@ -177,6 +177,10 @@ button { font-family: inherit; }
 /* Das laufende Ringband (#perf-ring) gibt es nur auf dem Desktop — `.as-ring` selbst ist ebenfalls erst
    ab 1400 px definiert. Unterhalb ist das Kind ein leeres, unsichtbares Element. */
 .as-ring-run { display: none; }
+/* Dieselbe Bauart für den Anteilsbalken des Durchlauf-Graphen (#graph-gold): er ergänzt eine zweite
+   Lesart, für die es unterhalb von 1400 px keinen Platz gibt (die Zahl daneben ist dort 9 px gesetzt).
+   Unsichtbar statt weggelassen, damit die Handy-Fassung Zeichen für Zeichen bleibt, was sie war. */
+.rg-share { display: none; }
 /* Serienkette: voll → statisches violettes Glühen; am Serien-Mult-Deckel (×2,5) → pulsendes Glühen. */
 .as-streak-glow { box-shadow: 0 0 8px 1px rgba(155,140,255,0.40); }
 /* #305 2a: Der pulsende Glow animiert nicht mehr `box-shadow` (Repaint pro Frame), sondern die OPACITY eines
@@ -4117,12 +4121,31 @@ button { font-family: inherit; }
   /* `.go-skins` gibt es nicht mehr: frisch freigeschaltete Skins sind seit #unlock-fenster ein eigenes
      Fenster (in JEDER Breite), keine Bahn im Screen. */
   .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { padding: 15px 17px 17px; margin-top: 22px !important; }
-  /* Drei entkoppelte Spalten: links die EINE Klammer (Verdienst + Herkunft), in der Mitte die Kennzahlen,
-     rechts Build und darunter die Aufstellung. Nur Build und Aufstellung teilen sich eine Spalte — deshalb
-     schiebt eine aufgeklappte Beschreibung ausschließlich die Aufstellung nach unten. */
-  .go-col1   { display: block; grid-column: 1; grid-row: 5; }
-  .go-stats  { grid-column: 2; grid-row: 5; }
+  /* #go-spalten (19.08.2026) — je ZWEI Panels pro Spalte statt drei / eins / eins.
+
+     Vorher: links die Klammer (Verdienst · Bestleistungen · Herkunft), Mitte Kennzahlen, rechts Build.
+     Die Zeilenhöhe bestimmt die LÄNGSTE Spalte, und `align-self: stretch` (s. unten) zieht die kürzeren auf
+     dasselbe Maß — an einem echten Lauf gemessen: Zeile 740 px, davon in Spalte 2 rund 340 und in Spalte 3
+     rund 555 px leer. Das Bestleistungs-Panel hatte die linke Spalte kurz zuvor um ~210 px verlängert und
+     den Effekt damit verschärft.
+
+     Jetzt: Spalte 1 Verdienst + Bestleistungen · Spalte 2 Kennzahlen und Verlauf · Spalte 3 Build + Herkunft.
+     Mit denselben Panelhöhen gerechnet: 457 statt 740 px Zeilenhöhe, Rest 75 bzw. 37 px.
+     Build und Herkunft gehören auch inhaltlich zusammen (was gewählt wurde / was dabei herauskam), und der
+     Build ist das einzige Panel, das mit der Lauflänge wirklich wächst — ein wachsendes Panel mit einem
+     festen zu paaren hält die Spalte berechenbar (die ausführliche Begründung steht am JSX).
+
+     Die Spalten 1 und 2 SPANNEN beide Zeilen; die zwei Panels der dritten stehen einzeln darin. Das ist der
+     Kniff, mit dem die Herkunft unter den Build kommt, ohne im JSX umzuziehen: sie bleibt an ihrer Stelle im
+     DOM (Handy-Reihenfolge unangetastet) und wird allein über `grid-column`/`grid-row` platziert.
+
+     Die Entkopplung, für die `go-col1` gebaut wurde, bleibt: Verdienst und Bestleistungen liegen weiter in
+     EINER Zelle, eine aufgeklappte Beschreibung im Build schiebt also nur die Herkunft darunter und nichts
+     in den Nachbarspalten. */
+  .go-col1   { display: block; grid-column: 1; grid-row: 5 / span 2; }
+  .go-stats  { grid-column: 2; grid-row: 5 / span 2; }
   .go-build  { grid-column: 3; grid-row: 5; }
+  .go-origin { grid-column: 3; grid-row: 6; }
   /* #go-breit (18.08.2026): Die Aufstellung läuft über ALLE DREI Spalten statt allein in der dritten.
      Vorher stand sie unter dem Build in Spalte 3 — und weil sie mit Abstand das höchste Panel des Screens
      ist (gemessen 597 px gegen 317/329 der Nachbarn), klaffte links daneben ein Loch von rund 620 px, durch
@@ -4130,11 +4153,16 @@ button { font-family: inherit; }
      Platz trägt die Gebäudeliste: Brett links, Liste rechts daneben statt darunter.
      Die zwei kürzeren Panels der Zeile darüber werden auf die Höhe der Spalte gezogen — ein Panel mit etwas
      Luft am Fuß ist eine Fläche, ein Loch ist keine. */
-  .go-layout { grid-column: 1 / -1; grid-row: 6; }
-  /* Die zwei kürzeren Panels der Zeile werden gezogen: ein Panel mit Luft am Fuß ist kein Loch (#go-breit,
-     gemessen). Kurz auf `start` gestellt und wieder zurück — die Luft unter dem Score-Verlauf ist nicht das
-     Problem, sie ist der PLATZ, den die Achsen-Fassung des Graphen jetzt füllt (#graph-achsen). */
-  .go-stats, .go-build { align-self: stretch; }
+  /* Zeile 7, nicht mehr 6: die Panelzeile ist seit #go-spalten zwei Rasterzeilen hoch (5 + 6). */
+  .go-layout { grid-column: 1 / -1; grid-row: 7; }
+  /* Die MITTLERE Spalte wird auf die Höhe der Zeile gezogen — sie ist ein einzelnes Panel über zwei
+     Rasterzeilen, und ein Panel mit etwas Luft am Fuß ist eine Fläche (#go-breit, gemessen). Der PLATZ
+     darin gehört der Achsen-Fassung des Graphen (#graph-achsen).
+
+     Der BUILD wird seit #go-spalten NICHT mehr gezogen, und das ist der Kern der Sache: Er ist jetzt das
+     obere von zwei Panels seiner Spalte. Gezogen schöbe er die Herkunft an den Fuß und risse genau das
+     Loch wieder auf, das der Umbau schließt — nur eine Zeile tiefer. */
+  .go-stats { align-self: stretch; }
   .go-layout > div {
     display: grid;
     grid-template-columns: var(--go-board-w, 440px) minmax(0, 1fr);
@@ -4813,6 +4841,71 @@ button { font-family: inherit; }
   /* NUR mit Gebäudeliste. Ohne sie ist der Graph das einzige Kind der Spalte — er stünde dann am Fuß
      eines sonst leeren Streifens, also genau das Loch, das die Regel beseitigen soll, nur oben. */
   .go-blist ~ .go-ticks { margin-top: auto; padding-top: 18px; }
+
+  /* ==========================================================================
+     #graph-gold — der Durchlauf-Graph im Ton der Score-Kurve (19.08.2026)
+
+     Gilt für JEDE `.rg-perTrick` ab 1400 px, also Siegesbildschirm UND Lauf-Details. Absichtlich nicht
+     auf einen der beiden Screens verengt: derselbe Graph in zwei Farbwelten wäre genau der Bruch, den
+     #st-ruhe und #cz-ruhe gerade überall zugemacht haben.
+
+     1. **Gold statt Grün, Grau statt Rot.** Auf diesem Schirm heißt Gold durchgehend „dieser Lauf" — die
+        Score-Zahl im Kopf, die Lauf-Kurve im Verlauf-Panel, der Rekord-Chip. Tragen die Stich-Balken
+        dieselbe Farbe, sprechen beide Graphen EINE Sprache (Gold = dein Lauf · Violett = der Rekord ·
+        Grau = nichts passiert). Rot war hier zusätzlich sachlich falsch: bei rund 48 % Siegquote ist
+        jeder zweite Balken ein „kein Sieg" — das ist der Normalfall, keine Störung.
+     2. **Grundlinie unter den Balken.** Sie standen im Nichts; mit einer Haarlinie darunter liest sich
+        jede Zeile als eigenes kleines Diagramm statt als Streifenmuster.
+     3. **28 → 40 px.** Der Graph sitzt seit #go-ruhe am Fuß einer ~1 200 px breiten Spalte. Bei 28 px war
+        ein Stich an der Mindesthöhe (6 %) knapp 2 px hoch und damit unsichtbar.
+     4. **Kürzel und Summe werden lesbar.** Beide standen auf 9 px bei 45 % Deckkraft — unter der Grenze,
+        die der Screen sich sonst selbst setzt (kleinste Schrift 10,5 px).
+
+     `!important` an den Balkenfarben ist Pflicht und kein Versehen: die Farbe steht INLINE am Balken und
+     IST die Handy-Fassung (`WIN`/`LOSS` in RunGraphs.jsx). Sie dort zu ändern träfe das Handy mit. */
+  .rg-perTrick .rg-bars {
+    height: 40px;
+    border-bottom: 1px solid rgba(150, 150, 170, .18);
+  }
+  .rg-perTrick .rg-bar { border-radius: 2px 2px 0 0; }
+  .rg-perTrick .rg-w {
+    background: linear-gradient(180deg, #d4a63a, color-mix(in srgb, #d4a63a 55%, transparent)) !important;
+    opacity: 1 !important;
+  }
+  .rg-perTrick .rg-l { background: #3a3a48 !important; opacity: 1 !important; }
+  /* Das Durchlauf-Kürzel wird zur Kachel — dieselbe Form wie jeder andere Kasten im Panel (#go-ruhe). */
+  .rg-perTrick .rg-cyc {
+    width: 38px; font-size: 11px; opacity: 1;
+    color: #8a8a95; text-align: center;
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid rgba(150, 150, 170, .12);
+    border-radius: 6px; padding: 3px 0;
+    align-self: center;
+  }
+  /* Rechts die Summe in Lesegröße, dahinter ihr Anteil am Lauf als Fläche. */
+  .rg-perTrick .rg-cycsum {
+    position: relative; width: 132px; opacity: 1; overflow: hidden;
+    align-self: center; text-align: right;
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid rgba(150, 150, 170, .12);
+    border-radius: 6px; padding: 5px 10px;
+  }
+  .rg-perTrick .rg-share {
+    display: block; position: absolute; inset: 0 auto 0 0;
+    background: color-mix(in srgb, #d4a63a 15%, transparent);
+  }
+  .rg-perTrick .rg-cycnum {
+    position: relative; display: block; font-size: 14px; font-weight: 500;
+    color: #e4e4ee; font-variant-numeric: tabular-nums;
+  }
+  /* Die Zeilen bekommen eine Trennlinie statt eines Abstands — bei bis zu 50 Durchläufen sind 6 px
+     Lücke × 50 eine halbe Bildschirmhöhe Luft, eine Haarlinie ist es nicht. */
+  .rg-perTrick > div > .flex.items-center.gap-2 {
+    gap: 14px; padding: 7px 0;
+    border-top: 1px solid rgba(150, 150, 170, .08);
+    margin-bottom: 0;
+  }
+  .rg-perTrick > div > .flex.items-center.gap-2:first-of-type { border-top: 0; }
 
   /* ==========================================================================
      #ecke — Glossar und Ton oben links, in JEDEM Menü (19.08.2026)

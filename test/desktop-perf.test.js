@@ -220,8 +220,13 @@ describe("#go-breit — der Siegesbildschirm hat kein Loch mehr, und das Brett k
     expect(css).toMatch(/\.go-side\s+\{[^}]*grid-column:\s*2/);
     // Ohne Inhalt daneben gibt es keine zweite Spur — sonst steht das Brett an einem 1200-px-Nichts.
     expect(css).toMatch(/\.go-layout > div:not\(:has\(\.go-side > \*\)\)/);
-    // Die zwei kürzeren Panels der Zeile darüber werden gezogen: ein Panel mit Luft am Fuß ist kein Loch.
-    expect(css).toMatch(/\.go-stats, \.go-build \{[^}]*align-self:\s*stretch/);
+    /* Die MITTLERE Spalte wird gezogen: ein Panel mit Luft am Fuß ist kein Loch.
+       #go-spalten (19.08.2026): der BUILD wird ausdrücklich NICHT mehr mitgezogen. Er war das untere Ende
+       einer Ein-Panel-Spalte und ist jetzt das OBERE von zweien (darunter die Score-Herkunft) — gezogen
+       schöbe er sie an den Fuß und risse dasselbe Loch eine Zeile tiefer wieder auf. */
+    expect(css).toMatch(/\.go-stats \{[^}]*align-self:\s*stretch/);
+    expect(css, "der Build wird wieder mitgezogen — das Loch kommt zurück")
+      .not.toMatch(/\.go-build[^{]*\{[^}]*align-self:\s*stretch/);
   });
 
   it("KEIN zoom am Brett — in keinem der beiden Screens", () => {

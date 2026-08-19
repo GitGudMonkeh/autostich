@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { GHOST_STEP } from "../game/constants.js"; // x-Achse: ein Stützpunkt je GHOST_STEP Stiche
 import { fmtScoreShort } from "./format.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
@@ -41,6 +42,11 @@ import { t, fmtNum } from "../i18n/index.js"; // #sprache
 const KNAPP_LAB = 46;
 
 export function Sparkline({ current = [], record = [], height = 40, axes = false }) {
+  /* Eigene Verlaufs-Kennung je Instanz. Der Endscreen und die Lauf-Details koennen gleichzeitig im DOM
+     stehen (die Bestenliste laesst sich aus dem Endscreen oeffnen), und zwei gleich benannte <defs> im
+     selben Dokument sind eine Falle: heute sind beide Verlaeufe identisch, also faellt nichts auf —
+     sobald einer von ihnen die Deckfarbe zieht, gewinnt still der erste im DOM. */
+  const gid = `sl-run-${useId().replace(/:/g, "")}`;
   const voll = axes === true;
   const knapp = axes === "knapp";
   const W = voll ? 620 : 300;
@@ -70,9 +76,27 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img"
       style={voll ? { height: "auto" } : { height: H, paddingLeft: knapp ? KNAPP_LAB : undefined }}
       preserveAspectRatio={voll ? "xMidYMid meet" : "none"}>
+      {/* #graph-gold (19.08.2026) — die AUSFÜHRLICHE Fassung bekommt Fläche, Grundton und Endpunkt.
+          Sie steht auf dem Siegesbildschirm in einer rund 500 px breiten Spalte; dort waren zwei
+          1,75-px-Linien auf weißem Gitter das Dünnste im ganzen Screen. Die KOMPAKTE Linie (Kachel,
+          StatusRail, Handy) bleibt Zeichen für Zeichen, wie sie war — sie ist 40 px hoch und würde von
+          einer Fläche zugedeckt. Deshalb hängt jeder Zusatz unten an `voll`. */}
+      {voll && (
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#d4a63a" stopOpacity="0.34" />
+            <stop offset="100%" stopColor="#d4a63a" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      )}
       {(voll || knapp) && yTicks.map((v, i) => (
         <g key={`y${i}`}>
-          <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="#ffffff" strokeOpacity={i === 0 ? 0.18 : 0.07} strokeWidth="1" />
+          {/* Das Gitter der ausführlichen Fassung zieht die Haarlinie des Hauses (dieselbe wie an jeder
+              Kachel, #st-ruhe). Weiß war hier die EINZIGE Stelle im Screen, die Weiß benutzt — und die
+              oberste Linie stand mit 18 % kräftiger da als die Rekord-Kurve daneben. */}
+          <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} strokeWidth="1"
+            stroke={voll ? "rgba(150, 150, 170, .12)" : "#ffffff"}
+            strokeOpacity={voll ? 1 : (i === 0 ? 0.18 : 0.07)} />
           {voll && <text x={padL - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10" fill="#8a8a95">{fmtScoreShort(v)}</text>}
         </g>
       ))}
@@ -80,8 +104,23 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
         <text key={`x${i}`} x={x(i)} y={H - 21} textAnchor={i === 0 ? "start" : i === maxLen - 1 ? "end" : "middle"}
           fontSize="10" fill="#8a8a95">{fmtNum((i + 1) * GHOST_STEP)}</text>
       ))}
+      {/* Die FLÄCHE unter der Lauf-Kurve — sie trägt die Linie über die Breite, ohne sie zu verdicken.
+          Nur der LAUF bekommt sie, nicht der Rekord: zwei Flächen übereinander wären Matsch, und der
+          Rekord ist ausdrücklich der leisere der beiden (55 % Deckkraft seit jeher). */}
+      {voll && current.length >= 2 && (
+        <path d={`${path(current)} L${x(current.length - 1).toFixed(1)},${(H - padB).toFixed(1)} L${x(0).toFixed(1)},${(H - padB).toFixed(1)} Z`}
+          fill={`url(#${gid})`} stroke="none" />
+      )}
       {record.length >= 2 && <path d={path(record)} fill="none" stroke="#8a7de0" strokeWidth="1.5" strokeOpacity="0.55" vectorEffect="non-scaling-stroke" />}
-      {current.length >= 2 && <path d={path(current)} fill="none" stroke="#d4a63a" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />}
+      {current.length >= 2 && <path d={path(current)} fill="none" stroke="#d4a63a" strokeWidth={voll ? "2.25" : "1.75"} strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
+      {/* Der ENDPUNKT ist die Aussage des Graphen — dort steht der Lauf. Ohne Marke muss man ihn an der
+          Achse ablesen; mit Punkt und Halo ist er das, worauf das Auge zuerst landet. */}
+      {voll && current.length >= 2 && (
+        <g>
+          <circle cx={x(current.length - 1)} cy={y(current[current.length - 1])} r="8.5" fill="none" stroke="#d4a63a" strokeWidth="1" opacity="0.38" />
+          <circle cx={x(current.length - 1)} cy={y(current[current.length - 1])} r="4" fill="#d4a63a" />
+        </g>
+      )}
       {/* Achsenbeschriftung: die y-Werte sind Score, die x-Werte Stiche — ohne die Angabe sind es nur Zahlen. */}
       {voll && <text x={(W + padL) / 2} y={H - 4} textAnchor="middle" fontSize="9.5"
         letterSpacing="0.08em" fill="#5f5f70">{t("sparkline.axis.x")}</text>}
