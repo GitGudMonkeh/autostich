@@ -14,7 +14,7 @@ Einbau ist NICHT gemacht: Issue #402.
 | C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ANDERS beleuchtet (Umriss · Ecken · eine Kante) | Fächer ✅ |
 | D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe ✅ |
 | E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug ✅ |
-| P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz |
+| P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz ✅ |
 | S | Ausbau | Slots & Ökonomie | `#5ec8c0` | 0 | 1 | Gerüst mit leerem, hell umrissenem Fach | offener Rahmen |
 
 ## Die Farbe trägt hier NICHT — die Silhouette muss es
@@ -64,6 +64,7 @@ Helligkeitsbänder, schwarzer Grund, quadratisch, `mix-blend-mode: screen`).
 | **C Rolle** | 31,4 % | 7,6 % | 3,6 % | 1,56 % | 1,81 | 132° |
 | **D Score** | 22,3 % | 8,7 % | 3,1 % | 0,96 % | 2,26 | 33° |
 | **E Form** | 30,4 % | 5,7 % | 1,4 % | 0,25 % | 1,50 | 219° |
+| **P Präzision** | 20,4 % | 5,5 % | 1,7 % | 0,49 % | 1,90 | 21° |
 
 **D Score** hat mit 2,26 die höchste Streuung des Satzes — die Treppe gibt jeder Stufe einen eigenen
 Helligkeitswert. Ihr Farbton liegt bei 33° statt der 43° der Kategoriefarbe, also oranger; das ist ein
@@ -88,6 +89,17 @@ eine Zahl in einer Tabelle statt eines neuen Bildversuchs. **C Rolle ist der ers
 heller Kartenumriss ist schlicht mehr Licht als eine Naht oder ein paar Kartenkanten (31,4 % Fläche, 1,56 %
 fast weiß gegen 0,4 % bei A und B). Faktor nach Messung rund **0,85** — endgültig gerechnet wird über alle
 sieben, sobald der Satz steht, denn der Zielwert ist der Median und der wandert noch.
+
+## Die warmen drei trennt nur die Form
+
+**B Stich (2°) · P Präzision (21°) · D Score (33°)** liegen in einem engen warmen Feld — bei 277 px
+Kachelbreite ist das kein Farbunterschied mehr. Unterschieden werden sie ausschließlich über die
+Grundform: **gespiegeltes Paar · Kreis mit Kreuz · Treppe**. Wer eines davon überarbeitet, darf die
+Grundform nicht antasten.
+
+Bei **P** ist der Ring mit rund 60 % der Bildbreite so groß, dass die Karte dahinter im Kleinen fast
+verschwindet — der Bezug „auf eine Karte gezielt" geht verloren, die Silhouette bleibt aber eindeutig, weil
+P der einzige Kreis des Satzes ist. Bewusst so belassen.
 
 ## Komposition
 
