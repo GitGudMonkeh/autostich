@@ -50,7 +50,12 @@ und der wandert mit jedem neuen Bild.
 kamen als 1536 × 1024). Unter `mix-blend-mode: screen` ist der schwarze Rand unsichtbar — Beschneiden
 würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmachen.
 
-## Stand Blitz (15 von 21 zugeordnet)
+## Stand Blitz — alle 21 Motive stehen, 13 liegen als Datei
+
+Fehlt noch **als Datei** (Motiv ist abgenommen, der Upload kam nur nicht durch): `02` Ionisierung ·
+`03` Kettenblitz · `05` Reststrom · `07` Ladungsserie · `09` Kurzschluss · `10` Entladung ·
+`12` Breitenbeschleuniger · `13` Spannungsstau. **Der Farbangleich wartet auf diese acht** — er zieht auf
+den Median des Satzes, und der wandert mit jedem fehlenden Bild.
 
 | Skill | ID | Motiv | Datei |
 |---|---|---|---|
@@ -68,10 +73,18 @@ würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmac
 | Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | offen (Upload) |
 | Überschlag | `SK_LIGHTNING_14` | Bogen über eine dunkle Kante, Funkenregen rechts | ✅ |
 | Blitzschlag | `SK_LIGHTNING_15` | eine stehende Karte, Einschlag mittig | ✅ |
+| Blitzfänger | `SK_LIGHTNING_11` | offene Steinschale fängt den Blitz auf | ✅ |
 | Dauerstrom | `SK_LIGHTNING_16` | waagerechtes Band über dem Raster | ✅ |
+| Serienschutz | `SK_LIGHTNING_17` | Bogenkuppel über einem Splitter | ✅ |
+| Donnergott | `SK_LIGHTNING_L01` | Wolfskopf aus Sturm, goldene Krone | ✅ |
+| Doppelentladung | `SK_LIGHTNING_L02` | zwei gespiegelte Blitze, goldener Kern mittig | ✅ |
+| Flächenionisation | `SK_LIGHTNING_L03` | Kartenfeld in Perspektive, vorne golden | ✅ |
+| Durchschlag | `SK_LIGHTNING_L04` | Karte mit durchgeschlagenem, goldglühendem Loch | ✅ |
 
-Es fehlen: `11` Blitzfänger · `17` Serienschutz · `L01` Donnergott · `L02` Doppelentladung ·
-`L03` Flächenionisation · `L04` Durchschlag.
+**Gold in den vier Legendären:** es sitzt jeweils an genau EINER Stelle (Krone · Kern · vordere Reihe ·
+Lochrand) und trägt dieselbe Bedeutung wie die goldene Kartenkante — „legendär". Wer ein fünftes
+Legendäres ergänzt, hält sich daran; Gold als zweite Deko über das ganze Bild verteilt nimmt der Kante
+ihre Aussage.
 
 **Verworfen und nicht wieder aufnehmen:** Reststrom als Kapsel mit vier Leuchtringen (las sich als
 halbvolle Batterie und war Gerätegehäuse statt Sturm) · Ladungsserie als Kette gleich großer Kugeln
@@ -85,8 +98,10 @@ Bei 21 Bildern derselben Fraktion entscheidet die **Silhouette bei 64 px**, nich
 bereits: Nadel (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Fontäne (04) · Kanal (05) ·
 Wolkenmasse (06) · Spirale (07) · Kreis (08) · Hantel (09) · Trichter mit Ring (10) ·
 Kartenreihe mit Bogen (12) · Stachelkugel (13) · Bogen über Kante (14) · einzelne Karte (15) ·
-waagerechtes Band (16). Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie,
-eine andere Grundform immer. Zweite Regel aus der Perlen-Panne: **nie aus gleichmäßig wiederholten,
+waagerechtes Band (16) · offene Schale (11) · Kuppel (17) · Kopf mit Krone (L01) · gespiegeltes V (L02) ·
+Fläche in Perspektive (L03) · Karte mit Loch (L04). Für Blitz ist der Satz damit voll; wer eine der Formen
+in Feuer, Eis oder Pflanze wiederverwendet, muss sie über die FRAKTIONSFARBE trennen, nicht über Details.
+Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie, eine andere Grundform immer. Zweite Regel aus der Perlen-Panne: **nie aus gleichmäßig wiederholten,
 gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Richtung variieren.
 
 **Die eine Kollision, die zu beobachten ist:** `08` (Kugel) und `13` (Stachelkugel) sind beide rund. Sie
