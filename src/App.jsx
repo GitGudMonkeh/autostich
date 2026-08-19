@@ -1172,7 +1172,7 @@ function AutostichGame() {
             </div>
             {/* Perks/Skills — Mobil unter den Stats (order-3), Desktop links unter dem Battlefield. */}
             <div className="order-3 lg:col-start-1 lg:row-start-2">
-              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} />
+              <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat} />
             </div>
             {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
             {state.weekMods?.length > 0 && (

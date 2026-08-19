@@ -115,7 +115,7 @@ export const SKILL_DEFS = {
   //      Flags werden in skills.js-Helfern (heatGainFor/heatLossFor/fireScoreFor) + engine.js gelesen. ----
   // Linie 1 — Generation (Marge · Konstanz · Serie)
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"],
-    desc: `Siege mit Wertvorsprung geben +${pct(C.EMBER_MULT - 1)} % mehr Hitze (Hitzegewinn ×${de(C.EMBER_MULT)}).`, emberBoost: true },
+    desc: `Siege mit Kampfwert-Vorsprung geben +${pct(C.EMBER_MULT - 1)} % mehr Hitze (Hitzegewinn ×${de(C.EMBER_MULT)}).`, emberBoost: true },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"],
     desc: `Jeder Sieg gibt +${C.ZUNDER_HEAT} % Hitze — auch bei knappem Vorsprung.`, zunder: true },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"],
@@ -127,16 +127,16 @@ export const SKILL_DEFS = {
     desc: `Nach einer Niederlage gibt der nächste Sieg +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % Hitze je Punkt Wert-Rückstand und der Siegkarte +${C.RUECKZUENDUNG_VALUE} Stichwert.`, rueckzuendung: true },
   // Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Für +${C.GLOWING_T2_VALUE} und +${C.GLOWING_T3_VALUE} braucht es zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Wertvorsprung im laufenden Segment.`, glowingBlade: true },
+    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Für +${C.GLOWING_T2_VALUE} und +${C.GLOWING_T3_VALUE} braucht es zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Kampfwert-Vorsprung im laufenden Segment.`, glowingBlade: true },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"],
     desc: `Hitze über ${C.HEAT_MAX} % staut sich als Überhitzung auf, bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %. Je höher sie steht, desto weniger vom Überschuss kommt an. Jeder Punkt gibt +${pct(C.OVERHEAT_SCORE_STEP)} % auf deinen Feuer-Score; je Stich baut sie ${C.OVERHEAT_DECAY} Punkte ab, bei einer Niederlage ${C.OVERHEAT_DECAY_LOSS}.`, whiteHeat: true },
   // Linie 4 — Wert-/Score-Motoren
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
     desc: `Ab ${C.FIREROLL_MIN_HEAT} % Hitze gibt jeder Sieg in Folge der nächsten Karte +1 Stichwert (steigend bis +${C.FIREROLL_MAX}); eine Niederlage setzt zurück.`, fireRoll: true },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
-    desc: `Großer Wertvorsprung gibt mehr Feuer-Score: ×${de(C.VERBRENNUNG_T1_MULT)} ab ${C.VERBRENNUNG_T1_MARGIN}, ×${de(C.VERBRENNUNG_T2_MULT)} ab ${C.VERBRENNUNG_T2_MARGIN} Wertvorsprung.`, verbrennung: true },
+    desc: `Großer Kampfwert-Vorsprung gibt mehr Feuer-Score: ×${de(C.VERBRENNUNG_T1_MULT)} ab ${C.VERBRENNUNG_T1_MARGIN}, ×${de(C.VERBRENNUNG_T2_MULT)} ab ${C.VERBRENNUNG_T2_MARGIN} Vorsprung.`, verbrennung: true },
   SK_FIRE_10: { id: "SK_FIRE_10", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Wertvorsprung legt das ${de(C.SPARKFLIGHT_BANK_MULT)}-fache seines Feuer-Scores plus ${C.SPARKFLIGHT_FLOOR_BASE} (+${C.SPARKFLIGHT_FLOOR_PER_SKILL} je weiterem Feuer-Skill) in einen Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet ihn aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
+    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Kampfwert-Vorsprung legt das ${de(C.SPARKFLIGHT_BANK_MULT)}-fache seines Feuer-Scores plus ${C.SPARKFLIGHT_FLOOR_BASE} (+${C.SPARKFLIGHT_FLOOR_PER_SKILL} je weiterem Feuer-Skill) in einen Speicher. Ein Sieg mit ≥${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung schüttet ihn aus und leert ihn; eine Niederlage halbiert ihn.`, sparkflight: true },
   // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
     desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze brennt der nächste Sieg deine Hitze bis auf ${C.CONFLAG_KEEP} % herunter: +${C.CONFLAG_PER_HEAT} Score je verbranntem Hitzepunkt, +${C.CONFLAG_PER_SKILL} je weiterem Feuer-Skill (mit ${C.SKILL_SLOTS} Feuer-Skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`, heatConsumer: "conflagration" },
@@ -343,9 +343,12 @@ export function initLightning() {
 // fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
 // over = Überhitzung (Weißglut, #fire-balance) · glowSegBest = größter Wertvorsprung im LAUFENDEN Segment, gelesen
 // von der Glühenden Klinge (s. glowMarginFor). Beide sind über `|| 0` abgesichert — Altstände laufen weiter.
+// sparkPaid/sparkPayouts (#384) = Bilanz des Funkenflugs für die Skill-Detailansicht: was seine Ausschüttungen
+// diesem Lauf WIRKLICH eingebracht haben (inkl. der Multiplikatoren des auslösenden Stichs, s. engine.js) und wie
+// oft er ausgeschüttet hat. Reine Anzeige — kein Leser im Regelwerk.
 export function initHeat() {
   return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0,
-           over: 0, glowSegBest: 0 };
+           over: 0, glowSegBest: 0, sparkPaid: 0, sparkPayouts: 0 };
 }
 
 // Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.

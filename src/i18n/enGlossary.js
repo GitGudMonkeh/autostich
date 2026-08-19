@@ -41,7 +41,7 @@ const E = [
   ["durchlauf", "Cycle", `All ${C.TRICKS_PER_CYCLE} cards of the deck played through once (${C.TRICKS_PER_CYCLE} tricks). Then the opponent reshuffles and a decision is due.`, ["cycle", "cycles", "deck cycle"]],
   ["aufstellung", "Order phase", "Between two cycles you rearrange your draw order — every swap costs order energy.", ["order phase", "draw order"]],
   ["streak", "Win streak (streak)", "Wins in a row. The streak multiplier and many skills grow with it; a loss resets it.", ["win streak", "streak", "streaks"]],
-  ["wertvorsprung", "Margin", "The gap between your combat value and the opponent card's. For fire it is not whether you win that counts, but by how much: heat and fire score grow with the margin.", ["margin", "value gap"]],
+  ["wertvorsprung", "Combat-value margin", "The gap between your combat value and the opponent card's — card value plus trick-value bonuses, not just the card value. For fire it is not whether you win that counts, but by how much: heat and fire score grow with the margin.", ["combat-value margin", "margin", "value gap"]],
   ["kampfwert", "Combat value", "A card's effective value in a trick: card value plus all trick-value bonuses. The higher one wins.", ["combat value"]],
   ["crit", "Crit", `Critical hit: the win counts with the crit multiplier (base ×${num(C.CRIT_BASE_MULT)}). Base crit is 0 — crit chance comes from the Precision families and from lightning skills. Every lightning skill also raises the crit multiplier by +${num(C.LIGHTNING_CRIT_MULT_PER_SKILL)}×.`, ["crit", "crits", "critical hit", "critical hits"]],
   ["gleichstand", "Tie", "Equal combat values in a trick — normally no win (no score).", ["tie", "ties"]],

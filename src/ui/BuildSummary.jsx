@@ -9,6 +9,7 @@ import { SUIT_ORDER, suitColor } from "../game/constants.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef, suitLabel } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Farben zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
+import { FIRE_HOT, WHITE_HEAT } from "./indicators/vocab.js"; // #384 Ertragszeile: dieselben Feuer-Töne wie das Hitze-Panel
 
 // Archetyp-Meta eines Skills (Icon/Farbe/Label) — Fallback neutral (#93 F1: Feuer & Blitz gemischt).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
@@ -128,12 +129,28 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
   );
 }
 
-/* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1). */
-export function SkillList({ skills = [], empty = t("build.skills.empty") }) {
+/* #384 Ertragszeile im aufgeklappten Skill-Detail — bislang nur der Funkenflug.
+   Warum nicht für JEDEN Skill: die meisten wirken als Faktor in einem geteilten Multiplikator-Stapel, ihr Anteil
+   wäre bestenfalls geschätzt. Der Funkenflug schüttet dagegen einen abgegrenzten Betrag aus, der sich exakt
+   zurechnen lässt (engine.js #384) — deshalb steht hier eine Zahl und sonst keine.
+   Die Zahl ist der ECHTE Beitrag: die Ausschüttung inklusive der Multiplikatoren des auslösenden Stichs. Das ist
+   die Frage, die der Spieler stellt („was hat mir der Skill gebracht?"); der rohe Speicherbetrag wäre kleiner als
+   die Wahrheit, weil ein Sieg mit ≥8 Vorsprung meist auch Serie/Formation/Crit trägt. */
+function skillYieldLine(skillId, heat) {
+  if (!heat || !SKILL_DEFS[skillId]?.sparkflight) return null;
+  const paid = Math.round(heat.sparkPaid || 0), n = heat.sparkPayouts || 0, store = Math.round(heat.sparkStore || 0);
+  const vals = { score: fmtNum(paid), n, store: fmtNum(store) };
+  return n > 0 ? t("build.skill.spark.yield", vals) : t("build.skill.spark.empty", vals);
+}
+
+/* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1).
+   `heat` (optional) speist die Ertragszeile — ohne Hitze-Substate (Rückblick, Auswahl-Panels) bleibt sie weg. */
+export function SkillList({ skills = [], empty = t("build.skills.empty"), heat = null }) {
   const [openSkill, setOpenSkill] = useState(null);
   const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill) : null;
   if (skills.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
   const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
+  const yieldLine = open ? skillYieldLine(open.id, heat) : null;
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -159,6 +176,19 @@ export function SkillList({ skills = [], empty = t("build.skills.empty") }) {
             <span className="font-bold" style={{ color: om.color }}>{open.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{open.desc}</div>
+          {/* #384 Ertrag des Skills in DIESEM Lauf — steht vor den Begriffserklärungen, weil er den Skill bewertet,
+              nicht erklärt. Farben wie im Feuer-Panel (Marke = heißes Ende, Zahlen = Weißglut-Weiß). */}
+          {yieldLine && (
+            <div className="text-xs leading-snug mt-1.5">
+              <span className="font-bold" style={{ color: FIRE_HOT }}>⚔ {t("build.skill.yield.term")}</span>
+              <span className="opacity-75"> — </span>
+              {/* **fett** im Satz = die Zahlen (dieselbe Markup-Konvention wie die Leitfaden-Texte). Die Deckkraft
+                  sitzt an den Wort-Teilen, nicht am Container — sonst dimmte sie die Zahlen gleich mit. */}
+              {yieldLine.split(/\*\*/).map((part, i) => (i % 2
+                ? <strong key={i} className="tabular-nums" style={{ color: WHITE_HEAT }}>{part}</strong>
+                : <span key={i} className="opacity-75">{part}</span>))}
+            </div>
+          )}
           {/* #201 P1: Schlüsselbegriffe des Skills gleich mit erklärt — im Build jederzeit abrufbar. */}
           {glossaryKeywords([open.id], SKILL_DEFS).map((k) => (
             <div key={k} className="text-xs leading-snug mt-1.5">

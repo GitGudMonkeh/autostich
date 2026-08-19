@@ -55,10 +55,10 @@ export const GUIDES = {
   // ---------------------------------------------------------------- FEUER
   fire: {
     subtitle: `Hitze belohnt totale Überlegenheit — je klarer du einen Stich dominierst, desto heißer die Leiste und desto mehr Score fällt sofort ab.`,
-    kernidee: `Feuer belohnt nicht bloßes Gewinnen, sondern **überlegenes** Gewinnen. Je größer dein **Wertvorsprung**, desto heißer die Leiste — und desto härter schlägt jeder Sieg zu. Der Archetyp der brachialen Dominanz.`,
+    kernidee: `Feuer belohnt nicht bloßes Gewinnen, sondern **überlegenes** Gewinnen. Je größer dein **Kampfwert-Vorsprung**, desto heißer die Leiste — und desto härter schlägt jeder Sieg zu. Der Archetyp der brachialen Dominanz.`,
     pillarsLabel: `Die drei Ressourcen`,
     pillars: [
-      { glyph: "⚔", color: "#e85c3c", name: "Wertvorsprung", sub: "· die Marge", text: `Feuers eigentliche Währung. Nicht **ob** du gewinnst zählt, sondern **wie klar**. Ein knapper Sieg zahlt kaum, ein erdrückender zahlt massiv.` },
+      { glyph: "⚔", color: "#e85c3c", name: "Kampfwert-Vorsprung", sub: "· die Marge", text: `Feuers eigentliche Währung. Nicht **ob** du gewinnst zählt, sondern **wie klar**. Ein knapper Sieg zahlt kaum, ein erdrückender zahlt massiv.` },
       { glyph: "🔥", faction: "fire", color: "#f0a63c", name: "Hitze", text: `Die Leiste (leer bis voll). Jeder Sieg heizt sie auf — vor allem mit Vorsprung —, klare Niederlagen kühlen sie ab. Gehaltene Hitze zahlt bei **jedem** Feuer-Sieg eine **Glutdividende** direkt aus; dazu ist sie ein Vorrat zum **Ausschütten**, und mit dem Skill Glühende Klinge macht sie deine Karten stärker.` },
       { glyph: "⚒", color: "#cca366", name: "Asche & Schmiede", text: `Die dauerhafte Investition. Brände senken Gegnerkarten und geben Asche; die Schmiede verwandelt Asche in **bleibenden Kartenwert**.` },
     ],

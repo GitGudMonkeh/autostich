@@ -924,7 +924,7 @@ const MUSTER_DESC = {
   D_CRIT_SCORE: { tpl: "Jeder Crit: +$0 Score.", vals: [["100"],["175"],["275"],["450"]] },
   D_SHARP_EYE: { tpl: "Crit mit Kartenwert ≥$0: +$1 Score.", vals: [["9","225"],["8","350"],["7","500"],["6","750"]] },
   D_RHYTHM: { tpl: "Im Takt: jeder $0. Sieg gibt +$1 Score.", vals: [["7","250"],["5","350"],["4","450"],["3","600"]] },
-  D_OVERPOWER: { tpl: "Sieg mit ≥$0 Wertvorsprung: +$1 Score.", vals: [["10","300"],["8","400"],["6","550"],["4","750"]] },
+  D_OVERPOWER: { tpl: "Sieg mit ≥$0 Kampfwert-Vorsprung: +$1 Score.", vals: [["10","300"],["8","400"],["6","550"],["4","750"]] },
   D_CRIT_HARVEST: { tpl: "Crit in ≥1 aktiver Formation: +$0 Score.", vals: [["175"],["300"],["475"],["750"]] },
   // Sprachprüfung: „Aufstellungsphase" ist der EINE Name der Phase (so auch im Glossar) — „Formationsphase"
   // war hier das einzige Vorkommen in einem Spielertext und wurde vom Glossar deshalb nicht mal gefettet.

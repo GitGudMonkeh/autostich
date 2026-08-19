@@ -203,10 +203,10 @@ export default {
   "bar.fire.badge.fireRoll.n": "Feuerwalze +{n}",
   "bar.fire.badge.glow": "Glühende Klinge",
   "bar.fire.badge.glow.n": "Glühende Klinge +{n}",
-  "bar.fire.badge.glow.title": "Glühende Klinge: +{v1} ab {h1} % Hitze · +{v2} ab {h2} % · +{v3} bei {h3} % Hitze. Die oberen Stufen verlangen je Segment einen Sieg über {m2} bzw. {m3} Wertvorsprung — bleibt ein Segment ohne, fällst du zurück.",
+  "bar.fire.badge.glow.title": "Glühende Klinge: +{v1} ab {h1} % Hitze · +{v2} ab {h2} % · +{v3} bei {h3} % Hitze. Die oberen Stufen verlangen je Segment einen Sieg über {m2} bzw. {m3} Kampfwert-Vorsprung — bleibt ein Segment ohne, fällst du zurück.",
   "bar.fire.badge.spark": "Funkenflug",
   "bar.fire.badge.spark.n": "Funkenflug {n}",
-  "bar.fire.badge.spark.title": "Funkenflug-Speicher: Siege unter {m} Wertvorsprung zahlen ein, ein Sieg ab {m} schüttet ihn aus. Eine Niederlage halbiert ihn.",
+  "bar.fire.badge.spark.title": "Funkenflug-Speicher: Siege unter {m} Kampfwert-Vorsprung zahlen ein, ein Sieg ab {m} schüttet ihn aus. Eine Niederlage halbiert ihn.",
   "bar.fire.tick.glow": "Glühende Klinge: +Wert ab {n} % Hitze",
   "bar.fire.tick.full": "100 % Hitze — darüber beginnt die Überhitzung",
   "bar.fire.tick.white": "Weißglut: Hitze über 100 % staut sich als Überhitzung auf (bis {max} %) — je heißer, desto weniger kommt an. Jeder Punkt gibt +{n} % auf den gesamten Feuer-Score und baut sich je Stich wieder ab.",
@@ -498,7 +498,7 @@ export default {
   // Die Zahlen stehen als Platzhalter: sie kommen zur Anzeigezeit aus constants.js/glacier.js,
   // damit ein Balancing-Dreh nicht am Text vorbeigeht.
   "skill.passive.lightning": "Der erste Blitz-Skill gibt +{first} % Crit-Chance, jeder weitere +{each} %. Dazu +{mult}× Crit-Multiplikator je Blitz-Skill.",
-  "skill.passive.fire": "Jeder Sieg mit mindestens {margin} Wertvorsprung heizt die Hitze um {heat} % auf und gibt +{score} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um {cool} % ab (plus Wert-Rückstand, bis {coolMax}). Jeder weitere Feuer-Skill gibt +{perSkill} Feuer-Score je Vorsprungspunkt.",
+  "skill.passive.fire": "Jeder Sieg mit mindestens {margin} Kampfwert-Vorsprung heizt die Hitze um {heat} % auf und gibt +{score} Feuer-Score — je größer der Vorsprung, desto mehr. Niederlagen kühlen die Hitze um {cool} % ab (plus Wert-Rückstand, bis {coolMax}). Jeder weitere Feuer-Skill gibt +{perSkill} Feuer-Score je Vorsprungspunkt.",
   "skill.passive.ice": "Jeder Eis-Skill friert eine eigene Karte als Gletscher fest — sie wird starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber jeden Durchlauf Masse und bricht schließlich gewaltig über ihre Nachbarn. Jeder Pick friert einen neuen Gletscher (auch ein Tausch bei vollen Slots); ab {declineFrom} gehaltenen Eis-Skills friert selbst das Ablehnen eines Angebots noch einen — so kannst du mehr Gletscher haben als Skill-Slots.",
   "skill.passive.plant": "Jeder Sieg gibt der Karte bis zu +1 Wachstum (volles Tempo ab {ref} Pflanze-Skills). Ab {green} Wachstum wird die Karte grün. Solange du nur Pflanzen-Skills hältst: je {perValue} Wachstum +1 Kartenwert (bis {cap}, danach ist sie voll ausgewachsen), ab {minSkills} Pflanzen-Skills auch bei jeder {everyLoss}. Niederlage.",
   "skill.forms.head": "Deine aktiven Formationen",
@@ -533,6 +533,10 @@ export default {
   "build.skills.empty": "Noch keine Skills.",
   "build.perks.emptyRun": "Noch keine Perks. In manchen Durchläufen wählst du einen dazu.",
   "build.skills.emptyRun": "Noch keine Skills — ab Durchlauf {cycle} wählbar.",
+  // #384 Funkenflug-Bilanz in der Skill-Detailansicht: echter Beitrag (inkl. der Multiplikatoren des Stichs).
+  "build.skill.yield.term": "Ertrag",
+  "build.skill.spark.yield": "bisher **{score}** Score aus **{n}** Ausschüttungen; **{store}** liegen im Speicher.",
+  "build.skill.spark.empty": "noch keine Ausschüttung; **{store}** liegen im Speicher.",
   "build.deck.legend": "Balken = Ø-Wert · violett ◆ = unschlagbar (>{over}, überbietet jede Gegnerkarte).",
 
   /* ---- Legendär-Wahl (LegendarySelect) ---- */

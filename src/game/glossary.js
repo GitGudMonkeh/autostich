@@ -88,9 +88,12 @@ export const GLOSSARY = {
   streak: { category: "grund", label: "Siegesserie (Serie)", icon: "📈", color: CLR.lightning,
     text: "Siege in Folge (Siegesserie). Der Serien-Multiplikator und viele Skills wachsen mit ihr; eine Niederlage setzt sie zurück.",
     match: ["Siegesserie", "Serie", "Serien"] },
-  wertvorsprung: { category: "grund", label: "Wertvorsprung", icon: "⚔️", color: CLR.fire,
-    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: Hitze und Feuer-Score wachsen mit dem Vorsprung.",
-    match: ["Wertvorsprung", "Vorsprung", "Wertabstand"] },
+  /* #383: hieß „Wertvorsprung" — das ließ offen, WELCHER Wert zählt (nur der Kartenwert? auch der Stichwert?).
+     Gemessen wird der Kampfwert, also beides zusammen (engine.js: pValue − oValue). Der Begriff sagt das jetzt
+     selbst; die Alt-Formen bleiben in `match`, damit ältere Texte weiter fett markiert werden. */
+  wertvorsprung: { category: "grund", label: "Kampfwert-Vorsprung", icon: "⚔️", color: CLR.fire,
+    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte — also Kartenwert plus Stichwert-Boni, nicht nur der Kartenwert. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: Hitze und Feuer-Score wachsen mit dem Vorsprung.",
+    match: ["Kampfwert-Vorsprung", "Wertvorsprung", "Vorsprung", "Wertabstand"] },
   kampfwert: { category: "grund", label: "Kampfwert", icon: "◆", color: CLR.grund,
     text: "Der effektive Wert einer Karte im Stich: Kartenwert plus alle Stichwert-Boni. Der höhere gewinnt.",
     match: ["Kampfwert"] },
@@ -211,7 +214,7 @@ export const GLOSSARY = {
 
   /* ============ 4 · Feuer ============ */
   heat: { category: "frak", group: "fire", label: "Hitze", icon: "🔥", color: CLR.fire,
-    text: `Siege mit klarem Wertvorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill). Großer Vorsprung zahlt weiter, ohne Deckel — mit abnehmendem Zuwachs; klare Niederlagen kühlen ab.`,
+    text: `Siege mit klarem Kampfwert-Vorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill). Großer Vorsprung zahlt weiter, ohne Deckel — mit abnehmendem Zuwachs; klare Niederlagen kühlen ab.`,
     match: ["Hitze", "Hitzeleiste"] },
   glutdividende: { category: "frak", group: "fire", label: "Glutdividende", icon: "🔥", color: CLR.fire,
     text: "Zusätzlicher Score bei jedem Feuer-Sieg, der direkt zählt (ohne Serie/Crit/Formation zu durchlaufen). Je mehr Hitze du hältst, desto mehr — bis zu einem Deckel. Stark im frühen Spiel.",

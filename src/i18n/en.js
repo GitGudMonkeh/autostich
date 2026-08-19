@@ -483,7 +483,7 @@ export default {
   "skill.passive.expand": "{arch}: expand passive",
   "skill.passive.collapse": "{arch}: collapse passive",
   "skill.passive.lightning": "The first lightning skill gives +{first}% crit chance, every further one +{each}%. On top of that +{mult}× crit multiplier per lightning skill.",
-  "skill.passive.fire": "Every win with at least {margin} value margin heats you up by {heat}% and gives +{score} fire score — the bigger the margin, the more. Losses cool the heat down by {cool}% (plus the value deficit, up to {coolMax}). Every further fire skill gives +{perSkill} fire score per point of margin.",
+  "skill.passive.fire": "Every win with at least {margin} combat-value margin heats you up by {heat}% and gives +{score} fire score — the bigger the margin, the more. Losses cool the heat down by {cool}% (plus the value deficit, up to {coolMax}). Every further fire skill gives +{perSkill} fire score per point of margin.",
   "skill.passive.ice": "Every ice skill freezes one of your own cards as a glacier — it turns rigid (never movable in any future order phase again), but gathers mass every cycle and eventually bursts massively over its neighbours. Every pick freezes a new glacier (a swap on full slots too); from {declineFrom} ice skills held, even declining an offer still freezes one — so you can have more glaciers than skill slots.",
   "skill.passive.plant": "Every win gives the card up to +1 growth (full pace from {ref} plant skills). From {green} growth the card turns green. As long as you hold only plant skills: every {perValue} growth gives +1 card value (up to {cap}, after which it is fully grown), and from {minSkills} plant skills also on every {everyLoss} loss.",
   "skill.forms.head": "Your active formations",
@@ -518,6 +518,10 @@ export default {
   "build.skills.empty": "No skills yet.",
   "build.perks.emptyRun": "No perks yet. Some cycles let you pick one.",
   "build.skills.emptyRun": "No skills yet — pickable from cycle {cycle}.",
+  // #384 Spark Flight balance in the skill detail: the real contribution (including the trick's multipliers).
+  "build.skill.yield.term": "Yield",
+  "build.skill.spark.yield": "**{score}** score so far from **{n}** payouts; **{store}** sitting in the store.",
+  "build.skill.spark.empty": "no payout yet; **{store}** sitting in the store.",
   "build.deck.legend": "Bar = avg value · purple ◆ = unbeatable (>{over}, beats any opponent card).",
 
   /* ---- Legendary choice (LegendarySelect) ---- */

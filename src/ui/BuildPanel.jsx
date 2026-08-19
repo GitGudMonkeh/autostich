@@ -6,7 +6,7 @@ import { t } from "../i18n/index.js"; // #sprache
 /* Build-Übersicht unter dem Battlefield: links die gewählten Perks, rechts die Skills
    (Blitz-Archetyp). Beide anklickbar → Beschreibung. Deck-Histogramm sitzt als eigener
    „Chronik"-Block ganz unten (#28). */
-export function BuildPanel({ perks, skills = [], familyTiers = {}, zins }) {
+export function BuildPanel({ perks, skills = [], familyTiers = {}, zins, heat = null }) {
   // `lv` statt `t`: der Parameter würde sonst den i18n-Leser `t` in dieser Funktion verdecken.
   const famCount = Object.values(familyTiers).filter((lv) => lv > 0).length;
   return (
@@ -22,7 +22,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {}, zins }) {
           <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
             {t("build.skills.head", { count: skills.length })}
           </div>
-          <SkillList skills={skills} empty={t("build.skills.emptyRun", { cycle: FIRST_SKILL_CYCLE })} />
+          <SkillList skills={skills} heat={heat} empty={t("build.skills.emptyRun", { cycle: FIRST_SKILL_CYCLE })} />
         </div>
       </div>
     </div>

@@ -468,6 +468,7 @@ export function resolveTrick(state, rng) {
     // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überhitzung), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
     let fireFlat = 0;
     let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
+    let sparkPayout = 0;      // #384: Funkenflug-Ausschüttung DIESES Stichs (Rohbetrag) → unten mit dem Stich-Faktor verrechnet
     let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
     if (heat && heat.active) {
       const fmargin = pValue - oValue;
@@ -513,7 +514,7 @@ export function resolveTrick(state, rng) {
         heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) };
       // Funkenflug: kleine Siege banken ihren Feuer-Score; ein Sieg ≥8 Vorsprung entlädt den Speicher voll.
       if (fireFlag(skills, "sparkflight")) {
-        if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { fireFlat += heat.sparkStore || 0; heat = { ...heat, sparkStore: 0 }; }
+        if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { sparkPayout = heat.sparkStore || 0; fireFlat += sparkPayout; heat = { ...heat, sparkStore: 0 }; }
         else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + sparkBankFor(fireBaseFlat, skills) };
       }
       // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den GESAMTEN Feuer-Score dieses Stichs — Grund-Score,
@@ -521,7 +522,7 @@ export function resolveTrick(state, rng) {
       // Hitze-Linie statt drei Sonderfälle; Glutstahl (Schmiede-Linie) kommt erst danach dazu und bleibt draußen.
       // Der Aufschlag ist der Weißglut-KANAL (#270.2) — fireBase bekommt unten den Rest.
       const wMult = overheatMult(heat.over || 0, skills);
-      if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; }
+      if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; sparkPayout *= wMult; }
     }
     // Glutstahl: geschmiedete Siegkarte → +GLUTSTAHL_PER_VALUE Score je geschmiedetem Wert (fließt in die multiplizierte Basis). [#230 N10: war „+20", ist 12]
     if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
@@ -814,6 +815,16 @@ export function resolveTrick(state, rng) {
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
     glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult * (isCrit ? critMultiplier : 1);
+    /* #384 Funkenflug-Bilanz (reine Anzeige): Die Ausschüttung liegt in `scoreBase` und fährt damit den GANZEN Stapel
+       dieses Stichs mit — Serie, Perk-/Formations-Multiplikatoren, Sonnenzorn, Architekt, Crit (der Weißglut-Anteil
+       steckt schon in `sparkPayout`). Genau dieser Gesamtfaktor steht als `glacierWinMult` bereits da, und weil
+       `gained` in `scoreBase` LINEAR ist, ist Ausschüttung × Faktor der exakte Beitrag — keine Schätzung.
+       Zwei bewusste Grenzen: bei scoreBase ≤ 0 (Architekt-Abzug frisst die Basis) kam nichts an, also 0; und der
+       Sim-Softcap WIN_SOFTCAP (Default aus) bliebe unberücksichtigt — er ist Diagnose, kein Spielzustand. */
+    if (sparkPayout > 0 && heat) {
+      const paid = scoreBase > 0 ? sparkPayout * glacierWinMult : 0;
+      heat = { ...heat, sparkPaid: Math.round((heat.sparkPaid || 0) + paid), sparkPayouts: (heat.sparkPayouts || 0) + 1 };
+    }
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im

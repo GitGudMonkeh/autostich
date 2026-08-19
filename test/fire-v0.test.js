@@ -245,6 +245,38 @@ describe("Feuer-Rework v0 — Engine-Integration", () => {
     expect(s.lastTrick.result).toBe("win");
     expect(s.heat.sparkStore).toBe(sparkBankFor(0, ["SK_FIRE_10"])); // Feuer-Score wäre hier 0 → nur der Sockel
   });
+  /* #384 Ertrags-Bilanz (nur Anzeige). Der Prüfstein ist immer derselbe: `sparkPaid` muss GENAU das sein, was die
+     Ausschüttung am Stich-Score verändert hat — sonst stünde im Build-Panel eine erfundene Zahl. Deshalb wird jede
+     Behauptung gegen einen Kontrolllauf mit leerem Speicher gemessen, nicht gegen eine nachgerechnete Formel. */
+  it("#384 Funkenflug-Bilanz: sparkPaid = das, was die Ausschüttung am Stich-Score wirklich ausmacht", () => {
+    const withStore = resolveTrick(scen(16, 6, { skills: ["SK_FIRE_10"], heat: heat({ value: 0, sparkStore: 1000 }) }), noCrit);
+    const control   = resolveTrick(scen(16, 6, { skills: ["SK_FIRE_10"], heat: heat({ value: 0, sparkStore: 0 }) }), noCrit);
+    expect(withStore.heat.sparkStore).toBe(0);          // ≥8 Vorsprung → Speicher geleert
+    expect(withStore.heat.sparkPayouts).toBe(1);
+    expect(control.heat.sparkPayouts).toBe(0);          // leerer Speicher ist KEINE Ausschüttung
+    const diff = withStore.lastTrick.scoreGain - control.lastTrick.scoreGain;
+    expect(Math.abs(diff - withStore.heat.sparkPaid)).toBeLessThanOrEqual(1);
+  });
+  it("#384 Funkenflug-Bilanz: die Ausschüttung fährt den Stich-Stapel mit (Serie) — mehr als der rohe Betrag", () => {
+    const ctx = { skills: ["SK_FIRE_10"], winStreak: 8 };
+    const withStore = resolveTrick(scen(16, 6, { ...ctx, heat: heat({ value: 0, sparkStore: 1000 }) }), noCrit);
+    const control   = resolveTrick(scen(16, 6, { ...ctx, heat: heat({ value: 0, sparkStore: 0 }) }), noCrit);
+    expect(withStore.heat.sparkPaid).toBeGreaterThan(1000); // der Serien-Multiplikator hebt sie über den Rohbetrag
+    const diff = withStore.lastTrick.scoreGain - control.lastTrick.scoreGain;
+    expect(Math.abs(diff - withStore.heat.sparkPaid)).toBeLessThanOrEqual(1);
+  });
+  it("#384 Funkenflug-Bilanz: summiert über mehrere Ausschüttungen, Niederlagen zählen nicht mit", () => {
+    let s = resolveTrick(scen(16, 6, { skills: ["SK_FIRE_10"], heat: heat({ value: 0, sparkStore: 500 }) }), noCrit);
+    const first = s.heat.sparkPaid;
+    expect(first).toBeGreaterThan(0);
+    s = resolveTrick({ ...s, deck: constDeck(4), oppDeck: constDeck(9) }, noCrit);   // Niederlage
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.heat.sparkPaid).toBe(first);               // Niederlage halbiert den Speicher, die Bilanz bleibt stehen
+    expect(s.heat.sparkPayouts).toBe(1);
+    s = resolveTrick({ ...s, deck: constDeck(16), oppDeck: constDeck(6), heat: { ...s.heat, sparkStore: 700 } }, noCrit);
+    expect(s.heat.sparkPayouts).toBe(2);
+    expect(s.heat.sparkPaid).toBeGreaterThan(first);
+  });
   it("Brandmal: Sieg brandmarkt die geschlagene Gegnerkarte (nächster Durchlauf) + Asche", () => {
     const s = resolveTrick(scen(12, 6, { skills: ["SK_FIRE_13"], heat: heat() }), noCrit);
     expect(s.brandPending[s.lastTrick.oCard.id]).toBe(C.BRAND_VALUE);
