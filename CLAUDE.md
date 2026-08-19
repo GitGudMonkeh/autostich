@@ -2047,6 +2047,34 @@ an den Panels von Baum, Werkstatt und Leitfaden).
   Dialog, der beim Zeigen wackelt, liest sich nervös.
 - Handy bitidentisch (Pixelvergleich 390 px, beide Dialoge 0,0000 von 255).
 
+### #up-still + #lv-griff + #update-desk — drei Nachzügler (19.08.2026)
+- **Die Auswertung des Baums: Balken ODER Wort, nie beides.** Ist eine Achse voll, sagt ein 100-%-Balken
+  nichts mehr — dann steht dort „Maximiert" (`upgrades.impact.maxed`). Ist sie es nicht, zeigt der Balken
+  auf einen Blick, wie weit noch fehlt; das leistet die Zahl allein nicht. Jede Kachel trägt damit EIN
+  Element unter der Zahl statt zweier, und der Kasten wird ruhig, ohne dass Information verloren geht.
+  Der Balken ist dabei von 6 auf 3 px zurückgenommen — er soll den Anteil zeigen, nicht die Kachel füllen.
+  - **Beide Zustände nehmen EXAKT gleich viel Platz** (`min-height` + `margin-top` in EINER Regel für
+    beide). Sonst stünden in einem Kasten mit gemischten Achsen (Baufeld voll, Rerolls nicht)
+    unterschiedlich hohe Kacheln nebeneinander. Gemessen 1920×1080: 87 px in beiden Zuständen.
+  - **Nur ab 1400 px.** Am Handy stehen die vier Kacheln gestapelt und der Kasten ist die einzige
+    Zusammenfassung weit und breit — dort hält der Balken die Reihe optisch zusammen.
+- **#lv-griff: die Griffe der Flügel standen nicht still.** Sie hängen mit `top: 50%` an `.lv-cardwrap`;
+  solange der nur so hoch war wie die Karte, verschob jeder Archetyp-Wechsel sie um die halbe
+  Höhendifferenz (jedes Angebot ist anders lang). **`align-self: stretch`** macht den Kasten so hoch wie
+  das Raster — und dessen Höhe steht seit #lv-fest fest (`--lv-h`). Damit ist die Griffposition eine
+  Konstante, **ohne dass irgendwo eine Pixelzahl geraten werden müsste**; die Karte darin behält ihre
+  Inhaltshöhe (sie ist ein Block im Fluss, kein Rasterkind). Gemessen 1536×791: Griff y = 358 in allen
+  vier Fraktionen, während die Karte zwischen 458 und 554 px schwankt.
+  (Das ist der zweite Teil desselben Fehlers wie #lv-fest — dort stand die KARTE still, hier die Griffe.
+  Merksatz bleibt: was an einer variablen Höhe hängt, wandert mit ihr.)
+- **#update-desk**: die „Neue Version verfügbar"-Leiste ist ab 1400 px eckig (6 px) und ihr Knopf verliert
+  den Schein. Sie ist ein HINWEIS, kein Angebot; die goldene Kante bleibt, „Neu laden" ist ihre Handlung.
+- **Offen** (aus der Vorlage, braucht eine Festlegung): die fünfte Kachel „Aktive Effekte 7/7" neben dem
+  Perk-Qualitäts-Balken. Es gibt im Baum keine Größe, die das schon zählt — was sie zählen soll (Knoten mit
+  Lauf-Wirkung? freigeschaltete Achsen?), ist eine Spiel-Entscheidung, keine Layout-Frage. Ebenfalls offen:
+  die Überschrift der Vorlage lautet „BAUM-EFFEKT · AKTUELLE LAUF-WIRKUNG", im Spiel steht
+  „Was der Baum gerade bewirkt" — eine Zeile in beiden Katalogen, wenn gewünscht.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

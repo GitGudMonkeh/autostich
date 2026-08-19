@@ -51,7 +51,7 @@ export function UpdateBanner() {
   return (
     <div className="fixed inset-x-0 z-40 flex justify-center px-3 pointer-events-none"
       style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-      <div className="pointer-events-auto flex items-center gap-3 rounded-xl px-3.5 py-2.5"
+      <div className="up-banner pointer-events-auto flex items-center gap-3 rounded-xl px-3.5 py-2.5"
         style={{ background: "#1b1b24", border: "1px solid #3a3a48", boxShadow: "0 6px 24px -8px #000" }}>
         <span className="text-sm font-bold" style={{ color: "#c9c0f0" }}>{t("update.available")}</span>
         {/* #kante: „Neu laden" ist das Ziel des Banners — starker Kanten-Knopf statt gefüllter Goldtaste. */}

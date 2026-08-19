@@ -2551,6 +2551,7 @@ Your first skill of an archetype activates it and brings up its resource bar. Yo
 "upgrades.impact.dropNow","i18n","Perk-Qualität jetzt","Perk quality now","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.impact.energy","i18n","Formations-Energie","Order energy","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.impact.legRerolls","i18n","Legendär-Rerolls","Legendary rerolls","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"upgrades.impact.maxed","i18n","Maximiert","Maxed out","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.impact.of","i18n","von {max}","of {max}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.impact.rerolls","i18n","Rerolls je Angebot","Rerolls per offer","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "upgrades.impact.title","i18n","Was der Baum gerade bewirkt","What the tree does right now","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

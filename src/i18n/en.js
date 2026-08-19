@@ -977,6 +977,7 @@ export default {
   "upgrades.impact.rerolls": "Rerolls per offer",
   "upgrades.impact.legRerolls": "Legendary rerolls",
   "upgrades.impact.of": "of {max}",
+  "upgrades.impact.maxed": "Maxed out",
   "upgrades.impact.dropNow": "Perk quality now",
   "upgrades.page.general": "General",
   "upgrades.page.generalHint": "Applies to every run, whatever the deck.",

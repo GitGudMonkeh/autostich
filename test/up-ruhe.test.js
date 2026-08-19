@@ -123,3 +123,41 @@ describe("#up-form — eine Kachelform, gleiche Reihen, eigene Legendär-Reihe",
     expect(read("src/ui/UpgradeScreen.jsx")).toMatch(/"--leg-cols": Math\.max\(1, leg\.length\)/);
   });
 });
+
+describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
+  const up = read("src/ui/UpgradeScreen.jsx");
+
+  it("Balken ODER Wort, nie beides — und nur auf dem Desktop", () => {
+    /* Ist die Achse voll, sagt ein 100-%-Balken nichts mehr; das Wort sagt es kürzer. Ist sie es nicht,
+       zeigt der Balken auf einen Blick, wie weit noch fehlt. So trägt jede Kachel EIN Element unter der
+       Zahl statt zweier. Am Handy bleibt der Balken: dort ist der Kasten die einzige Zusammenfassung und
+       die vier Kacheln stehen gestapelt — der Balken hält die Reihe optisch zusammen. */
+    expect(up).toMatch(/\{wide && x\.v >= x\.max/);
+    expect(up).toMatch(/up-stat-max/);
+    for (const cat of ["src/i18n/de.js", "src/i18n/en.js"])
+      expect(read(cat), `upgrades.impact.maxed fehlt in ${cat}`).toMatch(/"upgrades\.impact\.maxed":/);
+  });
+
+  it("Balken und Wort nehmen EXAKT gleich viel Platz", () => {
+    /* Sonst stehen in einem Kasten mit gemischten Achsen (Baufeld voll, Rerolls nicht) unterschiedlich
+       hohe Kacheln nebeneinander. Gemessen 1920×1080: 87 px in beiden Zuständen. Deshalb EINE Regel für
+       beide statt zweier eigener Abstände. */
+    expect(deskBlock).toMatch(/\.up-stat > \.up-stat-b,\s*\.up-stat > \.up-stat-max\s*\{[^}]*min-height:[^}]*margin-top:/);
+  });
+
+  it("die Griffe der Flügel stehen fest — der Kasten wird gestreckt, keine Pixelzahl geraten", () => {
+    /* Die Griffe hängen mit `top: 50%` an `.lv-cardwrap`. Solange der nur so hoch war wie die Karte,
+       verschob jeder Archetyp-Wechsel sie um die halbe Höhendifferenz. Gestreckt ist er so hoch wie das
+       Raster, und dessen Höhe steht seit #lv-fest fest. Gemessen 1536×791: Griff y=358 in allen vier
+       Fraktionen, während die Karte zwischen 458 und 554 px schwankt. */
+    expect(deskBlock).toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*stretch/);
+    expect(deskBlock, "ohne feste Rasterhöhe hilft das Strecken nichts").toMatch(/\.lv-rig\s*\{[^}]*min-height:\s*var\(--lv-h\)/);
+    expect(deskBlock, "eine geratene Pixelzahl statt der Konstruktion").not.toMatch(/\.lv-grip\s*\{[^}]*top:\s*\d+px/);
+  });
+
+  it("die Update-Leiste folgt derselben Sprache (eckig, kein Schein)", () => {
+    expect(deskBlock).toMatch(/\.up-banner\s*\{[^}]*border-radius:\s*6px/);
+    expect(deskBlock).toMatch(/\.up-banner \.as-edge-strong\s*\{[^}]*box-shadow:\s*none/);
+    expect(read("src/ui/UpdateBanner.jsx")).toMatch(/className="up-banner pointer-events-auto/);
+  });
+});

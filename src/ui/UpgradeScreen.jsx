@@ -291,6 +291,11 @@ function ChallengeBox({ arch, p }) {
 /* Der Auswirkungs-Kasten: was der Baum GERADE bewirkt. Die Zahlen kommen aus `nodeEffects` und den
    Basiswerten — nichts davon ist im Baum selbst ablesbar, obwohl es die Frage ist, die man dort stellt. */
 function ImpactBox({ p }) {
+  /* #up-still: Der Wechsel Balken↔Wort gilt NUR ab 1400 px. Am Handy steht der Kasten unter einem
+     gestapelten Baum und ist die einzige Zusammenfassung weit und breit — dort bleibt der Balken auch
+     im Vollausbau stehen, weil er die Reihe der vier Kacheln optisch zusammenhält. Auf dem Desktop
+     stehen sie nebeneinander und tragen sich selbst. */
+  const wide = useIsWide();
   const fx = nodeEffects(p);
   const werte = [
     { k: t("upgrades.impact.cover"), v: COVER_FLOOR + fx.treeCoverBonus, max: COVER_FLOOR + 4, c: CY },
@@ -332,11 +337,17 @@ function ImpactBox({ p }) {
     <div className="up-impact">
       <div className="up-impact-h">{t("upgrades.impact.title")}</div>
       <div className="up-impact-grid">
+        {/* #up-still: Balken ODER Wort, nie beides. Ist die Achse voll, sagt ein 100-%-Balken nichts mehr —
+            das Wort sagt es kürzer und ruhiger. Ist sie es nicht, zeigt der Balken auf einen Blick, wie weit
+            noch fehlt, was die Zahl allein nicht leistet. So trägt jede Kachel EIN Element unter der Zahl
+            statt zweier, und der Kasten wird ruhiger, ohne dass Information verloren geht. */}
         {werte.map((x) => (
           <div key={x.k} className="up-stat">
             <span className="up-stat-k">{x.k}</span>
             <span className="up-stat-v" style={{ color: x.c }}>{x.v}<i>{t("upgrades.impact.of", { max: x.max })}</i></span>
-            <span className="up-stat-b"><i style={{ width: `${Math.round((x.v / x.max) * 100)}%`, background: x.c }} /></span>
+            {wide && x.v >= x.max
+              ? <span className="up-stat-max">{t("upgrades.impact.maxed")}</span>
+              : <span className="up-stat-b"><i style={{ width: `${Math.round((x.v / x.max) * 100)}%`, background: x.c }} /></span>}
           </div>
         ))}
       </div>

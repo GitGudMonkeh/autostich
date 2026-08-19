@@ -3855,7 +3855,13 @@ button { font-family: inherit; }
      Karte in Spur 1 und klebt am Fensterrand (gemessen: 360 → 38 px). Die Klasse allein sagt „ich gehöre in
      die Mitte" — das Raster muss es auch wissen. */
   .lv-wing-l { grid-column: 1; }
-  .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; }
+  /* #lv-griff: `align-self: stretch` ist der Grund, warum die Griffe nicht mehr wandern. Sie hängen mit
+     `top: 50%` an DIESEM Kasten; solange er nur so hoch war wie die Karte, verschob jeder Archetyp-Wechsel
+     sie um die halbe Höhendifferenz (jedes Angebot ist anders lang). Gestreckt ist der Kasten so hoch wie
+     das Raster — und dessen Höhe steht seit #lv-fest fest (`--lv-h`). Damit ist die Griffposition eine
+     Konstante, ohne dass irgendwo eine Pixelzahl geraten werden müsste.
+     Die KARTE darin behält ihre Inhaltshöhe: sie ist ein Block im Fluss, kein Rasterkind. */
+  .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; align-self: stretch; }
   .lv-wing-r { grid-column: 3; }
   .lv-wing {
     width: 356px; max-width: 100%; align-self: start;
@@ -4095,6 +4101,15 @@ button { font-family: inherit; }
     background: rgba(255, 255, 255, .012);
     border: 1px solid rgba(150, 150, 170, .12);
   }
+  /* #up-still: Der Balken wird zur Haarlinie (6 → 3 px) — er soll den Anteil zeigen, nicht die Kachel
+     füllen. Ist die Achse voll, steht statt seiner das Wort (s. UpgradeScreen.jsx); der Platz bleibt
+     über `min-height` gleich, damit die vier Kacheln nicht unterschiedlich hoch werden. */
+  .up-stat-b { height: 3px; }
+  .up-stat-max { font-size: 11.5px; color: #6f6f7c; line-height: 1; letter-spacing: .04em; }
+  /* Balken und Wort müssen EXAKT gleich viel Platz einnehmen — sonst stehen in einem Kasten mit gemischten
+     Achsen (Baufeld voll, Rerolls nicht) unterschiedlich hohe Kacheln nebeneinander. Deshalb dieselbe
+     Mindesthöhe UND derselbe Abstand für beide, nicht je Element ein eigener Wert. */
+  .up-stat > .up-stat-b, .up-stat > .up-stat-max { min-height: 12px; margin-top: 5px; }
 
   /* ==========================================================================
      #kante-anlauf — der Farbanlauf der Auswahlkarten, nur auf dem Desktop leiser
@@ -4175,6 +4190,13 @@ button { font-family: inherit; }
     gap: 8px;
   }
   .up-skillgrid.is-leg > * { margin-bottom: 0; }
+
+  /* #update-desk — die „Neue Version verfügbar"-Leiste ab 1400 px in derselben Sprache wie der Rest:
+     eckig (6 px statt 12) und ohne Schein am Knopf. Sie ist ein HINWEIS, kein Angebot — der Schein war
+     dasselbe Mittel, das an Hub-Taste, Ring und Knoten in diesem Durchgang gefallen ist. Die goldene
+     Kante bleibt: „Neu laden" ist die Handlung der Leiste und darf sie tragen. */
+  .up-banner { border-radius: 6px !important; }
+  .up-banner .as-edge-strong { border-radius: 6px; box-shadow: none; }
 
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
      `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist.
