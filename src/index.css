@@ -2502,6 +2502,11 @@ button { font-family: inherit; }
   /* Die Karte hört auf, eine Karte zu sein: Fläche, Rahmen und Schlagschatten wandern in die zwei
      Panels darunter, sie bleibt das Raster. `!important` schlägt die inline gesetzte MODAL_CARD. */
   .gd-card {
+    /* #breite: derselbe Deckel wie `.up-card` / `.st-card` / `.cz-card`. Leitfaden und Glossar wurden beim
+       Pass vom 18.08.2026 übersehen und nahmen als einzige Screens weiter die volle Fensterbreite — über
+       1816 px (1720 + 2 × 48 Rand) standen sie dadurch sichtbar weiter außen als alles andere. Zentriert
+       wird über das `justify-center` des Rahmens, das ohnehin schon dort steht. */
+    width: min(1720px, 100%);
     max-width: none;
     max-height: none !important;
     height: 100%;
@@ -2711,6 +2716,7 @@ button { font-family: inherit; }
   /* Die Karte hört auf, eine Karte zu sein: Fläche, Rahmen und Schlagschatten wandern in die zwei
      Panels darunter, sie bleibt das Raster. `!important` schlägt die inline gesetzte MODAL_CARD. */
   .gl-card {
+    width: min(1720px, 100%);   /* #breite: derselbe Deckel wie `.gd-card` / `.up-card` / `.st-card` (s. dort) */
     max-width: none;
     max-height: none !important;
     height: 100%;

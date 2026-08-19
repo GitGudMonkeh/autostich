@@ -142,12 +142,13 @@ describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
    #breite · #rd-scroll — die zwei Nähte vom 18.08.2026, die beide STUMM kaputtgehen.
    ============================================================ */
 describe("#breite — alle gerahmten Screens stehen gleich breit im Bild", () => {
-  it("Baum und Werkstatt tragen denselben Deckel wie Statistik/Bestenliste/Sieg", () => {
-    /* Ohne den Deckel nehmen Baum und Werkstatt die volle Fensterbreite und lesen sich als Vollbild,
+  it("Baum, Werkstatt, Leitfaden und Glossar tragen denselben Deckel wie Statistik/Bestenliste/Sieg", () => {
+    /* Ohne den Deckel nehmen diese Screens die volle Fensterbreite und lesen sich als Vollbild,
        während Statistik, Bestenliste und Siegesbildschirm daneben als Block in der Mitte stehen.
        Auffallen würde das erst auf einem Schirm über 1816 px (1720 + 2 × 48 Rand) — also auf keinem
-       der Messanker, die dieser Pass sonst benutzt. */
-    for (const sel of ["\\.st-card, \\.lb-card, \\.go-card", "\\.up-card", "\\.cz-card"]) {
+       der Messanker, die dieser Pass sonst benutzt. Genau so sind Leitfaden und Glossar beim Pass vom
+       18.08.2026 durchgerutscht und erst am echten Gerät aufgefallen; deshalb stehen sie hier jetzt mit drin. */
+    for (const sel of ["\\.st-card, \\.lb-card, \\.go-card", "\\.up-card", "\\.cz-card", "\\.gd-card", "\\.gl-card"]) {
       expect(css, `${sel} ohne Breiten-Deckel`).toMatch(
         new RegExp(`${sel} \\{[^}]*width:\\s*min\\(1720px,\\s*100%\\)`),
       );
