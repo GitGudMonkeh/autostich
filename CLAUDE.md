@@ -2298,6 +2298,33 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #lv-mitte — die Flügel-Griffe sitzen auf der Kartenmitte (19.08.2026)
+Gemeldet: „die hängen ganz unten, es sieht komisch aus — sollten mittig sein" (Perk- UND Skill-Wahl).
+Das ist die Rücknahme der Überkorrektur aus #lv-griff: dort wurde `.lv-cardwrap` auf die RASTERhöhe
+gestreckt, damit der Griff (`top: 50%`) nie wandert. Gemessen 1536×791: Raster 728 px, Karte je nach
+Angebot **381–515 px** → Griff bei 396, Kartenmitte bei 222–289. Auf dem kürzesten Angebot ragten
+**21 px seines Körpers unter die Kartenkante** hinaus.
+- **Beides zugleich geht nicht, und das ist der Kern:** die Karte hat eine FESTE OBERKANTE (#lv-fest)
+  und eine vom Angebot abhängige Höhe — ihre Mitte MUSS also wandern. Es gibt nur „fest verankert,
+  aber nicht an der Karte" oder „mittig auf der Karte, wandert mit ihr".
+- **Gewählt ist mittig**, weil der Griff zur KARTE gehört: er steht damit in jedem Zustand an derselben
+  Stelle DER KARTE. Nachgemessen: Griffmitte = Kartenmitte in allen fünf Fällen (Perk 248 · Blitz 251 ·
+  Feuer 222 · Eis 289 · Pflanze 241), Oberkante der Karte unverändert fest bei y = 32.
+- **Warum die alte Begründung trotzdem nicht falsch war:** als sie entstand, wanderte die Karte SELBST
+  (das Overlay zentriert). Seit #lv-fest steht ihre Oberkante; ein mitwandernder Griff liest sich
+  seitdem als „sitzt auf der Karte" statt als Springen.
+- **Die feste Rasterhöhe bleibt** — sie hält die Oberkante, das ist eine andere Aufgabe als die
+  Griffposition. Eine geratene Pixelzahl am Griff bleibt verboten (sie wäre für kein Angebot richtig);
+  der Wächter hält beides fest.
+- **Nicht stabilisierbar ohne Verlust:** die Höhendifferenz kommt allein aus der Länge der Angebotstexte
+  (gemessen: Pager 157/196/215/292 px; der Rest der Karte ist auf allen Reitern gleich, und die Höhe ist
+  breitenunabhängig — 1536 und 1920 liefern dieselben Werte). Ein `min-height` an der Karte wäre eine
+  geratene, sprachabhängige Zahl und brächte die Leere zurück, die #lv-fluegel gerade entfernt hat.
+- Handy bitidentisch (Pixelvergleich 390 px, Perk und Skill je 0,0000 von 255) — die Regel steht im
+  1400er Block, unterhalb werden Griffe gar nicht erst gerendert.
+- Wächter: `test/up-ruhe.test.js` (auf die neue Entscheidung UMGESCHRIEBEN, nicht gelöscht).
+  Gegenprobe gemacht: alle drei sabotierten Nähte fallen.
+
 ### #bonus-benennen — die Wochen-Kachel sagt jetzt, was es zu holen gibt (19.08.2026)
 „Bonus noch offen" nannte den Betrag nicht. Nachgesehen: der Ranked-Wochenbonus ist **+5 SP UND +5 DP**
 für die erste abgeschlossene Ranked-Runde der Woche — bei **vollem Baum stattdessen +10 DP** (SP wären

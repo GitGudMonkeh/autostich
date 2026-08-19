@@ -4196,13 +4196,21 @@ button { font-family: inherit; }
      Karte in Spur 1 und klebt am Fensterrand (gemessen: 360 → 38 px). Die Klasse allein sagt „ich gehöre in
      die Mitte" — das Raster muss es auch wissen. */
   .lv-wing-l { grid-column: 1; }
-  /* #lv-griff: `align-self: stretch` ist der Grund, warum die Griffe nicht mehr wandern. Sie hängen mit
-     `top: 50%` an DIESEM Kasten; solange er nur so hoch war wie die Karte, verschob jeder Archetyp-Wechsel
-     sie um die halbe Höhendifferenz (jedes Angebot ist anders lang). Gestreckt ist der Kasten so hoch wie
-     das Raster — und dessen Höhe steht seit #lv-fest fest (`--lv-h`). Damit ist die Griffposition eine
-     Konstante, ohne dass irgendwo eine Pixelzahl geraten werden müsste.
-     Die KARTE darin behält ihre Inhaltshöhe: sie ist ein Block im Fluss, kein Rasterkind. */
-  .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; align-self: stretch; }
+  /* #lv-mitte (19.08.2026) — der Kasten ist wieder so hoch wie die KARTE, damit die Griffe (`top: 50%`)
+     auf deren Mitte sitzen.
+
+     Die Vorgängerfassung streckte ihn auf die Rasterhöhe (`stretch`), damit die Griffe nie wandern. Der
+     Preis war sichtbar und wurde gemeldet: das Raster ist `--lv-h` hoch (728 px bei 791 px Fensterhöhe),
+     die Karte je nach Angebot nur 381–515 px. Der Griff saß damit bei 396 px, also 107–174 px UNTER der
+     Kartenmitte — auf dem kürzesten Angebot ragten 21 px seines Körpers unter die Kartenkante hinaus.
+
+     Beides zugleich geht nicht: die Karte hat eine FESTE OBERKANTE (#lv-fest) und eine vom Angebot
+     abhängige Höhe — ihre Mitte MUSS also wandern. Von den zwei möglichen Fassungen ist die hier die
+     richtige, weil der Griff zur Karte gehört: mittig steht er in JEDEM Zustand an derselben Stelle DER
+     KARTE (gemessen 222–289 px absolut, während die Kartenunterkante um 134 px wandert). Fest verankert
+     stand er dagegen an einer Stelle, die mit der Karte nichts zu tun hat.
+     Eine Pixelzahl am Griff bleibt weiterhin verboten — sie wäre für kein Angebot richtig. */
+  .lv-cardwrap { grid-column: 2; position: relative; max-width: 880px; margin: 0 22px; align-self: start; }
   .lv-wing-r { grid-column: 3; }
   .lv-wing {
     width: 356px; max-width: 100%; align-self: start;

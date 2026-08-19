@@ -145,13 +145,17 @@ describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
     expect(deskBlock).toMatch(/\.up-stat > \.up-stat-b,\s*\.up-stat > \.up-stat-max\s*\{[^}]*min-height:[^}]*margin-top:/);
   });
 
-  it("die Griffe der Flügel stehen fest — der Kasten wird gestreckt, keine Pixelzahl geraten", () => {
-    /* Die Griffe hängen mit `top: 50%` an `.lv-cardwrap`. Solange der nur so hoch war wie die Karte,
-       verschob jeder Archetyp-Wechsel sie um die halbe Höhendifferenz. Gestreckt ist er so hoch wie das
-       Raster, und dessen Höhe steht seit #lv-fest fest. Gemessen 1536×791: Griff y=358 in allen vier
-       Fraktionen, während die Karte zwischen 458 und 554 px schwankt. */
-    expect(deskBlock).toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*stretch/);
-    expect(deskBlock, "ohne feste Rasterhöhe hilft das Strecken nichts").toMatch(/\.lv-rig\s*\{[^}]*min-height:\s*var\(--lv-h\)/);
+  it("#lv-mitte: die Griffe sitzen auf der Kartenmitte, nicht auf der Rastermitte", () => {
+    /* Die Griffe hängen mit `top: 50%` an `.lv-cardwrap`. Auf die Rasterhöhe GESTRECKT (die
+       Vorgängerfassung) saßen sie bei 396 px, während die Kartenmitte je nach Angebot bei 222–289 px
+       liegt — auf dem kürzesten Angebot ragten sie unter die Kartenkante hinaus. Der Kasten hört jetzt
+       wieder an der Karte auf.
+       Die feste Rasterhöhe bleibt: sie hält die OBERKANTE der Karte fest (#lv-fest), das ist eine andere
+       Aufgabe als die Griffposition. Eine geratene Pixelzahl am Griff bleibt verboten. */
+    expect(deskBlock).toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*start/);
+    expect(deskBlock, "der Kasten ist wieder auf die Rasterhöhe gestreckt")
+      .not.toMatch(/\.lv-cardwrap\s*\{[^}]*align-self:\s*stretch/);
+    expect(deskBlock, "ohne feste Rasterhöhe wandert die Oberkante der Karte wieder").toMatch(/\.lv-rig\s*\{[^}]*min-height:\s*var\(--lv-h\)/);
     expect(deskBlock, "eine geratene Pixelzahl statt der Konstruktion").not.toMatch(/\.lv-grip\s*\{[^}]*top:\s*\d+px/);
   });
 
