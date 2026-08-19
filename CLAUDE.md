@@ -1143,6 +1143,68 @@ Kategorie-A-Perks aber **Familien** und stehen als Stufen-Map in `state.familyTi
   den alten Wortlaut der `showPerks`-Zeile).
 - **Nicht am Gerät gesehen** — Build, Lint und 1578 Tests grün, der Blick auf die Chip-Wolke steht aus.
 
+### #buehne + #deckflug + #skillheim — der Spielbildschirm am PC (19.08.2026)
+Der Lauf war der **letzte Screen ohne Desktop-Pass**: 1024er Deckel (`max-w-5xl`) mit einem lg-Umbruch bei
+1024 px. Auf 1920 px blieben links und rechts je 448 px leer — und trotzdem passte er nicht auf den Schirm
+(Pflanze, Eis, Perks, Skills und Musik lagen unter der Scroll-Kante). Vom Spielfeldbild (1600 × 640) landeten
+dabei **23 %** auf dem Schirm: gequetscht auf 668 × 347 UND seitlich um 46 % beschnitten (`object-cover` auf
+1,93 : 1 statt 2,5 : 1). Jetzt ist das Brett die **Bühne**: 2,5 : 1 wie die Quelle, auf 1920 × 1080 volle
+**1600 × 640**, Dokumenthöhe exakt 1080 (kein Scrollen). Drei Etappen, drei Commits.
+
+- **Die Bühnenbreite ist EINE Regel mit DREI Deckeln** (`--bf-w` in index.css): native Bildbreite ·
+  Fensterbreite − Ränder · **`(100dvh − --rn-chrome) × 2,5`**. Der dritte ist der entscheidende: 2,5 : 1 heißt,
+  dass 1600 px Breite 640 px HÖHE kosten — auf flachen Fenstern (ein 1920×1200-Laptop bei 125 % ist CSS
+  1536×791) ist die Höhe die knappe Größe. `--rn-chrome: 430px` ist gemessen (Kopf + Leiste + Bank + Ränder).
+- **Karten wachsen über einen MASSSTAB, nicht über ein zweites Maß.** `--card-s` = 11 % der Bühnenbreite auf
+  die 104 px der Karte gerechnet (176 px bei 1600); der Slot wächst, sein Inhalt wird per `transform: scale()`
+  skaliert. Die sieben 104×144-Fundstellen (Card, Klingenschnitt, Laser-Stücke, previewScale) bleiben damit
+  unangetastet, und die Canvas-/Pixi-Effekte folgen von selbst — `CardFxStage` misst je Frame neu.
+  **`--card-s` MUSS einheitenlos sein** (`… / 104 / 1px`): `scale()` nimmt eine Zahl, `--bf-w` ist eine Länge.
+  Ohne die Division fällt die Deklaration still aus und die Karten bleiben unbemerkt auf 104 × 144.
+- **Instrumentenbank statt Sidebar**: Analyse links (296), eine Spur je Archetyp (1fr), Build rechts (296).
+  **Feste Höhe (270 px)** — wüchse sie mit ihrem Inhalt, schöbe der vierte Archetyp die Bühne aus dem Bild.
+  **Flex statt Grid**, weil die Zahl der Fraktions-Leisten im Lauf wechselt (0–4). Die 30 px gegenüber der
+  ersten Fassung kommen aus dem Außenrand darunter (`:has(.rn-shell)`, 24 → 12), nicht von der Bühne.
+- **Vitalleiste**: aus zwei gestapelten Zeilen wird eine, und sie nimmt **Musik** und **Meilensteinbalken**
+  auf (vorher eigene Reihen ganz unten bzw. über dem Brett). Der Umzug ist DOM (`useIsWide`), nicht Anordnung —
+  zwei gerenderte Musikleisten wären zwei Fokus-Ziele. Die Chronik ist dort eine kleine KARTE (42 px
+  Deck-Rücken), kein 🎴-Zeichen.
+- **Deck am Rand, Karte fliegt** (#deckflug): vier Kästen auf der Bühne (Stapel · Karte · Karte · Stapel),
+  Mitten bei **21,25 / 41,5 / 58,5 / 78,75 %**. Die äußeren 15,75 % bleiben frei — dort haben die
+  Spielfeldbilder ihr Motiv (die Mitte ist bewusst leer). Beim Aufdecken kommt die Karte vom Stapel herüber,
+  **während** sie flippt: **Maßstab außen (`bf-scale`) · Bewegung darin (`bf-fly-in`) · Drehung ganz innen
+  (`as-flip3d-inner`)**. Alles auf einem Knoten überschreibt sich und kippt die Perspektive mit (dieselbe
+  Regel wie Animation/Filter, #ios-word).
+  - **Die Flugstrecke ist im Kartenmaßstab KONSTANT 191,45 px** — Lücke (9,25 % der Bühne) + Kartenbreite
+    (11 %) geteilt durch den Maßstab (11 % / 104 px). Deshalb steht dort eine feste Zahl und keine Rechnung
+    mit `--bf-w`: die Animation läuft INNERHALB des skalierten Wrappers.
+  - **Falle, die zuschnappte**: `position: static` für die zwei Kästen nahm dem Deck seinen Bezugspunkt —
+    die absolut liegenden Stapelkarten hingen danach an der Seite und saßen auf der Gegnerseite MITTEN AUF
+    der Karte. Es muss `relative` sein.
+  - **Das Feuer brennt jetzt am STAPEL** (`deckSlotRef` zeigt auf den Deck-Kasten). Das ist die Fassung, für
+    die der Anker gebaut wurde (nicht neu starten bei Sieg/Verlust) — Entscheidung des Users.
+- **Skills bei ihrem Archetyp** (#skillheim): `PanelSkills` am Fuß der Fraktions-Schale, Zuordnung aus dem
+  Register (`archetypeOf`) — dieselbe, nach der auch das Angebot gebaut wird. `mt-auto` hält die Zeile unten,
+  dadurch stehen die Skill-Zeilen aller Spuren auf EINER Linie. Gescrollt wird bei einem langen Motor nur das
+  **Detail**; Kopf und Skill-Fuß bleiben stehen. Das Build-Panel lässt die untergebrachten Archetypen weg,
+  **nicht die ganze Spalte**: ein Skill, dessen Panel gerade nicht steht, bleibt dort sichtbar. Sind alle
+  untergebracht, entfällt die Spalte (eine Überschrift „Skills — 0" mit „ab Durchlauf 1 wählbar" wäre gelogen).
+  Der **Auto-Kollaps bei mehreren Fraktionen ist ab 1400 px aus** — er ist eine Platz-Regel des Handys.
+- **KEIN zweiter Renderpfad**: `rn-head/rn-body/rn-main/rn-bars/rn-bank` reichen unter 1400 px ihre Kinder
+  unverändert durch (`display: contents`), dieselbe Klammer-Technik wie #desktop-leitfaden und #glossar-desktop.
+  Handy-Fassung bei 390 px nachgemessen (auch mit vier Archetypen): unverändert.
+- **Messstand**: ein Spätzustand mit vier Archetypen kommt nicht aus einem Turbo-Lauf (das Skill-Angebot ist
+  archetyp-gegatet) — er wird über den **Simulator** erzeugt und als Fortsetzungs-Snapshot in
+  `localStorage["as_activerun"]` geladen (Schema 2). Derselbe Weg wie beim Architekt-Profil (#Architekt-Mount).
+  Gemessen damit: vier Spuren à 237 px, je 270 px hoch bei 268 px Inhalt.
+- Wächter: `test/buehne-desktop.test.js` (18 Prüfungen, Gegenprobe gemacht: Einheiten-Division und
+  `static` statt `relative` lassen ihn beide fallen).
+- **Offen / nicht am Gerät gesehen**: alles headless über Playwright im laufenden Dev-Server gemessen und
+  nachgerendert, kein Blick auf einem physischen Monitor. Ebenfalls offen: eine echte **Desktop-Fassung der
+  vier Fraktions-Leisten** (sie sind für 358 px Handy-Breite gebaut; in einer 237-px-Spur bricht mehr um, als
+  nötig wäre), die @2x-Frage für die 52 Spielfeldbilder (auf einem 2×-Display braucht eine 1600-px-Bühne
+  3200 Bildpixel, die Quelle hat 1600) und der Blick auf die Bühne über alle 40 Decks.
+
 ### Merge `Autostich/pixi` → `Autostich_Test` (Health Check 2026-08-16)
 Geprüft: Tests 1263 grün (84 Dateien) · ESLint 0/0 (282 Dateien, CI-Gate `--max-warnings=0`) · Build grün, auch als
 Slot-Build (`DEPLOY_BASE=/autostich/test/ VITE_PREVIEW=1`) · `npm audit --omit=dev` 0 Funde (die 7 Funde stecken
