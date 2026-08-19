@@ -7,7 +7,7 @@
 //   • Kontext (nur wenn relevant): Firn-Boden lädt · Gegner eingefroren · Duo-Buff · Große Lawine bereit/verbraucht.
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
-import { FactionShell } from "./indicators/panelKit.jsx";
+import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { glacierClusters, glacierNeighborFn, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
@@ -75,7 +75,7 @@ function Glacier({ mass, order = null, value = null }) {
 export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
                             deck = [], playerOrder = [],
                             frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
-                            options = {}, onOption, manyActive = false }) {
+                            options = {}, onOption, manyActive = false, skills = [], showSkills = false }) {
   // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
   // #384: je Gletscher Position (i, = Spielreihenfolge i+1) + Kartenwert (deck[playerOrder[i]].value); nach POSITION sortiert
   //   (Deck-/Spielreihenfolge) statt nach Masse. Die „kritisch/Bricht"-Optik bleibt masse-basiert (im Chip).
@@ -128,8 +128,10 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   }, [burst]);
 
   const stat = (k, v, sub, title) => (
-    <div title={title} style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3" : "1", minWidth: 0 }}>
-      <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".07em", color: "#6a7a86" }}>{k}</div>
+    <div title={title} style={{ background: "#191922", border: "1px solid #2a2a34", borderRadius: 8, padding: "6px 9px", flex: sub ? "1.3 1 90px" : "1 1 64px", minWidth: 0 }}>
+      {/* #skillheim: In der Instrumentenbank ist eine Spur bei vier Archetypen nur ~237 px breit — die
+          Beschriftung bricht dort um, statt am Rand abgeschnitten zu werden. */}
+      <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".07em", color: "#6a7a86", lineHeight: 1.15 }}>{k}</div>
       {/* #253: nowrap + overflow-hidden hält große Werte in der Kachel (Gletscher-Ertrag wird kompakt abgekürzt, s. u.) */}
       <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.05, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...(sub ? { fontSize: 22, color: FROST_BRIGHT, textShadow: `0 0 12px ${FROST}55` } : { fontSize: 17, color: "#e4eef4" }) }}>{v}</div>
     </div>
@@ -152,7 +154,8 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
 
   return (
     <FactionShell className="relative" icon={<FactionIcon type="ice" size={15} />} name={archetypeLabel("ice")} color={FROST_BRIGHT}
-      stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}>
+      stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}
+      footer={showSkills ? <PanelSkills skills={skills} arch="ice" color={FROST_BRIGHT} /> : null}>
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}
       {burst && burst.gain > 0 && (
         <div key={"g" + burst.key} className="as-glacier-gain" style={{ position: "absolute", left: "50%", top: 26, pointerEvents: "none", zIndex: 3,
@@ -161,7 +164,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
           <FactionIcon type="ice" size={16} /> +{fmtScoreShort(burst.gain)}
         </div>
       )}
-      <div style={{ display: "flex", gap: 6 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {stat(t("bar.ice.yield"), fmtScoreShort(glacierYield), true, fmtScore(glacierYield))}
         {stat(t("bar.ice.cascade"), <span>{cascade} <span style={{ fontSize: 10, color: "#6a7a86" }}>{t("bar.ice.cascade.unit")}</span></span>)}
         {stat(t("bar.ice.biggest"), biggest)}

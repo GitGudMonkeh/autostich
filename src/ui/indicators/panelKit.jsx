@@ -4,6 +4,8 @@
 
 import { PANEL_CARD } from "../modalStyle.jsx";
 import { fmtNum } from "../../i18n/index.js"; // #sprache: Trennzeichen folgen der Sprache
+import { archetypeOf } from "../../game/skills.js"; // #skillheim: Skill -> Archetyp (Registerwahrheit)
+import { skillDef } from "../../i18n/labels.js";    // #sprache: übersetzter Skill-Name
 
 // Alle Fraktions-/Indikator-Panels teilen die gemeinsame In-Run-Schale (Verlaufsfläche + Rahmen).
 export const PANEL_STYLE = PANEL_CARD;
@@ -23,7 +25,7 @@ export function IndicatorPanel({ children, className = "" }) {
 // `ambient` (box-shadow-String) + `ambientPulse` (Klassenname) tragen das Archetyp-Eigen-Ambiente, das von der
 // Battlefield-Fläche zu den Fraktions-Panels gewandert ist (#deckshop): eine an die Ressource gekoppelte Innen-Aura
 // (Feuer warm / Blitz blau→violett), als eigene Ebene HINTER dem Inhalt (Puls beeinflusst den Text nicht).
-export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, ambient = null, ambientPulse = null, className = "", children }) {
+export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, ambient = null, ambientPulse = null, className = "", footer = null, children }) {
   return (
     // isolation:isolate → eigener Stacking-Context, damit die negative-z Ambient-Ebene HINTER den Inhalt fällt,
     // ohne dass der Inhalt (oder ein absoluter Kind-Effekt wie ChargeBars as-blitz-pulse) positioniert werden muss.
@@ -46,7 +48,31 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
         <span className="text-[11px] shrink-0" aria-hidden="true"
           style={{ color: "#6d7288", display: "inline-block", transition: "transform .15s", transform: collapsed ? "none" : "rotate(90deg)" }}>▸</span>
       </button>
-      {!collapsed && <div className="grid gap-3 mt-2.5">{children}</div>}
+      {!collapsed && <div className="fac-body grid gap-3 mt-2.5">{children}</div>}
+      {/* #skillheim: Der Fuß trägt die gehaltenen Skills DIESES Archetyps (ab 1400 px, s. panelSkills unten).
+          Er sitzt bewusst unter dem Detail und mit `mt-auto` am unteren Rand der Spur: in der Bank sind alle
+          Spuren gleich hoch, so stehen die Skill-Zeilen aller Archetypen auf einer Linie. */}
+      {footer}
+    </div>
+  );
+}
+
+/* #skillheim: Die Skills eines Archetyps als Chip-Zeile — die Zuordnung kommt aus dem Register
+   (`archetypeOf`), sie ist also nicht erfunden, sondern die, nach der auch das Angebot gebaut wird.
+   Gibt null zurück, wenn dieser Archetyp keinen Skill hält: eine leere Überschrift wäre nur Rauschen. */
+export function PanelSkills({ skills = [], arch, color = "#e8e8ea" }) {
+  const mine = (skills || []).filter((id) => archetypeOf(id) === arch);
+  if (!mine.length) return null;
+  return (
+    <div className="mt-auto pt-2.5">
+      <div className="flex flex-wrap gap-1.5 border-t pt-2" style={{ borderColor: `${color}22` }}>
+        {mine.map((id) => (
+          <span key={id} className="text-[10px] font-semibold rounded px-1.5 py-1 whitespace-nowrap"
+            style={{ background: `${color}14`, color, border: `1px solid ${color}3a` }}>
+            {skillDef(id).name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

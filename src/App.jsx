@@ -1045,8 +1045,18 @@ function AutostichGame() {
   // hier direkt an die StatusBar durchgereicht.
   // Phase 3: Anzahl aktiver Fraktionen → bei mehreren klappen die Fraktions-Headlines standardmäßig ein (schlanker Mix-Run),
   // bei genau einer aktiven Fraktion bleibt sie offen (voller Detail wie bisher im Mono-Run).
-  const manyFac = [state.lightning?.active, state.heat?.active,
-    (state.activeArchetypes || []).includes("plant"), (state.activeArchetypes || []).includes("ice")].filter(Boolean).length > 1;
+  /* #skillheim: Welche Fraktions-Panels stehen gerade? Das sind dieselben vier Bedingungen, mit denen die
+     Bars sich selbst ein- und ausblenden — hier EINMAL abgeleitet und zweifach genutzt: für die Panel-Dichte
+     (`manyActive` — der Auto-Kollaps bei mehreren Fraktionen ist eine PLATZ-Regel des Handys und ab 1400 px
+     aus, weil die Bank ihre Spuren ohnehin nebeneinander stellt) und dafür, welche Archetypen ihre Skills zeigen. Das Build-Panel lässt
+     genau die dann weg; ein Skill, dessen Panel gerade nicht steht, bleibt dort sichtbar statt zu verschwinden. */
+  const shownSkillArchs = [
+    state.lightning?.active && "lightning",
+    state.heat?.active && "fire",
+    (state.activeArchetypes || []).includes("plant") && "plant",
+    (state.activeArchetypes || []).includes("ice") && "ice",
+  ].filter(Boolean);
+  const manyFac = shownSkillArchs.length > 1;
 
   // #perf A3: Alliance-Gruppierung + das an Battlefield gereichte `pe`-Objekt memoisieren — vorher wurde die Gruppierung
   // pro Render neu berechnet und ein frisches Objekt erzeugt (bricht jede Memo-Chance darunter). Keine Verhaltensänderung.
@@ -1196,11 +1206,13 @@ function AutostichGame() {
               {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
                   Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}
               <div data-tut="bf-bars" className="rn-bars grid gap-4 order-2 lg:col-start-1 lg:row-start-2">
+              {/* #skillheim: Ab 1400 px trägt jede Fraktions-Spur ihre eigenen Skills am Fuß — dort erklären sie
+                  den Balken darüber. Das Build-Panel zeigt sie dann nicht mehr doppelt (`hideSkillArchs`). */}
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
-                critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={manyFac} />
+                critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
                 ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
-                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} options={options} onOption={changeOptions} manyActive={manyFac} />
+                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
@@ -1209,14 +1221,15 @@ function AutostichGame() {
                 growthTotal={state.growthTotal || 0}
                 rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
                 trimCount={state.trimCount || 0}
-                options={options} onOption={changeOptions} manyActive={manyFac} />
+                options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
                 glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []} firnStack={state.firnStack || []}
                 glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
                 glacierPre={state.glacierPre} deck={state.deck || []} playerOrder={state.playerOrder || []}
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
-                grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={manyFac} />
+                grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac}
+                skills={state.skills || []} showSkills={wide} />
               </div>
               {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1400 px rechte Sidebar, darüber die
                   linke Spur der Bank. */}
@@ -1225,7 +1238,8 @@ function AutostichGame() {
               </div>
               {/* Perks/Skills — Mobil unter den Stats (order-4), bis 1400 px links unter dem Battlefield. */}
               <div className="rn-build order-4 lg:col-start-1 lg:row-start-3">
-                <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat} />
+                <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat}
+                  hideSkillArchs={wide ? shownSkillArchs : null} />
               </div>
               {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
               {state.weekMods?.length > 0 && (

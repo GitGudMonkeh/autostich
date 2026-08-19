@@ -5321,6 +5321,11 @@ button { font-family: inherit; }
     gap: 12px;
   }
 
+  /* Der Aussenrand UNTER der Bank faellt im Lauf von 24 auf 12 px — die gewonnenen Pixel gehen an die
+     Bank (240 -> 270), nicht an die Buehne. `:has(.rn-shell)` trifft dabei nur den Lauf; das Menue und
+     alle Overlays behalten ihren Rand. */
+  .app-root:has(.rn-shell) { padding-bottom: 12px; }
+
   /* Klammern: hier keine Boxen, nur Durchreichen (s. Kopf dieses Blocks). */
   .rn-head, .rn-body, .rn-main, .rn-bars { display: contents; }
 
@@ -5444,11 +5449,22 @@ button { font-family: inherit; }
      wechselt im Lauf (0 bis 4). Waechst die Bank mit ihrem Inhalt, schoebe der vierte Archetyp die Buehne
      aus dem Bild — der Bildschirm saehe bei jedem Lauf anders aus. So steht die Buehne fest, und die Spuren
      teilen sich die Breite. Was in einer Spur nicht aufgeht, scrollt IN ihr. */
-  .rn-bank { display: flex; gap: 12px; align-items: stretch; height: 240px; }
+  .rn-bank { display: flex; gap: 12px; align-items: stretch; height: 270px; }
   /* `.rn-bars` ist `display: contents`, seine Kinder sind also Flex-Items der Bank — im SELEKTOR
      bleiben sie aber Enkel. Ohne die zweite Zeile bekämen die Fraktions-Leisten kein `flex: 1` und
      die Bank stünde halb leer da. */
   .rn-bank > *, .rn-bars > * { flex: 1 1 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; }
+  /* Die Fraktions-Spur ist eine Spalte: Kopf, Detail, und ganz unten die Skills dieses Archetyps
+     (#skillheim, `mt-auto` am Fuss). Weil alle Spuren gleich hoch sind, stehen die Skill-Zeilen
+     dadurch auf EINER Linie — die Bank liest als Reihe, nicht als vier verschieden lange Zettel.
+     Gescrollt wird bei einem langen Motor NUR das Detail: Kopf (welche Fraktion, welcher Zustand)
+     und Skill-Fuss bleiben stehen. Wer scrollt, sucht eine Zahl — nicht die Ueberschrift. */
+  .rn-bars > .as-panel-fac { display: flex; flex-direction: column; overflow: hidden; }
+  .rn-bars > .as-panel-fac > .fac-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  /* Der Scrollbalken einer engen Spur soll die Spur nicht verschmaelern und nicht ins Auge springen. */
+  .rn-bank > *::-webkit-scrollbar, .rn-bars > *::-webkit-scrollbar { width: 6px; }
+  .rn-bank > *::-webkit-scrollbar-thumb, .rn-bars > *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--deck-a1, #8a7de0) 30%, transparent); border-radius: 3px; }
   .rn-bank > .rn-rail  { flex: 0 0 296px; order: -1; }
   .rn-bank > .rn-build { flex: 0 0 296px; order: 1; }
   .rn-bank > .rn-week  { flex: 0 0 296px; order: 2; }

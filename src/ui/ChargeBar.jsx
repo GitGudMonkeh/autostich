@@ -3,7 +3,7 @@ import { chargeConsumerOf } from "../game/skills.js";
 import { streakBaseMult } from "../game/perks.js";
 import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT, STREAK_BASE_CAP,
   STORM_CRIT_CAP, UEBERSCHLAG_DEPTH_PP_PER_CHARGE } from "../game/constants.js";
-import { FactionShell } from "./indicators/panelKit.jsx";
+import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
 import { t } from "../i18n/index.js"; // #sprache
@@ -83,7 +83,7 @@ function SatRow({ label, cur, max, on, payoff }) {
   );
 }
 
-export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, critMult = CRIT_BASE_MULT, deck = [], options = {}, onOption, manyActive = false }) {
+export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 0, critMult = CRIT_BASE_MULT, deck = [], options = {}, onOption, manyActive = false, showSkills = false }) {
   if (!lightning || !lightning.active) return null;
   const { charge, maxCharge } = lightning;
   // Sturm-Sättigung: Sturmgröße = Karten mit ≥1 Stapel gegen Schwelle · Sturmintensität = volle (5-Stapel-)Karten gegen Schwelle.
@@ -126,6 +126,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
   return (
     <FactionShell className="relative" icon={<FactionIcon type="lightning" size={15} />} name={archetypeLabel("lightning")} color={LIGHTNING}
+      footer={showSkills ? <PanelSkills skills={skills} arch="lightning" color={LIGHTNING} /> : null}
       stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}

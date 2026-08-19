@@ -8,7 +8,7 @@
 //     einklappbarer „Reifende Karten"-Strip (pro Karte ein Mini-Balken, default zu). Der zweistufige Ring an der Karte (Card.jsx) trägt das Signal am Objekt.
 //   • Ausläufer (kolonisierte Gegnerkarten) als eigene, getrennte Zeile — der Griff ins Gegnerdeck (Ernte/Dornenkönig).
 // Rein informativ, keine Engine-Kopplung (spiegelt state.deck/growth/colonized).
-import { FactionShell, YieldMeter } from "./indicators/panelKit.jsx";
+import { FactionShell, PanelSkills, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { PLANT_VALUE_CAP, PLANT_GREEN_THRESHOLD, PLANT_GROWTH_SKILL_REF, EWIGER_FRUEHLING_FIELD, UEBERWUCHERUNG_FIELD, TRIM_STEP, TRIM_CAP,
@@ -24,7 +24,7 @@ const fmtG = (g) => fmtNum(Math.round((g || 0) * 10) / 10); // Wachstum mit eine
 
 const BLOOM = "#e58fbf"; // Blüte (rosa) · Wurzel = PLANT (grün) · Ernte = PLANT_RIPE (hell)
 
-export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0,
+export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skills = [], growthTotal = 0, showSkills = false,
                           rootScore = 0, bloomScore = 0, harvestScore = 0, trimCount = 0, options = {}, onOption, manyActive = false }) {
   if (!active) return null;
   const trimMult = 1 + Math.min((trimCount || 0) * TRIM_STEP, TRIM_CAP); // #288 Trimmen: Wurzel-/Blüten-Multiplikator
@@ -93,7 +93,8 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   const stateText = overgrown ? t("bar.plant.state.overgrown") : t("bar.plant.state.green", { pct: Math.round(pct) });
 
   return (
-    <FactionShell icon={<FactionIcon type="plant" size={15} />} name={archetypeLabel("plant")} color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}>
+    <FactionShell icon={<FactionIcon type="plant" size={15} />} name={archetypeLabel("plant")} color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}
+      footer={showSkills ? <PanelSkills skills={skills} arch="plant" color={PLANT} /> : null}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">
         <YieldMeter title={t("bar.plant.yield")} accent={PLANT_RIPE} channels={[

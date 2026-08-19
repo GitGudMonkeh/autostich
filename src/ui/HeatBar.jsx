@@ -2,7 +2,7 @@ import { fireFlag, hasHeatConsumer, glowingValueFor, glowMarginFor } from "../ga
 import { GLOWING_T1_HEAT, GLOWING_T2_HEAT, GLOWING_T3_HEAT, GLOWING_T1_VALUE, GLOWING_T2_VALUE, GLOWING_T3_VALUE,
   GLOWING_T2_MARGIN, GLOWING_T3_MARGIN, OVERHEAT_MAX, OVERHEAT_SCORE_STEP, SPARKFLIGHT_MIN_MARGIN } from "../game/constants.js";
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
-import { FactionShell, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
+import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, ASH, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
 import { t, t as tr, fmtNum } from "../i18n/index.js"; // #sprache (tr = Alias, wo `t` lokal die Schwelle ist)
@@ -41,7 +41,7 @@ function AnvilIcon() {
 
 const grp = (n) => fmtNum(Math.round(n));
 
-export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0, options = {}, onOption, manyActive = false }) {
+export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0, brandTotal = 0, fireBase = 0, fireWhite = 0, options = {}, onOption, manyActive = false, showSkills = false }) {
   if (!heat || !heat.active) return null;
   const { value, max } = heat;
   // Weißglut (#fire-balance): die Hitze über 100 % staut sich als ÜBERHITZUNG in `heat.over` (eigener Sub-Akku, s.
@@ -106,6 +106,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
 
   return (
     <FactionShell icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+      footer={showSkills ? <PanelSkills skills={skills} arch="fire" color={FIRE} /> : null}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Überlauf) + verbrannte Asche (Lauf-Zähler).
           Der Überlauf-Kanal summiert BEIDE Überlauf-Pfade — Weißglut (Hitze über 100 %) und Ascheglut (Asche über die
