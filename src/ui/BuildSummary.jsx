@@ -3,7 +3,7 @@ import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, archetypeOf } from "../game/skills.js";
-import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor } from "../game/constants.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef, suitLabel } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Farben zur Anzeigezeit
@@ -192,7 +192,7 @@ export function SkillList({ skills = [], empty = t("build.skills.empty"), heat =
           {/* #201 P1: Schlüsselbegriffe des Skills gleich mit erklärt — im Build jederzeit abrufbar. */}
           {glossaryKeywords([open.id], SKILL_DEFS).map((k) => (
             <div key={k} className="text-xs leading-snug mt-1.5">
-              <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}>{FACTION_ICON_SRC[glossaryEntry(k).group] ? <FactionIcon type={glossaryEntry(k).group} size={12} /> : glossaryEntry(k).icon} {glossaryEntry(k).label}</span>
+              <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}><GlossaryIcon e={glossaryEntry(k)} size={12} /> {glossaryEntry(k).label}</span>
               <span className="opacity-70"> — {glossaryEntry(k).text}</span>
             </div>
           ))}

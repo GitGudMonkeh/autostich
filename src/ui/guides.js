@@ -131,7 +131,7 @@ export const GUIDES = {
     pillars: [
       { glyph: "🌱", faction: "plant", color: "#85dc9d", name: "Wachstum", text: `Der Motor. Jeder Sieg lässt deine Karte wachsen — **nur aufwärts, nie zurück**. Genug Wachstum macht sie dauerhaft **grün (reif)**; je mehr Pflanzen-Skills, desto schneller.` },
       { glyph: "🌿", faction: "plant", color: "#5ab87a", name: "Grünes Feld", sub: "· Breite", text: `Reife grüne Karten teilen sich einen **Farbblock**. Je größer und grüner dein Feld, desto mehr Score — Blüte, Überwucherung.` },
-      { glyph: "🌳", color: "#cca466", name: "Wurzeln", sub: "· Tiefe", text: `Im **reinen** Pflanzen-Build wird Wachstum zu dauerhaftem **Kartenwert**: grüne Karten werden echt stärker; am Deckel zahlt jede weitere Wurzel direkt Score.` },
+      { glyph: "⚘", color: "#cca466", name: "Wurzeln", sub: "· Tiefe", text: `Im **reinen** Pflanzen-Build wird Wachstum zu dauerhaftem **Kartenwert**: grüne Karten werden echt stärker; am Deckel zahlt jede weitere Wurzel direkt Score.` },
     ],
     loop: {
       nodes: ["Wachstum", "Grün ↑", "Feld ↑", "Siege ↑"],
@@ -148,7 +148,7 @@ export const GUIDES = {
       label: `Wie steht dein Garten?`,
       bars: [
         { name: "Breite", glyph: "🌿", faction: "plant", fill: 64, color: "#5ab87a", payoff: `Feld voll grün → **Überwucherung** (Skill)` },
-        { name: "Tiefe", glyph: "🌳", fill: 80, color: "#cca466", payoff: `am Wert-Deckel → **Überlauf-Score** (legendär)` },
+        { name: "Tiefe", glyph: "⚘", fill: 80, color: "#cca466", payoff: `am Wert-Deckel → **Überlauf-Score** (legendär)` },
       ],
     },
     principle: [

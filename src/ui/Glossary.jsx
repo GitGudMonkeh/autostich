@@ -6,7 +6,7 @@ import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 import { useIsWide } from "./useIsWide.js"; // #desktop: Spalte statt Chip-Leiste
 import { useTabSwipe } from "./useSwipeTabs.js"; // Kategorie-Wechsel per Swipe
-import { FactionIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { FactionIcon, FACTION_ICON_SRC, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { MODAL_CARD, TopHairline, STICKY_HEAD_BG, ActionButton } from "./modalStyle.jsx"; // gemeinsame Hub-Modal-Bildsprache
 
 /* ============================================================
@@ -280,7 +280,7 @@ function TermRow({ e }) {
   return (
     <div className="as-edge-card as-edge-thin flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row mb-1"
       style={{ "--c": e.color }}>
-      <span className="flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}>{FACTION_ICON_SRC[e.group] ? <FactionIcon type={e.group} size={14} /> : <span className="text-[15px]">{e.icon}</span>}</span>
+      <span className="flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}><GlossaryIcon e={e} size={14} textClass="text-[15px]" /></span>
       <div className="min-w-0">
         <div className="gl-tname font-bold text-[13px] leading-tight" style={{ color: e.color }}>{e.label}</div>
         <div className="gl-ttext text-[11.5px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{e.text}</div>

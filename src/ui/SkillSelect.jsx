@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
-import { FactionIcon, ArchIcon, FACTION_ICON_SRC } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
@@ -62,7 +62,7 @@ function KeywordGlossary({ tokens }) {
     <div className="grid gap-1.5 mt-2">
       {tokens.map((k) => (
         <div key={k} className="text-xs leading-snug">
-          <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}>{FACTION_ICON_SRC[glossaryEntry(k).group] ? <FactionIcon type={glossaryEntry(k).group} size={12} /> : glossaryEntry(k).icon} {glossaryEntry(k).label}</span>
+          <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}><GlossaryIcon e={glossaryEntry(k)} size={12} /> {glossaryEntry(k).label}</span>
           <span className="opacity-70"> — {glossaryEntry(k).text}</span>
         </div>
       ))}
