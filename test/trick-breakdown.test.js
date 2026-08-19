@@ -79,6 +79,45 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     expect(read("src/game/storage.js"), "Default AN = Flag false").toMatch(/hideBreakdown: false/);
   });
 
+  /* #boden-zeile: Läuft ein BODEN-Effekt, steht die Aufschlüsselung mobil ÜBER den Karten. Der Boden beginnt
+     bei 86 % der Panelhöhe (gemessen 298 px auf dem 358×347-Handybrett) — die Zeile lag mit 302–322 px genau
+     darin und war über Würfeln/Brandung nicht mehr zu lesen.
+     Vier Dinge hält der Wächter fest, alle vier sind unsichtbar kaputtzumachen: (1) es gibt EINEN Zeilen-Block,
+     der umgehängt wird — kein zweiter Nachbau, der driften könnte; (2) er hängt oben WIE unten an derselben
+     Variable, steht also nie doppelt oder gar nicht; (3) die Sieg/Niederlage-Ansage wandert NICHT mit — sie
+     bleibt unter den Karten, wo sie war; (4) nur mobil und nur bei den zwei Boden-Effekten. */
+  it("Boden-Effekt stellt nur die Aufschlüsselung mobil über die Karten", () => {
+    const src = read("src/ui/Battlefield.jsx");
+    expect(src, "Breite kommt aus derselben Quelle wie die Zonen-Wahl").toMatch(/MOBILE_MQ.*from ".\/fx\/effectZones\.js"/);
+
+    const boden = src.match(/const bodenFx = ([^;]+);/);
+    expect(boden, "bodenFx muss es geben").toBeTruthy();
+    expect(boden[1]).toMatch(/"cubematrix"/);
+    expect(boden[1]).toMatch(/"neonsurf"/);
+    expect(boden[1], "Aurora ist ein Himmels-Effekt, kein Boden").not.toMatch(/aurora/i);
+    expect(boden[1], "Sternenfeld/Komet sind Finisher, kein Dauerbild").not.toMatch(/starfield|embers/i);
+
+    expect(src, "nur mobil UND nur bei Boden-Effekt")
+      .toMatch(/const ketteOben = useMediaQuery\(MOBILE_MQ\) && bodenFx;/);
+
+    // EIN Block, zwei Einhängepunkte — nicht zwei Fassungen der Zeile.
+    expect(src.match(/const kette = \(/g) || [], "die Zeile darf nur EINMAL gebaut werden").toHaveLength(1);
+    const oben = src.indexOf("{ketteOben && kette}");
+    const karten = src.indexOf('className="relative z-10 mt-8 flex');
+    const unten = src.indexOf("{!ketteOben && kette}");
+    expect(oben, "oberer Einhängepunkt fehlt").toBeGreaterThan(-1);
+    expect(unten, "unterer Einhängepunkt fehlt").toBeGreaterThan(-1);
+    expect(oben, "der obere Block muss VOR der Kartenreihe stehen").toBeLessThan(karten);
+    expect(unten, "der untere Block muss NACH der Kartenreihe stehen").toBeGreaterThan(karten);
+
+    // Die Ansage bleibt, wo sie war: genau EINE Renderstelle, und die liegt hinter den Karten.
+    const ansageAlle = [...src.matchAll(/className="relative z-10 h-8 mt-4 flex/g)].map((m) => m.index);
+    expect(ansageAlle, "die Ansage darf nur EINMAL gerendert werden").toHaveLength(1);
+    expect(ansageAlle[0], "die Ansage bleibt unter den Karten").toBeGreaterThan(karten);
+    const ketteBlock = src.slice(src.indexOf("const kette = ("), src.indexOf("{ketteOben && kette}"));
+    expect(ketteBlock, "die Ansage gehört NICHT in den wandernden Block").not.toMatch(/hideFloatWinLose/);
+  });
+
   it("alle Texte der Zeile stehen in BEIDEN Katalogen", () => {
     const keys = ["bf.bd.base", "bf.bd.streak", "bf.bd.perks", "bf.bd.form", "bf.bd.crit",
                   "bf.bd.direct", "bf.bd.total", "bf.bd.aria",

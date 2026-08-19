@@ -66,7 +66,8 @@ const GLITCH_FORCE = cardAnimForce("glitch");
 const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
-import { floorEffectPlacement } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
+import { floorEffectPlacement, MOBILE_MQ } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
+import { useMediaQuery } from "./useIsWide.js";
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
@@ -728,6 +729,17 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const neonsurfGL = bgFx === "neonsurf" && !!deckA1;
   const pixiFin = PIXI_FIELD.has(bgFinisher) && !!deckA1;      // BG-Finisher (Komet/Sternenfeld) läuft auf der GPU-Bühne (Pixi)
   const cubeMatrixOn = bgFx === "cubematrix" && !!deckA1;      // #317 Cube-Matrix: eigene Canvas-Bühne (musik-reaktiv)
+  /* #boden-zeile: Läuft ein BODEN-Effekt, steht die Stich-Aufschlüsselung ÜBER den Karten statt darunter.
+     Gemessen (390×844, Produktionsbuild): Brett 358×347, der Boden beginnt laut `EFFECT_ZONES.mobile.y` (86 %)
+     bei 298 px — die Zeile lag mit 302–322 px komplett darin, und über Würfeln/Brandung ist die feine
+     Faktorenkette dort nicht mehr zu lesen.
+     NUR die Aufschlüsselung wandert. Die Sieg/Niederlage-Ansage bleibt, wo sie war (Feldmitte unter den
+     Karten): sie ist großer, fetter, farbiger Text und über dem Effekt weiterhin lesbar — und sie ist die
+     Stelle, an der das Auge nach jedem Stich ohnehin steht.
+     Nur mobil (MOBILE_MQ = dieselbe 640-px-Grenze, an der auch die Zonen-Wahl hängt) und nur bei den zwei
+     BODEN-Effekten: Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher (kurz, kein Dauerbild). */
+  const bodenFx = bgFx === "cubematrix" || bgFx === "neonsurf";
+  const ketteOben = useMediaQuery(MOBILE_MQ) && bodenFx;
   // #zone: fest verankerter Feld-Boden → Effekt-Front bündig am unteren Panel-Rahmen (höhenunabhängig, für ALLE Boden-Effekte).
   const cmZone = floorEffectPlacement();
   // Panel = Feld-Rahmen (Ref für Layout/Position), oppSlot = Gegnerkarten-Slot.
@@ -1383,6 +1395,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   }
   const outerGlow = outerParts.length ? outerParts.join(", ") : undefined;
 
+  /* Die Aufschlüsselungs-Zeile als EIN Block — je nach `ketteOben` über den Karten oder an ihrem alten Platz
+     unter der Ansage (s. #boden-zeile). Die Klassen sind in beiden Fällen dieselben, auch die Abstände: der
+     Block kostet oben wie unten `mt-1` + `min-h-5` = 24 px, die Panelhöhe ändert sich beim Umschalten also
+     nicht und es springt nichts.
+     MINDEST-Höhe (min-h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz
+     reserviert, damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog).
+     Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
+     flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
+  const kette = (
+    <div className="relative z-10 min-h-5 mt-1 flex items-center justify-center">
+      {!hideBreakdown && <TrickBreakdown trick={t} />}
+    </div>
+  );
+
   return (
    <>
     <div ref={panelRef} data-tut="bf-board" className="rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
@@ -1593,6 +1619,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           Pixi-Emitter (PixiStage). Es gibt keine DOM-Finisher-Fassung mehr. */}
       {/* Archetyp-Ambiente (Feuer-Glut / Blitz-Glow / ⚡) ist entfernt → wandert in die Fraktions-Panels
           (HeatBar/ChargeBar). Das Battlefield bleibt für Deck-Skin + das Stich-Juice reserviert. */}
+      {ketteOben && kette}
       <div className="relative z-10 mt-8 flex items-center justify-center gap-4 sm:gap-8">
         {/* KRITISCH-Text (#33) — bei reduzierter Bewegung statisch „… ×N". #389: per hideFloatMult ausblendbar. */}
         {isCrit && !hideFloatMult && (
@@ -1781,14 +1808,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         )}
       </div>
 
-      {/* Stich-Aufschlüsselung (§17) — die Faktorenkette des laufenden Stichs, unter der Sieg/Niederlage-Ansage.
-          MINDEST-Höhe (min-h-5): bei Niederlage/Gleichstand und bei ausgeblendeter Zeile bleibt der Platz reserviert,
-          damit die Karten NICHT springen (genau der Grund, aus dem die alte Fassung damals rausflog). Kein
-          overflow-hidden mehr: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per flex-wrap
-          auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */}
-      <div className="relative z-10 min-h-5 mt-1 flex items-center justify-center">
-        {!hideBreakdown && <TrickBreakdown trick={t} />}
-      </div>
+      {!ketteOben && kette}
     </div>
     {/* #: Krit-Vollbild-Flash/Vignette (CritScreenFx) entfernt — Krit-Finisher-Animationen raus. Der Screen-Shake bleibt
         (für große Siege, gemeinsam mit normalen Siegen); die „Kritisch!"-Anzeige + Lila bleiben unverändert. */}

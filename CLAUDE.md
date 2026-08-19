@@ -2221,6 +2221,37 @@ bleibt als Wahl erhalten, er ist nur nicht mehr die Vorauswahl.
   Vorauswahl soll ein bewusster Akt sein, kein Nebeneffekt.
 - Wächter: `test/announce-deck.test.js`, Abschnitt #fx-deckdefault.
 
+### #boden-zeile — die Stich-Aufschlüsselung steht bei Boden-Effekten mobil über den Karten (19.08.2026)
+Gemeldet: „bei Bodeneffekten, wie Neonbrandung und Cubes kann man die Score-Zusammensetzung nicht mehr lesen."
+Nachgemessen (390×844, Produktionsbuild): Brett **358×347**, der Boden beginnt laut `EFFECT_ZONES.mobile.y`
+(86 %) bei **298 px** — die Zeile lag mit 302–322 px komplett darin.
+- **Nur die Aufschlüsselung wandert, die Sieg/Niederlage-Ansage NICHT** (ausdrückliche Ansage des Users nach
+  zwei falschen Anläufen: erst hatte ich die zwei Zeilen getauscht, dann beide nach oben geschoben, dann der
+  Zeile eine Trägerfläche gegeben — alles drei war nicht gefragt). Die Ansage ist großer, fetter, farbiger
+  Text und über dem Effekt weiterhin lesbar; die feine Faktorenkette ist es nicht.
+- Gemessen danach: Zeile **29–49** (statt 302–322), Karten 81–274, Ansage 290–322. **Die Panelhöhe bleibt
+  347 px** — der Block kostet oben wie unten `mt-1` + `min-h-5` = 24 px, die Klassen sind in beiden Fassungen
+  dieselben. Es wird nur umgehängt, nichts umgerechnet.
+- **Preis, bewusst so:** weil die Zeile ihren Platz unten räumt, rutschen Karten und Ansage um genau diese
+  24 px nach unten (Ansage 266–298 → 290–322). Die Alternative wäre, den Platz unten leer zu reservieren —
+  dann stünden Karten und Ansage auf ihrem alten Pixel, das Panel würde aber 24 px höher, und mit ihm wandert
+  das Effekt-Band (es rechnet in Prozent der Panelhöhe). Konstante Panelhöhe war mir das wichtigere Gut.
+- **EIN Block, zwei Einhängepunkte** (`const kette`, `{ketteOben && kette}` vor der Kartenreihe,
+  `{!ketteOben && kette}` dahinter). Zwei Fassungen wären die Doppelpflege, vor der die Datei überall warnt.
+- **Nur `cubematrix` + `neonsurf`.** Aurora ist ein Himmels-Effekt (oben), Sternenfeld/Komet sind Finisher
+  (kurz, kein Dauerbild). Neue Boden-Ebene → in `bodenFx` eintragen.
+- **Nur mobil** (`MOBILE_MQ`, dieselbe 640-px-Grenze wie die Zonen-Wahl) — so angesagt. **Der Desktop ist
+  damit nicht sauber, sondern unangetastet:** das Brett ist dort breiter, aber gleich hoch (gemessen 668×347
+  bei 1400 px), und sein Band beginnt schon bei 82 % = **285 px** — die Zeile liegt also auch dort im Boden.
+  Wer das angeht, hängt `ketteOben` allein an `bodenFx` statt zusätzlich an die Breite.
+- `useMediaQuery` ist aus `useIsWide.js` herausgezogen (`useIsWide` ist jetzt der Sonderfall darauf).
+- Kontrollmessungen: ohne Boden-Effekt (mobil) und auf 1400 px steht alles unverändert (Karten 57–250,
+  Ansage 266–298, Zeile 302–322).
+- Wächter: `test/trick-breakdown.test.js`. Gegenprobe gemacht: Verschiebung ohne Boden-Effekt · Aurora
+  fälschlich als Boden · oberer Einhängepunkt entfernt · Ansage zweimal gerendert · Ansage in den wandernden
+  Block gezogen — alle fünf fallen.
+- **Nicht am Gerät gesehen** — headless im Produktionsbuild gemessen und nachgerendert.
+
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene
 ist im SELBEN Frame gemountet, `GottScene` reicht `trigger={1}` an den Prunk, dessen `onFire` spielt sofort
