@@ -40,9 +40,13 @@ const DEFAULT_OPTIONS = {
   fxEdgeGlow: false, fxHolo: false, fxGlitch: false,
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
   fxCubeMatrixSun: true, fxCubeMatrixWire: false,
-  fxAuroraDeck: false, fxNeonsurfDeck: false, fxStarfieldDeck: false, fxCubeMatrixDeck: false,
-  fxScorchDeck: false, fxBlackholeDeck: false, fxKlingeDeck: false, fxHologridDeck: false,
-  fxSonnenPulsDeck: false, fxLaserFaecherDeck: false, fxPrismaKaskadeDeck: false, fxHoloCubeDeck: false, fxSupernovaDeck: false,
+  /* #fx-deckdefault (19.08.2026): die dreizehn Farbmodus-Flags standen auf `false` (= Standardton) und
+     stehen jetzt auf `true` (= Deckfarbe). `fxDeckDefaultLift` ist der Marker der einmaligen Anhebung
+     bestehender Stände und MUSS hier false sein — er kommt aus den Defaults UNTER den gespeicherten Stand. */
+  fxAuroraDeck: true, fxNeonsurfDeck: true, fxStarfieldDeck: true, fxCubeMatrixDeck: true,
+  fxScorchDeck: true, fxBlackholeDeck: true, fxKlingeDeck: true, fxHologridDeck: true,
+  fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
+  fxDeckDefaultLift: false,
 };
 
 describe("rankHighscores", () => {

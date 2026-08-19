@@ -1671,15 +1671,23 @@ Effekt, das ist eine andere Frage als „welches Deck spiele ich").
 - **Die Rechnung liegt rein in `src/ui/fx/announceChrome.js`** (kein React, kein Canvas) — dieselbe Bauart wie
   `previewScale.js` und `packSort.js`, damit der Wächter die Verläufe NACHRECHNET statt Schreibweisen zu
   vergleichen. Dass ein Verlauf die Deckfarbe wirklich enthält, sieht man dem Aufrufer nicht an.
-- **DER PREIS, offen benannt: die drei unteren Stufen können sich nicht mehr über den FARBTON unterscheiden** —
-  bei einer Deckfarbe gibt es nur einen. Die Eskalation wandert auf die Achsen, die ohnehin schon tragen:
-  Größe (68/78/90 px), das Wort selbst, die **Sättigung** (`WEISS_JE_RANG` = 0,78 / 0,70 / 0,62 — je höher die
-  Stufe, desto weniger Weiß in den Zwischenstopps) und die zweite Glow-Lage `aura`, die es im festen Satz
-  ebenfalls erst ab Brutal gab (`AURA_AB_RANG = 2`, unverändert). Wer die Farbleiter zurückwill, braucht dafür
-  drei Farben — und die widerspricht dann dem Deckbezug.
-- **Der Mittelstopp ist die ZWEITE Deckfarbe** — derselbe Zweiton-Gedanke, den die epische Wortmarke schon hat.
-  Bei einem einfarbigen Deck tritt ein aufgehelltes Eigen-Grau an ihre Stelle, sonst liefe der Verlauf in der
-  Mitte flach (Hauptfarbe = Mittelstopp = Hauptfarbe ist kein Verlauf mehr).
+- **ZWEI Achsen, seit #ansage-stufen (19.08.2026).** Der erste Wurf hatte nur die Sättigung und bezahlte das
+  damit, dass die drei unteren Stufen denselben Farbton trugen. Die Rückfrage „am Desktop ziehen die Panels
+  doch verschiedene Farbstufen aus dem Deck — geht das nicht auch für die Ansagen?" war berechtigt:
+  - **Ton** (`TON_JE_RANG` = 0 / 0,5 / 1): Stark = Deck-Primär · Brutal = Mitte · Irre = Deck-Sekundär.
+    Damit ist die Farbleiter des festen Satzes (Cyan → Violett → Magenta) zurück — sie zieht ihre drei Töne
+    jetzt aus dem Deck statt aus einer Tabelle.
+  - **Sättigung** (`WEISS_JE_RANG` = 0,78 / 0,70 / 0,62): je höher die Stufe, desto weniger Weiß.
+  - dazu unverändert die zweite Glow-Lage `aura` erst ab Brutal (`AURA_AB_RANG = 2`).
+  **Woher das Muster stammt:** die Panels ziehen NICHT mehrere Deckfarben — ein Deck hat genau `a1` und `a2`.
+  Sie ziehen EINE Farbe in Stufen (`color-mix(… var(--deck-a1) N%, dunkel)`, N zwischen 7 und 80, plus
+  `--deck-border` bei 45 %). Genau diese Idee trägt hier zwei Achsen statt einer.
+- **Der Mittelstopp ist der GEGENPOL, nicht fest die Sekundärfarbe.** Genau das war die Falle beim Nachziehen:
+  fest auf `a2` gesetzt fällt er bei Irre mit der Hauptfarbe zusammen (die dort ja selbst `a2` ist) und der
+  Verlauf läuft flach — ausgerechnet auf der höchsten Stufe. Jetzt `ton <= 0.5 ? a2 : a1`.
+- **Zwei gleiche Deckfarben zählen als EINE.** Sonst liefe die Ton-Achse über eine Strecke der Länge 0; der
+  Verlauf wäre in der Mitte flach, ohne dass man dem Code ansieht, warum. Dann greift der Einfarb-Pfad
+  (aufgehelltes Eigen-Grau als Mitte, keine Aura).
 - **`null` ist überall der geplante Rückfall, kein Fehlerfall**: `deckChrome` gibt `null` zurück, sobald die
   Deckfarbe unlesbar ist oder die Stufe keinen `rank` hat (die epischen) — der Aufrufer nimmt dann den fest
   eingetragenen Satz. **Die drei festen `chrome`-Blöcke bleiben deshalb ausdrücklich stehen und sind kein
@@ -1692,9 +1700,35 @@ Effekt, das ist eine andere Frage als „welches Deck spiele ich").
 - **Falle beim Wächter-Schreiben**: `it("„Gönn dir" …")` — das deutsche Schlusszeichen ist ein GERADES `"` und
   beendet den JS-String. Vite meldet das als „invalid JS syntax", nicht als Anführungszeichen-Fehler. Im
   Zweifel `“…”` verwenden.
-- Wächter: `test/announce-deck.test.js` (17 Prüfungen: Farbrechnung nachgerechnet + Verdrahtung als Ratsche).
-- **Nicht am Gerät gesehen** — Build, Lint und 1753 Tests grün, der Blick auf die Ansagen über 40 Decks
+- Wächter: `test/announce-deck.test.js` (Farbrechnung nachgerechnet + Verdrahtung als Ratsche).
+- **Nicht am Gerät gesehen** — Build, Lint und 1772 Tests grün, der Blick auf die Ansagen über 40 Decks
   (besonders dunkle Decks: der Verlauf lebt vom Weiß-Anteil) steht aus.
+
+### #fx-deckdefault — Deckfarbe ist die Vorauswahl, für ALLE Effekte (19.08.2026)
+Die dreizehn Farbmodus-Flags (`fx*Deck`) standen alle auf `false` = Standardton. Die Karten-Animationen
+(Edge/Holo/Glitch) laufen dagegen ohnehin IMMER in der Deckfarbe und haben deshalb gar kein Flag — ein frisch
+gekaufter Hintergrund- oder Prunk-Effekt fiel daneben als einziger auf einen deckfremden Ton zurück, und zwar
+genau im Moment des Kaufs, in dem man ihn zum ersten Mal sieht. **Default ist jetzt `true`.** Der Standardton
+bleibt als Wahl erhalten, er ist nur nicht mehr die Vorauswahl.
+- **„Auch direkt nach Kauf" kostet nichts extra**: die Flags sind GLOBAL (nicht je gekauftem Stück), ein neu
+  freigeschalteter Effekt liest beim ersten Rendern also schon `true`. Es gibt keinen Kauf-Pfad, der sie setzt.
+- **Der Default allein erreicht bestehende Stände NICHT** — `loadOptions` merged `{...DEFAULT_OPTIONS, ...o}`,
+  der gespeicherte Wert gewinnt immer. Dieselbe Naht, an der schon `fxDeckGlow` hängen blieb. Deshalb
+  `liftFxDeckDefaults(o)` in `normalizeFxOptions`: hebt einmalig alle dreizehn und setzt den Marker
+  `fxDeckDefaultLift`. Vertretbar, weil `false` bis dahin der DEFAULT war — ein gespeichertes `false` lässt
+  sich nicht von „nie angefasst" unterscheiden, es gibt also keine bewusste Wahl zu überschreiben.
+- **Der Marker MUSS in DEFAULT_OPTIONS auf `false` stehen.** Stünde er auf `true`, bekäme ihn jedes Alt-Profil
+  aus dem Merge und die Anhebung liefe kein einziges Mal — die Änderung wäre lautlos wirkungslos.
+- **Und sie muss zurückgeschrieben werden**: `loadOptions` speichert jetzt auch, wenn der Marker fehlte
+  (vorher nur bei geändertem `reducedFx`). Ohne das liefe die Anhebung bei JEDEM Start und überschriebe eine
+  spätere bewusste Wahl „Standard" — ein Schalter, der sich nach dem Neuladen von selbst zurückstellt.
+- **`FX_DECK_KEYS` wird aus `DEFAULT_OPTIONS` abgeleitet** (`/^fx.+Deck$/`), nicht abgetippt, und
+  `COSMETIC_OPTION_KEYS` spreizt sie ein. Vorher standen dieselben dreizehn Namen zweimal da; ein neuer Effekt
+  mit Farbmodus hängt sich jetzt automatisch in Anhebung UND Dev-Reset ein.
+- **`test/storage.test.js` führt eine eigene Kopie von `DEFAULT_OPTIONS`** (das Original ist modul-privat) —
+  sie ist die Ratsche auf die Defaults und musste mitgezogen werden. Genau dafür ist sie da: eine geänderte
+  Vorauswahl soll ein bewusster Akt sein, kein Nebeneffekt.
+- Wächter: `test/announce-deck.test.js`, Abschnitt #fx-deckdefault.
 
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene

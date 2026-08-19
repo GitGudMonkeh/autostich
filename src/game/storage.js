@@ -560,12 +560,25 @@ const DEFAULT_OPTIONS = {
   fxSonnenPuls: true, fxLaserFaecher: false, fxPrismaKaskade: false, fxHoloCube: false, fxSupernova: false,
   // Cube-Matrix-Optik (Sonne default an; Wire aus).
   fxCubeMatrixSun: true, fxCubeMatrixWire: false,
-  // Farbmodus-Flags Standard ↔ Deckfarbe (Default Standard = false). Karten-Anims (Edge/Holo/Glitch) sind
-  // IMMER Deckfarbe → kein eigenes Flag.
-  fxAuroraDeck: false, fxNeonsurfDeck: false, fxStarfieldDeck: false, fxCubeMatrixDeck: false,
-  fxScorchDeck: false, fxBlackholeDeck: false, fxKlingeDeck: false, fxHologridDeck: false,
-  fxSonnenPulsDeck: false, fxLaserFaecherDeck: false, fxPrismaKaskadeDeck: false, fxHoloCubeDeck: false, fxSupernovaDeck: false,
+  /* Farbmodus-Flags Standard ↔ Deckfarbe. **Default ist seit 19.08.2026 die DECKFARBE** (war Standard).
+     Begründung: die Karten-Animationen (Edge/Holo/Glitch) laufen ohnehin IMMER in der Deckfarbe und haben
+     deshalb gar kein Flag — ein frisch gekaufter Hintergrund- oder Prunk-Effekt fiel daneben als einziger
+     auf einen deckfremden Standardton zurück, und zwar genau im Moment des Kaufs, in dem man ihn zum ersten
+     Mal sieht. Der Standardton bleibt als Wahl erhalten, er ist nur nicht mehr die Vorauswahl.
+     Weil die Flags GLOBAL sind (nicht je gekauftem Stück), deckt der Default den Fall „direkt nach Kauf"
+     mit ab: ein neu freigeschalteter Effekt liest beim ersten Rendern schon `true`. */
+  fxAuroraDeck: true, fxNeonsurfDeck: true, fxStarfieldDeck: true, fxCubeMatrixDeck: true,
+  fxScorchDeck: true, fxBlackholeDeck: true, fxKlingeDeck: true, fxHologridDeck: true,
+  fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
+  /* Marker der EINMALIGEN Anhebung bestehender Stände (s. `liftFxDeckDefaults`). Muss `false` sein: der
+     Merge in `loadOptions` legt DEFAULT_OPTIONS UNTER den gespeicherten Stand — stünde hier `true`, käme
+     der Marker für Alt-Profile aus den Defaults und die Anhebung liefe nie. */
+  fxDeckDefaultLift: false,
 };
+/* Die 13 Farbmodus-Flags als Liste — EINE Wahrheit für Anhebung und Wächter. Ohne sie stünden dieselben
+   dreizehn Namen ein drittes Mal da (Defaults · COSMETIC_OPTION_KEYS · Migration), und die Liste, die man
+   beim nächsten neuen Effekt vergisst, ist immer die, die niemand liest. */
+export const FX_DECK_KEYS = Object.keys(DEFAULT_OPTIONS).filter((key) => /^fx.+Deck$/.test(key));
 // #: Kosmetik-AUSWAHL-Felder in den Optionen (equipped Deck/Battlefield + alle Effekt-Toggles) — beim Dev-Reset
 // auf Default zurückgesetzt (deselektiert). Restliche Options-Prefs (Ton/UI/Name) bleiben unberührt.
 // #322 Gottgleich-Prunk-Toggles: Dev-Reset stellt Sonnen-Puls (Default true) wieder her und wählt die kaufbaren ab.
@@ -576,8 +589,9 @@ export const COSMETIC_OPTION_KEYS = [
   "fxAurora", "fxNeonsurf", "fxStarfield", "fxCubeMatrix", "fxEdgeGlow", "fxHolo", "fxGlitch",
   "fxSonnenPuls", "fxLaserFaecher", "fxPrismaKaskade", "fxHoloCube", "fxSupernova",
   "fxCubeMatrixSun", "fxCubeMatrixWire",
-  "fxAuroraDeck", "fxNeonsurfDeck", "fxStarfieldDeck", "fxCubeMatrixDeck", "fxScorchDeck", "fxBlackholeDeck",
-  "fxKlingeDeck", "fxHologridDeck", "fxSonnenPulsDeck", "fxLaserFaecherDeck", "fxPrismaKaskadeDeck", "fxHoloCubeDeck", "fxSupernovaDeck",
+  // #fx-deckdefault: aus FX_DECK_KEYS statt dreizehn Namen ein zweites Mal — ein neuer Effekt mit Farbmodus
+  // wird damit automatisch mit zurückgesetzt, statt hier vergessen zu werden.
+  ...FX_DECK_KEYS,
 ];
 /* #331 Einfachauswahl erzwingen (Migration/Normalisierung beim Laden): Hintergrund-Effekte (Aurora/Würfel-Matrix/
    Glutfunken/Komet) und Karten-Animationen (Neonrahmen/Holo-Sweep/Glitch) sind jetzt einfach-exklusiv. Alt-Stände, in
@@ -593,8 +607,21 @@ function reduceExclusive(o, keys) {
     if (o[key]) { if (kept) o[key] = false; else kept = true; }
   }
 }
+/* #ansage-deck / #fx-deckdefault — bestehende Stände EINMALIG auf den neuen Default heben.
+   Ein geänderter Default allein erreicht sie nicht: `loadOptions` merged `{...DEFAULT_OPTIONS, ...o}`,
+   der gespeicherte Wert gewinnt also immer — dieselbe Naht, an der schon `fxDeckGlow` hängen blieb.
+   Vertretbar ist die Anhebung, weil `false` bis hierher der DEFAULT war: ein gespeichertes `false` lässt
+   sich nicht von „nie angefasst" unterscheiden, es gibt also keine bewusste Wahl zu überschreiben.
+   Der Marker sorgt dafür, dass es bei genau einem Mal bleibt — wer danach „Standard" wählt, behält das. */
+export function liftFxDeckDefaults(o) {
+  if (o.fxDeckDefaultLift) return false;
+  for (const key of FX_DECK_KEYS) o[key] = true;
+  o.fxDeckDefaultLift = true;
+  return true;
+}
 export function normalizeFxOptions(o) {
   if (!o || typeof o !== "object") return o;
+  liftFxDeckDefaults(o);
   reduceExclusive(o, BG_EXCL_OPTS);
   reduceExclusive(o, CARD_ANIM_OPTS);
   // #deckglow-raus: „Leuchten" gibt es nicht mehr. Der Schlüssel würde sonst über den `{...DEFAULT_OPTIONS, ...o}`-
@@ -624,11 +651,13 @@ export function loadOptions() {
     if (raw) {
       const o = JSON.parse(raw);
       if (o && typeof o === "object") {
-        const before = o.reducedFx;
+        const before = o.reducedFx, hatteLift = !!o.fxDeckDefaultLift;
         const merged = normalizeFxOptions({ ...DEFAULT_OPTIONS, ...o });
         merged.reducedFx = migrateReducedFx(before);
-        // #363 einmalig zurückschreiben, damit kein „auto"/„ausgewogen" (oder fehlender Schlüssel) im Profil verbleibt.
-        if (merged.reducedFx !== before) { try { saveOptions(merged); } catch (e) {} }
+        /* #363 einmalig zurückschreiben, damit kein „auto"/„ausgewogen" (oder fehlender Schlüssel) im Profil
+           verbleibt. #fx-deckdefault: die Anhebung MUSS mit zurückgeschrieben werden — sonst fehlt der Marker
+           beim nächsten Laden wieder und sie überschriebe ein bewusstes „Standard" bei jedem Start erneut. */
+        if (merged.reducedFx !== before || !hatteLift) { try { saveOptions(merged); } catch (e) {} }
         return merged;
       }
     }
