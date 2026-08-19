@@ -40,24 +40,38 @@ Helligkeit, und zwar **in die Datei gebacken**, nicht per CSS-`filter`: ein Filt
 Rasterarbeit auf genau dem Screen, der laut Messung ohnehin am Mount klemmt (271–417 ms in
 `phase:levelup`, s. CLAUDE.md).
 
-## Stand Blitz (6 von 21 zugeordnet)
+## Stand Blitz (11 von 21 zugeordnet)
 
 | Skill | ID | Motiv | Datei |
 |---|---|---|---|
 | Blitzableiter | `SK_LIGHTNING_01` | Spitze auf Fels, Einschlag von oben | ✅ |
 | Ionisierung | `SK_LIGHTNING_02` | zwei Karten, Lichtbogen dazwischen | offen (Upload) |
+| Kettenblitz | `SK_LIGHTNING_03` | waagerechte Zickzack-Kette, vier Einschlagsterne | offen (Upload) |
 | Reststrom | `SK_LIGHTNING_05` | Blitzkanal mit vier Knoten | offen (Upload) |
 | Gewitterfront | `SK_LIGHTNING_06` | Wolkenwand über Raster | ✅ |
+| Ladungsserie | `SK_LIGHTNING_07` | aufziehende Spirale | offen (Upload) |
 | Statische Aufladung | `SK_LIGHTNING_08` | Plasmakugel, unten gefüllt | ✅ |
+| Kurzschluss | `SK_LIGHTNING_09` | zwei Splitter, Bogen über die Lücke | offen (Upload) |
 | Entladung | `SK_LIGHTNING_10` | Blitz + Schockring auf dem Raster | offen (Upload) |
+| Breitenbeschleuniger | `SK_LIGHTNING_12` | Kartenreihe, langer Bogen von links nach rechts | offen (Upload) |
+| Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | offen (Upload) |
 
-Es fehlen: `03` Kettenblitz · `04` Überspannung · `07` Ladungsserie · `09` Kurzschluss · `11` Blitzfänger ·
-`12` Breitenbeschleuniger · `13` Spannungsstau · `14` Überschlag · `15` Blitzschlag · `16` Dauerstrom ·
+Es fehlen: `04` Überspannung · `11` Blitzfänger · `14` Überschlag · `15` Blitzschlag · `16` Dauerstrom ·
 `17` Serienschutz · `L01` Donnergott · `L02` Doppelentladung · `L03` Flächenionisation · `L04` Durchschlag.
+
+**Verworfen und nicht wieder aufnehmen:** Reststrom als Kapsel mit vier Leuchtringen (las sich als
+halbvolle Batterie und war Gerätegehäuse statt Sturm) · Ladungsserie als Kette gleich großer Kugeln
+(gleichmäßig wiederholte Rundformen lesen sich als Deko, nicht als Aufbau).
 
 ## Die eine Regel beim Erzeugen
 
 Bei 21 Bildern derselben Fraktion entscheidet die **Silhouette bei 64 px**, nicht das Motiv. Belegt sind
-bereits: Nadel (01) · Kreis (08) · Kanal (05) · Wolkenmasse (06) · Trichter mit Ring (10) ·
-Doppelrechteck (02). Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie,
-eine andere Grundform immer.
+bereits: Nadel (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Kanal (05) · Wolkenmasse (06) ·
+Spirale (07) · Kreis (08) · Hantel/zwei Splitter (09) · Trichter mit Ring (10) · Kartenreihe mit Bogen (12) ·
+Stachelkugel (13). Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie,
+eine andere Grundform immer. Zweite Regel aus der Perlen-Panne: **nie aus gleichmäßig wiederholten,
+gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Richtung variieren.
+
+**Die eine Kollision, die zu beobachten ist:** `08` (Kugel) und `13` (Stachelkugel) sind beide rund. Sie
+trennt heute nur der Splitterkranz — wenn eine der beiden im Angebot neben der anderen steht und man
+stutzt, ist `13` die, die eckiger werden muss.
