@@ -2069,10 +2069,14 @@ an den Panels von Baum, Werkstatt und Leitfaden).
   Merksatz bleibt: was an einer variablen Höhe hängt, wandert mit ihr.)
 - **#update-desk**: die „Neue Version verfügbar"-Leiste ist ab 1400 px eckig (6 px) und ihr Knopf verliert
   den Schein. Sie ist ein HINWEIS, kein Angebot; die goldene Kante bleibt, „Neu laden" ist ihre Handlung.
-- **Offen** (aus der Vorlage, braucht eine Festlegung): die fünfte Kachel „Aktive Effekte 7/7" neben dem
-  Perk-Qualitäts-Balken. Es gibt im Baum keine Größe, die das schon zählt — was sie zählen soll (Knoten mit
-  Lauf-Wirkung? freigeschaltete Achsen?), ist eine Spiel-Entscheidung, keine Layout-Frage. Ebenfalls offen:
-  die Überschrift der Vorlage lautet „BAUM-EFFEKT · AKTUELLE LAUF-WIRKUNG", im Spiel steht
+- **ENTSCHIEDEN (19.08.2026): die fünfte Kachel „Aktive Effekte 7/7" aus der Vorlage kommt NICHT.**
+  Der Perk-Qualitäts-Balken behält die volle Breite. Begründung des Users, und sie trägt: der Balken IST
+  die Aussage der unteren Zeile, und er lebt von der Länge — vier Rarität-Anteile nebeneinander liest man
+  über die Breite, nicht über einen Rest neben einer Kachel. Dazu hätte die Kachel eine Größe gebraucht,
+  die es im Baum gar nicht gibt (was sind „aktive Effekte"? Knoten mit Lauf-Wirkung? freigeschaltete
+  Achsen?) — sie hätte also eine neue Kennzahl erfunden, um einen Platz zu füllen. **Wer sie später doch
+  will, definiert zuerst die Zahl, dann das Layout.**
+- **Offen**: die Überschrift der Vorlage lautet „BAUM-EFFEKT · AKTUELLE LAUF-WIRKUNG", im Spiel steht
   „Was der Baum gerade bewirkt" — eine Zeile in beiden Katalogen, wenn gewünscht.
 
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
