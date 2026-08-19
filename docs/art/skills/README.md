@@ -69,11 +69,11 @@ den Median des Satzes, und der wandert mit jedem fehlenden Bild.
 | Statische Aufladung | `SK_LIGHTNING_08` | Plasmakugel, unten gefüllt | ✅ |
 | Kurzschluss | `SK_LIGHTNING_09` | zwei Splitter, Bogen über die Lücke | offen (Upload) |
 | Entladung | `SK_LIGHTNING_10` | Blitz + Schockring auf dem Raster | offen (Upload) |
+| Blitzfänger | `SK_LIGHTNING_11` | offene Steinschale fängt den Blitz auf | ✅ |
 | Breitenbeschleuniger | `SK_LIGHTNING_12` | Kartenreihe, langer Bogen von links nach rechts | offen (Upload) |
 | Spannungsstau | `SK_LIGHTNING_13` | Knoten im Steinkäfig | offen (Upload) |
 | Überschlag | `SK_LIGHTNING_14` | Bogen über eine dunkle Kante, Funkenregen rechts | ✅ |
 | Blitzschlag | `SK_LIGHTNING_15` | eine stehende Karte, Einschlag mittig | ✅ |
-| Blitzfänger | `SK_LIGHTNING_11` | offene Steinschale fängt den Blitz auf | ✅ |
 | Dauerstrom | `SK_LIGHTNING_16` | waagerechtes Band über dem Raster | ✅ |
 | Serienschutz | `SK_LIGHTNING_17` | Bogenkuppel über einem Splitter | ✅ |
 | Donnergott | `SK_LIGHTNING_L01` | Wolfskopf aus Sturm, goldene Krone | ✅ |
