@@ -15,7 +15,7 @@ Einbau ist NICHT gemacht: Issue #402.
 | D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe ✅ |
 | E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug ✅ |
 | P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz ✅ |
-| S | Ausbau | Slots & Ökonomie | `#5ec8c0` | 0 | 1 | Gerüst mit leerem, hell umrissenem Fach | offener Rahmen |
+| S | Ausbau | Slots & Ökonomie | `#5ec8c0` | 0 | 1 | Gerüst mit leerem, hell umrissenem Fach | offener Rahmen ✅ |
 
 ## Die Farbe trägt hier NICHT — die Silhouette muss es
 
@@ -65,6 +65,29 @@ Helligkeitsbänder, schwarzer Grund, quadratisch, `mix-blend-mode: screen`).
 | **D Score** | 22,3 % | 8,7 % | 3,1 % | 0,96 % | 2,26 | 33° |
 | **E Form** | 30,4 % | 5,7 % | 1,4 % | 0,25 % | 1,50 | 219° |
 | **P Präzision** | 20,4 % | 5,5 % | 1,7 % | 0,49 % | 1,90 | 21° |
+| **S Ausbau** | 33,7 % | 8,3 % | 2,4 % | 0,46 % | 1,49 | 177° |
+
+## Helligkeits-Angleich — gerechnet über alle sieben
+
+Zielwert ist der **Median: 23,5 %** Leuchtfläche. Die Faktoren sind numerisch gesucht (die Helligkeit wird
+je Bild verstellt, bis die gemessene Fläche den Median trifft), nicht geschätzt:
+
+| Emblem | roh | Faktor | danach |
+|---|---|---|---|
+| P Präzision | 20,4 % | **1,33** | 23,2 % |
+| D Score | 22,4 % | **1,22** | 23,6 % |
+| B Stich | 23,2 % | **1,05** | 23,5 % |
+| A Deck | 23,5 % | **1,02** | 23,5 % |
+| E Form | 30,8 % | **0,73** | 23,7 % |
+| C Rolle | 32,3 % | **0,78** | 23,4 % |
+| S Ausbau | 34,3 % | **0,72** | 23,1 % |
+
+Spreizung vorher 1,7-fach, danach liegen alle zwischen 23,1 und 23,7 %.
+
+**Zwei Muster stecken darin.** P und D werden AUFGEHELLT statt gedämpft — Fadenkreuz und Treppe sind
+linienbetont und tragen von Haus aus wenig Licht. Und die drei „gebauten" Motive (Rolle, Form, Ausbau)
+landen alle bei ~0,75, weil sie große beleuchtete Flächen haben. Das ist der Unterschied zwischen **Linie
+und Fläche**, dieselbe Beobachtung wie Deck gegen Stich.
 
 **D Score** hat mit 2,26 die höchste Streuung des Satzes — die Treppe gibt jeder Stufe einen eigenen
 Helligkeitswert. Ihr Farbton liegt bei 33° statt der 43° der Kategoriefarbe, also oranger; das ist ein
