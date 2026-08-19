@@ -30,7 +30,19 @@ import { useT } from "../i18n/useLocale.js";
 // Reihenfolge der Abschnitte: erst WAS rausgeht (die beiden Sender), dann was bleibt, dann WER und WIE.
 const SECTIONS = ["telemetry", "board", "local", "host", "contact"];
 
-const ACC = "#8a7de0"; // Violett wie in den übrigen Overlay-Köpfen
+/* #datenschutz-kante: Die Kante der Abschnitte trägt eine AUSSAGE, keine Dekoration — die beiden SENDER
+   (Telemetrie, Bestenliste) stehen in der Deckfarbe, alles andere ist Kontext (was bleibt, wo es landet, wer
+   dahintersteht) und bleibt neutral. Wer hier einen Abschnitt ergänzt, entscheidet also zuerst: verlässt das
+   Beschriebene das Gerät oder nicht? */
+const SENDERS = new Set(["telemetry", "board"]);
+
+/* #deckui: Der Hinweis war als einziges Overlay auf ein festes Violett verdrahtet, während Kopf, Rahmen und
+   Knöpfe überall sonst die aktive DECKFARBE ziehen. `--deck-a1` spiegelt App.jsx zusätzlich auf `:root` — der
+   Wert greift also auch hier im Body-Portal. Fallback = Genesis-Cyan, wie in den `as-cta-*`-Klassen. */
+const ACC = "var(--deck-a1, #26c6e6)";
+const NEUTRAL = "#6d6b7a";   // Kontext-Abschnitte: dieselbe gedämpfte Kante wie `as-edge-neutral`
+// Überschrift eines Abschnitts: aufgehellte Kantenfarbe, damit sie zur Kante gehört, ohne sie zu überschreien.
+const secTitleColor = (c) => `color-mix(in srgb, ${c} 45%, #ffffff)`;
 
 export function PrivacyModal({ onClose }) {
   useEscape(onClose);
@@ -60,8 +72,13 @@ export function PrivacyModal({ onClose }) {
   return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      {/* #datenschutz-desktop: ab 1400 px 860 px breit statt 512 — der Hinweis bleibt ein FENSTER (er wird
+          geprüft und geschlossen, er ist keine Station wie Leitfaden/Glossar), aber die fünf Abschnitte stehen
+          dort in zwei Spalten statt als Schlange, die auf 1080 px Höhe scrollt, während links und rechts alles
+          leer ist. Darunter ändert sich nichts. #deckui: `as-panel-deck` = deck-getönter Rahmen wie in den
+          übrigen Overlays (Optionen/Werkstatt), nicht mehr der neutrale. */}
       <div onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel flex flex-col"
+        className="w-full max-w-lg min-[1400px]:max-w-[860px] rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col"
         style={MODAL_CARD}>
         <ModalHairline />
 
@@ -81,40 +98,53 @@ export function PrivacyModal({ onClose }) {
         <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6" style={{ overscrollBehavior: "contain" }}>
           <p className="text-sm leading-relaxed opacity-80">{t("privacy.intro")}</p>
 
-          <div className="grid gap-2.5 mt-4">
-            {SECTIONS.map((sec) => (
-              <section key={sec} className="rounded-lg p-3" style={{ background: "#20202a" }}>
-                <h3 className="font-bold text-sm mb-1">{t(`privacy.sec.${sec}.title`)}</h3>
-                <p className="text-sm opacity-70 leading-snug">
-                  {t(`privacy.sec.${sec}.body`, { ua: UA_MAX })}
-                </p>
-              </section>
-            ))}
+          {/* #kante: die Abschnitte waren gefüllte Kästen (#20202a) — die Fassung von vor „Kante statt Fläche"
+              und ohne jede Rangordnung: „Was bleibt auf dem Gerät" sah aus wie „Was wird gesendet". Jetzt
+              Kantenkarten, und die Kante sagt, worum es hier geht (s. SENDERS oben). */}
+          <div className="grid gap-2.5 mt-4 min-[1400px]:grid-cols-2 min-[1400px]:items-start">
+            {SECTIONS.map((sec) => {
+              const c = SENDERS.has(sec) ? ACC : NEUTRAL;
+              return (
+                <section key={sec} className="as-edge-card as-edge-thin rounded-lg p-3" style={{ "--c": c }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span aria-hidden="true" className="h-0.5 w-3.5 rounded-full shrink-0"
+                      style={{ background: c, boxShadow: `0 0 8px ${c}` }} />
+                    <h3 className="font-bold text-sm" style={{ color: secTitleColor(c) }}>{t(`privacy.sec.${sec}.title`)}</h3>
+                  </div>
+                  <p className="text-sm opacity-70 leading-snug">
+                    {t(`privacy.sec.${sec}.body`, { ua: UA_MAX })}
+                  </p>
+                </section>
+              );
+            })}
+
+            {/* Install-Kennung — nur zeigen, wenn überhaupt gesendet werden kann. Ohne Supabase-Config
+                (lokaler Build ohne .env) gibt es keine Zeilen, die man löschen lassen könnte.
+                Sie steht IN der Abschnitts-Spalte, aber über beide Spalten: sie ist Werkzeug, kein Abschnitt. */}
+            {telemetryConfigured && id && (
+              <div className="rounded-lg p-3 min-[1400px]:col-span-2" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
+                <div className="text-[10px] uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 min-w-0 truncate text-[12px] font-mono select-text" style={{ color: "#a8ecf7" }}>{id}</code>
+                  <ActionButton kind="secondary" onClick={copyId}>
+                    {t(copied ? "privacy.installId.copied" : "privacy.installId.copy")}
+                  </ActionButton>
+                </div>
+                <div className="text-[11px] opacity-55 leading-snug mt-2">{t("privacy.installId.hint")}</div>
+              </div>
+            )}
           </div>
 
-          {/* Install-Kennung — nur zeigen, wenn überhaupt gesendet werden kann. Ohne Supabase-Config
-              (lokaler Build ohne .env) gibt es keine Zeilen, die man löschen lassen könnte. */}
-          {telemetryConfigured && id && (
-            <div className="rounded-lg p-3 mt-2.5" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
-              <div className="text-[10px] uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 min-w-0 truncate text-[12px] font-mono select-text" style={{ color: "#a8ecf7" }}>{id}</code>
-                <ActionButton kind="secondary" onClick={copyId}>
-                  {t(copied ? "privacy.installId.copied" : "privacy.installId.copy")}
-                </ActionButton>
-              </div>
-              <div className="text-[11px] opacity-55 leading-snug mt-2">{t("privacy.installId.hint")}</div>
-            </div>
-          )}
-
-          {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Akzentfarbe des Modals. */}
-          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
-            className="as-edge as-edge-thin block text-center text-sm font-bold rounded-lg py-2.5 mt-3 transition-all"
-            style={{ "--c": ACC }}>
-            {t("privacy.contact.discord")}
-          </a>
-
-          <div className="text-[11px] opacity-40 mt-3 leading-snug">{t("privacy.updated")}</div>
+          {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Deckfarbe. Ab 1400 px steht der Stand
+              daneben statt darunter: zwei kurze Zeilen untereinander lassen den Fuß länger wirken als er ist. */}
+          <div className="mt-3 flex flex-col min-[1400px]:flex-row min-[1400px]:items-center gap-2 min-[1400px]:gap-3">
+            <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
+              className="as-edge as-edge-thin block flex-1 text-center text-sm font-bold rounded-lg py-2.5 transition-all"
+              style={{ "--c": ACC }}>
+              {t("privacy.contact.discord")}
+            </a>
+            <div className="text-[11px] opacity-40 leading-snug min-[1400px]:whitespace-nowrap">{t("privacy.updated")}</div>
+          </div>
         </div>
       </div>
     </div>
