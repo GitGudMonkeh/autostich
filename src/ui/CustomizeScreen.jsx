@@ -100,23 +100,44 @@ function prefetchFxChunks(spezialDeckTint = false) {
   prewarmSpezialStages(spezialDeckTint);
 }
 
-/* #382 Stufen-Bitmaps der Skill-Effekt-Bühne im Leerlauf aufbauen.
-   Moos und Frost halten je Reifestufe ein gecachtes Bitmap; der ERSTE Aufbau einer Stufe ist teuer. Die Bühne spielt
-   Wachstum und Vereisung binnen Sekunden komplett durch — ohne Vorwärmen fällt jeder Erst-Aufbau also mitten in eine
-   Stufen-Blende und macht genau die Frames kaputt, die weich sein sollen. Eine Aufgabe je Idle-Slot: nie zwei
-   Renderings im selben Frame. Nur die Palette, die die Bühne gerade zeigt — jedes Bitmap kostet Speicher, und der
-   andere Farbmodus wird erst beim Umschalten gebraucht (dann wärmt der Umschalter ihn hier erneut nicht: er läuft
-   dann live, aber nur noch für EINE Palette). */
-function prewarmSpezialStages(deckTint) {
+/* #382 EINE Warteschlange für alle Vorwärm-Aufgaben, genau eine je Idle-Slot.
+   Wichtig, dass es nur eine gibt: zwei parallele Ketten (Standard- und Deckfarbe-Palette) könnten sonst im selben
+   Idle-Fenster je ein Bitmap bauen — also doch zwei teure Renderings in einem Frame, genau das, was das Vorwärmen
+   verhindern soll. Fertig gecachte Aufgaben sind ein Map-Treffer und kosten nichts. */
+const fxWarmQueue = [];
+let fxWarmRunning = false;
+function enqueueFxWarm(tasks) {
+  fxWarmQueue.push(...tasks);
+  if (fxWarmRunning || typeof window === "undefined") return;
+  fxWarmRunning = true;
   const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 60));
-  const drain = (tasks) => {
-    let i = 0;
-    const step = () => { if (i >= tasks.length) return; try { tasks[i++](); } catch { /* Vorwärmen ist nie kritisch */ } idle(step, { timeout: 1500 }); };
+  const step = () => {
+    const task = fxWarmQueue.shift();
+    if (!task) { fxWarmRunning = false; return; }
+    try { task(); } catch { /* Vorwärmen ist nie kritisch */ }
     idle(step, { timeout: 1500 });
   };
+  idle(step, { timeout: 1500 });
+}
+
+/* #382 Stufen-Bitmaps der Skill-Effekt-Bühne im Leerlauf aufbauen.
+   Moos und Frost halten je Reifestufe UND je Palette ein gecachtes Bitmap; der ERSTE Aufbau einer Stufe ist teuer.
+   Die Bühne spielt Wachstum und Vereisung binnen Sekunden komplett durch — ohne Vorwärmen fällt jeder Erst-Aufbau
+   mitten in eine Stufen-Blende und macht genau die Frames kaputt, die weich sein sollen.
+
+   #384: Der Farbmodus gehört zum Cache-Schlüssel, das Vorwärmen deshalb auch. Vorher lief es nur für die Palette,
+   die beim Öffnen zu sehen war — der erste Sprung Standard→Deckfarbe baute dann alle zwölf Stufen auf einmal neu
+   auf (gemeldet als starker Ruckler, und nur beim ERSTEN Wechsel; danach war der Cache voll). Beide Paletten
+   vorwärmen kostet keinen zusätzlichen Speicher-Höchststand: dieselben Bitmaps entstünden beim Umschalten ohnehin,
+   nur eben zum falschen Zeitpunkt. Je Farbmodus einmal pro Sitzung (`spezialWarmed`). */
+const spezialWarmed = new Set();
+function prewarmSpezialStages(deckTint) {
+  const key = deckTint ? "deck" : "std";
+  if (spezialWarmed.has(key) || typeof window === "undefined") return;
+  spezialWarmed.add(key);
   const opts = { deckTint, deckColor: SPEZIAL_DECK_A, deckColor2: SPEZIAL_DECK_B };
   Promise.all([import("./fx/MossGrow.jsx"), import("./fx/FrostIce.jsx")])
-    .then(([moss, frost]) => drain([...moss.mossPrewarmTasks(opts), ...frost.frostPrewarmTasks(opts)]))
+    .then(([moss, frost]) => enqueueFxWarm([...moss.mossPrewarmTasks(opts), ...frost.frostPrewarmTasks(opts)]))
     .catch(() => { /* Vorwärmen ist nie kritisch */ });
 }
 import { suitColor, SUIT_ORDER } from "../game/constants.js";
@@ -839,6 +860,11 @@ function SpezialScene({ deckTint = false }) {
   const reducedMotion = usePrefersReducedMotion();
   const [iceMass, setIceMass] = useState(reducedMotion ? ICE_MASS_MAX : ICE_MASS_SEQ[0]);
   const [mossGrowth, setMossGrowth] = useState(reducedMotion ? MOSS_STAGE_MAX : MOSS_GROW_SEQ[0]);
+  /* #384 Diese Bühne trägt den Standard/Deckfarbe-Umschalter — also hier BEIDE Paletten vorwärmen, die gezeigte
+     zuerst. Der Umschalter ist nur sichtbar, solange die Bühne läuft; früher (beim Öffnen der Werkstatt) wäre die
+     zweite Palette oft umsonst gebaut, später (beim Klick) zu spät. Beide Aufrufe sind je Farbmodus ein No-op,
+     sobald sie einmal gelaufen sind. */
+  useEffect(() => { prewarmSpezialStages(deckTint); prewarmSpezialStages(!deckTint); }, [deckTint]);
   useEffect(() => {
     if (reducedMotion) { setIceMass(ICE_MASS_MAX); setMossGrowth(MOSS_STAGE_MAX); return undefined; }
     // Getrennte, unabhängige Timer (am einfachsten): je Stufe ~0,8 s bzw. ~0,62 s, dann von vorn (Reset auf 0).
