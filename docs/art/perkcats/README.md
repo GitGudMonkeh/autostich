@@ -12,8 +12,8 @@ Einbau ist NICHT gemacht: Issue #402.
 | A | Deck | Dauerhafte Kartenwerte | `#8a7de0` | 11 | 3 | Kartenstapel von der Seite, jede Kante glüht | liegender Block ✅ |
 | B | Stich | Stich-Effekte | `#e0605a` | 11 | 3 | zwei blanke Karten, dazwischen die weißglühende Naht | gespiegeltes Paar ✅ |
 | C | Rolle | Kartenrollen | `#5ab87a` | 12 | 3 | drei Karten im Fächer, je ANDERS beleuchtet (Umriss · Ecken · eine Kante) | Fächer ✅ |
-| D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe |
-| E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug |
+| D | Score | Score | `#d4a63a` | 20 | 5 | steigende Stufenfolge aus Lichtbalken | Treppe ✅ |
+| E | Form | Formationswerkzeuge | `#5a8ade` | 14 | 7 | Winkel und Lineal über Kartenfeldern | gekreuztes Werkzeug ✅ |
 | P | Präzision | Crit-Chance & -Multiplikator | `#e08a3a` | 5 | 0 | Fadenkreuz über einer Karte | Kreis mit Kreuz |
 | S | Ausbau | Slots & Ökonomie | `#5ec8c0` | 0 | 1 | Gerüst mit leerem, hell umrissenem Fach | offener Rahmen |
 
@@ -62,6 +62,17 @@ Helligkeitsbänder, schwarzer Grund, quadratisch, `mix-blend-mode: screen`).
 | **A Deck** | 23,5 % | 10,3 % | 1,6 % | 0,44 % | 1,95 | 261° |
 | **B Stich** | 23,2 % | 5,7 % | 2,0 % | 0,38 % | 1,99 | 2° |
 | **C Rolle** | 31,4 % | 7,6 % | 3,6 % | 1,56 % | 1,81 | 132° |
+| **D Score** | 22,3 % | 8,7 % | 3,1 % | 0,96 % | 2,26 | 33° |
+| **E Form** | 30,4 % | 5,7 % | 1,4 % | 0,25 % | 1,50 | 219° |
+
+**D Score** hat mit 2,26 die höchste Streuung des Satzes — die Treppe gibt jeder Stufe einen eigenen
+Helligkeitswert. Ihr Farbton liegt bei 33° statt der 43° der Kategoriefarbe, also oranger; das ist ein
+Vorteil, weil es sich vom **Legendär-Gold** entfernt, mit dem Score sonst verwechselbar wäre.
+
+**E Form** ist der zweite Angleich-Fall, aber aus anderem Grund als C: nicht ein zu heller Umriss, sondern
+die großflächig angeleuchtete Steinplatte. Das zeigt die Streuung von 1,50 — dem niedrigsten Wert des
+Satzes: das Licht verteilt sich gleichmäßig, statt zu rhythmisieren. Wirkt die Platte im Kleinen flach,
+wäre der Griff „dunklerer Stein", nicht „weniger Werkzeug".
 
 Der Unterschied im mittleren Band (5,7 gegen 10,3 %) ist kein Mangel, sondern der Motivunterschied: Deck
 leuchtet **flächig** (die große Deckfläche des obersten Blattes), Stich **linear** (Naht und Kanten). Genau
