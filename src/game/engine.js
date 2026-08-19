@@ -1258,7 +1258,7 @@ export function resolveTrick(state, rng) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
-  let newLegendaryOffer = state.legendaryOffer || null; // #272 Legendär-Phase (Runde 29): 2 Legendäre aus aktiven Fraktionen
+  let newLegendaryOffer = state.legendaryOffer || null; // #272 Legendär-Phase (Runde 29). Pool seit #369 §5a: ALLE freigeschalteten Archetypen, nicht nur die aktiven.
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).

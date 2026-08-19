@@ -1286,7 +1286,9 @@ function AutostichGame() {
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "legendary" && state.legendaryOffer && (
-        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} onReroll={rerollLegendary} state={state} />
+        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} onReroll={rerollLegendary}
+          skills={state.skills} state={state} options={options} onOption={changeOptions}
+          currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* Tutorial-Overlay: liegt ÜBER allen Phasen-Panels (eigener z-Index im Portal) und friert den Lauf
           über `tut.blocking` ein, solange es offen ist. Ohne laufende Führung rendert es nichts. */}

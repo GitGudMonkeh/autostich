@@ -555,11 +555,6 @@ export default {
   "leg.fallbackLabel": "Legendär",
   "leg.eyebrow": "Legendär · einmalige Wahl",
   "leg.title": "★ Legendärer Skill",
-  "leg.intro.a": "Ein mächtiger Skill für deinen",
-  "leg.intro.slot": "7. Slot",
-  "leg.intro.b": "— nur aus Fraktionen, in denen du schon aktive Skills hast. Die Wahl steht danach",
-  "leg.intro.final": "fest",
-  "leg.intro.c": " (kein Tausch). Oder wähle stattdessen einen normalen Skill.",
   "leg.reroll": "↻ Neu würfeln",
   "leg.decline": "Keinen Legendär — Skill wählen",
 

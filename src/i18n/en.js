@@ -540,11 +540,6 @@ export default {
   "leg.fallbackLabel": "Legendary",
   "leg.eyebrow": "Legendary · one-time choice",
   "leg.title": "★ Legendary skill",
-  "leg.intro.a": "A powerful skill for your",
-  "leg.intro.slot": "7th slot",
-  "leg.intro.b": "— only from factions you already hold active skills in. After this the choice is",
-  "leg.intro.final": "final",
-  "leg.intro.c": " (no swapping). Or take a normal skill instead.",
   "leg.reroll": "↻ Reroll",
   "leg.decline": "No legendary — take a skill",
 
