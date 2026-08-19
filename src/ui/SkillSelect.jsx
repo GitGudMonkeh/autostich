@@ -17,6 +17,7 @@ import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
 import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
+import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1400 px gerendert)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
@@ -444,6 +445,32 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
+                  /* #skillart: Emblem NUR ab 1400 px. Am Handy ist die Karte einspaltig und der Text
+                     trägt sie allein; ein 64-px-Bild nähme dort Zeilen weg, die die Beschreibung braucht.
+                     Weil das Gate im JSX sitzt (nicht in CSS), lädt der Browser die Bilder dort auch nicht. */
+                  const art = wide ? skillArt(id) : null;
+                  const badges = (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
+                        <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
+                      </span>
+                      {(s.heatConsumer || s.onFullCharge) && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                          style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
+                          {t("skill.badge.consumer")}
+                        </span>
+                      )}
+                      {s.legendary && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                          style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
+                          {t("skill.badge.legendary")}
+                        </span>
+                      )}
+                      {sel && <span className="text-[10px] font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
+                    </div>
+                  );
+                  const title = <div className="lv-cardname font-bold text-[15px]" style={{ color: col }}>{s.name}</div>;
                   return (
                     /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Anders als beim
                        Perk-Angebot trägt die Kante hier die SELTENHEIT, nicht die Fraktion: man blättert die
@@ -453,26 +480,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     <button key={id} onClick={() => clickSkill(id)}
                       className={`lv-offercard as-edge-card${sel ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                          style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-                          <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
-                        </span>
-                        {(s.heatConsumer || s.onFullCharge) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                            style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
-                            {t("skill.badge.consumer")}
-                          </span>
-                        )}
-                        {s.legendary && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
-                            style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
-                            {t("skill.badge.legendary")}
-                          </span>
-                        )}
-                        {sel && <span className="text-[10px] font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
-                      </div>
-                      <div className="lv-cardname font-bold text-[15px]" style={{ color: col }}>{s.name}</div>
+                      {/* Mit Emblem stehen Badge und Name als Block NEBEN dem Bild; ohne bleibt der Baum exakt
+                          wie vorher — die Handy-Fassung bekommt also keinen zusätzlichen Behälter. */}
+                      {art ? (
+                        <div className="flex items-center gap-2.5">
+                          <img src={art} alt="" aria-hidden="true" className="sk-em" loading="lazy" decoding="async" />
+                          <div className="min-w-0 flex-1 flex flex-col gap-1.5">{badges}{title}</div>
+                        </div>
+                      ) : (<>{badges}{title}</>)}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>

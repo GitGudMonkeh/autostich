@@ -93,6 +93,12 @@ export default defineConfig(({ command }) => ({
   base: command === "build" ? (process.env.DEPLOY_BASE || "/autostich/") : "/",
   plugins: [react(), tailwindcss(), serveMediaInDev(), emitVersionJson()],
   build: {
+    /* #skillart: Skill-Embleme NIE als data-URI ins JS inlinen. Vites Standardgrenze sind 4 kB, und fünf der
+       21 Blitz-Embleme liegen darunter (schlanke Motive komprimieren besser) — gemessen wanderten sie damit
+       in den Entry-Chunk. Das kehrt genau die Absicht um: gerendert werden sie erst ab 1400 px, inline lädt
+       sie aber JEDES Handy mit, bei jedem Seitenaufruf. Alles andere behält die Standardgrenze (`undefined`
+       heißt „wie bisher entscheiden"). Wächter: test/skill-art.test.js. */
+    assetsInlineLimit: (filePath) => (/[/\\]assets[/\\]skills[/\\]/.test(filePath) ? false : undefined),
     rollupOptions: {
       output: {
         // #292 §3: Bundle-Splitting — statt eines ~644-KB-Chunks eigene Chunks. `vendor` (React & Co.) ändert sich

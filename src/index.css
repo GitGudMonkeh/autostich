@@ -1333,6 +1333,17 @@ button { font-family: inherit; }
 .as-edge-card.is-locked { opacity: .45; }
 .as-edge-card.is-soon   { opacity: .55; border-left-style: dashed; }
 
+/* #skillart — Emblem in der Angebotskarte der Skill-Wahl (SkillSelect.jsx, nur ab 1400 px gerendert).
+   `mix-blend-mode: screen` ist der Kern: die Bilder haben einen SCHWARZEN Grund statt eines Alphakanals,
+   und Schwarz verschwindet unter screen von selbst. Das spart das Freistellen, hält die Dateien klein und
+   legt das Leuchten additiv auf die Karte — dieselbe Rechenart wie im übrigen FX-Stack.
+   64 px ist die abgemessene Größe: das Emblem steht neben Badge und Name, die Beschreibung bleibt der
+   Hauptträger der Karte. Größer verschöbe das Verhältnis (drei Karten nebeneinander à ~277 px). */
+.sk-em {
+  width: 64px; height: 64px; flex: none; border-radius: 6px;
+  mix-blend-mode: screen;
+}
+
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
    man beim Scrollen, was vom Standard abweicht, ohne jeden Schalter einzeln zu lesen.
    Warum `:has()` statt eines Props an der Zeile: der Zustand steckt im Schalter, den die Zeile nur als

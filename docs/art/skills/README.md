@@ -55,7 +55,11 @@ würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmac
 Alle Master liegen. Gemessen über den ganzen Satz streut die **Lichtmenge** (Leuchtfläche ×
 Spitzenhelligkeit) von **5,0 bis 51,2 — Faktor 10**, Median 17,5.
 
-**Angeglichen wird per Deckel, nicht per Normalisierung** (dieselbe Entscheidung wie beim Schleier-Deckel
+**Entschieden am Bild (19.08.2026): es wird NICHT angeglichen — ausgeliefert wird „wie generiert".**
+Die Messung bleibt trotzdem stehen, sie ist der Maßstab, falls der Satz später doch unruhig wirkt. Der
+vorbereitete Weg wäre der folgende — er ist gebaut und im Mockup durchgespielt, aber nicht angewandt:
+
+Angeglichen würde per Deckel, nicht per Normalisierung (dieselbe Entscheidung wie beim Schleier-Deckel
 der Spielfelder, `BATTLEFIELD_VEIL`): über 24 wird heruntergezogen, darunter bleibt alles unberührt. Das
 trifft genau **vier** Bilder — `L03` Flächenionisation (0,63) · `L01` Donnergott (0,81) · `04` Überspannung
 (0,79) · `08` Statische Aufladung (0,78).
@@ -99,6 +103,23 @@ halbvolle Batterie und war Gerätegehäuse statt Sturm) · Ladungsserie als Kett
 (gleichmäßig wiederholte Rundformen lesen sich als Deko, nicht als Aufbau) · Blitzfänger als
 geschlossene Steinkugel mit Kern (die Schale muss OFFEN sein — geschlossen ist es dasselbe Bild wie
 `13` Spannungsstau, und zwei runde Brocken im selben Angebot sind eine Verwechslung, kein Satz).
+
+## Einbau (19.08.2026)
+
+Ausgeliefert wird aus `src/assets/skills/<archetyp>/` — **192 px, WebP q86**, dieselben Dateinamen wie die
+Master. Gerechnet: gezeigt werden sie mit **64 CSS-px**, der Desktop-Deckel ist DPR 2 → 128 px wären exakt,
+192 gibt eine Stufe Reserve. Alle 21 zusammen: **121 kB** (256 px wären 196 kB gewesen).
+
+- **Platzierung**: im Kopf der Angebotskarte, links neben Badge und Name (`.sk-em` in index.css).
+- **Gate**: `const art = wide ? skillArt(id) : null` — ab 1400 px. Weil das Gate im JSX sitzt und nicht in
+  CSS, lädt das Handy die Bilder gar nicht erst.
+- **Zuordnung**: allein über den Dateinamen (`src/ui/skillArt.js`). Keine abgetippte Liste; ein neuer Skill
+  bekommt sein Emblem dadurch, dass die Datei nach seiner ID heißt.
+- **`assetsInlineLimit` in vite.config.js**: Skill-Embleme werden NIE als data-URI ins JS gezogen. Vites
+  Standardgrenze sind 4 kB, und fünf der 21 lagen darunter — sie landeten im Entry-Chunk und wären damit
+  auf jedem Handy mitgeladen worden. Das hätte das Gate zur Hälfte ausgehebelt, unsichtbar.
+- Wächter: `test/skill-art.test.js` (11 Prüfungen). Gegenprobe gemacht: Gate entfernt, screen-Blending
+  entfernt, Inline-Grenze entfernt, Datei ohne Skill — alle vier fallen.
 
 ## Die eine Regel beim Erzeugen
 
