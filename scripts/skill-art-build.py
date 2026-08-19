@@ -8,10 +8,15 @@ Liest `docs/art/skills/<archetyp>/*.webp` (die 1024er Master, unverändert) und 
 
 ZWEI Schritte, beide mit Begründung:
 
-1. Verkleinern auf 192 px. Gezeigt wird das Emblem als Kopfstreifen der Angebotskarte: die Karte ist
-   ~277 CSS-px breit, der Streifen zeigt das Bild `cover`. Bei DPR-Deckel 2 (mobileTier.js) wären
-   554 px exakt — die Zone ist aber nur 130 px hoch, es ist also ohnehin ein Ausschnitt, und 192
-   reicht für die gezeigte Fläche. Alle 21 Blitz-Embleme zusammen: ~120 kB.
+1. Verkleinern auf 384 px. Gezeigt wird das Emblem als Kopfstreifen der Angebotskarte: die Karte ist
+   ~277 CSS-px BREIT und der Streifen zeigt das Bild `cover` — die Breite entscheidet also, nicht die
+   Zonenhöhe. Bei DPR-Deckel 2 (mobileTier.js) wären 554 px exakt; 384 bleibt eine 1,4-fache
+   Vergrößerung, was weiche Verläufe verzeihen. Gemessen kostet der Satz damit 405 kB gegen 655 kB
+   bei exakten 512.
+
+   ACHTUNG, das war der Fehler der ersten Fassung: dort standen 192 px, begründet mit „gezeigt wird
+   ein 64-px-Emblem". Mit dem Kopfstreifen ist das Bild 277 statt 64 px breit — dieselbe Datei wurde
+   damit fast dreifach hochskaliert. Wer die Platzierung ändert, rechnet diese Zahl NEU.
 
 2. Bloom EINBACKEN statt im Browser rechnen. Am Gerät entschieden (19.08.2026) über einen Regler:
    Radius 15 CSS-px, Stärke 60 %, Sättigung 260 %. Als CSS-Filter wäre das Rasterarbeit auf genau
@@ -28,11 +33,11 @@ ZWEI Schritte, beide mit Begründung:
 from PIL import Image, ImageFilter, ImageEnhance, ImageChops
 from pathlib import Path
 
-SIZE = 192            # Kantenlänge der Auslieferung
+SIZE = 384            # Kantenlänge der Auslieferung
 STRIP_W = 277         # CSS-Breite der Zone (Angebotskarte auf 880 px Karte)
-BLOOM_CSS = 15        # Radius in CSS-px, am Gerät gewählt
-BLOOM_STRENGTH = 0.60 # Deckkraft der unscharfen Kopie
-BLOOM_SAT = 2.60      # Sättigung der unscharfen Kopie
+BLOOM_CSS = 16        # Radius in CSS-px, am Gerät gewählt
+BLOOM_STRENGTH = 0.70 # Deckkraft der unscharfen Kopie
+BLOOM_SAT = 2.00      # Sättigung der unscharfen Kopie
 
 SRC = Path("docs/art/skills")
 OUT = Path("src/assets/skills")

@@ -80,9 +80,9 @@ describe("#skillart — Verdrahtung", () => {
     expect(jsx).toContain('className="sk-strip"');
     const regel = css.slice(css.indexOf(".sk-strip {"), css.indexOf(".sk-strip {") + 420);
     expect(regel).toContain("mix-blend-mode: screen");
-    expect(regel).toContain("height: 130px");          // am Gerät gewählte Zonenhöhe
+    expect(regel).toContain("height: 210px");          // am Regler gewählte Zonenhöhe
     expect(regel).toContain("object-fit: cover");      // „füllend"
-    expect(regel).toContain("mask-image: linear-gradient(180deg, #000 38%, transparent)");
+    expect(regel).toContain("mask-image: linear-gradient(180deg, #000 62%, transparent)");
   });
 
   it("der Text steht ÜBER dem Streifen, nicht darunter", () => {
@@ -91,7 +91,7 @@ describe("#skillart — Verdrahtung", () => {
     expect(css).toContain(".sk-offer-art > *:not(img) { position: relative; }");
     const regel = css.slice(css.indexOf(".sk-offer-art {"), css.indexOf(".sk-offer-art {") + 220);
     expect(regel).toContain("overflow: hidden");
-    expect(regel).toContain("padding-top: 96px");
+    expect(regel).toContain("padding-top: 176px");
   });
 
   it("das Emblem ist für Screenreader unsichtbar — der Skillname steht daneben", () => {
@@ -104,9 +104,9 @@ describe("#skillart — der Bloom ist gebacken, nicht gerechnet", () => {
     const build = readFileSync(new URL("../scripts/skill-art-build.py", import.meta.url), "utf8");
     // Am Gerät gewählt (19.08.2026). Ändert sich einer der Werte, muss das Bild neu gebacken werden —
     // deshalb stehen sie hier, nicht nur im Skript.
-    expect(build).toContain("BLOOM_CSS = 15");
-    expect(build).toContain("BLOOM_STRENGTH = 0.60");
-    expect(build).toContain("BLOOM_SAT = 2.60");
+    expect(build).toContain("BLOOM_CSS = 16");
+    expect(build).toContain("BLOOM_STRENGTH = 0.70");
+    expect(build).toContain("BLOOM_SAT = 2.00");
     // Der Radius gilt für die ANZEIGE (277 px breit) und muss auf die Dateigröße umgerechnet werden.
     expect(build).toContain("BLOOM_CSS * SIZE / STRIP_W");
   });

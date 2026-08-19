@@ -114,18 +114,22 @@ geschlossene Steinkugel mit Kern (die Schale muss OFFEN sein — geschlossen ist
 
 ## Einbau (19.08.2026)
 
-Ausgeliefert wird aus `src/assets/skills/<archetyp>/` — **192 px, WebP q86**, erzeugt von
-**`scripts/skill-art-build.py`** aus den Mastern. Alle 21 zusammen: **129 kB**. Von Hand pflegt man dort
+Ausgeliefert wird aus `src/assets/skills/<archetyp>/` — **384 px, WebP q86**, erzeugt von
+**`scripts/skill-art-build.py`** aus den Mastern. Alle 21 zusammen: **405 kB**. Von Hand pflegt man dort
 nichts; wer ein Master austauscht, lässt das Skript neu laufen.
 
 - **Platzierung**: als **Kopfstreifen** über der Angebotskarte (`.sk-strip` / `.sk-offer-art`). Am Regler
-  entschieden: **Zone 130 px · Zuschnitt füllend · Auslauf ab 38 %**. Der untere Rand wird nicht gekappt,
-  sondern über eine Maske aufgelöst; `object-position: center top` hält die Aussage im Bild (die Motive
-  haben sie oben, den Bodenraster unten — und der darf verschwinden).
-- **Bloom gebacken statt gerechnet**: Radius 15 CSS-px, Stärke 60 %, Sättigung 260 %, ebenfalls am Regler
+  entschieden (zweite Runde): **Zone 210 px · Zuschnitt füllend · Auslauf ab 62 %**. Der untere Rand wird
+  nicht gekappt, sondern über eine Maske aufgelöst; `object-position: center top` hält die Aussage im Bild
+  (die Motive haben sie oben, den Bodenraster unten — und der darf verschwinden).
+- **Bloom gebacken statt gerechnet**: Radius 16 CSS-px, Stärke 70 %, Sättigung 200 %, ebenfalls am Regler
   gewählt. Als CSS-Filter wäre er Rasterarbeit auf dem Screen, der ohnehin am Mount klemmt. **Der Radius
-  wird umgerechnet**: 15 px gelten für die Anzeige mit 277 px Breite, die Datei hat 192 → 10,4 px. Wer die
+  wird umgerechnet**: 16 px gelten für die Anzeige mit 277 px Breite, die Datei hat 384 → 22,2 px. Wer die
   Zonenbreite ändert, zieht diese Zahl mit.
+- **Die Auflösung hängt an der BREITE, nicht an der Zonenhöhe.** Der Streifen zeigt das Bild `cover` in
+  einer 277 px breiten Karte; bei DPR-Deckel 2 sind das 554 Gerätepixel. Die erste Fassung lieferte 192 px
+  aus, begründet mit einem 64-px-Emblem — mit dem Streifen war dieselbe Datei fast dreifach hochskaliert.
+  384 ist der Kompromiss (1,4-fach, 405 kB); pixelgenau wären 512 px und **655 kB**.
 - **Gate**: `const art = wide ? skillArt(id) : null` — ab 1400 px. Weil das Gate im JSX sitzt und nicht in
   CSS, lädt das Handy die Bilder gar nicht erst.
 - **Zuordnung**: allein über den Dateinamen (`src/ui/skillArt.js`). Keine abgetippte Liste; ein neuer Skill

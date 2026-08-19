@@ -1334,7 +1334,7 @@ button { font-family: inherit; }
 .as-edge-card.is-soon   { opacity: .55; border-left-style: dashed; }
 
 /* #skillart — Kopfstreifen der Angebotskarte in der Skill-Wahl (SkillSelect.jsx, nur ab 1400 px gerendert).
-   Am Gerät entschieden (19.08.2026) über einen Regler: Zone 130 px · Zuschnitt füllend · Auslauf ab 38 %.
+   Am Regler entschieden (19.08.2026, zweite Runde): Zone 210 px · Zuschnitt füllend · Auslauf ab 62 %.
 
    `mix-blend-mode: screen` ist der Kern: die Bilder haben einen SCHWARZEN Grund statt eines Alphakanals,
    und Schwarz verschwindet unter screen von selbst. Das spart das Freistellen, hält die Dateien klein und
@@ -1348,18 +1348,18 @@ button { font-family: inherit; }
    oben (Blitz, Bogen, Wolke) und ihren Bodenraster unten, und der ist genau das, was verschwinden darf. */
 .sk-offer-art {
   position: relative; overflow: hidden;
-  padding-top: 96px;   /* 130 Zone − 34: der Text beginnt IM Auslauf, nicht darunter */
+  padding-top: 176px;  /* 210 Zone − 34: der Text beginnt IM Auslauf, nicht darunter */
 }
 /* Text über das Bild heben. Absolut Positioniertes malt über nicht-positionierten Fluss-Inhalt — ohne
    diese Zeile stünde die Beschreibung UNTER dem Streifen. `position: relative` genügt: unter gleichrangig
    positionierten Elementen entscheidet die DOM-Reihenfolge, und der Streifen steht als erstes Kind. */
 .sk-offer-art > *:not(img) { position: relative; }
 .sk-strip {
-  position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 130px;
+  position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 210px;
   object-fit: cover; object-position: center top;
   mix-blend-mode: screen; pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 38%, transparent);
-  mask-image: linear-gradient(180deg, #000 38%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent);
+  mask-image: linear-gradient(180deg, #000 62%, transparent);
 }
 
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
