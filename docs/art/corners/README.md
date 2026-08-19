@@ -25,14 +25,37 @@ hoch heißt Rhythmus, niedrig heißt gleichförmiger Teppich.
 | Feuer | 12,0 % | 3,9 % | 1,6 % | 0,40 % | 1,88 | 14° |
 | Eis | 13,0 % | 6,7 % | 2,5 % | 0,45 % | 1,68 | 206° |
 | Pflanze | 18,6 % | 8,2 % | 3,3 % | 0,89 % | 1,44 | 131° |
+| **Perk** (Filigran) | 7,7 % | 2,8 % | 0,8 % | 0,04 % | 1,99 | 359° |
 
 **Deckkraft je Fraktion** (damit alle vier dieselbe wahrgenommene Lichtmenge tragen — dieselbe Logik wie der
 Schleier-Deckel der Spielfelder, `BATTLEFIELD_VEIL`):
 
-**Blitz 11,0 % · Feuer 10,0 % · Eis 9,2 % · Pflanze 6,4 %**
+**Blitz 11,0 % · Feuer 10,0 % · Eis 9,2 % · Pflanze 6,4 % · Perk 15,6 %**
 
 Pflanze ist der einzige Ausreißer und bleibt es bewusst: Ranken SIND dicht. Statt das Bild zu verbiegen,
 regelt die Tabelle die Anzeige.
+
+## Die Perk-Ecke ist bewusst anders gebaut
+
+Die Perk-Wahl hat **eine** Identitätsfarbe (`PHASE_ACCENTS.red`, `#e05555`), also ein Bild statt vier. Und
+das Motiv ist **gemacht statt gewachsen**: Filigran-Ecke wie auf den Kartenrücken, geometrisch und
+symmetrisch — die vier Fraktions-Ecken sind Naturgewalten, diese hier sind die Karten selbst.
+
+Sie ist mit 7,7 % die dünnste des Satzes (Filigran ist Linie, keine Fläche) und trägt deshalb die höchste
+Deckkraft. Zwei Punkte für den Einbau, beide Regler-Fragen:
+
+- **Ihre Randlinien laufen auf der Bildkante.** Im Spiel sitzt sie in einer Karte, die schon einen 1-px-
+  Akzentrahmen und die farbige Haarlinie trägt — daraus können drei parallele rote Linien werden. Ausweg:
+  das Bild leicht nach innen versetzen, nicht neu erzeugen.
+- **Ihr Auslauf ist abrupter** als bei den organischen vier: Linien enden, statt zu zerfasern. Die Maske
+  muss dort mehr Arbeit leisten, der Verlauf also früher beginnen.
+
+## Messfalle: Farbton ist eine RICHTUNG, kein Wert
+
+Der erste Messlauf meldete für die rote Ecke **236°** — Blauviolett. Ursache: bei Rot liegen die Pixel
+beidseits der 0-Grad-Marke, und das arithmetische Mittel aus 358° und 2° ist 180°. Der Farbton braucht ein
+KREISMITTEL (Vektorsumme über Sinus/Kosinus); damit sind es korrekt **359°**. Bei den vier anderen fiel es
+nicht auf, weil ihre Farbtöne alle weit weg von der Naht liegen.
 
 ## Was beim Erzeugen entschieden wurde
 
