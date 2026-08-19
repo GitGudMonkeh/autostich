@@ -82,9 +82,10 @@ geschlossene Steinkugel mit Kern (die Schale muss OFFEN sein — geschlossen ist
 ## Die eine Regel beim Erzeugen
 
 Bei 21 Bildern derselben Fraktion entscheidet die **Silhouette bei 64 px**, nicht das Motiv. Belegt sind
-bereits: Nadel (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Kanal (05) · Wolkenmasse (06) ·
-Fontaene (04) · Spirale (07) · Kreis (08) · Hantel/zwei Splitter (09) · Trichter mit Ring (10) · Kartenreihe mit Bogen (12) ·
-Stachelkugel (13) · Bogen ueber Kante (14) · einzelne Karte (15) · waagerechtes Band (16). Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie,
+bereits: Nadel (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Fontäne (04) · Kanal (05) ·
+Wolkenmasse (06) · Spirale (07) · Kreis (08) · Hantel (09) · Trichter mit Ring (10) ·
+Kartenreihe mit Bogen (12) · Stachelkugel (13) · Bogen über Kante (14) · einzelne Karte (15) ·
+waagerechtes Band (16). Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie,
 eine andere Grundform immer. Zweite Regel aus der Perlen-Panne: **nie aus gleichmäßig wiederholten,
 gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Richtung variieren.
 
