@@ -53,7 +53,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         <ActionBar pad={6} bg={STICKY_HEAD_BG} className="un-bar">
           {!firstTime && <ActionButton kind="secondary" onClick={onClose}>{t("name.cancel")}</ActionButton>}
           <span className="flex-1" />
-          <ActionButton kind="primary" disabled={!canSave} onClick={submit}>{t("name.save")}</ActionButton>
+          {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1400 px `display: none`) —
+              im 320-px-Dialog nimmt es dem kurzen Wort mehr Platz weg, als es an Klarheit bringt. */}
+          <ActionButton kind="primary" disabled={!canSave} onClick={submit}>
+            <span className="un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
+          </ActionButton>
         </ActionBar>
         <div className="un-head text-center mb-4">
           <div className="un-eyebrow text-xs uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
@@ -76,6 +80,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         {/* #desktop — Klammer um die rechte Spalte (Feld · Hinweis · Sprache · Vorschau). Unter 1400 px ist
             sie `display: contents`, die Handy-Reihenfolge bleibt damit unangetastet. */}
         <div className="un-form">
+        {/* #willkommen: In der breiten Fassung steht die Marke links und der Titel „Wähle deinen Namen"
+            gehört zur Ansprache — das Feld rechts braucht deshalb eine eigene Beschriftung. Auf dem Handy
+            steht der Titel direkt darüber, dort wäre sie doppelt (`display: none`). Kein neuer Textschlüssel:
+            `name.title.change` IST „Dein Name". */}
+        <div className="un-flabel un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
         {/* Eingabefeld im pulsierenden Cyan-Glührahmen (wie der „Lauf fortsetzen"-Rahmen). */}
         <div className="as-guide-glow rounded-lg">
           <input autoFocus value={name} maxLength={MAX}
@@ -110,9 +119,9 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             wie die „richtige" aussieht. Die Umschaltung wirkt SOFORT (der Dialog selbst wechselt mit),
             damit man das Ergebnis seiner Wahl sieht, bevor man weiterklickt. */}
         {firstTime && (
-          <div className="mt-4">
-            <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="un-block mt-4">
+            <div className="un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
+            <div className="un-lang grid grid-cols-2 gap-2">
               {LOCALES.map((l) => {
                 const on = locale === l.id;
                 return (
@@ -130,15 +139,17 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         )}
 
         {/* Live-Vorschau: so steht der Name später in der Rangliste (eigene Zeile, grün hervorgehoben). */}
-        <div className="mt-3">
-          <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.preview.label")}</div>
-          <div className="flex items-center gap-2 text-sm px-2 py-1.5 rounded"
+        <div className="un-block mt-3">
+          <div className="un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.preview.label")}</div>
+          {/* #zeichensatz: ♔ statt 🥇 — dasselbe Zeichen, das im Glossar für Bestenliste und Ranglisten-Lauf
+              steht, und einfarbig wie der Rest. In der breiten Fassung sitzt es in einem runden Chip. */}
+          <div className="un-prev flex items-center gap-2 text-sm px-2 py-1.5 rounded"
             style={{ background: "#5ab87a22", border: "1px solid #5ab87a66" }}>
-            <span className="w-6 shrink-0 text-center" style={{ fontSize: "14px" }}>🥇</span>
-            <span className="flex-1 truncate font-semibold" style={{ color: trimmed ? "#5ab87a" : "#5f6b62" }}>
+            <span className="un-prevchip w-6 shrink-0 text-center" style={{ fontSize: "14px", color: "#d8b25e" }}>♔</span>
+            <span className="un-prevname flex-1 truncate font-semibold" style={{ color: trimmed ? "#5ab87a" : "#5f6b62" }}>
               {trimmed || t("name.placeholder")}<span className="opacity-60 text-xs"> · {t("name.preview.you")}</span>
             </span>
-            <span className="shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
+            <span className="un-prevscore shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
           </div>
         </div>
         </div>
