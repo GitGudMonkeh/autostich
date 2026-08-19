@@ -120,6 +120,6 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     // Spalte auch am Handy im DOM (und die Reiterzeile daneben).
     expect(jsx).toMatch(/import \{ useIsWide \}/);
     expect(jsx).toMatch(/\{wide && \(/);
-    expect(jsx).toMatch(/className="gd-nav as-ring"/);
+    expect(jsx).toMatch(/className="gd-nav as-ring\b/);
   });
 });

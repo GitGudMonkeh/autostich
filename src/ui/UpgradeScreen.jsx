@@ -470,7 +470,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             zwingen hätte beide Fassungen verbogen. Unter 1400 px läuft weiter der Zweig-Pfad darunter. */}
         {wide ? (
           <div className="up-desk">
-            <nav className="up-nav as-ring" aria-label={t("upgrades.nav.decks")}>
+            <nav className="up-nav as-ring as-ring-quiet" aria-label={t("upgrades.nav.decks")}>
               <i className="as-ring-run" aria-hidden="true" />
               <button type="button" onClick={() => { setPage("gen"); setSelNode(null); }}
                 className={`up-navrow${page === "gen" ? " is-on" : ""}`} style={{ "--c": CY }}>
@@ -504,7 +504,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               })}
             </nav>
 
-            <section className="up-page as-ring">
+            <section className="up-page as-ring as-ring-quiet">
               <i className="as-ring-run" aria-hidden="true" />
               {page === "gen" ? (
                 <>

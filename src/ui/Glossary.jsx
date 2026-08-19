@@ -180,7 +180,7 @@ export function GlossaryOverlay({ onClose }) {
                 /* Wie `.up-nav`/`.gd-nav`: die Spalte endet an ihrem Inhalt, sie wird NICHT auf volle
                    Höhe gezogen. Der Zähler je Kategorie ist der Grund, warum die Suche über alles
                    greifen darf, ohne den Überblick zu kosten. */
-                <nav className="gl-nav as-ring" aria-label={t("glossary.nav.categories")}>
+                <nav className="gl-nav as-ring as-ring-quiet" aria-label={t("glossary.nav.categories")}>
                   <i className="as-ring-run" aria-hidden="true" />
                   <div className="gl-navhead">{t("glossary.nav.categories")}</div>
                   <NavRow label={t("glossary.all")} color="#8f8fa0" count={entries.filter(match).length}
@@ -192,7 +192,7 @@ export function GlossaryOverlay({ onClose }) {
                   <div className="gl-navnote">{t("glossary.nav.note")}</div>
                 </nav>
               )}
-              <section className="gl-page as-ring">
+              <section className="gl-page as-ring as-ring-quiet">
                 <i className="as-ring-run" aria-hidden="true" />
                 {wide && (
                   <div className="gl-page-h" style={{ "--c": activeMeta ? activeMeta.color : "var(--deck-a1, #8a7de0)" }}>

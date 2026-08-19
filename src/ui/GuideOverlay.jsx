@@ -292,7 +292,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                 /* Wie `.up-nav` im Baum: die Spalte endet an ihrem Inhalt, sie wird NICHT auf volle
                    Höhe gezogen. Die zweite Zeile ist kein neuer Text, sondern der Kern des Kreislaufs
                    aus den Leitfaden-Daten (`loop.center`) — vier Zeilen, die den Archetyp benennen. */
-                <nav className="gd-nav as-ring" aria-label={t("guide.nav.archetypes")}>
+                <nav className="gd-nav as-ring as-ring-quiet" aria-label={t("guide.nav.archetypes")}>
                   <i className="as-ring-run" aria-hidden="true" />
                   <div className="gd-navhead">{t("guide.nav.archetypes")}</div>
                   {ARCHETYPE_ORDER.map((k) => {
@@ -310,7 +310,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
                   <div className="gd-navnote">{t("guide.nav.note")}</div>
                 </nav>
               )}
-              <section className="gd-page as-ring">
+              <section className="gd-page as-ring as-ring-quiet">
                 <i className="as-ring-run" aria-hidden="true" />
                 {wide && (
                   <div className="gd-page-h" style={{ "--c": activeMeta.color }}>

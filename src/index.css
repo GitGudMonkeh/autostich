@@ -3815,6 +3815,51 @@ button { font-family: inherit; }
      Handlung, und stand als gefüllte Kapsel zwischen Titel und Angebot wie ein Bedienelement. */
   .lv-score { background: none !important; border: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
 
+  /* ==========================================================================
+     #up-ruhe — Baum, Leitfaden und Glossar im Desktop-Ton (19.08.2026, Entwurf des Users)
+
+     Dritter Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Die sechs Panels (`up-nav`/`up-page`, `gd-nav`/`gd-page`, `gl-nav`/`gl-page`) tragen jetzt
+     `as-ring-quiet` — derselbe Schalter wie in der Werkstatt, ein Wort je Panel. Damit ist der laufende
+     Ring projektweit nur noch dort, wo ihn niemand nachgezogen hat.
+
+     Was hier zusätzlich fällt, ist der SCHEIN NACH AUSSEN. Er stand an drei Stellen und war überall
+     dieselbe Geste: „hier bist du". Die Aussage bleibt vollständig — sie steht in der Fläche, in der
+     Farbkante und in der Schriftfarbe; nur der Halo drumherum geht.
+
+     NICHT angefasst (Regel 5): die Kanten-Familie selbst (`as-edge-card`, `as-edge-thin`) und damit die
+     Farbkante der Knoten — sie sagt gekauft / kaufbar / gesperrt und ist projektweites Signal. Ebenso der
+     Zweig-Pfad unterhalb 1400 px (`.up-branch`), der auf dem Desktop gar nicht gerendert wird. */
+
+  /* Kopfzeile: „Zurücksetzen" und „Schließen" werden Text-Knöpfe. Sie sind Werkzeuge am Rand, keine
+     Angebote — dieselbe Entscheidung wie an der Aktionsleiste der Level-up-Karte (#lv-ruhe). Das
+     Klickziel bleibt bei 44 px (die Polsterung darüber steht unangetastet). */
+  .up-actions > * {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .up-actions > *:hover { color: #e8e6ff; }
+
+  /* Die aktive Zeile der Navigationsspalte behält ihren Anlauf nach innen, verliert aber den Halo nach
+     außen: eine leuchtende Spalte neben einem ruhigen Panel zieht den Blick aus dem Baum heraus. */
+  .up-navrow.is-on { box-shadow: inset 0 0 24px -14px var(--c); }
+  /* Der 2-px-Ring um die gewählte Legendär-Phase war der einzige RING im ganzen Screen. Er wird zur
+     Fläche — dieselbe Sprache, die die aktive Navigationszeile darüber schon spricht. */
+  .up-navpassive.is-sel { box-shadow: none; background: rgba(255, 255, 255, .05); }
+
+  /* Der gewählte Knoten leuchtet nicht mehr nach außen. Fläche und Farbkante sagen dasselbe, und im
+     Raster aus bis zu 27 Knoten war der Halo das lauteste Element der Seite. */
+  .up-vnode.is-sel { box-shadow: inset 0 0 22px -14px var(--c, #8a8a95); }
+
+  /* Auswertung: aus gefüllten Blöcken werden flache Kacheln mit Haarlinie — gleiche Bauform wie die
+     Kennzahlen-Kacheln der StatusRail, und sie trennt die vier Werte sauberer als der Farbunterschied
+     zum Kastengrund allein. */
+  .up-stat, .up-dropbox {
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid rgba(150, 150, 170, .12);
+  }
+
   /* #sk-reiter — die Fraktionsreiter der Skill-Wahl. Farbe, Rahmenton und Schein kommen INLINE aus
      `g.meta.color` (vier Fraktionen, ein Selektor); hier steht nur, was für alle gleich ist. */
   .sk-tab {

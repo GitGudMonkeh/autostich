@@ -1865,6 +1865,45 @@ Alles ab 1400 px; Handy nachgemessen **0 Abweichungen** (Element-Geometrie 390 p
   Wächter prüft die Knopf-Klasse jetzt mit Wortgrenze — `lv-actbtn` kommt dort als Ergänzung dazu.
 - **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080, DPR 1,25).
 
+### #up-ruhe — Baum, Leitfaden und Glossar im Desktop-Ton (19.08.2026, Entwurf des Users)
+Dritter Screen nach der Liste („Desktop-Umbau: die Entscheidungsregeln", oben). Handy nachgemessen
+**0 Abweichungen von 208 Elementen** (390 px vorher/nachher).
+- **Sechs Panels, ein Wort je Panel**: `up-nav`/`up-page`, `gd-nav`/`gd-page`, `gl-nav`/`gl-page` tragen jetzt
+  `as-ring-quiet`. Damit ist der laufende Ring nur noch dort, wo ihn niemand nachgezogen hat — der Schalter
+  aus #cz-ruhe hat sich als das richtige Werkzeug erwiesen (Regel 1).
+- **Der Zweig-Pfad `.up-branch` bekommt ihn BEWUSST NICHT.** Er wird nur gerendert, wenn `wide` false ist
+  (eigener Renderpfad, kein `display: contents`-Trick); die Quiet-Regeln stehen im 1400er Block und täten
+  dort nichts. Eine Zeile, die etwas verspricht und nichts hält, ist schlechter als keine — ein Wächter
+  hält die Abwesenheit fest.
+- **Der Schein NACH AUSSEN fällt an drei Stellen**, überall dieselbe Geste („hier bist du"): aktive
+  Navigationszeile, gewählter Knoten, gewählte Legendär-Phase. **Der Anlauf nach INNEN bleibt** — er trägt
+  die Aussage; beides zu entfernen nähme der Spalte ihren Zustand. Der 2-px-Ring an der Legendär-Phase war
+  der einzige RING im ganzen Screen und wird zur Fläche, also zu derselben Sprache, die die Zeile darüber
+  schon spricht.
+- **„Zurücksetzen" und „Schließen" werden Text-Knöpfe** (wie die Aktionsleiste in #lv-ruhe): Werkzeuge am
+  Rand, keine Angebote. **Das 44-px-Klickziel bleibt** — die Polsterung steht in einer eigenen, früheren
+  Regel und wird nicht angefasst; der Wächter prüft beides zusammen.
+- **Die Auswertung wird zu flachen Kacheln mit Haarlinie** (`.up-stat`, `.up-dropbox`) statt gefüllter
+  Blöcke — dieselbe Bauform wie die Kennzahlen der StatusRail, und sie trennt die vier Werte sauberer als
+  der Farbunterschied zum Kastengrund allein.
+- **OFFEN und bewusst nicht getan — die Fläche der Kanten-Karte.** Der Baum zeigt 16–27 Knoten gleichzeitig,
+  alle mit dem 90°-Farbanlauf aus `.as-edge-card`. In der Summe ist genau das, was der Mockup als „zu starker
+  Glow" markiert. Es ist aber **projektweites Signal** (#kante, Regel 5) und trifft Perk-/Skill-Karten,
+  Werkstatt-Kacheln, Filter und Baum gleichermaßen. **Das ist inzwischen der DRITTE Screen, an dem dieselbe
+  Frage auftaucht** — der nächste sinnvolle Schritt wäre, den Anlauf systemweit von 42 % auf ~25 % Breite
+  oder in der Deckkraft zu senken, EINMAL an der Familie, mit Bildvergleich über Baum · Werkstatt ·
+  Level-up. Nicht nebenbei, sondern als eigener Durchgang.
+- **Ebenfalls offen** (Mockup-Inhalte, die es im Spiel nicht gibt — Regel 10): die thematische Gruppierung
+  der Fraktions-Skills („Ladung & Aufladung", „Krit & Multiplikatoren", …) bräuchte eine Zuordnung je Skill
+  im Register; die Kachel „Aktive Effekte 7/7" und die „Maximiert"-Zeilen der Auswertung wären neue
+  Kennzahlen; der „BEREICH"-Eyebrow über der Navigationsspalte wäre ein neuer Katalogtext.
+- Wächter: `test/up-ruhe.test.js` (7). Gegenprobe gemacht: alle sechs sabotierten Nähte fallen. Die
+  Ratschen in `test/glossary-desktop.test.js` und `test/guide-desktop.test.js` prüfen die Panel-Klasse jetzt
+  mit Wortgrenze — der Modifikator ist eine Ergänzung, kein Ersatz der Konstruktion (dritter Wächter dieser
+  Art nach `desktop-perf` und `levelup-wings`).
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert (1920×1080, DPR 1,25),
+  Allgemein-Seite und Fraktionsseite.
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

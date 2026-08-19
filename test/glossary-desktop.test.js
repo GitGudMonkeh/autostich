@@ -94,7 +94,7 @@ describe("#glossar-desktop — Glossar ab 1400 px", () => {
     // `useIsWide` ist der einzige Ort, an dem der Bruchpunkt in JS steht — ohne ihn stünde die
     // Spalte auch am Handy im DOM (und die Chip-Leiste daneben).
     expect(jsx).toMatch(/import \{ useIsWide \}/);
-    expect(jsx).toMatch(/className="gl-nav as-ring"/);
+    expect(jsx).toMatch(/className="gl-nav as-ring\b/);
     expect(deskBlock).toMatch(/\.gl-tabs \{\s*display:\s*none/);
   });
 
