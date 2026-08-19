@@ -3303,8 +3303,18 @@ button { font-family: inherit; }
      22 px ist der Wert, mit dem `.st-sec`, `.up-*` und die Lauf-Details ihre Panels absetzen. */
   /* #run-dialoge: die zwei Rückfragen des Laufs. 320 px (`max-w-xs`) sind auf 1920 px eine Handy-Sprechblase;
      der Beenden-Dialog trägt drei Optionszeilen mit Folgentext, der Neustart-Dialog nur eine Warnung. */
+  /* #run-dialoge, Nachjustierung (19.08.2026): eckiger, wie alles andere ab 1400 px — die Hub-Knöpfe, die
+     Baum-Kacheln und die Angebotskarten stehen auf 6 px, die zwei Rückfragen liefen mit 12/8 px daneben.
+     Die KARTE behält ihren Radius: sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung wie an den
+     Panels von Baum, Werkstatt und Leitfaden). */
   .rc-wide   { max-width: 560px; }
   .rc-narrow { max-width: 440px; }
+  .rc-row, .rc-btn { border-radius: 6px; }
+  /* Der Pfeil rückt beim Überfahren eine Spur nach rechts — die einzige Bewegung im Dialog, und sie sagt,
+     wohin der Klick führt. Die Zeile selbst bleibt ruhig (kein Anheben wie bei den Angebotskarten: ein
+     Dialog, der beim Zeigen wackelt, liest sich nervös). */
+  .rc-row .rc-chev { transition: transform .12s ease, opacity .12s ease; }
+  .rc-row:hover .rc-chev { transform: translateX(2px); opacity: .6; }
   .lb-tabs, .lb-page { margin-top: 22px !important; }
   .lb-tabs {
     grid-column: 1; grid-row: 3;

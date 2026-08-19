@@ -2036,6 +2036,17 @@ Beim Nachrüsten des Wächters ist derselbe Fallstrick zugeschnappt wie beim `as
 und der `ATTACK:`-Ratsche (#cube-takt): die Negativ-Prüfung las den eigenen Begründungskommentar, der die
 verbotene Kurzform absichtlich beim Namen nennt. Sie prüft jetzt gegen den kommentarfreien Quelltext.
 
+#### #run-dialoge, Nachjustierung (19.08.2026): eckiger, mit Richtungspfeil
+Hub-Knöpfe, Baum-Kacheln und Angebotskarten stehen auf 6 px; die zwei Rückfragen liefen mit 12/8 px
+daneben. Jetzt tragen Optionszeile (`rc-row`) und die zwei Knöpfe der Neustart-Rückfrage (`rc-btn`)
+denselben Radius. **Die KARTE behält ihren** — sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung wie
+an den Panels von Baum, Werkstatt und Leitfaden).
+- **Der Pfeil rechts ist kein neues Zeichen**: dieselbe Geste tragen die Verwaltungszeilen im Hub. Er steht
+  fest im Markup, weil `OptionRow` ohnehin nur im Desktop-Zweig gerendert wird — kein Breiten-Gate nötig.
+- **Nur der Pfeil bewegt sich** beim Überfahren, die Zeile nicht (anders als die Angebotskarten): ein
+  Dialog, der beim Zeigen wackelt, liest sich nervös.
+- Handy bitidentisch (Pixelvergleich 390 px, beide Dialoge 0,0000 von 255).
+
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem
 stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau falsch herum.**

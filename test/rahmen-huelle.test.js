@@ -94,6 +94,25 @@ describe("#run-dialoge — Beenden und Neustarten", () => {
     expect(rc, "useEffect wird ohne den Handler nicht mehr gebraucht").not.toMatch(/useEffect/);
   });
 
+  it("Zeilen und Knöpfe sind so eckig wie der Rest des Desktops (6 px)", () => {
+    /* Hub-Knöpfe, Baum-Kacheln und Angebotskarten stehen auf 6 px; die zwei Rückfragen liefen mit 12/8 px
+       daneben. Die KARTE behält ihren Radius — sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung
+       wie an den Panels von Baum, Werkstatt und Leitfaden). */
+    expect(deskBlock).toMatch(/\.rc-row,\s*\.rc-btn\s*\{[^}]*border-radius:\s*6px/);
+    expect(rc).toMatch(/className="rc-row as-edge-card/);
+    expect((rc.match(/className="rc-btn"/g) || []).length, "beide Knöpfe der Neustart-Rückfrage").toBe(2);
+  });
+
+  it("die Optionszeile zeigt, wohin sie führt — und nur sie bewegt sich", () => {
+    /* Der Pfeil ist kein neues Zeichen: dieselbe Geste tragen die Verwaltungszeilen im Hub. Er steht fest
+       im Markup, weil `OptionRow` ohnehin nur im Desktop-Zweig gerendert wird. */
+    expect((rc.match(/rc-chev/g) || []).length, "der Pfeil fehlt in der Zeile").toBeGreaterThan(0);
+    expect(deskBlock).toMatch(/\.rc-row:hover \.rc-chev\s*\{[^}]*translateX/);
+    /* Die Zeile selbst hebt sich NICHT an (anders als die Angebotskarten): ein Dialog, der beim Zeigen
+       wackelt, liest sich nervös. */
+    expect(rc, "die Zeile hebt sich an").not.toMatch(/rc-row[^"]*hover:-translate-y/);
+  });
+
   it("die zwei Breiten stehen in der CSS, nicht als Zahl im JSX", () => {
     expect(deskBlock).toMatch(/\.rc-wide\s*\{[^}]*max-width:\s*\d+px/);
     expect(deskBlock).toMatch(/\.rc-narrow\s*\{[^}]*max-width:\s*\d+px/);

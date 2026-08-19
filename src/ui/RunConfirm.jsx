@@ -38,12 +38,18 @@ import { t } from "../i18n/index.js"; // #sprache
 /* Eine Wahl als Zeile: Name + Folge. `c` ist die Kantenfarbe (Gold = primär, Rot = gefährlich,
    Grau = Ausstieg) — dieselbe Leiter, die `.as-edge-card` überall im Spiel benutzt. */
 function OptionRow({ c, name, sub, onClick }) {
+  /* Die Zeile gibt es NUR auf dem Desktop (der Handy-Zweig fährt die Aktionsleiste, s. unten) — der Pfeil
+     rechts darf deshalb fest im Markup stehen und braucht kein Breiten-Gate. Er ist auch kein neues
+     Zeichen: dieselbe Geste tragen die Verwaltungszeilen im Hub. */
   return (
     <button type="button" onClick={onClick}
-      className="as-edge-card w-full text-left rounded-xl px-3.5 py-3 transition-all hover:brightness-110"
+      className="rc-row as-edge-card w-full text-left rounded-xl px-3.5 py-3 flex items-center gap-3 transition-all hover:brightness-110"
       style={{ "--c": c }}>
-      <span className="block text-[14.5px] font-bold" style={{ color: c }}>{name}</span>
-      <span className="block text-[12.5px] leading-snug opacity-65 mt-0.5">{sub}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14.5px] font-bold" style={{ color: c }}>{name}</span>
+        <span className="block text-[12.5px] leading-snug opacity-65 mt-0.5">{sub}</span>
+      </span>
+      <span aria-hidden="true" className="rc-chev shrink-0 text-[15px] opacity-35">›</span>
     </button>
   );
 }
@@ -75,7 +81,7 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
                 <div className="flex flex-col gap-2 w-full">
                   <ActionButton kind="primary" onClick={onSave}>{t("app.abort.save")}</ActionButton>
                   <div className="flex gap-2">
-                    <ActionButton kind="secondary" flex onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
+                    <ActionButton kind="secondary" flex className="rc-btn" onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
                     <ActionButton kind="danger" flex onClick={onEnd}>{t("app.end")}</ActionButton>
                   </div>
                 </div>
@@ -105,7 +111,7 @@ export function RestartConfirm({ onKeepPlaying, onRestart }) {
           {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
           <ActionBar pad={wide ? 6 : 5} bg={STICKY_HEAD_BG} className={wide ? "mt-5" : "mt-3"}>
             <ActionButton kind="secondary" flex onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
-            <ActionButton kind="danger" flex onClick={onRestart}>{t("app.restart")}</ActionButton>
+            <ActionButton kind="danger" flex className="rc-btn" onClick={onRestart}>{t("app.restart")}</ActionButton>
           </ActionBar>
           {!wide && <div className="text-sm opacity-70">{t("app.restart.help")}</div>}
         </div>
