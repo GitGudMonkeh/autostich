@@ -5301,7 +5301,12 @@ button { font-family: inherit; }
        Aussenrand des app-root = 430 px. Damit bleiben 650 px Hoehe fuer die Buehne, die 1600 px
        Breite also erreichbar — der Deckel greift ab hier ueber die BREITE, nicht ueber die Hoehe. */
     --rn-chrome: 430px;
-    --bf-w: min(1600px, calc(100vw - 80px), calc((100dvh - var(--rn-chrome)) * 2.5));
+    /* Die INSTRUMENTE (Leiste, Bank) nehmen die Breite, die das Fenster hergibt — sie sind Text und Zahlen,
+       kein Bild. Nur die BUEHNE ist zusaetzlich durch ihr Seitenverhaeltnis gedeckelt: auf einem flachen
+       Fenster (1536 x 791) bleiben ihr 1052 px, waehrend die Bank ihre vollen 1456 px behaelt. Beide an
+       `--bf-w` zu klemmen war der erste Wurf und quetschte dort die vier Spuren auf je 100 px. */
+    --rn-w: min(1600px, calc(100vw - 80px));
+    --bf-w: min(var(--rn-w), calc((100dvh - var(--rn-chrome)) * 2.5));
     --bf-h: calc(var(--bf-w) / 2.5);
     /* Kartenbreite = 11 % der Buehnenbreite (176 px bei 1600). Als MASSSTAB auf
        die 104 px der Karte gerechnet, nicht als zweites Kartenmass: die sieben
@@ -5313,9 +5318,12 @@ button { font-family: inherit; }
        nur die Karte wächst nicht mit. */
     --card-s: calc(var(--bf-w) * 0.11 / 104 / 1px);
     max-width: none;
-    /* Zeile 1 ist die Kopfzeile: Marke links, Steuerung rechts daneben, Glossar
-       aussen. Alles Weitere spannt ueber alle drei Spuren. */
-    grid-template-columns: 1fr auto auto;
+    /* Zeile 1 ist die Kopfzeile: Marke links, Steuerung rechts daneben, Glossar aussen. Alles Weitere
+       spannt ueber alle drei Spuren. `max-content` fuer die zwei rechten Spuren ist Pflicht, nicht Kosmetik:
+       mit `auto` bekamen sie neben einem spannenden Element fester Breite (Leiste, Bank) zu wenig ab, und
+       die Knopfreihe brach auf schmaleren Fenstern in VIER Zeilen um — der Kopf war dann 190 px hoch und
+       schob die Bank aus dem Bild. */
+    grid-template-columns: minmax(0, 1fr) max-content max-content;
     justify-items: center;
     align-content: start;
     gap: 12px;
@@ -5336,9 +5344,10 @@ button { font-family: inherit; }
   /* Alles unter der Kopfzeile ist auf die Buehnenbreite geklemmt und zentriert.
      So fluchten Leiste, Buehne und Bank auf denselben zwei Kanten — der Screen
      liest als EIN Block statt als drei verschieden breite Streifen. */
-  .rn-bar, .rn-milestone, .bf-panel, .rn-bank, .rn-music {
-    grid-column: 1 / -1; width: var(--bf-w); max-width: 100%;
+  .rn-bar, .rn-milestone, .rn-bank, .rn-music {
+    grid-column: 1 / -1; width: var(--rn-w); max-width: 100%;
   }
+  .bf-panel { grid-column: 1 / -1; width: var(--bf-w); max-width: 100%; }
 
   /* --- Die Vitalleiste ---------------------------------------------------
      Aus zwei gestapelten Zeilen (Steuerung oben, Score unten) wird EINE Leiste,
@@ -5479,4 +5488,15 @@ button { font-family: inherit; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bf-fly-in { animation: none; }
+}
+
+
+/* #buehne: Flache Fenster (Laptop 1920x1200 bei 125 % Skalierung = CSS 1536x791, und alles darunter).
+   Dort ist die HOEHE der Engpass: jede Zeile, die das Chrome kuerzer macht, wird mit 2,5 multipliziert
+   in Buehnenbreite ausgezahlt. Die Bank gibt deshalb 60 px ab (270 -> 210) — das sind 150 px mehr Buehne.
+   Gemessen 1536 x 791: Buehne 903 x 361 -> 1052 x 421, ohne Seiten-Scrollen. */
+@media (min-width: 1400px) and (max-height: 900px) {
+  /* 380 ist gemessen, nicht geschaetzt: mit 370 lief das Dokument um genau 10 px ueber (801 statt 791). */
+  .rn-shell { --rn-chrome: 380px; }
+  .rn-bank { height: 210px; }
 }

@@ -27,14 +27,37 @@ describe("#buehne · die Bühne ab 1400 px", () => {
   });
 
   it("die Bühnenbreite hat DREI Deckel — der dritte ist die Höhe", () => {
+    // Zwei davon stecken in --rn-w (native Bildbreite, Fensterbreite), der dritte kommt hier dazu.
+    const w = desktop.match(/--rn-w:\s*min\(([^;]+)\);/);
+    expect(w, "--rn-w fehlt").toBeTruthy();
+    expect(w[1], "native Bildbreite als Deckel").toMatch(/1600px/);
+    expect(w[1], "Fensterbreite abzüglich der Ränder").toMatch(/100vw/);
     const m = desktop.match(/--bf-w:\s*min\(([^;]+)\);/);
     expect(m, "--bf-w fehlt").toBeTruthy();
     const regel = m[1];
-    expect(regel, "native Bildbreite als Deckel").toMatch(/1600px/);
-    expect(regel, "Fensterbreite abzüglich der Ränder").toMatch(/100vw/);
+    expect(regel, "die Buehne erbt beide Deckel").toMatch(/var\(--rn-w\)/);
     // Ohne den Höhen-Deckel läuft die Bühne auf flachen Fenstern (1536x791) aus dem Bild.
     expect(regel, "was die HÖHE übrig lässt, mal 2,5").toMatch(/100dvh[\s\S]*\* 2\.5/);
     expect(desktop, "die Höhe folgt aus der Breite, 2,5:1 wie die Bildquelle").toMatch(/--bf-h:\s*calc\(var\(--bf-w\) \/ 2\.5\)/);
+  });
+
+  it("Instrumente nehmen die Fensterbreite, nur die Bühne ist am Format gedeckelt", () => {
+    // Beide an --bf-w zu klemmen war der erste Wurf: auf 1536 x 791 quetschte das die vier Spuren
+    // der Bank auf je 100 px, weil die Bühne dort schon durch die HÖHE begrenzt ist.
+    expect(desktop).toMatch(/--rn-w: min\(1600px, calc\(100vw - 80px\)\)/);
+    expect(desktop).toMatch(/\.rn-bar, \.rn-milestone, \.rn-bank, \.rn-music \{[^}]*width: var\(--rn-w\)/);
+    expect(desktop).toMatch(/\.bf-panel \{[^}]*width: var\(--bf-w\)/);
+  });
+
+  it("die Kopfzeile bleibt einzeilig (max-content, nicht auto)", () => {
+    // Mit `auto` bekamen die zwei rechten Spuren neben einem spannenden Element fester Breite zu wenig ab;
+    // die Knopfreihe brach in vier Zeilen um und schob die Bank aus dem Bild.
+    expect(desktop).toMatch(/grid-template-columns: minmax\(0, 1fr\) max-content max-content/);
+  });
+
+  it("flache Fenster bekommen ihre eigene Stufe", () => {
+    // Dort ist die Höhe der Engpass: jede gesparte Zeile zahlt 2,5-fach in Bühnenbreite aus.
+    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 900px\) \{[\s\S]*--rn-chrome: 380px[\s\S]*height: 210px/);
   });
 
   it("der Kartenmaßstab ist einheitenlos (sonst fällt die Regel still aus)", () => {
