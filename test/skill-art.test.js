@@ -70,21 +70,51 @@ describe("#skillart — Verdrahtung", () => {
     expect(jsx).toContain("const art = wide ? skillArt(id) : null;");
   });
 
-  it("die Karte ohne Emblem behält ihren Baum (Handy bleibt unberührt)", () => {
-    // Der Zweig ohne Bild darf KEINEN zusätzlichen Behälter einziehen, sonst verschiebt sich die
-    // Geometrie der Handy-Fassung, die niemand angefasst hat.
-    expect(jsx).toMatch(/\) : \(<>\{badges\}\{title\}<\/>\)\}/);
+  it("die Karte ohne Bild behält ihren Baum (Handy bleibt unberührt)", () => {
+    // Ohne Bild wird weder ein Element noch eine Klasse hinzugefügt: `art` schaltet BEIDES.
+    expect(jsx).toContain('${art ? " sk-offer-art" : ""}');
+    expect(jsx).toContain("{art && <img");
   });
 
-  it("das Bild trägt die Klasse, die den schwarzen Grund verschwinden lässt", () => {
-    expect(jsx).toContain('className="sk-em"');
-    const regel = css.slice(css.indexOf(".sk-em {"), css.indexOf(".sk-em {") + 200);
+  it("der Streifen trägt die Klasse, die den schwarzen Grund verschwinden lässt", () => {
+    expect(jsx).toContain('className="sk-strip"');
+    const regel = css.slice(css.indexOf(".sk-strip {"), css.indexOf(".sk-strip {") + 420);
     expect(regel).toContain("mix-blend-mode: screen");
-    expect(regel).toContain("width: 64px");
+    expect(regel).toContain("height: 130px");          // am Gerät gewählte Zonenhöhe
+    expect(regel).toContain("object-fit: cover");      // „füllend"
+    expect(regel).toContain("mask-image: linear-gradient(180deg, #000 38%, transparent)");
+  });
+
+  it("der Text steht ÜBER dem Streifen, nicht darunter", () => {
+    // Absolut Positioniertes malt über nicht-positionierten Fluss-Inhalt. Ohne diese Regel liegt die
+    // Beschreibung unter dem Bild — und man sieht es nur bei Motiven, die unten hell sind.
+    expect(css).toContain(".sk-offer-art > *:not(img) { position: relative; }");
+    const regel = css.slice(css.indexOf(".sk-offer-art {"), css.indexOf(".sk-offer-art {") + 220);
+    expect(regel).toContain("overflow: hidden");
+    expect(regel).toContain("padding-top: 96px");
   });
 
   it("das Emblem ist für Screenreader unsichtbar — der Skillname steht daneben", () => {
     expect(jsx).toContain('alt="" aria-hidden="true"');
+  });
+});
+
+describe("#skillart — der Bloom ist gebacken, nicht gerechnet", () => {
+  it("die Auslieferung entsteht aus den Mastern über das Skript, mit den gewählten Werten", () => {
+    const build = readFileSync(new URL("../scripts/skill-art-build.py", import.meta.url), "utf8");
+    // Am Gerät gewählt (19.08.2026). Ändert sich einer der Werte, muss das Bild neu gebacken werden —
+    // deshalb stehen sie hier, nicht nur im Skript.
+    expect(build).toContain("BLOOM_CSS = 15");
+    expect(build).toContain("BLOOM_STRENGTH = 0.60");
+    expect(build).toContain("BLOOM_SAT = 2.60");
+    // Der Radius gilt für die ANZEIGE (277 px breit) und muss auf die Dateigröße umgerechnet werden.
+    expect(build).toContain("BLOOM_CSS * SIZE / STRIP_W");
+  });
+
+  it("das Bild bringt sein Leuchten mit — im Stylesheet steht KEIN Filter auf dem Streifen", () => {
+    const regel = css.slice(css.indexOf(".sk-strip {"), css.indexOf(".sk-strip {") + 420);
+    expect(regel).not.toContain("filter:");
+    expect(regel).not.toContain("blur(");
   });
 });
 

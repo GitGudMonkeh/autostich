@@ -55,7 +55,8 @@ würde dagegen genau die Bogen- bzw. Bandenden kosten, die die Silhouette ausmac
 Alle Master liegen. Gemessen über den ganzen Satz streut die **Lichtmenge** (Leuchtfläche ×
 Spitzenhelligkeit) von **5,0 bis 51,2 — Faktor 10**, Median 17,5.
 
-**Entschieden am Bild (19.08.2026): es wird NICHT angeglichen — ausgeliefert wird „wie generiert".**
+**Entschieden am Bild (19.08.2026): die HELLIGKEIT wird nicht angeglichen — ausgeliefert wird „wie
+generiert", plus den gebackenen Bloom (s. Einbau).**
 Die Messung bleibt trotzdem stehen, sie ist der Maßstab, falls der Satz später doch unruhig wirkt. Der
 vorbereitete Weg wäre der folgende — er ist gebaut und im Mockup durchgespielt, aber nicht angewandt:
 
@@ -98,6 +99,13 @@ Lochrand) und trägt dieselbe Bedeutung wie die goldene Kartenkante — „legen
 Legendäres ergänzt, hält sich daran; Gold als zweite Deko über das ganze Bild verteilt nimmt der Kante
 ihre Aussage.
 
+**Überarbeitet am 19.08.2026** (die erste Fassung war reines Licht auf Schwarz — es fehlte der dunkle
+Gegenstand, an dem sich das Leuchten bricht): `04` Überspannung (bricht jetzt durch den aufgerissenen
+Rasterboden), `14` Überschlag (der Fels ist sichtbar statt schwarze Silhouette), `15` Blitzschlag (die
+Karte reißt entlang des Einschlags statt einer flachen Ellipse), `L02` Doppelentladung (goldener
+Detonationskern zwischen zwei getroffenen Karten — vorher war es die legendäre Fassung von `10` Entladung,
+also dieselbe Geste zweimal).
+
 **Verworfen und nicht wieder aufnehmen:** Reststrom als Kapsel mit vier Leuchtringen (las sich als
 halbvolle Batterie und war Gerätegehäuse statt Sturm) · Ladungsserie als Kette gleich großer Kugeln
 (gleichmäßig wiederholte Rundformen lesen sich als Deko, nicht als Aufbau) · Blitzfänger als
@@ -106,11 +114,18 @@ geschlossene Steinkugel mit Kern (die Schale muss OFFEN sein — geschlossen ist
 
 ## Einbau (19.08.2026)
 
-Ausgeliefert wird aus `src/assets/skills/<archetyp>/` — **192 px, WebP q86**, dieselben Dateinamen wie die
-Master. Gerechnet: gezeigt werden sie mit **64 CSS-px**, der Desktop-Deckel ist DPR 2 → 128 px wären exakt,
-192 gibt eine Stufe Reserve. Alle 21 zusammen: **121 kB** (256 px wären 196 kB gewesen).
+Ausgeliefert wird aus `src/assets/skills/<archetyp>/` — **192 px, WebP q86**, erzeugt von
+**`scripts/skill-art-build.py`** aus den Mastern. Alle 21 zusammen: **129 kB**. Von Hand pflegt man dort
+nichts; wer ein Master austauscht, lässt das Skript neu laufen.
 
-- **Platzierung**: im Kopf der Angebotskarte, links neben Badge und Name (`.sk-em` in index.css).
+- **Platzierung**: als **Kopfstreifen** über der Angebotskarte (`.sk-strip` / `.sk-offer-art`). Am Regler
+  entschieden: **Zone 130 px · Zuschnitt füllend · Auslauf ab 38 %**. Der untere Rand wird nicht gekappt,
+  sondern über eine Maske aufgelöst; `object-position: center top` hält die Aussage im Bild (die Motive
+  haben sie oben, den Bodenraster unten — und der darf verschwinden).
+- **Bloom gebacken statt gerechnet**: Radius 15 CSS-px, Stärke 60 %, Sättigung 260 %, ebenfalls am Regler
+  gewählt. Als CSS-Filter wäre er Rasterarbeit auf dem Screen, der ohnehin am Mount klemmt. **Der Radius
+  wird umgerechnet**: 15 px gelten für die Anzeige mit 277 px Breite, die Datei hat 192 → 10,4 px. Wer die
+  Zonenbreite ändert, zieht diese Zahl mit.
 - **Gate**: `const art = wide ? skillArt(id) : null` — ab 1400 px. Weil das Gate im JSX sitzt und nicht in
   CSS, lädt das Handy die Bilder gar nicht erst.
 - **Zuordnung**: allein über den Dateinamen (`src/ui/skillArt.js`). Keine abgetippte Liste; ein neuer Skill

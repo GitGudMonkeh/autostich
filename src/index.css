@@ -1333,15 +1333,33 @@ button { font-family: inherit; }
 .as-edge-card.is-locked { opacity: .45; }
 .as-edge-card.is-soon   { opacity: .55; border-left-style: dashed; }
 
-/* #skillart — Emblem in der Angebotskarte der Skill-Wahl (SkillSelect.jsx, nur ab 1400 px gerendert).
+/* #skillart — Kopfstreifen der Angebotskarte in der Skill-Wahl (SkillSelect.jsx, nur ab 1400 px gerendert).
+   Am Gerät entschieden (19.08.2026) über einen Regler: Zone 130 px · Zuschnitt füllend · Auslauf ab 38 %.
+
    `mix-blend-mode: screen` ist der Kern: die Bilder haben einen SCHWARZEN Grund statt eines Alphakanals,
    und Schwarz verschwindet unter screen von selbst. Das spart das Freistellen, hält die Dateien klein und
    legt das Leuchten additiv auf die Karte — dieselbe Rechenart wie im übrigen FX-Stack.
-   64 px ist die abgemessene Größe: das Emblem steht neben Badge und Name, die Beschreibung bleibt der
-   Hauptträger der Karte. Größer verschöbe das Verhältnis (drei Karten nebeneinander à ~277 px). */
-.sk-em {
-  width: 64px; height: 64px; flex: none; border-radius: 6px;
-  mix-blend-mode: screen;
+
+   Der Bloom steckt IN den Dateien (scripts/skill-art-build.py), nicht in einem CSS-Filter: er wäre sonst
+   Rasterarbeit auf genau dem Screen, der ohnehin am Mount klemmt (271–417 ms in `phase:levelup`).
+
+   Der untere Rand wird nicht gekappt, sondern über die Maske aufgelöst — deshalb `mask-image` statt einer
+   festen Kante. `object-position: center top` hält den Bildkopf im Bild: die Motive haben ihre Aussage
+   oben (Blitz, Bogen, Wolke) und ihren Bodenraster unten, und der ist genau das, was verschwinden darf. */
+.sk-offer-art {
+  position: relative; overflow: hidden;
+  padding-top: 96px;   /* 130 Zone − 34: der Text beginnt IM Auslauf, nicht darunter */
+}
+/* Text über das Bild heben. Absolut Positioniertes malt über nicht-positionierten Fluss-Inhalt — ohne
+   diese Zeile stünde die Beschreibung UNTER dem Streifen. `position: relative` genügt: unter gleichrangig
+   positionierten Elementen entscheidet die DOM-Reihenfolge, und der Streifen steht als erstes Kind. */
+.sk-offer-art > *:not(img) { position: relative; }
+.sk-strip {
+  position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 130px;
+  object-fit: cover; object-position: center top;
+  mix-blend-mode: screen; pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 38%, transparent);
+  mask-image: linear-gradient(180deg, #000 38%, transparent);
 }
 
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht

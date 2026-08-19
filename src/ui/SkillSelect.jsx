@@ -445,9 +445,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
-                  /* #skillart: Emblem NUR ab 1400 px. Am Handy ist die Karte einspaltig und der Text
-                     trägt sie allein; ein 64-px-Bild nähme dort Zeilen weg, die die Beschreibung braucht.
-                     Weil das Gate im JSX sitzt (nicht in CSS), lädt der Browser die Bilder dort auch nicht. */
+                  /* #skillart: Kopfstreifen NUR ab 1400 px. Am Handy ist die Karte einspaltig und der Text
+                     trägt sie allein; eine 130-px-Bildzone nähme dort den halben Bildschirm. Weil das Gate im
+                     JSX sitzt (nicht in CSS), lädt der Browser die Bilder dort auch gar nicht erst. */
                   const art = wide ? skillArt(id) : null;
                   const badges = (
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -478,16 +478,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                        als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
                        Die Fraktion steht weiterhin im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`lv-offercard as-edge-card${sel ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? " sk-offer-art" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
-                      {/* Mit Emblem stehen Badge und Name als Block NEBEN dem Bild; ohne bleibt der Baum exakt
-                          wie vorher — die Handy-Fassung bekommt also keinen zusätzlichen Behälter. */}
-                      {art ? (
-                        <div className="flex items-center gap-2.5">
-                          <img src={art} alt="" aria-hidden="true" className="sk-em" loading="lazy" decoding="async" />
-                          <div className="min-w-0 flex-1 flex flex-col gap-1.5">{badges}{title}</div>
-                        </div>
-                      ) : (<>{badges}{title}</>)}
+                      {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen darunter
+                          stehen an derselben Stelle wie ohne Bild, nur tiefer (Polster in `.sk-offer-art`).
+                          Ohne Bild bleibt der Baum exakt wie vorher: die Handy-Fassung ist unberührt. */}
+                      {art && <img src={art} alt="" aria-hidden="true" className="sk-strip" loading="lazy" decoding="async" />}
+                      {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>
