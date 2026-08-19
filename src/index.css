@@ -1437,6 +1437,11 @@ button { font-family: inherit; }
    und gewinnt sonst gegen jede Utility-Klasse am Element. */
 .as-gloss-foot { display: none !important; }
 
+/* #ecke — das Ecken-Paar (Glossar + Ton) gibt es NUR ab 1400 px (Regeln im Desktop-Block, s. dort).
+   Unterhalb bleibt alles, wie es war: der Mute-Knopf in der Ecke des Startbildschirms, das Glossar
+   rechts daneben. Die Handy-Fassung wird in diesem Umbau grundsätzlich nicht angefasst. */
+.as-corner { display: none; }
+
 /* ============================================================================
    #desktop — Startbildschirm ab 1400 px (Desktop-Pass)
    ----------------------------------------------------------------------------
@@ -4755,6 +4760,61 @@ button { font-family: inherit; }
   /* NUR mit Gebäudeliste. Ohne sie ist der Graph das einzige Kind der Spalte — er stünde dann am Fuß
      eines sonst leeren Streifens, also genau das Loch, das die Regel beseitigen soll, nur oben. */
   .go-blist ~ .go-ticks { margin-top: auto; padding-top: 18px; }
+
+  /* ==========================================================================
+     #ecke — Glossar und Ton oben links, in JEDEM Menü (19.08.2026)
+
+     Beide hingen bisher am Startbildschirm und waren in Werkstatt, Baum, Statistik, Bestenliste,
+     Leitfaden und Optionen nicht erreichbar — also gerade dort nicht, wo man nachschlägt. Das Paar
+     liegt über allen Menü-Overlays (z 70 gegen deren 20–60), auch über dem Glossar selbst.
+     Gerendert wird es an `phase === "menu"` (App.jsx); im LAUF gibt es beides an seinem eigenen Platz.
+
+     Die zwei Knöpfe sind quadratisch und tragen den Radius des Desktop-Passes (6 px, #eckig). Der
+     Glossar-Kreis (`.gloss-i-btn`) setzt `display: grid` und feste 26 px selbst — deshalb stehen die
+     Maße hier ausdrücklich und nicht als Utility am Element. */
+  .as-corner {
+    display: flex; align-items: center; gap: 8px;
+    /* 26 px, nicht 14: damit steht das Paar auf der Höhe der Kopfzeile der Menüs statt darüber.
+       Gemessen (1536 x 791) liegt die Mitte der Schließen-Knöpfe bei 43–49 px, die des Paars damit
+       bei 43 — es liest sich als Teil derselben Reihe, obwohl es fest am Fenster hängt. */
+    position: fixed; top: 26px; left: 14px; z-index: 70;
+  }
+  .as-corner > .as-corner-btn {
+    width: 34px; height: 34px; padding: 0;
+    display: grid; place-items: center;
+    border-radius: 6px; font-size: 1rem; line-height: 1;
+  }
+  /* Der Startbildschirm hatte den Mute-Knopf schon in dieser Ecke — jetzt trägt ihn das Paar.
+     Zwei Knöpfe für dieselbe Sache nebeneinander wären die Doppelpflege, vor der die Datei überall
+     warnt. Das Glossar-ⓘ im Fußband (neben Discord) bleibt: anderer Platz, andere Geste. */
+  .as-mute-hub { display: none !important; }
+
+  /* Die Bahn für das Paar. Die Menü-Köpfe setzen ihren Titel ganz links; ohne Polster läge er unter
+     den Knöpfen. Gegeben wird es dem KOPF, nicht der Wurzel: ein Polster an der Wurzel verschmälert
+     den ganzen Screen, und Baum, Leitfaden und Glossar sind auf flachen Fenstern bereits auf 0 px
+     Überlauf ausgemessen (#flach, #desktop-leitfaden) — 92 px weniger Breite hieße dort mehr Höhe.
+
+     NUR solange das Paar wirklich da ist (`data-corner-tools`, gesetzt in App.jsx): die Bestenliste
+     ist auch vom Endscreen aus erreichbar, dort gibt es kein Paar und also nichts einzurücken.
+
+     Und nur, solange die Karte überhaupt bis in die Ecke reicht — die Grenze ist gerechnet, nicht
+     geraten: die Karte beginnt bei `48 + (Fensterbreite − 96 − Deckel) / 2`, das Paar endet bei 90 px.
+     Deckel 1720 → Überschneidung unterhalb 1920 px; Deckel 1560 (Optionen) → unterhalb 1760 px.
+     Darüber steht das Paar links NEBEN der Karte im freien Grund, der Kopf bleibt unberührt. */
+  :root[data-corner-tools] .up-head, :root[data-corner-tools] .cz-head,
+  :root[data-corner-tools] .st-head, :root[data-corner-tools] .lb-head,
+  :root[data-corner-tools] .gd-head, :root[data-corner-tools] .gl-head,
+  :root[data-corner-tools] .op-head { padding-left: var(--as-corner-lane, 0px) !important; }
+}
+
+/* #ecke, Fortsetzung — die zwei gerechneten Grenzen (Begründung oben am `--as-corner-lane`). */
+@media (min-width: 1400px) and (max-width: 1920px) {
+  :root[data-corner-tools] .up-head, :root[data-corner-tools] .cz-head,
+  :root[data-corner-tools] .st-head, :root[data-corner-tools] .lb-head,
+  :root[data-corner-tools] .gd-head, :root[data-corner-tools] .gl-head { --as-corner-lane: 92px; }
+}
+@media (min-width: 1400px) and (max-width: 1760px) {
+  :root[data-corner-tools] .op-head { --as-corner-lane: 92px; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über

@@ -2298,6 +2298,43 @@ die Handy-Fassung ist per Konstruktion unberührt (alle Griffe hängen im `inlin
   alle fallen.
 - **Nicht am Gerät gesehen** — alles headless im Produktionsbuild gemessen und nachgerendert.
 
+### #ecke — Glossar und Ton in JEDEM Menü, oben links (19.08.2026)
+Beide hingen am Startbildschirm: der Mute-Knopf in dessen linker oberer Ecke, das Glossar rechts oben
+(unter 1400 px) bzw. im Fußband neben Discord (darüber). Sobald ein Menü-Screen offen war — Werkstatt,
+Baum, Statistik, Bestenliste, Leitfaden, Optionen —, war beides weg. **EIN globales Paar**
+(`src/ui/CornerTools.jsx`) statt sieben Einbauten; es liegt auf z 70 über allen Menü-Overlays (z 20–60)
+und ist damit auch im Glossar selbst erreichbar. Reihenfolge: **Glossar links, Ton rechts.**
+- **Nur im Menü** (`phase === "menu"` in App.jsx). Im Lauf haben beide ihren eigenen Platz — das ⓘ im
+  Kopf, den Ton in der Steuerzeile; ein schwebendes Paar über dem Brett wäre ein drittes Bedienelement.
+- **Ab 1400 px.** Alle Regeln stehen im Desktop-Block, darunter ist das Paar `display: none`. Handy
+  bitidentisch nachgewiesen (Pixelvergleich 390 px über Hub, Optionen und Statistik: je 0,0000 von 255).
+  **Messfalle dabei:** der erste Vergleich zeigte Abweichungen — der Messstand rendert die Komponente in
+  BEIDEN Fassungen, in der „vorher"-Fassung fehlte ihr aber die Regel, sie stand also als ungestylter
+  Block im Fluss. Eine neue Komponente muss im Vorher-Lauf **weggelassen** werden, nicht nur ihr CSS.
+- **Der Platz kommt vom KOPF, nicht von der Wurzel.** Die Menü-Köpfe setzen ihren Titel ganz links; ohne
+  Polster läge er unter den Knöpfen. Ein Polster an der Wurzel hätte den ganzen Screen verschmälert —
+  Baum, Leitfaden und Glossar sind auf flachen Fenstern auf 0 px Überlauf ausgemessen (#flach,
+  #desktop-leitfaden), 92 px weniger Breite hießen dort mehr Höhe.
+- **Und nur, solange das Paar wirklich da ist** (`:root[data-corner-tools]`, gesetzt in App.jsx). Sonst
+  stünde der Titel der Bestenliste auch dann eingerückt da, wenn man sie vom ENDSCREEN aus öffnet — dort
+  gibt es kein Paar. Der Marker hängt am `<html>`, weil Leitfaden und Glossar per Portal an
+  `document.body` rendern und unter `.app-root` nicht erreichbar wären.
+- **Die zwei Grenzen sind gerechnet, nicht geraten**: die Karte beginnt bei
+  `48 + (Breite − 96 − Deckel) / 2`, das Paar endet bei 90 px → das Polster darf frühestens bei
+  `Deckel + 2 × 90` entfallen. Deckel 1720 → **1920 px**, Deckel 1560 (Optionen) → **1760 px**. Darüber
+  steht das Paar links NEBEN der Karte im freien Grund. Der Wächter rechnet das nach, statt die Zahlen
+  zu vergleichen.
+- **Der Mute-Knopf des Hubs ist ab 1400 px ausgeblendet** (`as-mute-hub`) — das Paar sitzt an derselben
+  Stelle, zwei Knöpfe für dieselbe Handlung wären zwei Fassungen. **Das Glossar-ⓘ im Fußband bleibt**
+  (anderer Platz, anderes Paar: es steht dort mit dem Discord-Zeichen). Wenn es weg soll, ist es eine
+  Zeile — dann steht Discord allein.
+- Gemessen 2047 · 1920 · 1600 · 1536 · 1400 px über sieben Screens: nirgends Überschneidung mit dem
+  Titel (39–103 px Luft), nirgends waagerechtes Scrollen; das Paar liegt auf der Höhe der Schließen-
+  Knöpfe (Mitte 43 gegen 43–49).
+- Wächter: `test/ecke.test.js` (9). Gegenprobe gemacht: alle sieben sabotierten Nähte fallen — inklusive
+  der Falle, dass die Ratsche zuerst den eigenen Begründungskommentar las (dritter Fall dieser Art).
+- **Nicht am Gerät gesehen** — headless im Produktionspfad gemessen und nachgerendert.
+
 ### #lv-mitte — die Flügel-Griffe sitzen auf der Kartenmitte (19.08.2026)
 Gemeldet: „die hängen ganz unten, es sieht komisch aus — sollten mittig sein" (Perk- UND Skill-Wahl).
 Das ist die Rücknahme der Überkorrektur aus #lv-griff: dort wurde `.lv-cardwrap` auf die RASTERhöhe

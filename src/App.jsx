@@ -57,6 +57,7 @@ import { music } from "./ui/music.js";
 import { MusicBar } from "./ui/MusicBar.jsx";
 import { UsernameModal } from "./ui/UsernameModal.jsx";
 import { CrtParticles } from "./ui/CrtParticles.jsx";
+import { CornerTools } from "./ui/CornerTools.jsx"; // #ecke: Glossar + Ton in jedem Menü, oben links
 import { multTierColor, multTierLevel } from "./ui/multTier.js";
 // Tutorial (geführter Lauf): reine UI-Schicht — der Lauf selbst ist ein normaler Lauf mit festem Seed.
 import { TutorialOverlay } from "./ui/tutorial/TutorialOverlay.jsx";
@@ -804,6 +805,17 @@ function AutostichGame() {
     if (deckFx.deckA2) el.style.setProperty("--deck-a2", deckFx.deckA2); else el.style.removeProperty("--deck-a2");
   }, [deckFx.deckA1, deckFx.deckA2]);
 
+  /* #ecke: Der Marker sagt den Menü-Köpfen, dass links oben ein Paar Knöpfe liegt — sie halten dafür
+     Platz frei (index.css). Er hängt am <html>, nicht an `.app-root`: Leitfaden und Glossar rendern per
+     Portal an `document.body` und lägen sonst außerhalb der Bedingung. Ohne den Marker stünde der Titel
+     der Bestenliste auch dann eingerückt da, wenn man sie vom Endscreen aus öffnet — dort gibt es das
+     Paar nicht. */
+  useEffect(() => {
+    const el = document.documentElement;
+    if (state.phase === "menu") el.setAttribute("data-corner-tools", "1");
+    else el.removeAttribute("data-corner-tools");
+  }, [state.phase]);
+
   /* #desktop — Welche Effekte gerade ausgerüstet sind, für die Status-Tafel des Startbildschirms.
      Hier werden nur die SCHLÜSSEL gesammelt; die Namen löst der Startbildschirm auf, damit ein
      Sprachwechsel sie neu rendert. Zwei Registerquellen: die Katalog-Effekte (GLOBAL_FX → globalFxDef)
@@ -1069,6 +1081,12 @@ function AutostichGame() {
           offene Fläche, sodass sie ohne durchscheinende Panels sichtbar sind. Im Run bleiben
           die Panels deckend. (reduced-motion-gated in der Komponente.) */}
       {state.phase === "menu" && <CrtParticles />}
+      {/* #ecke — Glossar und Ton in JEDEM Menü, oben links (Begründung in CornerTools.jsx).
+          Nur im Menü: im Lauf haben beide ihren eigenen Platz (ⓘ im Kopf, Ton in der Steuerzeile). */}
+      {state.phase === "menu" && (
+        <CornerTools muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
+          onGlossaryOpenChange={setGlossaryOpen} />
+      )}
       {/* #desktop: Der Lauf behält seinen 1024er-Deckel (max-w-5xl) — dort ist die Breite an das Kartenfeld
           gebunden. Nur der Startbildschirm bekommt ab 1400 px mehr Bühne, gedeckelt bei 1520 px: das ist die
           Breite des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen. */}

@@ -351,8 +351,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
-      {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne. */}
-      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="rounded-xl absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
+      {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne.
+          #ecke: Ab 1400 px ist dieser Knopf ausgeblendet (`as-mute-hub`) — dort trägt ihn das globale
+          Ecken-Paar, das in JEDEM Menü an derselben Stelle steht (CornerTools.jsx). Zwei Mute-Knöpfe
+          nebeneinander wären zwei Fassungen derselben Handlung. Unterhalb 1400 px bleibt er, wie er war. */}
+      {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="as-mute-hub rounded-xl absolute top-2 left-2 min-[1400px]:top-0 min-[1400px]:left-0" />}
       {/* #kante: Der Glossar-Knopf ist ein Angebot, kein Ziel — leise violette Kante (die Textfarbe trägt
           die Klasse nicht, die kommt weiter von hier).
           #desktop: Ab 1400 px steht er nicht mehr in der oberen Ecke, sondern unten im Fußband hinter dem
