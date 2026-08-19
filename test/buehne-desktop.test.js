@@ -120,10 +120,11 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
   });
 
   it("die Flugstrecke ist im Kartenmaßstab konstant", () => {
-    // Die Zahl wird aus der LÜCKE gerechnet, nicht abgetippt: Lücke + Kartenbreite (11 %), geteilt
+    // Die Zahl wird aus der INNEREN Lücke gerechnet, nicht abgetippt: über die fliegt die Karte.
+    // Lücke + Kartenbreite (11 %), geteilt
     // durch den Maßstab (11 % / 104 px). Wer die Lücke ändert und die Strecke vergisst, lässt die Karte
     // an ihrer Fläche vorbeifliegen — genau das fängt diese Prüfung.
-    const gap = Number(desktop.match(/--bf-gap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
+    const gap = Number(desktop.match(/--bf-deckgap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
     const erwartet = Math.round((gap + 0.11) * 104 / 0.11 * 100) / 100;
     const links = Number(desktop.match(/\.bf-side\.is-left\s+\.bf-fly-in \{ --bf-fly-x: -([\d.]+)px; \}/)[1]);
     const rechts = Number(desktop.match(/\.bf-side\.is-right \.bf-fly-in \{ --bf-fly-x: ([\d.]+)px; \}/)[1]);
@@ -131,12 +132,19 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
     expect(rechts, "Flugstrecke rechts passt nicht zur Lücke").toBeCloseTo(erwartet, 1);
   });
 
-  it("#kartenreihe · alle DREI Luecken der Reihe sind dieselbe", () => {
-    // Zwei Werte (aussen 3,25 %, Mitte 6 %) liessen die vier Karten als zwei Paare mit einem Loch
-    // dazwischen lesen. Eine Variable haelt sie zusammen — und bindet zugleich die Flugstrecke daran.
-    expect(desktop, "die Luecke der Seite").toMatch(/column-gap: var\(--bf-gap\)/);
+  it("#deckpaar · der INNERE Abstand ist der kleinste", () => {
+    // Die Reihenfolge IST die Aussage: der Stapel gehoert zu seiner Karte (kleine Luecke), die Mitte
+    // ist die Grenze zwischen den zwei Seiten (grosse). Erst war es andersherum (3,25 aussen / 6 Mitte),
+    // dann alles gleich — beides hat die Zugehoerigkeit nicht getragen. Der Test RECHNET die zwei
+    // Faktoren gegeneinander, statt Zahlen zu vergleichen: ein Zahlendreher saehe sonst „geaendert" aus.
+    const seite = Number(desktop.match(/--bf-deckgap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
+    const mitte = Number(desktop.match(/--bf-gap: calc\(var\(--bf-w\) \* ([\d.]+)\)/)[1]);
+    expect(seite, "Stapel und Karte muessen enger stehen als die zwei Seiten zueinander").toBeLessThan(mitte);
+    expect(seite, "ganz ohne Naht lesen sich Stapel und Karte als EIN Objekt").toBeGreaterThan(0);
+    // Und beide muessen wirklich benutzt werden — sonst ist die Rechnung oben folgenlos.
+    expect(desktop, "die Luecke der Seite").toMatch(/column-gap: var\(--bf-deckgap\)/);
     expect(desktop, "die Luecke zwischen den zwei Spielkarten").toMatch(/\.bf-cards \{[^}]*gap: var\(--bf-gap\)/);
-    expect(desktop, "kein zweiter, abgetippter Abstand daneben").not.toMatch(/\.bf-cards \{[^}]*gap: calc\(var\(--bf-w\)/);
+    expect(desktop, "kein abgetippter Abstand daneben").not.toMatch(/\.bf-cards \{[^}]*gap: calc\(var\(--bf-w\)/);
   });
 
   it("bei reduzierter Bewegung fliegt nichts", () => {

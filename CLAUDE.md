@@ -1232,19 +1232,30 @@ eines." Am Messstand nachgesehen (`getAnimations()` je Seite, 30-ms-Takt): je St
   **derselben `startTime`**, der Wegflug beginnt 467–583 ms später (Zugdauer 460 ms). Vorher stand in jeder
   Zeile genau eine Seite.
 - **Die Deck-Lücke ist von 9,25 % auf 3,25 % der Bühnenbreite herunter** (Wunsch: Stapel näher an die
-  Spielkarten) — gemessen 52 px auf 1920, 33 px auf 1536. Die Flugstrecke zieht mit: 191,45 → **134,73 px**
-  im Kartenmaßstab. Der Wächter RECHNET sie aus der Lücke, statt sie zu vergleichen — wer die eine ändert
-  und die andere vergisst, lässt die Karte an ihrer Fläche vorbeifliegen.
+  Spielkarten) — und in einem dritten Anlauf weiter auf 1 % (s. #deckpaar unten). Die Flugstrecke zieht
+  jedes Mal mit: 191,45 → 134,73 → **113,45 px** im Kartenmaßstab. Der Wächter RECHNET sie aus der Lücke,
+  statt sie zu vergleichen — wer die eine ändert und die andere vergisst, lässt die Karte an ihrer Fläche
+  vorbeifliegen.
 
-#### #kartenreihe — EINE Lücke für alle drei Abstände (19.08.2026, am Bild nachgezogen)
-Die Reihe hatte zwei Werte: aussen 3,25 %, in der Mitte 6 % (`.bf-cards`). Die vier Karten lasen sich damit
-als zwei getrennte Paare mit einem Loch dazwischen. Jetzt trägt `--bf-gap` alle drei Abstände — gemessen
-**52 / 52 / 52 px** bei 1600, **33 / 34 / 33** bei 1028; jedes Paar rückt 22 px nach innen, die Reihe wird
-904 → **860 px** breit.
-- **Die Paarung geht dabei nicht verloren, sie hängt an anderen Zeichen:** der Stapel zeigt Rücken, die
-  Spielkarte ihr Gesicht; „DU"/„GEGNER" steht über der Spielkarte, der Stich-Zähler unter dem Stapel.
-- **Die Flugstrecke hängt jetzt an derselben Variable** — der Wächter liest den Faktor aus `--bf-gap` und
-  rechnet die 134,73 px daraus nach. Wer die Lücke ändert und die Strecke vergisst, fällt dort auf.
+#### #kartenreihe → #deckpaar — die Abstände der Reihe, in drei Anläufen (19.08.2026, je am Bild)
+Die Reihe hat vier Kästen und damit drei Abstände. Welcher davon der kleinste ist, entscheidet, was
+zusammengehört — und das hat drei Runden gebraucht:
+1. **3,25 % aussen / 6 % in der Mitte** (Ausgangslage): der Stapel stand WEITER von seiner Karte weg als
+   die zwei Karten voneinander. Die Reihe las sich als zwei Paare mit einem Loch dazwischen.
+2. **Alle drei gleich** (`--bf-gap`, 3,25 % → 52 / 52 / 52 px bei 1600): das Loch war weg, aber damit auch
+   die Zugehörigkeit — vier gleich weit entfernte Karten, keine Seiten mehr.
+3. **1 % innen / 3,25 % in der Mitte** (`--bf-deckgap` + `--bf-gap`): der INNERE Abstand ist jetzt der
+   kleinste. Der Stapel gehört sichtbar zu seiner Karte, die Mitte ist die Grenze Spieler ↔ Gegner.
+   Gemessen **16 / 52 / 16 px** bei 1600 · **10 / 34 / 10** bei 1028; die Reihe wird 860 → **788 px**.
+- **Die gespielten Karten bewegen sich dabei kein Pixel** (nachgemessen 758–934 und 986–1162 vor wie nach):
+  die Reihe ist symmetrisch und zentriert, ein kleinerer AUSSEN-Abstand zieht nur die Stapel nach innen.
+- **0,75 % war zu eng** (12 px bei 1600, 8 bei 1028 — beide Kartenrahmen stossen fast zusammen), deshalb 1 %.
+  Ganz ohne Naht läsen sich Stapel und Karte als ein Objekt; der Wächter verlangt darum > 0.
+- **Die Flugstrecke hängt an der INNEREN Lücke** — über die fliegt die Karte: (1 % + 11 %) × 104 / 11 % =
+  **113,45 px** im Kartenmaßstab. Am laufenden Brett gegengeprüft (erster Keyframe gegen die gemessene
+  Distanz Stapelmitte ↔ Kartenmitte): **−192/+192 px bei 1600, −123/+123 bei 1028, Soll = Ist**.
+- Der Wächter RECHNET beide Faktoren gegeneinander (innen < mitte, innen > 0) und leitet die Flugstrecke
+  aus `--bf-deckgap` ab, statt Zahlen zu vergleichen — ein Zahlendreher sähe im Quelltext sonst „geändert" aus.
 
 #### #turbo-takt — bei Turbo passte die Choreografie nicht mehr in den Stich (19.08.2026)
 Gemeldet: „die Animationen werden verkürzt oder geskippt, wenn ich auf einen der Turbos gehe — wie am Handy
