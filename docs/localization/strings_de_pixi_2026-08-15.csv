@@ -2367,7 +2367,7 @@
 "start.name.change","i18n","Name ändern","change name","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.set","i18n","Namen festlegen für den globalen Highscore","Set a name for the global high score","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.name.signedIn","i18n","Angemeldet als","Signed in as","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"start.normal","i18n","Normaler Lauf","Normal run","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.normal","i18n","Lauf beginnen","Start run","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.onb.ice","i18n","Eis frei","Ice unlocked","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.onb.legendary","i18n","Legendär ⭐ (Durchlauf 29)","Legendary ⭐ (cycle 29)","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.onb.plant","i18n","Pflanze frei","Plant unlocked","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

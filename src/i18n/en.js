@@ -1275,7 +1275,7 @@ export default {
 
   "start.resume": "▶ Resume run",
   "start.resume.sub": "Cycle {cycle}/{total} · Score {score}",
-  "start.normal": "Normal run",
+  "start.normal": "Start run",
 
   "start.seed.placeholder": "Paste seed",
   "start.seed.aria": "Paste a seed and play",

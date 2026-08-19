@@ -1316,7 +1316,7 @@ export default {
 
   "start.resume": "▶ Lauf fortsetzen",
   "start.resume.sub": "Durchlauf {cycle}/{total} · Score {score}",
-  "start.normal": "Normaler Lauf",
+  "start.normal": "Lauf beginnen",
 
   "start.seed.placeholder": "Seed einfügen",
   "start.seed.aria": "Seed einfügen und spielen",

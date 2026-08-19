@@ -190,7 +190,7 @@ button { font-family: inherit; }
   animation: as-glow-opacity 1.15s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) { .as-streak-pulse::after { animation: none; opacity: 0.53; } }
-/* Sanfter „Drück-mich"-Puls für die Primär-Aktion (z. B. „Normal" im aufgeklappten Normaler Lauf). Dezent. */
+/* Sanfter „Drück-mich"-Puls für die Primär-Aktion (z. B. „Normal" im aufgeklappten Lauf beginnen). Dezent. */
 .as-guide-glow { position: relative; }
 .as-guide-glow::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -1189,7 +1189,7 @@ button { font-family: inherit; }
   color: color-mix(in srgb, var(--deck-a2, #7ceafb) 45%, #ffffff);
   box-shadow: 0 0 16px -8px var(--deck-a1, #26c6e6);
 }
-/* Läuft ein Lauf, tritt „Normaler Lauf" hinter „Fortsetzen" zurück: gleiche Form, neutrale Kante. */
+/* Läuft ein Lauf, tritt „Lauf beginnen" hinter „Fortsetzen" zurück: gleiche Form, neutrale Kante. */
 .as-cta-ghost {
   background: rgba(12, 12, 18, .5);
   border: 1px solid rgba(150, 150, 170, .18);

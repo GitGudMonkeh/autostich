@@ -890,7 +890,7 @@ function AutostichGame() {
     const preBf   = rv ? battlefieldAssets(resolveSkinId(BATTLEFIELD_DEFS, rv.battlefieldId, profile)) : bfSkin;
     setPendingRun([preDeck.front, preDeck.back, ...(preBf ? [preBf.desktop, preBf.mobile] : []), ...OPP_SKIN_URLS]);
   }
-  // Normaler Lauf — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
+  // Lauf beginnen — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { setTutorialActive(false); launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
   /* GEFÜHRTER LAUF (Tutorial). Mechanisch ein ganz normaler Lauf: derselbe launchRun, derselbe Seed-Pfad
      wie der Seed-Chip — nur eben mit festem Seed, damit das Skript garantieren kann, dass früh etwas

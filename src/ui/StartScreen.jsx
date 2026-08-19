@@ -49,7 +49,7 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
    Ab 1400 px ziehen Knöpfe, Marke und Glow ohnehin ihren Ton aus dem AKTIVEN DECK (Regeln in der
    1400-px-Sektion von index.css) — dort greift von hier nichts. Diese Palette ist die Handy-Fassung. */
-const CY = "#26c6e6";   // Logo links (Cyan) — Start / Normaler Lauf; einzige unangetastete Farbe
+const CY = "#26c6e6";   // Logo links (Cyan) — Start / Lauf beginnen; einzige unangetastete Farbe
 const VI = "#9b82f0";   // Logo Mitte (Violett) — nur noch Onboarding-Leiste + Desktop-Status-Tafel
 const AM = "#d6ab6b";   // Währung (war #f2a83a) — Upgrades / SP / DP / Bonus-Leiste
 const RANK = "#6696a4"; // Rangliste + Tutorial: CY zur Hälfte ins Neutrale gezogen, dann entsättigt
@@ -170,7 +170,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
   const progDp = Math.max(0, Math.floor(Number(prof.deckPoints) || 0)); // #299/#301: Deck-Punkte-Guthaben (Werkstatt-Währung)
   const progOwned = ownedCount(prof);
-  /* #tutorial-sichtbarkeit: Nur das LAUTE Angebot über „Normaler Lauf" verschwindet, sobald der Spieler seinen
+  /* #tutorial-sichtbarkeit: Nur das LAUTE Angebot über „Lauf beginnen" verschwindet, sobald der Spieler seinen
      ersten (Best-)Lauf ABGESCHLOSSEN hat (hadCompletedRun kippt genau beim ersten completed-Lauf, nicht bei
      Abbrüchen) oder das Tutorial gesehen wurde — danach braucht der Einstieg keinen prominenten Platz mehr.
      Der ruhige Tutorial-CHIP unten neben „Optionen" BLEIBT dagegen dauerhaft (jederzeit wiederholbar), solange
@@ -261,7 +261,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const chipCls = "as-edge-neutral as-edge-thin min-[1400px]:inline-flex min-[1400px]:items-center min-[1400px]:gap-2 px-3.5 py-1.5 min-[1400px]:px-5 min-[1400px]:py-[11px] rounded-xl text-sm min-[1400px]:text-[15px] font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
-  // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Normaler Lauf" wird zum Cyan-Outline.
+  // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Lauf beginnen" wird zum Cyan-Outline.
   const hasResume = !!(onResume && resume);
   /* Cyan-Primär-Optik (hell, mit kräftigem Cyan-Glow) — geteilte Quelle für „Lauf fortsetzen" UND „Normaler
      Lauf", wenn dieser (ohne laufenden Run) selbst die Primär-Aktion ist → beide glühen identisch.
@@ -274,7 +274,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const normalCls = hasResume ? "as-cta-ghost" : "as-cta-primary";
 
   /* #kopf-kompakt (16.08.2026): Der Startbildschirm brauchte auf einem iPhone 14 Pro 865 px bei 664 px
-     Sichtfläche — man musste scrollen, um „Normaler Lauf" überhaupt zu sehen. Der Abstand lag über NEUN
+     Sichtfläche — man musste scrollen, um „Lauf beginnen" überhaupt zu sehen. Der Abstand lag über NEUN
      Lücken verteilt, jede für sich unauffällig; erst die Summe tat weh. Alles hier ist gemessen (Playwright
      gegen den Preview-Build), nicht geschätzt.
 
@@ -442,7 +442,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         </div>
       )}
 
-      {/* Play-Gruppe — Fortsetzen + Normaler Lauf. Normaler Lauf klappt Normal (+ Dev Run) und das
+      {/* Play-Gruppe — Fortsetzen + Lauf beginnen. Lauf beginnen klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
       <div className={`${LANE_LEAD} flex flex-col gap-2.5`}>
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
@@ -460,7 +460,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           </button>
         )}
 
-        {/* #382 „Normaler Lauf" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline.
+        {/* #382 „Lauf beginnen" startet direkt (kein Aufklapper mehr). Gefüllt ohne Resume (= Held), sonst Cyan-Outline.
             Volle Breite: der Knopf ist die oberste Stufe des Breiten-Trichters (LANE_LEAD, s. o.) — die Rangordnung
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
@@ -476,7 +476,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <path d="m9 6 6 6-6 6" />
           </svg>
         </button>
-        {/* #382 Seed-Zeile dauerhaft unter „Normaler Lauf": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
+        {/* #382 Seed-Zeile dauerhaft unter „Lauf beginnen": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
             tryPlaySeed). Zwischenzeitlich hing sie an einem Satelliten-Knopf neben dem CTA — zurückgebaut: der
             Seed gehört unter den Knopf, zu dem er die Variante ist, nicht daneben. Radius eine Stufe unter dem
             CTA (xl statt 2xl), damit die Zeile sichtbar zweite Geige spielt. */}
