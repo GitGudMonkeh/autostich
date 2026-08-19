@@ -12,6 +12,7 @@ import { FormationPanel } from "./FormationPanel.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
+import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — dieselbe Liste wie in der Skill-Auswahl
 import { useIsWide } from "./useIsWide.js";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 
@@ -159,6 +160,11 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           {tr("perk.onceHint")}
         </div>
         )}
+
+        {/* Was der Lauf schon trägt. Ein Perk, der Ladung verbraucht, ist ohne Blitz-Skill eine andere
+            Entscheidung — die Liste beantwortet genau diese Frage und steht deshalb auf BEIDEN
+            Auswahl-Bildschirmen (eine Quelle: HeldSkills.jsx). */}
+        <HeldSkills skills={state.skills || []} state={state} className="mt-4" />
 
         {/* Build-Kontext (#22) — sekundär, hilft bei der gezielten Wahl (Synergien, Lücken). Einklappbare Panels wie in
             Skill-Auswahl/Aufstellphase, damit die Perk-Wahl die primäre Aktion bleibt. */}

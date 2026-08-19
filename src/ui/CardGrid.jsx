@@ -145,8 +145,8 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       )}
       {/* #201.6a: Wert lesbarer — am Handy größer (text-xl statt -lg) + Kontrast-Schatten für JEDE Suit (nicht nur reife),
           damit die Zahl auf der dunklen Kachel unabhängig von der Farbe klar liest. Reife behält ihren grünen Glow. */}
-      <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: '"Orbitron", ui-monospace, monospace', color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
-      {inForm && <span className="text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
+      <span className="cg-val text-xl sm:text-2xl font-bold" style={{ fontFamily: '"Orbitron", ui-monospace, monospace', color: numCol, textShadow: ripe ? `0 0 6px ${numCol}99, 0 1px 2px #000a` : "0 1px 2px #000a, 0 0 3px #0006" }}>{card.value}</span>
+      {inForm && <span className="cg-mult text-[9px] sm:text-xs font-bold leading-none" style={{ color: fb.color || "#5ab87a" }}>×{fmt(pf.mult)}</span>}
       {/* #112: Auswahl-Marker — Farbpfeil „→X" (Shop-Farbwechsel) bzw. ✓ (gold) für gewählte Karten/Position. */}
       {(arrow || picked) && (
         <span className="text-[9px] sm:text-[11px] font-bold leading-none" style={{ color: arrow ? suitColor(arrow) : "#d4a63a" }}>
@@ -156,7 +156,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
           die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
       {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
-      {labels && <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Durchlauf-Beginn auf 12)` : ""}`}>

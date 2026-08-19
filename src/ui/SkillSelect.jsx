@@ -15,6 +15,7 @@ import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
 import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
@@ -482,28 +483,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           </div>
         )}
 
-        {held.length > 0 && (
-          <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
-              {t("skill.held", { held: held.length, slots: slotsShown })}
-            </div>
-            {/* #201 P1 / #UI: gehaltene Skills zeigen ihre Beschreibung DIREKT (kein Antippen mehr) — man kann seinen
-                Build auf einen Blick lesen. NEUTRAL (grau), damit sie nicht wie ein wählbares Angebot wirken. */}
-            <div className="flex flex-col gap-2">
-              {held.map((s) => (
-                <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"
-                  style={{ background: "#1c1c22", border: "1px solid #33333e" }}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <ArchIcon meta={ac(s.id)} size={13} />
-                    <b style={{ color: "#c8c8d0" }}>{s.name}</b>
-                    <span className="opacity-40 text-[11px]">{t("skill.heldBadge")}</span>
-                  </div>
-                  <div className="opacity-70 leading-snug whitespace-pre-line" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* #201 P1 / #UI: gehaltene Skills mit voller Beschreibung — man liest seinen Build auf einen Blick.
+            Seit 19.08.2026 in HeldSkills.jsx, weil die Perk-Auswahl dieselbe Liste zeigt; von dort kommt
+            auch das Ein-/Ausklappen (geteiltes `CollapsibleField`, offen als Standard). */}
+        <HeldSkills skills={skills} state={state} />
 
         {/* #161 FB-1 / #UI: bei Eis-Relevanz die aktiven Formationen zeigen — Einfrieren biegt die Formationserkennung.
             Einklappbar (default zu), damit das Aufstellfeld nicht dauerhaft Platz frisst. */}
