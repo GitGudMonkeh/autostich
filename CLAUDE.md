@@ -1656,7 +1656,45 @@ stärkeren Sieg". **Das stimmt für den frühen Lauf und ist im späten genau fa
   Wahrheit mit der Shop-Vorschau, die dieselbe Komponente mountet.
 - Wächter: `test/announce-perf.test.js`. Er liest die Stufenleiter aus der Quelle, statt die Zahlen abzutippen,
   und prüft zuerst, dass er sie überhaupt noch findet.
+- **Der Sweep-Ausbau trifft ALLE DREI epischen Ansagen** (Gottgleich, Lawine, „Gönn dir") — sie laufen durch
+  denselben `b.tier.epic`-Zweig und damit durch den einen `<GottChromeWord>`-Aufruf. Es gibt in Battlefield.jsx
+  genau EINE In-Game-Renderstelle der Wortmarke; wer hier eine zweite anlegt, spaltet auch diesen Schalter.
 - **GERECHNET, nicht am Gerät gemessen.**
+
+### #ansage-deck — vier von sechs Ansagen ignorierten das aktive Deck (19.08.2026)
+Die Farbe einer Groß-Ansage kam aus drei verschiedenen Quellen, und zwei davon kannten das Deck gar nicht:
+Stark/Brutal/Irre trugen je einen FEST eingetragenen `chrome`-Block (7-Stopp-Verlauf + Glow + optionale Aura,
+Leiter Cyan → Violett → Magenta), „Gönn dir" ein festes Gold `#ffd24a`, und nur Gottgleich/Lawine folgten der
+Deckfarbe — die auch nur bei eingeschaltetem Prunk-Farbmodus. Jetzt tragen **Stark/Brutal/Irre und „Gönn dir"
+IMMER die Deckfarbe**; Gottgleich und Lawine behalten ihren Prunk-Schalter (dort hängt die Farbe am gekauften
+Effekt, das ist eine andere Frage als „welches Deck spiele ich").
+- **Die Rechnung liegt rein in `src/ui/fx/announceChrome.js`** (kein React, kein Canvas) — dieselbe Bauart wie
+  `previewScale.js` und `packSort.js`, damit der Wächter die Verläufe NACHRECHNET statt Schreibweisen zu
+  vergleichen. Dass ein Verlauf die Deckfarbe wirklich enthält, sieht man dem Aufrufer nicht an.
+- **DER PREIS, offen benannt: die drei unteren Stufen können sich nicht mehr über den FARBTON unterscheiden** —
+  bei einer Deckfarbe gibt es nur einen. Die Eskalation wandert auf die Achsen, die ohnehin schon tragen:
+  Größe (68/78/90 px), das Wort selbst, die **Sättigung** (`WEISS_JE_RANG` = 0,78 / 0,70 / 0,62 — je höher die
+  Stufe, desto weniger Weiß in den Zwischenstopps) und die zweite Glow-Lage `aura`, die es im festen Satz
+  ebenfalls erst ab Brutal gab (`AURA_AB_RANG = 2`, unverändert). Wer die Farbleiter zurückwill, braucht dafür
+  drei Farben — und die widerspricht dann dem Deckbezug.
+- **Der Mittelstopp ist die ZWEITE Deckfarbe** — derselbe Zweiton-Gedanke, den die epische Wortmarke schon hat.
+  Bei einem einfarbigen Deck tritt ein aufgehelltes Eigen-Grau an ihre Stelle, sonst liefe der Verlauf in der
+  Mitte flach (Hauptfarbe = Mittelstopp = Hauptfarbe ist kein Verlauf mehr).
+- **`null` ist überall der geplante Rückfall, kein Fehlerfall**: `deckChrome` gibt `null` zurück, sobald die
+  Deckfarbe unlesbar ist oder die Stufe keinen `rank` hat (die epischen) — der Aufrufer nimmt dann den fest
+  eingetragenen Satz. **Die drei festen `chrome`-Blöcke bleiben deshalb ausdrücklich stehen und sind kein
+  toter Code**; ein Wächter zählt sie, damit sie beim nächsten Aufräumen nicht als Leiche wegfliegen.
+- **Reihenfolge in `epicWordColors` IST die Regel**: `deckAlways` („Gönn dir") → feste `tier.color` → Prunk-Modus.
+  Der mittlere Fall hat heute keinen Nutzer mehr, bleibt aber als Ausweg für eine Stufe mit eigener Farbe.
+- **Die drei Fundstellen im nicht-epischen Zweig gehören zusammen** (Basis-Glyphe · Verlauf · `chromeFilter`).
+  Stellt jemand EINE davon auf `b.tier.chrome` zurück, trägt dasselbe Wort zwei Farbsysteme gleichzeitig — der
+  Wächter prüft deshalb den ganzen Zweig auf Abwesenheit von `b.tier.chrome`.
+- **Falle beim Wächter-Schreiben**: `it("„Gönn dir" …")` — das deutsche Schlusszeichen ist ein GERADES `"` und
+  beendet den JS-String. Vite meldet das als „invalid JS syntax", nicht als Anführungszeichen-Fehler. Im
+  Zweifel `“…”` verwenden.
+- Wächter: `test/announce-deck.test.js` (17 Prüfungen: Farbrechnung nachgerechnet + Verdrahtung als Ratsche).
+- **Nicht am Gerät gesehen** — Build, Lint und 1753 Tests grün, der Blick auf die Ansagen über 40 Decks
+  (besonders dunkle Decks: der Verlauf lebt vom Weiß-Anteil) steht aus.
 
 ### #fx-grace — eine Sekunde Ruhe, bevor ein angeklickter Effekt losspielt (18.08.2026)
 Ein Klick in der Effekt-Liste wechselt `sel` → das wechselt den `key` an `GlobalFxScenePreview` → die neue Szene

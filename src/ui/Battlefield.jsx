@@ -45,6 +45,7 @@ const CardFxStage = lazy(() => import("./fx/CardFxStage.jsx").then((m) => ({ def
 // #322–#326 Gottgleich-Prunk (PIXI) — lazy wie die anderen Pixi-Layer: Pixi lädt erst beim ersten gottgleichen Sieg
 // (Render-Branch mountet nur bei gottTrigger>0) → Prod-Bundle bleibt Pixi-frei, bis der Effekt wirklich spielt.
 import { GottChromeWord } from "./fx/GottChromeWord.jsx"; // #gott geteilte Chrome-Wortmarke (In-Game-Ansage + Shop-Vorschau)
+import { deckChrome, epicWordColors } from "./fx/announceChrome.js"; // #ansage-deck: Ansage-Farben aus der Deckfarbe
 const SonnenPulsPixi = lazy(() => import("./fx/SonnenPulsPixi.jsx"));
 const LaserFaecherPixi = lazy(() => import("./fx/LaserFaecherPixi.jsx")); // #323 Gottgleich-Prunk „Laser-Fächer"
 const PrismaKaskadePixi = lazy(() => import("./fx/PrismaKaskadePixi.jsx")); // #324 Gottgleich-Prunk „Prisma-Kaskade"
@@ -201,9 +202,12 @@ export { GOTT_FX_MIN };
 // #: Lawine bekommt EXAKT den Gottgleich-Schrifteffekt (kein fester Farbton mehr) → Synthwave-Chrome-Zweiton bzw. im
 //   Prunk-Deckfarbe-Modus die Deckfarbe (wie Gottgleich). Zusätzlich löst Lawine denselben Gottgleich-Prunk aus (s. u.).
 const LAWINE_TIER = { key: "bf.big.avalanche", size: 104, epic: true };
-// Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil, festliches Gold).
+// Serien-Meilenstein: ab einer Siegesserie von STREAK_GOENN feuert einmalig eine epische „Gönn dir"-Ansage (Gottgleich-Stil).
 const STREAK_GOENN = 200;
-const GOENNDIR_TIER = { key: "bf.big.letsgo", size: 104, epic: true, color: "#ffd24a" };
+/* #ansage-deck: „Gönn dir" trug ein festes Gold (`#ffd24a`) und war damit die einzige Ansage, die weder dem Deck
+   noch dem Prunk-Schalter folgte. Jetzt `deckAlways` — IMMER Deckfarbe, unabhängig von `gottDeck` (der gehört zu
+   Gottgleich/Lawine, wo die Farbe am gekauften Prunk-Effekt hängt, und „Gönn dir" hat gar keinen Prunk). */
+const GOENNDIR_TIER = { key: "bf.big.letsgo", size: 104, epic: true, deckAlways: true };
 // #FB: Groß-Ansage („wie stark"). Sie hing bislang am Stich-Takt (key=trickNo) und wurde vom Folgestich sofort
 // ersetzt → bei 4×/MAX (flipMs ~160–440 ms) nur einen Wimpernschlag sichtbar. Jetzt entkoppelt in einem eigenen
 // Pool mit fester, langer Standzeit, damit sie ihre Animation IMMER voll ausspielt (auch bei Turbo).
@@ -1676,16 +1680,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           // Blink (Android) → auf dem iPhone „überzogen". Kleiner = günstiger + beide Geräte näher beieinander.
           // Desktop/voll behält den vollen, dramatischen Bloom.
           const gBig = lite ? 16 : 32, gMid = lite ? 8 : 12;
+          /* #ansage-deck: Beide Zweige holen ihre Farbe jetzt aus `announceChrome.js` statt sie hier auszurechnen.
+             Epische Wortmarke: „Gönn dir" (deckAlways) immer Deckfarbe · Gottgleich/Lawine weiter am Prunk-Schalter.
+             Nicht-epische Stufen: der `chrome`-Block wird aus den Deckfarben gebaut; `null` (kein lesbares Deck)
+             fällt auf den fest eingetragenen Satz der Stufe zurück, die Ansage bleibt also nie ohne Farbe. */
+          const [wordC1, wordC2] = epicWordColors(b.tier, gottDeck, deckA1, deckA2);
+          const chrome = deckChrome(deckA1, deckA2, b.tier.rank) || b.tier.chrome;
           // #gott: Synthwave-Chrome-Ansage (geteilter Look für GOTTGLEICH/Lawine/Gönn dir). Chrome-Verlauf (Weiß →
           // Akzent oben → dunkle Horizontlinie → Weiß → Akzent unten), Neon-Glow im Akzent, Sheen-Sweep über die
-          // Buchstaben. GOTTGLEICH (kein tier.color) = Synthwave-Zweiton (Cyan→Magenta); die anderen erben ihre Farbe.
+          // Buchstaben. Ohne Farbe (Gottgleich/Lawine außerhalb des Deckfarbe-Modus) = Synthwave-Zweiton Cyan→Magenta.
           return b.tier.epic ? (
             // #gott: geteilte Synthwave-Chrome-Wortmarke (identisch mit der Shop-Vorschau → eine Wahrheit, kein Drift).
             <GottChromeWord key={b.id} text={tr(b.tier.key)}
-              /* #335: „Gottgleich" UND „Lawine" (ohne feste tier.color) folgen dem Prunk-Farbmodus → im Deckfarbe-Modus in
-                 der Deckfarbe (Zweiton deckA1→deckA2), sonst Chrome-Zweiton. Nur „Gönn dir" behält seine feste tier.color (Gold). */
-              color={b.tier.color || (gottDeck && deckA1 ? deckA1 : null)}
-              color2={!b.tier.color && gottDeck && deckA1 ? (deckA2 || deckA1) : null}
+              color={wordC1} color2={wordC2}
               gBig={gBig} gMid={gMid} reduced={reduced}
               /* #perf-ansage2: Der Sheen-Sweep fällt auf `lite` weg — bis hierher hing er allein an `reduced`,
                  lief auf dem Handy (Default „ausgewogen" → lite, nicht reduced) also mit. Er ist der teuerste
@@ -1749,11 +1756,11 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
               const chromeOn = !lite;
               return (<>
                 <span style={{ ...ws, position: chromeOn ? "absolute" : "relative", left: 0, top: 0, color: "#f6f2ff", WebkitTextFillColor: "#f6f2ff",
-                  filter: `drop-shadow(0 0 ${gMid}px ${b.tier.chrome.glow}) drop-shadow(0 0 ${gBig}px ${b.tier.chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{tr(b.tier.key)}</span>
+                  filter: `drop-shadow(0 0 ${gMid}px ${chrome.glow}) drop-shadow(0 0 ${gBig}px ${chrome.glow}cc) drop-shadow(0 2px 3px #000b)` }}>{tr(b.tier.key)}</span>
                 {chromeOn && (
-                  <span style={{ ...ws, position: "relative", backgroundImage: b.tier.chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
+                  <span style={{ ...ws, position: "relative", backgroundImage: chrome.grad, backgroundSize: "100% auto", // 100% → KEIN wandernder Sweep
                     WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent",
-                    filter: chromeFilter(b.tier.chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
+                    filter: chromeFilter(chrome, gBig, gMid), opacity: 0.8 }}>{tr(b.tier.key)}</span>
                 )}
               </>);
             })()}
