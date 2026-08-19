@@ -2134,11 +2134,19 @@ button { font-family: inherit; }
      (`as-edge-*`, #kante), und die Hub-Knöpfe gehören nicht dazu; sie haben eigene Klassen. Am Handy
      bleibt alles, wie es war. */
   .as-cta-primary {
+    /* ZWEI Verläufe: der linke Anlauf (waagerecht) ist das Signal — er sagt „von hier geht es los" und ist
+       dieselbe Geste wie die Kante der Kanten-Familie. Darunter das Licht von oben (senkrecht), das die
+       Fläche zur Taste macht. Ein Schein NACH AUSSEN bleibt draußen: der legte sich als Wolke um den
+       ganzen Knopf und war dasselbe Mittel, das an Ring, Knoten und Angebotskarten gefallen ist. */
     background:
+      linear-gradient(90deg,
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 30%, transparent) 0%,
+        transparent 30%),
       linear-gradient(180deg,
-        color-mix(in srgb, var(--deck-a1, #26c6e6) 26%, #0d1016) 0%,
-        color-mix(in srgb, var(--deck-a1, #26c6e6) 11%, #0a0c11) 100%);
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 22%, #0d1016) 0%,
+        color-mix(in srgb, var(--deck-a1, #26c6e6) 10%, #0a0c11) 100%);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 46%, transparent);
+    border-left: 3px solid var(--deck-a1, #26c6e6);
     color: color-mix(in srgb, var(--deck-a2, #7ceafb) 22%, #ffffff);
     /* KEIN Schein nach außen (Nachjustierung 19.08.): der Halo legte sich als Wolke um den ganzen Knopf und
        war damit dasselbe Mittel, das an Ring, Knoten und Angebotskarten gerade gefallen ist. Was die Taste
@@ -4029,8 +4037,15 @@ button { font-family: inherit; }
      INLINE aus dem JSX kommen und Inline jedes Stylesheet schlägt — die Unterkante bleibt ausgenommen,
      sie IST das Signal und trägt die Farbe der Fraktion. */
   .sk-tab {
-    border: 0 !important;
-    border-bottom: 2px solid !important;
+    /* Die drei Seiten einzeln abräumen und von der Unterkante NUR Breite und Stil setzen: ihre FARBE kommt
+       inline aus `g.meta.color` (Fraktionsfarbe beim aktiven Reiter, sonst transparent). Die Kurzform
+       `border-bottom: 2px solid !important` setzte die Farbe still auf `currentColor` zurück — dann trugen
+       ALLE VIER Reiter dieselbe helle Linie und der aktive war nicht mehr zu erkennen. */
+    border-top: 0 !important;
+    border-right: 0 !important;
+    border-left: 0 !important;
+    border-bottom-width: 2px !important;
+    border-bottom-style: solid !important;
     border-radius: 0 !important;
     background: none !important;
     box-shadow: none !important;

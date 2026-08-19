@@ -1983,10 +1983,13 @@ Nachschlag zu #up-ruhe, nach dem Bild des Users. Alles ab 1400 px; Handy **bitid
   „Aktive Effekte 7/7", die „Maximiert"-Zeilen, der „BEREICH"-Eyebrow.
 - Wächter: `test/up-ruhe.test.js` (11) + `test/lv-ruhe.test.js`. Gegenprobe gemacht.
 
-#### #hub-knopf, Nachjustierung: eckiger, kein Halo
+#### #hub-knopf, Nachjustierung: eckiger, LINKER Anlauf statt Halo
 Die Taste hatte einen Schein NACH AUSSEN (`0 0 30px -12px`) — dasselbe Mittel, das an Ring, Knoten und
-Angebotskarten in denselben Durchgängen gerade gefallen ist. Er ist raus; was die Taste zur Taste macht,
-ist die FLÄCHE in der Deckfarbe plus das Licht von oben (`inset 0 1px 0`), und beides bleibt. Dazu **Radius
+Angebotskarten in denselben Durchgängen gerade gefallen ist. Er ist raus. An seine Stelle tritt der
+**linke Anlauf** (zweiter Wunsch des Users, nachdem die halo-lose Fassung zu flach wirkte): ein
+waagerechter Verlauf über die ersten 30 % plus eine 3-px-Kante in der Deckfarbe — dieselbe Geste wie an
+der Kanten-Familie, und sie sagt „von hier geht es los". Darunter liegt weiter das Licht von oben
+(senkrechter Verlauf + `inset 0 1px 0`), das die Fläche zur Taste macht. Dazu **Radius
 6 px** für alle fünf Hub-Knöpfe — sie trugen ihn als Tailwind-Utility (`rounded-xl` = 12 px), und index.css
 steht ungelayert dahinter, schlägt sie also ohne `!important`.
 
@@ -2020,6 +2023,18 @@ Aus fünf Vorschlägen des Users hat er zwei ausgewählt; die übrigen drei sind
   Layout-Entscheidung, und wartet auf eine ausdrückliche Ansage.
 - **Ein-/Ausklappen**: gibt es seit #lv-fluegel samt gemerktem Zustand. Offen wäre nur der Default, und der
   steht bewusst auf „auf" — die Flügel sind der Grund für die breite Fassung.
+
+#### Fehler beim Flachlegen der Fraktionsreiter — und der Wächter, der ihn nicht sah
+Der erste Wurf schrieb `border-bottom: 2px solid !important`. Die KURZFORM setzt die Farbe still auf
+`currentColor` zurück und schlägt mit `!important` den inline gesetzten Fraktionston — damit trugen **alle
+vier** Reiter dieselbe helle Linie und der aktive war nicht mehr zu erkennen. Aufgefallen ist es am Bild,
+nicht im Test. Jetzt werden die drei anderen Seiten einzeln abgeräumt und von der Unterkante nur
+`border-bottom-width` / `-style` gesetzt; die FARBE bleibt inline (`g.meta.color`).
+**Merksatz:** Wer eine inline gesetzte Teil-Eigenschaft am Leben lassen will, darf die Kurzform nicht
+anfassen — sie setzt alle Teile zurück, auch die, die man gar nicht nennt.
+Beim Nachrüsten des Wächters ist derselbe Fallstrick zugeschnappt wie beim `as-ring`-Zähler (#fx-panel)
+und der `ATTACK:`-Ratsche (#cube-takt): die Negativ-Prüfung las den eigenen Begründungskommentar, der die
+verbotene Kurzform absichtlich beim Namen nennt. Sie prüft jetzt gegen den kommentarfreien Quelltext.
 
 ### #perf-ansage2 — die Groß-Ansage war auf dem Handy ein Dauer-Effekt (18.08.2026)
 #perf-ansage hatte den EPISCHEN Zweig ausdrücklich ausgelassen, begründet mit „sie feuert selten statt bei jedem

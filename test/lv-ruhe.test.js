@@ -114,9 +114,20 @@ describe("#lv-ruhe — die Fraktionsreiter sind flach", () => {
     expect(r[1]).toMatch(/background:\s*none\s*!important/);
     expect(r[1]).toMatch(/box-shadow:\s*none\s*!important/);
     expect(r[1]).toMatch(/border-radius:\s*0\s*!important/);
-    /* Die Unterkante bleibt ausgenommen — sie IST das Signal und trägt die Farbe der Fraktion. */
-    expect(r[1], "ohne Unterkante ist gar nicht mehr zu sehen, welche Fraktion offen ist")
-      .toMatch(/border-bottom:\s*2px solid\s*!important/);
+    /* Die Unterkante bleibt ausgenommen — sie IST das Signal und trägt die Farbe der Fraktion.
+       ENTSCHEIDEND: nur Breite und Stil, NICHT die Kurzform. `border-bottom: 2px solid !important` setzt
+       die Farbe still auf `currentColor` zurück und schlägt damit den inline gesetzten Fraktionston —
+       dann tragen alle vier Reiter dieselbe helle Linie und der aktive ist nicht mehr zu erkennen.
+       (Genau so ist es beim ersten Anlauf passiert und am Bild aufgefallen.) */
+    expect(r[1]).toMatch(/border-bottom-width:\s*2px\s*!important/);
+    expect(r[1]).toMatch(/border-bottom-style:\s*solid\s*!important/);
+    /* Gegen den KOMMENTARFREIEN Quelltext prüfen: die Begründung darüber nennt die verbotene Kurzform
+       absichtlich beim Namen, und ein Greifer, der Kommentare mitliest, schlägt daran an (derselbe
+       Fallstrick wie beim `as-ring`-Zähler in #fx-panel und bei der `ATTACK:`-Ratsche in #cube-takt). */
+    expect(r[1].replace(/\/\*[\s\S]*?\*\//g, ""), "die Kurzform überschreibt die Fraktionsfarbe")
+      .not.toMatch(/border-bottom:\s/);
+    expect(read("src/ui/SkillSelect.jsx"), "die Fraktionsfarbe kommt nicht mehr inline")
+      .toMatch(/borderBottomColor: on \? g\.meta\.color/);
   });
 });
 
