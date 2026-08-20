@@ -4,7 +4,7 @@ name: Deploy Testbranch to Pages (/test/)
 # So lassen sich große Features live prüfen, ohne die Hauptseite anzufassen.
 on:
   push:
-    branches: [Autostich_Test]
+    branches: [test]
   workflow_dispatch:
 
 permissions:
@@ -21,16 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # #250: volle Historie → git rev-list --count HEAD als Build-Nummer
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
-      # QA-Gate: --max-warnings=0 — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
       - run: npm run lint -- --max-warnings=0
-      # #250: Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
       - name: Build-Metadaten
         run: |
           echo "VITE_BUILD_NUM=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
@@ -38,19 +36,13 @@ jobs:
           echo "VITE_ENV=test" >> "$GITHUB_ENV"
       - run: npm run build
         env:
-          # Assets müssen unter dem Unterpfad aufgelöst werden.
           DEPLOY_BASE: /autostich/test/
-          # Preview-Build: eigener localStorage-Namespace + kein Schreiben ins echte Leaderboard.
           VITE_PREVIEW: "1"
-      - run: npm run gen:db  # #256: Core Game Database aus src/game/* → dist/db/ (unter /autostich/test/db/)
+      - run: npm run gen:db
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
-          # Nur in den Unterordner test/ schreiben; Root (main-Seite) unangetastet lassen.
           destination_dir: test
-          # #F-01: keep_files FALSE — der Slot soll GENAU dem aktuellen Build entsprechen. Mit true blieben alle je
-          # gebauten gehashten Dateien für immer liegen (pixi/ trug ~3x so viele Dateien wie ein Build hat).
-          # Wirkt nur innerhalb von destination_dir, die anderen Slots und /media/ bleiben unberührt.
           keep_files: false
           commit_message: "deploy(test): ${{ github.sha }}"
