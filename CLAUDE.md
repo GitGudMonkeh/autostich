@@ -1,3 +1,34 @@
+> ## READ THIS FIRST
+>
+> Canonical current repository instructions live in `AGENTS.md`.
+> Read `AGENTS.md` first. If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
+>
+> Current branch model:
+> - ancestry: `main -> test -> dev`
+> - promotion: `dev -> test -> main`, fast-forward only
+> - feature/task work branches from `dev`
+> - no direct commits on `test` or `main`
+>
+> The historical branch instructions below (`Autostich/pixi`, `Autostich_Test`, etc.) are obsolete.
+> Use the branch/worktree assignment defined by `AGENTS.md` and the active task contract.
+> Full Git model: `docs/engineering/git-workflow.md`.
+>
+> Everything below this banner is currently a historical engineering log pending migration to
+> `docs/decisions/`. It contains valuable measurements, rejected approaches, traps, and rationale,
+> but it is not standing instruction.
+>
+> Do not preload the historical body. Search it only when relevant to the current task.
+> Historical entries may be superseded; verify unclear claims against current code and current docs.
+> Do not rewrite or translate the historical log unless explicitly asked.
+>
+> Language policy:
+> - new engineering/code-side material: English
+> - code identifiers: English
+> - player-visible UI text: German + English via the localization system
+> - existing historical German records: preserve as written
+
+---
+
 # CLAUDE.md — Autostich
 
 ## Branch-Wahl (WICHTIG — gilt für JEDE neue Session)
