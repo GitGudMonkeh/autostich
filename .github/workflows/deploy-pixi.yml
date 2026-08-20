@@ -1,18 +1,18 @@
-name: Deploy Pixi to Pages (/pixi/)
+name: Deploy Dev Preview to Pages (/pixi/)
 
-# Deployt den Pixi-Umbau-Branch als Unterpfad /autostich/pixi/ auf DIESELBE Pages-Seite wie main.
-# Eigener, isolierter Test-Slot für den GPU-/Pixi-Umbau — hier prüfen wir jeden Schritt live, OHNE
-# test/ oder die Hauptseite anzufassen, bis wir bereit sind umzuziehen. VITE_PREVIEW="1" → eigener
-# localStorage-Namespace + kein Schreiben ins echte Leaderboard, und die Pixi-Bühne ist aktiv.
+# Deployt den internen Dev-Branch als Unterpfad /autostich/pixi/ auf DIESELBE Pages-Seite wie main.
+# Eigener, isolierter Preview-Slot fuer laufende Entwicklungsstaende — hier pruefen wir jeden Schritt live,
+# OHNE test/ oder die Hauptseite anzufassen. VITE_PREVIEW="1" -> eigener localStorage-Namespace + kein
+# Schreiben ins echte Leaderboard, und die Pixi-Buehne ist aktiv.
 on:
   push:
-    branches: [Autostich/pixi]
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Gleiche Gruppe wie main/test/balancing → serialisiert die gh-pages-Pushes (kein Race beim Publizieren).
+# Gleiche Gruppe wie main/test -> serialisiert die gh-pages-Pushes (kein Race beim Publizieren).
 concurrency:
   group: gh-pages-publish
   cancel-in-progress: false
@@ -23,16 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # volle Historie → git rev-list --count HEAD als Build-Nummer
+          fetch-depth: 0   # volle Historie -> git rev-list --count HEAD als Build-Nummer
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
-      # QA-Gate: --max-warnings=0 — ohne Deckel wandert die Warnungszahl nur in eine Richtung.
       - run: npm run lint -- --max-warnings=0
-      # Build-Stempel (Version) — Commit-Count + kurze SHA + Umgebung in die Env (Vite exponiert VITE_*).
       - name: Build-Metadaten
         run: |
           echo "VITE_BUILD_NUM=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
@@ -40,19 +38,14 @@ jobs:
           echo "VITE_ENV=pixi" >> "$GITHUB_ENV"
       - run: npm run build
         env:
-          # Assets müssen unter dem Unterpfad aufgelöst werden.
           DEPLOY_BASE: /autostich/pixi/
-          # Preview-Build: eigener localStorage-Namespace, kein echtes Leaderboard, Pixi-Bühne aktiv.
           VITE_PREVIEW: "1"
-      - run: npm run gen:db  # Core Game Database aus src/game/* → dist/db/ (unter /autostich/pixi/db/)
+      - run: npm run gen:db
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist
-          # Nur in den Unterordner pixi/ schreiben; Root (main) und test/ unangetastet lassen.
+          # Branch heisst dev, der bestehende Preview-Slot bleibt bewusst /pixi/.
           destination_dir: pixi
-          # #F-01: keep_files FALSE — der Slot soll GENAU dem aktuellen Build entsprechen. Mit true blieben alle je
-          # gebauten gehashten Dateien für immer liegen (pixi/ trug ~3x so viele Dateien wie ein Build hat).
-          # Wirkt nur innerhalb von destination_dir, die anderen Slots und /media/ bleiben unberührt.
           keep_files: false
-          commit_message: "deploy(pixi): ${{ github.sha }}"
+          commit_message: "deploy(dev-preview): ${{ github.sha }}"
