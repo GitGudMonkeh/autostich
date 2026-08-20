@@ -1,14 +1,10 @@
 name: Deploy Media (/media/)
 
-# #F-01: Musik & andere schwere Medien werden EINMAL zentral nach /autostich/media/ veröffentlicht — nicht mehr
-# je Slot mitgebaut. Vorher trug jeder der vier App-Slots (main · test · pixi · balancing) eine eigene Kopie der
-# 55 Tracks (148 MB pro Build), was die Pages-Seite auf 1,7 GB getrieben hat (Limit: 1 GB).
-# Alle Slots referenzieren jetzt denselben absoluten Pfad (VITE_MEDIA_BASE, s. .env.production).
-#
-# WICHTIG: Dieser Workflow muss VOR dem ersten App-Deploy laufen, der auf /media/ zeigt — sonst spielt keine Musik.
+# Musik & andere schwere Medien werden zentral nach /autostich/media/ veröffentlicht.
+# Die aktiven App-Stufen sind main, test und dev.
 on:
   push:
-    branches: [main, Autostich/pixi, Autostich_Test, balancing]
+    branches: [main, test, dev]
     paths:
       - "media/**"
       - ".github/workflows/deploy-media.yml"
@@ -17,14 +13,6 @@ on:
 permissions:
   contents: write
 
-# Gleiche Gruppe wie die App-Deploys → serialisiert die gh-pages-Pushes (kein Race beim Publizieren).
-#
-# ACHTUNG, bekannter Nebeneffekt: GitHub hält pro Gruppe nur EINEN wartenden Lauf. Läuft gerade ein App-Deploy und
-# wartet ein zweiter, verdrängt dieser Media-Lauf den wartenden — der App-Deploy wird als „cancelled" beendet.
-# Genau das ist beim ersten Einsatz passiert (Pixi-Deploy e7101b07, 13:37:50 → 7 s später gecancelt).
-# Das trifft nur Pushes, die media/** ändern, also praktisch nur beim Hinzufügen/Entfernen von Tracks.
-# WENN es passiert: den betroffenen App-Deploy einmal manuell neu anstoßen (Actions → Workflow → Re-run).
-# Die Alternative (eigene Gruppe) wäre schlechter — dann könnten zwei Jobs gleichzeitig auf gh-pages pushen.
 concurrency:
   group: gh-pages-publish
   cancel-in-progress: false
@@ -34,8 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Die Medien sind branch-übergreifend identisch (dieselben Dateien, dieselben Namen). Damit ist egal,
-      # welcher der obigen Branches den Lauf auslöst — publiziert wird immer derselbe Stand.
       - name: Medien-Bestand zeigen
         run: |
           echo "Dateien: $(find media -type f | wc -l)"
@@ -45,7 +31,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: media
           destination_dir: media
-          # keep_files: false — der Ordner soll GENAU dem Repo-Stand entsprechen. Ohne Build-Hashes gibt es keine
-          # wachsende Altlast; ein gelöschter Track soll auch von der Seite verschwinden.
           keep_files: false
           commit_message: "deploy(media): ${{ github.sha }}"
