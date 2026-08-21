@@ -730,7 +730,73 @@ the original plan.
 
 `NEW_MACHINE_SETUP.md` is unaffected by this and remains straightforwardly needed.
 
-**The final Batch 4 file structure is deliberately not decided here.**
+**The final Batch 4 file structure is deliberately not decided here.** It was decided afterwards, by
+the design review recorded in §18.
 
 Batch 5 (README refresh) is unchanged: the stale branch line, the restated test counts, and the
 deploy description in `README.md` are still outstanding.
+
+---
+
+## 18. Batch 4 outcome (2026-08-21)
+
+Decided by a design review held after the first two workstreams had run end to end — the agent
+instruction refactor itself and the Desktop Viewport Harness (#400) — and approved by the owner.
+The structure was answered against the files as they stand, as §17 required.
+
+### `roles.md` — not created, deliberately
+
+§17's concern was correct. `git-workflow.md` §7–§9 already carries worker, integrator and reviewer
+ownership, and `AGENTS.md` carries the roles table. A separate document would have restated a third.
+
+The routing table row now points at `git-workflow.md` §7–§9 instead. This is the one case where the
+original plan's file list was reduced rather than delivered.
+
+### Created
+
+```
+docs/engineering/task-lifecycle.md
+docs/engineering/NEW_MACHINE_SETUP.md
+```
+
+`task-lifecycle.md` opens with an explicit **scope boundary** table naming what belongs to
+`git-workflow.md`, `AGENTS.md`, `testing.md` and `NEW_MACHINE_SETUP.md`, with the rule that a sentence
+which could live in any of them belongs there. That boundary is the safeguard against the drift §17
+identified; it is stated in the document rather than only intended.
+
+### Content that came from observed friction, not from the original plan
+
+The lifecycle documents three tiers rather than one procedure, and adds two rules that neither the
+original Batch 4 scope nor `git-workflow.md` contained:
+
+- **Every hazard named in a task contract must be resolved before the review handoff.** In #400 the
+  contract named three unverified hazards, the handoff shipped without closing them, and the reviewer
+  found the gap. All three were then closed with no code change needed — a review round trip the
+  contract had already paid for in advance.
+- **A reduced acceptance criterion needs a downgrade record in the Definition of Done.** In #400 a
+  measurement task was closed as documentation instead; the resulting gap is stated honestly in the
+  measurement report's prose, but nothing in the Definition of Done showed it.
+
+**Visual review is documented as a gate rather than a courtesy.** #400's only real defect passed both
+automated layers and was found by a human looking at the screen. The lifecycle therefore requires a
+baseline capture, keeps judgement human, and requires every finding to be classified and given an ID
+before it can leave a chat message.
+
+### `AGENTS.md` changes
+
+- Routing table: roles row retargeted to `git-workflow.md` §7–§9; the three `*(planned)*` markers
+  removed, since no planned engineering document remains.
+- The `NEW_MACHINE_SETUP.md` fallback paragraph in the platform section removed — the file now exists,
+  so the instruction to fall back to package metadata was about to become stale advice.
+- Language policy gained a rule for **appending to an existing German document with a fixed template**.
+  This was an open question flagged during #400's review, where a backlog entry was written in German
+  to match a German document rather than breaking its template.
+
+### Not built
+
+Claude commands were designed in the review and deliberately **not** implemented in this batch:
+`/create-task`, `/prepare-review`, `/cleanup-task`, `/prepare-integration`. `/plan-workstream` was
+assessed and rejected for now — its value is a report skeleton, which lives in `task-lifecycle.md`
+until the shape has held for more tasks.
+
+Subagent roles (architecture, test, history, visual scouts) were likewise designed and not built.

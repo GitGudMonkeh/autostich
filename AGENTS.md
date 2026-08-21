@@ -293,6 +293,17 @@ Do not mass-translate existing German code comments or historical engineering re
 New English comments may coexist with older German comments.
 Avoid large translation-only diffs, especially in files covered by source-text ratchet tests.
 
+### Appending to an existing German document
+
+A new document, and a new section of an English document, is English.
+
+An entry **appended to an existing German document that follows a fixed German template** stays in
+that document's language, and the deviation is noted where it is made. A single English entry in the
+middle of such a list breaks the template the rest of the file depends on, which costs more than the
+language consistency gains.
+
+This is an exception for appending to legacy documents, not a general licence.
+
 ---
 
 ## Platform: Windows development, Linux CI
@@ -337,10 +348,7 @@ If a documented command depends on a shell, state which shell.
 GitHub Actions uses Linux/bash semantics.
 
 Machine setup:
-`docs/engineering/NEW_MACHINE_SETUP.md` *(planned)*
-
-If that file does not yet exist, do not invent its contents; use this file, package metadata, and the
-current repository as the source of truth.
+`docs/engineering/NEW_MACHINE_SETUP.md`
 
 ---
 
@@ -420,14 +428,14 @@ Read deeper documentation only when the current task needs it.
 | Writing/fixing tests or diagnosing a confusing red suite | `docs/engineering/testing.md` |
 | Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` |
 | UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` |
-| Worker / integrator / reviewer responsibilities | `docs/engineering/roles.md` *(planned)* |
-| Starting a task, handoff, integration procedure | `docs/engineering/task-lifecycle.md` *(planned)* |
-| Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` *(planned)* |
+| Worker / integrator / reviewer responsibilities | `docs/engineering/git-workflow.md` §7–§9 |
+| Task tiers, task contract, evidence, visual review, handoff, cleanup timing | `docs/engineering/task-lifecycle.md` |
+| Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
 | Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |
 | Current multi-agent setup work | `docs/workstreams/setup/` |
 
-If a planned document does not exist yet:
+If a referenced document is missing:
 
 - do not invent its contents,
 - fall back to `AGENTS.md`,
