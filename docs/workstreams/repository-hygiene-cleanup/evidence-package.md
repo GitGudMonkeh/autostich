@@ -179,6 +179,151 @@ $ git hash-object go-b0.png
 contains no `.png` at the repository root. Each of the three is recoverable by one command; the
 commit message carries the blob SHA and the anchor.
 
+### E7 — reproducible verification block
+
+**Added 2026-08-22 at the review-fix round**, because E1–E6 above state results without always
+giving the reader a command to re-derive them. Everything below is scoped to **the three removed
+paths only**.
+
+Every command here reads the **base tree by SHA** rather than the working tree, so it produces the
+same output today, after the deletion, and after this branch is gone. Run from the task worktree;
+`MSYS_NO_PATHCONV=1` is required on Windows Git Bash for `revision:path` arguments
+(`CLAUDE.md` — *Platform note*) and is harmless on Linux.
+
+```bash
+BASE=370f1b0f36de99ed2066e7f184479b0ad59bc7d0
+HEAD=1b41b4a2a7efd355a9d6cef654f4b9f4f29fa9dc
+```
+
+**R1 — the blobs exist at base, with the recorded sizes.**
+
+```bash
+for p in go-b0.png go-b1.png unlock.png; do
+  MSYS_NO_PATHCONV=1 git rev-parse --verify "$BASE:$p"
+  MSYS_NO_PATHCONV=1 git cat-file -s "$BASE:$p"
+done
+```
+
+```console
+go-b0.png    40189f51b8e98552941fb92b24c657bf68d4d8fb  197508 bytes
+go-b1.png    28fbfd021955be16f05a3a52435591687509079f  206893 bytes
+unlock.png   7004e18aad384c793b5b7e4bcd7f6e66eb39429f  289590 bytes
+```
+
+Total **693,991 bytes**, matching the figure in the table above.
+
+**R2 — the paths are absent at head.** `--verify` exits 128 rather than echoing the argument.
+
+```console
+go-b0.png    rev-parse exit=128
+go-b1.png    rev-parse exit=128
+unlock.png   rev-parse exit=128
+```
+
+**R3/R4 — provenance and removal, per path.**
+
+```bash
+git log --diff-filter=A --format='%h %s' "$BASE" -- <path>        # added by
+git log --diff-filter=D --format='%h %s' "$BASE..$HEAD" -- <path> # removed by
+```
+
+```console
+go-b0.png    added 23434476  Siegesbildschirm: Durchlauf-Graph nach unten, Nullen bleiben stehen
+go-b1.png    added 23434476  (same commit)
+unlock.png   added e1f849db  Freischaltungen bekommen auf dem Desktop ein eigenes Fenster (#unlock-fenster)
+all three    removed 11773733  chore: remove unreferenced debug screenshots from repo root
+```
+
+All three were removed in **one** commit, which is the single artefact category this task approved.
+
+**R5 — reference sweep against the base tree, excluding this workstream's own documents.**
+Excluding them is deliberate: references created by this task's own analysis are not live
+dependencies, and including them would let the task cite itself as a consumer.
+
+```bash
+git grep -n -F -e "go-b0.png" -e "go-b1.png" -e "unlock.png" \
+  "$BASE" -- . ':!docs/workstreams/repository-hygiene-cleanup'
+git grep -n -F -e "go-b0" -e "go-b1" \
+  "$BASE" -- . ':!docs/workstreams/repository-hygiene-cleanup'
+```
+
+```console
+(no matches outside this workstream)
+(no matches outside this workstream)
+```
+
+**R6 — every `import.meta.glob` in the tracked source, at base.** This is the check H1 exists for.
+
+```bash
+git grep -n -F "import.meta.glob" "$BASE" -- src test scripts sim
+```
+
+```console
+…:src/ui/skillArt.js:17:   Kosten: `import.meta.glob` mit `?url` + `eager` liefert nur die URL-Strings …
+…:src/ui/skillArt.js:21:const FILES = import.meta.glob("../assets/skills/*/*.webp", { eager: true, query: "?url", import: "default" });
+```
+
+Two lines, **one glob** — line 17 is the rationale comment, line 21 is the call. Its pattern is
+`../assets/skills/*/*.webp`, which cannot match a `.png` at the repository root.
+
+**R7 — CI and workflow sweep at base.**
+
+```bash
+git grep -n -E "go-b0|go-b1|unlock\.png" "$BASE" -- .github
+```
+
+```console
+(zero hits in .github)
+```
+
+**R8/R9 — the `unlock` stem, and the claim that actually matters.**
+
+The load-bearing question is not how many times the stem appears; it is whether **any** occurrence
+names an image file. That is mechanically checkable:
+
+```bash
+git grep -n -E "unlock[^ ]*\.(png|jpg|jpeg|webp|gif|svg)" \
+  "$BASE" -- . ':!docs/workstreams/repository-hygiene-cleanup'
+```
+
+```console
+ZERO hits naming an image file
+```
+
+> **Correction to E1.4, recorded rather than quietly fixed.** E1.4 above states *"The bare stem
+> `unlock` appears 42 times."* That figure is **not reproduced** by the sweep here: measured at base
+> on 2026-08-22, excluding this workstream, the stem occurs **450 times across 39 files**. The
+> discrepancy is one of sweep scope, not of substance — 39 files plus this workstream's own documents
+> is close to 42, so the original figure was most likely a *file* count reported as an occurrence
+> count. **The number was decorative; R9 is the claim that carries weight**, and it is unchanged: no
+> occurrence of the stem names an image file. The original wording is left as written, with this
+> correction beside it.
+
+**R10 — recovery, proved without mutating the working tree.** E6 demonstrated recovery by checking a
+file out and re-applying the removal. That is not something a reviewer should have to do to their own
+tree, so here is the equivalent proof that the stored blob still hashes to the recorded SHA:
+
+```bash
+for p in go-b0.png go-b1.png unlock.png; do
+  MSYS_NO_PATHCONV=1 git rev-parse --verify "$BASE:$p"
+  MSYS_NO_PATHCONV=1 git cat-file blob "$BASE:$p" | git hash-object --stdin
+done
+```
+
+```console
+go-b0.png    recorded=40189f51…  rehashed=40189f51…  MATCH
+go-b1.png    recorded=28fbfd02…  rehashed=28fbfd02…  MATCH
+unlock.png   recorded=7004e18a…  rehashed=7004e18a…  MATCH
+```
+
+All three **MATCH** (*measured*). The actual recovery command remains
+`git checkout <base> -- <path>`, recorded in the removal commit message per E6; this block proves the
+object it would restore is intact without asking the reviewer to write to their tree.
+
+**What R1–R10 do not establish.** They prove the three paths were unreferenced in the tracked tree at
+base, are gone at head, and are recoverable. They say nothing about the two *other* gate conjuncts —
+see §5 and §6 — and nothing about any path this task did not remove.
+
 ---
 
 ## 4. What was added

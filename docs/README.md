@@ -98,20 +98,23 @@ them.
 | `Autostich-Balancing-Report-v2.pdf` | **historical** | 2026-07-25 | Balancing report, second version |
 | `Autostich-Patchnotes_main-zu-Autostich_Test.pdf` | **historical** | 2026-07-27 | Patch notes `main` → `Autostich_Test` — a branch that no longer exists |
 
-**These three PDFs are the only opaque files in `docs/`.** They cannot be diffed, searched or
+**The PDFs above are the only opaque files in `docs/`.** They cannot be diffed, searched or
 reviewed in a pull request. Prefer Markdown for anything new that is meant to be read by a reviewer.
 
 ## Subdirectories
 
-| Directory | Files | What it is |
-| --- | ---: | --- |
-| `engineering/` | 6 | **Current** engineering documentation. Routed to per task from `AGENTS.md` — *Routing table*. Read the one document the task needs |
-| `decisions/` | 2 | **Historical** engineering records, `#tag`-indexed, German, preserved as written. Start at `decisions/README.md`. Read on demand only — never preload |
-| `workstreams/` | 33 | Per-workstream planning reports, task contracts, evidence and handoffs. Historical records of particular tasks, not standing instruction |
-| `localization/` | 13 | See *Player-visible text* above |
-| `art/` | 42 | Source art references for skills, perk categories and card corners, with their own `README.md` per folder. Built into `src/assets/` by `scripts/skill-art-build.py` |
-| `prototypes/` | 8 | **historical.** Standalone HTML effect-tuning pages from the visual-effect work, superseded by the shipped implementations. Cited by path from `decisions/engineering-log-2026-08.md` |
-| `patchnotes/` | 1 | See *Player-visible text* above |
+| Directory | What it is |
+| --- | --- |
+| `engineering/` | **Current** engineering documentation. Routed to per task from `AGENTS.md` — *Routing table*. Read the one document the task needs |
+| `decisions/` | **Historical** engineering records, `#tag`-indexed, German, preserved as written. Start at `decisions/README.md`. Read on demand only — never preload |
+| `workstreams/` | Per-workstream planning reports, task contracts, evidence and handoffs. Historical records of particular tasks, not standing instruction |
+| `localization/` | See *Player-visible text* above |
+| `art/` | Source art references for skills, perk categories and card corners, with their own `README.md` per folder. Built into `src/assets/` by `scripts/skill-art-build.py` |
+| `prototypes/` | **historical.** Standalone HTML effect-tuning pages from the visual-effect work, superseded by the shipped implementations. Cited by path from `decisions/engineering-log-2026-08.md` |
+| `patchnotes/` | See *Player-visible text* above |
+
+For what is actually in each directory, list it — a count written down here is stale the next time
+someone adds a file (`AGENTS.md` — *House rules*).
 
 ---
 
@@ -120,8 +123,8 @@ reviewed in a pull request. Prefer Markdown for anything new that is meant to be
 - Give it a **status line in its own header**, with a date. This index transcribes that line; a
   document that declares nothing lands in `unclassified` and someone has to come and ask.
 - If it names a branch, expect that name to age. Prefer a SHA where the reference has to stay true.
-- If it is **generated**, say so in the file itself and name the script. Two files in this directory
-  are compared against their generator by a test, and hand-editing either turns the suite red.
+- If it is **generated**, say so in the file itself and name the script. Generated files here are
+  compared against their generator by a test, and hand-editing one turns the suite red.
 - Engineering material is written in **English** (`AGENTS.md` — *Language policy*). Existing German
   documents stay German and are not translated.
 

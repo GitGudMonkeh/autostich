@@ -343,18 +343,27 @@ Ticked only when true.
 
 **Downgrade record.**
 
-**No acceptance criterion was reduced.** The acceptance gate — no path leaves its location without a
-recorded, reproducible zero-live-reference proof, and the gates pass — was met in full for every
-removed path, and the removal set was not widened beyond what the owner approved.
+**One acceptance criterion was reduced, and the reduction is owner-approved.**
 
-One entry, recorded because it is a promise not kept as written rather than a criterion reduced:
+The *Acceptance gate* has two conjuncts: a proof standard for every removed path, **and** that "the
+full gate set passes on the result". The first was met for all three removed paths. **The second was
+not met and is not claimed.** `npm test` exits 1.
+
+Recorded under `task-lifecycle.md` — *Two standing rules*: what was promised, what was delivered
+instead, who decided, and what gap remains.
 
 | Promised | Delivered | Who decided | Gap that remains |
 | --- | --- | --- | --- |
-| `npm test` green | `npm test` exits 1, with the **same single failure as at the base commit** — a 5,000 ms timeout in `test/i18n-guards.test.js`, unrelated to this change and proven so four ways | This worker, on the standing rule that the fix is an edit to `test/` and `test/` is this task's tripwire | The suite is not green on this host. Whether it also times out in CI on Linux is **unmeasured**. Fixing it needs its own task, owned by whoever owns the suite |
+| The full gate set passes, `npm test` included | Lint, build and `gen:db` exit 0. **`npm test` exits 1** — a 5,000 ms timeout in `test/i18n-guards.test.js`, present identically at the base commit, not an assertion failure. Four independent lines of evidence in `evidence-package.md` §6 | **Owner, 2026-08-22**, on the Codex review round: the criterion is reduced from *full gate set green* to *full gate set green except a pre-existing timeout that this task is forbidden to fix*. Fixing it means editing `test/`, which is this task's tripwire | **The suite is not green on this host, and this task does not deliver a green suite.** Whether the same test times out in CI on Linux is **unmeasured** — no CI run has been observed for this branch. The timeout needs its own task, owned by whoever owns the suite |
+
+**What this record deliberately does not say.** It does not say the gate set passed. It does not say
+the failure is harmless — only that it is pre-existing, reproduced at the base commit, and outside
+the scope this contract permits the worker to touch. A reader asking "did the gates pass on this
+work" gets **no** from this table, which is the answer the evidence supports.
 
 Raising that test's timeout would have made this task's report look clean at the cost of editing the
-one directory the contract forbids it to touch. That trade was declined.
+one directory the contract forbids it to touch. That trade was declined, and the owner has accepted
+the reduced criterion instead.
 
 ---
 
