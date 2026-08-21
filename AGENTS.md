@@ -244,7 +244,7 @@ There are three language layers.
 All **new** engineering/code-side material should be English, including:
 
 - `AGENTS.md`
-- the future thin `CLAUDE.md` adapter
+- the thin `CLAUDE.md` adapter
 - `docs/engineering/**`
 - `docs/workstreams/**`
 - architecture and technical documentation
@@ -426,7 +426,7 @@ Read deeper documentation only when the current task needs it.
 | Starting a task, handoff, integration procedure | `docs/engineering/task-lifecycle.md` *(planned)* |
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` *(planned)* |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
-| Why an existing system was built a certain way | historical engineering log; currently the body of `CLAUDE.md`, later `docs/decisions/` |
+| Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |
 | Current multi-agent setup work | `docs/workstreams/setup/` |
 
 If a planned document does not exist yet:
@@ -440,26 +440,30 @@ If a planned document does not exist yet:
 
 ## Historical engineering log
 
-The current body of `CLAUDE.md` is a historical engineering log containing dated `#tag` records,
-measurements, rejected approaches, traps, and implementation rationale.
-
-It is pending migration to:
+Historical engineering records live in:
 
 ```text
 docs/decisions/
 ```
 
-Until that migration happens:
+Start at `docs/decisions/README.md`. The main log is
+`docs/decisions/engineering-log-2026-08.md` — dated `#tag` records, measurements, rejected
+approaches, traps, and implementation rationale.
+
+Read them on demand only:
 
 - do not read the entire log by default,
 - search only when the task needs historical context,
 - treat it as context, not current instruction,
 - treat branch/test-count/current-state claims inside it as historical,
-- follow explicit `SUPERSEDED` / current markers where available,
+- follow explicit status markers — `SUPERSEDED IN PART`, `REFUTED`, `CORRECTED`,
+- an entry without a status marker is not thereby current,
 - where status is unclear, verify the claim against current code and current documentation.
+
+`AGENTS.md` and `docs/engineering/` remain the sources for current rules.
 
 Example targeted search:
 
 ```bash
-grep -n "#perf-dpr" CLAUDE.md
+grep -n "#perf-dpr" docs/decisions/engineering-log-2026-08.md
 ```
