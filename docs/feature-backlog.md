@@ -154,6 +154,18 @@
 - **Betroffene Bereiche:** `src/ui/Battlefield.jsx`, `src/ui/Card.jsx` (Hälften/Klon), `src/index.css` (Keyframes) — **kein `game/`-Eingriff**. Dauern an Flip-Takt/Turbo gekoppelt; `prefers-reduced-motion`-Fallback.
 - **Notizen:** Konkrete Effekt-Specs (Schnittlinie −24°, Hälften-Offsets, ~20 Funken, Timings) im Issue [#177](https://github.com/GitGudMonkeh/autostich/issues/177). Umsetzung auf eigenem Branch, nach der Rarity-Shop-Arbeit. Mockup-Bilder als Referenz.
 
+### FB-13 — Handheld-/Kompaktlayout für das Band 1280–1399 px (u. a. Steam Deck)
+- **Status:** gesammelt (bewusst zurückgestellt — der aktuelle Stand ist akzeptiert)
+- **Beschreibung:** Zwischen 1280 und 1399 px CSS-Breite bekommt ein Desktop-Gerät heute das **Handy-Layout**. Der Desktop-Pass hängt an `@media (min-width: 1400px)`; darunter greift keine seiner Regeln. Das ist so gewollt und sauber gebaut — es fehlt aber eine **dritte** Stufe zwischen Handy und Desktop für Geräte, die Desktop-Eingabe und Desktop-Erwartung haben, aber unter dem Bruchpunkt liegen.
+- **Motivation / Warum:** Der **Steam Deck** liegt mit 1280×800 nativ genau in diesem Band, und Steam steht auf der Roadmap. Dazu: 1366×768-Notebooks (~1349 px nutzbar), 1080p-Laptops bei **150 % Windows-Skalierung** (→ exakt 1280 CSS-px), 1600×900 bei 125 %, MacBook Air mit „Größerer Text" — und **nicht maximierte Browserfenster** auf 1920er Monitoren, die in keiner Gerätestatistik auftauchen. `PerfOverlay.jsx` führt 1280 ohnehin als „unteres Bandende" des Zielbands.
+- **Aufwand / Warum zurückgestellt:** Das ist ein **drittes Layout** neben Handy und Desktop, keine Anpassung eines bestehenden. Der Bruchpunkt 1400 ist begründet (`index.css`: das Spaltenpaar des Hubs misst 1520 px, bei 1280 bliebe kein Rand), und das Handy-Layout ist bis auf den Pixel gegen ein iPhone SE abgestimmt und darf sich nicht bewegen. Ein Kompaktlayout muss deshalb eigenständig entworfen werden, statt einen der beiden Stände zu dehnen.
+- **Betroffene Bereiche:** `src/index.css` (neue Stufe, vermutlich 1280 bis 1399.98 px), `DESKTOP_MIN` in `src/ui/useIsWide.js` (Spiegel des Bruchpunkts), Hub (`.hub-pair`/`.hub-foot` samt `zoom`-Kette), Lauf-Bühne (`.rn-shell` mit `--rn-w`/`--bf-w`/`--card-s`), die vier großen Screens mit ihren `max-height`-Stufen. Betroffene Ratschen: `menu-desktop`, `screens-desktop`, `buehne-desktop`, `desktop-perf`.
+- **Offene Fragen:**
+  1. Eigene Stufe — oder den Desktop-Pass auf 1280 herunterziehen und den Hub dort auf eine Spalte klappen?
+  2. Gilt das Band als Desktop mit Zeigereingabe oder als „Handheld" mit eigenen Trefferflächen? (Steam Deck hat Touchscreen **und** Sticks.)
+  3. Höhe: 1280×800 (Deck) und 1366×768 (Notebook) liegen 32 px auseinander — reicht eine Stufe für beide?
+- **Notizen:** Aufgefallen beim manuellen Review des Test-Viewport-Harness (#400) am 21.08.2026 — der Harness macht das Band mit zwei Klicks sichtbar, daher der Befund. **Kein Harness-Defekt:** bei 1280×720 sind Harness-Aufnahme und echter Browser-Viewport pixelgleich gemessen (T2, max Δ0), ein echtes 1280er Fenster zeigt exakt dasselbe. Breakpoint-Änderungen sind in #400 ausdrücklich Non-Goal; die Entscheidung gehört ins Main Game Screen Desktop Refinement. Jederzeit nachstellbar über **Optionen → Grafik & Leistung → Test-Viewport → 1280×720** im Preview-Build. Belege: `docs/workstreams/viewport-harness/T2-measurement-report.md`.
+
 ---
 
 ## Erledigt

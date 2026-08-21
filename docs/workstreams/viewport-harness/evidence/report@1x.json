@@ -1,0 +1,624 @@
+{
+  "stamp": "2026-08-21T13:12:28.259Z",
+  "dpr": 1,
+  "origin": "http://localhost:5180",
+  "outerPad": 220,
+  "sizes": [
+    {
+      "id": "1280x720",
+      "w": 1280,
+      "h": 720,
+      "dpr": 1,
+      "harness": {
+        "outerWindow": {
+          "w": 1500,
+          "h": 940
+        },
+        "frameRect": {
+          "x": 110,
+          "y": 43,
+          "width": 1280,
+          "height": 720
+        },
+        "metrics": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "clientWidth": 1272,
+          "clientHeight": 720,
+          "scrollWidth": 1272,
+          "scrollHeight": 781,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": false,
+          "(max-width: 1399.98px)": true,
+          "(min-width: 1400px) and (max-width: 1920px)": false,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": false,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "720px",
+          "paddingLeft": "16px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "textBoxCount": 37,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "harness-1280x720@1x.png",
+        "capturedVia": "TestViewportHarness iframe"
+      },
+      "real": {
+        "outerWindow": {
+          "w": 1280,
+          "h": 720
+        },
+        "metrics": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "clientWidth": 1272,
+          "clientHeight": 720,
+          "scrollWidth": 1272,
+          "scrollHeight": 781,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": false,
+          "(max-width: 1399.98px)": true,
+          "(min-width: 1400px) and (max-width: 1920px)": false,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": false,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "720px",
+          "paddingLeft": "16px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "real-1280x720@1x.png",
+        "capturedVia": "CDP Emulation.setDeviceMetricsOverride"
+      },
+      "layoutIdentical": true,
+      "diffs": [],
+      "layoutDiffs": [],
+      "layoutDiffCount": 0,
+      "pixels": {
+        "sizeMismatch": false,
+        "width": 1280,
+        "height": 720,
+        "total": 921600,
+        "differing": 0,
+        "structural": 0,
+        "maxDelta": 0,
+        "differingPct": 0,
+        "structuralPct": 0,
+        "structuralBox": null,
+        "structuralBands": [],
+        "textMaskCoveragePct": 13.79,
+        "structuralOnText": 0,
+        "structuralOffText": 0,
+        "structuralOffTextMaxDelta": 0,
+        "structuralOffTextSamples": [],
+        "structuralInsideZoomScope": 0,
+        "zoomScopeCount": 2
+      },
+      "diffFile": "diff-1280x720@1x.png"
+    },
+    {
+      "id": "1600x900",
+      "w": 1600,
+      "h": 900,
+      "dpr": 1,
+      "harness": {
+        "outerWindow": {
+          "w": 1820,
+          "h": 1120
+        },
+        "frameRect": {
+          "x": 110,
+          "y": 43,
+          "width": 1600,
+          "height": 900
+        },
+        "metrics": {
+          "innerWidth": 1600,
+          "innerHeight": 900,
+          "clientWidth": 1600,
+          "clientHeight": 900,
+          "scrollWidth": 1600,
+          "scrollHeight": 900,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": true,
+          "(min-width: 1400px) and (max-width: 1760px)": true,
+          "(min-width: 1400px) and (max-height: 950px)": true,
+          "(min-width: 1400px) and (max-height: 900px)": true,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": false,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "900px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "0.85",
+        "nodeCount": 165,
+        "textBoxCount": 55,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "harness-1600x900@1x.png",
+        "capturedVia": "TestViewportHarness iframe"
+      },
+      "real": {
+        "outerWindow": {
+          "w": 1600,
+          "h": 900
+        },
+        "metrics": {
+          "innerWidth": 1600,
+          "innerHeight": 900,
+          "clientWidth": 1600,
+          "clientHeight": 900,
+          "scrollWidth": 1600,
+          "scrollHeight": 900,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": true,
+          "(min-width: 1400px) and (max-width: 1760px)": true,
+          "(min-width: 1400px) and (max-height: 950px)": true,
+          "(min-width: 1400px) and (max-height: 900px)": true,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": false,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "900px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "0.85",
+        "nodeCount": 165,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "real-1600x900@1x.png",
+        "capturedVia": "CDP Emulation.setDeviceMetricsOverride"
+      },
+      "layoutIdentical": true,
+      "diffs": [],
+      "layoutDiffs": [],
+      "layoutDiffCount": 0,
+      "pixels": {
+        "sizeMismatch": false,
+        "width": 1600,
+        "height": 900,
+        "total": 1440000,
+        "differing": 695669,
+        "structural": 3736,
+        "maxDelta": 147,
+        "differingPct": 48.3103,
+        "structuralPct": 0.2594,
+        "structuralBox": {
+          "x": 28,
+          "y": 36,
+          "w": 710,
+          "h": 822
+        },
+        "structuralBands": [
+          {
+            "yFrom": 846,
+            "yTo": 857,
+            "pixels": 864
+          },
+          {
+            "yFrom": 447,
+            "yTo": 465,
+            "pixels": 790
+          },
+          {
+            "yFrom": 363,
+            "yTo": 376,
+            "pixels": 778
+          },
+          {
+            "yFrom": 573,
+            "yTo": 587,
+            "pixels": 763
+          },
+          {
+            "yFrom": 513,
+            "yTo": 526,
+            "pixels": 515
+          },
+          {
+            "yFrom": 36,
+            "yTo": 47,
+            "pixels": 26
+          }
+        ],
+        "textMaskCoveragePct": 19.29,
+        "structuralOnText": 3736,
+        "structuralOffText": 0,
+        "structuralOffTextMaxDelta": 0,
+        "structuralOffTextSamples": [],
+        "structuralInsideZoomScope": 3710,
+        "zoomScopeCount": 2
+      },
+      "diffFile": "diff-1600x900@1x.png"
+    },
+    {
+      "id": "1920x1080",
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1,
+      "harness": {
+        "outerWindow": {
+          "w": 2140,
+          "h": 1300
+        },
+        "frameRect": {
+          "x": 110,
+          "y": 43,
+          "width": 1920,
+          "height": 1080
+        },
+        "metrics": {
+          "innerWidth": 1920,
+          "innerHeight": 1080,
+          "clientWidth": 1920,
+          "clientHeight": 1080,
+          "scrollWidth": 1920,
+          "scrollHeight": 1080,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": true,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": true,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "1080px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "textBoxCount": 55,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "harness-1920x1080@1x.png",
+        "capturedVia": "TestViewportHarness iframe"
+      },
+      "real": {
+        "outerWindow": {
+          "w": 1920,
+          "h": 1080
+        },
+        "metrics": {
+          "innerWidth": 1920,
+          "innerHeight": 1080,
+          "clientWidth": 1920,
+          "clientHeight": 1080,
+          "scrollWidth": 1920,
+          "scrollHeight": 1080,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": true,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": true,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "1080px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "real-1920x1080@1x.png",
+        "capturedVia": "CDP Emulation.setDeviceMetricsOverride"
+      },
+      "layoutIdentical": true,
+      "diffs": [],
+      "layoutDiffs": [],
+      "layoutDiffCount": 0,
+      "pixels": {
+        "sizeMismatch": false,
+        "width": 1920,
+        "height": 1080,
+        "total": 2073600,
+        "differing": 998481,
+        "structural": 4480,
+        "maxDelta": 143,
+        "differingPct": 48.1521,
+        "structuralPct": 0.216,
+        "structuralBox": {
+          "x": 28,
+          "y": 36,
+          "w": 848,
+          "h": 1002
+        },
+        "structuralBands": [
+          {
+            "yFrom": 1024,
+            "yTo": 1037,
+            "pixels": 1014
+          },
+          {
+            "yFrom": 438,
+            "yTo": 453,
+            "pixels": 952
+          },
+          {
+            "yFrom": 544,
+            "yTo": 565,
+            "pixels": 939
+          },
+          {
+            "yFrom": 700,
+            "yTo": 716,
+            "pixels": 888
+          },
+          {
+            "yFrom": 622,
+            "yTo": 637,
+            "pixels": 661
+          },
+          {
+            "yFrom": 36,
+            "yTo": 47,
+            "pixels": 26
+          }
+        ],
+        "textMaskCoveragePct": 17.82,
+        "structuralOnText": 4480,
+        "structuralOffText": 0,
+        "structuralOffTextMaxDelta": 0,
+        "structuralOffTextSamples": [],
+        "structuralInsideZoomScope": 4454,
+        "zoomScopeCount": 2
+      },
+      "diffFile": "diff-1920x1080@1x.png"
+    },
+    {
+      "id": "2560x1440",
+      "w": 2560,
+      "h": 1440,
+      "dpr": 1,
+      "harness": {
+        "outerWindow": {
+          "w": 2780,
+          "h": 1660
+        },
+        "frameRect": {
+          "x": 110,
+          "y": 43,
+          "width": 2560,
+          "height": 1440
+        },
+        "metrics": {
+          "innerWidth": 2560,
+          "innerHeight": 1440,
+          "clientWidth": 2560,
+          "clientHeight": 1440,
+          "scrollWidth": 2560,
+          "scrollHeight": 1440,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": false,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": true,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "1440px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "textBoxCount": 55,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "harness-2560x1440@1x.png",
+        "capturedVia": "TestViewportHarness iframe"
+      },
+      "real": {
+        "outerWindow": {
+          "w": 2560,
+          "h": 1440
+        },
+        "metrics": {
+          "innerWidth": 2560,
+          "innerHeight": 1440,
+          "clientWidth": 2560,
+          "clientHeight": 1440,
+          "scrollWidth": 2560,
+          "scrollHeight": 1440,
+          "dpr": 1
+        },
+        "mq": {
+          "(min-width: 640px)": true,
+          "(min-width: 1400px)": true,
+          "(max-width: 1399.98px)": false,
+          "(min-width: 1400px) and (max-width: 1920px)": false,
+          "(min-width: 1400px) and (max-width: 1760px)": false,
+          "(min-width: 1400px) and (max-height: 950px)": false,
+          "(min-width: 1400px) and (max-height: 900px)": false,
+          "(min-width: 1400px) and (max-height: 820px)": false,
+          "(min-width: 1750px) and (min-height: 1000px)": true,
+          "(pointer: coarse)": false
+        },
+        "appRoot": {
+          "minHeight": "1440px",
+          "paddingLeft": "24px",
+          "paddingTop": "24px"
+        },
+        "hubZoom": "1",
+        "nodeCount": 165,
+        "bodyTransform": "none",
+        "bodyFilter": "none",
+        "file": "real-2560x1440@1x.png",
+        "capturedVia": "CDP Emulation.setDeviceMetricsOverride"
+      },
+      "layoutIdentical": true,
+      "diffs": [],
+      "layoutDiffs": [],
+      "layoutDiffCount": 0,
+      "pixels": {
+        "sizeMismatch": false,
+        "width": 2560,
+        "height": 1440,
+        "total": 3686400,
+        "differing": 1505478,
+        "structural": 4434,
+        "maxDelta": 143,
+        "differingPct": 40.8387,
+        "structuralPct": 0.1203,
+        "structuralBox": {
+          "x": 28,
+          "y": 36,
+          "w": 1168,
+          "h": 1362
+        },
+        "structuralBands": [
+          {
+            "yFrom": 1384,
+            "yTo": 1397,
+            "pixels": 1018
+          },
+          {
+            "yFrom": 724,
+            "yTo": 745,
+            "pixels": 939
+          },
+          {
+            "yFrom": 880,
+            "yTo": 896,
+            "pixels": 895
+          },
+          {
+            "yFrom": 618,
+            "yTo": 633,
+            "pixels": 894
+          },
+          {
+            "yFrom": 802,
+            "yTo": 817,
+            "pixels": 662
+          },
+          {
+            "yFrom": 36,
+            "yTo": 47,
+            "pixels": 26
+          }
+        ],
+        "textMaskCoveragePct": 10.02,
+        "structuralOnText": 4434,
+        "structuralOffText": 0,
+        "structuralOffTextMaxDelta": 0,
+        "structuralOffTextSamples": [],
+        "structuralInsideZoomScope": 4408,
+        "zoomScopeCount": 2
+      },
+      "diffFile": "diff-2560x1440@1x.png"
+    }
+  ],
+  "determinism": {
+    "size": "1280x720",
+    "dpr": 1,
+    "sameViewport": true,
+    "sameState": true,
+    "byteIdentical": true,
+    "pixels": {
+      "sizeMismatch": false,
+      "width": 1280,
+      "height": 720,
+      "total": 921600,
+      "differing": 0,
+      "structural": 0,
+      "maxDelta": 0,
+      "differingPct": 0,
+      "structuralPct": 0,
+      "structuralBox": null,
+      "structuralBands": [],
+      "textMaskCoveragePct": 13.79,
+      "structuralOnText": 0,
+      "structuralOffText": 0,
+      "structuralOffTextMaxDelta": 0,
+      "structuralOffTextSamples": [],
+      "structuralInsideZoomScope": 0,
+      "zoomScopeCount": 0
+    },
+    "diffs": [],
+    "layoutDiffCount": 0,
+    "layoutDiffs": [],
+    "files": [
+      "determinism-a-1280x720@1x.png",
+      "determinism-b-1280x720@1x.png"
+    ]
+  },
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "serverStartedByScript": false,
+  "knownDifference": {
+    "what": "PWA install link (src/ui/PwaInstall.jsx)",
+    "cause": "Chrome fires `beforeinstallprompt` only in a top-level browsing context, never in an iframe.",
+    "realViewport": {
+      "present": true,
+      "text": "📲 Installieren"
+    },
+    "harness": {
+      "present": false,
+      "text": null
+    },
+    "nodesAffected": 3,
+    "controlledDuringComparison": "beforeinstallprompt suppressed in BOTH halves via Page.addScriptToEvaluateOnNewDocument, so the layout comparison is not about this.",
+    "impact": "The harness cannot display the install link. It is a browsing-context capability, not a layout fault, and it is conditional in production anyway (browser installability heuristics)."
+  }
+}
