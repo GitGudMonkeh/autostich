@@ -15,8 +15,18 @@ Node per `package.json` engines, in the worktree
 | Field | Value |
 | --- | --- |
 | **Base** | `370f1b0f36de99ed2066e7f184479b0ad59bc7d0` (`origin/dev` at task creation) |
-| **Head** | see the branch tip of `feature/repository-hygiene-cleanup` |
 | **Branch** | `feature/repository-hygiene-cleanup` — local, no upstream, never pushed |
+
+| Commit | Category | What it does |
+| --- | --- | --- |
+| `11773733` | removal | `chore: remove unreferenced debug screenshots from repo root` |
+| `681186e7` | addition | `docs: add docs/ index separating live from historical material` |
+| `b943e743` | records | `docs: add repository hygiene workstream records` — planning report, contract, and this file at the state it had when committed |
+
+One commit per artefact category, as the contract requires, so that reverting one does not revert the
+others. The reviewable diff is `370f1b0f..681186e7`; `b943e743` adds only this workstream's own
+documents. The **head is the branch tip**, which is one commit beyond `b943e743`: the tip amends this
+table into place, and so cannot name itself.
 
 SHAs rather than branch names, so this document survives branch deletion
 (`task-lifecycle.md` — §7).
