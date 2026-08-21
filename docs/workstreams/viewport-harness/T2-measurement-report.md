@@ -374,6 +374,115 @@ trusted measurement environment, not a UI redesign.
 
 ---
 
+## 8d. Frame-level behaviour: Back, service worker, audio
+
+Task contract §10 named three hazards as **unverified** — history/Back, service-worker registration,
+and audio autoplay from inside a frame. Codex flagged the evidence package incomplete on exactly
+those three. All three are now **measured**. Nothing was redesigned; **no code change was needed**.
+
+Method throughout: the same state rendered twice — through the harness and through the normal app —
+and the two compared. A harness-specific problem shows up as a difference; identical behaviour means
+the frame changes nothing.
+
+### 1. Browser Back
+
+`useBackGuard` pushes one sentinel history entry on mount (`src/ui/useBackGuard.js`). Inside a frame
+that push lands in the **joint session history**, which is shared with the top document.
+
+*Measured* — `history.length` is identical in both documents (6/6), and the sentinel's state object
+sits on the frame's entry (`{"asBackTrap":true}`) while the top's is `null`. Confirms one shared
+history, one sentinel — not two.
+
+Boot cost, measured against the baseline: the harness adds exactly **one** joint-history entry, which
+is its own page navigation. The app's sentinel behaves the same either way.
+
+Back presses, from a comparable starting history:
+
+| | Baseline (harness off) | Harness on |
+| --- | --- | --- |
+| Back #1, no overlay | stays on the app (sentinel consumed) | stays on the harness, app still in frame |
+| Back #2, no overlay | leaves the app | leaves the harness |
+| Back #1, **options overlay open** | overlay **closes**, history index unchanged | overlay **closes**, history index unchanged |
+
+The overlay row is the important one: with an overlay open, Back closes it and the history index does
+**not** move — the guard consumed the gesture and re-pushed the sentinel. That is `useBackGuard`
+working normally, from inside the frame.
+
+**Observed behaviour:** identical to the normal app. No extra Back presses to leave, no getting
+stuck, and the in-app back handling still functions inside the frame.
+
+**Decision:** acceptable, no action. The harness costs one ordinary history entry — the same as any
+navigation — and changes nothing about how Back behaves in the app. It is preview-only regardless.
+
+### 2. Service worker
+
+`main.jsx` registers the service worker only under `import.meta.env.PROD`, so the dev server never
+registers at all. The question only exists in a **built** preview, where both the harness shell and
+the app inside the frame execute that line.
+
+*Measured* on a real production preview build (`VITE_PREVIEW=1 npm run build`, served over
+`http://127.0.0.1`, a secure context; `@vite/client` absent from the document, confirming it is not
+a dev build):
+
+| | Baseline | Harness — top document | Harness — frame |
+| --- | --- | --- | --- |
+| Registrations | 1 | **1** | **1** |
+| Scope | `…/autostich/` | `…/autostich/` | `…/autostich/` |
+| Script | `…/autostich/sw.js` | same | same |
+| Controller | `…/autostich/sw.js` | same | same |
+| Secure context | yes | yes | yes |
+
+**Observed behaviour:** registration *is* attempted from inside the frame, it *is* allowed
+(same-origin, secure context), and it produces **no second registration** — same script and same
+scope means the browser keeps one. Top and frame report byte-identical scope lists, and the frame is
+controlled by the same worker. No 4xx/5xx during the harness load.
+
+**Action needed: none.** Worth noting as a side effect: the harness was also confirmed working in a
+genuine production preview build here — frame viewport exactly 1280×720, app mounted inside.
+
+### 3. Audio
+
+`audio.js` starts its `AudioContext` suspended and calls `unlock()` on the first user gesture.
+
+*Measured*, identical probe in both contexts, before any gesture and after a **real** CDP-dispatched
+mouse click (into the frame for the harness case):
+
+| | Baseline before | Harness before | Baseline after click | Harness after click |
+| --- | --- | --- | --- | --- |
+| `AudioContext.state` at creation | suspended | suspended | running | running |
+| `resume()` | never settles (1500 ms) | never settles (1500 ms) | resolves → running | resolves → running |
+| `navigator.userActivation` | false / false | false / false | true / true | true / true |
+
+**Observed behaviour:** identical. The same-origin frame inherits the autoplay permission — the
+Permissions-Policy default for `autoplay` is `self`, which covers same-origin frames — and user
+activation is granted to the frame by a click that lands in it. The app's gesture-gated `unlock()`
+therefore works inside the harness exactly as outside.
+
+One detail worth recording because it cost a hung measurement run: `resume()` on a blocked context
+returns a promise that **never settles** until activation arrives. It does not reject. Anything
+awaiting it blindly hangs. That is browser behaviour, not app behaviour, and it is the same in both
+contexts.
+
+**Action needed: none.**
+
+### Trap for whoever repeats the service-worker check
+
+`vite preview` derives `base` from `command`, and for preview that is `"serve"` — so
+`vite.config.js` yields `/` rather than `/autostich/`, and every asset request under `/autostich/`
+falls through to the SPA fallback. It answers **200 with `index.html`**, so a naive `curl -o /dev/null
+-w %{http_code}` check reports success while nothing is actually served; the app never boots and the
+service worker never registers. Serve it explicitly:
+
+```bash
+MSYS_NO_PATHCONV=1 npx vite preview --base /autostich/ --host 127.0.0.1 --port 5180 --strictPort
+```
+
+`MSYS_NO_PATHCONV=1` is required under Git Bash on Windows, or `/autostich/` is rewritten to a
+filesystem path (`CLAUDE.md`, platform note). Verify by size, not status: `assets/index-*.js` must be
+hundreds of kB of `text/javascript`, not ~1.4 kB of `text/html`.
+
+---
+
 ## 9. Limits of this evidence
 
 Stated so nobody reads more into it than it carries:
