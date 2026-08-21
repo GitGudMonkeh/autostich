@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 /* ============================================================
    #rd-ruhe (19.08.2026) — die Lauf-Details im Desktop-Ton.
 
-   Sechster Screen nach der Liste in CLAUDE.md. Er ist derselbe Screen wie der Siegesbildschirm, nur aus
-   einer anderen Herkunft (gespeicherte Zeile statt laufendes Spiel) — er MUSS deshalb dieselbe Fassung
-   tragen. Genau das prüft dieser Wächter rechnend: die Werte werden gegen `.st-box` (#st-ruhe) und
-   `.go-box` (#go-ruhe) verglichen, statt sie hier noch einmal abzutippen.
+   Sechster Screen nach der Liste in docs/engineering/conventions.md. Er ist derselbe Screen wie der
+   Siegesbildschirm, nur aus einer anderen Herkunft (gespeicherte Zeile statt laufendes Spiel) — er MUSS
+   deshalb dieselbe Fassung tragen. Genau das prüft dieser Wächter rechnend: die Werte werden gegen
+   `.st-box` (#st-ruhe) und `.go-box` (#go-ruhe) verglichen, statt sie hier noch einmal abzutippen.
 
    Zweite Naht: `RunStats.jsx` wird von Victory, Chronik UND Lauf-Details geteilt. Jede Regel muss auf
    `.rd-card` eingegrenzt bleiben, sonst zieht der Ton dieses Screens die anderen beiden mit.

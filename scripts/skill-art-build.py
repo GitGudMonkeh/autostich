@@ -20,8 +20,8 @@ ZWEI Schritte, beide mit Begründung:
 
 2. Bloom EINBACKEN statt im Browser rechnen. Am Gerät entschieden (19.08.2026) über einen Regler:
    Radius 15 CSS-px, Stärke 60 %, Sättigung 260 %. Als CSS-Filter wäre das Rasterarbeit auf genau
-   dem Screen, der ohnehin am Mount klemmt (271–417 ms in `phase:levelup`, s. CLAUDE.md) — gebacken
-   kostet es null Laufzeit.
+   dem Screen, der ohnehin am Mount klemmt (271–417 ms in `phase:levelup`, s.
+   docs/decisions/engineering-log-2026-08.md) — gebacken kostet es null Laufzeit.
 
    Der Radius wird UMGERECHNET, nicht übernommen: 15 px gelten für die Anzeige mit 277 px Breite,
    die Datei hat 192 → 15 × 192/277 = 10,4 px. Wer die Zonenbreite ändert, muss diese Zahl mitziehen.

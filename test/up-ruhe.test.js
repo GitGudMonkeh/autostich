@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 /* ============================================================
    #up-ruhe (19.08.2026) — Baum, Leitfaden und Glossar im Desktop-Ton.
 
-   Dritter Screen nach der Liste in CLAUDE.md („Desktop-Umbau: die Entscheidungsregeln"). Der Schalter ist
+   Dritter Screen nach der Liste in docs/engineering/conventions.md („Entscheidungsregeln"). Der Schalter ist
    derselbe wie in der Werkstatt (`as-ring-quiet`) — genau deshalb braucht es hier eine Ratsche: ein Panel,
    das den Modifikator beim nächsten Umbau verliert, holt sich still den laufenden Ring zurück und sieht
    für sich genommen weiter richtig aus.

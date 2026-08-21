@@ -4104,7 +4104,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #rd-ruhe — die Lauf-Details im Desktop-Ton (19.08.2026)
 
-     Sechster Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Sechster Screen nach derselben Liste (s. „Entscheidungsregeln" in docs/engineering/conventions.md).
      Anordnung und Inhalt bleiben unangetastet — geändert wird nur, wie laut der Screen spricht. Die
      Werte sind 1 : 1 die von `.st-box` (#st-ruhe) und `.go-box` (#go-ruhe): es ist derselbe Screen in
      einer anderen Herkunft, er darf nicht anders aussehen.
@@ -4648,7 +4648,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #up-ruhe — Baum, Leitfaden und Glossar im Desktop-Ton (19.08.2026, Entwurf des Users)
 
-     Dritter Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Dritter Screen nach derselben Liste (s. „Entscheidungsregeln" in docs/engineering/conventions.md).
      Die sechs Panels (`up-nav`/`up-page`, `gd-nav`/`gd-page`, `gl-nav`/`gl-page`) tragen jetzt
      `as-ring-quiet` — derselbe Schalter wie in der Werkstatt, ein Wort je Panel. Damit ist der laufende
      Ring projektweit nur noch dort, wo ihn niemand nachgezogen hat.
@@ -4837,7 +4837,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #st-ruhe — die Statistik im Desktop-Ton (19.08.2026)
 
-     Vierter Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Vierter Screen nach derselben Liste (s. „Entscheidungsregeln" in docs/engineering/conventions.md).
      Information und Anordnung bleiben unangetastet — geändert wird nur, wie laut der Screen spricht.
 
      1. **Der Ring steht still** (`as-ring-quiet` an den fünf `st-sec`, gesetzt im JSX). Fünf wandernde
@@ -4880,7 +4880,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #go-ruhe — der Siegesbildschirm im Desktop-Ton (19.08.2026)
 
-     Fünfter Screen nach derselben Liste (s. „Desktop-Umbau: die Entscheidungsregeln" in CLAUDE.md).
+     Fünfter Screen nach derselben Liste (s. „Entscheidungsregeln" in docs/engineering/conventions.md).
      Die Anordnung der Panels bleibt unangetastet; geändert wird, wie laut der Screen spricht — plus
      zwei Umbauten, die vorhandenen Platz nutzen statt neuen zu fordern.
 

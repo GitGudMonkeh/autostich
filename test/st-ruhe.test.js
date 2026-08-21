@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 /* ============================================================
    #st-ruhe (19.08.2026) — die Statistik im Desktop-Ton.
 
-   Vierter Screen nach der Liste in CLAUDE.md („Desktop-Umbau: die Entscheidungsregeln"). Information und
+   Vierter Screen nach der Liste in docs/engineering/conventions.md („Entscheidungsregeln"). Information und
    Anordnung sind ausdrücklich unangetastet geblieben; geändert wurde nur, wie laut der Screen spricht.
    Zwei Nähte brauchen deshalb eine Ratsche:
    · `as-ring-quiet` an fünf Panels — verliert eines den Modifikator, holt es sich still den laufenden

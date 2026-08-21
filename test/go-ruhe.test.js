@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 /* ============================================================
    #go-ruhe (19.08.2026) — der Siegesbildschirm im Desktop-Ton.
 
-   Fünfter Screen nach der Liste in CLAUDE.md („Desktop-Umbau: die Entscheidungsregeln"), gebaut wie
+   Fünfter Screen nach der Liste in docs/engineering/conventions.md („Entscheidungsregeln"), gebaut wie
    #st-ruhe davor. Vier Nähte brauchen eine Ratsche, weil sie alle still reißen — der Screen sieht
    danach für sich genommen weiter richtig aus, nur eben nicht mehr wie seine vier Nachbarn:
 

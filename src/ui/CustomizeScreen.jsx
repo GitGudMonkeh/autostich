@@ -1067,7 +1067,7 @@ function FieldFxPreview({ effect, deckTint = false }) {
 const CARDFX_PREVIEW_ON = (import.meta.env.VITE_PREVIEW === "1" || import.meta.env.DEV);
 function CardAnimPreview({ anim }) {
   /* #vorschau-deck: Karten-Animationen haben KEINEN Standard/Deckfarbe-Schalter — sie laufen im Spiel
-     immer in der Deckfarbe (CLAUDE.md #318). Die Vorschau nimmt deshalb ohne Gate das aktive Deck, samt
+     immer in der Deckfarbe (docs/decisions/engineering-log-2026-08.md #318). Die Vorschau nimmt deshalb ohne Gate das aktive Deck, samt
      seinem Spielfeld als Grund; die feste Tabelle (neutraler Genesis-Grund) bleibt nur der Rückfall. */
   const deckLook = useContext(DeckLookCtx);
   const look = deckLook || PREVIEW_LOOK[anim] || { bf: SHOWCASE_BF, a1: DEMO_C, a2: "#b06bff" };

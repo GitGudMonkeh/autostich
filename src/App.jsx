@@ -150,8 +150,8 @@ function pickRandomOwnedPack(profile, options = null) {
 
 /* #fx-spike: die Shader-Vergleichsseite (`?fxspike=1`) ist entfallen. Sie hatte genau eine Frage zu klären —
    „rendert ein Pixi-Custom-Shader auf dem Mobile-Setup?" — und die ist am echten Gerät beantwortet (ja, 60
-   Zeichnungen/s). Ihre Erkenntnisse stehen in CLAUDE.md und in pixiFieldShader.js; die Seite selbst hätte nur
-   eine zweite Fassung derselben Shader am Leben gehalten. */
+   Zeichnungen/s). Ihre Erkenntnisse stehen in docs/decisions/engineering-log-2026-08.md (#fx-spike) und in
+   pixiFieldShader.js; die Seite selbst hätte nur eine zweite Fassung derselben Shader am Leben gehalten. */
 export function Autostich() {
   return <AutostichGame />;
 }

@@ -46,7 +46,7 @@ export const GLOBAL_FX = [
   /* #deckglow-raus (18.08.2026): „Leuchten" (deckglow) ist ERSATZLOS entfernt — Effekt, Shader, Vorschau, Toggle,
      Besitz-Eintrag. Grund war Hitze auf dem Handy, nicht der Look: die Ebene ritt auf den KONTUREN des Battlefield-
      Bildes und vertrug als EINZIGE Kompositor-Ebene keine Verkleinerung (gemessene Abweichung 0,50 → 5,45 von 255,
-     s. CLAUDE.md #kompositor). Sie lief damit als einzige in voller Auflösung über die volle Panelfläche, 30×/s, den
+     s. docs/decisions/engineering-log-2026-08.md #kompositor). Sie lief damit als einzige in voller Auflösung über die volle Panelfläche, 30×/s, den
      ganzen Lauf — und weil sie zusätzlich als einzige GLEICHZEITIG mit einem Hintergrund lief, war sie auch die
      einzige Ebene, die den `stack`-Pfad des Kompositors überhaupt brauchte (der ist mit ihr entfallen).
      Wer sie zurückholt, holt beides zurück: die volle Auflösung und den zweiten Stapelplatz. */

@@ -7,8 +7,9 @@ import { FxBoundary } from "./FxBoundary.jsx";
    Effekt, rechts der Kompositor. Der ist entfallen, und zwar bewusst OHNE dass der Kompositor sich als schneller
    erwiesen hätte — am Gerät gemessen war er weder schneller noch langsamer. Der Grund ist ein anderer: ein Schalter
    heißt zwei Implementierungen, und zwei Implementierungen driften. Genau daran hat dieses Projekt schon einmal
-   Wochen verloren (dieselbe Arbeit lag mehrfach als verschiedene Objekte vor, s. CLAUDE.md). Der Kompositor gewinnt
-   also nicht über Zahlen, sondern weil eine Fassung besser ist als zwei gleich schnelle.
+   Wochen verloren (dieselbe Arbeit lag mehrfach als verschiedene Objekte vor, s. #kompositor in
+   docs/decisions/engineering-log-2026-08.md). Der Kompositor gewinnt also nicht über Zahlen, sondern weil eine
+   Fassung besser ist als zwei gleich schnelle.
 
    EINE Ebene je Bühne (`layer` + flache Props). Den Stapel-Pfad (`stack={[{ key, props }]}`) gab es für „Leuchten
    läuft gleichzeitig mit Aurora/Brandung"; mit #deckglow-raus hat er keinen Aufrufer mehr und ist entfallen.

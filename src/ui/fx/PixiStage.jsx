@@ -8,7 +8,8 @@ import { DRAW_HZ_COARSE, dprCap, DPR_CAP_COARSE, DPR_CAP_DESKTOP } from "./mobil
    Aurora/Neon-Brandung/Leuchten sind NICHT hier: das sind Vollbild-SHADER und laufen im Feld-Kompositor
    (FieldCompositor.jsx). Hier wohnen die EMITTER (Partikel/Szenen). Ob die auch in den Kompositor gehören, ist
    offen und bewusst nicht entschieden: seine Registry nimmt heute ein Shader-Quad, kein beliebiges Pixi-Objekt —
-   und ein Perf-Argument dafür gibt es nach der Gerätemessung nicht (s. CLAUDE.md #kompositor). */
+   und ein Perf-Argument dafür gibt es nach der Gerätemessung nicht
+   (s. docs/decisions/engineering-log-2026-08.md #kompositor). */
 const FIELD_FX = {
   starfield: createStarfield,
 };

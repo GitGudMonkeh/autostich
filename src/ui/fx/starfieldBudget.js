@@ -13,7 +13,8 @@ import { clamp } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfe
      3) Auflösung: die Sample-Zahl je Schweif blieb konstant, egal wie lang die Bahn ist.
    Aus den Konstanten gerechnet (Panel ~360×340, lite = DPR 1,4 + 30 fps): 0,3 Mpx/s im Ruhezustand gegen
    5,0 Mpx/s bei Turbo + Gottgleich, also das 17-Fache. Maßstab ist die Fill-Rate, weil der Prunk-Messstand
-   (CLAUDE.md #perf) belegt hat, dass die Kosten fast nur an „Canvas-Pixel pro Sekunde" hängen, kaum am Bildinhalt.
+   (docs/decisions/engineering-log-2026-08.md, Abschnitt „Gottgleich-Prunk — Perf-Naht") belegt hat, dass die Kosten
+   fast nur an „Canvas-Pixel pro Sekunde" hängen, kaum am Bildinhalt.
 
    ALLE drei Deckel greifen nur auf `lite` — Desktop bleibt unangetastet (Entscheidung des Users). Und alle drei
    greifen nur bei Überlappung bzw. hohem Tempo: ein einzelner Meteor im Normalspiel sieht aus wie vorher. */

@@ -43,8 +43,8 @@ Zwei Gruppen zeichnen sich ab — schlanke Motive (Überschlag, Blitzableiter) g
 Fontäne, Wolkenwand). Das ist es, was man in der Reihe sieht, nicht die Farbe. Angeglichen wird über die
 Helligkeit und **in die Datei gebacken**, nicht per CSS-`filter`: ein Filter je Emblem kostet Rasterarbeit
 auf genau dem Screen, der laut Messung ohnehin am Mount klemmt (271–417 ms in `phase:levelup`,
-s. CLAUDE.md). Angeglichen wird ERST, wenn alle 21 vorliegen — der Zielwert ist der Median des Satzes,
-und der wandert mit jedem neuen Bild.
+s. docs/decisions/engineering-log-2026-08.md). Angeglichen wird ERST, wenn alle 21 vorliegen — der
+Zielwert ist der Median des Satzes, und der wandert mit jedem neuen Bild.
 
 **Nicht-quadratische Bilder werden schwarz aufgefüllt, nicht beschnitten** (Überschlag und Dauerstrom
 kamen als 1536 × 1024). Unter `mix-blend-mode: screen` ist der schwarze Rand unsichtbar — Beschneiden
