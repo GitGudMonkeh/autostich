@@ -93,8 +93,8 @@ Everything in Tier B, plus:
 - Visual review as a numbered gate with its own artefact, run again if the design iterates.
 - A **downgrade record** for any acceptance criterion reduced during the work (§11).
 
-Serialize tasks that need heavy edits to the same hotspot file rather than parallelizing them
-(`git-workflow.md` §22).
+Before splitting a Tier C workstream into parallel tasks, check the decision guide in
+`git-workflow.md` §22 — it governs when tasks may run in parallel and when they must be serialized.
 
 ---
 
@@ -103,18 +103,21 @@ Serialize tasks that need heavy edits to the same hotspot file rather than paral
 The contract is the **binding scope statement**. Where it and a planning report disagree, the
 contract wins.
 
-| § | Section | Purpose |
-| --- | --- | --- |
-| 1 | Identity | Branch, **base SHA** (a SHA, not a branch name), owner, reviewer, concurrency rule |
-| 2 | Local workspace | Worktree path, preview port, the exact server invocation |
-| 3 | Scope | The parts, in the order they must happen |
-| 4 | Non-goals **and tripwire** | What is out of scope, and the signal that a rejected approach has crept back in |
-| 5 | Approved architecture | Binding statements, not suggestions |
-| 6 | Task-specific inputs | Sizes, screens, data — whatever the work is measured against |
-| 7 | Acceptance gate | The single criterion that decides success or failure |
-| 8 | Expected file surface | Indicative. Anything outside it is surfaced before it is changed |
-| 9 | Known hazards | See §11 — each must be resolved before handoff |
-| 10 | Definition of done | Checkboxes, ticked only when true |
+Sections, in the order they are usually written. Refer to them by name, not by number — a contract
+may add or drop a section, and a numeric citation from another document goes stale silently.
+
+| Section | Purpose |
+| --- | --- |
+| Identity | Branch, **base SHA** (a SHA, not a branch name), owner, reviewer, concurrency rule |
+| Local workspace | Worktree path, preview port, the exact server invocation |
+| Scope | The parts, in the order they must happen |
+| Non-goals **and tripwire** | What is out of scope, and the signal that a rejected approach has crept back in |
+| Approved architecture | Binding statements, not suggestions |
+| Task-specific inputs | Sizes, screens, data — whatever the work is measured against |
+| Acceptance gate | The single criterion that decides success or failure |
+| Expected file surface | Indicative. Anything outside it is surfaced before it is changed |
+| Known hazards | See §11 — each must be resolved before handoff |
+| Definition of done | Checkboxes, ticked only when true |
 
 Two properties make a contract work, and both are cheap:
 
@@ -135,15 +138,15 @@ Required:
 - The diff range as **SHAs** — durable review documents quote SHAs, not branch names, so they survive
   branch deletion.
 - Scope compliance, verified rather than asserted, with the command that reproduces it.
-- Gate results. Never claim a gate ran if it did not.
+- Gate results, under the reporting rules in `AGENTS.md` (House rules).
 - Every new guard's **counter-check**, recorded (`testing.md` §5). A guard that is merely green is not
   evidence.
 - Reproduce commands, so a reviewer can re-run the claims instead of trusting them.
 - **The limits of the evidence**, stated plainly: which screens, which host, which browser, and what
-  was inferred rather than measured.
+  was not covered.
 
-Distinguish *measured*, *observed*, *inferred* and *proposed* throughout. An evidence package that
-reads as uniformly confident is less useful than one that marks its own soft spots.
+`AGENTS.md` requires uncertainty to be reported by category. Apply it to the package as a whole: one
+that reads as uniformly confident is less useful than one that marks its own soft spots.
 
 ### Committing evidence
 
@@ -196,8 +199,7 @@ makes the decision durable; without it the workstream's most important review ro
 
 ## 9. Handoff to independent review
 
-The reviewer assesses; the reviewer does not implement. Findings return to the owning worker, in the
-same worktree (`git-workflow.md` §9).
+Reviewer scope, and where findings return to, are `git-workflow.md` §9.
 
 A handoff carries:
 
@@ -215,8 +217,8 @@ A handoff with no open questions is usually one that has not looked hard enough.
 
 ## 10. Integration and cleanup
 
-Integration mechanics, ancestry and promotion are `git-workflow.md` §11–§12. At lifecycle level only
-two things matter.
+Integration mechanics, promotion and ancestry diagnosis are `git-workflow.md` §11–§13. At lifecycle
+level only two things matter.
 
 **Integration is authorized, not assumed.** Gates green and review passed are preconditions, not the
 decision.
@@ -233,7 +235,8 @@ their integration base, and clear them. Deletion rules and their safety checks a
 
 ### Every hazard named in the contract must be resolved before handoff
 
-A hazard listed in contract §9 is a prediction. Before the review handoff each one is marked
+A hazard listed in the contract's hazards section is a prediction. Before the review handoff each one
+is marked
 **measured**, **not measured, and why**, or **not applicable**.
 
 Hazards that are named and then left open get found by the reviewer instead — a review round trip the

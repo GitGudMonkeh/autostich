@@ -295,7 +295,7 @@ Avoid large translation-only diffs, especially in files covered by source-text r
 
 ### Appending to an existing German document
 
-A new document, and a new section of an English document, is English.
+One narrow exception to the engineering-English rule above.
 
 An entry **appended to an existing German document that follows a fixed German template** stays in
 that document's language, and the deviation is noted where it is made. A single English entry in the

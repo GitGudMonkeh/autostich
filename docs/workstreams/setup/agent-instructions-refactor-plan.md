@@ -731,7 +731,7 @@ the original plan.
 `NEW_MACHINE_SETUP.md` is unaffected by this and remains straightforwardly needed.
 
 **The final Batch 4 file structure is deliberately not decided here.** It was decided afterwards, by
-the design review recorded in §18.
+the design review in `batch4-design-review.md`; §18 records the outcome.
 
 Batch 5 (README refresh) is unchanged: the stale branch line, the restated test counts, and the
 deploy description in `README.md` are still outstanding.
@@ -739,6 +739,10 @@ deploy description in `README.md` are still outstanding.
 ---
 
 ## 18. Batch 4 outcome (2026-08-21)
+
+**This section records the outcome only. The analysis behind it — observed friction with its
+measurements, the lifecycle tiers, the rejected approaches, the command designs and the subagent
+strategy — is in `batch4-design-review.md` in this directory.**
 
 Decided by a design review held after the first two workstreams had run end to end — the agent
 instruction refactor itself and the Desktop Viewport Harness (#400) — and approved by the owner.
@@ -794,9 +798,6 @@ before it can leave a chat message.
 
 ### Not built
 
-Claude commands were designed in the review and deliberately **not** implemented in this batch:
-`/create-task`, `/prepare-review`, `/cleanup-task`, `/prepare-integration`. `/plan-workstream` was
-assessed and rejected for now — its value is a report skeleton, which lives in `task-lifecycle.md`
-until the shape has held for more tasks.
-
-Subagent roles (architecture, test, history, visual scouts) were likewise designed and not built.
+Claude commands and subagent roles were designed in the review and deliberately **not** implemented in
+this batch. The designs, the risks attached to each, and the recommended build order are in
+`batch4-design-review.md` §5, §6 and §10.

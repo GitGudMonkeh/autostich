@@ -59,16 +59,10 @@ Worktree creation is `git-workflow.md` §6. The path convention is:
 
 ## 4. Verify the setup
 
-Run the gates from `AGENTS.md`, in order:
+Run the validation gates in the order `AGENTS.md` gives them. That list is authoritative and is
+deliberately not copied here.
 
-```bash
-npm test
-npm run lint -- --max-warnings=0
-npm run build
-npm run gen:db
-```
-
-A fresh machine that passes all four is set up correctly. **Read §5 before concluding that a failure
+A fresh machine that passes them all is set up correctly. **Read §5 before concluding that a failure
 means anything.**
 
 ---
@@ -91,32 +85,18 @@ npx vitest run test/<file>.test.js
 Report **both** results. A timeout that reproduces in isolation is a real failure; one that does not
 is a load artifact — and that label does not extend to any *other* failure in the same file.
 
-### Windows: Git Bash path conversion
+### Windows and Linux Git differences
 
-MSYS mangles arguments containing both `:` and `/` — exactly the shape of `revision:path` — and
-arguments that look like absolute POSIX paths, such as `--base /autostich/`:
+Git Bash path conversion, the `core.*` settings that differ on Windows, and the line-ending rules
+enforced by `.gitattributes` are **`git-workflow.md` §18**. They are Git behaviour, not machine
+setup, and are deliberately not restated here.
 
-```bash
-MSYS_NO_PATHCONV=1 git rev-parse "HEAD:docs/decisions/engineering-log-2026-08.md"
-```
+Two consequences worth knowing while a machine is still being set up:
 
-On Linux the prefix is unnecessary. Where an equivalent takes no colon argument, prefer it:
-`git hash-object <path>`, `git ls-files -s <path>`, `git show --raw <rev>`.
-
-### Windows: Git behaves differently from Linux
-
-`core.ignorecase=true`, `core.symlinks=false` and `core.filemode=false` are usual on Windows.
-Case-only renames and symlinks therefore do not behave the way they do in CI.
-
-### Line endings
-
-`.gitattributes` is **load-bearing** and forces LF in the working tree, because source-text ratchets
-match patterns that span newlines. Do not set `core.autocrlf=true`, and do not "fix" line endings.
-The reasoning, with the incidents that produced each exception, is written out in `.gitattributes`
-itself.
-
-When local and CI results disagree unexpectedly, check line endings, path case and generated files
-before suspecting logic.
+- Do not set `core.autocrlf=true`. `.gitattributes` is load-bearing and forces LF in the working
+  tree; source-text ratchets match patterns that span newlines.
+- When local and CI results disagree unexpectedly, check line endings, path case and generated files
+  before suspecting logic.
 
 ---
 
@@ -169,6 +149,9 @@ is actually served, the app never boots, and the service worker never registers.
 MSYS_NO_PATHCONV=1 npx vite preview --base /autostich/ --host 127.0.0.1 --port <port> --strictPort
 ```
 
+The `MSYS_NO_PATHCONV=1` prefix is required under Git Bash and unnecessary elsewhere
+(`git-workflow.md` §18).
+
 Verify by **size, not status**: `assets/index-*.js` must be hundreds of kB of `text/javascript`, not
 a small `text/html` document.
 
@@ -191,8 +174,7 @@ anything behind the preview gate, build it both ways locally before pushing.
 
 The host conditions in §5 and the traps in §6–§7 were measured during the Desktop Viewport Harness
 workstream; the method and the numbers are in
-`docs/workstreams/viewport-harness/T2-measurement-report.md`. The line-ending rationale, including
-the incidents behind each exception, is in `.gitattributes`.
+`docs/workstreams/viewport-harness/T2-measurement-report.md`.
 
 Those are historical records. Where they and this document disagree about what is true now, verify
 against the current repository.
