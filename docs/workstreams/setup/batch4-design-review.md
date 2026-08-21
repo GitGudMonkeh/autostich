@@ -172,12 +172,21 @@ Ranked by value-to-risk. **None is implemented.**
   derivable: base SHA, ancestry verification, branch name, worktree path, port, owner, reviewer. It is
   the step that must be exact and is currently hand-typed.
 - **Trigger:** an approved plan, or an agreed task note.
-- **Input:** task name, tier, base branch, optional feature integration branch.
+- **Input:** task name, **tier (A/B/C)**, base branch, optional feature integration branch.
 - **Output:** fetch; both ancestry checks; branch from `origin/<base>` at a named SHA; worktree at the
-  convention path; `npm ci`; port assigned; a contract skeleton with identity and workspace filled and
-  the rest left as headings. **Plus the cleanup audit printed first** (§8).
+  convention path; `npm ci`; port assigned. **Plus the cleanup audit printed first** (§8).
+- **Tier-aware output.** The tier is an input because it changes what is scaffolded, per
+  `task-lifecycle.md` §2:
+  - **Tier A** — a task-note stub. No contract, no workstream directory.
+  - **Tier B** — a contract skeleton with identity and workspace filled, the rest as headings, plus
+    the workstream directory.
+  - **Tier C** — the same, plus the feature integration branch as the base for later task branches,
+    and a measurement task named in the scope section rather than left implicit.
+  - **Any tier** — if the work will move pixels, prompt for the V1 baseline before implementation
+    starts (`task-lifecycle.md` §8). That prompt is the only reliable moment to take it.
 - **Risk:** inventing scope. It must stop after the workspace section and hand back. A pre-filled
-  non-goals list would be worse than an empty one.
+  non-goals list would be worse than an empty one. Scaffolding a Tier B contract for what is really a
+  Tier A task manufactures ceremony, so the tier must be given, never guessed.
 
 ### `/prepare-review` — build second
 
@@ -189,8 +198,15 @@ Named for what it does; it prepares for a reviewer and does not review.
   item is what removes F5.
 - **Trigger:** implementation complete, gates run, before handing over.
 - **Input:** contract path, base SHA, head SHA.
-- **Output:** the handoff document, with "open questions for the reviewer" as a required non-empty
-  section.
+- **Output:** the handoff document, with "open questions for the reviewer" as a **mandatory** section.
+  Mandatory means the section must be present and answered — never silently omitted. Where there
+  genuinely are none, the permitted answer is the explicit sentence:
+
+  > None after checking hazards and deferred decisions.
+
+  That wording is deliberate: it asserts the two checks were actually made, so an empty section
+  records a conclusion rather than an oversight. A blank or missing section is a defect in the
+  handoff.
 - **Risk:** producing something that looks like evidence but is only a diff summary. Two guards: never
   state a gate passed that it did not run, and print an unresolved hazard loudly rather than omitting
   it.
@@ -199,10 +215,16 @@ Named for what it does; it prepares for a reviewer and does not review.
 
 - **Value:** the step that measurably does not happen (F1).
 - **Trigger:** after integration — and, more usefully, at the start of the next task.
-- **Input:** none; it audits.
-- **Output:** every worktree and every task/feature branch with merged-status against the **correct**
+- **Input:** for each branch, **its integration base**, taken from the task contract's identity
+  section. A task branched from a feature branch is not merged merely because `dev` contains its
+  commits, so the base cannot be assumed.
+- **Unknown base — report, never guess.** Where no contract is available, or the contract does not
+  name a base, the branch is listed as **`base unknown — not assessed`** and **no deletion command is
+  printed for it**. Falling back to `dev` would produce a confident, wrong "safe to delete" for
+  exactly the branches most likely to still hold unmerged work.
+- **Output:** every worktree and every task/feature branch with merged-status against its stated
   integration base, unpushed commits, worktree cleanliness, and the exact deletion commands
-  **printed, not executed**.
+  **printed, not executed** — plus a separate, clearly marked list of the unassessed branches.
 - **Risk:** the two commands that can destroy unpushed work. Encode `git-workflow.md` §20 — prefer
   `-d` over `-D`, treat a dirty-worktree refusal as a safety feature, never touch the permanent
   branches or `archive/*` or `gh-pages`, and **never auto-execute a remote delete**.
@@ -241,7 +263,7 @@ the contract before it was signed.
 | **Architecture** | Tier B/C planning, before the contract fixes the file surface | Tier A; surface already known | Measured file list, seams touched, tripwire candidates, must-not-touch list |
 | **Test** | Before the contract, and again before editing a guarded file | Writing tests | Which ratchets read the blast radius, **which strip comments and which read raw**, which counter-checks will be needed |
 | **History** | A *why* question about existing behaviour | Current rules — those are in `AGENTS.md` | The tag, the entry, **its status marker**, and an explicit verify-against-current-code note |
-| **Visual** | Capturing and describing a screenshot set | **Approving anything** | The capture set with metadata, the diff, differences attributed — never a verdict |
+| **Visual** | Producing the V1/V2 captures and describing them | **Approving anything**; standing in for the V3 human gate | Capture files plus metadata written to `evidence/`, the diff, differences attributed — never a verdict. See the artefact rules below |
 
 **Test Scout has the clearest return.** Confusing the two guard families — comment-stripping versus
 raw-reading — cost one red suite during #400. "Does this guard strip comments?" is answerable in one
@@ -253,25 +275,46 @@ forbids preloading. Huge read, small return, zero writes.
 **Visual Scout must be constrained hard.** An agent looking at a screenshot cannot replace what found
 F3. A Visual Scout that emits "looks good" would destroy the gate that worked.
 
-**Orchestration.** The main session orchestrates. Scouts are read-only and never write into the
-worktree. Results come back as text the main session pastes into the planning report or contract —
-that is the durable form, and it means a human read it on the way through.
+### Visual Scout — artefact handling
+
+The Visual Scout is the one scout that produces **binary** output, so it is the one exception to
+"scouts never write", and the exception needs stating precisely.
+
+- **It produces V1 and V2 captures (`task-lifecycle.md` §8) plus their metadata**, written to the
+  workstream's `evidence/` directory. Capture files are its deliverable; it cannot hand back a PNG as
+  conversation text.
+- **It writes only into `evidence/`.** No source file, no document, no contract — those still come
+  back as text for a human to place.
+- **It reports differences with attribution** — which element, which viewport, how large — and never
+  a verdict. "Judgement stays human" (`task-lifecycle.md` §8, V3) binds the scout too.
+- **What it commits is decided by the committing rule, not by the scout.** Metadata and the
+  classification table always; images only when they *are* the evidence (§7). A scout that captured a
+  full set has not thereby earned a full set in the repository.
+- **The V3 gate consumes its output; it does not delegate to it.** A Visual Scout run is never a
+  substitute for a person having looked.
+
+**Orchestration.** The main session orchestrates. The other three scouts are read-only and never
+write into the worktree at all. Results come back as text the main session pastes into the planning
+report or contract — that is the durable form, and it means a human read it on the way through.
 
 ---
 
 ## 7. Visual review strategy
 
-The proposed chain was right, with one thing missing and one misordered.
+The proposed chain was right, with one thing missing and one misordered. The resulting flow is
+canonical in `task-lifecycle.md` §8 as **V1 baseline → V2 capture → V3 human gate → V4
+classification**; the reasoning is here.
 
-**Missing: a baseline capture.** A review that sees only the "after" cannot separate "this change did
-it" from "it was always like that". #400 hit this — a finding surfaced and had to be classified as
-pre-existing, correct behaviour.
+**Missing: a pre-change baseline (V1).** A review that sees only the "after" cannot separate "this
+change did it" from "it was always like that". #400 hit this — a finding surfaced and had to be
+classified as pre-existing, correct behaviour. The baseline has to be taken *before* implementation
+starts; reconstructing it later is when the wrong state gets captured.
 
-**Misordered: visual review belongs before the independent review**, with findings classified first.
-#400 did this by accident and it worked: the classification kept the reviewer from re-litigating a
-deferred design question.
+**Misordered: the human gate (V3) belongs before the independent review**, with findings classified
+first. #400 did this by accident and it worked: the classification kept the reviewer from
+re-litigating a deferred design question.
 
-**Artefacts:** the capture set (sizes × before/after × screen, DPR recorded), a metadata file per set,
+**Artefacts:** the V1 and V2 capture sets (sizes × screen, DPR recorded), a metadata file per set,
 the reviewer's annotations, and the classification table.
 
 **Classification is a required output**, in four categories: defect in this task / expected platform

@@ -32,7 +32,7 @@ That rule is the only thing preventing this file from becoming a second copy of 
 | Task contract | short note | full | full, one per task |
 | Workstream directory | no | yes | yes |
 | Measurement / proof task | no | when the central claim needs proof | yes, as a first-class deliverable |
-| Visual review | when pixels moved | when pixels moved | always, before **and** after |
+| Visual review (§8, V1–V4) | when pixels move — reduced scope | when pixels move — full scope | **always**, and repeated per design iteration |
 | Independent review | optional | yes | yes |
 | Branch shape | one branch off `dev` | one branch off `dev` | `feature/*` with `task/*` below it |
 
@@ -47,7 +47,8 @@ is Tier B, because the decision is architectural.
 ## 3. Tier A — standard task
 
 ```text
-task note -> branch -> implement -> gates -> self-review -> integrate -> cleanup
+task note -> branch -> [V1 baseline, if pixels will move] -> implement -> gates
+  -> self-review -> [V2 + V3 visual gate, if pixels moved] -> integrate -> cleanup
 ```
 
 **Task note.** Ten to twenty lines, in the branch's first commit message or an uncommitted scratch
@@ -57,6 +58,13 @@ was I supposed to change" has an answer that is not the diff.
 **Self-review** means reading the whole diff against the note before integrating — not re-reading the
 code you just wrote.
 
+**Conditional visual gate.** If the change moves pixels, Tier A still takes the §8 baseline (V1) and
+the post-change human review gate (V3). What shrinks is the *scope* — the affected screen, at the
+sizes that matter, rather than a full set — not the existence of the gate. A Tier A change that
+skips V1 is the one that makes "was it always like that" unanswerable a week later.
+
+If the change moves no pixels, V1–V4 do not apply.
+
 No planning report, no workstream directory, no evidence beyond the gate output.
 
 ---
@@ -65,8 +73,11 @@ No planning report, no workstream directory, no evidence beyond the gate output.
 
 ```text
 planning session -> planning report -> task contract -> branch + worktree
-  -> implementation -> gates -> visual review -> evidence package
-  -> independent review -> review fixes -> approval -> integration -> cleanup
+  -> [V1 baseline, if pixels will move]
+  -> implementation -> gates
+  -> [V2 capture -> V3 human visual gate -> V4 classification, if pixels moved]
+  -> evidence package -> independent review -> review fixes
+  -> approval -> integration -> cleanup
 ```
 
 **Planning report.** Its value is the **rejected** options and the reasons they were rejected — not
@@ -77,8 +88,9 @@ so that decision gets made deliberately rather than by default.
 **Nothing is implemented until the owner has settled the report's open questions.** House-rule gates
 — a new glyph, a new dependency, a breakpoint change — are settled here, not discovered in review.
 
-**Visual review comes before the independent review**, and its findings are classified first (§8). A
-reviewer should not have to re-litigate a finding already known to be out of scope.
+**The visual gate sits before the independent review**, and its findings are classified before the
+reviewer sees them (§8). The baseline (V1) is taken **after the worktree exists and before
+implementation begins** — that is the only point at which the "before" state is still real.
 
 ---
 
@@ -89,8 +101,11 @@ Everything in Tier B, plus:
 - A **feature integration branch** with `task/*` branches below it (`git-workflow.md` §3, §8).
 - A **measurement task as a named deliverable**, not a bullet inside the implementation task. If
   proving the work correct is a sub-bullet, it is the thing that gets cut under time pressure.
-- **Before and after** capture sets, per screen, at every canonical viewport size.
-- Visual review as a numbered gate with its own artefact, run again if the design iterates.
+- **V1 and V2 as full capture sets** — every affected screen, at every canonical viewport size, DPR
+  recorded. Tier C is where the baseline is least optional: a multi-screen redesign has no other way
+  to tell a regression from a pre-existing quirk.
+- **V3 run again after every design iteration**, each round producing its own V2 and its own
+  classification. One review at the end of a Tier C workstream reviews the last change, not the work.
 - A **downgrade record** for any acceptance criterion reduced during the work (§11).
 
 Before splitting a Tier C workstream into parallel tasks, check the decision guide in
@@ -166,15 +181,40 @@ Autostich is a visual product. The test suite does not render the UI and cannot 
 regression (`testing.md` §10). Visual review is therefore a **gate, not a courtesy** — it has caught a
 defect that passed every automated layer.
 
+**This is the canonical flow. Every tier that moves pixels follows it**, differing only in how much
+is captured, never in which steps happen.
+
 ```text
-baseline capture -> change -> capture -> human review -> classify -> fix tasks
+V1  pre-change baseline capture      <- BEFORE the first pixel moves
+      |
+    implementation + gates
+      |
+V2  post-change capture              <- same sizes, same DPR, same state as V1
+      |
+V3  human visual review gate         <- a person compares V1 and V2
+      |
+V4  classification                   <- every finding gets a row and an ID
+      |
+    fix tasks, for defects only
 ```
 
-**Capture a baseline.** A review that sees only the "after" cannot separate "this change did it" from
-"it was always like that". Same sizes, same DPR, same state.
+### V1 — pre-change baseline capture
 
-**Judgement stays human.** Tooling captures, diffs, and attributes differences. It does not decide
-whether a layout is good, and an agent must not report a visual result as approved.
+**Taken before implementation starts, not reconstructed afterwards.** A review that sees only the
+"after" cannot separate "this change did it" from "it was always like that", and reconstructing a
+baseline from a reverted working tree is exactly when the wrong state gets captured.
+
+Record the sizes, the DPR and the application state, because V2 has to match them.
+
+### V3 — human visual review gate
+
+**A person looks at the screens. Judgement stays human.** Tooling captures, diffs and attributes
+differences; it does not decide whether a layout is good, and **an agent must not report a visual
+result as approved.**
+
+This is a gate: the work does not proceed to independent review until it has been passed, and its
+findings are classified first, so a reviewer never re-litigates something already known to be out of
+scope.
 
 ### Classification is a required output
 

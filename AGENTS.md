@@ -189,6 +189,17 @@ npm run loc:export
 The generated localization exports are validated by tests. A catalog change without regeneration can
 make CI fail even when the underlying UI code is otherwise correct.
 
+### Additional gate: preview-gated code
+
+When a change touches code behind the `VITE_PREVIEW` preview gate, build **both** variants before
+pushing — the ordinary build and the preview build.
+
+CI builds both. A change that only breaks under `VITE_PREVIEW=1` passes an ordinary local build and
+then fails CI, which is the expensive way to find out.
+
+Setting the variable is shell-specific. The per-shell invocation is in
+`docs/engineering/NEW_MACHINE_SETUP.md`; this rule, not that file, is what decides when it applies.
+
 ---
 
 ## Hazard: source-text ratchet tests
@@ -391,8 +402,11 @@ Workers must not:
 
 Cross-task collisions must be surfaced rather than silently resolved.
 
-Full lifecycle:
+Branch and worktree mechanics:
 `docs/engineering/git-workflow.md`
+
+Task lifecycle — tiers, contract, evidence, visual review, handoff:
+`docs/engineering/task-lifecycle.md`
 
 ---
 

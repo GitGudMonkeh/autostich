@@ -4,10 +4,9 @@ How to get from a fresh machine to a checkout whose test results can be trusted.
 only — prerequisites, per-worktree setup, and the host conditions that otherwise get rediscovered as
 bugs.
 
-`AGENTS.md` holds the project rules and the gate commands. `docs/engineering/git-workflow.md` holds
-branch and worktree mechanics. This document does not repeat either.
-
----
+`AGENTS.md` holds the project rules and decides **which** gates apply and when.
+`docs/engineering/git-workflow.md` holds branch and worktree mechanics. This document repeats
+neither — it covers only how to execute things on a given machine.
 
 ## 1. Prerequisites
 
@@ -16,9 +15,23 @@ branch and worktree mechanics. This document does not repeat either.
 | Node | `^20 \|\| ^22 \|\| >=24` — authoritative source is `engines` in `package.json` |
 | npm | **npm only.** `package-lock.json` is the lockfile. No yarn, no pnpm. |
 | Git | any current version |
-| Chrome / Edge / Chromium | only for the CDP screenshot tooling (§6) |
+| Chrome / Edge / Chromium | only for the CDP screenshot tooling (§7) |
 
 CI runs `ubuntu-latest` with **Node 22**. Where a local host and CI disagree, CI decides.
+
+### Shell convention in this document
+
+Windows development may use **PowerShell** or **Git Bash**; CI is **Linux/bash**. Plain commands
+behave the same in all three. Anything that differs is labelled, and two things always differ:
+
+| | Git Bash / Linux | PowerShell |
+| --- | --- | --- |
+| Set a variable for one command | `NAME=value cmd` | `$env:NAME = "value"; cmd` — persists for the session |
+| Absolute-path arguments | may need `MSYS_NO_PATHCONV=1` (`git-workflow.md` §18) | passed through unchanged |
+
+PowerShell has no inline per-command variable prefix. Where a command below sets a variable, the
+PowerShell form sets it for the whole session, so **unset it afterwards** if the session continues:
+`Remove-Item Env:\NAME`.
 
 ---
 
@@ -76,9 +89,9 @@ assertions**, in timing-sensitive files that pass in isolation. This has been me
 unmodified `dev` checkout with no local changes at all, so it is a property of the host under full
 parallel load rather than of any branch.
 
-Procedure, from `testing.md` §12.2:
+Procedure, from `testing.md` §12, item 2:
 
-```bash
+```text
 npx vitest run test/<file>.test.js
 ```
 
@@ -119,20 +132,34 @@ occupied the run must fail loudly.
 | 5173 | Vite default — ad-hoc use in the main checkout |
 | 5180 | pinned in `scripts/viewport-proof.mjs`; do not occupy it while that script may run |
 
-Preview-only features are gated on `import.meta.env.VITE_PREVIEW === "1"`:
+Preview-only features are gated on `import.meta.env.VITE_PREVIEW === "1"`. To run the dev server with
+the gate open:
 
 ```bash
+# Git Bash / Linux
 VITE_PREVIEW=1 npm run dev -- --port <port> --strictPort
+```
+
+```powershell
+# PowerShell — sets the variable for the session, not just this command
+$env:VITE_PREVIEW = "1"; npm run dev -- --port <port> --strictPort
 ```
 
 ---
 
 ## 7. Screenshot and CDP tooling
 
-`scripts/cdp.mjs` discovers Chrome, Edge or Chromium automatically and honours `CHROME_PATH`:
+`scripts/cdp.mjs` discovers Chrome, Edge or Chromium automatically. Set `CHROME_PATH` only if
+discovery fails:
 
 ```bash
+# Git Bash / Linux
 CHROME_PATH=/path/to/chrome node scripts/viewport-proof.mjs
+```
+
+```powershell
+# PowerShell
+$env:CHROME_PATH = "C:\path\to\chrome.exe"; node scripts/viewport-proof.mjs
 ```
 
 `viewport-proof.mjs` starts and stops its own dev server on the pinned port; nothing needs to be
@@ -146,27 +173,47 @@ fallback and answers **200 with `index.html`**, so a status-code check reports s
 is actually served, the app never boots, and the service worker never registers.
 
 ```bash
+# Git Bash — the prefix stops MSYS rewriting /autostich/ into a filesystem path
 MSYS_NO_PATHCONV=1 npx vite preview --base /autostich/ --host 127.0.0.1 --port <port> --strictPort
 ```
 
-The `MSYS_NO_PATHCONV=1` prefix is required under Git Bash and unnecessary elsewhere
-(`git-workflow.md` §18).
+```powershell
+# PowerShell — no path rewriting, so no prefix
+npx vite preview --base /autostich/ --host 127.0.0.1 --port <port> --strictPort
+```
+
+On Linux the Git Bash form works without the prefix. Why MSYS rewrites the argument at all is
+`git-workflow.md` §18.
 
 Verify by **size, not status**: `assets/index-*.js` must be hundreds of kB of `text/javascript`, not
 a small `text/html` document.
 
 ---
 
-## 8. What CI does that the local gates do not
+## 8. Running the preview build locally
 
-`.github/workflows/ci.yml` builds a **second, preview-slot variant** after the normal build:
+**When** the preview build is required is a gate rule and lives in `AGENTS.md` (Validation gates).
+This section is only how to run it.
 
-```text
-DEPLOY_BASE=/autostich/ci/   VITE_PREVIEW=1   npm run build
+CI builds the preview variant with `DEPLOY_BASE` and `VITE_PREVIEW` set together; locally
+`DEPLOY_BASE` only changes the asset base path and can be left out unless you are reproducing a
+deployment path problem.
+
+```bash
+# Git Bash / Linux
+npm run build
+VITE_PREVIEW=1 npm run build
 ```
 
-A change that only breaks under `VITE_PREVIEW=1` passes the local gates and fails CI. If you touch
-anything behind the preview gate, build it both ways locally before pushing.
+```powershell
+# PowerShell — the variable persists, so clear it before the next ordinary build
+npm run build
+$env:VITE_PREVIEW = "1"; npm run build
+Remove-Item Env:\VITE_PREVIEW
+```
+
+The PowerShell caveat is the one that bites: leaving `VITE_PREVIEW` set turns every later build in
+that session into a preview build, silently.
 
 ---
 
