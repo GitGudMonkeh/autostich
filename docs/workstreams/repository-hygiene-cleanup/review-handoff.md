@@ -22,47 +22,61 @@ Four fixes were requested and all four are applied. **No fix changed the deletio
 | 1 | `docs/README.md` — remove volatile file counts, keep the index purpose | The per-directory *Files* column is gone; *"These three PDFs"* → *"The PDFs above"*; *"Two files in this directory"* → *"Generated files here"*. A line now states why counts are not kept here, citing `AGENTS.md` — *House rules*. Every table, status column and routing row is unchanged |
 | 2 | `review-handoff.md` — remove mandatory `TODO`s; fill reviewer questions, evidence limits, reading order, hazard statuses | This document. §2, §5, §7, §8, §9, §10 are filled |
 | 3 | `task-contract.md` — record the npm-test timeout as an owner-approved criterion reduction; do not claim full gate success | *Downgrade record* rewritten. It now opens **"One acceptance criterion was reduced, and the reduction is owner-approved"**, attributes the decision to the owner on 2026-08-22, and states in terms that the gate set did **not** pass |
-| 4 | `evidence-package.md` — add reproducible commands/output for the three removed PNGs only | New **§3 E7**, ten commands (R1–R10) with their real output, every one reading the base tree by SHA so it reproduces after the deletion and after the branch is gone |
+| 4 | `evidence-package.md` — add reproducible commands/output for the three removed PNGs only | New **§3 E7**, R1–R12 with their real output, every base-tree command reading by SHA so it reproduces after the deletion and after the branch is gone |
 
-**These fixes are currently uncommitted.** See §8 — this is the one thing a reviewer must know before
-reading a diff range.
+**Round 3 — the second review round's findings.** Round 2 was assessed and returned two blocking
+findings. Both are addressed:
+
+| # | Finding | Applied |
+| --- | --- | --- |
+| B1 | The handoff described a git state that was no longer true — it claimed the fixes were uncommitted, this file untracked, and the head still `1b41b4a2` | Corrected throughout, **and restructured so it cannot recur**: this document no longer asserts its own commit state. §8 gives the base and a command that reads the current head, plus a per-round SHA table. See the note in §8 |
+| B2 | The reproducibility block was partial — E1.3 (dynamic construction) had no command, E2's `dist/` hash claim was prose, and R2 showed results without its command | `evidence-package.md` §3 gains **R11** (four dynamic-construction sweeps, including an exhaustive enumeration of every `.png` literal on the build surface) and **R12** (`npm run build` plus a hash of every `dist/` PNG). **R2 now shows the command that produced it** |
 
 ---
 
 ## Blocking notice
 
 | Signal | Count | State |
-| --- | ---: | --- |
+| --- | --- | --- |
 | Hazards without a status | **0** | all nine carry a worker status in §5, supplied 2026-08-22 |
 | Hazards whose status is *not measured* | **1** | **H8**, Windows/Linux divergence — the one genuinely open risk |
 | Unticked Definition-of-done boxes | **3** | §6; one is a live item, two are the steps this handoff precedes |
 | Acceptance-gate conjuncts met | **1 of 2** | proof standard met; **gate set did not pass** — owner-approved reduction, §6 |
-| Review fixes committed | **no** | §8 |
 | Head commit on a remote branch | **no** | §8 — a reviewer cannot fetch this range yet |
-| Gates run in the session that generated this | **0 of 4** | §4 |
+| Gates run in a session that produced this document | **1 of 4** | `npm run build` exit 0, for R12 only — §4 |
+
+**This document does not state whether it is itself committed.** That claim inverts the moment it is
+committed, which is how round 2 shipped a handoff describing a git state that had already changed.
+§8 gives the base SHA and the command that reads the current head instead.
 
 ---
 
-| | |
+
+
+| Field | Value |
 | --- | --- |
 | **Context** | repository-hygiene-cleanup — Tier B feature workstream |
 | **Branch** | `feature/repository-hygiene-cleanup` (**not pushed**, no upstream, not merged into `dev`) |
-| **Committed diff** | `370f1b0f36de99ed2066e7f184479b0ad59bc7d0..1b41b4a2a7efd355a9d6cef654f4b9f4f29fa9dc` |
-| **Size, committed** | 7 files changed, +1418 · 3 binary deletions contribute no line deletions |
-| **Round-2 fixes** | **uncommitted**, 3 files, +175/−18 — see §8 |
+| **Base** | `370f1b0f36de99ed2066e7f184479b0ad59bc7d0` — fixed for the life of the task |
+| **Head** | moves with each review round — read it, do not trust a copy: `git -C <worktree> rev-parse HEAD` |
+| **Implementation range** | `370f1b0f..1b41b4a2` — 7 files, +1418 · 3 binary deletions contribute no line deletions |
 | **Worktree** | `C:/Code/Autostich-worktrees/repository-hygiene-cleanup` |
-| **Gates** | not run in the generating session — §4 |
+| **Gates** | §4 — one build run for R12; the rest not run |
 
-Four commits (*measured*):
+**Commits by round** (*measured*). Each round's commit is listed once it exists; the commit that
+carries a given round's handoff edit **cannot name itself**, so the newest row is described rather
+than numbered.
 
-```
-1b41b4a2  docs: record commit SHAs in the hygiene evidence package
-b943e743  docs: add repository hygiene workstream records
-681186e7  docs: add docs/ index separating live from historical material
-11773733  chore: remove unreferenced debug screenshots from repo root
-```
+| Round | Commit | What it is |
+| --- | --- | --- |
+| impl | `11773733` | `chore: remove unreferenced debug screenshots from repo root` |
+| impl | `681186e7` | `docs: add docs/ index separating live from historical material` |
+| impl | `b943e743` | `docs: add repository hygiene workstream records` |
+| impl | `1b41b4a2` | `docs: record commit SHAs in the hygiene evidence package` |
+| review round 1 fixes | `35ee1873` | `docs: address repository hygiene review findings` — 4 files, +628/−18 |
+| review round 2 fixes | *the current tip* | this handoff's B1/B2 corrections plus `evidence-package.md` R11/R12 |
 
-Committed change set (*measured*):
+Implementation change set, `370f1b0f..1b41b4a2` (*measured*):
 
 ```
 A  docs/README.md
@@ -73,6 +87,9 @@ D  go-b0.png
 D  go-b1.png
 D  unlock.png
 ```
+
+Everything after `1b41b4a2` is review-fix documentation. **No commit in any review round touches the
+deletion set, `test/`, or any protected path** — verified in §3.
 
 **Range validity — *measured*.** `git merge-base --is-ancestor <base> <head>` exits **0**. No rebase
 or force-push has invalidated the range. SHAs are quoted rather than branch names so the range
@@ -115,8 +132,10 @@ Check `evidence-package.md` §3, E1–E7. The contract's *Approved architecture*
 `grep` as evidence, because 19 live files under `src/assets/skills/` match no string anywhere and are
 loaded through `import.meta.glob`. **Falsified by:** any consumer of the three paths that the E1
 sweeps could not see — a runtime string built at execution time, an external reference, or a consumer
-outside the tracked tree. R6 is the check that closes the dynamic-loading route; press on whether its
-scope (`src test scripts sim`) is wide enough.
+outside the tracked tree. **R11(d) is the strongest single check**: it enumerates *every* `.png`
+literal on the runtime and build surface at base, so it is exhaustive rather than targeted, and none
+of the three appears. R6 closes the `import.meta.glob` route. Press on whether the sweep scopes
+(`src`, `index.html`, `vite.config.js`, `public`) are the right surface.
 
 **C2 — the removal is recoverable by one recorded command.**
 Check E6 and R10. **Falsified by:** a blob that no longer hashes to the recorded SHA, or a recovery
@@ -147,7 +166,7 @@ which would report a wildcard entry wrongly in either direction.
 The contract's list is 10 bullets carrying **14 entries** — three bullets list several paths.
 
 | # | Entry | Type | Hash at base and head | Verdict |
-| ---: | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- |
 | 1 | `test/**` — the tripwire | tree | `2d586cf549949049eb9e993aa49b8cf847d71267` | unchanged |
 | 2 | `src/**` | tree | `342f7f43a02be6f9933408841307ab8f40450cb6` | unchanged |
 | 3 | `media/**` | tree | `f2246c5a89dcc5028606efd8d83a179a01d67c2d` | unchanged |
@@ -177,19 +196,20 @@ file-surface section would miss that the scope surface is split across two secti
 | `docs/workstreams/viewport-harness/` | Q1 decision | tree | `8e82be859140ca6c31d8c6a74d17b17f34d1ca01` | unchanged |
 | `docs/localization/` | Q2 decision | tree | `8d77e56028885fe130e6bf47836162f935279708` | unchanged |
 
-### The round-2 fixes stay inside the same surface
+### The review-fix rounds stay inside the same surface
 
-*Measured* on the uncommitted working tree: `git status --porcelain` restricted to all 15 protected
-paths returns **empty**. The three modified files are `docs/README.md`,
-`docs/workstreams/repository-hygiene-cleanup/task-contract.md` and
-`.../evidence-package.md` — all three already inside this task's *written by this task* surface.
+The hashes above are quoted at the **implementation head** `1b41b4a2`. Every review round since has
+touched only `docs/README.md` and this workstream's own documents, so the same hashes still hold at
+the current head — which the reproduce block below checks, because it resolves `HEAD` rather than
+pinning a SHA.
 
-**Reproduce** — expected: every pair identical, every command exit 0.
+**Reproduce** — expected: every pair identical, every command exit 0. Run it against the current head,
+not against a SHA copied out of this document.
 
 ```bash
 W=C:/Code/Autostich-worktrees/repository-hygiene-cleanup
 BASE=370f1b0f36de99ed2066e7f184479b0ad59bc7d0
-HEAD=1b41b4a2a7efd355a9d6cef654f4b9f4f29fa9dc
+HEAD=$(git -C "$W" rev-parse HEAD)
 for e in test src media docs/engineering docs/decisions .github/workflows \
          AGENTS.md CLAUDE.md .gitattributes package.json package-lock.json \
          vite.config.js eslint.config.js \
@@ -203,15 +223,20 @@ done
 
 ## 4. Gate results
 
-**No gate was run in the session that generated this document**, and none was run during the
-round-2 fixes. The fixes changed three Markdown files and no code.
+**One gate has been run across the review rounds, and it was run as evidence, not as a gate result.**
+`npm run build` was executed at round 3 to produce R12 in `evidence-package.md`. It is reported here
+with its real exit code; the other three were not run.
 
-| Gate | Run in this session | Result |
+| Gate | Run | Result |
 | --- | --- | --- |
-| `npm test` | **no** | not run in this session — no result |
-| `npm run lint -- --max-warnings=0` | **no** | not run in this session — no result |
-| `npm run build` | **no** | not run in this session — no result |
-| `npm run gen:db` | **no** | not run in this session — no result |
+| `npm test` | **no** | not run in any session that produced this document — no result |
+| `npm run lint -- --max-warnings=0` | **no** | not run — no result |
+| `npm run build` | **yes**, 2026-08-22, round 3, unpiped | **exit 0** — "✓ built in 6.04s", 1204 modules transformed. Run to hash `dist/` PNGs for R12 |
+| `npm run gen:db` | **no** | not run — no result |
+
+The build result above is *measured* and is the only gate claim in this document that rests on an
+observation rather than a quotation. It does **not** make the gate set green — `npm test` remains
+unrun here and is claimed nowhere.
 
 ### Prior claims — quoted, not verified
 
@@ -219,7 +244,7 @@ round-2 fixes. The fixes changed three Markdown files and no code.
 **not** observed by the generating session and are not gate results in this document.
 
 | Gate | Claimed exit | Claimed result |
-| --- | ---: | --- |
+| --- | --- | --- |
 | `npm test` | **1** | "1 failed / 2047 passed of 2048 — **pre-existing**, see §6" |
 | `npm run lint -- --max-warnings=0` | **0** | "Clean" |
 | `npm run build` | **0** | "Built in 5.77 s" |
@@ -247,7 +272,7 @@ a different time and has **not** been reused as a handoff status; each status be
 measurement taken at, or re-taken at, the current head.
 
 | # | Hazard (abridged; verbatim in the contract) | Status at handoff | Basis |
-| ---: | --- | --- | --- |
+| --- | --- | --- | --- |
 | H1 | Dynamically loaded assets are invisible to `grep` | **measured** | R6 — every `import.meta.glob` in `src test scripts sim` at base: exactly one, pattern `../assets/skills/*/*.webp`, which cannot match a repository-root `.png` |
 | H2 | Source-text ratchet tests | **measured** | `test/` tree hash identical at base and head (`2d586cf5…`), so no test file changed. Separately verified: no test reads `docs/README.md` |
 | H3 | Engineering-log path citations broken by a move | **not applicable** | Nothing was moved or renamed. `docs/decisions` tree hash identical at both ends (`67eef85f…`) |
@@ -310,15 +335,16 @@ ticked.
 
 ## 7. Evidence and its limits
 
-**File state — *measured*.** Four documents; three committed, one untracked, three with uncommitted
-round-2 edits.
+**File state — *measured*.** Four documents in this workstream directory. Which rounds touched each:
 
-| Path | State |
-| --- | --- |
-| `task-contract.md` | committed, **modified** at round 2 (downgrade record) |
-| `planning-report.md` | committed, unmodified |
-| `evidence-package.md` | committed, **modified** at round 2 (§3 E7 added) |
-| `review-handoff.md` | **untracked** — this file |
+| Path | Introduced | Touched by review rounds |
+| --- | --- | --- |
+| `planning-report.md` | `b943e743` | none — unchanged since implementation |
+| `task-contract.md` | `b943e743` | round 1 — downgrade record rewritten |
+| `evidence-package.md` | `b943e743` | round 1 — §3 E7 (R1–R10); round 2 — R2 command, R11, R12 |
+| `review-handoff.md` | round 1 (`35ee1873`) | round 2 — B1 git state, B2 cross-references |
+
+To see any round's content rather than trusting this table, use `git log --oneline -- <path>`.
 
 **No captured images exist for this workstream** (*measured*). This task moved no pixels, so
 `task-lifecycle.md` — *Visual review* V1–V4 does not apply and no visual finding is classified here.
@@ -333,10 +359,14 @@ round-2 edits.
 - **Scope proof has one hole by construction.** Row 14 of §3 — *"Every path listed under Keep in
   `planning-report.md` §4.3"* — is an indirection no hash can check. Thirteen of fourteen entries are
   proven; the fourteenth is a reviewer's judgement.
-- **The reference sweeps cover the tracked tree only.** R5–R9 read the base tree by SHA. A consumer
-  living outside version control — a local script, a bookmark, an external document — would not
-  appear. For three debug screenshots at the repository root this is a small risk, but it is not zero
-  and it is not measured.
+- **The reference sweeps cover the tracked tree only.** R5–R9 and R11 read the base tree by SHA. A
+  consumer living outside version control — a local script, a bookmark, an external document — would
+  not appear. For three debug screenshots at the repository root this is a small risk, but it is not
+  zero and it is not measured.
+- **R12 is the weaker, post-removal form of the build check.** With the files already deleted, their
+  absence from `dist/` is partly guaranteed by the deletion. It is labelled as such in the evidence
+  package rather than presented as equivalent to the original pre-removal run. The check that does
+  the work without that circularity is R11(d).
 - **A numeric claim in E1.4 does not reproduce.** The evidence package says the `unlock` stem appears
   42 times; a sweep at base on 2026-08-22 gives **450 occurrences across 39 files**. The correction is
   recorded beside the original in `evidence-package.md` §3 R8/R9 rather than silently patched. The
@@ -350,21 +380,34 @@ round-2 edits.
 
 ## 8. Known state a reviewer will hit
 
-**1 — The round-2 fixes are uncommitted.** *Measured:* `git status --porcelain` shows three modified
-files and this untracked handoff. **The committed range `370f1b0f..1b41b4a2` therefore does not
-contain the review fixes.** To see them:
+**1 — Read the head; do not trust a SHA copied into prose.** Round 2 of this review found that this
+document asserted a git state that had gone stale the moment the fixes were committed. The structural
+fix is that the handoff now names only the **base**, which is fixed, and tells you how to read the
+rest:
 
 ```bash
-git -C C:/Code/Autostich-worktrees/repository-hygiene-cleanup diff
+W=C:/Code/Autostich-worktrees/repository-hygiene-cleanup
+git -C "$W" rev-parse HEAD                                    # current head
+git -C "$W" log --oneline 370f1b0f36de99ed2066e7f184479b0ad59bc7d0..HEAD
+git -C "$W" status --porcelain                                # expected: empty
 ```
 
-Committing them is the next step and requires authorization (`AGENTS.md` — *House rules*); this
-session did not commit.
+The implementation range `370f1b0f..1b41b4a2` is stable and is the one to read for the actual work.
+Everything after it is review-fix documentation, listed by round in the header table. **A round's own
+handoff edit is committed by the commit that carries it, so the newest round cannot print its own
+SHA** — that is a property of the format, not an omission.
 
-**2 — The head commit is on no remote branch.** *Measured:* `git branch -r --contains 1b41b4a2`
-returns empty and the branch has no upstream. **A reviewer cannot fetch this range yet.** The work
-exists only in this local worktree, which `git-workflow.md` — *Pushing and durable state* treats as
-not yet durable. Pushing is a separate authorization and was not performed.
+**2 — No commit on this branch is on any remote.** *Measured:* `git branch -r --contains <head>`
+returns empty for both the implementation head and the current head, and the branch has no upstream.
+**A reviewer cannot fetch this range yet.** The work exists only in this local worktree, which
+`git-workflow.md` — *Pushing and durable state* treats as not yet durable. Check it yourself:
+
+```bash
+git -C "$W" branch -r --contains "$(git -C "$W" rev-parse HEAD)"   # expected: empty
+git -C "$W" for-each-ref --format='%(upstream:short)' refs/heads/feature/repository-hygiene-cleanup
+```
+
+Pushing is a separate authorization and was not performed.
 
 **3 — `npm test` exits 1, and this task does not fix it.** A 5,000 ms timeout in
 `test/i18n-guards.test.js`, claimed present identically at the base commit. Not reproduced by the
@@ -395,15 +438,18 @@ a defect.
    `telemetry.md` declares no status and none is derivable. The alternative — guessing — is what the
    Q4 resolution deliberately refused. Leaving it open means the index ships with a visible gap.
 
-3. **Should the round-2 fixes be one commit or three?** The contract's *Approved architecture* #4
-   requires one commit per artefact category and forbids a sweeping commit. Review fixes across three
-   documents are arguably one category — "review fixes" — or three. The worker has not committed
-   them, precisely because this is a decision the reviewer's rule should settle.
+3. **Is one commit per review round the right granularity?** The contract's *Approved architecture* #4
+   requires one commit per artefact category and forbids a sweeping commit. Each review round has been
+   committed as **one** commit spanning the documents it touched, on the reading that "round-N review
+   fixes" is one category. The alternative — one commit per document per round — was not taken. If the
+   reviewer reads #4 differently, say so and the granularity changes from the next round on; the
+   commits already made are not worth rewriting for it.
 
 4. **Does the E1.4 count discrepancy warrant re-verifying the other numeric claims in the evidence
    package?** One number did not reproduce (§7). It was decorative and the load-bearing claim beside
    it is now mechanically checked — but a reviewer may reasonably want the byte counts and the
-   "0.32 %" figure re-derived before integration.
+   "0.32 %" figure re-derived before integration. R1 re-derives the byte counts; the "0.32 %" share
+   is still unverified here.
 
 5. **Is integration acceptable while H8 is unmeasured?** The branch has never been pushed, so CI has
    never run. The choice is to integrate on Windows-only evidence, or to require a push and a green
@@ -418,10 +464,11 @@ a defect.
 2. `task-contract.md` — *Downgrade record*. Rewritten at round 2; the one place the task says plainly
    what it did not deliver.
 3. §3 of this document — scope compliance. Thirteen hashes and one entry that cannot be hashed.
-4. `evidence-package.md` §3 **E7 (R1–R10)** — the reproducible block. Start here rather than at E1:
-   it is the shortest path to re-deriving the removal evidence yourself.
-5. `evidence-package.md` §3 **E1.2 and the R8/R9 correction** — the dynamic-loading check, which is
-   the one that would have been skipped, and the numeric correction beside it.
+4. `evidence-package.md` §3 **E7 (R1–R12)** — the reproducible block. Start here rather than at E1:
+   it is the shortest path to re-deriving the removal evidence yourself. **R11(d) first** — it is the
+   exhaustive one.
+5. `evidence-package.md` §3 **E1.2, R11 and the R8/R9 correction** — the dynamic-loading checks, which
+   are the ones that would have been skipped, and the numeric correction beside them.
 6. `docs/README.md` — *How to read the Status column*, then three spot-checked rows. This is C3.
 7. §5 and §9 of this document — the hazard statuses, and H8 in particular.
 8. `planning-report.md` §6 — the rejected options, if the question is *why this shape* rather than
@@ -435,19 +482,24 @@ their output in both places.
 ## Provenance
 
 Generated by `/prepare-review` on **2026-08-22** from
-`docs/workstreams/repository-hygiene-cleanup/task-contract.md`, without `--run-gates`. Completed by
-the worker at the round-2 review-fix pass on the same day: §2, §5, §7, §8, §9 and §10 are worker
-content; §0, §3, §4 and §6 are command output.
+`docs/workstreams/repository-hygiene-cleanup/task-contract.md`, without `--run-gates`, then completed
+and corrected by the worker across two review-fix rounds on the same day. §2, §5, §7, §8, §9 and §10
+are worker content; §0, §3, §4 and §6 are command output or measurement.
 
-**Measured by the command:** the section map; the range and its ancestry; the commit list and size;
-the push state; 15 object-hash comparisons; the presence and location of each hazard's recorded
-status; three unticked done-criteria; the workstream file state.
+**Measured by the command:** the section map; the implementation range and its ancestry; the commit
+list and size; the push state; 15 object-hash comparisons; the presence and location of each hazard's
+recorded status; three unticked done-criteria; the workstream file state.
 
-**Measured by the worker at round 2:** the uncommitted change surface against all 15 protected paths;
-R1–R10 in `evidence-package.md` E7; the `unlock`-stem recount; that no test reads `docs/README.md`.
+**Measured by the worker, round 1:** the change surface against all 15 protected paths; R1–R10 in
+`evidence-package.md` E7; the `unlock`-stem recount; that no test reads `docs/README.md`.
 
-**Not verified by anything here:** every gate — none was run in either session. Whether the E1–E5
-proofs are sound. Row 14 of §3. Any CI or Linux behaviour.
+**Measured by the worker, round 2:** R11 — four dynamic-construction sweeps at base, including an
+exhaustive enumeration of every `.png` literal on the runtime and build surface; R12 — `npm run build`
+(exit 0) and a `git hash-object` comparison of all five `dist/` PNGs against the three removed blobs.
 
-**Not done:** no review, no approval, no visual classification, no gate run, no commit, no push, no
-merge, no pull request. **This document records no approval and none should be inferred from it.**
+**Not verified by anything here:** `npm test`, `npm run lint`, `npm run gen:db` — none was run. Whether
+the E1–E5 narrative claims beyond R1–R12 are sound. Row 14 of §3. Any CI or Linux behaviour. The
+"0.32 %" tracked-content share.
+
+**Not done:** no review, no approval, no visual classification, no push, no merge, no pull request.
+**This document records no approval and none should be inferred from it.**

@@ -78,10 +78,10 @@ content. The number is small by design; `planning-report.md` §1 establishes tha
 deliverable is navigability, not bytes.
 
 | Path | Blob SHA | Bytes | Added by | Recovery anchor |
-| --- | --- | ---: | --- | --- |
+| --- | --- | --- | --- | --- |
 | `go-b0.png` | `40189f51b8e98552941fb92b24c657bf68d4d8fb` | 197,508 | `23434476` *Siegesbildschirm: Durchlauf-Graph nach unten, Nullen bleiben stehen* | base `370f1b0f` |
 | `go-b1.png` | `28fbfd021955be16f05a3a52435591687509079f` | 206,893 | `23434476` (same commit) | base `370f1b0f` |
-| `unlock.png` | `7004e18aad384c793b5b7e4bcd7f6e66eb39429f` | 289,590 | `e1f849db` *Freischaltungen bekommen auf dem Desktop ein eigenes Fenster (#unlock-fenster)* | base `370f1b0f` |
+| `unlock.png` | `7004e18aad384c793b5b7e4bcd7f6e66eb39429f` | 289,590 | `e1f849db` *Freischaltungen bekommen auf dem Desktop ein eigenes Fenster (*#unlock*-fenster)* | base `370f1b0f` |
 
 **Measured:** each blob is present at the base commit (`git cat-file -e <base>:<path>` → exit 0), and
 each was added inside a commit about an unrelated feature. **Inferred:** they are working screenshots
@@ -214,6 +214,13 @@ Total **693,991 bytes**, matching the figure in the table above.
 
 **R2 — the paths are absent at head.** `--verify` exits 128 rather than echoing the argument.
 
+```bash
+for p in go-b0.png go-b1.png unlock.png; do
+  MSYS_NO_PATHCONV=1 git rev-parse --verify "$HEAD:$p" >/dev/null 2>&1
+  printf '%-12s rev-parse exit=%s\n' "$p" "$?"
+done
+```
+
 ```console
 go-b0.png    rev-parse exit=128
 go-b1.png    rev-parse exit=128
@@ -320,7 +327,87 @@ All three **MATCH** (*measured*). The actual recovery command remains
 `git checkout <base> -- <path>`, recorded in the removal commit message per E6; this block proves the
 object it would restore is intact without asking the reviewer to write to their tree.
 
-**What R1–R10 do not establish.** They prove the three paths were unreferenced in the tracked tree at
+**R11 — dynamic path construction, the reproducible form of E1.3.** E1.3 above stated its result
+without a command. Four sweeps, all at base.
+
+```bash
+# a — template literals containing .png
+git grep -n -E '`[^`]*\.png' "$BASE" -- src test scripts sim bench maintenance vite.config.js index.html
+# b — new URL(...) on the runtime surface
+git grep -n -F "new URL(" "$BASE" -- src
+# c — string concatenation onto a .png literal
+git grep -n -E '\+ *"[^"]*\.png"|"[^"]*\.png" *\+' "$BASE" -- src scripts sim
+# d — every .png literal on the runtime and build surface
+git grep -n -E '\.png' "$BASE" -- src index.html vite.config.js public
+```
+
+```console
+a — 10 hits, all scripts/viewport-proof.mjs, all of the shape
+    join(OUT, `harness-${vp.id}@${DPR}x.png`) / `real-…` / `diff-…` / `determinism-…`
+b — (zero hits under src/)
+c — (no hits)
+d — index.html:11              favicon-64.png          (public/)
+    index.html:18              apple-touch-icon.png    (public/)
+    public/manifest.webmanifest:13-15   icon-192.png, icon-512.png, icon-maskable-512.png
+    src/index.css:617          comment: "statt logo-wordmark.png"
+    src/ui/StartScreen.jsx:377 comment: "statt logo-wordmark.png"
+    src/ui/cosmeticAssets.js:8-9  comments: "entspricht card-front.png / card-back.png"
+```
+
+**Sweep (d) is the decisive one, because it is exhaustive rather than targeted.** Every `.png`
+literal on the runtime and build surface is listed above, and **none of them is `go-b0.png`,
+`go-b1.png` or `unlock.png`**. The five real references are `public/` icons, which Vite copies
+verbatim; the four `src/` hits are **comments** recording that a PNG was *replaced* by text or by a
+`.webp`.
+
+Sweep (a) confirms the only template-literal `.png` construction writes into the viewport-proof
+output directory and is prefixed `harness-`/`real-`/`diff-`/`determinism-`, so it cannot produce a
+repository-root name. Sweep (b) is scoped to `src/` deliberately: `new URL(` occurs ~100 times under
+`test/`, every one of them `readFileSync(new URL("../src/…"))` — tests reading source as text, which
+is the ratchet surface, not an asset consumer. Widening (b) to `test/` produces noise, not evidence.
+
+**R12 — build-graph evidence, the reproducible form of E2.** E2 above asserted that no
+byte-identical PNG existed in `dist/`; it gave no command. Run 2026-08-22 at head:
+
+```bash
+npm run build      # unpiped; exit code captured separately
+find dist -name '*.png' -type f -exec git hash-object {} \;
+```
+
+```console
+npm run build  ->  exit 0, "✓ built in 6.04s", 1204 modules transformed
+dist PNG count: 5
+3344ec6de9ee129865fb1de1c74ca257d33cc618
+989b282584735fa0ed49c950313068b93800d430
+b5e8ceb2bc360a3a26c3dcbf25a949db0405cc16
+bea68bb012e3889748f2fa171e093ea58312c1c9
+f49c91dd4194300e18dfb37353ea84cbf5c55431
+
+intersection with the three removed blobs:
+no match  40189f51b8e98552941fb92b24c657bf68d4d8fb
+no match  28fbfd021955be16f05a3a52435591687509079f
+no match  7004e18aad384c793b5b7e4bcd7f6e66eb39429f
+```
+
+**This run is the post-removal form, and it is weaker than E2's original.** With the files already
+deleted, their absence from `dist/` is partly guaranteed by the deletion — which is exactly the
+circularity E2's ordering was designed to avoid. It is reported at its real strength, not dressed up:
+it confirms the current build ships none of the three, and nothing more.
+
+**The pre-removal form, for anyone re-running it**, needs the base tree. It writes to the working
+tree, so it belongs in a scratch checkout rather than in a reviewer's worktree:
+
+```bash
+git checkout 370f1b0f36de99ed2066e7f184479b0ad59bc7d0
+npm ci && npm run build
+find dist -name '*.png' -type f -exec git hash-object {} \;   # compare against the three blob SHAs
+```
+
+**What actually carries C1 is R11(d), not R12.** An exhaustive enumeration of every `.png` literal on
+the build surface at *base* — where all three files still existed — settles whether they could enter
+the build graph at all, and it needs no build and no checkout. R12 is corroboration.
+
+**What R1–R12 do not establish.** They prove the three paths were unreferenced in the tracked tree at
 base, are gone at head, and are recoverable. They say nothing about the two *other* gate conjuncts —
 see §5 and §6 — and nothing about any path this task did not remove.
 
@@ -376,7 +463,7 @@ Run in the contract's order, in the task worktree, **unpiped or with `set -o pip
 codes captured explicitly.
 
 | Gate | Command | Exit | Result |
-| --- | --- | ---: | --- |
+| --- | --- | --- | --- |
 | 1 | `npm test` | **1** | 1 failed / 2047 passed of 2048 — **pre-existing**, see §6 |
 | 2 | `npm run lint -- --max-warnings=0` | **0** | Clean |
 | 3 | `npm run build` | **0** | Built in 5.77 s |

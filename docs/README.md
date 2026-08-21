@@ -98,7 +98,7 @@ them.
 | `Autostich-Balancing-Report-v2.pdf` | **historical** | 2026-07-25 | Balancing report, second version |
 | `Autostich-Patchnotes_main-zu-Autostich_Test.pdf` | **historical** | 2026-07-27 | Patch notes `main` → `Autostich_Test` — a branch that no longer exists |
 
-**The PDFs above are the only opaque files in `docs/`.** They cannot be diffed, searched or
+**The PDFs above are the only opaque files in `docs/`.** **They cannot be diffed, searched or**
 reviewed in a pull request. Prefer Markdown for anything new that is meant to be read by a reviewer.
 
 ## Subdirectories
@@ -123,7 +123,7 @@ someone adds a file (`AGENTS.md` — *House rules*).
 - Give it a **status line in its own header**, with a date. This index transcribes that line; a
   document that declares nothing lands in `unclassified` and someone has to come and ask.
 - If it names a branch, expect that name to age. Prefer a SHA where the reference has to stay true.
-- If it is **generated**, say so in the file itself and name the script. Generated files here are
+- If it is generated, say so in the file itself and name the script. Generated files here are
   compared against their generator by a test, and hand-editing one turns the suite red.
 - Engineering material is written in **English** (`AGENTS.md` — *Language policy*). Existing German
   documents stay German and are not translated.
