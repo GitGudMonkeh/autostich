@@ -1430,6 +1430,11 @@ export default {
   "options.perfHud.title": "FPS counter & report",
   "options.perfHud.desc": "Shows FPS · p95 · jank in the top right and records performance data (⧉ report → console + clipboard). Test branch only. Off = no display and no measurement.",
 
+  "options.testvp.title": "Test viewport",
+  "options.testvp.desc": "Shows the game inside a frame of fixed size — for reproducible screenshots and layout checks. Test branch only. Switching reloads the page. The pixel density of the monitor is not simulated along with it.",
+  "options.testvp.off": "Off",
+  "options.testvp.hint": "To leave, set this back to Off in the options in here.",
+
   "options.float.title": "Show floating text",
   "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (FIERCE/BRUTAL/INSANE/GODLIKE) always stay visible.",
   "options.float.score.title": "↳ Score",

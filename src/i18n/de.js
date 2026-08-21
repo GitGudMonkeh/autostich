@@ -1493,6 +1493,11 @@ export default {
   "options.perfHud.title": "FPS-Zähler & Report",
   "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",
 
+  "options.testvp.title": "Test-Viewport",
+  "options.testvp.desc": "Zeigt das Spiel in einem Rahmen fester Größe — für reproduzierbare Bildschirmfotos und Layout-Prüfungen. Nur im Testbranch. Das Umschalten lädt die Seite neu. Die Pixeldichte des Monitors wird dabei nicht mit simuliert.",
+  "options.testvp.off": "Aus",
+  "options.testvp.hint": "Zum Beenden hier drinnen in den Optionen wieder auf Aus stellen.",
+
   "options.float.title": "Floating-Text anzeigen",
   "options.float.desc": "Aufsteigende Zahlen/Texte über dem Feld. Master-Schalter für alle drei unten. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich) bleiben immer sichtbar.",
   "options.float.score.title": "↳ Score",

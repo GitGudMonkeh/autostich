@@ -4,6 +4,8 @@ import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { LOCALES, fmtPct } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
+// #400 Test-Viewport — nur im Preview-Build gelesen (Gate an der Zeile unten in der Grafik-Sektion).
+import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChange } from "./testViewport.js";
 
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
    der Lauf, solange offen).
@@ -258,11 +260,28 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           </Row>
           {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
               FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
-          {import.meta.env.VITE_PREVIEW === "1" && (
+          {/* #400: ONE gate for both preview-only measurement rows, not one gate each — a second copy of the
+              condition is a second place to forget it. Both rows carry the same glyph on purpose: they are
+              measurement tools of the test branch, not player settings. */}
+          {import.meta.env.VITE_PREVIEW === "1" && (<>
             <Row icon="▥" title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
               <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
             </Row>
-          )}
+            {/* #400 Test viewport — renders the game inside a fixed-size frame so screenshots and layout
+                checks stop depending on the current browser window. `stack` like the reduced-effects row
+                above: five choices do not fit next to the text on narrow widths. Choosing a size swaps the
+                top-level document, so the page reloads — `reloadAfterViewportChange` explains why that
+                reload cannot happen on this line. */}
+            <Row stack icon="▥" title={t("options.testvp.title")} desc={t("options.testvp.desc")}>
+              <Segmented
+                value={options.testViewport || TEST_VIEWPORT_OFF}
+                options={[
+                  { v: TEST_VIEWPORT_OFF, label: t("options.testvp.off") },
+                  ...TEST_VIEWPORTS.map((v) => ({ v: v.id, label: v.label })),
+                ]}
+                onChange={(v) => { onChange({ testViewport: optionValue(v) }); reloadAfterViewportChange(); }} />
+            </Row>
+          </>)}
           </Section>
           <Section id="sound" title={t("options.sec.sound")}
             innerRef={(el) => { secRefs.current.sound = el; }}>

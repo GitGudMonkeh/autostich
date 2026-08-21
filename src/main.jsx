@@ -1,7 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { Autostich } from "./App.jsx";
 import { install as installErrorBuffer } from "./ui/errorBuffer.js"; // #396 Fehler-Ring-Puffer für den Melder
-import { maybeResetForEpoch } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
+import { maybeResetForEpoch, loadOptions } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
+import { activeTestViewport } from "./ui/testViewport.js"; // #400 Test-Viewport (nur Preview-Build)
 import "./index.css";
 
 // PWA: Das Install-Prompt-Event (`beforeinstallprompt`) kann VOR dem React-Mount feuern → früh einfangen und global
@@ -38,4 +39,28 @@ if (typeof window !== "undefined") {
   }
 }
 
-createRoot(document.getElementById("root")).render(<Autostich />);
+const rootEl = document.getElementById("root");
+
+/* #400 Test viewport — the ONE boot decision of the harness.
+
+   Read AFTER `maybeResetForEpoch` above, so a profile wipe cannot leave a stale size behind.
+
+   The gate is written out here rather than hidden inside `activeTestViewport` on purpose: Vite
+   substitutes `import.meta.env.VITE_PREVIEW` at build time, so in a `main` build this ternary folds
+   to `null`, the `if` branch below becomes unreachable, and both the harness module and its dynamic
+   import leave the graph entirely. A runtime check inside the helper would ship the whole feature and
+   merely decline to run it.
+
+   `null` — every production build, and every preview build with the switch off — takes the branch
+   this file has always taken, with no wrapper element and no harness CSS anywhere near it. */
+const testVp = import.meta.env.VITE_PREVIEW === "1"
+  ? activeTestViewport(loadOptions(), window.location.search)
+  : null;
+
+if (testVp) {
+  // Dynamic import: keeps the harness out of the entry chunk, and out of the module graph completely
+  // once the condition above is statically false.
+  import("./ui/TestViewportHarness.jsx").then((m) => m.mountTestViewportHarness(rootEl, testVp));
+} else {
+  createRoot(rootEl).render(<Autostich />);
+}
