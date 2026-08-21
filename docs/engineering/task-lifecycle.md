@@ -48,7 +48,9 @@ is Tier B, because the decision is architectural.
 
 ```text
 task note -> branch -> [V1 baseline, if pixels will move] -> implement -> gates
-  -> self-review -> [V2 + V3 visual gate, if pixels moved] -> integrate -> cleanup
+  -> self-review
+  -> [V2 capture -> V3 human visual gate -> V4 classification, if pixels moved]
+  -> integrate -> cleanup
 ```
 
 **Task note.** Ten to twenty lines, in the branch's first commit message or an uncommitted scratch
@@ -58,10 +60,16 @@ was I supposed to change" has an answer that is not the diff.
 **Self-review** means reading the whole diff against the note before integrating — not re-reading the
 code you just wrote.
 
-**Conditional visual gate.** If the change moves pixels, Tier A still takes the §8 baseline (V1) and
-the post-change human review gate (V3). What shrinks is the *scope* — the affected screen, at the
-sizes that matter, rather than a full set — not the existence of the gate. A Tier A change that
-skips V1 is the one that makes "was it always like that" unanswerable a week later.
+**Conditional visual gate.** If the change moves pixels, Tier A runs the **whole** §8 lifecycle —
+V1 baseline, V2 capture, V3 human review gate, **and V4 classification.** What shrinks is the
+*scope*, never the set of steps: the affected screen at the sizes that matter, rather than a full
+capture set. A Tier A change that skips V1 is the one that makes "was it always like that"
+unanswerable a week later, and one that skips V4 turns a real finding back into a chat message.
+
+**Where Tier A records V4.** In the **task note or the handoff** — Tier A has no workstream
+directory, and it does not get one for this. The classification table from §8 is written inline
+there; findings that leave the task still get a backlog ID, exactly as in the higher tiers. The
+recording surface is smaller; the requirement is identical.
 
 If the change moves no pixels, V1–V4 do not apply.
 

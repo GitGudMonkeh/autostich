@@ -278,13 +278,32 @@ F3. A Visual Scout that emits "looks good" would destroy the gate that worked.
 ### Visual Scout — artefact handling
 
 The Visual Scout is the one scout that produces **binary** output, so it is the one exception to
-"scouts never write", and the exception needs stating precisely.
+"scouts never write", and the exception needs stating precisely — including why it does not break the
+one-writer-per-worktree rule.
 
 - **It produces V1 and V2 captures (`task-lifecycle.md` §8) plus their metadata**, written to the
   workstream's `evidence/` directory. Capture files are its deliverable; it cannot hand back a PNG as
   conversation text.
-- **It writes only into `evidence/`.** No source file, no document, no contract — those still come
-  back as text for a human to place.
+- **It writes only into `evidence/`.** No source file, no document, no contract, no generated
+  artefact — those still come back as text for a human to place. `evidence/` holds no input to the
+  build and no file any guard reads, so a write there cannot affect a gate result.
+
+### Why this does not break one-writer-per-worktree
+
+`AGENTS.md` and `git-workflow.md` §5 allow **one active writer per worktree**. The Visual Scout is a
+writer, so it is subject to that rule rather than exempt from it.
+
+- **It runs sequentially, never alongside the implementing session.** The main session starts it,
+  waits for it, and resumes. Capture is a distinct step of the §8 lifecycle — V1 before
+  implementation, V2 after gates — so it never needs to overlap with editing.
+- **The main writer is idle while it runs.** That is what keeps the count at one. A scout capturing
+  V2 while the worktree is still being edited would also be capturing an indeterminate state, so the
+  correctness argument and the concurrency argument point the same way.
+- **Its write set and the main writer's are disjoint** — `evidence/` versus everything else — so even
+  a mistimed run cannot collide on a file. This is a second line of defence, not the rule; the rule
+  is that it runs alone.
+- **It never runs in another worker's worktree.** Like any scout, it operates in the task's own
+  worktree.
 - **It reports differences with attribution** — which element, which viewport, how large — and never
   a verdict. "Judgement stays human" (`task-lifecycle.md` §8, V3) binds the scout too.
 - **What it commits is decided by the committing rule, not by the scout.** Metadata and the

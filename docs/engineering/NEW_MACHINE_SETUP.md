@@ -44,7 +44,18 @@ npm ci
 ```
 
 The repository carries binary media — skill and corner art, music, captured evidence — so a clone is
-considerably larger than the source alone. Measure with `du -sh .git` rather than assuming a figure.
+considerably larger than the source alone. Measure rather than assuming a figure:
+
+```bash
+# Git Bash / Linux
+du -sh .git
+```
+
+```powershell
+# PowerShell
+"{0:N2} GB" -f ((Get-ChildItem .git -Recurse -Force -File |
+  Measure-Object Length -Sum).Sum / 1GB)
+```
 
 **Prefer `git worktree` over a second clone.** Worktrees share one object store; a second clone
 duplicates all of it.
