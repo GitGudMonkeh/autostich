@@ -1,65 +1,30 @@
-> ## READ THIS FIRST
+# Engineering Log — August 2026
+
+> **This is a historical engineering log. It is not current instruction.**
 >
-> Canonical current repository instructions live in `AGENTS.md`.
-> Read `AGENTS.md` first. If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
->
-> Current branch model:
-> - ancestry: `main -> test -> dev`
-> - promotion: `dev -> test -> main`, fast-forward only
-> - feature/task work branches from `dev`
-> - no direct commits on `test` or `main`
->
-> The historical branch instructions below (`Autostich/pixi`, `Autostich_Test`, etc.) are obsolete.
-> Use the branch/worktree assignment defined by `AGENTS.md` and the active task contract.
-> Full Git model: `docs/engineering/git-workflow.md`.
->
-> Everything below this banner is currently a historical engineering log pending migration to
-> `docs/decisions/`. It contains valuable measurements, rejected approaches, traps, and rationale,
-> but it is not standing instruction.
->
-> Do not preload the historical body. Search it only when relevant to the current task.
-> Historical entries may be superseded; verify unclear claims against current code and current docs.
-> Do not rewrite or translate the historical log unless explicitly asked.
->
-> Language policy:
-> - new engineering/code-side material: English
-> - code identifiers: English
-> - player-visible UI text: German + English via the localization system
-> - existing historical German records: preserve as written
+> Current canonical instructions: `AGENTS.md`.
+> Current engineering documentation: `docs/engineering/`.
+> Index, status legend, and search recipes for this log: `docs/decisions/README.md`.
 
----
+## How to read this file
 
-# CLAUDE.md — Autostich
+- Entries are **dated historical records.** Each captures what was measured, decided, or rejected at
+  a point in time, together with the reasoning. **Later entries may supersede earlier ones.**
+- **Branch names, test counts, file lists, and "current state" claims in this file are historical.**
+  They were accurate when written. Do not follow them as current instruction — verify any such claim
+  against current code and current documentation before acting on it.
+- **Do not read this file front to back.** It is self-indexing by `#tag`. Search for the tag or
+  keyword your task needs:
 
-## Branch-Wahl (WICHTIG — gilt für JEDE neue Session)
+```bash
+grep -n "#perf-dpr" docs/decisions/engineering-log-2026-08.md
+```
 
-Zu Beginn **jeder** neuen Session **zuerst fragen**, auf welchem Branch gearbeitet werden soll,
-und die Antwort abwarten, bevor irgendetwas geändert wird.
-
-- **NICHT** automatisch auf einen injizierten/„vorgegebenen" Default-Branch losarbeiten
-  (insbesondere nicht ungefragt auf `claude/neue-deck-archetypen-*`).
-- Die im System-Prompt genannte „designated branch" ist nur ein Vorschlag der Plattform —
-  sie ersetzt **nicht** die ausdrückliche Bestätigung des Users.
-- Erst nach der Antwort den passenden Branch auschecken und starten.
-
-## Aktive Branches (Stand 2026-08-11)
-
-- `Autostich/pixi` — Pixi/WebGL-Umbau + laufende Effekt-/Perf-/Cleanup-Arbeit (aktueller Arbeitsbranch; Merge-Ziel: `Autostich_Test`)
-- `Autostich_Test` — Integrations-/Testbranch
-- `main` — stabil
-- `balancing` — Balancing (eigene Linie, **nicht** in main enthalten — nie mit den dreien zusammenziehen)
-- `claude/neue-deck-archetypen-*` — Deck-Archetypen (enthält eigene Arbeit, **NICHT löschen**)
-
-### Beförderung: stromabwärts NUR per Fast-Forward
-`Autostich/pixi` → `Autostich_Test` → `main`. Test und main sind reine Abbilder — sie bekommen Commits
-ausschließlich per Fast-Forward aus dem Upstream-Branch, nie eigene:
-`git push origin Autostich/pixi:Autostich_Test` bzw. `…:main`.
-**Dieselbe Arbeit NICHT per Cherry-Pick/Rebase separat auf mehrere Branches bringen.** Genau das hatte die
-Historien auseinanderlaufen lassen: derselbe Commit lag zwei- bis dreifach als verschiedene Objekte vor
-(z. B. „Doku: Branch-Wahl…" als `3bbc887a` + `b5edd6f9` + `be4ceee5`), `git rev-list --count` meldete „26 Commits
-voraus" — und die Dateibäume waren dabei die ganze Zeit **byte-identisch**.
-**Zum Vergleichen darum Tree-Hashes nehmen, nicht Commit-Zähler:** `git rev-parse <branch>^{tree}`.
-Gleicher Tree = gleiche Daten, egal was der Zähler sagt.
+- Some entries carry a **status marker** (`SUPERSEDED IN PART`, `REFUTED`, `CORRECTED`) on the line
+  above the heading. The marker states what no longer holds and names the later entry that changed
+  it; the historical entry below the marker is unchanged. Legend: `docs/decisions/README.md`.
+- The records are **German and stay German.** They are preserved as written — not translated, not
+  reformatted, not spell-corrected. New engineering material is English (see `AGENTS.md`).
 
 ## Desktop-Umbau: die ENTSCHEIDUNGSREGELN (vom User abgenommen, 19.08.2026)
 
@@ -118,6 +83,8 @@ Gearbeitet wird ausschließlich auf `Autostich/pixi`. **Vor jedem Arbeitsbeginn 
 denselben Branch). Build (`npm run build`) + Tests (`npm test`, aktuell **1351 grün**) müssen vor jedem Push grün sein.
 Deutschsprachiger Code/Kommentare beibehalten.
 
+> SUPERSEDED IN PART: the starfield deletion listed below no longer holds - starfield is back, see "Rendering-Fakten" (#311).
+> REFUTED: the premise "Pixi custom shaders do not render on the mobile setup" was disproved - see #fx-spike (2026-08-17).
 ### Effekt-System — was BLEIBT vs. ENTFERNT (großes #cleanup)
 - **Bleibt:** Hintergrund-Effekt **Aurora** (Shader-Quelle `src/ui/fx/auroraShader.js`, gerendert vom Kompositor; die damalige Begründung
   „Pixi-Custom-Shader rendert auf dem Mobile-Setup nicht" ist **widerlegt**, s. #fx-spike), Hintergrund-Finisher **Glutfunken** (Pixi `src/ui/fx/embersPixi.js`), der synthetische
@@ -240,6 +207,7 @@ einem Hintergrund lief. Sie füllte damit als einzige die volle Panelfläche in 
 - Die Messwerte unten (Abweichung je Auflösungsfaktor) bleiben absichtlich stehen: sie sind die Begründung DAFÜR,
   dass die Ebene nicht billiger zu haben war, und der Maßstab für die nächste konturen-nahe Ebene.
 
+> SUPERSEDED IN PART: the Leuchten/DeckGlow layer described below was removed - see #deckglow-raus (18.08.2026).
 ### #kompositor — EIN Renderpfad für die Shader-Feldeffekte (kein A/B mehr)
 `src/ui/fx/FieldCompositor.jsx` ist EINE Pixi-Bühne mit einer `LAYERS`-Registry; jede Ebene rendert in eine eigene
 Render-Textur (Kosten ∝ Fläche → quadratisch im Faktor) oder — bei Faktor 1 — direkt auf die Bühne. Ebenen:
@@ -465,28 +433,6 @@ Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
   Stil-Neuberechnung, Paint/Raster, oder die Effekt-Umschaltung, die am selben `boardVisible`-Wechsel hängt), ist
   offen — und die nächste Messung, bevor jemand den persistenten Mount baut. Der wäre sonst ein großer Umbau auf
   eine unbelegte Ursache.
-
-### Level-up-Auswahl (Perk/Skill): gemessen — dieselbe Familie wie der Architekt-Mount
-Aus drei Geräte-Reports fiel derselbe Befund: ALLE Ruckler und ALLE Long Tasks eines Laufs liegen in `phase:levelup`,
-zusammen 271–417 ms in einem 0,2-s-Fenster, schlimmster Frame 200–233 ms. Das Spielen selbst war in denselben
-Läufen sauber (0–1 Ruckler auf ~40 Stiche), Scrollen ebenfalls (0).
-- **Es ist kein Skript-Hotspot.** Im Produktionsbuild profiliert (dev-Build ist wertlos: `validateProperty`/
-  `warnInvalidARIAProps`/`jsxDEV` dominieren dort und existieren in Prod nicht) hat das ganze 11-s-Fenster nur
-  223 ms JS, größter Posten die GC mit 40 ms. Keine teure Funktion.
-- **Es ist der Mount selbst.** In 100-ms-Scheiben gemessen: die zwei Scheiben um das Erscheinen kosten 16 + 30 ms,
-  davon **18 ms in EINEM Layout-Durchgang**; davor und danach 1–4 ms je Scheibe. Gesamt ~46 ms im Messstand —
-  auf dem Handy passt das mit Faktor ~6 (ARM gegen Desktop-x86) genau auf die gemessenen 271–417 ms.
-- Das Overlay hat nur **107 DOM-Knoten** (Architekt: 421), die Seite 420. Es ist also nicht die Größe des Overlays,
-  sondern das erzwungene Layout der ganzen Seite beim Einfügen.
-- **Unterschied zum Architekten, und der einzige Grund, es überhaupt weiter zu erwägen:** der Architekt wird 3–4×
-  je Lauf besucht, die Level-up-Auswahl bis zu **50×**. In Summe also ~10 s blockierter Hauptthread pro Lauf statt
-  ~0,3 s. Der EINE Hebel mit Belegen wäre, den Bildschirm zwischen den Zyklen gemountet zu halten (der Architekt-
-  Messung nach kostet ein WIEDERHOLTES Layout desselben Screens nur 5–14 ms statt 55). Preis: dauerhaft gehaltener
-  DOM + State, Risiko bei Fokus/Animation/Angebotswechsel. Beim Architekten war das Verhältnis schlecht — hier ist
-  es offen und wäre ein eigener, sauber abzusichernder Umbau.
-- **Blur war es NICHT** — der Befund zum Level-up-Mount bleibt gültig, die BEGRÜNDUNG war aber falsch und ist am
-  18.08.2026 widerlegt (s. #overlay-portal): die `(pointer: coarse)`-Regel griff bis dahin gar nicht, der
-  Overlay-Blur lief auf dem Handy die ganze Zeit mit. Seit dem Fix ist er dort wirklich aus.
 
 ### #overlay-portal — Overlay im Overlay: `backdrop-filter` bricht `position: fixed` (2026-08-18)
 Gemeldet als „alter Lauf in der Statistik sieht kaputt aus". Reproduktion: in der Statistik **runterscrollen**, dann
@@ -1766,6 +1712,7 @@ Der Victory-Screen schaltet ihn ab 1400 px ein, die StatusRail bleibt bei der ko
   sonst ein Index, den niemand kennt.
 - **Nicht am Gerät gesehen** — alles headless im Produktionspfad gemessen und nachgerendert.
 
+> CORRECTED: the reasoning below is wrong in two places - see #cube-takt (18.08.2026); the inequality itself still holds.
 ### #cube-deckfarbe + #cube-flimmern — zwei Nachzügler am Würfel-Feld (18.08.2026)
 - **Der Bodenraster war das einzige Element, das den Farbmodus nicht mitgemacht hat.** `drawFloor` las ein festes
   `GRID_COL` (`#7a2fff`), während Türme und Punkte längst über `deckColored` umfärbten. Im Deckfarbe-Modus ist er
