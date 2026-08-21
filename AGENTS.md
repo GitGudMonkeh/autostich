@@ -223,9 +223,7 @@ Project preference:
   the guard fails.
 
 More detail:
-`docs/engineering/testing.md` *(planned)*
-
-If that document does not exist yet, use this section plus the current tests as the source of truth.
+`docs/engineering/testing.md`
 
 ---
 
@@ -419,9 +417,9 @@ Read deeper documentation only when the current task needs it.
 | If your task involves… | Read |
 | --- | --- |
 | Branching, worktrees, promotion, integration, cleanup | `docs/engineering/git-workflow.md` |
-| Writing/fixing tests or diagnosing a confusing red suite | `docs/engineering/testing.md` *(planned)* |
-| Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` *(planned)* |
-| UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` *(planned)* |
+| Writing/fixing tests or diagnosing a confusing red suite | `docs/engineering/testing.md` |
+| Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` |
+| UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` |
 | Worker / integrator / reviewer responsibilities | `docs/engineering/roles.md` *(planned)* |
 | Starting a task, handoff, integration procedure | `docs/engineering/task-lifecycle.md` *(planned)* |
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` *(planned)* |
