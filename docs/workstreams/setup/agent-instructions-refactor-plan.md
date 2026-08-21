@@ -1,7 +1,11 @@
 # Agent Instruction Refactor Plan — from logbook to routing layer
 
-> Status: **APPROVED IN PRINCIPLE. Batch 1 implemented, uncommitted, pending review.**
-> Batches 2–5 not started.
+> Status: **APPROVED IN PRINCIPLE. Batches 1–3 implemented.** Batch 4 requires re-evaluation
+> before it is scoped (see §17). Batch 5 (README refresh) not started.
+>
+> **Batch 3 corrected several claims in this document.** Where a section below is superseded, a
+> marker points at §16. The original analysis is left as written — it records what was believed and
+> when, which is the point of keeping this file.
 >
 > Originally analysed against `dev` @ `0f17612a`. **Revised 2026-08-20** after the branch
 > reconciliation landed; see §0 for what changed. Companion documents: `baseline-report.md`
@@ -344,6 +348,10 @@ Everything currently in `CLAUDE.md` that is not in this list moves. Nothing is d
 | `NEW_MACHINE_SETUP.md` | New, from baseline §6/§7 | Windows + Linux laptop; the `MSYS_NO_PATHCONV` note; disk budget per worktree. |
 | `docs/decisions/` | 847–856 (tuning), 1322–1337 (privacy) | Reference material, on demand. |
 
+> **CORRECTED IN BATCH 3 — see §16.** Two claims in the `conventions.md` row above proved wrong:
+> the rules are documented in **English**, not verbatim German, and the citation surface is neither
+> five files nor exclusively guard tests.
+
 ---
 
 ## 7. How historical knowledge is preserved
@@ -456,18 +464,25 @@ should follow it, so the branch contract documented is the one actually in force
 
 ---
 
-## 12. Proposed size and scope caps
+## 12. Scope rules per document
 
-| File | Target | Hard cap | Rule |
-| --- | --- | --- | --- |
-| `AGENTS.md` | ~180 lines | **250** | Rules and routing only. No measurements, no `#tags`, no dated entries. If it needs a "why longer than a sentence", it belongs in `docs/engineering/`. |
-| `CLAUDE.md` | ~50 lines | **80** | Claude-specific behaviour only. If it is true for Codex too, it belongs in `AGENTS.md`. |
-| each `docs/engineering/*.md` | 100–250 lines | **400** | One topic. Present tense, current state. History goes to `docs/decisions/`. |
-| `docs/decisions/*` | unbounded | — | Append-only; existing entries edited only to add status markers. |
+> **REVISED IN BATCH 3.** This section previously set numeric line-count caps (250 / 80 / 400).
+> Batch 1 and Batch 2 produced good documents that exceeded them, which showed the caps were
+> measuring the wrong thing: length was a proxy for "contains material that belongs elsewhere", and
+> the proxy failed. The qualitative rules below state what the caps were trying to protect. **Do not
+> truncate good documentation to satisfy a line-count target.**
 
-**Enforcement:** these are review conventions, not tests. A guard test could assert the two caps
-cheaply (`wc -l`), and given this repo's ratchet culture that would be idiomatic — but it is a
-follow-up decision, not part of this plan.
+| File | Rule |
+| --- | --- |
+| `AGENTS.md` | Current rules plus routing. No historical measurements, no `#tags`, no dated entries, no volatile counts. If a point needs more than a short justification, the justification belongs in `docs/engineering/`. |
+| `CLAUDE.md` | A thin Claude-specific adapter. If a statement is also true for Codex, it belongs in `AGENTS.md`. |
+| each `docs/engineering/*.md` | One coherent current topic, present tense. Reasoning and measurements go to `docs/decisions/`; link rather than restate. A new document must justify why it is not a section of an existing one. |
+| `docs/decisions/*` | Append-only. Existing entries are edited only to add status markers. |
+
+Across all of them: **one canonical location per fact.** Duplication and restatement are the failure
+mode this refactor exists to remove, and they are what to check for in review — not length.
+
+**Enforcement:** these are review conventions, not tests.
 
 ---
 
@@ -507,6 +522,9 @@ test/rd-ruhe.test.js         same
 scripts/skill-art-build.py   same
 docs/workstreams/setup/baseline-report.md   §4 updated once the refactor lands
 ```
+
+> **INCOMPLETE — CORRECTED IN BATCH 3, see §16.** The citation list above undercounts the surface
+> and misclassifies `scripts/skill-art-build.py`. The list of files actually changed is in §16.
 
 ### Explicitly unchanged
 
@@ -610,3 +628,109 @@ Deviations from the plan as written — none in scope, two in content:
 ```bash
 git diff --stat CLAUDE.md      # expect: insertions only, 0 deletions
 ```
+
+---
+
+## 16. Batch 3 implementation status (2026-08-21)
+
+**Implemented and committed** on `feature/agent-instructions-refactor-batch3`, in three commits:
+engineering documents, citation migration, this plan update.
+
+### Created
+
+```
+docs/engineering/conventions.md
+docs/engineering/testing.md
+docs/engineering/architecture.md
+```
+
+`AGENTS.md` drops the `*(planned)*` marker for those three only. The other planned documents keep
+theirs.
+
+### The eleven rules are documented in English
+
+Superseding §6, which said "Rules 1–11 verbatim". The rules are **current standing guidance**, and
+the language policy in §4a assigns new engineering material to English. `conventions.md` therefore
+states them in English and cites the log as provenance. The German original in
+`docs/decisions/engineering-log-2026-08.md` is **unchanged** — verified: the file's blob hash is
+identical to the one on `origin/dev`. Nothing was translated in place, and nothing was removed.
+
+### The citation surface was larger than estimated
+
+§1 and §13 recorded five citation sites, described as guard-test comments. The measured surface was
+**fourteen sites across ten files**, in three distinct categories:
+
+| Category | Sites | Target |
+| --- | --- | --- |
+| Rule-list citations | 4 `*-ruhe` test headers + 4 comment blocks in `src/index.css` | `docs/engineering/conventions.md` |
+| Historical measurement citations | `scripts/skill-art-build.py`, `docs/art/skills/README.md` | the decision log |
+| Historical decision citations | `src/App.jsx`, `src/game/themes.js`, `src/ui/CustomizeScreen.jsx`, `src/ui/fx/FieldLayer.jsx`, `src/ui/fx/PixiStage.jsx`, `src/ui/fx/starfieldBudget.js` | the decision log, by tag |
+
+Three specific corrections to this document:
+
+1. **`scripts/skill-art-build.py` is a measurement citation, not a rule-list citation.** §1 quotes it
+   as citing "Dritter/Vierter/Fünfter/Sechster Screen nach der Liste in CLAUDE.md". It does not. It
+   cites the `phase:levelup` mount measurement. Retargeting it to `conventions.md` as planned would
+   have created a fresh dangling reference, because that measurement deliberately stays in the log.
+2. **`docs/art/skills/README.md` was missing from the inventory entirely.** It carries the same
+   measurement citation, in the same sentence shape, and was found only by a full-repository sweep.
+3. **`src/ui/fx/starfieldBudget.js` cited a `#perf` tag that does not exist.** The log has `#perf-*`
+   variants only; there is no standalone `#perf`. The citation was already broken before this
+   refactor and a mechanical path swap would have preserved the breakage. It now names the real
+   section, *"Gottgleich-Prunk — Perf-Naht"*.
+
+**Class B included.** The six source-comment citations in the third category were folded into this
+batch rather than deferred. They were inside the batch's blast radius already, and splitting a
+fourteen-site sweep across two batches invites the second half to be forgotten.
+
+**Result:** no `CLAUDE.md` citation remains in `src/**`, `test/**`, `scripts/**`, or `docs/art/**`.
+The intentionally historical references — `docs/decisions/README.md` describing the log's origin,
+`AGENTS.md` describing the current adapter, and everything in `docs/workstreams/setup/` — are
+untouched by design.
+
+### German comments were not translated
+
+Per §4a, each edit changed only the path or tag token inside the existing German sentence. Where a
+longer path forced a rewrap, the wording is unchanged and every word is preserved. Comment text is
+the only thing that changed in `src/**`, `test/**`, and `scripts/**` — no executable code,
+selectors, JSX structure, constants, imports, or behaviour.
+
+### Ratchet handling
+
+The preflight established which guards read `src/index.css` and the edited JSX **without** stripping
+comments, and confirmed that no assertion anywhere depends on the literal string `CLAUDE.md`. The
+replacement text was checked against the counting guards: it introduces no guarded class name, CSS
+value, or magic literal. The doctrine and the trap classes are now written up in
+`docs/engineering/testing.md`.
+
+### Validation
+
+`npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, and `npm run gen:db` were all run.
+`npm run loc:export` was correctly not required — no player-visible string changed.
+
+One pre-existing condition, recorded before any Batch 3 edit and unchanged by it:
+`test/i18n-guards.test.js` hits the default per-test timeout in the full parallel run on the Windows
+development host, and passes in isolation. It is a load artifact, not a defect, and the test was not
+modified. Anyone seeing it should re-run the file alone and report both results — and should not
+extend that label to any *other* failure in that file.
+
+---
+
+## 17. Batch 4 requires re-evaluation
+
+**Do not implement Batch 4 as scoped in §10.** It assigns `roles.md` and `task-lifecycle.md` as new
+documents, but `docs/engineering/git-workflow.md` — written in Batch 1 — already contains worker
+ownership, integrator ownership, reviewer ownership, the integration procedure, and a task-level
+decision guide.
+
+Creating two documents that restate a third would reproduce exactly the drift this refactor exists to
+remove. The open question is whether that material should stay in `git-workflow.md`, move out of it,
+or be split differently — and it should be answered against the file as it now stands, not against
+the original plan.
+
+`NEW_MACHINE_SETUP.md` is unaffected by this and remains straightforwardly needed.
+
+**The final Batch 4 file structure is deliberately not decided here.**
+
+Batch 5 (README refresh) is unchanged: the stale branch line, the restated test counts, and the
+deploy description in `README.md` are still outstanding.
