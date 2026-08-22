@@ -197,6 +197,6 @@ prevent.
 
 | # | Question | Blocking? |
 | --- | --- | --- |
-| Q1 | Do regular and legendary perk tiles share one header-strip zone, or does the legendary tile get its own treatment? Decides whether the two lots need one `strip_w` or two | Yes — part 1 cannot finish without it |
+| Q1 | ~~Do regular and legendary perk tiles share one header-strip zone?~~ **Answered from the code, 2026-08-22.** `src/ui/PerkSelect.jsx:112` renders both populations through the **same** `<button>` — identical `lv-offercard as-edge-card` classes in the same `sm:grid-cols-3` grid. A legendary differs only by the added `as-legendary` class (animated gold frame) and the name colour; the tile geometry is the same. **One `strip_w` covers both lots.** Giving legendary tiles a different zone would be new design, which is a non-goal | **No — closed** |
 | Q2 | Category `S` has 0 families and 1 perk, `P` has 5 families and 0 perks. Does an S icon ever appear on a regular perk tile, or only via its single legendary? | No — affects test expectations, not the build |
 | Q3 | Should the disabled `E10` (`offerable:false`) be covered by the completeness guard, or excluded as unreachable? | No — reportable either way |
