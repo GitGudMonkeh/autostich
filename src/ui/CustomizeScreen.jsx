@@ -1237,7 +1237,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
       {/* #deckui: äußerer Modal-Rahmen zieht die aktive Deckfarbe (as-panel-deck) — wie die übrigen Werkstatt-/
           Options-Panels. NUR die Haupt-Shop-Karte; die Effekt-Vorschau-Bühnen (FxStage/Scenes) bleiben unberührt. */}
-      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
+      <div className="w-full max-w-xl dt:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
         <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
@@ -1250,20 +1250,20 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 (`display: contents`), damit ihre Kinder direkt im Raster liegen. Unterhalb bleiben sie
                 die Flex-Container, die sie immer waren — die Handy-Kopfzeile ändert sich nicht. */}
             <div className="cz-topline flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h2 className="text-lg min-[1400px]:text-2xl font-bold whitespace-nowrap">{t("shop.title")}</h2>
+              <h2 className="text-lg dt:text-2xl font-bold whitespace-nowrap">{t("shop.title")}</h2>
               <div className="cz-headrow flex items-center gap-2.5 shrink-0 ml-auto">
                 {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
                     Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
                 <span className="cz-bal flex items-baseline gap-1 whitespace-nowrap">
-                  <span className="text-lg min-[1400px]:text-3xl font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                  <span className="text-[10px] min-[1400px]:text-[13px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+                  <span className="text-lg dt:text-3xl font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                  <span className="text-[10px] dt:text-[13px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
                 </span>
                 <button onClick={onClose} className="cz-close as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-sm">{t("common.close")}</button>
               </div>
               {/* Auskunft wie im Baum: was der Reiter enthält, und was ein Antippen bewirkt. Erst ab
                   1400 px — am Handy ist die Kopfzeile für eine dritte Spalte zu schmal. */}
               {tab !== "fx" && (
-                <div className="cz-readout hidden min-[1400px]:block">
+                <div className="cz-readout hidden dt:block">
                   <div className="text-[11px] tabular-nums" style={{ color: "#a6a6b0" }}>
                     {t(tab === "challenges" ? "shop.head.challenges" : "shop.head.packs",
                       { n: catList(tab).length, own: catList(tab).filter((pk) => (pk.kind === "std" ? "own" : packState(p, pk)) === "own").length })}
@@ -1273,7 +1273,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
               )}
             </div>
             {/* Die Haarlinie trennt Kopf und Inhalt — dieselbe Zeile in Deckfarbe wie im Upgrade-Baum. */}
-            <div className="cz-hair hidden min-[1400px]:block h-[2px] w-full rounded-full"
+            <div className="cz-hair hidden dt:block h-[2px] w-full rounded-full"
               style={{ background: "linear-gradient(90deg, var(--deck-a1, #9b82f0), var(--deck-a2, #26c6e6), var(--deck-a1, #9b82f0))", opacity: .7 }} />
             {/* Tab-Umschalter: Packs · Challenges · Effekte.
                 #kante: Die Reiter tragen das Farbsignal an der UNTERkante, nicht links wie Knöpfe und Karten.
@@ -1593,7 +1593,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
         <div ref={shotBodyRef} className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] min-[1400px]:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            <span className="text-[15px] dt:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
           </div>
 

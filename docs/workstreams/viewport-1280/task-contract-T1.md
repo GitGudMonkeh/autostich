@@ -68,13 +68,29 @@ from "does 1280 break something".
 
 ### Commit 1 — Test anchors compute instead of slicing on a literal
 
-~27 occurrences across 20 test files currently do `css.indexOf("@media (min-width: 1400px)")` to cut
-`index.css` into a phone half and a desktop half. Replace with a computed anchor:
+**Corrected 22.08.2026 — the anchor count is 33, not 27.** The first estimate counted only one kind.
+The full set:
 
-```js
-import { DESKTOP_MIN } from "../src/ui/useIsWide.js";
-const DESKTOP_AT = `@media (min-width: ${DESKTOP_MIN}px)`;
-```
+| Kind | Count | Reacts to |
+| --- | --- | --- |
+| Block anchors, `indexOf("@media (min-width: 1400px)…")` | 27 | commit 3 |
+| Regex assertions on the media-query text, including a `matchAll` over the `max-width` bands | 5 | commit 3 |
+| A **prose anchor** — see below | 1 | commit 3 |
+| JSX class-name assertions carrying the variant literal | 7 | **commit 2** |
+
+The prose anchor is the one worth naming: `test/buehne-desktop.test.js` sliced `index.css` not at the
+media query but at a **German comment heading** containing "ab 1400 px". Carrying the prose forward in
+commit 3 would have broken it, and it would have looked like a real failure. It anchors on the
+`#buehne` section marker now — the dash form, which distinguishes a section heading from the inline
+cross-reference form used elsewhere in the file.
+
+All of them move to `test/desktopBreakpoint.js`, which computes the media query, the block opener, the
+variant prefix and the regex-safe forms. The seven JSX assertions go through the same helper so that
+commit 2 changes one line there instead of seven test files.
+
+**Verify the converted regexes are faithful before trusting a green suite.** Two of them feed
+constructs that pass vacuously on zero matches — `for (const m of css.matchAll(RE))` and
+`css.match(RE) || []`. Run old and new against the real stylesheet and compare match for match.
 
 **Threshold value: unchanged at 1400. Suite must be green. No behaviour change, no visual change.**
 
@@ -86,21 +102,39 @@ green. After it, every red test in this task is a real signal.
 - `@theme { --breakpoint-dt: 1280px }` … **no.** In this commit the value is **still 1400**:
   `@theme { --breakpoint-dt: 1400px }`.
 - Codemod every `min-[1400px]:` JSX utility (~134 occurrences, 10 files) to `dt:`.
-- `DESKTOP_MIN` in `src/ui/useIsWide.js` is derived from the same source rather than typed again.
+- `DESKTOP_MIN` in `src/ui/useIsWide.js` stays a literal, and a guard proves it equals the token.
+  **Corrected 22.08.2026:** the contract first said "derived from the same source rather than typed
+  again". That is not achievable — a CSS media query cannot read a custom property, so the JS side
+  must carry its own copy of the number. Two literals with a guard that computes both sides and
+  compares them is the honest construction, and it is what `test/desktopBreakpoint.js` does.
 - After this commit **no arbitrary `min-[Npx]:` variant remains anywhere in `src/**`.**
 
-**Hard gate: the compiled CSS must be byte-identical to the compiled CSS of commit 1.**
+**Hard gate: the compiled CSS must be unchanged apart from named, inherent differences.**
+
+**Corrected 22.08.2026.** The contract first demanded a *byte-identical* stylesheet. That gate cannot
+be met and asking for it would have forced a wrong conclusion: the variant prefix appears in the
+SELECTORS, so renaming it necessarily rewrites `.min-\[1400px\]\:top-0` into `.dt\:top-0`. The bytes
+must differ.
+
+The real gate: normalise both artefacts by rewriting whichever variant prefix they carry into one
+neutral token, remove the differences that are inherent to defining a theme breakpoint — each one
+named and printed, never quietly subtracted — and compare the remainder byte for byte.
 
 ```bash
-npm run build            # before and after, compare the emitted CSS asset
+npm run build            # before and after, then compare the emitted CSS asset as described
 ```
 
-If it is not identical, the codemod is wrong. This proof is stronger than any ratchet: it shows the
-rename changed nothing, at the only level that matters — the output.
+Measured on the actual run: identical at 149800 bytes on both sides, 63 variant selectors on both
+sides, with one inherent difference — Tailwind emits one `.container` max-width step per theme
+breakpoint, and `.container` is carried by no element in this app.
 
 **The codemod must be a script, not hand edits.** A hand-edited rename cannot be re-run, cannot be
-reviewed as a transformation, and makes the byte-identity proof a coincidence rather than a
-consequence.
+reviewed as a transformation, and makes the equivalence proof a coincidence rather than a consequence.
+
+**Prerequisite discovered during the work.** The comparison is only meaningful against a clean
+baseline, and the baseline was not clean: Tailwind's automatic source detection scanned `docs/**`,
+so class names quoted in prose were compiled into the shipped stylesheet. That is fixed in its own
+commit (`build: stop documentation prose from reaching the stylesheet`) **before** this one.
 
 **Threshold value: still 1400. Suite green. No visual change.**
 

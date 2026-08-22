@@ -78,7 +78,7 @@ export function PrivacyModal({ onClose }) {
           leer ist. Darunter ändert sich nichts. #deckui: `as-panel-deck` = deck-getönter Rahmen wie in den
           übrigen Overlays (Optionen/Werkstatt), nicht mehr der neutrale. */}
       <div onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg min-[1400px]:max-w-[860px] rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col"
+        className="w-full max-w-lg dt:max-w-[860px] rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col"
         style={MODAL_CARD}>
         <ModalHairline />
 
@@ -106,7 +106,7 @@ export function PrivacyModal({ onClose }) {
               Kopier-Knopf) — gemessen 364,8 px Spur in einem 356 px breiten Scroller, alle sechs Abschnitte erben
               die Breite und der Hinweis scrollt seitwärts. `truncate` hilft dagegen NICHT, es kappt die DARSTELLUNG,
               nicht den max-content-Beitrag. Dieselbe Naht wie in der Bestenlisten-Zeile (#global). */}
-          <div className="grid grid-cols-1 gap-2.5 mt-4 min-[1400px]:grid-cols-2 min-[1400px]:items-start">
+          <div className="grid grid-cols-1 gap-2.5 mt-4 dt:grid-cols-2 dt:items-start">
             {SECTIONS.map((sec) => {
               const c = SENDERS.has(sec) ? ACC : NEUTRAL;
               return (
@@ -127,7 +127,7 @@ export function PrivacyModal({ onClose }) {
                 (lokaler Build ohne .env) gibt es keine Zeilen, die man löschen lassen könnte.
                 Sie steht IN der Abschnitts-Spalte, aber über beide Spalten: sie ist Werkzeug, kein Abschnitt. */}
             {telemetryConfigured && id && (
-              <div className="rounded-lg p-3 min-[1400px]:col-span-2" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
+              <div className="rounded-lg p-3 dt:col-span-2" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
                 <div className="text-[10px] uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 min-w-0 truncate text-[12px] font-mono select-text" style={{ color: "#a8ecf7" }}>{id}</code>
@@ -142,13 +142,13 @@ export function PrivacyModal({ onClose }) {
 
           {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Deckfarbe. Ab 1400 px steht der Stand
               daneben statt darunter: zwei kurze Zeilen untereinander lassen den Fuß länger wirken als er ist. */}
-          <div className="mt-3 flex flex-col min-[1400px]:flex-row min-[1400px]:items-center gap-2 min-[1400px]:gap-3">
+          <div className="mt-3 flex flex-col dt:flex-row dt:items-center gap-2 dt:gap-3">
             <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
               className="as-edge as-edge-thin block flex-1 text-center text-sm font-bold rounded-lg py-2.5 transition-all"
               style={{ "--c": ACC }}>
               {t("privacy.contact.discord")}
             </a>
-            <div className="text-[11px] opacity-40 leading-snug min-[1400px]:whitespace-nowrap">{t("privacy.updated")}</div>
+            <div className="text-[11px] opacity-40 leading-snug dt:whitespace-nowrap">{t("privacy.updated")}</div>
           </div>
         </div>
       </div>

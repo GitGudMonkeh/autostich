@@ -119,7 +119,7 @@ export function FeedbackModal({ onClose }) {
           {/* #desktop: Auskunftszeile neben dem Titel (Spalte 2 des Kopf-Rasters, wie im Upgrade-Baum).
               Sie sagt, wohin die Meldung geht und was automatisch mitgeht — auf dem Handy fehlt dafür
               schlicht die Zeile, dort steht es am Lauf-Bezug weiter unten. */}
-          <div className="fb-readout hidden min-[1400px]:block">{t("feedback.desk.readout")}</div>
+          <div className="fb-readout hidden dt:block">{t("feedback.desk.readout")}</div>
 
           <div className="fb-head text-center mb-4">
             {/* #deckui: Eyebrow deck-getönt. */}

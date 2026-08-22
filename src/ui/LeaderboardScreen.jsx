@@ -223,7 +223,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${accent} 14%, transparent))` }
                     : { color: "#8a8a95", borderBottom: "2px solid transparent", background: "transparent" }}>
                   <span className="lb-tab-l flex items-center justify-center gap-1.5">{icon && <RankIcon />}{tr(labelKey)}</span>
-                  <span className="lb-tab-s hidden min-[1400px]:block">
+                  <span className="lb-tab-s hidden dt:block">
                     {subKey === "week" ? tr("board.weekLabel", { week: week.week, year: week.year }) : tr(subKey)}
                   </span>
                 </button>
@@ -303,8 +303,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                       420 px Spaltenbreite passt der volle Text — dann ist die Kurzform überflüssig, und man
                       muss für „was heißt Knapper Bau?" nicht mehr in den Regeln nachsehen. */}
                   <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
-                  <div className="mb-3 min-[1400px]:hidden"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
-                  <div className="lb-modlist mb-3 hidden min-[1400px]:grid gap-1.5">
+                  <div className="mb-3 dt:hidden"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
+                  <div className="lb-modlist mb-3 hidden dt:grid gap-1.5">
                     {pickedDisplayMods(weekMods).map((m) => <ModBox key={m.id} m={m} />)}
                   </div>
                   </div>)}

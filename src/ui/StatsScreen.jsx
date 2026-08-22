@@ -164,7 +164,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
           <h2 className="text-lg font-bold flex items-center gap-2">{t("stats.title")}</h2>
           {/* #desktop: Auskunftszeile im Kopf (Spalte 3, wie im Upgrade-Baum). Unter 1400 px ist der Kopf
               zweispaltig und hat dafür keinen Platz. */}
-          <div className="st-readout hidden min-[1400px]:block">{t("stats.desk.readout")}</div>
+          <div className="st-readout hidden dt:block">{t("stats.desk.readout")}</div>
           <ActionButton kind="secondary" className="st-close shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
 

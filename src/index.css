@@ -40,6 +40,24 @@
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-weight-bold: 600;
   --font-weight-extrabold: 600;
+
+  /* #viewport-1280 — die Desktop-Schwelle, EINMAL.
+     Vorher stand die Zahl als arbiträre Tailwind-Variante an rund 134 Stellen
+     im JSX — `min-` plus Klammerausdruck, die Schwelle also 134-mal
+     ausgeschrieben. (Die alte Schreibweise steht hier bewusst NICHT wörtlich
+     da: der Codemod, der sie ersetzt hat, hätte sonst diesen Satz mit
+     umgeschrieben und die Begründung zerstört.) Eine Änderung war damit ein
+     Suchen-und-Ersetzen über zehn Dateien, bei dem eine übersehene Stelle
+     zwischen den beiden Werten den falschen Zweig zeigt — und das sieht man
+     weder im Test noch beim Draufschauen.
+     `--breakpoint-dt` erzeugt in Tailwind 4 die Variante `dt:`,
+     genauso wie `sm:`/`md:`/`lg:` aus den eingebauten Breakpoints kommen.
+
+     Die Media Queries weiter unten können den Wert NICHT lesen: CSS-Media-
+     Queries kennen keine Custom Properties. Sie tragen die Zahl deshalb
+     ausgeschrieben. Dass beide Fundorte übereinstimmen, sichert ein Wächter,
+     der sie ausrechnet und vergleicht, statt sie abzuschreiben. */
+  --breakpoint-dt: 1400px;
 }
 
 /* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
@@ -2273,7 +2291,7 @@ button { font-family: inherit; }
   /* Die Verwaltungsliste: Fläche hellt auf, der Farbanlauf zieht an und die Kante wächst von 4 auf
      6 px. KEIN Schein am Rahmen — die Liste sitzt in EINEM Glasrahmen, ein Leuchten je Zeile würde
      gegen diesen Rahmen arbeiten. Angehoben wird hier auch nicht (steht schon im JSX als
-     `min-[1400px]:hover:translate-y-0`): eine Liste, die beim Überfahren hüpft, wirkt unruhig.
+     `dt:hover:translate-y-0`): eine Liste, die beim Überfahren hüpft, wirkt unruhig.
      `!important` beim Streifen, weil seine Farbe inline aus dem JSX kommt. */
   .as-hub-list .as-hub-tile:hover { background: rgba(255, 255, 255, .06); }
   .as-hub-list .as-hub-tile:hover .as-hub-stripe {

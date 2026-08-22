@@ -124,13 +124,13 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             Kennzahlen. Fehlt der Wert (lokaler Lauf, Alt-Eintrag), rendert der Block gar nichts. */}
         <div className="rd-c1 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
-          <div className="rd-ph hidden min-[1400px]:block">{t("gameover.stats")}</div>
+          <div className="rd-ph hidden dt:block">{t("gameover.stats")}</div>
           <RunTreeBlock treeNodes={entry.treeNodes} />
           <RunStatCells entry={entry} sourceCells />
         </div>
         <div className="rd-c2 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
-          <div className="rd-ph hidden min-[1400px]:block">{t("gameover.build")}</div>
+          <div className="rd-ph hidden dt:block">{t("gameover.build")}</div>
           <div className="mt-4"><RunBuildChips entry={entry} anonymized={anonymized} /></div>
         </div>
         {/* #rd-verlauf: Verlauf des Laufs — Score-Kurve gegen den besten Lauf der Historie und der Stich-Score
@@ -139,12 +139,12 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         {(hasTraj || hasLog) && (
           <div className="rd-c4 as-ring as-ring-quiet">
             <i className="as-ring-run" aria-hidden="true" />
-            <div className="rd-ph hidden min-[1400px]:block">{t("gameover.chart.title")}</div>
+            <div className="rd-ph hidden dt:block">{t("gameover.chart.title")}</div>
             {hasTraj && (
               <div className="rd-spark mt-4">
                 <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
-                  <span className="min-[1400px]:hidden">{t("gameover.chart.title")}</span>
-                  <span className="hidden min-[1400px]:inline" />
+                  <span className="dt:hidden">{t("gameover.chart.title")}</span>
+                  <span className="hidden dt:inline" />
                   <span className="flex gap-3 normal-case tracking-normal">
                     <span style={{ color: "#d4a63a" }}>{t("gameover.chart.run")}</span>
                     {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>{t("gameover.chart.record")}</span> : <span className="opacity-40">{t("gameover.chart.first")}</span>}

@@ -78,8 +78,8 @@ function PillBody({ label, mark, titleColor, markColor }) {
     <>
       {/* #desktop: eine Stufe größer ab 1400 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
           zu klein. Größer geht nicht: 27 Knoten müssen gleichzeitig ins Bild passen. */}
-      <span className="text-[11px] min-[1400px]:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
-      <span className="text-[9.5px] min-[1400px]:text-[12px] ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
+      <span className="text-[11px] dt:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
+      <span className="text-[9.5px] dt:text-[12px] ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
     </>
   );
 }
@@ -422,7 +422,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
    <>
     <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck up-card relative"
+      <div className="w-full max-w-xl dt:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck up-card relative"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
 
         {/* Sticky-Kopf: Titel + SP-Guthaben + Respec + Schließen + Reiter. */}
@@ -430,11 +430,11 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <TopHairline />
           {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
               (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
-          <h2 className="text-lg min-[1400px]:text-2xl font-bold">{t("upgrades.title")}</h2>
+          <h2 className="text-lg dt:text-2xl font-bold">{t("upgrades.title")}</h2>
           <div className="up-headrow flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
-              <span className="text-xl min-[1400px]:text-3xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
-              <span className="text-[10px] min-[1400px]:text-[13px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
+              <span className="text-xl dt:text-3xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
+              <span className="text-[10px] dt:text-[13px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
             <div className="up-actions flex items-center gap-2.5 shrink-0">
               {/* #kante: neutraler Kanten-Knopf mit schmaler Kante (kleines Element) — Respec ist ein Ausweg,
@@ -599,8 +599,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <button onClick={() => setDetailArch(arch)}
                     className="flex items-center gap-2 w-full text-left mb-2.5 group" title={`${meta?.label}: Details`}>
                     <FactionIcon type={arch} size={20} />
-                    <span className="text-[14px] min-[1400px]:text-[17px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
-                    <span className="ml-auto text-[10.5px] min-[1400px]:text-[13px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
+                    <span className="text-[14px] dt:text-[17px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
+                    <span className="ml-auto text-[10.5px] dt:text-[13px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
                   </button>
                   <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} selected={selNode} onSelect={toggleNode} />
                 </div>
@@ -623,8 +623,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               return (
               <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(acc)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
-                  <span className="text-[13px] min-[1400px]:text-[16px] font-extrabold" style={{ color: acc }}>{t(lane.nameKey)}</span>
-                  {lane.noteKey && <span className="text-[9.5px] min-[1400px]:text-[12px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
+                  <span className="text-[13px] dt:text-[16px] font-extrabold" style={{ color: acc }}>{t(lane.nameKey)}</span>
+                  {lane.noteKey && <span className="text-[9.5px] dt:text-[12px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
                 </div>
                 <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={acc} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>

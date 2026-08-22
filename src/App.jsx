@@ -1106,7 +1106,7 @@ function AutostichGame() {
           #buehne (19.08.2026): Der LAUF hat seinen 1024er-Deckel verloren. Er war an das alte Kartenfeld gebunden
           (668 × 347) und ließ auf jedem Desktop-Fenster fast die halbe Breite leer — vom Spielfeldbild (1600 × 640)
           landeten dadurch nur 23 % auf dem Schirm. Ab 1400 px trägt `rn-shell` das Bühnen-Layout (index.css). */}
-      <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "min-[1400px]:max-w-[1520px]" : "rn-shell"}`}>
+      <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "dt:max-w-[1520px]" : "rn-shell"}`}>
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("ranked")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
             onResume={resumable ? resumeRun : null}

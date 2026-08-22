@@ -193,7 +193,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
             {/* #desktop: Auskunftszeile neben dem Titel — dieselbe Stelle wie das Guthaben im Upgrade-Baum
                 (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1400 px gibt es sie nicht: dort ist
                 der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
-            <div className="op-readout hidden min-[1400px]:block">{t("options.desk.readout")}</div>
+            <div className="op-readout hidden dt:block">{t("options.desk.readout")}</div>
             <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>
               <span className="as-deskonly op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
             </ActionButton>
