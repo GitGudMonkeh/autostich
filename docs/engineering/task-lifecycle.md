@@ -23,7 +23,7 @@ That rule is the only thing preventing this file from becoming a second copy of 
 
 ---
 
-## 2. Choosing a tier
+## 2. Choosing a tier, and where the owner is needed
 
 | | **A — Standard task** | **B — Feature workstream** | **C — Large UI / architecture workstream** |
 | --- | --- | --- | --- |
@@ -36,11 +36,31 @@ That rule is the only thing preventing this file from becoming a second copy of 
 | Independent review | optional, risk-based | optional, risk-based | optional, risk-based |
 | Branch shape | one branch off `dev` | one branch off `dev` | `feature/*` with `task/*` below it |
 
-**When in doubt, pick the lower tier and escalate.** Escalating costs one planning session.
-Over-scoping costs the entire ceremony on work that never needed it.
+**Tier A is the default.** A task is Tier A unless one sentence says why it is not, written where the
+task starts — the task note, or the message that sets the work going. No sentence, no apparatus.
 
-A tier follows from the *shape* of the work, not its size in lines. A one-line change to a breakpoint
-is Tier B, because the decision is architectural.
+Escalating later costs one planning session. Starting one tier too high costs the whole apparatus on
+work that never needed it, and nobody notices, because the result looks thorough either way.
+
+A tier follows from the *shape* of the work, not its size in lines. It is Tier B when the work makes
+a design choice that outlives it — a one-line breakpoint change qualifies, because the number becomes
+the rule. It is Tier A when it carries out a decision already taken, however many files that touches.
+
+### The owner's two stops
+
+Across every tier the owner is stopped **twice**. The rest of the lifecycle runs without them.
+
+| Stop | When | Settled in one pass |
+| --- | --- | --- |
+| **Start** | Before implementation | Scope and tier; the decision block's questions (§4); whatever the House rules reserve — a new glyph, a new dependency; and, where pixels will move, which state the V1 baseline captures |
+| **End** | Before integration | The V3 visual gate (§8) and the integration authorization (§10), answered together |
+
+A question that could have waited for one of those two stops and was raised on its own instead is a
+defect in the process, not diligence.
+
+**Not stops:** technical choices (`AGENTS.md` — *Decision authority*), committing and pushing the
+task's own branch (`AGENTS.md` — House rules), and anything the planning report itself marked
+non-blocking.
 
 ---
 
@@ -96,12 +116,21 @@ so that decision gets made deliberately rather than by default.
 
 **Nothing is implemented until the owner has settled the report's blocking open questions** — where
 an open question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
-authority*). A technical question is not an open question: the planner either resolves it and records
-the rejected options, or names it explicitly as a decision delegated to the worker. An owner question
-the report itself marks non-blocking is recorded, not a gate — the report's *Blocking?* column
-decides. Owner gates are settled here, not discovered in review: a new glyph and a new dependency are
-reserved by the House rules; a responsive breakpoint change moves visible layout and is the owner's
-under `AGENTS.md` — *Decision authority*.
+authority*). A technical question is not an open question: it is resolved in the report with the
+rejected options recorded, or named explicitly as a decision delegated to the worker.
+
+**The owner-facing part is a decision block at the top of the report, and it is short.** A few lines
+on what is being built, then the questions the owner must answer — **at most three, 400 words for the
+whole block**. Each carries a recommended answer and its reason, so that silence is an answer and
+only disagreement costs a round trip. A question the report marks non-blocking is recorded further
+down, not raised here. This block is the *Start* stop from §2: owner gates are settled in it, not
+discovered in review — a new glyph and a new dependency are reserved by the House rules, and a
+responsive breakpoint change moves visible layout and is the owner's under `AGENTS.md` — *Decision
+authority*.
+
+**Everything below the decision block is written for whoever implements and reviews the work.** Its
+length is not capped and the owner is not expected to read it. A report that buries two owner
+questions inside five thousand words has not asked them; it has hidden them.
 
 **The visual gate sits before integration**, and its findings are classified there (§8) — and before
 any independent review, where one was requested. The baseline (V1) is taken **after the worktree
@@ -187,8 +216,13 @@ claims.
 
 Commit **captured images only when they are the evidence**, that is when the finding is visual and a
 reader must see it to judge it. Otherwise keep them regenerable, which is only honest if the
-generating script is committed and deterministic. Images are heavy and permanent; decide per
-workstream rather than by habit.
+generating script is committed and deterministic.
+
+**The same test governs generated data** — geometry dumps, survey matrices, measurement JSON. Commit
+the table that carries the claim, not the machine output behind it, unless a reader must see the raw
+rows to judge the finding. Captured output is heavy and permanent: `viewport-1280` committed 11 MB of
+evidence, one file of which is 268,070 lines, and Git keeps it for good. Decide per workstream rather
+than by habit.
 
 ---
 
@@ -221,7 +255,9 @@ V4  classification                   <- every finding gets a row and an ID
 "after" cannot separate "this change did it" from "it was always like that", and reconstructing a
 baseline from a reverted working tree is exactly when the wrong state gets captured.
 
-Record the sizes, the DPR and the application state, because V2 has to match them.
+Record the sizes, the DPR and the application state, because V2 has to match them. **Which state to
+capture is asked at the *Start* stop** (§2), together with everything else the owner settles there —
+not as a round of its own once the worktree exists.
 
 ### V3 — human visual review gate
 
@@ -329,7 +365,8 @@ Integration mechanics, promotion and ancestry diagnosis are `git-workflow.md` §
 level only two things matter.
 
 **Integration is authorized, not assumed.** Readiness is a precondition, not the decision — the
-authorization is separate and explicit.
+authorization is separate and explicit. It is asked **together with the visual gate**, as the single
+*End* stop in §2, not as a further round after it.
 
 **What readiness means** is `AGENTS.md` — *Independent review*: scope and contract met, required
 validation and evidence present with the relevant gates passed, branch clean and committed, known

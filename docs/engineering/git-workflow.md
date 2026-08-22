@@ -227,7 +227,9 @@ A fresh worktree does not inherit dependencies from another checkout.
 
 Do not trust test/lint results before `npm ci` has completed in the current worktree.
 
-Nimbalyst may create/manage worktrees for us. The same ownership and lifecycle rules still apply.
+The `/create-task` command (`.claude/commands/create-task.md`) performs this setup for us — branch,
+worktree, dependencies and a contract scaffold — from the cockpit checkout. The same ownership and
+lifecycle rules still apply to a worktree it created.
 
 ---
 
@@ -242,7 +244,7 @@ A worker may:
 - take the technical implementation decisions inside that scope (`AGENTS.md` — *Decision authority*),
 - run validation,
 - make coherent commits,
-- push its own branch when authorized,
+- push its own branch — standing authorization (`AGENTS.md` — House rules),
 - update its own work after review feedback,
 - produce a handoff.
 
@@ -574,9 +576,10 @@ Therefore:
 - Important commits should be pushed before switching machines or ending a meaningful work period.
 - Task decisions belong in handoffs, PRs, workstream docs, or other durable repository artifacts when relevant.
 
-Do not interpret this as permission for agents to push whenever they want.
+An agent pushes **its own task branch** freely — that is standing authorization (`AGENTS.md` — House
+rules) and the reason durable state is cheap to reach.
 
-Push only when the task/workflow authorizes it.
+It does not push a permanent branch, another task's branch, or anything by force.
 
 ---
 
@@ -607,7 +610,7 @@ recreate local worktree
     ->
 npm ci
     ->
-open/create Nimbalyst session
+start an agent session in that worktree
     ->
 read AGENTS.md + workstream + task + handoff
     ->
