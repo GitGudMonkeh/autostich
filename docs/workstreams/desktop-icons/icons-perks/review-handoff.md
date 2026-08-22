@@ -22,7 +22,7 @@ For **Codex**, as independent reviewer (`AGENTS.md` — *Roles and source of tru
 3. **`scripts/skill-art-build.py`**, the block above the lot table — the same argument in the place
    the number lives.
 4. **`src/ui/perkArt.js`** — the two-population split, ~80 lines.
-5. **`test/perk-art.test.js`** — 32 assertions; the counter-check results are in the evidence package.
+5. **`test/perk-art.test.js`** — the counter-check results are in the evidence package.
 6. **`docs/art/legendaries/README.md`** — the light alignment, and the one method change.
 7. **`src/index.css`**, the `.pk-offer-art` / `.pk-strip` / `.pk-strip-mid` block.
 
@@ -73,14 +73,19 @@ approved it as shipped. Comparison image: `visual/V2-legendaries-anchor-comparis
 ### 3. The alignment statistic changed for the new lot
 
 The perk-category factors are the README's, applied unchanged as the contract requires. The legendary
-factors were solved against **total emitted light** rather than the **luminous area** the category set
-used, because area-matching does not converge on this lot — five of 21 files hit the solver ceiling
-and three were still short of target there.
+factors are solved against **light as shown** — the delivery file after resize, bloom, crop to the
+zone and the CSS mask.
 
-The consequence to check: the two lots are now aligned by two different statistics. The defence is
-that alignment is per lot and each set is internally consistent; the cost is that
-`align --lot perkcats` now disagrees with what perkcats ships (E Form: 1.06 solved, 0.73 shipped).
-That divergence is reported by the tool rather than acted on. See `ICONS-PERK-VIS-05`.
+This is the finding review round 1 got right and is the biggest change since. Two statistics were
+tried and dropped first: luminous area does not converge on this lot, and total emitted light *on the
+master* converged but measured before the pipeline, claiming a 1.26-fold residual where the shipped
+files actually spread 1.78-fold in the zone. Solving at the end of the pipeline gives 1.01-fold.
+
+What to check now: the lot table gained `strip_h`, `mask_stop` and `anchor`, so the solver depends on
+three more numbers that must match `src/index.css` — all three are guarded and counter-checked, but
+they are new seams. And the two perk lots are still aligned by two different statistics:
+`align --lot perkcats` reports 1.56 for B Stich against 1.05 shipped, leaving that lot at 1.69-fold as
+shown. Not acted on, because the contract requires the README's factors. See `ICONS-PERK-VIS-05`.
 
 ---
 
@@ -183,5 +188,5 @@ Nothing in the contract's *Must not be touched* list was touched: `SkillSelect.j
 `LegendarySelect.jsx`, `skillArt.js`, `docs/art/skills/**`, `src/assets/skills/**`,
 `docs/art/corners/**`, `AGENTS.md`, `CLAUDE.md`, `docs/engineering/**`, `docs/decisions/**`.
 
-Not committed and not pushed: the contract does not authorise it (`AGENTS.md` — *House rules*). No PR
-opened. The work is in the worktree, uncommitted, awaiting the V3 gate and this review.
+Committed and pushed to `origin/task/icons-perks` after the owner passed V3 and authorised it. No PR
+opened — that needs its own instruction (`AGENTS.md` — *House rules*).

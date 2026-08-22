@@ -48,7 +48,10 @@ visual/V1-perk-card-<size>.png       visual/V2-perk-card-<size>.png       the ov
 visual/V2-legendaries-anchor-comparison.png      all 21, both anchors, in the real 265x201 zone
 visual/V2-legendaries-in-strip-geometry.png      all 21 as shipped, cropped and masked as the browser does
 visual/V2-perkcats-in-strip-geometry.png         all 7, likewise
+visual/V2b-relight-before-after.png              the four largest movers of the ICONS-PERK-VIS-08 re-bake
 ```
+
+Everything labelled V2 was re-captured after the `ICONS-PERK-VIS-08` fix and shows the shipped state.
 
 ---
 
@@ -171,6 +174,20 @@ The verdict does **not** extend to what the captures could not show, which stays
 under *Downgrade records* below: 25 of the 28 emblems were never rendered by the application, only
 German was captured, and only DPR 1.
 
+**Pixels moved after this verdict, and that is recorded rather than glossed over.** Review round 1
+found the light alignment measured the wrong stage (`ICONS-PERK-VIS-08`), so all 21 legendary
+delivery files were re-baked. How far each moved:
+
+| Change in brightness factor | Count | Which |
+| --- | --- | --- |
+| ≥ 1.5× — **visible** | 2 | Henker ×2.11, Opfergang ×1.64 |
+| 1.15×–1.5× — noticeable side by side | 5 | Ballast, Schmiede, Richtfest, Vabanque, Fundament |
+| within ±15 % | 14 | the rest |
+
+Every one of the seven larger movers ends up **closer to the lot's own median than before**, which is
+the point of the fix, and none moved away from it. The captures below are the post-fix state. A
+narrow re-confirmation of the two visible movers is recorded as `DR-3`.
+
 ---
 
 ## V4 — classification
@@ -183,13 +200,17 @@ Every finding has an ID. Nothing here is closed by an agent.
 | `ICONS-PERK-VIS-02` | The 21 legendary masters are centred (light centroid 0.48) where the 7 category masters are top-weighted (0.42). Under a top-anchored 76 % window the legendary subjects are cut — Henker keeps 34.7 % of its light, and what survives is the axe *shaft*. The legendary strip is therefore centre-anchored: median retention 71.4 % → 86.5 % | New design question — **closed at V3, 2026-08-22** | Shipped as one CSS class (`.pk-strip-mid`). The owner saw the both-anchors comparison and approved it as shipped. Measurement in `docs/art/legendaries/README.md` |
 | `ICONS-PERK-VIS-03` | The offer tile grows from 162.5 px to 317.5 px tall. At 1600 × 900 — the tightest desktop size — the overlay still fits without scrolling, and the wings are unaffected | Expected platform behaviour — **closed at V3, 2026-08-22** | No fix. It is the same consequence the skill card already carries (`padding-top: 176px` there, 167 here) |
 | `ICONS-PERK-VIS-04` | Legendary and category emblems are aligned against their own lots, so they do not match each other on a screen where they appear side by side: category median 23.5 % luminous area, legendary median 30.1 %. The legendary tiles read brighter | **New design question** | Per-lot alignment is the contract's *Approved architecture* 6 and was followed. Whether the two lots should also be aligned to each other is a question this task is not authorised to answer — named as input to a future workstream |
-| `ICONS-PERK-VIS-05` | `align --lot perkcats` under the new statistic proposes 1.06 for E Form where 0.73 ships — the largest divergence in that lot. Both numbers are internally correct; they measure different things (total emitted light vs luminous area) | **Pre-existing, out of scope** | The contract requires the README's existing factors be applied, not re-derived. The script reports the divergence rather than acting on it |
+| `ICONS-PERK-VIS-05` | `align --lot perkcats` disagrees with the shipped perkcats factors | **Superseded by `ICONS-PERK-VIS-10`**, which measures the same divergence correctly and states it as 1.69-fold | Kept as an id so nothing dangles |
 | `ICONS-PERK-VIS-06` | The skill lots remain baked against `STRIP_W = 277` while the skill card measures 270.66 — the audit's `ICONS-VIS-01`, still open | **Pre-existing, out of scope** | Re-baking lightning and ice is an explicit non-goal of this contract. Carried forward unchanged. Note that `ICONS-PERK-VIS-07` below suggests the audit's 270.66 may itself be the skill BUTTON rather than the skill strip; not investigated, because touching the skill lots is a non-goal |
 | `ICONS-PERK-VIS-07` | The first pass measured the perk TILE (270 px) instead of the emblem drawn inside it (265 px), and baked both lots against 270. Wrong by 5 px, i.e. a bloom radius of 22.76 px against the correct 23.18 | Defect in this task — **fixed** | Caught by reading the `<img>` box out of the live DOM rather than only the button's. Both lots re-baked at 265; the guard now also rejects `strip_w=270`. Worth carrying into the reviewer's reading: the contract's tripwire warns against a BORROWED constant, and this was a measured one that measured the wrong box — the same failure with a different origin |
+| `ICONS-PERK-VIS-08` | The light alignment was solved on the brightness-corrected **master** — before resize, bloom, crop to the zone and the CSS mask — and claimed a 1.26-fold residual. Measured where the emblems are shown, that shipped table spreads **1.78-fold**; the mask discards the bottom of the frame and the motifs differ in how much of their light sits there. Henker shipped at 1.48 where it needs 3.12 | Defect in this task — **fixed** | Found by the reviewer in round 1. `align` now measures at the end of the pipeline, mask-weighted; the lot table gained `strip_h`, `mask_stop` and `anchor` so it can. Re-solved and re-baked: **3.45-fold raw → 1.01-fold**. Three new guards tie the zone, mask and anchor back to `src/index.css`, each counter-checked |
+| `ICONS-PERK-VIS-09` | The completeness guards reduced filenames to a set, so **two files resolving to one id** passed unseen. The loader keeps the last one, so a stray second `L_ZINS_*.webp` would silently take over the binding while "completeness in both directions" stayed green | Defect in this task — **fixed** | Found by the reviewer in round 1, who demonstrated it at 32/32 green. Both lots now count instead of de-duplicating, and the failure names the colliding files. Counter-checked in both lots |
+| `ICONS-PERK-VIS-10` | The perk-category lot spreads **1.69-fold** measured as shown — its README's factors were solved on luminous area of the master, the same domain error as `ICONS-PERK-VIS-08`. The corrected solver proposes 1.56 for B Stich against 1.05 shipped | **Pre-existing, out of scope** | Not acted on. The contract requires the README's factors *applied, not re-derived*, and the set was approved at V3 as it ships. Named for a future task; supersedes the weaker version of `ICONS-PERK-VIS-05` |
 
 ### Downgrade records
 
 | ID | What is missing | Why it is recorded rather than repaired |
 | --- | --- | --- |
 | `DR-1` | V1 was taken correctly, then overwritten by operator error and regenerated from the immutable base commit | Regeneration reproduces the original figures exactly, but a re-derived baseline is weaker than an untouched one and is labelled as such rather than presented as clean |
+| `DR-3` | The V3 verdict was given on the pre-fix bake. Two emblems — Henker and Opfergang — changed visibly when `ICONS-PERK-VIS-08` was corrected afterwards | Re-baking was the right call on a measured defect, and both moved *towards* the lot's own median rather than away. But a verdict given on one set of pixels does not automatically transfer to another set, so the two that moved visibly are put back in front of the owner rather than assumed approved |
 | `DR-2` | Only **one** of the 21 legendary emblems (`L_VAB`) and **two** of the 7 category emblems (`B`, `C`) were seen rendered by the application. The other 25 were verified as files and as bindings, not on the screen | A perk offer holds three tiles, and driving 26 further offers means playing out the run's RNG. What was checked instead: every file bakes, every binding resolves in `test/perk-art.test.js` in both directions, and all 28 are rendered in the exact strip geometry in the contact sheets. That is a lot-level check, not a screen-level one |

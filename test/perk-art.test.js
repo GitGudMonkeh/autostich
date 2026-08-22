@@ -31,6 +31,26 @@ const css = src("index.css");
 
 const LEG_IDS = Object.values(PERK_DEFS).filter((p) => p.rarity === "legendary").map((p) => p.id);
 
+/* Genau EINE Datei je ID — in beide Richtungen, und deshalb über eine Zählung statt über ein Set.
+   -------------------------------------------------------------------------------------------------
+   Gefunden im Review (22.08.2026): die Vollständigkeitsprüfungen unten reduzieren die Dateinamen auf
+   ein Set und übersehen damit die Doppelung. Der Loader in perkArt.js schreibt beide Treffer auf
+   denselben Objektschlüssel, der zweite gewinnt — eine versehentlich zweite `L_ZINS_*.webp` hätte
+   also die Laufzeitbindung stillschweigend übernommen, während „Vollständigkeit in beide Richtungen"
+   grün blieb. Gegengeprüft: mit einer Kopie im Ordner lief die Datei vor dieser Prüfung 32/32 grün.
+
+   Zurückgegeben wird die Liste der mehrfach belegten IDs, nicht nur ein Wahrheitswert, damit die
+   Fehlermeldung sagt, WELCHE Datei doppelt ist. */
+function doppelte(files, idOf) {
+  const zähler = new Map();
+  for (const f of files) {
+    const id = idOf(f);
+    if (id) zähler.set(id, [...(zähler.get(id) || []), f]);
+  }
+  return [...zähler.entries()].filter(([, fs]) => fs.length > 1)
+    .map(([id, fs]) => `${id} ← ${fs.join(" + ")}`);
+}
+
 describe("#perkart — Zuordnung über den Dateinamen", () => {
   it("liest den Kategorie-Schlüssel aus dem Kategorie-Dateinamen", () => {
     expect(perkCatArtIdFromFile("perkcat_A_deck.webp")).toBe("A");
@@ -83,6 +103,12 @@ describe("#perkart — Vollständigkeit der Kategorie-Embleme", () => {
     expect(files.filter((f) => perkCatArtIdFromFile(f) === null)).toEqual([]);
   });
 
+  it("genau EINE Datei je Kategorie — eine zweite überschriebe die Bindung lautlos", () => {
+    const doppelt = doppelte(files, perkCatArtIdFromFile);
+    expect(doppelt, `mehrfach belegt: ${doppelt.join(", ")}`).toEqual([]);
+    expect(files.length).toBe(new Set(files.map(perkCatArtIdFromFile)).size);
+  });
+
   it("jede angebotene Familie landet damit auf einem vorhandenen Emblem", () => {
     // Der eigentliche Zweck der sieben Bilder: 73 Familien, 7 Embleme, keine Lücke. Diese Prüfung
     // geht den Weg, den der Bildschirm geht — Familie → Kategorie → Bild — statt nur die Endpunkte.
@@ -112,6 +138,12 @@ describe("#perkart — Vollständigkeit der Legendär-Embleme", () => {
 
   it("jeder Dateiname erfüllt das Muster (kein stiller Ausfall über null)", () => {
     expect(files.filter((f) => legendaryArtIdFromFile(f) === null)).toEqual([]);
+  });
+
+  it("genau EINE Datei je legendärem Perk — eine zweite überschriebe die Bindung lautlos", () => {
+    const doppelt = doppelte(files, legendaryArtIdFromFile);
+    expect(doppelt, `mehrfach belegt: ${doppelt.join(", ")}`).toEqual([]);
+    expect(files.length).toBe(new Set(files.map(legendaryArtIdFromFile)).size);
   });
 
   it("E10 ist bewusst NICHT dabei — der Ordner ist der Legendär-Satz, nicht der Perk-Satz", () => {
@@ -219,8 +251,10 @@ describe("#perkart — der Bloom ist gebacken, nicht gerechnet", () => {
     /* Der Kern dieser Aufgabe. Der Bloom-Radius ist eine CSS-Länge geteilt durch die Zonenbreite; eine
        abgeschriebene Breite ergibt einen Radius, der maßgeblich und falsch ist. Deshalb steht hier die
        gemessene 265 UND, gleich darunter, die drei Zahlen, die sie NICHT ist. */
-    expect(build).toContain("strip_w=265, light=LEGENDARY_LIGHT");
-    expect(build).toContain("strip_w=265, light=PERKCAT_LIGHT");
+    expect(build).toContain("strip_w=265, strip_h=201");
+    // Beide Perk-Lose, nicht nur eines — sie teilen die Zone, und ein Los allein umzustellen wäre
+    // genau die Sorte halbe Änderung, die man erst am Bild bemerkt.
+    expect(build.match(/strip_w=265, strip_h=201/g)).toHaveLength(2);
     // 277 = Skill-Backwert, nie an irgendetwas gemessen. 270,66 = gemessene SKILL-Karte.
     // 270 = die Perk-KACHEL — richtig gemessen, aber die falsche Box: das Bild darin ist 265 breit
     // (4 px Raritätskante links, 1 px rechts). Genau dieser Fehler ist hier einmal passiert.
@@ -230,17 +264,42 @@ describe("#perkart — der Bloom ist gebacken, nicht gerechnet", () => {
   });
 
   it("die Zone im Stylesheet und die Zone im Backskript sind dieselbe Zone", () => {
-    /* Die eine Naht, die lautlos auseinanderlaufen kann: das Backskript rechnet den Radius durch die
-       Zonenbreite, das Stylesheet zeigt das Ergebnis in einer Zone dieser Breite. Fällt die Kachel
-       später auf eine andere Breite, ist der gebackene Radius still falsch — sichtbar nur als „das
-       Leuchten wirkt irgendwie zu weich". Geprüft wird deshalb die abgeleitete HÖHE gegen die Breite,
-       denn die Höhe ist die einzige der beiden, die im Stylesheet überhaupt steht: 76 % Komposition
-       auf 265 px Breite sind 201 px, und beide Zahlen müssen aus demselben Wert stammen. */
-    const zone = /strip_w=(\d+), light=PERKCAT_LIGHT/.exec(build);
-    expect(zone, "keine gemessene Zonenbreite im Backskript gefunden").toBeTruthy();
+    /* Die Naht, die lautlos auseinanderlaufen kann: das Backskript rechnet den Bloom-Radius durch die
+       Zonenbreite und gleicht das Licht im ZUGESCHNITTENEN, MASKIERTEN Zustand an — beides hängt an
+       Maßen, die tatsächlich im Stylesheet stehen. Fällt die Kachel später auf eine andere Größe, sind
+       Radius und Angleich still falsch, sichtbar nur als „das wirkt irgendwie zu weich".
+
+       Geprüft werden deshalb ALLE DREI Maße gegeneinander, nicht nur die Breite:
+         · Höhe:      Tabelle gegen `.pk-strip { height }`
+         · Maske:     Tabelle gegen den Prozentwert im `mask-image`
+         · Herleitung: Höhe = 76 % der Breite, die Komposition der Master */
+    const w = /strip_w=(\d+), strip_h=(\d+)/.exec(build);
+    expect(w, "keine gemessene Zone im Backskript gefunden").toBeTruthy();
+    const [, breite, hoeheTab] = w.map(Number);
+
     const hoehe = /\.pk-strip \{[^}]*height: (\d+)px/.exec(css);
     expect(hoehe, "keine Zonenhöhe in .pk-strip gefunden").toBeTruthy();
-    expect(Number(hoehe[1])).toBe(Math.round(0.76 * Number(zone[1])));
+    expect(Number(hoehe[1]), "Stylesheet und Backskript-Tabelle nennen verschiedene Zonenhöhen")
+      .toBe(hoeheTab);
+    expect(hoeheTab, "die Zonenhöhe ist nicht mehr 76 % der gemessenen Breite")
+      .toBe(Math.round(0.76 * breite));
+
+    const maske = /\.pk-strip \{[^}]*#000 (\d+)%/.exec(css);
+    expect(maske, "kein Maskenwert in .pk-strip gefunden").toBeTruthy();
+    expect(build, `Backskript rechnet nicht mit der Maske aus dem Stylesheet (${maske[1]} %)`)
+      .toContain(`mask_stop=${Number(maske[1]) / 100}`);
+  });
+
+  it("der Anker steht in der Tabelle so, wie er im Stylesheet steht", () => {
+    /* Seit der Angleich im zugeschnittenen Zustand misst, ist der Anker ein BACK-Eingang: oben oder
+       mittig verschiebt, welches Licht die Maske frisst, und damit jeden gelösten Faktor. Liefe der
+       Anker im Stylesheet dem in der Tabelle davon, wäre das Los gegen eine Darstellung angeglichen,
+       die es nicht gibt. */
+    expect(build).toContain('anchor="center",');            // legendaries
+    expect(build).toContain('anchor="top",');                // perkcats
+    expect(css).toContain(".pk-strip-mid { object-position: center center; }");
+    const regel = css.slice(css.indexOf(".pk-strip {"), css.indexOf(".pk-strip {") + 420);
+    expect(regel).toContain("object-position: center top");
   });
 
   it("die Auslieferung entsteht aus den Mastern über das Skript, mit den gewählten Werten", () => {

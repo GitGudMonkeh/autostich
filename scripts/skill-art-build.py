@@ -125,6 +125,9 @@ class Lot:
       filename stem. Alignment is per lot by decision, not per repository: the art READMEs align a
       set against ITSELF, because two lots never share a screen. A lot without the key ships at 1.0,
       which is exactly what the four skill lots do.
+    - `strip_h` / `mask_stop` / `anchor` complete the render zone: its height, the point where the
+      CSS mask starts fading, and whether `object-position` puts the crop at the top or the middle.
+      The bake does not need them — but `align` does, and that is the point (below).
 
     **`strip_w=None` means the render zone is not settled, and then no radius exists.** That is why
     `calibrated` is derived rather than passed: an uncalibrated lot is not one somebody forgot to
@@ -134,7 +137,8 @@ class Lot:
 
     def __init__(self, key, master, delivery, master_px, square=True, expect=None,
                  size=SIZE, strip_w=STRIP_W, bloom_css=BLOOM_CSS,
-                 bloom_strength=BLOOM_STRENGTH, bloom_sat=BLOOM_SAT, light=None):
+                 bloom_strength=BLOOM_STRENGTH, bloom_sat=BLOOM_SAT, light=None,
+                 strip_h=None, mask_stop=0.62, anchor="top"):
         self.key = key
         self.master = Path(master)
         self.delivery = Path(delivery)
@@ -143,6 +147,9 @@ class Lot:
         self.expect = expect                # masters needed before the lot may ship; None = no rule
         self.size = size                    # long edge of a delivery file
         self.strip_w = strip_w              # CSS width of the render zone; None = not settled
+        self.strip_h = strip_h              # CSS height of the render zone; None = not settled
+        self.mask_stop = mask_stop          # share of the zone that is fully opaque before the fade
+        self.anchor = anchor                # "top" or "center" — the lot's `object-position`
         self.bloom_css = bloom_css
         self.bloom_strength = bloom_strength
         self.bloom_sat = bloom_sat
@@ -152,9 +159,33 @@ class Lot:
     def calibrated(self):
         return self.strip_w is not None
 
+    @property
+    def shown(self):
+        """Can the lot's ON-SCREEN appearance be reconstructed? `align` needs this, `bake` does not."""
+        return self.calibrated and self.strip_h is not None
+
     def light_of(self, master_path):
         """Brightness correction for one file of this lot. 1.0 when the lot is not aligned."""
         return self.light.get(master_path.stem, 1.0)
+
+    def as_shown(self, delivery_im):
+        """A delivery file cropped and masked the way the browser shows it.
+
+        `object-fit: cover` on a square source in a `strip_w x strip_h` box scales by the width, so
+        the visible slice is `strip_h / strip_w` of the image, taken from the top or the middle
+        depending on the anchor. The mask is then a linear fade from `mask_stop` to transparent,
+        returned as a per-row weight rather than baked in, because the caller wants to WEIGH light,
+        not to look at a picture.
+        """
+        w, h = self.strip_w, self.strip_h
+        im = delivery_im.convert("RGB").resize((w, w), Image.LANCZOS)
+        top = 0 if self.anchor == "top" else (w - h) // 2
+        return im.crop((0, top, w, top + h))
+
+    def mask_weight(self, y):
+        """Opacity of the CSS mask at row `y` of the zone. 1.0 down to `mask_stop`, then linear to 0."""
+        f = y / self.strip_h
+        return 1.0 if f <= self.mask_stop else max(0.0, 1.0 - (f - self.mask_stop) / (1 - self.mask_stop))
 
     @property
     def sigma(self):
@@ -191,9 +222,9 @@ LOTS = {a: Lot(a, SRC / a, OUT / a, (1024, 1024), expect=ARCHETYPE_SIZE) for a i
 #
 # and the measurement is the same at every desktop viewport the images render at:
 #
-#     1600x900   tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 205
-#     1920x1080  tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 205
-#     2560x1440  tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 205
+#     1600x900   tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 201
+#     1920x1080  tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 201
+#     2560x1440  tile 270.00 css-px   ->  <img class="pk-strip"> measures 265 x 201
 #     1280x720   tile 230 css-px, BELOW the 1400 px gate — no image is rendered there at all
 #
 # The tile is 270 because the level-up overlay card is width-capped at 880 css-px, so the 3-column
@@ -237,36 +268,39 @@ PERKCAT_LIGHT = {
 }
 
 # Light alignment of the 21 legendary emblems, solved by `align --lot legendaries` against THIS lot's
-# own median emitted light (21.65). Per the workstream's approved architecture the two perk lots are
-# aligned separately — a legendary tile shows its own icon and a regular tile its category's, so what
-# has to match is each set against itself. Derivation, the reason the statistic is emitted light
-# rather than luminous area, and the residual spread are in `docs/art/legendaries/README.md`.
+# own median light AS SHOWN — after resize, bloom, crop to the zone and the CSS mask, which is the
+# only place the claim "these emblems read equally bright" can honestly be measured. Per the
+# workstream's approved architecture the two perk lots are aligned separately: a legendary tile shows
+# its own icon and a regular tile its category's, so what has to match is each set against itself.
 #
-# Raw spread 4.2-fold, the widest of any lot in the repository; after alignment 1.26-fold. The three
-# largest lifts (Vabanque, Hochseil, Ballast) do not reach the median even at their factor, because
-# clipping eats part of the lift — they are the honest residual, not a solver failure.
+# CORRECTED AFTER REVIEW (2026-08-22). The first version of this table was solved on the
+# brightness-corrected MASTER, before resize, bloom, crop and mask, and claimed a 1.26-fold residual.
+# Measured where the emblems are actually shown, that table spreads 1.78-fold: the mask discards the
+# bottom of the frame and these motifs differ in how much of their light sits down there. Henker was
+# hit hardest and shipped at 1.48 where it needs 3.12. Solving on the shown state brings the lot from
+# 3.45-fold raw to 1.01-fold. Derivation in `docs/art/legendaries/README.md`.
 LEGENDARY_LIGHT = {
-    "L_VAB_vabanque":     2.72,   # the dimmest of the set — a small lever on a lot of black
-    "L_HOCH_hochseil":    2.24,
-    "L_BALL_ballast":     2.22,
-    "L_MEIS_meisterhand": 1.76,
-    "L_SCHM_schmiede":    1.59,
-    "L_HENK_henker":      1.48,
-    "L_MONO_monochrom":   1.21,
-    "L_OPFER_opfergang":  1.17,
-    "L_RICHT_richtfest":  1.08,
-    "L_PATT_patt":        1.05,
-    "L_ECHO_echo":        1.00,   # the median carrier
-    "L_TAKT_taktschlag":  0.97,
-    "L_ZINS_zinseszins":  0.95,
-    "L_FUND_fundament":   0.93,
-    "L2_unaufhaltsam":    0.92,
-    "L_BAUH_bauhuette":   0.90,
-    "L_BRENN_brennpunkt": 0.90,
-    "L_UMV_umverteilung": 0.86,
-    "L4_kritische-masse": 0.71,
-    "L_SAMM_sammler":     0.70,
-    "L6_raserei":         0.65,   # the blaze — the brightest, and the one that would shout
+    "L_VAB_vabanque":    3.14,   # the dimmest of the set — a small lever on a lot of black
+    "L_HENK_henker":     3.12,   # was 1.48 under the old measurement; the mask eats more of this one than of any other
+    "L_BALL_ballast":    3.00,
+    "L_HOCH_hochseil":   2.29,
+    "L_SCHM_schmiede":   1.98,
+    "L_OPFER_opfergang": 1.92,   # the largest clip cost of the lot, 1.11 % of pixels
+    "L_MEIS_meisterhand":1.54,
+    "L_RICHT_richtfest": 1.27,
+    "L_MONO_monochrom":  1.13,
+    "L_ZINS_zinseszins": 1.06,
+    "L_PATT_patt":       1.00,   # the median carrier
+    "L_BAUH_bauhuette":  0.93,
+    "L_ECHO_echo":       0.89,
+    "L_TAKT_taktschlag": 0.87,
+    "L2_unaufhaltsam":   0.84,
+    "L_BRENN_brennpunkt":0.83,
+    "L_FUND_fundament":  0.80,
+    "L_UMV_umverteilung":0.75,
+    "L_SAMM_sammler":    0.66,
+    "L4_kritische-masse":0.65,
+    "L6_raserei":        0.59,   # the blaze — the brightest, and the one that would shout
 }
 
 # The three Phase-2 lots. Master sizes are the ones the existing files/READMEs already use.
@@ -275,9 +309,11 @@ LEGENDARY_LIGHT = {
 # Note `corners` is 3:2, not square — with a single hardcoded delivery edge it would ship distorted,
 # which is the reason `size` names the long edge and `delivery_px` derives the short one.
 LOTS["legendaries"] = Lot("legendaries", "docs/art/legendaries", "src/assets/legendaries",
-                          (1024, 1024), expect=21, strip_w=265, light=LEGENDARY_LIGHT)
+                          (1024, 1024), expect=21, strip_w=265, strip_h=201, anchor="center",
+                          light=LEGENDARY_LIGHT)
 LOTS["perkcats"] = Lot("perkcats", "docs/art/perkcats", "src/assets/perkcats",
-                       (1024, 1024), expect=7, strip_w=265, light=PERKCAT_LIGHT)
+                       (1024, 1024), expect=7, strip_w=265, strip_h=201, anchor="top",
+                       light=PERKCAT_LIGHT)
 LOTS["corners"] = Lot("corners", "docs/art/corners", "src/assets/corners",
                       (1536, 1024), square=False, expect=5, strip_w=None)
 
@@ -469,18 +505,58 @@ def cmd_measure(args):
               f"(factor {lights[-1]/max(lights[0], 0.01):.1f})")
 
 
+ALIGN_PX = 132        # resolution the solver weighs at; ratios are stable well below the delivery size
+
+
 def emitted_light(im, factor=1.0):
-    """Mean Rec. 709 luma over the WHOLE frame — the total light this emblem adds to its tile.
+    """Mean Rec. 709 luma over the WHOLE frame — the light this image would add, ignoring the zone.
 
     Under `mix-blend-mode: screen` on a near-black ground, screen(a, b) = a + b - ab, and for the
-    small values that dominate an emblem on black that is very close to plain addition. So the sum of
-    the pixel values IS, to first order, the light the tile gains. That is the quantity two emblems
-    have to share if neither is to shout over the other.
+    small values that dominate an emblem on black that is very close to plain addition, so the sum of
+    the pixel values is the light the tile gains.
+
+    NOT what `align` solves against — see `light_as_shown`. This measures a full square, and no
+    emblem is ever shown as a full square.
     """
     if factor != 1.0:
         im = ImageEnhance.Brightness(im).enhance(factor)
     lum, _ = luma(im)
     return sum(lum) / len(lum)
+
+
+def light_as_shown(master_im, lot, factor):
+    """The light this emblem actually puts on its tile, at the end of the whole pipeline.
+
+    Master -> brightness factor -> resize to delivery -> bloom -> crop to the zone -> mask. That is
+    every stage the browser sees, run in order, and the result is weighed row by row against the
+    CSS mask so that light under the fade counts for what it is worth and light under the
+    transparent tail counts for nothing.
+
+    WHY THIS AND NOT THE MASTER (found in review, 2026-08-22). The first version of `align` measured
+    the brightness-corrected MASTER, full frame, before resize, bloom, crop and mask, and reported a
+    1.26-fold residual spread. Measured on what ships instead, that same set spreads 1.77-fold in the
+    zone — because the mask discards the bottom of the frame, and these motifs differ in how much of
+    their light sits down there. Henker lost most and was the file the alignment helped least.
+
+    So the old figure was not wrong about its own intermediate state; it was measuring a state nobody
+    looks at. An alignment is a claim about what the player sees, and it has to be measured there.
+    """
+    im = ImageEnhance.Brightness(master_im).enhance(factor) if factor != 1.0 else master_im
+    shown = lot.as_shown(bake(im.resize(lot.delivery_px, Image.LANCZOS), lot))
+    h = max(1, round(ALIGN_PX * lot.strip_h / lot.strip_w))
+    small = shown.resize((ALIGN_PX, h), Image.LANCZOS)
+    raw = small.tobytes()
+    total = 0.0
+    for y in range(h):
+        weight = lot.mask_weight(y * lot.strip_h / h)
+        if weight == 0.0:
+            continue
+        row = 0.0
+        for x in range(ALIGN_PX):
+            i = (y * ALIGN_PX + x) * 3
+            row += 0.2126 * raw[i] + 0.7152 * raw[i + 1] + 0.0722 * raw[i + 2]
+        total += row * weight
+    return total / (ALIGN_PX * h)
 
 
 def area_at(im, factor=1.0):
@@ -498,27 +574,34 @@ def cmd_align(args):
     gesucht (die Helligkeit wird je Bild verstellt, bis die gemessene Fläche den Median trifft),
     nicht geschätzt" — written down as code, so a new lot is not aligned by hand.
 
-    THE STATISTIC IS TOTAL EMITTED LIGHT, NOT LUMINOUS AREA, and the change is deliberate. Measured
-    on the 21 legendary masters (icons-perks, 22.08.2026), area-matching does not merely give
-    different numbers — it does not converge:
+    THE STATISTIC IS LIGHT AS SHOWN — see `light_as_shown`. Two earlier statistics were tried and
+    both are recorded here, because each failed in a way the next one had to avoid.
 
-        five of 21 files hit the solver's 5.0 ceiling, and three of those five were STILL short of
-        the target area at 5.0 (Hochseil reached 23.3 % against a target of 30.1 %)
+    1. LUMINOUS AREA, the procedure the perkcats README used. On the 21 legendary masters it does not
+       merely give different numbers, it does not converge: five of 21 files hit the solver's 5.0
+       ceiling and three of those were STILL short of target there (Hochseil 23.3 % against 30.1 %).
+       Area asks how much of the FRAME a motif fills, and this lot's motifs genuinely differ in that
+       — Sammler is a full panel at 53.8 %, Vabanque a small lever at 14.5 %.
 
-    because luminous area asks how much of the FRAME a motif fills, and this lot's motifs genuinely
-    differ in that: Sammler is a full panel at 53.8 %, Vabanque a small lever at 14.5 %, a 3.7-fold
-    spread. Equalising it means inflating a small emblem's halo until it covers as much frame as a
-    large one, which is not the same thing as making the two read equally bright. Total light is,
-    and it is also linear in the factor, so it has a closed form and cannot silently saturate at a
-    solver bound the way the bisection did.
+    2. TOTAL EMITTED LIGHT ON THE MASTER, which converged and shipped. Caught in review
+       (2026-08-22): it measures the brightness-corrected master, full frame, BEFORE resize, bloom,
+       crop and mask. It reported a 1.26-fold residual; the same files measured where they are
+       actually shown spread 1.77-fold, because the mask discards the bottom of the frame and these
+       motifs differ in how much of their light sits down there.
 
-    The perkcats lot never exposed this: its area spread is 1.7-fold, small enough that the two
-    statistics broadly agree (both put P highest at ~1.33 and C at ~0.79). Its seven factors are the
-    ones already recorded in its README and stay as they are — `align --lot perkcats` therefore
-    REPORTS a divergence rather than proposing a change, which is the useful thing for it to do.
+    The lesson both share: an alignment is a claim about what the player sees, so the measurement has
+    to be taken there and nowhere earlier. Solving on `light_as_shown` brings the legendary lot from
+    1.77-fold to 1.01-fold.
 
-    Prints a table that can be pasted into the lot's `light=` dict. It deliberately does not write
-    the table itself: which factors ship is a decision that belongs in a reviewed diff.
+    Bisection rather than a closed form, and that is a consequence of measuring late: bloom, WebP
+    quantisation and clipping are not linear in the factor. Monotone is all bisection needs. The
+    solver reports when it lands on a bound instead of a solution, which is exactly the failure mode
+    that made statistic 1 unusable and that statistic 2 hid.
+
+    A lot that already ships a light table gets a DIVERGENCE REPORT rather than a proposal — the
+    perkcats seven are the ones its README solved and the contract requires them applied, not
+    re-derived. Prints a table that can be pasted into a lot's `light=` dict; it deliberately does not
+    write the table itself, because which factors ship belongs in a reviewed diff.
     """
     keys = [args.lot] if args.lot else list(LOTS)
     for key in keys:
@@ -526,34 +609,51 @@ def cmd_align(args):
         files = sorted(lot.master.glob("*.webp"))
         if not files:
             continue
+        if not lot.shown:
+            print(f"\n== {key}: the render zone is not fully described (needs strip_w and strip_h), "
+                  f"so the on-screen appearance cannot be reconstructed. Not solving.")
+            continue
         if lot.expect is not None and len(files) != lot.expect:
             print(f"\n== {key}: {len(files)} of {lot.expect} masters — the median is not settled yet, "
                   f"so these factors would age out. Not solving.")
             continue
         rows = [(f, Image.open(f).convert("RGB")) for f in files]
-        rows = [(f, im, emitted_light(im), area_at(im)) for f, im in rows]
-        target = sorted(e for _, _, e, _ in rows)[len(rows) // 2]
-        print(f"\n== {key} ({len(files)} files) — target = own median emitted light {target:.2f}")
-        print(f"{'file':32s} {'light':>7} {'area':>7} {'factor':>7} {'after':>7} {'clip%':>7}"
+        rows = [(f, im, light_as_shown(im, lot, 1.0)) for f, im in rows]
+        target = sorted(v for _, _, v in rows)[len(rows) // 2]
+        print(f"\n== {key} ({len(files)} files) — target = own median light AS SHOWN {target:.2f} "
+              f"(zone {lot.strip_w}x{lot.strip_h}, anchor {lot.anchor}, mask from {lot.mask_stop:.0%})")
+        print(f"{'file':32s} {'raw':>7} {'factor':>7} {'after':>7} {'clip%':>7}"
               + ("  ships" if lot.light else ""))
         out = {}
-        for f, im, e, a in sorted(rows, key=lambda r: -r[2]):
-            factor = round(target / e, 2) if e else 1.0
+        LO, HI = 0.2, 6.0
+        for f, im, v in sorted(rows, key=lambda r: -r[2]):
+            lo, hi = LO, HI
+            for _ in range(14):
+                mid = (lo + hi) / 2
+                if light_as_shown(im, lot, mid) < target:
+                    lo = mid
+                else:
+                    hi = mid
+            factor = round((lo + hi) / 2, 2)
             out[f.stem] = factor
+            bound = "  AT SOLVER BOUND" if factor <= LO + 0.01 or factor >= HI - 0.01 else ""
             # What the correction costs at the top end: a lift large enough to flatten a visible share
             # of the emblem's core into flat white is a reason to look at the picture, not a number to
             # accept quietly. Reported so the reviewer sees the cost next to the benefit.
-            lum, _ = luma(ImageEnhance.Brightness(im).enhance(factor) if factor != 1.0 else im)
-            clip = 100.0 * sum(1 for v in lum if v >= 254) / len(lum)
+            lum, _ = luma(bake(ImageEnhance.Brightness(im).enhance(factor)
+                               .resize(lot.delivery_px, Image.LANCZOS), lot))
+            clip = 100.0 * sum(1 for x in lum if x >= 254) / len(lum)
             ships = f"  {lot.light.get(f.stem, 1.0):.2f}" if lot.light else ""
-            print(f"{f.stem:32s} {e:7.2f} {a:6.1f}% {factor:7.2f} {emitted_light(im, factor):7.2f} "
-                  f"{clip:6.2f}%{ships}")
-        before = [e for _, _, e, _ in rows]
-        after = [emitted_light(im, out[f.stem]) for f, im, _, _ in rows]
-        print(f"  emitted light {min(before):.2f}-{max(before):.2f} "
-              f"(factor {max(before)/max(min(before), .01):.1f}) -> {min(after):.2f}-{max(after):.2f} "
-              f"(factor {max(after)/max(min(after), .01):.2f})")
+            print(f"{f.stem:32s} {v:7.2f} {factor:7.2f} {light_as_shown(im, lot, factor):7.2f} "
+                  f"{clip:6.2f}%{ships}{bound}")
+        before = [v for _, _, v in rows]
+        after = [light_as_shown(im, lot, out[f.stem]) for f, im, _ in rows]
+        print(f"  light as shown {min(before):.2f}-{max(before):.2f} "
+              f"(spread {max(before)/max(min(before), .01):.2f}x) -> {min(after):.2f}-{max(after):.2f} "
+              f"(spread {max(after)/max(min(after), .01):.2f}x)")
         if lot.light:
+            shipped = [light_as_shown(im, lot, lot.light_of(f)) for f, im, _ in rows]
+            print(f"  what SHIPS today spreads {max(shipped)/max(min(shipped), .01):.2f}x")
             worst = max(out, key=lambda s: abs(out[s] - lot.light.get(s, 1.0)))
             print(f"  this lot already ships a light table; largest divergence {worst}: "
                   f"solver {out[worst]:.2f} vs shipped {lot.light.get(worst, 1.0):.2f}. "

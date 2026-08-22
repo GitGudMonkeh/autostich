@@ -55,6 +55,11 @@ export function legendaryArtIdFromFile(name) {
   return m ? m[1] : null;
 }
 
+/* Filename → id → URL. Two files resolving to the SAME id would silently collapse here, the later
+   one winning; that case is not defended against at runtime because it is a repository mistake, not
+   a state the application can be in with a correct checkout. It is caught in `test/perk-art.test.js`
+   ("genau EINE Datei je …"), which counts rather than de-duplicates — a guard that reduced the
+   filenames to a set could not see it, and for a while did not. */
 const build = (files, idOf) => {
   const out = {};
   for (const path of Object.keys(files)) {

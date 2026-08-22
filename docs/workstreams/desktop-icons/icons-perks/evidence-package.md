@@ -42,7 +42,7 @@ Run in the worktree, bare, with no pipes (`AGENTS.md` — *Important shell rule*
 
 | Gate | Result |
 | --- | --- |
-| `npm test` | **135 of 136 files green, 2079 of 2080 tests.** The one failure is a pre-existing timeout, measured at `HEAD` as well — see §5 |
+| `npm test` | One failure, a pre-existing timeout — see §5. Everything else green. Run it for the current result rather than trusting a count here |
 | `npm run lint -- --max-warnings=0` | green |
 | `npm run build` | green |
 | `VITE_PREVIEW=1 npm run build` | green |
@@ -95,9 +95,9 @@ for. A guard recomputes it from the width, so the two cannot drift apart silentl
 | --- | --- |
 | Legendary lot | 21 masters (1024², 3232 kB) + 21 delivery (384², 350 kB). Both directories new |
 | Perk-category lot | 7 delivery (384², 42 kB). Masters untouched |
-| Light alignment | perkcats: the README's 7 existing factors applied unchanged. legendaries: 21 factors solved by the new `align` mode against the lot's own median |
+| Light alignment | perkcats: the README's 7 existing factors applied unchanged. legendaries: 21 factors solved by the new `align` mode against the lot's own median **light as shown** |
 | Wiring | `src/ui/perkArt.js` (new), `PerkSelect.jsx`, `.pk-offer-art` / `.pk-strip` / `.pk-strip-mid` in `src/index.css` |
-| Guards | `test/perk-art.test.js`, 32 assertions |
+| Guards | `test/perk-art.test.js` — run it for the current case count |
 | Inline limit | `vite.config.js` extended to the two new asset directories |
 
 **The skill lots are byte-identical after the change.** `python3 scripts/skill-art-build.py` was
@@ -111,34 +111,52 @@ not disturb what already shipped.
 
 The perk-category factors are the README's, applied and not re-derived, per the contract.
 
-The legendary factors are new and were solved against **total emitted light** rather than luminous
-area. That is a change of statistic and it was measured, not preferred: solving for area drove five
-of 21 files to the solver's 5.0 ceiling and three of those were still short of target there
-(Hochseil 23.3 % against 30.1 %). Full derivation in `docs/art/legendaries/README.md`. Raw spread
-4.2-fold, aligned 1.26-fold, clipping ≤ 0.55 % of pixels.
+The legendary factors are new, and the statistic they were solved against **changed twice** — the
+second time because review round 1 found the first change measured the wrong stage. Both dead ends
+are recorded in `docs/art/legendaries/README.md` and at `cmd_align`, because each failed in a way the
+next had to avoid:
 
-Running `align --lot perkcats` under the new statistic reports a divergence from the shipped factors —
-largest at E Form, 1.06 solved against 0.73 shipped — and deliberately does not act on it
-(`ICONS-PERK-VIS-05`).
+| Statistic | Outcome |
+| --- | --- |
+| Luminous area (the perkcats procedure) | Does not converge. Five of 21 files hit the solver ceiling; three were still short of target there (Hochseil 23.3 % against 30.1 %) |
+| Total emitted light on the **master** | Converged, shipped for a few hours, and was wrong: it measures before resize, bloom, crop and mask. Claimed 1.26-fold; the same table spreads **1.78-fold** where the emblems are shown |
+| Light **as shown** — after the whole pipeline, mask-weighted | Ships. **3.45-fold raw → 1.01-fold**, no solver bounds, worst clip cost 1.11 % of pixels |
+
+The lot table now carries `strip_h`, `mask_stop` and `anchor` as well as `strip_w`, because measuring
+at the end of the pipeline needs the whole zone, not just its width. Guards tie all three back to
+`src/index.css`.
+
+Running `align --lot perkcats` reports a divergence from the shipped factors — largest at B Stich,
+1.56 solved against 1.05 shipped, leaving that lot at 1.69-fold as shown — and deliberately does not
+act on it. The contract requires the README's factors applied, not re-derived (`ICONS-PERK-VIS-05`).
 
 ### Guards, each counter-checked
 
-Every guard was verified by breaking the seam it protects and confirming it goes red. Eleven
-mutations, all caught, tree restored and baseline green afterwards:
+Every guard was verified by breaking the seam it protects and confirming it goes red. All caught,
+tree restored and baseline green afterwards:
 
 ```text
-desktop gate removed                                          caught
-population fallback introduced                                caught
-zone width borrowed from the skill lot (strip_w 265 -> 277)    caught
-css zone height drifts from the measured width                caught
-runtime filter added to the strip                             caught
-a legendary light factor dropped                              caught
-vite inline exclusion narrowed back                           caught
-emblem bound to the translated name instead of the key        caught
-legendary anchor dropped                                      caught
-legendary anchor hung on a second definition of legendary     caught
-a legendary delivery file deleted                             caught
+desktop gate removed                                       caught
+population fallback introduced                             caught
+zone width borrowed from the skill lot (265 -> 277)        caught
+css zone height drifts from the table                      caught
+runtime filter added to the strip                          caught
+a legendary light factor dropped                           caught
+vite inline exclusion narrowed back                        caught
+emblem bound to the translated name instead of the key     caught
+legendary anchor dropped from the markup                   caught
+legendary anchor hung on a second definition of legendary  caught
+lot table's anchor flipped away from the css               caught
+css mask moved away from what the solver assumes           caught
+zone height dropped from the lot table                     caught
+a legendary delivery file deleted                          caught
+a SECOND file for one legendary id                         caught
+a SECOND file for one category id                          caught
 ```
+
+The last three were added in review round 1. The two duplicate-file seams close a real hole the
+reviewer demonstrated: the completeness guards reduced filenames to a set, so a second
+`L_ZINS_*.webp` overwrote the runtime binding with everything still green.
 
 ---
 
@@ -191,7 +209,8 @@ The working tree was restored after the `HEAD` experiment and verified byte-iden
 
 ## 7. What this package does NOT cover
 
-- **V3 is open.** No human has looked at the result. Nothing here is a visual approval.
+- **V3 covers what the captures showed, and no more.** The owner passed it on 2026-08-22; the
+  emblems that were never rendered, the untested language and the single DPR below are outside it.
 - **25 of the 28 emblems were never seen on the screen.** One legendary and two category emblems
   rendered in the application; the other 25 were verified as files, as bindings and in the exact
   strip geometry offline. That is a lot-level check, not a screen-level one (`DR-2`).

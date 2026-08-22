@@ -171,10 +171,16 @@ an der falschen Box.
 **Die sieben Faktoren oben sind unverändert übernommen worden**, nicht neu hergeleitet — sie stehen als
 `PERKCAT_LIGHT` im Backskript. Das ist eine Vorgabe des Aufgaben-Kontrakts und hat einen Grund: der
 Zielwert ist ein Median, und ein Median wandert. `align --lot perkcats` rechnet inzwischen mit einer
-anderen Statistik (Gesamtlicht statt Leuchtfläche, s. `docs/art/legendaries/README.md`) und meldet
-deshalb eine Abweichung, statt eine Änderung vorzuschlagen — am deutlichsten bei **E Form**, wo der Löser
-1,06 sagt und ausgeliefert 0,73 wird. Beide Zahlen sind für sich richtig; sie messen Verschiedenes. Die
-ausgelieferte ist die, die schon einmal angesehen wurde.
+anderen Statistik — dem Licht IM ZUGESCHNITTENEN, MASKIERTEN Zustand, s. `docs/art/legendaries/README.md`
+— und meldet deshalb eine Abweichung, statt eine Änderung vorzuschlagen.
+
+> Nachtrag Review-Runde 1, 22.08.2026: Diese Abweichung ist größer, als sie zuerst aussah. **Gemessen
+> dort, wo die Embleme erscheinen, spreizt dieser Satz 1,69-fach** — der Löser sagt für **B Stich** 1,56
+> gegen ausgelieferte 1,05. Der Grund ist derselbe wie beim Legendär-Los: die Faktoren oben sind gegen
+> die LEUCHTFLÄCHE des Masters gerechnet, und die Maske frisst je nach Motiv verschieden viel vom
+> unteren Bildrand. Nicht geändert — der Aufgaben-Kontrakt verlangt ausdrücklich, die Faktoren dieses
+> Dokuments anzuwenden statt sie neu herzuleiten, und der Satz ist am Sicht-Gate so abgenommen worden.
+> Für eine spätere Aufgabe notiert (`ICONS-PERK-VIS-05`).
 
 **Das Legendär-Los wird getrennt angeglichen** und hängt zusätzlich mittig statt oben (`.pk-strip-mid`),
 weil seine 21 Motive nachweislich nicht nach der Regel dieses Dokuments komponiert sind —

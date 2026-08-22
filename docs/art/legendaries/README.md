@@ -43,60 +43,74 @@ The zone HEIGHT, 201 px, is derived rather than chosen: 76 % of the measured 265
 window `docs/art/perkcats/README.md` states. Change the tile width **or either border width** and both
 numbers move; `test/perk-art.test.js` recomputes the height from the width so they cannot drift apart.
 
-## Light alignment — against this lot, not against any other
+## Light alignment — measured where the emblems are actually shown
 
 Alignment is per lot: what has to match is the 21 legendaries against each other. A legendary tile
 shows its own emblem and a regular tile shows its category's, so the two sets are never the same
 picture in different tiles.
 
-**The statistic is total emitted light** (mean Rec. 709 luma over the frame), not the luminous area
-the perk-category set was aligned on, and the change is measured rather than preferred. Under
-`mix-blend-mode: screen` on black, screen(a, b) = a + b − ab, which for the small values that dominate
-an emblem is close to addition — the sum of the pixel values is, to first order, the light the tile
-gains.
+**The statistic is light AS SHOWN** — the mean Rec. 709 luma of the delivery file after resize,
+bloom, crop to the 265 × 201 zone and the CSS mask, weighed row by row against that mask. Under
+`mix-blend-mode: screen` on black, screen(a, b) = a + b − ab, which for the small values that
+dominate an emblem is close to addition, so that quantity is the light the tile actually gains.
 
-Area-matching does not merely give different numbers on this lot; **it does not converge.** Solving
-for the lot's median area (30.1 %) drove five of the 21 files to the solver's 5.0 ceiling, and three
-of those five were still short of the target there — Hochseil reached 23.3 % against a target of
-30.1 %. The reason is that luminous area asks how much of the *frame* a motif fills, and these motifs
-genuinely differ in that: Sammler is a full panel at 53.8 %, Vabanque a small lever at 14.5 %. The
-perk-category set never exposed this because its area spread is 1.7-fold against this lot's 3.7-fold.
+### Two earlier statistics, and why each was abandoned
 
-Solved by `python3 scripts/skill-art-build.py align --lot legendaries`; the factors ship in
-`LEGENDARY_LIGHT` in that script.
+**Luminous area**, the procedure `docs/art/perkcats/README.md` used, does not converge on this lot.
+Solving for its median area (30.1 %) drove five of the 21 files to the solver's ceiling, and three of
+those were still short of target there — Hochseil reached 23.3 % against 30.1 %. Area asks how much
+of the *frame* a motif fills, and these motifs genuinely differ in that: Sammler is a full panel at
+53.8 %, Vabanque a small lever at 14.5 %. The perk-category set never exposed this because its area
+spread is 1.7-fold against this lot's 3.7-fold.
 
-| Emblem | emitted light | area > 10 | factor | after |
+**Total emitted light on the master** converged, and it shipped for a few hours. **Caught in review,
+2026-08-22:** it measures the brightness-corrected master, full frame, *before* resize, bloom, crop
+and mask, and reported a 1.26-fold residual spread. Measured where the emblems are shown, that same
+table spreads **1.78-fold** — because the mask discards the bottom of the frame and these motifs
+differ in how much of their light sits down there. Henker was hit hardest: it shipped at 1.48 where
+it needs 3.12.
+
+The figure was not wrong about its own intermediate state. It was measuring a state nobody looks at.
+An alignment is a claim about what the player sees, so it has to be measured there.
+
+### The shipped factors
+
+Solved by `python3 scripts/skill-art-build.py align --lot legendaries`; the table lives in
+`LEGENDARY_LIGHT` in that script. `raw` and `after` are light as shown, `clip` is the share of
+pixels the lift flattens to white.
+
+| Emblem | raw | factor | after | clip |
 |---|---|---|---|---|
-| L6 Raserei | 33.38 | 38.3 % | **0.65** | 21.4 |
-| L_SAMM Sammler | 30.82 | 53.8 % | **0.70** | 21.3 |
-| L4 Kritische Masse | 30.37 | 46.2 % | **0.71** | 21.3 |
-| L_UMV Umverteilung | 25.15 | 38.3 % | **0.86** | 21.4 |
-| L_BAUH Bauhütte | 24.18 | 43.7 % | **0.90** | 21.4 |
-| L_BRENN Brennpunkt | 24.13 | 32.8 % | **0.90** | 21.4 |
-| L2 Unaufhaltsam | 23.51 | 30.1 % | **0.92** | 21.4 |
-| L_FUND Fundament | 23.30 | 32.4 % | **0.93** | 21.4 |
-| L_ZINS Zinseszins | 22.70 | 27.6 % | **0.95** | 21.4 |
-| L_TAKT Taktschlag | 22.41 | 28.9 % | **0.97** | 21.4 |
-| L_ECHO Echo | 21.65 | 37.7 % | **1.00** | 21.7 |
-| L_PATT Patt | 20.55 | 31.1 % | **1.05** | 21.3 |
-| L_RICHT Richtfest | 20.01 | 32.2 % | **1.08** | 21.3 |
-| L_OPFER Opfergang | 18.51 | 20.3 % | **1.17** | 20.7 |
-| L_MONO Monochrom | 17.86 | 24.6 % | **1.21** | 20.9 |
-| L_HENK Henker | 14.64 | 23.1 % | **1.48** | 19.9 |
-| L_SCHM Schmiede | 13.62 | 25.2 % | **1.59** | 19.4 |
-| L_MEIS Meisterhand | 12.28 | 20.9 % | **1.76** | 19.2 |
-| L_BALL Ballast | 9.76 | 15.0 % | **2.22** | 17.2 |
-| L_HOCH Hochseil | 9.68 | 15.5 % | **2.24** | 17.2 |
-| L_VAB Vabanque | 7.97 | 14.5 % | **2.72** | 17.1 |
+| L6 Raserei | 54.12 | **0.59** | 33.84 | 0.00 % |
+| L4 Kritische Masse | 49.66 | **0.65** | 33.76 | 0.00 % |
+| L_SAMM Sammler | 49.31 | **0.66** | 33.53 | 0.00 % |
+| L_UMV Umverteilung | 43.88 | **0.75** | 33.60 | 0.00 % |
+| L_FUND Fundament | 41.04 | **0.80** | 33.69 | 0.00 % |
+| L_BRENN Brennpunkt | 39.67 | **0.83** | 33.65 | 0.00 % |
+| L2 Unaufhaltsam | 39.15 | **0.84** | 33.52 | 0.00 % |
+| L_TAKT Taktschlag | 37.99 | **0.87** | 33.46 | 0.00 % |
+| L_ECHO Echo | 37.71 | **0.89** | 33.71 | 0.00 % |
+| L_BAUH Bauhütte | 36.49 | **0.93** | 33.46 | 0.00 % |
+| L_PATT Patt | 33.60 | **1.00** | 33.60 | 0.02 % |
+| L_ZINS Zinseszins | 32.38 | **1.06** | 33.51 | 0.09 % |
+| L_MONO Monochrom | 30.90 | **1.13** | 33.62 | 0.00 % |
+| L_RICHT Richtfest | 28.09 | **1.27** | 33.57 | 0.17 % |
+| L_MEIS Meisterhand | 24.33 | **1.54** | 33.66 | 0.19 % |
+| L_OPFER Opfergang | 25.06 | **1.92** | 33.62 | 1.11 % |
+| L_SCHM Schmiede | 21.94 | **1.98** | 33.62 | 0.29 % |
+| L_HOCH Hochseil | 19.76 | **2.29** | 33.58 | 0.23 % |
+| L_BALL Ballast | 17.59 | **3.00** | 33.77 | 0.41 % |
+| L_HENK Henker | 16.19 | **3.12** | 33.62 | 0.26 % |
+| L_VAB Vabanque | 15.68 | **3.14** | 33.59 | 0.09 % |
 
-Spread 4.2-fold before, 1.26-fold after. **The residual is honest, not a rounding artefact:** the
-three largest lifts (Vabanque, Hochseil, Ballast) do not reach the median even at their factor,
-because clipping eats part of the lift. Pushing them further would flatten their cores into white to
-buy a number. Clipped share stays at or below 0.55 % of pixels for the whole lot.
+**Spread 3.45-fold before, 1.01-fold after**, with no file landing on a solver bound and the worst
+clip cost 1.11 % of pixels (Opfergang). Re-running `align` against the shipped table reports a
+divergence of zero, which is the check that the table and the solver still agree.
 
-Two patterns sit in the table, and they are the same two the perk-category set found. The three
-largest cuts (Raserei, Sammler, Kritische Masse) are the AREA motifs — a blaze, a full panel, an
-explosion. The three largest lifts are LINE motifs on a lot of black. Line against area, again.
+Two patterns sit in the table. The three largest cuts (Raserei, Sammler, Kritische Masse) are the
+AREA motifs — a blaze, a full panel, an explosion. The three largest lifts (Vabanque, Henker,
+Ballast) are LINE motifs on a lot of black, and Henker additionally loses more to the mask than
+anything else in the lot. Line against area, again, now with the mask on top of it.
 
 ## The composition does not follow the perk-category rule — and the strip is anchored for it
 
