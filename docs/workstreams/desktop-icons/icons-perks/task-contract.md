@@ -17,9 +17,9 @@ contract wins**.
 | **Feature** | feature/desktop-icons |
 | **Branch** | `task/icons-perks` |
 | **Base** | `origin/feature/desktop-icons` @ `3013881f723080753b8829feea4b051356f0cae0` |
-| **Owner** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
-| **Integrator** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
-| **Reviewer** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
+| **Owner** | **Claude Code worker** — implementation, per `AGENTS.md` — *Roles and source of truth* |
+| **Integrator** | **Claude Code** feature integrator, same source |
+| **Reviewer** | **Codex**, independent review only — it does not implement, same source |
 | **Concurrency** | One writer. Sequential sessions may continue this task in the same worktree. Never two simultaneous writers. |
 
 ---
