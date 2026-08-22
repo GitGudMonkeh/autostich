@@ -295,8 +295,10 @@ here deliberately: a status recorded at planning is a different claim at a diffe
 Tick only when true.
 
 - [x] **Exactly one definition; every other live mention a pointer or an application**, classified by
-      reading rather than by hit count. Live sites enumerated: the definition in `AGENTS.md`; pointers
-      at the `AGENTS.md` roles table, the `task-lifecycle.md` planning gate, and `git-workflow.md` §7.
+      reading rather than by hit count. Live sites enumerated: the **definition** in `AGENTS.md`;
+      **pointers** at the `AGENTS.md` roles table, the `task-lifecycle.md` planning gate and
+      `git-workflow.md` §7; and one **application**, the `task-lifecycle.md` sentence routing the
+      breakpoint gate to the tie-break. Four live mentions besides the definition, in three files.
       **Reformulated in review round 1** — the previous single-line grep could not see the
       `task-lifecycle.md` pointer, whose citation wraps a line break, and counted this workstream's
       dated records as though they were live rules. Command and result under *Reproduce* below.
@@ -306,7 +308,9 @@ Tick only when true.
 - [x] `docs/engineering/task-lifecycle.md:96` no longer blocks implementation on a technical
       question, and still names every owner gate — each now routed to the source that actually
       reserves it, House rules for a glyph and a dependency, the tie-break for a breakpoint.
-- [x] `docs/engineering/task-lifecycle.md:141` distinguishes recording from blocking.
+- [x] `docs/engineering/task-lifecycle.md` — the *Expected file surface* row of the task-contract
+      table distinguishes recording from blocking. Cited by row rather than by line: the base-commit
+      number 141 is now 147, and a done criterion asserts a present fact.
 - [x] `docs/engineering/git-workflow.md` §7 names the authority by pointer, not by restatement.
 - [x] No file was created outside `docs/workstreams/agent-decision-authority/`.
 - [x] Every entry of the *Must not touch* list is unchanged, verified by blob or tree hash. All
@@ -334,11 +338,15 @@ an owner question. *Gap that remains:* the Windows full-suite timeout is untouch
 this task's scope — a repository-level condition, and the one thing this handoff does not deliver
 green.
 
-*Measured after the push:* GitHub Actions run `32572829351`, on Linux, at this exact head commit
-`aff76af2c3eab66d3bd6346cb069edb48ae7d41f`, reports `npm test` **success**, alongside lint, build, the
-preview-slot build and `gen:db`. The failure is therefore confined to the Windows host and absent
-from the environment that enforces the gate. The box stays unticked because the criterion is the
-**local** run (`AGENTS.md` — *Validation gates*), not because the change breaks tests.
+*Measured on Linux CI, most recently at the content head* `a2357b47` *(run* `32579560825`*):*
+`npm test` **success**, alongside lint, build, the preview-slot build and `gen:db`. The same was measured at
+`aff76af2` (run `32572829351`) when this record was first written. The failure is therefore confined
+to the Windows host and absent from the environment that enforces the gate. The box stays unticked
+because the criterion is the **local** run (`AGENTS.md` — *Validation gates*), not because the change
+breaks tests.
+
+**A CI result is dated evidence.** Cite the run and the head it ran on, never "the current head" —
+that phrasing is what round-2 finding 2 and round-3 finding 2 were both made of.
 
 **Reproduce — one definition, pointers elsewhere.** Multiline-aware, because the `task-lifecycle.md`
 citation wraps a line break; limited to live rule documents, because `docs/workstreams/**` holds
@@ -460,3 +468,44 @@ breakpoint governance was correct. Concluding that the only options were "invent
 "leave it broken" was not — the rule this task created already answered it, and the worker did not
 apply its own tie-break to the case in front of it. The defect was a missed application, not a
 missing rule.
+
+---
+
+## Review round 3 — Codex, 2026-08-22
+
+Verdict: **changes requested** on `d954d3d9`. Round-2 finding 1 confirmed fixed. Round-2 finding 2
+**only partly** fixed — the reviewer's judgement, and it was correct.
+
+> "Die Live-Governance ist integrationsfähig, das Review-Paket selbst noch nicht zuverlässig genug."
+
+The three live rule documents drew no new correctness, architecture or authority finding in this
+round. Everything below is the review package failing to describe itself accurately.
+
+| # | Finding | Disposition |
+| --- | --- | --- |
+| a | The handoff claimed six commits in the content range; git has seven. `d63e471a` was missing from a list written **while fixing the previous version of this same defect**. | **Fixed.** The count is now derived from `git log` and the list is complete. |
+| b | "Full changed-file list" named five files; the range contains six. The omitted file was this handoff itself. | **Fixed.** Six files, derived from `git diff --name-only`. |
+| c | The done criterion called the live sites "enumerated" but omitted the breakpoint application added in round 2, while the *Reproduce* block counted it correctly. | **Fixed.** The criterion enumerates one definition, three pointers and one application. |
+| d | Several round-1 statements stood unmarked as current: stale contract line numbers in the hazard table, a downgrade citation, the superseded single-line-grep behaviour, and "corrective edit (approved verbatim)" in the reading order. | **Fixed.** Round-1 sections carry explicit historical-snapshot markers, the obsolete statements are replaced, and contract citations are by **section**, not by line. |
+
+### The structural change, not just the four fixes
+
+Four rounds produced the same class of defect: a statement of current state that was true when
+written and silently false afterwards. Patching instances did not stop it — round 3's fix introduced
+a fresh instance of the very defect it was fixing.
+
+Two changes attack the cause rather than the instances.
+
+1. **Citations into this workstream are by section name, never by line number.** A line number is a
+   measurement with a shelf life; a section name is stable across edits. The base-commit line numbers
+   in *Scope*, *Task-specific inputs* and the planning report stay as they are — those are explicitly
+   dated measurements against `863febe5` and are correct as history.
+2. **Counts are derived, not typed.** Commit lists, file lists and the section map are generated from
+   `git` and from the contract itself, and re-verified by a mechanical audit before handoff. That
+   audit is what caught the one defect this round's reviewer did not: the *Expected file surface* row
+   had moved from `:141` to `:147`, and a done criterion was still asserting a present fact with the
+   base-commit number.
+
+**What remains true and unfixed:** a handoff cannot contain its own commit SHA, so the review-package
+range always ends one commit after the document describing it. That is stated in the header rather
+than left to be discovered.

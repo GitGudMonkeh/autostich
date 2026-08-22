@@ -27,7 +27,7 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 | **Gates** | **Linux CI green at the content head `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
 
-**Six commits in the content range** (*measured*):
+**Seven commits in the content range** (*measured*, `git log --oneline 863febe5..a2357b47 | wc -l`):
 
 ```
 96e4ee4e  docs: define the owner/agent decision boundary in AGENTS.md
@@ -35,8 +35,13 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 aff76af2  docs: record the owner's answer to Q1 in the contract
 175bfbf2  docs: add the reviewer handoff and record the Linux CI result
 e0caa513  docs: address the round-1 review findings
+d63e471a  docs: update the handoff for review round 2
 a2357b47  docs: address the round-2 review findings
 ```
+
+*Corrected at round 3:* the previous version said six and omitted `d63e471a` — the same defect the
+round-3 refresh was meant to remove, committed while removing it. The count is now derived from
+`git log`, not typed.
 
 The commit carrying *this* update is not in that list and cannot be: a handoff cannot contain its own
 SHA. That is what the *Review-package range* row above is for. Stated once here rather than left to
@@ -123,6 +128,36 @@ contract's enumerated expectation, with the second `task-lifecycle.md` hit being
 
 ---
 
+## 0c. Round 4 — what changed since the third review
+
+Codex reviewed `d954d3d9`: round-2 finding 1 confirmed fixed, round-2 finding 2 **only partly**
+fixed. No new findings in the three live rule documents — the reviewer's summary was that the live
+governance is ready to integrate and the review package is not. Dispositions in
+[`task-contract.md`](./task-contract.md) — *Review round 3*.
+
+Four residual instances of one class, all fixed: a commit list that said six over a range of seven
+(omitting `d63e471a`), a "full changed-file list" of five over a range of six (omitting this
+document), a done criterion calling the live sites "enumerated" while omitting the breakpoint
+application, and several round-1 statements standing unmarked as current.
+
+**The class, stated plainly.** Every round produced the same defect: a statement of current state,
+true when written, silently false afterwards. Round 3's fix introduced a fresh instance of the defect
+it was fixing. Patching instances was not working, so two things changed:
+
+- **Citations into this workstream are by section, never by line.** Base-commit line numbers in the
+  contract's *Scope* and *Task-specific inputs* and in the planning report stay — those are dated
+  measurements against `863febe5`, correct as history and labelled as such.
+- **Counts are derived, not typed**, and re-verified mechanically before handoff. That audit caught
+  what this round's review did not: the *Expected file surface* row had moved from `:141` to `:147`
+  while a done criterion still asserted a present fact using the base number.
+
+*Measured at round 4:* the audit passes — commit count and list, file count and list, contract
+section map, and the absence of line-number citations into the contract all agree with `git` and with
+the contract as it stands. Gates re-run: `npm test` exit 1 on the same pre-existing Windows timeout,
+the file green in isolation, lint / build / `gen:db` exit 0.
+
+---
+
 ## 1. What was agreed
 
 The contract is the binding scope statement; this document does not restate it. Its *Acceptance
@@ -136,11 +171,13 @@ gate*, quoted verbatim:
 > All three clauses must hold. A change that adds the rule while altering the owner side has failed
 > this gate even if the rule text is perfect.
 
-Section map of the contract at the content head `a2357b47` (*measured*): Identity `:12`, Local
-workspace `:25`, Scope `:41`, Non-goals and tripwire `:77`, Approved architecture `:102`,
-Task-specific inputs `:201`, Acceptance gate `:216`, Expected file surface `:230`, Known hazards
-`:273`, Definition of done `:293`. No section absent. The contract additionally carries *Review
-round 1* `:412` and *Review round 2* `:445`, which did not exist when this document was generated.
+Section map of the contract, **generated from the file rather than typed** (*measured*): Identity
+`:12`, Local workspace `:25`, Scope `:41`, Non-goals and tripwire `:77`, Approved architecture
+`:102`, Task-specific inputs `:201`, Acceptance gate `:216`, Expected file surface `:230`, Known
+hazards `:273`, Definition of done `:293`. No
+section absent. The contract additionally carries *Review round 1*, *Review round 2* and *Review
+round 3*, which did not exist when this document was first generated — cited by name, because the
+line numbers of this workstream's own documents have moved in every round so far.
 
 ---
 
@@ -160,7 +197,9 @@ Ordered by where the worker thinks a finding is most likely, not by size.
    once below" rather than standing on its own. A reviewer may weigh that differently, and the
    cheapest fix — shortening the row to a bare pointer — is available.
 
-2. **Is `task-lifecycle.md:144` the right strength?** This wording was *delegated* to the worker, not
+2. **Is the *Expected file surface* row the right strength?** (Cited at round 1 as
+   `task-lifecycle.md:144`; the row is at `:147` at the content head.) This wording was *delegated*
+   to the worker, not
    approved in advance, so it has had the least scrutiny of the five edits. It now reads "recorded
    and reported before it is changed — not blocked on an owner answer unless the departure is itself
    a scope change". The question is whether that sharpens the *Expected file surface* discipline or
@@ -213,9 +252,20 @@ into it.
 | `vite.config.js` | blob | `9c7ec59c4765d6e34aefc4e685fc7c10a1aac06f` | unchanged |
 | `eslint.config.js` | blob | `3ebdf1a7dc83f433495dc6d76d4ad9abfe8cbc96` | unchanged |
 
-No entry was unverifiable. Full changed-file list over the range (*measured*): `AGENTS.md`,
-`docs/engineering/git-workflow.md`, `docs/engineering/task-lifecycle.md` modified;
-`docs/workstreams/agent-decision-authority/planning-report.md` and `task-contract.md` added.
+No entry was unverifiable. Full changed-file list over the content range — **six files**
+(*measured*, `git diff --name-only 863febe5 a2357b47`):
+
+```
+M  AGENTS.md
+M  docs/engineering/git-workflow.md
+M  docs/engineering/task-lifecycle.md
+A  docs/workstreams/agent-decision-authority/planning-report.md
+A  docs/workstreams/agent-decision-authority/review-handoff.md
+A  docs/workstreams/agent-decision-authority/task-contract.md
+```
+
+*Corrected at round 3:* the previous list omitted this document, which the range does contain — an
+earlier revision of it, added by `175bfbf2`.
 
 Re-run the claim rather than trusting it:
 
@@ -281,6 +331,11 @@ describes exactly this. The CI conclusion was read from the run, not produced by
 
 ## 5. Hazards
 
+> **Historical snapshot — generated at round 1.** The hazard *text* is unchanged, but H6 and H7 were
+> both found defective in review and their contract statuses were rewritten; the *Recorded elsewhere*
+> column below quotes the contract as it stands, by section rather than by line number. Read the
+> contract's *Known hazards* table for the current wording.
+
 One row per hazard, text quoted verbatim from the contract. **The status column is deliberately
 unset**: a status recorded at another time is a different claim, and only the worker can supply the
 status at handoff (`task-lifecycle.md` — *Two standing rules*). The contract's own statuses are
@@ -288,20 +343,23 @@ quoted in the third column, attributed and located, and are **not** promoted.
 
 | Hazard (verbatim) | Status at handoff | Recorded elsewhere |
 | --- | --- | --- |
-| **H1** Design gets relabelled as "technical" — spacing, colour, glyphs, wording claimed as implementation detail. The most expensive misfire. | *measured* / *not measured, and why* / *not applicable* — unset | `task-contract.md:231`: "**measured** — the canonical text was byte-compared against this contract's approved block; `conventions.md` blob `3bd5082e` is identical at base and HEAD. How future sessions apply the tie-break is not measurable here." |
-| **H2** Autonomy read as a scope licence — unrequested refactors, added work. | unset | `task-contract.md:232`: "**measured** — 'within the approved scope' is present in the inserted text; the House rule against unrelated cleanup is outside the diff. Three files changed, all on the *Expected to change* list; the tripwire did not fire." |
-| **H3** Autonomy read as a licence for irreversible actions — push, PR, delete, history rewrite. | unset | `task-contract.md:233`: "**measured** — the sentence that the House rules are not relaxed is present verbatim; `CLAUDE.md` blob `af449360` and the `.claude` tree `09d8fd3f` are identical at base and HEAD." |
-| **H4** Silent decisions with no trace. | unset | `task-contract.md:234`: "**measured** — the record clause naming the four existing surfaces is present verbatim, and no file was created outside `docs/workstreams/agent-decision-authority/`." |
-| **H5** Over-correction — the planner stops raising genuine product questions. | unset | `task-contract.md:235`: "**measured** — the 'cuts both ways' sentence is present verbatim, and the corrected `:96` still blocks implementation on a product, design, gameplay, priority or scope question." |
-| **H6** Third-copy drift (F10) — the rule echoed into commands and other docs. | unset | `task-contract.md:236`: "**measured** — one definition and three pointer sites at handoff. The grep is single-line and cannot see the `:96` pointer, whose citation wraps a line break in the approved text; a multiline-aware re-count confirms three." |
-| **H7** "A new dependency" is technical under the new rule but listed as a house-rule gate. | unset | `task-contract.md:237`: "**measured** — 'a new dependency' is still named among the house-rule gates at the corrected `:96`, and *Approved architecture* item 5 is committed alongside the change." |
-| **H8** The rule is not enforceable by tests — `testing.md:246`, verified in planning. Held by review alone. | unset | `task-contract.md:238`: "**not measured, and why** — unenforceable by construction, re-verified this session: five `test/` files mention `docs/engineering`, all in header comments, none via `readFileSync`. `testing.md:246` holds. Held by review alone; not fixable within this task." |
+| **H1** Design gets relabelled as "technical" — spacing, colour, glyphs, wording claimed as implementation detail. The most expensive misfire. | *measured* / *not measured, and why* / *not applicable* — unset | `task-contract.md` — *Known hazards*, **H1**: "**measured** — the canonical text was byte-compared against this contract's approved block; `conventions.md` blob `3bd5082e` is identical at base and HEAD. How future sessions apply the tie-break is not measurable here." |
+| **H2** Autonomy read as a scope licence — unrequested refactors, added work. | unset | `task-contract.md` — *Known hazards*, **H2**: "**measured** — 'within the approved scope' is present in the inserted text; the House rule against unrelated cleanup is outside the diff. Three files changed, all on the *Expected to change* list; the tripwire did not fire." |
+| **H3** Autonomy read as a licence for irreversible actions — push, PR, delete, history rewrite. | unset | `task-contract.md` — *Known hazards*, **H3**: "**measured** — the sentence that the House rules are not relaxed is present verbatim; `CLAUDE.md` blob `af449360` and the `.claude` tree `09d8fd3f` are identical at base and HEAD." |
+| **H4** Silent decisions with no trace. | unset | `task-contract.md` — *Known hazards*, **H4**: "**measured** — the record clause naming the four existing surfaces is present verbatim, and no file was created outside `docs/workstreams/agent-decision-authority/`." |
+| **H5** Over-correction — the planner stops raising genuine product questions. | unset | `task-contract.md` — *Known hazards*, **H5**: "**measured** — the 'cuts both ways' sentence is present verbatim, and the corrected `:96` still blocks implementation on a product, design, gameplay, priority or scope question." |
+| **H6** Third-copy drift (F10) — the rule echoed into commands and other docs. | unset | `task-contract.md` — *Known hazards*, **H6**: "**measured** — one definition and three pointer sites at handoff. The grep is single-line and cannot see the `:96` pointer, whose citation wraps a line break in the approved text; a multiline-aware re-count confirms three." |
+| **H7** "A new dependency" is technical under the new rule but listed as a house-rule gate. | unset | `task-contract.md` — *Known hazards*, **H7**: "**measured** — 'a new dependency' is still named among the house-rule gates at the corrected `:96`, and *Approved architecture* item 5 is committed alongside the change." |
+| **H8** The rule is not enforceable by tests — `testing.md:246`, verified in planning. Held by review alone. | unset | `task-contract.md` — *Known hazards*, **H8**: "**not measured, and why** — unenforceable by construction, re-verified this session: five `test/` files mention `docs/engineering`, all in header comments, none via `readFileSync`. `testing.md:246` holds. Held by review alone; not fixable within this task." |
 
 ---
 
 ## 6. Definition of done
 
-Fourteen boxes ticked, **one unticked** (*measured*). The unticked box, verbatim:
+> **Historical snapshot — generated at round 1.** The F10 criterion and the `:96` criterion have both
+> been rewritten since; the counts below are as at round 1. The contract is authoritative.
+
+Fourteen boxes ticked, **one unticked** (*measured* at round 1). The unticked box, verbatim:
 
 ```
 - [ ] `npm test` — passed, unpiped. Any failing file also run in isolation, both results reported
@@ -313,7 +371,9 @@ It stays unticked because the criterion is the **local** gate (`AGENTS.md` — *
 requires the local run), not because the change breaks tests: Linux CI is green at the content head
 `a2357b47`.
 
-The downgrade record exists (`task-contract.md:273`), verbatim:
+The downgrade record exists — `task-contract.md` — *Definition of done*, immediately after the
+checkbox list. Quoted verbatim as of the content head; it has since gained a dated CI paragraph
+recording the Linux result at `a2357b47`, which is not reproduced here:
 
 > **Downgrade — `npm test`.** *Promised:* a green full suite. *Delivered:* 2047 of 2048 tests green in
 > two consecutive full runs, with `test/i18n-guards.test.js > "jeder Katalog-Schlüssel wird auch
@@ -359,12 +419,12 @@ verified:
   there. One test, a 5000 ms timeout, passing in isolation. The contract's downgrade record states
   it reproduces at the clean base commit with this task's changes stashed. **That reproduction is a
   prior claim from the worker's session, quoted here, not re-run when this handoff was generated.**
-- **The single-line grep in the definition of done undercounts by one.** The `task-lifecycle.md:96`
-  pointer wraps `*Decision\nauthority*` across a line break in the approved verbatim text, so
-  `grep -rn "Decision authority"` cannot see it. A reviewer counting pointer sites with that command
-  will find two where there are three.
-- **The contract quotes the rule text it approved**, so the same grep also returns four hits inside
-  `task-contract.md`. Those are a record, not rule sites.
+- **The F10 check is no longer a single-line grep** — *superseded at round 1, corrected here at
+  round 3.* The old criterion could not see the `task-lifecycle.md` pointer, whose citation wraps a
+  line break, and it counted this workstream's dated records as live rule sites. The contract now
+  enumerates the live sites and pairs them with a multiline-aware search that **locates while a human
+  classifies**. At the content head: `AGENTS.md` 3, `task-lifecycle.md` 2, `git-workflow.md` 1 — one
+  definition, three pointers, one application.
 - **Linux CI is green at the content head.** GitHub Actions run `32579560825`, head SHA
   `a2357b4708578bff3d73c1945b76c0de074b50a8`: `npm test` **success**, lint success, build success,
   preview-slot build success, `gen:db` success. The Windows timeout in §4 does not exist in the
@@ -425,12 +485,16 @@ The original five, kept for comparison.
 
 ## 10. Suggested reading order
 
+> **Written at round 1, corrected at round 3** where an item had gone stale.
+
 1. **[`task-contract.md`](./task-contract.md) — *Approved architecture*.** The rule text as approved,
    and items 1 to 5 that bind the drafting. Everything else is downstream of this.
 2. **The `AGENTS.md` diff.** The new section and the role-table row together — §2 item 1 is decided
    here.
-3. **`task-lifecycle.md:96` and `:144`.** The corrective edit (approved verbatim) and the delegated
-   wording (not) — §2 items 2 and 4.
+3. **`task-lifecycle.md`, the planning gate and the *Expected file surface* row.** The corrective
+   edit — **no longer the block approved at planning**; rounds 1 and 2 changed it, and the contract
+   carries both the superseded original and the current approved text — and the delegated wording,
+   which was never pre-approved. §2 items 2 and 4.
 4. **`git-workflow.md:242`.** One line — §2 item 3.
 5. **§3 and §5 of this document.** Scope compliance and the hazard statuses, if the hash evidence
    matters to the verdict.
