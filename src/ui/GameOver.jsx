@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1400 px steht die finale Aufstellung offen
+import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1280 px steht die finale Aufstellung offen
 import { useEscape } from "./useEscape.js";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { Sparkline } from "./Sparkline.jsx";
@@ -206,7 +206,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const hasTicks = Array.isArray(state.trickLog) && state.trickLog.some((c) => c && c.length);
   const architectCover = hasArch ? architectCoverFor(state) : null;
   const wide = useIsWide();   // #desktop: eigene Spalte für die Aufstellung → sie startet aufgeklappt
-  // #graph-fuellt: der Score-Verlauf fuellt die freie Hoehe seiner Spalte (nur ab 1400 px gemessen).
+  // #graph-fuellt: der Score-Verlauf fuellt die freie Hoehe seiner Spalte (nur ab 1280 px gemessen).
   const chartRef = useRef(null);
   const chartVh = useFuellHoehe(chartRef, wide);
   const [unlockSeen, setUnlockSeen] = useState(false);   // #unlock-fenster: einmal bestätigen, dann weg
@@ -237,7 +237,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           </button>
         </div>
         {/* #go-kopf (19.08.2026) — der Kopf trägt nur noch Augenbraue, Kennzahlen und Aktionen.
-            Die SCORE-ZAHL steht ab 1400 px UNTER der Haarlinie, als Kopf der linken Spalte über dem
+            Die SCORE-ZAHL steht ab 1280 px UNTER der Haarlinie, als Kopf der linken Spalte über dem
             Verdienst (s. `.go-heroblock` weiter unten). Oben stand sie in einer Zeile mit vier
             Kennzahlen und zwei Knöpfen und ging darin unter — sie ist aber die Aussage des Screens.
             Unter der Linie beginnt der INHALT mit ihr, und das ist ihr Platz.
@@ -272,7 +272,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Verdienst und Herkunft in ZWEI Rasterzeilen, und die zweite teilt sich ihre Höhe mit dem Build der
             dritten Spalte — wächst dort die Beschreibung, rutscht hier die Herkunft mit nach unten. Als EINE
             Zelle ist die Spalte von der Nachbarspalte entkoppelt; wachsen darf dann nur, was UNTER dem Build
-            steht (die finale Aufstellung). Unter 1400 px ist die Klammer `display: contents`. */}
+            steht (die finale Aufstellung). Unter 1280 px ist die Klammer `display: contents`. */}
         <div className="go-col1">
         {/* #go-kopf: Score-Zahl, Rekord-Chip und (am Handy) die Kleinschrift-Zeile. Sie liegen in der
             linken KLAMMER, nicht als eigene Rasterzeile — Rasterzeilen gelten über alle drei Spalten,
@@ -280,9 +280,9 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Panels dort um die Höhe der Zahl nach unten geschoben. In der Klammer gehört sie zur Spalte
             und schiebt nur, was darunter in DIESER Spalte steht.
             `text-center` ist die Handy-Fassung (der Block sass bis hierher im zentrierten `go-hero`);
-            ab 1400 px stellt `.go-heroblock` auf linksbündig. */}
-        {/* #go-score-panel: Ab 1400 px ist der Score ein Panel wie die daneben — mit denselben Ring-Klassen
-            und derselben Maske wie die übrigen Panels dieses Bildschirms. Unter 1400 px tragen sie keine
+            ab 1280 px stellt `.go-heroblock` auf linksbündig. */}
+        {/* #go-score-panel: Ab 1280 px ist der Score ein Panel wie die daneben — mit denselben Ring-Klassen
+            und derselben Maske wie die übrigen Panels dieses Bildschirms. Unter 1280 px tragen sie keine
             Darstellung, die schmale Fassung bleibt unberührt. `is-record` schaltet den Rahmen auf Gold und
             lässt ihn pulsen (Legendär-Geste), sonst steht dort die Deckfarbe der Nachbarn. */}
         <div className={`go-heroblock as-ring as-ring-quiet text-center${isRecord ? " is-record" : ""}`}>
@@ -408,7 +408,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             das Profil es weiß. Verglichen wird gegen `prevBests` (Schnappschuss aus App.jsx, VOR recordRun);
             ohne den Schnappschuss ist das Profil beim Rendern längst überschrieben und jede Zeile hieße „neu".
 
-            NUR ab 1400 px (`wide`): am Handy ist der Screen ohnehin eine lange Kolonne, und ein viertes Panel
+            NUR ab 1280 px (`wide`): am Handy ist der Screen ohnehin eine lange Kolonne, und ein viertes Panel
             zwischen Verdienst und Herkunft macht sie länger, ohne etwas zu lösen. Der Platz, den das Panel hier
             füllt, ist ein DESKTOP-Platz. Es steht in Spalte 1 unter dem Verdienst — beide beantworten dieselbe
             Frage („was hat der Lauf gebracht"), und die Klammer `go-col1` hält die Spalte von der Nachbarspalte
@@ -453,7 +453,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* Victory-Redesign: Fraktions-Score-Herkunft — die für Spieler wichtigste Frage „welche Fraktion
             trägt den Score?".
 
-            #go-spalten (19.08.2026): Sie steht ab 1400 px in Spalte 3 UNTER dem Build, nicht mehr in der
+            #go-spalten (19.08.2026): Sie steht ab 1280 px in Spalte 3 UNTER dem Build, nicht mehr in der
             linken Klammer. Zwei Gründe, ein Effekt:
             · Inhaltlich sind Build und Herkunft zwei Hälften derselben Frage — der Build sagt, was gewählt
               wurde (Feuer ×3, drei Feuer-Skills), die Herkunft, was dabei herauskam (Feuer 27 %). Sie standen
@@ -587,8 +587,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <i className="as-ring-run" aria-hidden="true" />
             <div className="p-3 pt-0">
-              {/* #go-breit: Brett und Gebäudeliste stehen ab 1400 px NEBENEINANDER (das Panel läuft dort über
-                  alle drei Spalten). Die zwei Klammern sind dafür da; unterhalb 1400 px sind sie schlichte
+              {/* #go-breit: Brett und Gebäudeliste stehen ab 1280 px NEBENEINANDER (das Panel läuft dort über
+                  alle drei Spalten). Die zwei Klammern sind dafür da; unterhalb 1280 px sind sie schlichte
                   Blöcke im Fluss und ändern nichts. */}
               <div className="go-board">
                 {/* Architekt-Gebäude auf dem Brett ein-/ausblenden (Toggle + Kategorie-Legende) — wie in der Chronik/Aufstellung. */}
@@ -602,7 +602,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               {/* #go-stiche: Gebäudeliste und Durchlauf-Graph sind EIN Rasterfeld neben dem Brett. Als zwei
                   getrennte Felder müsste das Brett zwei Zeilen überspannen — und ein überspannendes Element
                   verteilt seine Mehrhöhe auf beide, was zwischen Liste und Graph eine Lücke von 119 px riss
-                  (gemessen). Unterhalb 1400 px ist die Klammer ein schlichter Block im Fluss. */}
+                  (gemessen). Unterhalb 1280 px ist die Klammer ein schlichter Block im Fluss. */}
               <div className="go-side">
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (

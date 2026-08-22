@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #cz-ruhe (19.08.2026) — ruhigere Deck-Werkstatt ab 1400 px, als Quelltext-Ratsche.
+   #cz-ruhe (19.08.2026) — ruhigere Deck-Werkstatt ab 1280 px, als Quelltext-Ratsche.
 
    Vier Griffe, die alle still zurückfallen können, weil der Screen danach weiter „richtig" aussieht:
    ein wieder laufender Ring, wieder gerahmte Reiter, ein wieder vollbreiter Aktionsknopf und ein
    wieder enges Raster. Und einer, der noch stiller kippt: die KLAMMER der Bühnen-Fußzeile — ohne
-   `display: contents` unterhalb 1400 px bekäme die Handy-Fassung eine zusätzliche Box.
+   `display: contents` unterhalb 1280 px bekäme die Handy-Fassung eine zusätzliche Box.
    ============================================================ */
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
@@ -76,7 +76,7 @@ describe("#cz-ruhe — flache Reiter, luftiges Raster, kompakter Knopf", () => {
     expect((jsx.match(/cz-actbtn/g) || []).length).toBe(2);
   });
 
-  it("die Fußzeile ist unterhalb 1400 px eine reine KLAMMER", () => {
+  it("die Fußzeile ist unterhalb 1280 px eine reine KLAMMER", () => {
     /* Ohne `display: contents` in der BASIS bekäme die Handy-Fassung eine zusätzliche Box zwischen
        Bühne und Knopf — nachgemessen ist die Geometrie bei 390 px sonst identisch. */
     const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
@@ -85,7 +85,7 @@ describe("#cz-ruhe — flache Reiter, luftiges Raster, kompakter Knopf", () => {
 });
 
 describe("#cz-ruhe — die Effekt-Liste sind flache Zeilen, keine Kacheln", () => {
-  it("die Zeile verliert ab 1400 px Fläche, Radius und Abstand — getrennt wird durch Haarlinien", () => {
+  it("die Zeile verliert ab 1280 px Fläche, Radius und Abstand — getrennt wird durch Haarlinien", () => {
     const r = deskBlock.match(/\.cz-fxlist \.cz-fxrow\s*\{([^}]*)\}/);
     expect(r, ".cz-fxrow-Regel nicht mehr gefunden").toBeTruthy();
     expect(r[1]).toMatch(/border-radius:\s*0\s*!important/);

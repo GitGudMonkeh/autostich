@@ -49,7 +49,7 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
           style={{ color: "#6d7288", display: "inline-block", transition: "transform .15s", transform: collapsed ? "none" : "rotate(90deg)" }}>▸</span>
       </button>
       {!collapsed && <div className="fac-body grid gap-3 mt-2.5">{children}</div>}
-      {/* #skillheim: Der Fuß trägt die gehaltenen Skills DIESES Archetyps (ab 1400 px, s. panelSkills unten).
+      {/* #skillheim: Der Fuß trägt die gehaltenen Skills DIESES Archetyps (ab 1280 px, s. panelSkills unten).
           Er sitzt bewusst unter dem Detail und mit `mt-auto` am unteren Rand der Spur: in der Bank sind alle
           Spuren gleich hoch, so stehen die Skill-Zeilen aller Archetypen auf einer Linie. */}
       {footer}

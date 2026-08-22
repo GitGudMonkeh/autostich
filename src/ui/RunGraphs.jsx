@@ -150,7 +150,7 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
      Stich wurde damit zu EINEM Balken ueber die ganze Zeile (im Spiel gesehen: C12, 716 Punkte, ein Stich).
      Nebenwirkung, und der eigentliche Gewinn: die Balken sind ueber alle Zeilen gleich breit, die
      Zeilenlaenge sagt damit etwas (wie viele Stiche der Durchlauf hatte). Als CSS-Variable, weil die
-     Breite nur ab 1400 px greift — am Handy bleibt es bei `flex-1`. Uebergeben wird die ZAHL, nicht der
+     Breite nur ab 1280 px greift — am Handy bleibt es bei `flex-1`. Uebergeben wird die ZAHL, nicht der
      Anteil: der einzelne Balken rechnet sich daraus seinen Bruchteil der Bahn aus (s. index.css), und
      damit stimmt die Breite auch, wenn die Bahn selbst noch die Restbreite der Zeile fuellt. */
   const maxTricks = Math.max(1, ...log.map((c) => (c || []).length));
@@ -194,7 +194,7 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
                         hoher in D9 bedeuten damit voellig verschiedene Punktzahlen (gemessen an einem echten
                         Lauf: Faktor 35). Der Hinweistext sagt das, steht aber klein ueber neun Zeilen, die
                         gleich aussehen. Die Flaeche traegt die zweite Lesart nach: Form INNERHALB des
-                        Durchlaufs oben, Gewicht IM Lauf hier. Nur ab 1400 px sichtbar. */}
+                        Durchlaufs oben, Gewicht IM Lauf hier. Nur ab 1280 px sichtbar. */}
                     <i className="rg-share" aria-hidden="true" style={{ width: `${runScore > 0 ? Math.round((cycleScore / runScore) * 100) : 0}%` }} />
                     <b className="rg-cycnum">{fmtScoreShort(cycleScore)}</b>
                   </span>

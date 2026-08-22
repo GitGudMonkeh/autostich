@@ -48,7 +48,7 @@ export function StatusBar({
   score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused, winStreak = 0, bestStreak = 0,
   cycle = 0, totalCycles = 1,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack, className = "",
-  // #buehne: Ab 1400 px ziehen Musik und Meilensteinbalken IN die Leiste — sie sind dort, wo man sie
+  // #buehne: Ab 1280 px ziehen Musik und Meilensteinbalken IN die Leiste — sie sind dort, wo man sie
   // sucht, und der Lauf spart zwei eigene Reihen. Der Umzug ist DOM (App.jsx entscheidet per useIsWide),
   // nicht Anordnung: zwei gerenderte Musikleisten wären zwei Fokus-Ziele und zwei Abo-Punkte am Player.
   // Unterhalb bleiben beide null → die Leiste ist dann exakt die von heute.
@@ -62,7 +62,7 @@ export function StatusBar({
         style={{ background: "linear-gradient(180deg,#1b1a24f2,#141019f2)", border: `1px solid ${DECK_BORDER}`, backdropFilter: "blur(6px)", boxShadow: "0 8px 20px -8px #000" }}>
 
         {/* Zeile 1: Ablauf-Steuerung (Pause · Tempo · Karten) — links; Runde + Zeit rechts neben dem Karten-Icon.
-            `sb-row1`/`sb-row2` sind ab 1400 px keine Boxen mehr (display: contents): die Zellen werden dann
+            `sb-row1`/`sb-row2` sind ab 1280 px keine Boxen mehr (display: contents): die Zellen werden dann
             direkte Felder EINER Leiste. `sb-ctl` hält die vier Ablauf-Knöpfe dabei als Gruppe zusammen. */}
         <div className="sb-row1 flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
           <div className="sb-ctl flex items-center gap-1.5">

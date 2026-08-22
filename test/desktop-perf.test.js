@@ -250,7 +250,7 @@ describe("#lb-rahmen — die Bestenliste steht wie die anderen Screens im Bild",
   it("Rahmen aussen, Scroller innen — sonst laeuft die Ringkante durch die Liste", () => {
     expect(css).toMatch(/\.lb-page \{[^}]*overflow:\s*hidden/);
     expect(css).toMatch(/\.lb-pagescroll \{[^}]*overflow-y:\s*auto/);
-    // Unter 1400 px ist der Wrapper keine Box — dort scrollt weiter das Panel selbst.
+    // Unter 1280 px ist der Wrapper keine Box — dort scrollt weiter das Panel selbst.
     expect(css).toMatch(/^\.lb-pagescroll \{ display: contents; \}/m);
   });
 });

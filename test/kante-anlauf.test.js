@@ -10,7 +10,7 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
    der Werkstatt, drei Angebote plus gehaltene Skills in der Level-up-Karte — und in der Summe wird aus
    dem Signal eine Farbwolke. An DREI Screens kam dieselbe Beobachtung auf; jedes Mal wurde sie bewusst
    nicht einzeln behoben, weil der Anlauf projektweites Signal ist. Hier ist er EINMAL an der Familie
-   geändert, und nur ab 1400 px.
+   geändert, und nur ab 1280 px.
 
    Die Ratsche hält zwei Dinge fest, die beide still kippen können: dass es EINE Definition bleibt
    (keine zweite Regel im Desktop-Block), und dass die Handy-Werte die Rückfälle sind.

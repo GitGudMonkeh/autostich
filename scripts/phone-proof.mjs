@@ -90,7 +90,20 @@ function topLevelBlocks(css) {
 function widthVerdict(cond, w) {
   let applies = true;
   const rest = [];
-  for (const part of cond.split(/\s+and\s+/i)) {
+  /* BOTH spellings of the separator, and that is not defensive padding — it was a real hole.
+     Source CSS writes `(min-width: 1400px) and (max-height: 820px)`; the MINIFIER writes
+     `(min-width:1400px)and (max-height:820px)`, with no space before `and`. This function is fed
+     the BUILT stylesheet, so for compound queries it only ever sees the second form. Splitting on
+     \s+and\s+ alone therefore never split them at all: the whole condition fell through to `rest`
+     as one opaque string, `applies` stayed true, and the width was never evaluated.
+
+     The damage was silent and exactly the wrong shape. Six compound blocks were carried into the
+     comparison key as TEXT, so proof 1 compared spellings for them while claiming to compute — and
+     a threshold change then surfaced as a "difference" in blocks that cannot apply at 390 px on
+     either side. Measured on the 1400 → 1280 flip: five false differences, no real ones
+     (evidence-T1.md). A proof that compares spellings where it promises to evaluate is the failure
+     mode this project has already paid for once, in the i18n key guard. */
+  for (const part of cond.split(/\)\s*and\s*\(|\s+and\s+/i)) {
     const p = part.trim().replace(/^\(|\)$/g, "");
     let m;
     if ((m = p.match(/^min-width\s*:\s*([\d.]+)(px|rem)$/))) {
@@ -275,11 +288,49 @@ async function capture(label) {
   process.stdout.write(`\n  evidence -> ${join(OUT, label)}\n`);
 }
 
+/* Re-canonicalise a STORED rule set through today's evaluator.
+
+   WHY THIS EXISTS. `capture` writes the applicable set as it understood it at the time, and
+   `compare` used to diff two such files directly. That freezes the VERDICT into the artefact: the
+   two sides went through the same function only as long as nobody touched that function in between.
+   A parser fix landing between two captures silently made the comparison be about two different
+   questions — which is exactly what happened here (see `widthVerdict` above).
+
+   Running both stored sides through the current evaluator restores the property the header of this
+   file claims: one code path, both sides, at comparison time. It also keeps an older baseline VALID
+   across a parser fix instead of forcing a re-capture — which matters here, because the 390 px
+   baseline was taken while the threshold still stood at its old value and cannot honestly be taken
+   again afterwards.
+
+   Idempotent on a line that was evaluated correctly: no width terms survive there, so re-evaluating
+   changes nothing. One record per line; a line carrying no ` :: ` separator is treated as a
+   continuation of the previous record rather than silently dropped. */
+function recanonicalise(text, w) {
+  const records = [];
+  for (const line of text.split("\n")) {
+    if (line.startsWith("@") && line.includes(" :: ")) records.push(line);
+    else if (records.length) records[records.length - 1] += "\n" + line;
+    else records.push(line);
+  }
+  const kept = [];
+  for (const rec of records) {
+    const at = rec.indexOf(" :: ");
+    if (at < 0) { kept.push(rec); continue; }
+    const cond = rec.slice(1, at), body = rec.slice(at + 4);
+    if (!cond) { kept.push(rec); continue; }            // the unconditional chunk
+    const v = widthVerdict(cond, w);
+    if (!v.applies) continue;                            // cannot apply at this width
+    kept.push(`@${v.rest} :: ${body}`);
+  }
+  return kept.sort().join("\n");
+}
+
 function compare(a, b) {
   const read = (l, f) => readFileSync(join(OUT, l, f), "utf8");
   let bad = 0;
 
-  const ra = read(a, "applicable-390.txt"), rb = read(b, "applicable-390.txt");
+  const ra = recanonicalise(read(a, "applicable-390.txt"), PHONE.w);
+  const rb = recanonicalise(read(b, "applicable-390.txt"), PHONE.w);
   if (ra === rb) {
     process.stdout.write(`  PROOF 1  rule set at ${PHONE.w}px IDENTICAL (${ra.length} bytes)\n`);
   } else {

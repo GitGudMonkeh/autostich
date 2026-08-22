@@ -1,4 +1,4 @@
-/* #fx-panel + #vorschau-brett — der Effekte-Reiter der Deck-Werkstatt ab 1400 px.
+/* #fx-panel + #vorschau-brett — der Effekte-Reiter der Deck-Werkstatt ab 1280 px.
    -------------------------------------------------------------------------------------------------
    Zwei Sorten Prüfung, bewusst getrennt:
    1. Der MASSSTAB wird nachgerechnet (previewScale.js ist rein, ohne React) — das ist die Aussage,
@@ -16,7 +16,7 @@ import { DESKTOP_AT } from "./desktopBreakpoint.js";
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
-// Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.
+// Nur der 1280er-Block — sonst prüfte man Regeln, die am Handy stehen.
 const desktop = css.slice(css.indexOf(DESKTOP_AT));
 
 describe("#vorschau-brett — der Maßstab, nachgerechnet", () => {
@@ -129,7 +129,7 @@ describe("#fx-panel — zwei Panels, beide enden am Inhalt", () => {
 });
 
 describe("#fx-panel — die Handy-Fassung bleibt unberührt", () => {
-  it("`cz-fxside` ist unterhalb 1400 px nur eine Klammer", () => {
+  it("`cz-fxside` ist unterhalb 1280 px nur eine Klammer", () => {
     // Ohne `display: contents` bekäme die Handy-Fassung eine zusätzliche Box um Liste und Fußnote.
     // Nachgemessen wurde beides: Geometrie an sechs Messpunkten identisch, drei von vier Reitern
     // bitidentisch (der vierte weicht nur um das laufende Pixi-Bild ab).

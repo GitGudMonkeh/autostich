@@ -19,7 +19,7 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { useIsWide } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1400 px in die Leiste (DOM-Umzug)
+import { useIsWide } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug)
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
@@ -159,7 +159,7 @@ export function Autostich() {
 function AutostichGame() {
   const [state, dispatch] = useReducer(gameReducer, null, () => menuState());
   const [paused, setPaused] = useState(false);
-  // #buehne: ab 1400 px trägt die Vitalleiste Musik und Meilenstein (statt eigener Reihen darüber und
+  // #buehne: ab 1280 px trägt die Vitalleiste Musik und Meilenstein (statt eigener Reihen darüber und
   // darunter). Das ist ein DOM-Umzug, keine Anordnung — deshalb hier und nicht in CSS.
   const wide = useIsWide();
   // #sprache: Die Sprache MUSS vor dem ersten Rendern stehen, sonst blitzt eine Frame lang die
@@ -1047,7 +1047,7 @@ function AutostichGame() {
   // bei genau einer aktiven Fraktion bleibt sie offen (voller Detail wie bisher im Mono-Run).
   /* #skillheim: Welche Fraktions-Panels stehen gerade? Das sind dieselben vier Bedingungen, mit denen die
      Bars sich selbst ein- und ausblenden — hier EINMAL abgeleitet und zweifach genutzt: für die Panel-Dichte
-     (`manyActive` — der Auto-Kollaps bei mehreren Fraktionen ist eine PLATZ-Regel des Handys und ab 1400 px
+     (`manyActive` — der Auto-Kollaps bei mehreren Fraktionen ist eine PLATZ-Regel des Handys und ab 1280 px
      aus, weil die Bank ihre Spuren ohnehin nebeneinander stellt) und dafür, welche Archetypen ihre Skills zeigen. Das Build-Panel lässt
      genau die dann weg; ein Skill, dessen Panel gerade nicht steht, bleibt dort sichtbar statt zu verschwinden. */
   const shownSkillArchs = [
@@ -1067,7 +1067,7 @@ function AutostichGame() {
     // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
     //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
     //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
-    //   ab 1400 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
+    //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
     //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
     <div className="app-root relative w-full flex justify-center"
       style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
@@ -1101,11 +1101,11 @@ function AutostichGame() {
         <CornerTools muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
           onGlossaryOpenChange={setGlossaryOpen} />
       )}
-      {/* #desktop: Der Startbildschirm bekommt ab 1400 px mehr Bühne, gedeckelt bei 1520 px: das ist die Breite
+      {/* #desktop: Der Startbildschirm bekommt ab 1280 px mehr Bühne, gedeckelt bei 1520 px: das ist die Breite
           des Spaltenpaars, und der Deckel hält es auf Ultrawide zusammen, statt es an die Ränder zu werfen.
           #buehne (19.08.2026): Der LAUF hat seinen 1024er-Deckel verloren. Er war an das alte Kartenfeld gebunden
           (668 × 347) und ließ auf jedem Desktop-Fenster fast die halbe Breite leer — vom Spielfeldbild (1600 × 640)
-          landeten dadurch nur 23 % auf dem Schirm. Ab 1400 px trägt `rn-shell` das Bühnen-Layout (index.css). */}
+          landeten dadurch nur 23 % auf dem Schirm. Ab 1280 px trägt `rn-shell` das Bühnen-Layout (index.css). */}
       <div className={`w-full max-w-5xl grid gap-4 ${state.phase === "menu" ? "dt:max-w-[1520px]" : "rn-shell"}`}>
         {state.phase === "menu" ? (
           <StartScreen onStart={startRun} onPlaySeed={startRun} onSecretSeed={import.meta.env.VITE_PREVIEW === "1" ? handleSecretSeed : null} onRankedBoard={() => setShowLeaderboard("ranked")} highscores={highscores} best={best} onOptions={() => setShowOptions(true)}
@@ -1124,7 +1124,7 @@ function AutostichGame() {
           {/* Gameplay-Neu-Aufbau: schlanker Kopf — Wortmarke/Seed links, das Glossar-ⓘ groß oben rechts.
               Die Sekundär-Controls stehen als eigene, über die Breite verteilte Reihe darunter; die Vitalwerte +
               Pause/Tempo in der schwebenden StatusBar. */}
-          {/* #buehne: `rn-head` ist ab 1400 px `display: contents` — Wortmarke und Glossar-ⓘ werden dann direkte
+          {/* #buehne: `rn-head` ist ab 1280 px `display: contents` — Wortmarke und Glossar-ⓘ werden dann direkte
               Felder des Shell-Rasters und stehen in EINER Zeile mit der Steuerung (Marke links, Knöpfe rechts),
               statt drei Reihen zu stapeln. Unterhalb bleibt der Kopf die Box, die er heute ist. */}
           <header className="rn-head flex items-center justify-between gap-2">
@@ -1134,11 +1134,11 @@ function AutostichGame() {
               <div className="relative isolate shrink-0">
                 {/* Fläche großzügig größer als die Marke + früher Transparenz-Auslauf + Blur → weicher
                     Übergang, kein harter Rechteck-Rand. Farben in index.css unter `.as-runhead-glow`:
-                    bis 1400 px der Logo-Dreiklang, darüber die Deckfarben — dieselbe Regel wie am Hub. */}
+                    bis 1280 px der Logo-Dreiklang, darüber die Deckfarben — dieselbe Regel wie am Hub. */}
                 <div aria-hidden="true" className="as-runhead-glow pointer-events-none absolute -z-10"
                   style={{ inset: "-150% -70%", filter: "blur(9px)" }} />
                 {/* #logo — dieselbe Text-Wortmarke wie am Mainscreen (index.css `.as-wordmark`), nur klein.
-                    Hier im Lauf ist --deck-a1/--deck-a2 immer gesetzt, die Marke trägt also ab 1400 px
+                    Hier im Lauf ist --deck-a1/--deck-a2 immer gesetzt, die Marke trägt also ab 1280 px
                     durchgehend die Farbe des gespielten Decks. */}
                 <div className="as-wordmark as-wordmark-sm select-none block" aria-hidden="true">{t("start.logo.alt")}</div>
               </div>
@@ -1171,16 +1171,16 @@ function AutostichGame() {
               : null}
           />
 
-          {/* #UI: Mobil-Reihenfolge Battlefield → Bars → Stats → Perks (order-1…4). Bis 1400 px bleibt das
+          {/* #UI: Mobil-Reihenfolge Battlefield → Bars → Stats → Perks (order-1…4). Bis 1280 px bleibt das
               2-spaltige lg-Raster via expliziter Grid-Platzierung: Battlefield+Bars links, Stats-Sidebar rechts.
-              #buehne: Ab 1400 px reichen `rn-body` und `rn-main` ihre Kinder durch (display: contents) und
+              #buehne: Ab 1280 px reichen `rn-body` und `rn-main` ihre Kinder durch (display: contents) und
               `rn-bank` wird die Instrumentenbank unter der Bühne — eine Spur je Archetyp, Analyse links,
               Build rechts. Die vier Blöcke stehen dafür als GESCHWISTER im DOM (vorher steckten die Bars in
               der linken Spalte); die order-/lg-Klassen halten die Reihenfolge darunter unverändert. */}
           <div className="rn-body grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="rn-main grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
               {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine).
-                  Ab 1400 px steht er IN der Vitalleiste (s. `milestone`-Prop der StatusBar oben). */}
+                  Ab 1280 px steht er IN der Vitalleiste (s. `milestone`-Prop der StatusBar oben). */}
               {!wide && (profile?.onboarding || 0) >= ONBOARDING_LINKS && (
                 <div data-tut="bf-milestone" className="rn-milestone">{/* Tutorial-Anker (Plan §5 nennt den Meilensteinbalken ausdrücklich) */}
                   <ScoreMilestoneBar score={state.score} />
@@ -1199,14 +1199,14 @@ function AutostichGame() {
                 hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
             </div>
-            {/* #buehne: Bank aus Bars · Analyse · Build · Wochen-Mods. Unter 1400 px ist sie `display: contents`,
+            {/* #buehne: Bank aus Bars · Analyse · Build · Wochen-Mods. Unter 1280 px ist sie `display: contents`,
                 die vier Blöcke sind also weiterhin direkte Felder des lg-Rasters und tragen ihre eigene
-                Platzierung. Ab 1400 px wird sie die Flex-Reihe unter der Bühne. */}
+                Platzierung. Ab 1280 px wird sie die Flex-Reihe unter der Bühne. */}
             <div className="rn-bank">
               {/* Tutorial-Anker um die vier Fraktions-Leisten (Plan §5): sie erscheinen erst, wenn ein
                   Archetyp aktiv ist — der Coach-Mark zeigt dann auf die, die gerade da ist. */}
               <div data-tut="bf-bars" className="rn-bars grid gap-4 order-2 lg:col-start-1 lg:row-start-2">
-              {/* #skillheim: Ab 1400 px trägt jede Fraktions-Spur ihre eigenen Skills am Fuß — dort erklären sie
+              {/* #skillheim: Ab 1280 px trägt jede Fraktions-Spur ihre eigenen Skills am Fuß — dort erklären sie
                   den Balken darüber. Das Build-Panel zeigt sie dann nicht mehr doppelt (`hideSkillArchs`). */}
               <ChargeBar lightning={state.lightning} skills={state.skills} winStreak={state.winStreak} critChance={totalCritChanceRaw(state)}
                 critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
@@ -1231,12 +1231,12 @@ function AutostichGame() {
                 grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac}
                 skills={state.skills || []} showSkills={wide} />
               </div>
-              {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1400 px rechte Sidebar, darüber die
+              {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1280 px rechte Sidebar, darüber die
                   linke Spur der Bank. */}
               <div className="rn-rail order-3 lg:col-start-2 lg:row-start-1">
                 <StatusRail state={state} currentTraj={currentTraj.current} recordTraj={recordTraj.current} options={options} onOption={changeOptions} best={best} />
               </div>
-              {/* Perks/Skills — Mobil unter den Stats (order-4), bis 1400 px links unter dem Battlefield. */}
+              {/* Perks/Skills — Mobil unter den Stats (order-4), bis 1280 px links unter dem Battlefield. */}
               <div className="rn-build order-4 lg:col-start-1 lg:row-start-3">
                 <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat}
                   hideSkillArchs={wide ? shownSkillArchs : null} />

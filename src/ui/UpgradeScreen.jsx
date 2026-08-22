@@ -14,7 +14,7 @@ import { unlockLabel } from "../i18n/unlockText.js";
 import { guideDef } from "../i18n/guideText.js"; // Einzeiler der Fraktion über der Skill-Liste
 import { rarityLabel, skillDef, themeDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
 import { DeckDetail } from "./DeckDetail.jsx";
-import { GuideOverlay } from "./GuideOverlay.jsx"; // #desktop: der Leitfaden ist ab 1400 px ein eigener gerahmter Screen
+import { GuideOverlay } from "./GuideOverlay.jsx"; // #desktop: der Leitfaden ist ab 1280 px ein eigener gerahmter Screen
 import {
   // #sprache: NODES ist durch nodeList() (labels.js) ersetzt — die Knotentexte werden zur Anzeigezeit aufgelöst.
   TOTAL_NODES, COVER_FLOOR, ENERGY_FLOOR, REROLL_BASE, nodeEffects,
@@ -76,7 +76,7 @@ const panelStyle = (c) => ({
 function PillBody({ label, mark, titleColor, markColor }) {
   return (
     <>
-      {/* #desktop: eine Stufe größer ab 1400 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
+      {/* #desktop: eine Stufe größer ab 1280 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
           zu klein. Größer geht nicht: 27 Knoten müssen gleichzeitig ins Bild passen. */}
       <span className="text-[11px] dt:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
       <span className="text-[9.5px] dt:text-[12px] ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
@@ -175,7 +175,7 @@ function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) 
 }
 
 /* ============================================================================
-   #desktop — die senkrechte Fassung (ab 1400 px)
+   #desktop — die senkrechte Fassung (ab 1280 px)
    ----------------------------------------------------------------------------
    Statt sechs waagerechter Ketten untereinander stehen die Kategorien als Spalten nebeneinander,
    die Knoten laufen darin von oben nach unten. Zwei Unterschiede zur Handy-Fassung, die nicht nur
@@ -291,7 +291,7 @@ function ChallengeBox({ arch, p }) {
 /* Der Auswirkungs-Kasten: was der Baum GERADE bewirkt. Die Zahlen kommen aus `nodeEffects` und den
    Basiswerten — nichts davon ist im Baum selbst ablesbar, obwohl es die Frage ist, die man dort stellt. */
 function ImpactBox({ p }) {
-  /* #up-still: Der Wechsel Balken↔Wort gilt NUR ab 1400 px. Am Handy steht der Kasten unter einem
+  /* #up-still: Der Wechsel Balken↔Wort gilt NUR ab 1280 px. Am Handy steht der Kasten unter einem
      gestapelten Baum und ist die einzige Zusammenfassung weit und breit — dort bleibt der Balken auch
      im Vollausbau stehen, weil er die Reihe der vier Kacheln optisch zusammenhält. Auf dem Desktop
      stehen sie nebeneinander und tragen sich selbst. */
@@ -358,7 +358,7 @@ function ImpactBox({ p }) {
 
 /* Die Zeichenerklärung. Sie steht ZWEIMAL im DOM und ist trotzdem EINE Quelle — sichtbar ist immer
    genau eine (dieselbe Technik wie beim Glossar-Knopf im Startbildschirm, Begründung dort).
-   Grund: Auf dem Handy hängt sie unter dem Stapel, ab 1400 px gehört sie INS Panel (unter den
+   Grund: Auf dem Handy hängt sie unter dem Stapel, ab 1280 px gehört sie INS Panel (unter den
    Auswirkungs-Kasten, über die Panelkante) — und die beiden Plätze liegen in verschiedenen
    Containern. Verschieben ließe sich das nur im DOM, und das zöge die Handy-Fassung mit.
    `where` schaltet, welche Instanz die jeweilige Breite zeigt (Regeln in index.css). */
@@ -381,9 +381,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
   // Reiter-Wechsel schließt die offene Detailzeile (sonst hinge sie im anderen Reiter nach).
   const selectTab = (key) => { setTab(key); setSelNode(null); };
   const tabSwipe = useTabSwipe(["deck", "gen"], tab, selectTab); // horizontaler Swipe → Reiterwechsel
-  /* #desktop — ab 1400 px navigiert nicht mehr die Reiterzeile, sondern eine Spalte links: „Allgemein"
+  /* #desktop — ab 1280 px navigiert nicht mehr die Reiterzeile, sondern eine Spalte links: „Allgemein"
      plus die vier Fraktionen, jede mit eigener Seite. Das ist kein Umsortieren derselben Bausteine,
-     sondern eine andere Navigation — deshalb JS-State statt Media Query. Unter 1400 px bleibt alles
+     sondern eine andere Navigation — deshalb JS-State statt Media Query. Unter 1280 px bleibt alles
      beim Alten (zwei Reiter, Fraktions-Ketten untereinander, Deck-Details als Ebene 2). */
   const wide = useIsWide();
   const [page, setPage] = useState("gen");   // "gen" | Fraktions-Key
@@ -444,7 +444,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
           </div>
-          {/* Reiter Decks / Allgemein. Ab 1400 px stehen beide Zweige nebeneinander (s. .up-branches in
+          {/* Reiter Decks / Allgemein. Ab 1280 px stehen beide Zweige nebeneinander (s. .up-branches in
               index.css) — dann hat die Reiterzeile nichts mehr zu schalten und wird ausgeblendet. */}
           <div className="flex gap-1.5 mt-3 up-tabs">
             {[{ key: "deck", labelKey: "upgrades.tab.decks" }, { key: "gen", labelKey: "upgrades.tab.gen" }].map((tb) => {
@@ -466,7 +466,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <div className="up-hair h-[2px] w-full rounded-full mt-2.5" style={{ background: `linear-gradient(90deg, ${UI1}, ${UI2}, ${UI1})`, opacity: .7 }} />
           {/* Knotenzähler + Tipp-Hinweis. Der Wrapper existiert für Desktop: dort rücken beide als EINE
               Einheit neben das Guthaben in die Kopfzeile (s. .up-readout in index.css), statt zwei volle
-              Bänder unter der Haarlinie zu belegen. Unterhalb von 1400 px ist er eine reine Klammer ohne
+              Bänder unter der Haarlinie zu belegen. Unterhalb von 1280 px ist er eine reine Klammer ohne
               eigene Darstellung — die Abstände sitzen wie bisher an den beiden Zeilen selbst. */}
           <div className="up-readout">
             <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
@@ -480,7 +480,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             Bewusst ein EIGENER Renderpfad statt der `display: contents`-Klammer, die der Rest des
             Desktop-Passes benutzt: Hier wird nicht dasselbe anders angeordnet, sondern anders navigiert
             (Spalte statt Reiter, eine Seite statt zweier Zweige). Das in eine gemeinsame DOM-Struktur zu
-            zwingen hätte beide Fassungen verbogen. Unter 1400 px läuft weiter der Zweig-Pfad darunter. */}
+            zwingen hätte beide Fassungen verbogen. Unter 1280 px läuft weiter der Zweig-Pfad darunter. */}
         {wide ? (
           <div className="up-desk">
             <nav className="up-nav as-ring as-ring-quiet" aria-label={t("upgrades.nav.decks")}>
@@ -635,7 +635,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
         </div>
         )}
 
-        {/* Legende, Handy-Platz: unter dem Stapel. Ab 1400 px übernimmt die Instanz im Panel. */}
+        {/* Legende, Handy-Platz: unter dem Stapel. Ab 1280 px übernimmt die Instanz im Panel. */}
         <Legend where="outer" />
       </div>
     </div>

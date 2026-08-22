@@ -1,4 +1,4 @@
-/* #shop-skalieren — Breitenfaktor der Pack-Vorschau in der Deck-Werkstatt (ab 1400 px).
+/* #shop-skalieren — Breitenfaktor der Pack-Vorschau in der Deck-Werkstatt (ab 1280 px).
    -------------------------------------------------------------------------------------------------
    Rein, ohne React (wie `previewScale.js` / `packSort.js`) — der Wächter rechnet die Regel NACH, statt
    Schreibweisen zu vergleichen.

@@ -56,9 +56,9 @@ const GROUP_ORDER = ["gen", "fire", "lightning", "ice", "plant"];
 
 /* Das durchsuchbare, kategorisierte Overlay.
 
-   #glossar-desktop (18.08.2026) — ab 1400 px ist das kein Modal mehr, sondern ein gerahmter Screen
+   #glossar-desktop (18.08.2026) — ab 1280 px ist das kein Modal mehr, sondern ein gerahmter Screen
    wie Upgrade-Baum, Werkstatt und Leitfaden: Kategorien als Navigationsspalte, Suche in der Kopfzeile,
-   Begriffe im Spaltenfluss. Die `gl-*`-Klassen sind reine HAKEN — unterhalb von 1400 px tragen sie
+   Begriffe im Spaltenfluss. Die `gl-*`-Klassen sind reine HAKEN — unterhalb von 1280 px tragen sie
    keine Darstellung (`display: contents` in index.css), die Handy-Fassung bleibt DOM- und pixelgleich.
 
    #gl-sprung (19.08.2026): Eine Kategorie ist jetzt auf BEIDEN Breiten dasselbe — eine SPRUNGMARKE.
@@ -147,7 +147,7 @@ export function GlossaryOverlay({ onClose }) {
           style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...catSwipe}>
           <TopHairline />
 
-          {/* Kopf: Titel + Schließen + Suche. Ab 1400 px wird aus den drei gestapelten Bändern EINE
+          {/* Kopf: Titel + Schließen + Suche. Ab 1280 px wird aus den drei gestapelten Bändern EINE
               Rasterzeile (Titel · Suche · Schließen) — dasselbe Raster wie `.up-head`/`.gd-head`.
               Die Suche steht dort in der Spalte, in der der Leitfaden seine Auskunft zeigt: sie ist
               das wichtigste Werkzeug des Glossars und hing bisher im mitscrollenden Kopf. */}
@@ -176,7 +176,7 @@ export function GlossaryOverlay({ onClose }) {
             {wide && <div className="gl-hair" aria-hidden="true" />}
           </div>
 
-          {/* Kategorie-Chips (Sprungnavigation) — ab 1400 px übernimmt die Spalte links (`.gl-tabs`). */}
+          {/* Kategorie-Chips (Sprungnavigation) — ab 1280 px übernimmt die Spalte links (`.gl-tabs`). */}
           <div className="gl-tabs flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible as-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
             <Chip label={t("glossary.all")} active={activeCat === "all"} onClick={() => jump("all")} />
             {glossaryCategories().map((c) => (
@@ -184,7 +184,7 @@ export function GlossaryOverlay({ onClose }) {
             ))}
           </div>
 
-          {/* Körper: Sektionen. `gl-desk`/`gl-page`/`gl-body`/`gl-cols` sind unterhalb von 1400 px
+          {/* Körper: Sektionen. `gl-desk`/`gl-page`/`gl-body`/`gl-cols` sind unterhalb von 1280 px
               `display: contents` — dort landen die Sektionen wie eh und je direkt im Scroller. */}
           <div ref={bodyRef} className="gl-scroll flex-1 overflow-y-auto overlay-card pb-8" style={{ overscrollBehavior: "contain" }}>
             <div className="gl-desk">

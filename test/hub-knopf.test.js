@@ -8,7 +8,7 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
    Bis hierher trugen alle vier Hub-Knöpfe dieselbe Bauform (90°-Farbanlauf + 4-px-Kante links), nur in
    verschiedenen Helligkeiten. Auf dem Handy trägt das; auf einem 1920er Schirm stehen sie übereinander
    und vier Varianten derselben Geste ergeben eine Leiter, auf der keine Stufe heraussticht.
-   Ab 1400 px: EINE Taste (`as-cta-primary`) und drei ruhige Zeilen.
+   Ab 1280 px: EINE Taste (`as-cta-primary`) und drei ruhige Zeilen.
 
    Der Zustandswechsel braucht dafür keine zweite Regel — welcher Knopf `as-cta-primary` trägt, entscheidet
    `normalCls` in StartScreen.jsx. Läuft ein Lauf, ist die Taste „Lauf fortsetzen"; sonst „Lauf beginnen".
@@ -57,7 +57,7 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
     expect(start, "die Fortsetzen-Taste trägt die Primär-Klasse nicht").toMatch(/onClick=\{onResume\}\s*\n?\s*className="as-cta-primary/);
   });
 
-  it("die Hub-Knöpfe sind ab 1400 px eckiger (6 px, wie alles andere)", () => {
+  it("die Hub-Knöpfe sind ab 1280 px eckiger (6 px, wie alles andere)", () => {
     expect(deskBlock).toMatch(/\.as-cta-primary,\s*\.as-cta-ghost,\s*\.as-tut-btn,\s*\.as-ranked-btn,\s*\.as-seed-play\s*\{[^}]*border-radius:\s*6px/);
   });
 

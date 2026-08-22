@@ -9,11 +9,11 @@
    WHY THIS EXISTS. Roughly thirty guards slice `src/index.css` into a phone half and a desktop half,
    and every one of them used to do it by typing the media query out:
 
-     css.indexOf("@media (min-width: 1400px) {")
+     css.indexOf("@media (min-width: 1280px) {")
 
    That string is a STRUCTURAL TOOL — the guards are about `display: contents` brackets, about panels
    keeping their modifier, about the stage layout. None of them is an assertion that the threshold is
-   1400. But written that way, changing the threshold turns thirty structural guards red at once, and
+   1280. But written that way, changing the threshold turns thirty structural guards red at once, and
    a red guard that only means "the number moved" is indistinguishable from one that means "the
    layout broke". That is the expensive kind of noise: it arrives exactly when you most need the
    suite to be trustworthy.
@@ -52,7 +52,7 @@ export const DESKTOP_MIN = Number(hookHit[1]);
 /* ---------------------------------------------------------------- the CSS side
 
    The Tailwind variant prefix is NOT derived from the number — it is read out of the `@theme` block,
-   token name and all. `--breakpoint-dt: 1400px` is what makes `dt:` exist; deriving the prefix from
+   token name and all. `--breakpoint-dt: 1280px` is what makes `dt:` exist; deriving the prefix from
    anything else would be guessing at Tailwind's behaviour rather than reading the declaration that
    causes it. Rename the token and every guard below follows on the next run.
 

@@ -39,7 +39,7 @@ const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, tr
                     liegt einen Klick weiter beim Ranglisten-Knopf, wo es hingehört.
    Der Wochen-Reiter behält in BEIDEN Sätzen die id "meister" — sie ist zugleich der Board-String der
    Datenbank und der Wert, den App.jsx als `initialTab` hereinreicht. */
-/* `subKey` erscheint NUR ab 1400 px als Zweitzeile der Navigationsspalte (unter 1400 px sind es Reiter, dort
+/* `subKey` erscheint NUR ab 1280 px als Zweitzeile der Navigationsspalte (unter 1280 px sind es Reiter, dort
    ist kein Platz). „week" ist der Sonderfall: die Zeile ist dynamisch und kommt aus `board.weekLabel`. */
 const TABS_RANKED = [
   { id: "meister",    labelKey: "board.tab.week",       subKey: "week",                    accent: UI1 },
@@ -78,8 +78,8 @@ function RegelnPanel() {
   const pos = catalog.filter((m) => m.sign === "pos");
   const neg = catalog.filter((m) => m.sign === "neg");
   const head = "text-[10px] font-bold uppercase tracking-wider";
-  /* #desktop: Ab 1400 px stehen positive und negative Modifikatoren NEBENEINANDER (links/rechts) statt
-     untereinander — die Liste ist 19 Kästen lang und war sonst eine Rolle. Die Klassen sind unter 1400 px
+  /* #desktop: Ab 1280 px stehen positive und negative Modifikatoren NEBENEINANDER (links/rechts) statt
+     untereinander — die Liste ist 19 Kästen lang und war sonst eine Rolle. Die Klassen sind unter 1280 px
      tote Haken; die Reihenfolge im DOM bleibt die der Handy-Fassung. */
   return (
     <div className="rg-root text-[12px] leading-relaxed">
@@ -207,7 +207,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
           </div>
 
           {/* #385 Reiter im Shop-/Upgrades-Stil: gleich breit (flex-1), aktiv = Akzentfarbe auf dunklem Grund. */}
-          {/* #desktop: Ab 1400 px wird aus der Reiterzeile eine Navigationsspalte (wie im Upgrade-Baum) —
+          {/* #desktop: Ab 1280 px wird aus der Reiterzeile eine Navigationsspalte (wie im Upgrade-Baum) —
               dieselben Knöpfe, dieselbe Reihenfolge, nur untereinander und mit Zweitzeile. */}
           <div className="lb-tabs as-ring as-ring-quiet flex gap-1.5 mb-4 shrink-0" role="tablist">
             <i className="as-ring-run" aria-hidden="true" />
@@ -234,7 +234,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
           {/* #lb-rahmen: Panel wie im Upgrade-Baum (`.up-page`) — Ring aussen, Scroller INNEN. Läge beides am
               selben Element, liefe die untere Ringkante beim Scrollen mitten durch die Liste (der Rahmen sitzt
               mit `inset: 0` im Inhaltsfluss). Der Wächter zählt die Klassennamen im Quelltext — deshalb steht
-              hier keiner ausgeschrieben. Unterhalb 1400 px ist der Scroll-Wrapper `display: contents`, dort
+              hier keiner ausgeschrieben. Unterhalb 1280 px ist der Scroll-Wrapper `display: contents`, dort
               scrollt weiter das Panel selbst — die Handy-Fassung bleibt unverändert. */}
           <div className="lb-page as-ring as-ring-quiet rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
             <i className="as-ring-run" aria-hidden="true" />
@@ -256,7 +256,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                     <span className="lb-weekcount text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
                   {/* #lb-premium: Drei Kontext-Kacheln — was diesen Lauf ausmacht, in einem Blick. Sie stehen NUR
-                      im Wochen-Reiter (dort fällt die Entscheidung mitzuspielen) und nur ab 1400 px; darunter
+                      im Wochen-Reiter (dort fällt die Entscheidung mitzuspielen) und nur ab 1280 px; darunter
                       trägt der Regeln-Reiter dieselbe Auskunft im Fließtext. */}
                   {!boardMode && (
                     <div className="lb-ctx as-deskonly">
@@ -273,8 +273,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {boardMode && (
                     <div className="text-[11px] opacity-45 leading-snug mb-3">{tr("board.week.viewOnly")}</div>
                   )}
-                  {/* #desktop — Klammer um das „Cockpit" (Seed · Spielen · Modifikatoren). Ab 1400 px steht es als
-                      eigene Spalte NEBEN der Liste; unter 1400 px ist die Klammer `display: contents` und ändert nichts. */}
+                  {/* #desktop — Klammer um das „Cockpit" (Seed · Spielen · Modifikatoren). Ab 1280 px steht es als
+                      eigene Spalte NEBEN der Liste; unter 1280 px ist die Klammer `display: contents` und ändert nichts. */}
                   {!boardMode && (<div className="lb-cockpit">
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
@@ -299,7 +299,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   </div>
                   {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch).
                       Zwei Darstellungen, eine Quelle (`pickedDisplayMods`): am Handy die anklickbaren Chips,
-                      ab 1400 px dieselben Modifikatoren AUSGESCHRIEBEN in den Kästen des Regeln-Reiters. Auf
+                      ab 1280 px dieselben Modifikatoren AUSGESCHRIEBEN in den Kästen des Regeln-Reiters. Auf
                       420 px Spaltenbreite passt der volle Text — dann ist die Kurzform überflüssig, und man
                       muss für „was heißt Knapper Bau?" nicht mehr in den Regeln nachsehen. */}
                   <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>

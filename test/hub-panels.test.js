@@ -34,7 +34,7 @@ describe("#394/#385 — Hub-Modals behalten eine konstante Fenstergröße", () =
   }
 
   /* Gesucht wird nur noch `w-full max-w-xl` statt der ganzen Kette bis `rounded-2xl`: seit dem
-     Desktop-Pass steht `min-[1400px]:max-w-none` dazwischen (ab 1400 px füllt die Werkstatt den
+     Desktop-Pass steht `min-[1280px]:max-w-none` dazwischen (ab 1280 px füllt die Werkstatt den
      Bildschirm). Die Absicht des Tests ändert das nicht — die Karte soll auf JEDER Breite eine
      feste Größe haben statt mit dem Reiterinhalt zu springen; auf Desktop ist diese feste Größe
      eben der volle Rahmen. Die drei geprüften Eigenschaften gelten unverändert. */
@@ -49,8 +49,8 @@ describe("#394/#385 — Hub-Modals behalten eine konstante Fenstergröße", () =
 });
 
 describe("#394 — Mainscreen: Rangliste-Schloss verschwindet bei Freischaltung", () => {
-  /* #premium (18.08.2026) hatte den Knopf auf ZWEI Fassungen gestellt: Emoji bis 1399 px, Vektor ab
-     1400 px. Seit dem Pokal-Tausch (#pokal) ist es wieder EINE — der Vektor gilt auf allen Breiten,
+  /* #premium (18.08.2026) hatte den Knopf auf ZWEI Fassungen gestellt: Emoji bis 1279 px, Vektor ab
+     1280 px. Seit dem Pokal-Tausch (#pokal) ist es wieder EINE — der Vektor gilt auf allen Breiten,
      die Emoji-Konstanten am Knopf sind entfallen. Der frühere Wortlaut-Test `rankedFree ? "🏆"`
      greift damit endgültig nicht mehr.
      Geprüft wird durch alle drei Fassungen hindurch dieselbe Absicht, und sie ist der Grund, warum

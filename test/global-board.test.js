@@ -78,7 +78,7 @@ describe("#global · Reitersätze", () => {
 describe("#global · im Nachschlage-Modus wird nicht gespielt", () => {
   it("Seed-Kasten, Spielen-Knopf und Modifikator-Chips hängen an `!boardMode`", () => {
     // Ein Weg zum Spielen, nicht zwei — sonst steht der Ranglisten-Knopf im Hub für nichts Eigenes mehr.
-    /* Seit dem Desktop-Pass steckt ALLES zum Spielen in EINER Klammer (`lb-cockpit` — ab 1400 px die eigene
+    /* Seit dem Desktop-Pass steckt ALLES zum Spielen in EINER Klammer (`lb-cockpit` — ab 1280 px die eigene
        Spalte neben der Liste). Geprüft wird deshalb die Klammer und ihr Inhalt, nicht mehr jede Zeile
        einzeln: Seed, Spielen-Knopf und BEIDE Darstellungen der Modifikatoren (Chips am Handy, ausgeschrieben
        auf dem Desktop) müssen darin liegen — sonst tauchte eine davon im Nachschlage-Modus wieder auf. */

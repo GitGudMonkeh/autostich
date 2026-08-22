@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #lv-fluegel — die zwei Seitenleisten der Level-up-Karte (Perk + Skill, ab 1400 px), als Ratsche.
+   #lv-fluegel — die zwei Seitenleisten der Level-up-Karte (Perk + Skill, ab 1280 px), als Ratsche.
 
    Das Projekt hat kein Component-Test-Setup; geprüft wird deshalb der Quelltext. Das ist hier mehr
    als Buchhaltung: JEDE der fünf Nähte unten ist eine, die BEIM BAUEN zugeschnappt ist, und alle fünf
@@ -21,11 +21,11 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
         passieren darf.
      4. Fehlende Defaults. Ohne Eintrag in `DEFAULT_OPTIONS` schluckt der `{...DEFAULT_OPTIONS, ...o}`-
         Merge in `loadOptions` die zwei Schlüssel — der gemerkte Zustand überlebt den Reload nicht.
-     5. Doppelte Deck-Daten. Deck-Stärke, Formationen und Build leben ab 1400 px NUR in den Flügeln; die
+     5. Doppelte Deck-Daten. Deck-Stärke, Formationen und Build leben ab 1280 px NUR in den Flügeln; die
         gleichnamigen Klappfelder in der Karte hängen deshalb an der BREITE (`!wide`), nicht am Auf-/Zu-
         Zustand der Flügel. Andersherum wäre der Griff kein Schalter, sondern eine zweite Anordnung.
 
-   Dazu die Regel, die die Handy-Fassung schützt: `.lv-rig` ist unterhalb von 1400 px `display: contents`,
+   Dazu die Regel, die die Handy-Fassung schützt: `.lv-rig` ist unterhalb von 1280 px `display: contents`,
    und Flügel wie Griffe hängen am `wide`-Gate — sie werden dort gar nicht gerendert.
    ============================================================ */
 
@@ -33,7 +33,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const wings = read("src/ui/LevelupWings.jsx");
 
-// Der große `@media (min-width: 1400px) { … }`-Block.
+// Der große `@media (min-width: 1280px) { … }`-Block.
 const deskBlock = (() => {
   const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return "";
@@ -46,7 +46,7 @@ const deskBlock = (() => {
 })();
 const base = deskBlock ? css.replace(deskBlock, "") : css;
 
-describe("#lv-fluegel — unterhalb von 1400 px gibt es die Flügel nicht", () => {
+describe("#lv-fluegel — unterhalb von 1280 px gibt es die Flügel nicht", () => {
   it(".lv-rig ist in der BASIS `display: contents` (die Karte bleibt direktes Kind des Overlays)", () => {
     const rule = base.match(/^[^{}\n]*\.lv-rig[^{}\n]*\{([^}]*)\}/m);
     expect(rule, "Basis-Regel für .lv-rig nicht mehr gefunden").toBeTruthy();
@@ -123,7 +123,7 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(wings).toMatch(/onOption\(\{\s*\[key\]:\s*!on\s*\}\)/);
   });
 
-  it("die Karte zeigt ab 1400 px keine Kontext-Klappfelder mehr — die leben in den Flügeln", () => {
+  it("die Karte zeigt ab 1280 px keine Kontext-Klappfelder mehr — die leben in den Flügeln", () => {
     const perk = read("src/ui/PerkSelect.jsx");
     expect(perk).toMatch(/const inWings = useIsWide\(\);/);
     // Deck-Stärke, Formationen UND Build hängen am Gate.
@@ -146,9 +146,9 @@ describe("#lv-fluegel — Zustand wird gemerkt, Daten stehen nicht doppelt", () 
     expect(read("src/ui/PerkSelect.jsx")).toMatch(/<PhaseHairline accent=\{PHASE_ACCENTS\.red\} \/>/);
   });
 
-  it("die Karte hat ab 1400 px KEINE feste Höhe mehr — der Rahmen endet am Inhalt", () => {
+  it("die Karte hat ab 1280 px KEINE feste Höhe mehr — der Rahmen endet am Inhalt", () => {
     /* Am Handy ist die feste Höhe richtig (die zentrierte Karte sprang sonst beim Archetyp-Wechsel in
-       Position UND Größe). Ab 1400 px ist die Karte die Mittelspur eines Rasters, dessen Höhe die höheren
+       Position UND Größe). Ab 1280 px ist die Karte die Mittelspur eines Rasters, dessen Höhe die höheren
        Flügel bestimmen — der Kopf steht also fest, und der Rahmen darf am Angebot enden statt in der ersten
        Skill-Runde einen halben Bildschirm Leere zu zeigen. `max-height` bleibt als Deckel. */
     const skill = read("src/ui/SkillSelect.jsx");
@@ -276,7 +276,7 @@ describe("#lv-fest — die Oberkante der Karte steht fest, sie wächst nur nach 
   });
 
   it("die Regel steht im Desktop-Block — am Handy gibt es kein Raster, das sie tragen könnte", () => {
-    /* Unterhalb 1400 px ist `.lv-rig` `display: contents`; ein min-height dort wäre wirkungslos und
+    /* Unterhalb 1280 px ist `.lv-rig` `display: contents`; ein min-height dort wäre wirkungslos und
        gleichzeitig irreführend. Die Handy-Karte hat ihre eigene feste Höhe (`min(92dvh, 760px)` inline). */
     const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     expect(basis.match(/\.lv-rig\s*\{([^}]*)\}/)[1]).not.toMatch(/min-height/);
@@ -298,11 +298,11 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
       .toMatch(/<ActionButton kind="decline" flex/);
   });
 
-  it("unterhalb 1400 px sind nur die MASSE kleiner, nicht die Optik", () => {
+  it("unterhalb 1280 px sind nur die MASSE kleiner, nicht die Optik", () => {
     /* „Ablehnen → Perk" ist länger als das „Alle ablehnen" der Perk-Wahl: in den Standardmaßen braucht es
        gemessen 158 px, auf 375 px stehen 151 zur Verfügung — mit `whitespace-nowrap` liefe der Text aus
        dem Knopf. Mit dieser Regel: 133/151. Sie darf deshalb nur Größen setzen, keine Farben/Gewichte. */
-    const m = css.match(/@media \(max-width: 1399\.98px\) \{\s*\.sk-actbtn\s*\{([^}]*)\}/);
+    const m = css.match(/@media \(max-width: 1279.98px\) \{\s*\.sk-actbtn\s*\{([^}]*)\}/);
     expect(m, ".sk-actbtn-Regel nicht mehr gefunden").toBeTruthy();
     expect(m[1]).toMatch(/font-size:\s*12px/);
     expect(m[1]).toMatch(/padding:/);

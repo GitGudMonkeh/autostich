@@ -68,7 +68,7 @@ describe("#graph-knapp — die drei Stufen von `axes`", () => {
 });
 
 describe("#graph-knapp — wer welche Stufe bekommt", () => {
-  it("Lauf-Details: ab 1400 px dieselbe beschriftete Fassung wie der Victory-Screen", () => {
+  it("Lauf-Details: ab 1280 px dieselbe beschriftete Fassung wie der Victory-Screen", () => {
     expect(runDetail).toMatch(/<Sparkline current=\{traj\} record=\{recordTraj\} height=\{110\} axes=\{wide\} \/>/);
     expect(gameOver).toMatch(/axes=\{wide\}/);   // die Vorlage, an der es abgemessen ist
   });

@@ -12,7 +12,7 @@ import { t, fmtNum } from "../i18n/index.js"; // #sprache
    danebenläuft:
      `false`    kompakte Linie (StatusRail).
      `true`     ausführlich: Gitter, beschriftete y-Achse in Score, x-Achse in Stichen (Victory-Screen
-                und Lauf-Details ab 1400 px).
+                und Lauf-Details ab 1280 px).
      `"knapp"`  nur die Höhenmarken: waagerechte Linien auf runden Werten, ihre Zahlen daneben, KEINE
                 x-Beschriftung (Statistik-Trend).
 

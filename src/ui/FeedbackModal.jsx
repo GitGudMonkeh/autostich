@@ -142,7 +142,7 @@ export function FeedbackModal({ onClose }) {
           ) : (
             <div className="fb-form grid gap-3">
               {/* #desktop — zwei Klammern für die beiden Spalten (links Art + Text, rechts Name, Lauf-Bezug
-                  und Absenden). Unter 1400 px sind beide `display: contents`; das Handy-Raster ordnet dann
+                  und Absenden). Unter 1280 px sind beide `display: contents`; das Handy-Raster ordnet dann
                   weiterhin alle Bausteine direkt, Reihenfolge und Abstände unverändert. */}
               <div className="fb-left">
               {/* Art — vorausgewählt „Bug", aber die Idee steht gleichberechtigt daneben. */}

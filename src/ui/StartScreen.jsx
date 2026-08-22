@@ -46,10 +46,10 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
    Alle Werte außer CY sind um 42 % entsättigt (sRGB-Sättigungsmatrix, s = 0,58 — dieselbe Rechnung,
    die `filter: saturate()` macht). Bewusst als feste Hexwerte und NICHT als Filter am Wurzelknoten:
    ein `filter` dort erzeugt einen Stacking-Context, bricht das `backdrop-filter` der Bonus-Leiste und
-   färbte ab 1400 px auch das Spielfeld-Bodenband und die Deckfarben mit ein.
+   färbte ab 1280 px auch das Spielfeld-Bodenband und die Deckfarben mit ein.
 
-   Ab 1400 px ziehen Knöpfe, Marke und Glow ohnehin ihren Ton aus dem AKTIVEN DECK (Regeln in der
-   1400-px-Sektion von index.css) — dort greift von hier nichts. Diese Palette ist die Handy-Fassung. */
+   Ab 1280 px ziehen Knöpfe, Marke und Glow ohnehin ihren Ton aus dem AKTIVEN DECK (Regeln in der
+   1280-px-Sektion von index.css) — dort greift von hier nichts. Diese Palette ist die Handy-Fassung. */
 const CY = "#26c6e6";   // Logo links (Cyan) — Start / Lauf beginnen; einzige unangetastete Farbe
 const VI = "#9b82f0";   // Logo Mitte (Violett) — nur noch Onboarding-Leiste + Desktop-Status-Tafel
 const AM = "#d6ab6b";   // Währung (war #f2a83a) — Upgrades / SP / DP / Bonus-Leiste
@@ -76,7 +76,7 @@ const onbRewards = (t) => [
 
    Deshalb auch alle vier gleich groß, gleich hell, gleiche Ecke: sobald eines heraussticht, ist es
    wieder ein Signal. Farbe und Deckkraft stehen in index.css unter `.as-hub-glyph` (EINE Stellschraube
-   für alle 40 Decks); ab 1400 px ist es aus — dort sind die Kacheln Listenzeilen mit Untertitel, und
+   für alle 40 Decks); ab 1280 px ist es aus — dort sind die Kacheln Listenzeilen mit Untertitel, und
    die brauchen keine zweite Kennzeichnung.
 
    Strichzeichnung statt Fläche, weil eine Fläche bei 9 % zu einem Fleck verläuft: die Kontur bleibt
@@ -101,9 +101,9 @@ const GLYPHS = {
 };
 
 /* #premium (18.08.2026) — das führende Zeichen der Bonus-/Onboarding-Zeile.
-   Bis 1399 px steht dort weiter das Emoji, das vorher IM i18n-String stand (💠 bzw. 🎓); die Zeile
+   Bis 1279 px steht dort weiter das Emoji, das vorher IM i18n-String stand (💠 bzw. 🎓); die Zeile
    sieht am Handy also unverändert aus, was sie auch soll — Handy ist ein anderer Durchgang.
-   Ab 1400 px übernimmt eine schlichte Raute in der Textfarbe. Emoji bringen ihre eigene Farbe und
+   Ab 1280 px übernimmt eine schlichte Raute in der Textfarbe. Emoji bringen ihre eigene Farbe und
    ihr eigenes Gewicht mit, und beides steht quer zu einem Screen, der seine Farben aus dem aktiven
    Deck zieht — 💠 ist immer blau, egal ob das Deck grün, rot oder gold ist.
    Die Raute ist bewusst KEIN zweites Symbol je Zustand: sie markiert die Zeile, benannt wird der
@@ -112,7 +112,7 @@ const GLYPHS = {
 const EMO_BONUS = "💠";
 const EMO_ONB = "🎓";
 
-/* Die Zeichen der drei Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1400 px
+/* Die Zeichen der drei Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1280 px
    sichtbar: am Handy steht die Reihe eng, dort kostet jedes Zeichen Breite, die die Wörter brauchen. */
 const CHIP_PATHS = {
   // Optionen — drei Regler. Die Linien sind unterbrochen, damit die Knöpfe nicht überzeichnet werden.
@@ -156,7 +156,7 @@ function TileGlyph({ kind }) {
 }
 
 export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
-  // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1400 px;
+  // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1280 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
   musicTitle = null, onMusicNext = null, activeFx = null }) {
@@ -238,7 +238,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      ab 86 % die Überschrift „Deck workshop" um (+22 px Höhe, liest sich als Fehler). Alle anderen
      Blöcke sind einspaltig und vertragen die Breite mühelos — der Stapel richtet sich deshalb nach dem
      empfindlichsten Glied. Wer enger will, muss zuerst an den Kacheltexten arbeiten, nicht an der Zahl. */
-  /* #desktop: Ab 1400 px ist das ohnehin gegenstandslos — dort steht der Stapel in einer eigenen Spalte
+  /* #desktop: Ab 1280 px ist das ohnehin gegenstandslos — dort steht der Stapel in einer eigenen Spalte
      und läuft auf volle Spaltenbreite. Die Konstanten bleiben getrennt benannt, damit eine spätere
      Rangordnung über Breite nicht wieder an drei Stellen einzeln erfunden werden muss. */
   const LANE_DESK = "dt:w-full dt:max-w-none";
@@ -247,7 +247,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const LANE_TAIL = `w-[88%] max-w-sm ${LANE_DESK}`;
 
   /* Sekundär-Navigation als ruhige Chip-Reihe.
-     #desktop: 17 px auf 44 px Höhe — damit erfüllen die Chips oberhalb von 1400 px die Mindest-Klickzielgröße.
+     #desktop: 17 px auf 44 px Höhe — damit erfüllen die Chips oberhalb von 1280 px die Mindest-Klickzielgröße.
      #kante: Seit 17.08.2026 in der Kanten-Familie (index.css) — eckig statt Pille, dünne neutrale Kante links,
      Grund und Rahmen exakt die der neutralen Knöpfe. Vorher war ihr Grund (#20202a) heller als der neue
      Standard, dadurch stachen sie hervor, obwohl sie der leiseste Rang der Seite sind. */
@@ -255,7 +255,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      (16 px CTA · 12 px Kacheln/Seed · 8 px Rangliste/Chips/Ecken) — drei Formsprachen für eine Seite.
      Alles läuft jetzt auf 12 px zusammen; einzige Ausnahme bleibt der Discord-Knopf, der als Kreis ein
      Ziel für sich ist, und der 4-px-Wochen-Chip, der dafür zu klein ist. */
-  /* #premium: 17 → 15 px ab 1400 px. Die Chips waren größer gesetzt als die Unterzeilen der
+  /* #premium: 17 → 15 px ab 1280 px. Die Chips waren größer gesetzt als die Unterzeilen der
      Verwaltungsliste, obwohl sie der leiseste Rang der Seite sind; die Klickzielgröße hält der
      Innenabstand, nicht die Schrift. Dazu ein Zeichen je Chip — `inline-flex`, damit es neben dem
      Wort sitzt statt darüber. */
@@ -269,7 +269,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      #knopf-relief (F): war eine flache Fläche (#5fe0f7 + Glow). „Zu breit" war in Wahrheit „zu flach" — ein
      358 px breites Rechteck stört, eine 358 px breite TASTE nicht. Deshalb Licht von oben: Verlauf hell→dunkel,
      eine helle Kante an der Oberseite und ein dunkler Fuß unten. Maße bleiben unangetastet, nur die Form entsteht.
-     #desktop: Die Werte sind nach index.css gewandert (`.as-cta-primary` / `.as-cta-ghost`). Grund: ab 1400 px
+     #desktop: Die Werte sind nach index.css gewandert (`.as-cta-primary` / `.as-cta-ghost`). Grund: ab 1280 px
      ziehen die Knöpfe ihre Farbe aus dem aktiven Deck, und ein inline-style ließe sich davon nicht
      überschreiben. Auf dem Handy liefern die Klassen exakt dieselben Farben wie vorher. */
   const normalCls = hasResume ? "as-cta-ghost" : "as-cta-primary";
@@ -289,11 +289,11 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      nichts mehr), sondern an einem Baustein. */
   return (
     /* `hub-root`: der senkrechte Rhythmus der Desktop-Fassung steht in index.css, weil er von ZWEI
-       Bedingungen abhängt (Breite ≥ 1400 UND Fensterhöhe) — als Tailwind-Variante wäre das nicht lesbar. */
+       Bedingungen abhängt (Breite ≥ 1280 UND Fensterhöhe) — als Tailwind-Variante wäre das nicht lesbar. */
     <div className="hub-root relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1">
       {/* Ambient-Glow hinter der Wortmarke. Verankert die ganze Kopfzone farblich, ohne laute Flächen.
           #desktop: skaliert mit, sonst bliebe er auf 1920 px ein kleiner Fleck über einer breiten Bühne.
-          #logo: Die drei Ellipsen stehen seit 17.08.2026 in index.css unter `.as-wm-glow` — bis 1400 px im
+          #logo: Die drei Ellipsen stehen seit 17.08.2026 in index.css unter `.as-wm-glow` — bis 1280 px im
           Logo-Dreiklang (Cyan · Violett · Amber), darüber in den Deckfarben, genau wie die Marke selbst.
           Als Klasse statt inline, weil ein inline-style keine Media Query kennt.
           Der weiche Auslauf (Farbe → halb → 0) plus blur(30px) löst den Glow kantenlos in den Grund auf —
@@ -302,14 +302,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           (bis unter die Play-Gruppe) und legte damit drei Farbzonen hinter Marke, Bonus-Leiste und
           Start-Knopf. Jetzt trägt er nur noch die Marke und läuft über der Bonus-Leiste aus.
           Die Desktop-Höhe bleibt bei 620 px: dort steht die Marke in einer eigenen, viel höheren Kopfzone,
-          und der Glow läuft ohnehin in Deckfarben (1400-px-Sektion) statt in dieser Palette. */}
+          und der Glow läuft ohnehin in Deckfarben (1280-px-Sektion) statt in dieser Palette. */}
       <div aria-hidden="true" className="as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[190px] dt:h-[620px] -z-10"
         style={{ filter: "blur(30px)" }} />
 
       {/* Ecken-Buttons als konsistentes Paar: Schnell-Mute oben LINKS, Glossar (Info) oben RECHTS — beide
           gleich gestylte dunkle Rounded-Pills, mit Rahmen-Inset (top-2 / left-2·right-2) statt in die Ecke gedrängt.
           Der Info-Button überschreibt den Kreis-Default (gloss-i-btn) auf denselben Pill-Look wie Mute. */}
-      {/* #desktop — Deck-Hintergrund als BODENBAND (erst ab 1400 px).
+      {/* #desktop — Deck-Hintergrund als BODENBAND (erst ab 1280 px).
           Bewusst kein Vollbild: die 40 Spielfelder sind 1600 × 640, also 2,5 : 1 — genau die Proportion
           dieses Fensters. Sie passen ohne Beschnitt hinein und werden nur 1,2× hochskaliert. Ein Vollbild
           bräuchte 1,69× und schnitte 29 % der Breite ab; nachgemessen im Entwurfsdokument, und genau
@@ -320,7 +320,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           `fixed` statt `absolute`: der Startbildschirm sitzt in einem auf 1520 px gedeckelten Container —
           absolut positioniert wäre das Band genauso breit und läge als Rechteck mitten im Bild statt als
           Hintergrund. Ein Hintergrund muss randlos laufen, und scrollen tut hier nichts. */}
-      {/* #deck-mobil — Deck-Hintergrund am HANDY (das Gegenstück zum Bodenband darunter, das erst ab 1400 px
+      {/* #deck-mobil — Deck-Hintergrund am HANDY (das Gegenstück zum Bodenband darunter, das erst ab 1280 px
           erscheint). Beide sind bewusst getrennte Ebenen und keine gemeinsame mit Media-Query: sie zeigen
           verschiedene BILDER (`mobile` gegen `desktop`), haben verschiedene Zuschnitte und verschiedene
           Verschleierungen. Eine Ebene mit drei Weichen wäre kürzer und in einem halben Jahr unlesbar.
@@ -352,13 +352,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       )}
 
       {/* #desktop: die beiden Ecken lösen sich vom 384-px-Stapel und rücken an die Kante der breiten Bühne.
-          #ecke: Ab 1400 px ist dieser Knopf ausgeblendet (`as-mute-hub`) — dort trägt ihn das globale
+          #ecke: Ab 1280 px ist dieser Knopf ausgeblendet (`as-mute-hub`) — dort trägt ihn das globale
           Ecken-Paar, das in JEDEM Menü an derselben Stelle steht (CornerTools.jsx). Zwei Mute-Knöpfe
-          nebeneinander wären zwei Fassungen derselben Handlung. Unterhalb 1400 px bleibt er, wie er war. */}
+          nebeneinander wären zwei Fassungen derselben Handlung. Unterhalb 1280 px bleibt er, wie er war. */}
       {onToggleMute && <MuteButton muted={muted} onToggle={onToggleMute} className="as-mute-hub rounded-xl absolute top-2 left-2 dt:top-0 dt:left-0" />}
       {/* #kante: Der Glossar-Knopf ist ein Angebot, kein Ziel — leise violette Kante (die Textfarbe trägt
           die Klasse nicht, die kommt weiter von hier).
-          #desktop: Ab 1400 px steht er nicht mehr in der oberen Ecke, sondern unten im Fußband hinter dem
+          #desktop: Ab 1280 px steht er nicht mehr in der oberen Ecke, sondern unten im Fußband hinter dem
           Discord-Zeichen (zweite Instanz weiter unten). Ausgeblendet wird hier nur der KNOPF — `className`
           reicht die Komponente allein an ihn durch, das Overlay hängt daran nicht. Ein über den Bruchpunkt
           gezogenes Fenster lässt ein offenes Glossar deshalb offen, statt es wegzureißen.
@@ -369,7 +369,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           "--c": "#8a7de0", color: "#b3a8ff",
           fontFamily: "inherit", fontStyle: "normal", fontWeight: 600, fontSize: "0.9rem", lineHeight: 1 }} />
 
-      {/* #desktop — ab hier das Spaltenpaar: links spielen, rechts der Stand. Unterhalb von 1400 px sind
+      {/* #desktop — ab hier das Spaltenpaar: links spielen, rechts der Stand. Unterhalb von 1280 px sind
           `hub-pair`/`hub-play`/`hub-stand` per `display: contents` reine Klammern ohne eigene Box, die
           Flex-Spalte darüber ordnet also weiterhin alle Bausteine direkt — Handy-Reihenfolge unverändert. */}
       <div className="hub-pair">
@@ -393,7 +393,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 dt:px-5 dt:py-3.5 flex flex-col gap-1.5 dt:gap-2`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
-          {/* Der Flex-Kontext gilt ERST ab 1400 px. Darunter bleibt die Zeile ein normaler Textfluss —
+          {/* Der Flex-Kontext gilt ERST ab 1280 px. Darunter bleibt die Zeile ein normaler Textfluss —
               Emoji, Leerzeichen, Text — also Zeichen für Zeichen das, was vorher im i18n-String stand.
               Als Flex-Zeile mit `gap` läge dort ein 6-px-Abstand statt der Breite eines Leerzeichens,
               und das wäre eine sichtbare Änderung am Handy (anderer Durchgang, anderer Chat). */}
@@ -416,7 +416,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             kein Glow mehr irgendwohin. Ab jetzt leuchtet NUR der Primär-CTA; er ist das eine Ziel der Seite.
             Der Balken behält seine Farbe, er verliert nur den Schein. */}
         {/* #premium: Fläche und Rahmen kommen aus `.as-bonus-track` statt aus einem inline-style — ab
-            1400 px wird aus der 7-px-Röhre ein 2-px-Faden, und ein inline gesetzter Grund ließe sich
+            1280 px wird aus der 7-px-Röhre ein 2-px-Faden, und ein inline gesetzter Grund ließe sich
             davon nicht überschreiben (inline schlägt jedes Stylesheet). Die Klasse liefert unterhalb
             exakt dieselben Werte wie vorher. */}
         <div className="as-bonus-track h-[7px] dt:h-[2px] rounded-full overflow-hidden">
@@ -455,7 +455,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             className="as-cta-primary w-full px-5 py-3 dt:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-[20px] dt:text-[24px]">{t("start.resume")}</span>
             {/* `as-cta-sub`: die Zweitzeile klebte am Titel (`leading-tight` ohne Abstand dazwischen).
-                Luft und Fußpolster stehen ab 1400 px in index.css — beides zusammen, sonst rutscht die
+                Luft und Fußpolster stehen ab 1280 px in index.css — beides zusammen, sonst rutscht die
                 Zeile nur von oben weg und dafür an den unteren Rahmen. */}
             <span className="as-cta-sub ty-num-sm text-[11px] dt:text-[14px] opacity-80">
               {t("start.resume.sub", {
@@ -476,7 +476,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {t("start.normal")}
           {/* #premium: Der Knopf sagt jetzt auch in der Form, dass es weitergeht. Absolut am rechten Rand
               und nicht als Flex-Kind, damit das Label mittig bleibt — mit dem Zeichen im Fluss säße es
-              um die halbe Zeichenbreite nach links versetzt. Erst ab 1400 px: am Handy ist der Knopf
+              um die halbe Zeichenbreite nach links versetzt. Erst ab 1280 px: am Handy ist der Knopf
               schmaler und die Zeile dort ohnehin randvoll. */}
           <svg className="as-cta-chev hidden dt:block" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
             fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -502,7 +502,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 dt:px-4 dt:py-3 rounded-xl font-mono text-sm dt:text-[18px]`}
               />
               {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
-                  der Rahmen ab 1400 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
+                  der Rahmen ab 1280 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
               <button type="submit" disabled={!seedInput.trim()}
                 className="as-seed-play shrink-0 px-3.5 py-2 dt:px-4 dt:py-3 rounded-xl text-sm dt:text-[18px] font-medium transition-all disabled:opacity-40">
                 {t("start.seed.play")}
@@ -527,7 +527,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             {/* #premium/#pokal: Hier zeichnet auf JEDER Breite ein Vektor in der Knopffarbe — Schloss
                 für „Spielen noch gesperrt", Pokal für „frei". Die Emoji-Fassung darunter ist entfallen.
                 Das ist der eine Punkt, an dem dieser Knopf weiter geht als der übrige #premium-Pass
-                (der hält Emoji bis 1399 px, s. `Lead` oben): Das Argument gegen Emoji — sie bringen
+                (der hält Emoji bis 1279 px, s. `Lead` oben): Das Argument gegen Emoji — sie bringen
                 ihre eigene Farbe mit und stehen damit quer zu einem Screen, der seine Farben aus dem
                 aktiven Deck zieht — gilt am Handy seit #deck-mobil genauso. Und der Pokal ist das eine
                 Zeichen dieses Screens, für das es eine gezeichnete Vorlage gibt.
@@ -549,10 +549,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 dagegenhalten; und die Bonus-Zeile darunter durfte den Font gar nicht erst tragen, weil Press
                 Start 2P doppelt so breit baut und in die Knopfmitte geragt wäre. Beide Sonderfälle sind mit dem
                 Font entfallen. 9 → 10 px, weil die System-Mono auf 9 px kleiner baut als der Pixel-Font.
-                Ab 1400 px stand hier ohnehin schon Orbitron (`.as-week-chip`, s. u.). */}
+                Ab 1280 px stand hier ohnehin schon Orbitron (`.as-week-chip`, s. u.). */}
             <span className="absolute inset-y-0 right-2 dt:right-4 flex flex-col justify-center items-end gap-0.5 pointer-events-none"
               aria-label={t("start.ranked.badge.aria", { n: week.week })}>
-              {/* #desktop: Ab 1400 px trägt der Chip Orbitron im Deckton (`.as-week-chip` in index.css) — er war
+              {/* #desktop: Ab 1280 px trägt der Chip Orbitron im Deckton (`.as-week-chip` in index.css) — er war
                   die letzte Stelle am Knopf, die das aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel
                   sonst der Wortmarke und den Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe
                   Rolle. Darunter läuft er seit #ruhe in der System-Mono wie der ganze Rest des Hubs. */}
@@ -562,7 +562,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
                   rechts zeigt denselben Stand ausführlicher (Woche · 0/1 · „Bonus noch offen"). Zweimal
                   dieselbe Information nebeneinander ist keine Betonung, nur Rauschen. Unterhalb von
-                  1400 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
+                  1280 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
               {weekBonusOpen && (
                 <span className="ty-num-sm text-[9.5px] dt:hidden leading-tight" style={{ color: `${RANK}c0` }}>
                   {t("start.ranked.bonus", { have: 0, max: 1 })}
@@ -590,7 +590,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
       <div className="hub-stand">
 
-      {/* #desktop — Status-Tafel. Erst ab 1400 px sichtbar (`hidden dt:flex`), auf dem Handy also
+      {/* #desktop — Status-Tafel. Erst ab 1280 px sichtbar (`hidden dt:flex`), auf dem Handy also
           gar nicht im Layout. Sie beantwortet, was man vor dem Start wissen will: welches Deck aktiv ist,
           wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
           stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
@@ -705,12 +705,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             #desktop: dieselben vier Ziele werden zur Liste — flex-row statt flex-col, kein eigener Rahmen
             je Kachel (Glas + Ring sitzen am Container), dafür ein Trenner (CSS `.as-hub-list`). Die Fläche
             kommt aus der Klasse `as-hub-tile` statt aus einem inline-style, sonst ließe sie sich oberhalb
-            von 1400 px nicht auf Glas umstellen. */}
+            von 1280 px nicht auf Glas umstellen. */}
         {(() => { const tileCls = "as-hub-tile relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5"
             + " dt:flex-row dt:items-center dt:gap-3 dt:min-h-0 dt:rounded-none dt:py-4 dt:pl-6 dt:pr-5 dt:hover:translate-y-0";
           /* #kante: Aus dem 3-px-Streifen wird die Kante der Kanten-Familie — 4 px plus der kurze Farbanlauf
              nach rechts, den auch Auswahlkarten und Knöpfe tragen. Bleibt ein absolut liegendes Overlay über
-             der ganzen Kachel (nicht deren border-left), weil die Kachel ab 1400 px zur randlosen Listenzeile
+             der ganzen Kachel (nicht deren border-left), weil die Kachel ab 1280 px zur randlosen Listenzeile
              wird und ihren eigenen Rahmen verliert; so überlebt das Farbsignal beide Fassungen unverändert.
              Klickdurchlässig, damit die Kachel darunter der Knopf bleibt. */
           const Stripe = ({ c, dim }) => (<span aria-hidden="true"
@@ -734,7 +734,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                 <div className={headBox}>
                   {head(t("start.tile.upgrades"))}
                   {/* „kaufbar"-Hinweis. Am Handy steht hier NUR DIE ZAHL im goldenen Ring, der ganze
-                      Satz erst ab 1400 px — und das ist eine Fehlerbehebung, keine Verknappung:
+                      Satz erst ab 1280 px — und das ist eine Fehlerbehebung, keine Verknappung:
                       nachgemessen lief die Kachel in JEDER Kombination über und wurde am Kachelrand
                       abgeschnitten (390 px/DE 11 px, 390 px/EN 18 px, 375 px/EN 25 px, „9 availabl…").
                       „Upgrades" (63 px) plus „9 available" (74 px) brauchen 141 px, die Kachel hat
@@ -815,7 +815,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       </div>
       </div>
 
-      {/* #desktop — Chips und Fußlinks laufen ab 1400 px als EIN Band über die volle Breite zusammen
+      {/* #desktop — Chips und Fußlinks laufen ab 1280 px als EIN Band über die volle Breite zusammen
           (Chips links, Nachschlage-Links rechts). Darunter bleiben es zwei gestapelte Blöcke wie bisher. */}
       <div className="hub-foot">
 
@@ -848,7 +848,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <path fill="currentColor" d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.419-2.157 2.419z"/>
             </svg>
           </a>
-          {/* #desktop: Der Glossar-Knopf, hinter dem Discord-Zeichen. Bis 1399 px sitzt er oben rechts in der
+          {/* #desktop: Der Glossar-Knopf, hinter dem Discord-Zeichen. Bis 1279 px sitzt er oben rechts in der
               Ecke (Instanz weiter oben) und ist hier ausgeblendet — im schmalen Stapel wäre das Fußband sonst
               eine Zeile länger, und die obere Ecke ist dort der eingeführte Platz dafür.
               Er bleibt der runde ⓘ und wächst nur auf die Größe des Discord-Zeichens daneben: die beiden sind
@@ -882,7 +882,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
       </div>
       {/* #kopf: Versions-/Build-Stempel — jetzt UNTER der „angemeldet als"-Zeile (aus dem Kopf hierher gezogen).
-          Mobil zentriert wie die Fuß-Links darüber, ab 1400 px rechtsbündig zum restlichen Fuß-Band. */}
+          Mobil zentriert wie die Fuß-Links darüber, ab 1280 px rechtsbündig zum restlichen Fuß-Band. */}
       <div className="ty-meta text-[10px] opacity-40 select-text mt-1 text-center dt:text-right" title={t("start.version.title")}>{VERSION_FULL}</div>
       {/* #desktop — Ende des Fuß-Bandes. */}
       </div>

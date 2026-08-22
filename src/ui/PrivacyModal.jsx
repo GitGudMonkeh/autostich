@@ -72,7 +72,7 @@ export function PrivacyModal({ onClose }) {
   return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      {/* #datenschutz-desktop: ab 1400 px 860 px breit statt 512 — der Hinweis bleibt ein FENSTER (er wird
+      {/* #datenschutz-desktop: ab 1280 px 860 px breit statt 512 — der Hinweis bleibt ein FENSTER (er wird
           geprüft und geschlossen, er ist keine Station wie Leitfaden/Glossar), aber die fünf Abschnitte stehen
           dort in zwei Spalten statt als Schlange, die auf 1080 px Höhe scrollt, während links und rechts alles
           leer ist. Darunter ändert sich nichts. #deckui: `as-panel-deck` = deck-getönter Rahmen wie in den
@@ -140,7 +140,7 @@ export function PrivacyModal({ onClose }) {
             )}
           </div>
 
-          {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Deckfarbe. Ab 1400 px steht der Stand
+          {/* #kante: Der Kontaktweg ist hier das Angebot — Kante in der Deckfarbe. Ab 1280 px steht der Stand
               daneben statt darunter: zwei kurze Zeilen untereinander lassen den Fuß länger wirken als er ist. */}
           <div className="mt-3 flex flex-col dt:flex-row dt:items-center gap-2 dt:gap-3">
             <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"

@@ -145,10 +145,10 @@ describe("#graph-achsen — der Score-Verlauf mit Achsen", () => {
 
   /* #graph-knapp (19.08.2026): die Lauf-Details schalten die volle Fassung inzwischen ebenfalls ein und
      der Statistik-Trend die knappe — wer das bekommt, steht in test/graph-labels.test.js. Hier bleibt die
-     Aussage, die sich NICHT geändert hat: der Victory-Screen erst ab 1400 px, die StatusRail nie. */
+     Aussage, die sich NICHT geändert hat: der Victory-Screen erst ab 1280 px, die StatusRail nie. */
   it("Victory nur auf dem Desktop, StatusRail bleibt die kompakte Linie", () => {
     /* #graph-fuellt: dazu kam `vh` — die gemessene freie Höhe der Spalte als viewBox-Höhe. Die Aussage
-       dieses Tests bleibt `axes={wide}`: die ausführliche Fassung erst ab 1400 px. */
+       dieses Tests bleibt `axes={wide}`: die ausführliche Fassung erst ab 1280 px. */
     expect(read("src/ui/GameOver.jsx")).toMatch(/<Sparkline current=\{currentTraj\} record=\{recordTraj\} height=\{110\} axes=\{wide\} vh=\{chartVh\} \/>/);
     // Die StatusRail bleibt die kompakte Linie — dort ist die Kachel ~300 px breit.
     expect(read("src/ui/StatusRail.jsx")).toMatch(/<Sparkline current=\{currentTraj\} record=\{recordTraj\} \/>/);

@@ -43,7 +43,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
   return overlayPortal((
     <div onClick={onClose} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
-      {/* #desktop: `un-first` schaltet ab 1400 px die zweispaltige Fassung frei — und NUR beim Erststart.
+      {/* #desktop: `un-first` schaltet ab 1280 px die zweispaltige Fassung frei — und NUR beim Erststart.
           „Name ändern" bleibt der schmale Dialog: das ist ein Umbenennen, kein Auftritt. */}
       <div onClick={(e) => e.stopPropagation()} className={`un-card w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck ${firstTime ? "un-first" : ""}`}
         style={MODAL_CARD}>
@@ -53,7 +53,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         <ActionBar pad={6} bg={STICKY_HEAD_BG} className="un-bar">
           {!firstTime && <ActionButton kind="secondary" onClick={onClose}>{t("name.cancel")}</ActionButton>}
           <span className="flex-1" />
-          {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1400 px `display: none`) —
+          {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1280 px `display: none`) —
               im 320-px-Dialog nimmt es dem kurzen Wort mehr Platz weg, als es an Klarheit bringt. */}
           <ActionButton kind="primary" className="un-save" disabled={!canSave} onClick={submit}>
             <span className="as-deskonly un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
@@ -65,7 +65,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           </div>
           {/* #desktop: In der breiten Fassung trägt die linke Spalte die MARKE — derselbe Text-Schlüssel und
               dieselbe Klasse wie im Hub (`.as-wordmark`), also EINE Quelle für Verlauf, Schrift und Deckfarbe.
-              Unter 1400 px gibt es sie hier nicht: dort ist der Dialog 320 px breit und die Marke stand
+              Unter 1280 px gibt es sie hier nicht: dort ist der Dialog 320 px breit und die Marke stand
               zwei Sekunden vorher schon auf dem Startbildschirm. */}
           <div className="un-wm as-wordmark select-none hidden">{t("start.logo.alt")}</div>
           {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett. */}
@@ -77,7 +77,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           </h2>
         </div>
 
-        {/* #desktop — Klammer um die rechte Spalte (Feld · Hinweis · Sprache · Vorschau). Unter 1400 px ist
+        {/* #desktop — Klammer um die rechte Spalte (Feld · Hinweis · Sprache · Vorschau). Unter 1280 px ist
             sie `display: contents`, die Handy-Reihenfolge bleibt damit unangetastet. */}
         <div className="un-form">
         {/* #willkommen: In der breiten Fassung steht die Marke links und der Titel „Wähle deinen Namen"

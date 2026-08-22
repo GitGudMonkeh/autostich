@@ -380,9 +380,9 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
   return (
     <div className={`bf-side flex flex-col items-center gap-2 shrink-0 ${dealFrom === "right" ? "is-right" : "is-left"}`}>
       <div className="bf-label text-[11px] uppercase tracking-wide opacity-55">{label}</div>
-      {/* #deckflug: Deck-Stapel und Spielfläche sind ZWEI Kästen im selben Rahmen. Unterhalb von 1400 px liegen
+      {/* #deckflug: Deck-Stapel und Spielfläche sind ZWEI Kästen im selben Rahmen. Unterhalb von 1280 px liegen
           sie exakt aufeinander (beide absolut, `bf-sidebox` gibt das Maß vor) — das ist der Aufbau, den es immer
-          gab. Ab 1400 px rückt der Stapel an den Rand und die Karte fliegt von dort auf die Fläche (index.css). */}
+          gab. Ab 1280 px rückt der Stapel an den Rand und die Karte fliegt von dort auf die Fläche (index.css). */}
       <div className={`bf-sidebox relative ${dealFrom === "right" ? "is-right" : "is-left"}`}>
         {/* #feuer: STABILER Deck-Slot. slotRef zeigt auf DIESE Box — sie remountet NICHT pro Stich und fliegt nicht
             weg → das Feuer (an slotRef verankert) brennt durchgängig weiter, statt bei jedem Sieg/Niederlage neu zu
@@ -401,14 +401,14 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
             </div>
           ))}
         </div>
-        {/* Spielfläche: hier landet die gespielte Karte. `bf-scale` trägt ab 1400 px den Kartenmaßstab, damit die
+        {/* Spielfläche: hier landet die gespielte Karte. `bf-scale` trägt ab 1280 px den Kartenmaßstab, damit die
             Karte darin ihre eigene Bewegung (Flug/Flip/Wegfliegen) behält — Maßstab außen, Bewegung innen. */}
         <div className="bf-play bf-slot relative">
           <div className="bf-scale bf-cardbox">{children}</div>
           {overlay}
         </div>
       </div>
-      {/* #deckflug: Ab 1400 px steht der Zähler unter dem STAPEL („wie weit ist das Deck") und das Label über
+      {/* #deckflug: Ab 1280 px steht der Zähler unter dem STAPEL („wie weit ist das Deck") und das Label über
           der Spielfläche — beides gehört dorthin, wo die Sache liegt, über die es spricht. */}
       <div className="bf-count text-[11px] opacity-55">{tr("bf.trickCount", { n: position, total: deckLen })}</div>
     </div>
@@ -419,7 +419,7 @@ function Side({ label, remaining, position = 0, deckLen = 0, children, overlay =
    (`front` = fertige Karte mit Zahl/Effekten). 3D-rotateY, Dauer an den Flip-Takt gekoppelt. Zwei Faces mit
    `backface-visibility: hidden`: erst die Rückseite, ab der Mitte die Front. Position:relative → malt (wie die
    Karte sonst) über die Ergebnis-Welle. Nur für die Spielerseite; bei reduzierter Bewegung nicht gerendert. */
-/* `bf-cardbox` ist die KARTENGRÖSSE (104 × 144) — sie wächst ab 1400 px NICHT selbst, sondern wird vom
+/* `bf-cardbox` ist die KARTENGRÖSSE (104 × 144) — sie wächst ab 1280 px NICHT selbst, sondern wird vom
    `transform: scale()` des Slots mitgenommen (s. #buehne in index.css). Beides zu skalieren hieße quadrieren. */
 function FlipReveal({ front, backImage, dur }) {
   return (
@@ -866,7 +866,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
   const wide = useIsWide();
-  /* #turbo-takt: Ab 1400 px muss die ganze Choreografie IN den Stich passen — sonst schneidet der nächste
+  /* #turbo-takt: Ab 1280 px muss die ganze Choreografie IN den Stich passen — sonst schneidet der nächste
      Stich sie ab, und genau das las sich als „bei Turbo werden die Animationen verkürzt oder übersprungen".
      Gemessen am laufenden Brett (1920 px, Zug + Wegflug gegen den Stich-Takt): 1× 1360 von 1750 ms ✔ ·
      ×2 1060 von 880 ✗ · ×4 540 von 440 ✗ · MAX 540 von 300 ✗. Schuld sind die festen UNTERGRENZEN
@@ -877,19 +877,19 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      sie beide Takte mit dem Tempo mit — jede Animation läuft dann VOLLSTÄNDIG, nur schneller. Zusammen
      92 %; die restlichen 8 % sind der Atemzug zwischen zwei Stichen.
      Es gibt bewusst KEINE Untergrenze mehr: eine wäre genau der Fehler, den diese Zeilen beheben.
-     Nur oberhalb 1400 px — die Handy-Fassung hat keinen Zug-Takt und bleibt bei ihren Rohwerten. */
+     Nur oberhalb 1280 px — die Handy-Fassung hat keinen Zug-Takt und bleibt bei ihren Rohwerten. */
   const ZUG_ANTEIL = 0.40, WEG_ANTEIL = 0.52;
   const flyDurRoh  = clamp(flipMs * 0.7, 320, 900);   // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
   const flipDurRoh = clamp(flipMs * 0.55, 220, 460);  // Flug vom Stapel + Flip der einlaufenden Karte
   const flyDur   = wide ? Math.min(flyDurRoh, flipMs * WEG_ANTEIL) : flyDurRoh;
   const flipDur  = wide ? Math.min(flipDurRoh, flipMs * ZUG_ANTEIL) : flipDurRoh;
-  /* #deckzug: Ab 1400 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
+  /* #deckzug: Ab 1280 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
      danach wird AUFGELÖST (Sieger kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben
      Frame: der Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten Bild —
      und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER nur eine Seite (die
      Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte die Gegnerkarte gar nicht, und nur
      beim Unentschieden zogen beide. Genau das las sich als „mal ziehen beide Decks, mal nur eines".
-     `zugMs` ist die Zugdauer (= Flug/Flip); unterhalb 1400 px, bei reduzierter Bewegung und bei hohem Turbo ist
+     `zugMs` ist die Zugdauer (= Flug/Flip); unterhalb 1280 px, bei reduzierter Bewegung und bei hohem Turbo ist
      sie 0 — dort bleibt alles wie bisher, die Handy-Fassung ist unberührt.
      Der Zustand hängt an der STICH-NUMMER, nicht an einem Flag: `drawnNo !== t.trickNo` ist schon im ERSTEN Render
      des neuen Stichs falsch. Ein `setState(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung für
@@ -1026,7 +1026,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Sieger kippt an (as-slice-winner); im Flip-Fall steckt die (evtl. gekippte) Karte als Front-Face im Flip.
   const playerFront = playerWinner ? <div style={winnerTilt(sWinner)}>{pCardEl}</div> : pCardEl;
   const playerCard = t ? (
-    /* #deckflug: Ab 1400 px kommt die Karte vom Deck-Stapel herübergeflogen, während sie flippt — `bf-fly-in`
+    /* #deckflug: Ab 1280 px kommt die Karte vom Deck-Stapel herübergeflogen, während sie flippt — `bf-fly-in`
        trägt die Bewegung, der Flip sitzt eine Ebene tiefer im `as-flip3d-inner`. Beides auf EINEM Knoten würde
        sich überschreiben und die Perspektive mitkippen (dieselbe Regel wie Animation/Filter, #ios-word).
        Ohne Flip (reduzierte Bewegung, Turbo) bleibt es beim kurzen Einschieben von früher. */

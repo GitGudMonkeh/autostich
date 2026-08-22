@@ -37,9 +37,9 @@ describe("#up-ruhe — alle sechs Desktop-Panels stehen still", () => {
     }
   });
 
-  it("der Zweig-Pfad unter 1400 px bleibt bewusst OHNE Modifikator", () => {
+  it("der Zweig-Pfad unter 1280 px bleibt bewusst OHNE Modifikator", () => {
     /* `.up-branch` wird nur gerendert, wenn `wide` false ist (eigener Renderpfad, s. UpgradeScreen.jsx).
-       Ein Modifikator, dessen Regeln im 1400er Block stehen, täte dort nichts — ihn trotzdem zu setzen
+       Ein Modifikator, dessen Regeln im 1280er Block stehen, täte dort nichts — ihn trotzdem zu setzen
        wäre eine Zeile, die etwas verspricht und nichts hält. */
     const up = read("src/ui/UpgradeScreen.jsx");
     expect(up).toMatch(/up-branch as-ring\$\{/);
@@ -81,7 +81,7 @@ describe("#up-ruhe — der Schein nach außen fällt, die Aussage bleibt", () =>
     expect(deskBlock).toMatch(/\.up-stat,\s*\.up-dropbox\s*\{[^}]*border:\s*1px solid/);
   });
 
-  it("alles hängt am 1400er Block — die Handy-Fassung darf sich nicht bewegen", () => {
+  it("alles hängt am 1280er Block — die Handy-Fassung darf sich nicht bewegen", () => {
     const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     for (const k of ["up-navrow", "up-vnode", "up-stat", "up-actions"])
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}[\\s.,{]`));

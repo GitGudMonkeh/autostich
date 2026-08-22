@@ -98,7 +98,7 @@ describe("#lv-ruhe — Angebotskarten, Aktionsleiste, Score", () => {
     expect(perk).toMatch(/<RoundScoreBadge state=\{state\} className="lv-score" \/>/);
   });
 
-  it("alles hängt am 1400er Block — die Handy-Fassung darf sich nicht bewegen", () => {
+  it("alles hängt am 1280er Block — die Handy-Fassung darf sich nicht bewegen", () => {
     const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     for (const k of ["lv-offercard", "lv-cardname", "lv-actbtn", "lv-score"])
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}\\s*\\{`));

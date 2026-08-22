@@ -37,7 +37,7 @@ function jsxFiles(dir = srcDir, prefix = "") {
 const AUSNAHMEN = [{
   datei: "ui/CustomizeScreen.jsx",
   bei: "fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto",
-  grund: "PackDetail rendert dieselbe Komponente ab 1400 px `inline` als Spalte IM Raster der Werkstatt; nur die "
+  grund: "PackDetail rendert dieselbe Komponente ab 1280 px `inline` als Spalte IM Raster der Werkstatt; nur die "
        + "Overlay-Fassung portalt (`return inline ? node : overlayPortal(node)` am Ende der Komponente).",
 }, {
   datei: "ui/StartScreen.jsx",

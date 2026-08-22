@@ -1,8 +1,8 @@
-# Evidence — `#viewport-1280` T1, commits 1 and 2
+# Evidence — `#viewport-1280` T1 and T1b, commits 1 to 3
 
 **Branch:** `feature/viewport-1280`, based on `dev` @ `863febe54fce513c4171314eb8cfc0d86f997408`.
 **Date:** 2026-08-22. **Not pushed. No pull request.**
-**Threshold at the end of this record: still 1400.** The flip to 1280 is commit 3 and has not happened.
+**Threshold at the end of this record: 1280.** The flip is commit 3 and is recorded in §7.
 
 | Commit | Subject |
 | --- | --- |
@@ -11,6 +11,10 @@
 | `f49c5b15` | test: derive the desktop breakpoint anchors from DESKTOP_MIN |
 | `5ce69805` | build: stop documentation prose from reaching the stylesheet |
 | `1f43b101` | refactor: name the desktop breakpoint instead of spelling it out |
+| `062538e4` | docs: record the evidence for viewport-1280 commits 1 and 2 |
+| `e131155d` | docs: contract the flip to 1280 and the survey |
+| `d3f65b43` | test: capture the 390 px phone baseline before the threshold moves |
+| *(this record)* | refactor: lower the desktop threshold to 1280 px |
 
 Two of these were not in the contract. Both were forced by the work and both are recorded below with
 what made them necessary.
@@ -200,11 +204,202 @@ the commit-3 gate, where source under `src/` actually changes behaviour.
 
 ---
 
-## 7. What is not done
+## 7. Commit 3 — the flip to 1280
 
-- **Commit 3** — the value flip to 1280, the counter-edge, the completeness guard with its sabotage
-  check, and the prose carried forward. Not started.
-- **Commit 4** — the measurement probe. Not started.
-- **The phone counter-proof at 390 px.** It needs a CDP capture on both sides of the flip, so the
-  "before" side must be captured while the threshold is still 1400 — that is, from this state.
+Base `d3f65b43`, clean tree, threshold verified still at 1400 before the first edit.
+
+### 7.1 What moved
+
+| Site | Count | From → to |
+| --- | --- | --- |
+| `@theme` token `--breakpoint-dt` | 1 | 1400px → 1280px |
+| `min-width` media queries in `index.css` | 11 | 1400px → 1280px |
+| Counter-edge `max-width` | 1 | 1399.98px → 1279.98px |
+| `DESKTOP_MIN` in `src/ui/useIsWide.js` | 1 | 1400 → 1280 |
+| Prose carried forward | 399 lines across 66 files under `src/` and `test/` | 1400/1399 → 1280/1279 |
+
+Untouched by design: the height bands 950 / 900 / 820, `min-width: 1750px` (the guide's large step),
+the `max-width: 1920px` / `1760px` right edges, and every rule of the phone layout.
+
+**Not one source-text ratchet broke.** That is the return on commit 1: all 33 anchors already compute
+from `DESKTOP_MIN`, so they followed the threshold instead of failing at it. The hazard the contract
+called the most expensive one (§10.2) cost nothing in the end, because it had already been paid off.
+
+The mechanical pass ran as a script over `git ls-files` with an explicit skip list, so the six lines
+that needed judgement were left untouched and edited by hand rather than being swept along.
+
+### 7.2 What deliberately did NOT move
+
+Eleven occurrences of `1400` survive in `src/`. None of them is the threshold, and each is named in
+the guard's exception list with its reason:
+
+| Kind | Sites |
+| --- | --- |
+| Timing constants in milliseconds | `FireHead.jsx` particle lifetime · `SeedChip.jsx` copy timeout |
+| Measurements at a named window size | `shopScale.js` (1400 × 700) · KPI tile inner width · three guide `--gs` measurement rows · shop tile count · laptop overlap observation · verified window sizes |
+| Historical reference | the superseded rationale, which names the value it superseded |
+
+**A measurement taken at 1400 px stays true when the threshold moves.** Rewriting those numbers would
+not carry prose forward, it would falsify a record. Two notes drafted during this commit originally
+introduced fresh `1400`s of their own; they were reworded to say "the previous, higher threshold"
+instead, so that the exception list records only what was already there.
+
+### 7.3 The rationale block
+
+`index.css` argued **for** 1400 and **against** 1280 on the grounds that the hub column pair measures
+1520 px. Replaced in place, in German, with the current reasoning: the itch.io embed at 1280 × 720,
+and why the column pair loses nothing it needs (`.hub-pair` is fluid-capped at 1520 px and rides the
+`zoom` clamp with its 0.85 floor — the 1520 px is air the design *takes*, not air it *needs*). The
+superseded argument is stated as superseded rather than deleted.
+
+`docs/decisions/` was not touched.
+
+### 7.4 The completeness guard — `test/viewport-1280.test.js`
+
+Five assertions, none of which spells the threshold out. Each states a relationship and derives both
+sides, so the file needs no edit the next time the number moves:
+
+1. no `1400`/`1399` in `src/**` outside the named exception list — **and** no exception that has gone
+   stale, which is the half that keeps the list from rotting into a permanent hole;
+2. every `min-width` above 1000 px equals the `@theme` token or is a named band (`{1750}`);
+3. exactly one fractional `max-width` exists and it equals *token − 0.02* — computed, not typed;
+4. no arbitrary `min-[Npx]:` variant survives; the named variant is the only route;
+5. `@theme` holds exactly one `--breakpoint-*` token and `DESKTOP_MIN` equals its value.
+
+Assertions 2 and 4 carry their own vacuity checks (at least one wide `min-width` must equal the token;
+the named variant must actually occur), and a sixth test asserts that the file walk reaches
+`ui/fx/cardFx`, `ui/tutorial`, `ui/indicators`, `i18n` and `game`. That last one is written from the
+scar in §3: the i18n guard reported "0 unused" for months because its walk was flat and it was
+structurally unable to report anything else.
+
+The old-value scan folds in `1399` as well. The contract asks only for `1400`; the counter-edge moved
+with the threshold and a forgotten `1399` is the same defect wearing the other hat.
+
+### 7.5 The guard was seen to fail — five times, not asserted
+
+| # | Sabotage | Result |
+| --- | --- | --- |
+| A | one media query reinstated at 1400 | assertions **1 + 2** fail; names `src/index.css:5230` |
+| B | counter-edge left at 1399.98 | assertions **1 + 3** fail; *"expected 1399.98 to be close to 1279.98"* |
+| C | one `dt:` variant rewritten to `min-[1280px]:` | assertion **4** fails; names `CustomizeScreen.jsx:1240` |
+| D | `DESKTOP_MIN` set to 1360 | `desktopBreakpoint.js` throws: *"Desktop breakpoint drift: … must be changed together"* |
+| E | an exception's site edited away | the **staleness** half fails; names `ui/SeedChip.jsx «setCopied(false), 1400»` |
+
+Every one reverted and verified by `git hash-object` against the pre-sabotage hash.
+
+A guard nobody has watched fail is not evidence. That is the whole lesson of §3, and it is the reason
+these five runs are in the record rather than a sentence saying the guard works.
+
+### 7.6 The phone counter-proof — and the defect it exposed in its own tool
+
+The first `compare` run came back **FAIL**, on five lines of proof 1. It was not a layout regression.
+It was a hole in the proof.
+
+`widthVerdict()` split media conditions on `/\s+and\s+/`. Source CSS writes `(min-width: 1400px) and
+(max-height: 820px)`, but the **minifier** writes `(min-width:1400px)and (max-height:820px)` — no space
+before `and` — and proof 1 is fed the *built* stylesheet. The split therefore never fired on a single
+compound query. The whole condition fell through as one opaque string, `applies` stayed `true`, and
+**the width was never evaluated at all.**
+
+Six compound blocks were carried into the comparison key as text. So for those blocks proof 1
+compared spellings while claiming to compute — the same shape of defect as the vacuous i18n guard in
+§3, in the very tool built to prove this commit safe.
+
+**The verdict itself was unchanged, and that was measured, not assumed.** Re-evaluating both stored
+artefacts with a correct parser, without rebuilding anything and without touching the baseline:
+
+```
+before: 40 records -> 34 applicable at 390px
+after : 40 records -> 34 applicable at 390px
+byte length: before 67136 · after 67136
+IDENTICAL — the rule set that can apply at 390 px did not move.
+```
+
+All six dropped blocks open with a `min-width` of 1400 or 1750, false at 390 px on **both** sides:
+
+```
+@min-width:1400px)and (max-height:820px    @min-width:1400px)and (max-width:1760px
+@min-width:1400px)and (max-height:900px    @min-width:1400px)and (max-width:1920px
+@min-width:1400px)and (max-height:950px    @min-width:1750px)and (min-height:1000px
+```
+
+The sixth carries 1750 on both sides, so it was invisible in the diff while being just as mis-parsed —
+which is the part worth remembering: the defect was only *visible* because a number happened to change.
+
+**Two fixes, on the owner's decision.** The regex now splits both spellings. And `compare` re-runs both
+stored artefacts through today's evaluator instead of diffing them raw — because the old construction
+froze the *verdict* into the artefact, so the two sides went through the same function only as long as
+nobody touched that function in between. That is a structural weakness independent of this bug, and it
+is what lets the protected 390 px baseline stay valid across a parser fix rather than being re-captured.
+
+**The repaired proof was then shown to still fail.** A proof changed until it passes is worth nothing
+otherwise: `.lv-rig { --lv-h: min(92dvh, 760px) }` — a rule outside every media query, so live at
+390 px — was moved to 761px, rebuilt and captured. Proof 1 caught the one-pixel change and named it.
+Reverted, rebuilt, capture directory removed.
+
+**Final result, DE and EN, five screens:**
+
+```
+PROOF 1  rule set at 390px IDENTICAL (67136 bytes)
+PROOF 2  de/hub 163 · de/upgrades 372 · de/shop 412 · de/leaderboard 261 · de/stats 171   all identical
+PROOF 2  en/hub 163 · en/upgrades 372 · en/shop 412 · en/leaderboard 261 · en/stats 171   all identical
+PASS · the phone layout is unchanged
+```
+
+`before/` was never written to; verified with `git diff` against the committed baseline (empty).
+
+### 7.7 Two findings documented, not repaired
+
+Both are prose carried forward honestly rather than layout touched. §9 of the contract forbids the
+repair; it does not forbid saying what is now true.
+
+- **The `:hover` argument is weaker at 1280.** `index.css` justifies omitting `@media (hover: hover)`
+  by saying a touch device at the threshold width practically does not exist. The 12.9" iPad in
+  landscape is 1366 CSS px: below the old threshold it never saw those rules, above the new one it
+  does. Noted at the site. Retrofitting the hover query would be a repair → T2.
+- **The level-up wings.** The in-file arithmetic is explicitly *for the narrowest case*, and the
+  narrowest case moved: 1280 − 32 − 880 − 44 = **324 px for two wings, 162 per side** (previously
+  444 / 222). The wing asks for 320 px, so it now gets about half at the bottom end. Documented at
+  the site and left standing, per §9. Note the planning report's §1.5 row 11 predicted 178 px per
+  side — it omitted the 32 px overlay padding that the in-file computation includes.
+
+### 7.8 Scope: prose carried slightly beyond the contract's list
+
+The contract names `index.css`, `App.jsx`, `de.js`, `en.js` and the test headers. Three documentation
+files stated the threshold as a live fact and would otherwise have been left lying:
+`docs/engineering/conventions.md` (named by `AGENTS.md` as a source of *current* conventions) and
+`docs/art/corners/README.md` + `docs/art/skills/README.md` (both describe the render gate).
+
+**Deliberately left alone**, and reported rather than changed:
+
+- `docs/decisions/` — historical record, forbidden by the contract.
+- `docs/workstreams/viewport-harness/` — the finished workstream's own measurement records.
+- `docs/feature-backlog.md` — its entry "desktop devices between 1280 and 1399 px get the phone
+  layout" is **obsolete as of this commit**. Removing or rewriting a backlog entry is a product
+  decision, so it is flagged here instead.
+
+### 7.9 Gate results
+
+All run unpiped, on the final tree, after the `phone-proof.mjs` fix:
+
+```
+npm test                             136 files, 2057 tests, all passing   (was 135 / 2051)
+npm run lint -- --max-warnings=0     0 warnings
+npm run build                        succeeds
+npm run gen:db                       219 entries
+VITE_PREVIEW=1 npm run build         succeeds
+```
+
+Commit 3 is the first commit in this workstream to change `src/`, so it is the first where both build
+variants actually matter. Both were run.
+
+---
+
+## 8. What is not done
+
+- **Commit 4** — the survey: five sizes × two languages × the surface list of contract §5.2, the
+  typography inventory, and every §1.5 prediction marked held or refuted. Not started.
+- **T2** — every repair. Nothing that overflows at 1280 was fixed, including the two findings in §7.7
+  and the guide's `--gs` step.
 - `gameover.best.hint` — reported, untouched, awaiting a product decision.
+- `docs/feature-backlog.md` — the now-obsolete compact-layout entry, see §7.8.

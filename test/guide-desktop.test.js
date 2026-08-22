@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT, desktopAndRx } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #desktop — Leitfaden als gerahmter Screen ab 1400 px, als Quelltext-Ratsche.
+   #desktop — Leitfaden als gerahmter Screen ab 1280 px, als Quelltext-Ratsche.
 
    Geprüft wird eine NAHT über zwei Dateien, keine Optik. Der Desktop-Leitfaden hat KEINEN eigenen
    Renderpfad: `GuideOverlay.jsx` setzt dieselben Klammern (`gd-desk` / `gd-page` / `gd-cols` / `gd-col`)
@@ -26,7 +26,7 @@ const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8"
 const css = read("index.css");
 const jsx = read("ui/GuideOverlay.jsx");
 
-// Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
+// Der Block `@media (min-width: 1280px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
   const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return null;
@@ -38,8 +38,8 @@ const deskBlock = (() => {
   return null;
 })();
 
-describe("#desktop — Leitfaden ab 1400 px", () => {
-  it("die vier Klammern sind unterhalb von 1400 px `display: contents`", () => {
+describe("#desktop — Leitfaden ab 1280 px", () => {
+  it("die vier Klammern sind unterhalb von 1280 px `display: contents`", () => {
     // Die Regel muss AUSSERHALB des Desktop-Blocks stehen, sonst gilt sie dort nicht, wo sie zählt.
     const base = deskBlock ? css.replace(deskBlock, "") : css;
     const rule = base.match(/^\.gd-desk,\s*\.gd-page,\s*\.gd-cols,\s*\.gd-col\s*\{([^}]*)\}/m);
@@ -68,7 +68,7 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
   });
 
   it("die vier --gs-Stufen stehen an ihren gemessenen Fenster-Bedingungen", () => {
-    // Grundstufe im 1400er Block.
+    // Grundstufe im 1280er Block.
     expect(deskBlock).toMatch(/\.gd-page\s*\{\s*--gs:\s*\.95;\s*\}/);
     // Große, hohe Fenster: nur zusammen mit min-height, sonst liefe es auf flachen Fenstern über.
     expect(css).toMatch(/@media \(min-width: 1750px\) and \(min-height: 1000px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*1\.2;/);
