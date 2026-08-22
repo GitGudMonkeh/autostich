@@ -1,0 +1,2818 @@
+{
+  "label": "V2R3",
+  "origin": "http://localhost:5185",
+  "seedInput": "11",
+  "dpr": 1,
+  "results": {
+    "1280x720": {
+      "skill": {
+        "perTab": [
+          {
+            "tab": null,
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1280,
+              "innerHeight": 720,
+              "dpr": 1
+            },
+            "wide": false,
+            "card": {
+              "x": 252,
+              "y": 28.8,
+              "w": 768,
+              "h": 662.39,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 766
+            },
+            "head": {
+              "x": 269,
+              "y": 29.8,
+              "w": 734,
+              "h": 72
+            },
+            "h2": {
+              "x": 269,
+              "y": 73.8,
+              "w": 734,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 269,
+              "y": 53.8,
+              "w": 734,
+              "h": 16
+            },
+            "hairline": {
+              "x": 253,
+              "y": 29.8,
+              "w": 766,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 253,
+              "y": 105.8,
+              "w": 766,
+              "h": 100
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 734
+            },
+            "tabs": [],
+            "corners": [],
+            "clipped": [],
+            "cardCount": 3
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "dpr": 1
+        },
+        "wide": false,
+        "card": {
+          "x": 252,
+          "y": 28.8,
+          "w": 768,
+          "h": 662.39,
+          "paddingTop": "24px",
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 758
+        },
+        "head": {
+          "x": 277,
+          "y": 53.8,
+          "w": 710,
+          "h": 86.67
+        },
+        "h2": {
+          "x": 277,
+          "y": 73.8,
+          "w": 710,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 277,
+          "y": 53.8,
+          "w": 710,
+          "h": 16
+        },
+        "hairline": {
+          "x": 253,
+          "y": 29.8,
+          "w": 758,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": {
+          "x": 253,
+          "y": 144.47,
+          "w": 758,
+          "h": 63
+        },
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 8,
+          "headTop": 25,
+          "headHeight": 86.67,
+          "topToSticky": 115.67,
+          "widestText": 710
+        },
+        "tabs": [],
+        "corners": [],
+        "clipped": [],
+        "cardCount": 3
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 1280,
+          "innerHeight": 720,
+          "dpr": 1
+        },
+        "wide": false,
+        "card": {
+          "x": 252,
+          "y": 28.8,
+          "w": 768,
+          "h": 662.39,
+          "paddingTop": "0px",
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 766
+        },
+        "head": {
+          "x": 269,
+          "y": 29.8,
+          "w": 734,
+          "h": 110.67
+        },
+        "h2": {
+          "x": 269,
+          "y": 73.8,
+          "w": 734,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 269,
+          "y": 53.8,
+          "w": 734,
+          "h": 16
+        },
+        "hairline": {
+          "x": 253,
+          "y": 29.8,
+          "w": 766,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": null,
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 1,
+          "headHeight": 110.67,
+          "topToSticky": null,
+          "widestText": 734
+        },
+        "tabs": [],
+        "corners": [],
+        "clipped": [],
+        "cardCount": 1
+      }
+    },
+    "1600x900": {
+      "skill": {
+        "perTab": [
+          {
+            "tab": "Blitz",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1600,
+              "innerHeight": 900,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 360,
+              "y": 70,
+              "w": 880,
+              "h": 679.25,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 377,
+              "y": 71,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 377,
+              "y": 115,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 377,
+              "y": 95,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 361,
+              "y": 71,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 361,
+              "y": 147,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": true,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 361,
+                "y": 71,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 939,
+                "y": 71,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Feuer",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1600,
+              "innerHeight": 900,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 360,
+              "y": 70,
+              "w": 880,
+              "h": 640.75,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 377,
+              "y": 71,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 377,
+              "y": 115,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 377,
+              "y": 95,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 361,
+              "y": 71,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 361,
+              "y": 147,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": true,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 361,
+                "y": 71,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 939,
+                "y": 71,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Eis",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1600,
+              "innerHeight": 900,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 360,
+              "y": 70,
+              "w": 880,
+              "h": 698.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 377,
+              "y": 71,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 377,
+              "y": 115,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 377,
+              "y": 95,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 361,
+              "y": 71,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 361,
+              "y": 147,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": true,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 361,
+                "y": 71,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 939,
+                "y": 71,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Pflanze",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1600,
+              "innerHeight": 900,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 360,
+              "y": 70,
+              "w": 880,
+              "h": 621.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 377,
+              "y": 71,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 377,
+              "y": 115,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 377,
+              "y": 95,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 361,
+              "y": 71,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 361,
+              "y": 147,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": true,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 361,
+                "y": 71,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 939,
+                "y": 71,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 1600,
+          "innerHeight": 900,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 360,
+          "y": 70,
+          "w": 880,
+          "h": 759.17,
+          "paddingTop": "24px",
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 385,
+          "y": 95,
+          "w": 830,
+          "h": 85.67
+        },
+        "h2": {
+          "x": 385,
+          "y": 115,
+          "w": 830,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 385,
+          "y": 95,
+          "w": 830,
+          "h": 16
+        },
+        "hairline": {
+          "x": 361,
+          "y": 71,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": {
+          "x": 361,
+          "y": 184.67,
+          "w": 878,
+          "h": 63
+        },
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 25,
+          "headHeight": 85.67,
+          "topToSticky": 114.67,
+          "widestText": 830
+        },
+        "tabs": [],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 367,
+            "y": 77,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 933,
+            "y": 77,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 3
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 1600,
+          "innerHeight": 900,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 360,
+          "y": 70,
+          "w": 880,
+          "h": 735.67,
+          "paddingTop": "0px",
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 377,
+          "y": 71,
+          "w": 846,
+          "h": 110.67
+        },
+        "h2": {
+          "x": 377,
+          "y": 115,
+          "w": 846,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 377,
+          "y": 95,
+          "w": 846,
+          "h": 16
+        },
+        "hairline": {
+          "x": 361,
+          "y": 71,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": null,
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 1,
+          "headHeight": 110.67,
+          "topToSticky": null,
+          "widestText": 846
+        },
+        "tabs": [
+          {
+            "label": "Blitz",
+            "active": true,
+            "color": "#8a7de0"
+          },
+          {
+            "label": "Feuer",
+            "active": false,
+            "color": "#e0714a"
+          },
+          {
+            "label": "Eis",
+            "active": false,
+            "color": "#5ec8f0"
+          },
+          {
+            "label": "Pflanze",
+            "active": false,
+            "color": "#5ab87a"
+          }
+        ],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 361,
+            "y": 71,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 939,
+            "y": 71,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 1
+      }
+    },
+    "1920x1080": {
+      "skill": {
+        "perTab": [
+          {
+            "tab": "Blitz",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 520,
+              "y": 160,
+              "w": 880,
+              "h": 679.25,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 537,
+              "y": 161,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 537,
+              "y": 205,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 537,
+              "y": 185,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 521,
+              "y": 161,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 521,
+              "y": 237,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": true,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 521,
+                "y": 161,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1099,
+                "y": 161,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Feuer",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 520,
+              "y": 160,
+              "w": 880,
+              "h": 640.75,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 537,
+              "y": 161,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 537,
+              "y": 205,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 537,
+              "y": 185,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 521,
+              "y": 161,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 521,
+              "y": 237,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": true,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 521,
+                "y": 161,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1099,
+                "y": 161,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Eis",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 520,
+              "y": 160,
+              "w": 880,
+              "h": 698.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 537,
+              "y": 161,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 537,
+              "y": 205,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 537,
+              "y": 185,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 521,
+              "y": 161,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 521,
+              "y": 237,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": true,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 521,
+                "y": 161,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1099,
+                "y": 161,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Pflanze",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 520,
+              "y": 160,
+              "w": 880,
+              "h": 621.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 537,
+              "y": 161,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 537,
+              "y": 205,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 537,
+              "y": 185,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 521,
+              "y": 161,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 521,
+              "y": 237,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": true,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 521,
+                "y": 161,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1099,
+                "y": 161,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 1920,
+          "innerHeight": 1080,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 520,
+          "y": 160,
+          "w": 880,
+          "h": 759.17,
+          "paddingTop": "24px",
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 545,
+          "y": 185,
+          "w": 830,
+          "h": 85.67
+        },
+        "h2": {
+          "x": 545,
+          "y": 205,
+          "w": 830,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 545,
+          "y": 185,
+          "w": 830,
+          "h": 16
+        },
+        "hairline": {
+          "x": 521,
+          "y": 161,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": {
+          "x": 521,
+          "y": 274.67,
+          "w": 878,
+          "h": 63
+        },
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 25,
+          "headHeight": 85.67,
+          "topToSticky": 114.67,
+          "widestText": 830
+        },
+        "tabs": [],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 527,
+            "y": 167,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 1093,
+            "y": 167,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 3
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 1920,
+          "innerHeight": 1080,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 520,
+          "y": 160,
+          "w": 880,
+          "h": 735.67,
+          "paddingTop": "0px",
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 537,
+          "y": 161,
+          "w": 846,
+          "h": 110.67
+        },
+        "h2": {
+          "x": 537,
+          "y": 205,
+          "w": 846,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 537,
+          "y": 185,
+          "w": 846,
+          "h": 16
+        },
+        "hairline": {
+          "x": 521,
+          "y": 161,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": null,
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 1,
+          "headHeight": 110.67,
+          "topToSticky": null,
+          "widestText": 846
+        },
+        "tabs": [
+          {
+            "label": "Blitz",
+            "active": true,
+            "color": "#8a7de0"
+          },
+          {
+            "label": "Feuer",
+            "active": false,
+            "color": "#e0714a"
+          },
+          {
+            "label": "Eis",
+            "active": false,
+            "color": "#5ec8f0"
+          },
+          {
+            "label": "Pflanze",
+            "active": false,
+            "color": "#5ab87a"
+          }
+        ],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 521,
+            "y": 161,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 1099,
+            "y": 161,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 1
+      }
+    },
+    "2560x1440": {
+      "skill": {
+        "perTab": [
+          {
+            "tab": "Blitz",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 2560,
+              "innerHeight": 1440,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 840,
+              "y": 340,
+              "w": 880,
+              "h": 679.25,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 857,
+              "y": 341,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 857,
+              "y": 385,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 857,
+              "y": 365,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 841,
+              "y": 341,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 841,
+              "y": 417,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": true,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 841,
+                "y": 341,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1419,
+                "y": 341,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.33",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_lightning.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Feuer",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 2560,
+              "innerHeight": 1440,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 840,
+              "y": 340,
+              "w": 880,
+              "h": 640.75,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 857,
+              "y": 341,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 857,
+              "y": 385,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 857,
+              "y": 365,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 841,
+              "y": 341,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 841,
+              "y": 417,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": true,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 841,
+                "y": 341,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1419,
+                "y": 341,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.3",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_fire.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Eis",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 2560,
+              "innerHeight": 1440,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 840,
+              "y": 340,
+              "w": 880,
+              "h": 698.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 857,
+              "y": 341,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 857,
+              "y": 385,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 857,
+              "y": 365,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 841,
+              "y": 341,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 841,
+              "y": 417,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": true,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": false,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 841,
+                "y": 341,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1419,
+                "y": 341,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.276",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_ice.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          },
+          {
+            "tab": "Pflanze",
+            "reached": true,
+            "screen": "skill",
+            "viewport": {
+              "innerWidth": 2560,
+              "innerHeight": 1440,
+              "dpr": 1
+            },
+            "wide": true,
+            "card": {
+              "x": 840,
+              "y": 340,
+              "w": 880,
+              "h": 621.5,
+              "paddingTop": "0px",
+              "paddingLeft": "16px",
+              "paddingRight": "16px",
+              "borderTopWidth": "1px",
+              "borderLeftWidth": "1px",
+              "borderRadius": "16px",
+              "overflow": "auto",
+              "overflowX": "auto",
+              "overflowY": "auto",
+              "position": "relative",
+              "paddingBoxWidth": 878
+            },
+            "head": {
+              "x": 857,
+              "y": 341,
+              "w": 846,
+              "h": 72
+            },
+            "h2": {
+              "x": 857,
+              "y": 385,
+              "w": 846,
+              "h": 28
+            },
+            "eyebrow": {
+              "x": 857,
+              "y": 365,
+              "w": 846,
+              "h": 16
+            },
+            "hairline": {
+              "x": 841,
+              "y": 341,
+              "w": 878,
+              "h": 3,
+              "height": "3px"
+            },
+            "sticky": {
+              "x": 841,
+              "y": 417,
+              "w": 878,
+              "h": 105.5
+            },
+            "dead": {
+              "leftWidth": 0,
+              "rightWidth": 0,
+              "headTop": 1,
+              "headHeight": 72,
+              "topToSticky": 77,
+              "widestText": 846
+            },
+            "tabs": [
+              {
+                "label": "Blitz",
+                "active": false,
+                "color": "#8a7de0"
+              },
+              {
+                "label": "Feuer",
+                "active": false,
+                "color": "#e0714a"
+              },
+              {
+                "label": "Eis",
+                "active": false,
+                "color": "#5ec8f0"
+              },
+              {
+                "label": "Pflanze",
+                "active": true,
+                "color": "#5ab87a"
+              }
+            ],
+            "corners": [
+              {
+                "side": "left",
+                "w": 300,
+                "h": 115,
+                "x": 841,
+                "y": 341,
+                "transform": "none",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              },
+              {
+                "side": "right",
+                "w": 300,
+                "h": 115,
+                "x": 1419,
+                "y": 341,
+                "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+                "blend": "screen",
+                "opacity": "0.192",
+                "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+                "filter": "none",
+                "objectFit": "cover",
+                "objectPosition": "0% 0%",
+                "zIndex": "0",
+                "position": "absolute",
+                "src": "corner_plant.webp",
+                "alt": "",
+                "ariaHidden": "true",
+                "naturalW": 600,
+                "naturalH": 400
+              }
+            ],
+            "clipped": [
+              {
+                "side": "left",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              },
+              {
+                "side": "right",
+                "overflowsLeft": false,
+                "overflowsRight": false,
+                "overflowsTop": false
+              }
+            ],
+            "cardCount": 3
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 2560,
+          "innerHeight": 1440,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 840,
+          "y": 340,
+          "w": 880,
+          "h": 759.17,
+          "paddingTop": "24px",
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 865,
+          "y": 365,
+          "w": 830,
+          "h": 85.67
+        },
+        "h2": {
+          "x": 865,
+          "y": 385,
+          "w": 830,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 865,
+          "y": 365,
+          "w": 830,
+          "h": 16
+        },
+        "hairline": {
+          "x": 841,
+          "y": 341,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": {
+          "x": 841,
+          "y": 454.67,
+          "w": 878,
+          "h": 63
+        },
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 25,
+          "headHeight": 85.67,
+          "topToSticky": 114.67,
+          "widestText": 830
+        },
+        "tabs": [],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 847,
+            "y": 347,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 1413,
+            "y": 347,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.468",
+            "mask": "linear-gradient(rgb(0, 0, 0) 6%, rgba(0, 0, 0, 0) 55%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_perk.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 3
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 2560,
+          "innerHeight": 1440,
+          "dpr": 1
+        },
+        "wide": true,
+        "card": {
+          "x": 840,
+          "y": 340,
+          "w": 880,
+          "h": 735.67,
+          "paddingTop": "0px",
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderTopWidth": "1px",
+          "borderLeftWidth": "1px",
+          "borderRadius": "16px",
+          "overflow": "auto",
+          "overflowX": "auto",
+          "overflowY": "auto",
+          "position": "relative",
+          "paddingBoxWidth": 878
+        },
+        "head": {
+          "x": 857,
+          "y": 341,
+          "w": 846,
+          "h": 110.67
+        },
+        "h2": {
+          "x": 857,
+          "y": 385,
+          "w": 846,
+          "h": 28
+        },
+        "eyebrow": {
+          "x": 857,
+          "y": 365,
+          "w": 846,
+          "h": 16
+        },
+        "hairline": {
+          "x": 841,
+          "y": 341,
+          "w": 878,
+          "h": 3,
+          "height": "3px"
+        },
+        "sticky": null,
+        "dead": {
+          "leftWidth": 0,
+          "rightWidth": 0,
+          "headTop": 1,
+          "headHeight": 110.67,
+          "topToSticky": null,
+          "widestText": 846
+        },
+        "tabs": [
+          {
+            "label": "Blitz",
+            "active": true,
+            "color": "#8a7de0"
+          },
+          {
+            "label": "Feuer",
+            "active": false,
+            "color": "#e0714a"
+          },
+          {
+            "label": "Eis",
+            "active": false,
+            "color": "#5ec8f0"
+          },
+          {
+            "label": "Pflanze",
+            "active": false,
+            "color": "#5ab87a"
+          }
+        ],
+        "corners": [
+          {
+            "side": "left",
+            "w": 300,
+            "h": 115,
+            "x": 841,
+            "y": 341,
+            "transform": "none",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          },
+          {
+            "side": "right",
+            "w": 300,
+            "h": 115,
+            "x": 1419,
+            "y": 341,
+            "transform": "matrix(-1, 0, 0, 1, 0, 0)",
+            "blend": "screen",
+            "opacity": "0.33",
+            "mask": "linear-gradient(rgb(0, 0, 0) 18%, rgba(0, 0, 0, 0) 62%)",
+            "filter": "none",
+            "objectFit": "cover",
+            "objectPosition": "0% 0%",
+            "zIndex": "0",
+            "position": "absolute",
+            "src": "corner_lightning.webp",
+            "alt": "",
+            "ariaHidden": "true",
+            "naturalW": 600,
+            "naturalH": 400
+          }
+        ],
+        "clipped": [
+          {
+            "side": "left",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          },
+          {
+            "side": "right",
+            "overflowsLeft": false,
+            "overflowsRight": false,
+            "overflowsTop": false
+          }
+        ],
+        "cardCount": 1
+      }
+    }
+  }
+}

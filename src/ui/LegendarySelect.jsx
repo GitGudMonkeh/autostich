@@ -8,6 +8,7 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 import { HeldSkills } from "./HeldSkills.jsx";   // gehaltene Skills — geteilt mit Skill- und Perk-Auswahl
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1400 px gerendert)
+import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
 import { useIsWide } from "./useIsWide.js";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
@@ -73,9 +74,16 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                    height: wide ? undefined : "min(92dvh, 760px)",
                    maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
           <PhaseHairline accent={archAccent} />
+          {/* #cornerart: WORTGLEICH zur Skill-Wahl — die Ecke folgt dem aktiven Reiter (`curG.arch`),
+              genau wie die Schale darum herum es schon tut. Dieser Bildschirm spricht die Sprache der
+              Skill-Wahl: dieselbe Reiterzeile, dieselben Skill-Embleme auf den Karten, also auch
+              dasselbe Ornament. Am Sicht-Gate wurde eine eigene goldene Phasen-Ecke ausprobiert und
+              verworfen (Q9, 22.08.2026) — das Legendäre steht im Titel und im Gold-Rahmen der Karte,
+              es braucht keine zweite Stimme im Kopf. */}
+          {wide && curG && <CardCorners artKey={curG.arch} />}
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
 
-          <div className="text-center mb-1 pt-6">
+          <div className="co-head text-center mb-1 pt-6">
             <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
             <h2 className="text-xl font-bold mt-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
             {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
