@@ -23,7 +23,7 @@ A **downgrade record** is carried in the contract's Definition of done.
 
 **What exists instead, and what it is worth.** The base commit is committed and immutable, so the
 *asset* state before the change can be rendered deterministically from
-`863febe54fce513c4171314eb8cfc0d86f997408` — that is what `V2-lightning-replacements.webp` shows on
+`863febe54fce513c4171314eb8cfc0d86f997408` — that is what `V2-lightning-replacements.png` shows on
 its left column. This is an **asset-level before/after, not a V1 screen capture**: it proves what the
 two replaced files looked like, and proves nothing about the screen around them. For the ice lot even
 that does not apply, because there was no ice art at the base commit at all — its "before" is the
@@ -72,8 +72,8 @@ evidence*), not as decoration.
 
 | File | What it shows |
 | --- | --- |
-| `visual/V2-ice-strip-geometry.webp` | All 21 ice delivery files, each rendered in the **measured** header geometry — 271 × 210, `cover`, `center top`, `screen` over the card background, with the 62 % mask fade applied |
-| `visual/V2-lightning-replacements.webp` | The two replaced lightning icons, base vs head, in the same geometry |
+| `visual/V2-ice-strip-geometry.png` | All 21 ice delivery files, each rendered in the **measured** header geometry — 271 × 210, `cover`, `center top`, `screen` over the card background, with the 62 % mask fade applied |
+| `visual/V2-lightning-replacements.png` | The two replaced lightning icons, base vs head, in the same geometry |
 
 Both were produced from the committed delivery files and the measured CSS values, so they can be
 regenerated. They are **not** screenshots of the application.
@@ -86,7 +86,7 @@ Not passed, not failed — not yet run. It needs a person to look at the two cap
 
 The specific question the reviewer raised, put plainly for whoever runs V3:
 **`SK_ICE_L03` Große Lawine measures 150.6 light against a lot median of 60.7 (≈2.5×).** In
-`V2-ice-strip-geometry.webp` it is the brightest tile of the 21, and the measurement and the picture
+`V2-ice-strip-geometry.png` it is the brightest tile of the 21, and the measurement and the picture
 agree. Whether that is too bright *in the set* is the judgement V3 exists to make. For context, the
 lightning lot ships two tiles at the same ratio (`L02` 127.2 and `L03` 132.9 against a median of
 57.8) and shipped un-aligned deliberately.

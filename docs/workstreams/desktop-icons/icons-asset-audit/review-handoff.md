@@ -303,8 +303,8 @@ run on Linux locally; CI covers the Linux leg and is green on the pushed branch.
 **Committed captures**, under `visual/` — here the images **are** the evidence
 (`task-lifecycle.md` — *Committing evidence*):
 
-- `V2-ice-strip-geometry.webp` — all 21 ice delivery files in the measured header geometry
-- `V2-lightning-replacements.webp` — the two replaced icons, base vs head, same geometry
+- `V2-ice-strip-geometry.png` — all 21 ice delivery files in the measured header geometry
+- `V2-lightning-replacements.png` — the two replaced icons, base vs head, same geometry
 
 **Three gaps remain, and they carry downgrade records in the contract:**
 
