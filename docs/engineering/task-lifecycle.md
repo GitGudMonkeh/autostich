@@ -93,11 +93,13 @@ the description of the chosen one. A report that lists only the approach taken h
 the code will not show. It should also name the one decision that cannot be corrected cheaply later,
 so that decision gets made deliberately rather than by default.
 
-**Nothing is implemented until the owner has settled the report's open questions** — where an open
-question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
+**Nothing is implemented until the owner has settled the report's blocking open questions** — where
+an open question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
 authority*). A technical question is not an open question: the planner either resolves it and records
-the rejected options, or names it explicitly as a decision delegated to the worker. House-rule gates
-— a new glyph, a new dependency, a breakpoint change — are settled here, not discovered in review.
+the rejected options, or names it explicitly as a decision delegated to the worker. An owner question
+the report itself marks non-blocking is recorded, not a gate — the report's *Blocking?* column
+decides. House-rule gates — a new glyph, a new dependency, a breakpoint change — are settled here,
+not discovered in review.
 
 **The visual gate sits before the independent review**, and its findings are classified before the
 reviewer sees them (§8). The baseline (V1) is taken **after the worktree exists and before
@@ -258,8 +260,9 @@ A handoff carries:
 - the evidence package (§7),
 - **known state the reviewer will hit**, including pre-existing failures not caused by this work, with
   the measurement that shows it,
-- **open questions** — decisions the owner deferred, stated as questions rather than hidden as
-  defects,
+- **open questions** — **reviewer-directed**: decisions the owner deferred, and the worker's own
+  uncertainties, stated as questions rather than hidden as defects. A question that needs an owner
+  decision belongs in the contract's *Open questions*, not here,
 - a suggested reading order.
 
 A handoff with no open questions is usually one that has not looked hard enough.

@@ -37,7 +37,7 @@ table at the end.
 | Integration | **Claude Code** feature integrator. |
 | Review | **Codex** is initially used as an independent reviewer only; it does not implement. |
 | Concurrency | **One simultaneous writer per worktree.** Never run two writing agents in the same worktree at the same time. |
-| Decision authority | **Repository owner** decides what is built and how it should feel; agents decide how it is technically built. Defined once below — *Decision authority*. |
+| Decision authority | **Repository owner** — see *Decision authority* below. |
 
 A task is not complete merely because code exists locally.
 
@@ -453,6 +453,9 @@ Task lifecycle — tiers, contract, evidence, visual review, handoff:
 ## House rules
 
 - **No new icons or glyphs** that are not already part of the established system without asking first.
+- **No new dependency** without asking first. Choosing between libraries is technical, but adding one
+  carries durable cost — licence, bundle size, maintenance — beyond the task that adds it, so the
+  decision to add at all is reserved.
 - **Do not open pull requests unless explicitly requested.**
 - **Do not commit or push unless the task/workflow explicitly authorizes it.**
 - **Do not weaken tests simply to achieve green CI.**
