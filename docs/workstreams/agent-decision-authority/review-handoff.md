@@ -21,13 +21,13 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 | --- | --- |
 | **Context** | Agent Decision Authority — owner/agent decision boundary, documentation only |
 | **Branch** | `feature/agent-decision-authority` (pushed, own upstream, **not** merged into `dev`) |
-| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..e0caa513c204817908f7958bb2565c0f413d0824` — the rule change plus the round-1 review fixes |
+| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — the rule change plus the round-1 and round-2 review fixes |
 | **Review-package range** | to the current head, which additionally carries this document. The contract's *Expected file surface* names both ranges and why they differ |
-| **Size** | 5 files, +598/−2 · no evidence images |
-| **Gates** | **Linux CI green at this head SHA.** Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a Windows timeout — see *Gate results* |
+| **Size** | 6 files, +1146/−5 over the content range · no evidence images |
+| **Gates** | **Linux CI green at the content head `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
 
-Three commits (*measured*):
+**Six commits in the content range** (*measured*):
 
 ```
 96e4ee4e  docs: define the owner/agent decision boundary in AGENTS.md
@@ -35,7 +35,12 @@ Three commits (*measured*):
 aff76af2  docs: record the owner's answer to Q1 in the contract
 175bfbf2  docs: add the reviewer handoff and record the Linux CI result
 e0caa513  docs: address the round-1 review findings
+a2357b47  docs: address the round-2 review findings
 ```
+
+The commit carrying *this* update is not in that list and cannot be: a handoff cannot contain its own
+SHA. That is what the *Review-package range* row above is for. Stated once here rather than left to
+be noticed — round 2 finding 2 was, in part, exactly this drift going unmarked.
 
 **Read first:** [`task-contract.md`](./task-contract.md) — the binding scope statement. Its
 *Approved architecture* section carries the rule text that was approved verbatim, and its *Non-goals
@@ -83,6 +88,41 @@ must-not-touch entries still object-identical to the base commit.
 
 ---
 
+## 0b. Round 3 — what changed since the second review
+
+Codex reviewed `d63e471a` and returned **changes requested**: all four round-1 findings confirmed
+fixed, two new medium findings. Both accepted, both fixed. Dispositions in
+[`task-contract.md`](./task-contract.md) — *Review round 2*.
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| 1 Medium | The breakpoint gate was still misclassified as a house-rule gate. Not inventing breakpoint governance was right, but the alternative was missed: a responsive breakpoint moves visible layout, so the **tie-break already assigns it to the owner**. | `task-lifecycle.md` routes each gate to the source that actually reserves it — House rules for a glyph and a dependency, *Decision authority* for a breakpoint. No new governance. |
+| 2 Medium | The round-2 package presented round-1 data as current: a commit count that disagreed with its own list, a reproduce command pinned to a superseded head, CI claims on the old SHA, and the contract still carrying the pre-fix corrective block while this document asserted byte-identity with it. | The contract marks the superseded block and records the current approved text beside it. This document is refreshed to the content head throughout — ranges, commit list, section map, reproduce command, CI, provenance. |
+
+**Worth recording plainly:** on finding 1 the worker was half right. Declining to invent breakpoint
+governance was correct. Concluding that the only options were "invent a House rule" or "leave it
+broken" was not — the rule this task created already answered it, and the worker failed to apply its
+own tie-break to the case in front of it. That is a missed application, not a missing rule, and it is
+the kind of miss this handoff exists to expose rather than smooth over.
+
+**What round 3 should look at.**
+
+1. **Is the corrected gate sentence right?** `task-lifecycle.md` now names three gates and routes each
+   to a different authority in one sentence. Readability against precision is a judgement.
+2. **Does the contract's superseded/current block pair read unambiguously?** A future reader must not
+   mistake the superseded block for the live requirement. It is marked, but marking is not proof.
+3. **Is anything else in this document still round-1 data?** Finding 2 was a class of error, not a
+   single instance. Every SHA-bearing line was refreshed; a reviewer disbelieving that is behaving
+   correctly.
+
+*Measured at round 3:* gates re-run after the fixes — `npm test` exit 1 on the same pre-existing
+Windows timeout, the same file green in isolation, lint / build / `gen:db` exit 0. Linux CI green at
+`a2357b47`. All fourteen must-not-touch entries object-identical to the base commit. The F10 count at
+the content head: `AGENTS.md` 3, `task-lifecycle.md` 2, `git-workflow.md` 1 — matching the
+contract's enumerated expectation, with the second `task-lifecycle.md` hit being the new application.
+
+---
+
 ## 1. What was agreed
 
 The contract is the binding scope statement; this document does not restate it. Its *Acceptance
@@ -96,10 +136,11 @@ gate*, quoted verbatim:
 > All three clauses must hold. A change that adds the rule while altering the owner side has failed
 > this gate even if the rule text is perfect.
 
-Section map of the contract, as matched when this handoff was generated (*measured*): Identity `:12`,
-Local workspace `:25`, Scope `:41`, Non-goals and tripwire `:60`, Approved architecture `:84`,
-Task-specific inputs `:157`, Acceptance gate `:172`, Expected file surface `:186`, Known hazards
-`:222`, Definition of done `:242`. No section absent.
+Section map of the contract at the content head `a2357b47` (*measured*): Identity `:12`, Local
+workspace `:25`, Scope `:41`, Non-goals and tripwire `:77`, Approved architecture `:102`,
+Task-specific inputs `:201`, Acceptance gate `:216`, Expected file surface `:230`, Known hazards
+`:273`, Definition of done `:293`. No section absent. The contract additionally carries *Review
+round 1* `:412` and *Review round 2* `:445`, which did not exist when this document was generated.
 
 ---
 
@@ -136,18 +177,24 @@ Ordered by where the worker thinks a finding is most likely, not by size.
    must still name the house-rule gates including a new dependency (H7). Both are *measured* as
    present; whether the sentence achieves it in practice is a reading, not a measurement.
 
-**What is already measured and does not need re-checking:** that the canonical text and the `:96`
-corrective edit are byte-identical to the blocks approved in the contract. They were transferred
-programmatically out of the contract's fenced blocks and compared, not retyped. The open question is
-whether the approved text does what it claims, not whether it arrived intact.
+**What is already measured and does not need re-checking:** the canonical `## Decision authority` text
+is byte-identical to the block approved in the contract — transferred programmatically and compared,
+not retyped, and unchanged through both review rounds.
+
+**Corrected after round 2.** The `:96` corrective edit is **no longer** identical to the block
+approved at planning: rounds 1 and 2 changed it. The contract now carries both — the superseded
+original, marked as such, and the current approved text, which is what byte-identity is measured
+against from round 2 onward. Verified at the content head: the superseded block does **not** appear in
+`task-lifecycle.md`, and the current block does.
 
 ---
 
 ## 3. Scope compliance
 
 Every entry of the contract's *Must not touch* list, by object hash. All fourteen resolve at both
-ends and are equal (*measured*). A tree hash proves the whole subtree byte-identical, recursively,
-including that nothing was added into it.
+ends and are equal (*measured*, re-run at the content head `a2357b47` after the round-2 fixes). A
+tree hash proves the whole subtree byte-identical, recursively, including that nothing was added
+into it.
 
 | Entry | Type | Hash at base and head | Result |
 | --- | --- | --- | --- |
@@ -175,7 +222,7 @@ Re-run the claim rather than trusting it:
 ```bash
 W="C:/Code/Autostich-worktrees/agent-decision-authority"
 B=863febe54fce513c4171314eb8cfc0d86f997408
-H=aff76af2c3eab66d3bd6346cb069edb48ae7d41f
+H=a2357b4708578bff3d73c1945b76c0de074b50a8
 for e in CLAUDE.md .claude/** docs/engineering/conventions.md docs/engineering/testing.md \
          docs/engineering/architecture.md docs/engineering/NEW_MACHINE_SETUP.md src/** test/** \
          docs/localization/** docs/decisions/** package.json package-lock.json vite.config.js \
@@ -214,7 +261,7 @@ Run in the session that generated this handoff, from the contract's worktree, un
 | `npm run lint -- --max-warnings=0` | yes | **0** | clean |
 | `npm run build` | yes | **0** | built in 5.95 s |
 | `npm run gen:db` | yes | **0** | 219 entries |
-| **GitHub Actions `32572829351`** (Linux, head SHA `aff76af2…`) | not by this session — read from the run | **success** | `npm test`, lint, build, **preview-slot build**, `gen:db` all success |
+| **GitHub Actions `32579560825`** (Linux, content head `a2357b47`) | not by this session — read from the run | **success** | `npm test`, lint, build, **preview-slot build**, `gen:db` all success |
 | `npm run loc:export` | no | — | not applicable: the diff touches no `src/i18n/**` and no player-visible text (*measured* — no `src/` path appears in the range) |
 | Preview build (`VITE_PREVIEW=1`) | no | — | not applicable: the diff touches no preview-gated code, by the same measurement |
 
@@ -263,7 +310,8 @@ Fourteen boxes ticked, **one unticked** (*measured*). The unticked box, verbatim
 ```
 
 It stays unticked because the criterion is the **local** gate (`AGENTS.md` — *Validation gates*
-requires the local run), not because the change breaks tests: Linux CI is green at this head SHA.
+requires the local run), not because the change breaks tests: Linux CI is green at the content head
+`a2357b47`.
 
 The downgrade record exists (`task-contract.md:273`), verbatim:
 
@@ -317,8 +365,8 @@ verified:
   will find two where there are three.
 - **The contract quotes the rule text it approved**, so the same grep also returns four hits inside
   `task-contract.md`. Those are a record, not rule sites.
-- **Linux CI is green at this exact head commit.** GitHub Actions run `32572829351`, head SHA
-  `aff76af2c3eab66d3bd6346cb069edb48ae7d41f`: `npm test` **success**, lint success, build success,
+- **Linux CI is green at the content head.** GitHub Actions run `32579560825`, head SHA
+  `a2357b4708578bff3d73c1945b76c0de074b50a8`: `npm test` **success**, lint success, build success,
   preview-slot build success, `gen:db` success. The Windows timeout in §4 does not exist in the
   environment that enforces the gate. A reviewer running the suite on Linux should expect green.
 - The head commit is on `origin/feature/agent-decision-authority`; the worktree is clean.
@@ -396,7 +444,7 @@ The original five, kept for comparison.
 
 Generated by `/prepare-review` on 2026-08-22 against
 `docs/workstreams/agent-decision-authority/task-contract.md`, range
-`863febe54fce513c4171314eb8cfc0d86f997408..aff76af2c3eab66d3bd6346cb069edb48ae7d41f`.
+`863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8`, refreshed at round 3.
 
 **What this command did not verify:** it did not review the change, did not judge whether the rule
 text is correct or well-placed, did not decide any hazard status, and did not assess whether the
