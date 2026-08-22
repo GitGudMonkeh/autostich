@@ -3,7 +3,8 @@
 Ein Emblem je **Perk-Kategorie** (`CATEGORIES` in `src/game/perks.js`), nicht je Perk und nicht je Familie —
 das wären 130 Bilder. Sie sollen wie die Skill-Embleme als **Kopfstreifen** auf der Angebotskachel liegen.
 
-Einbau ist NICHT gemacht: Issue #402.
+**Einbau ist gemacht (icons-perks, 22.08.2026, Issue #402).** Der Abschnitt „Zone und Auslieferung" ganz
+unten hält den Stand fest; alles dazwischen ist der Sammelstand, wie er war, und wurde nicht angefasst.
 
 ## Die sieben Kategorien
 
@@ -130,3 +131,58 @@ Der Kopfstreifen zeigt die **oberen 76 %** des quadratischen Bildes (Zone 210 px
 `object-fit: cover`, `object-position: center top`). Bei Deck liegen 100 % des Lichts in diesem Fenster —
 die Unterkante des Stapels sitzt aber knapp an der Grenze. Für die restlichen sechs gilt: **Motiv in die
 oberen zwei Drittel, unteres Drittel fast schwarz.**
+
+> Nachtrag icons-perks, 22.08.2026: Die 76 % gelten unverändert, die zwei Pixelmaße daneben waren
+> geschätzt. GEMESSEN wird das Bild **265 px** breit gezeichnet (Kachel 270 minus 4 px Raritätskante
+> und 1 px Gegenkante), die Zone daraus **201 px** hoch (0,76 × 265).
+> Die Regel „Motiv in die oberen zwei Drittel" ist damit bestätigt: der Lichtschwerpunkt der sieben liegt
+> im Median bei 0,42 der Bildhöhe, und 97,5–100 % ihres Lichts liegen im Fenster.
+
+## Zone und Auslieferung
+
+*Nachtrag der Aufgabe `icons-perks`, 22.08.2026. Auf Deutsch, weil dieses Dokument einer festen deutschen
+Vorlage folgt und ein englischer Eintrag mittendrin sie bräche (`AGENTS.md` — Sprachregel, Ausnahme für
+Anhänge an Bestandsdokumente). Neues Material sonst: Englisch.*
+
+| | |
+| --- | --- |
+| Master | 7 × 1024 × 1024 WebP, hier im Ordner, unverändert |
+| Auslieferung | 7 × 384 × 384 WebP, `src/assets/perkcats/`, 42 kB |
+| Gebacken mit | `python3 scripts/skill-art-build.py bake --lot perkcats` |
+| Gezeigt als | Kopfstreifen der Perk-Angebotskachel, `.pk-strip` in `src/index.css`, nur ab 1400 px |
+| Zone | **265 × 201 CSS-px** |
+
+**Die Zone ist gemessen, nicht angenommen.** Der Bloom steckt in der Datei, und sein Radius ist eine
+CSS-Länge geteilt durch die Zonenbreite — eine geborgte Breite ergäbe einen Radius, der maßgeblich und
+falsch ist. Genau deshalb hat `scripts/skill-art-build.py` dieses Los bis hierher verweigert. Ausgelesen
+wurde die Breite in der laufenden Anwendung
+(`docs/workstreams/desktop-icons/icons-perks/perk-zone-probe.mjs`), und sie ist an jedem Desktop-Format
+gleich, an dem die Bilder überhaupt erscheinen: **265 px** bei 1600 × 900, 1920 × 1080 und 2560 × 1440.
+Die KACHEL ist 270 — die Overlay-Karte ist auf 880 px gedeckelt, das Dreier-Raster damit 830 px breit,
+eine Spalte (830 − 2 × 10)/3. Das BILD darin ist 5 px schmäler, weil `left: 0; right: 0` gegen die
+Polsterbox auflöst und `.as-edge-card` links 4 px Raritätskante plus 1 px an den übrigen Seiten trägt.
+Geteilt wird durch die Breite, in der das Emblem GEZEICHNET wird, nicht durch die Box drumherum.
+
+Drei Nachbarzahlen sind Fallen, keine Abkürzungen: `STRIP_W = 277`, gegen das die Skill-Lose gebacken
+sind und das nie an irgendetwas gemessen wurde; 270,66, die gemessene SKILL-Karte (`ICONS-VIS-01` in
+der Sichtprüfung des Asset-Audits); und 270, die Perk-Kachel — am richtigen Bildschirm gemessen, aber
+an der falschen Box.
+
+**Die sieben Faktoren oben sind unverändert übernommen worden**, nicht neu hergeleitet — sie stehen als
+`PERKCAT_LIGHT` im Backskript. Das ist eine Vorgabe des Aufgaben-Kontrakts und hat einen Grund: der
+Zielwert ist ein Median, und ein Median wandert. `align --lot perkcats` rechnet inzwischen mit einer
+anderen Statistik — dem Licht IM ZUGESCHNITTENEN, MASKIERTEN Zustand, s. `docs/art/legendaries/README.md`
+— und meldet deshalb eine Abweichung, statt eine Änderung vorzuschlagen.
+
+> Nachtrag Review-Runde 1, 22.08.2026: Diese Abweichung ist größer, als sie zuerst aussah. **Gemessen
+> dort, wo die Embleme erscheinen, spreizt dieser Satz 1,69-fach** — der Löser sagt für **B Stich** 1,56
+> gegen ausgelieferte 1,05. Der Grund ist derselbe wie beim Legendär-Los: die Faktoren oben sind gegen
+> die LEUCHTFLÄCHE des Masters gerechnet, und die Maske frisst je nach Motiv verschieden viel vom
+> unteren Bildrand. Nicht geändert — der Aufgaben-Kontrakt verlangt ausdrücklich, die Faktoren dieses
+> Dokuments anzuwenden statt sie neu herzuleiten, und der Satz ist am Sicht-Gate so abgenommen worden.
+> Für eine spätere Aufgabe notiert (`ICONS-PERK-VIS-05`).
+
+**Das Legendär-Los wird getrennt angeglichen** und hängt zusätzlich mittig statt oben (`.pk-strip-mid`),
+weil seine 21 Motive nachweislich nicht nach der Regel dieses Dokuments komponiert sind —
+Lichtschwerpunkt im Median 0,48 gegen 0,42 hier. Begründung und Messung in
+`docs/art/legendaries/README.md`. Für dieses Los ändert sich dadurch nichts.

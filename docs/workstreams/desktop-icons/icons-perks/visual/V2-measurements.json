@@ -1,0 +1,443 @@
+{
+  "label": "V2",
+  "origin": "http://localhost:5184",
+  "seedInput": "11",
+  "dpr": 1,
+  "results": {
+    "1280x720": {
+      "reached": true,
+      "viewport": {
+        "innerWidth": 1280,
+        "innerHeight": 720,
+        "dpr": 1
+      },
+      "wide": false,
+      "gridTemplateColumns": "230px 230px 230px",
+      "gap": "10px",
+      "gridWidth": 710,
+      "overlayCardWidth": 768,
+      "overlayCardRect": {
+        "x": 252,
+        "y": 28.8,
+        "w": 768,
+        "h": 662.39
+      },
+      "cards": [
+        {
+          "legendary": true,
+          "w": 230,
+          "h": 172.38,
+          "paddingTop": "12px",
+          "box": {
+            "padding": "12px",
+            "borderRadius": "12px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.831373 0.65098 0.227451 / 0.8)",
+            "overflow": "visible",
+            "position": "static"
+          },
+          "badge": "Rolle",
+          "name": "Vabanque",
+          "hasImg": false,
+          "strip": null
+        },
+        {
+          "legendary": false,
+          "w": 230,
+          "h": 172.38,
+          "paddingTop": "12px",
+          "box": {
+            "padding": "12px",
+            "borderRadius": "12px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.290196 0.870588 0.501961 / 0.8)",
+            "overflow": "visible",
+            "position": "static"
+          },
+          "badge": "Stich",
+          "name": "Starker Auftakt II",
+          "hasImg": false,
+          "strip": null
+        },
+        {
+          "legendary": false,
+          "w": 230,
+          "h": 172.38,
+          "paddingTop": "12px",
+          "box": {
+            "padding": "12px",
+            "borderRadius": "12px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.541176 0.541176 0.584314 / 0.8)",
+            "overflow": "visible",
+            "position": "static"
+          },
+          "badge": "Rolle",
+          "name": "Leibwache I",
+          "hasImg": false,
+          "strip": null
+        }
+      ]
+    },
+    "1600x900": {
+      "reached": true,
+      "viewport": {
+        "innerWidth": 1600,
+        "innerHeight": 900,
+        "dpr": 1
+      },
+      "wide": true,
+      "gridTemplateColumns": "270px 270px 270px",
+      "gap": "10px",
+      "gridWidth": 830,
+      "overlayCardWidth": 880,
+      "overlayCardRect": {
+        "x": 360,
+        "y": 45.66,
+        "w": 880,
+        "h": 808.67
+      },
+      "cards": [
+        {
+          "legendary": true,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.831373 0.65098 0.227451 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Vabanque",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 50%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "L_VAB_vabanque.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.290196 0.870588 0.501961 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Stich",
+          "name": "Starker Auftakt II",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_B_stich.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.541176 0.541176 0.584314 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Leibwache I",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_C_rolle.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        }
+      ]
+    },
+    "1920x1080": {
+      "reached": true,
+      "viewport": {
+        "innerWidth": 1920,
+        "innerHeight": 1080,
+        "dpr": 1
+      },
+      "wide": true,
+      "gridTemplateColumns": "270px 270px 270px",
+      "gap": "10px",
+      "gridWidth": 830,
+      "overlayCardWidth": 880,
+      "overlayCardRect": {
+        "x": 520,
+        "y": 135.66,
+        "w": 880,
+        "h": 808.67
+      },
+      "cards": [
+        {
+          "legendary": true,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.831373 0.65098 0.227451 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Vabanque",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 50%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "L_VAB_vabanque.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.290196 0.870588 0.501961 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Stich",
+          "name": "Starker Auftakt II",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_B_stich.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.541176 0.541176 0.584314 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Leibwache I",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_C_rolle.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        }
+      ]
+    },
+    "2560x1440": {
+      "reached": true,
+      "viewport": {
+        "innerWidth": 2560,
+        "innerHeight": 1440,
+        "dpr": 1
+      },
+      "wide": true,
+      "gridTemplateColumns": "270px 270px 270px",
+      "gap": "10px",
+      "gridWidth": 830,
+      "overlayCardWidth": 880,
+      "overlayCardRect": {
+        "x": 840,
+        "y": 315.66,
+        "w": 880,
+        "h": 808.67
+      },
+      "cards": [
+        {
+          "legendary": true,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.831373 0.65098 0.227451 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Vabanque",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 50%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "L_VAB_vabanque.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.290196 0.870588 0.501961 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Stich",
+          "name": "Starker Auftakt II",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_B_stich.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        },
+        {
+          "legendary": false,
+          "w": 270,
+          "h": 317.5,
+          "paddingTop": "167px",
+          "box": {
+            "padding": "167px 12px 12px",
+            "borderRadius": "6px",
+            "borderTopWidth": "1px",
+            "borderLeftWidth": "4px",
+            "borderRightWidth": "1px",
+            "borderBottomWidth": "1px",
+            "borderLeftColor": "color(srgb 0.541176 0.541176 0.584314 / 0.8)",
+            "overflow": "hidden",
+            "position": "relative"
+          },
+          "badge": "Rolle",
+          "name": "Leibwache I",
+          "hasImg": true,
+          "strip": {
+            "w": 265,
+            "h": 201,
+            "objectFit": "cover",
+            "objectPosition": "50% 0%",
+            "blend": "screen",
+            "mask": "linear-gradient(rgb(0, 0, 0) 62%, rgba(0, 0, 0, 0))",
+            "filter": "none",
+            "src": "perkcat_C_rolle.webp",
+            "alt": "",
+            "ariaHidden": "true"
+          }
+        }
+      ]
+    }
+  }
+}

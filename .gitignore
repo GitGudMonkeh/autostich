@@ -44,3 +44,8 @@ Thumbs.db
 
 # Temporäre Agent-Worktrees (nicht versionieren)
 .claude/worktrees/
+
+# Python-Bytecode aus scripts/ (entsteht, sobald ein Werkzeug skill-art-build.py importiert
+# statt es aufzurufen — z. B. beim Nachmessen). Gehoert nie in den Baum.
+__pycache__/
+*.pyc
