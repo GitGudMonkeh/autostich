@@ -49,7 +49,7 @@ On either platform, where an equivalent takes no colon argument, prefer it — `
 
 ### Project commands
 
-`.claude/commands/` holds `/create-task`, `/cleanup-task` and `/prepare-review`. All three are
+`.claude/skills/` holds `/create-task`, `/cleanup-task` and `/prepare-review`. All three are
 **owner-invoked** — a session cannot run them for itself. Where one of them covers the work at hand,
 name it and let the owner run it, rather than hand-rolling the equivalent Git commands.
 
