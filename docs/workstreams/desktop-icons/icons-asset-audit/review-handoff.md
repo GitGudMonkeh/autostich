@@ -16,7 +16,7 @@ Every claim below is marked *measured* (observed by running a command in the gen
 | --- | --- |
 | Round | **2.** Round 1 requested changes; all three blockers are addressed — see *Round 1* below |
 | Hazards with no recorded status anywhere | **0 of 5** — all five carry a status in the contract and in the evidence package (*measured*) |
-| Unticked Definition-of-done boxes | **1 of 12** (*measured*) — the **V3 human visual gate**, which only a person can close |
+| Unticked Definition-of-done boxes | **0 of 12** (*measured*) — V3 was passed by the owner on 2026-08-22 |
 | Downgrade records | **3** (DR-1 V1 not taken, DR-2 planning report reconstructed, DR-3 ice not seen in-app) |
 | Push state | **Pushed.** `cc1d2a63` is contained in `origin/task/icons-asset-audit` (*measured*, 2026-08-22) |
 

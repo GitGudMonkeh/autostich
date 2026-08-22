@@ -78,6 +78,16 @@ labelled as reconstructed after the fact** — a report written now cannot do wh
 for. Its substantive cost is **DR-2**: four of five open questions were settled during implementation
 rather than before it, including the toolchain, which is a house-rule gate.
 
+### V3 closed after the fixes
+
+The owner passed the visual gate on **2026-08-22** ("sieht super aus. passt so"), reviewing both
+captures at the measured geometry. Decision: **the ice lot ships as generated**, the documented cap
+is not applied to `SK_ICE_L03`, and `ICONS-VIS-02` is closed as *no action*. Taken in knowledge of
+DR-1 (no V1 baseline) and DR-3 (no ice card rendered by the app itself) — accepting the gate on that
+evidence is part of what was decided.
+
+With that, **all 12 Definition-of-done boxes are ticked** and three downgrade records stand.
+
 ### One finding that came out of doing B2
 
 `ICONS-VIS-01`: the bake converts the bloom radius through `STRIP_W = 277`, while the rendered strip

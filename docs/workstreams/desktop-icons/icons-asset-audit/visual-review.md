@@ -5,8 +5,9 @@ The §8 lifecycle of `docs/engineering/task-lifecycle.md` for this task. Tier C 
 
 Added in review round 1 (2026-08-22) after the reviewer recorded its absence as a blocker.
 
-**V3 is not recorded here as passed.** A person has to look at V2 and decide; an agent must not
-report a visual result as approved (§8 — *V3*). Everything below is capture and classification.
+**V3 was passed by the owner on 2026-08-22**, recorded below with the verdict verbatim. Nothing in
+this document is an agent's visual approval — the capture and classification are the worker's, the
+judgement is not (§8 — *V3*).
 
 ---
 
@@ -80,16 +81,29 @@ regenerated. They are **not** screenshots of the application.
 
 ---
 
-## V3 — human visual review gate: **OPEN**
+## V3 — human visual review gate: **PASSED**
 
-Not passed, not failed — not yet run. It needs a person to look at the two captures above and decide.
+| Field | Value |
+| --- | --- |
+| Decided by | **Owner** (`GitGudMonkeh`) |
+| Date | 2026-08-22 |
+| Reviewed | `visual/V2-ice-strip-geometry.png` and `visual/V2-lightning-replacements.png` |
+| Verdict, verbatim | *"sieht super aus. passt so"* |
 
-The specific question the reviewer raised, put plainly for whoever runs V3:
+The question put to the gate was:
 **`SK_ICE_L03` Große Lawine measures 150.6 light against a lot median of 60.7 (≈2.5×).** In
 `V2-ice-strip-geometry.png` it is the brightest tile of the 21, and the measurement and the picture
 agree. Whether that is too bright *in the set* is the judgement V3 exists to make. For context, the
 lightning lot ships two tiles at the same ratio (`L02` 127.2 and `L03` 132.9 against a median of
 57.8) and shipped un-aligned deliberately.
+
+**Decision: the ice lot ships as generated. No brightness alignment is applied**, and the documented
+cap is not used on `SK_ICE_L03`. `ICONS-VIS-02` below is therefore closed as *no action*, not carried
+forward as work.
+
+The owner reviewed the captures at the measured geometry, in knowledge of **DR-1** (no V1 baseline
+exists) and **DR-3** (no ice card was rendered by the application itself). Accepting the gate on that
+evidence is part of what was decided here.
 
 ---
 
@@ -101,7 +115,7 @@ the workstream backlog at integration.
 | ID | Finding (verbatim, 2026-08-22) | Classification | Disposition |
 | --- | --- | --- | --- |
 | `ICONS-VIS-01` | The bake converts the bloom radius through `STRIP_W = 277`, but the rendered `.sk-strip` measures **270.66 px** wide in the running app at 1920 × 1080. The baked radius is therefore ~2.3 % wider than the authored 16 CSS-px implies. | **Pre-existing, out of scope** — `277` predates this task; it is in the original script and in `docs/art/skills/README.md`, and the lightning set already shipped with it. | Backlog entry. Fixing it would re-bake every delivery file in every lot, so it is a deliberate decision, not a drive-by. |
-| `ICONS-VIS-02` | `SK_ICE_L03` Große Lawine carries ≈2.5× the ice lot's median light (150.6 vs 60.7) and is visibly the brightest tile of the 21. | **New design question** | Input to V3 above and to `icons-skills`. Not a defect: the documented cap method exists and was deliberately not applied, for the reason recorded in `evidence-package.md` §6. |
+| `ICONS-VIS-02` | `SK_ICE_L03` Große Lawine carries ≈2.5× the ice lot's median light (150.6 vs 60.7) and is visibly the brightest tile of the 21. | **New design question — CLOSED at V3, no action** | Put to the owner at V3 on 2026-08-22 and accepted: the lot ships as generated, the documented cap is not applied. Nothing carried forward. |
 | `ICONS-VIS-03` | Fire offer cards render with no header art, because `docs/art/skills/fire/` holds 6 of 21 masters and the lot-completeness gate skips the lot. | **Expected platform behaviour** | Documented, no fix. This is the gate working as designed; it resolves when `icons-skills` completes the fire lot. |
 | `ICONS-VIS-04` | On the replacement `SK_LIGHTNING_L01` Donnergott, gold reads in two places (crown and base sparks). `docs/art/skills/README.md` states gold sits at exactly one place per legendary. | **New design question** | Backlog entry, input to `icons-skills`. Artwork is final and owner-approved; this records the deviation rather than reopening it. |
 

@@ -205,8 +205,9 @@ Added in review round 1 (2026-08-22):
 
 - [x] Visual gate run and classified — `visual-review.md`; V2 captures committed under `visual/`,
       V4 table carries four IDs, none classified as a defect in this task
-- [ ] **V3 human visual review gate** — open. A person compares V2 and decides; an agent must not
-      report a visual result as approved (`task-lifecycle.md` §8)
+- [x] **V3 human visual review gate** — passed by the owner on 2026-08-22 ("sieht super aus. passt
+      so"). Decision: the ice lot ships as generated, no cap on `SK_ICE_L03`. Recorded in
+      `visual-review.md` §V3, taken in knowledge of DR-1 and DR-3
 - [x] Per-lot delivery size and render-zone width configurable in `scripts/skill-art-build.py`
       — review finding; `corners` would have been squashed from 3:2 to 1:1 on activation
 
