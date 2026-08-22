@@ -4,7 +4,8 @@ Fraktions-Ornamente für den Kopf der Skill-Wahl (ab 1280 px). Sie sollen aus de
 tote Fläche des Kartenkopfs laufen (~300 × 115 px je Seite) und **mit dem aktiven Reiter wechseln** — damit
 sind sie Information („du bist bei Blitz"), nicht Deko.
 
-Einbau ist NICHT gemacht: Issue #402.
+Einbau ist GEMACHT (icons-corners, 22.08.2026) — Issue #402 damit erledigt. Zone, Auslieferung
+und die beiden Einbaustellen stehen unten unter „Einbau".
 
 ## Ablage
 
@@ -74,3 +75,147 @@ eine große sehr schwache Fläche aus Kapillaren und Korona. Jede Stufe etwa hal
 
 **Ins Bild gehört normale Helligkeit, nicht vorgedimmte.** Der erste Versuch war schon auf 10 % heruntergemalt
 (hellstes Pixel 57 von 255) — auf 10 % Deckkraft gelegt wäre er unsichtbar gewesen. Die Oberfläche dimmt.
+
+
+## Einbau (icons-corners, 22.08.2026) — Issue #402 erledigt
+
+*Nachtrag an ein deutsches Dokument mit festem Aufbau; er bleibt deshalb deutsch (AGENTS.md,
+„Appending to an existing German document"). Die Arbeitsstrom-Dokumente der Aufgabe sind englisch.*
+
+### Zone: 300 × 115 px, eine für beide Bildschirme
+
+Gemessen in der laufenden Anwendung, nicht aus dem Stylesheet gelesen — die Sonde und ihre Ausgabe
+liegen bei:
+
+    docs/workstreams/desktop-icons/icons-corners/corner-zone-probe.mjs
+    docs/workstreams/desktop-icons/icons-corners/visual/V1-measurements.json
+
+| | Skill-Wahl | Perk-Wahl |
+|---|---|---|
+| Overlay-Karte | 880 px (Polsterbox 878) | 880 px (Polsterbox 878) |
+| Kopfpolster | 16 px | 24 px |
+| Kopfband bis zur Aktionsleiste | **77 px** | **115 px** |
+
+Bei 1600 × 900, 1920 × 1080 und 2560 × 1440 identisch; bei 1280 × 720 liegt die Karte bei 768 px und
+unter dem 1400-px-Tor — dort wird gar kein Ornament gerendert.
+
+**Die BREITE ist der Backwert** (`strip_w=300` in `scripts/skill-art-build.py`), denn durch sie wird der
+Bloom-Radius geteilt. Anders als bei den Emblem-Streifen ist sie *erklärt* statt *ausgerechnet*: ein
+Streifen mit `left:0; right:0` ist so breit, wie die Kachel es zulässt, ein Eckornament bekommt seine
+Breite. Gewählt wurde sie trotzdem gegen eine gemessene Hülle: breitester Kopftext 244 px, mittig, es
+bleiben ~317 px je Seite (Perk) bzw. ~324 px (Skill). Das Licht der Master läuft bei ~213 px aus.
+
+**Die HÖHE ist bewusst KEINE Kopfhöhe.** Der Kopf wächst mit Runden-Score und Bonushinweis, die
+Aktionsleiste rutscht mit. Deshalb eine feste Zone von 115 px, und die Maske ist bei 62 % = 71 px
+fertig — also vor dem schmalsten je gemessenen Kopf (77 px). So entsteht keine Kante, egal wie hoch
+der Kopf gerade steht. `test/corner-art.test.js` rechnet genau diese Ungleichung nach.
+
+### Auslieferung: `src/assets/corners/`, 600 × 400
+
+Fünf Dateien, 80 kB zusammen — eine je Master. **600 ist hergeleitet, nicht geerbt**: 300 CSS-px × Desktop-DPR-Deckel 2
+(`DPR_CAP_DESKTOP`, `src/ui/fx/mobileTier.js`) — die Skill-Lose liefern 384 auf eine 265er Zone, was
+`icons-perks` selbst als geschätzt und nicht gemessen vermerkt hat (dessen offene Frage Q-D). Lange
+Kante 600, kurze aus dem 3:2 der Master abgeleitet, nie quadratisch gequetscht.
+
+### Die Deckkraft-Tabelle bleibt eine ANZEIGE-Größe
+
+*(Die Zahlen hier sind die BALANCE der Lose zueinander. Der gemeinsame Pegel darüber wurde am
+Sicht-Gate auf 3× gesetzt — s. „Am Sicht-Gate entschieden" unten. Die Verhältnisse ändert das nicht.)*
+
+Sie steht als `CORNER_OPACITY` in `src/ui/cornerArt.js` und ist **nicht** in die Pixel gebacken — das
+Los backt mit Licht 1,0. Beides zusammen hieße doppelt korrigiert und rund ein Hundertstel der
+gewollten Helligkeit; `test/corner-art.test.js` hält die zwei Wege auseinander.
+
+**Nachgemessen, wie gezeigt** (Differenz V2 − V1 über die echten 300 × 115 der Zone, 1920 × 1080):
+
+| Los | Deckkraft | Mittleres Zusatzlicht | Spitze (p99) | Fläche > 2 |
+|---|---|---|---|---|
+| Blitz | 11,0 % | 0,737 | 13,43 | 10,34 % |
+| Feuer | 10,0 % | 0,579 | 9,20 | 8,68 % |
+| Eis | 9,2 % | 0,734 | 10,52 | 11,89 % |
+| Pflanze | 6,4 % | 0,655 | 7,79 | 12,79 % |
+| Perk | 15,6 % | 0,593 | 9,19 | 9,11 % |
+
+**Streuung 1,27-fach** — die Tabelle hält, was sie versprochen hat, und zwar ohne einen eigenen
+Angleich-Lauf. Was zwischen den Losen wirklich verschieden ist, ist nicht die Lichtmenge, sondern ihre
+VERTEILUNG: Pflanze trägt die größte Fläche bei der niedrigsten Spitze (weicher Teppich), Blitz die
+höchste Spitze bei mittlerer Fläche (Linien). Wer die Ecken „ungleich hell" findet, meint diesen
+Unterschied, nicht die Deckkraft.
+
+### Die beiden Einbaustellen
+
+`src/ui/CardCorners.jsx` — eine Komponente, beide Bildschirme, je zwei Ornamente, das rechte über
+`transform: scaleX(-1)` gespiegelt und an die rechte Kante verankert. Regeln in `src/index.css`
+(`.co-corner`), Gate im JSX wie bei den Emblemen, damit unter 1400 px kein `<img>` im DOM steht.
+
+- **Skill-Wahl**: das Ornament folgt dem AKTIVEN REITER (`curG.arch`), nicht dem Kartenakzent.
+- **Perk-Wahl**: eine Ecke, weil es eine Identitätsfarbe gibt. Beide Sonderwünsche aus dem Abschnitt
+  „Die Perk-Ecke ist bewusst anders gebaut" sind umgesetzt — 6 px nach innen versetzt (gegen die drei
+  parallelen roten Linien aus Akzentrahmen, Haarlinie und Bildkante) und die Maske setzt früher ein
+  (6 % statt 18 %, fertig bei 55 % statt 62 %).
+
+- **Legendär-Phase**: dieselbe Bindung wie die Skill-Wahl — die Ecke folgt dem aktiven Reiter. Sie kam
+  am Sicht-Gate dazu und war vorher kein Ziel dieser Aufgabe; s. unten.
+
+
+## Am Sicht-Gate entschieden (V3, 22.08.2026)
+
+Zwei Änderungen aus dem Sicht-Gate, beide Eigentümer-Entscheidungen, keine technischen.
+
+### 1. Pegel 3×
+
+Befund in Runde 1: „gut platziert, aber zu transparent, man kann sie kaum erkennen." Beurteilt an
+einer Vier-Stufen-Tafel bei identischem Spielzustand
+(`docs/workstreams/desktop-icons/icons-corners/visual/V3-gain-options.png`). 4× wurde in derselben
+Runde verworfen: die Filigran-Ecke liest sich dort als Rahmen statt als Ecke.
+
+Umgesetzt als EIN Regler (`CORNER_GAIN` in `src/ui/cornerArt.js`), nicht als fünf geänderte Zahlen.
+Das trennt zwei Dinge, die nicht zusammengehören:
+
+- die **Balance** zwischen den Losen — gemessen, oben in dieser README, nicht anzufassen;
+- den **Pegel** des Ganzen — eine Gestaltungsfrage, die dem Eigentümer gehört.
+
+`test/corner-art.test.js` prüft deshalb die VERHÄLTNISSE, nicht die absoluten Werte: der Pegel darf
+wandern, ein still geänderter Einzelwert fällt auf. Der entschiedene Pegel selbst ist zusätzlich
+festgeschrieben — sonst könnte er unbemerkt auf 1 zurückfallen, und genau diesen Zustand hat das Gate
+abgelehnt. Diese Lücke hat der Gegen-Check gefunden, nicht die Planung.
+
+### 2. Die Legendär-Phase bekommt eine Ecke — die ihres Reiters
+
+Auf Wunsch des Eigentümers am Gate. Sie war vorher ausdrücklich KEIN Ziel dieser Aufgabe: der Contract
+begrenzte die Ornamente auf die zwei Auswahl-Bildschirme. Die Erweiterung ist damit eine bewusste
+Scope-Änderung und keine stille.
+
+**Gebaut und wieder verworfen: eine goldene Phasen-Ecke.** Der erste Anlauf gab der Legendär-Phase
+eine eigene Identitäts-Ecke — das Perk-Filigran, beim Backen auf `#d4a63a` umgefärbt. Technisch
+sauber (ein Motiv, ein Master, kein Laufzeit-Filter, Deckkraft auf 11,4 % hergeleitet, weil Gold das
+1,369-fache Licht des Rots trägt), am Gate aber verworfen: die Legendär-Wahl spricht die Sprache der
+SKILL-Wahl — dieselbe Reiterzeile, dieselben Skill-Embleme auf den Karten — und eine eigene Ecke im
+Kopf hätte eine zweite Aussage dazugesetzt, die der Bildschirm nicht braucht. Das Legendäre steht im
+Titel und im Gold-Rahmen der Karte.
+
+**Ausgeliefert wird die FRAKTIONS-Ecke des aktiven Reiters**, wortgleich zur Skill-Wahl: Blitze bei
+Blitz, Ranken bei Pflanze. Die Schale dort wechselt ohnehin schon mit dem Reiter.
+
+Mit der Entscheidung ist die Umfärb-Mechanik wieder aus dem Backskript verschwunden — sie hätte keinen
+Aufrufer mehr gehabt, und eine Fähigkeit ohne Aufrufer ist ein Versprechen, das niemand prüft.
+Vergleichsbild beider Varianten:
+`docs/workstreams/desktop-icons/icons-corners/visual/Q9-legendaer-varianten.png`.
+
+### Nachgemessen bei ausgeliefertem Pegel
+
+Differenz gegen die Grundlinie über die echten 300 × 115 der Zone, 1920 × 1080:
+
+| Los | Balance | × 3 = Deckkraft | Mittleres Zusatzlicht | Spitze (p99) | Fläche > 2 |
+|---|---|---|---|---|---|
+| Blitz | 11,0 % | 33,0 % | 2,269 | 40,00 | 18,89 % |
+| Feuer | 10,0 % | 30,0 % | 1,751 | 27,51 | 16,74 % |
+| Eis | 9,2 % | 27,6 % | 2,241 | 31,39 | 19,57 % |
+| Pflanze | 6,4 % | 19,2 % | 1,998 | 23,88 | 22,90 % |
+| Perk | 15,6 % | 46,8 % | 1,775 | 27,92 | 16,44 % |
+
+**Streuung 1,30-fach** (bei Pegel 1 waren es 1,27). Der Pegelwechsel hat die Balance also nicht
+verschoben — genau dafür ist der eine Regler da.
+
+Die Legendär-Phase hat keine eigene Zeile, weil sie kein eigenes Los hat: sie zeigt die
+Fraktions-Ecken und ist durch deren Zeilen abgedeckt.
