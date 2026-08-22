@@ -70,6 +70,20 @@ const SURFACES = [
   { id: "options", steps: [{ text: "Optionen|Options" }], marker: ".op-head, .as-ring-run" },
   { id: "feedback", steps: [{ text: "Feedback" }], marker: ".fb-form" },
   { id: "privacy", steps: [{ text: "Datenschutz|Privacy" }], marker: ".as-panel" },
+
+  /* ---- in-run surfaces ----------------------------------------------------
+     Measured 2026-08-22: a run OPENS on the skill choice, so that screen needs no play at all. The
+     run stage follows once a skill is taken, and the perk choice arrives about twelve seconds later
+     with turbo at MAX. Formation, architect, victory, run details and the run dialogs sit further
+     into the schedule and are still not reached — they stay named gaps in survey-findings.md §4. */
+  { id: "skill-choice", steps: [{ text: "Lauf beginnen|Start run", settle: 2200 }], marker: ".sk-offers" },
+  { id: "run-stage",
+    steps: [{ text: "Lauf beginnen|Start run", settle: 2200 }, { sel: ".sk-offers button", settle: 1800 }],
+    marker: ".rn-shell" },
+  { id: "perk-choice",
+    steps: [{ text: "Lauf beginnen|Start run", settle: 2200 }, { sel: ".sk-offers button", settle: 1500 },
+            { turbo: true }, { until: ".lv-offercard", maxMs: 90000 }],
+    marker: ".lv-offercard" },
 ];
 
 /* ------------------------------------------------------------------ server */
@@ -152,20 +166,50 @@ const clickSel = (sel, nth = 0) => `(() => {
   hit.click(); return { ok: true };
 })()`;
 
+/* Turbo to MAX. Autostich resolves tricks automatically — the player only decides between rounds —
+   so reaching a decision screen is a matter of waiting, and waiting is what the survey must not do
+   at real speed. */
+const TURBO = `(() => {
+  const m = Array.prototype.slice.call(document.querySelectorAll("button"))
+    .find((b) => (b.textContent || "").trim() === "MAX");
+  if (!m) return { ok: false, why: "no MAX turbo button" };
+  m.click(); return { ok: true };
+})()`;
+
 const hasMarker = (sel) => `(() => !!document.querySelector(${JSON.stringify(sel)}))()`;
 
 /* ------------------------------------------------------------------ one cell */
 
 async function measure(c, surface) {
+  /* Starting a run writes as_activerun, and a saved run changes the hub for EVERY surface measured
+     afterwards — the start button becomes "continue". Clearing it per surface is what keeps the
+     in-run cells from silently contaminating the menu cells. */
+  await evaluate(c, `(() => { try { localStorage.removeItem("as_activerun"); } catch (e) {} return 1; })()`);
   await goto(c, ORIGIN, { settleMs: 900 });
   const trace = [];
   for (const step of surface.steps) {
-    const r = step.tile !== undefined ? await evaluate(c, clickTile(step.tile))
-            : step.sel !== undefined ? await evaluate(c, clickSel(step.sel, step.nth || 0))
-                                      : await evaluate(c, clickText(step.text));
+    let r;
+    if (step.turbo) {
+      r = await evaluate(c, TURBO);
+    } else if (step.until) {
+      /* Poll rather than sleep a guessed amount. A fixed wait would either be too short on a slow
+         machine or waste minutes on a fast one, and it could not report WHY it failed. */
+      const deadline = Date.now() + (step.maxMs || 90000);
+      r = { ok: false, why: `${step.until} never appeared within ${(step.maxMs || 90000) / 1000}s` };
+      while (Date.now() < deadline) {
+        if (await evaluate(c, hasMarker(step.until))) { r = { ok: true }; break; }
+        await sleep(1200);
+      }
+    } else if (step.tile !== undefined) {
+      r = await evaluate(c, clickTile(step.tile));
+    } else if (step.sel !== undefined) {
+      r = await evaluate(c, clickSel(step.sel, step.nth || 0));
+    } else {
+      r = await evaluate(c, clickText(step.text));
+    }
     trace.push({ step, ...r });
-    if (!r.ok) return { reached: false, trace };
-    await sleep(700);
+    if (!r.ok) return { reached: false, trace, why: r.why };
+    await sleep(step.settle || 700);
   }
   const settled = await evaluate(c, SETTLE);
   if (!await evaluate(c, hasMarker(surface.marker))) {
@@ -173,6 +217,24 @@ async function measure(c, surface) {
   }
   const probe = await evaluate(c, probeSource());
   return { reached: true, trace, settled, ...probe };
+}
+
+/* Every cell runs against a wall-clock deadline, and this is not belt-and-braces — it cost 53
+   minutes to learn.
+
+   cdp.mjs sends a CDP command over a websocket and awaits the reply with NO timeout. When the
+   browser dies mid-run, that promise never settles: the survey sat on one cell for the better part
+   of an hour, six node processes alive, zero Chrome processes left, and the log frozen mid-line with
+   nothing to say why. Same failure family as the goto() hang in pixel-diff.mjs — a wait with no
+   upper bound, in shared tooling, that only shows itself when something upstream disappears.
+
+   Fixing cdp.mjs would touch every caller, so the bound lives here instead: one cell may fail, the
+   matrix may not. A cell that trips this is recorded as unreached with the reason, exactly like a
+   missing marker. */
+function withDeadline(promise, ms, what) {
+  let timer;
+  const bell = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(what + ": no answer within " + (ms / 1000) + "s — browser gone?")), ms); });
+  return Promise.race([promise, bell]).finally(() => clearTimeout(timer));
 }
 
 /* ------------------------------------------------------------------ shrinkage
@@ -230,7 +292,10 @@ try {
         const key = `${lang}/${size}/${s.id}`;
         let cell;
         try {
-          cell = await measure(c, s);
+          /* The perk choice legitimately waits up to 90 s for a decision to arrive; everything else
+             should be done inside 60. Give each cell its own budget plus headroom. */
+          const budget = (s.steps || []).reduce((t, st) => t + (st.maxMs || 0), 0) + 90000;
+          cell = await withDeadline(measure(c, s), budget, `${lang}/${size}/${s.id}`);
         } catch (e) {
           cell = { reached: false, why: String(e && e.message || e) };
         }
@@ -255,6 +320,20 @@ try {
   await server.stop();
 }
 
-writeFileSync(join(OUT, "matrix.json"), JSON.stringify(matrix, null, 1));
-const total = Object.keys(matrix.cells).length;
+/* MERGE, do not overwrite. The full matrix takes long enough that it is run in chunks — one size at
+   a time, both languages — and a chunk that replaced the file would throw away every earlier one.
+   Cells are keyed lang/size/surface, so a re-run of the same chunk replaces exactly its own cells
+   and leaves the rest standing. */
+const target = join(OUT, "matrix.json");
+let merged = matrix;
+if (existsSync(target)) {
+  try {
+    const prev = JSON.parse(readFileSync(target, "utf8"));
+    merged = { ...matrix, cells: { ...prev.cells, ...matrix.cells } };
+    merged.sizes = [...new Set([...(prev.sizes || []), ...matrix.sizes])];
+    merged.langs = [...new Set([...(prev.langs || []), ...matrix.langs])];
+  } catch (e) { process.stdout.write("  (existing matrix.json unreadable, starting fresh)" + String.fromCharCode(10)); }
+}
+writeFileSync(target, JSON.stringify(merged, null, 1));
+const total = Object.keys(merged.cells).length;
 process.stdout.write(`\n  ${total} cells · ${unreached} not reached\n  evidence -> ${join(OUT, "matrix.json")}\n`);

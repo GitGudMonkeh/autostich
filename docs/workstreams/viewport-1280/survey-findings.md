@@ -15,8 +15,8 @@ the input to T2.
 | --- | --- |
 | Sizes | 1920×1080 (reference) · 1600×900 · 1536×791 · 1400×700 · 1280×720 |
 | Languages | DE and EN |
-| Surfaces | 10 — hub, upgrades, shop-packs, leaderboard, stats, guide, glossary, options, feedback, privacy |
-| Cells | **100, none unreached** |
+| Surfaces | 13 — hub, upgrades, shop-packs, leaderboard, stats, guide, glossary, options, feedback, privacy, **skill-choice, run-stage, perk-choice** |
+| Cells | **130, none unreached** |
 | Build | production, real CDP viewport, `vite preview --port 5181 --strictPort` |
 
 Determinism controls are the ones `phone-proof.mjs` earned: reduced motion, seeded `Math.random`,
@@ -46,8 +46,31 @@ language, at 1920×1080. Absolute values stay in `matrix.json`.
 | `privacy` | **278.8 px** (de 1400×700) | **4** (de 1536×791) | **6** (de 1536×791) | — | — | 0×15 px |
 | `upgrades` | **116 px** (de 1400×700) | **1** (de 1400×700) | **14** (de 1400×700) | — | — | 0×15 px |
 | `options` | **103.6 px** (de 1280×720) | — | **2** (de 1400×700) | — | — | 0×15 px |
+| `perk-choice` | 4.9 px | — | **46** (de 1280×720) | **6** (de 1280×720) | — | none |
+| `skill-choice` | 3.8 px | — | **35** (de 1280×720) | **3** (de 1280×720) | — | none |
 | `shop-packs` | 2.8 px | **6** (de 1400×700) | **6** (de 1400×700) | **7** (de 1280×720) | — | 0×15 px |
-| `feedback` · `hub` · `leaderboard` · `stats` | — | — | — | — | — | 0×15 px |
+| `feedback` · `hub` · `leaderboard` · `stats` · `run-stage` | — | — | — | — | — | 0×15 px (none for `run-stage`) |
+
+### 2.0 The two decision screens
+
+Both open on the level-up rig, and both are damaged in the same way — not by a wide overflow but by
+**many small ones and hard truncation**. `.lv-rig` is a three-track grid whose middle track is fixed
+at 924 px, so every pixel of lost window width comes off the two side rails:
+
+| | 1920×1080 | 1600×900 | 1536×791 | 1400×700 | 1280×720 |
+| --- | --- | --- | --- | --- | --- |
+| `.lv-rig` side rail | 482 px | 322 px | 290 px | 222 px | **162 px** |
+
+The rail asks for 320 px. At 1280 it gets **half**. What that does, measured on `perk-choice` at
+1280×720: "Deine aktiven Formationen" is given 51 px for 166 px of text — **69 % cut**; "Formation"
+38 of 54 px; "Gebäude" 38 of 43 px.
+
+This is the owner's visual finding `V1280-04` (*"die seite is komplett kaput. mittelteil kleiner
+skalieren das die seiten panels ganz angezeigt werden"*), now with numbers, and it names the exact
+mechanism: the middle track is the one that refuses to give.
+
+**`run-stage` is clean on every metric at every size** — no overflow, no truncation, no scrolling,
+in either language.
 
 ### 2.1 The guide is the worst case, and it is a text problem
 
@@ -94,19 +117,19 @@ Every row of `planning-report.md` §1.5, marked against measurement.
 
 | # | Site | Predicted | Measured | Verdict |
 | --- | --- | --- | --- | --- |
-| 1 | `.go-blist` (victory) | real overflow ~70–90 px | — | **not measured** — victory needs a live run |
+| 1 | `.go-blist` (victory) | real overflow ~70–90 px | — | **not measured** — victory sits deeper in the run schedule |
 | 2 | Guide `--gs` `.82` | labels 10 → 8.2, tags 10.5 → 8.6, body 13 → 10.7 | `.82` from 1536 down; 12.6 → 9.45, 13.2 → 9.9, floor 8.61 px | **HELD, and worse** — the step engages at 1536, not 1280 |
 | 3 | `.cz-split` / `.cz-shotlab` (shop) | high | 2.8 px added overflow; **7 truncated deck names** at 1280 | **HELD in kind, not in severity** — the damage is truncation, not overflow |
 | 4 | `.st-readout` (stats) `1fr 620px` | high | **zero** added overflow, outside, truncation or shrinkage at every size | **REFUTED** |
 | 5 | `.lb-page` / `.lb-body` (leaderboard) | medium | **zero** on every metric at every size | **REFUTED** |
 | 6 | `.up-vgrid` `repeat(6, minmax(0,1fr))` | ~210 px per node at 1400, ~190 at 1280 | 215 px at 1920, **147 px at 1400, 128.5 px at 1280** | **HELD in direction, REFUTED in magnitude** — a third narrower than predicted |
 | 7 | `.up-facbody` / `.gd-desk` / `.gl-desk` / `.fb-form` / `.un-first` | medium, −120 px each | guide and glossary badly hit; `.fb-form` (feedback) **zero on every metric** | **SPLIT** — held for the guide and glossary, refuted for feedback |
-| 8 | Run stage `--rn-w` / `--bf-w` | not a regression; 1280×720 better than 1400×700 | — | **not measured** — needs a live run |
+| 8 | Run stage `--rn-w` / `--bf-w` | not a regression; 1280×720 better than 1400×700 | `run-stage` clean on every metric at every size, both languages | **HELD** |
 | 9 | `.hub-pair` zoom floor `0.85` | ~1449 zoomed px at 1280 | zoom is **0.85 at 1600, 1536, 1400 and 1280**; 1 only at 1920 | **HELD, floor reached far earlier** than the row implies |
 | 10 | `#ecke` `--as-corner-lane: 92px` | band reaches to 1280, 92 px unverified there | **92 px at every size, 1920 down to 1280** | **HELD** — constant, now verified. Whether 92 px is *right* at 1280 is a design question |
-| 11 | `.lv-rig` wings | 178 px each | — | **not measured here**; computed at 162 px and recorded in `evidence-T1.md` §7.7, confirmed visually as `V1280-04` |
+| 11 | `.lv-rig` wings | 178 px each at 1280, 238 at 1400 | **162 px at 1280, 222 at 1400** | **HELD in direction, off by 16 px** — the prediction omitted the 32 px overlay padding. The in-file arithmetic recorded in `evidence-T1.md` §7.7 said 162 px and is confirmed |
 
-**Score: 5 held, 2 refuted, 2 split, 3 not measured.**
+**Score: 7 held, 2 refuted, 2 split, 1 not measured.**
 
 The two clean refutations matter more than the hits. Rows 4 and 5 were rated "high" and "medium" and
 produce **no measurable damage at any size in either language**. Both were derived by reading grid
@@ -120,18 +143,24 @@ prediction reasoned about a construction that is not where it was thought to be.
 
 Named, per contract §5.4 and acceptance §8.4.
 
-### 4.1 Seven of the fifteen surfaces in §5.2
+### 4.1 Four of the fifteen surfaces in §5.2
 
-`perk choice` · `skill choice` · `formation phase with buildings / architect contour` · `architect` ·
-`victory screen` · `run details` · `run dialogs`.
+`formation phase with buildings / architect contour` · `architect` · `victory screen` ·
+`run details` · `run dialogs`.
 
-All seven sit behind a live run. The survey drives the production build, and the only direct route
-into a chosen run state — `DevRunSetup`, which takes a per-round schedule of
-`skill` / `perk` / `formation` / `shop` — is `VITE_PREVIEW`-gated and folded out of production. The
-likely route is a `RESTORE_RUN` snapshot injected into `localStorage`; it is not built.
+**Three in-run surfaces WERE reached**, and the assumption that they needed a snapshot injection or a
+`VITE_PREVIEW` route was wrong. Measured: a run **opens on the skill choice**, so that screen needs no
+play at all; the run stage follows one click later; and the perk choice arrives about twelve seconds
+after that with turbo at MAX. Autostich resolves tricks automatically, so reaching a decision screen
+is a matter of waiting, not of driving.
 
-**This is the largest gap in commit 4 and it is not a small one:** three §1.5 predictions (rows 1, 8,
-11) and two of the owner's four visual findings (`V1280-01`, `V1280-04`) live on those screens.
+What remains unreached sits further into the round schedule than a survey can wait for. Getting there
+needs a **set schedule** — `DevRunSetup` builds exactly that (`skill` / `perk` / `formation` / `shop`
+per round) but is `VITE_PREVIEW`-gated, while the survey drives production by contract §3. That
+conflict is unresolved and is the remaining work.
+
+**One §1.5 prediction (row 1, the victory screen) and one of the owner's visual findings
+(`V1280-02`, the challenger deck) still live on unmeasured screens.**
 
 ### 4.2 Named in the contract, still not measured
 
@@ -146,6 +175,8 @@ likely route is a `RESTORE_RUN` snapshot injected into `localStorage`; it is not
   branch as a whole was not enumerated.
 - **Leaderboard tabs.** Global only; `ranked` was not measured.
 - **The username modal** (`.un-first`, §1.5 row 7) — reachable only on first start.
+- **Only the first decision of a run.** The skill and perk choices measured are the ones a run opens
+  with; later offers carry different content and may be longer.
 - **2560×1440** — out of scope by the planning report's own decision.
 
 ---

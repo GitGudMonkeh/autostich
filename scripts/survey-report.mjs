@@ -35,6 +35,29 @@ const surfaces = [...new Set(Object.keys(m.cells).map((k) => k.split("/")[2]))];
 
 const maxPx = (list, axis) => list && list.length ? Math.max(...list.map((o) => o[axis])) : 0;
 
+/* Text shrinkage is computed HERE, not at measure time, and that is a correction.
+
+   The runner used to derive it while measuring, which worked only as long as the whole matrix ran in
+   one pass. It does not: the full run takes long enough that it is executed one size at a time, and
+   a chunk holds no 1920 cell to compare against — so the criterion silently evaluated to nothing.
+   Measured: the guide reported 60 shrunk nodes in a single-pass run and zero after chunking, with no
+   change to the app in between.
+
+   Deriving it in the report instead means it is computed from the merged matrix, once, against
+   whatever reference is on file. The raw cells keep only what was observed. */
+function shrunkNodes(cell, ref) {
+  if (!cell || !cell.type || !ref || !ref.type) return [];
+  const at = new Map(ref.type.map((t) => [t.path, t]));
+  const out = [];
+  for (const t of cell.type) {
+    const r = at.get(t.path);
+    if (r && t.size < r.size - 0.01) {
+      out.push({ path: t.path, here: t.size, at: r.size, text: t.text });
+    }
+  }
+  return out;
+}
+
 const rows = [];
 for (const id of surfaces) {
   const worst = { id, scrollX: 0, scrollY: 0, overflow: 0, overflowPx: 0, outside: 0, truncated: 0, shrunk: 0,
@@ -55,7 +78,7 @@ for (const id of surfaces) {
       take("overflow", Math.max(0, c.overflows.length - ref.overflows.length));
       take("outside", Math.max(0, c.outside.length - ref.outside.length));
       take("truncated", Math.max(0, c.truncated.length - ref.truncated.length));
-      take("shrunk", (c.shrunk || []).length);
+      take("shrunk", shrunkNodes(c, ref).length);
       /* The widest single overflow the narrow viewport adds, plus what caused it. */
       const refPaths = new Set(ref.overflows.map((o) => o.path));
       const added = c.overflows.filter((o) => !refPaths.has(o.path));
