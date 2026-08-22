@@ -291,4 +291,63 @@ Neither blocks this task. Both are cheap to revisit while the artwork pipeline i
 the local sources. Needs the corner-panel render zone settled before any bake, same as above. Note
 its masters are 1536×1024, not square, so `square=False` is already set in the lot table.
 
-**Not done here, by design:** no wiring, no push, no promotion, no PR.
+**Not done here, by design:** no wiring, no promotion, no PR. The branch **is** pushed, so a reviewer
+can fetch the range.
+
+---
+
+## 11. Review round 1 — findings and what changed (2026-08-22)
+
+Codex reviewed head `cc1d2a63` and requested changes. Three blockers; all three are addressed below.
+The reviewer also confirmed the two items this package had flagged as the reviewer's call — the
+lightning carve-out and the README change — and confirmed all eight mapping/bake claims mechanically.
+
+### B1 — the lot table was a promise the code did not keep
+
+**Confirmed as a real defect.** `Lot.__init__` never stored `strip_w`, `size` or the bloom values,
+and `cmd_bake` read the module-level `SIZE`/`STRIP_W` unconditionally. The class docstring described
+a `strip_w` attribute that did not exist. For the four skill lots the result was correct and is what
+shipped, but `corners` masters are 3:2 — activating that lot would have resized 1536×1024 to
+**384×384**, distorting every corner ornament.
+
+Fixed by making the values per-lot and the refusal structural rather than a flag:
+
+- `Lot.size` names the **long** edge; `Lot.delivery_px` derives the short edge from the master's
+  aspect. Corners now compute to **384×256** — aspect 1.500 against the master's 1.500 (*measured*).
+- `strip_w=None` means no render zone, so `Lot.sigma` **raises** instead of returning a
+  skill-card number. `calibrated` is now derived from that rather than passed independently, so an
+  uncalibrated lot is one whose radius is uncomputable, not one somebody forgot to flag.
+- Counter-checked both ways (*measured*): with `strip_w=None` all three Phase-2 lots refuse; setting
+  `strip_w=300` on `corners` makes sigma computable at 20.5 px.
+
+**The refactor changed no output.** A full default bake after the change left `git status` empty —
+all 42 committed delivery files byte-identical. The four ratchet literals in
+`test/skill-art.test.js` survive verbatim.
+
+### B2 — the Tier C visual gate was missing
+
+**Confirmed.** Tier C runs the visual gate always, and none had been run. Now recorded in
+`visual-review.md`, with V2 captures committed under `visual/`.
+
+What this closes: the application **was** launched and driven to the skill-selection screen, and the
+offer-card header geometry was read from the live DOM — 270.66 × 210, `cover`, `50% 0%`, `screen`,
+62 % mask. All 21 ice delivery files are captured in that measured geometry, `SK_ICE_L03` among them
+and visibly the brightest, which agrees with its measured 150.6 against a lot median of 60.7.
+
+What it does not close, and is recorded as **DR-1** and **DR-3** in the contract: V1 was never taken
+and cannot honestly be reconstructed, and no ice card was rendered by the application itself (ice is
+gated behind `unlockedArchetypes`, and the headless renderer would not advance the run to a fresh ice
+offer). **V3 remains open** — a person decides, and this package does not.
+
+Four findings are classified in `visual-review.md` §V4 with IDs `ICONS-VIS-01..04`. None is a defect
+in this task. `ICONS-VIS-01` is worth naming here: the bake converts the bloom radius through
+`STRIP_W = 277`, while the rendered zone measures **270.66** — a ~2.3 % discrepancy that predates
+this task and would re-bake every lot to fix.
+
+### B3 — the Tier C process was incomplete
+
+**Confirmed.** Staffing now filled in the contract's Identity section from `AGENTS.md`'s role table
+and this task's recorded decisions. `planning-report.md` added — **explicitly labelled as
+reconstructed after the fact**, because a report written now cannot do what a planning report is for.
+Its substantive cost is recorded as **DR-2**: four of five open questions were settled during
+implementation rather than before it, including the toolchain, which is a house-rule gate.

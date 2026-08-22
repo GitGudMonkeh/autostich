@@ -17,9 +17,10 @@ contract wins**.
 | **Feature** | feature/desktop-icons |
 | **Branch** | `task/icons-asset-audit` |
 | **Base** | `origin/feature/desktop-icons` @ `863febe54fce513c4171314eb8cfc0d86f997408` |
-| **Owner** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
-| **Integrator** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
-| **Reviewer** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
+| **Owner** | Repository owner (`GitGudMonkeh`) — product/design decisions. Decisions attributed to the owner in this task were taken on 2026-08-22: the two pre-resolved mappings, the toolchain, the legendary filename convention, and the `legendaries/` location |
+| **Implementation** | Claude Code worker, per `AGENTS.md` — *Roles and source of truth*. Sequential sessions, one writer |
+| **Integrator** | Claude Code feature integrator for `feature/desktop-icons`, per `AGENTS.md`. **Not yet assigned to a session** — integration is authorized, not assumed (`task-lifecycle.md` §10) |
+| **Reviewer** | Codex, independent assessment only (`git-workflow.md` §9). Round 1 completed 2026-08-22 — changes requested; see `review-record.md` |
 | **Concurrency** | One writer. Sequential sessions may continue this task in the same worktree. Never two simultaneous writers. |
 
 ---
@@ -199,6 +200,37 @@ Full reasoning for each is in `evidence-package.md` §8.
 - [x] Evidence package written; every hazard H1–H5 marked measured / not measured and why / not applicable
 - [x] Handoff prepared, naming what `icons-skills` / `icons-perks` / `icons-corners` need from this task's output
       — `evidence-package.md` §10
+
+Added in review round 1 (2026-08-22):
+
+- [x] Visual gate run and classified — `visual-review.md`; V2 captures committed under `visual/`,
+      V4 table carries four IDs, none classified as a defect in this task
+- [ ] **V3 human visual review gate** — open. A person compares V2 and decides; an agent must not
+      report a visual result as approved (`task-lifecycle.md` §8)
+- [x] Per-lot delivery size and render-zone width configurable in `scripts/skill-art-build.py`
+      — review finding; `corners` would have been squashed from 3:2 to 1:1 on activation
+
+### Downgrade records
+
+`task-lifecycle.md` §11 — a reduced criterion needs a record here, not prose in a report.
+
+- **DR-1 — V1 baseline not taken.** *Promised:* Tier C V1 as a full capture set, before implementation
+  (`task-lifecycle.md` §5, §8). *Delivered:* nothing at V1; V2 only, plus an asset-level before/after
+  for the two lightning replacements rendered from the base commit. *Decided by:* nobody — this was
+  an omission, found by the reviewer in round 1, not a decision. *Gap that remains:* for any V3
+  finding on a screen rather than on an asset, "was it always like that" cannot be answered from this
+  task's evidence.
+- **DR-2 — planning report written after the fact.** *Promised:* a planning report before
+  implementation, with the owner settling its open questions first (`task-lifecycle.md` §4).
+  *Delivered:* `planning-report.md`, reconstructed on 2026-08-22 and labelled as such, containing only
+  independently evidenced decisions. *Decided by:* worker, during review round 1. *Gap that remains:*
+  four of five open questions were settled during implementation instead of before it — including the
+  toolchain, which is a house-rule gate.
+- **DR-3 — ice not verified in the running application.** *Promised:* V2 capture of the affected
+  screens. *Delivered:* the skill-selection screen was verified live and its geometry measured, but
+  only with a lightning offer; the ice lot is captured in the measured geometry, not screenshotted in
+  the app. *Decided by:* worker, after the headless renderer would not advance the run to an ice
+  offer. *Gap that remains:* no ice card has been seen rendered by the application itself.
 
 ## Open questions
 

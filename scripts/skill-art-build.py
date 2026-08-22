@@ -55,8 +55,16 @@ copying Blitz's measured number onto another faction.
 
 Not every lot can be baked. The bloom radius is a CSS length converted through the render zone's
 width, and perk-category tiles, corner panels and legendary-perk tiles have no settled render zone
-yet (their wiring is Phase 2). Those lots are therefore marked uncalibrated: `ingest` and `measure`
-work, `bake` refuses with a message instead of silently reusing the skill-card numbers.
+yet (their wiring is Phase 2). Those lots carry `strip_w=None`, which makes their sigma uncomputable
+rather than merely unflagged: `ingest` and `measure` work, `bake` refuses instead of silently
+reusing the skill-card numbers.
+
+**Delivery size and bloom are per-lot, not global** (fixed after review round 1, 2026-08-22). The
+first version of this generalization read the module-level `SIZE`/`STRIP_W` inside the bake loop and
+resized every lot to `SIZE x SIZE`. For the four skill lots that is correct and is what shipped, but
+it made the lot table a promise the code did not keep — and `corners` masters are 3:2, so activating
+that lot would have squashed 1536x1024 into 384x384. `Lot.size` now names the LONG edge and
+`Lot.delivery_px` derives the short one from the master's aspect.
 """
 from PIL import Image, ImageFilter, ImageEnhance, ImageChops
 from pathlib import Path
@@ -78,23 +86,63 @@ MASTER_Q = 92         # quality of a master, matching the sets already in docs/a
 DELIVERY_Q = 86       # quality of a delivery copy, unchanged from the first version
 MAP = Path("docs/workstreams/desktop-icons/icons-asset-audit/asset-mapping.tsv")
 
+# The bloom radius on a skill delivery file, in pixels. The CSS radius is authored against the render
+# zone's WIDTH, so converting it needs that width — which is what makes the zone a build input rather
+# than a display detail.
+BLOOM_SIGMA = BLOOM_CSS * SIZE / STRIP_W
+
 
 class Lot:
     """One set of icons that is judged, aligned and shipped as a unit.
 
-    `strip_w` is the CSS width of the zone the icon is shown in; it is what converts the bloom radius
-    from a CSS length into a pixel radius on the file. A lot without a settled render zone carries
-    calibrated=False and cannot be baked — see the module docstring.
+    Every value the bake depends on is per-lot, because none of them generalize:
+
+    - `size` is the LONG edge of a delivery file. `delivery_px` derives the other edge from the
+      master's aspect, so a non-square lot is never squashed into a square.
+    - `strip_w` is the CSS width of the zone the icon is shown in. It converts the bloom radius from
+      a CSS length into a pixel radius on the file, so a lot shown in a different-width zone needs a
+      different sigma for the same authored radius.
+    - `bloom_css` / `bloom_strength` / `bloom_sat` are the authored bloom, chosen at the device.
+
+    **`strip_w=None` means the render zone is not settled, and then no radius exists.** That is why
+    `calibrated` is derived rather than passed: an uncalibrated lot is not one somebody forgot to
+    flag, it is one whose sigma is literally uncomputable. `bake` refuses it; `ingest` and `measure`
+    do not need a zone and work.
     """
 
-    def __init__(self, key, master, delivery, master_px, square=True, calibrated=True, expect=None):
+    def __init__(self, key, master, delivery, master_px, square=True, expect=None,
+                 size=SIZE, strip_w=STRIP_W, bloom_css=BLOOM_CSS,
+                 bloom_strength=BLOOM_STRENGTH, bloom_sat=BLOOM_SAT):
         self.key = key
         self.master = Path(master)
         self.delivery = Path(delivery)
         self.master_px = master_px          # (w, h) of a master, long edge included
         self.square = square
-        self.calibrated = calibrated
         self.expect = expect                # masters needed before the lot may ship; None = no rule
+        self.size = size                    # long edge of a delivery file
+        self.strip_w = strip_w              # CSS width of the render zone; None = not settled
+        self.bloom_css = bloom_css
+        self.bloom_strength = bloom_strength
+        self.bloom_sat = bloom_sat
+
+    @property
+    def calibrated(self):
+        return self.strip_w is not None
+
+    @property
+    def sigma(self):
+        """Blur radius in file pixels. Raises when the lot has no settled render zone."""
+        if not self.calibrated:
+            raise ValueError(f"lot {self.key!r} has no render-zone width, so no bloom radius exists")
+        return self.bloom_css * self.size / self.strip_w
+
+    @property
+    def delivery_px(self):
+        """Delivery size, aspect taken from the master. `size` is the long edge, never both edges."""
+        mw, mh = self.master_px
+        if mw >= mh:
+            return (self.size, max(1, round(self.size * mh / mw)))
+        return (max(1, round(self.size * mw / mh)), self.size)
 
 
 ARCHETYPES = ("lightning", "fire", "ice", "plant")
@@ -105,21 +153,24 @@ ARCHETYPE_SIZE = 21   # 17 regular + 4 legendary, the same for all four factions
 # tab showing art on 6 of 21 offer cards reads as breakage, not as progress. So `expect` is a gate,
 # not a statistic — an incomplete lot is skipped by `bake` and says so.
 LOTS = {a: Lot(a, SRC / a, OUT / a, (1024, 1024), expect=ARCHETYPE_SIZE) for a in ARCHETYPES}
-# The three Phase-2 lots. Sizes are the ones the existing masters/READMEs already use.
+# The three Phase-2 lots. Master sizes are the ones the existing files/READMEs already use.
+# `strip_w=None` on all three: their render zones are Phase-2 decisions and do not exist yet.
+# Note `corners` is 3:2, not square — with a single hardcoded delivery edge it would ship distorted,
+# which is the reason `size` names the long edge and `delivery_px` derives the short one.
 LOTS["legendaries"] = Lot("legendaries", "docs/art/legendaries", "src/assets/legendaries",
-                          (1024, 1024), calibrated=False, expect=21)
+                          (1024, 1024), expect=21, strip_w=None)
 LOTS["perkcats"] = Lot("perkcats", "docs/art/perkcats", "src/assets/perkcats",
-                       (1024, 1024), calibrated=False, expect=7)
+                       (1024, 1024), expect=7, strip_w=None)
 LOTS["corners"] = Lot("corners", "docs/art/corners", "src/assets/corners",
-                      (1536, 1024), square=False, calibrated=False, expect=5)
+                      (1536, 1024), square=False, expect=5, strip_w=None)
 
 
-def bake(im):
+def bake(im, lot):
     """Scharfes Bild + unscharfe, gesättigte Kopie, additiv überlagert (wie `mix-blend-mode: screen`)."""
-    sigma = BLOOM_CSS * SIZE / STRIP_W
+    sigma = lot.sigma
     glow = im.filter(ImageFilter.GaussianBlur(sigma))
-    glow = ImageEnhance.Color(glow).enhance(BLOOM_SAT)
-    glow = ImageEnhance.Brightness(glow).enhance(BLOOM_STRENGTH)
+    glow = ImageEnhance.Color(glow).enhance(lot.bloom_sat)
+    glow = ImageEnhance.Brightness(glow).enhance(lot.bloom_strength)
     return ImageChops.screen(im, glow)
 
 
@@ -191,14 +242,16 @@ def cmd_bake(args):
         if lot.expect is not None and len(masters) != lot.expect:
             print(f"skip {key}: {len(masters)} of {lot.expect} masters - a lot ships whole or not at all")
             continue
+        w, h = lot.delivery_px
         for master in masters:
             out = lot.delivery / master.name
             out.parent.mkdir(parents=True, exist_ok=True)
-            im = Image.open(master).convert("RGB").resize((SIZE, SIZE), Image.LANCZOS)
-            bake(im).save(out, "WEBP", quality=DELIVERY_Q, method=6)
+            im = Image.open(master).convert("RGB").resize((w, h), Image.LANCZOS)
+            bake(im, lot).save(out, "WEBP", quality=DELIVERY_Q, method=6)
             n += 1
             total += out.stat().st_size
-    print(f"{n} Embleme, {total/1024:.0f} kB (Radius {BLOOM_CSS * SIZE / STRIP_W:.1f} px auf {SIZE} px)")
+        print(f"  {key}: {len(masters)} at {w}x{h}, radius {lot.sigma:.1f} px (zone {lot.strip_w} css-px)")
+    print(f"{n} Embleme, {total/1024:.0f} kB (Radius {BLOOM_SIGMA:.1f} px auf {SIZE} px)")
 
 
 def luma(im):

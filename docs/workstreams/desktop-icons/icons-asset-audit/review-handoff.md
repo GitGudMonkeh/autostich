@@ -14,8 +14,10 @@ Every claim below is marked *measured* (observed by running a command in the gen
 
 | Item | State |
 | --- | --- |
+| Round | **2.** Round 1 requested changes; all three blockers are addressed — see *Round 1* below |
 | Hazards with no recorded status anywhere | **0 of 5** — all five carry a status in the contract and in the evidence package (*measured*) |
-| Unticked Definition-of-done boxes | **0 of 9** (*measured*) |
+| Unticked Definition-of-done boxes | **1 of 12** (*measured*) — the **V3 human visual gate**, which only a person can close |
+| Downgrade records | **3** (DR-1 V1 not taken, DR-2 planning report reconstructed, DR-3 ice not seen in-app) |
 | Push state | **Pushed.** `cc1d2a63` is contained in `origin/task/icons-asset-audit` (*measured*, 2026-08-22) |
 
 When `/prepare-review` ran, the head was on no remote and this row read as a blocker. The branch has
@@ -253,11 +255,17 @@ Hazards with no recorded status anywhere: **0 of 5** (*measured*).
 
 ## Definition of done
 
-**Unticked boxes: 0.** All 9 boxes in the contract's *Definition of done* are ticked (*measured*).
+**Unticked boxes: 1 of 12** (*measured*, after round 1 added three). Verbatim:
 
-**Downgrade record:** none found in the contract (*measured*). No search hit for `downgrade`,
-`reduced` or `abgesenkt`. This command does not write one and does not infer whether a criterion was
-reduced — `task-lifecycle.md` — *Two standing rules* makes that the worker's record to keep.
+> - [ ] **V3 human visual review gate** — open. A person compares V2 and decides; an agent must not
+>   report a visual result as approved (`task-lifecycle.md` §8)
+
+It stays unticked deliberately. Nothing in this task can close it.
+
+**Downgrade records: 3**, added in round 1 after the reviewer found the process gaps. Full text in
+the contract; in short — **DR-1** V1 baseline never taken and not reconstructable, **DR-2** planning
+report written after the fact, **DR-3** ice never rendered by the running application. Each names what
+was promised, what was delivered instead, who decided, and the gap that remains.
 
 ---
 
@@ -279,29 +287,36 @@ directory: **0** (*measured*) — everything present is committed.
 images only when they **are** the evidence. This command reports that state and cites the rule; it
 decides nothing about whether image evidence was required here.
 
-**Limits — stated by the worker.**
+**Limits — stated by the worker. Rewritten in review round 1**, which is when the visual gate was
+actually run; the first version of this section correctly recorded that it had not been.
 
-**The app was never launched.** No screen was exercised at any viewport. No browser, no dev server,
-no screenshot. Everything in the evidence package was measured by decoding image files and by
-running the build script and the gates.
+The full record is **`visual-review.md`**. In summary:
+
+**The app was launched** (`npm run dev -- --port 5182 --strictPort`) and driven to the
+skill-selection screen in a headless browser at 1920 × 1080, DPR 1. The offer-card header was read
+from the live DOM: **270.66 × 210**, `object-fit: cover`, `object-position: 50% 0%`,
+`mix-blend-mode: screen`, 62 % mask fade — all matching `src/index.css`, with art bound by filename.
 
 **Host:** Windows 11, Node v24.18.0, Python 3.12.10 with Pillow 12.3.0 and numpy 2.5.2. Nothing was
-run on Linux.
+run on Linux locally; CI covers the Linux leg and is green on the pushed branch.
 
-**What this leaves uncovered, and it is the sharpest limit here:** this task changes what the game
-renders, without ever having looked at it. The 21 new files under `src/assets/skills/ice/` make ice
-skill cards show art at ≥1400 px — automatically, because `skillArt.js` binds art to a skill by
-filename alone — and the two replaced lightning files change two icons that were already shipping.
-None of that was viewed in the running application at the real viewport.
+**Committed captures**, under `visual/` — here the images **are** the evidence
+(`task-lifecycle.md` — *Committing evidence*):
 
-Contact sheets and a 277 × 210 strip rendering were produced during the work and used to make the
-per-lot light decision and to retract an earlier silhouette-collision claim. **They were written to
-a temporary directory and are not committed**, so they are not available to the reviewer and are not
-evidence in the `task-lifecycle.md` sense. Their absence is a gap, not a decision that images were
-unnecessary.
+- `V2-ice-strip-geometry.webp` — all 21 ice delivery files in the measured header geometry
+- `V2-lightning-replacements.webp` — the two replaced icons, base vs head, same geometry
 
-Whether the *Visual review* gate applies here, and at which V-level, is **not classified in this
-document** — V3 and V4 are human (`task-lifecycle.md` — *Visual review*).
+**Three gaps remain, and they carry downgrade records in the contract:**
+
+- **DR-1 — V1 was never taken**, and §8 forbids reconstructing it. For any V3 finding about a
+  *screen* rather than an *asset*, this task's evidence cannot answer "was it always like that".
+- **DR-3 — no ice card was rendered by the application.** Ice is gated behind `unlockedArchetypes`;
+  the profile was seeded to unlock it, but the headless renderer throttles the game loop and the run
+  would not advance to a fresh ice offer. Only lightning and fire offers were reachable.
+- **V3 is open.** A person compares V2 and decides. This document records no visual verdict.
+
+Four findings are classified in `visual-review.md` §V4 as `ICONS-VIS-01..04`. **None is classified as
+a defect in this task.**
 
 ---
 
@@ -379,9 +394,17 @@ Seven, worker-stated.
 6. **Q1/Q2/Q3 in the contract are answered, two of them attributed to an owner decision dated
    2026-08-22.** A reviewer may want to confirm that attribution independently, since those answers
    bind `icons-perks` and `icons-corners`.
-7. **Does the *Visual review* gate apply?** This range adds 42 image artefacts and changes what the
-   game renders, and no visual capture is committed — see *Evidence and its limits*. The worker
-   cannot classify this; V3 and V4 are human.
+7. **Does the *Visual review* gate apply?** **Answered in round 1: yes, and it has now been run.**
+   Tier C runs it always. `visual-review.md` records V1 (not taken — DR-1), V2 (captures committed
+   under `visual/`, plus in-app geometry measured live), V3 (**open** — human), and V4 (four findings
+   classified as `ICONS-VIS-01..04`, none a defect in this task). What remains for the reviewer is
+   whether V3 can be signed off on captures at the measured geometry when no ice card was ever
+   rendered by the application itself (DR-3).
+
+**Round 1 blockers and where each is answered:** B1 the per-lot bake defect →
+`evidence-package.md` §11 and `scripts/skill-art-build.py`; B2 the missing visual gate →
+`visual-review.md`; B3 the incomplete Tier C process → contract *Identity*, `planning-report.md`, and
+the three downgrade records.
 
 ---
 
