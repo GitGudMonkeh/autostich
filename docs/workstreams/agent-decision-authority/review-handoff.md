@@ -1,32 +1,23 @@
 # Codex Review Handoff — Agent Decision Authority
 
-> ## Next review: **closure review, second round**
+> ## Review is closed — no further review is expected
 >
-> The owner scoped this to a closure check; the branch under review changes no process rule or
-> workflow document to introduce it. A second closure round is permitted because the first one found
-> a known finding still open and a regression caused by its fix — not because the scope reopened.
+> **Owner decision, 2026-08-22: independent review is no longer a required step.** Mandatory Codex
+> review between worker and integration produced more review pingpong than it caught, and was removed
+> from the workflow. The canonical rule — independent review is optional and risk-based, and normal
+> integration readiness is scope and contract, required validation and evidence, branch state, and
+> unresolved blockers — arrives with the `feature/review-convergence` branch.
 >
-> **Closure round 1 result:** finding 1 **closed** — the reviewer ran the reproduce block without
-> checkout and got three `identical` lines with the expected hashes. Finding 2 **not closed**, with a
-> regression caused by its own fix. Both are fixed below.
+> **This document is now a record, not a request.** It describes four review rounds that did happen:
+> one full review and three follow-up rounds, whose findings and dispositions are in
+> [`task-contract.md`](./task-contract.md) — *Review round 1* through *Closure review round 1*. The
+> last open item, round-4 finding 2, was fixed; no reviewer confirmed that fix, and this document
+> does not claim otherwise.
 >
-> **Answer two questions and nothing else:**
->
-> 1. **Round-4 finding 2 closed now?** Three defects were reported and all three are fixed:
->    the broken back-reference to a renamed row (this document, above the reproduce block); the two
->    surviving uses of the retired name *review-package range* (this document's round-2 table and the
->    contract's round-1 record); and the **too-narrow tail definition** — the package-record tail also
->    carries binding contract changes to *Expected file surface*, *Definition of done*, hazard
->    statuses and gate evidence, and both documents now say so and say those are in scope.
-> 2. **Any regression caused by *these* fixes?**
->
-> Finding 1 stays closed and is not re-examined. Do not re-open closed findings, do not re-review
-> areas already confirmed integration-ready — the three live rule documents drew no findings in
-> round 4 or in closure round 1 and are unchanged since `a2357b47` — and do not raise new
-> documentation refinements. A new finding is admissible only if these fixes created it or it is a
-> genuine blocker.
->
-> If both answers are yes and no: **APPROVED**.
+> **What is measured, and stands on its own:** the four gates, Linux CI green at the head, all
+> fourteen must-not-touch entries object-identical to the base commit, and the three live rule
+> documents unchanged since `a2357b47`. Those are the integration-readiness facts, and none of them
+> depends on a review verdict.
 
 **Reviewer role: independent assessment only. Do not implement.** Findings return to the Claude
 worker in this worktree (`docs/engineering/git-workflow.md` — *Reviewer ownership*).

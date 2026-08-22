@@ -569,3 +569,25 @@ points at a heading or row that no longer exists under that name.
 
 A second closure round is permitted here because a known finding was still open and its fix caused a
 regression — not because settled scope was reopened.
+
+---
+
+## Review closed — owner decision, 2026-08-22
+
+**Independent review is no longer a required step.** The owner removed mandatory Codex review from
+the workflow; the canonical rule arrives with the `feature/review-convergence` branch. Review stays
+available and is requested on risk, not by default.
+
+For this workstream that means: the second closure round asked for in *Closure review round 1* will
+not run. The three defects it reported were fixed in the commit that follows that record, and **no
+reviewer confirmed the fix**. That is stated rather than papered over — it is the one claim in this
+contract that rests on the worker alone.
+
+What integration readiness rests on instead, all measured:
+
+- the agreed scope is implemented and every *Definition of done* box is ticked except `npm test`,
+  which carries its downgrade record and is green in Linux CI;
+- the four gates ran, unpiped, with their real exit codes recorded;
+- all fourteen *Must not touch* entries are object-identical to the base commit;
+- the three live rule documents are unchanged since `a2357b47`, verified by blob hash;
+- the branch is clean, committed and pushed.
