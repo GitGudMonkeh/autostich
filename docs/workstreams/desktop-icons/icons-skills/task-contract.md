@@ -17,9 +17,9 @@ contract wins**.
 | **Feature** | feature/desktop-icons |
 | **Branch** | `task/icons-skills` |
 | **Base** | `origin/feature/desktop-icons` @ `3013881f723080753b8829feea4b051356f0cae0` |
-| **Owner** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
+| **Owner** | Codex worker session, explicitly assigned by the user on 2026-08-22 |
 | **Integrator** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
-| **Reviewer** | TODO — staffing decision; see `AGENTS.md` — *Roles and source of truth* |
+| **Reviewer** | TODO — must be independent; this implementation session cannot review its own work |
 | **Concurrency** | One writer. Sequential sessions may continue this task in the same worktree. Never two simultaneous writers. |
 
 ---
@@ -142,24 +142,24 @@ in the filename; a lot that looks wrong is a per-lot value, not a global constan
 
 | # | Hazard | Status at contract-writing |
 | --- | --- | --- |
-| H1 | The 6 existing fire masters predate the audit's pipeline and may not match the 15 new ones in size or treatment | **Not measured** — check before baking; re-derive all 21 from source if they diverge |
-| H2 | Two fire sources are non-square and take the black-pad rule | **Measured by the audit**, favourably — but verify the padded result reads correctly in the 270.66×210 crop |
-| H3 | The completeness gate silently skips a lot that is one file short | **Known behaviour** — read the script's own output rather than assuming a bake ran |
-| H4 | Windows/Linux case sensitivity on the new `plant/` directory | **Not measured** — all-lowercase ASCII, matching siblings; CI covers Linux |
-| H5 | V1 baseline | **Taken by the owner before this task started** — captured 2026-08-22 |
+| H1 | The 6 existing fire masters predate the audit's pipeline and may not match the 15 new ones in size or treatment | **Measured — closed.** Re-ingesting the complete fire lot with the current pipeline changed none of the six tracked masters; only the expected mapped additions appeared. |
+| H2 | Two fire sources are non-square and take the black-pad rule | **Observed at asset level.** Both padded deliveries read correctly in the measured 271×210 crop in V2. The running-app check remains open with the acceptance gate. |
+| H3 | The completeness gate silently skips a lot that is one file short | **Measured — closed.** Both bake commands explicitly reported a complete lot and wrote every mapped delivery file; exact set equality was checked afterwards. |
+| H4 | Windows/Linux case sensitivity on the new `plant/` directory | **Partially measured.** The local directory is all-lowercase ASCII and mapping-exact on Windows. No local Linux run was available; CI covers that leg after push. |
+| H5 | V1 baseline | **Owner-held, bounded.** The contract records a 2026-08-22 owner baseline, but it was not supplied to the worker. The owner passed V3 after being asked to compare V2 against V1; the worker could not independently verify V1 dimensions/state or make a matching full-screen V2 capture because no controllable browser was available. |
 
 ## Definition of done
 
-- [ ] Fire lot complete: 21 masters, 21 delivery files, names round-trip through `artIdFromFile`
-- [ ] Plant lot complete: 21 masters, 21 delivery files, names round-trip through `artIdFromFile`
-- [ ] Per-lot light consistency measured and recorded for fire and for plant, each against its own median
-- [ ] Any cap applied is recorded with its numeric factor and its reason
-- [ ] `docs/art/skills/README.md` collection state updated
+- [x] Fire lot complete: 21 masters, 21 delivery files, names round-trip through `artIdFromFile`
+- [x] Plant lot complete: 21 masters, 21 delivery files, names round-trip through `artIdFromFile`
+- [x] Per-lot light consistency measured and recorded for fire and for plant, each against its own median
+- [x] Any cap applied is recorded with its numeric factor and its reason — **no cap applied; V3 accepted both lots as generated**
+- [x] `docs/art/skills/README.md` collection state updated
 - [ ] V2 capture taken at the same sizes, DPR and state as the owner's V1
-- [ ] V3 human visual gate passed — **only a person can close this**
-- [ ] V4 classification written; every finding carries an ID
-- [ ] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — all green
-- [ ] Evidence package written, stating its own limits; hazards H1–H5 each marked
+- [x] V3 human visual gate passed — **owner verdict on 2026-08-22: “Bestanden, kein Cap”**
+- [x] V4 classification written; every finding carries an ID
+- [ ] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — **not all durably green:** lint, both builds, and database generation pass. The unchanged package test script produced both a pass and isolated i18n timeouts on Node 22. See the evidence package.
+- [x] Evidence package written, stating its own limits; hazards H1–H5 each marked
 - [ ] `ICONS-VIS-03` confirmed resolved (fire cards now render art)
 
 ## Open questions
@@ -168,3 +168,10 @@ in the filename; a lot that looks wrong is a per-lot value, not a global constan
 | --- | --- | --- |
 | Q1 | Do the 6 pre-existing fire masters match the audit's pipeline output, or should all 21 be re-derived from the PNG source for consistency? | Yes — decides the ingest path |
 | Q2 | `ICONS-VIS-04` documents a two-place gold deviation on Donnergott. Should the same check run across the fire and plant legendaries before shipping, or is the artwork accepted as final without it? | No — reportable either way |
+
+### Open-question resolution
+
+| # | Resolution |
+| --- | --- |
+| Q1 | **Measured:** the six pre-existing masters are byte-identical to current pipeline output. They were not replaced; the ingest added only the remaining mapped masters. |
+| Q2 | **No additional semantic gold audit was used as a shipping gate.** The contract declares the artwork final and makes reopening `ICONS-VIS-04` a non-goal. All fire and plant legendaries were visible in V2, and the owner passed V3 without requesting changes. |
