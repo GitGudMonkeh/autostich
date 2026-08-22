@@ -2,12 +2,11 @@
 
 ## Handoff status
 
-**Prepared, but not yet eligible for independent review.** Three lifecycle prerequisites remain:
+**Prepared, but not yet eligible for independent review.** Two lifecycle prerequisites remain:
 
 1. the binding acceptance gate still needs an in-app observation of every Fire and Plant offer
    card; and
-2. the final full `npm test` gate must complete successfully; and
-3. the implementation is uncommitted, so the evidence package has no durable review-head SHA.
+2. the final full `npm test` gate must complete successfully.
 
 The human asset-level V3 gate is passed. This distinction is intentional: visual approval of the V2
 contact sheets does not prove that the running application bound every file.
@@ -38,9 +37,8 @@ Read `evidence-package.md`. It contains:
 - Branch: `task/icons-skills`, deliberately without upstream
 - Contract base: `3013881f723080753b8829feea4b051356f0cae0`
 - Branch HEAD before implementation: `83a9d818c4e98b2051e8487f74c0aa954b5de8c2` (task contract)
-- Implementation state: uncommitted working tree
-- Commit state: user-authorized, but the required atomic commit dialog resolved against the main
-  checkout instead of this task worktree and could not stage the task paths; no CLI fallback used
+- Implementation commit: `40d186014a4ccd30815c5c974d58db80b40d0860`
+- Immutable implementation range: `3013881f723080753b8829feea4b051356f0cae0..40d186014a4ccd30815c5c974d58db80b40d0860`
 - Local Vite server: started on port 5183 and returned HTTP 200 during the worker session
 - Browser state: the supported runtime again reported no available browser during remediation
 - Local gates: lint, ordinary build, preview build, and database generation pass. The unchanged
@@ -64,11 +62,7 @@ run as a green replacement for the required full-suite gate.
 2. **Will the full test gate become durably green on the stable review head and CI?** The unchanged
    package script has produced both a pass and isolated i18n timeouts on Node 22. Repeat it after
    committing; do not increase timeouts or edit unrelated tests merely to get green.
-3. **How will the authorized commit be created?** The atomic commit dialog is currently bound to the
-   main checkout rather than `C:/Code/Autostich-worktrees/icons-skills`, so it rejects the task paths.
-   Correct the session/worktree binding, then repeat the atomic proposal. Do not substitute a CLI
-   commit. Push remains unauthorized.
-4. **Who is the independent reviewer and integrator?** The contract still leaves both roles unstaffed.
+3. **Who is the independent reviewer and integrator?** The contract still leaves both roles unstaffed.
    Because Codex implemented this task by explicit user assignment, this same session cannot serve
    as its independent reviewer.
 

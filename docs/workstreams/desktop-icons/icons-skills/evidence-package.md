@@ -6,17 +6,16 @@
 | --- | --- |
 | Contract base | `3013881f723080753b8829feea4b051356f0cae0` |
 | Contract commit already on the task branch | `83a9d818c4e98b2051e8487f74c0aa954b5de8c2` |
-| Implementation review HEAD | **Not available yet — implementation is uncommitted** |
+| Implementation review HEAD | `40d186014a4ccd30815c5c974d58db80b40d0860` |
+| Immutable implementation range | `3013881f723080753b8829feea4b051356f0cae0..40d186014a4ccd30815c5c974d58db80b40d0860` |
 | Branch | `task/icons-skills`, no upstream |
 
-The lifecycle requires the final evidence package to quote a base-to-head SHA range. The user has
-authorized the implementation commit, but the required atomic commit dialog is bound to the main
-checkout instead of this explicitly assigned task worktree and could not stage these paths. This
-working-tree package therefore still cannot honestly provide a durable range. A reviewer must not
-treat `3013881f..WORKTREE` as durable evidence. After the session/worktree binding is corrected,
-replace the pending field above with the commit SHA and review that immutable range.
+The user created the implementation commit directly in the explicitly assigned task worktree after
+the editor's atomic commit dialog could not target the sibling worktree. The worktree was clean and
+the branch HEAD matched the implementation review HEAD immediately afterwards. Independent review
+must use the immutable range above rather than a branch-name or working-tree diff.
 
-No commit, push, merge, promotion, or pull request was performed by this session.
+No push, merge, promotion, or pull request was performed.
 
 ## What was proven
 
@@ -138,7 +137,7 @@ after the task preview server was stopped. The canonical gate is therefore not d
 | Gate | Result |
 | --- | --- |
 | Node 22: unchanged `npm test` package script | Mixed, load-sensitive result: one successful run followed by repeats timing out only in `test/i18n-guards.test.js`; not durably green |
-| Host Node 24: `npm test` | Failed only because `test/i18n-guards.test.js` exceeded its per-test timeout under full-suite load; no assertion failed |
+| Host Node 24: post-commit `npm test` on the implementation review HEAD | Failed only because `test/i18n-guards.test.js` exceeded its per-test timeout under full-suite load; no assertion failed |
 | `npx vitest run test/i18n-guards.test.js test/faction-panels.test.js` | Passed together in isolation; this classifies the observed Node 24 failure as load-sensitive, not as a replacement for the Node 22 package-script gate |
 | `npm run lint -- --max-warnings=0` | Passed on the final ratchet state |
 | `npm run build` | Passed; Vite emitted its existing chunk-size advisory |
@@ -151,9 +150,9 @@ No player-visible text changed, so `npm run loc:export` was not applicable.
 
 | Finding | Disposition at this package revision |
 | --- | --- |
-| `ICONS-REV-001` | Authorization is explicit; the atomic commit dialog is blocked by an incorrect main-checkout binding and no CLI commit was substituted |
+| `ICONS-REV-001` | Resolved: implementation commit and immutable base-to-head range recorded above |
 | `ICONS-REV-002` | Still blocked by the absence of a supported browser instance after a remediation retry; no substitute evidence claimed |
-| `ICONS-REV-003` | Still open: the unchanged package test script produced both a pass and isolated i18n timeouts on Node 22; no timeout or test source was changed |
+| `ICONS-REV-003` | Still open: post-commit `npm test` on the stable implementation HEAD timed out only in the i18n coverage guard; no timeout or test source was changed |
 | `ICONS-REV-004` | Fixed with per-lot membership and duplicate checks; both failure modes counter-checked |
 | `ICONS-REV-005` | Fixed; durable task documents no longer record volatile test totals |
 
