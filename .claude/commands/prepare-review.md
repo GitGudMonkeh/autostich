@@ -1,11 +1,15 @@
 ---
-description: Assemble the evidence package and reviewer handoff from a task contract and its diff
+description: Assemble the handoff for a deliberately requested independent review, from a task contract and its diff
 argument-hint: <contract-path> [--base <sha>] [--head <sha>] [--run-gates] [--closure <finding-ids>]
 allowed-tools: Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git log:*), Bash(git diff:*), Bash(git cat-file:*), Bash(git status:*), Bash(git branch:*), Bash(git -C:*), Bash(MSYS_NO_PATHCONV=1 git:*), Bash(npm test:*), Bash(npm run:*), Bash(npx vitest run:*), Read, Grep, Glob, Write
 disable-model-invocation: true
 ---
 Assemble the evidence package and the reviewer handoff for one task, from its contract and its diff,
 and write `review-handoff.md` beside the contract.
+
+**Independent review is optional and risk-based** (`AGENTS.md` — *Independent review*). This command
+is for a review that was deliberately requested; it is not a step every task passes through, and a
+task that produces no handoff is not thereby incomplete.
 
 **You prepare for a reviewer. You are not the reviewer.** Nothing you produce is an assessment,
 an approval, or a verdict on the work. Every fact in the document is one you measured in this
@@ -20,7 +24,7 @@ this file and those disagree, those win.
 
 Arguments: `$ARGUMENTS` — first positional is the contract path; `--base <sha>` and `--head <sha>`
 override the derived range; `--run-gates` opts into running the gates in this session; `--closure`
-names the open finding IDs and makes this a closure handoff (`AGENTS.md` — *Review convergence*).
+names the open finding IDs and makes this a closure handoff (`AGENTS.md` — *Independent review*).
 
 ---
 
@@ -54,7 +58,7 @@ Open the report with one line: this prepares a handoff, it does not review, it a
 every gate row states whether it was run in this session.
 
 Then state the **review type**, which the handoff must carry unambiguously
-(`AGENTS.md` — *Review convergence*, `task-lifecycle.md` §9):
+(`AGENTS.md` — *Independent review*, `task-lifecycle.md` §9):
 
 - **Without `--closure`: `Review Type: Full`.** The reviewer may examine the whole agreed scope.
 - **With `--closure <ids>`: `Review Type: Closure`.** Reproduce the IDs verbatim and put the closure

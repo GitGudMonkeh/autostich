@@ -35,7 +35,7 @@ table at the end.
 | Local cockpit | **Nimbalyst** — session orchestration, workstream visibility, review context, local Git/worktree management. |
 | Implementation | **Claude Code** workers. |
 | Integration | **Claude Code** feature integrator. |
-| Review | **Codex** is initially used as an independent reviewer only; it does not implement. How review rounds converge is *Review convergence* below. |
+| Review | **Optional and risk-based.** Codex can be asked for an independent technical review; it reviews only and does not implement. It is not a gate every task passes through — *Independent review* below. |
 | Concurrency | **One simultaneous writer per worktree.** Never run two writing agents in the same worktree at the same time. |
 | Decision authority | **Repository owner** — see *Decision authority* below. |
 
@@ -89,7 +89,29 @@ owner" as a finding against a technical decision that was taken and recorded und
 
 ---
 
-## Review convergence
+## Independent review
+
+**Independent technical review is optional and risk-based.** It is not a gate every task passes
+through, and **a missing review does not block integration** where none was requested.
+
+**Normal integration readiness** is determined by four things and not by anyone's approval:
+
+- the agreed scope is implemented and the task contract is met,
+- the validation and evidence the task requires are present, and the relevant gates passed,
+- the branch is clean and committed,
+- known blockers are resolved, or documented as open with their consequence stated.
+
+**When to ask for one anyway.** Risky architectural change; save, persistence or migration logic; a
+defect that will not reproduce reliably; anything security-relevant; a large or risky integration; a
+release-critical change; or simply because the planner, worker, integrator or owner wants a second
+technical opinion. Asking is cheap and is never wrong — the point is that *not* asking is also
+correct, and needs no justification.
+
+**The human visual gate is unaffected.** Where pixels move, V1–V4 apply exactly as before
+(`docs/engineering/task-lifecycle.md` §8). A technical gate does not replace a person looking at
+the screen, and nothing in this section removes that requirement.
+
+### When a review is requested, it converges
 
 Review reduces relevant risk. It does not enforce perfection. **Good, correct and integration-ready
 is enough.**
@@ -111,7 +133,8 @@ as a **follow-up** and does not block the current integration.
 permitted only where a known blocking finding is still unfixed, or its fix caused a new regression.
 There is no second full review.
 
-How each round is run, and what a handoff must state: `docs/engineering/task-lifecycle.md` §9.
+How a requested review is run, and what a handoff must state: `docs/engineering/task-lifecycle.md`
+§9.
 
 ---
 
@@ -512,7 +535,7 @@ Read deeper documentation only when the current task needs it.
 | Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` |
 | UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` |
 | Worker / integrator / reviewer responsibilities | `docs/engineering/git-workflow.md` §7–§9 |
-| Task tiers, task contract, evidence, visual review, handoff, review rounds, cleanup timing | `docs/engineering/task-lifecycle.md` |
+| Task tiers, task contract, evidence, visual review, integration readiness, cleanup timing | `docs/engineering/task-lifecycle.md` |
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
 | Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |

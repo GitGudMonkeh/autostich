@@ -223,7 +223,9 @@ naming what the human has to supply.
 | Preview port / URL | from step 8 |
 | Server invocation | `npm run dev -- --port <port> --strictPort` |
 
-Owner, Integrator and Reviewer are `TODO`, pointing at `AGENTS.md` — *Roles and source of truth*.
+Owner and Integrator are `TODO`, pointing at `AGENTS.md` — *Roles and source of truth*. A Reviewer
+row is emitted only where the task explicitly requested an independent review; review is optional and
+risk-based (`AGENTS.md` — *Independent review*).
 Staffing a task is a decision, not a derivation.
 
 ### Tier A — print, write nothing
