@@ -23,9 +23,14 @@ since been pushed by the worker, so `git fetch` reaches the range
 (`git-workflow.md` — *Pushing and durable state*). Nothing was merged, promoted, or opened as a pull
 request.
 
-**Note the branch head is ahead of the review range.** `origin/task/icons-asset-audit` now points at
-`28ac29e0`, which is this handoff document. The range to review is still
-`863febe5..cc1d2a63`; `28ac29e0` adds no source, asset or script change.
+**Note the branch head is ahead of the review range.** Every commit after `cc1d2a63` on
+`task/icons-asset-audit` is this handoff document and its corrections — no source, asset or script
+change. The range to review is `863febe5..cc1d2a63` regardless of where the branch head currently
+sits. Confirm with:
+
+```bash
+git log --oneline --name-only cc1d2a632642c10531b52a27894bd49b592587c3..origin/task/icons-asset-audit
+```
 
 ---
 
@@ -304,10 +309,10 @@ document** — V3 and V4 are human (`task-lifecycle.md` — *Visual review*).
 
 *Measured* in the generating session:
 
-- **The branch is pushed, and its head is one commit ahead of the review range.**
+- **The branch is pushed, and its head is ahead of the review range.**
   `git branch -r --contains cc1d2a63` returns `origin/task/icons-asset-audit` (*measured*,
-  2026-08-22). `origin/task/icons-asset-audit` is at `28ac29e0`, which is this handoff document and
-  contains no source, asset or script change. Review `863febe5..cc1d2a63`.
+  2026-08-22). Everything after `cc1d2a63` is this handoff document and its corrections — documentation
+  only. Review `863febe5..cc1d2a63`, not the branch head.
 - **The worktree was clean at the time the range was measured.** Nothing is excluded from the range
   by uncommitted work. The only files added afterwards are this handoff and its commit.
 - **`npm test` fails on the full suite and passes in isolation** — see *Gate results*. Expect exit 1
