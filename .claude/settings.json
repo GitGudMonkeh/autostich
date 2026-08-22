@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "skillOverrides": {
+    "create-task": "user-invocable-only",
+    "cleanup-task": "user-invocable-only",
+    "prepare-review": "user-invocable-only"
+  }
+}

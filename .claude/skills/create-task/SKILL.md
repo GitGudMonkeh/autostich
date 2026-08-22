@@ -1,9 +1,13 @@
 ---
+name: create-task
 description: Set up a task — audit, branch, worktree, deps, contract scaffold
 argument-hint: <task-slug> <A|B|C> [--base <branch>] [--feature <branch>] [--pixels]
 allowed-tools: Bash(git fetch origin:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git for-each-ref:*), Bash(git ls-remote:*), Bash(git rev-list:*), Bash(git worktree list:*), Bash(git worktree add:*), Bash(git log:*), Bash(git status:*), Bash(git -C:*), Bash(npm --prefix:*), Read, Grep, Glob, Write
-disable-model-invocation: true
 ---
+
+**Owner-invoked only.** A session does not run this on its own initiative; it names the
+skill and lets the owner run it.
+
 Set up one task: run the cleanup audit, verify the repository is in a fit state, then create the
 branch, the worktree, the dependencies and a contract scaffold whose non-derivable sections are
 headings only.
@@ -67,7 +71,7 @@ proceed with a default.
 
 ## Step 2 — the cleanup audit, printed first
 
-Read `.claude/commands/cleanup-task.md` and follow its steps 1–7 as written, printing its sections
+Read `.claude/skills/cleanup-task/SKILL.md` and follow its steps 1–7 as written, printing its sections
 A–F. **Do not restate its rules here and do not reimplement its logic** — a second copy of the
 deletion-safety conditions is the exact drift this layer is built to avoid.
 

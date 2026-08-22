@@ -1,9 +1,12 @@
 ---
+name: cleanup-task
 description: Audit worktrees and branches; propose cleanup, never execute it
 argument-hint: [--worktrees-only|--branches-only]
 allowed-tools: Bash(git fetch origin:*), Bash(git worktree list:*), Bash(git for-each-ref:*), Bash(git rev-list:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git log:*), Bash(git status:*), Bash(git -C:*), Read, Grep, Glob
-disable-model-invocation: true
 ---
+
+**Owner-invoked only.** A session does not run this on its own initiative; it names the
+skill and lets the owner run it.
 
 Audit this repository's worktrees and non-permanent branches, and report what could be cleaned up.
 
