@@ -31,8 +31,8 @@ table at the end.
 
 | Concern | Rule |
 | --- | --- |
-| Durable source of truth | **GitHub.** Important work must not live only in a local worktree, terminal, Nimbalyst session, Claude session, or Codex session. |
-| Local cockpit | **Nimbalyst** — session orchestration, workstream visibility, review context, local Git/worktree management. |
+| Durable source of truth | **GitHub.** Important work must not live only in a local worktree, a terminal, or an agent session. |
+| Local orchestration | **The owner, through Claude Code.** There is no separate cockpit application. Sessions are opened by hand, one per task worktree, and the view of parallel work comes from `docs/workstreams/`, `git worktree list` and `/cleanup-task`. |
 | Implementation | **Claude Code** workers. |
 | Integration | **Claude Code** feature integrator. |
 | Review | **Optional and risk-based.** Codex can be asked for an independent technical review; it reviews only and does not implement. It is not a gate every task passes through — *Independent review* below. |
@@ -68,6 +68,10 @@ built**.
 | Priorities, scope changes, requirements outside the contract | **Owner** |
 | A genuine contradiction between two product requirements | **Owner** |
 | Anything the House rules reserve for explicit approval | **Owner** |
+
+**Owner decisions are gathered, not sprinkled.** `docs/engineering/task-lifecycle.md` §2 defines the
+two points at which a task stops for the owner — once before implementation, once before integration.
+A question that could have waited for one of them belongs there, not in a message of its own.
 
 **An agent does not delegate a technical multiple-choice question back to the owner.** Where several
 technical routes exist: analyse them, choose the one that fits the existing system, record the choice
@@ -478,6 +482,18 @@ same worktree
   Claude session C /
 ```
 
+### Session placement
+
+Nothing places a session automatically. **The owner starts each one, and the prompt that starts it
+names the branch and the worktree the session works in.**
+
+A session that has been given both confirms them before its first edit — *Before you start* above.
+Where the stated branch or worktree does not match what the session actually finds, that is a
+collision to surface, not a difference to work around.
+
+A session that has **not** been given them does not choose. It asks. Selecting a plausible-looking
+worktree is exactly how two writers end up in one, and the session cannot see the other writer.
+
 Workers must not:
 
 - switch to another worker's branch,
@@ -506,7 +522,10 @@ Task lifecycle — tiers, contract, evidence, visual review, handoff:
   carries durable cost — licence, bundle size, maintenance — beyond the task that adds it, so the
   decision to add at all is reserved.
 - **Do not open pull requests unless explicitly requested.**
-- **Do not commit or push unless the task/workflow explicitly authorizes it.**
+- **Committing and pushing the task's own branch is standing authorization.** It needs no separate
+  ask, and asking for it each time is a round trip that buys nothing: a task branch is isolated, and
+  integration is authorized separately. This does **not** extend to a permanent branch (`dev`,
+  `test`, `main`), to another task's branch, to a force-push, or to opening a pull request.
 - **Do not weaken tests simply to achieve green CI.**
 - **Do not rewrite shared history on your own initiative.**
 - **Do not delete branches/worktrees containing uncommitted or unpushed work.**
@@ -539,7 +558,7 @@ Read deeper documentation only when the current task needs it.
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
 | Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |
-| Current multi-agent setup work | `docs/workstreams/setup/` |
+| How the command layer and the multi-agent setup were built | `docs/workstreams/setup/` — dated records, not current instruction |
 
 If a referenced document is missing:
 

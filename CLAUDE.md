@@ -38,10 +38,20 @@ On either platform, where an equivalent takes no colon argument, prefer it — `
 
 ## Sessions and worktrees
 
-- Take the branch and worktree from `AGENTS.md` and the active task contract. Do not choose your own.
+- Take the branch and worktree from the starting prompt, `AGENTS.md` and the active task contract.
+  Do not choose your own — `AGENTS.md` — *Session placement*.
+- **Confirm the working directory before the first edit.** A session opened in the cockpit checkout
+  is not thereby entitled to a task worktree: say which directory you are in and ask, rather than
+  `cd`-ing into one that was not assigned to you.
 - **One simultaneous writer per worktree.** Never write from two sessions into the same worktree.
 - Sequential Claude sessions may continue the same task and worktree — implementation, then review
   fixes, then debugging.
+
+### Project commands
+
+`.claude/commands/` holds `/create-task`, `/cleanup-task` and `/prepare-review`. All three are
+**owner-invoked** — a session cannot run them for itself. Where one of them covers the work at hand,
+name it and let the owner run it, rather than hand-rolling the equivalent Git commands.
 
 ## Historical knowledge
 
