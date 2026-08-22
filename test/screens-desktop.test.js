@@ -1,14 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT, DT_RX } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #desktop-screens — Statistik · Bestenliste · Ranked · Victory ab 1400 px, als Quelltext-Ratsche.
+   #desktop-screens — Statistik · Bestenliste · Ranked · Victory ab 1280 px, als Quelltext-Ratsche.
 
    Wie bei den Menü-Overlays gibt es KEINEN zweiten Renderpfad: dasselbe JSX in jeder Breite, index.css
    entscheidet. Festgenagelt sind die Stellen, die stumm kaputtgehen — es kompiliert weiter, es sieht fast
    gleich aus, nur das Layout rutscht:
 
-     1. Die Klammer `lb-cockpit` muss unter 1400 px `display: contents` sein, sonst bekommt die Handy-Fassung
+     1. Die Klammer `lb-cockpit` muss unter 1280 px `display: contents` sein, sonst bekommt die Handy-Fassung
         eine zusätzliche Box im Fluss.
      2. Die Spaltenplätze der Statistik stehen AUSDRÜCKLICH im CSS. Ohne sie entscheidet die Reihenfolge im
         JSX, was wo landet — und die ändert sich, sobald jemand eine Sektion einfügt.
@@ -26,7 +27,7 @@ const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8"
 const css = read("index.css");
 
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return "";
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
@@ -37,7 +38,7 @@ const deskBlock = (() => {
 })();
 const base = deskBlock ? css.replace(deskBlock, "") : css;
 
-describe("#desktop-screens — die Klammer ist unterhalb von 1400 px keine Box", () => {
+describe("#desktop-screens — die Klammer ist unterhalb von 1280 px keine Box", () => {
   it("lb-cockpit steht als `display: contents` in der BASIS", () => {
     const rule = base.match(/^\.lb-cockpit\s*\{([^}]*)\}/m);
     expect(rule, "Basis-Regel für lb-cockpit nicht mehr gefunden").toBeTruthy();
@@ -45,9 +46,9 @@ describe("#desktop-screens — die Klammer ist unterhalb von 1400 px keine Box",
   });
 
   it("die desktop-only Zeilen sind am Handy ausgeblendet", () => {
-    // Auskunftszeile der Statistik und die Zweitzeilen der Navigationsspalte gibt es nur ab 1400 px.
-    expect(read("ui/StatsScreen.jsx")).toMatch(/className="st-readout hidden min-\[1400px\]:block"/);
-    expect(read("ui/LeaderboardScreen.jsx")).toMatch(/className="lb-tab-s hidden min-\[1400px\]:block"/);
+    // Auskunftszeile der Statistik und die Zweitzeilen der Navigationsspalte gibt es nur ab 1280 px.
+    expect(read("ui/StatsScreen.jsx")).toMatch(new RegExp(`className="st-readout hidden ${DT_RX}block"`));
+    expect(read("ui/LeaderboardScreen.jsx")).toMatch(new RegExp(`className="lb-tab-s hidden ${DT_RX}block"`));
   });
 });
 

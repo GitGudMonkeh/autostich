@@ -1,4 +1,22 @@
-@import "tailwindcss";
+/* #quellen — Tailwind sieht NUR die Anwendung, nicht das ganze Verzeichnis.
+
+   Tailwind 4 sucht ohne Angabe selbsttätig im ganzen Projekt nach Klassennamen. Das bezieht
+   `docs/**` mit ein — und dort stehen Klassennamen als PROSA: der historische Engineering-Log
+   zitiert sie, wenn er eine frühere Änderung beschreibt, Arbeitsstrang-Berichte führen sie in
+   Tabellen, und ein Lokalisierungs-Extrakt trägt eine ganze Klassenzeile. Aus solchen Zitaten
+   wurden echte Regeln im ausgelieferten Stylesheet.
+
+   Gemessen am 22.08.2026: zwölf Selektoren kamen auf diesem Weg in die Produktion, zwei davon mit
+   ungültigen Werten aus Platzhaltern eines Planungsdokuments — eine Regel, deren Deklaration der
+   Platzhalter selbst war. Kein Element trägt sie, sie waren also folgenlos; folgenlos ist aber
+   nicht dasselbe wie richtig. Ein Satz in einem Dokument darf nicht ins Produkt kompiliert werden.
+
+   Aufgenommen sind genau die zwei Orte, die die Anwendung ausmachen. NICHT dabei sind
+   `docs/prototypes/*.html` (eigenständige Entwurfsseiten) und `maintenance/index.html` (eigene
+   Seite, eigenes Stylesheet). Wächter: test/bundle-split.test.js, Abschnitt #quellen. */
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "../src";
 
 /* ============================================================================
    #typo — Tailwind-Theme: Schriftfamilien und Gewichte an EINER Stelle
@@ -22,6 +40,24 @@
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-weight-bold: 600;
   --font-weight-extrabold: 600;
+
+  /* #viewport-1280 — die Desktop-Schwelle, EINMAL.
+     Vorher stand die Zahl als arbiträre Tailwind-Variante an rund 134 Stellen
+     im JSX — `min-` plus Klammerausdruck, die Schwelle also 134-mal
+     ausgeschrieben. (Die alte Schreibweise steht hier bewusst NICHT wörtlich
+     da: der Codemod, der sie ersetzt hat, hätte sonst diesen Satz mit
+     umgeschrieben und die Begründung zerstört.) Eine Änderung war damit ein
+     Suchen-und-Ersetzen über zehn Dateien, bei dem eine übersehene Stelle
+     zwischen den beiden Werten den falschen Zweig zeigt — und das sieht man
+     weder im Test noch beim Draufschauen.
+     `--breakpoint-dt` erzeugt in Tailwind 4 die Variante `dt:`,
+     genauso wie `sm:`/`md:`/`lg:` aus den eingebauten Breakpoints kommen.
+
+     Die Media Queries weiter unten können den Wert NICHT lesen: CSS-Media-
+     Queries kennen keine Custom Properties. Sie tragen die Zahl deshalb
+     ausgeschrieben. Dass beide Fundorte übereinstimmen, sichert ein Wächter,
+     der sie ausrechnet und vergleicht, statt sie abzuschreiben. */
+  --breakpoint-dt: 1280px;
 }
 
 /* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
@@ -165,20 +201,20 @@ button { font-family: inherit; }
 .guide-ring-spark { animation: guide-ring-run 3.6s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .guide-ring-spark { animation: none; } }
 /* #desktop-Klammern des Leitfadens: Rumpf, Seite und die drei Spalten des Körpers sind unterhalb von
-   1400 px KEINE Boxen, sondern reichen ihre Kinder durch. Die Handy-Fassung bleibt damit DOM- und
+   1280 px KEINE Boxen, sondern reichen ihre Kinder durch. Die Handy-Fassung bleibt damit DOM- und
    pixelgleich, obwohl der Desktop daraus ein zweispaltiges Raster mit dreispaltigem Körper baut.
    Gilt auch für die Deck-Detailansicht, die dieselbe GuideBody in einer schmalen Spalte zeigt: dort
-   fehlt `.gd-page`, und ohne die greift die Desktop-Regel gar nicht erst (s. index.css, 1400er Block). */
+   fehlt `.gd-page`, und ohne die greift die Desktop-Regel gar nicht erst (s. index.css, 1280er Block). */
 .gd-desk, .gd-page, .gd-cols, .gd-col { display: contents; }
 /* Dieselben Klammern für das Glossar (#glossar-desktop): Rumpf, Seite, Scroller und der Spaltenfluss
    der Begriffe. `.gl-cols` ist der Grund, warum die Begriffe auf dem Handy weiter untereinander im
    Scroller stehen, obwohl der Desktop drei Spalten daraus macht. */
 .gl-desk, .gl-page, .gl-body, .gl-cols { display: contents; }
 /* Das laufende Ringband (#perf-ring) gibt es nur auf dem Desktop — `.as-ring` selbst ist ebenfalls erst
-   ab 1400 px definiert. Unterhalb ist das Kind ein leeres, unsichtbares Element. */
+   ab 1280 px definiert. Unterhalb ist das Kind ein leeres, unsichtbares Element. */
 .as-ring-run { display: none; }
 /* Dieselbe Bauart für den Anteilsbalken des Durchlauf-Graphen (#graph-gold): er ergänzt eine zweite
-   Lesart, für die es unterhalb von 1400 px keinen Platz gibt (die Zahl daneben ist dort 9 px gesetzt).
+   Lesart, für die es unterhalb von 1280 px keinen Platz gibt (die Zahl daneben ist dort 9 px gesetzt).
    Unsichtbar statt weggelassen, damit die Handy-Fassung Zeichen für Zeichen bleibt, was sie war. */
 .rg-share { display: none; }
 /* Serienkette: voll → statisches violettes Glühen; am Serien-Mult-Deckel (×2,5) → pulsendes Glühen. */
@@ -620,12 +656,12 @@ button { font-family: inherit; }
    Desktop-Pass Knöpfe, Streifen und Panel-Rahmen aus dem aktiven Deck einfärbt, stand
    die Marke als einziges Element quer zu jeder Deckfarbe. Als Text folgt sie mit.
 
-   AB WELCHER BREITE DECKFARBE: erst ab 1400 px, zusammen mit dem Rest des Hubs (Knöpfe,
+   AB WELCHER BREITE DECKFARBE: erst ab 1280 px, zusammen mit dem Rest des Hubs (Knöpfe,
    Streifen, Panel-Rahmen färben genau dort aus dem Deck). Darunter — also auf dem Handy —
    behält die Marke den Verlauf des alten PNG: Cyan → Blau → Violett → Amber, statisch.
    Das ist kein Rückfall, sondern die Regel: mobil bleibt der Logo-Dreiklang der Farbcode
    (Cyan = Start, Violett = Rangliste, Amber = Währung), und der braucht seinen Anker.
-   Die Deck-Fassung steht deshalb unten in der 1400-px-Sektion, nicht hier.
+   Die Deck-Fassung steht deshalb unten in der 1280-px-Sektion, nicht hier.
 
    Schnitt aus der Mockup-Abnahme (17.08.2026): Gewicht 450, Sperrung 0.06em, 46 px auf
    Desktop. Die Größe hängt an --wm-size, damit Mainscreen (groß) und Run-Kopf (klein)
@@ -658,10 +694,10 @@ button { font-family: inherit; }
 }
 /* Run-Kopf: dieselbe Marke, nur klein — ersetzt das h-14-Logo neben den Kopf-Controls. */
 .as-wordmark-sm { --wm-size: 22px; }
-/* #kopf (18.08.2026): Mainscreen-Marke am HANDY vergrößert. Ohne diese Regel fiel die Hub-Marke unter 1400 px
+/* #kopf (18.08.2026): Mainscreen-Marke am HANDY vergrößert. Ohne diese Regel fiel die Hub-Marke unter 1280 px
    auf den Basis-Clamp-Boden (28 px) zurück — für die Kopfzone deutlich zu klein. Der Versionsstempel ist aus der
    Zeile darunter in den Fuß gewandert (StartScreen), die Marke bekommt den Platz. `.hub-play` grenzt bewusst gegen
-   den Run-Kopf ab (der zieht seine 22 px aus `.as-wordmark-sm`). Ab 1400 px gewinnt die Desktop-Regel (88 px, in
+   den Run-Kopf ab (der zieht seine 22 px aus `.as-wordmark-sm`). Ab 1280 px gewinnt die Desktop-Regel (88 px, in
    der Media-Query weiter unten). Deckel 52 px: darüber stößt „AUTOSTICH" (nowrap) an die Mute-/Info-Knöpfe.
    Gemessen an der DEUTSCHEN Marke — die ist mit zehn Zeichen die längere; „AUTOTRICK" (englisch, neun Zeichen)
    bleibt darunter. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
@@ -672,7 +708,7 @@ button { font-family: inherit; }
 
 /* Ambient-Glow hinter der Marke — drei weiche Ellipsen im Logo-Dreiklang (Cyan links · Violett Mitte ·
    Amber rechts). Lag bis 17.08.2026 als inline-style im JSX; inline kann keine Media Query, und genau
-   die braucht es, seit der Glow ab 1400 px in die Deckfarbe wechselt (Deck-Fassung s. 1400-px-Sektion).
+   die braucht es, seit der Glow ab 1280 px in die Deckfarbe wechselt (Deck-Fassung s. 1280-px-Sektion).
    Zwei Fassungen derselben Idee: `as-wm-glow` über der Kopfzone des Hubs, `as-runhead-glow` im Run-Kopf.
    Beide Flächen sind absichtlich größer als die Marke und laufen früh in transparent aus — zusammen mit
    dem Blur am Element ergibt das den kantenlosen Übergang statt eines sichtbaren Rechtecks. */
@@ -683,7 +719,7 @@ button { font-family: inherit; }
    unter der Marke. Die Höhe halbiert der Aufrufer (StartScreen.jsx).
    #deck-mobil: Der Halo zieht seinen Ton jetzt aus dem Deck — er ist die weichste Stelle des Bildschirms
    und trägt den Deck-Bezug, ohne einen einzigen Knopf anzufassen. EINE Ellipse bleibt es trotzdem.
-   Die Deck-Fassung ab 1400 px bleibt dreiteilig: dort sind es nur ZWEI Farben (a1/a2) und sie gehören
+   Die Deck-Fassung ab 1280 px bleibt dreiteilig: dort sind es nur ZWEI Farben (a1/a2) und sie gehören
    demselben Deck, laufen also nicht gegeneinander. */
 .as-wm-glow {
   background:
@@ -1065,7 +1101,7 @@ button { font-family: inherit; }
    dieser Datei) trifft nur `.fixed.inset-0` / `.absolute.inset-0` / `.as-statusbar` — diese Kacheln
    fallen NICHT darunter und blurren am Handy tatsächlich. Das Menü ist nicht perf-kritisch (kein
    Frame-Loop), aber es sind sechs Blur-Flächen statt einer; wer hier Frames sucht, fängt damit an.
-   Ab 1400 px setzt `.as-hub-list .as-hub-tile` alles davon zurück — dort ist die Kachelbank eine Liste
+   Ab 1280 px setzt `.as-hub-list .as-hub-tile` alles davon zurück — dort ist die Kachelbank eine Liste
    auf EINER Glasscheibe, und ein zweiter Blur je Zeile wäre Blur auf Blur. */
 .as-hub-tile {
   background: linear-gradient(180deg,
@@ -1087,7 +1123,7 @@ button { font-family: inherit; }
 .as-hub-field.is-err { border-color: #e06a6a; }
 
 /* Die Rinne des Bonus-/Onboarding-Balkens. Stand bis 18.08.2026 als inline-style am Element und ist
-   hier WERTGLEICH übernommen — unterhalb von 1400 px ändert sich dadurch nichts. Der Umzug war nötig,
+   hier WERTGLEICH übernommen — unterhalb von 1280 px ändert sich dadurch nichts. Der Umzug war nötig,
    damit die Desktop-Fassung sie überhaupt überschreiben kann (inline schlägt jedes Stylesheet). */
 .as-bonus-track { background: #0e0e13; border: 1px solid #26262e; }
 
@@ -1120,7 +1156,7 @@ button { font-family: inherit; }
     rgb(17 17 22 / min(1, calc(.62 * var(--vk)))) 62%,
     rgb(17 17 22 / min(1, calc(.78 * var(--vk)))) 100%);
 }
-/* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1400 px ziehen
+/* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1280 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
 
    #ruhe: Die ZAHL ist jetzt neutral, nur die EINHEIT bleibt Gold. Vorher standen 161 und 654 in gesättigtem
@@ -1128,13 +1164,13 @@ button { font-family: inherit; }
    Start-Knopf. Sie sind aber Kontostand, kein Angebot: man liest sie, man klickt sie nicht. Der Ton wandert
    deshalb auf das Kürzel daneben, das ohnehin sagt, WELCHE Währung gemeint ist — dieselbe Information, ein
    Fünftel der Fläche. Der Glow ist ersatzlos weg (Glow-Budget: nur der Primär-CTA leuchtet).
-   Ab 1400 px überschreibt `.as-hub-list .as-hub-num` beides mit dem Ton der Listenzeile. */
+   Ab 1280 px überschreibt `.as-hub-list .as-hub-num` beides mit dem Ton der Listenzeile. */
 .as-hub-num { color: #dcdce4; }
 /* Schloss/Pokal am Ranglisten-Knopf. Etwas kleiner als die Schrift daneben und leicht zurück-
    genommen: das Zeichen begleitet das Wort, es kündigt es nicht an.
    Größe in `em` statt in px, und das ist der Grund, warum die Regel hier steht und nicht mehr in
-   der 1400-px-Sektion: das Zeichen gilt seit dem Pokal-Tausch auf ALLEN Breiten, und der Knopf ist
-   am Handy 15 px, ab 1400 px 19 px groß. 0,9 em hält auf beiden dasselbe Verhältnis zur Schrift —
+   der 1280-px-Sektion: das Zeichen gilt seit dem Pokal-Tausch auf ALLEN Breiten, und der Knopf ist
+   am Handy 15 px, ab 1280 px 19 px groß. 0,9 em hält auf beiden dasselbe Verhältnis zur Schrift —
    auf Desktop sind das die 17 px, gegen die es abgenommen wurde. */
 .as-rank-icon { width: 0.9em; height: 0.9em; flex: none; opacity: .8; }
 
@@ -1174,10 +1210,10 @@ button { font-family: inherit; }
    Die Kante ist dieselbe Sprache wie die Streifen der Verwaltungsliste: EIN Farbsignal an der linken
    Seite, sonst Ruhe. Sie verträgt darum auch 40 sehr unterschiedliche Decks.
 
-   #deck-mobil (17.08.2026): Die FARBE kam bis hierher nur ab 1400 px aus dem Deck, darunter stand der
+   #deck-mobil (17.08.2026): Die FARBE kam bis hierher nur ab 1280 px aus dem Deck, darunter stand der
    feste Logo-/#ruhe-Ton. Diese Grenze ist WEG — der Deckton gilt jetzt auf allen Breiten, und damit steht
    der Ton EINMAL statt zweimal. Vorher lagen dieselben vier Deklarationen doppelt vor (hier fest, in der
-   1400-px-Sektion mit `var(--deck-a1)`), was genau die Drift erzeugt, vor der die Datei sonst überall warnt.
+   1280-px-Sektion mit `var(--deck-a1)`), was genau die Drift erzeugt, vor der die Datei sonst überall warnt.
    Der Rückfall ist der #ruhe-Wert: ohne gesetztes Deck sieht der Knopf aus wie vor dem Deck-Pass.
    `--deck-a1`/`--deck-a2` hängen an `.app-root` (App.jsx) und sind auch im Menü gesetzt.
 
@@ -1223,7 +1259,7 @@ button { font-family: inherit; }
   border-left: 4px solid color-mix(in srgb, var(--deck-a2, #6696a4) 80%, transparent);
   color: color-mix(in srgb, var(--deck-a2, #cfe2e8) 50%, #ffffff);
 }
-/* „↻ Spielen" neben dem Seed-Feld. Als Klasse statt inline-style, damit der Rahmen ab 1400 px vom
+/* „↻ Spielen" neben dem Seed-Feld. Als Klasse statt inline-style, damit der Rahmen ab 1280 px vom
    Hover-Schein übernommen werden kann.
    #kante: Grund und Rahmen sind jetzt die der neutralen Kanten-Knöpfe. Die Hover-Regel weiter unten setzt
    ohnehin schon eine linke Kante in der Deckfarbe — sie hatte bis eben nur keine, auf der sie aufbauen konnte. */
@@ -1234,7 +1270,7 @@ button { font-family: inherit; }
   color: #b9b9c6;
 }
 
-/* Der Wochen-Chip am Ranglisten-Knopf; die Desktop-Fassung steht in der 1400er-Media-Query.
+/* Der Wochen-Chip am Ranglisten-Knopf; die Desktop-Fassung steht in der 1280er-Media-Query.
    #ruhe: Grund und Schrift folgen dem Knopf, auf dem der Chip sitzt — vorher Violett-Schwarz auf einem
    inzwischen teal-grauen Knopf, also der letzte Rest der alten Palette an dieser Stelle. Press Start 2P
    ist am Aufrufer entfallen (Begründung dort), der Chip nimmt jetzt die Mono des Hubs.
@@ -1312,7 +1348,7 @@ button { font-family: inherit; }
    #kante-anlauf (19.08.2026): Der Anlauf hängt an VIER Variablen statt an vier Literalen. Die Defaults
    in den `var()`-Rückfällen SIND die Handy-Werte — steht keine Variable, rechnet die Regel exakt wie
    vorher. Der Desktop-Block setzt sie um (s. dort). Bewusst so herum und nicht als zweite Regel im
-   1400er Block: es bleibt EINE Definition des Anlaufs, und man liest an dieser Stelle, dass es einen
+   1280er Block: es bleibt EINE Definition des Anlaufs, und man liest an dieser Stelle, dass es einen
    Schalter gibt — eine Kopie unten hätte die Familie gespalten.
    ACHTUNG: die Prozentzeichen gehören IN die Variablen. `color-mix(… var(--x)%, …)` ist ungültig. */
 .as-edge-card {
@@ -1333,7 +1369,7 @@ button { font-family: inherit; }
 .as-edge-card.is-locked { opacity: .45; }
 .as-edge-card.is-soon   { opacity: .55; border-left-style: dashed; }
 
-/* #skillart — Kopfstreifen der Angebotskarte in der Skill-Wahl (SkillSelect.jsx, nur ab 1400 px gerendert).
+/* #skillart — Kopfstreifen der Angebotskarte in der Skill-Wahl (SkillSelect.jsx, nur ab 1280 px gerendert).
    Am Regler entschieden (19.08.2026, zweite Runde): Zone 210 px · Zuschnitt füllend · Auslauf ab 62 %.
 
    `mix-blend-mode: screen` ist der Kern: die Bilder haben einen SCHWARZEN Grund statt eines Alphakanals,
@@ -1380,7 +1416,7 @@ button { font-family: inherit; }
 
 /* Dieselbe Klammer-Technik in den drei Menü-Overlays (#desktop-menues): `un-form` (Willkommen) sowie
    `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
-   Unterhalb von 1400 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
+   Unterhalb von 1280 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
 .op-col2, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-left, .go-col1 { display: contents; }
 /* Zwei Bausteine des Willkommen-Bildschirms gehören AUSSCHLIESSLICH der breiten Fassung: das Zeichen im
@@ -1388,9 +1424,9 @@ button { font-family: inherit; }
    Sie stehen im DOM, damit die breite Fassung ohne zweiten Renderpfad auskommt — hier sind sie aus. */
 /* EINE Regel für alles, was nur die breite Fassung trägt (Zeichen in Knöpfen, Zusatz-Beschriftungen,
    Hinweiszeilen). Die Bausteine stehen im DOM, damit der Desktop-Pass ohne zweiten Renderpfad auskommt;
-   sichtbar werden sie erst im 1400-px-Block, der ihnen dort ihre jeweilige `display`-Art gibt. */
+   sichtbar werden sie erst im 1280-px-Block, der ihnen dort ihre jeweilige `display`-Art gibt. */
 .as-deskonly { display: none; }
-/* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1400 px keine
+/* Dasselbe für den Ranglisten-Screen: `lb-cockpit` (Seed · Spielen · Modifikatoren) ist unter 1280 px keine
    Box, sondern reicht seine Kinder unverändert an die Handy-Fassung durch. */
 .lb-cockpit { display: contents; }
 
@@ -1413,7 +1449,7 @@ button { font-family: inherit; }
    Rand greifen könnte. */
 .rs-row-sep > * { margin-top: 7px; }
 
-/* #lv-fluegel: Auch die Level-up-Karte trägt eine Klammer — unterhalb von 1400 px ist sie KEINE Box, die
+/* #lv-fluegel: Auch die Level-up-Karte trägt eine Klammer — unterhalb von 1280 px ist sie KEINE Box, die
    Karte bleibt also direktes Kind des zentrierenden Overlays und die Handy-Fassung damit unverändert.
    Die Flügel und die Griffe darin werden dort ohnehin nicht gerendert (`useIsWide`-Gate). */
 /* #sk-ablehnen — Reroll/Ablehnen der Skill-Wahl sind seit 19.08. dieselben `ActionButton`s wie in der
@@ -1422,7 +1458,7 @@ button { font-family: inherit; }
    „Alle ablehnen" der Perk-Wahl und braucht mit `text-sm px-4` 158 px, wo auf 375 px nur 151 zur Verfügung
    stehen (gemessen, DE; EN ist kürzer). `whitespace-nowrap` ließe den Text aus dem Knopf laufen. Diese Regel
    nimmt deshalb die MASSE zurück, nicht die Optik — Kantenfarbe, Gewicht und Hover bleiben identisch. */
-@media (max-width: 1399.98px) {
+@media (max-width: 1279.98px) {
   .sk-actbtn { font-size: 12px; line-height: 1rem; padding: 8px 12px; }
 }
 
@@ -1430,18 +1466,18 @@ button { font-family: inherit; }
    Perk-Karte) — und #lv-fest bindet die feste Oberkante daran, das darf nicht auseinanderlaufen. */
 .lv-rig { display: contents; --lv-h: min(92dvh, 760px); }
 
-/* #cz-ruhe — Klammer der Bühnen-Fußzeile in der Werkstatt. Unterhalb 1400 px erzeugt sie keine Box, die
+/* #cz-ruhe — Klammer der Bühnen-Fußzeile in der Werkstatt. Unterhalb 1280 px erzeugt sie keine Box, die
    Handy-Fassung ist damit DOM- und pixelgleich (dieselbe Technik wie `.gd-cols` / `.gl-body`). */
 .cz-fxfoot { display: contents; }
 
-/* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1400 px keine Box,
+/* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1280 px keine Box,
    dort scrollt weiter das Panel selbst. */
 .lb-pagescroll { display: contents; }
 
-/* #go-stiche: die rechte Klammer der Aufstellung ist unter 1400 px ein schlichter Block — Gebäudeliste
+/* #go-stiche: die rechte Klammer der Aufstellung ist unter 1280 px ein schlichter Block — Gebäudeliste
    und Graph stehen dort wie bisher im Fluss (der Graph selbst wird am Handy gar nicht hier gerendert). */
 
-/* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1399 px keine Box, sondern reicht
+/* Dieselbe Klammer-Technik im Upgrade-Baum: `.up-branches` ist bis 1279 px keine Box, sondern reicht
    seine beiden Kinder unverändert an die Karte durch. Die Zweige „Decks" und „Allgemein" liegen beide
    im DOM; `is-off` blendet den aus, dessen Reiter gerade nicht gewählt ist — von außen ist das exakt
    das alte Verhalten (genau ein Zweig sichtbar, umgeschaltet über die Reiterzeile). Die Spalten-
@@ -1450,47 +1486,58 @@ button { font-family: inherit; }
 .up-branch.is-off { display: none; }
 .up-branch-h { display: none; }
 /* Die Zeichenerklärung steht zweimal im DOM (Begründung an `Legend` in UpgradeScreen.jsx). Bis
-   1399 px gilt der Handy-Platz unter dem Stapel; die Instanz im Panel ist hier aus dem Layout.
-   Umgeschaltet wird in der 1400-px-Sektion — sichtbar ist immer genau eine. */
+   1279 px gilt der Handy-Platz unter dem Stapel; die Instanz im Panel ist hier aus dem Layout.
+   Umgeschaltet wird in der 1280-px-Sektion — sichtbar ist immer genau eine. */
 .up-legend-page { display: none; }
 
-/* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1399 px reichen `cz-split` und `cz-main` ihre
+/* Dieselbe Klammer-Technik in der Deck-Werkstatt: bis 1279 px reichen `cz-split` und `cz-main` ihre
    Kinder unverändert an den Scroller durch — Katalog, Effekt-Bühne und Liste sitzen exakt wie bisher.
-   Ab 1400 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts).
-   `cz-fxside` gehört in dieselbe Familie: ab 1400 px ist es das rechte Panel des Effekte-Reiters
+   Ab 1280 px wird `cz-split` das Zwei-Spalten-Raster (Katalog links, Pack-Detail rechts).
+   `cz-fxside` gehört in dieselbe Familie: ab 1280 px ist es das rechte Panel des Effekte-Reiters
    (Kategorien · Liste · Fußnote), darunter fällt die Klammer weg und die Reihenfolge Bühne → Liste →
    Hinweis bleibt exakt die der Handy-Fassung. */
 .cz-split, .cz-main, .cz-mainscroll, .cz-fxside { display: contents; }
 
-/* Der Glossar-Knopf steht zweimal im Startbildschirm: oben rechts in der Ecke (bis 1399 px) und unten
-   im Fußband hinter dem Discord-Zeichen (ab 1400 px). Zwei Instanzen statt einer wandernden, weil die
+/* Der Glossar-Knopf steht zweimal im Startbildschirm: oben rechts in der Ecke (bis 1279 px) und unten
+   im Fußband hinter dem Discord-Zeichen (ab 1280 px). Zwei Instanzen statt einer wandernden, weil die
    beiden Plätze in verschiedenen Containern liegen — verschieben ließe sich das nur im DOM, und das
    würde die Handy-Fassung mitziehen. Sichtbar ist immer genau eine.
    `!important` ist hier nicht Bequemlichkeit: `.gloss-i-btn` (der ⓘ-Kreis) setzt selbst `display: grid`
    und gewinnt sonst gegen jede Utility-Klasse am Element. */
 .as-gloss-foot { display: none !important; }
 
-/* #ecke — das Ecken-Paar (Glossar + Ton) gibt es NUR ab 1400 px (Regeln im Desktop-Block, s. dort).
+/* #ecke — das Ecken-Paar (Glossar + Ton) gibt es NUR ab 1280 px (Regeln im Desktop-Block, s. dort).
    Unterhalb bleibt alles, wie es war: der Mute-Knopf in der Ecke des Startbildschirms, das Glossar
    rechts daneben. Die Handy-Fassung wird in diesem Umbau grundsätzlich nicht angefasst. */
 .as-corner { display: none; }
 
 /* ============================================================================
-   #desktop — Startbildschirm ab 1400 px (Desktop-Pass)
+   #desktop — Startbildschirm ab 1280 px (Desktop-Pass)
    ----------------------------------------------------------------------------
-   Bis 1399 px ist ALLES hier wirkungslos: sämtliche Regeln stehen in der Media Query, die Klassen im
+   Bis 1279 px ist ALLES hier wirkungslos: sämtliche Regeln stehen in der Media Query, die Klassen im
    JSX sind darunter tote Haken. Das ist Absicht — das Handy-Layout wurde bis auf den Pixel gegen ein
    iPhone SE abgestimmt (s. LANE_LEAD-Kommentar in StartScreen.jsx) und darf sich nicht bewegen.
 
-   Warum 1400 und nicht der `xl`-Standard 1280: das Spaltenpaar misst 1520 px. Bei 1280 bliebe kein Rand,
-   der Entwurf klappt dort bewusst auf eine Spalte zurück. 1400 ist die erste Breite, bei der das Paar mit
-   Luft steht (fluid gedeckelt, s. .hub-pair).
+   WARUM 1280 (#viewport-1280, 22.08.2026). Hier stand bis heute die Gegenbegründung: 1400 statt des
+   `xl`-Standards 1280, weil das Spaltenpaar 1520 px misst und bei 1280 kein Rand bliebe. Das Argument
+   war richtig und ist überholt — nicht widerlegt, sondern von einer Anforderung eingeholt, die es
+   damals nicht gab: der itch.io-Rahmen ist 1280 × 720. Unter der alten Schwelle bekam dort JEDER
+   Besucher die Handy-Fassung, und für viele ist das die einzige Sitzung, die sie je sehen.
+
+   Das Spaltenpaar verliert dadurch nichts, was es braucht: `.hub-pair` ist fluid auf 1520 px gedeckelt
+   und hängt zusätzlich am `zoom`-Clamp mit Untergrenze 0,85 (s. u.) — es skaliert bei 1280 also mit,
+   statt überzulaufen. Die 1520 px sind Luft, die der Entwurf NIMMT, nicht Luft, die er BRAUCHT.
+
+   Was die Verschiebung an anderen Flächen kostet, wird gemessen und nicht geraten:
+   docs/workstreams/viewport-1280/. Reparaturen sind dort ein eigener Schritt — in diesem Commit
+   bewegt sich AUSSCHLIESSLICH die Zahl. Dass die Handy-Fassung Regel für Regel und Pixel für Pixel
+   dieselbe geblieben ist, steht als Nachweis in evidence-T1.md.
    ============================================================================ */
-@media (min-width: 1400px) {
+@media (min-width: 1280px) {
   /* Die obere linke Ecke soll ausgeglichen wirken: Der Rahmen der Bühne ist oben 1,5 rem breit, seitlich
      aber nur 1 rem — der Ton-Knopf saß dadurch sichtbar näher an der linken Kante als an der oberen
      (gemessen: 16 statt 24 px). Auf dem Desktop bekommen alle vier Seiten denselben Wert.
-     Unter 1400 px bleibt es bei 1 rem: dort ist Breite knapp, und jeder Rand geht vom Inhalt ab. */
+     Unter 1280 px bleibt es bei 1 rem: dort ist Breite knapp, und jeder Rand geht vom Inhalt ab. */
   .app-root {
     padding-left: max(1.5rem, env(safe-area-inset-left));
     padding-right: max(1.5rem, env(safe-area-inset-right));
@@ -1552,7 +1599,7 @@ button { font-family: inherit; }
      Stellschraube, die 40 unterschiedlich helle Spielfelder gleichzeitig beherrschbar macht. Der Blur ist
      das, was „durchscheinend" von „unruhig" trennt — ohne ihn zeichnet sich jedes Bilddetail hinter dem
      Text ab. Auf `pointer: coarse` (Handy) ist Backdrop-Blur projektweit aus Perf-Gründen abgeschaltet;
-     diese Regeln greifen dort ohnehin nicht, weil kein Handy 1400 px CSS-Pixel hat. */
+     diese Regeln greifen dort ohnehin nicht, weil kein Handy 1280 px CSS-Pixel hat. */
   .as-glass {
     background: linear-gradient(180deg, rgba(27, 26, 36, 0.72), rgba(22, 22, 32, 0.78));
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
@@ -1791,7 +1838,7 @@ button { font-family: inherit; }
   .as-ring { box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent); }
 
   /* ==========================================================================
-     #desktop — Upgrade-Baum ab 1400 px
+     #desktop — Upgrade-Baum ab 1280 px
      --------------------------------------------------------------------------
      Aus dem schmalen Modal (576 px, 30 % der Bildbreite) wird ein randverankerter Screen: die beiden
      Zweige stehen nebeneinander, damit alle 27 Knoten gleichzeitig sichtbar sind. Das ist der Punkt
@@ -1800,7 +1847,7 @@ button { font-family: inherit; }
 
      Viel `!important` hier, und das hat einen Grund: Der Screen setzt seine Flächen über Inline-Styles
      (MODAL_CARD, STICKY_HEAD_BG, der Dim am Overlay-Root). Inline schlägt jedes Stylesheet, also ist
-     das der einzige Weg, sie ab 1400 px durch Glas zu ersetzen, ohne die geteilte Quelle in
+     das der einzige Weg, sie ab 1280 px durch Glas zu ersetzen, ohne die geteilte Quelle in
      modalStyle.jsx anzufassen — die hängt an allen anderen Modals mit dran. [Neue Screens besser
      gleich als Klasse anlegen, dann entfällt das.]
      ========================================================================== */
@@ -1868,7 +1915,7 @@ button { font-family: inherit; }
      Aus vier gestapelten Bändern (Titel · Guthaben+Knöpfe · Zähler · Hinweis, zusammen 172 px) wird
      EINE Zeile. Der Kniff ist `display: contents` an der inneren Guthaben-Zeile: sie verschwindet als
      Box, ihre Kinder werden direkte Rasterfelder — so lassen sich Titel, Guthaben, Zähler und Knöpfe
-     nebeneinander setzen, ohne die DOM-Reihenfolge anzufassen (unter 1400 px muss sie die alte
+     nebeneinander setzen, ohne die DOM-Reihenfolge anzufassen (unter 1280 px muss sie die alte
      bleiben). Spart rund 95 px, die der Baum auf flachen Fenstern zum Scrollen gebraucht hätte. */
   .up-head {
     background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
@@ -2172,12 +2219,19 @@ button { font-family: inherit; }
      Bis hierher hoben sich die Knöpfe beim Überfahren nur an. Auf Desktop, wo eine Maus da ist und
      der Zeiger über die Fläche wandert, ist das wenig: Das Anheben sieht man erst, wenn man schon
      getroffen hat. Der Rahmen zieht ab hier zusätzlich den Deckton an und wirft einen Schein — nach
-     außen und, ganz schwach, nach innen. Auf Touch greift `:hover` ohnehin nicht, und unter 1400 px
+     außen und, ganz schwach, nach innen. Auf Touch greift `:hover` ohnehin nicht, und unter 1280 px
      bleibt es beim reinen Anheben.
 
-     `:hover` steht bewusst ohne `@media (hover: hover)`: Ein Desktop-Fenster unter 1400 px gibt es,
-     ein Touchgerät mit 1400 CSS-Pixeln Breite praktisch nicht. Die Breite ist hier das schärfere
+     `:hover` steht bewusst ohne `@media (hover: hover)`: Ein Desktop-Fenster unter 1280 px gibt es,
+     ein Touchgerät mit 1280 CSS-Pixeln Breite praktisch nicht. Die Breite ist hier das schärfere
      Kriterium und sie steht schon in der umgebenden Regel.
+
+     #viewport-1280 (22.08.2026) — dieses Argument ist mit der Schwelle SCHWÄCHER geworden, und das
+     gehört hierhin statt in eine Fußnote: unter der vorherigen, höheren Schwelle lag das 12,9"-iPad
+     quer (1366 CSS-Pixel) DARUNTER und sah diese Regeln nie. Bei 1280 liegt es darüber. Die Aussage
+     „praktisch kein Touchgerät" stimmt damit nicht mehr uneingeschränkt.
+     Nicht geändert wird sie hier trotzdem: `@media (hover: hover)` nachzurüsten wäre eine Reparatur,
+     und dieser Commit verschiebt nur die Zahl. Als Befund notiert in evidence-T1.md.
      ========================================================================== */
   .as-cta-primary:hover,
   .as-cta-ghost:hover,
@@ -2199,7 +2253,7 @@ button { font-family: inherit; }
      einem 1920er Schirm stehen sie übereinander in einer Spalte, und vier Varianten derselben Geste
      sortieren sich nicht — sie ergeben eine Leiter, auf der keine Stufe heraussticht.
 
-     Ab 1400 px deshalb ZWEI Bauformen statt vier Helligkeiten:
+     Ab 1280 px deshalb ZWEI Bauformen statt vier Helligkeiten:
      · `as-cta-primary` ist eine TASTE — Fläche in der Deckfarbe, Rahmen rundum, weicher Schein, Licht
        von oben. Sie ist das einzige laute Element der Seite.
      · Alles andere (Tutorial, Rangliste, „Lauf beginnen" solange ein Lauf läuft) ist eine ruhige ZEILE:
@@ -2234,7 +2288,7 @@ button { font-family: inherit; }
        zur Taste macht, ist die FLÄCHE in der Deckfarbe plus das Licht von oben — beides bleibt. */
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--deck-a1, #26c6e6) 34%, transparent);
   }
-  /* Eckiger, wie alles andere ab 1400 px (6 px). Die Knöpfe tragen ihren Radius als Tailwind-Utility
+  /* Eckiger, wie alles andere ab 1280 px (6 px). Die Knöpfe tragen ihren Radius als Tailwind-Utility
      (`rounded-xl` = 12 px); index.css steht ungelayert dahinter und schlägt sie ohne `!important`. */
   .as-cta-primary, .as-cta-ghost, .as-tut-btn, .as-ranked-btn, .as-seed-play { border-radius: 6px; }
   /* Die Zweitzeile der Fortsetzen-Taste („Durchlauf 1/50 · Score 544") klebte am Titel: der Knopf ist
@@ -2255,7 +2309,7 @@ button { font-family: inherit; }
   /* Die Verwaltungsliste: Fläche hellt auf, der Farbanlauf zieht an und die Kante wächst von 4 auf
      6 px. KEIN Schein am Rahmen — die Liste sitzt in EINEM Glasrahmen, ein Leuchten je Zeile würde
      gegen diesen Rahmen arbeiten. Angehoben wird hier auch nicht (steht schon im JSX als
-     `min-[1400px]:hover:translate-y-0`): eine Liste, die beim Überfahren hüpft, wirkt unruhig.
+     `dt:hover:translate-y-0`): eine Liste, die beim Überfahren hüpft, wirkt unruhig.
      `!important` beim Streifen, weil seine Farbe inline aus dem JSX kommt. */
   .as-hub-list .as-hub-tile:hover { background: rgba(255, 255, 255, .06); }
   .as-hub-list .as-hub-tile:hover .as-hub-stripe {
@@ -2291,7 +2345,7 @@ button { font-family: inherit; }
   }
 
   /* ==========================================================================
-     #desktop — Deck-Werkstatt ab 1400 px
+     #desktop — Deck-Werkstatt ab 1280 px
      --------------------------------------------------------------------------
      Der Katalog zeigt 21 gezeichnete Kartenrücken durch ein 576 px schmales Fenster; sechs sind
      sichtbar, für den Rest scrollt man 1535 px. Ab hier steht der Screen randverankert, der Katalog
@@ -2381,7 +2435,7 @@ button { font-family: inherit; }
   .cz-tabs { grid-column: 1 / -1; grid-row: 3; }
 
   /* --- Die Reiter sind flache Text-Reiter (#cz-ruhe, 19.08.2026) -----------
-     Bis 1399 px sind es Karteikartenreiter über die volle Breite (drei gleich breite Flächen mit
+     Bis 1279 px sind es Karteikartenreiter über die volle Breite (drei gleich breite Flächen mit
      Unterkante) — auf 1824 px wurde daraus eine 600 px breite Fläche je Reiter, ein Rahmenelement statt
      eines Bedienelements. Die erste Desktop-Antwort darauf waren Knöpfe der Kanten-Familie (Fläche,
      Rahmen, Radius, farbige Linkskante). Sie hat das Problem gelöst und ein zweites gemacht: die
@@ -2421,7 +2475,7 @@ button { font-family: inherit; }
      Screens setzen ihre schmale Spalte links (Upgrade-Baum: Fraktionen · Leitfaden: Archetypen ·
      Glossar: Kategorien) — die Werkstatt war der einzige Screen mit der schmalen Spalte rechts, und
      zwischen Baum und Werkstatt wechselt man im Menü ständig hin und her.
-     Umgesetzt über die SPUR, nicht über die DOM-Reihenfolge: unter 1400 px reicht `.cz-split` seine
+     Umgesetzt über die SPUR, nicht über die DOM-Reihenfolge: unter 1280 px reicht `.cz-split` seine
      Kinder unverändert durch (`display: contents`), dort steht der Katalog weiter oben und das Detail
      darunter — genau so, wie eine Handy-Seite gelesen wird. Preis der Lösung: die Tabulator-Reihenfolge
      folgt weiter dem DOM, läuft also rechts vor links. */
@@ -2452,7 +2506,7 @@ button { font-family: inherit; }
   /* Der Rahmen gehört an die Box, das Scrollen nach INNEN. Lag beides am selben Element, lief die
      untere Ringkante beim Scrollen mitten durch die Kacheln — ein Pseudo-Element mit `inset: 0` sitzt
      im Inhaltsfluss und wandert mit ihm. Deshalb trägt `.cz-main` nur noch Rahmen und Fläche, und
-     `.cz-mainscroll` darin scrollt. Unter 1400 px ist der Wrapper `display: contents`, also nicht da. */
+     `.cz-mainscroll` darin scrollt. Unter 1280 px ist der Wrapper `display: contents`, also nicht da. */
   .cz-main {
     display: block;
     min-width: 0;
@@ -2557,7 +2611,7 @@ button { font-family: inherit; }
   .cz-main:has(.cz-stage) { background: none; box-shadow: none; }
   /* Der Ring gehört an die zwei Panels; der des Wrappers zöge sonst einen dritten Rahmen um beide.
      `as-ring` und `as-ring-run` sind ein PAAR (#perf-ring) — hier wird das KIND stumm geschaltet und
-     nicht die Klasse entfernt, weil `.cz-main` unter 1400 px und in den anderen Reitern derselbe
+     nicht die Klasse entfernt, weil `.cz-main` unter 1280 px und in den anderen Reitern derselbe
      Knoten ist und seinen Rahmen dort behalten muss. */
   .cz-main:has(.cz-stage) > .as-ring-run { display: none; }
   .cz-mainscroll:has(.cz-stage) {
@@ -2619,7 +2673,7 @@ button { font-family: inherit; }
   .cz-fxhint { margin-top: 12px !important; flex: none; }
 
   /* ==========================================================================
-     #desktop — Leitfaden ab 1400 px
+     #desktop — Leitfaden ab 1280 px
      --------------------------------------------------------------------------
      Der letzte große Screen, der noch als 672-px-Modal in der Mitte eines 1920-px-Bildes stand:
      35 % der Breite genutzt, dafür drei Bildschirmhöhen Inhalt untereinander. Ab hier derselbe
@@ -2775,11 +2829,26 @@ button { font-family: inherit; }
      Der Inhalt wird mit der Breite kürzer (die drei Spalten brechen weniger um), deshalb ist die
      Mindesthöhe keine feste Zahl, sondern die Gerade durch die beiden Messpunkte: 1400 px → 715,
      1920 px → 616. Der `max()`-Boden fängt sehr breite Schirme ab; dort entscheidet wieder der Inhalt. */
+  /* #viewport-1280 / V1280-03 — DER RAHMEN GIBT NACH, NICHT DIE SCHRIFT.
+
+     Vorher trug diese Seite den Schrumpffaktor `--gs` in vier gemessenen Stufen und wuchs dafür in
+     der Höhe, bis sie passte. Bei 1280 landete Text dadurch auf 8,61 px, bei 1600×900 fiel
+     "Kernidee" von 13,2 auf 9,9 px — 60 Knoten kleiner als dieselben Knoten bei 1920. Das war die
+     EINZIGE Fläche im ganzen Survey mit Textverkleinerung, und der Eigentümer hat den Handel
+     umgedreht: Lesbarkeit schlägt Nicht-Scrollen.
+
+     `--gs` steht deshalb überall auf 1 (die Stufen weiter unten sind entfernt). Die ~25
+     `calc(… * var(--gs))` bleiben stehen und rechnen jetzt neutral — sie zu entfernen wäre ein
+     zweiter, großer Diff ohne Verhaltensgewinn.
+
+     Statt zu wachsen scrollt die Seite jetzt INNEN, mit dem Idiom, das index.css an sechzehn
+     Stellen führt. `align-self: start` musste weichen: es ließ die Seite an ihrem Inhalt enden,
+     womit sie nie eine Höhe hatte, an der sie hätte überlaufen können. */
   .gd-page {
     display: flex; flex-direction: column;
-    align-self: start;
     border-radius: 14px; padding: 16px 20px 14px;
-    min-height: max(560px, calc(985px - 19.04vw));
+    min-height: 0;
+    overflow-y: auto; overscroll-behavior: contain; padding-right: 14px;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
@@ -2835,7 +2904,7 @@ button { font-family: inherit; }
      Die kleine Stufe ist damit PFLICHT, nicht Feinschliff: mit der heutigen Größe liefe der Screen auf
      flachen Fenstern über und würde scrollen. Diskrete Stufen statt clamp(), weil der Rest der Datei so
      gebaut ist — und weil eine Stufe testbar ist (test/guide-desktop.test.js). */
-  .gd-page { --gs: .95; }
+  .gd-page { --gs: 1; }
   .gd-page .gd-seclabel { margin-top: calc(24px * var(--gs)); margin-bottom: calc(12px * var(--gs)); }
   .gd-page .gd-sectext { font-size: calc(11px * var(--gs)); }
   .gd-page .gd-core { font-size: calc(15px * var(--gs)); }
@@ -2859,7 +2928,7 @@ button { font-family: inherit; }
   .gd-page .gd-ringbox { max-width: calc(334px * var(--gs)); }
 
   /* ==========================================================================
-     #glossar-desktop — Glossar ab 1400 px
+     #glossar-desktop — Glossar ab 1280 px
      --------------------------------------------------------------------------
      Der letzte Screen im 672-px-Modal: 109 Begriffe in einer Spalte, die 42 % der Bildbreite nutzt.
      Ab hier derselbe gerahmte Screen wie Baum, Werkstatt und Leitfaden — Überzug, Ränder, Kopf-Raster,
@@ -3117,7 +3186,7 @@ button { font-family: inherit; }
   .gl-grouphead { margin: 20px 0 9px !important; }
 
   /* ==========================================================================
-     #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px
+     #desktop-menues — Optionen · Willkommen · Feedback ab 1280 px
      --------------------------------------------------------------------------
      Die drei letzten Menü-Overlays, die noch als schmale Handy-Karte mitten auf einem 1920er Schirm
      standen (Optionen 512 px, Willkommen 320 px, Feedback 512 px). Sie bekommen KEINEN eigenen
@@ -3572,7 +3641,7 @@ button { font-family: inherit; }
   .fb-shorticon { display: inline-block; opacity: .7; }
 
   /* ==========================================================================
-     #desktop-screens — Statistik · Bestenliste · Ranked · Victory ab 1400 px
+     #desktop-screens — Statistik · Bestenliste · Ranked · Victory ab 1280 px
      --------------------------------------------------------------------------
      Vier Screens, dieselbe Familie wie Baum/Werkstatt/Optionen: Überzug 82 % OHNE Blur (#perf-blur),
      Kopf als EINE Rasterzeile, Inhalt in Glas-Panels mit laufendem Deckfarben-Ring (`as-ring` + `.as-ring-run`).
@@ -3735,7 +3804,7 @@ button { font-family: inherit; }
      22 px ist der Wert, mit dem `.st-sec`, `.up-*` und die Lauf-Details ihre Panels absetzen. */
   /* #run-dialoge: die zwei Rückfragen des Laufs. 320 px (`max-w-xs`) sind auf 1920 px eine Handy-Sprechblase;
      der Beenden-Dialog trägt drei Optionszeilen mit Folgentext, der Neustart-Dialog nur eine Warnung. */
-  /* #run-dialoge, Nachjustierung (19.08.2026): eckiger, wie alles andere ab 1400 px — die Hub-Knöpfe, die
+  /* #run-dialoge, Nachjustierung (19.08.2026): eckiger, wie alles andere ab 1280 px — die Hub-Knöpfe, die
      Baum-Kacheln und die Angebotskarten stehen auf 6 px, die zwei Rückfragen liefen mit 12/8 px daneben.
      Die KARTE behält ihren Radius: sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung wie an den
      Panels von Baum, Werkstatt und Leitfaden). */
@@ -3973,7 +4042,7 @@ button { font-family: inherit; }
 
   /* ---- Lauf-Details: derselbe Screen wie nach einem Lauf ------------------
      Eine gespeicherte Zeile aus Statistik oder Bestenliste öffnete bis hierher ein 448-px-Fenster, während der
-     Victory-Screen daneben den ganzen Schirm nutzt — dieselbe Sache, zwei Formate. Ab 1400 px ist es derselbe
+     Victory-Screen daneben den ganzen Schirm nutzt — dieselbe Sache, zwei Formate. Ab 1280 px ist es derselbe
      zentrierte Block mit derselben Kopfzeile und denselben drei Spalten; die Panels sind die Schnittmenge der
      Daten, die ein gespeicherter Lauf trägt (kein Punkteverlauf, kein Verdienst). */
   .rd-root {
@@ -4381,8 +4450,11 @@ button { font-family: inherit; }
      nichts verdecken. Wird das Fenster knapp, schrumpfen sie (flex-shrink), statt über die Karte zu
      laufen; die Karte selbst ist `flex: 0 0 auto` und behält Breite UND Position, egal was auf- oder
      zugeklappt ist (sonst bräche das Angebot mitten in der Entscheidung neu um). Rechnung für den
-     engsten Fall: 1400 px − 32 (Overlay-Polster) − 880 (Karte) − 44 (Griffbahn) = 444 px für zwei
-     Flügel, also 222 je Seite.
+     engsten Fall: 1280 px − 32 (Overlay-Polster) − 880 (Karte) − 44 (Griffbahn) = 324 px für zwei
+     Flügel, also 162 je Seite. (#viewport-1280, 22.08.2026: unter der vorherigen, höheren Schwelle
+     waren es 444 bzw. 222. Der Flügel WÜNSCHT 320 px — er bekommt am unteren Ende jetzt gut die Hälfte davon.
+     Das ist hier bewusst dokumentiert und NICHT repariert: die Flügel bleiben stehen, wie sie sind,
+     bis eigens über sie entschieden ist. s. docs/workstreams/viewport-1280/.)
      RASTER statt Flex, und das ist die eigentliche Pointe: mit drei Spuren (1fr · auto · 1fr) sitzt die Karte
      in der MITTELSPUR und steht damit immer exakt in der Fenstermitte — auch wenn nur EIN Flügel offen ist.
      Als Flex-Reihe mit `justify-content: center` wanderte sie beim Aufklappen um die halbe Flügelbreite zur
@@ -4396,7 +4468,30 @@ button { font-family: inherit; }
      damit beim Zuklappen eines Flügels schmaler (gemessen: 880 → 784 px). Fest heißt: die Karte steht in
      allen vier Zuständen (zu/zu · auf/zu · zu/auf · auf/auf) auf denselben Pixeln. */
   .lv-rig {
-    display: grid; grid-template-columns: minmax(0, 1fr) 924px minmax(0, 1fr);
+    /* #viewport-1280 / V1280-04 — DIE MITTELSPUR GIBT NACH, DIE FLÜGEL BEKOMMEN EINEN BODEN.
+
+       Gemessen: mit fester 924er Mitte bekam eine Seitenspur bei 1920 noch 482 px, bei 1280 nur
+       162 — sie WILL 356. Auf der Perk-Wahl blieben "Deine aktiven Formationen" dadurch 51 px für
+       166 px Text, also 69 % abgeschnitten. Der Eigentümer: "mittelteil kleiner skalieren das die
+       seiten panels ganz angezeigt werden" (V1280-04).
+
+       DAS SPRINGEN KOMMT DABEI NICHT ZURÜCK, und das ist der Punkt, an dem die alte Fassung hing.
+       Der Kommentar unten hält fest, warum die Mitte fest war: eine `auto`-Spur misst sich am
+       INHALT, also wurde die Karte beim Zuklappen eines Flügels schmaler (gemessen 880 → 784) und
+       das Angebot brach mitten in der Entscheidung um.
+
+       Hier misst sich nichts am Inhalt. `minmax(0, 924px)` ist nach oben gedeckelt und nach unten
+       nur durch den verbleibenden Platz begrenzt; die Flügelspuren tragen einen Boden aus `clamp`,
+       der allein an der Fensterbreite hängt. Beide Spuren sind damit eine reine Funktion des
+       Viewports — ob ein Flügel offen, zu oder leer ist, ändert keine einzige Breite.
+
+       Was das rechnet (1fr-Anteile bei aufgebrauchtem Platz, Overlay-Polster 32 px):
+         1920 → Flügel 356 (Boden erreicht), Mitte 924 — unverändert wie bisher
+         1600 → Flügel 352, Mitte 864
+         1280 → Flügel ~282 statt 162, Mitte ~685
+       Die Karte trägt `max-width`, nicht `width`, und folgt der Spur von selbst. */
+    display: grid;
+    grid-template-columns: minmax(clamp(240px, 22vw, 356px), 1fr) minmax(0, 924px) minmax(clamp(240px, 22vw, 356px), 1fr);
     /* Oben BÜNDIG, nicht mittig: ein kurzer Flügel (die Kennzahlen sind ~300 px hoch, die Karte ~750)
        schwebte sonst auf halber Höhe neben der Karte und wirkte, als gehörte er nicht dazu. */
     align-items: start; width: 100%;
@@ -4465,6 +4560,17 @@ button { font-family: inherit; }
   .lv-wing-l { justify-self: end; }
   .lv-wing-r { justify-self: start; }
   .lv-wing-sep { height: 1px; margin: 12px 0; }
+  /* #viewport-1280 / V1280-01 — die Legendären stehen zu ZWEIT, nicht zu viert.
+
+     `.sk-offers` setzt drei Spalten, weil die Skill-Wahl drei Angebote je Fraktion zeigt. Die
+     Legendär-Wahl zeigt vier, und vier Spalten in derselben Mitte gaben jeder Karte rund 220 px —
+     der Text brach dann Wort für Wort um. Eigentümer: "legendare auf 2 nebeneinander andern anstatt
+     4. bessere uebersicht" (V1280-01).
+
+     Eigene Klasse statt `.sk-offers` umzuschreiben: die drei Spalten der Skill-Wahl sind aus einem
+     Playtest hergeleitet und sollen bleiben, wie sie sind. Zwei Reihen zu zwei Karten sind bei vier
+     Angeboten ohnehin die ruhigere Anordnung — `grid-auto-rows: 1fr` hält beide Reihen gleich hoch. */
+  .sk-offers-leg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* Drei Angebote je Fraktion → drei Spalten. Auf 880 px brach `sm:grid-cols-2` die dritte Karte in eine
      eigene Zeile und ließ daneben ein Loch — genau das Bild, das die Mitte „unattraktiv" gemacht hat.
 
@@ -4474,7 +4580,7 @@ button { font-family: inherit; }
      `items-start` trägt — ohne das zöge sich die Karte INNERHALB der gleich hohen Zeile wieder auf
      Inhaltshöhe zusammen, und die Regel täte sichtbar nichts.
 
-     Bewusst NUR ab 1400 px: am Handy ist das Angebot einspaltig, dort bläht `1fr` jede einzelne Karte auf
+     Bewusst NUR ab 1280 px: am Handy ist das Angebot einspaltig, dort bläht `1fr` jede einzelne Karte auf
      die Höhe der längsten auf und verlängert den Screen, statt eine Reihe zu ordnen. */
   .sk-offers {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4515,7 +4621,7 @@ button { font-family: inherit; }
     font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
 
   /* ==========================================================================
-     #cz-ruhe — ruhigere Werkstatt ab 1400 px (19.08.2026, Entwurf des Users)
+     #cz-ruhe — ruhigere Werkstatt ab 1280 px (19.08.2026, Entwurf des Users)
 
      Vier kleine Griffe, alle nur oberhalb der Desktop-Schwelle. Die Handy-Fassung ist per Konstruktion
      unberührt: `cz-fxfoot` ist unten `display: contents`, alles andere steht in diesem Block.
@@ -4591,7 +4697,7 @@ button { font-family: inherit; }
      nicht hier, sondern in `phaseCard(..., { quiet })` leiser gestellt — sie setzt ihren Stil inline,
      eine Regel bräuchte `!important` an drei Eigenschaften.
 
-     Alles hier gilt NUR ab 1400 px. Am Handy bleibt jede Angebotskarte eine kräftige Kanten-Karte: dort
+     Alles hier gilt NUR ab 1280 px. Am Handy bleibt jede Angebotskarte eine kräftige Kanten-Karte: dort
      ist sie das Ziel eines Daumens auf kleinem Schirm, hier eine von drei Spalten auf 880 px.
 
      Der Halo der Angebotskarten fällt weg (`box-shadow`) — er stand auf hohen Familienstufen und seltenen
@@ -4659,7 +4765,7 @@ button { font-family: inherit; }
 
      NICHT angefasst (Regel 5): die Kanten-Familie selbst (`as-edge-card`, `as-edge-thin`) und damit die
      Farbkante der Knoten — sie sagt gekauft / kaufbar / gesperrt und ist projektweites Signal. Ebenso der
-     Zweig-Pfad unterhalb 1400 px (`.up-branch`), der auf dem Desktop gar nicht gerendert wird. */
+     Zweig-Pfad unterhalb 1280 px (`.up-branch`), der auf dem Desktop gar nicht gerendert wird. */
 
   /* Kopfzeile: „Zurücksetzen" und „Schließen" werden Text-Knöpfe. Sie sind Werkzeuge am Rand, keine
      Angebote — dieselbe Entscheidung wie an der Aktionsleiste der Level-up-Karte (#lv-ruhe). Das
@@ -4710,7 +4816,7 @@ button { font-family: inherit; }
      (#cz-ruhe, #lv-ruhe, #up-ruhe); dort wurde sie jedes Mal bewusst NICHT einzeln behoben, weil der
      Anlauf projektweites Signal ist (#kante) und ein Screen ihn nicht allein ändern darf.
 
-     Hier ist er einmal an der Familie geändert — und ausdrücklich nur ab 1400 px:
+     Hier ist er einmal an der Familie geändert — und ausdrücklich nur ab 1280 px:
      · Mischung  14 % → 9 %   (gewählt 24 % → 16 %)
      · Auslauf   42 % → 26 %  (gewählt 46 % → 30 %)
      Am Handy bleibt alles, wie es war: dort steht selten mehr als eine Karte im Blick, der Anlauf hilft
@@ -4730,7 +4836,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #up-form — Baum, Leitfaden und Glossar bekommen dieselbe Kachelform (19.08.2026)
 
-     Nachjustierung zu #up-ruhe, nach dem Bild des Users. Vier Griffe, alle ab 1400 px:
+     Nachjustierung zu #up-ruhe, nach dem Bild des Users. Vier Griffe, alle ab 1280 px:
 
      1. **Radius 6 px, überall.** Die Angebotskarten der Perk-/Skill-Wahl stehen seit #lv-ruhe auf 6 px;
         Baum, Leitfaden und Glossar liefen mit 9/11/12/14 px daneben. Das ist keine Feinheit: nebeneinander
@@ -4779,7 +4885,7 @@ button { font-family: inherit; }
   }
   .up-skillgrid.is-leg > * { margin-bottom: 0; }
 
-  /* #update-desk — die „Neue Version verfügbar"-Leiste ab 1400 px in derselben Sprache wie der Rest:
+  /* #update-desk — die „Neue Version verfügbar"-Leiste ab 1280 px in derselben Sprache wie der Rest:
      eckig (6 px statt 12) und ohne Schein am Knopf. Sie ist ein HINWEIS, kein Angebot — der Schein war
      dasselbe Mittel, das an Hub-Taste, Ring und Knoten in diesem Durchgang gefallen ist. Die goldene
      Kante bleibt: „Neu laden" ist die Handlung der Leiste und darf sie tragen. */
@@ -5029,7 +5135,7 @@ button { font-family: inherit; }
   /* ==========================================================================
      #graph-gold — der Durchlauf-Graph im Ton der Score-Kurve (19.08.2026)
 
-     Gilt für JEDE `.rg-perTrick` ab 1400 px, also Siegesbildschirm UND Lauf-Details. Absichtlich nicht
+     Gilt für JEDE `.rg-perTrick` ab 1280 px, also Siegesbildschirm UND Lauf-Details. Absichtlich nicht
      auf einen der beiden Screens verengt: derselbe Graph in zwei Farbwelten wäre genau der Bruch, den
      #st-ruhe und #cz-ruhe gerade überall zugemacht haben.
 
@@ -5150,19 +5256,19 @@ button { font-family: inherit; }
 }
 
 /* #ecke, Fortsetzung — die zwei gerechneten Grenzen (Begründung oben am `--as-corner-lane`). */
-@media (min-width: 1400px) and (max-width: 1920px) {
+@media (min-width: 1280px) and (max-width: 1920px) {
   :root[data-corner-tools] .up-head, :root[data-corner-tools] .cz-head,
   :root[data-corner-tools] .st-head, :root[data-corner-tools] .lb-head,
   :root[data-corner-tools] .gd-head, :root[data-corner-tools] .gl-head { --as-corner-lane: 92px; }
 }
-@media (min-width: 1400px) and (max-width: 1760px) {
+@media (min-width: 1280px) and (max-width: 1760px) {
   :root[data-corner-tools] .op-head { --as-corner-lane: 92px; }
 }
 
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
    `min-height` aus — dort gilt weiter die kleine Stufe, sonst liefe der Screen über (s. Messung oben). */
 @media (min-width: 1750px) and (min-height: 1000px) {
-  .gd-page { --gs: 1.2; }
+  /* #viewport-1280: die Schrumpfstufen sind entfernt, s. .gd-page. */
 }
 
 /* Flache Desktop-Fenster: 27 Knoten nebeneinander brauchen Höhe. Auf 1080 px geht der Baum ohne Scrollen
@@ -5170,7 +5276,7 @@ button { font-family: inherit; }
    nicht wegzukürzen, ohne die Knoten unlesbar zu machen. Der Screen scrollt dort also, und das ist die
    bewusste Entscheidung: der Kopf bleibt sticky, das Guthaben also immer im Bild. Was hier passiert, ist
    nur, den Rand zusammenzuziehen, damit möglichst viel Inhalt in den ersten Bildschirm fällt. */
-@media (min-width: 1400px) and (max-height: 950px) {
+@media (min-width: 1280px) and (max-height: 950px) {
   .up-root { padding: 10px 36px 12px !important; }
   .up-branches { gap: 22px; }
   .up-branch { padding: 12px 16px 16px; }
@@ -5195,7 +5301,7 @@ button { font-family: inherit; }
    wo die Höhe es verlangt; die abgenommene Optik auf 1080 bleibt unberührt. */
 /* Flache Desktop-Fenster: dieselbe Straffung für die vier großen Screens — nur der Rand und die Abstände
    zwischen den Panels, kein Inhalt. Reicht es nicht, scrollt der jeweilige Rumpf weiter. */
-@media (min-width: 1400px) and (max-height: 950px) {
+@media (min-width: 1280px) and (max-height: 950px) {
   .st-root, .lb-root, .go-root { padding: 10px 36px 12px !important; }
   .st-sec, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
   .st-card, .lb-card, .go-card { column-gap: 16px; }
@@ -5214,13 +5320,13 @@ button { font-family: inherit; }
    unter 125 % Skalierung) fehlen ~90 px. Statt den Rhythmus überall zu kürzen, wird hier nur der Rand
    zusammengezogen; reicht auch das nicht, scrollt der Rumpf (die Karte behält `max-h-[90dvh]`), und der
    Kopf mit dem Schließen-Knopf bleibt im Bild. */
-@media (min-width: 1400px) and (max-height: 950px) {
+@media (min-width: 1280px) and (max-height: 950px) {
   .op-root { padding: 10px 36px 12px !important; }
   .op-cols { gap: 16px; margin-top: 10px; }
   .op-sec { padding: 12px 15px 14px; }
 }
 
-@media (min-width: 1400px) and (max-height: 950px) {
+@media (min-width: 1280px) and (max-height: 950px) {
   .hub-root { gap: 18px; padding-top: 6px; }
   .hub-pair { column-gap: 56px; }
   .hub-play { gap: 14px; }
@@ -5233,10 +5339,10 @@ button { font-family: inherit; }
    1440 x 900, 1600 x 900 und 1400 x 950 ohne Scrollen. Läuft doch einmal etwas über — längere
    Übersetzung, sechster Kreislauf-Schritt —, scrollt der Spaltenbereich INNEN (s. `.gd-cols`);
    abgeschnitten wird nichts. */
-@media (min-width: 1400px) and (max-height: 950px) {
+@media (min-width: 1280px) and (max-height: 950px) {
   .gd-frame { padding: 10px 36px 12px !important; }
   .gd-desk { gap: 18px; margin-top: 2px; }
-  .gd-page { --gs: .9; padding: 12px 16px 10px; }
+  .gd-page { padding: 12px 16px 10px; }
   .gd-page .gd-cols { gap: 18px; }
   .gd-nav { padding: 12px 10px; }
   /* Glossar: dieselbe Straffung, aber OHNE Größenstufe. Der Leitfaden braucht seine, weil er auf eine
@@ -5252,8 +5358,8 @@ button { font-family: inherit; }
    und der Spaltenbereich fing an, intern zu scrollen. Mit .82 passen alle vier Archetypen wieder ganz ins
    Bild (1536x791: 93 %, 1536x760: 98 %, 1600x800: 88 %). Die 10,7 px Fliesstext klingen wenig, landen auf
    so einem Geraet aber bei ~13 echten Pixeln — solche Fenster entstehen praktisch nur durch Skalierung. */
-@media (min-width: 1400px) and (max-height: 820px) {
-  .gd-page { --gs: .82; }
+@media (min-width: 1280px) and (max-height: 820px) {
+  /* #viewport-1280: Schrumpfstufe entfernt, s. .gd-page. */
 }
 
 
@@ -5273,7 +5379,7 @@ button { font-family: inherit; }
 
 
 /* ==========================================================================
-   #buehne — der Spielbildschirm ab 1400 px (Desktop-Pass, 19.08.2026)
+   #buehne — der Spielbildschirm ab 1280 px (Desktop-Pass, 19.08.2026)
    --------------------------------------------------------------------------
    Der Lauf war der letzte Screen ohne Desktop-Pass: 1024er Deckel (`max-w-5xl`)
    mit einem lg-Umbruch bei 1024 px. Auf einem 1920er Fenster blieben links und
@@ -5295,16 +5401,16 @@ button { font-family: inherit; }
    Inline gesetzt kaeme die Desktop-Regel nicht dagegen an (Inline schlaegt
    jedes Stylesheet) — dieselbe Falle wie beim Overlay-Blur (#overlay-portal). */
 .bf-slot, .bf-cardbox { width: 104px; height: 144px; }
-/* #deckflug: Unterhalb von 1400 px liegen Deck-Stapel und Spielflaeche exakt aufeinander — genau der
+/* #deckflug: Unterhalb von 1280 px liegen Deck-Stapel und Spielflaeche exakt aufeinander — genau der
    Aufbau, den es immer gab (Stapel unter der gespielten Karte, gemeinsamer Anker fuer das Feuer). */
 .bf-sidebox { width: 104px; height: 144px; }
 .bf-sidebox > .bf-deck, .bf-sidebox > .bf-play { position: absolute; inset: 0; }
-/* Die Instrumentenbank ist unterhalb von 1400 px KEINE Box: ihre vier Bloecke
+/* Die Instrumentenbank ist unterhalb von 1280 px KEINE Box: ihre vier Bloecke
    (Fraktions-Leisten, Analyse, Build, Wochen-Mods) bleiben direkte Felder des
    lg-Rasters und tragen dort ihre eigene order-/Spalten-Platzierung. */
 .rn-bank { display: contents; }
 
-@media (min-width: 1400px) {
+@media (min-width: 1280px) {
   .rn-shell {
     /* Die eine Zahl, aus der alles folgt. DREI Deckel, und der dritte ist der
        entscheidende: 2,5:1 heisst, dass 1600 px Breite 640 px HOEHE kosten —
@@ -5452,7 +5558,7 @@ button { font-family: inherit; }
   /* Die Seite wird zum Raster: Stapel und Spielflaeche nebeneinander, und die Beschriftung steht je an
      dem Kasten, ueber den sie spricht — das Label ueber der Spielflaeche, der Stich-Zaehler unter dem
      Stapel. `bf-sidebox` reicht dafuer nur durch (display: contents), damit beide Kaesten direkte
-     Rasterfelder werden; unter 1400 px ist sie die Box, in der beide aufeinanderliegen. */
+     Rasterfelder werden; unter 1280 px ist sie die Box, in der beide aufeinanderliegen. */
   .bf-side { display: grid; grid-template-columns: auto auto; align-items: start; justify-items: center;
     column-gap: var(--bf-deckgap); row-gap: 8px; }
   .bf-sidebox { display: contents; }
@@ -5527,7 +5633,7 @@ button { font-family: inherit; }
    Dort ist die HOEHE der Engpass: jede Zeile, die das Chrome kuerzer macht, wird mit 2,5 multipliziert
    in Buehnenbreite ausgezahlt. Die Bank gibt deshalb 60 px ab (270 -> 210) — das sind 150 px mehr Buehne.
    Gemessen 1536 x 791: Buehne 903 x 361 -> 1052 x 421, ohne Seiten-Scrollen. */
-@media (min-width: 1400px) and (max-height: 900px) {
+@media (min-width: 1280px) and (max-height: 900px) {
   /* 380 ist gemessen, nicht geschaetzt: mit 370 lief das Dokument um genau 10 px ueber (801 statt 791). */
   .rn-shell { --rn-chrome: 380px; }
   .rn-bank { height: 210px; }

@@ -272,8 +272,8 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
     // #201.6a: etwas mehr Abstand ZWISCHEN den Segment-Zeilen (gap-2.5 statt -1.5) als innerhalb einer Zeile (gap-1.5)
     // → die Segmente lesen sich als eigene Bänder, die Grenzen sind klarer.
     /* `cg-root`: Andockstelle für Aufrufer, die das Brett kleiner brauchen (Victory-Screen und Lauf-Details
-       zeigen es ab 1400 px in einer Spalte — dort deckelt index.css die Breite, damit alle Karten als
-       Übersicht ins Panel passen). Unter 1400 px hat die Klasse keine Regel. */
+       zeigen es ab 1280 px in einer Spalte — dort deckelt index.css die Breite, damit alle Karten als
+       Übersicht ins Panel passen). Unter 1280 px hat die Klasse keine Regel. */
     <div ref={wrapRef} className="cg-root relative grid gap-2.5">
       {/* #UI: Gebäude-Kontur (SVG) über dem Grid — eine durchgezogene Linie je Gebäude in seiner Form. */}
       {archFrame && archFrame.lines.length > 0 && (

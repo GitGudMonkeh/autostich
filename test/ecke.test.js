@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_AT_RX, DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #ecke (19.08.2026) — Glossar und Ton oben links, in JEDEM Menü.
@@ -20,7 +21,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const app = read("src/App.jsx");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -51,7 +52,7 @@ describe("#ecke — das Paar hängt am Menü, nicht am Lauf", () => {
 });
 
 describe("#ecke — die Handy-Fassung bleibt unberührt", () => {
-  it("unterhalb 1400 px ist das Paar aus dem Layout", () => {
+  it("unterhalb 1280 px ist das Paar aus dem Layout", () => {
     expect(basis).toMatch(/\.as-corner \{ display: none; \}/);
   });
 
@@ -60,7 +61,7 @@ describe("#ecke — die Handy-Fassung bleibt unberührt", () => {
     expect(basis, "eine Positionsregel außerhalb des Desktop-Blocks").not.toMatch(/\.as-corner \{[^}]*position:/);
   });
 
-  it("der Mute-Knopf des Hubs weicht nur ab 1400 px", () => {
+  it("der Mute-Knopf des Hubs weicht nur ab 1280 px", () => {
     /* Sonst stünden zwei Knöpfe für dieselbe Handlung nebeneinander — bzw. am Handy gar keiner.
        Gegen den KOMMENTARFREIEN Quelltext geprüft: die Begründung im JSX nennt die Klasse selbst
        (dieselbe Falle wie beim `as-ring`-Zähler in #fx-panel). */
@@ -103,7 +104,7 @@ describe("#ecke — die Bahn für das Paar", () => {
     const rechts = left + 2 * w + gap;
 
     const grenze = (sel) => {
-      for (const m of css.matchAll(/@media \(min-width: 1400px\) and \(max-width: (\d+)px\) \{([\s\S]*?)\n\}/g))
+      for (const m of css.matchAll(new RegExp(DESKTOP_AT_RX + " and \\(max-width: (\\d+)px\\) \\{([\\s\\S]*?)\\n\\}", "g")))
         if (m[2].includes(sel) && m[2].includes("--as-corner-lane")) return Number(m[1]);
       return null;
     };

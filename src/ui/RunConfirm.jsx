@@ -12,7 +12,7 @@ import { t } from "../i18n/index.js"; // #sprache
    Desktop gibt es kein Scrollen — dieselbe Reihenfolge kostet dort nur eins: man entscheidet, bevor man
    gelesen hat.
 
-   Ab 1400 px deshalb zwei verschiedene Antworten, weil die zwei Dialoge verschiedene Probleme haben:
+   Ab 1280 px deshalb zwei verschiedene Antworten, weil die zwei Dialoge verschiedene Probleme haben:
 
    · BEENDEN hat drei Wege, und zwei davon heißen fast gleich („Beenden" / „Beenden & speichern").
      Ein Fließtext darunter erklärt den Unterschied — man muss ihn nur lesen. Die Optionen tragen ihre
@@ -27,7 +27,7 @@ import { t } from "../i18n/index.js"; // #sprache
    laufenden Lauf beendet, ist schlechter als gar keiner. Escape schließt weiter über den bestehenden
    `useEscape`-Pfad des Aufrufers, das ist Systemverhalten und braucht keine Beschriftung.
 
-   Unterhalb 1400 px bleibt beides Knoten für Knoten wie vorher — die Handy-Fassung ist gegen ein
+   Unterhalb 1280 px bleibt beides Knoten für Knoten wie vorher — die Handy-Fassung ist gegen ein
    390-px-Gerät abgestimmt.
 
    Der Überzug behält seinen Blur, anders als die großen Screens (#perf-blur): diese Dialoge sind klein,

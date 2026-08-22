@@ -529,7 +529,7 @@ export default {
   "perk.upgrade": "⬆ AUFWERTEN · {from}→{to}",
   "perk.onceHint": "Jeder Perk ist pro Lauf nur einmal wählbar.",
   "perk.deckStrength": "Deck-Stärke je Farbe",
-  // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte (nur ab 1400 px).
+  // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte (nur ab 1280 px).
   "lv.wing.deck": "Deck",
   "lv.wing.stats": "Kennzahlen",
   "lv.wing.expand": "{what} einblenden",
@@ -780,7 +780,7 @@ export default {
 
   /* ---- Statistiken (StatsScreen) ---- */
   "stats.title": "Statistiken",
-  /* #desktop: Auskunftszeile im Kopf der Statistik (erst ab 1400 px, neben dem Titel). */
+  /* #desktop: Auskunftszeile im Kopf der Statistik (erst ab 1280 px, neben dem Titel). */
   "stats.desk.readout": "Alle Zahlen liegen lokal auf diesem Gerät. Eine Zeile anklicken öffnet den vollständigen Lauf.",
   "stats.empty": "Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.",
   "stats.overview": "Übersicht",
@@ -900,7 +900,7 @@ export default {
   "board.tab.weekShort": "Woche",
   "board.tab.challenger": "Challenger",
   "board.tab.rules": "Regeln",
-  /* #desktop: Zweitzeilen der Navigationsspalte im Ranglisten-Screen (ab 1400 px; darunter sind es Reiter). */
+  /* #desktop: Zweitzeilen der Navigationsspalte im Ranglisten-Screen (ab 1280 px; darunter sind es Reiter). */
   "board.nav.global.sub": "Allzeit · alle Läufe",
   "board.nav.champions.sub": "Platz 1 jeder abgelaufenen Woche",
   "board.nav.rules.sub": "Baseline und alle Modifikatoren",
@@ -994,7 +994,7 @@ export default {
   "guide.core": "Kernidee",
   "guide.loop": "Der Kreislauf",
   "guide.principles": "Spielprinzip",
-  // #desktop: Überschrift und Fußnote der Archetyp-Spalte (ab 1400 px statt der Reiterzeile).
+  // #desktop: Überschrift und Fußnote der Archetyp-Spalte (ab 1280 px statt der Reiterzeile).
   "guide.nav.archetypes": "Archetypen",
   "guide.nav.note": "Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.",
 
@@ -1027,7 +1027,7 @@ export default {
   "upgrades.state.lockGate": "Braucht eine freigeschaltete Legendär-Stufe",
   "upgrades.state.locked": "Noch gesperrt",
   "upgrades.buy": "Kaufen · {cost} SP",
-  // #desktop — senkrechte Baum-Fassung ab 1400 px: kurze Preismarke am Knoten + Auswirkungs-Kasten.
+  // #desktop — senkrechte Baum-Fassung ab 1280 px: kurze Preismarke am Knoten + Auswirkungs-Kasten.
   "upgrades.buy.short": "{cost} SP",
   "upgrades.impact.title": "Was der Baum gerade bewirkt",
   "upgrades.impact.cover": "Baufeld",
@@ -1140,7 +1140,7 @@ export default {
   // #tiered Stufen-Decks (I/II/III): {roman} ist die römische Stufenziffer — sie bleibt in beiden Sprachen gleich.
   "shop.tier.active": "Stufe {roman} aktiv ✓",
   "shop.tier.activate": "Stufe {roman} aktivieren",
-  /* Auskunft in der Kopfzeile (erst ab 1400 px, wo Platz dafür ist) — dasselbe Muster wie im
+  /* Auskunft in der Kopfzeile (erst ab 1280 px, wo Platz dafür ist) — dasselbe Muster wie im
      Upgrade-Baum: eine Zeile Bestand, eine Zeile, was ein Antippen bewirkt. */
   "shop.head.packs": "{n} Packs · {own} freigeschaltet",
   "shop.head.challenges": "{n} Herausforderungen · {own} freigeschaltet",
@@ -1150,7 +1150,7 @@ export default {
   "shop.tile.sub.active": "aktiv",
   "shop.tile.sub.details": "tippen → Details",
   "shop.tile.sub.detailsTier": "Stufe {roman} · tippen → Details",
-  /* Ab 1400 px steht die Vorschau dauerhaft daneben — „tippen → Details" führt dort zu etwas, das
+  /* Ab 1280 px steht die Vorschau dauerhaft daneben — „tippen → Details" führt dort zu etwas, das
      bereits im Bild ist. Die Zeile sagt stattdessen den Zustand. */
   "shop.tile.sub.owned": "freigeschaltet",
   "shop.tile.sub.ownedTier": "Stufe {roman} · freigeschaltet",
@@ -1302,7 +1302,7 @@ export default {
   "start.discord": "Discord öffnen",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Feedback senden",
-  /* #desktop: Auskunftszeile im Kopf (ab 1400 px) — sagt, wohin die Meldung geht und was mitgeht. */
+  /* #desktop: Auskunftszeile im Kopf (ab 1280 px) — sagt, wohin die Meldung geht und was mitgeht. */
   "feedback.desk.readout": "Geht direkt an die Entwicklung. Seed und Durchlauf des letzten Laufs hängen automatisch mit dran.",
   "feedback.kind": "Art",
   "feedback.kind.bug": "Bug",
@@ -1330,8 +1330,8 @@ export default {
   /* ---- Startbildschirm ---- */
   "start.logo.alt": "AUTOSTICH",
 
-  // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1400 px
-  // dasselbe Emoji, ab 1400 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.
+  // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1280 px
+  // dasselbe Emoji, ab 1280 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.
   "start.progress.onboarding": "Onboarding",
   "start.progress.bonus": "Bonus-{cur} · nächste +5",
   "start.progress.runs": "{done} / {total} Läufe",
@@ -1382,7 +1382,7 @@ export default {
   "start.tile.lock_one": "🔒 noch {count} Lauf",
   "start.tile.lock_other": "🔒 noch {count} Läufe",
 
-  /* #desktop — Status-Tafel des Startbildschirms. Sie erscheint erst ab 1400 px und zeigt, was der
+  /* #desktop — Status-Tafel des Startbildschirms. Sie erscheint erst ab 1280 px und zeigt, was der
      Spieler wissen will, BEVOR er startet: welches Deck aktiv ist, wie die Guthaben stehen, was die
      Woche noch hergibt und wie der letzte Lauf lief. Die Untertitel der beiden Währungs-Einträge stehen
      ebenfalls nur dort — auf dem Handy bleibt es beim reinen Titel plus Zahl. */
@@ -1447,7 +1447,7 @@ export default {
   "options.chip.display": "Anzeige",
   "options.eyebrow": "Optionen",
   "options.title": "Einstellungen",
-  /* #desktop: Auskunftszeile im Kopf — steht erst ab 1400 px neben dem Titel (dort, wo im Upgrade-Baum
+  /* #desktop: Auskunftszeile im Kopf — steht erst ab 1280 px neben dem Titel (dort, wo im Upgrade-Baum
      das Guthaben steht). Sie beantwortet die Frage, die ein Einstellungs-Screen ohne „Übernehmen"-Knopf
      zwangsläufig aufwirft. */
   "options.desk.readout": "Alles sofort wirksam und gespeichert.",

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT, DT_RX } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px, als Quelltext-Ratsche.
+   #desktop-menues — Optionen · Willkommen · Feedback ab 1280 px, als Quelltext-Ratsche.
 
    Wie beim Leitfaden gibt es KEINEN zweiten Renderpfad: Das JSX setzt in jeder Breite dieselben
    Klammern (`op-col2` / `un-form` / `fb-left` / `fb-right`), und index.css entscheidet, ob daraus
@@ -12,7 +13,7 @@ import { readFileSync } from "node:fs";
      1. Fällt `display: contents` in der Basis weg, bekommt die HANDY-Fassung vier zusätzliche Boxen
         im Fluss. Die Handy-Fassung ist gegen ein iPhone SE abgestimmt; sie darf sich nicht bewegen.
      2. Die desktop-only Elemente (Auskunftszeile, Wortmarke) müssen `hidden` tragen und erst ab
-        1400 px erscheinen — sonst stehen sie plötzlich im 320-px-Dialog.
+        1280 px erscheinen — sonst stehen sie plötzlich im 320-px-Dialog.
      3. `.op-card.as-panel` mit ZWEI Klassen wiegt weniger als `[data-skin="crt"] .as-panel.as-panel-deck`
         (0,2,0 gegen 0,3,0). Die Regel stünde da und täte nichts, die Karte malte weiter einen 1-px-Verlauf
         um den ganzen Bildschirm — derselbe Fehler, der schon `.up-card`/`.cz-card`/`.gd-card` getroffen hat.
@@ -28,9 +29,9 @@ import { readFileSync } from "node:fs";
 const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const css = read("index.css");
 
-// Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
+// Der Block `@media (min-width: 1280px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return "";
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
@@ -41,7 +42,7 @@ const deskBlock = (() => {
 })();
 const base = deskBlock ? css.replace(deskBlock, "") : css;
 
-describe("#desktop-menues — die Klammern sind unterhalb von 1400 px keine Boxen", () => {
+describe("#desktop-menues — die Klammern sind unterhalb von 1280 px keine Boxen", () => {
   it("op-col2 · un-form · fb-left · fb-right stehen als `display: contents` in der BASIS", () => {
     /* Die Regel sammelt inzwischen alle Klammern des Desktop-Passes (auch die der großen Screens) — geprüft
        wird deshalb je Klasse, nicht die ganze Selektorliste am Stück. */
@@ -75,11 +76,11 @@ describe("#desktop-menues — die Klammern sind unterhalb von 1400 px keine Boxe
 });
 
 describe("#desktop-menues — desktop-only Elemente sind auf dem Handy nicht da", () => {
-  it("Auskunftszeilen und Wortmarke tragen `hidden` und erscheinen erst ab 1400 px", () => {
+  it("Auskunftszeilen und Wortmarke tragen `hidden` und erscheinen erst ab 1280 px", () => {
     for (const [datei, marke] of [["ui/OptionsModal.jsx", "op-readout"], ["ui/FeedbackModal.jsx", "fb-readout"]]) {
       const zeile = read(datei).match(new RegExp(`className="${marke}[^"]*"`));
       expect(zeile, `${marke} nicht mehr gefunden`).toBeTruthy();
-      expect(zeile[0], `${marke} muss unter 1400 px ausgeblendet sein`).toMatch(/hidden min-\[1400px\]:block/);
+      expect(zeile[0], `${marke} muss unter 1280 px ausgeblendet sein`).toMatch(new RegExp(`hidden ${DT_RX}block`));
     }
     // Die Wortmarke im Willkommen-Dialog wird über die CSS eingeblendet (sie braucht dort weitere
     // Eigenschaften) — im JSX steht deshalb nur `hidden`, das Gegenstück MUSS im Desktop-Block liegen.

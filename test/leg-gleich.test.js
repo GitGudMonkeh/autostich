@@ -47,7 +47,7 @@ describe("#leg-gleich — dieselben Bausteine wie die Skill-Wahl", () => {
     expect(leg, "die Augenbraue ist nicht mehr gold").toMatch(/color: GOLD[^>]*>\{t\("leg\.eyebrow"\)\}/);
   });
 
-  it("die Reiterzeile ab 1400 px ist dieselbe wie drüben, der Pager bleibt darunter", () => {
+  it("die Reiterzeile ab 1280 px ist dieselbe wie drüben, der Pager bleibt darunter", () => {
     for (const teil of ['className="sk-tabs mt-2 grid gap-2"', 'className="sk-tab text-left rounded-xl px-3 py-2.5']) {
       expect(leg, `fehlt in der Legendär-Wahl: ${teil}`).toContain(teil);
       expect(skill, `fehlt in der Skill-Wahl: ${teil}`).toContain(teil);

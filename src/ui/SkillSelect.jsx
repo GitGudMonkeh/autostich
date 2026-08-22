@@ -14,10 +14,10 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
-import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
 import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
-import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1400 px gerendert)
+import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
@@ -80,7 +80,7 @@ function KeywordGlossary({ tokens }) {
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
-  // #lv-fluegel: ab 1400 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
+  // #lv-fluegel: ab 1280 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
   const held = skills.map((id) => skillDef(id)).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
@@ -194,7 +194,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
             bleibt die Karte konstant, nur der Inhalt darunter scrollt.
 
-            AB 1400 px gilt das nicht mehr: dort ist die Karte kein zentriertes Modal, sondern die Mittelspur
+            AB 1280 px gilt das nicht mehr: dort ist die Karte kein zentriertes Modal, sondern die Mittelspur
             eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht also fest,
             egal wie hoch die Karte ist. Der Rahmen darf deshalb am Inhalt enden und erst mitwachsen, wenn
             gehaltene Skills dazukommen. Bleibt die feste Höhe, steht unter dem Angebot in der ersten
@@ -228,7 +228,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               Die Klassen der Sorten (`reroll` Gold / `decline` neutral) sind unverändert dieselben.
               Der STICKY-Rahmen bleibt handgeschrieben: `ActionBar` ist selbst der Sticky-Behälter, hier
               gehört aber die Reiterzeile mit unter dasselbe Dach.
-              `sk-actbtn` nimmt die MASSE unterhalb 1400 px zurück (nicht die Optik): „Ablehnen → Perk" ist
+              `sk-actbtn` nimmt die MASSE unterhalb 1280 px zurück (nicht die Optik): „Ablehnen → Perk" ist
               länger als das „Alle ablehnen" der Perk-Wahl, und in den Standardmaßen läuft es auf 375 px
               gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
               derselbe Knopf. */}
@@ -241,7 +241,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             </ActionButton>
           </div>
 
-          {/* #sk-reiter — ab 1400 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
+          {/* #sk-reiter — ab 1280 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
               nebeneinander. Der Zustand ist derselbe (`page`/`goTo`),
               es ist nur eine zweite Darstellung desselben Pagers — kein neuer State, keine zweite Wahrheit.
               Bewusst ein `wide`-Zweig statt zweier gerenderter Navigationen: zwei Bedienelemente für dieselbe
@@ -404,7 +404,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - tx.current; if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1); }}>
             <div key={page} className="px-0.5"
               style={{ animation: `${dir.current < 0 ? "as-page-in-left" : "as-page-in-right"} .26s cubic-bezier(.22,.61,.36,1)` }}>
-              {/* Passiv-Beschreibung — einklappbar (am Handy default zu, ab 1400 px offen).
+              {/* Passiv-Beschreibung — einklappbar (am Handy default zu, ab 1280 px offen).
                   Die Zeile ist ein Flex-Behälter, weil der Leitfaden-Chip daneben ein EIGENER Knopf sein muss —
                   verschachtelte <button> sind ungültiges HTML. Am Handy hat sie genau ein Kind (`flex-1`), das
                   vorher `w-full` war: gleiche Breite, gleicher Abstand, gleiche Geometrie. */}
@@ -420,7 +420,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </span>
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
-              {/* Der i-Chip saß am Pager-Badge — das gibt es ab 1400 px nicht mehr. Ohne diesen Ersatz wäre der
+              {/* Der i-Chip saß am Pager-Badge — das gibt es ab 1280 px nicht mehr. Ohne diesen Ersatz wäre der
                   Archetyp-Leitfaden auf dem Desktop von der Skill-Wahl aus gar nicht mehr erreichbar. */}
               {wide && (
                 <button type="button" onClick={() => setGuideArch(curG.arch)}
@@ -445,7 +445,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
-                  /* #skillart: Kopfstreifen NUR ab 1400 px. Am Handy ist die Karte einspaltig und der Text
+                  /* #skillart: Kopfstreifen NUR ab 1280 px. Am Handy ist die Karte einspaltig und der Text
                      trägt sie allein; eine 130-px-Bildzone nähme dort den halben Bildschirm. Weil das Gate im
                      JSX sitzt (nicht in CSS), lädt der Browser die Bilder dort auch gar nicht erst. */
                   const art = wide ? skillArt(id) : null;

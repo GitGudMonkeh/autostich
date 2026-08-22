@@ -5,7 +5,7 @@ import { GlossaryPanel } from "./Glossary.jsx";
    #ecke — Glossar und Ton in JEDEM Menü, oben links (19.08.2026)
 
    Bis hierher hingen beide am Startbildschirm: der Mute-Knopf in dessen linker oberer Ecke, das
-   Glossar rechts oben (unter 1400 px) bzw. im Fußband neben Discord (darüber). Sobald man einen
+   Glossar rechts oben (unter 1280 px) bzw. im Fußband neben Discord (darüber). Sobald man einen
    Menü-Screen öffnete — Werkstatt, Baum, Statistik, Bestenliste, Leitfaden, Optionen — war beides
    weg. Genau dort will man aber nachschlagen („was heißt Struktur?") und stummschalten.
 
@@ -18,7 +18,7 @@ import { GlossaryPanel } from "./Glossary.jsx";
       gibt es beides bereits an seinem eigenen Platz — das ⓘ im Kopf, den Ton in der Steuerzeile —
       und ein schwebendes Paar über dem Brett wäre ein drittes Bedienelement in einer Ecke, in der
       nichts liegen soll.
-   2. **Ab 1400 px.** Die Regeln stehen im Desktop-Block von index.css, das Paar ist darunter
+   2. **Ab 1280 px.** Die Regeln stehen im Desktop-Block von index.css, das Paar ist darunter
       `display: none`. Die Handy-Fassung bleibt Knoten für Knoten dieselbe: dort steht der Mute-Knopf
       weiter in der Ecke des Startbildschirms und das Glossar rechts daneben.
    3. **Glossar LINKS, Ton rechts** — die Reihenfolge, in der der Screen gelesen wird: erst das

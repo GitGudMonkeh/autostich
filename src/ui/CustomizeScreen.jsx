@@ -1151,7 +1151,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const spezialDeckTint = options?.archColor === "deck";
   useEffect(() => { prefetchFxChunks(spezialDeckTint); }, [spezialDeckTint]);
   const p = profile || {};
-  const wide = useIsWide();                          // #desktop: ab 1400 px steht das Pack-Detail fest daneben
+  const wide = useIsWide();                          // #desktop: ab 1280 px steht das Pack-Detail fest daneben
   const [tab, setTab] = useState("packs");           // "packs" | "challenges" | "fx"
   const [packOv, setPackOv] = useState(null);        // offene Pack-Detailansicht: { cat, idx } | null
   const [packSel, setPackSel] = useState("back");   // "back" | "front" | "bg" — Cover (Rücken) zuerst, dann Front
@@ -1165,7 +1165,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const listFor = (cat, mode) => sortPacks(orderPacks(cat === "challenges" ? CHALLENGES_TAB : PACKS_TAB, deckId), mode);
   const catList = (cat) => listFor(cat, sort);
   /* Beim Umschalten wandert das offene Pack an eine andere Stelle. Statt das Detail zu schließen, wird sein
-     Index auf DASSELBE Pack in der neuen Reihenfolge umgerechnet — ab 1400 px steht es dauerhaft daneben,
+     Index auf DASSELBE Pack in der neuen Reihenfolge umgerechnet — ab 1280 px steht es dauerhaft daneben,
      ein Zuklappen sähe dort wie ein Fehler aus. */
   const toggleSort = () => {
     const next = nextSort(sort);
@@ -1192,9 +1192,9 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
     return () => ro?.disconnect();
   }, [tab]);
 
-  /* #desktop: Das Detail steht ab 1400 px fest neben dem Katalog — also darf es nie leer sein. Beim Öffnen
+  /* #desktop: Das Detail steht ab 1280 px fest neben dem Katalog — also darf es nie leer sein. Beim Öffnen
      und bei jedem Reiterwechsel wird das erste Pack der Kategorie vorgewählt; `orderPacks` stellt das
-     ausgerüstete nach vorn, man landet also auf dem eigenen Deck. Bis 1399 px passiert hier nichts: dort ist
+     ausgerüstete nach vorn, man landet also auf dem eigenen Deck. Bis 1279 px passiert hier nichts: dort ist
      das Detail ein Overlay, das erst auf Tippen aufgeht (`packOv` bleibt null, bis der Spieler wählt). */
   useEffect(() => {
     if (!wide || tab === "fx") return;
@@ -1216,7 +1216,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   const stepPack = (d) => { setPackOv((o) => (o ? { ...o, idx: (o.idx + d + catList(o.cat).length) % catList(o.cat).length } : o)); setPackSel("back"); };
 
   // Ist ein Kauffenster offen, wird der Shop-Hintergrund NICHT mitgescrollt (kein Scroll-Durchgriff auf iOS).
-  /* Sperrt das Scrollen des Katalogs, solange das Detail als Overlay darüber liegt. Ab 1400 px ist das
+  /* Sperrt das Scrollen des Katalogs, solange das Detail als Overlay darüber liegt. Ab 1280 px ist das
      Detail KEIN Overlay mehr, sondern die zweite Spalte — dort muss der Katalog weiter scrollen können,
      sonst wäre er auf die sichtbaren zwölf Packs eingefroren. */
   const anyOverlay = !!packOv && !wide;
@@ -1237,33 +1237,33 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
       {/* #deckui: äußerer Modal-Rahmen zieht die aktive Deckfarbe (as-panel-deck) — wie die übrigen Werkstatt-/
           Options-Panels. NUR die Haupt-Shop-Karte; die Effekt-Vorschau-Bühnen (FxStage/Scenes) bleiben unberührt. */}
-      <div className="w-full max-w-xl min-[1400px]:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
+      <div className="w-full max-w-xl dt:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
         <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
           {/* Sticky Kopf */}
           <div ref={headRef} className="sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 relative cz-head" style={{ background: STICKY_HEAD_BG }}>
             <TopHairline />
-            {/* #werkstatt: Der Kopf trägt ab 1400 px dasselbe Raster wie der Upgrade-Baum — Titel,
+            {/* #werkstatt: Der Kopf trägt ab 1280 px dasselbe Raster wie der Upgrade-Baum — Titel,
                 Guthaben, Auskunft, Aktionen in EINER Zeile, darunter die Haarlinie und dann die Reiter.
                 `cz-topline` und `cz-headrow` sind dafür oberhalb der Schwelle reine Klammern
                 (`display: contents`), damit ihre Kinder direkt im Raster liegen. Unterhalb bleiben sie
                 die Flex-Container, die sie immer waren — die Handy-Kopfzeile ändert sich nicht. */}
             <div className="cz-topline flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h2 className="text-lg min-[1400px]:text-2xl font-bold whitespace-nowrap">{t("shop.title")}</h2>
+              <h2 className="text-lg dt:text-2xl font-bold whitespace-nowrap">{t("shop.title")}</h2>
               <div className="cz-headrow flex items-center gap-2.5 shrink-0 ml-auto">
                 {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
                     Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
                 <span className="cz-bal flex items-baseline gap-1 whitespace-nowrap">
-                  <span className="text-lg min-[1400px]:text-3xl font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                  <span className="text-[10px] min-[1400px]:text-[13px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+                  <span className="text-lg dt:text-3xl font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                  <span className="text-[10px] dt:text-[13px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
                 </span>
                 <button onClick={onClose} className="cz-close as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-sm">{t("common.close")}</button>
               </div>
               {/* Auskunft wie im Baum: was der Reiter enthält, und was ein Antippen bewirkt. Erst ab
-                  1400 px — am Handy ist die Kopfzeile für eine dritte Spalte zu schmal. */}
+                  1280 px — am Handy ist die Kopfzeile für eine dritte Spalte zu schmal. */}
               {tab !== "fx" && (
-                <div className="cz-readout hidden min-[1400px]:block">
+                <div className="cz-readout hidden dt:block">
                   <div className="text-[11px] tabular-nums" style={{ color: "#a6a6b0" }}>
                     {t(tab === "challenges" ? "shop.head.challenges" : "shop.head.packs",
                       { n: catList(tab).length, own: catList(tab).filter((pk) => (pk.kind === "std" ? "own" : packState(p, pk)) === "own").length })}
@@ -1273,7 +1273,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
               )}
             </div>
             {/* Die Haarlinie trennt Kopf und Inhalt — dieselbe Zeile in Deckfarbe wie im Upgrade-Baum. */}
-            <div className="cz-hair hidden min-[1400px]:block h-[2px] w-full rounded-full"
+            <div className="cz-hair hidden dt:block h-[2px] w-full rounded-full"
               style={{ background: "linear-gradient(90deg, var(--deck-a1, #9b82f0), var(--deck-a2, #26c6e6), var(--deck-a1, #9b82f0))", opacity: .7 }} />
             {/* Tab-Umschalter: Packs · Challenges · Effekte.
                 #kante: Die Reiter tragen das Farbsignal an der UNTERkante, nicht links wie Knöpfe und Karten.
@@ -1299,12 +1299,12 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             </div>
           </div>
 
-          {/* `cz-split` ist bis 1399 px `display: contents` — der Katalog fällt unverändert in den Scroller
-              durch. Ab 1400 px wird daraus das Zwei-Spalten-Raster: Katalog links, Pack-Detail rechts. */}
+          {/* `cz-split` ist bis 1279 px `display: contents` — der Katalog fällt unverändert in den Scroller
+              durch. Ab 1280 px wird daraus das Zwei-Spalten-Raster: Katalog links, Pack-Detail rechts. */}
           <div className="cz-split">
-            {/* `cz-mainscroll` ist ab 1400 px der Scroller INNERHALB des Katalog-Panels. Der Rahmen sitzt
+            {/* `cz-mainscroll` ist ab 1280 px der Scroller INNERHALB des Katalog-Panels. Der Rahmen sitzt
                 am Panel selbst — läge beides am gleichen Element, wanderte die untere Rahmenkante beim
-                Scrollen mitten durch die Kacheln. Bis 1399 px ist der Wrapper `display: contents`, dort
+                Scrollen mitten durch die Kacheln. Bis 1279 px ist der Wrapper `display: contents`, dort
                 ändert sich also nichts. */}
             <div className="cz-main as-ring as-ring-quiet">
               <i className="as-ring-run" aria-hidden="true" />
@@ -1314,7 +1314,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                   : <FxView p={p} options={options} onChoose={onChoose} onBuyFx={(fx) => buy((pf) => buyGlobalFx(pf, fx))} stickyTop={headH} wide={wide} />}
               </div>
             </div>
-            {/* Ab 1400 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
+            {/* Ab 1280 px steht das Detail hier fest; darunter bleibt es das Portal-Overlay unten. */}
             {wide && packOv && tab !== "fx" && (
               <div className="cz-side as-ring as-ring-quiet">
                 <i className="as-ring-run" aria-hidden="true" />
@@ -1330,7 +1330,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 
       {/* Kauffenster: das Portal sitzt seit #overlay-portal IN `PackDetail` (wie bei allen Vollbild-Overlays),
           nicht mehr hier am Aufrufer — sonst stünde dieselbe Begründung an zwei Stellen und die Regel wäre
-          wieder eine Einzelfall-Entscheidung. Ab 1400 px entfällt das Overlay; das Detail steht dann oben im
+          wieder eine Einzelfall-Entscheidung. Ab 1280 px entfällt das Overlay; das Detail steht dann oben im
           Raster (s. `cz-side`) und rendert `inline`, also bewusst OHNE Portal. */}
       {!wide && packOv && (
         <PackDetail pack={catList(packOv.cat)[packOv.idx]} idx={packOv.idx} count={catList(packOv.cat).length} p={p} dpBal={dpBal}
@@ -1345,7 +1345,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 /* ============================ Packs- / Challenges-Tab ============================ */
 // #Shop-Reorg: geteilte Ansicht für „Packs" (Kauf-Packs, nach DP-Preis sortiert) und „Challenges" (freischaltbare
 // cond-Packs). `list` kommt vorsortiert rein; die Reihenfolge bleibt (kein erneutes Sortieren) → billig oben, teuer unten.
-/* `sel` = Index des Packs, das ab 1400 px rechts im Detail steht (bis dahin null). Die Kachel bekommt
+/* `sel` = Index des Packs, das ab 1280 px rechts im Detail steht (bis dahin null). Die Kachel bekommt
    dafür einen eigenen Marker: `is-sel` ist schon vergeben — das trägt das AUSGERÜSTETE Deck, und die
    beiden Zustände müssen unterscheidbar bleiben (man betrachtet ja meist ein anderes als das eigene). */
 /* `onEquip(pack, tier)` — Doppelklick auf eine Kachel rüstet direkt aus, ohne Umweg über das Detail.
@@ -1356,7 +1356,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
 function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = null, onOption = null, sel = null,
   sort = SORT_DEFAULT, onSort = null }) {
   const challenge = cat === "challenges";
-  const wide = useIsWide();   // ab 1400 px steht die Vorschau dauerhaft daneben (s. Untertitel unten)
+  const wide = useIsWide();   // ab 1280 px steht die Vorschau dauerhaft daneben (s. Untertitel unten)
   const [filter, setFilter] = useState("alle");
   const chips = challenge ? [["alle", "shop.filter.all"], ["besitz", "shop.filter.free"], ["gesperrt", "shop.filter.locked"]] : [["alle", "shop.filter.all"], ["besitz", "shop.filter.owned"], ["kaufbar", "shop.filter.buyable"]];
   const stateOf = (pack) => (pack.kind === "std" ? "own" : packState(p, pack));
@@ -1431,7 +1431,7 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
             : s === "buy" ? [`${packPrice(pack)} DP`, "#0e2429", "#35c6e6", "#2b5a68"]
             : s === "lock" ? ["🔒", "#1c1b24", "#9a97ab", "#2e2d38"]
             : null;
-          /* #werkstatt: „tippen → Details" führt ab 1400 px zu etwas, das schon im Bild steht — die
+          /* #werkstatt: „tippen → Details" führt ab 1280 px zu etwas, das schon im Bild steht — die
              Vorschau liegt dort dauerhaft daneben. Dann sagt die Zeile den Zustand statt der Geste. */
           const sub = active ? [t("shop.tile.sub.active"), STATE_ON]
             : s === "own" ? [tiered
@@ -1579,7 +1579,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
     setShotF(shotFactor(bildHoehe, ueberhang));
   }, [inline, shotMess, pack.id, viewPack.deckId, viewPack.bfId, hasBf]);
 
-  /* #overlay-portal: NUR die Overlay-Fassung portalt. Ab 1400 px steht dieselbe Komponente `inline` als Spalte
+  /* #overlay-portal: NUR die Overlay-Fassung portalt. Ab 1280 px steht dieselbe Komponente `inline` als Spalte
      IM Raster der Werkstatt (`cz-detail`) — die gehört dorthin, wo sie steht, und ein Portal würde sie aus dem
      Layout reißen. Deshalb hier die einzige Ausnahme von der sonst ausnahmslosen Regel, und sie hängt an
      genau dem Schalter, der auch über `position: fixed` entscheidet. */
@@ -1593,11 +1593,11 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
         <div ref={shotBodyRef} className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] min-[1400px]:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            <span className="text-[15px] dt:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
             {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
           </div>
 
-          {/* #werkstatt (18.08.2026) — Ab 1400 px liegen alle drei Ansichten NEBENEINANDER statt hinter
+          {/* #werkstatt (18.08.2026) — Ab 1280 px liegen alle drei Ansichten NEBENEINANDER statt hinter
               einem Umschalter: Cover und Karte oben als Paar, das Spielfeld quer darunter. Der Grund für
               „quer" ist das Bild selbst — die 40 Spielfelder sind 1600 × 640; in einer halben Panelbreite
               wäre das ein hochkant beschnittener Streifen, in dem man nichts erkennt. Über die volle
@@ -1798,7 +1798,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
   };
 
   /* #fx-panel: Die Kategorie-Reiter werden EINMAL gebaut und je nach Breite an einer von zwei Stellen
-     gerendert — am Handy im Sticky-Kopf über der Bühne (unverändert), ab 1400 px im Kopf des Listen-Panels.
+     gerendert — am Handy im Sticky-Kopf über der Bühne (unverändert), ab 1280 px im Kopf des Listen-Panels.
      Das ist DOM, keine Anordnung, also nicht per CSS lösbar; dieselbe Entscheidung wie beim Leitfaden, wo
      die Nav-Spalte am `wide`-Schalter hängt. Ein zweites Rendern (beide Stellen + CSS-Umschalter) wäre die
      Alternative gewesen — dann lägen zwei Reiterzeilen mit zwei Fokus-Reihenfolgen im Baum. */
@@ -1825,11 +1825,11 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
   return (
     <>
       {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar.
-          #fx-panel: Ab 1400 px ist das hier das LINKE PANEL (Glas + Ring, endet an seinem Inhalt) und die
-          Reiter sind nach rechts gezogen — s. .cz-stage im 1400er Block. */}
+          #fx-panel: Ab 1280 px ist das hier das LINKE PANEL (Glas + Ring, endet an seinem Inhalt) und die
+          Reiter sind nach rechts gezogen — s. .cz-stage im 1280er Block. */}
       <div className="cz-stage as-ring as-ring-quiet sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
         {/* Rahmenklasse und Laufband sind ein PAAR (#perf-ring) — die Klasse ohne dieses Kind ergäbe
-            keinen Rahmen. Beide sind unterhalb 1400 px wirkungslos (das Band steht global auf
+            keinen Rahmen. Beide sind unterhalb 1280 px wirkungslos (das Band steht global auf
             `display: none`), die Handy-Fassung bleibt davon also unberührt.
             Der Wächter in test/desktop-perf.test.js zählt die zwei Namen im Quelltext gegeneinander —
             deshalb stehen sie hier bewusst NICHT ausgeschrieben in der Prosa. */}
@@ -1838,14 +1838,14 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
         <FxStage fx={selFx} group={selGroup} p={p} active={isActive(selGroup, selFx)} onChoose={onChoose} onBuyFx={onBuyFx} options={options} />
       </div>
 
-      {/* #fx-panel: Ab 1400 px das RECHTE PANEL (Kategorien · Liste · Fußnote), darunter `display: contents` —
+      {/* #fx-panel: Ab 1280 px das RECHTE PANEL (Kategorien · Liste · Fußnote), darunter `display: contents` —
           am Handy fällt die Klammer also weg und die Reihenfolge Bühne → Liste → Hinweis bleibt, wie sie war. */}
       <div className="cz-fxside as-ring as-ring-quiet">
         <i className="as-ring-run" aria-hidden="true" />
         {wide && cats}
 
         {/* #shopB Vertikale Liste der AKTIVEN Kategorie (scrollt unter der Bühne). Tippen → Bühne; Doppeltippen → umschalten.
-            #desktop: ab 1400 px rückt sie neben die Bühne (s. .cz-fxlist), statt darunter wegzuscrollen. */}
+            #desktop: ab 1280 px rückt sie neben die Bühne (s. .cz-fxlist), statt darunter wegzuscrollen. */}
         <div className="cz-fxlist mt-3">
           <div className={EYEBROW} style={{ color: "#9a97ab" }}>
             {selGroup.title}
@@ -2040,7 +2040,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     <>
       {/* #shopB „Bühne für alle gleich skaliert" — feste Höhe, unabhängig vom Effekt. */}
       {/* Die Höhe ist auf dem Handy bewusst gedeckelt (die Liste soll darunter noch sichtbar sein). Ab
-          1400 px steht die Liste daneben statt darunter — dort trägt die Vorschau das BRETT-Verhältnis
+          1280 px steht die Liste daneben statt darunter — dort trägt die Vorschau das BRETT-Verhältnis
           (`--bf-ratio`, s. .cz-fxpreview in index.css); der Handy-Deckel hier ist inline und braucht
           deshalb `!important` drüben. */}
       <div ref={previewRef} className="cz-fxpreview relative w-full rounded-xl overflow-hidden"
@@ -2073,8 +2073,8 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         {!active && !owned && <PanelChip corner="tr" style={{ color: rarityTint(fx), border: `1px solid ${rarityTint(fx)}66` }}>{price} DP</PanelChip>}
         {hasColorMode && <PanelChip corner="br">{t(deckTintOn ? "shop.color.deck" : "shop.color.standard")}</PanelChip>}
       </div>
-      {/* #cz-ruhe: `cz-fxfoot` ist unterhalb 1400 px eine reine KLAMMER (`display: contents`) — die
-          Handy-Fassung bleibt damit Knoten für Knoten dieselbe. Ab 1400 px wird daraus die Fußzeile der
+      {/* #cz-ruhe: `cz-fxfoot` ist unterhalb 1280 px eine reine KLAMMER (`display: contents`) — die
+          Handy-Fassung bleibt damit Knoten für Knoten dieselbe. Ab 1280 px wird daraus die Fußzeile der
           Bühne: Beschreibung links im Fluss, Aktionsknopf rechts daneben statt über die ganze Breite. */}
       <div className="cz-fxfoot">
         {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}

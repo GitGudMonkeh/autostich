@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { phaseCard, PHASE_ACCENTS } from "../src/ui/modalStyle.jsx";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #lv-ruhe (19.08.2026) — Perk- und Skill-Wahl im Desktop-Ton.
@@ -16,7 +17,7 @@ const css = read("src/index.css");
 const perk = read("src/ui/PerkSelect.jsx");
 const skill = read("src/ui/SkillSelect.jsx");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -97,8 +98,8 @@ describe("#lv-ruhe — Angebotskarten, Aktionsleiste, Score", () => {
     expect(perk).toMatch(/<RoundScoreBadge state=\{state\} className="lv-score" \/>/);
   });
 
-  it("alles hängt am 1400er Block — die Handy-Fassung darf sich nicht bewegen", () => {
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+  it("alles hängt am 1280er Block — die Handy-Fassung darf sich nicht bewegen", () => {
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     for (const k of ["lv-offercard", "lv-cardname", "lv-actbtn", "lv-score"])
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}\\s*\\{`));
   });

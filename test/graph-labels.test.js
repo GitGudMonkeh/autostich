@@ -12,6 +12,7 @@
    Quelltext-Ratsche (kein Component-Test-Setup, s. test/fx-panel.test.js). */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const spark = src("ui/Sparkline.jsx");
@@ -20,7 +21,7 @@ const stats = src("ui/StatsScreen.jsx");
 const rail = src("ui/StatusRail.jsx");
 const gameOver = src("ui/GameOver.jsx");
 const css = src("index.css");
-const desktopBlank = css.slice(css.indexOf("@media (min-width: 1400px)")).replace(/\/\*[\s\S]*?\*\//g, "");
+const desktopBlank = css.slice(css.indexOf(DESKTOP_AT)).replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("#graph-knapp — die drei Stufen von `axes`", () => {
   it("EINE Komponente, drei Stufen — keine zweite Fassung daneben", () => {
@@ -67,7 +68,7 @@ describe("#graph-knapp — die drei Stufen von `axes`", () => {
 });
 
 describe("#graph-knapp — wer welche Stufe bekommt", () => {
-  it("Lauf-Details: ab 1400 px dieselbe beschriftete Fassung wie der Victory-Screen", () => {
+  it("Lauf-Details: ab 1280 px dieselbe beschriftete Fassung wie der Victory-Screen", () => {
     expect(runDetail).toMatch(/<Sparkline current=\{traj\} record=\{recordTraj\} height=\{110\} axes=\{wide\} \/>/);
     expect(gameOver).toMatch(/axes=\{wide\}/);   // die Vorlage, an der es abgemessen ist
   });

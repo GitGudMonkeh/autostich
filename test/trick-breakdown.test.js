@@ -104,7 +104,7 @@ describe("Stich-Aufschlüsselung · Anzeige verdrahtet und abschaltbar", () => {
     expect(src.match(/const kette = \(/g) || [], "die Zeile darf nur EINMAL gebaut werden").toHaveLength(1);
     const oben = src.indexOf("{ketteOben && kette}");
     // #buehne: Die Kartenreihe trägt seit dem Desktop-Pass die Klasse `bf-cards` (index.css klemmt sie
-    // ab 1400 px auf die Bühnenhöhe); die Abstände darin bleiben am `ketteOben`-Zweig (#boden-effekt).
+    // ab 1280 px auf die Bühnenhöhe); die Abstände darin bleiben am `ketteOben`-Zweig (#boden-effekt).
     const karten = src.indexOf("`bf-cards relative z-10 ${ketteOben");
     const unten = src.indexOf("{!ketteOben && kette}");
     expect(oben, "oberer Einhängepunkt fehlt").toBeGreaterThan(-1);

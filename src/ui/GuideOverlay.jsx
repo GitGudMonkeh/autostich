@@ -18,9 +18,9 @@ import { t } from "../i18n/index.js";
    - GuideOverlay: das Overlay mit vier Reitern.
    - GuidePanel:   Button + selbstverwaltetes Overlay als Drop-in (eine Zeile je Panel).
 
-   #desktop (18.08.2026) — ab 1400 px ist das kein Modal mehr, sondern ein gerahmter Screen wie
+   #desktop (18.08.2026) — ab 1280 px ist das kein Modal mehr, sondern ein gerahmter Screen wie
    Upgrade-Baum und Werkstatt: Navigationsspalte links, Seite rechts, Körper in drei Spalten.
-   Die `gd-*`-Klassen hier sind reine HAKEN — sie tragen unterhalb von 1400 px keine Darstellung
+   Die `gd-*`-Klassen hier sind reine HAKEN — sie tragen unterhalb von 1280 px keine Darstellung
    (`display: contents` in index.css), die Handy-Fassung bleibt damit DOM- und pixelgleich.
    ============================================================ */
 
@@ -131,7 +131,7 @@ export function GuideButton({ onClick, className = "", style }) {
    showSubtitle zusätzlich den Untertitel (auf dem Desktop trägt ihn der Seitenkopf).
 
    Die drei `gd-col`-Klammern sind der Grund, warum der Desktop-Körper OHNE zweiten Renderpfad in drei
-   Spalten steht: unterhalb von 1400 px sind sie `display: contents` und damit gar nicht da. Sie stehen
+   Spalten steht: unterhalb von 1280 px sind sie `display: contents` und damit gar nicht da. Sie stehen
    in Lesereihenfolge — wer eine Sektion verschiebt, verschiebt sie auf beiden Fassungen. */
 export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) {
   const active = ARCHETYPE_ORDER.includes(archetype) ? archetype : "lightning";
@@ -247,7 +247,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
           style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }} {...archSwipe}>
           <TopHairline />
 
-          {/* Kopf. Ab 1400 px wird aus den zwei gestapelten Zeilen EINE Rasterzeile
+          {/* Kopf. Ab 1280 px wird aus den zwei gestapelten Zeilen EINE Rasterzeile
               (Titel · Auskunft · Schließen) — dasselbe Raster wie `.up-head`/`.cz-head`. */}
           <div className="gd-head px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2a2a33", background: STICKY_HEAD_BG }}>
             <div className="gd-headrow flex items-center gap-2.5">
@@ -263,7 +263,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             {wide && <div className="gd-hair" aria-hidden="true" />}
           </div>
 
-          {/* Archetyp-Reiter — ab 1400 px übernimmt die Spalte links (s. `.gd-tabs` in index.css). */}
+          {/* Archetyp-Reiter — ab 1280 px übernimmt die Spalte links (s. `.gd-tabs` in index.css). */}
           <div className="gd-tabs flex gap-1.5 px-3 pt-2.5 pb-0 flex-none overflow-x-auto" style={{ borderBottom: "1px solid #2a2a33" }}>
             {ARCHETYPE_ORDER.map((k) => {
               const m = archMeta(k);
@@ -284,7 +284,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
             })}
           </div>
 
-          {/* Körper (Single-Source-Inhalt). `gd-desk`/`gd-page` sind unterhalb von 1400 px
+          {/* Körper (Single-Source-Inhalt). `gd-desk`/`gd-page` sind unterhalb von 1280 px
               `display: contents` — dort landet GuideBody wie eh und je direkt im Scroller. */}
           <div className="gd-scroll flex-1 overflow-y-auto overlay-card px-4 pb-8" style={{ overscrollBehavior: "contain" }}>
             <div className="gd-desk">

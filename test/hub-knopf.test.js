@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #hub-knopf (19.08.2026) — EIN Ziel, der Rest sind Angebote.
@@ -7,7 +8,7 @@ import { readFileSync } from "node:fs";
    Bis hierher trugen alle vier Hub-Knöpfe dieselbe Bauform (90°-Farbanlauf + 4-px-Kante links), nur in
    verschiedenen Helligkeiten. Auf dem Handy trägt das; auf einem 1920er Schirm stehen sie übereinander
    und vier Varianten derselben Geste ergeben eine Leiter, auf der keine Stufe heraussticht.
-   Ab 1400 px: EINE Taste (`as-cta-primary`) und drei ruhige Zeilen.
+   Ab 1280 px: EINE Taste (`as-cta-primary`) und drei ruhige Zeilen.
 
    Der Zustandswechsel braucht dafür keine zweite Regel — welcher Knopf `as-cta-primary` trägt, entscheidet
    `normalCls` in StartScreen.jsx. Läuft ein Lauf, ist die Taste „Lauf fortsetzen"; sonst „Lauf beginnen".
@@ -17,7 +18,7 @@ import { readFileSync } from "node:fs";
 const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 const start = readFileSync(new URL("../src/ui/StartScreen.jsx", import.meta.url), "utf8");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -56,7 +57,7 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
     expect(start, "die Fortsetzen-Taste trägt die Primär-Klasse nicht").toMatch(/onClick=\{onResume\}\s*\n?\s*className="as-cta-primary/);
   });
 
-  it("die Hub-Knöpfe sind ab 1400 px eckiger (6 px, wie alles andere)", () => {
+  it("die Hub-Knöpfe sind ab 1280 px eckiger (6 px, wie alles andere)", () => {
     expect(deskBlock).toMatch(/\.as-cta-primary,\s*\.as-cta-ghost,\s*\.as-tut-btn,\s*\.as-ranked-btn,\s*\.as-seed-play\s*\{[^}]*border-radius:\s*6px/);
   });
 
@@ -73,7 +74,7 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
   it("die Handy-Fassung bleibt unberührt", () => {
     /* Die Basis-Regeln der vier Knöpfe stehen weiter oben und dürfen die Desktop-Werte nicht kennen —
        nachgemessen ist der Hub bei 390 px vorher/nachher bitidentisch (0,0000 von 255). */
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     const prim = basis.match(/\.as-cta-primary\s*\{([^}]*)\}/);
     expect(prim, "die Handy-Fassung der Taste ist verschwunden").toBeTruthy();
     expect(prim[1], "der 90°-Anlauf der Handy-Fassung ist weg").toMatch(/linear-gradient\(90deg/);

@@ -5,9 +5,9 @@ import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
-import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { HeldSkills } from "./HeldSkills.jsx";   // gehaltene Skills — geteilt mit Skill- und Perk-Auswahl
-import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1400 px gerendert)
+import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { useIsWide } from "./useIsWide.js";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
@@ -38,7 +38,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
 
   /* Swipe-Pager je Archetyp — dieselbe Bedienung wie die Skill-Auswahl (SkillSelect §Pager).
      Ohne ihn stand hier eine lange Liste, in der die Fraktionen nur am Chip zu unterscheiden waren.
-     Eine Seite je Archetyp, Ring (modulo), Pfeiltasten und Wischen; ab 1400 px stattdessen die
+     Eine Seite je Archetyp, Ring (modulo), Pfeiltasten und Wischen; ab 1280 px stattdessen die
      Reiterzeile (#sk-reiter) — derselbe Zustand, nur eine zweite Darstellung. */
   const [pageState, setPageState] = useState(null);
   const tx = useRef(0);
@@ -65,7 +65,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <LevelupRig accent={archAccent.c} state={state} deck={state.deck || []} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
-        {/* Maße wie in der Skill-Auswahl: unterhalb 1400 px eine FESTE Höhe (sonst springt die zentrierte
+        {/* Maße wie in der Skill-Auswahl: unterhalb 1280 px eine FESTE Höhe (sonst springt die zentrierte
             Karte beim Archetyp-Wechsel in Position und Größe), darüber nur ein Deckel — dort bestimmen die
             Flügel die Höhe und der Rahmen darf am Inhalt enden. */}
         <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card"
@@ -93,7 +93,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>{t("leg.decline")}</ActionButton>
           </div>
 
-          {/* #sk-reiter: ab 1400 px die Reiterzeile statt des Pagers. `repeat(n,1fr)` statt fester Vier —
+          {/* #sk-reiter: ab 1280 px die Reiterzeile statt des Pagers. `repeat(n,1fr)` statt fester Vier —
               `groups` filtert leere Fraktionen weg, es können 1–4 sein. */}
           {wide && nPages > 0 && curG && (
             <div className="sk-tabs mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
@@ -119,7 +119,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
             </div>
           )}
 
-          {/* Archetyp-Navi unterhalb 1400 px: aktueller Typ mittig, Nachbarn links/rechts im Endlos-Ring. */}
+          {/* Archetyp-Navi unterhalb 1280 px: aktueller Typ mittig, Nachbarn links/rechts im Endlos-Ring. */}
           {!wide && nPages > 1 && curG && (
             <div className="mt-2">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
@@ -154,13 +154,13 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
               onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - tx.current; if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1); }}>
               {/* `gridAutoRows: 1fr` zieht ALLE Karten auf die Höhe der längsten — eine Playtest-Korrektur
                   (vorher hing die Höhe je Karte am Text und die Reihe wirkte zerrissen). Das ist KEIN Bruch
-                  mit der Skill-Auswahl: die macht es ab 1400 px genauso (`.sk-offers` in index.css setzt dort
+                  mit der Skill-Auswahl: die macht es ab 1280 px genauso (`.sk-offers` in index.css setzt dort
                   `grid-auto-rows: 1fr` + `align-items: stretch`). */}
-              <div key={curG.arch} className="sk-offers grid gap-2 sm:grid-cols-2" style={{ gridAutoRows: "1fr",
+              <div key={curG.arch} className="sk-offers sk-offers-leg grid gap-2 sm:grid-cols-2" style={{ gridAutoRows: "1fr",
                 animation: `${dir.current < 0 ? "as-page-in-left" : "as-page-in-right"} .26s cubic-bezier(.22,.61,.36,1)` }}>
                 {curG.list.map((s) => {
                   const meta = ac(s.id);
-                  /* #skillart: Kopfstreifen NUR ab 1400 px — am Handy nähme die Bildzone den halben
+                  /* #skillart: Kopfstreifen NUR ab 1280 px — am Handy nähme die Bildzone den halben
                      Bildschirm. Das Gate sitzt im JSX, der Browser lädt die Bilder dort also gar nicht erst.
                      Die vier legendären Blitz-Embleme liegen bereits vor (SK_LIGHTNING_L01…L04); die übrigen
                      Fraktionen bekommen ihre, sobald sie gezeichnet sind — bis dahin gibt `skillArt` `null`

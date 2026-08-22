@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { transform } from "lightningcss";
+import { DT } from "./desktopBreakpoint.js";
 
 /* Wächter für #overlay-portal — die Naht, an der derselbe Fehler dreimal aufgetreten ist.
 
@@ -36,11 +37,11 @@ function jsxFiles(dir = srcDir, prefix = "") {
 const AUSNAHMEN = [{
   datei: "ui/CustomizeScreen.jsx",
   bei: "fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto",
-  grund: "PackDetail rendert dieselbe Komponente ab 1400 px `inline` als Spalte IM Raster der Werkstatt; nur die "
+  grund: "PackDetail rendert dieselbe Komponente ab 1280 px `inline` als Spalte IM Raster der Werkstatt; nur die "
        + "Overlay-Fassung portalt (`return inline ? node : overlayPortal(node)` am Ende der Komponente).",
 }, {
   datei: "ui/StartScreen.jsx",
-  bei: "as-hub-bg min-[1400px]:hidden pointer-events-none fixed inset-0",
+  bei: `as-hub-bg ${DT}hidden pointer-events-none fixed inset-0`,
   grund: "KEIN Overlay, sondern die Deck-Hintergrundebene des Hubs (#deck-mobil): `pointer-events: none`, liegt "
        + "HINTER dem Inhalt und ist nur deshalb `fixed`, weil der Hub in einem gedeckelten Container sitzt. Ein "
        + "Portal an document.body würde sie hinter allem hervor nach VORN holen — genau falsch herum.",

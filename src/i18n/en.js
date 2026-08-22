@@ -514,7 +514,7 @@ export default {
   "perk.upgrade": "⬆ UPGRADE · {from}→{to}",
   "perk.onceHint": "Each perk can only be chosen once per run.",
   "perk.deckStrength": "Deck strength per suit",
-  // #lv-fluegel: the two side rails of the level-up card (1400 px and up).
+  // #lv-fluegel: the two side rails of the level-up card (1280 px and up).
   "lv.wing.deck": "Deck",
   "lv.wing.stats": "Metrics",
   "lv.wing.expand": "Show {what}",
@@ -963,7 +963,7 @@ export default {
   "guide.core": "Core idea",
   "guide.loop": "The loop",
   "guide.principles": "How it plays",
-  // #desktop: heading and footnote of the archetype column (from 1400 px on, replacing the tab row).
+  // #desktop: heading and footnote of the archetype column (from 1280 px on, replacing the tab row).
   "guide.nav.archetypes": "Archetypes",
   "guide.nav.note": "The guide explains how an archetype plays. Terms and special rules live in the glossary.",
 
@@ -996,7 +996,7 @@ export default {
   "upgrades.state.lockGate": "Needs an unlocked legendary tier",
   "upgrades.state.locked": "Still locked",
   "upgrades.buy": "Buy · {cost} TP",
-  // #desktop — vertical tree layout from 1400 px: short price mark on the node + the impact box.
+  // #desktop — vertical tree layout from 1280 px: short price mark on the node + the impact box.
   "upgrades.buy.short": "{cost} TP",
   "upgrades.impact.title": "What the tree does right now",
   "upgrades.impact.cover": "Build space",
@@ -1109,7 +1109,7 @@ export default {
   // #tiered tiered decks (I/II/III): {roman} is the Roman tier numeral — identical in both languages.
   "shop.tier.active": "Tier {roman} active ✓",
   "shop.tier.activate": "Activate tier {roman}",
-  // Header readout from 1400 px up — same pattern as the upgrade tree; reasoning in de.js.
+  // Header readout from 1280 px up — same pattern as the upgrade tree; reasoning in de.js.
   "shop.head.packs": "{n} packs · {own} unlocked",
   "shop.head.challenges": "{n} challenges · {own} unlocked",
   "shop.head.hint": "Tap a card to see back, front and battlefield.",
@@ -1118,7 +1118,7 @@ export default {
   "shop.tile.sub.active": "active",
   "shop.tile.sub.details": "tap → details",
   "shop.tile.sub.detailsTier": "Tier {roman} · tap → details",
-  // From 1400 px up the preview stays open beside the catalogue — reasoning in de.js.
+  // From 1280 px up the preview stays open beside the catalogue — reasoning in de.js.
   "shop.tile.sub.owned": "unlocked",
   "shop.tile.sub.ownedTier": "Tier {roman} · unlocked",
   "shop.tile.sub.buyable": "available",
@@ -1336,7 +1336,7 @@ export default {
   "start.tile.lock_one": "🔒 {count} more run",
   "start.tile.lock_other": "🔒 {count} more runs",
 
-  /* #desktop — status board on the start screen (shown from 1400 px). Terminology per the frozen table:
+  /* #desktop — status board on the start screen (shown from 1280 px). Terminology per the frozen table:
      Durchlauf = cycle, Stichpunkte = Trick Points, Spielfeld = battlefield. */
   "start.board.title": "Your standing",
   "start.board.field": "Battlefield · {name}",

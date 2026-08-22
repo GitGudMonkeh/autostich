@@ -9,7 +9,7 @@ import { StatusRail } from "./StatusRail.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 
 /* ============================================================
-   #lv-fluegel — die Level-up-Karte bekommt ab 1400 px zwei ausklappbare Seitenleisten.
+   #lv-fluegel — die Level-up-Karte bekommt ab 1280 px zwei ausklappbare Seitenleisten.
 
    Perk- und Skill-Wahl bleiben, was sie sind: eine KARTE ÜBER DEM BRETT, kein gerahmter Vollbild-Screen
    (bewusste Ausnahme vom Desktop-Pass — die anderen Screens ersetzen den Hub, diese hier unterbrechen
@@ -23,7 +23,7 @@ import { t } from "../i18n/index.js"; // #sprache
             sonst driften die Kennzahlen im Overlay von denen auf dem Brett weg) — und darunter der eigene
             Build (Perks + gehaltene Familien).
 
-   Die Karte selbst zeigt ab 1400 px KEINES dieser Felder mehr. Deck-Stärke, Formationen und Build lebten
+   Die Karte selbst zeigt ab 1280 px KEINES dieser Felder mehr. Deck-Stärke, Formationen und Build lebten
    dort als Klappfelder unter dem Angebot; sie sind jetzt in den Flügeln zu Hause. Der Grund ist nicht Platz,
    sondern Rollenteilung: die Karte trägt die ENTSCHEIDUNG, die Flügel den KONTEXT, an dem man sie trifft.
 
@@ -37,7 +37,7 @@ import { t } from "../i18n/index.js"; // #sprache
       Die 22-px-Bahn für die Griffe hält `.lv-cardwrap` als eigenen Rand frei; auch der Griff liegt also
       neben dem Text, nicht darauf. Die Mittelspur ist FEST, damit die Karte in allen vier Zuständen
       auf denselben Pixeln steht (gemessen — mit `auto` schrumpfte sie beim Zuklappen auf 784 px).
-   3. **Unterhalb 1400 px gibt es das alles nicht.** `.lv-rig` ist dort `display: contents`, die Flügel
+   3. **Unterhalb 1280 px gibt es das alles nicht.** `.lv-rig` ist dort `display: contents`, die Flügel
       und die Griffe werden gar nicht erst gerendert (`wide`-Gate). Die Handy-Fassung bleibt Knoten für
       Knoten dieselbe — sie ist gegen ein 390-px-Gerät abgestimmt und darf sich nicht bewegen.
 

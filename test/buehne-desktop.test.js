@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_AT, DESKTOP_AT_RX, desktopAndRx } from "./desktopBreakpoint.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));   // wie in Battlefield.jsx
 
-/* #buehne / #deckflug / #skillheim — der Spielbildschirm ab 1400 px.
+/* #buehne / #deckflug / #skillheim — der Spielbildschirm ab 1280 px.
    Das Projekt hat kein Component-Test-Setup, die Nähte hängen deshalb als Quelltext-Ratsche hier.
    Jede Prüfung sichert eine Stelle, an der der Umbau beim Bauen tatsächlich gestolpert ist —
    nicht die Schreibweise einer Regel, sondern die Eigenschaft, die sie tragen muss. */
@@ -15,17 +16,17 @@ const kit = readFileSync(new URL("../src/ui/indicators/panelKit.jsx", import.met
 const build = readFileSync(new URL("../src/ui/BuildPanel.jsx", import.meta.url), "utf8");
 
 // Der Abschnitt dieses Umbaus: erst die Regeln, die auf JEDER Breite gelten (die Handy-Fassung),
-// dann die Media Query ab 1400 px. Der Wächter prüft beide Hälften getrennt — eine Desktop-Regel,
+// dann die Media Query ab 1280 px. Der Wächter prüft beide Hälften getrennt — eine Desktop-Regel,
 // die in die Basis rutscht, wäre genau der Fehler, den er finden soll.
-const block = css.slice(css.indexOf("#buehne — der Spielbildschirm ab 1400 px"));
-const mq = block.indexOf("@media (min-width: 1400px)");
+const block = css.slice(css.indexOf("#buehne —"));
+const mq = block.indexOf(DESKTOP_AT);
 const basis = block.slice(0, mq);
 const desktop = block.slice(mq);
 
-describe("#buehne · die Bühne ab 1400 px", () => {
+describe("#buehne · die Bühne ab 1280 px", () => {
   it("der Umbau steht überhaupt noch in index.css", () => {
     expect(desktop.length, "der #buehne-Block fehlt — dann prüft dieser Wächter nichts").toBeGreaterThan(2000);
-    expect(desktop).toMatch(/@media \(min-width: 1400px\)/);
+    expect(desktop).toMatch(new RegExp(DESKTOP_AT_RX));
   });
 
   it("die Bühnenbreite hat DREI Deckel — der dritte ist die Höhe", () => {
@@ -59,7 +60,7 @@ describe("#buehne · die Bühne ab 1400 px", () => {
 
   it("flache Fenster bekommen ihre eigene Stufe", () => {
     // Dort ist die Höhe der Engpass: jede gesparte Zeile zahlt 2,5-fach in Bühnenbreite aus.
-    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 900px\) \{[\s\S]*--rn-chrome: 380px[\s\S]*height: 210px/);
+    expect(css).toMatch(new RegExp(desktopAndRx("max-height: 900px") + " \\{[\\s\\S]*--rn-chrome: 380px[\\s\\S]*height: 210px"));
   });
 
   it("der Kartenmaßstab ist einheitenlos (sonst fällt die Regel still aus)", () => {
@@ -78,7 +79,7 @@ describe("#buehne · die Bühne ab 1400 px", () => {
 
   it("Klammern reichen nur durch — die Handy-Fassung bleibt DOM-gleich", () => {
     expect(desktop).toMatch(/\.rn-head, \.rn-body, \.rn-main, \.rn-bars \{ display: contents; \}/);
-    expect(basis, "die Bank ist unter 1400 px keine Box").toMatch(/\.rn-bank \{ display: contents; \}/);
+    expect(basis, "die Bank ist unter 1280 px keine Box").toMatch(/\.rn-bank \{ display: contents; \}/);
     for (const k of ["rn-shell", "rn-body", "rn-main", "rn-bank", "rn-bars", "rn-rail", "rn-build"]) {
       expect(app, `Klammer ${k} fehlt im JSX`).toContain(k);
     }
@@ -94,11 +95,11 @@ describe("#buehne · die Bühne ab 1400 px", () => {
 });
 
 describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
-  it("Stapel und Spielfläche liegen unter 1400 px aufeinander", () => {
+  it("Stapel und Spielfläche liegen unter 1280 px aufeinander", () => {
     expect(basis).toMatch(/\.bf-sidebox > \.bf-deck, \.bf-sidebox > \.bf-play \{ position: absolute; inset: 0; \}/);
   });
 
-  it("ab 1400 px bleiben beide `relative` — NICHT static", () => {
+  it("ab 1280 px bleiben beide `relative` — NICHT static", () => {
     // `static` nahm dem Deck seinen Bezugspunkt: die absolut liegenden Stapelkarten hingen danach an
     // der Seite und sassen auf der Gegnerseite mitten auf der Karte. Genau das ist beim Bauen passiert.
     expect(desktop).toMatch(/\.bf-side \.bf-deck, \.bf-side \.bf-play \{ position: relative; inset: auto; \}/);
@@ -158,7 +159,7 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
 });
 
 describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
-  it("der Zug-Takt greift nur ab 1400 px, nicht am Handy", () => {
+  it("der Zug-Takt greift nur ab 1280 px, nicht am Handy", () => {
     // `wide` ist die einzige Stelle, an der der zweite Takt haengt — faellt sie weg, bekommt auch die
     // Handy-Fassung eine Verzoegerung, die sie nie hatte.
     expect(bf, "zugMs muss an useIsWide haengen").toMatch(/const zugMs = wide && !reduced && !!t && flipMs > 170/);

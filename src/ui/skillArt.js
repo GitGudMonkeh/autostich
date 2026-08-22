@@ -1,4 +1,4 @@
-/* #skillart — Embleme für die Skill-Wahl auf dem Desktop (ab 1400 px).
+/* #skillart — Embleme für die Skill-Wahl auf dem Desktop (ab 1280 px).
    -------------------------------------------------------------------------------------------------
    EIN Bild je Skill, benannt nach der Skill-ID aus `src/game/skills.js`. Die ID ist der Fügepunkt, der
    Name dahinter nur Lesehilfe — deshalb steht hier KEINE abgetippte Liste: die Zuordnung entsteht aus
@@ -16,7 +16,7 @@
 
    Kosten: `import.meta.glob` mit `?url` + `eager` liefert nur die URL-Strings (ein paar hundert Byte),
    nicht die Bilddaten. Die Bytes holt der Browser erst, wenn ein <img> wirklich rendert — und das tut
-   es nur ab 1400 px (Gate in SkillSelect.jsx). Am Handy wird also kein einziges Emblem geladen. */
+   es nur ab 1280 px (Gate in SkillSelect.jsx). Am Handy wird also kein einziges Emblem geladen. */
 
 const FILES = import.meta.glob("../assets/skills/*/*.webp", { eager: true, query: "?url", import: "default" });
 

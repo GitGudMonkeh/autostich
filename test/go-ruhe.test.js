@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #go-ruhe (19.08.2026) — der Siegesbildschirm im Desktop-Ton.
@@ -28,7 +29,7 @@ const storage = read("src/game/storage.js");
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const goBare = go.replace(/\/\*[\s\S]*?\*\//g, "");
 const deskBlock = (src) => {
-  const at = src.indexOf("@media (min-width: 1400px) {");
+  const at = src.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = src.indexOf("{", at); j < src.length; j++) {
     if (src[j] === "{") depth++;
@@ -116,7 +117,7 @@ describe("#go-ruhe — die zwei Aktionen tragen die Kachelform", () => {
 
 describe("#go-ruhe — die Kennzahlenreihe im Kopf ist Desktop-only", () => {
   it("die Handy-Fassung steht als eigener Zweig daneben", () => {
-    /* Die Reihe ersetzt die 55-%-opake Zeile NUR ab 1400 px; am Handy bleibt die kompakte Zeile.
+    /* Die Reihe ersetzt die 55-%-opake Zeile NUR ab 1280 px; am Handy bleibt die kompakte Zeile.
        Ohne die Verzweigung stünden vier beschriftete Werte neben einer 40-px-Zahl. */
     /* #go-kopf: Die zwei Fassungen stehen seit dem Kopfumbau an VERSCHIEDENEN Stellen im DOM — die
        Kennzahlenreihe oben im Kopf, die kompakte Zeile unten beim Score. Deshalb zwei Bedingungen
@@ -305,7 +306,7 @@ describe("#graph-gold — der Durchlauf-Graph", () => {
   });
 
   it("der Anteilsbalken ist am Handy unsichtbar, nicht weggelassen", () => {
-    /* Er trägt die zweite Lesart (Gewicht des Durchlaufs im Lauf); unterhalb 1400 px ist die Zahl
+    /* Er trägt die zweite Lesart (Gewicht des Durchlaufs im Lauf); unterhalb 1280 px ist die Zahl
        daneben 9 px gesetzt und es gibt keinen Platz dafür. */
     expect(cssBare.replace(desk, ""), "die Grundregel fehlt — der Balken erschiene am Handy")
       .toMatch(/^\.rg-share \{ display: none; \}/m);
@@ -390,11 +391,11 @@ describe("#go-kopf — die Score-Zahl steht unter der Haarlinie", () => {
   });
 
   it("am Handy bleibt der Score zentriert und in derselben Reihenfolge", () => {
-    /* `go-col1` ist unterhalb 1400 px `display: contents` — die Kinder des Blocks stehen dort im Fluss
+    /* `go-col1` ist unterhalb 1280 px `display: contents` — die Kinder des Blocks stehen dort im Fluss
        genau da, wo sie vorher im zentrierten `go-hero` standen. */
     expect(cssBare).toMatch(/\.go-col1 \{ display: contents; \}|, \.go-col1 \{ display: contents; \}/);
-    /* `text-center` MUSS bleiben: Es ist die Handy-Fassung des Blocks (ab 1400 px stellt `.go-heroblock`
-       auf linksbündig). Die Ring-Klassen dazwischen tragen unter 1400 px keine Darstellung. */
+    /* `text-center` MUSS bleiben: Es ist die Handy-Fassung des Blocks (ab 1280 px stellt `.go-heroblock`
+       auf linksbündig). Die Ring-Klassen dazwischen tragen unter 1280 px keine Darstellung. */
     expect(goBare).toMatch(/go-heroblock[^`"]*text-center/);
     const block = goBare.slice(goBare.indexOf("go-heroblock"));
     const score = block.indexOf("go-score"), rec = block.indexOf("go-rec"), klein = block.indexOf("text-xs opacity-55");

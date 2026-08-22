@@ -16,7 +16,7 @@ import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChan
    Überschrift sauber bei `top: 0` des Scroll-Bodys kleben. Vorher lag die Aktionsleiste selbst sticky IM
    Scroll-Fluss — zwei sticky-Ebenen im selben Container hätten sich gegenseitig überlagert.
 
-   #optionen-ton (19.08.2026): Die schmale Fassung bleibt bewusst reiner Text. Ab 1400 px stehen drei
+   #optionen-ton (19.08.2026): Die schmale Fassung bleibt bewusst reiner Text. Ab 1280 px stehen drei
    Panels nebeneinander, und dort trägt jede Zeile ein Zeichen — nicht als Schmuck, sondern weil in
    drei Spalten gesucht statt gelesen wird. Es sind einfarbige Text-Glyphen wie im Glossar, keine
    Emoji, und sie führen den Zustand der Zeile (grün = an) weiter, den auf dem Handy die Kante trägt. */
@@ -76,9 +76,9 @@ function Segmented({ value, options, onChange }) {
    Breiten weder Text noch die Knöpfe gequetscht werden. */
 /* #kante: Kanten-Zeile mit schmaler Kante. Ob sie grün wird, entscheidet index.css anhand des Schalters
    in `children` (`.as-opt-row:has(…)`) — die Zeile selbst muss den Zustand gar nicht kennen. */
-/* #optionen-ton (19.08.2026): `icon` ist ein reines DESKTOP-Zeichen. Ab 1400 px trägt es den Zustand
+/* #optionen-ton (19.08.2026): `icon` ist ein reines DESKTOP-Zeichen. Ab 1280 px trägt es den Zustand
    der Zeile (`--c`, dieselbe Variable, die auf dem Handy die linke Kante färbt) und macht die Spalte
-   scanbar — man findet eine Einstellung am Zeichen, bevor man die Zeile liest. Unter 1400 px ist es
+   scanbar — man findet eine Einstellung am Zeichen, bevor man die Zeile liest. Unter 1280 px ist es
    `display: none`: dort ist die Liste schmal, und ein Zeichen je Zeile nähme dem Text die Breite. */
 function Row({ icon, title, desc, children, stack = false }) {
   return (
@@ -114,9 +114,9 @@ const SECTIONS = [
 function Section({ id, title, innerRef, children }) {
   return (
     <section ref={innerRef} data-sec={id} className="op-sec as-ring as-ring-quiet pb-1">
-      {/* #desktop: Ab 1400 px ist die Sektion das Panel des Screens und trägt den laufenden
+      {/* #desktop: Ab 1280 px ist die Sektion das Panel des Screens und trägt den laufenden
           Deckfarben-Ring. Das `<i>` ist die stehende Maske der kompositierten Fassung (#perf-ring) —
-          ohne dieses Kind fehlt der Rahmen. Unter 1400 px ist beides inert (`.as-ring-run` ist dort
+          ohne dieses Kind fehlt der Rahmen. Unter 1280 px ist beides inert (`.as-ring-run` ist dort
           `display: none`, `.as-ring` selbst greift erst im Desktop-Block). */}
       <i className="as-ring-run" aria-hidden="true" />
       <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-xs font-bold uppercase tracking-widest"
@@ -178,7 +178,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
     <div onClick={onClose} className="op-root fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div onClick={(e) => e.stopPropagation()} className="op-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
-        {/* #desktop: ab 1400 px wandert die Linie per `order` UNTER den Kopf (Zeile 2 des Kopf-Rasters). */}
+        {/* #desktop: ab 1280 px wandert die Linie per `order` UNTER den Kopf (Zeile 2 des Kopf-Rasters). */}
         <ModalHairline className="op-hair" />
 
         {/* FIXER KOPF (#395): Titel · Schließen · Sprung-Chips — scrollt NICHT mit, damit die
@@ -191,14 +191,14 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
             </div>
             {/* #desktop: Auskunftszeile neben dem Titel — dieselbe Stelle wie das Guthaben im Upgrade-Baum
-                (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1400 px gibt es sie nicht: dort ist
+                (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1280 px gibt es sie nicht: dort ist
                 der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
-            <div className="op-readout hidden min-[1400px]:block">{t("options.desk.readout")}</div>
+            <div className="op-readout hidden dt:block">{t("options.desk.readout")}</div>
             <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>
               <span className="as-deskonly op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
             </ActionButton>
           </div>
-          {/* #desktop: Die Sprungleiste ist ab 1400 px gegenstandslos (nichts scrollt mehr) und wird ausgeblendet. */}
+          {/* #desktop: Die Sprungleiste ist ab 1280 px gegenstandslos (nichts scrollt mehr) und wird ausgeblendet. */}
           <div className="op-chips flex flex-nowrap sm:flex-wrap gap-1.5 mt-3 overflow-x-auto sm:overflow-x-visible as-chiprow">
             {SECTIONS.map((sec) => (
               <JumpChip key={sec.id} label={t(sec.chipKey)} active={active === sec.id} onClick={() => jump(sec.id)} />
@@ -247,7 +247,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           {/* #desktop — Klammer für die MITTLERE Spalte: „Grafik & Leistung" und „Ton" teilen sich dort eine
               Spalte und müssen als EIN Rasterfeld stehen. Ohne die Klammer säßen sie in zwei Rasterzeilen,
               deren Höhe die längste Spalte daneben bestimmt — zwischen den beiden klaffte dann deren
-              Restluft. Unter 1400 px ist sie `display: contents`, ändert dort also nichts. */}
+              Restluft. Unter 1280 px ist sie `display: contents`, ändert dort also nichts. */}
           <div className="op-col2">
           <Section id="graphics" title={t("options.sec.graphics")}
             innerRef={(el) => { secRefs.current.graphics = el; }}>

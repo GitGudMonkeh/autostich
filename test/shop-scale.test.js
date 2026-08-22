@@ -1,4 +1,4 @@
-/* #shop-skalieren + #shop-luft — die Pack-Vorschau der Deck-Werkstatt ab 1400 px (19.08.2026).
+/* #shop-skalieren + #shop-luft — die Pack-Vorschau der Deck-Werkstatt ab 1280 px (19.08.2026).
    -------------------------------------------------------------------------------------------------
    Gemessen im Produktionsbuild (Playwright, echte Komponente): der Inhalt der Detailspalte braucht
    662 px. Auf 1920 × 1080 und 1723 × 1030 hat er sie — dort passte es. Auf 1536 × 791 stehen ihm 558
@@ -20,6 +20,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 /* Zeilenenden beim Lesen vereinheitlichen (Gürtel und Hosenträger): Seit .gitattributes (`* text=auto eol=lf`)
    liegt der Quelltext auch auf Windows mit LF in der Arbeitskopie. Eine Arbeitskopie, die davor ausgecheckt
@@ -29,8 +30,8 @@ import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
-// Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.
-const desktop = css.slice(css.indexOf("@media (min-width: 1400px)"));
+// Nur der 1280er-Block — sonst prüfte man Regeln, die am Handy stehen.
+const desktop = css.slice(css.indexOf(DESKTOP_AT));
 // Ohne die Begründungen: die Kommentare nennen die verworfene Fassung absichtlich beim Namen (dieselbe
 // Falle wie beim `as-ring`-Zähler in #fx-panel und beim `ATTACK:`-Greifer in #cube-takt).
 const desktopBlank = desktop.replace(/\/\*[\s\S]*?\*\//g, "");

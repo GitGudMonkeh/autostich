@@ -14,7 +14,7 @@ import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — dieselbe Liste wie in der Skill-Auswahl
 import { useIsWide } from "./useIsWide.js";
-import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
+import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -49,7 +49,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                              options = {}, onOption, currentTraj = [], recordTraj = [], best = 0 }) {
   // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
   // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
-  /* #lv-fluegel: Ab 1400 px zeigt die Karte KEINE Kontext-Klappfelder mehr — Deck-Stärke, Formationen und
+  /* #lv-fluegel: Ab 1280 px zeigt die Karte KEINE Kontext-Klappfelder mehr — Deck-Stärke, Formationen und
      Build sind in den Flügeln zu Hause. Gebunden an die BREITE, nicht an den Auf-/Zu-Zustand der Flügel:
      „lebt nur noch im Reiter" heißt, dass die Karte sie auch bei zugeklapptem Flügel nicht zurückholt —
      sonst wäre der Griff kein Schalter, sondern nur eine zweite Anordnung derselben Inhalte. */
@@ -69,7 +69,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
     <div className="fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c1099", backdropFilter: "blur(3px)" }}>
       <LevelupRig accent={PHASE_ACCENTS.red.c} state={state} deck={deck} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
-        {/* #lv-ruhe: ab 1400 px die leise Fassung derselben Karte (schwächerer Rahmen, kein farbiger Schein) —
+        {/* #lv-ruhe: ab 1280 px die leise Fassung derselben Karte (schwächerer Rahmen, kein farbiger Schein) —
             dieselbe Entscheidung wie an den Werkstatt-Panels (#cz-ruhe). Am Handy bleibt der kräftige Rahmen:
             dort steht die Karte auf einem kleinen Schirm über dem Brett und braucht die Ablösung. */}
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red, undefined, { quiet: inWings })}>

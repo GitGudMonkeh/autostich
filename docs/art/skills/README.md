@@ -1,6 +1,6 @@
 # Skill-Artworks — Sammelstand
 
-Embleme für die Skill-Wahl auf dem Desktop (ab 1400 px). Erzeugt mit ChatGPT nach dem Stil-Anker der
+Embleme für die Skill-Wahl auf dem Desktop (ab 1280 px). Erzeugt mit ChatGPT nach dem Stil-Anker der
 Spielfelder/Kartenrücken: tiefschwarzer Grund, EIN Neonton, weißglühende Kerne, additives Leuchten.
 
 ## Ablage
@@ -130,7 +130,7 @@ nichts; wer ein Master austauscht, lässt das Skript neu laufen.
   einer 277 px breiten Karte; bei DPR-Deckel 2 sind das 554 Gerätepixel. Die erste Fassung lieferte 192 px
   aus, begründet mit einem 64-px-Emblem — mit dem Streifen war dieselbe Datei fast dreifach hochskaliert.
   384 ist der Kompromiss (1,4-fach, 405 kB); pixelgenau wären 512 px und **655 kB**.
-- **Gate**: `const art = wide ? skillArt(id) : null` — ab 1400 px. Weil das Gate im JSX sitzt und nicht in
+- **Gate**: `const art = wide ? skillArt(id) : null` — ab 1280 px. Weil das Gate im JSX sitzt und nicht in
   CSS, lädt das Handy die Bilder gar nicht erst.
 - **Zuordnung**: allein über den Dateinamen (`src/ui/skillArt.js`). Keine abgetippte Liste; ein neuer Skill
   bekommt sein Emblem dadurch, dass die Datei nach seiner ID heißt.

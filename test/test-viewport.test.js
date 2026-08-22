@@ -12,7 +12,7 @@ import {
    #400 Test viewport — the preview-only viewport harness.
 
    Why the harness is an iframe and not a sized container: the desktop layout is dimensioned from the
-   REAL viewport — `@media (min-width: 1400px)`, several `max-height` blocks, and the `100vw`/`100dvh`
+   REAL viewport — `@media (min-width: 1280px)`, several `max-height` blocks, and the `100vw`/`100dvh`
    chain behind `--rn-w`/`--bf-w`. None of those can be scoped to a container, so a fixed-size box
    inside a large window keeps evaluating the large window. An iframe content box IS a viewport, so
    everything resolves by itself and the application needs no knowledge of the harness.

@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import { GLOSSARY_CATEGORIES } from "../src/game/glossary.js";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #glossar-desktop — Glossar als gerahmter Screen ab 1400 px, als Quelltext-Ratsche.
+   #glossar-desktop — Glossar als gerahmter Screen ab 1280 px, als Quelltext-Ratsche.
 
    Geprüft wird die NAHT über drei Dateien, keine Optik. Der Screen hat wie der Leitfaden KEINEN
    eigenen Renderpfad: `Glossary.jsx` setzt dieselben Klammern (`gl-desk` / `gl-page` / `gl-body` /
@@ -32,9 +33,9 @@ const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8"
 const css = read("index.css");
 const jsx = read("ui/Glossary.jsx");
 
-// Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
+// Der Block `@media (min-width: 1280px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return null;
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
@@ -44,8 +45,8 @@ const deskBlock = (() => {
   return null;
 })();
 
-describe("#glossar-desktop — Glossar ab 1400 px", () => {
-  it("die vier Klammern sind unterhalb von 1400 px `display: contents`", () => {
+describe("#glossar-desktop — Glossar ab 1280 px", () => {
+  it("die vier Klammern sind unterhalb von 1280 px `display: contents`", () => {
     // Die Regel muss AUSSERHALB des Desktop-Blocks stehen, sonst gilt sie dort nicht, wo sie zählt.
     const base = deskBlock ? css.replace(deskBlock, "") : css;
     const rule = base.match(/^\.gl-desk,\s*\.gl-page,\s*\.gl-body,\s*\.gl-cols\s*\{([^}]*)\}/m);

@@ -50,7 +50,7 @@ const fmtHours = (ms) => {
 
 /* #desktop: `id` ist der Platzhalter im Spaltenraster (data-sec), `st-sec` die Panel-Klammer und
    `as-ring` + `<i>` der Deckfarben-Rahmen (#perf-ring: Klasse und Band sind ein Paar).
-   Unter 1400 px ist beides inert — `.as-ring-run` ist dort `display: none`, `.st-sec` hat keine Regel.
+   Unter 1280 px ist beides inert — `.as-ring-run` ist dort `display: none`, `.st-sec` hat keine Regel.
    #st-ruhe: `as-ring-quiet` stellt das wandernde Band still — derselbe Modifikator wie in Werkstatt,
    Baum, Leitfaden und Glossar. Fünf laufende Rahmen um Zahlenblöcke sind Bewegung ohne Aussage. */
 function Section({ id, title, hint, children }) {
@@ -162,9 +162,9 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         <div className="st-head sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <h2 className="text-lg font-bold flex items-center gap-2">{t("stats.title")}</h2>
-          {/* #desktop: Auskunftszeile im Kopf (Spalte 3, wie im Upgrade-Baum). Unter 1400 px ist der Kopf
+          {/* #desktop: Auskunftszeile im Kopf (Spalte 3, wie im Upgrade-Baum). Unter 1280 px ist der Kopf
               zweispaltig und hat dafür keinen Platz. */}
-          <div className="st-readout hidden min-[1400px]:block">{t("stats.desk.readout")}</div>
+          <div className="st-readout hidden dt:block">{t("stats.desk.readout")}</div>
           <ActionButton kind="secondary" className="st-close shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
 

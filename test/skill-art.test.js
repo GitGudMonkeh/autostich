@@ -1,4 +1,4 @@
-/* #skillart — Embleme der Skill-Wahl (Desktop ab 1400 px).
+/* #skillart — Embleme der Skill-Wahl (Desktop ab 1280 px).
    -------------------------------------------------------------------------------------------------
    Drei Sorten Prüfung, bewusst getrennt:
    1. Die ZUORDNUNG wird nachgerechnet: `artIdFromFile` ist rein, also wird sie mit den echten
@@ -120,7 +120,7 @@ describe("#skillart — der Bloom ist gebacken, nicht gerechnet", () => {
 
 describe("#skillart — kein Emblem als data-URI im Bundle", () => {
   /* Vites Standardgrenze (4 kB) hätte fünf der 21 Blitz-Embleme ins JS inline gezogen — gemessen im
-     Produktionsbuild. Damit lädt sie JEDES Handy bei jedem Seitenaufruf mit, obwohl sie erst ab 1400 px
+     Produktionsbuild. Damit lädt sie JEDES Handy bei jedem Seitenaufruf mit, obwohl sie erst ab 1280 px
      gerendert werden. Der `wide`-Gate oben wäre also zur Hälfte ausgehebelt, ohne dass man es sieht. */
   it("die Grenze schaltet für Skill-Embleme auf „nie inlinen“, sonst bleibt sie unangetastet", async () => {
     const mod = await import("../vite.config.js");

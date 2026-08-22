@@ -136,7 +136,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
         /* Spaltenköpfe und Zeilen sind zwei Geschwister an einer Stelle, an der ein Ausdruck steht — die
            Klammer ist deshalb Pflicht, nicht Geschmack. */
         <>
-        {/* #lb-premium: Spaltenköpfe NUR ab 1400 px (`as-deskonly`). Auf dem Handy stehen die Zeilen
+        {/* #lb-premium: Spaltenköpfe NUR ab 1280 px (`as-deskonly`). Auf dem Handy stehen die Zeilen
             zweizeilig und die Köpfe hätten nichts, worüber sie stehen könnten. */}
         <div className="lb-cols as-deskonly" aria-hidden="true">
           <span>{t("board.col.rank")}</span><span>{t("board.col.pilot")}</span><span>{t("board.col.score")}</span>
@@ -166,7 +166,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 title={t("stats.showDetails")}
                 className={`as-edge-card as-edge-thin${mineRow ? " is-sel" : ""} flex items-center gap-2 px-2 py-1.5 rounded text-left w-full transition-all hover:brightness-125`}
                 style={{ "--c": rankTone }}>
-                {/* #lb-podest: Die Rangzahl IST die Auszeichnung — sie steht ab 1400 px in einer Kante aus
+                {/* #lb-podest: Die Rangzahl IST die Auszeichnung — sie steht ab 1280 px in einer Kante aus
                     Gold/Silber/Bronze (`--c`, dieselbe Farbe wie die Zeilenkante). Emoji-Medaillen sind draußen:
                     sie bringen ihre eigene Farbe mit und stehen quer zur Deckfarbe (s. RankIcon.jsx). */}
                 <span className="lb-rank w-6 shrink-0 text-center ty-num-sm" style={{ opacity: 0.5 }}>{`#${i + 1}`}</span>

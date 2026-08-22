@@ -6,7 +6,7 @@
    the test only proves that somebody wrote the same number twice.
 
    Why a harness exists at all: the desktop layout is dimensioned from the REAL browser viewport —
-   `@media (min-width: 1400px)`, several `max-height` blocks, and the `100vw`/`100dvh` calc chain
+   `@media (min-width: 1280px)`, several `max-height` blocks, and the `100vw`/`100dvh` calc chain
    behind `--rn-w`/`--bf-w` in index.css. None of those can be scoped to a container, so a fixed-size
    box inside a large window would keep evaluating the large window and show a plausible but WRONG
    picture. An iframe content box is a real viewport, so media queries, `vw`/`dvh`, `matchMedia`,

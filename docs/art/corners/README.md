@@ -1,6 +1,6 @@
 # Ecken-Ornamente — Sammelstand
 
-Fraktions-Ornamente für den Kopf der Skill-Wahl (ab 1400 px). Sie sollen aus den **oberen Ecken** in die
+Fraktions-Ornamente für den Kopf der Skill-Wahl (ab 1280 px). Sie sollen aus den **oberen Ecken** in die
 tote Fläche des Kartenkopfs laufen (~300 × 115 px je Seite) und **mit dem aktiven Reiter wechseln** — damit
 sind sie Information („du bist bei Blitz"), nicht Deko.
 

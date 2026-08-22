@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
-   #desktop — Leitfaden als gerahmter Screen ab 1400 px, als Quelltext-Ratsche.
+   #desktop — Leitfaden als gerahmter Screen ab 1280 px, als Quelltext-Ratsche.
 
    Geprüft wird eine NAHT über zwei Dateien, keine Optik. Der Desktop-Leitfaden hat KEINEN eigenen
    Renderpfad: `GuideOverlay.jsx` setzt dieselben Klammern (`gd-desk` / `gd-page` / `gd-cols` / `gd-col`)
@@ -25,9 +26,9 @@ const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8"
 const css = read("index.css");
 const jsx = read("ui/GuideOverlay.jsx");
 
-// Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
+// Der Block `@media (min-width: 1280px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return null;
   let depth = 0, i = css.indexOf("{", at);
   for (let j = i; j < css.length; j++) {
@@ -37,8 +38,8 @@ const deskBlock = (() => {
   return null;
 })();
 
-describe("#desktop — Leitfaden ab 1400 px", () => {
-  it("die vier Klammern sind unterhalb von 1400 px `display: contents`", () => {
+describe("#desktop — Leitfaden ab 1280 px", () => {
+  it("die vier Klammern sind unterhalb von 1280 px `display: contents`", () => {
     // Die Regel muss AUSSERHALB des Desktop-Blocks stehen, sonst gilt sie dort nicht, wo sie zählt.
     const base = deskBlock ? css.replace(deskBlock, "") : css;
     const rule = base.match(/^\.gd-desk,\s*\.gd-page,\s*\.gd-cols,\s*\.gd-col\s*\{([^}]*)\}/m);
@@ -66,22 +67,29 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     expect(deskBlock).toMatch(/\.gd-page \.gd-cols\s*\{[^}]*overflow-y:\s*auto/);
   });
 
-  it("die vier --gs-Stufen stehen an ihren gemessenen Fenster-Bedingungen", () => {
-    // Grundstufe im 1400er Block.
-    expect(deskBlock).toMatch(/\.gd-page\s*\{\s*--gs:\s*\.95;\s*\}/);
-    // Große, hohe Fenster: nur zusammen mit min-height, sonst liefe es auf flachen Fenstern über.
-    expect(css).toMatch(/@media \(min-width: 1750px\) and \(min-height: 1000px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*1\.2;/);
-    // Flache Fenster: eine Stufe kleiner, im bestehenden max-height-Block.
-    const flat = css.match(/@media \(min-width: 1400px\) and \(max-height: 950px\) \{[\s\S]*?\n\}/g) || [];
-    expect(flat.some((b) => /\.gd-page\s*\{[^}]*--gs:\s*\.9;/.test(b)),
-      "Die flache Stufe (--gs: .9) fehlt im max-height-Block").toBe(true);
-    // Sehr flache Fenster (skalierte Laptops, CSS 1536x791 und darunter).
-    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 820px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*\.82;/);
-    // REIHENFOLGE: Beide max-height-Blöcke treffen auf ein 791-px-Fenster zu, die Spezifität ist
-    // gleich — also gewinnt der spätere. Steht 820 vor 950, ist die Stufe wirkungslos (genau so
-    // ist es beim ersten Anlauf passiert und im Browser gar nicht aufgefallen).
-    expect(css.indexOf("max-height: 820px"), "Der 820er Block muss NACH dem 950er stehen")
-      .toBeGreaterThan(css.lastIndexOf("and (max-height: 950px) {\n  .gd-frame"));
+  /* #viewport-1280 / V1280-03 — UMGEDREHT, NICHT GELÖSCHT.
+
+     Bis 2026-08-22 sicherte dieser Wächter vier gemessene --gs-Schrumpfstufen an ihren jeweiligen
+     Fensterbedingungen. Die Stufen sind entfernt: der Leitfaden war die einzige Fläche im Survey,
+     die Text verkleinert, um nicht scrollen zu müssen — bei 1280 auf 8,61 px, bei 1600×900 fiel
+     "Kernidee" von 13,2 auf 9,9 px. Der Eigentümer hat den Handel umgedreht (V1280-03).
+
+     Der Wächter sichert jetzt die GEGENTEILIGE Zusicherung, damit die Stufen nicht unbemerkt
+     zurückkommen und die Seite ihr Ventil behält. Eine Ratsche weniger wäre der falsche Schluss
+     gewesen — die Stelle ist genauso schützenswert wie vorher, nur mit umgekehrtem Vorzeichen. */
+  it("der Leitfaden schrumpft KEINEN Text mehr — --gs ist neutral und die Seite scrollt", () => {
+    const stufen = [...css.matchAll(/--gs:\s*([\d.]+)/g)].map((m) => m[1]);
+    expect(stufen.length, "--gs muss genau einmal definiert sein, s. .gd-page").toBe(1);
+    expect(stufen[0], "--gs darf nicht mehr verkleinern").toBe("1");
+
+    // Das Ventil, das die Schrumpfung ersetzt: die Seite selbst scrollt innen.
+    const seite = deskBlock.match(/\.gd-page \{([^}]*)\}/);
+    expect(seite, ".gd-page-Regel nicht mehr gefunden").toBeTruthy();
+    expect(seite[1], "die Seite braucht ein eigenes Ventil").toMatch(/overflow-y:\s*auto/);
+    expect(seite[1], "ohne min-height: 0 kann ein Flex-Kind gar nicht überlaufen").toMatch(/min-height:\s*0/);
+    expect(seite[1], "Scrollen darf nicht auf die Seite dahinter durchschlagen").toMatch(/overscroll-behavior:\s*contain/);
+    expect(seite[1], "align-self: start ließ die Seite am Inhalt enden — dann läuft sie nie über")
+      .not.toMatch(/align-self:\s*start/);
   });
 
   it("der Untertitel im Seitenkopf bricht um, statt abgeschnitten zu werden", () => {

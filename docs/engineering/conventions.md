@@ -41,7 +41,7 @@ verbatim in the decision log; see §5.
    PARAMETER at the source is better than `!important` on three properties. Use `!important` only
    where the seam is otherwise unreachable — and then with the reason in the comment.
 
-4. **The bracket technique for new structure.** A new wrapper is `display: contents` below 1400 px,
+4. **The bracket technique for new structure.** A new wrapper is `display: contents` below 1280 px,
    so the mobile variant stays identical in DOM and in pixels (`cz-fxfoot`, `gd-cols`, `gl-body`,
    `lv-rig`).
 

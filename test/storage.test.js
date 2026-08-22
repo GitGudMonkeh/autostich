@@ -29,7 +29,7 @@ const DEFAULT_OPTIONS = {
   calmMusic: false,
   telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
-  lvWingDeck: true, lvWingStats: true, // #lv-fluegel: Seitenleisten der Level-up-Karte (nur ab 1400 px)
+  lvWingDeck: true, lvWingStats: true, // #lv-fluegel: Seitenleisten der Level-up-Karte (nur ab 1280 px)
   lvPassive: false, // #lv-fluegel: Passiv-Beschreibung der Skill-Wahl — gemerkt, Default zu
   lvHeld: true, // #held-merken: „Deine Skills" in Perk-/Skill-Wahl — gemerkt, Default auf
   lvWingBuildings: false, // #lv-gebaeude: Gebäude-Liste im linken Flügel — gemerkt, Default zu
