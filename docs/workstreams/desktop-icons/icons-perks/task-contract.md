@@ -182,12 +182,12 @@ prevent.
 - [x] Legendary lot complete: 21 masters, 21 delivery files; `L_ZINS` verified by motif and by elimination
 - [x] Perk-category lot complete: 7 delivery files; the README's existing factors applied, not re-derived
 - [x] Wiring in `PerkSelect.jsx` behind the desktop gate, in JSX rather than CSS
-- [x] Guards added for both lots' completeness and for the regular-vs-legendary distinction — 32 assertions, **11 seams counter-checked** by deliberately breaking each
+- [x] Guards added for both lots' completeness and for the regular-vs-legendary distinction, **16 seams counter-checked** by deliberately breaking each. Five were added in review round 1 — the three zone guards and the two duplicate-id guards
 - [x] No runtime `filter:`/`blur(` on any new rule — guarded, counter-checked, and `filter: none` read from the live DOM
 - [~] V1 baseline taken **before** the first pixel moved — it was, then overwritten by operator error and regenerated deterministically from the immutable base commit. **Downgrade `DR-1`**; see `visual-review.md`
 - [x] V2 capture at the same sizes, DPR and state as V1 — same committed script, same seed
-- [x] V3 human visual gate **passed by the owner, 2026-08-22** — verdict recorded verbatim in `visual-review.md`. Closes `ICONS-PERK-VIS-02` (legendary anchor) and `ICONS-PERK-VIS-03` (tile height)
-- [x] V4 classification written; 7 findings `ICONS-PERK-VIS-01..07` plus `DR-1`/`DR-2`
+- [x] V3 human visual gate **passed by the owner, 2026-08-22**, and re-confirmed the same day after the round-1 re-bake moved two emblems. Both verdicts verbatim in `visual-review.md`. Closes `ICONS-PERK-VIS-02` (legendary anchor), `ICONS-PERK-VIS-03` (tile height) and `DR-3`
+- [x] V4 classification written; 10 findings `ICONS-PERK-VIS-01..10` plus `DR-1`/`DR-2`/`DR-3`. Three came from review round 1
 - [~] `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — green. `npm test`: **135 of 136 files green**; the one failure is a 5000 ms **timeout** in `test/i18n-guards.test.js`, **pre-existing** — measured at `HEAD` with this task's changes removed (fails 2 of 3 runs there) and 2050 ms when the test runs alone. Not fixed here: that guard belongs to another task. Evidence package §5
 - [x] `npm run loc:export` run — no diff. No player-visible text changed (`alt=""`, `aria-hidden="true"`)
 - [x] Evidence package written with a "what this does NOT cover" section; H1–H6 each marked

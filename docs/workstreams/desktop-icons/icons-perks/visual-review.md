@@ -2,10 +2,10 @@
 
 The §8 lifecycle of `docs/engineering/task-lifecycle.md`. Tier C runs the visual gate **always**.
 
-**V3 was passed by the owner on 2026-08-22**, recorded below with the verdict verbatim. Everything
-else here is capture, measurement and classification — the worker's work. The judgement is not: no
-agent approved anything in this document (§8 — *V3*: "an agent must not report a visual result as
-approved").
+**V3 was passed by the owner on 2026-08-22**, and re-confirmed the same day after the round-1 fix
+moved two emblems. Both verdicts are recorded verbatim below. Everything else here is capture,
+measurement and classification — the worker's work. The judgement is not: no agent approved anything
+in this document (§8 — *V3*: "an agent must not report a visual result as approved").
 
 ---
 
@@ -186,7 +186,12 @@ delivery files were re-baked. How far each moved:
 
 Every one of the seven larger movers ends up **closer to the lot's own median than before**, which is
 the point of the fix, and none moved away from it. The captures below are the post-fix state. A
-narrow re-confirmation of the two visible movers is recorded as `DR-3`.
+narrow re-confirmation of the two visible movers was put to the owner on 2026-08-22 with
+`visual/V2b-relight-before-after.png`, and the verdict, verbatim:
+
+> passt
+
+**`DR-3` is therefore closed, and the V3 pass covers the shipped bake.**
 
 ---
 
@@ -212,5 +217,5 @@ Every finding has an ID. Nothing here is closed by an agent.
 | ID | What is missing | Why it is recorded rather than repaired |
 | --- | --- | --- |
 | `DR-1` | V1 was taken correctly, then overwritten by operator error and regenerated from the immutable base commit | Regeneration reproduces the original figures exactly, but a re-derived baseline is weaker than an untouched one and is labelled as such rather than presented as clean |
-| `DR-3` | The V3 verdict was given on the pre-fix bake. Two emblems — Henker and Opfergang — changed visibly when `ICONS-PERK-VIS-08` was corrected afterwards | Re-baking was the right call on a measured defect, and both moved *towards* the lot's own median rather than away. But a verdict given on one set of pixels does not automatically transfer to another set, so the two that moved visibly are put back in front of the owner rather than assumed approved |
+| ~~`DR-3`~~ | ~~The V3 verdict was given on the pre-fix bake; Henker and Opfergang changed visibly when `ICONS-PERK-VIS-08` was corrected afterwards~~ | **Closed 2026-08-22.** The two movers were put back in front of the owner with a before/after rather than assumed approved, and confirmed. The V3 pass covers the shipped bake |
 | `DR-2` | Only **one** of the 21 legendary emblems (`L_VAB`) and **two** of the 7 category emblems (`B`, `C`) were seen rendered by the application. The other 25 were verified as files and as bindings, not on the screen | A perk offer holds three tiles, and driving 26 further offers means playing out the run's RNG. What was checked instead: every file bakes, every binding resolves in `test/perk-art.test.js` in both directions, and all 28 are rendered in the exact strip geometry in the contact sheets. That is a lot-level check, not a screen-level one |

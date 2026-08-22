@@ -10,7 +10,8 @@ For **Codex**, as independent reviewer (`AGENTS.md` — *Roles and source of tru
 | Base | `origin/feature/desktop-icons` @ `3013881f723080753b8829feea4b051356f0cae0` |
 | Contract | `docs/workstreams/desktop-icons/icons-perks/task-contract.md` — the binding scope, not restated here |
 | Evidence | `evidence-package.md` |
-| Visual | `visual-review.md` — **V3 passed by the owner, 2026-08-22** |
+| Visual | `visual-review.md` — **V3 passed by the owner, 2026-08-22**, re-confirmed after the round-1 re-bake |
+| Review | **Round 1 complete** (Codex). Four findings, all reproduced, all addressed in `44174a47`. The owner declined a second round |
 
 ---
 
@@ -85,7 +86,8 @@ What to check now: the lot table gained `strip_h`, `mask_stop` and `anchor`, so 
 three more numbers that must match `src/index.css` — all three are guarded and counter-checked, but
 they are new seams. And the two perk lots are still aligned by two different statistics:
 `align --lot perkcats` reports 1.56 for B Stich against 1.05 shipped, leaving that lot at 1.69-fold as
-shown. Not acted on, because the contract requires the README's factors. See `ICONS-PERK-VIS-05`.
+shown. Not acted on, because the contract requires the README's factors and the set was approved as it
+ships. See `ICONS-PERK-VIS-10`.
 
 ---
 
@@ -171,7 +173,7 @@ Restoration of the working tree after the `HEAD` experiment was verified byte-id
 | Q-B | **Should the two lots be aligned to each other, not only to themselves?** They share a screen — a legendary tile beside two category tiles is the normal case, and the legendary median sits at 30.1 % luminous area against the category median's 23.5 %, so legendary tiles read brighter. Per-lot alignment is the contract's *Approved architecture* 6 and was followed; whether the architecture is right for *this* pair is a different question | Owner / future workstream (`ICONS-PERK-VIS-04`) |
 | Q-C | ~~Is doubling the tile height wanted?~~ **Closed at V3, 2026-08-22.** 162.5 px → 317.5 px, approved as shipped | Closed |
 | Q-D | **Is 384 px the right delivery size for a 265 px zone?** Inherited from the skill lots' reasoning (DPR cap 2 → 530 px would be exact; 384 is a 1.4× upscale that soft gradients forgive) and not re-derived here. At 265 the exact figure is 530, so the same reasoning holds, but it was reasoned, not measured | Reviewer, if it matters |
-| Q-E | **`ICONS-PERK-VIS-05`** — `align --lot perkcats` disagrees with the shipped perkcats factors under the new statistic, most at E Form (1.06 vs 0.73). Shipping the README's numbers is what the contract requires. Should the two lots eventually use one statistic? | Owner / future workstream |
+| Q-E | **`ICONS-PERK-VIS-10`** — the perk-category lot spreads 1.69-fold measured as shown, because its README's factors carry the same domain error the legendary lot's did. Shipping them unchanged is what the contract requires and the set was approved that way. Should it be re-solved in a later task? | Owner / future workstream |
 | Q-F | **The audit's 270.66 for the skill card** may itself be the skill BUTTON rather than the skill strip, by exact analogy with the 270/265 error this task made. If so, `ICONS-VIS-01` understates the discrepancy. Not investigated — touching the skill lots is a non-goal of this contract | Reviewer / a future task |
 | Q-G | **Contract Q2** — does an S-category icon ever appear on a *regular* perk tile? S has 0 families and 1 perk, so on the current data: no, only via its single legendary. The emblem exists and the guard covers it either way. Reportable, not blocking | Noted |
 | Q-H | **Contract Q3** — `E10` (`offerable: false`) is excluded from the legendary completeness guard, because it is neither offerable nor legendary. Recorded as an explicit assertion in `test/perk-art.test.js` so the gap reads as a decision | Noted |
