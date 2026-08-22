@@ -301,8 +301,29 @@ done
 
 | ID | Question | Who decides | Blocking? |
 | --- | --- | --- | --- |
-| **Q1** | Should the owner's planning prompt be coupled to the new section, so the rule reaches the surface where the friction actually originates (`planning-report.md` §3 and R9)? It changes nothing in the repository and is cheap to add once the section exists to cite. | Owner | **No** — deliberately outside this task's scope |
+| **Q1** | Should the owner's planning prompt be coupled to the new section, so the rule reaches the surface where the friction actually originates (`planning-report.md` §3 and R9)? It changes nothing in the repository and is cheap to add once the section exists to cite. | Owner | **No** — outside this task's scope. **Answered below.** |
 
 Q1 is the only open question. Every technical question raised during planning was resolved in the
 planning report or delegated to the worker under *Approved architecture* — which is the rule this
 task establishes, applied to itself.
+
+### Q1 — answered by the owner, 2026-08-22: **yes**
+
+The sentence belongs in the planning prompt the owner types, and no repository file holds those
+prompts. Checked at handoff: `docs/workstreams/setup/` carries design notes and implementation
+notes, not prompt templates, and the only other candidate is `.claude/commands/**`, which this
+contract's tripwire puts off limits. The answer therefore adds no repository change — which is what
+`planning-report.md` R9 predicted. It is recorded here so the decision is durable rather than living
+in a session:
+
+> Technische Fragen entscheidest du selbst nach `AGENTS.md` — *Decision authority*: analysieren, den
+> für das bestehende System sinnvollsten Weg wählen, die verworfenen Optionen im Planungsreport
+> festhalten, weiterarbeiten. Als offene Frage kommt nur zu mir, was Produkt, Design, Gameplay,
+> Priorität oder Scope betrifft.
+
+German because the owner's session prompts are German. `AGENTS.md` — *Language policy* governs new
+engineering material; this is a quoted prompt artefact, not new engineering prose, and translating
+it would make it unusable at the surface it exists for.
+
+This closes Q1 as a decision. It does not close R9: the rule still reaches the planning surface only
+as far as the owner carries it there, and nothing in the repository enforces that.
