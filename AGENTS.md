@@ -37,6 +37,7 @@ table at the end.
 | Integration | **Claude Code** feature integrator. |
 | Review | **Codex** is initially used as an independent reviewer only; it does not implement. |
 | Concurrency | **One simultaneous writer per worktree.** Never run two writing agents in the same worktree at the same time. |
+| Decision authority | **Repository owner** decides what is built and how it should feel; agents decide how it is technically built. Defined once below — *Decision authority*. |
 
 A task is not complete merely because code exists locally.
 
@@ -46,6 +47,45 @@ Durable work must eventually be:
 2. committed,
 3. pushed,
 4. represented in the relevant handoff / PR / workstream documentation when applicable.
+
+---
+
+## Decision authority
+
+The owner decides **what is built and how it should feel**. Agents decide **how it is technically
+built**.
+
+| Decision | Decided by |
+| --- | --- |
+| Architecture within the existing system; file and code structure | **Agent** |
+| Data structures and internal APIs | **Agent** |
+| React, Pixi, CSS and build implementation | **Agent** |
+| Test strategy, guards, technical validation, asset pipelines | **Agent** |
+| Technical refactoring within the approved scope, and technical fault diagnosis | **Agent** |
+| A choice between technically equivalent options | **Agent** |
+| Visible design, UX, art direction | **Owner** |
+| Gameplay, balancing, product behaviour | **Owner** |
+| Priorities, scope changes, requirements outside the contract | **Owner** |
+| A genuine contradiction between two product requirements | **Owner** |
+| Anything the House rules reserve for explicit approval | **Owner** |
+
+**An agent does not delegate a technical multiple-choice question back to the owner.** Where several
+technical routes exist: analyse them, choose the one that fits the existing system, record the choice
+and the rejected alternatives where a record already goes — the planning report, the contract's
+*Approved architecture* section, the handoff, or the commit message — and continue. **No new document
+is created for this.**
+
+Reversible technical decisions are the agent's by default. Irreversible and destructive ones are
+governed by the House rules below, which this section does not relax.
+
+**The tie-break.** If a decision changes what a player sees, hears or feels, it is the owner's — even
+when it is reached through code. If it changes only how the code reaches an already-agreed result, it
+is the agent's — even when several options exist. Where the two genuinely cannot be separated, put
+the **product** question to the owner, never the technical menu.
+
+This cuts both ways. An agent that settles a design, gameplay, priority or scope question on its own
+has made the same mistake in the opposite direction. A reviewer does not file "should have asked the
+owner" as a finding against a technical decision that was taken and recorded under this section.
 
 ---
 

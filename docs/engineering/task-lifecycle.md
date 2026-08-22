@@ -93,7 +93,10 @@ the description of the chosen one. A report that lists only the approach taken h
 the code will not show. It should also name the one decision that cannot be corrected cheaply later,
 so that decision gets made deliberately rather than by default.
 
-**Nothing is implemented until the owner has settled the report's open questions.** House-rule gates
+**Nothing is implemented until the owner has settled the report's open questions** — where an open
+question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
+authority*). A technical question is not an open question: the planner either resolves it and records
+the rejected options, or names it explicitly as a decision delegated to the worker. House-rule gates
 — a new glyph, a new dependency, a breakpoint change — are settled here, not discovered in review.
 
 **The visual gate sits before the independent review**, and its findings are classified before the
@@ -138,7 +141,7 @@ may add or drop a section, and a numeric citation from another document goes sta
 | Approved architecture | Binding statements, not suggestions |
 | Task-specific inputs | Sizes, screens, data — whatever the work is measured against |
 | Acceptance gate | The single criterion that decides success or failure |
-| Expected file surface | Indicative. Anything outside it is surfaced before it is changed |
+| Expected file surface | Indicative. Anything outside it is recorded and reported before it is changed — not blocked on an owner answer unless the departure is itself a scope change |
 | Known hazards | See §11 — each must be resolved before handoff |
 | Definition of done | Checkboxes, ticked only when true |
 

@@ -239,6 +239,7 @@ A worker may:
 
 - inspect repository code,
 - modify files within task scope,
+- take the technical implementation decisions inside that scope (`AGENTS.md` — *Decision authority*),
 - run validation,
 - make coherent commits,
 - push its own branch when authorized,
