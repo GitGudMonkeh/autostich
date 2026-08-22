@@ -275,3 +275,53 @@ in T2, not here.
 
 **Not done** if any acceptance item is asserted rather than shown, or if a layout repair was made
 along the way because it "was only one line".
+
+---
+
+## 12. Expected file surface
+
+Added 22.08.2026, after commit 3, so that scope compliance can be verified by object hash instead of
+by reading a diff. Every status below was measured across `d3f65b43..c8af0f76`.
+
+### A — must not change; verifiable by blob or tree hash
+
+| Entry | Why | Status at commit 3 |
+| --- | --- | --- |
+| `docs/decisions/**` | historical record; §4 says so explicitly | unchanged |
+| `docs/workstreams/viewport-harness/**` | a finished workstream's own records | unchanged |
+| `sim/**` | balance simulation, unrelated | unchanged |
+| `src/assets/**` | no asset work in this task | unchanged |
+| `src/main.jsx` | entry point; the threshold does not live here | unchanged |
+| `index.html` | — | unchanged |
+| `package.json`, `package-lock.json` | no dependency may be added; the CDP tooling is dependency-free on record | unchanged |
+| `vite.config.js`, `eslint.config.js` | build and lint configuration | unchanged |
+| `AGENTS.md`, `CLAUDE.md` | repository instructions | unchanged |
+| `.gitattributes` | load-bearing for line endings | unchanged |
+| `.github/**` | CI workflows | unchanged |
+| `public/**` | — | unchanged |
+
+### B — behaviour frozen; comment-only changes permitted
+
+Not a hash comparison. The check is that the diff for the path contains no non-comment line.
+
+| Entry | Status at commit 3 |
+| --- | --- |
+| `src/game/**` | one comment line in `storage.js`; no non-comment line |
+| `src/i18n/**` | comment-only — which is why `loc:export` is not triggered |
+
+### C — constrained, but the reviewer must judge
+
+Not mechanically verifiable. Named here so that "not checked" is visible rather than implied.
+
+- **The phone layout below the threshold.** The proof is `scripts/phone-proof.mjs`, not a hash.
+- **The height media queries** 950 / 900 / 820 / 1000. Counts measured equal at commit 3 (5 / 1 / 1 / 1),
+  but no guard asserts this and a later commit could move one unnoticed.
+- **`scripts/cdp.mjs`** — the shared CDP client. Commit 4 may extend it; a behavioural change to it is a
+  scope question, not a free hand.
+- **`gameover.best.hint`** must stay present and untouched in both catalogues. Measured unchanged.
+- **No layout repair anywhere** (§9). Only a reading of the diff can establish this.
+
+### D — expected to change
+
+`src/index.css`, `src/ui/**`, `src/App.jsx`, `test/**`, `docs/workstreams/viewport-1280/**`, and — in
+commit 3, deliberately, and worth pressing on in review — `scripts/phone-proof.mjs`.

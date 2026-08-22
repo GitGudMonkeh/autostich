@@ -348,6 +348,34 @@ PASS · the phone layout is unchanged
 
 `before/` was never written to; verified with `git diff` against the committed baseline (empty).
 
+### 7.6.1 The pixel half of the acceptance gate is NOT demonstrated
+
+Found on 2026-08-22 while assembling the review handoff, after `c8af0f76` was already committed and
+pushed. It is recorded here rather than quietly fixed, because it changes what the commit can claim.
+
+Contract §3.1 asks for a "Pixel comparison — the existing text-mask / noise-threshold method", and
+acceptance §8.1 for "0.0000 % of pixels beyond the noise threshold". **Neither happens:**
+
+- `compare()` in `scripts/phone-proof.mjs` reads `applicable-390.txt` and `geometry.json` only. It
+  never opens a PNG.
+- `geometry.json` holds `metrics` and node boxes — **no pixel digest**, so comparing it cannot compare
+  pixels indirectly either.
+- Byte comparison of the committed pairs: **3 identical, 7 differing** (`de-hub`, `en-hub`,
+  `en-leaderboard` identical; the rest differ by −583 B to +705 B).
+- The method itself exists, fully implemented, in `scripts/viewport-proof.mjs`. It was never wired
+  into `phone-proof.mjs`.
+
+**What this does and does not mean.** A differing PNG byte count is not a statement that the layout
+moved — separating rasterisation noise from a structural difference is precisely what the unused
+method is for. Element geometry is identical on all ten captures, which is strong independent
+evidence that it did not. But that is not the criterion the contract wrote down, and no artefact in
+the repository satisfies the one that was.
+
+**Correction on the record.** The commit message of `c8af0f76` says "geometry and pixels identical on
+five screens in DE and EN". The geometry half is measured. The pixel half was never measured; it was
+taken from the tool's own header comment, which describes a comparison `compare()` does not perform.
+The commit is pushed, so the message stands as written and this is the correction.
+
 ### 7.7 Two findings documented, not repaired
 
 Both are prose carried forward honestly rather than layout touched. §9 of the contract forbids the
@@ -399,6 +427,8 @@ variants actually matter. Both were run.
 
 - **Commit 4** — the survey: five sizes × two languages × the surface list of contract §5.2, the
   typography inventory, and every §1.5 prediction marked held or refuted. Not started.
+- **The pixel comparison of acceptance §8.1** — see §7.6.1. The method exists in
+  `scripts/viewport-proof.mjs` and is not wired into `phone-proof.mjs`. Open for decision.
 - **T2** — every repair. Nothing that overflows at 1280 was fixed, including the two findings in §7.7
   and the guide's `--gs` step.
 - `gameover.best.hint` — reported, untouched, awaiting a product decision.
