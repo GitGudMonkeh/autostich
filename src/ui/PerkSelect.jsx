@@ -15,6 +15,9 @@ import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes kla
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — dieselbe Liste wie in der Skill-Auswahl
 import { useIsWide } from "./useIsWide.js";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
+import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1280 px gerendert)
+import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
+import { CORNER_PERK } from "./cornerArt.js";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -30,7 +33,10 @@ function offerView(entry, familyTiers = {}) {
     const tm = tierMeta(t) || { color: "#8a8a95" };
     const held = familyTierOf(familyTiers, entry.familyId); // 0 = neu, sonst gehaltener Rang
     return {
-      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: perkCat(fam.cat),
+      /* #perkart: `catKey` is the raw CATEGORIES key next to the already-localized `cat`. The emblem
+         binds to the key, never to the display name — `cat.name` is „Deck"/„Trick" depending on the
+         language, and hanging an image on it would make the picture disappear on an English run. */
+      key: `${entry.familyId}:${t}`, entry, isFamily: true, cat: perkCat(fam.cat), catKey: fam.cat,
       accent: tm.color, tierLabel: rarityLabel(t), tier: t, held, upgrade: held > 0,
       name: `${fam.name} ${romanOf(t)}`, desc: (fam.tiers[t] || {}).desc || "",
       glow: t >= 3, // Selten/Rar erhalten einen dezenten Farbschein
@@ -39,7 +45,7 @@ function offerView(entry, familyTiers = {}) {
   const p = perkDef(entry);
   const rar = rarityOf(entry);
   const rm = RARITY_META[rar];
-  return { key: entry, entry, isFamily: false, cat: perkCat(p.cat), accent: rm.color, rar, rm,
+  return { key: entry, entry, isFamily: false, cat: perkCat(p.cat), catKey: p.cat, accent: rm.color, rar, rm,
            leg: rar === "legendary", name: p.label, desc: p.desc };
 }
 
@@ -74,8 +80,12 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             dort steht die Karte auf einem kleinen Schirm über dem Brett und braucht die Ablösung. */}
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red, undefined, { quiet: inWings })}>
         <PhaseHairline accent={PHASE_ACCENTS.red} />
+        {/* #cornerart: EINE Ecke, weil die Perk-Wahl EINE Identitätsfarbe hat — hier wechselt nichts
+            mit einem Reiter, es gibt keinen. Sie ist dieselbe Familie wie drüben, nur mit dem
+            Perk-Schlüssel; das Nach-innen-Versetzen und die frühere Maske hängen an ihm. */}
+        {inWings && <CardCorners artKey={CORNER_PERK} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
-        <div className="text-center mb-1">
+        <div className="co-head text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
             {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>
@@ -103,6 +113,12 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           {offer.map((entry) => {
             const v = offerView(entry, state.familyTiers);
             const cat = v.cat;
+            /* #perkart: the emblem hangs on the SAME 1280 px desktop breakpoint the wings use, and the
+               gate is here in JSX rather than in CSS on purpose. A CSS-only gate would still put the
+               <img> in the DOM, so a phone would fetch three images to hide them. `inWings` already
+               holds `useIsWide()`; a second hook for the same query would be a second thing to keep
+               in step with index.css. */
+            const art = inWings ? perkArt(v) : null;
             return (
               <button
                 key={v.key}
@@ -113,12 +129,22 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                    Perk = Raritätsfarbe aus RARITY_META). Die Kategorie bleibt im Badge oben — sie sagt, WAS der
                    Perk anfasst, die Kante sagt, WIE GUT er ist, und das ist die Achse, nach der man sortiert.
                    Hohe Stufen bekommen zusätzlich einen dezenten Halo in derselben Farbe. */
-                className={`lv-offercard as-edge-card text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                className={`lv-offercard as-edge-card${art ? " pk-offer-art" : ""} text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ "--c": v.accent,
                          // Legendär (flach): animierter Gold-Rahmen über .as-legendary (#201.3) → dort KEIN eigener Schein.
                          boxShadow: (!v.isFamily && v.leg) ? undefined
                                   : (v.isFamily ? v.glow : v.rar === "rare") ? `0 0 14px -6px ${v.accent}` : undefined }}
               >
+                {/* #perkart: without an emblem NEITHER the element NOR the class is added — `art`
+                    switches both, so the tile without a picture keeps exactly the tree it had before
+                    this task and the phone layout is untouched. The badges and the name stay where
+                    they were, only lower (the padding lives in `.pk-offer-art`).
+                    `pk-strip-mid` is for the legendaries only: their motifs are composed centred, the
+                    category ones in the upper two thirds — measurement and reasoning at the rule in
+                    index.css. Same condition as the gold frame above, so that „legendary" is not
+                    defined a second time here. */}
+                {art && <img src={art} alt="" aria-hidden="true" loading="lazy" decoding="async"
+                             className={`pk-strip${(!v.isFamily && v.leg) ? " pk-strip-mid" : ""}`} />}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                     style={{ background: `${cat.color}22`, color: cat.color }}>

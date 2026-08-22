@@ -4,8 +4,8 @@
    1. Die ZUORDNUNG wird nachgerechnet: `artIdFromFile` ist rein, also wird sie mit den echten
       Dateinamen gefüttert. Die Verbindung Bild ↔ Skill hängt allein am Dateinamen — genau deshalb
       muss sie geprüft werden, statt sich darauf zu verlassen, dass sie „offensichtlich" stimmt.
-   2. Die VOLLSTÄNDIGKEIT je Archetyp: jeder Blitz-Skill hat sein Emblem, und es gibt keine Datei
-      ohne Skill. Ein neuer Blitz-Skill fällt damit hier auf, nicht am Bildschirm.
+   2. COMPLETENESS per archetype: every skill has an emblem, and every file belongs to a skill.
+      A new or missing skill-art file fails here instead of first appearing as a broken card.
    3. Die VERDRAHTUNG als Quelltext-Ratsche über SkillSelect.jsx + index.css (das Projekt hat kein
       Component-Test-Setup, s. test/fx-panel.test.js). Beide Nähte fallen lautlos aus: ohne das
       `wide`-Gate lädt das Handy 21 Bilder, die es nie zeigt; ohne `mix-blend-mode: screen` steht um
@@ -19,6 +19,27 @@ const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8")
 const dir = (p) => readdirSync(new URL(`../src/${p}`, import.meta.url));
 const jsx = src("ui/SkillSelect.jsx");
 const css = src("index.css");
+
+const analyzeLot = (files, skillIds) => {
+  const expectedIds = new Set(skillIds);
+  const parsed = files.map((file) => ({ file, id: artIdFromFile(file) }));
+  const counts = new Map();
+
+  for (const { id } of parsed) {
+    if (id !== null) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+
+  return {
+    missing: skillIds.filter((id) => !counts.has(id)),
+    misplaced: parsed
+      .filter(({ id }) => id !== null && !expectedIds.has(id))
+      .map(({ file }) => file),
+    invalid: parsed.filter(({ id }) => id === null).map(({ file }) => file),
+    duplicateIds: [...counts]
+      .filter(([, count]) => count > 1)
+      .map(([id]) => id),
+  };
+};
 
 describe("#skillart — Zuordnung über den Dateinamen", () => {
   it("trennt ID und Lesehilfe an der Schreibweise, nicht an der Position", () => {
@@ -37,30 +58,61 @@ describe("#skillart — Zuordnung über den Dateinamen", () => {
 });
 
 describe("#skillart — Vollständigkeit", () => {
-  const files = dir("assets/skills/lightning").filter((f) => f.endsWith(".webp"));
-  const haveIds = new Set(files.map(artIdFromFile));
-  const lightningIds = Object.values(SKILL_DEFS)
-    .filter((s) => s.archetype === "lightning")
-    .map((s) => s.id);
+  const archetypes = ["lightning", "fire", "ice", "plant"];
 
-  it("kennt überhaupt Blitz-Skills (sonst wäre der Test still grün)", () => {
-    expect(lightningIds.length).toBeGreaterThanOrEqual(21);
+  it("rejects a registered foreign-archetype ID in the wrong lot", () => {
+    const report = analyzeLot(
+      ["SK_FIRE_01_glut.webp", "SK_ICE_01_anfrieren.webp"],
+      ["SK_FIRE_01"],
+    );
+
+    expect(report.misplaced).toEqual(["SK_ICE_01_anfrieren.webp"]);
   });
 
-  it("jeder Blitz-Skill hat ein Emblem", () => {
-    const fehlt = lightningIds.filter((id) => !haveIds.has(id));
-    expect(fehlt, `ohne Emblem: ${fehlt.join(", ")}`).toEqual([]);
+  it("rejects two filenames that parse to the same registered ID", () => {
+    const report = analyzeLot(
+      ["SK_FIRE_01_glut.webp", "SK_FIRE_01_andere-lesehilfe.webp"],
+      ["SK_FIRE_01"],
+    );
+
+    expect(report.duplicateIds).toEqual(["SK_FIRE_01"]);
   });
 
-  it("jedes Emblem gehört zu einem Skill — keine Leiche im Ordner", () => {
-    const alle = new Set(Object.values(SKILL_DEFS).map((s) => s.id));
-    const verwaist = [...haveIds].filter((id) => !alle.has(id));
-    expect(verwaist, `ohne Skill: ${verwaist.join(", ")}`).toEqual([]);
-  });
+  for (const archetype of archetypes) {
+    describe(archetype, () => {
+      const files = dir(`assets/skills/${archetype}`).filter((f) => f.endsWith(".webp"));
+      const skillIds = Object.values(SKILL_DEFS)
+        .filter((s) => s.archetype === archetype)
+        .map((s) => s.id);
+      const report = analyzeLot(files, skillIds);
 
-  it("jeder Dateiname erfüllt das Muster (kein stiller Ausfall über null)", () => {
-    expect(files.filter((f) => artIdFromFile(f) === null)).toEqual([]);
-  });
+      it("retains the established registry baseline so the check cannot pass vacuously", () => {
+        expect(skillIds.length).toBeGreaterThanOrEqual(21);
+      });
+
+      it("has one delivery emblem for every registered skill", () => {
+        expect(report.missing, `missing emblems: ${report.missing.join(", ")}`).toEqual([]);
+      });
+
+      it("contains no registered emblem from another archetype", () => {
+        expect(
+          report.misplaced,
+          `misplaced emblems: ${report.misplaced.join(", ")}`,
+        ).toEqual([]);
+      });
+
+      it("round-trips every delivery filename through the live parser", () => {
+        expect(report.invalid, `invalid filenames: ${report.invalid.join(", ")}`).toEqual([]);
+      });
+
+      it("contains no duplicate delivery ID", () => {
+        expect(
+          report.duplicateIds,
+          `duplicate delivery IDs: ${report.duplicateIds.join(", ")}`,
+        ).toEqual([]);
+      });
+    });
+  }
 });
 
 describe("#skillart — Verdrahtung", () => {

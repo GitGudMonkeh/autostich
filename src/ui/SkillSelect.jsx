@@ -18,6 +18,7 @@ import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Ken
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
 import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
+import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
@@ -204,8 +205,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                    height: wide ? undefined : "min(92dvh, 760px)",
                    maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
         <PhaseHairline accent={archAccent} />
+        {/* #cornerart: die Ecken folgen dem AKTIVEN REITER (`curG.arch`), nicht dem Kartenakzent —
+            der Kopf sagt damit dasselbe wie die Reiterzeile darunter. Gate wie beim Emblem im JSX,
+            damit unterhalb 1280 px kein <img> im DOM steht und kein Handy die Bilder lädt. */}
+        {wide && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
-        <div className="text-center mb-1 pt-6">
+        <div className="co-head text-center mb-1 pt-6">
           <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
           <h2 className="text-xl font-bold mt-1">{t("skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht

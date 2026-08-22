@@ -1,0 +1,50 @@
+feat(icons): perk-selection emblems, on a measured render zone
+
+PerkSelect.jsx had no icon code at all, so this builds the seam and fills
+it. The 73 regular perks get the emblem of their category; the 21
+legendary perks get their own. Two populations, two maps, no path between
+them.
+
+The render zone was MEASURED in the running application, which is what
+scripts/skill-art-build.py was holding both lots back for: the bloom
+radius is a CSS length divided by that width, so a borrowed number is
+authoritative and wrong.
+
+  perk tile          270.00 css-px
+  emblem drawn at    265 x 201 css-px   <- the divisor
+  1280 x 720         no <img> at all, below the 1400 px gate
+
+The 5 px between the two is the tile's 4 px rarity edge plus 1 px on the
+other sides, and this change got it wrong once: the first pass read the
+tile off the grid and baked both lots against 270 (radius 22.76 against
+the correct 23.18). Corrected and re-baked; the guard now rejects 270
+alongside 277 and 270.66. Filed as ICONS-PERK-VIS-07.
+
+Light alignment is per lot. perkcats applies the seven factors its README
+already solved. legendaries needed 21 new ones, solved against total
+emitted light rather than luminous area, because area-matching does not
+converge on that lot: five of 21 files hit the solver ceiling and three
+were still short of target there.
+
+The legendary strip is centre-anchored where the category strip is
+top-anchored. `center top` exists because the motifs put their statement
+at the top; measured, that holds for the 7 category masters (light
+centroid 0.42) and not for the 21 legendary ones (0.48). Top-anchored,
+Henker keeps 34.7 % of its light and what survives is the axe shaft.
+Deliberately one CSS class, so it stays cheap to reverse.
+
+The skill lots re-bake byte-identical. `bake --lot corners` still
+refuses; that zone belongs to icons-corners.
+
+Guards: test/perk-art.test.js, 32 assertions, eleven seams each
+counter-checked by deliberately breaking them.
+
+V3, the human visual gate, was passed by the owner on 2026-08-22 —
+verdict recorded verbatim in visual-review.md. That closes
+ICONS-PERK-VIS-02 (the anchor) and ICONS-PERK-VIS-03 (the tile height).
+It does not extend to what the captures could not show: 25 of the 28
+emblems were never rendered by the application, only German, only DPR 1.
+
+Gates: lint, build, VITE_PREVIEW=1 build, gen:db, loc:export (no diff)
+all green. npm test 135 of 136 files; the one failure is a pre-existing
+5000 ms timeout in test/i18n-guards.test.js, measured at HEAD as well.
