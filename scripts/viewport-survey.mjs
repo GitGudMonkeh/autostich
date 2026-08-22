@@ -33,12 +33,24 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { launch, setViewport, reduceMotion, seedRandom, suppressInstallPrompt,
+import { launch, setViewport, reduceMotion, seedRandom, suppressInstallPrompt, screenshot,
   goto, evaluate, sleep } from "./cdp.mjs";
 import { probeSource } from "./surveyProbe.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "docs/workstreams/viewport-1280/evidence/survey");
+/* `--out <dir>` added 2026-08-23 (#typo-system S0), and it fixes a real accident rather than adding
+   a convenience. The output directory was hard-wired to the viewport-1280 strand's evidence folder,
+   and the writer MERGES into whatever matrix.json it finds there. A survey run from a different
+   workstream therefore silently rewrote another strand's committed evidence — which is what happened
+   on the first full S0 run, and was caught only because `git status` showed the file modified.
+   Evidence belongs to the workstream that produced it; the default stays put so existing invocations
+   are unchanged. */
+const OUT = (() => {
+  const i = process.argv.indexOf("--out");
+  return i >= 0 && process.argv[i + 1]
+    ? resolve(process.argv[i + 1])
+    : join(ROOT, "docs/workstreams/viewport-1280/evidence/survey");
+})();
 const PORT = 5181;
 const BASE = (() => {
   const html = readFileSync(join(ROOT, "dist/index.html"), "utf8");
@@ -84,6 +96,67 @@ const SURFACES = [
     steps: [{ text: "Lauf beginnen|Start run", settle: 2200 }, { sel: ".sk-offers button", settle: 1500 },
             { turbo: true }, { until: ".lv-offercard", maxMs: 90000 }],
     marker: ".lv-offercard" },
+
+  /* #typo-system S0 (2026-08-23): two surfaces added, and the §4.1 reason is worth keeping here.
+     The typography workstream migrates ~770 size utilities and checks itself by re-running this
+     survey and demanding zero deltas. On the thirteen surfaces above, that check reached roughly two
+     thirds of them. `ArchitectScreen.jsx` alone carries 79 size utilities — the heaviest file in the
+     tree — and `GameOver.jsx` 38, and neither was measured. Both are also two of the six screens the
+     `#typo` pass never looked at, so without this they would have had neither a machine check nor a
+     human one.
+
+     The route is the one already proven for the perk choice — play forward with turbo and poll —
+     NOT `DevRunSetup`. That was the proposal in survey-findings.md §4.1 and it is rejected: it is
+     `VITE_PREVIEW`-gated, and this survey measures the PRODUCTION build on purpose. A baseline taken
+     through a preview build is a baseline of something nobody plays.
+
+     Both walk the decision schedule (`BASE_SCHEDULE`, constants.js): round 1 skill, 2 perk,
+     3 formation, 4 shop. Round 4's "shop" IS the architect phase — the run passes `architect: true`
+     (App.jsx:893), so it is enabled in a normal run even though `C.ARCHITECT_ENABLED` defaults to
+     false for the sim. Each decision screen BLOCKS the schedule until it is dismissed, which is why
+     these steps click through rounds 2 and 3 rather than waiting them out. */
+  { id: "architect",
+    steps: [{ text: "Lauf beginnen|Start run", settle: 2200 },
+            { sel: ".sk-offers button", settle: 1500 },                       // R1 skill -> run stage
+            { turbo: true },
+            { until: ".lv-offercard", maxMs: 90000 },                         // R2 perk
+            { sel: ".lv-offercard", settle: 1500 },                           // taking it is one click
+            { until: '[data-tut="form-energy"]', maxMs: 90000 },              // R3 formation
+            { sel: '[data-tut="form-energy"] .as-edge-strong', settle: 1500 },// "Fortfahren"
+            { until: '[data-tut="arch-board"]', maxMs: 120000 }],              // R4 shop == architect
+    /* MARKER, and the first attempt was wrong in a way worth recording. `.arch-toggle` looks like an
+       architect class and is not: it lives in `ArchPanels.jsx`, which `ArchitectScreen` does not
+       import — only `FormationPhase` and `ChronikOverview` do. A probe run reached step 7 of 8 and
+       then waited out the full 120 s for a class that renders on a different screen.
+       `ArchitectScreen` has NO root class of its own (its outermost node is
+       `fixed inset-0 overlay-root z-20`, which every overlay shares), so the marker is the tutorial
+       hook on the board instead — stable, semantic, and already load-bearing for the tutorial.
+       Giving the screen a real root class is a `src/**` change S0 may not make; recorded as a
+       finding for S2, which edits that file anyway. */
+    marker: '[data-tut="arch-board"]' },
+
+  /* Victory / end screen. NOT played to the end — `END_RUN` (reducer.js:308) ends a run voluntarily
+     and goes straight to the end screen, which is what the "Beenden" control in the run does. A full
+     run would take the schedule's whole length and measure the same markup.
+     It walks the architect path FIRST and only then ends, deliberately: an end screen from round 1
+     has no perks, no skills and no score, so half its sections never render and would silently go
+     unmeasured. Ending after round 4 gives it something to show.
+     Both "Beenden" labels collide (`controls.quit` and `app.end` share the word), so the dialog is
+     dismissed by row index, not by text. */
+  { id: "victory",
+    steps: [{ text: "Lauf beginnen|Start run", settle: 2200 },
+            { sel: ".sk-offers button", settle: 1500 },
+            { turbo: true },
+            { until: ".lv-offercard", maxMs: 90000 },
+            { sel: ".lv-offercard", settle: 1500 },
+            { until: '[data-tut="form-energy"]', maxMs: 90000 },
+            { sel: '[data-tut="form-energy"] .as-edge-strong', settle: 1500 },
+            { until: '[data-tut="arch-board"]', maxMs: 120000 },
+            { sel: '[data-tut="arch-done"]', settle: 1500 },                  // leave the architect
+            { text: "Beenden|End", settle: 1200 },                            // opens the abort dialog
+            { sel: ".rc-row", nth: 1, settle: 1500 },                         // row 1 = end and score it
+            { until: ".go-root", maxMs: 30000 }],
+    marker: ".go-root" },
 ];
 
 /* ------------------------------------------------------------------ server */
@@ -260,10 +333,26 @@ function shrinkage(cell, reference) {
 /* ------------------------------------------------------------------ main */
 
 const argv = process.argv.slice(2);
-const only = { size: argv[argv.indexOf("--size") + 1], lang: argv[argv.indexOf("--lang") + 1] };
+const only = { size: argv[argv.indexOf("--size") + 1], lang: argv[argv.indexOf("--lang") + 1],
+               surface: argv[argv.indexOf("--surface") + 1] };
 const sizes = argv.includes("--size") ? SIZES.filter(([w, h]) => `${w}x${h}` === only.size) : SIZES;
 const langs = argv.includes("--lang") ? LANGS.filter((l) => l === only.lang) : LANGS;
+/* #typo-system S0: `--surface` narrows a debug run to one screen. Added because timing a single
+   in-run surface was otherwise impossible — the smallest unit was a whole cell, i.e. every screen at
+   one size and language. A run that uses it writes NO matrix file (see the guard at the end): a
+   partial matrix silently overwriting a full one is exactly the kind of evidence corruption this
+   survey exists to avoid. */
+const surfaces = argv.includes("--surface") ? SURFACES.filter((s) => s.id === only.surface) : SURFACES;
 if (!sizes.length || !langs.length) throw new Error("no cell matches the given --size/--lang");
+if (!surfaces.length) throw new Error(`no surface named ${only.surface}`);
+
+/* #typo-system S0: `--shots <dir>` also writes a PNG per cell at DPR 1 and 2 — the V1 baseline the
+   human visual gate compares against later. Opt-in, because the viewport survey's own job is
+   measurement and it should stay cheap when that is all that is wanted. */
+const SHOTS = argv.includes("--shots");
+const SHOT_FMT = argv.includes("--png") ? "png" : "webp";
+const SHOT_DIR = SHOTS ? resolve(argv[argv.indexOf("--shots") + 1] || join(ROOT, "capture")) : null;
+if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 
 mkdirSync(OUT, { recursive: true });
 const server = await ensureServer();
@@ -288,7 +377,7 @@ try {
       await setViewport(c, { width: w, height: h, deviceScaleFactor: 1 });
       process.stdout.write(`\n  ${lang} · ${size}\n`);
 
-      for (const s of SURFACES) {
+      for (const s of surfaces) {
         const key = `${lang}/${size}/${s.id}`;
         let cell;
         try {
@@ -307,6 +396,36 @@ try {
             + `${cell.overflows.length} overflow · ${cell.outside.length} outside · `
             + `${cell.truncated.length} truncated · ${cell.type.length} text`
             + `${cell.shrunk && cell.shrunk.length ? ` · ${cell.shrunk.length} SHRUNK` : ""}\n`);
+          /* #typo-system S0: capture the V1/V2 screenshot pair for the human visual gate.
+
+             WHY HERE and not in a separate capture script: the browser is already at the right
+             viewport, in the right language, with the right seeded state, at the end of a navigation
+             that took up to a minute to walk. A second script would have to reproduce all of it, and
+             any drift between the two reproductions would show up as a false visual difference.
+
+             WHY BOTH DPRs: `matrix.json` measures COMPUTED styles and is device-pixel-independent, so
+             it stays at DPR 1. Screenshots are not — sub-pixel rounding of a new type scale is
+             exactly the defect class that appears at 2x and not at 1x, and it is a typography defect,
+             so the owner's decision to accept layout breakage (planning report §8.1d) does not cover
+             it. Changing deviceScaleFactor re-rasterises without re-navigating, so the second shot is
+             nearly free — the expensive part was getting here. */
+          if (SHOTS) {
+            /* DPR 2 only where it can actually be judged, and the arithmetic is the reason: the full
+               matrix at both scale factors is ~210 files. Captured twice (V1 and V2) that is evidence
+               measured in tens of megabytes, for a question — "did sub-pixel rounding of the new
+               scale go wrong" — that does not need every viewport to answer. 1280x720 is the binding
+               viewport (the itch.io release) and 1920x1080 is the reference the shrinkage criterion
+               is defined against; a rounding defect that shows nowhere in those two is not one worth
+               this cost. */
+            const dprs = (size === "1280x720" || size === REFERENCE) ? [1, 2] : [1];
+            for (const dpr of dprs) {
+              if (dpr !== 1) await setViewport(c, { width: w, height: h, deviceScaleFactor: dpr });
+              await sleep(250);
+              const png = await screenshot(c, null, { format: SHOT_FMT, quality: 95 });
+              writeFileSync(join(SHOT_DIR, `${lang}__${size}__${s.id}__dpr${dpr}.${SHOT_FMT}`), Buffer.from(png, "base64"));
+            }
+            await setViewport(c, { width: w, height: h, deviceScaleFactor: 1 });
+          }
         } else {
           unreached++;
           process.stdout.write(`    ${s.id.padEnd(14)} NOT REACHED — ${cell.why || (cell.trace || []).map((t) => t.why).filter(Boolean).join("; ")}\n`);
@@ -325,6 +444,16 @@ try {
    Cells are keyed lang/size/surface, so a re-run of the same chunk replaces exactly its own cells
    and leaves the rest standing. */
 const target = join(OUT, "matrix.json");
+/* #typo-system S0: a `--surface` run is a debug probe, not evidence. Merging its one cell into the
+   stored matrix would leave a file that LOOKS complete and is not — the same failure the reachability
+   reporting above exists to prevent, one level up. */
+if (argv.includes("--surface")) {
+  const reached = Object.values(matrix.cells).filter((c) => c.reached !== false).length;
+  process.stdout.write(`\n  --surface probe: ${Object.keys(matrix.cells).length} cell(s), ${reached} reached.` +
+    `\n  matrix.json NOT written (probe runs never touch the evidence file)\n`);
+  process.exit(unreached ? 1 : 0);
+}
+
 let merged = matrix;
 if (existsSync(target)) {
   try {

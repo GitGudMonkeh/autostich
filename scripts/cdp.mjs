@@ -196,8 +196,14 @@ export async function evaluate(c, expression) {
   return r.result.value;
 }
 
-export async function screenshot(c, clip = null) {
-  const params = { format: "png", captureBeyondViewport: false };
+/* `opts` added 2026-08-23 (#typo-system S0) and DEFAULTS TO THE OLD BEHAVIOUR — png, no quality —
+   so every existing caller is byte-identical. It exists because a full V1 baseline is 150 cells at
+   two device scale factors: as png that is ~180 MB of evidence, which is not something to put in the
+   repository. Lossy webp is the right trade for screenshots a PERSON compares; it is the wrong trade
+   for anything a machine diffs, so pixel-diff.mjs and phone-proof.mjs keep the png default. */
+export async function screenshot(c, clip = null, opts = {}) {
+  const params = { format: opts.format || "png", captureBeyondViewport: false };
+  if (opts.quality != null && params.format !== "png") params.quality = opts.quality;
   if (clip) params.clip = { ...clip, scale: 1 };
   const { data } = await c.send("Page.captureScreenshot", params);
   return data; // base64
