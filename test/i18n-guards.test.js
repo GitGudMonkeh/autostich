@@ -620,17 +620,19 @@ describe("i18n · Abdeckung wächst mit", () => {
       for (let d = tail.indexOf("."); d !== -1; d = tail.indexOf(".", d + 1)) tpl.add(tail.slice(0, d + 1));
     }
 
-    /* Named exceptions. Listed, not silently skipped: an entry here is a decision somebody has to
-       defend, whereas a deleted catalogue key is product text that quietly disappears.
+    /* NO EXCEPTION LIST, and that is the decision rather than an omission.
 
-       `gameover.best.hint` is the single genuinely dead key the corrected walk found on 22.08.2026.
-       It is DE and EN product text with no call site. Left in place deliberately — deciding between
-       wiring it up and deleting it is a product call, not something a test fix gets to make. If it
-       is ever wired up, this line stops being needed and should go. */
-    const DEAD_OK = new Set(["gameover.best.hint"]);
+       The corrected walk found exactly one genuinely dead key on 22.08.2026, `gameover.best.hint`.
+       It was carried here as a named exception for one commit and then deleted instead, because an
+       exception asserts "the guard is wrong here" and the guard was right: the key was dead. Using
+       the list to mean "maybe later" overloads the mechanism, and the next dead key joins it the same
+       way until the list is the actual state rather than a rare, argued departure from it.
 
+       So a dead key has two honest answers — wire it up or delete it — and no third one. If a case
+       ever genuinely needs an exception, add the list back WITH the argument, and with the assertion
+       that every entry is still dead; an exception that has quietly become stale would hide the next
+       dead key that happens to share its name. */
     const unused = KEYS_DE.filter((k) => {
-      if (DEAD_OK.has(k)) return false;
       const base = k.replace(/_(one|other)$/, "");
       if (dq.has(base) || sq.has(base)) return false;
       /* Dynamisch zusammengesetzte Schlüssel erkennen. Die Einsetzstelle kann auf JEDER Ebene
@@ -643,10 +645,5 @@ describe("i18n · Abdeckung wächst mit", () => {
       return true;
     });
     expect(unused, `Toter Katalog-Eintrag (nirgends per t() gerufen):\n  ${unused.join("\n  ")}`).toEqual([]);
-
-    /* An exception that no longer applies is worse than no exception: it would hide the next dead
-       key that happens to be called the same thing. So every entry has to still be dead. */
-    const revived = [...DEAD_OK].filter((k) => !KEYS_DE.includes(k));
-    expect(revived, `DEAD_OK nennt Schlüssel, die es nicht mehr gibt: ${revived.join(", ")}`).toEqual([]);
   });
 });

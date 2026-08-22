@@ -181,7 +181,6 @@ export default {
   "gameover.kpi.cycles": "Cycles",
   "gameover.kpi.perTrick": "Per trick",
   "gameover.best": "Personal bests",
-  "gameover.best.hint": "all-time records",
   "gameover.best.new": "New",
   "gameover.best.streak": "Best streak",
   "gameover.best.trick": "Best trick",

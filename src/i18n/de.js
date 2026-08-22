@@ -182,7 +182,6 @@ export default {
   "gameover.kpi.cycles": "Durchläufe",
   "gameover.kpi.perTrick": "Je Stich",
   "gameover.best": "Bestleistungen",
-  "gameover.best.hint": "persönliche Rekorde",
   "gameover.best.new": "Neu",
   "gameover.best.streak": "Beste Serie",
   "gameover.best.trick": "Bester Stich",
