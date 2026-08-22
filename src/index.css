@@ -1,4 +1,22 @@
-@import "tailwindcss";
+/* #quellen — Tailwind sieht NUR die Anwendung, nicht das ganze Verzeichnis.
+
+   Tailwind 4 sucht ohne Angabe selbsttätig im ganzen Projekt nach Klassennamen. Das bezieht
+   `docs/**` mit ein — und dort stehen Klassennamen als PROSA: der historische Engineering-Log
+   zitiert sie, wenn er eine frühere Änderung beschreibt, Arbeitsstrang-Berichte führen sie in
+   Tabellen, und ein Lokalisierungs-Extrakt trägt eine ganze Klassenzeile. Aus solchen Zitaten
+   wurden echte Regeln im ausgelieferten Stylesheet.
+
+   Gemessen am 22.08.2026: zwölf Selektoren kamen auf diesem Weg in die Produktion, zwei davon mit
+   ungültigen Werten aus Platzhaltern eines Planungsdokuments — eine Regel, deren Deklaration der
+   Platzhalter selbst war. Kein Element trägt sie, sie waren also folgenlos; folgenlos ist aber
+   nicht dasselbe wie richtig. Ein Satz in einem Dokument darf nicht ins Produkt kompiliert werden.
+
+   Aufgenommen sind genau die zwei Orte, die die Anwendung ausmachen. NICHT dabei sind
+   `docs/prototypes/*.html` (eigenständige Entwurfsseiten) und `maintenance/index.html` (eigene
+   Seite, eigenes Stylesheet). Wächter: test/bundle-split.test.js, Abschnitt #quellen. */
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "../src";
 
 /* ============================================================================
    #typo — Tailwind-Theme: Schriftfamilien und Gewichte an EINER Stelle
