@@ -5,7 +5,8 @@ this is written for whoever picks it up next — a reviewer, or the integrator.
 
 **State:** implemented over three design rounds, gated, captured, guards counter-checked, and
 **V3 passed by the owner on 2026-08-22** (*"passt alles. gut weiter"*). Committed and pushed to
-`origin/task/icons-corners` on that authorisation. No PR — that needs its own instruction.
+`origin/task/icons-corners`, then **integrated into `feature/desktop-icons`** on the owner's
+instruction. No PR — that needs its own instruction.
 
 ---
 
@@ -161,6 +162,10 @@ Also not done: the `.pk-strip`/`.sk-strip` merge (declined, above), `ICONS-VIS-0
 Verified: re-running the full bake leaves the four shipped skill lots **byte-identical** — neither the
 lot table change nor the new derived-delivery step perturbed the shared code path.
 
-**Committed and pushed** to `origin/task/icons-corners` after the owner passed V3 and said to
-continue. **No PR opened, no merge, no promotion** — each of those needs its own instruction
+**Committed and pushed** to `origin/task/icons-corners` after the owner passed V3, then merged into
+`feature/desktop-icons` (`--no-ff`, matching how `icons-skills` and `icons-perks` were integrated) on
+the owner's instruction. The gates were re-run ON THE MERGE RESULT, not only on the task branch,
+and the two tree hashes match — the merge introduced nothing beyond the task.
+
+**No PR opened, and no promotion to `dev`/`test`/`main`** — each needs its own instruction
 (`AGENTS.md` — *House rules*, *Branch model*).
