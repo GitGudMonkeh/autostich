@@ -156,7 +156,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                   (vorher hing die Höhe je Karte am Text und die Reihe wirkte zerrissen). Das ist KEIN Bruch
                   mit der Skill-Auswahl: die macht es ab 1280 px genauso (`.sk-offers` in index.css setzt dort
                   `grid-auto-rows: 1fr` + `align-items: stretch`). */}
-              <div key={curG.arch} className="sk-offers grid gap-2 sm:grid-cols-2" style={{ gridAutoRows: "1fr",
+              <div key={curG.arch} className="sk-offers sk-offers-leg grid gap-2 sm:grid-cols-2" style={{ gridAutoRows: "1fr",
                 animation: `${dir.current < 0 ? "as-page-in-left" : "as-page-in-right"} .26s cubic-bezier(.22,.61,.36,1)` }}>
                 {curG.list.map((s) => {
                   const meta = ac(s.id);

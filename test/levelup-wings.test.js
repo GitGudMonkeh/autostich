@@ -66,20 +66,49 @@ describe("#lv-fluegel — unterhalb von 1280 px gibt es die Flügel nicht", () =
 describe("#lv-fluegel — die Karte steht in allen vier Zuständen auf denselben Pixeln", () => {
   const rig = deskBlock.match(/\.lv-rig\s*\{([^}]*)\}/);
 
-  it("das Raster hat drei Spuren und die MITTLERE ist fest (nicht `auto`)", () => {
+  /* #viewport-1280 / V1280-04 — UMGEDREHT, NICHT GELÖSCHT.
+
+     Diese beiden Zusicherungen sicherten bis 2026-08-22, dass die Mittelspur FEST ist und exakt
+     Kartenbreite + zweimal Griffbahn misst. Das war richtig, solange die Karte auf jeder Breite
+     880 px behalten sollte. Gemessen hat es die Flügel bei 1280 auf 162 px gedrückt, wo sie 356
+     wollen — auf der Perk-Wahl blieben 51 px für 166 px Text. Der Eigentümer hat entschieden, dass
+     die Mitte nachgibt (V1280-04).
+
+     Der SCHUTZZWECK bleibt derselbe und ist das Einzige, was zählt: die Karte darf nicht springen,
+     wenn ein Flügel auf- oder zugeklappt wird. Der alte Weg dorthin war eine feste Zahl; der neue
+     ist, dass keine Spur sich am INHALT misst. Genau das wird jetzt geprüft. */
+  it("keine Spur misst sich am Inhalt — sonst springt die Karte beim Zuklappen", () => {
     expect(rig, ".lv-rig-Regel im Desktop-Block nicht mehr gefunden").toBeTruthy();
     const cols = rig[1].match(/grid-template-columns:\s*([^;]+);/);
     expect(cols, "grid-template-columns fehlt").toBeTruthy();
-    expect(cols[1], "die Mittelspur darf nicht `auto` sein — sonst schrumpft die Karte beim Zuklappen")
-      .not.toMatch(/\bauto\b/);
-    expect(cols[1], "erwartet: 1fr · feste Breite · 1fr").toMatch(/minmax\(0,\s*1fr\).*\d+px.*minmax\(0,\s*1fr\)/);
+
+    /* `auto`, `min-content`, `max-content` und `fit-content` messen alle den Inhalt. Genau daran
+       ist die erste Fassung gescheitert: die Karte wurde beim Zuklappen 880 → 784 px schmal. */
+    expect(cols[1], "eine inhaltsgetriebene Spur holt das Springen zurück")
+      .not.toMatch(/\b(auto|min-content|max-content|fit-content)\b/);
+
+    /* Drei Spuren, und die mittlere nach oben gedeckelt — sie darf nachgeben, aber nie wachsen. */
+    expect(cols[1], "erwartet drei Spuren mit gedeckelter Mitte").toMatch(/minmax\([^)]*\).*minmax\(0,\s*\d+px\).*minmax\([^)]*\)/);
   });
 
-  it("die Mittelspur ist genau Kartenbreite + zweimal Griffbahn", () => {
-    const track = Number(rig[1].match(/grid-template-columns:[^;]*?(\d+)px/)[1]);
+  it("die Mittelspur ist nach oben genau Kartenbreite + zweimal Griffbahn", () => {
+    /* Der Deckel bleibt die alte feste Zahl: bei 1920 sieht die Karte aus wie immer. Nur darunter
+       gibt die Spur nach. Gerechnet statt abgeschrieben — driftet die Karte, fällt das hier auf. */
+    const cap = Number(rig[1].match(/minmax\(0,\s*(\d+)px\)/)[1]);
     const cardW = Number(deskBlock.match(/\.lv-cardwrap\s*\{[^}]*max-width:\s*(\d+)px/)[1]);
     const lane = Number(deskBlock.match(/\.lv-cardwrap\s*\{[^}]*margin:\s*0\s+(\d+)px/)[1]);
-    expect(track, `Spur ${track} ≠ ${cardW} + 2 × ${lane}`).toBe(cardW + 2 * lane);
+    expect(cap, `Deckel ${cap} ≠ ${cardW} + 2 × ${lane}`).toBe(cardW + 2 * lane);
+  });
+
+  it("die Flügelspuren haben einen Boden, und der ist nicht größer als die Wunschbreite", () => {
+    /* Der Boden ist der ganze Zweck der Änderung: ohne ihn nimmt die 1fr-Spur, was übrig bleibt,
+       und das waren bei 1280 gemessene 162 px. Er darf aber nicht über die Wunschbreite des
+       Flügels hinausgehen — sonst wäre bei 1920 plötzlich der Boden die Breite und nicht mehr der
+       Wunsch. */
+    const boden = Number(rig[1].match(/clamp\(\s*(\d+)px/)[1]);
+    const wunsch = Number(deskBlock.match(/\.lv-wing\s*\{[^}]*width:\s*(\d+)px/)[1]);
+    expect(boden, "kein clamp-Boden auf den Flügelspuren").toBeGreaterThan(0);
+    expect(boden, `Boden ${boden} über der Wunschbreite ${wunsch}`).toBeLessThanOrEqual(wunsch);
   });
 
   it("alle drei Spuren sind ausdrücklich zugewiesen (sonst greift die Auto-Platzierung)", () => {

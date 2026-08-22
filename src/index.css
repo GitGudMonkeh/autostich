@@ -2829,11 +2829,26 @@ button { font-family: inherit; }
      Der Inhalt wird mit der Breite kürzer (die drei Spalten brechen weniger um), deshalb ist die
      Mindesthöhe keine feste Zahl, sondern die Gerade durch die beiden Messpunkte: 1400 px → 715,
      1920 px → 616. Der `max()`-Boden fängt sehr breite Schirme ab; dort entscheidet wieder der Inhalt. */
+  /* #viewport-1280 / V1280-03 — DER RAHMEN GIBT NACH, NICHT DIE SCHRIFT.
+
+     Vorher trug diese Seite den Schrumpffaktor `--gs` in vier gemessenen Stufen und wuchs dafür in
+     der Höhe, bis sie passte. Bei 1280 landete Text dadurch auf 8,61 px, bei 1600×900 fiel
+     "Kernidee" von 13,2 auf 9,9 px — 60 Knoten kleiner als dieselben Knoten bei 1920. Das war die
+     EINZIGE Fläche im ganzen Survey mit Textverkleinerung, und der Eigentümer hat den Handel
+     umgedreht: Lesbarkeit schlägt Nicht-Scrollen.
+
+     `--gs` steht deshalb überall auf 1 (die Stufen weiter unten sind entfernt). Die ~25
+     `calc(… * var(--gs))` bleiben stehen und rechnen jetzt neutral — sie zu entfernen wäre ein
+     zweiter, großer Diff ohne Verhaltensgewinn.
+
+     Statt zu wachsen scrollt die Seite jetzt INNEN, mit dem Idiom, das index.css an sechzehn
+     Stellen führt. `align-self: start` musste weichen: es ließ die Seite an ihrem Inhalt enden,
+     womit sie nie eine Höhe hatte, an der sie hätte überlaufen können. */
   .gd-page {
     display: flex; flex-direction: column;
-    align-self: start;
     border-radius: 14px; padding: 16px 20px 14px;
-    min-height: max(560px, calc(985px - 19.04vw));
+    min-height: 0;
+    overflow-y: auto; overscroll-behavior: contain; padding-right: 14px;
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
@@ -2889,7 +2904,7 @@ button { font-family: inherit; }
      Die kleine Stufe ist damit PFLICHT, nicht Feinschliff: mit der heutigen Größe liefe der Screen auf
      flachen Fenstern über und würde scrollen. Diskrete Stufen statt clamp(), weil der Rest der Datei so
      gebaut ist — und weil eine Stufe testbar ist (test/guide-desktop.test.js). */
-  .gd-page { --gs: .95; }
+  .gd-page { --gs: 1; }
   .gd-page .gd-seclabel { margin-top: calc(24px * var(--gs)); margin-bottom: calc(12px * var(--gs)); }
   .gd-page .gd-sectext { font-size: calc(11px * var(--gs)); }
   .gd-page .gd-core { font-size: calc(15px * var(--gs)); }
@@ -4453,7 +4468,30 @@ button { font-family: inherit; }
      damit beim Zuklappen eines Flügels schmaler (gemessen: 880 → 784 px). Fest heißt: die Karte steht in
      allen vier Zuständen (zu/zu · auf/zu · zu/auf · auf/auf) auf denselben Pixeln. */
   .lv-rig {
-    display: grid; grid-template-columns: minmax(0, 1fr) 924px minmax(0, 1fr);
+    /* #viewport-1280 / V1280-04 — DIE MITTELSPUR GIBT NACH, DIE FLÜGEL BEKOMMEN EINEN BODEN.
+
+       Gemessen: mit fester 924er Mitte bekam eine Seitenspur bei 1920 noch 482 px, bei 1280 nur
+       162 — sie WILL 356. Auf der Perk-Wahl blieben "Deine aktiven Formationen" dadurch 51 px für
+       166 px Text, also 69 % abgeschnitten. Der Eigentümer: "mittelteil kleiner skalieren das die
+       seiten panels ganz angezeigt werden" (V1280-04).
+
+       DAS SPRINGEN KOMMT DABEI NICHT ZURÜCK, und das ist der Punkt, an dem die alte Fassung hing.
+       Der Kommentar unten hält fest, warum die Mitte fest war: eine `auto`-Spur misst sich am
+       INHALT, also wurde die Karte beim Zuklappen eines Flügels schmaler (gemessen 880 → 784) und
+       das Angebot brach mitten in der Entscheidung um.
+
+       Hier misst sich nichts am Inhalt. `minmax(0, 924px)` ist nach oben gedeckelt und nach unten
+       nur durch den verbleibenden Platz begrenzt; die Flügelspuren tragen einen Boden aus `clamp`,
+       der allein an der Fensterbreite hängt. Beide Spuren sind damit eine reine Funktion des
+       Viewports — ob ein Flügel offen, zu oder leer ist, ändert keine einzige Breite.
+
+       Was das rechnet (1fr-Anteile bei aufgebrauchtem Platz, Overlay-Polster 32 px):
+         1920 → Flügel 356 (Boden erreicht), Mitte 924 — unverändert wie bisher
+         1600 → Flügel 352, Mitte 864
+         1280 → Flügel ~282 statt 162, Mitte ~685
+       Die Karte trägt `max-width`, nicht `width`, und folgt der Spur von selbst. */
+    display: grid;
+    grid-template-columns: minmax(clamp(240px, 22vw, 356px), 1fr) minmax(0, 924px) minmax(clamp(240px, 22vw, 356px), 1fr);
     /* Oben BÜNDIG, nicht mittig: ein kurzer Flügel (die Kennzahlen sind ~300 px hoch, die Karte ~750)
        schwebte sonst auf halber Höhe neben der Karte und wirkte, als gehörte er nicht dazu. */
     align-items: start; width: 100%;
@@ -4522,6 +4560,17 @@ button { font-family: inherit; }
   .lv-wing-l { justify-self: end; }
   .lv-wing-r { justify-self: start; }
   .lv-wing-sep { height: 1px; margin: 12px 0; }
+  /* #viewport-1280 / V1280-01 — die Legendären stehen zu ZWEIT, nicht zu viert.
+
+     `.sk-offers` setzt drei Spalten, weil die Skill-Wahl drei Angebote je Fraktion zeigt. Die
+     Legendär-Wahl zeigt vier, und vier Spalten in derselben Mitte gaben jeder Karte rund 220 px —
+     der Text brach dann Wort für Wort um. Eigentümer: "legendare auf 2 nebeneinander andern anstatt
+     4. bessere uebersicht" (V1280-01).
+
+     Eigene Klasse statt `.sk-offers` umzuschreiben: die drei Spalten der Skill-Wahl sind aus einem
+     Playtest hergeleitet und sollen bleiben, wie sie sind. Zwei Reihen zu zwei Karten sind bei vier
+     Angeboten ohnehin die ruhigere Anordnung — `grid-auto-rows: 1fr` hält beide Reihen gleich hoch. */
+  .sk-offers-leg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* Drei Angebote je Fraktion → drei Spalten. Auf 880 px brach `sm:grid-cols-2` die dritte Karte in eine
      eigene Zeile und ließ daneben ein Loch — genau das Bild, das die Mitte „unattraktiv" gemacht hat.
 
@@ -5219,7 +5268,7 @@ button { font-family: inherit; }
 /* Große, hohe Fenster: der Leitfaden-Körper darf wachsen. Die Bedingung schließt flache Fenster über
    `min-height` aus — dort gilt weiter die kleine Stufe, sonst liefe der Screen über (s. Messung oben). */
 @media (min-width: 1750px) and (min-height: 1000px) {
-  .gd-page { --gs: 1.2; }
+  /* #viewport-1280: die Schrumpfstufen sind entfernt, s. .gd-page. */
 }
 
 /* Flache Desktop-Fenster: 27 Knoten nebeneinander brauchen Höhe. Auf 1080 px geht der Baum ohne Scrollen
@@ -5293,7 +5342,7 @@ button { font-family: inherit; }
 @media (min-width: 1280px) and (max-height: 950px) {
   .gd-frame { padding: 10px 36px 12px !important; }
   .gd-desk { gap: 18px; margin-top: 2px; }
-  .gd-page { --gs: .9; padding: 12px 16px 10px; }
+  .gd-page { padding: 12px 16px 10px; }
   .gd-page .gd-cols { gap: 18px; }
   .gd-nav { padding: 12px 10px; }
   /* Glossar: dieselbe Straffung, aber OHNE Größenstufe. Der Leitfaden braucht seine, weil er auf eine
@@ -5310,7 +5359,7 @@ button { font-family: inherit; }
    Bild (1536x791: 93 %, 1536x760: 98 %, 1600x800: 88 %). Die 10,7 px Fliesstext klingen wenig, landen auf
    so einem Geraet aber bei ~13 echten Pixeln — solche Fenster entstehen praktisch nur durch Skalierung. */
 @media (min-width: 1280px) and (max-height: 820px) {
-  .gd-page { --gs: .82; }
+  /* #viewport-1280: Schrumpfstufe entfernt, s. .gd-page. */
 }
 
 
