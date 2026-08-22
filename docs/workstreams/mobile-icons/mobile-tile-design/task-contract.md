@@ -190,11 +190,11 @@ Each is marked **measured**, **not measured and why**, or **not applicable** bef
 | H1 | `task/icon-position-review` part 2 will edit `src/index.css` and the same three screens | D2: not waited for, not touched. Part 1 touches none of those files. For part 2 the overlap is textual, not semantic — record it in part 2's contract |
 | H1b | `test/perk-art.test.js` is also on that collision surface (:223, :300, :302) | Added to the must-not-touch list; not touched by part 1 |
 | H2 | Below 1280 px no `<img>` exists at all — first placement, not adjustment | Already measured; carry into part 2's contract |
-| H3 | The phone band is fluid with a ~2.4× spread, and the baked bloom divides by the render width | Deliverable M answers it with a measurement; it also fixes the Banner's cap |
+| H3 | The phone band is fluid, and the baked bloom divides by the render width | **Measured, 2026-08-23** — `visual/M-tile-widths.json`. Phone case: skill 245/315/405/564 px, perk 233/303/393/552 px, legendary 249/319/409/568 px at 320/390/480/639 px. +14 % over the baked zone at 390 px, +105 % at 639 px, spread 2.3×. The Banner's `max-width` cap is load-bearing, not a refinement |
 | H4 | Source-text ratchets: `test/skill-art.test.js:122`, `test/perk-art.test.js:198–199`, `test/leg-gleich.test.js:59`, `test/corner-art.test.js:231`, `CardCorners.jsx` two-`<img>` guard | Not applicable to part 1 (no `src/` or `test/` change); named so part 2 plans their rewrite and counter-check rather than discovering them |
 | H5 | `scripts/icon-contact-sheet.*` is on `task/icon-position-review`, not on `dev` | Template, not dependency — part 1 writes its own sheet |
 | H6 | `npm test` baseline unknown | **Measured, 2026-08-23, in this worktree: green.** `npm test` (`vitest run`) — 138 files, 2149 tests, all passed, exit 0, 45.83 s. The load-dependent `test/i18n-guards.test.js` timeouts the `icon-position-review` contract reported did **not** reproduce, and no `--testTimeout` override was needed. Any red run from here on is this task's own |
-| H7 | The three screens are not reachable from a hub click path | Prove the dev-run route before promising M; report per screen |
+| H7 | The three screens are not reachable from a hub click path | **Measured, 2026-08-23 — all three reachable.** Not via a dev run: round 1 and 2 are played from a seeded run, the legendary phase is resumed into from a real run state, and the application needs its „Lauf fortsetzen" click because it does not auto-resume |
 | H8 | D3 leaves the 640–1279 band with no emblems and no ornaments | Recorded as a decision, not a gap. Part 2 proves it by rule applicability: every added rule sits below 640 px and the JSX gate is a phone query, not `!wide` |
 
 ## Definition of done
@@ -203,8 +203,8 @@ Ticked only when true.
 
 - [x] `npm ci` ran in this worktree (exit 0); the `npm test` baseline is recorded verbatim, with the
       command — see H6: green, 138 files / 2149 tests, exit 0
-- [ ] Deliverable M: measured tile and emblem-box widths for three screens at 320 / 390 / 480 / 639 px,
-      DPR recorded
+- [x] Deliverable M: measured tile and emblem-box widths for three screens at 320 / 390 / 480 / 639 px,
+      DPR recorded — `visual/M-tile-widths.json`, both scrollbar modes, written up in `findings.md`
 - [ ] Deliverable S: one PNG per screen per variant, whole card, row of real tiles including that
       variant's decisive case, plus the sidecar with read-back geometry and SHA-256
 - [ ] D4 proven: tile bounding boxes and computed font sizes are identical with and without the emblem,

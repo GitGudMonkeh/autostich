@@ -115,7 +115,20 @@ about 265.7 px, not 277, which would put the shipped skill radius at ~16.7 autho
 That is a desktop question and out of scope here. It is recorded so part 2 does not later discover it and
 file it as its own defect.
 
-### The phone band is fluid, and the spread is 2.4x
+### The phone band is fluid, and the spread is 2.3x
+
+> **Superseded by measurement, 2026-08-23.** The derivation below was written before the worktree
+> existed. Deliverable M has since measured all three screens across the band in the running
+> application — see [`findings.md`](./findings.md) — and **the measured table is what part 2 authors
+> against.** The derivation is kept because its *shape* held (the band is fluid, the phone tile is
+> wider than the desktop tile) while two of its numbers did not, and because the difference between
+> the two is itself the finding: a classic desktop scrollbar takes layout width and a phone's overlay
+> scrollbar does not, so a plausible desk calculation and a plausible desktop measurement can both be
+> the wrong number for the device the design is for.
+>
+> Measured, phone case, tile padding box: skill 245 / **315** / 405 / 564 px and perk 233 / **303** /
+> 393 / 552 px at 320 / 390 / 480 / 639 px. At the canonical 390 px that is **+14 %** over the baked
+> zone, not the +15–16 % derived below.
 
 This is the finding that most shapes the design, and D3 does not remove it — it concentrates it.
 
