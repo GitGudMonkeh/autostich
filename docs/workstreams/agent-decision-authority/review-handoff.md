@@ -21,8 +21,8 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 | --- | --- |
 | **Context** | Agent Decision Authority — owner/agent decision boundary, documentation only |
 | **Branch** | `feature/agent-decision-authority` (pushed, own upstream, **not** merged into `dev`) |
-| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — the rule change plus the round-1 and round-2 review fixes |
-| **Review-package range** | to the current head, which additionally carries this document. The contract's *Expected file surface* names both ranges and why they differ |
+| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — the rule change plus the round-1 and round-2 review fixes. **The three live rule documents reach their final state at `a2357b47`** and do not change afterwards, verified by blob hash: `AGENTS.md` `65662e6a`, `task-lifecycle.md` `d443937a`, `git-workflow.md` `528961ac` are identical at `a2357b47` and at the head |
+| **Review-package range** | everything after `a2357b47`: this document and the contract's review records. No live rule document changes there — that is the point of separating the two, and it is a measurement, not a convention |
 | **Size** | 6 files, +1146/−5 over the content range · no evidence images |
 | **Gates** | **Linux CI green at the content head `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
@@ -46,6 +46,16 @@ round-3 refresh was meant to remove, committed while removing it. The count is n
 The commit carrying *this* update is not in that list and cannot be: a handoff cannot contain its own
 SHA. That is what the *Review-package range* row above is for. Stated once here rather than left to
 be noticed — round 2 finding 2 was, in part, exactly this drift going unmarked.
+
+**Reproduce the claim that the rules are final at `a2357b47`:**
+
+```bash
+for f in AGENTS.md docs/engineering/task-lifecycle.md docs/engineering/git-workflow.md; do
+  a=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "a2357b47:$f")
+  b=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "HEAD:$f")
+  [ "$a" = "$b" ] && echo "identical  $a  $f" || echo "DIFFERS  $f"
+done
+```
 
 **Read first:** [`task-contract.md`](./task-contract.md) — the binding scope statement. Its
 *Approved architecture* section carries the rule text that was approved verbatim, and its *Non-goals
