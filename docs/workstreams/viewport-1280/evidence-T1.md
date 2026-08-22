@@ -348,7 +348,7 @@ PASS · the phone layout is unchanged
 
 `before/` was never written to; verified with `git diff` against the committed baseline (empty).
 
-### 7.6.1 The pixel half of the acceptance gate is NOT demonstrated
+### 7.6.1 The pixel half — found missing, then made to work
 
 Found on 2026-08-22 while assembling the review handoff, after `c8af0f76` was already committed and
 pushed. It is recorded here rather than quietly fixed, because it changes what the commit can claim.
@@ -365,11 +365,97 @@ acceptance §8.1 for "0.0000 % of pixels beyond the noise threshold". **Neither 
 - The method itself exists, fully implemented, in `scripts/viewport-proof.mjs`. It was never wired
   into `phone-proof.mjs`.
 
-**What this does and does not mean.** A differing PNG byte count is not a statement that the layout
-moved — separating rasterisation noise from a structural difference is precisely what the unused
-method is for. Element geometry is identical on all ten captures, which is strong independent
-evidence that it did not. But that is not the criterion the contract wrote down, and no artefact in
-the repository satisfies the one that was.
+**Resolved the same day. §8.1 is now satisfied — measured, not argued.** What it took is below,
+because the route matters more than the result: four defects sat between "the tool exists" and "the
+tool measures", and three of them were invisible while the tool reported PASS.
+
+#### The four defects
+
+| # | Defect | How it surfaced |
+| --- | --- | --- |
+| 1 | `compare()` never opened a PNG | reading the function while assembling the review handoff |
+| 2 | `goto()` hangs forever on about:blank → about:blank | wiring in the comparison; ten pairs in a row, no navigation between |
+| 3 | `settlePaint()` had no deadline and hung the capture | **introduced by this session's own fix**, caught by this session's own control |
+| 4 | 16 of the shop's 32 images never loaded | the diagnostic added in 3 printed `16 STILL PENDING, 16 DECODE TIMEOUT` |
+
+`goto` awaits `Page.loadEventFired` with no timeout, and Chrome fires no load event for a navigation
+from about:blank to about:blank. `viewport-proof.mjs` never hit it because it captures the
+application between comparisons; `phone-proof.mjs` compares ten pairs back to back and hung on the
+first. Fixed in `pixel-diff.mjs` by navigating only when not already blank.
+
+#### The cause that mattered, and the two hypotheses that were wrong
+
+Fixing all four still left the shop differing **from itself** — two captures of one build, 0.65 %
+beyond the noise threshold, ~1800 pixels off any text box, geometry identical. So the flip was not
+the cause, and neither were the images.
+
+Two hypotheses were tested and **refuted**, and they are recorded because a refuted hypothesis is
+what makes the third credible:
+
+- **Canvas / Pixi rendering.** Refuted: the probe records tag names, and the shop has 32 `IMG` and 11
+  `svg` and **zero** `CANVAS`.
+- **`backdrop-filter: blur()` not being bit-deterministic on the GPU.** Refuted by measuring computed
+  styles on the live screen: the only blurred elements are the hub field and four hub tiles, none of
+  which is where the difference sits.
+
+The actual cause came from the same measurement. One element carried a running animation:
+
+```
+DIV.w-full max-w-xl ...   as-panel-sweep 7s   @12,51 366x743
+```
+
+**Exactly the bounding box the pixel diff had been reporting all along** — `x12..378, y51..793`. Two
+captures land at two phases of a seven-second sweep, so a moving gradient sits somewhere else in
+each. Every symptom matches: spread over the panel, none on text, none inside an image, deltas up to
+109, and geometry untouched because nothing moves.
+
+**It is not a bug in the app.** `index.css` freezes `as-panel-sweep` under `data-reduced-fx` and then
+deliberately exempts the identity panels — the comment at that rule calls it "AUSNAHME (auf Wunsch)".
+The shop card carries `as-panel as-panel-deck`, so it is inside the exemption by design.
+
+**Worth recording separately:** `prefers-reduced-motion: reduce` — which this capture sets — does not
+cover `as-panel-sweep` at all. That is a different axis from `reducedFx`, and an infinite decorative
+animation that ignores it is at least an accessibility question. Reported, not changed; §9 forbids
+the repair and this is not even a layout one.
+
+#### The control, and why it lives in the tool
+
+Every animation is pinned to `currentTime = 0` and paused, through the Web Animations API, before the
+probe and the screenshot. Not an injected `animation: none` rule: the exemption above is written with
+`!important` and a three-part selector, so a universal override would lose the specificity fight and
+fail **silently**. Pinning cannot lose, and it pins to a *defined* phase rather than to whichever
+moment the screenshot happened to catch.
+
+Determinism control after the fix — two captures, one build:
+
+```
+10 screens, DE and EN:  0.0000 % beyond noise      (8 of them byte-identical)
+```
+
+#### The baseline was re-derived, and `before/` was not touched
+
+The old `before/` was captured with animations running, so it cannot be compared against a pinned
+capture — measured: 8 of 10 screens differ, and the 2 that do not are exactly the two with no
+animation.
+
+The premise that the baseline "cannot be re-taken" was true **only while the capture was
+nondeterministic**. It no longer is, and the pre-flip state is `d3f65b43` in git. So `src/` was
+checked out at that commit, built, captured with the current tool into **`before-pinned/`**, and
+`src/` restored — verified by `git status` reporting `src/` clean against HEAD afterwards.
+**`before/` was never written to** and remains the historical artefact.
+
+#### The result
+
+```
+PROOF 1   rule set at 390px IDENTICAL (67136 bytes)
+PROOF 2   10 screens, geometry identical
+PROOF 2b  10 screens, 0.0000 % beyond noise, max delta 1-8 (all sub-threshold)
+PASS · the phone layout is unchanged
+```
+
+Acceptance §8.1 — *"0 structural differences on geometry, 0.0000 % of pixels beyond the noise
+threshold, DE and EN, comparing across the flip"* — is met on the evidence, not on an argument about
+what geometry implies.
 
 **Correction on the record.** The commit message of `c8af0f76` says "geometry and pixels identical on
 five screens in DE and EN". The geometry half is measured. The pixel half was never measured; it was
@@ -427,8 +513,6 @@ variants actually matter. Both were run.
 
 - **Commit 4** — the survey: five sizes × two languages × the surface list of contract §5.2, the
   typography inventory, and every §1.5 prediction marked held or refuted. Not started.
-- **The pixel comparison of acceptance §8.1** — see §7.6.1. The method exists in
-  `scripts/viewport-proof.mjs` and is not wired into `phone-proof.mjs`. Open for decision.
 - **T2** — every repair. Nothing that overflows at 1280 was fixed, including the two findings in §7.7
   and the guide's `--gs` step.
 - `gameover.best.hint` — reported, untouched, awaiting a product decision.

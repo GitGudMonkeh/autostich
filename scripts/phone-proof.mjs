@@ -35,6 +35,10 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { launch, setViewport, reduceMotion, seedRandom, suppressInstallPrompt,
   goto, evaluate, screenshot, sleep } from "./cdp.mjs";
+/* The text-mask / noise-threshold comparison, shared with viewport-proof.mjs rather than copied.
+   Wired in on 22.08.2026: contract §3.1 asks for it and §8.1 grades on it, but compare() used to
+   read the rule set and the geometry only and never opened a PNG at all. */
+import { comparePixels } from "./pixel-diff.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "docs/workstreams/viewport-1280/evidence/phone-390");
@@ -203,11 +207,24 @@ const PROBE = `(() => {
     walk(c);
   } };
   walk(d.body);
+  /* Boxes of elements that DIRECTLY carry text — the mask for the pixel comparison. A differing
+     pixel inside one is glyph rasterisation; one outside every box is something genuinely drawn
+     differently, and only the second kind is a finding. Form controls count as text because a
+     PLACEHOLDER is not a DOM text node; that hole once produced a false "not on text" result and is
+     documented in scripts/pixel-diff.mjs. */
+  const textBoxes = [];
+  for (const e of d.querySelectorAll("*")) {
+    let hasText = false;
+    for (const n of e.childNodes) if (n.nodeType === 3 && n.textContent.trim()) { hasText = true; break; }
+    if (!hasText && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.tagName)) continue;
+    const r = e.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) textBoxes.push([Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)]);
+  }
   return {
     metrics: { innerWidth: w.innerWidth, innerHeight: w.innerHeight,
       clientWidth: el.clientWidth, clientHeight: el.clientHeight,
       scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight, dpr: w.devicePixelRatio },
-    nodeCount: nodes.length, nodes,
+    nodeCount: nodes.length, nodes, textBoxes,
   };
 })()`;
 
@@ -232,6 +249,96 @@ const clickTile = (i) => `(() => {
   return { ok: true, found: tiles.length };
 })()`;
 
+/* Wait for the things that make two captures of the SAME state differ.
+
+   MEASURED, 22.08.2026. Capturing the shop twice from one build produced 0.66 % of pixels beyond the
+   noise threshold, with ~1800 of them OFF any text box while every element box stayed identical.
+   Identical geometry plus differing non-text pixels is the signature of a bitmap that had painted in
+   one run and not yet in the other — not of a layout that moved.
+
+   A fixed sleep is not the fix. It was already 900-1400 ms here and the shop still moved, because
+   "long enough" depends on disk cache, decode queue and machine load — exactly the variables a
+   measurement must not depend on. This waits for the CONDITION instead:
+
+     · document.fonts.ready  — a late webfont reflows and repaints text.
+     · img.decode() on every image — resolves when the bitmap is decodable, which `complete` alone
+       does not guarantee. Errors are swallowed: a broken image is a stable state, and failing the
+       capture over it would hide the layout question behind an asset question.
+     · two animation frames — a decoded bitmap still has to be composited before it is in a shot.
+
+   KNOWN LIMIT, stated rather than hidden: `document.images` does not include CSS `background-image`.
+   If a surface paints its artwork through a background, this does not wait for it, and the residual
+   instability would look exactly the same. The counter-check below is what tells us whether that
+   case is present — not this comment. */
+async function settlePaint(c) {
+  return evaluate(c, `(async () => {
+    /* EVERY wait here is raced against a deadline, and that is not belt-and-braces — the first
+       version without it hung the capture indefinitely (measured, 22.08.2026). A decode() call on an
+       image that never finishes loading returns a promise that simply never settles, and one such
+       image is enough to stall the whole run with no output and no error.
+
+       A deadline turns a hang into a report of what did not settle, which is the difference
+       between a broken tool and a measurement with a named gap. */
+    const deadline = (ms, value) => new Promise((r) => setTimeout(() => r(value), ms));
+    const race = (p, ms, v) => Promise.race([p, deadline(ms, v)]);
+
+    /* PIN EVERY ANIMATION TO TIME ZERO. This is the shop instability, found 22.08.2026 after images
+       and canvas had both been ruled out.
+
+       The shop panel carries as-panel-sweep, 7s linear infinite, on the element at exactly the
+       bounding box the pixel diff kept reporting. Two captures land at two phases of that sweep, so
+       a moving gradient sits somewhere else in each - roughly 2200 pixels, deltas up to 109, spread
+       over the panel, none of it on text or inside an image. Every symptom matched.
+
+       It is NOT a bug in the app. index.css freezes as-panel-sweep under data-reduced-fx, then
+       deliberately exempts the identity panels (.as-panel-deck / .as-panel-fac) so their gradient
+       keeps moving - the comment there records that as a product decision. prefers-reduced-motion,
+       which this capture already sets, is a separate axis and never covered this animation.
+
+       So the control belongs HERE, in the measurement, not in the stylesheet. The Web Animations API
+       is used rather than an injected animation:none rule on purpose: that exemption is written with
+       !important and a three-part selector, so a universal override would lose the specificity fight
+       and fail silently. Pinning currentTime to 0 cannot lose, and it pins to a DEFINED phase rather
+       than to whatever moment the screenshot happened to catch. */
+    for (const a of document.getAnimations()) {
+      try { a.currentTime = 0; a.pause(); } catch (e) { /* finished or detached */ }
+    }
+
+    const fontsOk = await race(document.fonts.ready.then(() => true), 3000, false);
+
+    /* FORCE EAGER FIRST. Measured 22.08.2026: the shop carries 32 images and 16 of them never
+       finished loading, in both languages, while the other four screens had none outstanding. They
+       are lazy-loaded, and decode() does not make a lazy image start loading — it waits for a
+       bitmap that nothing has asked for. That is the whole shop instability: a lazily loaded image
+       inside the viewport had painted in one capture and not in the other, which is exactly the
+       signature we saw (identical element boxes, differing non-text pixels).
+
+       Flipping loading to eager makes the browser fetch them, and then the wait below is a wait for
+       something that is actually going to happen. This changes the PAGE UNDER TEST, and that is a
+       deliberate trade: eager loading is a strictly more-loaded state than production, so a
+       screenshot taken this way can only show MORE than a user sees, never less. A measurement that
+       silently varies is worse than one that is honestly a notch ahead of reality. */
+    const imgs = Array.from(document.images);
+    for (const i of imgs) if (i.loading === "lazy") i.loading = "eager";
+
+    const pendingBefore = imgs.filter((i) => !i.complete).length;
+    const loaded = (i) => i.complete ? Promise.resolve(true) : new Promise((r) => {
+      i.addEventListener("load", () => r(true), { once: true });
+      i.addEventListener("error", () => r(true), { once: true });
+    });
+    const settled = await Promise.all(imgs.map(async (i) => {
+      if (!await race(loaded(i), 5000, false)) return false;
+      return race(i.decode().then(() => true).catch(() => true), 2000, false);
+    }));
+    const timedOut = settled.filter((ok) => !ok).length;
+
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return { images: imgs.length, pendingBefore, fontsOk, timedOut,
+      animations: document.getAnimations().length,
+      stillPending: Array.from(document.images).filter((i) => !i.complete).length };
+  })()`);
+}
+
 async function captureScreens(c, lang) {
   const out = {};
   for (const s of SCREENS) {
@@ -241,11 +348,13 @@ async function captureScreens(c, lang) {
       if (!r || !r.ok) throw new Error(`${lang}/${s.id}: hub tile ${s.open} not found (tiles: ${r && r.found})`);
       await sleep(900);
     }
+    const settled = await settlePaint(c);
     const probe = await evaluate(c, PROBE);
     const png = await screenshot(c);
     out[s.id] = { probe, png };
     process.stdout.write(`    ${lang}/${s.id.padEnd(12)} ${probe.nodeCount} nodes · `
-      + `doc ${probe.metrics.scrollWidth}x${probe.metrics.scrollHeight} in ${probe.metrics.clientWidth}x${probe.metrics.clientHeight}\n`);
+      + `doc ${probe.metrics.scrollWidth}x${probe.metrics.scrollHeight} in ${probe.metrics.clientWidth}x${probe.metrics.clientHeight}`
+      + ` \u00b7 ${settled.images} img (${settled.pendingBefore} awaited${settled.stillPending ? `, ${settled.stillPending} STILL PENDING` : ""}${settled.timedOut ? `, ${settled.timedOut} DECODE TIMEOUT` : ""}${settled.fontsOk ? "" : ", FONTS TIMEOUT"}${settled.animations ? `, ${settled.animations} anim pinned` : ""})\n`);
   }
   return out;
 }
@@ -325,7 +434,64 @@ function recanonicalise(text, w) {
   return kept.sort().join("\n");
 }
 
-function compare(a, b) {
+/* PROOF 2b — pixels, with the deltas attributed instead of merely counted.
+
+   Runs in a browser because the diff itself does: the PNGs decode onto a canvas, which costs Node no
+   image dependency. That is why this function launches Chrome where compare() used to be pure file
+   I/O.
+
+   THE MASK COMES FROM THE 'b' SIDE. It has to come from one of them, and that choice is only sound
+   because proof 2a has already established that every element box is identical. A capture taken
+   before text boxes were recorded degrades LOUDLY rather than silently: an empty mask attributes
+   every structural pixel to "off text", which is the conservative direction, and it says so.
+
+   WHY NOT JUST COMPARE BYTES. Two runs of the same build legitimately produce different PNG bytes —
+   font rasterisation and sub-pixel positioning vary. Byte equality would fail constantly and mean
+   nothing; an unaided eye would pass everything and mean just as little. The threshold sits between
+   the two and, more importantly, ATTRIBUTES what is above it. */
+async function comparePixelPairs(a, b, screens, bTextBoxes, dpr) {
+  const noMask = screens.filter((k) => !bTextBoxes[k] || !bTextBoxes[k].length);
+  if (noMask.length) {
+    process.stdout.write("  PROOF 2b  NOTE: no text mask for " + noMask.length + " screen(s) — every "
+      + "structural pixel there counts as off-text (conservative). Re-capture '" + b + "' to fix.\n");
+  }
+  const c = await launch();
+  const results = {};
+  try {
+    for (const k of screens) {
+      const file = k.replace("/", "-") + ".png";
+      const A = readFileSync(join(OUT, a, file)).toString("base64");
+      const B = readFileSync(join(OUT, b, file)).toString("base64");
+      const px = await comparePixels(c, A, B, bTextBoxes[k] || [], dpr);
+      results[k] = px;
+      if (px.sizeMismatch) {
+        process.stdout.write("  PROOF 2b  " + k.padEnd(18) + " SIZE MISMATCH " + px.a + " vs " + px.b + "\n");
+        continue;
+      }
+      if (px.structural === 0) {
+        process.stdout.write("  PROOF 2b  " + k.padEnd(18) + " 0.0000 % beyond noise  ("
+          + px.differingPct + " % differ at all, max delta " + px.maxDelta + ")\n");
+      } else {
+        /* The visual record is written only when there is something to look at: a human gate needs
+           WHERE, not just how much (task-lifecycle.md — Visual review). Black = identical,
+           blue = sub-threshold noise, orange = beyond noise on a glyph, white = beyond noise and NOT
+           on any text box. White is the colour that matters. */
+        const dst = join(OUT, b, k.replace("/", "-") + "-diff.png");
+        writeFileSync(dst, Buffer.from(px.diffPng, "base64"));
+        const bands = (px.structuralBands || []).slice(0, 3)
+          .map((z) => "y" + z.yFrom + "-" + z.yTo + ":" + z.pixels + "px").join(" ") || "none";
+        process.stdout.write("  PROOF 2b  " + k.padEnd(18) + " " + px.structuralPct + " % BEYOND NOISE  ("
+          + px.structuralOnText + " on text, " + px.structuralOffText + " off text, max delta "
+          + px.maxDelta + ")\n            bands: " + bands + "\n            diff image -> " + dst + "\n");
+      }
+    }
+  } finally {
+    await c.close();
+  }
+  return results;
+}
+
+async function compare(a, b) {
   const read = (l, f) => readFileSync(join(OUT, l, f), "utf8");
   let bad = 0;
 
@@ -360,6 +526,13 @@ function compare(a, b) {
     else process.stdout.write(`  PROOF 2  ${k.padEnd(18)} identical (${A.nodeCount} nodes)\n`);
   }
 
+  /* Proof 2b. Contract §8.1 grades on "0.0000 % of pixels beyond the noise threshold", so anything
+     above zero fails here. It is not a tolerance to be widened. */
+  const shared = keys.filter((k) => ga.screens[k] && gb.screens[k]);
+  const masks = Object.fromEntries(shared.map((k) => [k, gb.screens[k].textBoxes]));
+  const px = await comparePixelPairs(a, b, shared, masks, (gb.phone && gb.phone.dpr) || 1);
+  for (const k of Object.keys(px)) if (px[k].sizeMismatch || px[k].structural > 0) bad++;
+
   process.stdout.write(bad ? `\nFAIL · ${bad} check(s) differ\n` : "\nPASS · the phone layout is unchanged\n");
   process.exit(bad ? 1 : 0);
 }
@@ -368,7 +541,7 @@ function compare(a, b) {
 
 const [cmd, x, y] = process.argv.slice(2);
 if (cmd === "capture" && x) await capture(x);
-else if (cmd === "compare" && x && y) compare(x, y);
+else if (cmd === "compare" && x && y) await compare(x, y);
 else {
   process.stdout.write("usage:\n  phone-proof.mjs capture <label>\n  phone-proof.mjs compare <labelA> <labelB>\n");
   process.exit(2);

@@ -13,7 +13,7 @@ Every gate row below states whether the gate was run while this document was bei
 
 | | |
 | --- | --- |
-| **Acceptance gate §8.1 — pixel half** | **not demonstrated.** `phone-proof.mjs compare` never reads the PNGs; 7 of 10 committed pairs differ at byte level. See §3.1 — this is the most important thing in this document |
+| **Acceptance gate §8.1 — pixel half** | **now demonstrated.** It was not, when this document was first written; §3.1 records what it took. Result: 10 screens, DE and EN, 0.0000 % beyond the noise threshold across the flip |
 | **Hazards without a status at handoff** | **0 of 8** — §6, supplied by the worker on 2026-08-22 |
 | **Definition-of-done items unticked** | **7 of 7** — §7. The contract writes them as plain bullets, so none carries a tick mark |
 | **Push state** | head **is** on `origin/feature/viewport-1280`; the range is fetchable |
@@ -90,10 +90,20 @@ of range for this review:
 
 **Worker-supplied, 2026-08-22.** Ordered by how much the worker doubts them, not by size.
 
-### 3.1 The pixel half of the acceptance gate is not demonstrated — start here
+### 3.1 The pixel comparison: four tool defects, two refuted hypotheses — start here
 
-**Measured.** Contract §3.1 requires "Pixel comparison — the existing text-mask / noise-threshold
-method", and §8.1 requires "0.0000 % of pixels beyond the noise threshold". Neither happens:
+**Measured, and since resolved.** When this handoff was first assembled neither half of contract §3.1
+happened. Both do now. The full account is `evidence-T1.md` §7.6.1; the short version is that the
+tool needed four fixes before it measured anything, and that two plausible explanations for the
+residual instability were tested and refuted before the real one was found — an `as-panel-sweep`
+animation on the shop panel, running at whatever phase the screenshot caught.
+
+**What a reviewer should press on** is not the result but the route: three of the four defects were
+invisible while the tool reported PASS, and one of them was introduced by the very session that was
+fixing the others. Ask whether the controls now in `settlePaint()` are the right ones, and whether
+pinning animations to time 0 hides anything a user would see.
+
+The original finding, kept for the record:
 
 - `compare()` in `scripts/phone-proof.mjs` reads `applicable-390.txt` and `geometry.json` **only**.
   It never opens a PNG. Verified by reading the function and by grep.
