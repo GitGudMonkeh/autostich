@@ -164,12 +164,32 @@ owner" as a finding against a technical decision that was taken and recorded und
 
 ### The corrective edit — `task-lifecycle.md:96`
 
+**Superseded in review rounds 1 and 2. The block below is the text approved at planning, kept so the
+two versions can be compared; it is no longer what the repository should contain.** Two findings
+changed it: round 1 finding 3, which separated a blocking owner question from a recorded one, and
+round 2 finding 1, which found the breakpoint misclassified as a house-rule gate. The owner
+authorized both by instructing that the review fixes be implemented.
+
 ```markdown
 **Nothing is implemented until the owner has settled the report's open questions** — where an open
 question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
 authority*). A technical question is not an open question: the planner either resolves it and records
 the rejected options, or names it explicitly as a decision delegated to the worker. House-rule gates
 — a new glyph, a new dependency, a breakpoint change — are settled here, not discovered in review.
+```
+
+**Current approved text** — this is what `task-lifecycle.md` carries, and what byte-identity is
+measured against from round 2 onward:
+
+```markdown
+**Nothing is implemented until the owner has settled the report's blocking open questions** — where
+an open question is a product, design, gameplay, priority or scope question (`AGENTS.md` — *Decision
+authority*). A technical question is not an open question: the planner either resolves it and records
+the rejected options, or names it explicitly as a decision delegated to the worker. An owner question
+the report itself marks non-blocking is recorded, not a gate — the report's *Blocking?* column
+decides. Owner gates are settled here, not discovered in review: a new glyph and a new dependency are
+reserved by the House rules; a responsive breakpoint change moves visible layout and is the owner's
+under `AGENTS.md` — *Decision authority*.
 ```
 
 The wording of the roles-table row (scope item 1), the `task-lifecycle.md:141` clarification (item 4)
@@ -284,7 +304,8 @@ Tick only when true.
 - [x] The canonical text is inserted **verbatim**, tie-break clause and reviewer sentence intact.
       Transferred programmatically out of the fenced block above and byte-compared, not retyped.
 - [x] `docs/engineering/task-lifecycle.md:96` no longer blocks implementation on a technical
-      question, and still names the house-rule gates including a new dependency.
+      question, and still names every owner gate — each now routed to the source that actually
+      reserves it, House rules for a glyph and a dependency, the tie-break for a breakpoint.
 - [x] `docs/engineering/task-lifecycle.md:141` distinguishes recording from blocking.
 - [x] `docs/engineering/git-workflow.md` §7 names the authority by pointer, not by restatement.
 - [x] No file was created outside `docs/workstreams/agent-decision-authority/`.
@@ -331,8 +352,9 @@ done
 ```
 
 Expected: `AGENTS.md` 3 — the definition heading, plus the roles-table row, which names the section
-twice: once as the row's concern and once as the pointer. `task-lifecycle.md` 1 — pointer.
-`git-workflow.md` 1 — pointer. No hit in `CLAUDE.md` or `.claude/commands/`. The count locates; only
+twice: once as the row's concern and once as the pointer. `task-lifecycle.md` 2 — one pointer in the
+planning gate, one **application** routing the breakpoint gate to the tie-break. `git-workflow.md` 1 —
+pointer. No hit in `CLAUDE.md` or `.claude/commands/`. The count locates; only
 reading decides whether a hit is a definition, a pointer or an application.
 
 **Reproduce — scope compliance.** `MSYS_NO_PATHCONV=1` because `revision:path` is exactly the
@@ -417,3 +439,24 @@ decision with no owner input behind it — unlike the dependency gate, where *Ap
 item 5 already recorded the owner's decision and only the mechanism was missing. Inventing the rule
 would be exactly the overreach this task exists to prevent. Recorded for the owner to decide
 separately.
+
+---
+
+## Review round 2 — Codex, 2026-08-22
+
+Verdict: **changes requested** on `d63e471a`. All four round-1 findings confirmed fixed; two new
+medium findings, both accepted.
+
+| # | Severity | Finding | Disposition |
+| --- | --- | --- | --- |
+| 1 | Medium | The breakpoint gate was still misclassified. Correct that no new House rule should be invented — but the alternative was missed: a responsive breakpoint moves visible layout, so it is **already** the owner's under the tie-break. An agent hunting for the asserted breakpoint House rule finds none and concludes one of the two documents is stale. | **Fixed.** `task-lifecycle.md` now routes each gate to the source that actually reserves it: House rules for a glyph and a dependency, *Decision authority* for a breakpoint. No new governance. |
+| 2 | Medium | The round-2 package still presented round-1 data as current: a "three commits" line above five, a reproduce command pinned to `aff76af2`, CI claims pointing at the old head, and — worst — the contract still carrying the pre-fix corrective block while the handoff asserted byte-identity with it. A later reviewer would validate the wrong state, or read the corrected live text as an unapproved deviation. | **Fixed.** The superseded block is marked and the current approved text recorded beside it; the handoff is brought to the current head. |
+
+The reviewer also accepted the reformulated F10 criterion, having re-run its equivalent on
+`d63e471a` and obtained the enumerated counts, and accepted the shortened Q1 sentence.
+
+**On finding 1, the worker was half right and it is worth recording which half.** Refusing to invent
+breakpoint governance was correct. Concluding that the only options were "invent a House rule" or
+"leave it broken" was not — the rule this task created already answered it, and the worker did not
+apply its own tie-break to the case in front of it. The defect was a missed application, not a
+missing rule.

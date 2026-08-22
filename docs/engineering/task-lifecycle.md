@@ -98,8 +98,9 @@ an open question is a product, design, gameplay, priority or scope question (`AG
 authority*). A technical question is not an open question: the planner either resolves it and records
 the rejected options, or names it explicitly as a decision delegated to the worker. An owner question
 the report itself marks non-blocking is recorded, not a gate — the report's *Blocking?* column
-decides. House-rule gates — a new glyph, a new dependency, a breakpoint change — are settled here,
-not discovered in review.
+decides. Owner gates are settled here, not discovered in review: a new glyph and a new dependency are
+reserved by the House rules; a responsive breakpoint change moves visible layout and is the owner's
+under `AGENTS.md` — *Decision authority*.
 
 **The visual gate sits before the independent review**, and its findings are classified before the
 reviewer sees them (§8). The baseline (V1) is taken **after the worktree exists and before
