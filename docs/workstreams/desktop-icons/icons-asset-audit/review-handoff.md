@@ -16,11 +16,16 @@ Every claim below is marked *measured* (observed by running a command in the gen
 | --- | --- |
 | Hazards with no recorded status anywhere | **0 of 5** — all five carry a status in the contract and in the evidence package (*measured*) |
 | Unticked Definition-of-done boxes | **0 of 9** (*measured*) |
-| Push state | **The head is on no remote branch.** A reviewer cannot fetch this range yet (*measured*) |
+| Push state | **Pushed.** `cc1d2a63` is contained in `origin/task/icons-asset-audit` (*measured*, 2026-08-22) |
 
-The push state is the one item that blocks an off-machine review outright: `git fetch` cannot reach
-`cc1d2a63`. `git-workflow.md` — *Pushing and durable state* governs. Nothing was pushed by this
-command, and this command cannot push.
+When `/prepare-review` ran, the head was on no remote and this row read as a blocker. The branch has
+since been pushed by the worker, so `git fetch` reaches the range
+(`git-workflow.md` — *Pushing and durable state*). Nothing was merged, promoted, or opened as a pull
+request.
+
+**Note the branch head is ahead of the review range.** `origin/task/icons-asset-audit` now points at
+`28ac29e0`, which is this handoff document. The range to review is still
+`863febe5..cc1d2a63`; `28ac29e0` adds no source, asset or script change.
 
 ---
 
@@ -299,9 +304,12 @@ document** — V3 and V4 are human (`task-lifecycle.md` — *Visual review*).
 
 *Measured* in the generating session:
 
-- **The head is on no remote branch.** `git branch -r --contains cc1d2a63` is empty. Fetching this
-  range is not possible until someone pushes `task/icons-asset-audit`.
-- **The worktree is clean.** Nothing is excluded from the range by uncommitted work.
+- **The branch is pushed, and its head is one commit ahead of the review range.**
+  `git branch -r --contains cc1d2a63` returns `origin/task/icons-asset-audit` (*measured*,
+  2026-08-22). `origin/task/icons-asset-audit` is at `28ac29e0`, which is this handoff document and
+  contains no source, asset or script change. Review `863febe5..cc1d2a63`.
+- **The worktree was clean at the time the range was measured.** Nothing is excluded from the range
+  by uncommitted work. The only files added afterwards are this handoff and its commit.
 - **`npm test` fails on the full suite and passes in isolation** — see *Gate results*. Expect exit 1
   from a bare `npm test` on a Windows host.
 - **The contract lives only on this branch.** It was added in `b6cf3f8b`; the main checkout is on
