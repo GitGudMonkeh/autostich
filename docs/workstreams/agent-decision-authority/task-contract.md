@@ -280,6 +280,12 @@ an owner question. *Gap that remains:* the Windows full-suite timeout is untouch
 this task's scope — a repository-level condition, and the one thing this handoff does not deliver
 green.
 
+*Measured after the push:* GitHub Actions run `32572829351`, on Linux, at this exact head commit
+`aff76af2c3eab66d3bd6346cb069edb48ae7d41f`, reports `npm test` **success**, alongside lint, build, the
+preview-slot build and `gen:db`. The failure is therefore confined to the Windows host and absent
+from the environment that enforces the gate. The box stays unticked because the criterion is the
+**local** run (`AGENTS.md` — *Validation gates*), not because the change breaks tests.
+
 **Reproduce — scope compliance.** `MSYS_NO_PATHCONV=1` because `revision:path` is exactly the
 argument shape MSYS rewrites under Git Bash; `--verify` because without it `git rev-parse` echoes an
 unresolvable argument and still exits 0.
