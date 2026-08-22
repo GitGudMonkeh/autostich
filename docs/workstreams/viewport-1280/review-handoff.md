@@ -17,7 +17,7 @@ Every gate row below states whether the gate was run while this document was bei
 | **Hazards without a status at handoff** | **0 of 8** — §6, supplied by the worker on 2026-08-22 |
 | **Definition-of-done items unticked** | **7 of 7** — §7. The contract writes them as plain bullets, so none carries a tick mark |
 | **Push state** | head **is** on `origin/feature/viewport-1280`; the range is fetchable |
-| **Worktree** | **dirty** at the time of writing — see §9 |
+| **Worktree** | clean, and in sync with `origin` — see §9 |
 
 **Two deviations from the contract, both deliberate, both the owner's decision:**
 
@@ -367,15 +367,14 @@ attempted here.
 
 **Measured:**
 
-- **Worktree is dirty.** `docs/workstreams/viewport-1280/task-contract-T1b.md` is modified and
-  uncommitted — this is contract §12, added while assembling this handoff. `review-handoff.md`
-  itself is untracked. Neither is in the reviewed range, so the range excludes work that exists on
-  disk.
+- **Worktree is clean.** Contract §12, this handoff, and the §7.6.1 correction in `evidence-T1.md`
+  were committed as `6f92d7ae` and pushed. **`6f92d7ae` is deliberately NOT in the reviewed range** —
+  it is the handoff about the range, not part of it. Review `c8af0f76`; read `6f92d7ae` as apparatus.
 - **Head is pushed.** `origin/feature/viewport-1280` contains `c8af0f76`; the range is fetchable.
 - **`dev`, `test` and `main` untouched.** `origin/dev` is at `863febe5` and is an ancestor of the
   head; nothing was merged, promoted or force-pushed. No pull request was opened.
-- **The branch carries more than this range.** `origin/dev..HEAD` is 9 commits; this review covers
-  the last one. Commits 1 and 2 are recorded in `evidence-T1.md` §§1–6.
+- **The branch carries more than this range.** `origin/dev..HEAD` is 10 commits; this review covers
+  `c8af0f76`, the second from the tip. Commits 1 and 2 are recorded in `evidence-T1.md` §§1–6.
 - **`npm ci` is per-worktree.** Test or lint failures in a fresh checkout may mean missing
   dependencies rather than a defect (`AGENTS.md` — *Before you start*).
 
