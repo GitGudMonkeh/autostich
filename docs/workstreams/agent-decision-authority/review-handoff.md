@@ -12,11 +12,17 @@ definition-of-done boxes: **1** — `npm test`, with a downgrade record, and gre
 head SHA. Push state: the head commit **is** on `origin/feature/agent-decision-authority`, so the
 range is fetchable.
 
+**Round 2.** The first review returned *changes requested*; all four findings were accepted and
+fixed. What changed, and what a second reviewer should look at first, is in *Round 2* immediately
+below. Sections 2, 5, 6 and 9 were written for round 1 and are annotated where round 2 supersedes
+them; they are kept rather than rewritten so the two rounds stay comparable.
+
 | | |
 | --- | --- |
 | **Context** | Agent Decision Authority — owner/agent decision boundary, documentation only |
 | **Branch** | `feature/agent-decision-authority` (pushed, own upstream, **not** merged into `dev`) |
-| **Diff** | `863febe54fce513c4171314eb8cfc0d86f997408..aff76af2c3eab66d3bd6346cb069edb48ae7d41f` |
+| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..e0caa513c204817908f7958bb2565c0f413d0824` — the rule change plus the round-1 review fixes |
+| **Review-package range** | to the current head, which additionally carries this document. The contract's *Expected file surface* names both ranges and why they differ |
 | **Size** | 5 files, +598/−2 · no evidence images |
 | **Gates** | **Linux CI green at this head SHA.** Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
@@ -27,11 +33,53 @@ Three commits (*measured*):
 96e4ee4e  docs: define the owner/agent decision boundary in AGENTS.md
 5da398d9  docs: record the agent-decision-authority planning report and contract
 aff76af2  docs: record the owner's answer to Q1 in the contract
+175bfbf2  docs: add the reviewer handoff and record the Linux CI result
+e0caa513  docs: address the round-1 review findings
 ```
 
 **Read first:** [`task-contract.md`](./task-contract.md) — the binding scope statement. Its
 *Approved architecture* section carries the rule text that was approved verbatim, and its *Non-goals
 and tripwire* section carries the boundary this change was not allowed to cross.
+
+---
+
+## 0. Round 2 — what changed since the first review
+
+Codex reviewed `175bfbf2` and returned **changes requested**: two high findings, two medium. All four
+were accepted; none was argued down. The dispositions, with the reviewer's own reasoning, are
+recorded in [`task-contract.md`](./task-contract.md) — *Review round 1*.
+
+| # | Finding | Fix, in one line |
+| --- | --- | --- |
+| 1 High | The roles-table row was a second definition — the exact F10 breach this change exists to prevent. | The row is now `**Repository owner** — see *Decision authority* below.` |
+| 2 High | The dependency gate was recorded but never implemented: no House rule reserved dependencies, so the canonical rule did not cover them. | `AGENTS.md` — *House rules* reserves it; `task-lifecycle.md` applies that rule instead of asserting the gate. |
+| 3 Medium | "Open question" meant blocking, non-blocking and reviewer-directed in three different places. | The planning gate defers to the report's *Blocking?* column; handoff open questions are reviewer-directed by definition. |
+| 4 Medium | The range added a third workstream file against a contract that said two were the only additions. | The handoff is named in *Expected to be added*; content range and review-package range are distinguished. |
+
+Two further changes follow from the reviewer's answers rather than from a finding: the F10
+done-criterion was **reformulated** (the old single-line grep could not see the `task-lifecycle.md`
+pointer across its line break and counted dated workstream records as live rule sites), and the Q1
+prompt sentence was **shortened** from a procedural paraphrase to a citation.
+
+**What round 2 should look at first.**
+
+1. **Finding 2's fix creates a new House rule.** That is a governance change, authorized by the owner
+   rather than assumed, and it is the largest thing this task now does that its original scope did
+   not contain. Whether the rule is worded at the right strength — "No new dependency without asking
+   first", with the durable-cost rationale attached — is the open question of this round.
+2. **Finding 1's fix may have gone too far the other way.** The row is now so short that the owner's
+   domain is named only by the section it points at. Whether a reader of the roles table alone still
+   learns that the owner exists in the decision model is a judgement.
+3. **A defect found while fixing and deliberately left unfixed.** `task-lifecycle.md` names three
+   house-rule gates: a new glyph, a new dependency, a breakpoint change. After finding 2 the first
+   two are each backed by a House rule; **"a breakpoint change" is not.** It is finding 2's defect one
+   clause over, it predates this task, and reserving breakpoints would be a new governance decision
+   with no owner input behind it. Recorded in the contract for the owner, not invented here. A
+   reviewer may disagree that leaving it is right.
+
+*Measured at round 2:* gates re-run after the fixes — `npm test` exit 1 on the same pre-existing
+Windows timeout with the same file green in isolation, lint / build / `gen:db` exit 0. All fourteen
+must-not-touch entries still object-identical to the base commit.
 
 ---
 
@@ -56,6 +104,10 @@ Task-specific inputs `:157`, Acceptance gate `:172`, Expected file surface `:186
 ---
 
 ## 2. The claims to check
+
+**Round 1, superseded in part — kept for comparison.** Item 1 was confirmed as a finding and fixed;
+items 2 and 3 were checked and cleared by the reviewer; item 4 was cleared subject to finding 3,
+which is fixed. The round-2 claims are in §0.
 
 Ordered by where the worker thinks a finding is most likely, not by size.
 
@@ -286,7 +338,13 @@ verified:
 
 ## 9. Open questions for the reviewer
 
-Five, from the worker.
+**Round 1, answered.** All five were answered by Codex and the answers adopted: the roles-table row
+was a restatement (fixed); review-only enforcement stands, no test guard; no new repository surface
+for the planning prompt, and the sentence was shortened to a citation; the grep criterion was
+reformulated; and the dependency explanation was moved into the canonical House rules. The round-2
+questions are in §0.
+
+The original five, kept for comparison.
 
 1. **Is the role-table row a restatement?** §2 item 1. The worker judged it a pointer; a reviewer
    who judges otherwise has found the one F10 breach this change could plausibly contain.
