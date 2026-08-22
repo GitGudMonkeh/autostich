@@ -1,0 +1,99 @@
+lot	source	id	label	master	delivery	method
+lightning	Blitz/Blitzableiter_.png	SK_LIGHTNING_01	Blitzableiter	docs/art/skills/lightning/SK_LIGHTNING_01_blitzableiter.webp	src/assets/skills/lightning/SK_LIGHTNING_01_blitzableiter.webp	name-exact
+lightning	Blitz/donnergott_.png	SK_LIGHTNING_L01	Donnergott	docs/art/skills/lightning/SK_LIGHTNING_L01_donnergott.webp	src/assets/skills/lightning/SK_LIGHTNING_L01_donnergott.webp	name-exact
+fire	Fire/ascheschmiede.png	SK_FIRE_15	Ascheschmiede	docs/art/skills/fire/SK_FIRE_15_ascheschmiede.webp	src/assets/skills/fire/SK_FIRE_15_ascheschmiede.webp	name-exact
+fire	Fire/brandmal.png	SK_FIRE_13	Brandmal	docs/art/skills/fire/SK_FIRE_13_brandmal.webp	src/assets/skills/fire/SK_FIRE_13_brandmal.webp	name-exact
+fire	Fire/damaststahl.png	SK_FIRE_L04	Damaststahl	docs/art/skills/fire/SK_FIRE_L04_damaststahl.webp	src/assets/skills/fire/SK_FIRE_L04_damaststahl.webp	name-exact
+fire	Fire/feuersturm.png	SK_FIRE_03	Feuersturm	docs/art/skills/fire/SK_FIRE_03_feuersturm.webp	src/assets/skills/fire/SK_FIRE_03_feuersturm.webp	name-exact
+fire	Fire/feuerwalze.png	SK_FIRE_08	Feuerwalze	docs/art/skills/fire/SK_FIRE_08_feuerwalze.webp	src/assets/skills/fire/SK_FIRE_08_feuerwalze.webp	name-exact
+fire	Fire/flaechenbrand.png	SK_FIRE_11	Flächenbrand	docs/art/skills/fire/SK_FIRE_11_flaechenbrand.webp	src/assets/skills/fire/SK_FIRE_11_flaechenbrand.webp	name-exact
+fire	Fire/funkenflug.png	SK_FIRE_10	Funkenflug	docs/art/skills/fire/SK_FIRE_10_funkenflug.webp	src/assets/skills/fire/SK_FIRE_10_funkenflug.webp	name-exact
+fire	Fire/gluehende klinge.png	SK_FIRE_06	Glühende Klinge	docs/art/skills/fire/SK_FIRE_06_gluehende-klinge.webp	src/assets/skills/fire/SK_FIRE_06_gluehende-klinge.webp	name-exact
+fire	Fire/glut.png	SK_FIRE_01	Glut	docs/art/skills/fire/SK_FIRE_01_glut.webp	src/assets/skills/fire/SK_FIRE_01_glut.webp	name-exact
+fire	Fire/glutbett.png	SK_FIRE_04	Glutbett	docs/art/skills/fire/SK_FIRE_04_glutbett.webp	src/assets/skills/fire/SK_FIRE_04_glutbett.webp	name-exact
+fire	Fire/glutstahl.png	SK_FIRE_16	Glutstahl	docs/art/skills/fire/SK_FIRE_16_glutstahl.webp	src/assets/skills/fire/SK_FIRE_16_glutstahl.webp	name-exact
+fire	Fire/lauffeuer.png	SK_FIRE_14	Lauffeuer	docs/art/skills/fire/SK_FIRE_14_lauffeuer.webp	src/assets/skills/fire/SK_FIRE_14_lauffeuer.webp	name-exact
+fire	Fire/phoenixfeuer.png	SK_FIRE_L02	Phönixfeuer	docs/art/skills/fire/SK_FIRE_L02_phoenixfeuer.webp	src/assets/skills/fire/SK_FIRE_L02_phoenixfeuer.webp	name-exact
+fire	Fire/rueckzuendung.png	SK_FIRE_05	Rückzündung	docs/art/skills/fire/SK_FIRE_05_rueckzuendung.webp	src/assets/skills/fire/SK_FIRE_05_rueckzuendung.webp	name-exact
+fire	Fire/schmelzofen.png	SK_FIRE_17	Schmelzofen	docs/art/skills/fire/SK_FIRE_17_schmelzofen.webp	src/assets/skills/fire/SK_FIRE_17_schmelzofen.webp	name-exact
+fire	Fire/schmelzpunkt.png	SK_FIRE_12	Schmelzpunkt	docs/art/skills/fire/SK_FIRE_12_schmelzpunkt.webp	src/assets/skills/fire/SK_FIRE_12_schmelzpunkt.webp	name-exact
+fire	Fire/sonnenkern.png	SK_FIRE_L01	Sonnenkern	docs/art/skills/fire/SK_FIRE_L01_sonnenkern.webp	src/assets/skills/fire/SK_FIRE_L01_sonnenkern.webp	name-exact
+fire	Fire/sonnenzorn.png	SK_FIRE_L03	Sonnenzorn	docs/art/skills/fire/SK_FIRE_L03_sonnenzorn.webp	src/assets/skills/fire/SK_FIRE_L03_sonnenzorn.webp	name-exact
+fire	Fire/verbrennung.png	SK_FIRE_09	Verbrennung	docs/art/skills/fire/SK_FIRE_09_verbrennung.webp	src/assets/skills/fire/SK_FIRE_09_verbrennung.webp	name-exact
+fire	Fire/weissglut.png	SK_FIRE_07	Weißglut	docs/art/skills/fire/SK_FIRE_07_weissglut.webp	src/assets/skills/fire/SK_FIRE_07_weissglut.webp	name-exact
+fire	Fire/zunder.png	SK_FIRE_02	Zunder	docs/art/skills/fire/SK_FIRE_02_zunder.webp	src/assets/skills/fire/SK_FIRE_02_zunder.webp	name-exact
+ice	Eis/Lawine.png	SK_ICE_L03	Große Lawine	docs/art/skills/ice/SK_ICE_L03_grosse-lawine.webp	src/assets/skills/ice/SK_ICE_L03_grosse-lawine.webp	owner-pre-resolved
+ice	Eis/abbruchkante.png	SK_ICE_10	Abbruchkante	docs/art/skills/ice/SK_ICE_10_abbruchkante.webp	src/assets/skills/ice/SK_ICE_10_abbruchkante.webp	name-exact
+ice	Eis/anfrieren.png	SK_ICE_01	Anfrieren	docs/art/skills/ice/SK_ICE_01_anfrieren.webp	src/assets/skills/ice/SK_ICE_01_anfrieren.webp	name-exact
+ice	Eis/dauerfrost.png	SK_ICE_03	Dauerfrost	docs/art/skills/ice/SK_ICE_03_dauerfrost.webp	src/assets/skills/ice/SK_ICE_03_dauerfrost.webp	name-exact
+ice	Eis/einfrieren.png	SK_ICE_15	Einfrieren	docs/art/skills/ice/SK_ICE_15_einfrieren.webp	src/assets/skills/ice/SK_ICE_15_einfrieren.webp	name-exact
+ice	Eis/eisbruecke.png	SK_ICE_07	Eisbrücke	docs/art/skills/ice/SK_ICE_07_eisbruecke.webp	src/assets/skills/ice/SK_ICE_07_eisbruecke.webp	name-exact
+ice	Eis/eispanzer.png	SK_ICE_17	Eispanzer	docs/art/skills/ice/SK_ICE_17_eispanzer.webp	src/assets/skills/ice/SK_ICE_17_eispanzer.webp	name-exact
+ice	Eis/eiswall.png	SK_ICE_08	Eiswall	docs/art/skills/ice/SK_ICE_08_eiswall.webp	src/assets/skills/ice/SK_ICE_08_eiswall.webp	name-exact
+ice	Eis/eiszeit.png	SK_ICE_L01	Eiszeit	docs/art/skills/ice/SK_ICE_L01_eiszeit.webp	src/assets/skills/ice/SK_ICE_L01_eiszeit.webp	name-exact
+ice	Eis/erstarrung.png	SK_ICE_L04	Erstarrung	docs/art/skills/ice/SK_ICE_L04_erstarrung.webp	src/assets/skills/ice/SK_ICE_L04_erstarrung.webp	name-exact
+ice	Eis/ewiges schild.png	SK_ICE_L02	Ewiges Schild	docs/art/skills/ice/SK_ICE_L02_ewiges-schild.webp	src/assets/skills/ice/SK_ICE_L02_ewiges-schild.webp	name-exact
+ice	Eis/frostbund.png	SK_ICE_16	Frostbund	docs/art/skills/ice/SK_ICE_16_frostbund.webp	src/assets/skills/ice/SK_ICE_16_frostbund.webp	name-exact
+ice	Eis/gletscherzturz.png	SK_ICE_14	Gletschersturz	docs/art/skills/ice/SK_ICE_14_gletschersturz.webp	src/assets/skills/ice/SK_ICE_14_gletschersturz.webp	owner-pre-resolved
+ice	Eis/kettenbruch.png	SK_ICE_11	Kettenbruch	docs/art/skills/ice/SK_ICE_11_kettenbruch.webp	src/assets/skills/ice/SK_ICE_11_kettenbruch.webp	name-exact
+ice	Eis/packeis.png	SK_ICE_06	Packeis	docs/art/skills/ice/SK_ICE_06_packeis.webp	src/assets/skills/ice/SK_ICE_06_packeis.webp	name-exact
+ice	Eis/rissbildung.png	SK_ICE_13	Rissbildung	docs/art/skills/ice/SK_ICE_13_rissbildung.webp	src/assets/skills/ice/SK_ICE_13_rissbildung.webp	name-exact
+ice	Eis/schneetreiben.png	SK_ICE_02	Schneetreiben	docs/art/skills/ice/SK_ICE_02_schneetreiben.webp	src/assets/skills/ice/SK_ICE_02_schneetreiben.webp	name-exact
+ice	Eis/verdichtung.png	SK_ICE_04	Verdichtung	docs/art/skills/ice/SK_ICE_04_verdichtung.webp	src/assets/skills/ice/SK_ICE_04_verdichtung.webp	name-exact
+ice	Eis/verschmelzen.png	SK_ICE_05	Verschmelzen	docs/art/skills/ice/SK_ICE_05_verschmelzen.webp	src/assets/skills/ice/SK_ICE_05_verschmelzen.webp	name-exact
+ice	Eis/verzahnung.png	SK_ICE_09	Verzahnung	docs/art/skills/ice/SK_ICE_09_verzahnung.webp	src/assets/skills/ice/SK_ICE_09_verzahnung.webp	name-exact
+ice	Eis/zermalmen.png	SK_ICE_12	Zermalmen	docs/art/skills/ice/SK_ICE_12_zermalmen.webp	src/assets/skills/ice/SK_ICE_12_zermalmen.webp	name-exact
+plant	Pflanze/Aussaat.png	SK_PLANT_05	Aussaat	docs/art/skills/plant/SK_PLANT_05_aussaat.webp	src/assets/skills/plant/SK_PLANT_05_aussaat.webp	name-exact
+plant	Pflanze/Bluetezeit.png	SK_PLANT_11	Blütezeit	docs/art/skills/plant/SK_PLANT_11_bluetezeit.webp	src/assets/skills/plant/SK_PLANT_11_bluetezeit.webp	name-exact
+plant	Pflanze/Flugsamen.png	SK_PLANT_06	Flugsamen	docs/art/skills/plant/SK_PLANT_06_flugsamen.webp	src/assets/skills/plant/SK_PLANT_06_flugsamen.webp	name-exact
+plant	Pflanze/Pfahlwurzel.png	SK_PLANT_03	Pfahlwurzel	docs/art/skills/plant/SK_PLANT_03_pfahlwurzel.webp	src/assets/skills/plant/SK_PLANT_03_pfahlwurzel.webp	name-exact
+plant	Pflanze/Ranken.png	SK_PLANT_09	Ranken	docs/art/skills/plant/SK_PLANT_09_ranken.webp	src/assets/skills/plant/SK_PLANT_09_ranken.webp	name-exact
+plant	Pflanze/Setzlingsbeet.png	SK_PLANT_07	Setzlingsbeet	docs/art/skills/plant/SK_PLANT_07_setzlingsbeet.webp	src/assets/skills/plant/SK_PLANT_07_setzlingsbeet.webp	name-exact
+plant	Pflanze/Wurzeltiefe.png	SK_PLANT_02	Wurzeltiefe	docs/art/skills/plant/SK_PLANT_02_wurzeltiefe.webp	src/assets/skills/plant/SK_PLANT_02_wurzeltiefe.webp	name-exact
+plant	Pflanze/auslaeufer.png	SK_PLANT_15	Ausläufer	docs/art/skills/plant/SK_PLANT_15_auslaeufer.webp	src/assets/skills/plant/SK_PLANT_15_auslaeufer.webp	name-exact
+plant	Pflanze/baumreihe.png	SK_PLANT_L03	Baumreihe	docs/art/skills/plant/SK_PLANT_L03_baumreihe.webp	src/assets/skills/plant/SK_PLANT_L03_baumreihe.webp	name-exact
+plant	Pflanze/blaetterdach.png	SK_PLANT_13	Blätterdach	docs/art/skills/plant/SK_PLANT_13_blaetterdach.webp	src/assets/skills/plant/SK_PLANT_13_blaetterdach.webp	name-exact
+plant	Pflanze/bluete.png	SK_PLANT_10	Blüte	docs/art/skills/plant/SK_PLANT_10_bluete.webp	src/assets/skills/plant/SK_PLANT_10_bluete.webp	name-exact
+plant	Pflanze/erntedank.png	SK_PLANT_17	Erntedank	docs/art/skills/plant/SK_PLANT_17_erntedank.webp	src/assets/skills/plant/SK_PLANT_17_erntedank.webp	name-exact
+plant	Pflanze/ewiger fruehling.png	SK_PLANT_L04	Ewiger Frühling	docs/art/skills/plant/SK_PLANT_L04_ewiger-fruehling.webp	src/assets/skills/plant/SK_PLANT_L04_ewiger-fruehling.webp	name-exact
+plant	Pflanze/jahresringe.png	SK_PLANT_04	Jahresringe	docs/art/skills/plant/SK_PLANT_04_jahresringe.webp	src/assets/skills/plant/SK_PLANT_04_jahresringe.webp	name-exact
+plant	Pflanze/kernholz.png	SK_PLANT_18	Kernholz	docs/art/skills/plant/SK_PLANT_18_kernholz.webp	src/assets/skills/plant/SK_PLANT_18_kernholz.webp	name-exact
+plant	Pflanze/mutterbaum.png	SK_PLANT_L02	Mutterbaum	docs/art/skills/plant/SK_PLANT_L02_mutterbaum.webp	src/assets/skills/plant/SK_PLANT_L02_mutterbaum.webp	name-exact
+plant	Pflanze/photosynthese.png	SK_PLANT_12	Photosynthese	docs/art/skills/plant/SK_PLANT_12_photosynthese.webp	src/assets/skills/plant/SK_PLANT_12_photosynthese.webp	name-exact
+plant	Pflanze/rhizom.png	SK_PLANT_16	Rhizom	docs/art/skills/plant/SK_PLANT_16_rhizom.webp	src/assets/skills/plant/SK_PLANT_16_rhizom.webp	name-exact
+plant	Pflanze/ueberwucherung.png	SK_PLANT_14	Überwucherung	docs/art/skills/plant/SK_PLANT_14_ueberwucherung.webp	src/assets/skills/plant/SK_PLANT_14_ueberwucherung.webp	name-exact
+plant	Pflanze/weltenbaum.png	SK_PLANT_L01	Weltenbaum	docs/art/skills/plant/SK_PLANT_L01_weltenbaum.webp	src/assets/skills/plant/SK_PLANT_L01_weltenbaum.webp	name-exact
+plant	Pflanze/zaeher halm.png	SK_PLANT_08	Zäher Halm	docs/art/skills/plant/SK_PLANT_08_zaeher-halm.webp	src/assets/skills/plant/SK_PLANT_08_zaeher-halm.webp	name-exact
+legendaries	legendäre/ballast.png	L_BALL	Ballast	docs/art/legendaries/L_BALL_ballast.webp	src/assets/legendaries/L_BALL_ballast.webp	label-exact
+legendaries	legendäre/bauhuette.png	L_BAUH	Bauhütte	docs/art/legendaries/L_BAUH_bauhuette.webp	src/assets/legendaries/L_BAUH_bauhuette.webp	label-exact
+legendaries	legendäre/brennpunkt.png	L_BRENN	Brennpunkt	docs/art/legendaries/L_BRENN_brennpunkt.webp	src/assets/legendaries/L_BRENN_brennpunkt.webp	label-exact
+legendaries	legendäre/echo.png	L_ECHO	Echo	docs/art/legendaries/L_ECHO_echo.webp	src/assets/legendaries/L_ECHO_echo.webp	label-exact
+legendaries	legendäre/fundament.png	L_FUND	Fundament	docs/art/legendaries/L_FUND_fundament.webp	src/assets/legendaries/L_FUND_fundament.webp	label-exact
+legendaries	legendäre/henker.png	L_HENK	Henker	docs/art/legendaries/L_HENK_henker.webp	src/assets/legendaries/L_HENK_henker.webp	label-exact
+legendaries	legendäre/hochseil.png	L_HOCH	Hochseil	docs/art/legendaries/L_HOCH_hochseil.webp	src/assets/legendaries/L_HOCH_hochseil.webp	label-exact
+legendaries	legendäre/kritische masse.png	L4	Kritische Masse	docs/art/legendaries/L4_kritische-masse.webp	src/assets/legendaries/L4_kritische-masse.webp	label-exact
+legendaries	legendäre/meisterhand.png	L_MEIS	Meisterhand	docs/art/legendaries/L_MEIS_meisterhand.webp	src/assets/legendaries/L_MEIS_meisterhand.webp	label-exact
+legendaries	legendäre/monochrom.png	L_MONO	Monochrom	docs/art/legendaries/L_MONO_monochrom.webp	src/assets/legendaries/L_MONO_monochrom.webp	label-exact
+legendaries	legendäre/opfergang.png	L_OPFER	Opfergang	docs/art/legendaries/L_OPFER_opfergang.webp	src/assets/legendaries/L_OPFER_opfergang.webp	label-exact
+legendaries	legendäre/patt.png	L_PATT	Patt	docs/art/legendaries/L_PATT_patt.webp	src/assets/legendaries/L_PATT_patt.webp	label-exact
+legendaries	legendäre/raserei.png	L6	Raserei	docs/art/legendaries/L6_raserei.webp	src/assets/legendaries/L6_raserei.webp	label-exact
+legendaries	legendäre/richtfest.png	L_RICHT	Richtfest	docs/art/legendaries/L_RICHT_richtfest.webp	src/assets/legendaries/L_RICHT_richtfest.webp	label-exact
+legendaries	legendäre/sammler.png	L_SAMM	Sammler	docs/art/legendaries/L_SAMM_sammler.webp	src/assets/legendaries/L_SAMM_sammler.webp	label-exact
+legendaries	legendäre/schmiede.png	L_SCHM	Schmiede	docs/art/legendaries/L_SCHM_schmiede.webp	src/assets/legendaries/L_SCHM_schmiede.webp	label-exact
+legendaries	legendäre/taktschlag.png	L_TAKT	Taktschlag	docs/art/legendaries/L_TAKT_taktschlag.webp	src/assets/legendaries/L_TAKT_taktschlag.webp	label-exact
+legendaries	legendäre/umverteilung.png	L_UMV	Umverteilung	docs/art/legendaries/L_UMV_umverteilung.webp	src/assets/legendaries/L_UMV_umverteilung.webp	label-exact
+legendaries	legendäre/unaufhaltsam.png	L2	Unaufhaltsam	docs/art/legendaries/L2_unaufhaltsam.webp	src/assets/legendaries/L2_unaufhaltsam.webp	label-exact
+legendaries	legendäre/vabanque.png	L_VAB	Vabanque	docs/art/legendaries/L_VAB_vabanque.webp	src/assets/legendaries/L_VAB_vabanque.webp	label-exact
+legendaries	legendäre/zinsezins.png	L_ZINS	Zinseszins	docs/art/legendaries/L_ZINS_zinseszins.webp	src/assets/legendaries/L_ZINS_zinseszins.webp	by-elimination
+perkcats	perks/deck.png	A	Kategorie A	docs/art/perkcats/perkcat_A_deck.webp	src/assets/perkcats/perkcat_A_deck.webp	pixel-diff-identical
+perkcats	perks/stich.png	B	Kategorie B	docs/art/perkcats/perkcat_B_stich.webp	src/assets/perkcats/perkcat_B_stich.webp	pixel-diff-identical
+perkcats	perks/rolle.png	C	Kategorie C	docs/art/perkcats/perkcat_C_rolle.webp	src/assets/perkcats/perkcat_C_rolle.webp	pixel-diff-identical
+perkcats	perks/score.png	D	Kategorie D	docs/art/perkcats/perkcat_D_score.webp	src/assets/perkcats/perkcat_D_score.webp	pixel-diff-identical
+perkcats	perks/form.png	E	Kategorie E	docs/art/perkcats/perkcat_E_form.webp	src/assets/perkcats/perkcat_E_form.webp	pixel-diff-identical
+perkcats	perks/praezision.png	P	Kategorie P	docs/art/perkcats/perkcat_P_praezision.webp	src/assets/perkcats/perkcat_P_praezision.webp	pixel-diff-identical
+perkcats	perks/ausbau.png	S	Kategorie S	docs/art/perkcats/perkcat_S_ausbau.webp	src/assets/perkcats/perkcat_S_ausbau.webp	pixel-diff-identical
+corners	rahmen/blitz.png	lightning	lightning	docs/art/corners/corner_lightning.webp	src/assets/corners/corner_lightning.webp	pixel-diff-identical
+corners	rahmen/feuer.png	fire	fire	docs/art/corners/corner_fire.webp	src/assets/corners/corner_fire.webp	pixel-diff-identical
+corners	rahmen/eis.png	ice	ice	docs/art/corners/corner_ice.webp	src/assets/corners/corner_ice.webp	pixel-diff-identical
+corners	rahmen/pflanze.png	plant	plant	docs/art/corners/corner_plant.webp	src/assets/corners/corner_plant.webp	pixel-diff-identical
+corners	rahmen/perks.png	perk	perk	docs/art/corners/corner_perk.webp	src/assets/corners/corner_perk.webp	pixel-diff-identical

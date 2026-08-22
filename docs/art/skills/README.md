@@ -72,7 +72,7 @@ im Grund mit an.
 
 | Skill | ID | Motiv | Datei |
 |---|---|---|---|
-| Blitzableiter | `SK_LIGHTNING_01` | Spitze auf Fels, Einschlag von oben | ✅ |
+| Blitzableiter | `SK_LIGHTNING_01` | Ring aus Lichtbögen um eine stehende Karte | ✅ |
 | Ionisierung | `SK_LIGHTNING_02` | zwei Karten, Lichtbogen dazwischen | ✅ |
 | Kettenblitz | `SK_LIGHTNING_03` | waagerechte Zickzack-Kette, vier Einschlagsterne | ✅ |
 | Überspannung | `SK_LIGHTNING_04` | Fontäne aus dem Raster, drei Strahlen | ✅ |
@@ -89,7 +89,7 @@ im Grund mit an.
 | Blitzschlag | `SK_LIGHTNING_15` | eine stehende Karte, Einschlag mittig | ✅ |
 | Dauerstrom | `SK_LIGHTNING_16` | waagerechtes Band über dem Raster | ✅ |
 | Serienschutz | `SK_LIGHTNING_17` | Bogenkuppel über einem Splitter | ✅ |
-| Donnergott | `SK_LIGHTNING_L01` | Wolfskopf aus Sturm, goldene Krone | ✅ |
+| Donnergott | `SK_LIGHTNING_L01` | Gestalt aus Blitzsträngen, goldene Krone | ✅ |
 | Doppelentladung | `SK_LIGHTNING_L02` | zwei gespiegelte Blitze, goldener Kern mittig | ✅ |
 | Flächenionisation | `SK_LIGHTNING_L03` | Kartenfeld in Perspektive, vorne golden | ✅ |
 | Durchschlag | `SK_LIGHTNING_L04` | Karte mit durchgeschlagenem, goldglühendem Loch | ✅ |
@@ -105,6 +105,26 @@ Rasterboden), `14` Überschlag (der Fels ist sichtbar statt schwarze Silhouette)
 Karte reißt entlang des Einschlags statt einer flachen Ellipse), `L02` Doppelentladung (goldener
 Detonationskern zwischen zwei getroffenen Karten — vorher war es die legendäre Fassung von `10` Entladung,
 also dieselbe Geste zweimal).
+
+**Ausgetauscht am 22.08.2026** (`icons-asset-audit`, vom Owner freigegeben): `01` Blitzableiter — vorher
+Spitze auf Fels, jetzt Ring aus Lichtbögen um eine stehende Karte — und `L01` Donnergott — vorher
+Wolfskopf aus Sturm, jetzt Gestalt aus Blitzsträngen. Beide sind gemessen NEUES Artwork, nicht nur ein
+neuer Export (mittlere Pixelabweichung 36,5 bzw. 46,6 von 255 gegen die abgelösten Fassungen).
+
+Zwei Folgen, die man leicht übersieht:
+
+- **Die Messtabellen weiter oben (19.08.2026) beschreiben für `01` und `L01` die ABGELÖSTEN Bilder.**
+  Sie bleiben als Messprotokoll stehen; die aktuellen Werte sind `01` 37,2 % Leuchtfläche und `L01`
+  41,9 % (gemessen 22.08.2026). Beide sind damit nicht mehr die „schlanken Motive", als die der
+  Angleich-Abschnitt sie führt.
+- **Die Grundform „Nadel" ist damit wieder FREI** und steht Feuer, Eis und Pflanze offen; belegt ist
+  jetzt stattdessen „Ring um eine Karte". Die Liste im Abschnitt *Die eine Regel beim Erzeugen* führt
+  beides bereits richtig.
+
+Geprüft und NICHT beanstandet: der Ring kollidiert nicht mit `08` Kugel oder `13` Stachelkugel. Bei
+binarisierten 64 px fällt er mit `08` zusammen, in der ECHTEN Zone (277 × 210, `cover`, oben
+angeschnitten) trennt ihn die sichtbare Karte im Inneren eindeutig — und die echte Zone entscheidet,
+nicht die 64 px aus der ersten Platzierungsidee.
 
 **Verworfen und nicht wieder aufnehmen:** Reststrom als Kapsel mit vier Leuchtringen (las sich als
 halbvolle Batterie und war Gerätegehäuse statt Sturm) · Ladungsserie als Kette gleich großer Kugeln
@@ -143,11 +163,13 @@ nichts; wer ein Master austauscht, lässt das Skript neu laufen.
 ## Die eine Regel beim Erzeugen
 
 Bei 21 Bildern derselben Fraktion entscheidet die **Silhouette bei 64 px**, nicht das Motiv. Belegt sind
-bereits: Nadel (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Fontäne (04) · Kanal (05) ·
+bereits: Ring um eine Karte (01) · Doppelrechteck (02) · Zickzack-Kette (03) · Fontäne (04) · Kanal (05) ·
 Wolkenmasse (06) · Spirale (07) · Kreis (08) · Hantel (09) · Trichter mit Ring (10) ·
 Kartenreihe mit Bogen (12) · Stachelkugel (13) · Bogen über Kante (14) · einzelne Karte (15) ·
-waagerechtes Band (16) · offene Schale (11) · Kuppel (17) · Kopf mit Krone (L01) · gespiegeltes V (L02) ·
-Fläche in Perspektive (L03) · Karte mit Loch (L04). Für Blitz ist der Satz damit voll; wer eine der Formen
+waagerechtes Band (16) · offene Schale (11) · Kuppel (17) · Gestalt mit Krone (L01) · gespiegeltes V (L02) ·
+Fläche in Perspektive (L03) · Karte mit Loch (L04). **Nicht mehr belegt: die Nadel** — sie war `01` bis
+zum Austausch am 22.08.2026 und steht Feuer, Eis und Pflanze wieder offen.
+Für Blitz ist der Satz damit voll; wer eine der Formen
 in Feuer, Eis oder Pflanze wiederverwendet, muss sie über die FRAKTIONSFARBE trennen, nicht über Details.
 Jedes weitere Bild braucht eine Form, die dagegen steht — mehr Detail hilft nie, eine andere Grundform immer. Zweite Regel aus der Perlen-Panne: **nie aus gleichmäßig wiederholten,
 gleich großen Rundformen bauen**; Wiederholung muss in Größe, Abstand oder Richtung variieren.

@@ -168,30 +168,44 @@ Indicative, not a licence. Anything outside this is surfaced before it is change
 
 ## Known hazards
 
-| # | Hazard | Status at contract-writing |
-| --- | --- | --- |
-| H1 | Filename↔ID mapping errors across 98 files with no cross-file precedent except skills | **Not measured** — mitigation is the name-cross-check required by the acceptance gate |
-| H2 | Local PNG resolution/format may not meet the resolution the existing masters assume (skills: 1024px) | **Not measured** |
-| H3 | Bloom-bake parameters calibrated for a 277px skill-card strip may not suit perk-category/corner render contexts | **Not measured** — must be checked per lot before reuse, not assumed |
-| H4 | Whether `docs/art/perkcats/` and `docs/art/corners/` are master-only or already delivery-ready is unresolved | **Not measured** — blocking for `icons-perks`/`icons-corners` scope, see *Open questions* |
-| H5 | Windows/Linux path and case-sensitivity risk when introducing new asset directories | **Not applicable yet** — no new directories created at contract-writing time |
+Status at contract-writing is kept for comparison; the closing status is the second column.
+Full reasoning for each is in `evidence-package.md` §8.
+
+| # | Hazard | Status at contract-writing | Status at handoff |
+| --- | --- | --- | --- |
+| H1 | Filename↔ID mapping errors across 98 files with no cross-file precedent except skills | **Not measured** | **Measured — closed.** 63 exact `name`, 20 exact `label`, 2 owner-resolved, 12 pixel-diff, 1 by elimination. No ID claimed twice, all 98 sources mapped once, all 86 generated filenames round-trip through the live `artIdFromFile` rule |
+| H2 | Local PNG resolution/format may not meet the resolution the existing masters assume (skills: 1024px) | **Not measured** | **Measured — closed, favourably.** 91 of 98 are 1254×1254, so downscaled not upscaled; the 5 corner sources are exactly 1536×1024; the 2 non-square fire sources are handled by the now measurement-backed black-pad rule |
+| H3 | Bloom-bake parameters calibrated for a 277px skill-card strip may not suit perk-category/corner render contexts | **Not measured** | **Not measured — deliberately, and now enforced in code.** Those render zones do not exist yet; the script marks those lots uncalibrated and `bake` refuses them rather than reusing skill-card numbers |
+| H4 | Whether `docs/art/perkcats/` and `docs/art/corners/` are master-only or already delivery-ready is unresolved | **Not measured** | **Measured — closed.** Master-only; see Q1. `icons-perks`/`icons-corners` unblocked on this point |
+| H5 | Windows/Linux path and case-sensitivity risk when introducing new asset directories | **Not applicable yet** | **Partially measured.** One new directory pair created (`{docs/art,src/assets}/skills/ice/`) — lowercase, ASCII, sibling-consistent; Linux verified by CI, not locally. `legendaries/` not yet created, so the risk stays open for `icons-perks`. No German source filename reaches the repo |
 
 ## Definition of done
 
-- [ ] Perkcat/corner diff recorded (identical vs. updated), method stated, for all 12 files
-- [ ] Full 98-item mapping table written and cross-checked against `skills.js`/`perks.js` names
-- [ ] Both pre-resolved filename cases carried through into the mapping table unchanged
-- [ ] Legendary-perk naming convention finalized and applied consistently across all 21 entries
-- [ ] `scripts/skill-art-build.py` generalized and proven against at least one non-lightning archetype
-- [ ] Per-lot light-alignment principle applied/verified for whatever this task bakes
-- [ ] `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db` all green
-- [ ] Evidence package written; every hazard H1–H5 marked measured / not measured and why / not applicable
-- [ ] Handoff prepared, naming what `icons-skills` / `icons-perks` / `icons-corners` need from this task's output
+- [x] Perkcat/corner diff recorded (identical vs. updated), method stated, for all 12 files
+      — all 12 identical; method and counter-check in `evidence-package.md` §4
+- [x] Full 98-item mapping table written and cross-checked against `skills.js`/`perks.js` names
+      — `asset-mapping.md` plus the machine-readable `asset-mapping.tsv`
+- [x] Both pre-resolved filename cases carried through into the mapping table unchanged
+      — `gletscherzturz.png` → `SK_ICE_14`, `Lawine.png` → `SK_ICE_L03`, both marked owner-resolved
+- [x] Legendary-perk naming convention finalized and applied consistently across all 21 entries
+      — `<PERK_DEFS key>_<slug>.webp`; owner chose the unprefixed form over the `PERK_` proposal
+- [x] `scripts/skill-art-build.py` generalized and proven against at least one non-lightning archetype
+      — **ice**, 21 masters + 21 delivery copies, byte-identical across a repeated full run
+- [x] Per-lot light-alignment principle applied/verified for whatever this task bakes
+      — ice measured; ship-as-generated, reasoning and the one watch item in `evidence-package.md` §6
+- [x] `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db` all green
+      — plus `VITE_PREVIEW=1 npm run build`. `npm test` matches its pre-existing baseline exactly
+      (one pre-existing environmental timeout in `i18n-guards`, identical before and after)
+- [x] Evidence package written; every hazard H1–H5 marked measured / not measured and why / not applicable
+- [x] Handoff prepared, naming what `icons-skills` / `icons-perks` / `icons-corners` need from this task's output
+      — `evidence-package.md` §10
 
 ## Open questions
 
-| # | Question | Blocking? |
-| --- | --- | --- |
-| Q1 | Are `docs/art/perkcats/*.webp` and `docs/art/corners/*.webp` master-only (needing their own `src/assets/...` delivery-bake step, like skills) or already delivery-ready (just need copying into `src/assets/`)? | Yes — for `icons-perks`/`icons-corners` scope |
-| Q2 | Should legendary-perk delivery WebPs live under a new `src/assets/perks/legendary/` directory, mirroring the skills master/delivery split? | Yes — for the mapping table and for `icons-perks` |
-| Q3 | Should the generalized `skill-art-build.py` be extended in place for all four groups, or should perk-categories/legendary-perks/corners get a separate script given their different render context (square perk-category tile vs. corner panel chrome vs. skill card strip)? | No — reportable either way, but shapes `icons-perks`/`icons-corners` tooling |
+**All three are answered.** Full reasoning in `evidence-package.md` §7.
+
+| # | Question | Blocking? | Answer |
+| --- | --- | --- | --- |
+| Q1 | Are `docs/art/perkcats/*.webp` and `docs/art/corners/*.webp` master-only (needing their own `src/assets/...` delivery-bake step, like skills) or already delivery-ready (just need copying into `src/assets/`)? | Yes — for `icons-perks`/`icons-corners` scope | **Master-only.** Settled from evidence: perkcats are 1024², the skill lot's master size; the corners README says "(Master, 1536 × 1024)" outright; neither has a `src/assets/` counterpart; the perkcats README already names the build script as where a future alignment gets baked. Both lots need their own delivery bake — but see H3 |
+| Q2 | Should legendary-perk delivery WebPs live under a new `src/assets/perks/legendary/` directory, mirroring the skills master/delivery split? | Yes — for the mapping table and for `icons-perks` | **No — `docs/art/legendaries/` + `src/assets/legendaries/`** (owner, 2026-08-22). A flat lot directory matching the existing `perkcats/` and `corners/`, rather than a second `perks/` tree beside `perkcats/`. Registered in the script's lot table; not yet created on disk |
+| Q3 | Should the generalized `skill-art-build.py` be extended in place for all four groups, or should perk-categories/legendary-perks/corners get a separate script given their different render context (square perk-category tile vs. corner panel chrome vs. skill card strip)? | No — reportable either way, but shapes `icons-perks`/`icons-corners` tooling | **One script, one lot table** — recommendation, not a mandate. The groups differ in three numbers plus a squareness flag; that is a table, not a second program. The real difference — three lots have no settled render zone — is a `calibrated` flag that makes `bake` refuse, which is safer than a second script someone could run with copied constants |
