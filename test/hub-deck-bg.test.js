@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DT_RX } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #deck-mobil — Deck-Hintergrund im Handy-Hub, als Quelltext-Ratsche.
@@ -64,8 +65,8 @@ describe("#deck-mobil — Schleier-Deckel für zu helle Spielfelder", () => {
   it("der Handy-Hintergrund bleibt mobil-only und liest das Hochformat-Bild", () => {
     // Desktop hat sein eigenes Layout (Bodenband mit `battlefield.desktop`) — die beiden dürfen nicht
     // gleichzeitig laufen, sonst liegen zwei Bilder übereinander.
-    expect(start).toMatch(/as-hub-bg[^"]*min-\[1400px\]:hidden/);
+    expect(start).toMatch(new RegExp(`as-hub-bg[^"]*${DT_RX}hidden`));
     expect(start).toContain("battlefield.mobile");
-    expect(start, "das Desktop-Bodenband ist verschwunden").toMatch(/hidden min-\[1400px\]:block[\s\S]*?battlefield\.desktop/);
+    expect(start, "das Desktop-Bodenband ist verschwunden").toMatch(new RegExp(`hidden ${DT_RX}block[\\s\\S]*?battlefield\\.desktop`));
   });
 });

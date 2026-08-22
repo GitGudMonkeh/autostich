@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #kante-anlauf (19.08.2026) — der Farbanlauf der Auswahlkarten, nur auf dem Desktop leiser.
@@ -17,7 +18,7 @@ import { readFileSync } from "node:fs";
 
 const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -25,7 +26,7 @@ const deskBlock = (() => {
   }
   return "";
 })();
-const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
 
 describe("#kante-anlauf — ein Knopf, zwei Breiten", () => {
   it("die Handy-Werte stehen als Rückfall IN der Regel — ohne Variable rechnet sie wie vorher", () => {

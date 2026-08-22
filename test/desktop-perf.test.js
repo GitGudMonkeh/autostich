@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #perf-ring · #perf-blur · #flach — die drei Desktop-Nähte vom 18.08.2026 als Quelltext-Ratsche.
@@ -61,7 +62,7 @@ describe("#perf-ring — der Ring ist ein Paar aus zwei Boxen", () => {
 
 describe("#perf-blur — kein backdrop-filter auf dem Desktop", () => {
   const deskBlock = (() => {
-    const at = css.indexOf("@media (min-width: 1400px) {");
+    const at = css.indexOf(DESKTOP_BLOCK_AT);
     let depth = 0;
     for (let j = css.indexOf("{", at); j < css.length; j++) {
       if (css[j] === "{") depth++;

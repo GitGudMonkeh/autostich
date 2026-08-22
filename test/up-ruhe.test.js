@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #up-ruhe (19.08.2026) — Baum, Leitfaden und Glossar im Desktop-Ton.
@@ -13,7 +14,7 @@ import { readFileSync } from "node:fs";
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -81,7 +82,7 @@ describe("#up-ruhe — der Schein nach außen fällt, die Aussage bleibt", () =>
   });
 
   it("alles hängt am 1400er Block — die Handy-Fassung darf sich nicht bewegen", () => {
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     for (const k of ["up-navrow", "up-vnode", "up-stat", "up-actions"])
       expect(basis, `${k} steht in der Basis und trifft damit auch das Handy`).not.toMatch(new RegExp(`\\.${k}[\\s.,{]`));
   });

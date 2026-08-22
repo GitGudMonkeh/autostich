@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #lv-fluegel — die zwei Seitenleisten der Level-up-Karte (Perk + Skill, ab 1400 px), als Ratsche.
@@ -34,7 +35,7 @@ const wings = read("src/ui/LevelupWings.jsx");
 
 // Der große `@media (min-width: 1400px) { … }`-Block.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return "";
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
@@ -277,7 +278,7 @@ describe("#lv-fest — die Oberkante der Karte steht fest, sie wächst nur nach 
   it("die Regel steht im Desktop-Block — am Handy gibt es kein Raster, das sie tragen könnte", () => {
     /* Unterhalb 1400 px ist `.lv-rig` `display: contents`; ein min-height dort wäre wirkungslos und
        gleichzeitig irreführend. Die Handy-Karte hat ihre eigene feste Höhe (`min(92dvh, 760px)` inline). */
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     expect(basis.match(/\.lv-rig\s*\{([^}]*)\}/)[1]).not.toMatch(/min-height/);
   });
 });

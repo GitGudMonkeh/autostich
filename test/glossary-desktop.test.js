@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { GLOSSARY_CATEGORIES } from "../src/game/glossary.js";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #glossar-desktop — Glossar als gerahmter Screen ab 1400 px, als Quelltext-Ratsche.
@@ -34,7 +35,7 @@ const jsx = read("ui/Glossary.jsx");
 
 // Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return null;
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {

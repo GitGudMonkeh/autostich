@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT, desktopAndRx } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #desktop — Leitfaden als gerahmter Screen ab 1400 px, als Quelltext-Ratsche.
@@ -27,7 +28,7 @@ const jsx = read("ui/GuideOverlay.jsx");
 
 // Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return null;
   let depth = 0, i = css.indexOf("{", at);
   for (let j = i; j < css.length; j++) {
@@ -72,11 +73,11 @@ describe("#desktop — Leitfaden ab 1400 px", () => {
     // Große, hohe Fenster: nur zusammen mit min-height, sonst liefe es auf flachen Fenstern über.
     expect(css).toMatch(/@media \(min-width: 1750px\) and \(min-height: 1000px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*1\.2;/);
     // Flache Fenster: eine Stufe kleiner, im bestehenden max-height-Block.
-    const flat = css.match(/@media \(min-width: 1400px\) and \(max-height: 950px\) \{[\s\S]*?\n\}/g) || [];
+    const flat = css.match(new RegExp(desktopAndRx("max-height: 950px") + " \\{[\\s\\S]*?\\n\\}", "g")) || [];
     expect(flat.some((b) => /\.gd-page\s*\{[^}]*--gs:\s*\.9;/.test(b)),
       "Die flache Stufe (--gs: .9) fehlt im max-height-Block").toBe(true);
     // Sehr flache Fenster (skalierte Laptops, CSS 1536x791 und darunter).
-    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 820px\)\s*\{[^}]*\.gd-page\s*\{\s*--gs:\s*\.82;/);
+    expect(css).toMatch(new RegExp(desktopAndRx("max-height: 820px") + "\\s*\\{[^}]*\\.gd-page\\s*\\{\\s*--gs:\\s*\\.82;"));
     // REIHENFOLGE: Beide max-height-Blöcke treffen auf ein 791-px-Fenster zu, die Spezifität ist
     // gleich — also gewinnt der spätere. Steht 820 vor 950, ist die Stufe wirkungslos (genau so
     // ist es beim ersten Anlauf passiert und im Browser gar nicht aufgefallen).

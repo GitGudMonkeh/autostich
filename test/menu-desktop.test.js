@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT, DT_RX } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #desktop-menues — Optionen · Willkommen · Feedback ab 1400 px, als Quelltext-Ratsche.
@@ -30,7 +31,7 @@ const css = read("index.css");
 
 // Der Block `@media (min-width: 1400px) { … }`, in dem der ganze Desktop-Pass steht.
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   if (at < 0) return "";
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
@@ -79,7 +80,7 @@ describe("#desktop-menues — desktop-only Elemente sind auf dem Handy nicht da"
     for (const [datei, marke] of [["ui/OptionsModal.jsx", "op-readout"], ["ui/FeedbackModal.jsx", "fb-readout"]]) {
       const zeile = read(datei).match(new RegExp(`className="${marke}[^"]*"`));
       expect(zeile, `${marke} nicht mehr gefunden`).toBeTruthy();
-      expect(zeile[0], `${marke} muss unter 1400 px ausgeblendet sein`).toMatch(/hidden min-\[1400px\]:block/);
+      expect(zeile[0], `${marke} muss unter 1400 px ausgeblendet sein`).toMatch(new RegExp(`hidden ${DT_RX}block`));
     }
     // Die Wortmarke im Willkommen-Dialog wird über die CSS eingeblendet (sie braucht dort weitere
     // Eigenschaften) — im JSX steht deshalb nur `hidden`, das Gegenstück MUSS im Desktop-Block liegen.

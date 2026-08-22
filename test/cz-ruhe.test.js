@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #cz-ruhe (19.08.2026) — ruhigere Deck-Werkstatt ab 1400 px, als Quelltext-Ratsche.
@@ -14,7 +15,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const jsx = read("src/ui/CustomizeScreen.jsx");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -78,7 +79,7 @@ describe("#cz-ruhe — flache Reiter, luftiges Raster, kompakter Knopf", () => {
   it("die Fußzeile ist unterhalb 1400 px eine reine KLAMMER", () => {
     /* Ohne `display: contents` in der BASIS bekäme die Handy-Fassung eine zusätzliche Box zwischen
        Bühne und Knopf — nachgemessen ist die Geometrie bei 390 px sonst identisch. */
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     expect(basis).toMatch(/\.cz-fxfoot\s*\{\s*display:\s*contents/);
   });
 });

@@ -12,6 +12,7 @@
    Quelltext-Ratsche (kein Component-Test-Setup, s. test/fx-panel.test.js). */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const spark = src("ui/Sparkline.jsx");
@@ -20,7 +21,7 @@ const stats = src("ui/StatsScreen.jsx");
 const rail = src("ui/StatusRail.jsx");
 const gameOver = src("ui/GameOver.jsx");
 const css = src("index.css");
-const desktopBlank = css.slice(css.indexOf("@media (min-width: 1400px)")).replace(/\/\*[\s\S]*?\*\//g, "");
+const desktopBlank = css.slice(css.indexOf(DESKTOP_AT)).replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("#graph-knapp — die drei Stufen von `axes`", () => {
   it("EINE Komponente, drei Stufen — keine zweite Fassung daneben", () => {

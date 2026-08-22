@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import { UA_MAX } from "../src/game/telemetry.js";
+import { DT_RX } from "./desktopBreakpoint.js";
 
 /* ============================================================
    DATENSCHUTZ-NAHT (#datenschutz)
@@ -153,6 +154,6 @@ describe("#datenschutz · der Hinweis ist von überall erreichbar", () => {
     expect(cls[1], "`grid` braucht ein explizites grid-cols-1 — sonst ist die Spur max-content")
       .toMatch(/\bgrid-cols-1\b/);
     // Ab 1400 px stehen die Abschnitte zweispaltig; das muss die Handy-Regel überschreiben, nicht ersetzen.
-    expect(cls[1]).toMatch(/min-\[1400px\]:grid-cols-2/);
+    expect(cls[1]).toMatch(new RegExp(`${DT_RX}grid-cols-2`));
   });
 });

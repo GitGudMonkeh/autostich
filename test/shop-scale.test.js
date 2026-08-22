@@ -20,6 +20,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { shotFactor, SHOT_F_MIN } from "../src/ui/shopScale.js";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 /* Zeilenenden beim Lesen vereinheitlichen (Gürtel und Hosenträger): Seit .gitattributes (`* text=auto eol=lf`)
    liegt der Quelltext auch auf Windows mit LF in der Arbeitskopie. Eine Arbeitskopie, die davor ausgecheckt
@@ -30,7 +31,7 @@ const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8")
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
 // Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.
-const desktop = css.slice(css.indexOf("@media (min-width: 1400px)"));
+const desktop = css.slice(css.indexOf(DESKTOP_AT));
 // Ohne die Begründungen: die Kommentare nennen die verworfene Fassung absichtlich beim Namen (dieselbe
 // Falle wie beim `as-ring`-Zähler in #fx-panel und beim `ATTACK:`-Greifer in #cube-takt).
 const desktopBlank = desktop.replace(/\/\*[\s\S]*?\*\//g, "");

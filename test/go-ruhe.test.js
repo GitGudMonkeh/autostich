@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #go-ruhe (19.08.2026) — der Siegesbildschirm im Desktop-Ton.
@@ -28,7 +29,7 @@ const storage = read("src/game/storage.js");
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const goBare = go.replace(/\/\*[\s\S]*?\*\//g, "");
 const deskBlock = (src) => {
-  const at = src.indexOf("@media (min-width: 1400px) {");
+  const at = src.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = src.indexOf("{", at); j < src.length; j++) {
     if (src[j] === "{") depth++;

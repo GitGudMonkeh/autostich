@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #hub-knopf (19.08.2026) — EIN Ziel, der Rest sind Angebote.
@@ -17,7 +18,7 @@ import { readFileSync } from "node:fs";
 const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 const start = readFileSync(new URL("../src/ui/StartScreen.jsx", import.meta.url), "utf8");
 const deskBlock = (() => {
-  const at = css.indexOf("@media (min-width: 1400px) {");
+  const at = css.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = css.indexOf("{", at); j < css.length; j++) {
     if (css[j] === "{") depth++;
@@ -73,7 +74,7 @@ describe("#hub-knopf — eine Taste, drei Zeilen", () => {
   it("die Handy-Fassung bleibt unberührt", () => {
     /* Die Basis-Regeln der vier Knöpfe stehen weiter oben und dürfen die Desktop-Werte nicht kennen —
        nachgemessen ist der Hub bei 390 px vorher/nachher bitidentisch (0,0000 von 255). */
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px) {"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_BLOCK_AT));
     const prim = basis.match(/\.as-cta-primary\s*\{([^}]*)\}/);
     expect(prim, "die Handy-Fassung der Taste ist verschwunden").toBeTruthy();
     expect(prim[1], "der 90°-Anlauf der Handy-Fassung ist weg").toMatch(/linear-gradient\(90deg/);

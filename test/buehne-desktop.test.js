@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_AT, DESKTOP_AT_RX, desktopAndRx } from "./desktopBreakpoint.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));   // wie in Battlefield.jsx
 
@@ -17,15 +18,15 @@ const build = readFileSync(new URL("../src/ui/BuildPanel.jsx", import.meta.url),
 // Der Abschnitt dieses Umbaus: erst die Regeln, die auf JEDER Breite gelten (die Handy-Fassung),
 // dann die Media Query ab 1400 px. Der Wächter prüft beide Hälften getrennt — eine Desktop-Regel,
 // die in die Basis rutscht, wäre genau der Fehler, den er finden soll.
-const block = css.slice(css.indexOf("#buehne — der Spielbildschirm ab 1400 px"));
-const mq = block.indexOf("@media (min-width: 1400px)");
+const block = css.slice(css.indexOf("#buehne —"));
+const mq = block.indexOf(DESKTOP_AT);
 const basis = block.slice(0, mq);
 const desktop = block.slice(mq);
 
 describe("#buehne · die Bühne ab 1400 px", () => {
   it("der Umbau steht überhaupt noch in index.css", () => {
     expect(desktop.length, "der #buehne-Block fehlt — dann prüft dieser Wächter nichts").toBeGreaterThan(2000);
-    expect(desktop).toMatch(/@media \(min-width: 1400px\)/);
+    expect(desktop).toMatch(new RegExp(DESKTOP_AT_RX));
   });
 
   it("die Bühnenbreite hat DREI Deckel — der dritte ist die Höhe", () => {
@@ -59,7 +60,7 @@ describe("#buehne · die Bühne ab 1400 px", () => {
 
   it("flache Fenster bekommen ihre eigene Stufe", () => {
     // Dort ist die Höhe der Engpass: jede gesparte Zeile zahlt 2,5-fach in Bühnenbreite aus.
-    expect(css).toMatch(/@media \(min-width: 1400px\) and \(max-height: 900px\) \{[\s\S]*--rn-chrome: 380px[\s\S]*height: 210px/);
+    expect(css).toMatch(new RegExp(desktopAndRx("max-height: 900px") + " \\{[\\s\\S]*--rn-chrome: 380px[\\s\\S]*height: 210px"));
   });
 
   it("der Kartenmaßstab ist einheitenlos (sonst fällt die Regel still aus)", () => {

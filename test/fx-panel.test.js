@@ -11,12 +11,13 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { BOARD_W, BOARD_H, CARD_H, BOARD_RATIO_CSS, sceneScale, kartenAnteil } from "../src/ui/fx/previewScale.js";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
 // Nur der 1400er-Block — sonst prüfte man Regeln, die am Handy stehen.
-const desktop = css.slice(css.indexOf("@media (min-width: 1400px)"));
+const desktop = css.slice(css.indexOf(DESKTOP_AT));
 
 describe("#vorschau-brett — der Maßstab, nachgerechnet", () => {
   it("die Karte hat in der Vorschau denselben Anteil wie auf dem Brett (jede Desktop-Breite)", () => {
@@ -132,7 +133,7 @@ describe("#fx-panel — die Handy-Fassung bleibt unberührt", () => {
     // Ohne `display: contents` bekäme die Handy-Fassung eine zusätzliche Box um Liste und Fußnote.
     // Nachgemessen wurde beides: Geometrie an sechs Messpunkten identisch, drei von vier Reitern
     // bitidentisch (der vierte weicht nur um das laufende Pixi-Bild ab).
-    const basis = css.slice(0, css.indexOf("@media (min-width: 1400px)"));
+    const basis = css.slice(0, css.indexOf(DESKTOP_AT));
     expect(basis).toMatch(/\.cz-fxside[^{]*\{\s*display:\s*contents/);
   });
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
 /* ============================================================
    #st-ruhe (19.08.2026) — die Statistik im Desktop-Ton.
@@ -20,7 +21,7 @@ const stats = read("src/ui/StatsScreen.jsx");
 // Kommentarfreie Fassung: die Begründungen unten nennen die alten Werte absichtlich beim Namen.
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const deskBlock = (src) => {
-  const at = src.indexOf("@media (min-width: 1400px) {");
+  const at = src.indexOf(DESKTOP_BLOCK_AT);
   let depth = 0;
   for (let j = src.indexOf("{", at); j < src.length; j++) {
     if (src[j] === "{") depth++;
