@@ -63,8 +63,13 @@ PERK ZONE MEASURED (icons-perks, 22.08.2026). `perkcats` and `legendaries` were 
 held back that way. Their zone now exists and was MEASURED in the running application at 265 css-px —
 the tile is 270 and the image inside it is 5 px narrower, which is a distinction the first pass here
 got wrong. The full derivation, and why the neighbouring 277 and 270.66 are traps rather than
-shortcuts, sits at the lot table below. `corners` is still uncalibrated and still refuses; its zone
-belongs to `icons-corners`, which has not run.
+shortcuts, sits at the lot table below.
+
+CORNER ZONE MEASURED (icons-corners, 22.08.2026). `corners` was the third and last lot held back
+that way, and it is now calibrated too, so no lot in the table refuses any more. Its zone is a
+DECLARED 300 css-px width rather than a layout outcome — the ornament is anchored in a corner instead
+of being stretched between two edges — measured against the card head's free envelope on BOTH
+selection screens. Derivation at the lot table below.
 
 `align` is the fourth mode, added with those two lots. It solves the per-file brightness factors of
 the LIGHT ALIGNMENT against the lot's own median TOTAL EMITTED LIGHT — the procedure the art READMEs
@@ -77,7 +82,8 @@ first version of this generalization read the module-level `SIZE`/`STRIP_W` insi
 resized every lot to `SIZE x SIZE`. For the four skill lots that is correct and is what shipped, but
 it made the lot table a promise the code did not keep — and `corners` masters are 3:2, so activating
 that lot would have squashed 1536x1024 into 384x384. `Lot.size` now names the LONG edge and
-`Lot.delivery_px` derives the short one from the master's aspect.
+`Lot.delivery_px` derives the short one from the master's aspect. That fix is what the now-active
+`corners` lot rides on: it ships 600x400, and would have shipped 600x600 without it.
 """
 from PIL import Image, ImageFilter, ImageEnhance, ImageChops
 from pathlib import Path
@@ -303,9 +309,59 @@ LEGENDARY_LIGHT = {
     "L6_raserei":        0.59,   # the blaze — the brightest, and the one that would shout
 }
 
+# ---------------------------------------------------------------------------------------------
+# CORNER RENDER ZONE — MEASURED, NOT ASSUMED (icons-corners, 22.08.2026)
+#
+# `strip_w=300` below is the CSS width the corner ornament is DRAWN at, and unlike the two emblem
+# zones it is a DECLARED width rather than a layout outcome. That difference is the whole reason this
+# lot could be got wrong in a new way, so it is spelled out.
+#
+# The emblem strips are `position:absolute; left:0; right:0` — their width is whatever the tile
+# resolves to, which is why `icons-perks` had to read 265 out of the DOM and why reading 270 off the
+# grid would have shipped the wrong radius. The corner ornament is not stretched between two edges:
+# it is anchored in one corner and given a width. So the number is chosen — but it is chosen against
+# a measured envelope, and the measurement is what says 300 fits.
+#
+# Measured with the probe, at every desktop viewport the ornaments render at:
+#
+#     docs/workstreams/desktop-icons/icons-corners/corner-zone-probe.mjs
+#     docs/workstreams/desktop-icons/icons-corners/visual/V1-measurements.json
+#
+#     1600x900   card 880 css-px  ->  padding box 878   skill head band 77 px   perk head band 115 px
+#     1920x1080  card 880 css-px  ->  padding box 878   skill head band 77 px   perk head band 115 px
+#     2560x1440  card 880 css-px  ->  padding box 878   skill head band 77 px   perk head band 115 px
+#     1280x720   card 768 css-px, BELOW the 1400 px gate — no ornament is rendered there at all
+#
+# ONE number covers BOTH screens, and that is contract question Q1 answered rather than dodged. The
+# skill card and the perk card are the same 880 px overlay card with the same 878 px padding box at
+# every desktop size; only their head PADDING differs (16 px against 24 px), which moves the text, not
+# the card edge. The widest head text measured 244 px (the perk score line), centred, so the free run
+# from the padding edge is ~317 px per side on the perk head and ~324 px on the skill head. 300 fits
+# both with room, and the light in the masters fades out by ~213 px anyway.
+#
+# WHAT THE TWO SCREENS DO NOT SHARE IS THE HEIGHT — 77 px against 115 px, because the sticky action
+# bar sits lower on the perk card. That costs nothing here: the bloom radius divides by the zone's
+# WIDTH (`bloom_css * size / strip_w`), so a different visible height is a display concern and not a
+# build input. `strip_h=115` below is the TALLER of the two bands, recorded for `align`; this lot does
+# not run `align` (see the light note below), so it is documentation rather than a computation input.
+#
+# `size=600` is DERIVED, not inherited. The skill lots ship 384 for a 265 px zone — a 1.4x upscale
+# that `icons-perks` recorded as reasoned rather than measured (its open question Q-D). At a 300 px
+# zone the exact figure under the desktop DPR cap of 2 (`DPR_CAP_DESKTOP`, src/ui/fx/mobileTier.js) is
+# 300 * 2 = 600, so this lot takes the exact number instead of repeating the estimate. Long edge only:
+# the masters are 3:2 and `delivery_px` derives the short edge, so 600x400 rather than 600x600.
+#
+# NO `light` TABLE, and that is deliberate. The other two Phase-2 lots carry per-file brightness baked
+# INTO the pixels. The corners README solved the same problem the other way — as a per-faction DISPLAY
+# opacity (Blitz 11.0 % / Feuer 10.0 % / Eis 9.2 % / Pflanze 6.4 % / Perk 15.6 %), explicitly on the
+# model of `BATTLEFIELD_VEIL` in src/ui/cosmeticAssets.js, which scales the veil's alpha at display
+# time and does not touch a file. The contract requires those numbers to be taken as measured, so they
+# live in `src/ui/cornerArt.js` as opacities and every corner file bakes at light 1.0. Baking them in
+# INSTEAD would have been the quiet mistake here: the set would then be corrected twice, once in the
+# pixels and once in the CSS, and read at roughly a hundredth of the intended brightness.
+# ---------------------------------------------------------------------------------------------
+
 # The three Phase-2 lots. Master sizes are the ones the existing files/READMEs already use.
-# `corners` still carries `strip_w=None`: the corner panel's render zone belongs to `icons-corners`,
-# which has not run yet, so its sigma stays uncomputable and `bake` still refuses it.
 # Note `corners` is 3:2, not square — with a single hardcoded delivery edge it would ship distorted,
 # which is the reason `size` names the long edge and `delivery_px` derives the short one.
 LOTS["legendaries"] = Lot("legendaries", "docs/art/legendaries", "src/assets/legendaries",
@@ -315,7 +371,8 @@ LOTS["perkcats"] = Lot("perkcats", "docs/art/perkcats", "src/assets/perkcats",
                        (1024, 1024), expect=7, strip_w=265, strip_h=201, anchor="top",
                        light=PERKCAT_LIGHT)
 LOTS["corners"] = Lot("corners", "docs/art/corners", "src/assets/corners",
-                      (1536, 1024), square=False, expect=5, strip_w=None)
+                      (1536, 1024), square=False, expect=5, size=600, strip_w=300, strip_h=115,
+                      mask_stop=0.18, anchor="top")
 
 # See the note at BLOOM_SIGMA: the generalized per-lot formula has to still BE the documented one.
 for _a in ARCHETYPES:

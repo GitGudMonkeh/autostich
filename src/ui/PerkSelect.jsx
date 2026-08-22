@@ -16,6 +16,8 @@ import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — dieselbe 
 import { useIsWide } from "./useIsWide.js";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1400 px)
 import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1400 px gerendert)
+import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
+import { CORNER_PERK } from "./cornerArt.js";
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -78,8 +80,12 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             dort steht die Karte auf einem kleinen Schirm über dem Brett und braucht die Ablösung. */}
         <div className="relative w-full rounded-2xl p-6 max-h-[92dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.red, undefined, { quiet: inWings })}>
         <PhaseHairline accent={PHASE_ACCENTS.red} />
+        {/* #cornerart: EINE Ecke, weil die Perk-Wahl EINE Identitätsfarbe hat — hier wechselt nichts
+            mit einem Reiter, es gibt keinen. Sie ist dieselbe Familie wie drüben, nur mit dem
+            Perk-Schlüssel; das Nach-innen-Versetzen und die frühere Maske hängen an ihm. */}
+        {inWings && <CardCorners artKey={CORNER_PERK} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
-        <div className="text-center mb-1">
+        <div className="co-head text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
             {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>

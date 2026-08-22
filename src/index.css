@@ -1434,6 +1434,93 @@ button { font-family: inherit; }
    EINE Klasse, damit sie eine Zeile kostet, falls dort anders entschieden wird. */
 .pk-strip-mid { object-position: center center; }
 
+/* #cornerart — Eck-Ornamente im KOPF der beiden Auswahlkarten (SkillSelect.jsx / PerkSelect.jsx,
+   nur ab 1400 px gerendert). Fünf Bilder, zehn Platzierungen: je Kopf zwei, das rechte gespiegelt.
+
+   HIER IST DIE FAMILIE WIRKLICH GETEILT — und das ist eine Aussage über die Zone, keine Bequemlichkeit.
+   `.sk-strip` und `.pk-strip` stehen oben bewusst als ZWEI Regelsätze, weil ihre Zonen verschieden sind
+   (265 × 201 gegen 277-gebacken/210). Bei den Ecken ist es umgekehrt: beide Bildschirme sind DIESELBE
+   880-px-Overlay-Karte mit derselben 878-px-Polsterbox, an jedem Desktop-Format nachgemessen
+   (docs/workstreams/desktop-icons/icons-corners/visual/V1-measurements.json). Eine Zone, eine Regel.
+
+   ZONE: 300 × 115 px. Die BREITE ist der Backwert (`strip_w=300`, scripts/skill-art-build.py) und
+   damit die Zahl, durch die der Bloom-Radius geteilt wird. Sie ist gewählt, aber gegen eine gemessene
+   Hülle gewählt: der breiteste Kopftext misst 244 px, mittig, es bleiben also ~317 px je Seite auf dem
+   Perk-Kopf und ~324 px auf dem Skill-Kopf. Das Licht der Master läuft ohnehin bei ~213 px aus.
+
+   DIE HÖHE IST KEINE INHALTSABHÄNGIGE ZAHL, und das ist Absicht. Der Kopf ist verschieden hoch — er
+   trägt je nach Runde einen Runden-Score, einen Bonus-Hinweis oder keins von beidem, und die
+   Aktionsleiste rutscht mit. Gemessen: Skill-Kopf 77 px im schmalsten Fall, Perk-Kopf 115 px. Ein
+   Ornament an eine dieser Zahlen zu binden wäre genau der Fehler, den das Handoff der Perk-Aufgabe
+   für die Kacheln beschreibt. Stattdessen: EINE feste Höhe von 115 px, und die MASKE ist vor dem
+   schmalsten Kopf fertig — bei 62 % von 115 px = 71 px, also 6 px bevor die Aktionsleiste im engsten
+   Fall überhaupt beginnt. Damit gibt es keine Kante, egal wie hoch der Kopf gerade ist.
+
+   Warum die Leiste sonst eine Kante wäre: sie ist `sticky` mit vollflächigem `PANEL_BG` und z-20,
+   malt also über alles darunter. Ein Ornament, das dort noch Licht trägt, endet an einer geraden
+   Linie quer durch das Bild.
+
+   `object-fit: cover` mit `left top`: die Master sind 3:2 und ihr Ornament sitzt im oberen linken
+   Quadranten (Lichtschwerpunkt bei 14–22 % / 21–32 % der Bildkanten). Bei 300 px Breite skaliert cover
+   über die BREITE, das Bild ist also auf beiden Bildschirmen exakt gleich groß; verschieden ist nur,
+   wie weit man es nach unten sieht — und das erledigt die Maske, nicht ein zweiter Maßstab.
+
+   KEIN `filter`. Der Bloom steckt IN den Dateien (scripts/skill-art-build.py), wie bei den Emblemen,
+   und aus demselben Grund: `phase:levelup` klemmt beim Mount ohnehin (271–417 ms), und ein
+   Laufzeit-Blur wäre Rasterarbeit auf genau diesem Mount. `test/corner-art.test.js` hält das fest.
+
+   Die Deckkraft kommt von außen als `--co-o` (aus `CORNER_OPACITY` in src/ui/cornerArt.js), weil sie
+   je Fraktion gemessen ist und aus den Daten stammt — dieselbe Begründung wie bei `--c` an der
+   Kanten-Familie. Der Rückfall steht im `var()`-Aufruf, nicht als eigene Zeile im selben Regelsatz:
+   eine dort definierte Variable kann beim Bauen statisch aufgelöst werden, dann greift das Setzen von
+   außen nicht mehr (ausführlich am Knopf-Block oben). */
+.co-corner {
+  position: absolute; top: 0; left: 0; z-index: 0;
+  width: 300px; height: 115px;
+  object-fit: cover; object-position: left top;
+  mix-blend-mode: screen; pointer-events: none;
+  opacity: var(--co-o, .1);
+  -webkit-mask-image: linear-gradient(180deg, #000 18%, transparent 62%);
+  mask-image: linear-gradient(180deg, #000 18%, transparent 62%);
+}
+/* Die rechte Ecke ist dasselbe Bild, gespiegelt — `right: 0` statt `left: 0`, damit die Spiegelung
+   an der Kante sitzt und nicht 300 px daneben. `scaleX(-1)` kippt den Kasten um seine eigene Mitte,
+   die Verankerung muss also mitwandern. */
+.co-corner-r { left: auto; right: 0; transform: scaleX(-1); }
+
+/* Die FILIGRAN-Ecke — nur die Perk-Wahl. Sie ist zweimal anders als die vier organischen Ecken, und
+   beides steht so in docs/art/corners/README.md.
+
+   (Am Sicht-Gate wurde eine goldene Schwester für die Legendär-Phase gebaut und wieder verworfen,
+   Q9/22.08.2026: dieser Bildschirm trägt jetzt die FRAKTIONS-Ecke seines Reiters, wie die Skill-Wahl.
+   Die Klasse bleibt trotzdem `-fil` und nicht `-perk` benannt — sie beschreibt die Machart des
+   Motivs, nicht den Bildschirm, und `isFiligree` in src/ui/cornerArt.js entscheidet, wer sie bekommt.)
+
+   1. VERSETZT NACH INNEN. Ihre Randlinien laufen auf der Bildkante (Filigran, gemacht statt
+      gewachsen), und die Karte trägt an derselben Stelle schon einen 1-px-Akzentrahmen UND die 3 px
+      Haarlinie (`PhaseHairline`) in der Phasenfarbe. Bündig gesetzt wären das drei parallele Linien
+      im selben Ton. 6 px nach innen lösen die Ecke von beiden ab, ohne das Bild neu zu erzeugen.
+   2. IHRE MASKE SETZT FRÜHER EIN. Der Auslauf der vier organischen Ecken zerfasert; dieser hier hört
+      auf — Linien enden. Die Maske muss deshalb mehr Arbeit leisten und beginnt bei 6 % statt 18 %,
+      fertig bei 55 % statt 62 %.
+
+   WELCHE Schlüssel das betrifft, entscheidet `isFiligree` in src/ui/cornerArt.js — nicht eine hier
+   abgetippte Liste: Klasse und Schlüsselsatz müssen zusammenbleiben. */
+.co-corner-fil {
+  top: 6px; left: 6px;
+  -webkit-mask-image: linear-gradient(180deg, #000 6%, transparent 55%);
+  mask-image: linear-gradient(180deg, #000 6%, transparent 55%);
+}
+.co-corner-fil.co-corner-r { left: auto; right: 6px; }
+
+/* Den Kartenkopf über die Ornamente heben. Gleiche Begründung wie bei `.sk-offer-art > *:not(img)`:
+   absolut Positioniertes malt über nicht-positionierten Fluss-Inhalt, ohne diese Zeile stünde der
+   Titel UNTER dem Ornament. Bewusst NUR am Kopf und nicht an allen Kindern der Karte: `position:
+   relative` an einem Container macht ihn auch zum Bezugsrahmen für alles absolut Positionierte
+   darin, und das an einer Karte mit dieser Menge Inhalt zu ändern wäre eine Nebenwirkung, die man
+   erst drei Bildschirme später bemerkt. */
+.co-head { position: relative; z-index: 1; }
+
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
    man beim Scrollen, was vom Standard abweicht, ohne jeden Schalter einzeln zu lesen.
    Warum `:has()` statt eines Props an der Zeile: der Zustand steckt im Schalter, den die Zeile nur als
