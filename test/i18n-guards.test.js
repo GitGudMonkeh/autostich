@@ -565,28 +565,88 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
 
 describe("i18n · Abdeckung wächst mit", () => {
   it("jeder Katalog-Schlüssel wird auch irgendwo benutzt", () => {
-    // Quelltext einmal einlesen (App + alle UI-Dateien + i18n-Konsumenten in src/game).
-    // src/i18n gehört dazu: labels.js baut die Register-Schlüssel dynamisch zusammen.
-    const roots = ["src", "src/ui", "src/game", "src/i18n"];
-    let src = "";
-    for (const dir of roots) {
-      for (const f of readdirSync(new URL(`../${dir}`, import.meta.url), { withFileTypes: true })) {
-        if (!f.isFile() || !/\.(js|jsx)$/.test(f.name)) continue;
-        src += readFileSync(new URL(`../${dir}/${f.name}`, import.meta.url), "utf8") + "\n";
+    /* Quelltext einmal einlesen (App + alle UI-Dateien + i18n-Konsumenten in src/game).
+       src/i18n gehört dazu: labels.js baut die Register-Schlüssel dynamisch zusammen.
+
+       TWO CORRECTIONS, 22.08.2026 — until then this guard could not fail at all, and the two reasons
+       hid each other. Found by counter-check: a key added to both catalogues and used nowhere was
+       still reported as used.
+
+       1. THE WALK WAS FLAT. `readdirSync` on "src", "src/ui", "src/game", "src/i18n" reads the top
+          level of each and nothing below it. `src/ui/tutorial/`, `src/ui/fx/`, `src/ui/fx/cardFx/`
+          and `src/ui/indicators/` were therefore invisible — 42 `tutorial.*` keys are used in
+          src/ui/tutorial/ and the guard never looked there. 194 files are scanned now; the flat walk
+          saw about 130.
+
+       2. THE CATALOGUES SCANNED THEMSELVES. de.js and en.js live in src/i18n, so every key matched
+          its own definition — `"gameover.best.hint"` is in de.js, therefore "used". That is why
+          defect 1 never surfaced: everything matched, always, for the wrong reason.
+
+       Excluding the catalogues is what gives the guard teeth; walking recursively is what stops it
+       from biting the innocent. Both are needed, and either one alone would be worse than neither. */
+    const isCatalogue = (u) => /\/i18n\/(de|en)\.js$/.test(u.pathname);
+    const walk = (url, out = []) => {
+      for (const f of readdirSync(url, { withFileTypes: true })) {
+        if (f.isDirectory()) walk(new URL(`${f.name}/`, url), out);
+        else if (/\.(js|jsx)$/.test(f.name)) out.push(new URL(f.name, url));
       }
+      return out;
+    };
+    const files = walk(new URL("../src/", import.meta.url)).filter((u) => !isCatalogue(u));
+    const src = files.map((u) => readFileSync(u, "utf8")).join("\n");
+    /* One pass to build the lookup sets, then O(1) per key.
+
+       The previous version asked `src.includes(...)` once or more per key: 2526 keys against 2.56 MB,
+       up to nine probes each. Measured at 1992 ms — against vitest's 5 s default, with 135 files
+       competing for cores. It passed on an idle machine and timed out on a busy one, which is the
+       worst way for a guard to behave: the red then says nothing about the code. Measured after the
+       change: 1.2 ms, and the same verdict for every one of the 2526 keys.
+
+       The sets answer EXACTLY the question the substring scan asked, INCLUDING where it was loose.
+       `"X"` occurs in the source precisely when X is one of the segments between two quotes, so
+       splitting on the quote and dropping the outer two segments is that set — the head has no quote
+       before it, the tail none after it. Reproducing the looseness is the point: `a` and
+       `options.rfx.zzzz` count as used here, exactly as they did before. Tightening this guard is a
+       separate decision, not something a speed fix may smuggle in. */
+    const between = (q) => new Set(src.split(q).slice(1, -1));
+    const dq = between('"');
+    const sq = between("'");
+    /* Every `prefix. that follows a backtick. The window is the longest key plus its dot: nothing
+       longer can ever be asked for, so a wider slice would only cost memory. */
+    const win = Math.max(...KEYS_DE.map((k) => k.length)) + 1;
+    const tpl = new Set();
+    for (let i = src.indexOf("`"); i !== -1; i = src.indexOf("`", i + 1)) {
+      const tail = src.slice(i + 1, i + 1 + win);
+      for (let d = tail.indexOf("."); d !== -1; d = tail.indexOf(".", d + 1)) tpl.add(tail.slice(0, d + 1));
     }
+
+    /* Named exceptions. Listed, not silently skipped: an entry here is a decision somebody has to
+       defend, whereas a deleted catalogue key is product text that quietly disappears.
+
+       `gameover.best.hint` is the single genuinely dead key the corrected walk found on 22.08.2026.
+       It is DE and EN product text with no call site. Left in place deliberately — deciding between
+       wiring it up and deleting it is a product call, not something a test fix gets to make. If it
+       is ever wired up, this line stops being needed and should go. */
+    const DEAD_OK = new Set(["gameover.best.hint"]);
+
     const unused = KEYS_DE.filter((k) => {
+      if (DEAD_OK.has(k)) return false;
       const base = k.replace(/_(one|other)$/, "");
-      if (src.includes(`"${base}"`) || src.includes(`'${base}'`)) return false;
+      if (dq.has(base) || sq.has(base)) return false;
       /* Dynamisch zusammengesetzte Schlüssel erkennen. Die Einsetzstelle kann auf JEDER Ebene
          liegen: `options.rfx.${v}` (hinten) genauso wie `formation.${type}.label` (in der Mitte).
          Deshalb jedes Präfix von links prüfen, nicht nur das längste. */
       const parts = base.split(".");
       for (let i = 1; i <= parts.length; i++) {
-        if (src.includes("`" + parts.slice(0, i).join(".") + ".")) return false;
+        if (tpl.has(parts.slice(0, i).join(".") + ".")) return false;
       }
       return true;
     });
     expect(unused, `Toter Katalog-Eintrag (nirgends per t() gerufen):\n  ${unused.join("\n  ")}`).toEqual([]);
+
+    /* An exception that no longer applies is worse than no exception: it would hide the next dead
+       key that happens to be called the same thing. So every entry has to still be dead. */
+    const revived = [...DEAD_OK].filter((k) => !KEYS_DE.includes(k));
+    expect(revived, `DEAD_OK nennt Schlüssel, die es nicht mehr gibt: ${revived.join(", ")}`).toEqual([]);
   });
 });
