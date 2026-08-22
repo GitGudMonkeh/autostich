@@ -176,24 +176,30 @@ bug to see.
 
 ## Definition of done
 
-- [ ] Corner render zone measured live on **both** screens and recorded, with the resulting `strip_w`
-- [ ] `bake --lot corners` no longer refuses, and the reason is a measurement, not a flag flip
-- [ ] Five delivery copies produced at the correct 3:2 aspect, per-faction opacity from the README applied
-- [ ] Ornaments wired into both card heads, mirrored right, switching with the active tab, behind the desktop gate
-- [ ] Perk corner inset so it does not form a third parallel line, and its mask starts earlier
-- [ ] Nothing clipped by `overflow: hidden` — verified in the running app, not only in a contact sheet
-- [ ] No runtime `filter:`/`blur(` on any new rule — guarded and counter-checked
-- [ ] Guards added for lot completeness, mirroring and tab binding, each counter-checked by breaking the seam
-- [ ] The `.pk-strip`/`.sk-strip` unification question answered — taken or declined, with the reason recorded
-- [ ] V1 baseline taken **before** the first pixel moved, on both screens
-- [ ] V2 capture at the same sizes, DPR and state as V1
-- [ ] V3 human visual gate passed — **only a person can close this**
-- [ ] V4 classification written; every finding carries an ID
-- [ ] `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — green
-- [ ] `npm test` reported honestly against the H7 baseline — no claim of green if the command exits 1
-- [ ] `npm run loc:export` run, or recorded as not applicable with the reason
-- [ ] Issue #402 recorded as resolved in `docs/art/corners/README.md`
-- [ ] Evidence package written, stating its own limits; hazards H1–H7 each marked
+**Ticked by the integrator at hand-over, 2026-08-22, by verifying each line against
+`evidence-package.md` and `visual-review.md` — not by performing the work.** The worker completed
+every item but left the boxes untouched; an all-unticked list beside finished work is the ambiguity
+`task-lifecycle.md` — *Two standing rules* exists to prevent, because it cannot be told apart from
+work that was never done.
+
+- [x] Corner render zone measured live on **both** screens and recorded, with the resulting `strip_w` — `corner-zone-probe.mjs` is committed; `skill-art-build.py:313` carries the measurement
+- [x] `bake --lot corners` no longer refuses, and the reason is a measurement, not a flag flip
+- [x] Five delivery copies produced at the correct 3:2 aspect — ships 600 × 400; without the aspect derivation it would have shipped 600 × 600
+- [x] Ornaments wired into both card heads, mirrored right, switching with the active tab, behind the desktop gate — `src/ui/CardCorners.jsx`, `src/ui/cornerArt.js`
+- [x] Perk corner inset so it does not form a third parallel line — **6 px**, confirmed at V3 (`ICONS-CORNER-04`)
+- [x] Nothing clipped by `overflow: hidden` — verified in the running app
+- [x] No runtime `filter:`/`blur(` on any new rule — guarded and counter-checked
+- [x] Guards added for lot completeness, mirroring and tab binding — `test/corner-art.test.js`
+- [x] The `.pk-strip`/`.sk-strip` unification question answered — **taken** for the corners (one component across three screens), **declined** for the emblem strips; reasoning in the handoff (H5)
+- [~] V1 baseline taken **before** the first pixel moved, on both screens — taken for both, but the **legendary head has a reconstructed baseline only** (`V1L-*`): it entered scope at the round-1 gate, after pixels had moved. Recorded as a weakening in `visual-review.md`, not presented as clean
+- [x] V2 capture at the same sizes, DPR and state as V1
+- [x] V3 human visual gate passed — three rounds; closed 2026-08-22, verbatim *"passt alles. gut weiter"*
+- [x] V4 classification written; every finding carries an ID
+- [x] `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — all exit 0
+- [~] `npm test` — **exit 1**, and not claimed as passing. The single failure is the H7 timeout in `test/i18n-guards.test.js`, not an assertion failure
+- [x] `npm run loc:export` run — exit 0, no drift. Run rather than declared not-applicable
+- [x] Issue #402 recorded as resolved in `docs/art/corners/README.md`
+- [x] Evidence package written, stating its own limits; hazards H1–H7 each marked
 
 ## Open questions
 
