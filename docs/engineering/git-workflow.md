@@ -281,7 +281,7 @@ Workers own the `task/*` branches below it.
 
 The integrator:
 
-1. reads each task contract and handoff,
+1. reads each task contract, and the handoff where an independent review was requested,
 2. reviews the full worker diff,
 3. determines dependency/integration order,
 4. integrates one completed task at a time,
@@ -299,9 +299,11 @@ The feature branch should remain a controlled integration target.
 
 ## 9. Reviewer ownership
 
-Codex is currently used as an independent reviewer.
+**Independent technical review is optional and risk-based** (`AGENTS.md` — *Independent review*).
+Codex is the reviewer when one is requested. **Where no review was requested, its absence does not
+block integration** — readiness is scope, validation and evidence, branch state and blockers.
 
-The reviewer:
+When a review is requested, the reviewer:
 
 - reads requirements,
 - reads the relevant diff,
@@ -371,6 +373,12 @@ polish
    |
 feature tests
 ```
+
+Before integrating a worker branch, the integrator confirms the source and target branch, a clean
+branch state, that the contract is met, that the relevant gates and evidence are present, and that
+known blockers are resolved or documented. **A review record is required only where an independent
+review was requested for that task** — including inside a Tier C workstream, where individual worker
+branches do not each need one.
 
 A worker branch may be integrated by the repository's chosen merge/PR strategy.
 

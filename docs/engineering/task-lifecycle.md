@@ -33,7 +33,7 @@ That rule is the only thing preventing this file from becoming a second copy of 
 | Workstream directory | no | yes | yes |
 | Measurement / proof task | no | when the central claim needs proof | yes, as a first-class deliverable |
 | Visual review (§8, V1–V4) | when pixels move — reduced scope | when pixels move — full scope | **always**, and repeated per design iteration |
-| Independent review | optional | yes | yes |
+| Independent review | optional, risk-based | optional, risk-based | optional, risk-based |
 | Branch shape | one branch off `dev` | one branch off `dev` | `feature/*` with `task/*` below it |
 
 **When in doubt, pick the lower tier and escalate.** Escalating costs one planning session.
@@ -84,8 +84,9 @@ planning session -> planning report -> task contract -> branch + worktree
   -> [V1 baseline, if pixels will move]
   -> implementation -> gates
   -> [V2 capture -> V3 human visual gate -> V4 classification, if pixels moved]
-  -> evidence package -> independent review -> review fixes
-  -> approval -> integration -> cleanup
+  -> evidence package
+  -> [independent review -> review fixes, if one was requested]
+  -> integration -> cleanup
 ```
 
 **Planning report.** Its value is the **rejected** options and the reasons they were rejected — not
@@ -102,9 +103,10 @@ decides. Owner gates are settled here, not discovered in review: a new glyph and
 reserved by the House rules; a responsive breakpoint change moves visible layout and is the owner's
 under `AGENTS.md` — *Decision authority*.
 
-**The visual gate sits before the independent review**, and its findings are classified before the
-reviewer sees them (§8). The baseline (V1) is taken **after the worktree exists and before
-implementation begins** — that is the only point at which the "before" state is still real.
+**The visual gate sits before integration**, and its findings are classified there (§8) — and before
+any independent review, where one was requested. The baseline (V1) is taken **after the worktree
+exists and before implementation begins** — that is the only point at which the "before" state is
+still real.
 
 ---
 
@@ -137,7 +139,7 @@ may add or drop a section, and a numeric citation from another document goes sta
 
 | Section | Purpose |
 | --- | --- |
-| Identity | Branch, **base SHA** (a SHA, not a branch name), owner, reviewer, concurrency rule |
+| Identity | Branch, **base SHA** (a SHA, not a branch name), owner, concurrency rule — and a reviewer only where an independent review was requested |
 | Local workspace | Worktree path, preview port, the exact server invocation |
 | Scope | The parts, in the order they must happen |
 | Non-goals **and tripwire** | What is out of scope, and the signal that a rejected approach has crept back in |
@@ -159,8 +161,9 @@ Two properties make a contract work, and both are cheap:
 
 ## 7. Evidence package
 
-The evidence package is what makes independent review possible at all. It states what was proven, how,
-and **what was not proven**.
+The evidence package states what was proven, how, and **what was not proven**. It is what makes the
+work checkable by anyone who did not do it — the integrator, the owner, or an independent reviewer
+where one was requested. It is required on its own terms, not because a review is coming.
 
 Required:
 
@@ -226,9 +229,9 @@ Record the sizes, the DPR and the application state, because V2 has to match the
 differences; it does not decide whether a layout is good, and **an agent must not report a visual
 result as approved.**
 
-This is a gate: the work does not proceed to independent review until it has been passed, and its
-findings are classified first, so a reviewer never re-litigates something already known to be out of
-scope.
+This is a gate: **the work does not proceed to integration until it has been passed**, and its
+findings are classified first. Where an independent review was requested, classification also spares
+the reviewer re-litigating something already known to be out of scope.
 
 ### Classification is a required output
 
@@ -253,7 +256,9 @@ makes the decision durable; without it the workstream's most important review ro
 
 ## 9. Handoff to independent review
 
-Reviewer scope, and where findings return to, are `git-workflow.md` §9.
+**Only when an independent review was requested.** Review is optional and risk-based
+(`AGENTS.md` — *Independent review*); a task that was not sent for review produces no handoff, and
+its absence is not a gap. Reviewer scope, and where findings return to, are `git-workflow.md` §9.
 
 A handoff carries:
 
@@ -268,6 +273,54 @@ A handoff carries:
 
 A handoff with no open questions is usually one that has not looked hard enough.
 
+### Review type
+
+The canonical rule is `AGENTS.md` — *Independent review*. This section is how a requested review is
+run.
+
+Every handoff states its type in one line. A reviewer who cannot find one treats the review as
+**full**, which is the conservative default.
+
+| Type | When | What it examines |
+| --- | --- | --- |
+| **Full** | The first independent review of the workstream | The whole agreed scope |
+| **Closure** | Every review after it | The named open findings, and regressions caused by their fixes |
+
+### Full review
+
+Examines the agreed scope and returns blocking findings, non-blocking findings, an approval, or
+changes requested. **Non-blocking findings are recorded as follow-ups when they are raised**, not
+left to be rediscovered in a later round — that is what turns one review into many.
+
+### Closure review
+
+The handoff **names the open finding IDs** it is asking about. The review answers, per ID, closed or
+not closed, and then one further question: did these fixes cause a regression. Nothing else is
+required of it, and areas already confirmed sound are not re-examined.
+
+A closure review that returns "closed, closed, no regression" is an **approval**.
+
+### New findings during a closure review
+
+A new finding may block the workstream again only where it was **created by the current fix**, or is
+a **genuine blocker** — a correctness defect, data loss, a security problem, a broken build or test
+suite, or a violated project invariant.
+
+Everything else is a **follow-up**: recorded, not blocking. Follow-ups go where the workstream's
+record already goes — the handoff or the contract — and become their own task through `/create-task`
+if they should outlive the workstream. No new document and no backlog system is created for them.
+
+### Review budget
+
+The numbers are canonical in `AGENTS.md` — *Independent review*; what follows is how they are applied.
+
+One full review plus one closure review is the normal case. A further closure round is permitted only
+where a known blocking finding is still unfixed, or its fix caused a new regression. **There is no
+second full review.**
+
+The budget is a ceiling on process, not on judgement: a genuine blocker found late is still a
+blocker. What the budget forbids is re-opening settled scope to look for more.
+
 ---
 
 ## 10. Integration and cleanup
@@ -275,8 +328,13 @@ A handoff with no open questions is usually one that has not looked hard enough.
 Integration mechanics, promotion and ancestry diagnosis are `git-workflow.md` §11–§13. At lifecycle
 level only two things matter.
 
-**Integration is authorized, not assumed.** Gates green and review passed are preconditions, not the
-decision.
+**Integration is authorized, not assumed.** Readiness is a precondition, not the decision — the
+authorization is separate and explicit.
+
+**What readiness means** is `AGENTS.md` — *Independent review*: scope and contract met, required
+validation and evidence present with the relevant gates passed, branch clean and committed, known
+blockers resolved or documented. **An independent review is not among those conditions** unless one
+was requested for this task.
 
 **Run the cleanup audit at the start of the next task, not the end of the last one.** The end of a
 task is when attention is lowest, which is exactly why cleanup is the step that does not happen.
@@ -288,14 +346,15 @@ their integration base, and clear them. Deletion rules and their safety checks a
 
 ## 11. Two standing rules
 
-### Every hazard named in the contract must be resolved before handoff
+### Every hazard named in the contract must be resolved before integration
 
-A hazard listed in the contract's hazards section is a prediction. Before the review handoff each one
-is marked
-**measured**, **not measured, and why**, or **not applicable**.
+A hazard listed in the contract's hazards section is a prediction. Before the work is integrated —
+and before any review handoff, where one was requested — each one is marked **measured**, **not
+measured, and why**, or **not applicable**.
 
-Hazards that are named and then left open get found by the reviewer instead — a review round trip the
-contract had already paid for in advance.
+A hazard named and then left open is a question the contract already paid for and then threw away.
+It surfaces later — in integration, in a requested review, or in production — at a worse moment and
+at a higher price.
 
 ### A reduced acceptance criterion needs a downgrade record
 
