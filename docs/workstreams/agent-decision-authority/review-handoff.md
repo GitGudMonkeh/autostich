@@ -1,27 +1,32 @@
 # Codex Review Handoff — Agent Decision Authority
 
-> ## Next review: **closure review only**
+> ## Next review: **closure review, second round**
 >
-> The owner has scoped the next review to a closure check. It is **not** another full review of this
-> workstream, and this instruction is local to this workstream — no process rule or workflow document
-> was changed to introduce it.
+> The owner scoped this to a closure check; the branch under review changes no process rule or
+> workflow document to introduce it. A second closure round is permitted because the first one found
+> a known finding still open and a regression caused by its fix — not because the scope reopened.
 >
-> **Answer three questions and nothing else:**
+> **Closure round 1 result:** finding 1 **closed** — the reviewer ran the reproduce block without
+> checkout and got three `identical` lines with the expected hashes. Finding 2 **not closed**, with a
+> regression caused by its own fix. Both are fixed below.
 >
-> 1. **Round-4 finding 1 closed?** The reproduce command no longer compares against the ambient
->    `HEAD`; both sides are named explicitly. See *Reproduce the claim that the rules are final*.
-> 2. **Round-4 finding 2 closed?** The contract and this document now use one range terminology —
->    *live-rule finalization range* and *package-record tail* — and the contract no longer claims the
->    handoff sits outside a range that contains it. See the header table here and *Expected file
->    surface* in the contract.
-> 3. **Any regression caused by these two fixes?**
+> **Answer two questions and nothing else:**
 >
-> Do not re-open closed findings, do not re-review areas already confirmed integration-ready — the
-> three live rule documents drew no new findings in round 4 and are unchanged since `a2357b47` — and
-> do not raise new documentation refinements. A new finding is admissible only if this fix created it
-> or it is a genuine blocker.
+> 1. **Round-4 finding 2 closed now?** Three defects were reported and all three are fixed:
+>    the broken back-reference to a renamed row (this document, above the reproduce block); the two
+>    surviving uses of the retired name *review-package range* (this document's round-2 table and the
+>    contract's round-1 record); and the **too-narrow tail definition** — the package-record tail also
+>    carries binding contract changes to *Expected file surface*, *Definition of done*, hazard
+>    statuses and gate evidence, and both documents now say so and say those are in scope.
+> 2. **Any regression caused by *these* fixes?**
 >
-> If all three answers are yes, yes, no: **APPROVED**.
+> Finding 1 stays closed and is not re-examined. Do not re-open closed findings, do not re-review
+> areas already confirmed integration-ready — the three live rule documents drew no findings in
+> round 4 or in closure round 1 and are unchanged since `a2357b47` — and do not raise new
+> documentation refinements. A new finding is admissible only if these fixes created it or it is a
+> genuine blocker.
+>
+> If both answers are yes and no: **APPROVED**.
 
 **Reviewer role: independent assessment only. Do not implement.** Findings return to the Claude
 worker in this worktree (`docs/engineering/git-workflow.md` — *Reviewer ownership*).
@@ -45,7 +50,7 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 | **Context** | Agent Decision Authority — owner/agent decision boundary, documentation only |
 | **Branch** | `feature/agent-decision-authority` (pushed, own upstream, **not** merged into `dev`) |
 | **Live-rule finalization range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — base to the commit at which the three live rule documents reach their final state. It **does** contain earlier revisions of this document and both rounds of review fixes; it is defined by where the rules stop changing, not by which files it touches |
-| **Package-record tail** | everything after `a2357b47`: workstream record only — this document and the contract's review sections. Verified by blob hash: `AGENTS.md` `65662e6a`, `task-lifecycle.md` `d443937a`, `git-workflow.md` `528961ac` are identical at `a2357b47` and at the package head |
+| **Package-record tail** | everything after `a2357b47`. Defining property: **no live rule document changes here** — verified by blob hash, `AGENTS.md` `65662e6a`, `task-lifecycle.md` `d443937a`, `git-workflow.md` `528961ac` identical at `a2357b47` and at the package head. **Not** review records only: the tail also carries binding contract changes — *Expected file surface*, *Definition of done*, hazard statuses, gate evidence — and those are **in scope for review** |
 | **Size** | 6 files, +1146/−5 over the live-rule finalization range · no evidence images |
 | **Gates** | **Linux CI green at the live-rule finalization commit `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
@@ -68,7 +73,7 @@ round-3 refresh was meant to remove, committed while removing it. The count is n
 `git log`, not typed.
 
 The commit carrying *this* update is not in that list and cannot be: a handoff cannot contain its own
-SHA. That is what the *Review-package range* row above is for. Stated once here rather than left to
+SHA. That is what the *Package-record tail* row above is for. Stated once here rather than left to
 be noticed — round 2 finding 2 was, in part, exactly this drift going unmarked.
 
 **Reproduce the claim that the rules are final at `a2357b47`.** Both sides are named explicitly.
@@ -113,7 +118,7 @@ recorded in [`task-contract.md`](./task-contract.md) — *Review round 1*.
 | 1 High | The roles-table row was a second definition — the exact F10 breach this change exists to prevent. | The row is now `**Repository owner** — see *Decision authority* below.` |
 | 2 High | The dependency gate was recorded but never implemented: no House rule reserved dependencies, so the canonical rule did not cover them. | `AGENTS.md` — *House rules* reserves it; `task-lifecycle.md` applies that rule instead of asserting the gate. |
 | 3 Medium | "Open question" meant blocking, non-blocking and reviewer-directed in three different places. | The planning gate defers to the report's *Blocking?* column; handoff open questions are reviewer-directed by definition. |
-| 4 Medium | The range added a third workstream file against a contract that said two were the only additions. | The handoff is named in *Expected to be added*; live-rule finalization range and review-package range are distinguished. |
+| 4 Medium | The range added a third workstream file against a contract that said two were the only additions. | The handoff is named in *Expected to be added*; the live-rule finalization range and the package-record tail are distinguished. |
 
 Two further changes follow from the reviewer's answers rather than from a finding: the F10
 done-criterion was **reformulated** (the old single-line grep could not see the `task-lifecycle.md`
@@ -226,6 +231,32 @@ wrong environment.
 file green in isolation, lint / build / `gen:db` exit 0. The mechanical audit passes. No live rule
 document changed: `AGENTS.md`, `task-lifecycle.md` and `git-workflow.md` are byte-identical to
 `a2357b47`.
+
+---
+
+## 0e. Closure round 1 — result and fixes
+
+Finding 1 **closed**: the reviewer ran the reproduce block unchanged, without checkout, and got three
+`identical` lines with the expected hashes. Finding 2 **not closed**, and its own fix caused the
+regression — the round-4 rename retired *content range* but left the *review-package range* name
+behind in three places, including a back-reference to a row that no longer exists under that name.
+
+| Defect | Fix |
+| --- | --- |
+| A back-reference pointing at a header row under the name the rename had just retired | Points at *Package-record tail*, which is what the row is called |
+| The retired name surviving in this document's round-2 table and the contract's round-1 record, against a contract that claims "these two names and no others" | Both use *package-record tail* |
+| The tail defined as "workstream record only — this document and the contract's review sections", while `git diff a2357b47..22edf14a` also changes *Expected file surface*, *Definition of done* and gate evidence | The tail is defined by its **defining property** — no live rule document changes in it — and both documents state that it carries binding contract changes which **are in scope for review** |
+
+The third is the one that mattered. The first two are cosmetic drift; the third could have led a
+later reviewer to skip binding sections of the contract because a header row told them the tail held
+only review records. *Measured:* the tail's contract diff touches *Expected file surface* at `:245`,
+*Definition of done* at `:307`, the gate evidence at `:350`, and the two review records.
+
+**On the rename that caused this.** A rename is not a search-and-replace of one string; it is a
+change of vocabulary, and the vocabulary had two words in it. Round 4 retired *content range* and
+verified that *content range* was gone — the verification matched the edit rather than the intent,
+so the second stale name and the back-reference that depended on it survived a check designed to
+catch exactly that. The audit now asserts the absence of **both** retired names.
 
 ---
 

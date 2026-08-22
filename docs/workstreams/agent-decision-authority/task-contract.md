@@ -249,7 +249,7 @@ Indicative. Anything outside it is recorded and reported before it is changed.
 | Name | Definition |
 | --- | --- |
 | **Live-rule finalization range** | `863febe5..a2357b47` — from the base to the commit at which the three live rule documents reach their final state. It **does** contain earlier revisions of the handoff and both rounds of review fixes; it is defined by where the rules stop changing, not by which files it touches. |
-| **Package-record tail** | Everything after `a2357b47`: workstream record only — this contract's review sections and the handoff. No live rule document changes here, and that is a measurement, reproducible by blob hash, not a convention. |
+| **Package-record tail** | Everything after `a2357b47`. Its defining property is that **no live rule document changes here** — a measurement, reproducible by blob hash, not a convention. It is **not** limited to review records: it also carries binding changes to this contract, including *Expected file surface*, *Definition of done*, hazard statuses and gate evidence. **A reviewer reads the tail's contract diff; it is in scope.** |
 
 *Corrected at round 4.* The earlier wording called the first range "the rule change itself" and said
 the handoff was "generated after the content change and therefore not part of it". Both were wrong in
@@ -436,7 +436,7 @@ implementation.
 | 1 | High | The roles-table row was a second definition, not a pointer — an F10 breach in the change whose purpose is to prevent F10. | **Fixed.** Reduced to `**Repository owner** — see *Decision authority* below.` |
 | 2 | High | The dependency gate was not canonical: the rule reserves to the owner "anything the House rules reserve", and no House rule reserved dependencies. A Tier-A worker reading only `AGENTS.md` would have treated it as its own call. | **Fixed**, with owner-authorized scope adjustment. A House rule now reserves it; `task-lifecycle.md` applies it. See *Approved architecture* item 5. |
 | 3 | Medium | "Open question" carried incompatible meanings — blocking in the planning gate, non-blocking in the report's own Q1, owner-deferred in the handoff spec but reviewer-directed in practice. | **Fixed** at both sites: the planning gate defers to the report's *Blocking?* column; handoff open questions are reviewer-directed by definition. |
-| 4 | Medium | The review range added a third workstream file while the contract said two were the only additions. | **Fixed.** The handoff is named in *Expected to be added*, and the live-rule finalization range and review-package range are distinguished. |
+| 4 | Medium | The review range added a third workstream file while the contract said two were the only additions. | **Fixed.** The handoff is named in *Expected to be added*, and the live-rule finalization range and the package-record tail are distinguished. |
 
 Codex's answers to the five open questions were adopted as follows: the roles-table row was a
 restatement (finding 1, fixed); no test guard is created for this rule, review-only enforcement
@@ -546,3 +546,26 @@ them or they are genuine blockers.
 
 This is recorded here and in the handoff. **No process rule or workflow document was changed** — the
 instruction is local to this workstream, per the owner's explicit constraint.
+
+---
+
+## Closure review round 1 — Codex, 2026-08-22
+
+Verdict: **not approved**. Finding 1 closed; finding 2 not closed, with a regression caused by its
+own fix. Scoped correctly as a fix-regression finding, not as a new full review.
+
+| Finding | Result | Disposition |
+| --- | --- | --- |
+| Round-4 finding 1 — ambient `HEAD` in the reproduce block | **Closed.** The reviewer ran it without checkout and got three `identical` lines with the expected hashes. | Not re-examined. |
+| Round-4 finding 2 — contradictory range terminology | **Not closed**, three defects. A back-reference to a row the rename had renamed; the retired name *review-package range* surviving in two places against a contract claiming "these two names and no others"; and the package-record tail defined as review records only, when it also carries binding changes to *Expected file surface*, *Definition of done* and gate evidence. | **All three fixed.** The tail is now defined by its defining property — no live rule document changes in it — and both documents state that its binding contract changes are in scope for review. |
+| Regression caused by the fixes | **Yes**, and the reviewer was right to call it that: the round-4 rename created the broken back-reference and the "no others" contradiction. | Fixed as above. |
+
+**What the rename got wrong, recorded because it is the more general lesson.** Round 4 retired the
+term *content range* and verified that *content range* had disappeared. The vocabulary being replaced
+had two words in it, and the check was written against the edit that had been made rather than
+against the intent. A verification that mirrors the change cannot catch what the change forgot. The
+mechanical audit now asserts the absence of **both** retired names, and that no cross-reference
+points at a heading or row that no longer exists under that name.
+
+A second closure round is permitted here because a known finding was still open and its fix caused a
+regression — not because settled scope was reopened.
