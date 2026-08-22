@@ -1,6 +1,6 @@
 ---
 description: Assemble the evidence package and reviewer handoff from a task contract and its diff
-argument-hint: <contract-path> [--base <sha>] [--head <sha>] [--run-gates]
+argument-hint: <contract-path> [--base <sha>] [--head <sha>] [--run-gates] [--closure <finding-ids>]
 allowed-tools: Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git log:*), Bash(git diff:*), Bash(git cat-file:*), Bash(git status:*), Bash(git branch:*), Bash(git -C:*), Bash(MSYS_NO_PATHCONV=1 git:*), Bash(npm test:*), Bash(npm run:*), Bash(npx vitest run:*), Read, Grep, Glob, Write
 disable-model-invocation: true
 ---
@@ -19,7 +19,8 @@ ownership*. Gates and reporting honesty are `AGENTS.md` — *Validation gates* a
 this file and those disagree, those win.
 
 Arguments: `$ARGUMENTS` — first positional is the contract path; `--base <sha>` and `--head <sha>`
-override the derived range; `--run-gates` opts into running the gates in this session.
+override the derived range; `--run-gates` opts into running the gates in this session; `--closure`
+names the open finding IDs and makes this a closure handoff (`AGENTS.md` — *Review convergence*).
 
 ---
 
@@ -47,10 +48,22 @@ These bind for the whole command. The `allowed-tools` list is only a first line 
 
 ---
 
-## Step 0 — state the posture
+## Step 0 — state the posture and the review type
 
 Open the report with one line: this prepares a handoff, it does not review, it approves nothing, and
 every gate row states whether it was run in this session.
+
+Then state the **review type**, which the handoff must carry unambiguously
+(`AGENTS.md` — *Review convergence*, `task-lifecycle.md` §9):
+
+- **Without `--closure`: `Review Type: Full`.** The reviewer may examine the whole agreed scope.
+- **With `--closure <ids>`: `Review Type: Closure`.** Reproduce the IDs verbatim and put the closure
+  questions at the top of the document: per ID, closed or not closed; then, did these fixes cause a
+  regression. State that settled scope is not reopened and that a new finding blocks only where the
+  current fix created it or it is a genuine blocker.
+
+**You do not decide the review type**, and never infer it from how many rounds you can see in the
+workstream. It is `--closure` or it is full.
 
 ## Step 1 — parse the arguments
 
@@ -60,6 +73,7 @@ every gate row states whether it was run in this session.
 | `--base <sha>` | no | overrides the base; default is the SHA recorded in the contract's Identity section |
 | `--head <sha>` | no | overrides the head; default is `HEAD` of the worktree the contract names |
 | `--run-gates` | no | run the gates in this session; without it, every gate row reads *not run* |
+| `--closure <finding-ids>` | no | comma-separated open finding IDs. Its presence makes the handoff **Review Type: Closure**; without it the handoff is **Review Type: Full** |
 
 **Stop, writing nothing, if** the contract path is absent, or does not exist on disk. Name what was
 missing. Never search for "a likely contract" and never proceed against a default path — the contract
@@ -291,6 +305,7 @@ must supply. A plausible guess in any of them reads as a claim nobody made.
 | --- | --- |
 | Opening posture — independent assessment only, findings return to the worker, do not implement | you, citing `git-workflow.md` — *Reviewer ownership* |
 | Blocking notice — open hazard count, unticked DoD count, push state | you |
+| **Review type** — `Full` or `Closure`; when closure, the open finding IDs, verbatim from `--closure` | you |
 | Header table — context, branch, **diff range as SHAs**, size, gate summary | you |
 | Commit list | you |
 | What was agreed — a **pointer** to the contract, plus its *Acceptance gate* quoted verbatim | you |

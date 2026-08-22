@@ -268,6 +268,53 @@ A handoff carries:
 
 A handoff with no open questions is usually one that has not looked hard enough.
 
+### Review type
+
+The canonical rule is `AGENTS.md` — *Review convergence*. This section is how it is run.
+
+Every handoff states its type in one line. A reviewer who cannot find one treats the review as
+**full**, which is the conservative default.
+
+| Type | When | What it examines |
+| --- | --- | --- |
+| **Full** | The first independent review of the workstream | The whole agreed scope |
+| **Closure** | Every review after it | The named open findings, and regressions caused by their fixes |
+
+### Full review
+
+Examines the agreed scope and returns blocking findings, non-blocking findings, an approval, or
+changes requested. **Non-blocking findings are recorded as follow-ups when they are raised**, not
+left to be rediscovered in a later round — that is what turns one review into many.
+
+### Closure review
+
+The handoff **names the open finding IDs** it is asking about. The review answers, per ID, closed or
+not closed, and then one further question: did these fixes cause a regression. Nothing else is
+required of it, and areas already confirmed sound are not re-examined.
+
+A closure review that returns "closed, closed, no regression" is an **approval**.
+
+### New findings during a closure review
+
+A new finding may block the workstream again only where it was **created by the current fix**, or is
+a **genuine blocker** — a correctness defect, data loss, a security problem, a broken build or test
+suite, or a violated project invariant.
+
+Everything else is a **follow-up**: recorded, not blocking. Follow-ups go where the workstream's
+record already goes — the handoff or the contract — and become their own task through `/create-task`
+if they should outlive the workstream. No new document and no backlog system is created for them.
+
+### Review budget
+
+The numbers are canonical in `AGENTS.md` — *Review convergence*; what follows is how they are applied.
+
+One full review plus one closure review is the normal case. A further closure round is permitted only
+where a known blocking finding is still unfixed, or its fix caused a new regression. **There is no
+second full review.**
+
+The budget is a ceiling on process, not on judgement: a genuine blocker found late is still a
+blocker. What the budget forbids is re-opening settled scope to look for more.
+
 ---
 
 ## 10. Integration and cleanup

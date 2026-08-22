@@ -35,7 +35,7 @@ table at the end.
 | Local cockpit | **Nimbalyst** — session orchestration, workstream visibility, review context, local Git/worktree management. |
 | Implementation | **Claude Code** workers. |
 | Integration | **Claude Code** feature integrator. |
-| Review | **Codex** is initially used as an independent reviewer only; it does not implement. |
+| Review | **Codex** is initially used as an independent reviewer only; it does not implement. How review rounds converge is *Review convergence* below. |
 | Concurrency | **One simultaneous writer per worktree.** Never run two writing agents in the same worktree at the same time. |
 | Decision authority | **Repository owner** — see *Decision authority* below. |
 
@@ -86,6 +86,32 @@ the **product** question to the owner, never the technical menu.
 This cuts both ways. An agent that settles a design, gameplay, priority or scope question on its own
 has made the same mistake in the opposite direction. A reviewer does not file "should have asked the
 owner" as a finding against a technical decision that was taken and recorded under this section.
+
+---
+
+## Review convergence
+
+Review reduces relevant risk. It does not enforce perfection. **Good, correct and integration-ready
+is enough.**
+
+**The first independent review is a full review.** It may examine the whole agreed scope, and it may
+return blocking findings, non-blocking findings, an approval, or changes requested.
+
+**Every review after it is a closure review.** It examines two things and no others: whether the open
+findings were closed, and whether those specific fixes caused a regression. Scope that has already
+been reviewed and closed is not reopened, and a closed finding stays closed.
+
+**A closure review does not move the finish line.** It may block the workstream again only where the
+finding was created by the current fix, or is a genuine blocker — a correctness defect, data loss, a
+security problem, a broken build or test suite, or a violated project invariant. Everything else —
+improvement ideas, documentation refinements, robustness wishes, style, optional cleanup — is recorded
+as a **follow-up** and does not block the current integration.
+
+**The normal budget is one full review plus one closure review.** A further closure round is
+permitted only where a known blocking finding is still unfixed, or its fix caused a new regression.
+There is no second full review.
+
+How each round is run, and what a handoff must state: `docs/engineering/task-lifecycle.md` §9.
 
 ---
 
@@ -486,7 +512,7 @@ Read deeper documentation only when the current task needs it.
 | Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` |
 | UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` |
 | Worker / integrator / reviewer responsibilities | `docs/engineering/git-workflow.md` §7–§9 |
-| Task tiers, task contract, evidence, visual review, handoff, cleanup timing | `docs/engineering/task-lifecycle.md` |
+| Task tiers, task contract, evidence, visual review, handoff, review rounds, cleanup timing | `docs/engineering/task-lifecycle.md` |
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
 | Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |
