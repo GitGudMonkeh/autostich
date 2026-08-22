@@ -1362,6 +1362,78 @@ button { font-family: inherit; }
   mask-image: linear-gradient(180deg, #000 62%, transparent);
 }
 
+/* #perkart — Kopfstreifen der Angebotskachel in der Perk-Wahl (PerkSelect.jsx, nur ab 1400 px gerendert).
+   Dieselbe Sprache wie `.sk-strip` darüber, aber MIT EIGENEN ZAHLEN — und genau darum steht es hier als
+   zweiter Regelsatz und nicht als zweite Klasse an dem einen: die Zone ist eine andere, und eine geteilte
+   Regel hätte die Gleichheit behauptet, statt sie zu prüfen. (Eine echte Zusammenführung der beiden
+   Bildschirme gehört `icons-corners`, der Aufgabe, die beide anfasst.)
+
+   ZONE: 265 × 201 px. Nicht gewählt, sondern GERECHNET — aus zwei Größen, die beide gemessen sind:
+
+     · Das BILD ist 265 CSS-px breit. In der laufenden Anwendung ausgelesen, an jedem Desktop-Format
+       gleich (1600/1920/2560), s. docs/workstreams/desktop-icons/icons-perks/perk-zone-probe.mjs.
+     · Die Master sind für ein Fenster über den OBEREN 76 % des Quadrats komponiert — Motiv in den oberen
+       zwei Dritteln, unteres Drittel fast schwarz (docs/art/perkcats/README.md, „Komposition").
+
+   Bei `object-fit: cover` auf einem quadratischen Bild bestimmt die Breite den Maßstab, die sichtbare
+   Höhe ist also der Anteil: 0,76 × 265 = 201,4 → 201 px.
+
+   ACHTUNG — 265, NICHT 270. Die Kachel ist 270 breit, das Bild darin ist 5 px schmäler: `left: 0;
+   right: 0` löst gegen die POLSTERBOX auf, und `.as-edge-card` trägt links 4 px Raritätskante plus
+   1 px an den anderen drei Seiten. Der erste Anlauf hier las die Kachelbreite aus dem Raster ab und
+   hätte einen Bloom-Radius von 22,8 statt 23,2 px eingebacken — maßgeblich und falsch, auf dem
+   richtigen Bildschirm an der falschen Box gemessen. Wer die Kachelbreite ODER eine der Kantenstärken
+   ändert, rechnet BEIDE Zahlen neu: diese hier und den Radius im Backskript.
+
+   Die 210 px der Skill-Karte wären hier falsch gewesen, obwohl die Karten fast gleich breit sind: 210
+   auf 265 sind 79 %, und die drei Prozentpunkte kämen genau vom unteren Rand des Motivs — dort, wo bei
+   „Deck" die Unterkante des Stapels ohnehin knapp an der Grenze sitzt.
+
+   Der Rest ist bewusst identisch zur Skill-Karte, weil er dort am Gerät entschieden wurde und nicht von
+   der Zonengröße abhängt: füllender Zuschnitt, Kopf im Bild, Auslauf ab 62 %, `mix-blend-mode: screen`
+   gegen den schwarzen Grund. Und wie dort steckt der Bloom IN den Dateien — hier KEIN `filter`. */
+.pk-offer-art {
+  position: relative; overflow: hidden;
+  padding-top: 167px;  /* 201 Zone − 34: der Text beginnt IM Auslauf, nicht darunter (wie .sk-offer-art) */
+}
+/* Text über das Bild heben — gleiche Begründung wie bei `.sk-offer-art`: absolut Positioniertes malt über
+   nicht-positionierten Fluss-Inhalt, sonst stünde die Beschreibung UNTER dem Streifen. */
+.pk-offer-art > *:not(img) { position: relative; }
+.pk-strip {
+  position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 201px;
+  object-fit: cover; object-position: center top;
+  mix-blend-mode: screen; pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent);
+  mask-image: linear-gradient(180deg, #000 62%, transparent);
+}
+/* Die LEGENDÄREN Embleme hängen mittig statt oben — und das ist keine zweite Gestaltung, sondern
+   dieselbe Regel auf ein Los angewandt, für das ihre Begründung nicht gilt.
+
+   `center top` steht bei `.sk-strip` mit Grund da: „die Motive haben ihre Aussage oben und ihren
+   Bodenraster unten, und der ist genau das, was verschwinden darf". Für die sieben Kategorie-Embleme
+   stimmt das — sie sind ausdrücklich so komponiert (docs/art/perkcats/README.md: Motiv in die oberen
+   zwei Drittel, unteres Drittel fast schwarz). Für die 21 legendären stimmt es nicht: sie lagen nie
+   im Repository, sind nie gegen diese Regel gebaut worden und sind schlicht mittig komponiert.
+
+   Nachgemessen (icons-perks, 22.08.2026) als Schwerpunkt des Lichts über die Bildhöhe, 0 = oben:
+
+       Kategorie-Embleme   Median 0,42   (obere zwei Drittel, wie dokumentiert)
+       Legendär-Embleme    Median 0,48   (mittig)
+
+   und als Anteil des Lichts, der in der echten Zone (265 × 201) Zuschnitt UND Maske übersteht:
+
+       oben verankert    Median 71,4 %   schlechtester Fall  Henker 34,7 %
+       mittig verankert  Median 86,5 %   schlechtester Fall  Henker 56,7 %
+
+   Bei Henker liegt die Axtschneide unter der Kante — oben verankert sieht man den Stiel. Der Griff
+   ist deshalb der Anker, nicht die Zonenhöhe: die bleibt für beide Lose gleich, und damit bleibt auch
+   der gebackene Bloom-Radius für beide derselbe.
+
+   Vergleichsbild beider Anker über alle 21: docs/workstreams/desktop-icons/icons-perks/visual/
+   V2-legendaries-anchor-comparison.png. Die Entscheidung gehört dem Sicht-Gate V3; sie ist bewusst
+   EINE Klasse, damit sie eine Zeile kostet, falls dort anders entschieden wird. */
+.pk-strip-mid { object-position: center center; }
+
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
    man beim Scrollen, was vom Standard abweicht, ohne jeden Schalter einzeln zu lesen.
    Warum `:has()` statt eines Props an der Zeile: der Zustand steckt im Schalter, den die Zeile nur als

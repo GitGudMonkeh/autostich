@@ -177,21 +177,21 @@ prevent.
 
 ## Definition of done
 
-- [ ] Render zone measured live on the perk tile and recorded, with the resulting `strip_w`
-- [ ] `bake` no longer refuses `perkcats`/`legendaries`, and the reason is a measurement, not a flag flip
-- [ ] Legendary lot complete: 21 masters, 21 delivery files; the weak `L_ZINS` row verified
-- [ ] Perk-category lot complete: 7 delivery files; the README's existing factors applied, not re-derived
-- [ ] Wiring in `PerkSelect.jsx` behind the desktop gate, in JSX rather than CSS
-- [ ] Guards added for both lots' completeness and for the regular-vs-legendary distinction, each counter-checked by deliberately breaking the seam
-- [ ] No runtime `filter:`/`blur(` on any new rule
-- [ ] V1 baseline taken **before** the first pixel moved
-- [ ] V2 capture at the same sizes, DPR and state as V1
-- [ ] V3 human visual gate passed — **only a person can close this**
-- [ ] V4 classification written; every finding carries an ID
-- [ ] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — all green
-- [ ] `npm run loc:export` run, or recorded as not applicable with the reason
-- [ ] Evidence package written, stating its own limits; hazards H1–H6 each marked
-- [ ] Handoff records the final card geometry `icons-corners` needs
+- [x] Render zone measured live on the perk tile and recorded, with the resulting `strip_w` — **265 × 201**, the drawn `<img>` box, not the 270 tile around it (that near-miss is `ICONS-PERK-VIS-07`)
+- [x] `bake` no longer refuses `perkcats`/`legendaries`, and the reason is a measurement, not a flag flip. `corners` still refuses
+- [x] Legendary lot complete: 21 masters, 21 delivery files; `L_ZINS` verified by motif and by elimination
+- [x] Perk-category lot complete: 7 delivery files; the README's existing factors applied, not re-derived
+- [x] Wiring in `PerkSelect.jsx` behind the desktop gate, in JSX rather than CSS
+- [x] Guards added for both lots' completeness and for the regular-vs-legendary distinction — 32 assertions, **11 seams counter-checked** by deliberately breaking each
+- [x] No runtime `filter:`/`blur(` on any new rule — guarded, counter-checked, and `filter: none` read from the live DOM
+- [~] V1 baseline taken **before** the first pixel moved — it was, then overwritten by operator error and regenerated deterministically from the immutable base commit. **Downgrade `DR-1`**; see `visual-review.md`
+- [x] V2 capture at the same sizes, DPR and state as V1 — same committed script, same seed
+- [x] V3 human visual gate **passed by the owner, 2026-08-22** — verdict recorded verbatim in `visual-review.md`. Closes `ICONS-PERK-VIS-02` (legendary anchor) and `ICONS-PERK-VIS-03` (tile height)
+- [x] V4 classification written; 7 findings `ICONS-PERK-VIS-01..07` plus `DR-1`/`DR-2`
+- [~] `npm run lint -- --max-warnings=0`, `npm run build`, `VITE_PREVIEW=1 npm run build`, `npm run gen:db` — green. `npm test`: **135 of 136 files green**; the one failure is a 5000 ms **timeout** in `test/i18n-guards.test.js`, **pre-existing** — measured at `HEAD` with this task's changes removed (fails 2 of 3 runs there) and 2050 ms when the test runs alone. Not fixed here: that guard belongs to another task. Evidence package §5
+- [x] `npm run loc:export` run — no diff. No player-visible text changed (`alt=""`, `aria-hidden="true"`)
+- [x] Evidence package written with a "what this does NOT cover" section; H1–H6 each marked
+- [x] Handoff records the final card geometry `icons-corners` needs, plus five things that will bite it
 
 ## Open questions
 
