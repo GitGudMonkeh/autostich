@@ -1,5 +1,28 @@
 # Codex Review Handoff — Agent Decision Authority
 
+> ## Next review: **closure review only**
+>
+> The owner has scoped the next review to a closure check. It is **not** another full review of this
+> workstream, and this instruction is local to this workstream — no process rule or workflow document
+> was changed to introduce it.
+>
+> **Answer three questions and nothing else:**
+>
+> 1. **Round-4 finding 1 closed?** The reproduce command no longer compares against the ambient
+>    `HEAD`; both sides are named explicitly. See *Reproduce the claim that the rules are final*.
+> 2. **Round-4 finding 2 closed?** The contract and this document now use one range terminology —
+>    *live-rule finalization range* and *package-record tail* — and the contract no longer claims the
+>    handoff sits outside a range that contains it. See the header table here and *Expected file
+>    surface* in the contract.
+> 3. **Any regression caused by these two fixes?**
+>
+> Do not re-open closed findings, do not re-review areas already confirmed integration-ready — the
+> three live rule documents drew no new findings in round 4 and are unchanged since `a2357b47` — and
+> do not raise new documentation refinements. A new finding is admissible only if this fix created it
+> or it is a genuine blocker.
+>
+> If all three answers are yes, yes, no: **APPROVED**.
+
 **Reviewer role: independent assessment only. Do not implement.** Findings return to the Claude
 worker in this worktree (`docs/engineering/git-workflow.md` — *Reviewer ownership*).
 
@@ -21,13 +44,14 @@ them; they are kept rather than rewritten so the two rounds stay comparable.
 | --- | --- |
 | **Context** | Agent Decision Authority — owner/agent decision boundary, documentation only |
 | **Branch** | `feature/agent-decision-authority` (pushed, own upstream, **not** merged into `dev`) |
-| **Content range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — the rule change plus the round-1 and round-2 review fixes. **The three live rule documents reach their final state at `a2357b47`** and do not change afterwards, verified by blob hash: `AGENTS.md` `65662e6a`, `task-lifecycle.md` `d443937a`, `git-workflow.md` `528961ac` are identical at `a2357b47` and at the head |
-| **Review-package range** | everything after `a2357b47`: this document and the contract's review records. No live rule document changes there — that is the point of separating the two, and it is a measurement, not a convention |
-| **Size** | 6 files, +1146/−5 over the content range · no evidence images |
-| **Gates** | **Linux CI green at the content head `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
+| **Live-rule finalization range** | `863febe54fce513c4171314eb8cfc0d86f997408..a2357b4708578bff3d73c1945b76c0de074b50a8` — base to the commit at which the three live rule documents reach their final state. It **does** contain earlier revisions of this document and both rounds of review fixes; it is defined by where the rules stop changing, not by which files it touches |
+| **Package-record tail** | everything after `a2357b47`: workstream record only — this document and the contract's review sections. Verified by blob hash: `AGENTS.md` `65662e6a`, `task-lifecycle.md` `d443937a`, `git-workflow.md` `528961ac` are identical at `a2357b47` and at the package head |
+| **Size** | 6 files, +1146/−5 over the live-rule finalization range · no evidence images |
+| **Gates** | **Linux CI green at the live-rule finalization commit `a2357b47`** (run `32579560825`). Locally: lint / build / gen:db exit 0, `npm test` exit 1 on a pre-existing Windows timeout — see *Gate results* |
 | **Worktree** | clean at handoff — the head commit is the state the worker is looking at |
 
-**Seven commits in the content range** (*measured*, `git log --oneline 863febe5..a2357b47 | wc -l`):
+**Seven commits in the live-rule finalization range**
+(*measured*, `git log --oneline 863febe5..a2357b47 | wc -l`):
 
 ```
 96e4ee4e  docs: define the owner/agent decision boundary in AGENTS.md
@@ -47,15 +71,30 @@ The commit carrying *this* update is not in that list and cannot be: a handoff c
 SHA. That is what the *Review-package range* row above is for. Stated once here rather than left to
 be noticed — round 2 finding 2 was, in part, exactly this drift going unmarked.
 
-**Reproduce the claim that the rules are final at `a2357b47`:**
+**Reproduce the claim that the rules are final at `a2357b47`.** Both sides are named explicitly.
+**Do not use `HEAD`** — the review is performed without checking this branch out, so `HEAD` is the
+reviewer's own branch and every file reports `DIFFERS` for the wrong reason. That was round-4
+finding 1, reported by a reviewer who ran the previous version of this command exactly as written.
 
 ```bash
+git fetch origin feature/agent-decision-authority
+
+RULES=a2357b47                                    # live-rule finalization commit
+PKG=origin/feature/agent-decision-authority       # or an explicit package-tail SHA
+
 for f in AGENTS.md docs/engineering/task-lifecycle.md docs/engineering/git-workflow.md; do
-  a=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "a2357b47:$f")
-  b=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "HEAD:$f")
+  a=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "$RULES:$f")
+  b=$(MSYS_NO_PATHCONV=1 git rev-parse --verify "$PKG:$f")
   [ "$a" = "$b" ] && echo "identical  $a  $f" || echo "DIFFERS  $f"
 done
 ```
+
+Expected: three `identical` lines — `65662e6a`, `d443937a`, `528961ac`.
+
+*Terminology note, round 4:* what earlier rounds and the round-4 review text call the **content
+range** / **content head** is now the **live-rule finalization range** / **live-rule finalization
+commit**, throughout both documents. Same commits, one name, so the contract and this handoff can no
+longer describe them differently.
 
 **Read first:** [`task-contract.md`](./task-contract.md) — the binding scope statement. Its
 *Approved architecture* section carries the rule text that was approved verbatim, and its *Non-goals
@@ -74,7 +113,7 @@ recorded in [`task-contract.md`](./task-contract.md) — *Review round 1*.
 | 1 High | The roles-table row was a second definition — the exact F10 breach this change exists to prevent. | The row is now `**Repository owner** — see *Decision authority* below.` |
 | 2 High | The dependency gate was recorded but never implemented: no House rule reserved dependencies, so the canonical rule did not cover them. | `AGENTS.md` — *House rules* reserves it; `task-lifecycle.md` applies that rule instead of asserting the gate. |
 | 3 Medium | "Open question" meant blocking, non-blocking and reviewer-directed in three different places. | The planning gate defers to the report's *Blocking?* column; handoff open questions are reviewer-directed by definition. |
-| 4 Medium | The range added a third workstream file against a contract that said two were the only additions. | The handoff is named in *Expected to be added*; content range and review-package range are distinguished. |
+| 4 Medium | The range added a third workstream file against a contract that said two were the only additions. | The handoff is named in *Expected to be added*; live-rule finalization range and review-package range are distinguished. |
 
 Two further changes follow from the reviewer's answers rather than from a finding: the F10
 done-criterion was **reformulated** (the old single-line grep could not see the `task-lifecycle.md`
@@ -112,7 +151,7 @@ fixed, two new medium findings. Both accepted, both fixed. Dispositions in
 | # | Finding | Fix |
 | --- | --- | --- |
 | 1 Medium | The breakpoint gate was still misclassified as a house-rule gate. Not inventing breakpoint governance was right, but the alternative was missed: a responsive breakpoint moves visible layout, so the **tie-break already assigns it to the owner**. | `task-lifecycle.md` routes each gate to the source that actually reserves it — House rules for a glyph and a dependency, *Decision authority* for a breakpoint. No new governance. |
-| 2 Medium | The round-2 package presented round-1 data as current: a commit count that disagreed with its own list, a reproduce command pinned to a superseded head, CI claims on the old SHA, and the contract still carrying the pre-fix corrective block while this document asserted byte-identity with it. | The contract marks the superseded block and records the current approved text beside it. This document is refreshed to the content head throughout — ranges, commit list, section map, reproduce command, CI, provenance. |
+| 2 Medium | The round-2 package presented round-1 data as current: a commit count that disagreed with its own list, a reproduce command pinned to a superseded head, CI claims on the old SHA, and the contract still carrying the pre-fix corrective block while this document asserted byte-identity with it. | The contract marks the superseded block and records the current approved text beside it. This document is refreshed to the live-rule finalization commit throughout — ranges, commit list, section map, reproduce command, CI, provenance. |
 
 **Worth recording plainly:** on finding 1 the worker was half right. Declining to invent breakpoint
 governance was correct. Concluding that the only options were "invent a House rule" or "leave it
@@ -133,7 +172,7 @@ the kind of miss this handoff exists to expose rather than smooth over.
 *Measured at round 3:* gates re-run after the fixes — `npm test` exit 1 on the same pre-existing
 Windows timeout, the same file green in isolation, lint / build / `gen:db` exit 0. Linux CI green at
 `a2357b47`. All fourteen must-not-touch entries object-identical to the base commit. The F10 count at
-the content head: `AGENTS.md` 3, `task-lifecycle.md` 2, `git-workflow.md` 1 — matching the
+the live-rule finalization commit: `AGENTS.md` 3, `task-lifecycle.md` 2, `git-workflow.md` 1 — matching the
 contract's enumerated expectation, with the second `task-lifecycle.md` hit being the new application.
 
 ---
@@ -168,6 +207,28 @@ the file green in isolation, lint / build / `gen:db` exit 0.
 
 ---
 
+## 0d. Round 5 — the two round-4 findings
+
+Codex reviewed `ff144a5c`: the three live rule documents integration-ready with no new findings, and
+all four round-3 findings confirmed fixed. Two medium findings remained, both in the review package,
+both fixed here.
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| 1 Medium | The reproduce command compared against `HEAD`. The review runs **without checkout**, so `HEAD` is the reviewer's own branch — running the command as written reported `DIFFERS` for all three live documents and appeared to refute a claim that is in fact true. | Both sides are named explicitly: `RULES=a2357b47` and `PKG=origin/feature/agent-decision-authority`, with `HEAD` called out as the thing not to use, and the expected output stated. |
+| 2 Medium | The contract and this document defined the two ranges differently, and the contract's definition was wrong: it said the handoff was "not part of" a range that contains it via `175bfbf2` and `d63e471a`. | One terminology in both documents, taken from the reviewer's own suggestion: **live-rule finalization range** and **package-record tail**, defined by where the rules stop changing rather than by which files a range touches. |
+
+Finding 1 is the sharper of the two: the command was correct in the worktree it was written in and
+wrong in the only context it was ever going to be run in. It was verified by the author against the
+wrong environment.
+
+*Measured at round 5:* gates re-run — `npm test` exit 1 on the same pre-existing Windows timeout, the
+file green in isolation, lint / build / `gen:db` exit 0. The mechanical audit passes. No live rule
+document changed: `AGENTS.md`, `task-lifecycle.md` and `git-workflow.md` are byte-identical to
+`a2357b47`.
+
+---
+
 ## 1. What was agreed
 
 The contract is the binding scope statement; this document does not restate it. Its *Acceptance
@@ -184,10 +245,9 @@ gate*, quoted verbatim:
 Section map of the contract, **generated from the file rather than typed** (*measured*): Identity
 `:12`, Local workspace `:25`, Scope `:41`, Non-goals and tripwire `:77`, Approved architecture
 `:102`, Task-specific inputs `:201`, Acceptance gate `:216`, Expected file surface `:230`, Known
-hazards `:273`, Definition of done `:293`. No
-section absent. The contract additionally carries *Review round 1*, *Review round 2* and *Review
-round 3*, which did not exist when this document was first generated — cited by name, because the
-line numbers of this workstream's own documents have moved in every round so far.
+hazards `:282`, Definition of done `:302`. No section absent. The contract additionally carries
+*Review round 1* through *Review round 4*, cited by name because the line numbers of this
+workstream's own documents have moved in every round.
 
 ---
 
@@ -208,8 +268,8 @@ Ordered by where the worker thinks a finding is most likely, not by size.
    cheapest fix — shortening the row to a bare pointer — is available.
 
 2. **Is the *Expected file surface* row the right strength?** (Cited at round 1 as
-   `task-lifecycle.md:144`; the row is at `:147` at the content head.) This wording was *delegated*
-   to the worker, not
+   `task-lifecycle.md:144`; the row is at `:147` at the live-rule finalization commit.) This wording
+   was *delegated* to the worker, not
    approved in advance, so it has had the least scrutiny of the five edits. It now reads "recorded
    and reported before it is changed — not blocked on an owner answer unless the departure is itself
    a scope change". The question is whether that sharpens the *Expected file surface* discipline or
@@ -233,17 +293,17 @@ not retyped, and unchanged through both review rounds.
 **Corrected after round 2.** The `:96` corrective edit is **no longer** identical to the block
 approved at planning: rounds 1 and 2 changed it. The contract now carries both — the superseded
 original, marked as such, and the current approved text, which is what byte-identity is measured
-against from round 2 onward. Verified at the content head: the superseded block does **not** appear in
-`task-lifecycle.md`, and the current block does.
+against from round 2 onward. Verified at the live-rule finalization commit: the superseded block does
+**not** appear in `task-lifecycle.md`, and the current block does.
 
 ---
 
 ## 3. Scope compliance
 
 Every entry of the contract's *Must not touch* list, by object hash. All fourteen resolve at both
-ends and are equal (*measured*, re-run at the content head `a2357b47` after the round-2 fixes). A
-tree hash proves the whole subtree byte-identical, recursively, including that nothing was added
-into it.
+ends and are equal (*measured*, re-run at the live-rule finalization commit `a2357b47` after the
+round-2 fixes). A tree hash proves the whole subtree byte-identical, recursively, including that
+nothing was added into it.
 
 | Entry | Type | Hash at base and head | Result |
 | --- | --- | --- | --- |
@@ -262,7 +322,7 @@ into it.
 | `vite.config.js` | blob | `9c7ec59c4765d6e34aefc4e685fc7c10a1aac06f` | unchanged |
 | `eslint.config.js` | blob | `3ebdf1a7dc83f433495dc6d76d4ad9abfe8cbc96` | unchanged |
 
-No entry was unverifiable. Full changed-file list over the content range — **six files**
+No entry was unverifiable. Full changed-file list over the live-rule finalization range — **six files**
 (*measured*, `git diff --name-only 863febe5 a2357b47`):
 
 ```
@@ -321,7 +381,7 @@ Run in the session that generated this handoff, from the contract's worktree, un
 | `npm run lint -- --max-warnings=0` | yes | **0** | clean |
 | `npm run build` | yes | **0** | built in 5.95 s |
 | `npm run gen:db` | yes | **0** | 219 entries |
-| **GitHub Actions `32579560825`** (Linux, content head `a2357b47`) | not by this session — read from the run | **success** | `npm test`, lint, build, **preview-slot build**, `gen:db` all success |
+| **GitHub Actions `32579560825`** (Linux, live-rule finalization commit `a2357b47`) | not by this session — read from the run | **success** | `npm test`, lint, build, **preview-slot build**, `gen:db` all success |
 | `npm run loc:export` | no | — | not applicable: the diff touches no `src/i18n/**` and no player-visible text (*measured* — no `src/` path appears in the range) |
 | Preview build (`VITE_PREVIEW=1`) | no | — | not applicable: the diff touches no preview-gated code, by the same measurement |
 
@@ -378,12 +438,12 @@ Fourteen boxes ticked, **one unticked** (*measured* at round 1). The unticked bo
 ```
 
 It stays unticked because the criterion is the **local** gate (`AGENTS.md` — *Validation gates*
-requires the local run), not because the change breaks tests: Linux CI is green at the content head
-`a2357b47`.
+requires the local run), not because the change breaks tests: Linux CI is green at the live-rule
+finalization commit `a2357b47`.
 
 The downgrade record exists — `task-contract.md` — *Definition of done*, immediately after the
-checkbox list. Quoted verbatim as of the content head; it has since gained a dated CI paragraph
-recording the Linux result at `a2357b47`, which is not reproduced here:
+checkbox list. Quoted verbatim as of the live-rule finalization commit; it has since gained a dated
+CI paragraph recording the Linux result at `a2357b47`, which is not reproduced here:
 
 > **Downgrade — `npm test`.** *Promised:* a green full suite. *Delivered:* 2047 of 2048 tests green in
 > two consecutive full runs, with `test/i18n-guards.test.js > "jeder Katalog-Schlüssel wird auch
@@ -433,9 +493,9 @@ verified:
   round 3.* The old criterion could not see the `task-lifecycle.md` pointer, whose citation wraps a
   line break, and it counted this workstream's dated records as live rule sites. The contract now
   enumerates the live sites and pairs them with a multiline-aware search that **locates while a human
-  classifies**. At the content head: `AGENTS.md` 3, `task-lifecycle.md` 2, `git-workflow.md` 1 — one
-  definition, three pointers, one application.
-- **Linux CI is green at the content head.** GitHub Actions run `32579560825`, head SHA
+  classifies**. At the live-rule finalization commit: `AGENTS.md` 3, `task-lifecycle.md` 2,
+  `git-workflow.md` 1 — one definition, three pointers, one application.
+- **Linux CI is green at the live-rule finalization commit.** GitHub Actions run `32579560825`, head SHA
   `a2357b4708578bff3d73c1945b76c0de074b50a8`: `npm test` **success**, lint success, build success,
   preview-slot build success, `gen:db` success. The Windows timeout in §4 does not exist in the
   environment that enforces the gate. A reviewer running the suite on Linux should expect green.
