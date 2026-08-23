@@ -552,11 +552,29 @@ rather than fighting one:
 
 | | |
 | --- | --- |
-| **Worktree** | **One**, for all eleven tasks. Created once, kept for the round |
-| **Preview port** | **One**, fixed. The owner tests at the same URL from M1 to M11 |
+| **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — one, for all eleven tasks. Created once, kept for the round |
+| **Checked out on** | `feature/desktop-menus`, **not** a task branch. Each task creates its own inside the worktree |
+| **Preview port** | **5189**, fixed. `http://localhost:5189/autostich/` from M1 to M11 |
 | **Branches** | Unchanged — `task/menu-mN-*` under `feature/desktop-menus`, one per task, created and checked out **inside that one worktree** |
 | **Worker handover** | The owner reports when a worker is done and starts the next one. Workers never overlap |
 | **Integration** | **The planner integrates, once, when all eleven are through** — not per task |
+
+**How the worktree was created, and why not with `/create-task`'s usual form.** That command couples a
+new worktree to a new `task/*` branch, because it is built for one worktree *per task*. A shared round
+worktree wants the opposite: the worktree tracks the integration branch, and the task branches are
+created inside it. It was therefore created as
+
+```bash
+git worktree add ../Autostich-worktrees/menu-rework feature/desktop-menus
+```
+
+with the rest of `/create-task`'s procedure followed as written — cockpit check, ancestry, base SHA,
+the four collision checks, port allocation, `npm ci`. Port **5189** is the lowest free integer from
+5181 upward: 5180 is reserved by `scripts/viewport-proof.mjs` and 5181–5188 are claimed by existing
+workstream contracts (*measured*).
+
+No contract scaffold was written. The round's contract already exists in full as
+`task-contract-M1-options.md`; a `TODO` skeleton beside it would be noise.
 
 **Why this is safe here, and where it would not be.** `AGENTS.md` — *Session placement* forbids a
 worker editing another worktree or switching to another worker's branch, because a session cannot see

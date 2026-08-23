@@ -13,7 +13,7 @@
 | **Task** | `M1` — the pilot of the desktop menu rework |
 | **Branch** | `task/menu-m1-options` |
 | **Feature branch** | `feature/desktop-menus` |
-| **Base SHA** | the tip of `feature/desktop-menus` at start (the planning commit, on top of `4f72ba68`). Record the actual SHA here |
+| **Base SHA** | `cddf1368817e9ef253231ead91b15c3ca36d7a38` — `feature/desktop-menus`, the planning merge, on top of `4f72ba68` |
 | **Tier** | C — `task-lifecycle.md` §5 |
 | **Owner stops** | Two: once before implementation, once before integration |
 | **Concurrency** | **Exclusive.** No other `#menu-rework` task runs while this one is open. This task defines the vocabulary every later task consumes |
@@ -27,14 +27,23 @@ sequential.
 
 | | |
 | --- | --- |
-| **Worktree** | the shared `#menu-rework` worktree. **Created once for the round; do not create another, and do not remove it at the end of this task** |
-| **Preview port** | fixed for the round — record it here at start. The owner tests at this URL from M1 to M11 |
-| **Server** | `node node_modules/vite/bin/vite.js preview --port <PORT> --strictPort --base /autostich/` |
+| **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — the shared `#menu-rework` worktree. **Created once for the round; do not create another, and do not remove it at the end of this task** |
+| **Preview port** | **5189**, fixed for the round. The owner tests at `http://localhost:5189/autostich/` from M1 to M11 |
+| **Server** | `node node_modules/vite/bin/vite.js preview --port 5189 --strictPort --base /autostich/` |
 | **Survey** | `node scripts/viewport-survey.mjs` — the harness already carries the five sizes, both languages and all 15 surfaces |
 
 **`--base` is not optional.** `vite.config.js` applies the deploy base for `build` only, so `preview`
 without it serves `dist/` at `/` while `index.html` points at `/autostich/`. Every asset comes back as
 the SPA fallback with status 200 and the page merely looks slow.
+
+**The worktree arrives on `feature/desktop-menus`, not on a task branch.** M1 creates its own:
+
+```bash
+git switch -c task/menu-m1-options
+```
+
+Every later task does the same from the round tip. The worktree tracks the integration branch; the
+task branches live inside it.
 
 **Before the first edit** (`AGENTS.md` — *Before you start*, *Session placement*):
 
@@ -44,6 +53,20 @@ the SPA fallback with status 200 and the page merely looks slow.
    to tidy away.
 
 A difference from either is a collision to surface, not to work around.
+
+### The tree was green when this worktree was handed over
+
+*Measured at `cddf1368`, in this worktree, before M1 started:*
+
+| Gate | Result |
+| --- | --- |
+| `npm run lint` | exit 0 |
+| `npm test` | **140 files, 2165 tests, all passed** |
+| `npm run build` | exit 0 — the "chunks larger than 500 kB" notice is pre-existing and not a failure |
+| `npm ci` | exit 0 — two `allow-scripts` warnings (`esbuild`, `ffmpeg-static`), pre-existing |
+
+**A red gate in this worktree is therefore something M1 caused.** That is the whole reason this table
+is here: without it, the first failure costs a session to attribute.
 
 ---
 
