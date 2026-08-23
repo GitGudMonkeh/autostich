@@ -244,6 +244,14 @@ html, body { background:#141419; color:#e8e8ea; font-family: var(--font-sans); -
 :root { --deck-border: color-mix(in srgb, var(--deck-a1, #2c2a3a) 45%, #17171c); }
 * { box-sizing: border-box; }
 button { font-family: inherit; }
+/* #typo-system S2 — die LETZTE Undichtigkeit der Gewichtsleiter, und die unauffälligste.
+   Tailwinds Preflight setzt `b, strong { font-weight: bolder }`. Von 400 aus ergibt `bolder` **700**,
+   also eine Sprosse, die die Leiter gar nicht kennt — und der `@theme`-Deckel greift nicht, weil er
+   nur die UTILITIES `font-bold`/`font-extrabold` umbiegt, nicht das Element. Gemessen: 92 `<b>`/
+   `<strong>` im JSX, 101 Knoten auf 700 im gerenderten Baum, nachdem alle CSS-Deklarationen auf der
+   Leiter waren. Dieselbe Form von Leck wie die 24 Deklarationen weiter unten, nur aus dem
+   Browser-Default statt aus dem Stylesheet. */
+b, strong { font-weight: 600; }
 ::-webkit-scrollbar { height:8px; width:8px; }
 ::-webkit-scrollbar-thumb { background:#2a2a33; border-radius:4px; }
 
