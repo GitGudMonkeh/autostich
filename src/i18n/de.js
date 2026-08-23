@@ -377,7 +377,7 @@ export default {
   "bf.banner.loss": "Verloren",
   "bf.banner.tie": "Gleichstand",
   /* Groß-Ansagen — eingefrorene Eskalationskette (Übersetzerpaket §3.6). Ein eigener Wächter
-     prüft die Zuordnung Stark→FIERCE · Brutal→BRUTAL · Irre→INSANE · Gottgleich→GODLIKE ·
+     prüft die Zuordnung Stark→NICE · Brutal→BRUTAL · Irre→INSANE · Gottgleich→GODLIKE ·
      Lawine→AVALANCHE · Gönn dir→LET’S GO!. */
   "bf.big.fierce": "Stark",
   "bf.big.brutal": "Brutal",
@@ -385,6 +385,11 @@ export default {
   "bf.big.godlike": "Gottgleich",
   "bf.big.avalanche": "Lawine",
   "bf.big.letsgo": "Gönn dir",
+  /* Krit-Float über dem Feld (#33). ZWEI Fassungen, weil die reduzierte den Faktor mitträgt und die
+     volle ihn nicht zeigt — beide gehören in den Katalog, sonst übersetzt sich nur die halbe Anzeige.
+     Versalien macht `textTransform: uppercase` in Battlefield.jsx; hier steht die normale Schreibung. */
+  "bf.crit": "Kritisch!",
+  "bf.crit.mult": "Kritisch ×{n}",
   /* Stich-Aufschlüsselung (§17) — die Faktorenkette unter dem Feld. Die Labels sind bewusst kurz:
      die Zeile muss auf einem Handy in EINE Zeile passen. Die Langfassung steckt jeweils im `…title`
      (Hover) — dort darf erklärt werden, was hinter dem Glied steckt. */
