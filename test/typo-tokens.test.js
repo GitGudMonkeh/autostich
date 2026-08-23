@@ -128,6 +128,27 @@ describe("#typo-system — no bare size utility survives in the JSX", () => {
     expect(bad, `a size belongs in a token, not at the call site:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
+  it("no NAMED scale utility either — text-xs, text-sm, text-lg …", () => {
+    /* Added during integration, after this guard let one through. It only ever checked
+       `text-[Npx]`, so a `text-xs` arriving from another branch would have passed silently — and one
+       nearly did: `dev` still carried `text-xs` in PerkSelect.jsx while this branch had migrated the
+       same line, and it took a manual grep to confirm the merge had reconciled them. A guard that
+       covers half the ways to write a size is a guard that will eventually be wrong.
+       The named scale is worse than the arbitrary one in one respect: it also carries a line-height,
+       so reintroducing it changes two things rather than one. */
+    const root = new URL("../src", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+    const bad = [];
+    for (const f of walk(root)) {
+      const rel = f.replace(/\\/g, "/").replace(/^.*?\/src\//, "src/");
+      if (EXEMPT.includes(rel)) continue;
+      const code = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+      const hits = code.match(/\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl)\b/g);
+      if (hits) bad.push(`${rel}: ${[...new Set(hits)].join(" ")}`);
+    }
+    expect(bad, `the named scale is a call-site size too — reach for a role token:\n  ${bad.join("\n  ")}`)
+      .toEqual([]);
+  });
+
   it("the exemptions are real — they still carry their own sizes", () => {
     /* If these two files ever lose their arbitrary sizes, the exemption above is stale and silently
        weakens the check for everyone else. */

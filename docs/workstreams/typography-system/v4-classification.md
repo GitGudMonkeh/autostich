@@ -56,3 +56,20 @@ integration** where none was run.
 **What is genuinely uncovered:** the **168 utilities** of TYPO-09, where neither the machine gate nor
 a reviewer looked, only the V3 comparison. If a wrong token is ever found in this migration, that is
 where to look first.
+
+---
+
+## Added at integration, 2026-08-23
+
+Merging `dev` (16 commits, the mobile-icons workstream) into the feature branch produced **no
+conflicts** — which is precisely the case where a textually clean merge can be semantically wrong,
+so it was measured rather than trusted.
+
+| ID | Finding | Classification | Disposition |
+| --- | --- | --- | --- |
+| **TYPO-11** | The victory screen's node set depends on **run outcome**, not just on layout: `"★ Neuer Rekord"` appeared in the post-merge run and not in V2, changing one node from weight 400 to 600 | **Expected platform behaviour** | The same class as TYPO-08 (leaderboard), but sourced from game state rather than the network. One node of 2609. Any future zero-delta comparison must expect it on that surface. No fix |
+| **TYPO-12** | The `.ty-*`/token guard checked only `text-[Npx]` and **not the named scale** — a `text-xs` arriving from another branch would have passed silently | **Defect in this task** | **Fixed here.** `dev` still carried `text-xs` in `PerkSelect.jsx` where this branch had migrated the same line; the merge reconciled them, but only a manual grep proved it. A guard covering half the ways to write a size will eventually be wrong. Counter-checked |
+
+**Post-merge verification:** 2609 nodes re-surveyed at 1280×720 against V2 — **one deviation, and it
+is TYPO-11**. All four gates green on the merged tree (140 test files). The named-scale check finds
+exactly ten occurrences left in the tree, all of them in the two exempt files or inside comments.
