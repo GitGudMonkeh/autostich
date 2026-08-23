@@ -59,6 +59,7 @@ document can be perfectly current while its branch references are stale.
 | `gameplay-redesign.md` | **live** | 2026-08-07 | Gameplay screen rebuild. Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending |
 | `optionen-redesign.md` | **live** | 2026-08-23 | Options overlay rebuild (≥ 1280 px). Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending. Design side only; links a clickable mockup |
 | `mainscreen-marke.md` | **live** | 2026-08-24 | Main screen and brand mark (≥ 1280 px). Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending. Design side only; the wordmark's `I` becomes a column of eight cells. Links a mockup with deck-colour switches |
+| `feedback-redesign.md` | **live** | 2026-08-24 | Feedback modal (≥ 1280 px). Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending. Design side only; inherits its component vocabulary from `design-sprache.md`, which it says to read first |
 | `progression-decisions.md` | **live** | 2026-08-08 | Binding, versioned decision state for the progression system. Declares it *"ergänzt/überschreibt"* the long-form design doc |
 | `progression-tree.md` | **draft** | 2026-08-04 | Progression tree + start screen, *"Entwurf zur gemeinsamen Abstimmung"* (v0). Superseded in part by `progression-decisions.md`, which says so itself |
 | `rarity-system.md` | **draft** | 2026-07-26 | Rarity families for perks and shop items. *"Design-Spezifikation, Stand 26.07.2026"*; describes a target state |
