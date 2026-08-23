@@ -228,6 +228,222 @@
   --text-head--line-height: 1.2;
   --text-figure: 27px;
   --text-figure--line-height: 1.1;
+
+  /* ==========================================================================
+     #menu-rework M1 — THE PANEL VOCABULARY. Five axes, nineteen steps.
+     --------------------------------------------------------------------------
+     This is to surfaces what the seven roles above are to type, and it is meant
+     to be read the same way: a menu picks a token, or changes a token for
+     everyone. A menu does not introduce a value.
+
+     WHY VARIABLES AND NOT UTILITY CLASSES. Three consumers have to reach the
+     same value: a Tailwind utility, a stylesheet rule, and an INLINE style
+     emitted from modalStyle.jsx. A utility class cannot reach the third. A
+     custom property can — and it also reverses the cascade problem that inline
+     style creates: an inline "background: var(--sf-head)" is steered by any
+     rule that sets --sf-head on that element, WITHOUT !important. That is
+     measured, not reasoned (planning report 2.1, cases A/B/C). --deck-border
+     below has worked this way since #356; this block is the rest of the file
+     joining it.
+
+     THE VALUES ARE DERIVED, NOT INVENTED. Every one of them is a value already
+     standing in this tree on 2026-08-23, so converting modalStyle.jsx is
+     value-preserving by construction and provable by machine
+     (scripts/surface-delta.mjs).
+
+     EACH AXIS IS CAPPED before the derivation: surface 4, edge 4, elevation 5,
+     radius 3, inset 3. A cap is what makes this a collapse rather than a
+     survey. Tokens marked OUTSIDE THE LADDER are not steps and not choices:
+     they are composites built from the steps, or values that are not
+     comparable on a ladder at all (a translucency depends on what is behind
+     it; an identity colour encodes meaning). The same line the type scale
+     draws between its seven roles and text-display-*.
+     ========================================================================== */
+
+  /* ---- The geometry hook. -------------------------------------------------
+     Every LENGTH below is defined through this multiplier, so a later UI-scaling
+     feature is ONE variable instead of a sweep over nineteen values. It is a
+     RESERVED HOOK, not a control: no screen and no worker sets it. A per-screen
+     --ui-scale is Tripwire 1 in a new costume.
+
+     At 1 every calc() computes to the value it wraps. That is measured rather
+     than assumed: calc(N * 1) serialises identically to N in computed style for
+     radius, padding, box-shadow (negative spread included) and gradient axes, in
+     px and in rem alike.
+
+     THE RULE IS ABOUT VALUES, NOT FAMILIES. A length scales wherever it sits,
+     including the gradient axes of the light cone; a colour, an opacity or a
+     percentage does not, because a percentage is already relative. That is why
+     --sf-cone-stop (70%) and `at 50% 0%` stand untouched beside axes that scale.
+
+     ONE DELIBERATE EXCEPTION: --text-* are lengths and they stay OUT. Typography
+     is frozen (owner decision 8) and has its own ladder and its own workstream.
+     Without this sentence the value-shaped rule above would sweep it in.
+
+     Border widths and the 3px hairline sit at their call sites rather than in a
+     token, so the rule does not reach them — and should not: a hairline is a
+     device-pixel decision, not a scaled one. */
+  --ui-scale: 1;
+
+  /* ---- Surface: the fill a box gets. Four steps, darkest to lightest. -----
+     DERIVED BY COUNTING CALL SITES, not by picking pleasant numbers. Each step
+     is the value the largest coherent group of boxes in that role already
+     carries: 12 inset tiles on --sf-sunken, 30 `.as-panel` on --sf-base, every
+     sticky head on --sf-head, every overlay card on --sf-raised. */
+  --sf-sunken: #141320;   /* an inset tile inside a panel: readouts, list rows */
+                          /* (MENU_PANEL — go-box, st-box, go-layout)          */
+  --sf-base:   #17171c;   /* the neutral panel fill. This is the value the 30  */
+                          /* `.as-panel` sites carry, and it is already baked  */
+                          /* into --deck-border as the dark half of its mix —  */
+                          /* the tree's real panel ground, in two places       */
+  --sf-head:   #1b1a24;   /* a sticky head — and the top stop of --sf-raised,  */
+                          /* which is what makes the head/card seam invisible  */
+  --sf-raised: linear-gradient(180deg, var(--sf-head), var(--sf-deep));
+                          /* the card or overlay shell above a panel          */
+
+  /* OUTSIDE THE LADDER. */
+  --sf-ground: #141419;   /* what a panel SITS ON, not a panel: the app's own  */
+                          /* background (html, body). `phasePanel()` defaults  */
+                          /* to it so an inner structure box reads as a hole   */
+                          /* punched in the card rather than as another layer  */
+  --sf-deep:   #141019;   /* internal: --sf-raised's closing stop. Not a step, */
+                          /* and no call site names it                        */
+  --sf-glass:  linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  --sf-head-fade: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0));
+                          /* THE TWO DESKTOP TRANSLUCENCIES, and they are a    */
+                          /* pair: --sf-glass is what --sf-base looks like on  */
+                          /* the desktop, --sf-head-fade is what --sf-head     */
+                          /* does there. Both sit outside the ladder for the   */
+                          /* same reason — a translucency depends on what is   */
+                          /* behind it and cannot be ranked by depth.          */
+                          /* Neither is invented: 13 rules already carry the   */
+                          /* glass gradient verbatim and 7 carry the fade      */
+                          /* (up/cz/gd/gl/op/st/lb heads), each with its own   */
+                          /* !important. They are the desktop's real surface   */
+                          /* vocabulary, written out thirteen and seven times. */
+  --sf-scrim:  rgba(12, 12, 16, .94);   /* the full-screen overlay wash       */
+  /* THE LIGHT CONE AT THE HEAD OF A CARD, and why it is scalars rather than one token.
+
+     MEASURED (finding MENU-15): a custom property that references another custom property is
+     substituted on the element that DECLARES it, not on the element that uses it, and the resolved
+     string then inherits. A `--sf-cone` declared here that read `var(--ac-rgb)` would therefore
+     freeze whatever --ac-rgb is AT :root — the violet fallback — and no phase card setting --ac-rgb
+     on itself could ever change it. That is not the mechanism planning report 2.1 proved: case B
+     redefines the property ON the element, which works and is what .cz-stage still does.
+
+     So anything ACCENT-COLOURED decomposes. Every length and every alpha is a token here; the colour
+     is interpolated by modalStyle.jsx, which is where PHASE_ACCENTS already lives as a documented
+     exemption. The values are unchanged either way — this is about where they are assembled.
+
+     --sf-cone-modal is NOT accent-parameterised (fixed violet, read from :root alongside it), so it
+     stays a whole token. It is the one cone that can be.
+
+     THE TWO FOOTPRINTS are 20px apart on the width alone — same height, same .14, same 70% stop.
+     Nothing in the tree defends the difference; finding MENU-04. Kept as two because --sf-cone-w
+     belongs to the in-run phase cards, which this round converts MECHANICALLY and must not move. */
+  --sf-cone-w:       calc(340px * var(--ui-scale, 1));   /* menu modals        */
+  --sf-cone-w-phase: calc(360px * var(--ui-scale, 1));   /* in-run phase cards */
+  --sf-cone-h:       calc(150px * var(--ui-scale, 1));
+  --sf-cone-stop:    70%;     /* a percentage: already relative, never scaled */
+  --sf-cone-a:       .14;
+  --sf-cone-a-quiet: .06;
+  --sf-cone-modal: radial-gradient(var(--sf-cone-w) var(--sf-cone-h) at 50% 0%, rgba(var(--ac-violet-rgb), var(--sf-cone-a)), transparent var(--sf-cone-stop));
+
+  /* ---- Edge: the border colour. Four steps, quietest to loudest. ---------- */
+  --ed-quiet:  #2a2a34;   /* a divider inside a panel                         */
+  --ed-base:   #2c2a3a;   /* the standard frame. Also --deck-border's neutral  */
+                          /* fallback, so a deckless menu already reads this   */
+  --ed-strong: #302d40;   /* the crisp frame that carries the framed look      */
+  --ed-deck:   var(--deck-border);  /* deck-tinted, for NEUTRAL structure      */
+                          /* panels only. Meaning-coded borders keep their own */
+
+  /* OUTSIDE THE LADDER: the two accent-edge opacities. Scalars, not colours,  */
+  /* for the reason given at the cone above — an accent-coloured composite     */
+  /* cannot be assembled here.                                                  */
+  --ed-accent-a:       .42;
+  --ed-accent-a-quiet: .18;
+
+  /* ---- Elevation: the shadow. Five steps. -------------------------------- */
+  --el-flat:  none;                                 /* on the board — and    */
+                          /* this IS the #ruhe choice for a desktop panel:     */
+                          /* `as-ring-quiet` sets exactly this, which is why   */
+                          /* the rule is expressible as a step rather than as  */
+                          /* an absence                                        */
+  --el-rest:  0 0 calc(14px * var(--ui-scale, 1)) color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent);
+                          /* a panel at rest, deck-tinted — the value the 89   */
+                          /* `.as-ring` sites carry. Chosen over the CRT       */
+                          /* panel's fixed violet halo because it follows the  */
+                          /* active deck, and because it is the one the        */
+                          /* desktop switches OFF                              */
+  --el-float: 0 calc(14px * var(--ui-scale, 1)) calc(44px * var(--ui-scale, 1)) rgba(0, 0, 0, .42);
+  --el-modal: 0 calc(18px * var(--ui-scale, 1)) calc(48px * var(--ui-scale, 1)) rgba(0, 0, 0, .5);
+  --el-glow:  0 0 calc(16px * var(--ui-scale, 1)) calc(-8px * var(--ui-scale, 1)) var(--c, #8a8a95);
+                          /* #ruhe: ONLY the                                   */
+                          /* primary CTA glows. A token named for the rule is  */
+                          /* harder to spread than a shadow value copied       */
+
+  /* OUTSIDE THE LADDER: the coloured halo of a LOUD phase card, as its two     */
+  /* scalars. This is the value #ruhe removes on the desktop (quiet), kept so   */
+  /* the phone branch stays value-preserving. Nothing new takes it.             */
+  --el-halo-blur: calc(26px * var(--ui-scale, 1));
+  --el-halo-a:    .12;
+
+  /* ---- Radius. Three steps. ---------------------------------------------- */
+  --rd-sm: calc(6px * var(--ui-scale, 1));     /* #eckig: tiles, buttons, rows, chips */
+  --rd-md: calc(0.5rem * var(--ui-scale, 1));  /* a control that is not a tile        */
+  --rd-lg: calc(14px * var(--ui-scale, 1));    /* a panel — the frame, not the content */
+  /* REM STAYS REM, and the mixed units are deliberate — the same rule the type
+     block states above. --rd-md replaces Tailwind's rounded-lg, which emits
+     0.5rem; writing it as 8px would compute identically today and differently
+     for a reader who has changed their browser's base size. The other two
+     replace px literals and stay px. Value-preserving means preserving the
+     value, not its current evaluation. */
+
+  /* OUTSIDE THE LADDER: the overlay shell's outer corner. Not chosen —        */
+  /* MATCHED: the hairline clips against it, so the two must agree or the line */
+  /* cuts the corner. Below 1280 this is the untouchable phone card.           */
+  --rd-shell: calc(1rem * var(--ui-scale, 1));
+
+  /* ---- Inset: the gap between a box's edge and its content. Three steps. -- */
+  --in-tight: calc(11px * var(--ui-scale, 1));   /* a row or a chip */
+  --in-snug:  calc(13px * var(--ui-scale, 1));   /* an inner box    */
+  --in-base:  calc(18px * var(--ui-scale, 1));   /* a panel         */
+
+  /* OUTSIDE THE LADDER: a button pads against its LABEL, not against a panel  */
+  /* edge — the same reason fit-to-box text is exempt from the type ladder     */
+  /* (conventions.md 2b). One pair, so the 44px click target stays one edit.   */
+  --btn-pad-y: calc(0.625rem * var(--ui-scale, 1));   /* = py-2.5 */
+  --btn-pad-x: calc(1rem * var(--ui-scale, 1));       /* = px-4   */
+  /* A button's padding carries neither the --in- nor the --rd- prefix, and it scales anyway: a button
+     whose padding ignores --ui-scale while the panel around it obeys it is exactly the drift the hook
+     exists to prevent. Recorded as a decision, not an oversight. */
+  --btn-off-bg: #2a2a33;   /* disabled: flat grey. No signal, nothing to take */
+  --btn-off-fg: #8a8a92;
+
+  /* ---- Hairlines. Composites, one per family. ----------------------------- */
+  /* #deckui: the modal hairline pulls the ACTIVE DECK colour throughout; the   */
+  /* fallback is the old logo sweep, for a menu with no deck.                   */
+  --hl-deck:  linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
+  /* The IN-RUN phase bar is deliberately DECOUPLED — what you see while you    */
+  /* play keeps its own colour system, not the deck's.                          */
+  --hl-phase: linear-gradient(90deg, #26c6e6, #9b82f0, #f2a83a);
+  /* The accent bar is one colour, half -> full -> half, so it keeps a          */
+  /* silhouette instead of going flat. Only its END OPACITY is a token — the    */
+  /* gradient itself is assembled in modalStyle.jsx, same reason as the cone.   */
+  --hl-accent-a: .5;
+
+  /* ---- Phase identity colours. The CSS half of PHASE_ACCENTS. ------------- */
+  /* NOT a ladder: each one says which phase you are in. The JS half stays      */
+  /* literal, and modalStyle.jsx says why — two consumers concatenate it into   */
+  /* 8-digit hex, which a var() cannot survive.                                 */
+  --ac-violet: #9b82f0;  --ac-violet-rgb: 155, 130, 240;
+  --ac-green:  #5ab87a;  --ac-green-rgb:  90, 184, 122;
+  --ac-ice:    #7fdcff;  --ac-ice-rgb:    127, 220, 255;
+  --ac-gold:   #d4a63a;  --ac-gold-rgb:   212, 166, 58;
+  --ac-blue:   #3b7dbe;  --ac-blue-rgb:   59, 125, 190;
+  --ac-red:    #e05555;  --ac-red-rgb:    224, 85, 85;
+  --ac-danger: #e0605a;  /* the danger BUTTON, a warmer red than --ac-red.     */
+                         /* Two reds one shade apart — finding MENU-05         */
 }
 
 
@@ -244,6 +460,20 @@ html, body { background:#141419; color:#e8e8ea; font-family: var(--font-sans); -
 :root { --deck-border: color-mix(in srgb, var(--deck-a1, #2c2a3a) 45%, #17171c); }
 * { box-sizing: border-box; }
 button { font-family: inherit; }
+/* #menu-rework M1 — the ActionButton takes its radius and padding here instead of as utilities in
+   modalStyle.jsx, where they were values at the call site. EARLY in the stylesheet on purpose:
+   unlayered rules beat Tailwind's utilities, and because any later rule of equal specificity beats
+   this one, the #eckig handle in the 1280 block (.as-actbtn -> 6px) still lands unchanged.
+   Value-preserving: --rd-md is rounded-lg, --btn-pad-* is px-4/py-2.5, all three in rem as before. */
+.as-actbtn { border-radius: var(--rd-md); }
+/* PADDING RIDES ON ITS OWN HOOK, and that is a measured correction rather than taste. `as-actbtn` is
+   the #eckig RADIUS hook, and GameOver.jsx hangs it on three buttons it builds BY HAND — two of which
+   carry `py-3` / `py-2.5` and no horizontal padding at all. An unlayered rule beats a Tailwind utility
+   whatever the order, so putting padding here silently gave those three 16px of horizontal padding
+   they never had (15 deltas on the victory screen, finding MENU-16). `as-actbtn-pad` is emitted only
+   by ActionButton, so the kind's padding reaches the kind and nothing else.
+   The RADIUS may stay above: all three hand-built buttons carry `rounded-lg`, and --rd-md is its value. */
+.as-actbtn-pad { padding: var(--btn-pad-y) var(--btn-pad-x); }
 /* #typo-system S2 — die LETZTE Undichtigkeit der Gewichtsleiter, und die unauffälligste.
    Tailwinds Preflight setzt `b, strong { font-weight: bolder }`. Von 400 aus ergibt `bolder` **700**,
    also eine Sprosse, die die Leiter gar nicht kennt — und der `@theme`-Deckel greift nicht, weil er
@@ -3055,9 +3285,18 @@ b, strong { font-weight: 600; }
     overflow: hidden;
     border-radius: 14px;
     padding: 14px 16px 12px;
-    /* `!important`, weil `.cz-stage` seine Sticky-Kopf-Fläche INLINE setzt (STICKY_HEAD_BG) und Inline
-       jede Stylesheet-Regel schlägt — dieselbe Stelle, an der vorher `background: none !important` stand. */
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
+    /* #menu-rework M1 — an `!important` stood here, and it does not any more. `.cz-stage` still sets
+       its sticky-head fill INLINE, but since the vocabulary conversion the constant emits
+       `var(--sf-head)` rather than a literal. This rule redefines --sf-head ON THE ELEMENT; the
+       inline declaration reads the variable there and picks up the new value, with the cascade
+       intact. `.cz-fxside` has no inline fill at all and takes the same variable through the line
+       below — one source for both sides of the grid.
+       The gradient deliberately stays a literal rather than --sf-glass: the token form carries
+       `180deg` and therefore serialises differently, which the zero-delta run would report as a
+       difference although no pixel falls elsewhere. The workshop belongs to M2a, and so does this
+       line. */
+    --sf-head: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-head);
   }
   .cz-stage {
     grid-column: 2;   /* #panelseite: Bühne rechts, Liste links — wie in den Pack-Reitern */

@@ -36,6 +36,9 @@ import { spawn } from "node:child_process";
 import { launch, setViewport, reduceMotion, seedRandom, suppressInstallPrompt, screenshot,
   goto, evaluate, sleep } from "./cdp.mjs";
 import { probeSource } from "./surveyProbe.js";
+/* #menu-rework M1: the surface axes the geometry probe does not see. See surfaceProbe.js
+   for why this is a second probe and not an edit to the first. */
+import { surfaceProbeSource } from "./surfaceProbe.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /* `--out <dir>` added 2026-08-23 (#typo-system S0), and it fixes a real accident rather than adding
@@ -289,7 +292,8 @@ async function measure(c, surface) {
     return { reached: false, trace, why: `marker ${surface.marker} absent after navigation` };
   }
   const probe = await evaluate(c, probeSource());
-  return { reached: true, trace, settled, ...probe };
+  const surf = await evaluate(c, surfaceProbeSource());
+  return { reached: true, trace, settled, ...probe, ...surf };
 }
 
 /* Every cell runs against a wall-clock deadline, and this is not belt-and-braces — it cost 53
@@ -395,6 +399,7 @@ try {
           process.stdout.write(`    ${s.id.padEnd(14)} scroll ${sc.x}x${sc.y}px · `
             + `${cell.overflows.length} overflow · ${cell.outside.length} outside · `
             + `${cell.truncated.length} truncated · ${cell.type.length} text`
+            + `${cell.surface ? ` · ${cell.surface.length} surf` : ""}`
             + `${cell.shrunk && cell.shrunk.length ? ` · ${cell.shrunk.length} SHRUNK` : ""}\n`);
           /* #typo-system S0: capture the V1/V2 screenshot pair for the human visual gate.
 

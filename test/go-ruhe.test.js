@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { inlineValueOf, overridesInline } from "./inlineOverride.js";
 
 /* ============================================================
    #go-ruhe (19.08.2026) — der Siegesbildschirm im Desktop-Ton.
@@ -11,8 +12,9 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 
    · `as-ring-quiet` an den Panels — verliert eines den Modifikator, holt es sich den laufenden Ring
      zurück (dieselbe Begründung wie in #up-ruhe und #st-ruhe).
-   · `.go-box` an den `MENU_PANEL`-Kästen — die Konstante wird INLINE gesetzt; ohne `!important` an
-     Fläche und Rahmen bliebe die Regel wirkungslos, ohne dass im Quelltext etwas fehlt.
+   · `.go-box` an den `MENU_PANEL`-Kästen — die Konstante wird INLINE gesetzt; wird sie an der Regel
+     nicht neutralisiert, bliebe die flache Fassung wirkungslos, ohne dass im Quelltext etwas fehlt.
+     (#menu-rework M1: WIE sie neutralisiert wird, steht nicht mehr hier fest — s. inlineOverride.js.)
    · die Kennzahlenreihe im Kopf ist DESKTOP-ONLY (`wide`) — fällt die Bedingung weg, trägt das Handy
      plötzlich vier beschriftete Werte neben einer 40-px-Zahl.
    · das Bestleistungs-Panel hängt an `prevBests`, dem Schnappschuss VOR `recordRun`. Wird er aus
@@ -24,6 +26,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const go = read("src/ui/GameOver.jsx");
 const app = read("src/App.jsx");
+const modal = read("src/ui/modalStyle.jsx");
 const storage = read("src/game/storage.js");
 // Kommentarfreie Fassung: die Begründungen nennen die alten Werte absichtlich beim Namen.
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -86,10 +89,20 @@ describe("#go-ruhe — EINE Kachelform für alles im Panel", () => {
   });
 
   it("die flache Fassung schlägt das INLINE gesetzte MENU_PANEL", () => {
+    /* #menu-rework M1 — geprüft wird die INVARIANTE, nicht der Mechanismus: am Element gewinnt der
+       flache Wert, egal ob über `!important` oder darüber, dass die Regel die Variable umdefiniert,
+       die der Inline-Wert liest. Der Wert wird dabei aus modalStyle.jsx GEHOLT statt hier noch
+       einmal hingeschrieben — steht dort eines Tages etwas anderes, prüft dieser Wächter das
+       andere. Begründung ausführlich in test/inlineOverride.js. */
     const box = desk.match(/\.go-card \.go-box\s*\{[^}]*\}/)[0];
-    for (const prop of ["background", "border"])
-      expect(box, `${prop} ohne !important — MENU_PANEL steht inline und gewänne`)
-        .toMatch(new RegExp(`${prop}:[^;]*!important`));
+    for (const prop of ["background", "border"]) {
+      const inline = inlineValueOf(modal, "MENU_PANEL", prop);
+      expect(inline, `MENU_PANEL setzt ${prop} nicht mehr inline — dann prüft dieser Test nichts`).toBeTruthy();
+      expect(overridesInline(box, prop, inline),
+        `${prop} wird an .go-card .go-box nicht neutralisiert — MENU_PANEL steht inline (${inline}) `
+        + `und gewänne. Nötig ist entweder !important, oder die Regel definiert die Variable um, `
+        + `die der Inline-Wert liest.`).toBeTruthy();
+    }
   });
 
   it("Kästen MIT Farbkante behalten sie (#kante)", () => {

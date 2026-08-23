@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { inlineValueOf, overridesInline } from "./inlineOverride.js";
 
 /* ============================================================
    #st-ruhe (19.08.2026) — die Statistik im Desktop-Ton.
@@ -11,13 +12,15 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
    · `as-ring-quiet` an fünf Panels — verliert eines den Modifikator, holt es sich still den laufenden
      Ring zurück und sieht für sich genommen weiter richtig aus (dieselbe Begründung wie in #up-ruhe).
    · die acht `MENU_PANEL`-Kästen und ihre gemeinsame Klasse `.st-box` — die Konstante wird INLINE
-     gesetzt, ohne `!important` an Fläche und Rahmen bliebe die Regel wirkungslos, ohne dass im
-     Quelltext etwas fehlt.
+     gesetzt; wird sie an der Regel nicht neutralisiert, bliebe die flache Fassung wirkungslos, ohne
+     dass im Quelltext etwas fehlt. (#menu-rework M1: WIE sie neutralisiert wird, steht nicht mehr
+     hier fest — s. inlineOverride.js.)
    ============================================================ */
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const stats = read("src/ui/StatsScreen.jsx");
+const modal = read("src/ui/modalStyle.jsx");
 // Kommentarfreie Fassung: die Begründungen unten nennen die alten Werte absichtlich beim Namen.
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const deskBlock = (src) => {
@@ -79,10 +82,17 @@ describe("#st-ruhe — EINE Kachelform für alles im Panel", () => {
   });
 
   it("die flache Fassung schlägt das INLINE gesetzte MENU_PANEL", () => {
+    /* #menu-rework M1 — geprüft wird die INVARIANTE, nicht der Mechanismus. Dieselbe Bauart wie in
+       go-ruhe; die Begründung steht einmal, in test/inlineOverride.js. */
     const box = desk.match(/\.st-box\s*\{[^}]*\}/)[0];
-    for (const prop of ["background", "border"])
-      expect(box, `${prop} ohne !important — MENU_PANEL steht inline und gewänne`)
-        .toMatch(new RegExp(`${prop}:[^;]*!important`));
+    for (const prop of ["background", "border"]) {
+      const inline = inlineValueOf(modal, "MENU_PANEL", prop);
+      expect(inline, `MENU_PANEL setzt ${prop} nicht mehr inline — dann prüft dieser Test nichts`).toBeTruthy();
+      expect(overridesInline(box, prop, inline),
+        `${prop} wird an .st-box nicht neutralisiert — MENU_PANEL steht inline (${inline}) und `
+        + `gewänne. Nötig ist entweder !important, oder die Regel definiert die Variable um, die der `
+        + `Inline-Wert liest.`).toBeTruthy();
+    }
   });
 });
 
