@@ -51,6 +51,7 @@ document can be perfectly current while its branch references are stale.
 
 | File | Status | Date | What it is |
 | --- | --- | --- | --- |
+| `design-sprache.md` | **living** | 2026-08-24 | Design language for every menu overlay (≥ 1280 px). Declares itself a *lebendes Dokument* — the source of truth for panel recipe, head canon, colour roles, components and states. **Read before touching any overlay**; the per-screen design docs defer to it |
 | `archetyp-effekte-eigenstaendig.md` | **living** | 2026-08-14 | Standalone archetype effects. Declares itself *"Lebendes Dokument … die Quelle der Wahrheit, die den Clear überlebt"* — read before working in this area |
 | `archetyp-karteneffekte.md` | **living** | 2026-08-12 | One Pixi card effect per faction; specification, decisions and implementation status |
 | `stein-fraktion.md` | **draft** / living | 2026-08-18 | Stone faction. Declares *"Status: KONZEPT. Nur Vision, Fundament und Abgrenzung. Noch keine Skills, noch keine Zahlen."* |
