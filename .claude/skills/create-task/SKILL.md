@@ -1,7 +1,7 @@
 ---
 name: create-task
 description: Set up a task — audit, branch, worktree, deps, contract scaffold
-argument-hint: <task-slug> <A|B|C> [--base <branch>] [--feature <branch>] [--pixels]
+argument-hint: <task-slug> <A|B|C> [--base <branch>] [--feature <branch>]
 allowed-tools: Bash(git fetch origin:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git for-each-ref:*), Bash(git ls-remote:*), Bash(git rev-list:*), Bash(git worktree list:*), Bash(git worktree add:*), Bash(git log:*), Bash(git status:*), Bash(git -C:*), Bash(npm --prefix:*), Read, Grep, Glob, Write
 ---
 
@@ -45,7 +45,6 @@ These bind for the whole command. The `allowed-tools` list is only a first line 
 - **Never run a validation gate.** Setup produces no gate result worth reporting.
 - **Never edit `AGENTS.md`, `CLAUDE.md`, `docs/engineering/**`, or any other rule document.**
 - **Never write into an existing worktree** other than the one this run creates.
-- **Never take the V1 baseline yourself.** Prompt; a human decides what state to capture.
 
 ---
 
@@ -57,7 +56,6 @@ These bind for the whole command. The `allowed-tools` list is only a first line 
 | `<A\ | B\ | C>` | yes | the tier |
 | `--base <branch>` | no | default `dev` for Tier A/B; ignored for Tier C, whose base is the feature branch |
 | `--feature <branch>` | Tier C only | the feature integration branch the task hangs under |
-| `--pixels` | no | the work will move pixels |
 
 **Stop and ask, creating nothing, if:**
 
@@ -237,8 +235,7 @@ Staffing a task is a decision, not a derivation.
 Write no file and create no workstream directory. Print a task-note template for the human to put in
 the branch's first commit message or a scratch file, with the five headings
 `task-lifecycle.md` — *Tier A — standard task* requires: goal, non-goals, expected file surface,
-known hazards, done criteria. Include the derived table above as context, then state that Tier A
-records V4 in the task note or handoff, not in a workstream directory.
+known hazards, done criteria. Include the derived table above as context.
 
 ### Tier B and C — write one file
 
@@ -263,15 +260,7 @@ print the manual finish for a human.** Do not retry in a loop, do not delete any
 the worktree — that is class 3. State plainly that no test or lint result from that worktree means
 anything until this succeeds.
 
-## Step 13 — the visual baseline, only with `--pixels`
-
-Print the V1 prompt: this is the moment to capture the baseline, before the first pixel moves, and
-`task-lifecycle.md` — *Visual review* is the procedure. Name what must be recorded alongside it —
-sizes, DPR, application state — because V2 has to match them.
-
-**Do not capture it.** A human chooses the state.
-
-## Step 14 — output
+## Step 13 — output
 
 In this order:
 
@@ -283,8 +272,7 @@ In this order:
 the `npm ci` result. Never list something you did not create.
 
 **D. What a human must do next** — the `TODO` sections to fill, in the order the contract needs them;
-whether the base branch still needs pushing (Tier C, local-only feature branch); the V1 capture, if
-`--pixels`; and the `npm ci` finish, if step 12 failed.
+whether the base branch still needs pushing (Tier C, local-only feature branch); and the `npm ci` finish, if step 12 failed.
 
 **E. Outcome** — exactly one of `PROCEED`, `STOP-AND-ASK` or `ABORT`, with the reason.
 

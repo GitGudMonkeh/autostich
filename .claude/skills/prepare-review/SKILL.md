@@ -21,10 +21,9 @@ session, or it is marked as a gap.
 
 Rules are cited, not restated. The evidence package and the handoff are
 `docs/engineering/task-lifecycle.md` — *Evidence package* and *Handoff to independent review*. Hazard
-and downgrade rules are the same document — *Two standing rules*. The visual gate is the same
-document — *Visual review*. Reviewer scope is `docs/engineering/git-workflow.md` — *Reviewer
-ownership*. Gates and reporting honesty are `AGENTS.md` — *Validation gates* and *House rules*. Where
-this file and those disagree, those win.
+and downgrade rules are the same document — *Two standing rules*. Reviewer scope is
+`docs/engineering/git-workflow.md` — *Reviewer ownership*. Gates and reporting honesty are
+`AGENTS.md` — *Validation gates* and *House rules*. Where this file and those disagree, those win.
 
 Arguments: `$ARGUMENTS` — first positional is the contract path; `--base <sha>` and `--head <sha>`
 override the derived range; `--run-gates` opts into running the gates in this session; `--closure`
@@ -44,8 +43,6 @@ These bind for the whole command. The `allowed-tools` list is only a first line 
 - **Never pipe a gate command** (`AGENTS.md` — *Validation gates*). Bare commands only.
 - **Never resolve a hazard.** You may demand a status and report where one is already written down.
   You may not decide one.
-- **Never classify a visual finding.** V3 and V4 are human (`task-lifecycle.md` — *Visual review*).
-  You may report that captures exist and whether they are committed; never what they show.
 - **Never claim scope compliance for an entry you could not hash.** Print it in its own row as
   `not mechanically verifiable — reviewer must judge`.
 - **Never edit anything** — not source, not tests, not the contract, not a rule document, not the
@@ -62,7 +59,7 @@ Open the report with one line: this prepares a handoff, it does not review, it a
 every gate row states whether it was run in this session.
 
 Then state the **review type**, which the handoff must carry unambiguously
-(`AGENTS.md` — *Independent review*, `task-lifecycle.md` §9):
+(`AGENTS.md` — *Independent review*, `task-lifecycle.md` §8):
 
 - **Without `--closure`: `Review Type: Full`.** The reviewer may examine the whole agreed scope.
 - **With `--closure <ids>`: `Review Type: Closure`.** Reproduce the IDs verbatim and put the closure
@@ -293,7 +290,7 @@ Locate the workstream directory's evidence, if any. Report:
   (`git -C <worktree> status --porcelain <evidence-dir>`);
 - the count and total size of image files.
 
-Apply `task-lifecycle.md` — *Committing evidence*: metadata and classification tables are always
+Apply `task-lifecycle.md` — *Committing evidence*: metadata and the tables carrying the claims are always
 committed; images only when they **are** the evidence. **Report the state and cite the rule. Decide
 nothing**, and never say what an image shows.
 
