@@ -2061,6 +2061,79 @@ b, strong { font-weight: 600; }
 .as-opt-row { --c: #3a3a48; }
 .as-opt-row:has([role="switch"][aria-checked="true"]) { --c: #5ab87a; }
 
+/* #optionen-redesign — die Bedienelemente des Optionen-Screens (src/ui/optionsBits.jsx).
+   ============================================================================
+   ALLES HIER IST WERTGLEICH zu den Inline-Stilen, die es ersetzt. Die Maße standen vorher als
+   `style={{ width: 46, height: 26, … }}` im JSX; sie stehen jetzt hier, Zahl für Zahl dieselben,
+   damit die schmale Fassung sich nicht bewegt. Was den Zustand trägt, ist `aria-checked` — das
+   Attribut, das ohnehin da sein muss, statt eines zweiten Wegs daneben.
+
+   ZWEI BAUTEILE ÄNDERN SICH AUCH SCHMAL, und das ist die Entscheidung des Entwurfs, nicht Bequem-
+   lichkeit: die Sprachwahl wird ein Dropdown (eine Segmented-Reihe wächst mit jeder Sprache in die
+   Breite), und die Regler bekommen ihre Wertanzeige, weil die Beschreibung ihren `{pct}` abgegeben
+   hat — eine schmale Fassung, die dafür nichts zurückbekommt, hätte Information verloren statt sie
+   umgestellt. Der Entwurf sagt für genau diesen Fall: die Komponenten-Maße gelten dort ebenfalls,
+   sobald das Bauteil angefasst wird.
+
+   COMMIT 2a: Struktur mit den heutigen Flächenwerten. Die Tokens kommen in 2b. */
+
+.op-switch { width: 46px; height: 26px; background: #30303a; border: 1px solid #3a3a44; }
+.op-switch[aria-checked="true"] { background: #5ab87a; border-color: #5ab87a; }
+.op-switch-knob { width: 20px; height: 20px; left: 2px; background: #f2f2f4; transform: translateY(-50%); }
+.op-switch[aria-checked="true"] .op-switch-knob { left: 22px; }
+.op-switch:disabled { cursor: not-allowed; }
+
+.op-seg { border: 1px solid #3a3a44; }
+.op-seg-btn { background: #25252e; color: #c8c8d0; }
+.op-seg-btn[aria-checked="true"] { background: #d4a63a; color: #141419; }
+
+/* Das Zeilen-Zeichen ist gezeichnet statt getippt (s. optionsBits.jsx). Die Box, in der es sitzt,
+   ist unverändert — nur ihr Inhalt ist jetzt ein <svg> statt einer Glyphe. */
+.op-icon-svg { width: 16px; height: 16px; display: block; }
+
+/* Regler: Breite und Zeiger wie vorher. Die Farbe ist jetzt für ALLE DREI die Deckfarbe — vorher
+   trug SFX Grün, die Musik die Deckfarbe und die Zahlengröße Gold, ohne erkennbare Regel. Ein Regler
+   ist Chrome, kein Zustandssignal: Grün gehört den Schaltern, Gold der Währung. */
+.op-slider input[type="range"] { width: 120px; accent-color: var(--deck-a1, #8a7de0); cursor: pointer; }
+.op-slider.is-off input[type="range"] { cursor: not-allowed; }
+/* 42 % statt der bisherigen 40 %: der Komponenten-Kanon hat EINEN Wert für „hängt an etwas anderem",
+   und er steht auch an der Float-Untergruppe. */
+.op-slider.is-off { opacity: .42; }
+.op-slider-val { min-width: 46px; text-align: right; font-size: var(--text-body-1); color: #c9c9d2; }
+
+/* Dropdown. Feste Knopfbreite, damit der Kasten beim Wechseln der Auswahl nicht springt. Die Liste
+   liegt absolut über dem Inhalt und wird nicht mitgescrollt — sie schließt bei Klick daneben. */
+.op-dd { position: relative; }
+.op-dd-btn { min-width: 172px; min-height: 44px; padding: 0 12px;
+  border: 1px solid #3a3a44; background: rgba(19, 19, 26, .9); color: #f0eefc;
+  font-size: var(--text-body-5); font-weight: 600; }
+.op-dd-chev { width: 12px; height: 12px; color: #8a8a95; transition: transform 140ms ease; }
+.op-dd-chev[data-open="1"] { transform: rotate(180deg); }
+.op-dd-list { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; min-width: 172px;
+  margin: 0; padding: 4px; list-style: none;
+  border: 1px solid #3a3a44; border-radius: 10px; background: #1b1a24;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
+.op-dd-item { min-height: 36px; padding: 0 10px; border-radius: 6px; color: #c9c9d2;
+  font-size: var(--text-body-5); }
+.op-dd-item:hover { background: rgba(255, 255, 255, .05); }
+/* Gewählt heißt HELLER **und** Haken — eine fettere Schrift allein ist auf einer Liste aus zwei
+   Einträgen kein Unterschied, den man ohne Vergleich sieht. */
+.op-dd-item[data-sel="1"] { color: #f0eefc; }
+.op-dd-tick { width: 14px; height: 14px; color: var(--deck-a1, #8a7de0); }
+
+/* Die Float-Gruppe ist auf dem Handy eine reine Klammer — dieselbe `display: contents`-Technik wie
+   `.op-col2`, damit Reihenfolge und Abstände der abgenommenen schmalen Fassung exakt bleiben. Erst
+   ab 1280 px wird sie der umschlossene Block, den der Entwurf zeichnet. */
+.op-floatsubs { border-left: 2px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 27%, transparent); }
+.op-floatsubs.is-off { opacity: .42; }
+/* Die Untergruppe nimmt keine Eingabe an, wenn der Master aus ist. Die Schalter darin tragen
+   zusätzlich `disabled` — das hier ist die Maus, das Attribut ist die Tastatur. */
+.op-floatsubs.is-off { pointer-events: none; }
+
+/* Der Fuß gehört der breiten Fassung. Unter 1280 px gibt es ihn nicht: die schmale Fassung ist
+   abgenommen, und ein Zurücksetzen-Knopf ist eine neue Handlung, keine Umstellung einer alten. */
+.op-foot { display: none; }
+
 /* Die vier Gruppierungs-Container sind auf dem Handy reine Klammern ohne eigene Box: `display: contents`
    reicht ihre Kinder unverändert an die Flex-Spalte des Startbildschirms durch. Reihenfolge und Abstände
    bleiben damit exakt wie vorher — die Gruppen existieren allein für das Desktop-Raster. */
@@ -2070,7 +2143,7 @@ b, strong { font-weight: 600; }
    `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
    Unterhalb von 1280 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
-.op-col2, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-left, .go-col1 { display: contents; }
+.op-col2, .op-floatgroup, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-left, .go-col1 { display: contents; }
 /* Zwei Bausteine des Willkommen-Bildschirms gehören AUSSCHLIESSLICH der breiten Fassung: das Zeichen im
    Speichern-Knopf und die Beschriftung über dem Namensfeld (auf dem Handy steht der Titel schon darüber).
    Sie stehen im DOM, damit die breite Fassung ohne zweiten Renderpfad auskommt — hier sind sie aus. */
@@ -3911,17 +3984,18 @@ b, strong { font-weight: 600; }
     border-bottom: 0 !important;
     padding: 10px 0 8px !important;
   }
-  /* Titel · Auskunft · Schließen in EINER Zeile (Raster von `.up-head`). */
+  /* #optionen-redesign: Titel und Schließen, ZWEI Spalten statt drei. Die Auskunftszeile stand in der
+     mittleren Spalte hinter einem senkrechten Strich; sie steht jetzt als Unterzeile am Titel, wohin
+     sie inhaltlich gehört — eine Kontur weniger im Kopf, und der Titelblock liest sich als einer. */
   .op-headrow {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 22px;
   }
   .op-title h2 { font-size: var(--text-figure-1); margin-top: 2px; }
   .op-readout {
-    padding-left: 22px;
-    border-left: 1px solid rgba(150, 150, 170, .18);
+    margin-top: 3px;
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
   /* Gleiche Knopfgröße wie im Baum und in der Werkstatt (44-px-Klickziel des Desktop-Passes). */
@@ -4036,10 +4110,64 @@ b, strong { font-weight: 600; }
   /* Regler: schmalere Spur, kleinerer Griff, mehr Länge — die Feineinstellung soll sich fein anfühlen. */
   .op-sec input[type="range"] { width: 148px !important; height: 4px; }
 
-  /* Kopf: der Einzeiler steht als Unterzeile am Titel, nicht hinter einem Trennstrich — eine Kontur
-     weniger, und die Ansage gehört ohnehin zum Titel. */
-  .op-readout { padding-left: 0; border-left: 0; }
   .op-closeicon { display: inline-block; margin-right: 8px; opacity: .7; font-size: var(--text-body-3); }
+
+  /* ---- #optionen-redesign, ab hier -----------------------------------------
+     TON ÜBER GRAFIK, per `order` statt über das DOM. Im Quelltext steht weiter Grafik zuerst, damit
+     die schmale Fassung Zeile für Zeile die bleibt, die abgenommen wurde; hier tauschen die beiden
+     Sektionen ihre Plätze in der Flex-Spalte. Dieselbe Bauart wie `.op-hair` weiter oben.
+
+     Die BEGRÜNDUNG des Entwurfs für diese Reihenfolge ist nachgemessen hinfällig — „Grafik" fiele
+     ohne die Dev-Zeilen nicht auf zwei Zeilen zusammen, weil in einem `main`-Build nie welche darin
+     standen (Befund MENU-08). Die PLATZIERUNG bleibt trotzdem richtig: Spalte 2 ist mit 614 px die
+     kürzeste, „Ton" leistet dort Ausgleich. Gleiche Entscheidung, anderer Grund. */
+  .op-col2 > .op-sec[data-sec="sound"] { order: 1; }
+  .op-col2 > .op-sec[data-sec="graphics"] { order: 2; }
+
+  /* Master und Untergruppe als EIN umschlossener Block: vorher trug die Abhängigkeit allein eine
+     dünne Einrück-Kante, und der Master las sich wie jede andere Zeile. */
+  .op-floatgroup {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(150, 150, 170, .12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .012);
+  }
+  .op-floatgroup > .as-opt-row { border-bottom: 1px solid rgba(150, 150, 170, .12) !important; }
+  .op-floatsubs { border-left-color: color-mix(in srgb, var(--deck-a1, #8a7de0) 40%, transparent); }
+
+  /* Die Dev-Sektion läuft über alle drei Spalten und steht unter ihnen — sie ist Werkzeug, nicht
+     Spieler-Option, und nur im Preview-Build überhaupt im DOM. */
+  .op-sec-dev { grid-column: 1 / -1; }
+
+  /* Der Fuß: volle Breite, an der UNTERKANTE der Karte verankert statt direkt unter der höchsten
+     Spalte — sonst hinge er je nach Sprache auf einer anderen Höhe. */
+  .op-foot {
+    display: flex;
+    order: 4;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 48px 4px;
+  }
+  .op-foot-hint { color: #5c5c68; font-size: var(--text-body-3); }
+  /* Ein ruhiger Textknopf, kein Signalknopf: Zurücksetzen ist kein Angebot. */
+  .op-reset { color: #8a8a95; font-size: var(--text-body-3); padding: 6px 0; }
+  .op-reset:hover { color: #d5d5df; }
+  .op-reset-icon { width: 14px; height: 14px; }
+  .op-reset-ask { color: #d5d5df; font-size: var(--text-body-3); }
+  .op-reset-yes { color: #e0605a; font-size: var(--text-body-3); font-weight: 600;
+    padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(224, 96, 90, .38); }
+  .op-reset-yes:hover { background: rgba(224, 96, 90, .12); }
+  .op-reset-no { color: #8a8a95; font-size: var(--text-body-3); padding: 6px 10px; }
+  .op-reset-no:hover { color: #d5d5df; }
+
+  /* Der Komponenten-Kanon: alles Bedienbare misst 44 px in der Höhe. Sichtbar bleibt der Schalter
+     46 x 26 — das Klickziel wächst über ein Pseudo-Element, das nichts umbricht. */
+  .op-switch { position: relative; }
+  .op-switch::after { content: ""; position: absolute; left: 0; right: 0; top: -9px; bottom: -9px; }
+  .op-dd-btn { font-size: var(--text-body-3); }
 
   /* Auch die beiden Dialog-Wurzeln geben ihren Inline-Blur ab: Die Filterfläche ist der VIEWPORT, nicht
      der Dialog — hinter ihnen liegt der Hub mit laufender Wortmarke und Ringen, also genau die

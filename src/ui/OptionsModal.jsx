@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
+import { OptIcon, Toggle, Segmented, Dropdown, Slider, ResetAction } from "./optionsBits.jsx";
+import { defaultScreenOptions } from "../game/storage.js";
 import { LOCALES, fmtPct } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
-// #400 Test-Viewport — nur im Preview-Build gelesen (Gate an der Zeile unten in der Grafik-Sektion).
+// #400 Test-Viewport — nur im Preview-Build gelesen (Gate an der Zeile unten in der Dev-Sektion).
 import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChange } from "./testViewport.js";
 
 /* Optionen-Overlay (#41): erreichbar aus dem Menü UND im laufenden Run (dort pausiert
@@ -18,72 +20,45 @@ import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChan
 
    #optionen-ton (19.08.2026): Die schmale Fassung bleibt bewusst reiner Text. Ab 1280 px stehen drei
    Panels nebeneinander, und dort trägt jede Zeile ein Zeichen — nicht als Schmuck, sondern weil in
-   drei Spalten gesucht statt gelesen wird. Es sind einfarbige Text-Glyphen wie im Glossar, keine
-   Emoji, und sie führen den Zustand der Zeile (grün = an) weiter, den auf dem Handy die Kante trägt. */
+   drei Spalten gesucht statt gelesen wird. */
 
-/* Ein/Aus-Schalter im Stil der übrigen UI. */
-function Toggle({ on, onClick }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={on}
-      onClick={onClick}
-      className="relative rounded-full transition-all shrink-0"
-      /* #kante: „an" ist im Spiel grün (wie die Aktiv-Marken in der Werkstatt), nicht gold — Gold gehört
-         der Währung und dem Ziel einer Phase. Die Zeile darum färbt sich in derselben Farbe. */
-      style={{
-        width: 46, height: 26,
-        background: on ? "#5ab87a" : "#30303a",
-        border: `1px solid ${on ? "#5ab87a" : "#3a3a44"}`,
-      }}
-    >
-      <span
-        className="absolute top-1/2 rounded-full transition-all"
-        style={{
-          width: 20, height: 20, background: "#f2f2f4",
-          transform: "translateY(-50%)",
-          left: on ? 22 : 2,
-        }}
-      />
-    </button>
-  );
-}
+/* #optionen-redesign (24.08.2026) — der freigegebene Zielentwurf, docs/optionen-redesign.md.
+   ============================================================================
+   Vier Dinge ändern sich: die Spalten werden nach INHALT geteilt statt nach Zeilenzahl, der Kopf
+   trägt seine Auskunft als Unterzeile statt hinter einem Trennstrich, ein Fuß kommt dazu, und die
+   Dev-Zeilen verlassen den Spieler-Screen.
 
-/* 3-Wege-Auswahl (z. B. Auto/An/Aus) im Stil der übrigen UI.
-   `self-start`: In der gestapelten Zeile („Effekte reduziert") ist der Elternteil eine Spalte, und deren
-   Kinder werden quer GESTRECKT — der Rahmen lief dann über die ganze Zeilenbreite, während die drei Knöpfe
-   im linken Drittel standen. Die Auswahl bemisst sich an ihrem Inhalt, nicht am Kasten. Gilt für BEIDE
-   Fassungen: die schmale hatte denselben Fehler. */
-function Segmented({ value, options, onChange }) {
-  return (
-    <div className="flex rounded-lg overflow-hidden shrink-0 self-start" style={{ border: "1px solid #3a3a44" }}>
-      {options.map((o) => {
-        const on = value === o.v;
-        return (
-          <button key={o.v} role="radio" aria-checked={on} onClick={() => onChange(o.v)}
-            className="px-3 py-1.5 text-body-5 font-bold transition-all"
-            style={{ background: on ? "#d4a63a" : "#25252e", color: on ? "#141419" : "#c8c8d0" }}>
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+   ZWEI DINGE, DIE DER ENTWURF NICHT WUSSTE, und beide sind nachgemessen:
+
+   1. Die Dev-Zeilen waren SCHON preview-gated. Der Entwurf nennt als Ausgangsproblem, sie nähmen ein
+      Drittel der mittleren Spalte; in einem `main`-Build stand dort nie etwas. Gemessen enden die
+      Spalten bei 619 / 614 / 710 px statt der angenommenen 680 / 1010 / 790, die tote Fläche unten
+      links ist ~91 px statt ~350, und die längste Spalte ist die DRITTE. Der Umbau bleibt richtig, er
+      verschiebt aber eine Spalte um 76 px statt ein Drittel Bildschirm (Befund MENU-08/09).
+
+   2. „Ton stumm" → „Ton" dreht NUR DIE ANZEIGE um. Der gespeicherte Schlüssel bleibt `muted` mit
+      `true` = stumm. Wer den Wert selbst invertiert, setzt jedes bestehende Spielerprofil auf stumm —
+      und zwar auch die Stummtaste am Hub, in der Eckleiste und in den Lauf-Controls, die alle
+      denselben Schlüssel lesen (MuteButton.jsx). Deshalb: `!options.muted` anzeigen, `muted`
+      schreiben. `test/optionen-redesign.test.js` wacht darüber.
+
+   REIHENFOLGE ÜBER `order`, NICHT ÜBER DAS DOM. „Ton" steht ab 1280 px über „Grafik & Leistung"; im
+   DOM bleibt die alte Folge, damit die schmale Fassung Zeile für Zeile die bleibt, die abgenommen
+   wurde. Dieselbe Bauart wie `.op-hair` weiter unten.
+
+   COMMIT 2a: die STRUKTUR, mit den heutigen Flächenwerten. Die Tokens kommen in 2b. */
 
 /* Eine Options-Zeile: Titel + Beschreibung links, Steuerung rechts. `stack` (#363) → Text OBEN, Steuerung darunter
    (voll-breit) — für Zeilen mit breiter Steuerung + langem Text (z. B. „Effekte reduziert"), damit auf schmalen
    Breiten weder Text noch die Knöpfe gequetscht werden. */
 /* #kante: Kanten-Zeile mit schmaler Kante. Ob sie grün wird, entscheidet index.css anhand des Schalters
    in `children` (`.as-opt-row:has(…)`) — die Zeile selbst muss den Zustand gar nicht kennen. */
-/* #optionen-ton (19.08.2026): `icon` ist ein reines DESKTOP-Zeichen. Ab 1280 px trägt es den Zustand
-   der Zeile (`--c`, dieselbe Variable, die auf dem Handy die linke Kante färbt) und macht die Spalte
-   scanbar — man findet eine Einstellung am Zeichen, bevor man die Zeile liest. Unter 1280 px ist es
-   `display: none`: dort ist die Liste schmal, und ein Zeichen je Zeile nähme dem Text die Breite. */
-function Row({ icon, title, desc, children, stack = false }) {
+/* #optionen-redesign: `icon` ist jetzt ein NAME statt einer Glyphe (s. optionsBits.jsx). `off` dämpft
+   die Zeile, wenn ihr Schalter von einem anderen abhängt — sichtbar, nicht nur wirkungslos. */
+function Row({ icon, title, desc, children, stack = false, off = false }) {
   return (
-    <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
-      {icon && <span className="as-deskonly op-rowicon" aria-hidden="true">{icon}</span>}
+    <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3${off ? " is-off" : ""} ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
+      {icon && <span className="as-deskonly op-rowicon" aria-hidden="true"><OptIcon name={icon} /></span>}
       <div className="op-rowtext flex-1">
         <div className="op-rowtitle font-bold text-body-lg-5">{title}</div>
         {desc && <div className="op-rowdesc text-body-lg-5 opacity-70 leading-snug">{desc}</div>}
@@ -147,6 +122,11 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
   const secRefs = useRef({});
   const [active, setActive] = useState(SECTIONS[0].id);
 
+  /* #optionen-redesign: „Ton an" IST „nicht stumm". Nur die Anzeige dreht sich; geschrieben wird
+     weiter `muted`, sonst stünde nach dem Update jedes bestehende Profil auf stumm. */
+  const soundOn = !options.muted;
+  const floatOn = !(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose);
+
   /* Aktiver Chip folgt dem Scrollen: beobachtet werden die Sektionen, gezählt wird aber nur das obere
      Band des Scroll-Bodys (rootMargin schneidet die unteren 65 % weg) — sonst gälte beim Scrollen immer
      die längste sichtbare Sektion als aktiv statt der, die gerade oben klebt. Bei mehreren Treffern
@@ -189,11 +169,10 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               {/* #deckui: Eyebrow deck-getönt. */}
               <div className="text-body-5 uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.eyebrow")}</div>
               <h2 className="text-title-6 font-bold mt-1">{t("options.title")}</h2>
+              {/* #optionen-redesign: Die Auskunft steht als UNTERZEILE am Titel statt rechts daneben
+                  hinter einem Trennstrich — eine Kontur weniger, und die Ansage gehört zum Titel. */}
+              <div className="op-readout hidden dt:block">{t("options.desk.readout")}</div>
             </div>
-            {/* #desktop: Auskunftszeile neben dem Titel — dieselbe Stelle wie das Guthaben im Upgrade-Baum
-                (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1280 px gibt es sie nicht: dort ist
-                der Kopf zweizeilig und trägt bereits die Sprungleiste. */}
-            <div className="op-readout hidden dt:block">{t("options.desk.readout")}</div>
             <ActionButton kind="secondary" className="op-close ml-auto shrink-0" onClick={onClose}>
               <span className="as-deskonly op-closeicon" aria-hidden="true">✕</span>{t("common.close")}
             </ActionButton>
@@ -212,26 +191,31 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           <Section id="general" title={t("options.sec.general")}
             innerRef={(el) => { secRefs.current.general = el; }}>
           {/* #sprache: Sprachwahl ganz oben. Die Labels der Sprachen stehen bewusst in ihrer EIGENEN Sprache
-              („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem. */}
-          <Row icon="⊕" title={t("options.language.title")} desc={t("options.language.desc")}>
-            <Segmented value={locale}
+              („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem.
+              #optionen-redesign: Dropdown statt Segmented — die Liste WÄCHST, und drei Reiter nebeneinander
+              wären bei der vierten Sprache eine Reiterzeile, die niemand mehr überblickt. */}
+          <Row icon="language" title={t("options.language.title")} desc={t("options.language.desc")}>
+            <Dropdown value={locale} label={t("options.language.title")}
               options={LOCALES.map((l) => ({ v: l.id, label: l.label }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
-          <Row icon="≋" title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
-            <Toggle on={options.haptics !== false} onClick={() => onChange({ haptics: options.haptics === false })} />
+          <Row icon="haptics" title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
+            <Toggle on={options.haptics !== false} label={t("options.haptics.title")}
+              onClick={() => onChange({ haptics: options.haptics === false })} />
           </Row>
           {/* Ruhiger Modus: kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks (Default aus). */}
-          <Row icon="☾" title={t("options.calm.title")} desc={t("options.calm.desc")}>
-            <Toggle on={!!options.calmMusic} onClick={() => onChange({ calmMusic: !options.calmMusic })} />
+          <Row icon="calm" title={t("options.calm.title")} desc={t("options.calm.desc")}>
+            <Toggle on={!!options.calmMusic} label={t("options.calm.title")}
+              onClick={() => onChange({ calmMusic: !options.calmMusic })} />
           </Row>
           {/* #telemetrie: anonyme Lauf-Daten (Beta-Playtest) — Default an, hier abschaltbar. Bewusst mit klarer
               Ansage, WAS gesendet wird und was nicht, statt einer nichtssagenden „Diagnosedaten"-Formel.
               #datenschutz: Der Kurztext kann die vollständige Liste nicht tragen (Gerätekontext, Install-Kennung,
               Bestenliste) — deshalb der Link zum Hinweis direkt HIER. Das ist der Punkt, an dem entschieden wird;
-              ein Hinweis, den man erst im Menü suchen muss, kommt für diese Entscheidung zu spät. */}
-          <Row icon="⇢" title={t("options.telemetry.title")}
+              ein Hinweis, den man erst im Menü suchen muss, kommt für diese Entscheidung zu spät.
+              Der Entwurf zeigt diesen Text gekürzt, damit die Spalte ins Bild passt — er bleibt UNGEKÜRZT. */}
+          <Row icon="telemetry" title={t("options.telemetry.title")}
             desc={<>
               {t("options.telemetry.desc")}
               {onPrivacy && (
@@ -241,70 +225,55 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
                   style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.telemetry.more")}</button>
               )}
             </>}>
-            <Toggle on={options.telemetry !== false} onClick={() => onChange({ telemetry: options.telemetry === false })} />
+            <Toggle on={options.telemetry !== false} label={t("options.telemetry.title")}
+              onClick={() => onChange({ telemetry: options.telemetry === false })} />
           </Row>
           </Section>
-          {/* #desktop — Klammer für die MITTLERE Spalte: „Grafik & Leistung" und „Ton" teilen sich dort eine
+          {/* #desktop — Klammer für die MITTLERE Spalte: „Ton" und „Grafik & Leistung" teilen sich dort eine
               Spalte und müssen als EIN Rasterfeld stehen. Ohne die Klammer säßen sie in zwei Rasterzeilen,
               deren Höhe die längste Spalte daneben bestimmt — zwischen den beiden klaffte dann deren
-              Restluft. Unter 1280 px ist sie `display: contents`, ändert dort also nichts. */}
+              Restluft. Unter 1280 px ist sie `display: contents`, ändert dort also nichts.
+              #optionen-redesign: die REIHENFOLGE der beiden (Ton oben) macht `order` im 1280er Block, nicht
+              das DOM — die schmale Fassung bleibt Zeile für Zeile die abgenommene. */}
           <div className="op-col2">
           <Section id="graphics" title={t("options.sec.graphics")}
             innerRef={(el) => { secRefs.current.graphics = el; }}>
+          {/* #optionen-redesign: Hier steht KEINE Zeile „Auflösung", und das ist eine Entscheidung, keine
+              Auslassung. Der Entwurf macht daraus eine Spieler-Option mit festen Bildgrößen; Owner und
+              Planner haben inzwischen hergeleitet, dass feste Fenstergrößen NICHT das Modell sein sollen —
+              das Spiel skaliert auf den verfügbaren Viewport mit 16:9-Sicherzone, und Renderqualität und
+              UI-Skalierung wären getrennte Optionen. Der Platz bleibt frei, bis das entschieden ist.
+              Der Haken dafür steht bereits: --ui-scale in index.css. */}
           {/* #363: Effekte reduziert — 3 Zustände (Aus/Mobile/An). Text OBEN, Segmented darunter (stack) → kein Quetschen
               auf schmalen Breiten. Beschreibung wechselt mit dem gewählten Zustand. Handy-Default „Mobile", Desktop „Aus". */}
-          <Row stack icon="✶" title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
-            <Segmented value={rfx}
+          <Row stack icon="rfx" title={t("options.rfx.title")} desc={t(`options.rfx.desc.${rfx}`)}>
+            <Segmented value={rfx} label={t("options.rfx.title")}
               options={RFX_VALUES.map((v) => ({ v, label: t(`options.rfx.${v}`) }))}
               onChange={(v) => onChange({ reducedFx: v })} />
           </Row>
-          {/* Perf-HUD — NUR im Preview-/Testbranch-Build sichtbar (in „main“ ausgeblendet). Steuert das
-              FPS/Report-Overlay: aus = kein Overlay UND keine Aufzeichnung (Recorder mountet erst bei „an“). */}
-          {/* #400: ONE gate for both preview-only measurement rows, not one gate each — a second copy of the
-              condition is a second place to forget it. Both rows carry the same glyph on purpose: they are
-              measurement tools of the test branch, not player settings. */}
-          {import.meta.env.VITE_PREVIEW === "1" && (<>
-            <Row icon="▥" title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
-              <Toggle on={!!options.perfHud} onClick={() => onChange({ perfHud: !options.perfHud })} />
-            </Row>
-            {/* #400 Test viewport — renders the game inside a fixed-size frame so screenshots and layout
-                checks stop depending on the current browser window. `stack` like the reduced-effects row
-                above: five choices do not fit next to the text on narrow widths. Choosing a size swaps the
-                top-level document, so the page reloads — `reloadAfterViewportChange` explains why that
-                reload cannot happen on this line. */}
-            <Row stack icon="▥" title={t("options.testvp.title")} desc={t("options.testvp.desc")}>
-              <Segmented
-                value={options.testViewport || TEST_VIEWPORT_OFF}
-                options={[
-                  { v: TEST_VIEWPORT_OFF, label: t("options.testvp.off") },
-                  ...TEST_VIEWPORTS.map((v) => ({ v: v.id, label: v.label })),
-                ]}
-                onChange={(v) => { onChange({ testViewport: optionValue(v) }); reloadAfterViewportChange(); }} />
-            </Row>
-          </>)}
           </Section>
           <Section id="sound" title={t("options.sec.sound")}
             innerRef={(el) => { secRefs.current.sound = el; }}>
           {/* Retro-Skin (CRT) ist jetzt der feste Look des Spiels — immer an, kein Toggle mehr. */}
-          {/* #110 Sound: Mute-Toggle + Lautstärke-Slider (persistiert über die Optionen). */}
-          <Row icon="⊘" title={t("options.mute.title")} desc={t("options.mute.desc")}>
-            <Toggle on={!!options.muted} onClick={() => onChange({ muted: !options.muted })} />
+          {/* #110 Sound + #optionen-redesign: die Zeile heißt „Ton" und AN heißt Ton an. Grün ist im Spiel
+              „an"; ein grüner Schalter, der den Ton ABschaltet, sagt das Gegenteil. Gespeichert wird
+              unverändert `muted` (true = stumm) — s. der Block am Kopf dieser Datei. */}
+          <Row icon={soundOn ? "sound" : "soundOff"} title={t("options.mute.title")} desc={t("options.mute.desc")}>
+            <Toggle on={soundOn} label={t("options.mute.title")}
+              onClick={() => onChange({ muted: soundOn })} />
           </Row>
-          <Row icon="✧" title={t("options.sfx.title")} desc={t("options.sfx.desc")}>
-            <input type="range" min="0" max="1" step="0.05" value={options.sfxVol ?? 0.4}
-              disabled={!!options.muted}
-              onChange={(e) => onChange({ sfxVol: Number(e.target.value) })}
-              aria-label={t("options.sfx.aria")}
-              style={{ width: 120, accentColor: "#5ab87a", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          {/* #optionen-redesign: Die zwei Regler hängen sichtbar am Ton — gedämpft, ohne Eingabe, und der
+              Wert sagt „stumm" statt einer Zahl, die nichts bewirkt. */}
+          <Row icon="sfx" title={t("options.sfx.title")} desc={t("options.sfx.desc")}>
+            <Slider value={options.sfxVol ?? 0.4} min={0} max={1} step={0.05} disabled={!soundOn}
+              label={t("options.sfx.aria")} mutedLabel={t("options.slider.muted")}
+              format={(v) => fmtPct(v)} onChange={(v) => onChange({ sfxVol: v })} />
           </Row>
-          {/* #111 Musik: eigener Lautstärke-Slider (Default 0,2). */}
-          <Row icon="♪" title={t("options.music.title")} desc={t("options.music.desc")}>
-            <input type="range" min="0" max="1" step="0.05" value={options.musicVol ?? 0.2}
-              disabled={!!options.muted}
-              onChange={(e) => onChange({ musicVol: Number(e.target.value) })}
-              aria-label={t("options.music.aria")}
-              /* #deckui: generischer Violett-Akzent des Musik-Reglers → Deckfarbe (SFX bleibt grün, Zahlengröße gold — die tragen Bedeutung). */
-              style={{ width: 120, accentColor: "var(--deck-a1, #8a7de0)", opacity: options.muted ? 0.4 : 1, cursor: options.muted ? "not-allowed" : "pointer" }} />
+          {/* #111 Musik: eigener Lautstärke-Regler (Default 0,2). */}
+          <Row icon="music" title={t("options.music.title")} desc={t("options.music.desc")}>
+            <Slider value={options.musicVol ?? 0.2} min={0} max={1} step={0.05} disabled={!soundOn}
+              label={t("options.music.aria")} mutedLabel={t("options.slider.muted")}
+              format={(v) => fmtPct(v)} onChange={(v) => onChange({ musicVol: v })} />
           </Row>
           </Section>
           </div>
@@ -313,48 +282,100 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           {/* #389 Floating-Text: Master-Schalter + drei Einzel-Schalter (Score · Multiplier · Win/Lose). „An" = sichtbar
               (Flag false). Master spiegelt „alle sichtbar" und setzt beim Umschalten alle drei zugleich. Score/Werte
               zählen unabhängig weiter — nur die aufsteigenden Popups verschwinden. Die großen Ansagen (Stark/Brutal/
-              Irre/Gottgleich) sind bewusst NICHT ausblendbar und bleiben immer sichtbar. */}
-          <Row icon="⇡" title={t("options.float.title")} desc={t("options.float.desc")}>
-            <Toggle
-              on={!(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose)}
+              Irre/Gottgleich) sind bewusst NICHT ausblendbar und bleiben immer sichtbar.
+              #optionen-redesign: Master und Untergruppe stehen in EINEM umschlossenen Block — vorher trug die
+              Abhängigkeit allein eine dünne Einrück-Kante, und der Master las sich wie jede andere Zeile.
+              BEKANNTER NEBENEFFEKT, bewusst nicht gelöst: schaltet man den letzten aktiven Unterschalter
+              einzeln aus, kippt der Master auf „aus" und der Weg zurück schaltet alle drei ein. Das ist das
+              heutige Verhalten; die Antwort wäre ein Mixed-State und ist eine eigene Entscheidung. */}
+          <div className="op-floatgroup">
+          <Row icon="float" title={t("options.float.title")} desc={t("options.float.desc")}>
+            <Toggle on={floatOn} label={t("options.float.title")}
               onClick={() => {
-                const anyVisible = !(options.hideFloatScore && options.hideFloatMult && options.hideFloatWinLose);
-                const hide = anyVisible; // etwas sichtbar → alles ausblenden; sonst alles einblenden
+                const hide = floatOn; // etwas sichtbar → alles ausblenden; sonst alles einblenden
                 onChange({ hideFloatScore: hide, hideFloatMult: hide, hideFloatWinLose: hide });
               }} />
           </Row>
-          {/* #deckui: Einrück-Kante der Float-Unterschalter deck-getönt (~27 % Alpha). */}
-          <div className="flex flex-col gap-2.5 pl-3 ml-1" style={{ borderLeft: "2px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 27%, transparent)" }}>
-            <Row icon="◆" title={t("options.float.score.title")} desc={t("options.float.score.desc")}>
-              <Toggle on={!options.hideFloatScore} onClick={() => onChange({ hideFloatScore: !options.hideFloatScore })} />
+          {/* #deckui: Einrück-Kante der Float-Unterschalter deck-getönt. */}
+          <div className={`op-floatsubs flex flex-col gap-2.5 pl-3 ml-1${floatOn ? "" : " is-off"}`}>
+            <Row icon="score" title={t("options.float.score.title")} desc={t("options.float.score.desc")}>
+              <Toggle on={!options.hideFloatScore} disabled={!floatOn} label={t("options.float.score.title")}
+                onClick={() => onChange({ hideFloatScore: !options.hideFloatScore })} />
             </Row>
-            <Row icon="✕" title={t("options.float.mult.title")} desc={t("options.float.mult.desc")}>
-              <Toggle on={!options.hideFloatMult} onClick={() => onChange({ hideFloatMult: !options.hideFloatMult })} />
+            <Row icon="mult" title={t("options.float.mult.title")} desc={t("options.float.mult.desc")}>
+              <Toggle on={!options.hideFloatMult} disabled={!floatOn} label={t("options.float.mult.title")}
+                onClick={() => onChange({ hideFloatMult: !options.hideFloatMult })} />
             </Row>
-            <Row icon="⚔" title={t("options.float.winlose.title")} desc={t("options.float.winlose.desc")}>
-              <Toggle on={!options.hideFloatWinLose} onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
+            <Row icon="winlose" title={t("options.float.winlose.title")} desc={t("options.float.winlose.desc")}>
+              <Toggle on={!options.hideFloatWinLose} disabled={!floatOn} label={t("options.float.winlose.title")}
+                onClick={() => onChange({ hideFloatWinLose: !options.hideFloatWinLose })} />
             </Row>
+          </div>
           </div>
           {/* Stich-Aufschlüsselung (§17): die Faktorenkette unter dem Feld (Basis × Serie × Perks × Form × Crit
               (+ Direkt) = Summe). Eigener Schalter, NICHT unter dem Floating-Text-Master — die Zeile steht fest
               im Layout statt aufzusteigen. „An" = sichtbar (Flag false); der Platz bleibt so oder so reserviert. */}
-          <Row icon="▤" title={t("options.breakdown.title")} desc={t("options.breakdown.desc")}>
-            <Toggle on={!options.hideBreakdown} onClick={() => onChange({ hideBreakdown: !options.hideBreakdown })} />
+          <Row icon="breakdown" title={t("options.breakdown.title")} desc={t("options.breakdown.desc")}>
+            <Toggle on={!options.hideBreakdown} label={t("options.breakdown.title")}
+              onClick={() => onChange({ hideBreakdown: !options.hideBreakdown })} />
           </Row>
-          {/* Zahlengröße — skaliert Kartenzahlen + aufsteigende Score-Zahlen (Orbitron) gemeinsam. 1 = Standard. */}
-          <Row icon="⌗" title={t("options.numScale.title")} desc={t("options.numScale.desc", { pct: fmtPct(Number(options.numScale) || 1) })}>
-            <input type="range" min="0.75" max="1.25" step="0.05" value={options.numScale ?? 1}
-              onChange={(e) => onChange({ numScale: Number(e.target.value) })}
-              aria-label={t("options.numScale.aria")}
-              style={{ width: 120, accentColor: "#d4a63a", cursor: "pointer" }} />
+          {/* Zahlengröße — skaliert Kartenzahlen + aufsteigende Score-Zahlen (Orbitron) gemeinsam.
+              #optionen-redesign: der Prozentwert steht am REGLER statt in der Beschreibung. Der gespeicherte
+              Standard ist 0,75 (die kleinste Stufe, s. storage.js) — nicht 1, wie hier früher stand. */}
+          <Row icon="numScale" title={t("options.numScale.title")} desc={t("options.numScale.desc")}>
+            <Slider value={options.numScale ?? 0.75} min={0.75} max={1.25} step={0.05}
+              label={t("options.numScale.aria")} format={(v) => fmtPct(v)}
+              onChange={(v) => onChange({ numScale: v })} />
           </Row>
           </Section>
+
+          {/* #400 / #optionen-redesign — die MESSWERKZEUGE des Testbranch, gesammelt und ganz unten.
+              Sie standen gleichrangig zwischen Spieler-Optionen; dass sie den Spieler-Screen verlassen, ist
+              entschieden, WOHIN sie wandern war offen. Bis das entschieden ist: preview-gated wie bisher,
+              aber als eigene Sektion am Ende statt mitten in „Grafik & Leistung". Ein Gate für beide Zeilen,
+              nicht eines je Zeile — eine zweite Kopie der Bedingung ist eine zweite Stelle zum Vergessen. */}
+          {import.meta.env.VITE_PREVIEW === "1" && (
+            <section data-sec="dev" className="op-sec op-sec-dev as-ring as-ring-quiet pb-1">
+              <i className="as-ring-run" aria-hidden="true" />
+              <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-body-5 font-bold uppercase tracking-widest"
+                style={{ color: "var(--deck-a1, #8a7de0)", background: STICKY_HEAD_BG }}>{t("options.sec.dev")}</h3>
+              <div className="grid gap-2.5 pt-2.5">
+                <Row icon="dev" title={t("options.perfHud.title")} desc={t("options.perfHud.desc")}>
+                  <Toggle on={!!options.perfHud} label={t("options.perfHud.title")}
+                    onClick={() => onChange({ perfHud: !options.perfHud })} />
+                </Row>
+                {/* Choosing a size swaps the top-level document, so the page reloads —
+                    `reloadAfterViewportChange` explains why that reload cannot happen on this line. */}
+                <Row stack icon="dev" title={t("options.testvp.title")} desc={t("options.testvp.desc")}>
+                  <Segmented value={options.testViewport || TEST_VIEWPORT_OFF} label={t("options.testvp.title")}
+                    options={[
+                      { v: TEST_VIEWPORT_OFF, label: t("options.testvp.off") },
+                      ...TEST_VIEWPORTS.map((v) => ({ v: v.id, label: v.label })),
+                    ]}
+                    onChange={(v) => { onChange({ testViewport: optionValue(v) }); reloadAfterViewportChange(); }} />
+                </Row>
+              </div>
+            </section>
+          )}
         </div>
 
-        {/* Hier stand die Fußzeile „Weitere Optionen (Tempo-Default …) folgen hier." — ein Aushang an den
-            Spieler, der eigentlich eine Notiz an die Entwicklung war. Die Optionen sind inzwischen gefüllt;
-            ein Platzhalter, der auf nichts Bestimmtes zeigt, kostet nur Zeile und Aufmerksamkeit. Raus auf
-            beiden Breiten, mitsamt Text (`options.footer`) und Klasse (`.op-foot`). */}
+        {/* #optionen-redesign — FUSS über die volle Breite, an der Unterkante der Karte. Links das
+            Zurücksetzen als ruhiger Textknopf (kein Signalknopf: es ist kein Angebot), rechts die
+            Ansage, dass alles sofort wirkt. Der Knopf fragt nach, bevor er schreibt — er überschreibt
+            jede Einstellung dieses Screens, und der Entwurf hatte dafür keine Rückfrage vorgesehen. */}
+        </div>
+
+        {/* #optionen-redesign — FUSS über die volle Breite, an der UNTERKANTE der Karte. Er ist
+            GESCHWISTER des Scroll-Rumpfs, nicht sein letztes Kind: im Rumpf wäre er unter den Spalten
+            mitgescrollt, und auf 1280 x 720 lag er damit 170 px unterhalb der Kartenkante — das
+            Zurücksetzen wäre nur nach Scrollen erreichbar gewesen (nachgemessen, bevor diese Zeile
+            stand). `order: 4` im 1280er Block, weil Kopf, Haarlinie und Rumpf dort ihre Plätze
+            ebenfalls über `order` bekommen und ein Kind ohne Angabe sonst nach vorn rutscht.
+            Links das Zurücksetzen als ruhiger Textknopf (kein Signalknopf: es ist kein Angebot),
+            rechts die Ansage, dass alles sofort wirkt. Der Knopf fragt nach, bevor er schreibt. */}
+        <div className="op-foot flex-none">
+          <ResetAction onReset={() => onChange(defaultScreenOptions())} />
+          <span className="op-foot-hint">{t("options.foot.hint")}</span>
         </div>
       </div>
     </div>

@@ -1439,11 +1439,11 @@ export default {
   "options.sec.general": "Allgemein",
   "options.sec.graphics": "Grafik & Leistung",
   "options.sec.sound": "Ton",
-  "options.sec.display": "Anzeige",
+  "options.sec.display": "HUD & Text",
   "options.chip.general": "Allgemein",
   "options.chip.graphics": "Grafik",
   "options.chip.sound": "Ton",
-  "options.chip.display": "Anzeige",
+  "options.chip.display": "HUD",
   "options.eyebrow": "Optionen",
   "options.title": "Einstellungen",
   /* #desktop: Auskunftszeile im Kopf — steht erst ab 1280 px neben dem Titel (dort, wo im Upgrade-Baum
@@ -1454,8 +1454,8 @@ export default {
   "options.language.title": "Sprache",
   "options.language.desc": "Sprache der Spieltexte.",
 
-  "options.mute.title": "Ton stumm",
-  "options.mute.desc": "Schaltet alle Klick- und Spiel-Sounds ab.",
+  "options.mute.title": "Ton",
+  "options.mute.desc": "Alle Klick- und Spiel-Sounds. Aus = komplett stumm.",
   "options.sfx.title": "Effekt-Lautstärke",
   "options.sfx.desc": "Lautstärke der Klick-/Spiel-Sounds (SFX).",
   "options.sfx.aria": "SFX-Lautstärke",
@@ -1466,7 +1466,7 @@ export default {
   // #394 Zahlengröße: {pct} kommt als fertig formatierter Prozentwert (fmtPct) — das Prozentzeichen sitzt
   // im Deutschen mit schmalem Abstand, im Englischen ohne, deshalb steht es NICHT in der Vorlage.
   "options.numScale.title": "Zahlengröße",
-  "options.numScale.desc": "Größe der aufsteigenden Score-Zahlen. {pct}",
+  "options.numScale.desc": "Größe der aufsteigenden Score-Zahlen.",
   "options.numScale.aria": "Zahlengröße",
 
   "options.rfx.title": "Effekte reduziert",
@@ -1488,6 +1488,15 @@ export default {
      im verlinkten Hinweis (PrivacyModal), hier nur die ehrliche Kurzfassung. */
   "options.telemetry.desc": "Sendet nach jedem Lauf Score, gewählte Perks und Skills, deinen Fortschritt sowie groben Gerätekontext (Browserkennung, Kerne, Fenstergröße) — ohne Namen und ohne Konto. Hilft uns beim Ausbalancieren des Spiels. Aus = es wird nichts gesendet.",
   "options.telemetry.more": "Was genau gesendet wird",
+  /* #optionen-redesign: der Fuß des Screens. Der Regler-Wert steht am Regler statt in der
+     Beschreibung; ist der Ton aus, sagt er WARUM statt eine Zahl zu zeigen, die nichts bewirkt. */
+  "options.sec.dev": "Testbranch",
+  "options.slider.muted": "stumm",
+  "options.reset": "Alles auf Standard zurücksetzen",
+  "options.reset.confirm": "Wirklich alle Einstellungen zurücksetzen?",
+  "options.reset.yes": "Zurücksetzen",
+  "options.reset.no": "Abbrechen",
+  "options.foot.hint": "Änderungen wirken sofort",
 
   "options.perfHud.title": "FPS-Zähler & Report",
   "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",
@@ -1499,11 +1508,11 @@ export default {
 
   "options.float.title": "Floating-Text anzeigen",
   "options.float.desc": "Aufsteigende Zahlen/Texte über dem Feld. Master-Schalter für alle drei unten. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich) bleiben immer sichtbar.",
-  "options.float.score.title": "↳ Score",
+  "options.float.score.title": "Score",
   "options.float.score.desc": "Aufsteigende Punktzahlen bei gewonnenen Stichen.",
-  "options.float.mult.title": "↳ Multiplikator",
+  "options.float.mult.title": "Multiplikator",
   "options.float.mult.desc": "„Kritisch!“- und Formations-Text (Multiplikator-Boni).",
-  "options.float.winlose.title": "↳ Sieg / Niederlage",
+  "options.float.winlose.title": "Sieg / Niederlage",
   "options.float.winlose.desc": "Gewonnen/Verloren-Text am Stich-Ausgang.",
   "options.breakdown.title": "Stich-Aufschlüsselung anzeigen",
   "options.breakdown.desc": "Faktorenkette unter dem Feld: Basis × Serie × Perks × Formation × Crit = Summe des laufenden Stichs. Der Platz bleibt reserviert — die Karten stehen so oder so gleich.",
