@@ -374,12 +374,16 @@ export default {
   "bf.banner.loss": "Lost",
   "bf.banner.tie": "Tie",
   /* Big call-outs — frozen escalation chain (§3.6). A dedicated guard checks the mapping. */
-  "bf.big.fierce": "FIERCE",
+  "bf.big.fierce": "NICE",
   "bf.big.brutal": "BRUTAL",
   "bf.big.insane": "INSANE",
   "bf.big.godlike": "GODLIKE",
   "bf.big.avalanche": "AVALANCHE",
   "bf.big.letsgo": "LET’S GO!",
+  /* The crit float over the field (#33). Two fassungen: the reduced-motion one carries the
+     multiplier, the full one does not. Caps come from `textTransform: uppercase` in Battlefield.jsx. */
+  "bf.crit": "Critical!",
+  "bf.crit.mult": "Critical ×{n}",
   /* Trick breakdown (§17) — the factor chain under the field. Labels stay short so the line fits on a
      phone in ONE row; the long form lives in each `…title` (hover). Named sources use their established
      English names: Sun Wrath, Echo (Nachhall), Core (Formationskern), All In (Vabanque). */
@@ -1435,7 +1439,7 @@ export default {
   "options.testvp.hint": "To leave, set this back to Off in the options in here.",
 
   "options.float.title": "Show floating text",
-  "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (FIERCE/BRUTAL/INSANE/GODLIKE) always stay visible.",
+  "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (NICE/BRUTAL/INSANE/GODLIKE) always stay visible.",
   "options.float.score.title": "↳ Score",
   "options.float.score.desc": "Rising score numbers on tricks you win.",
   "options.float.mult.title": "↳ Multiplier",
