@@ -745,6 +745,7 @@ Three things carry it, and each has an address in this report:
 | **R5** | **`--el-glow` spreads.** A token named for the primary CTA is easier to reach for than a shadow value | The `#ruhe` rule is stated in `conventions.md` §2c beside the token, and `hub-knopf.test.js` already guards the hub's instance |
 | **R6** | **Planner context exhaustion** — H9 | §6. Handoffs, not diffs. If the planner reads one diff, the sequential split has bought nothing |
 | **R7** | **A retune is requested mid-round** (decision block Q1 answered (b) later) | A retune after the freeze is one token-table edit plus one re-capture and one owner comparison across the migrated screens — which is the whole point of the system. It is cheap *because* of the freeze, and expensive only if requested before it |
+| **R9** | **`dev` moves under the round.** It already has: `aa80bd58` merged `feature/playtest-fixes` after this branch was cut, touching nine `src/` files — including `de.js` and `en.js`. Wording changes alter text length, and text length is layout | The round deliberately **stays on `4f72ba68`** and does not take `dev` mid-flight — see §8.2. The merge happens once, at integration, and the baseline is re-verified then rather than eleven times |
 | **R8** | **TYPO-03 returns.** 7 px text migrated into `--text-micro` at 28.6 % displacement is an open design question handed to this round | Not this round's to fix — it is a **type** question, and decision 8 forbids reopening typography. Carried as a backlog input; if a menu's comparison surfaces it, it is classified *New design question*, not *Defect* |
 
 ### 8.1 Inherited findings — inputs, not new defects
@@ -763,6 +764,34 @@ From `docs/workstreams/typography-system/v4-classification.md`, handed to this r
 147 and 157–170 overflowing nodes that predate everything. A worker on either must be told this before
 it starts, or it will spend its round chasing a condition it did not cause — both contracts carry the
 figure.
+
+
+### 8.2 Why the round does not take `dev` mid-flight
+
+*Measured 2026-08-23, after this branch was cut:* `dev` moved from `4f72ba68` to `aa80bd58`, merging
+`feature/playtest-fixes` — nine `src/` files, 98 insertions. **No `index.css`, no menu component**, so
+nothing this round rewrites. But `src/i18n/de.js` and `src/i18n/en.js` are among them, and a wording
+change is a text-length change, which is a layout change.
+
+**The decision: the round stays on `4f72ba68` until integration.** Two reasons, and the second is the
+one that decides it:
+
+1. **It matches the owner's model.** One worktree, eleven sequential tasks, *"wenn alle durch sind
+   integrierst du alles"* — the round runs on its own base and merges once at the end.
+2. **Taking `dev` now would void the inherited baseline.** §0.4 accepted the `#typo` capture set
+   because every `src/` change since it was gated below 640 px. The i18n edits are not: they are
+   visible at every viewport. Merging them in means M1 opens with a full 210-cell capture run — the
+   one thing §6.4 point 5 of the predecessor's report exists to save.
+
+**What this costs, stated rather than hidden.** By integration there will be more drift than this, and
+it lands in one merge instead of eleven small ones. That is the trade: eleven cheap tasks and one
+merge that has to be measured, against eleven tasks that each re-baseline. Given the tasks touch
+disjoint screen files and `dev`'s traffic is not in `index.css`, the first is the better bet — but it
+is a bet, and the integration step must re-verify rather than assume.
+
+**M1 does not need to do anything about this.** Its baseline validity check
+(`git diff --stat dab335a9..HEAD -- src/`) is against its own `HEAD`, which is this branch, where the
+check still passes. The check is what would catch it if someone did merge `dev` in first.
 
 ---
 

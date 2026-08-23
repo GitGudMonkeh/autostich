@@ -60,10 +60,13 @@ A difference from either is a collision to surface, not to work around.
 
 | Gate | Result |
 | --- | --- |
-| `npm run lint` | exit 0 |
-| `npm test` | **140 files, 2165 tests, all passed** |
+| `npm test` | exit 0 — **140 files, 2165 tests, all passed** |
+| `npm run lint -- --max-warnings=0` | exit 0 |
 | `npm run build` | exit 0 — the "chunks larger than 500 kB" notice is pre-existing and not a failure |
+| `npm run gen:db` | exit 0 — 219 entries |
 | `npm ci` | exit 0 — two `allow-scripts` warnings (`esbuild`, `ffmpeg-static`), pre-existing |
+
+The four are the ones `AGENTS.md` — *Validation gates* names, in that order, plus the install.
 
 **A red gate in this worktree is therefore something M1 caused.** That is the whole reason this table
 is here: without it, the first failure costs a session to attribute.
