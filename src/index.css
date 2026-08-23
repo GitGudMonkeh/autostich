@@ -185,7 +185,52 @@
   --text-display-4: 1.9rem;    /* 30.4px */
   --text-display-5: 46px;
   --text-display-6: 56px;
+
+  /* ==========================================================================
+     #typo-system S2 — THE SEVEN ROLES. This is the vocabulary.
+     --------------------------------------------------------------------------
+     Ratio 1.2, body anchored at 13 px, seven steps (owner decision, planning
+     report §8.1c Q8b). Fitted against 3701 measured menu text nodes: ~42 % of
+     menu text moves by more than 5 %, worst case 10.0 % — the lowest worst case
+     of any 1.2 fit, and the worst case is what governs clipping at 720 px height.
+
+     A NEW CALL SITE USES THESE NAMES. `text-body`, `text-meta`, `text-title`.
+     Never a number, and never one of the `-N` variants above.
+
+     WHY THE VARIANTS SURVIVE ANYWAY, and this is the one place the plan had to
+     bend: a class renders ONE size. `text-meta-1` (10 px, 135 sites) and
+     `text-meta-3` (11 px, 159 sites) differ ON THE PHONE TOO. Collapsing both
+     onto `text-meta` would therefore move the phone, and an unmoved phone is a
+     hard non-goal (§5 item 1, acceptance §7.3). Seven clean names at every call
+     site AND a frozen phone are not simultaneously possible.
+
+     So the variants stay as the PHONE's value carriers, and the desktop
+     override below re-points each of them AT the role token. One edit to a role
+     still moves every desktop call site — which is the deliverable — while the
+     phone keeps the values it has today. When a later mobile strand collapses
+     the phone too, that override becomes unnecessary and the variants are
+     deleted; the deferral is a deletion, not a second migration.
+
+     This supersedes `task-contract-S1.md` A2, which expected the variants to be
+     renamed away in a machine-verifiable pass. That would have moved the phone.
+     ========================================================================== */
+  --text-micro: 9px;
+  --text-micro--line-height: 1.3;
+  --text-meta: 11px;
+  --text-meta--line-height: 1.35;
+  --text-body: 13px;
+  --text-body--line-height: 1.45;
+  --text-body-lg: 15.5px;
+  --text-body-lg--line-height: 1.4;
+  --text-title: 18.5px;
+  --text-title--line-height: 1.3;
+  --text-head: 22.5px;
+  --text-head--line-height: 1.2;
+  --text-figure: 27px;
+  --text-figure--line-height: 1.1;
 }
+
+
 
 /* App-Grundstil — nach dem Tailwind-Import, damit diese Regeln gewinnen. */
 /* #314: iOS Safari vergrößert Text in manchen Layouts automatisch („text inflation") → Elemente wirken auf dem
@@ -5923,4 +5968,76 @@ button { font-family: inherit; }
   /* 380 ist gemessen, nicht geschaetzt: mit 370 lief das Dokument um genau 10 px ueber (801 statt 791). */
   .rn-shell { --rn-chrome: 380px; }
   .rn-bank { height: 210px; }
+}
+
+/* ============================================================================
+   #typo-system S2 — THE COLLAPSE, and it lives entirely in this one block.
+   ----------------------------------------------------------------------------
+   Every provisional variant is re-pointed AT its role token, for desktop only.
+   Nothing outside this media query changes, which is what makes the phone
+   non-goal structural rather than careful: no value the phone reads is edited,
+   so the phone cannot move, and §7.3 verifies rather than hopes.
+
+   Each entry reads `var(--text-<role>)` rather than repeating the number. That
+   is the whole point — the ladder is edited in ONE place above, and forty-six
+   variants follow. Writing `13px` forty-six times here would have rebuilt the
+   problem this workstream exists to remove, one indirection later.
+
+   LINE-HEIGHTS ARE NOT RE-POINTED. The variants carrying one hold it as a
+   unitless multiplier (`calc(1 / 0.75)` and friends), so it scales with the new
+   size by itself. Overriding them here would be a second, unrequested change
+   riding along with the first.
+
+   DISPLAY IS ABSENT ON PURPOSE. `--text-display-*` — the announcement and hero
+   sizes — sit above the ladder and are not collapsed (planning report §3.2).
+   ============================================================================ */
+@media (min-width: 1280px) {
+  :root {
+    --text-micro-1: var(--text-micro);
+    --text-micro-2: var(--text-micro);
+    --text-micro-3: var(--text-micro);
+    --text-micro-4: var(--text-micro);
+    --text-micro-5: var(--text-micro);
+    --text-micro-6: var(--text-micro);
+
+    --text-meta-1: var(--text-meta);
+    --text-meta-2: var(--text-meta);
+    --text-meta-3: var(--text-meta);
+    --text-meta-4: var(--text-meta);
+    --text-meta-5: var(--text-meta);
+
+    --text-body-1: var(--text-body);
+    --text-body-2: var(--text-body);
+    --text-body-3: var(--text-body);
+    --text-body-4: var(--text-body);
+    --text-body-5: var(--text-body);
+    --text-body-6: var(--text-body);
+    --text-body-7: var(--text-body);
+
+    --text-body-lg-1: var(--text-body-lg);
+    --text-body-lg-2: var(--text-body-lg);
+    --text-body-lg-3: var(--text-body-lg);
+    --text-body-lg-4: var(--text-body-lg);
+    --text-body-lg-5: var(--text-body-lg);
+    --text-body-lg-6: var(--text-body-lg);
+    --text-body-lg-7: var(--text-body-lg);
+    --text-body-lg-8: var(--text-body-lg);
+    --text-body-lg-9: var(--text-body-lg);
+
+    --text-title-1: var(--text-title);
+    --text-title-2: var(--text-title);
+    --text-title-3: var(--text-title);
+    --text-title-4: var(--text-title);
+    --text-title-5: var(--text-title);
+    --text-title-6: var(--text-title);
+
+    --text-head-1: var(--text-head);
+    --text-head-2: var(--text-head);
+    --text-head-3: var(--text-head);
+    --text-head-4: var(--text-head);
+
+    --text-figure-1: var(--text-figure);
+    --text-figure-2: var(--text-figure);
+    --text-figure-3: var(--text-figure);
+  }
 }
