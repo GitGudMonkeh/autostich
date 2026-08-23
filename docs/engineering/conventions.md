@@ -97,6 +97,88 @@ not decorative glyphs.
 
 ---
 
+## 2b. Typography
+
+Two layers, and they must not merge.
+
+| Layer | Carries | Written as |
+| --- | --- | --- |
+| **Role** `.ty-*` | family, weight, letter-spacing, numeric variant | a class: `ty-num`, `ty-title` |
+| **Size token** `--text-*` | size, and the line-height paired with it | a class: `text-body`, `text-meta` |
+
+`.ty-num text-figure` is a number in Geist Mono at the figure size. Each half owns what it can own.
+
+### The seven roles
+
+Ratio 1.2, body anchored at 13 px. Desktop values; the phone keeps its own (see *Why the `-N`
+variants exist*).
+
+| Token | Size | For |
+| --- | --- | --- |
+| `text-micro` | 9 | rarity ticks, the smallest badge, footnotes |
+| `text-meta` | 11 | labels, eyebrows, counters, chips, version stamp, seeds |
+| `text-body` | 13 | running text: descriptions, list rows, button text |
+| `text-body-lg` | 15.5 | emphasised body, primary list rows, CTA, card names |
+| `text-title` | 18.5 | panel and section titles |
+| `text-head` | 22.5 | screen headings |
+| `text-figure` | 27 | the large readouts: score, credits, KPI values |
+
+Above the ladder and deliberately outside it: `text-display-1/-2/-3` — announcement and hero sizes.
+
+### The rule
+
+> **A menu picks a role, or changes a role for everyone. A menu does not introduce a size.**
+
+That single sentence is what keeps the system. Without it the next pass re-creates the 39 values this
+one collapsed.
+
+**The escape hatch, and its price.** Where a screen genuinely needs a size no role provides, it
+proposes a **new role** — reviewed once, then available everywhere. Not a number at the call site.
+
+**Where a size is changed:** one edit, in the `@theme` block of `src/index.css`. Every desktop call
+site follows, because the provisional variants resolve through the role token. Changing a size
+anywhere else is a bug.
+
+### What is exempt, permanently
+
+These are not migration debt — a reading scale is the wrong instrument for them, and they will still
+be outside the roles in a year.
+
+- **Fit-to-box text** — the `clamp(… cqw …)` rules and the `--gs` family. Sized against a container,
+  not against reading distance.
+- **Game-piece text** — card marks and board counters in `CardGrid.jsx` and `Battlefield.jsx`. Sized
+  against artwork.
+- **Runtime sizes** — inline `fontSize` computed from game state.
+- **The wordmark** — reads `--wm-size`.
+
+Do not "fix" any of these into ladder steps.
+
+### Why the `-N` variants exist
+
+You will see `text-meta-1`, `text-body-5` and so on at existing call sites. They are the **phone's**
+value carriers, and on desktop each one resolves through its role token.
+
+The reason is arithmetic, not indecision: a class renders one size. `text-meta-1` (10 px) and
+`text-meta-3` (11 px) differ on the phone too, so collapsing both onto `text-meta` would move the
+phone — which the typography workstream was explicitly scoped not to do. A later mobile strand
+deletes the desktop override and the variants together.
+
+**New code writes the role name.** Never a `-N` variant, never a number.
+
+### Weights
+
+Three rungs: **400 · 500 · 600**. `font-bold` and `font-extrabold` both resolve to 600 through
+`@theme`.
+
+Two exceptions, both from the font rather than from taste: the glossary's serif quote stays at 700
+because **Georgia is not a variable face** and has nothing between 400 and 700, and the large
+in-game announcement stays at 800 because 600 reads thin at 40–100 px.
+
+Anything else at 700 or above is a defect. `test/typo-tokens.test.js` guards the layer split; the
+weight ladder is enforced by review.
+
+---
+
 ## 3. Language layers
 
 Three layers, one rule each.

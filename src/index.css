@@ -1176,12 +1176,15 @@ button { font-family: inherit; }
    tailwindcss) → gewinnt gegen Tailwind-Utilities.
    ============================================================================ */
 /* Fett markierter Glossar-Begriff in Beschreibungen — Signal „steht im Glossar". NICHT klickbar. */
-.gloss-term { font-weight: 700; color: #eae5ff; }
+.gloss-term { font-weight: 600; color: #eae5ff; }
 
 /* Der ⓘ-Kreis (Panels + Haupt-/Spielseite). */
 .gloss-i-btn {
   width: 26px; height: 26px; border-radius: 50%;
   display: grid; place-items: center; flex: none; cursor: pointer;
+  /* #typo-system S2: bleibt 700 statt 600 — Georgia ist KEINE variable Schrift und kennt nur 400
+     und 700. Eine 600 bekäme man synthetisch oder gar nicht. Ausnahme aus der Schrift heraus,
+     nicht aus Geschmack. */
   font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700;
   font-size: var(--text-body-7); line-height: 1;
   color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
@@ -1195,6 +1198,7 @@ button { font-family: inherit; }
 .gloss-i-mark {
   width: 22px; height: 22px; border-radius: 50%;
   display: grid; place-items: center;
+  /* #typo-system S2: 700 bleibt — Georgia ist nicht variabel (s. oben). */
   font-family: Georgia, serif; font-style: italic; font-weight: 700; font-size: var(--text-meta-5);
   color: #8a7de0; background: #1b1830; border: 1px solid #3b3563;
 }
@@ -2307,7 +2311,7 @@ button { font-family: inherit; }
     display: block;
     margin: 0;
     font-size: var(--text-body-lg-3);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: .18em;
     text-transform: uppercase;
   }
@@ -2358,7 +2362,7 @@ button { font-family: inherit; }
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .up-navhead {
-    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
+    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; margin-top: 10px; padding-top: 10px;
     border-top: 1px solid rgba(150, 150, 170, .14);
   }
@@ -2377,7 +2381,7 @@ button { font-family: inherit; }
     box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
   }
   .up-navtext { display: flex; flex-direction: column; line-height: 1.25; }
-  .up-navtext b { font-size: var(--text-body-lg-4); font-weight: 700; }
+  .up-navtext b { font-size: var(--text-body-lg-4); font-weight: 600; }
   .up-navtext i { font-style: normal; font-size: var(--text-body-2); color: #8a8a95; font-variant-numeric: tabular-nums; }
   .up-navpassive {
     display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;
@@ -2385,7 +2389,7 @@ button { font-family: inherit; }
     background: #12121a; border: 1px solid rgba(150, 150, 170, .12);
     border-left: 3px solid rgba(150, 150, 170, .3);
   }
-  .up-navpassive i { margin-left: auto; font-style: normal; font-size: var(--text-body-2); font-weight: 700; }
+  .up-navpassive i { margin-left: auto; font-style: normal; font-size: var(--text-body-2); font-weight: 600; }
   .up-navpassive.is-soon { opacity: .55; border-left-style: dashed; }
   .up-navpassive.is-sel { box-shadow: 0 0 0 2px rgba(155, 130, 240, .5); }
 
@@ -2405,7 +2409,7 @@ button { font-family: inherit; }
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .up-page-eyebrow { font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+  .up-page-eyebrow { font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
   /* Der Einzeiler darf schrumpfen, damit der Leitfaden-Knopf rechts in der Ecke steht statt vom Text
      weggeschoben zu werden — und er bricht nicht um, sondern endet mit Auslassungspunkten. */
   .up-page-hint { font-size: var(--text-body-3); color: #71717c; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2415,7 +2419,7 @@ button { font-family: inherit; }
   .up-vgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; align-items: start; overflow-y: auto; min-height: 0; }
   .up-vlane { display: flex; flex-direction: column; min-width: 0; }
   .up-vlane-h {
-    font-size: var(--text-body-lg-2); font-weight: 800; text-align: center;
+    font-size: var(--text-body-lg-2); font-weight: 600; text-align: center;
     padding-bottom: 7px; margin-bottom: 10px; border-bottom: 2px solid;
   }
   .up-vchain { display: flex; flex-direction: column; }
@@ -2432,9 +2436,9 @@ button { font-family: inherit; }
   /* Feuer und Blitz sind von Beginn an spielbar — ihre Kette startet mit einem Deck, das nie gekauft
      wurde. Sieht aus wie „gehört dir", ist aber nichts zum Anklicken. */
   .up-vnode.is-lead { cursor: default; }
-  .up-vnode-t { font-size: var(--text-body-lg-2); font-weight: 700; line-height: 1.2; }
+  .up-vnode-t { font-size: var(--text-body-lg-2); font-weight: 600; line-height: 1.2; }
   .up-vnode-w { font-size: var(--text-meta-4); color: #8a8a95; line-height: 1.3; font-variant-numeric: tabular-nums; }
-  .up-vnode-m { font-size: var(--text-body-1); font-weight: 700; margin-top: 1px; }
+  .up-vnode-m { font-size: var(--text-body-1); font-weight: 600; margin-top: 1px; }
   .up-varrow { display: block; text-align: center; font-size: var(--text-body-lg-1); line-height: 1; padding: 6px 0; color: #3f3f4c; }
 
   /* --- Fraktionsseite: Kette quer, darunter Skills und Challenge -------------
@@ -2457,7 +2461,7 @@ button { font-family: inherit; }
   .up-chall { align-self: start; max-height: 100%; overflow-y: auto; }
   .up-skills-h {
     display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px;
-    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf;
+    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600; color: #b9b3cf;
   }
   .up-skills-h span { font-size: var(--text-body-1); letter-spacing: 0; text-transform: none; font-weight: 600; color: #71717c; }
   .up-skills-h.is-leg { color: #d4a63a; margin-top: 14px; }
@@ -2483,16 +2487,16 @@ button { font-family: inherit; }
     border: 1px solid rgba(150, 150, 170, .1);
     border-left: 3px solid color-mix(in srgb, var(--c) 65%, transparent);
   }
-  .up-skill-n { font-size: var(--text-body-4); font-weight: 700; line-height: 1.2; }
+  .up-skill-n { font-size: var(--text-body-4); font-weight: 600; line-height: 1.2; }
   /* Ungeklemmt — Begründung am `.up-skillgrid` oben. (Die alte Fassung klemmte auf drei Zeilen, weil im
      Raster die höchste Zelle die Reihenhöhe bestimmt; im Spaltenfluss gibt es keine Reihe mehr.) */
   .up-skill-d { font-size: var(--text-meta-4); color: #8a8a95; line-height: 1.4; }
 
   .up-chall { border-radius: 12px; padding: 13px 15px; background: #12121a; border: 1px solid rgba(150, 150, 170, .1); }
-  .up-chall-h { font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
+  .up-chall-h { font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600; color: #b9b3cf; margin-bottom: 10px; }
   .up-chall-img { border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
   .up-chall-img img { width: 100%; display: block; }
-  .up-chall-n { font-size: var(--text-title-1); font-weight: 800; }
+  .up-chall-n { font-size: var(--text-title-1); font-weight: 600; }
   .up-chall-b { font-size: var(--text-body-2); color: #9a97ab; margin-top: 3px; line-height: 1.4; }
   .up-chall-bar { height: 8px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 9px; }
   .up-chall-bar i { display: block; height: 100%; border-radius: 99px; }
@@ -2503,7 +2507,7 @@ button { font-family: inherit; }
   .up-page-guide {
     flex: none;
     margin-left: auto;
-    font-size: var(--text-body-lg-1); font-weight: 700; padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    font-size: var(--text-body-lg-1); font-weight: 600; padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #0e0e14) 0%, #0e0e14 34%);
     border: 1px solid rgba(150, 150, 170, .16); border-left: 4px solid var(--c);
     color: color-mix(in srgb, var(--c) 45%, #ffffff);
@@ -2524,11 +2528,11 @@ button { font-family: inherit; }
     margin-top: auto; padding: 13px 15px; border-radius: 12px;
     background: #12121a; border: 1px solid rgba(150, 150, 170, .1);
   }
-  .up-impact-h { font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #b9b3cf; margin-bottom: 10px; }
+  .up-impact-h { font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600; color: #b9b3cf; margin-bottom: 10px; }
   .up-impact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
   .up-stat { display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px; background: #14131c; }
   .up-stat-k { font-size: var(--text-body-2); color: #8a8a95; }
-  .up-stat-v { font-size: var(--text-figure-2); font-weight: 800; line-height: 1; display: flex; align-items: baseline; gap: 7px; font-variant-numeric: tabular-nums; }
+  .up-stat-v { font-size: var(--text-figure-2); font-weight: 600; line-height: 1; display: flex; align-items: baseline; gap: 7px; font-variant-numeric: tabular-nums; }
   .up-stat-v i { font-style: normal; font-size: var(--text-body-2); font-weight: 600; color: #71717c; }
   .up-stat-b { height: 6px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 3px; }
   .up-stat-b i { display: block; height: 100%; border-radius: 99px; }
@@ -3117,7 +3121,7 @@ button { font-family: inherit; }
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .gd-navhead {
-    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
+    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; padding: 2px 3px 4px;
   }
   .gd-navrow {
@@ -3135,7 +3139,7 @@ button { font-family: inherit; }
     box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
   }
   .gd-navtext { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
-  .gd-navtext b { font-size: var(--text-body-lg-4); font-weight: 700; }
+  .gd-navtext b { font-size: var(--text-body-lg-4); font-weight: 600; }
   .gd-navtext i {
     font-style: normal; font-size: var(--text-body-2); color: #8a8a95;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -3185,7 +3189,7 @@ button { font-family: inherit; }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
   .gd-page-eyebrow {
     display: flex; align-items: center; gap: 9px;
-    font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 800; color: var(--c);
+    font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; color: var(--c);
   }
   /* Anders als `.up-page-hint` im Baum bricht der Einzeiler hier UM statt abzuschneiden: Dort muss der
      „Leitfaden ›"-Knopf in der Ecke stehen bleiben, hier steht rechts nichts. Der Blitz-Untertitel ist mit
@@ -3349,7 +3353,7 @@ button { font-family: inherit; }
     background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
   .gl-navhead {
-    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 700;
+    font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; padding: 2px 3px 4px;
   }
   .gl-navrow {
@@ -3394,7 +3398,7 @@ button { font-family: inherit; }
   .gl-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex: none; min-height: 36px; }
   .gl-page-eyebrow {
     display: flex; align-items: center; gap: 9px;
-    font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 800; color: var(--c);
+    font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; color: var(--c);
   }
   .gl-page-eyebrow .gl-sq { width: 11px; height: 11px; border-radius: 3px; background: var(--c); flex: none; }
   .gl-page-hint { font-size: var(--text-body-3); color: #71717c; min-width: 0; line-height: 1.35; flex: 1;
@@ -4234,7 +4238,7 @@ button { font-family: inherit; }
      behält `as-cta-primary`: „Lauf starten" spricht im ganzen Spiel EINE Sprache. */
 
   /* Kopf: die Woche wird zur Auszeichnung, der Countdown zum Chip. */
-  .lb-weektitle { font-size: var(--text-body-lg-3) !important; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+  .lb-weektitle { font-size: var(--text-body-lg-3) !important; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
   /* Der Countdown ist die einzige Zahl des Kopfes, die sich BEWEGT — er darf heller stehen als die übrige
      Chrome: heller Rahmen statt Haarlinie, eine Stufe größer. Er beantwortet die Frage, mit der man diesen
      Bildschirm öffnet: wie lange läuft die Woche noch? */
@@ -4301,7 +4305,7 @@ button { font-family: inherit; }
 
   /* Kopf der Liste: Umfang als Auszeichnung, die Auswahlregel als Chip daneben. */
   .lb-page .lb-listhead { align-items: center !important; margin-bottom: 12px !important; }
-  .lb-page .lb-listtitle { font-size: var(--text-body-3) !important; letter-spacing: .16em; font-weight: 800; opacity: 1 !important; color: var(--deck-a1, #9b82f0); }
+  .lb-page .lb-listtitle { font-size: var(--text-body-3) !important; letter-spacing: .16em; font-weight: 600; opacity: 1 !important; color: var(--deck-a1, #9b82f0); }
   .lb-page .lb-listsub {
     font-size: var(--text-meta-4) !important; opacity: 1 !important; color: #8a8a95;
     border: 1px solid rgba(150, 150, 170, .14); border-radius: 999px; padding: 3px 10px;
@@ -4314,7 +4318,7 @@ button { font-family: inherit; }
     grid-template-columns: 34px minmax(0, 1fr) auto;
     gap: 12px;
     padding: 0 6px 9px;
-    font-size: var(--text-meta-2); letter-spacing: .18em; text-transform: uppercase; color: #71717c; font-weight: 700;
+    font-size: var(--text-meta-2); letter-spacing: .18em; text-transform: uppercase; color: #71717c; font-weight: 600;
   }
   .lb-page .lb-cols > :last-child { text-align: right; }
 
