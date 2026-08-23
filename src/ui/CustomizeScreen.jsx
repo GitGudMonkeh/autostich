@@ -529,7 +529,7 @@ const KLINGE_SCHEDULE = [
 const PANEL_CHIP_POS = { tl: "left-2 top-2", tr: "right-2 top-2", bl: "left-2 bottom-2", br: "right-2 bottom-2" };
 function PanelChip({ corner = "tl", children, style }) {
   return (
-    <span className={`absolute ${PANEL_CHIP_POS[corner]} text-[9px] font-extrabold px-2 py-0.5 rounded-md`}
+    <span className={`absolute ${PANEL_CHIP_POS[corner]} text-micro-3 font-extrabold px-2 py-0.5 rounded-md`}
       style={{ background: "#0b0a16cc", border: "1px solid #ffffff1f", color: "#cbd3ff", ...style }}>{children}</span>
   );
 }
@@ -1121,9 +1121,9 @@ function BfPreview({ bfId, className = "", showVersion = false, ratio = "16 / 10
   return (
     <div className={`relative rounded-lg overflow-hidden ${className}`} style={{ aspectRatio: ratio, background: "#0b0a16" }}>
       {src ? <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          : <div className="absolute inset-0 grid place-items-center text-xs opacity-40">{t("shop.noBattlefield")}</div>}
+          : <div className="absolute inset-0 grid place-items-center text-body-5 opacity-40">{t("shop.noBattlefield")}</div>}
       {showVersion && bf && (
-        <span className="absolute top-1.5 left-1.5 text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded"
+        <span className="absolute top-1.5 left-1.5 text-micro-3 font-extrabold tracking-wider px-1.5 py-0.5 rounded"
           style={{ background: "#0b0a16cc", border: "1px solid #34333f", color: "#9a97ab" }}>{isMobile ? "MOBILE" : "DESKTOP"}</span>
       )}
     </div>
@@ -1139,7 +1139,7 @@ function DeckThumb({ deckId, className = "", face = "back", style }) {
   return <img src={img} alt="" loading="lazy" decoding="async" className={`object-contain ${className}`} style={{ aspectRatio: CARD_RATIO, background: "#0b0a16", ...style }} />;
 }
 
-const EYEBROW = "flex items-center gap-2 text-[10px] font-extrabold tracking-[0.13em] uppercase mt-4 mb-2";
+const EYEBROW = "flex items-center gap-2 text-meta-1 font-extrabold tracking-[0.13em] uppercase mt-4 mb-2";
 
 /* ============================ Haupt-Screen ============================ */
 export function CustomizeScreen({ options, profile, onChoose, onClose, onProfileChange }) {
@@ -1250,25 +1250,25 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 (`display: contents`), damit ihre Kinder direkt im Raster liegen. Unterhalb bleiben sie
                 die Flex-Container, die sie immer waren — die Handy-Kopfzeile ändert sich nicht. */}
             <div className="cz-topline flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h2 className="text-lg dt:text-2xl font-bold whitespace-nowrap">{t("shop.title")}</h2>
+              <h2 className="text-title-5 dt:text-head-3 font-bold whitespace-nowrap">{t("shop.title")}</h2>
               <div className="cz-headrow flex items-center gap-2.5 shrink-0 ml-auto">
                 {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
                     Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
                 <span className="cz-bal flex items-baseline gap-1 whitespace-nowrap">
-                  <span className="text-lg dt:text-3xl font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                  <span className="text-[10px] dt:text-[13px] font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
+                  <span className="text-title-5 dt:text-display-1 font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
+                  <span className="text-meta-1 dt:text-body-3 font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
                 </span>
-                <button onClick={onClose} className="cz-close as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-sm">{t("common.close")}</button>
+                <button onClick={onClose} className="cz-close as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-body-lg-5">{t("common.close")}</button>
               </div>
               {/* Auskunft wie im Baum: was der Reiter enthält, und was ein Antippen bewirkt. Erst ab
                   1280 px — am Handy ist die Kopfzeile für eine dritte Spalte zu schmal. */}
               {tab !== "fx" && (
                 <div className="cz-readout hidden dt:block">
-                  <div className="text-[11px] tabular-nums" style={{ color: "#a6a6b0" }}>
+                  <div className="text-meta-3 tabular-nums" style={{ color: "#a6a6b0" }}>
                     {t(tab === "challenges" ? "shop.head.challenges" : "shop.head.packs",
                       { n: catList(tab).length, own: catList(tab).filter((pk) => (pk.kind === "std" ? "own" : packState(p, pk)) === "own").length })}
                   </div>
-                  <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("shop.head.hint")}</div>
+                  <div className="text-meta-2 mt-0.5" style={{ color: "#71717c" }}>{t("shop.head.hint")}</div>
                 </div>
               )}
             </div>
@@ -1287,7 +1287,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
                 const on = tab === m;
                 return (
                   <button key={m} onClick={() => setTab(m)} role="tab" aria-selected={on}
-                    className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
+                    className="flex-1 text-body-3 font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
                     style={on
                       ? { color: "#fff", borderBottom: `2px solid ${col}`,
                           background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${col} 14%, transparent))` }
@@ -1377,8 +1377,8 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
         <div className="mt-3 rounded-xl p-3 flex items-center gap-3"
           style={{ background: randomOn ? "#1a1330" : "#14131c", border: `1px solid ${randomOn ? "#9b82f0aa" : "#2a2836"}` }}>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-extrabold">{t("shop.randomDeck.title")}</div>
-            <div className="text-[11px] leading-snug" style={{ color: "#9a97ab" }}>{t("shop.randomDeck.desc")}</div>
+            <div className="text-body-3 font-extrabold">{t("shop.randomDeck.title")}</div>
+            <div className="text-meta-3 leading-snug" style={{ color: "#9a97ab" }}>{t("shop.randomDeck.desc")}</div>
           </div>
           <button type="button" role="switch" aria-checked={randomOn} aria-label={t("shop.randomDeck.aria")}
             onClick={() => onOption({ randomDeckEachRun: !randomOn })}
@@ -1394,7 +1394,7 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
           /* #kante: Filter in der Chip-Fassung der Kanten-Familie — der aktive trägt eine schmale Cyan-Kante
              statt einer gefüllten Cyan-Pille, die neben den ruhigen Kacheln als lauteste Fläche dastand. */
           <button key={k} onClick={() => setFilter(k)}
-            className={`as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-colors${filter === k ? " text-white" : ""}`}
+            className={`as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-meta-4 font-bold transition-colors${filter === k ? " text-white" : ""}`}
             style={filter === k ? { borderLeftColor: "#26c6e6" } : undefined}>{t(label)}</button>
         ))}
         {/* #packsort: Der Sortier-Knopf steht in DERSELBEN Zeile (Handy wie Desktop), aber hinter einer
@@ -1409,7 +1409,7 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
                 Beschriftung des NÄCHSTEN Klicks („Preis" leuchtet, sortiert ist aber nach Farbe).
                 Die Rückmeldung ist die Umsortierung der Kacheln selbst. */}
             <button type="button" onClick={onSort} title={t("shop.sort.hint")}
-              className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-[11.5px] font-bold transition-colors">
+              className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded-lg text-meta-4 font-bold transition-colors">
               {t(sortLabelKey(sort, challenge))}
             </button>
           </>
@@ -1450,22 +1450,22 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
               style={{ "--c": pack.a1 || "#8a8a95" }}>
               <div className="relative" style={{ aspectRatio: CARD_RATIO }}>
                 <DeckThumb deckId={coverDeckId} className="absolute inset-0 w-full h-full" style={{ filter: owned ? undefined : "grayscale(.7) brightness(.5)" }} />
-                {badge && <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
+                {badge && <span className="absolute top-1.5 right-1.5 text-micro-3 font-extrabold px-1.5 py-0.5 rounded" style={{ background: badge[1], color: badge[2], border: `1px solid ${badge[3]}` }}>{badge[0]}</span>}
                 {/* #tiered: Mehrstufen-Markierung — Stufen-Pills (I/II/III), freigeschaltete hell, gesperrte gedimmt. Signalisiert „Deck mit mehreren Stufen". */}
                 {tiered && (
                   <span className="absolute bottom-1 left-1 flex gap-0.5">
                     {/* `ti` statt `t`: `t` ist in dieser Datei der Übersetzer — eine Stufe darf ihn nicht verdecken. */}
                     {pack.tiers.map((ti) => {
                       const free = isUnlocked(DECK_DEFS[ti.deckId], p);
-                      return <span key={ti.deckId} className="text-[8px] font-extrabold leading-none px-1 py-[3px] rounded"
+                      return <span key={ti.deckId} className="text-micro-2 font-extrabold leading-none px-1 py-[3px] rounded"
                         style={{ background: free ? "#1a1330e6" : "#0a0a12e6", color: free ? "#c9b6ff" : "#6a6780", border: `1px solid ${free ? "#6a4fb0" : "#33313f"}` }}>{ti.roman}</span>;
                     })}
                   </span>
                 )}
               </div>
               <div className="px-2 py-1.5">
-                <span className="text-[12px] font-extrabold truncate block">{packLabel(pack)}</span>
-                <span className="text-[10px] truncate block" style={{ color: sub[1] }}>{sub[0]}</span>
+                <span className="text-body-1 font-extrabold truncate block">{packLabel(pack)}</span>
+                <span className="text-meta-1 truncate block" style={{ color: sub[1] }}>{sub[0]}</span>
               </div>
             </button>
           );
@@ -1473,10 +1473,10 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
       </div>
 
       {shown.length === 0 && (
-        <div className="text-center text-[12px] py-6" style={{ color: "#6d6a80" }}>{t("shop.emptyView")}</div>
+        <div className="text-center text-body-1 py-6" style={{ color: "#6d6a80" }}>{t("shop.emptyView")}</div>
       )}
 
-      <p className="text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+      <p className="text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
         {challenge
           ? t("shop.hint.challenge")
           : t("shop.hint.pack")}
@@ -1593,8 +1593,8 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className="h-[3px] w-full shrink-0" style={HAIRLINE} aria-hidden="true" />
         <div ref={shotBodyRef} className={`p-3.5 ${inline ? "flex-1 min-h-0 overflow-y-auto" : ""}`}>
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[15px] dt:text-[20px] font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
-            {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-[11px] px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
+            <span className="text-body-lg-3 dt:text-title-4 font-extrabold truncate">{packLabel(pack)}{tiered ? <span className="opacity-60 font-bold"> · {selTier.name}</span> : null}</span>
+            {!inline && <button onClick={onClose} className="as-edge-neutral as-edge-thin shrink-0 text-meta-3 px-2.5 py-1 rounded-lg">{t("common.close")}</button>}
           </div>
 
           {/* #werkstatt (18.08.2026) — Ab 1280 px liegen alle drei Ansichten NEBENEINANDER statt hinter
@@ -1635,19 +1635,19 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             <>
               {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
               <div className="flex items-center gap-2" style={{ height: 252 }}>
-                <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
+                <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
                 <div className="flex-1 min-w-0 h-full flex items-center justify-center">
                   {activeSel === "bg"
                     ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
                     : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
                 </div>
-                <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-[15px]" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
+                <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
               </div>
 
               {/* Umschalter Karte vorne / hinten / Hintergrund */}
               <div className="flex gap-1.5 justify-center mt-2.5">
                 {segs.map(([k, label]) => (
-                  <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                  <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-meta-3 font-extrabold transition-colors"
                     style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
                 ))}
               </div>
@@ -1665,7 +1665,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
                 const isEq = equippedTier && equippedTier.deckId === ti.deckId;
                 return (
                   <button key={ti.deckId} onClick={() => setSelDeck(ti.deckId)}
-                    className="flex-1 max-w-[96px] py-1.5 rounded-lg text-[11px] font-extrabold transition-colors"
+                    className="flex-1 max-w-[96px] py-1.5 rounded-lg text-meta-3 font-extrabold transition-colors"
                     style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`,
                       color: on ? "#e8e6ff" : (free ? "#c9c6dd" : "#8b88a0") }}>
                     {free ? "" : "🔒 "}{ti.roman}{isEq ? " ✓" : ""}
@@ -1693,36 +1693,36 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
         <div className={`p-3.5 pt-0 ${inline ? "cz-action flex-none" : ""}`}>
           {tiered ? (
             active ? (
-              <div className="w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ background: "#123a25", color: STATE_ON, border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
+              <div className="w-full rounded-xl font-extrabold text-body-3 py-3 text-center" style={{ background: "#123a25", color: STATE_ON, border: "1px solid #2f7a4f" }}>{t("shop.tier.active", { roman: selTier.roman })}</div>
             ) : selTierUnlocked ? (
-              <button onClick={() => { onActivateTier(pack, selTier); if (!inline) onClose(); }} className="w-full rounded-xl font-extrabold text-[13px] py-3"
+              <button onClick={() => { onActivateTier(pack, selTier); if (!inline) onClose(); }} className="w-full rounded-xl font-extrabold text-body-3 py-3"
                 /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
                 style={{ background: "#20202c", border: `1px solid ${STATE_OFF}`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
             ) : (
-              <div className="w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+              <div className="w-full rounded-xl font-extrabold text-body-1 py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
                 {t("shop.unlock", { cond: unlockLabel(selTierLock) })}
                 {selTierLock.target > 1 && <span className="opacity-70"> · {fmtNum(selTierLock.cur)} / {fmtNum(selTierLock.target)}</span>}
               </div>
             )
           ) : active ? (
             /* #kante: „läuft gerade" ist eine Auskunft, kein Knopf — Kanten-Karte in Grün. */
-            <div className="as-edge-card w-full rounded-xl font-extrabold text-[13px] py-3 text-center" style={{ "--c": STATE_ON, color: STATE_ON }}>{t("shop.activeCheck")}</div>
+            <div className="as-edge-card w-full rounded-xl font-extrabold text-body-3 py-3 text-center" style={{ "--c": STATE_ON, color: STATE_ON }}>{t("shop.activeCheck")}</div>
           ) : s === "own" ? (
             /* #kante: Ausrüsten ist das Angebot dieser Ansicht — violette Kante. */
-            <button onClick={() => { onActivate(pack); if (!inline) onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-[13px] py-3"
+            <button onClick={() => { onActivate(pack); if (!inline) onClose(); }} className="as-edge w-full rounded-xl font-extrabold text-body-3 py-3"
               /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
               style={{ "--c": STATE_OFF }}>{t("shop.activate")}</button>
           ) : s === "buy" ? (
             /* #kante: Kaufen — starker Kanten-Knopf in DP-Cyan, gedimmt-neutral wenn das Guthaben nicht
                reicht (gleiche Fassung wie der Kaufen-Knopf der Effekt-Bühne). */
             <button onClick={() => { if (canBuy) { onBuy(pack); if (!inline) onClose(); } }} disabled={!canBuy}
-              className={`w-full rounded-xl font-extrabold text-[13px] py-3 transition-opacity ${canBuy ? "as-edge-strong" : "as-edge-neutral"}`}
+              className={`w-full rounded-xl font-extrabold text-body-3 py-3 transition-opacity ${canBuy ? "as-edge-strong" : "as-edge-neutral"}`}
               style={{ ...(canBuy ? { "--c": "#35c6e6" } : null), opacity: canBuy ? 1 : 0.6, cursor: canBuy ? "pointer" : "not-allowed" }}>
               {t("shop.buy", { price })}{!canBuy && dpBal < price ? t("shop.tooFewDp") : ""}
             </button>
           ) : (
             /* #kante: gesperrt — neutrale Kante, gedimmt: da ist etwas, aber nicht für dich. */
-            <div className="as-edge-card is-locked w-full rounded-xl font-extrabold text-[12px] py-3 text-center leading-snug" style={{ "--c": "#8a8a95", color: "#9a97ab" }}>
+            <div className="as-edge-card is-locked w-full rounded-xl font-extrabold text-body-1 py-3 text-center leading-snug" style={{ "--c": "#8a8a95", color: "#9a97ab" }}>
               {t("shop.unlock", { cond: unlockLabel(unlock) })}
               {unlock.target > 1 && <span className="opacity-70"> · {fmtNum(unlock.cur)} / {fmtNum(unlock.target)}</span>}
             </div>
@@ -1811,7 +1811,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
              reiner Text. Vorher waren es fünf umrandete Kästen nebeneinander.
              #deckui: der Aktiv-Akzent ist Chrome → Deckfarbe (var(--deck-a1)), Gold nur noch als Fallback. */
           <button key={g.key} onClick={() => pickCat(g.key)} role="tab" aria-selected={on}
-            className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-[11px] font-extrabold transition-colors"
+            className="grow basis-auto py-1.5 px-2.5 whitespace-nowrap rounded-t-md text-meta-3 font-extrabold transition-colors"
             style={on
               ? { color: "#fff", borderBottom: "2px solid var(--deck-a1, #d4a63a)", background: "linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--deck-a1, #d4a63a) 14%, transparent))" }
               : { color: "#9a97ab", borderBottom: "2px solid transparent", background: "transparent" }}>
@@ -1850,7 +1850,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
           <div className={EYEBROW} style={{ color: "#9a97ab" }}>
             {selGroup.title}
             <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
-            <span className="normal-case tracking-normal font-semibold text-[10px]" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
+            <span className="normal-case tracking-normal font-semibold text-meta-1" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
           </div>
           <div className="flex flex-col gap-2">
             {selItems.map((fx) => (
@@ -1864,7 +1864,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
           </div>
         </div>
 
-        <p className="cz-fxhint text-[11px] mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+        <p className="cz-fxhint text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
           {t("shop.fx.hint")}
         </p>
       </div>
@@ -1923,7 +1923,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   /* #kante: Der Aktionsknopf der Bühne („Als Hintergrund wählen" / „Ausgewählt" / „Anschalten") in der
      Kanten-Familie. AUS = violette Kante (das Angebot), AN = grüne Kante mit Schein (läuft gerade) — dieselbe
      Zuordnung wie am Status rechts oben in der Bühne. Die Klassen kommen zum `actBtn` dazu, der nur Maße hält. */
-  const actBtn = "cz-actbtn w-full rounded-xl font-extrabold text-[12.5px] py-2.5";
+  const actBtn = "cz-actbtn w-full rounded-xl font-extrabold text-body-2 py-2.5";
   // `act(active)` liefert Klasse UND Farbe in einem Rutsch — die acht Aufrufstellen unten spreizen es
   // einfach in den Knopf (<button {...act(active)}>), statt className und style getrennt zu führen.
   // #deckui: „Angebot" (off) zieht die Deckfarbe (war Violett); „läuft gerade" (on) bleibt Grün (Zustands-Signal).
@@ -1932,7 +1932,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
   let action;
   if (fx.standard) {
     // #kante: „im Standard enthalten" ist kein Knopf, sondern eine Auskunft — Kanten-Karte, nicht anklickbar.
-    action = <div className="cz-actbtn as-edge-card w-full rounded-xl font-extrabold text-[12px] py-2.5 text-center" style={{ "--c": "#7fb4ff", color: "#7fb4ff" }}>{t("shop.standardFree")}</div>;
+    action = <div className="cz-actbtn as-edge-card w-full rounded-xl font-extrabold text-body-1 py-2.5 text-center" style={{ "--c": "#7fb4ff", color: "#7fb4ff" }}>{t("shop.standardFree")}</div>;
   } else if (!owned) {
     /* #kante: Kaufen ist das Ziel der Bühne — starker Kanten-Knopf in DP-Cyan. Reicht das Guthaben nicht,
        bleibt er neutral und gedimmt: kein Farbsignal für etwas, das gerade nicht geht. */
@@ -1956,7 +1956,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
           {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = finDeckOn === o.v;
-            return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+            return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
@@ -1977,7 +1977,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
           <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
             {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
               const on = deckTintOn === o.v;
-              return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+              return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
                 style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
             })}
           </div>
@@ -1987,7 +1987,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
               <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
                 {[{ v: false, l: t("shop.cube.filled") }, { v: true, l: t("shop.cube.wire") }].map((o) => {
                   const on = wireOn === o.v;
-                  return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-[11px] font-extrabold"
+                  return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-meta-3 font-extrabold"
                     style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
                 })}
               </div>
@@ -2006,7 +2006,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
           {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = deckTintOn === o.v;
-            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+            return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
@@ -2019,7 +2019,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
         <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
           {[{ v: "standard", l: t("shop.color.standard") }, { v: "deck", l: t("shop.color.deck") }].map((o) => {
             const on = spezialSel === o.v;
-            return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-[11px] font-extrabold"
+            return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
               style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
@@ -2078,7 +2078,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
           Bühne: Beschreibung links im Fluss, Aktionsknopf rechts daneben statt über die ganze Breite. */}
       <div className="cz-fxfoot">
         {/* #shopB Kurzbeschreibung: nur der funktionale Bezug (was der Effekt tut / worauf er reagiert). */}
-        <div className="cz-fxdesc text-[10.5px] leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
+        <div className="cz-fxdesc text-meta-2 leading-snug mt-1.5 mb-2 text-center" style={{ color: "#9a97ab", minHeight: 20 }}>{shortDesc(fx, group)}</div>
         {action}
       </div>
     </>
@@ -2118,8 +2118,8 @@ function FxRow({ fx, selected, owned, active, onPick, onToggle }) {
     <button type="button" onClick={handleTap} title={active ? t("shop.dblTap.off") : owned ? t("shop.dblTap.on") : undefined}
       className={`cz-fxrow as-edge-card${selected ? " is-sel" : ""}${owned ? "" : " opacity-75"} relative w-full overflow-hidden rounded-xl text-left transition-transform active:scale-[.99] flex items-center gap-3`}
       style={{ padding: "11px 13px", "--c": tint }}>
-      <span className="flex-1 min-w-0 text-[13px] font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
-      <span className="flex items-center gap-1.5 text-[10px] font-bold shrink-0" style={{ color: status.c }}>
+      <span className="flex-1 min-w-0 text-body-3 font-extrabold leading-tight truncate" style={{ color: selected ? "#e8e6ff" : owned ? "#e3e1ec" : "#7d7a8b" }}>{fx.name}</span>
+      <span className="flex items-center gap-1.5 text-meta-1 font-bold shrink-0" style={{ color: status.c }}>
         {status.dot && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: status.dot, boxShadow: `0 0 6px ${status.dot}` }} />}
         {status.label}
       </span>

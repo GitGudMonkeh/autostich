@@ -29,7 +29,11 @@ function RT({ t }) {
   const parts = String(t || "").split(/\*\*/);
   return (
     <>
-      {parts.map((s, i) => (i % 2 ? <strong key={i} style={{ color: "#f2f0f8", fontWeight: 650 }}>{s}</strong> : <span key={i}>{s}</span>))}
+      {/* #typo-system S2: 650 war die letzte Sprosse ausserhalb der Leiter 400/500/600 — sie stand
+          hier inline und ging deshalb an der `@theme`-Umbiegung vorbei. Das Gewicht ist jetzt
+          ueberfluessig: `<strong>` traegt seit S2 projektweit 600 (index.css, direkt unter
+          `button`). Nur die Farbe bleibt, und die ist die eigentliche Absicht dieser Stelle. */}
+      {parts.map((s, i) => (i % 2 ? <strong key={i} style={{ color: "#f2f0f8" }}>{s}</strong> : <span key={i}>{s}</span>))}
     </>
   );
 }
@@ -39,7 +43,7 @@ function SecLabel({ children, color }) {
   return (
     <div className="gd-seclabel flex items-center gap-2.5 mb-3 mt-6">
       <span className="w-3.5 h-0.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-      <h3 className="gd-sectext text-[10px] tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{children}</h3>
+      <h3 className="gd-sectext text-meta-1 tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{children}</h3>
     </div>
   );
 }
@@ -81,10 +85,10 @@ function Bar({ b }) {
   return (
     <div className="gd-bar rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="gd-barname text-[13px] tracking-wide" style={{ color: "#e2e0ee" }}>
+        <span className="gd-barname text-body-3 tracking-wide" style={{ color: "#e2e0ee" }}>
           <span className="mr-1.5" style={{ color: b.color }}>{b.faction ? <FactionIcon type={b.faction} size={12} /> : b.glyph}</span>{b.name}
         </span>
-        {!single && b.payoff && <span className="gd-barpay text-[11px] text-right" style={{ color: "#9a9aa6" }}><RT t={b.payoff} /></span>}
+        {!single && b.payoff && <span className="gd-barpay text-meta-3 text-right" style={{ color: "#9a9aa6" }}><RT t={b.payoff} /></span>}
       </div>
       <div className="relative overflow-hidden rounded-md" style={{ height: single ? 18 : 12, background: "#0c0c11", border: "1px solid #2a2a33" }}>
         <span className="absolute inset-y-0 left-0" style={{
@@ -107,7 +111,7 @@ function Bar({ b }) {
         )}
       </div>
       {single && (
-        <div className="gd-barscale flex justify-between mt-1.5 text-[10px]" style={{ color: "#71717c" }}>
+        <div className="gd-barscale flex justify-between mt-1.5 text-meta-1" style={{ color: "#71717c" }}>
           {b.scale.map((s, i) => <span key={i} className={i === b.scale.length - 1 ? "" : "ty-num-sm"}>{s}</span>)}
         </div>
       )}
@@ -118,7 +122,7 @@ function Bar({ b }) {
 export function GuideButton({ onClick, className = "", style }) {
   return (
     <button type="button" onClick={onClick} aria-label={t("guide.open")} title={t("guide.title")}
-      className={"inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full " + className}
+      className={"inline-flex items-center gap-1.5 text-meta-3 font-semibold tracking-wide px-2.5 py-1 rounded-full " + className}
       style={{ background: "#20202a", border: "1px solid #3a3a4a", color: "#cfcad8", ...style }}>
       <span aria-hidden="true">📖</span> {t("guide.title")}
     </button>
@@ -142,34 +146,34 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
     <>
       {showTitle ? (
         <div className="pt-4">
-          <h1 className="text-3xl font-extrabold tracking-wide uppercase leading-none"
+          <h1 className="text-display-1 font-extrabold tracking-wide uppercase leading-none"
               style={{ color: "#f4f2ff", textShadow: `0 0 22px ${color}66` }}>
             <ArchIcon meta={meta} size={16} className="mr-2" />{meta.label}
           </h1>
-          <p className="text-[13.5px] mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
+          <p className="text-body-4 mt-2.5 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
         </div>
       ) : showSubtitle && (
-        <p className="text-[13.5px] pt-1 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
+        <p className="text-body-4 pt-1 leading-relaxed" style={{ color: "#a9a9b6", maxWidth: "56ch" }}>{g.subtitle}</p>
       )}
 
       <div className="gd-cols">
         {/* Spalte 1 — worum es geht und woraus es besteht. */}
         <div className="gd-col">
           <SecLabel color={color}>{t("guide.core")}</SecLabel>
-          <p className="gd-core text-[15px] leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
+          <p className="gd-core text-body-lg-3 leading-relaxed" style={{ color: "#dcdce6" }}><RT t={g.kernidee} /></p>
 
           <SecLabel color={color}>{g.pillarsLabel}</SecLabel>
           <div className="grid gap-2.5">
             {g.pillars.map((p, i) => (
               <div key={i} className="gd-pillar grid gap-3 items-start rounded-xl px-3.5 py-3"
                    style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
-                <div className="gd-pglyph w-[38px] h-[38px] grid place-items-center rounded-lg text-lg"
+                <div className="gd-pglyph w-[38px] h-[38px] grid place-items-center rounded-lg text-title-5"
                      style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
                 <div>
-                  <div className="gd-pname text-[14.5px] font-semibold" style={{ color: p.color }}>
-                    {p.name}{p.sub && <span className="ml-1 text-[12px] font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
+                  <div className="gd-pname text-body-lg-2 font-semibold" style={{ color: p.color }}>
+                    {p.name}{p.sub && <span className="ml-1 text-body-1 font-normal" style={{ color: "#71717c" }}>{p.sub}</span>}
                   </div>
-                  <div className="gd-ptext text-[13px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
+                  <div className="gd-ptext text-body-3 leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}><RT t={p.text} /></div>
                 </div>
               </div>
             ))}
@@ -183,15 +187,15 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
             <div className="gd-ringbox mx-auto w-full max-w-[190px]"><LoopRing color={color} nodes={g.loop.nodes} center={g.loop.center} /></div>
             <ol className="grid gap-2.5 list-none p-0 m-0" style={{ counterReset: "gstep" }}>
               {g.loop.steps.map((s, i) => (
-                <li key={i} className="gd-step grid gap-3 items-baseline text-[13.5px]" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
-                  <span className="gd-stepno grid place-items-center text-[11px] ty-num-sm rounded-md"
+                <li key={i} className="gd-step grid gap-3 items-baseline text-body-4" style={{ gridTemplateColumns: "24px 1fr", color: "#d3d3dd" }}>
+                  <span className="gd-stepno grid place-items-center text-meta-3 ty-num-sm rounded-md"
                         style={{ width: 24, height: 24, color: color, background: "#0e0e13", border: "1px solid #33333e" }}>{i + 1}</span>
                   <span><RT t={s} /></span>
                 </li>
               ))}
             </ol>
           </div>
-          <div className="gd-valve mt-3.5 rounded-xl px-3.5 py-3 text-[13px] leading-relaxed"
+          <div className="gd-valve mt-3.5 rounded-xl px-3.5 py-3 text-body-3 leading-relaxed"
                style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
             <RT t={g.loop.valve} />
           </div>
@@ -207,9 +211,9 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
           <SecLabel color={color}>{t("guide.principles")}</SecLabel>
           <ul className="grid gap-2.5 list-none p-0 m-0">
             {g.principle.map((p, i) => (
-              <li key={i} className="gd-princ grid gap-3 rounded-xl px-3.5 py-3 text-[13.5px]"
+              <li key={i} className="gd-princ grid gap-3 rounded-xl px-3.5 py-3 text-body-4"
                   style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
-                <span className="gd-tag h-fit ty-badge text-[10.5px] uppercase px-2 py-1 rounded-md whitespace-nowrap"
+                <span className="gd-tag h-fit ty-badge text-meta-2 uppercase px-2 py-1 rounded-md whitespace-nowrap"
                       style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
                 <span className="leading-relaxed"><RT t={p.text} /></span>
               </li>
@@ -219,7 +223,7 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
       </div>
 
       {showTitle && (
-        <div className="mt-6 pt-3.5 text-[11px] flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
+        <div className="mt-6 pt-3.5 text-meta-3 flex items-center gap-2" style={{ borderTop: "1px solid #2a2a33", color: "#71717c" }}>
           <ArchIcon meta={meta} size={14} /> {meta.label} · {t("guide.archOf", { n: ARCHETYPE_ORDER.indexOf(active) + 1, total: ARCHETYPE_ORDER.length })}
         </div>
       )}
@@ -254,11 +258,11 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
               {/* Kein Zeichen vor dem Titel: Die anderen Screens (Baum, Werkstatt) tragen dort auch keins,
                   und das Buch-Emoji war ein Fremdkörper im Zeichensatz des Spiels. */}
               <span className="gd-title flex items-center gap-2.5">
-                <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
+                <h2 className="text-body-5 font-bold tracking-[0.28em] uppercase" style={{ color: "#d8d2f2" }}>{t("guide.title")}</h2>
               </span>
               <ActionButton kind="secondary" className="gd-close ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
-            <div className="gd-hint text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("guide.subtitle")}</div>
+            <div className="gd-hint text-meta-1 mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("guide.subtitle")}</div>
             {/* Die Haarlinie der Karte sitzt an deren Ecke; ohne Kartenfläche braucht der Kopf eine eigene. */}
             {wide && <div className="gd-hair" aria-hidden="true" />}
           </div>
@@ -270,7 +274,7 @@ export function GuideOverlay({ onClose, initial = "lightning" }) {
               const on = k === active;
               return (
                 <button key={k} type="button" onClick={() => setActive(k)} role="tab" aria-selected={on}
-                  className="flex-1 min-w-max flex items-center justify-center gap-1.5 text-[12px] font-semibold tracking-wide uppercase px-3 py-2 rounded-t-lg"
+                  className="flex-1 min-w-max flex items-center justify-center gap-1.5 text-body-1 font-semibold tracking-wide uppercase px-3 py-2 rounded-t-lg"
                   style={{
                     color: on ? m.color : "#71717c",
                     background: on ? "#131318" : "transparent",

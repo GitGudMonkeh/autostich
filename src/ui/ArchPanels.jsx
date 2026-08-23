@@ -39,7 +39,7 @@ const formationRules = () => [
    Quelle: Knopf UND Legende, durchgehend über t(). Der Aufrufer entscheidet weiter, OB er ihn zeigt (`hasArch`). */
 export function ArchToggle({ on, onToggle }) {
   return (
-    <div className="arch-toggle flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-[11px]">
+    <div className="arch-toggle flex items-center flex-wrap gap-x-3 gap-y-1 mb-2 text-meta-3">
       <button onClick={onToggle}
         className={`${on ? "as-edge" : "as-edge-neutral"} as-edge-thin px-2 py-1 rounded-lg font-bold`}
         style={on ? { "--c": ARCH_CAT.value.color } : undefined}>
@@ -66,13 +66,13 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
     ? ({ children }) => <div>{children}</div>
     : ({ children }) => (
       <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-        <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: buildings.length })}</div>
+        <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: buildings.length })}</div>
         {children}
       </div>
     );
   return (
     <Schale>
-      <div className="text-[10px] opacity-45 mb-1.5">{t("archpanels.tapHint")}</div>
+      <div className="text-meta-1 opacity-45 mb-1.5">{t("archpanels.tapHint")}</div>
       <div className="grid gap-1">
         {buildings.map((b) => {
           const fam = archFamily(b.familyId); if (!fam) return null;
@@ -82,7 +82,7 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
           const on = inspectBid === b.id;
           return (
             <button key={b.id} id={`arch-bld-${b.id}`} onClick={() => onInspect?.(on ? null : b.id)}
-              className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
+              className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
               style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
               <span className="inline-flex items-center gap-1.5 flex-wrap">
                 <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
@@ -103,7 +103,7 @@ export function ArchBuildingList({ buildings = [], cover = null, inspectBid = nu
 export function FormationLegend({ state = {}, className = "" }) {
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 gap-y-0.5 text-xs sm:text-[13px] leading-snug font-medium">
+      <div className="grid grid-cols-1 gap-y-0.5 text-body-5 sm:text-body-3 leading-snug font-medium">
         {/* Sprachprüfung A11/A12: aus FORMATION_TYPES generiert — vorher fehlten Nachhall/Kern/Grenzbonus in der
             Legende, obwohl die Karten-Badges sie zeigen, und der Anker stand mit einem festen Faktor da (×1,25),
             den er nur in einer von mehreren Quellen hat. */}

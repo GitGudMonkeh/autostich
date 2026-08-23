@@ -88,7 +88,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       }}
     >
       {permBoost > 0 && (
-        <div className="absolute top-1.5 right-2 text-[11px] font-bold px-1 rounded"
+        <div className="absolute top-1.5 right-2 text-meta-3 font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
           title={`Dauerhaft +${permBoost} (Basis ${baseRank})`}>
           +{permBoost}
@@ -96,14 +96,14 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       )}
       {/* Feuer (#206): Schmiede-Amboss + Betrag (Gold) — oben rechts, unter dem Dauerwert-Badge gestapelt (CORNER.forge). */}
       {forged > 0 && (
-        <div className="absolute right-2 text-[10px] font-bold px-1 rounded leading-none"
+        <div className="absolute right-2 text-meta-1 font-bold px-1 rounded leading-none"
           style={{ top: permBoost > 0 ? 24 : 6, color: "#f0b74a", background: "#f0b74a22", textShadow: "0 0 5px #f0a83a88" }}
           title={`Geschmiedet +${forged} Wert (dauerhaft)`}>
           ⚒+{forged}
         </div>
       )}
       {/* Zahl (z-2). */}
-      <div className="text-5xl font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, ...numGlow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
+      <div className="text-display-3 font-bold card-num" style={{ position: "relative", zIndex: 2, color: numColor, WebkitTextFillColor: "transparent", WebkitTextStroke: `2px ${numColor}`, ...numGlow, fontFamily: '"Orbitron", "Helvetica Neue", Arial, sans-serif', fontWeight: 900, fontSize: "calc(2rem * 1.2)", lineHeight: 1 }}>{effective}</div>
       {/* Pflanze (#277): zweistufiger Wachstumsring unten-rechts — Stufe 1 grau→grün (Reife), Stufe 2 heller (Wert-Deckel/
           ausgewachsen). Ausgeblendet erst, wenn die Karte ausgewachsen ist. Sitzt in vocab.CORNER.growthRing. */}
       {showGrowthRing && (
@@ -120,7 +120,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
           title={`Kolonisiert (Ausläufer) · Ernte +${colonized} Wachstum`}>
           <FactionIcon type="plant" size={15} />
-          <span className="text-[9px] font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
+          <span className="text-micro-3 font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
         </div>
       )}
       {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}
@@ -130,7 +130,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts. Warm/orange → „Feuer, nicht Eis". */}
       {branded > 0 && (
         <>
-          <div className="absolute top-1 text-[10px] font-bold px-1 rounded leading-none"
+          <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
             style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
             title={`Gebrandmarkt −${branded} Wert`}>−{branded}</div>
           <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
@@ -155,7 +155,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           })}
         </div>
       )}
-      <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-[10px]">
+      <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-meta-1">
         {permBoost > 0 && <span className="opacity-55">Basis {baseRank}</span>}
         {stichBonus > 0 && <span style={{ color: "#e0605a" }}>⚔ +{stichBonus} Stich</span>}
       </div>
@@ -177,7 +177,7 @@ function CardBackView({ label = "?", image = null }) {
   }
   return (
     <div
-      className="rounded-xl border-2 border-dashed flex items-center justify-center text-2xl opacity-40"
+      className="rounded-xl border-2 border-dashed flex items-center justify-center text-head-3 opacity-40"
       style={{ width: 104, height: 144, borderColor: "#3a3a44", background: "#17171c" }}
     >
       {label}

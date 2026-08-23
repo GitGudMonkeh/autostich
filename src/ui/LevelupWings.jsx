@@ -90,9 +90,9 @@ function WingFold({ open, label, count, color, onToggle, children }) {
     <>
       <button type="button" onClick={onToggle} aria-expanded={open}
         className="w-full flex items-center gap-1.5 text-left mb-2">
-        <span className="text-[10px] opacity-50" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
-        <span className="text-[11px] uppercase tracking-wide opacity-50 truncate">{label}</span>
-        <span className="ml-auto text-[11px] font-bold shrink-0" style={{ color }}>{count}</span>
+        <span className="text-meta-1 opacity-50" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
+        <span className="text-meta-3 uppercase tracking-wide opacity-50 truncate">{label}</span>
+        <span className="ml-auto text-meta-3 font-bold shrink-0" style={{ color }}>{count}</span>
       </button>
       {open && children}
     </>
@@ -122,7 +122,7 @@ export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options 
         <aside className="lv-wing lv-wing-l" style={{ borderColor: `${accent}4d` }}>
           <FormationPanel state={state} glowBid={inspectBid} quietFrames />
           <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
-          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("perk.deckStrength")}</div>
+          <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("perk.deckStrength")}</div>
           <DeckStrength deck={deck} />
           {buildings.length > 0 && (
             <>
@@ -151,7 +151,7 @@ export function LevelupRig({ accent = "#9b82f0", state = {}, deck = [], options 
                       options={options} onOption={onOption} best={best} />
           {/* Der Build steht UNTER den Multiplikatoren: erst wodurch der Score entsteht, dann womit. */}
           <div className="lv-wing-sep" style={{ background: `${accent}2e` }} />
-          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+          <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
             {t("perk.build", { count: (state.perks || []).length + famCount(state) })}
           </div>
           <PerkList perks={state.perks || []} familyTiers={state.familyTiers}

@@ -35,7 +35,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
   const hasLegs = legs.length > 0;
 
   const Header = ({ open, onClick, color, label, count }) => (
-    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold transition-all"
+    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-body-lg-5 font-bold transition-all"
       style={{ background: open ? `${color}1f` : "#1c1c22", border: `1px solid ${open ? color : "#30303a"}`, color: open ? color : "#c8c8d0" }}>
       <span>{label} <span className="opacity-55 font-normal">· {count}</span></span>
       <span className="opacity-70">{open ? "▲" : "▼"}</span>
@@ -44,7 +44,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <div className="text-xs opacity-55">Voll-Katalog (Dev): Kategorie aufklappen → Familie wählen → Stufe klicken.</div>
+      <div className="text-body-5 opacity-55">Voll-Katalog (Dev): Kategorie aufklappen → Familie wählen → Stufe klicken.</div>
       {sections.map((s) => (
         <div key={s.key} className="flex flex-col gap-1.5">
           <Header open={openCat === s.key} onClick={() => setOpenCat(openCat === s.key ? null : s.key)}
@@ -62,10 +62,10 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
                     <button onClick={() => setOpenFam(open ? null : fid)}
                       className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left">
                       <span className="flex flex-col gap-0.5 min-w-0">
-                        <span className="font-semibold text-sm" style={{ color: s.meta.color }}>{fam.name}</span>
-                        {repDesc && <span className="text-[11px] opacity-60 leading-snug">{repDesc}</span>}
+                        <span className="font-semibold text-body-lg-5" style={{ color: s.meta.color }}>{fam.name}</span>
+                        {repDesc && <span className="text-meta-3 opacity-60 leading-snug">{repDesc}</span>}
                       </span>
-                      <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{open ? "▲ Stufe" : "▼ Stufe"}</span>
+                      <span className="text-meta-3 opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{open ? "▲ Stufe" : "▼ Stufe"}</span>
                     </button>
                     {open && (
                       <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
@@ -74,7 +74,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
                           return (
                             <button key={t} onClick={() => onPick({ familyId: fid, tier: t })}
                               title={(fam.tiers[t] || {}).desc || ""}
-                              className="px-2.5 py-1 rounded text-xs font-bold transition-all hover:-translate-y-0.5"
+                              className="px-2.5 py-1 rounded text-body-5 font-bold transition-all hover:-translate-y-0.5"
                               style={{ background: `${tm.color}1f`, color: tm.color, border: `1px solid ${tm.color}88` }}>
                               {romanOf(t)} · {rarityLabel(t)}
                             </button>
@@ -102,8 +102,8 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
                   <button key={id} onClick={() => onPick(id)}
                     className="text-left rounded-lg p-3 flex flex-col gap-1 transition-all hover:-translate-y-0.5"
                     style={{ background: "#20202a", border: `1px solid ${LEG_GOLD}88` }}>
-                    <div className="font-bold text-sm" style={{ color: LEG_GOLD }}>{p.label}</div>
-                    <div className="text-[11px] opacity-70 leading-snug">{p.desc}</div>
+                    <div className="font-bold text-body-lg-5" style={{ color: LEG_GOLD }}>{p.label}</div>
+                    <div className="text-meta-3 opacity-70 leading-snug">{p.desc}</div>
                   </button>
                 );
               })}
@@ -113,7 +113,7 @@ export function DevPerkCatalog({ offer = [], onPick, onDecline }) {
       )}
 
       {onDecline && (
-        <button onClick={onDecline} className="self-center mt-2 text-xs px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
+        <button onClick={onDecline} className="self-center mt-2 text-body-5 px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110"
           style={{ background: "#20202a", color: "#9a9aa4", border: "1px solid #3a3a44" }}>
           {t("skill.skipCycle")}
         </button>

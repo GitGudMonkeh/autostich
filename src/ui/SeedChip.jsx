@@ -15,7 +15,7 @@ export function SeedChip({ code, onReplay = null }) {
     setTimeout(() => setCopied(false), 1400);
   };
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px]">
+    <span className="inline-flex items-center gap-1.5 text-meta-3">
       {/* #kante: Kopieren ist der Nebenweg (neutral), Nachspielen das Angebot (Goldkante). */}
       <button onClick={copy} title={t("seed.copy")}
         className="as-edge-neutral as-edge-thin inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono transition-all hover:brightness-125">

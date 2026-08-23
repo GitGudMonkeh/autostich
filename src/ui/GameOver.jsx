@@ -133,7 +133,7 @@ function UnlockModal({ unlocks, onConfirm }) {
       <div className="ul-card as-legendary rounded-2xl px-5 pt-6 pb-5 sm:px-8 sm:pt-7 sm:pb-6 text-center"
         style={{ background: "linear-gradient(180deg, #1c1708, #14110c)", maxWidth: "min(92vw, 760px)", maxHeight: "90dvh", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="text-xs sm:text-sm uppercase tracking-[.2em] sm:tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
+        <div className="text-body-5 sm:text-body-lg-5 uppercase tracking-[.2em] sm:tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
           {t("gameover.skins.title")}
         </div>
         <div className="flex flex-wrap justify-center items-end gap-5 sm:gap-7 mt-5 sm:mt-6">
@@ -149,15 +149,15 @@ function UnlockModal({ unlocks, onConfirm }) {
                     <img src={img} alt="" decoding="async" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />
                   </div>
                 )}
-                <span className="text-[15px] font-semibold leading-tight">{u.name}</span>
+                <span className="text-body-lg-3 font-semibold leading-tight">{u.name}</span>
               </div>
             );
           })}
         </div>
         {alsoNames.length > 0 && (
-          <div className="text-[13px] opacity-70 mt-4">+ {alsoNames.join(" · ")}</div>
+          <div className="text-body-3 opacity-70 mt-4">+ {alsoNames.join(" · ")}</div>
         )}
-        <div className="text-xs opacity-55 mt-5">{t("gameover.skins.hint")}</div>
+        <div className="text-body-5 opacity-55 mt-5">{t("gameover.skins.hint")}</div>
         <button onClick={onConfirm} autoFocus
           className="as-actbtn as-edge-strong mt-5 sm:mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
           style={{ "--c": "#d4a63a" }}>
@@ -246,7 +246,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             `display: contents`, und die Reihenfolge im DOM ist unverändert Augenbraue → Zahl →
             Rekord-Chip → Kleinschrift-Zeile. */}
         <div className="go-hero text-center mt-4">
-          <div className="go-eyebrow text-xs uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
+          <div className="go-eyebrow text-body-5 uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile unter dem Score die Kennzahlenreihe
               im Kopf (Bauform `.rd-kpi` aus den Lauf-Details): die Zahl sagt das Ergebnis, die Reihe den
               Rahmen — wie lange, wie viele Stiche, wie viele Durchläufe. Am HANDY bleibt die kompakte
@@ -288,23 +288,23 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         <div className={`go-heroblock as-ring as-ring-quiet text-center${isRecord ? " is-record" : ""}`}>
           <i className="as-ring-run" aria-hidden="true" />
           {/* #253/Victory-Redesign: kompakt abgekürzt (Mio./Mrd.) gegen Overflow bei großen Scores; voller Wert im Tooltip. */}
-          <div className="go-score text-4xl sm:text-5xl ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
+          <div className="go-score text-display-2 sm:text-display-3 ty-num mt-2 leading-tight" title={fmtScore(score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(scoreUp)}</div>
           {/* Rekord-Zeile: neuer Rekord → Stern + Zuwachs; sonst Abstand zum Rekord. */}
           <div className="go-rec mt-2 flex items-center justify-center gap-2 flex-wrap">
             {isRecord ? (
               /* #deckui: „neuer Rekord"-Chip zieht die Deckfarbe (generischer Violett-Akzent, kein Gold-Rekordwert). */
-              <span className="inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-0.5 rounded-full" style={{ color: "var(--deck-a1, #8a7de0)", background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 33%, transparent)" }}>
+              <span className="inline-flex items-center gap-1.5 text-body-lg-5 font-bold px-2.5 py-0.5 rounded-full" style={{ color: "var(--deck-a1, #8a7de0)", background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 33%, transparent)" }}>
                 ★ {t("gameover.record.new")}{deltaPct != null && deltaPct > 0 ? ` · +${deltaPct} %` : ""}
               </span>
             ) : deltaPct != null ? (
-              <span className="text-sm px-2.5 py-0.5 rounded-full" style={{ color: "#9a9aa6", background: "#ffffff0d", border: "1px solid #33333e" }}>
+              <span className="text-body-lg-5 px-2.5 py-0.5 rounded-full" style={{ color: "#9a9aa6", background: "#ffffff0d", border: "1px solid #33333e" }}>
                 {deltaPct >= 0 ? "+" : ""}{deltaPct} % {t("gameover.record.from")}
               </span>
             ) : null}
           </div>
           {/* #202: Münzen-Zeile entfernt — der Shop ist seit dem Architekt-Umbau dormant, Münzen sind obsolet. */}
           {!wide && (
-            <div className="text-xs opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
+            <div className="text-body-5 opacity-55 mt-2 flex items-center justify-center gap-x-2 gap-y-0.5 flex-wrap">
               {timeStr && <span>{timeStr}</span>}
               {perTrick > 0 && <><span className="opacity-30">·</span><span title={t("gameover.perTrick.title")}>{t("gameover.perTrick", { score: fmtScoreShort(perTrick) })}</span></>}
               <span className="opacity-30">·</span><span>{t("gameover.cycles", { count: cyclesDone })}</span>
@@ -320,7 +320,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <div className="go-earn as-ring as-ring-quiet mt-4">
             <i className="as-ring-run" aria-hidden="true" />
             <div className="go-box rounded-xl px-3 py-2.5" style={MENU_PANEL}>
-              <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
+              <div className="flex items-center justify-between mb-1.5 text-meta-3 font-bold">
                 <span style={{ color: "#9a9aa6" }}>{t("gameover.milestones", { done: mb.reached, total: mb.total })}</span>
                 <span style={{ color: "#8a8896" }}>{mb.atMax ? t("gameover.milestones.max") : t("gameover.milestones.next", { n: Math.round(mb.next.at / 1_000_000) })}</span>
               </div>
@@ -338,14 +338,14 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                     Kanten auf gleichem Grund lesen sie sich als ein Paar statt als zwei verschiedene Kästen;
                     die Farbe steckt weiter in Kante und Zahl. */}
                 <div className="as-edge-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ "--c": "#d4a63a" }}>
-                  <span className="text-[11px] font-bold" style={{ color: "#d4a63a" }}>{t("gameover.sp")}</span>
-                  <span className="ty-num text-[18px]" style={{ color: "#f2c14a" }}>+{spUp}</span>
+                  <span className="text-meta-3 font-bold" style={{ color: "#d4a63a" }}>{t("gameover.sp")}</span>
+                  <span className="ty-num text-title-2" style={{ color: "#f2c14a" }}>+{spUp}</span>
                 </div>
                 <div className="as-edge-card relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ "--c": "#35c6e6" }}>
-                  <span className="text-[11px] font-bold" style={{ color: "#35c6e6" }}>{t("gameover.dp")}</span>
+                  <span className="text-meta-3 font-bold" style={{ color: "#35c6e6" }}>{t("gameover.dp")}</span>
                   <span className="flex items-center gap-1.5">
-                    {dpRoll.minus && <span className="text-[10px] font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
-                    <span className="ty-num text-[18px]" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
+                    {dpRoll.minus && <span className="text-meta-1 font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
+                    <span className="ty-num text-title-2" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
                   </span>
                   {dpRoll.minus && <span aria-hidden className="absolute bottom-0 left-0 h-[3px]" style={{ width: "100%", background: "#e05555" }} />}
                 </div>
@@ -358,10 +358,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               <div className="as-legendary mt-2 rounded-xl px-3 py-2.5 flex items-center justify-between gap-3"
                 style={{ background: "#1a1608" }}>
                 <span className="min-w-0">
-                  <span className="text-[12px] font-extrabold block" style={{ color: "#f2c14a" }}>{t("gameover.welcome")}</span>
-                  <span className="text-[10.5px] leading-snug block" style={{ color: "#c8bb8a" }}>{t("gameover.welcome.hint")}</span>
+                  <span className="text-body-1 font-extrabold block" style={{ color: "#f2c14a" }}>{t("gameover.welcome")}</span>
+                  <span className="text-meta-2 leading-snug block" style={{ color: "#c8bb8a" }}>{t("gameover.welcome.hint")}</span>
                 </span>
-                <span className="ty-num text-[18px] shrink-0" style={{ color: "#f2c14a" }}>
+                <span className="ty-num text-title-2 shrink-0" style={{ color: "#f2c14a" }}>
                   {t("gameover.welcome.value", { n: earn.welcomeDp })}
                 </span>
               </div>
@@ -373,17 +373,17 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             freigeschalteter Belohnung (progressUnlocks) bzw. der nächsten Freischaltung. Nur während des Onboardings. */}
         {onboarding && (
           <div className="go-onb as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
-            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>
+            <div className="text-body-5 uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>
               ✦ Onboarding {onboarding.step}/{onboarding.links}
             </div>
             {progressUnlocks.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {progressUnlocks.map((u) => (
                   <div key={u.id} className="flex flex-col items-center gap-2 rounded-lg px-3 py-2 text-center" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
-                    <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>{t("gameover.unlocked.inline", { label: u.label })}</span>
+                    <span className="text-body-1 font-bold leading-snug" style={{ color: "#f0d27a" }}>{t("gameover.unlocked.inline", { label: u.label })}</span>
                     {u.guide && (
                       <button type="button" onClick={() => setGuideArch(u.guide)}
-                        className="rounded-full px-3 py-1 text-[12px] font-bold transition-all hover:-translate-y-0.5"
+                        className="rounded-full px-3 py-1 text-body-1 font-bold transition-all hover:-translate-y-0.5"
                         style={{ background: "#241b34", color: "#e8d9ff", border: "1px solid #6b4fa0" }}>
                         📖 Leitfaden: {u.guideName}
                       </button>
@@ -392,7 +392,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 ))}
               </div>
             ) : (
-              <div className="text-[12px] text-center font-bold" style={{ color: "#f0d27a" }}>
+              <div className="text-body-1 text-center font-bold" style={{ color: "#f0d27a" }}>
                 {t(onboarding.advanced ? "gameover.progress.saved" : "gameover.progress.done")}
                 {onboarding.nextLabel ? ` · Nächste Freischaltung bei ${onboarding.nextAt}/${onboarding.links}: ${onboarding.nextLabel}` : ""}
               </div>
@@ -425,7 +425,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           return (
             <div className="go-best as-ring as-ring-quiet mt-5">
               <i className="as-ring-run" aria-hidden="true" />
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.best")}</div>
+              <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("gameover.best")}</div>
               {rows.map((r) => {
                 const isNew = r.now > r.was;
                 return (
@@ -485,7 +485,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Onboarding-Banner oben die Freischaltungen (kein Ziel-Button nötig) → hier nur NACH dem Onboarding. */}
         {!onboarding && progressUnlocks.length > 0 && (
           <div className="go-unlocks as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
-            <div className="text-xs uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>{t("gameover.unlocked.title")}</div>
+            <div className="text-body-5 uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>{t("gameover.unlocked.title")}</div>
             <div className="flex flex-col gap-2">
               {progressUnlocks.map((u) => {
                 const nav = u.target === "workshop" ? { fn: onCustomize, label: t("gameover.nav.workshop") }
@@ -493,11 +493,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                   : u.target === "leaderboard" ? { fn: onLeaderboard, label: t("gameover.nav.leaderboard") } : null;
                 return (
                   <div key={u.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
-                    <span className="text-[12px] font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ {u.label}</span>
+                    <span className="text-body-1 font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ {u.label}</span>
                     {nav && nav.fn && (
                       /* #kante: Weiterleitung in der Freischaltungs-Zeile — starker Kanten-Knopf statt
                          gefüllter Goldtaste. Die Zeile drumherum behält bewusst ihre Fläche. */
-                      <button onClick={nav.fn} className="as-edge-strong as-edge-thin shrink-0 text-[11px] font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
+                      <button onClick={nav.fn} className="as-edge-strong as-edge-thin shrink-0 text-meta-3 font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
                         style={{ "--c": "#d4a63a" }}>{nav.label} ›</button>
                     )}
                   </div>
@@ -514,7 +514,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           || Object.values(state.familyTiers || {}).some((tier) => tier > 0) || motor.length > 0) && (
           <div className="go-build as-ring as-ring-quiet mt-5">
               <i className="as-ring-run" aria-hidden="true" />
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.build")}</div>
+            <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("gameover.build")}</div>
             {/* `families` = die Familien-Stufen des Laufs (#167). Ohne sie zeigte der Endscreen nur die flachen
                 Perks und die Legendären — also einen Bruchteil dessen, was im Lauf gewählt wurde. Der Endscreen
                 hat den vollen State und kann sie liefern; die Bestenlisten-Detailansicht kann es nicht (die
@@ -522,14 +522,14 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <RunBuildChips entry={{ perks: state.perks, skills: state.skills || [], families: state.familyTiers || {} }} />
             {motor.length > 0 && (
               <>
-                <div className="text-[10px] uppercase tracking-wide opacity-40 mt-4 mb-2">{t("gameover.engine")}</div>
+                <div className="text-meta-1 uppercase tracking-wide opacity-40 mt-4 mb-2">{t("gameover.engine")}</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {motor.map((m) => (
                     /* #go-ruhe: `--gob` trägt den Kantenton für die Desktop-Kachelform; die INLINE gesetzte
                        borderLeft bleibt stehen und ist weiter die Handy-Fassung. */
                     <div key={m.label} className="go-box go-box-c rounded-lg px-3 py-2 min-w-0" style={{ ...MENU_PANEL, borderLeft: `3px solid ${m.color}`, "--gob": m.color }}>
-                      <div className="opacity-50 text-[10px] uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
-                      <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
+                      <div className="opacity-50 text-meta-1 uppercase tracking-wide truncate" title={m.label}>{m.label}</div>
+                      <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-body-lg-3 mt-0.5" title={fmtNum(m.value)} style={{ color: m.color }}>{fmtScoreShort(m.value)}</div>
                     </div>
                   ))}
                 </div>
@@ -542,7 +542,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Score-Herkunft → sourceCells={false}) + Score-Verlauf + Durchlauf-Graph. */}
         <div className="go-stats as-ring as-ring-quiet mt-5">
             <i className="as-ring-run" aria-hidden="true" />
-          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("gameover.stats")}</div>
+          <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("gameover.stats")}</div>
           <RunStatCells entry={{
             bestStreak: state.bestStreak, crits: state.crits, wins: state.wins,
             bestTrickScore: state.bestTrickScore, bestGlacierTrickScore: state.bestGlacierTrickScore,
@@ -553,7 +553,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
               VOR dem saveRun-Überschreiben → bei neuem Rekord liegt die Lauf-Linie sichtbar darüber. */}
           {currentTraj.length >= 2 && (
             <div className="go-chart mt-4">
-              <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
+              <div className="flex items-center justify-between text-meta-3 uppercase tracking-wide opacity-50 mb-2">
                 <span>{t("gameover.chart.title")}</span>
                 <span className="flex gap-2 normal-case tracking-normal">
                   <span style={{ color: "#d4a63a" }}>{t("gameover.chart.run")}</span>
@@ -584,7 +584,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
           <details className="go-layout as-ring as-ring-quiet mt-5 rounded-xl overflow-hidden" open={wide} style={MENU_PANEL}>
             {/* `summary` MUSS das erste Kind bleiben (sonst ist es nicht der Aufklapp-Griff); das Ringband
                 kommt deshalb danach. */}
-            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
+            <summary className="cursor-pointer select-none px-3 py-2 text-meta-3 uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             <i className="as-ring-run" aria-hidden="true" />
             <div className="p-3 pt-0">
               {/* #go-breit: Brett und Gebäudeliste stehen ab 1280 px NEBENEINANDER (das Panel läuft dort über
@@ -612,8 +612,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                    bei sieben Gebäuden auf eine Spalte zusammen (gemessen). */
                 <div className="go-blist mt-3 rounded-lg p-2.5"
                   style={{ background: "#17171c", border: "1px solid #5a8ade", "--gob-cols": Math.min(3, archBuildings.length) }}>
-                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: archBuildings.length })}</div>
-                  <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
+                  <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: archBuildings.length })}</div>
+                  <div className="text-meta-1 opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
                     {archBuildings.map((b) => {
                       const fam = archFamily(b.familyId); if (!fam) return null;
@@ -623,7 +623,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       const on = inspectBid === b.id;
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
+                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
                           style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}` }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />

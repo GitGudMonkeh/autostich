@@ -64,7 +64,7 @@ function KeywordGlossary({ tokens }) {
   return (
     <div className="grid gap-1.5 mt-2">
       {tokens.map((k) => (
-        <div key={k} className="text-xs leading-snug">
+        <div key={k} className="text-body-5 leading-snug">
           <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}><GlossaryIcon e={glossaryEntry(k)} size={12} /> {glossaryEntry(k).label}</span>
           <span className="opacity-70"> — {glossaryEntry(k).text}</span>
         </div>
@@ -212,12 +212,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1 pt-6">
-          <div className="text-xs uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
-          <h2 className="text-xl font-bold mt-1">{t("skill.title")}</h2>
+          <div className="text-body-5 uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
+          <h2 className="text-title-6 font-bold mt-1">{t("skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
               sonst den Fehler bei sich. */}
           {bonusOffer && (
-            <div className="mt-2 mx-auto max-w-md rounded-lg px-3 py-1.5 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
+            <div className="mt-2 mx-auto max-w-md rounded-lg px-3 py-1.5 text-body-5" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
               {t("skill.bonus.hint")}
             </div>
           )}
@@ -271,9 +271,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                              boxShadow: on ? `0 0 18px -10px ${g.meta.color}` : undefined }}>
                     <div className="flex items-center gap-1.5">
                       <ArchIcon meta={g.meta} size={14} />
-                      <span className="text-[13px] font-bold uppercase tracking-wide truncate"
+                      <span className="text-body-3 font-bold uppercase tracking-wide truncate"
                             style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
-                      <span className="ml-auto text-[11px] opacity-45 tabular-nums">{g.ids.length}</span>
+                      <span className="ml-auto text-meta-3 opacity-45 tabular-nums">{g.ids.length}</span>
                     </div>
                   </button>
                 );
@@ -289,11 +289,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(-1)}
                     className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title={t("skill.nav.prev")}>
-                    <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
-                    {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
+                    <span className="font-bold text-title-5 leading-none" style={{ color: "#9aa0b4" }}>‹</span>
+                    {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-meta-3" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
                   </button>
                 ) : <span />}
-                <span className="inline-flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full whitespace-nowrap"
+                <span className="inline-flex items-center gap-1.5 font-bold text-body-lg-5 px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
                   <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
                   {/* i im Kreis → öffnet den Leitfaden direkt auf der Seite dieses Archetyps (#UI). */}
@@ -306,8 +306,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(1)}
                     className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title={t("skill.nav.next")}>
-                    {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
-                    <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
+                    {nextG && <><span className="truncate text-meta-3" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
+                    <span className="font-bold text-title-5 leading-none" style={{ color: "#9aa0b4" }}>›</span>
                   </button>
                 ) : <span />}
               </div>
@@ -325,7 +325,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
         {pendingConsumer && (
-          <div className="mt-3 rounded-lg px-3 py-3 text-xs leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
+          <div className="mt-3 rounded-lg px-3 py-3 text-body-5 leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
             <div className="mb-2">
               {t("skill.consumer.pre", { kind: CONSUMER_LABEL[pendingConsumer.type] })}{" "}
               <b style={{ color: ac(pendingConsumer.replace).color }}>{skillDef(pendingConsumer.replace)?.name}</b>.{" "}
@@ -345,7 +345,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
         {/* Bei vollen Slots: Hinweis, dass beim Wählen ein Ersetzen-Fenster erscheint (#234). */}
         {full && !pending && (
-          <div className="mt-3 rounded-lg px-3 py-2 text-xs" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
+          <div className="mt-3 rounded-lg px-3 py-2 text-body-5" style={{ background: "#d4a63a14", border: "1px solid #d4a63a55", color: "#e8dcb8" }}>
             {t("skill.slotsFull.hint", { slots: slotsShown })}
           </div>
         )}
@@ -356,9 +356,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             <div className="relative w-full max-w-md rounded-2xl p-5 max-h-[88dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.violet)}>
               <PhaseHairline />
               <div className="text-center mb-3">
-                <div className="text-xs uppercase tracking-widest" style={{ color: "#d4a63a" }}>{t("skill.slotsFull")}</div>
-                <h3 className="text-lg font-bold mt-1">{t("skill.replace.which")}</h3>
-                <p className="text-xs opacity-65 mt-1">
+                <div className="text-body-5 uppercase tracking-widest" style={{ color: "#d4a63a" }}>{t("skill.slotsFull")}</div>
+                <h3 className="text-title-5 font-bold mt-1">{t("skill.replace.which")}</h3>
+                <p className="text-body-5 opacity-65 mt-1">
                   {t("skill.replace.new")} <b style={{ color: ac(pending).color }}><ArchIcon meta={ac(pending)} size={13} /> {skillDef(pending)?.name}</b>. {t("skill.replace.tap")}
                 </p>
               </div>
@@ -378,16 +378,16 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     className={`as-edge-card${deactivates ? " is-sel" : ""} text-left rounded-xl p-3 flex flex-col gap-1 transition-all hover:brightness-110`}
                     style={{ "--c": deactivates ? "#d1462f" : ac(s.id).color }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
-                      {(s.heatConsumer || s.onFullCharge) && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
-                      {s.legendary && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
+                      <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
+                      {(s.heatConsumer || s.onFullCharge) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
+                      {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
-                    <div className="font-bold text-sm" style={{ color: ac(s.id).color }}>{s.name}</div>
-                    <div className="text-xs opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
-                    <div className="text-[10px] font-bold mt-0.5" style={{ color: "#e0605a" }}>{t("skill.replace.this")}</div>
+                    <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
+                    <div className="text-body-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+                    <div className="text-meta-1 font-bold mt-0.5" style={{ color: "#e0605a" }}>{t("skill.replace.this")}</div>
                     {/* #238b: gezielte Warnung — nur wenn dieses Ersetzen den letzten Skill des Archetyps entfernt. */}
                     {deactivates && (
-                      <div className="mt-1 rounded px-2 py-1 text-[10px] font-bold leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
+                      <div className="mt-1 rounded px-2 py-1 text-meta-1 font-bold leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
                         {t("skill.lastOfArch", { arch: ac(s.id).label, loss: t(ARCH_LOSS[arch].key) })}{ARCH_LOSS[arch].baked ? t("skill.lastOfArch.baked") : ""}
                       </div>
                     )}
@@ -395,7 +395,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   );
                 })}
               </div>
-              <button onClick={() => setPending(null)} className="as-edge-neutral w-full mt-3 rounded-lg py-2 text-sm font-bold">{t("skill.cancel")}</button>
+              <button onClick={() => setPending(null)} className="as-edge-neutral w-full mt-3 rounded-lg py-2 text-body-lg-5 font-bold">{t("skill.cancel")}</button>
             </div>
           </div>
         )}
@@ -418,8 +418,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               <button type="button" onClick={() => onOption?.({ lvPassive: !detailOpen })}
                 className="flex-1 min-w-0 flex items-center gap-2 text-left" aria-expanded={detailOpen}
                 title={t(detailOpen ? "skill.passive.collapse" : "skill.passive.expand", { arch: curG.meta.label })}>
-                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {t("skill.passive.head", { arch: curG.meta.label })}</span>
-                <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+                <span className="text-meta-3 font-bold uppercase tracking-wide" style={{ color: curG.meta.color }}><ArchIcon meta={curG.meta} size={12} /> {t("skill.passive.head", { arch: curG.meta.label })}</span>
+                <span className="text-meta-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}3a` }}>
                   <span className="transition-transform" style={{ display: "inline-block", transform: detailOpen ? "rotate(90deg)" : "none" }}>▸</span>
                   {t(detailOpen ? "skill.less" : "skill.more")}
@@ -437,7 +437,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               )}
               </div>
               {detailOpen && (
-                <div className="mb-3 rounded-lg px-3 py-2 text-xs leading-snug"
+                <div className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
                   style={{ background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}44` }}>
                   <div className="opacity-90">{unlockLine(curG.arch)}</div>
                   <KeywordGlossary tokens={groupKws} />
@@ -461,26 +461,26 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const art = (wide || phone) ? skillArt(id) : null;
                   const badges = (
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                      <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                         <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                       </span>
                       {(s.heatConsumer || s.onFullCharge) && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
                           {t("skill.badge.consumer")}
                         </span>
                       )}
                       {s.legendary && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
                           {t("skill.badge.legendary")}
                         </span>
                       )}
-                      {sel && <span className="text-[10px] font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
+                      {sel && <span className="text-meta-1 font-bold" style={{ color: col }}>{t("skill.selected")}</span>}
                     </div>
                   );
-                  const title = <div className="lv-cardname font-bold text-[15px]" style={{ color: col }}>{s.name}</div>;
+                  const title = <div className="lv-cardname font-bold text-body-lg-3" style={{ color: col }}>{s.name}</div>;
                   return (
                     /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Anders als beim
                        Perk-Angebot trägt die Kante hier die SELTENHEIT, nicht die Fraktion: man blättert die
@@ -496,7 +496,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       {art && <img src={art} alt="" aria-hidden="true" className={wide ? "sk-strip" : "mc-emblem"} loading="lazy" decoding="async" />}
                       {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
-                      <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+                      <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
                 })}
@@ -517,8 +517,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           <div className="mt-5 pt-4 border-t" style={{ borderColor: "#2a2a33" }}>
             <button type="button" onClick={() => setOpenForms((o) => !o)} aria-expanded={openForms}
               className="w-full flex items-center gap-2 text-left" title={t(openForms ? "skill.forms.collapse" : "skill.forms.expand")}>
-              <span className="text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={12} /> {t("skill.forms.head")}</span>
-              <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+              <span className="text-meta-3 font-bold uppercase tracking-wide inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={12} /> {t("skill.forms.head")}</span>
+              <span className="text-meta-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
                 style={{ color: "#7fd4f0", background: "#7fd4f014", border: "1px solid #7fd4f03a" }}>
                 <span className="transition-transform" style={{ display: "inline-block", transform: openForms ? "rotate(90deg)" : "none" }}>▸</span>
                 {t(openForms ? "skill.less" : "skill.more")}

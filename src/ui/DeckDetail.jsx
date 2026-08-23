@@ -40,7 +40,7 @@ function ProgressBar({ cur, target, color, done }) {
 // Status-Pille (Deck / Leg I / Leg II) im Kopf.
 function StatusPill({ label, on, color }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-meta-1 font-bold tracking-wide"
       style={on
         ? { background: `${color}22`, border: `1px solid ${color}`, color }
         : { background: "#17151f", border: "1px solid #2e2d38", color: "#5c5b66" }}>
@@ -93,11 +93,11 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
           <TopHairline />
           <div className="flex items-center gap-2.5">
             <button onClick={onBack} title={t("deckdetail.back.title")} aria-label={t("deckdetail.back.title")}
-              className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold">{t("deckdetail.back")}</button>
+              className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-body-5 font-semibold">{t("deckdetail.back")}</button>
             <FactionIcon type={archetype} size={26} />
             <div className="min-w-0">
-              <h2 className="text-lg font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
-              {guide?.subtitle && <div className="text-[10.5px] mt-0.5 leading-snug" style={{ color: "#a6a6b0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{guide.subtitle}</div>}
+              <h2 className="text-title-5 font-bold leading-none" style={{ color: "#e8e8ea" }}>{meta?.label || archetype}</h2>
+              {guide?.subtitle && <div className="text-meta-2 mt-0.5 leading-snug" style={{ color: "#a6a6b0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{guide.subtitle}</div>}
             </div>
             <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
           </div>
@@ -112,7 +112,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
               return (
                 /* #kante: Reiter mit Signal an der Unterkante, in der Deckfarbe. */
                 <button key={t.key} onClick={() => setTab(t.key)} role="tab" aria-selected={on}
-                  className="flex-1 text-[12px] font-semibold tracking-wide px-3 pt-1.5 pb-1 rounded-t-md transition-colors"
+                  className="flex-1 text-body-1 font-semibold tracking-wide px-3 pt-1.5 pb-1 rounded-t-md transition-colors"
                   style={on
                     ? { color: "#fff", borderBottom: `2px solid ${color}`,
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${color} 14%, transparent))` }
@@ -128,7 +128,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
         {tab === "passives" && (
           <div className="mt-4">
             {guide?.kernidee && (
-              <div className="rounded-xl px-3.5 py-3 text-[13px] leading-relaxed mb-4"
+              <div className="rounded-xl px-3.5 py-3 text-body-3 leading-relaxed mb-4"
                 style={{ background: "linear-gradient(180deg,#1a1826,#16161c)", border: "1px solid #2a2a33", borderLeft: `3px solid ${color}`, color: "#cfcfda" }}>
                 {String(guide.kernidee).replace(/\*\*/g, "")}
               </div>
@@ -149,7 +149,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
         {tab === "challenges" && (
           <div className="mt-4 grid gap-3">
             {packs.length === 0 && (
-              <div className="text-[12px] text-center py-6" style={{ color: "#a6a6b0" }}>{t("deckdetail.noUnlocks")}</div>
+              <div className="text-body-1 text-center py-6" style={{ color: "#a6a6b0" }}>{t("deckdetail.noUnlocks")}</div>
             )}
             {packs.map((pk) => {
               const prog = packUnlock(p, pk);          // { done, cur, target, label }
@@ -159,9 +159,9 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
               return (
                 <div key={pk.id} className="rounded-2xl p-3" style={{ background: "#141419", border: "1px solid #2a2a33" }}>
                   <div className="flex items-center gap-2 mb-2.5">
-                    <span className="text-[15px]" aria-hidden="true">{pk.emblem}</span>
-                    <span className="text-[13.5px] font-bold" style={{ color: pk.a1 || color }}>{pk.name}</span>
-                    <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    <span className="text-body-lg-3" aria-hidden="true">{pk.emblem}</span>
+                    <span className="text-body-4 font-bold" style={{ color: pk.a1 || color }}>{pk.name}</span>
+                    <span className="ml-auto text-meta-1 font-bold px-2 py-0.5 rounded-full"
                       style={unlocked ? { background: `${color}22`, border: `1px solid ${color}`, color } : { background: "#17151f", border: "1px solid #2e2d38", color: "#8a8a95" }}>
                       {unlocked ? "✓ frei" : "🔒 gesperrt"}
                     </span>
@@ -176,8 +176,8 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
                   {prog && (
                     <>
                       <div className="flex items-baseline justify-between gap-2 mb-1">
-                        <span className="text-[11px] leading-tight" style={{ color: "#a6a6b0" }}>{prog.label}</span>
-                        <span className="text-[11px] ty-num shrink-0" style={{ color: unlocked ? color : "#c8c8d0" }}>{Math.min(prog.cur, prog.target)} / {prog.target}</span>
+                        <span className="text-meta-3 leading-tight" style={{ color: "#a6a6b0" }}>{prog.label}</span>
+                        <span className="text-meta-3 ty-num shrink-0" style={{ color: unlocked ? color : "#c8c8d0" }}>{Math.min(prog.cur, prog.target)} / {prog.target}</span>
                       </div>
                       <ProgressBar cur={prog.cur} target={prog.target} color={color} done={unlocked} />
                     </>
@@ -199,8 +199,8 @@ function SkillGroup({ title, skills, color, legendary = false }) {
     <div className="mb-4">
       <div className="flex items-center gap-2.5 mb-2.5">
         <span className="w-3.5 h-0.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-        <h3 className="text-[10px] tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{title}</h3>
-        <span className="text-[10px] tabular-nums" style={{ color: "#5c5b66" }}>{skills.length}</span>
+        <h3 className="text-meta-1 tracking-[0.22em] uppercase font-bold" style={{ color: "#b9b3cf" }}>{title}</h3>
+        <span className="text-meta-1 tabular-nums" style={{ color: "#5c5b66" }}>{skills.length}</span>
       </div>
       <div className="grid gap-2">
         {skills.map((s) => (
@@ -210,26 +210,26 @@ function SkillGroup({ title, skills, color, legendary = false }) {
           <div key={s.id} className={`as-edge-card as-edge-thin${legendary ? " is-sel" : ""} rounded-xl px-3 py-2.5`}
             style={{ "--c": color }}>
             <div className="flex items-center gap-1.5 flex-wrap">
-              {legendary && <span className="text-[11px]" style={{ color }} aria-hidden="true">★</span>}
-              <span className="text-[13px] font-bold" style={{ color }}>{skillDef(s.id)?.name || s.name}</span>
+              {legendary && <span className="text-meta-3" style={{ color }} aria-hidden="true">★</span>}
+              <span className="text-body-3 font-bold" style={{ color }}>{skillDef(s.id)?.name || s.name}</span>
               {/* Voraussetzung sichtbar machen: Verstärker-Skills tun ohne ihren Basis-Skill NICHTS. Im Angebot
                   sind sie dadurch gegatet (skills.js `enabler`), im Katalog stand die Abhängigkeit bisher nirgends. */}
               {s.enabler && skillDef(s.enabler) && (
-                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                <span className="text-micro-4 font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>
                   {t("deckdetail.needs", { name: skillDef(s.enabler).name })}
                 </span>
               )}
               {(s.heatConsumer || s.onFullCharge) && (
-                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                <span className="text-micro-4 font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.consumer")}</span>
               )}
               {s.trimGrowth && (
-                <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                <span className="text-micro-4 font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: "#20202a", border: "1px solid #3a3a46", color: "#9a9aa4" }}>{t("deckdetail.trimmable")}</span>
               )}
             </div>
-            <div className="text-[12px] leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{skillDef(s.id)?.desc || s.desc}</div>
+            <div className="text-body-1 leading-relaxed mt-0.5" style={{ color: "#b6b6c2" }}>{skillDef(s.id)?.desc || s.desc}</div>
           </div>
         ))}
       </div>

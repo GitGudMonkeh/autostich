@@ -35,8 +35,8 @@ const pct = (x) => `${Math.round((x || 0) * 100)}%`;
 function Kpi({ label, value, color, title, className = "" }) {
   return (
     <div title={title} className={`st-box rounded-lg px-3 py-2 text-center min-w-0 ${className}`} style={MENU_PANEL}>
-      <div className="opacity-50 text-[11px] truncate">{label}</div>
-      <div className="ty-num text-lg whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
+      <div className="opacity-50 text-meta-3 truncate">{label}</div>
+      <div className="ty-num text-title-5 whitespace-nowrap overflow-hidden text-ellipsis" style={color ? { color } : undefined}>{value}</div>
     </div>
   );
 }
@@ -59,8 +59,8 @@ function Section({ id, title, hint, children }) {
       <i className="as-ring-run" aria-hidden="true" />
       <div className="st-sech flex items-baseline justify-between mb-2">
         {/* #deckui: generische Sektions-Überschrift zieht die Deckfarbe (Fallback = bisheriges Violett) */}
-        <h3 className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{title}</h3>
-        {hint && <span className="text-[11px] opacity-40">{hint}</span>}
+        <h3 className="text-body-5 uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{title}</h3>
+        {hint && <span className="text-meta-3 opacity-40">{hint}</span>}
       </div>
       {children}
     </div>
@@ -81,7 +81,7 @@ function BuildHerkunft({ run }) {
           <div key={r.key} style={{ width: `${(r.value / score) * 100}%`, background: r.color }} title={`${r.label}: ${fmtScore(r.value)} (${fmtPct(r.value / score)})`} />
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-3.5 gap-y-1 mt-2.5 text-[11px]">
+      <div className="flex flex-wrap gap-x-3.5 gap-y-1 mt-2.5 text-meta-3">
         {rows.map((r) => (
           <span key={r.key} className="inline-flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: r.color }} />
@@ -99,8 +99,8 @@ function BuildHerkunft({ run }) {
 function BarRow({ label, color, frac, right }) {
   return (
     <div className="grid items-center gap-x-2.5" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}>
-      <span className="text-xs truncate" style={{ color }} title={label}>{label}</span>
-      <span className="text-[11px] ty-num-sm opacity-60 text-right whitespace-nowrap">{right}</span>
+      <span className="text-body-5 truncate" style={{ color }} title={label}>{label}</span>
+      <span className="text-meta-3 ty-num-sm opacity-60 text-right whitespace-nowrap">{right}</span>
       <div className="col-span-2 h-1.5 rounded overflow-hidden mt-1" style={{ background: "#0c0d14" }}>
         <div className="h-full rounded" style={{ width: `${Math.max(3, (frac || 0) * 100)}%`, background: color, opacity: 0.85 }} />
       </div>
@@ -112,8 +112,8 @@ function BarRow({ label, color, frac, right }) {
 // rechts. So bleibt es auch auf schmalen Screens sauber lesbar (statt Tag/Text/Wert in einer engen Zeile zu quetschen).
 function WinRow({ tag, children, val }) {
   return (
-    <div className="st-box rounded-lg px-3 py-2 text-xs" style={MENU_PANEL}>
-      <div className="text-[10px] font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
+    <div className="st-box rounded-lg px-3 py-2 text-body-5" style={MENU_PANEL}>
+      <div className="text-meta-1 font-bold uppercase tracking-wide opacity-45 mb-1">{tag}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0">{children}</span>
         {val && <span className="ty-num whitespace-nowrap shrink-0" style={{ color: "#5ab87a" }}>{val}</span>}
@@ -161,7 +161,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
         {/* #UI: Kopf mit Schließen-Knopf STICKY → beim Scrollen oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="st-head sticky top-0 z-20 -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex items-center justify-between gap-3 relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
-          <h2 className="text-lg font-bold flex items-center gap-2">{t("stats.title")}</h2>
+          <h2 className="text-title-5 font-bold flex items-center gap-2">{t("stats.title")}</h2>
           {/* #desktop: Auskunftszeile im Kopf (Spalte 3, wie im Upgrade-Baum). Unter 1280 px ist der Kopf
               zweispaltig und hat dafür keinen Platz. */}
           <div className="st-readout hidden dt:block">{t("stats.desk.readout")}</div>
@@ -184,7 +184,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                 <Kpi className="col-span-2 sm:col-span-1" label={t("stats.bestStreak")} value={`${profile.bestStreak || 0}×`} />
               </div>
               <div className="st-trend st-box mt-3 rounded-lg px-3 py-2" style={MENU_PANEL}>
-                <div className="text-[11px] opacity-50 mb-1">{t("stats.trend", { n: trend.length })}</div>
+                <div className="text-meta-3 opacity-50 mb-1">{t("stats.trend", { n: trend.length })}</div>
                 {/* #graph-knapp: knappe Beschriftung — waagerechte Marken auf runden Score-Werten, sonst
                     nichts. KEINE x-Achse: die zaehlt hier LAEUFE, nicht Stiche; die ausfuehrliche Fassung
                     wuerde sie mit „Stiche" beschriften und damit etwas Falsches behaupten. */}
@@ -203,14 +203,14 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   style={{ "--c": "#d4a63a" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-3xl ty-num leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
-                      {buildSubtitle(best) && <div className="text-[11px] opacity-50 mt-1.5 truncate">{buildSubtitle(best)}</div>}
+                      <div className="text-display-1 ty-num leading-none" title={fmtScore(best.score)} style={{ color: "#d4a63a" }}>{fmtScoreShort(best.score)}</div>
+                      {buildSubtitle(best) && <div className="text-meta-3 opacity-50 mt-1.5 truncate">{buildSubtitle(best)}</div>}
                     </div>
-                    <div className="text-2xl shrink-0 leading-none">{(best.archetypes || []).map((a, i) => <FactionIcon key={i} type={a} size={20} />)}</div>
+                    <div className="text-head-3 shrink-0 leading-none">{(best.archetypes || []).map((a, i) => <FactionIcon key={i} type={a} size={20} />)}</div>
                   </div>
                   <BuildHerkunft run={best} />
                   {!hasFineOrigin(best) && (
-                    <div className="text-[10px] opacity-40 mt-2.5 leading-relaxed">{t("stats.coarseOrigin")}</div>
+                    <div className="text-meta-1 opacity-40 mt-2.5 leading-relaxed">{t("stats.coarseOrigin")}</div>
                   )}
                 </button>
               </Section>
@@ -226,7 +226,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                     /* #kante: Lauf-Zeilen neutral — bis auf die, die den Rekord hält (delta ≥ 0). Nur dort
                        trägt die Kante Gold, sonst wäre die Farbe bloß Dekoration über einer Zahlenliste. */
                     <button key={r.ts || i} onClick={() => setDetail({ entry: r, rank: null })} title={t("stats.showDetails")}
-                      className="as-edge-card as-edge-thin grid items-center gap-2.5 text-xs px-2.5 py-1.5 rounded text-left transition-all hover:brightness-125"
+                      className="as-edge-card as-edge-thin grid items-center gap-2.5 text-body-5 px-2.5 py-1.5 rounded text-left transition-all hover:brightness-125"
                       style={{ "--c": delta >= 0 ? "#d4a63a" : "#3a3a48", gridTemplateColumns: "auto minmax(0,1fr) auto" }}>
                       <span className="opacity-45 ty-num-sm shrink-0">{r.ts ? fmtDayMonth(r.ts) : "—"}</span>
                       <span className="flex items-center gap-2.5 min-w-0">
@@ -249,23 +249,23 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             <Section id="picked" title={t("stats.mostPicked")} hint={t("stats.mostPicked.hint")}>
               <div className="st-picked2 grid sm:grid-cols-2 gap-3">
                 <div className="st-box rounded-lg px-3 py-3" style={MENU_PANEL}>
-                  <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topSkills")}</div>
+                  <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topSkills")}</div>
                   <div className="grid gap-2.5">
-                    {skillRates.length === 0 ? <span className="text-xs opacity-40">{t("stats.noSkills")}</span> :
+                    {skillRates.length === 0 ? <span className="text-body-5 opacity-40">{t("stats.noSkills")}</span> :
                       skillRates.map((s) => <BarRow key={s.id} label={skillLabel(s.id)} color={skillColor(s.id)} frac={s.rate} right={pct(s.rate)} />)}
                   </div>
                 </div>
                 <div className="st-box rounded-lg px-3 py-3" style={MENU_PANEL}>
-                  <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topPerks")}</div>
+                  <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2.5">{t("stats.topPerks")}</div>
                   <div className="grid gap-2.5">
-                    {perkRates.length === 0 ? <span className="text-xs opacity-40">–</span> :
+                    {perkRates.length === 0 ? <span className="text-body-5 opacity-40">–</span> :
                       perkRates.map((p) => <BarRow key={p.id} label={perkLabel(p.id)} color={perkColor(p.id)} frac={p.rate} right={pct(p.rate)} />)}
                   </div>
                 </div>
               </div>
               {archUse.length > 0 && (
                 <div className="st-box rounded-lg px-3 py-3 mt-3" style={MENU_PANEL}>
-                  <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2.5">{t("stats.archUse")}</div>
+                  <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2.5">{t("stats.archUse")}</div>
                   <div className="grid gap-2.5">
                     {archUse.map((a) => (
                       <BarRow key={a.arch} label={archLabel(a.arch)} color={archColor(a.arch)} frac={a.rate}
@@ -279,7 +279,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
             {/* Was am besten läuft — die belastbaren Insights als kompakte Highlight-Zeilen (ersetzt „Optimale Analyse"). */}
             <Section id="works" title={t("stats.whatWorks")} hint={t("stats.whatWorks.hint", { n: MIN_SAMPLE })}>
               {!enough ? (
-                <div className="st-box rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3 text-body-5 opacity-55" style={MENU_PANEL}>
                   {t("stats.tooFew", { have: history.length, need: MIN_SAMPLE })}
                 </div>
               ) : (bestArch[0] || skillLift[0] || perkLift[0]) ? (
@@ -304,7 +304,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
                   )}
                 </div>
               ) : (
-                <div className="st-box rounded-lg px-3 py-3 text-xs opacity-55" style={MENU_PANEL}>
+                <div className="st-box rounded-lg px-3 py-3 text-body-5 opacity-55" style={MENU_PANEL}>
                   {t("stats.noPatterns")}
                 </div>
               )}

@@ -85,8 +85,8 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
 
           <div className="co-head text-center mb-1 pt-6">
-            <div className="text-xs uppercase tracking-widest" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
-            <h2 className="text-xl font-bold mt-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
+            <div className="text-body-5 uppercase tracking-widest" style={{ color: GOLD }}>{t("leg.eyebrow")}</div>
+            <h2 className="text-title-6 font-bold mt-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
             {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
           </div>
           {/* #leg-gleich: Der Intro-Absatz ist RAUS. Er behauptete, das Angebot komme „nur aus Fraktionen,
@@ -118,9 +118,9 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                              boxShadow: on ? `0 0 18px -10px ${g.meta.color}` : undefined }}>
                     <div className="flex items-center gap-1.5">
                       <ArchIcon meta={g.meta} size={14} />
-                      <span className="text-[13px] font-bold uppercase tracking-wide truncate"
+                      <span className="text-body-3 font-bold uppercase tracking-wide truncate"
                             style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
-                      <span className="ml-auto text-[11px] opacity-45 tabular-nums">{g.list.length}</span>
+                      <span className="ml-auto text-meta-3 opacity-45 tabular-nums">{g.list.length}</span>
                     </div>
                   </button>
                 );
@@ -134,17 +134,17 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 <button type="button" onClick={() => go(-1)}
                   className="flex items-center gap-1.5 min-w-0 text-left transition-all hover:brightness-125" title={t("skill.nav.prev")}>
-                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>‹</span>
-                  {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
+                  <span className="font-bold text-title-5 leading-none" style={{ color: "#9aa0b4" }}>‹</span>
+                  {prevG && <><ArchIcon meta={prevG.meta} size={14} /><span className="truncate text-meta-3" style={{ color: "#6d7288" }}>{prevG.meta.label}</span></>}
                 </button>
-                <span className="inline-flex items-center gap-1.5 font-bold text-sm px-3 py-1 rounded-full whitespace-nowrap"
+                <span className="inline-flex items-center gap-1.5 font-bold text-body-lg-5 px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
                   <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
                 </span>
                 <button type="button" onClick={() => go(1)}
                   className="flex items-center justify-end gap-1.5 min-w-0 text-right transition-all hover:brightness-125" title={t("skill.nav.next")}>
-                  {nextG && <><span className="truncate text-[11px]" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
-                  <span className="font-bold text-lg leading-none" style={{ color: "#9aa0b4" }}>›</span>
+                  {nextG && <><span className="truncate text-meta-3" style={{ color: "#6d7288" }}>{nextG.meta.label}</span><ArchIcon meta={nextG.meta} size={14} /></>}
+                  <span className="font-bold text-title-5 leading-none" style={{ color: "#9aa0b4" }}>›</span>
                 </button>
               </div>
               <div className="flex justify-center gap-2 mt-2">
@@ -186,17 +186,17 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                           darunter stehen an derselben Stelle wie ohne Bild, nur tiefer (`.sk-offer-art`). */}
                       {art && <img src={art} alt="" aria-hidden="true" className={wide ? "sk-strip" : "mc-emblem"} loading="lazy" decoding="async" />}
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}88` }}>
                           <ArchIcon meta={meta} size={12} /> {meta.label.toUpperCase()}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
                           {t("skill.badge.legendary")}
                         </span>
                       </div>
-                      <div className="lv-cardname font-bold text-[15px]" style={{ color: GOLD }}>{s.name}</div>
-                      <div className="text-sm opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+                      <div className="lv-cardname font-bold text-body-lg-3" style={{ color: GOLD }}>{s.name}</div>
+                      <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
                     </button>
                   );
                 })}

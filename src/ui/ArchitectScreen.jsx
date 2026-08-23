@@ -66,7 +66,7 @@ function ArchCollapse({ head, children, defaultOpen = false, className = "", sty
         className="w-full flex items-center gap-2 text-left">
         <span className="min-w-0">{head}</span>
         <span className="flex-1" />
-        <span className="text-[10px] opacity-60 shrink-0 whitespace-nowrap">{t(open ? "arch.collapse.less" : "arch.collapse.more")}</span>
+        <span className="text-meta-1 opacity-60 shrink-0 whitespace-nowrap">{t(open ? "arch.collapse.less" : "arch.collapse.more")}</span>
       </button>
       {open && <div className="mt-1.5">{children}</div>}
     </div>
@@ -624,8 +624,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         {/* Kopf (#UI-Redesign): Titel + Glossar; die Kennzahlen wandern in die Hero-Leiste darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.18em] opacity-60" style={{ color: CAT.value.color }}>{t("arch.eyebrow", { cycle: round })}</div>
-            <h2 className="text-xl font-bold mt-0.5">{t("arch.title")}</h2>
+            <div className="text-meta-1 uppercase tracking-[0.18em] opacity-60" style={{ color: CAT.value.color }}>{t("arch.eyebrow", { cycle: round })}</div>
+            <h2 className="text-title-6 font-bold mt-0.5">{t("arch.title")}</h2>
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
@@ -635,19 +635,19 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
             title={t("arch.boost.title")}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-xs opacity-60"> / {maxCover}</span></span>
-            <span className="text-[9px] ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
+            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
+            <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
           </div>
           {state.lastCycleScore != null && (
             <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
-              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
+              <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
               <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
-              {scoreHasDiff && <span className="text-[10px] font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
+              {scoreHasDiff && <span className="text-meta-1 font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
             </div>
           )}
         </div>
@@ -663,7 +663,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                  Schein (`is-sel`), statt Vollrahmen plus Außen-Glow. */
               <div ref={colorBarRef} className="as-edge-card is-sel mb-3 rounded-lg px-3 py-2.5 flex items-center gap-3 flex-wrap"
                 style={{ "--c": "#d97a3a", scrollMarginTop: "12px" }}>
-                <span className="text-[11px] uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
+                <span className="text-meta-3 uppercase tracking-wide font-bold" style={{ color: "#e0894a" }}>{t("arch.buffSuit")}</span>
                 <div className="flex gap-2.5">
                   {SUIT_ORDER.map((s) => (
                     <button key={s} onClick={() => onRecolor?.({ buildingId: selBuilding.id, colorChoice: s })}
@@ -679,7 +679,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   Ziehen nicht in der Breite flackert; die Toggles bleiben rechts (ml-auto) unverrückt. */}
               {/* #ui: Persistenter Boost-Δ-Chip — zeigt dauerhaft, wie viel diese Bauphase am Boost geändert hat
                   (analog zum Aufstellungs-Δ). Beim Ziehen wechselt er auf die Live-Vorschau der schwebenden Position. */}
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
+              <span className="text-meta-3 font-bold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center justify-center"
                 style={{ fontVariantNumeric: "tabular-nums", minWidth: 92,
                          color: boostTone.fg, background: boostTone.bg,
                          border: `1px solid ${boostTone.br}` }}
@@ -690,11 +690,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
                     Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}
                 <button onClick={toggleCombos}
-                  className={`${showCombos ? "as-edge" : "as-edge-neutral"} as-edge-thin text-[11px] font-bold rounded-lg px-2 py-1 transition-colors`}
+                  className={`${showCombos ? "as-edge" : "as-edge-neutral"} as-edge-thin text-meta-3 font-bold rounded-lg px-2 py-1 transition-colors`}
                   style={showCombos ? { "--c": "#d4a63a" } : undefined}
                   title={t("arch.combos.title")}>{showCombos ? "◉" : "○"} {t("arch.combos")}</button>
                 <button onClick={toggleForms}
-                  className={`${showForms ? "as-edge" : "as-edge-neutral"} as-edge-thin text-[11px] font-bold rounded-lg px-2 py-1 transition-colors`}
+                  className={`${showForms ? "as-edge" : "as-edge-neutral"} as-edge-thin text-meta-3 font-bold rounded-lg px-2 py-1 transition-colors`}
                   style={showForms ? { "--c": "#3b7dbe" } : undefined}
                   title={t("arch.forms.title")}>{showForms ? "◉" : "○"} {t("arch.forms")}</button>
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
@@ -827,35 +827,35 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {isBlocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(8,12,18,0.62) 3.5px, rgba(8,12,18,0.62) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(134,153,168,0.45)" }} />
                     )}
-                    {boost > 0 && <span className="absolute top-[1px] left-[3px] text-[8px] font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
+                    {boost > 0 && <span className="absolute top-[1px] left-[3px] text-micro-2 font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
                         <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>
                     )}
                     {isFirn && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-[8px] ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="text-[13px] sm:text-[15px] leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
+                    <span className="text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
-                      <span className="absolute bottom-[1px] left-[3px] text-[7px] font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
+                      <span className="absolute bottom-[1px] left-[3px] text-micro-1 font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}
                         {upCan && <span style={{ color: "#f0b429" }}>→{tierLabel(b.tier + 1)}</span>}
                       </span>
                     )}
                     {/* #UI: Stufen-Zahl (I–IV / ★) unten rechts im Gebäude, in der SELTENHEITS-Farbe — der Rahmen zeigt jetzt den Typ. */}
                     {b && !isDragOrig && pos === Math.max(...b.footprint) && (
-                      <span className="absolute bottom-[1px] right-[3px] text-[9px] font-extrabold leading-none"
+                      <span className="absolute bottom-[1px] right-[3px] text-micro-3 font-extrabold leading-none"
                         style={{ color: fam.legendary ? GOLD : tierColor(b.tier), textShadow: "0 1px 2px #000a" }}
                         title={fam.legendary ? t("arch.legendary") : t("arch.tier", { tier: ROMAN[b.tier] })}>
                         {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
                     {showForms && inForm && (
-                      <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-[7px] font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
+                      <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-micro-1 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
                         {formLabels}×{fmt(pf.mult)}
                       </span>
                     )}
@@ -868,21 +868,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               }); })()}
             </div>
             {/* Legende */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] opacity-80">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-meta-3 opacity-80">
               <span className="opacity-70">{t("arch.legend.frame")}</span>
               {Object.entries(CAT).map(([k, v]) => (
                 <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[11px] h-[11px] rounded-[3px]" style={{ boxShadow: `inset 0 0 0 2px ${v.color}` }} />{v.label}</span>
               ))}
             </div>
             {/* Stufe/Rarität = die Zahl (I–IV / ★) in der ECKE des Gebäudes; der Rahmen zeigt den Typ. */}
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-[10px] opacity-70">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5 text-meta-1 opacity-70">
               <span className="opacity-70">{t("arch.legend.tier")}</span>
               {[1, 2, 3, 4].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1"><b className="tabular-nums" style={{ color: tierColor(t) }}>{ROMAN[t]}</b></span>
               ))}
               <span className="inline-flex items-center gap-1"><b style={{ color: GOLD }}>★</b> {t("arch.legendary")}</span>
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] opacity-60">
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-meta-1 opacity-60">
               <span>{t("arch.legend.ring")}</span>
               {["wiederholung", "farbblock", "treppe", "wechsel", "anker"].map((ft) => (
                 <span key={ft}><b>{formationAbbr(ft)}</b> {formationLabel(ft)}</span>
@@ -898,7 +898,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <div className="rounded-xl p-3 order-1" style={phasePanel(PHASE_ACCENTS.blue, "#0e1822")}>
 
               {/* Struktur-Kombis (oben): welche Gebäude-Kombinationen Boni geben — live am Board umrandet. Einklappbar (default zu). */}
-              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-[10px] leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
+              <ArchCollapse className="mb-3 rounded-lg px-2.5 py-2 text-meta-1 leading-snug" style={{ background: "#141f29", border: "1px solid #24333f" }}
                 head={<span className="uppercase tracking-wide opacity-55">{t("arch.struct.head")}</span>}>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>{t("arch.struct.row", { f: fmt(HAEUSERZEILE_FACTOR) })}</span>
@@ -917,7 +917,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const n = demolishIds.length;
                 return (
                   <div>
-                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
+                    <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: "#3a1518", borderLeft: `3px solid ${enough ? "#ff6a4d" : "#d1462f"}` }}>
                       {t("arch.noRoom", { name: pendingFamName(removeFor) })}{" "}
                       {n === 0
                         ? t("arch.noRoom.mark")
@@ -936,7 +936,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           /* #kante: Abriss-Liste — zum Abriss markierte Gebäude tragen die rote Kante samt
                              Schein, die übrigen bleiben neutral. */
                           <button key={b.id} onClick={() => setDemolishIds((cur) => cur.includes(b.id) ? cur.filter((x) => x !== b.id) : [...cur, b.id])}
-                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-[11px] leading-snug transition-all hover:brightness-110`}
+                            className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-meta-3 leading-snug transition-all hover:brightness-110`}
                             style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
                               <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
@@ -949,14 +949,14 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         );
                       })}
                     </div>
-                    {n > 0 && <div className="text-[10px] opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
+                    {n > 0 && <div className="text-meta-1 opacity-55 mb-2">{t("arch.demolish.warn")}</div>}
                     <div className="flex gap-2">
                       {/* #kante: Zurück neutral, Abreißen als roter Kanten-Knopf — destruktiv, aber hier ist es
                           die gewollte Aktion, also volle Kante statt der leisen Fassung. */}
                       <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }}
-                        className="as-edge-neutral as-edge-thin flex-1 rounded-lg py-1.5 text-xs font-bold">{t("arch.back")}</button>
+                        className="as-edge-neutral as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold">{t("arch.back")}</button>
                       <button onClick={confirmDemolish} disabled={!enough}
-                        className={`${enough ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin flex-1 rounded-lg py-1.5 text-xs font-bold`}
+                        className={`${enough ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin flex-1 rounded-lg py-1.5 text-body-5 font-bold`}
                         style={{ ...(enough ? { "--c": "#d1462f" } : null), opacity: enough ? 1 : 0.6, cursor: enough ? "pointer" : "not-allowed" }}>
                         {n > 0 ? t("arch.demolish.n", { n }) : t("arch.demolish")}
                       </button>
@@ -971,7 +971,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   es bliebe sonst nur ein totes Auswahlfenster (Bauen/Aufwerten sind dann ohnehin gesperrt). */}
               {!removeFor && phase === "choose" && !architect.actedMain && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">{t("arch.choose.head")}</div>
+                  <div className="text-body-lg-5 font-semibold mb-2">{t("arch.choose.head")}</div>
                   {state.devMode ? (
                     <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
                       onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
@@ -992,17 +992,17 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                           style={{ "--c": tierCol, cursor: o.used ? "not-allowed" : "pointer" }}>
                           <div className="flex items-center justify-between gap-1">
                             <div className="p-1 rounded" style={{ background: "#0e1822" }}><MiniShape form={fam.form} color={cat.color} /></div>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                            <span className="text-micro-3 font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
                               style={{ background: `${tierCol}22`, color: tierCol, border: `1px solid ${tierCol}66` }}>
                               {o.legendary ? "★" : tierLabel(o.tier)}
                             </span>
                           </div>
-                          <div className="text-[13px] font-bold flex items-center gap-1 leading-tight">
+                          <div className="text-body-3 font-bold flex items-center gap-1 leading-tight">
                             <span className="w-[9px] h-[9px] rounded-full inline-block shrink-0" style={{ background: cat.color }} />{fam.name}
                           </div>
-                          <div className="text-[10px] opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
-                          {!rotatableForm(fam.form) && <span className="self-start text-[9px] px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
-                          {noRoom && !o.used && <span className="text-[9px]" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
+                          <div className="text-meta-1 opacity-60 leading-snug">{famEff(fam, { tier: o.tier })}</div>
+                          {!rotatableForm(fam.form) && <span className="self-start text-micro-3 px-1.5 py-0.5 rounded" style={{ color: "#8a97a5", background: "#1a2732", border: "1px solid #2b3e4d" }} title={t("arch.noRotate.title")}>{t("arch.noRotate")}</span>}
+                          {noRoom && !o.used && <span className="text-micro-3" style={{ color: "#e0705a" }}>{t("arch.noRoom.replace")}</span>}
                         </button>
                       );
                     })}
@@ -1012,15 +1012,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
                       className={`as-edge-card as-edge-thin is-soon${canUpgradeAny ? "" : " is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
                       style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
-                      <div className="text-lg leading-none">⬆</div>
-                      <div className="text-[13px] font-bold leading-tight">{t("arch.upgrade")}</div>
-                      <div className="text-[10px] opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
+                      <div className="text-title-5 leading-none">⬆</div>
+                      <div className="text-body-3 font-bold leading-tight">{t("arch.upgrade")}</div>
+                      <div className="text-meta-1 opacity-60 leading-snug">{t("arch.upgrade.sub")}{canUpgradeAny ? "" : t("arch.upgrade.none")}</div>
                     </button>
                   </div>
                   )}
                   {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog). */}
                   {!state.devMode && onReroll && (state.rerollsArch || 0) > 0 && (
-                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-xs font-bold transition-all hover:brightness-110"
+                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all hover:brightness-110"
                       style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
                       {t("arch.reroll", { n: state.rerollsArch })}
                     </button>
@@ -1037,12 +1037,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {up && uf ? (
                       // Ausgewähltes Gebäude: aktueller UND nächster Effekt (beide sichtbar), bestätigt wird über den Knopf unten.
                       <div className="rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: "3px solid #f0b429" }}>
-                        <div className="text-sm font-semibold flex items-center gap-1.5 flex-wrap">
+                        <div className="text-body-lg-5 font-semibold flex items-center gap-1.5 flex-wrap">
                           <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[uf.category].color }} />
                           {uf.name}
                           <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(up.tier), to: tierLabel(up.tier + 1) })}</span>
                         </div>
-                        <div className="mt-1.5 grid gap-1 text-[11px] leading-snug">
+                        <div className="mt-1.5 grid gap-1 text-meta-3 leading-snug">
                           <div className="rounded px-2 py-1" style={{ background: "#16232f", border: "1px solid #24333f" }}>
                             <span className="opacity-55">{t("arch.now")}</span> {famEff(uf, up)}
                           </div>
@@ -1050,16 +1050,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             <span className="opacity-55">{t("arch.after")}</span> <span style={{ color: "#8fe0a0" }}>{famEff(uf, { tier: up.tier + 1 })}</span>
                           </div>
                         </div>
-                        <div className="text-[11px] opacity-60 mt-1.5">{t("arch.upgrade.confirmHint")}</div>
+                        <div className="text-meta-3 opacity-60 mt-1.5">{t("arch.upgrade.confirmHint")}</div>
                       </div>
                     ) : (
                       <>
-                        <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                        <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
                           head={<b>{t("arch.upgrade")}</b>}>
                           <div className="opacity-85 leading-snug">{t("arch.upgrade.help")}</div>
                         </ArchCollapse>
                         {upgradeMsg && (
-                          <div className="text-xs rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
+                          <div className="text-body-5 rounded-r-lg px-3 py-2 mb-1" style={{ background: "#3a2a15", borderLeft: "3px solid #d0902f", color: "#f0d9a8" }}>
                             <b>„{upgradeMsg.name}"</b> — {t(UPGRADE_REASON[upgradeMsg.reason] || "arch.upgrade.reason.generic")}.
                           </div>
                         )}
@@ -1072,7 +1072,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                               const f = familyDef(b.familyId);
                               return (
                                 <button key={b.id} onClick={() => { setPendingUpgrade(b.id); setUpgradeMsg(null); }}
-                                  className="rounded px-2 py-1.5 text-left text-[10px] leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
+                                  className="rounded px-2 py-1.5 text-left text-meta-1 leading-snug flex flex-wrap items-baseline gap-x-1.5 transition-all hover:brightness-125"
                                   style={{ background: "#16232f", border: "1px solid #2f4150" }}>
                                   <span className="inline-flex items-center gap-1"><span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: CAT[f.category].color }} /><b>{f.name}</b></span>
                                   <span style={{ color: "#f0b429" }}>{tierLabel(b.tier)}→{tierLabel(b.tier + 1)}</span>
@@ -1096,13 +1096,13 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 <div>
                   {/* Erfolgs-Feedback: hervorgehobene Zeile, dass das Aufwerten wirklich griff (mobil sonst leicht übersehen — die Ziffer am Gebäude ist winzig). */}
                   {upgradeDone && (
-                    <div className="text-sm rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
+                    <div className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2 flex items-center gap-1.5 flex-wrap" style={{ background: "#15291a", borderLeft: "3px solid #f0b429", color: "#d7f0c8" }}>
                       <span aria-hidden="true">⬆</span> <b>„{upgradeDone.name}"</b> {t("arch.upgraded")}
                       <span className="ty-num-sm" style={{ color: "#f0b429" }}>{t("arch.tierArrow", { from: tierLabel(upgradeDone.from), to: tierLabel(upgradeDone.to) })}</span>
                     </div>
                   )}
                   {/* #UI: Die Farbauswahl (colorLocked-Gebäude) liegt jetzt direkt über dem Brett, nicht mehr hier. */}
-                  <ArchCollapse className="text-sm rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
+                  <ArchCollapse className="text-body-lg-5 rounded-r-lg px-3 py-2.5 mb-2" style={{ background: `${CAT.value.color}18`, borderLeft: `3px solid ${CAT.value.color}` }}
                     head={<b>{t("arch.place.head")}</b>}>
                     <div className="opacity-85 leading-snug">{t("arch.place.help")}</div>
                   </ArchCollapse>
@@ -1117,16 +1117,16 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
               {/* #248/#UI: Rotieren in der schwebenden Leiste. In der Verschiebe-Phase steht „Drehen" KOMPAKT neben
                   „Bestätigen" (unten) — kein voll-breiter Balken mehr. Außerhalb (place) bleibt es die eigene Zeile. */}
               {showRotate && phase !== "move" && (selRotatable ? (
-                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
+                <button onClick={rotateSelected} className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
               ) : (
                 <button type="button" disabled aria-disabled="true"
                   title={t("arch.noRotate.title")}
-                  className="w-full mb-2 rounded-lg py-2 text-sm font-bold cursor-not-allowed"
+                  className="w-full mb-2 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed"
                   style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate.big")}</button>
               ))}
               {/* #266: „kein Platz zum Drehen" — ehrliches Feedback statt eines wirkungslosen Buttons am vollen Brettrand. */}
               {showRotate && rotateMsg && (
-                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
+                <div className="mb-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f", color: "#e0705a" }}>
                   ⟳ {rotateMsg}
                 </div>
               )}
@@ -1138,42 +1138,42 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                   {/* #kante: Diese Leiste trug bis zuletzt das Menü-Grau (#20202a) mitten in der Petrol-Welt —
                       sie sitzt weit weg vom Rest der Datei und war beim ersten Durchgang durchgerutscht.
                       Als Kanten-Knöpfe erben sie den Grund des Architekten automatisch. */}
-                  <button onClick={doArchUndo} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+                  <button onClick={doArchUndo} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 font-bold whitespace-nowrap"
                     style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.undo")}</button>
-                  <button onClick={doArchReset} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+                  <button onClick={doArchReset} disabled={!canArchUndo} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 whitespace-nowrap"
                     style={{ opacity: canArchUndo ? 1 : 0.4, cursor: canArchUndo ? "pointer" : "default" }}>{t("arch.reset")}</button>
                 </div>
               )}
               {removeFor ? (
-                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="as-edge-neutral as-edge-thin w-full rounded-lg py-2 text-xs font-bold">{t("arch.otherPlan")}</button>
+                <button onClick={() => { setRemoveFor(null); setDemolishIds([]); }} className="as-edge-neutral as-edge-thin w-full rounded-lg py-2 text-body-5 font-bold">{t("arch.otherPlan")}</button>
               ) : phase === "choose" ? (
                 // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
                 // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
                 committed.length > 0 ? (
                   <div className="flex gap-2" data-tut="arch-done">
-                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                    <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                   </div>
                 ) : (
-                  <button onClick={() => onDone?.()} data-tut="arch-done" className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                  <button onClick={() => onDone?.()} data-tut="arch-done" className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                 )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">
-                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.cancel")}</button>
-                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-sm font-bold" style={{ background: "#f0b429", color: "#141419" }}>{t("arch.upgrade.confirm")}</button>
+                  <button onClick={() => setPendingUpgrade(null)} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.cancel")}</button>
+                  <button onClick={confirmUpgrade} className="flex-1 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#f0b429", color: "#141419" }}>{t("arch.upgrade.confirm")}</button>
                 </div>
               ) : phase === "upgrade" ? (
-                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-xs font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
+                <button onClick={() => { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("choose"); }} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.back")}</button>
               ) : phase === "move" ? (
                 <div className="flex flex-wrap gap-2">
                   {/* Drehen kompakt (nur wenn ein Gebäude gewählt ist); Bestätigen bleibt der prominente Knopf. */}
                   {showRotate && (selRotatable ? (
-                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-sm font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
+                    <button onClick={rotateSelected} className="shrink-0 px-3.5 rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: "#1a2a37", border: `1px solid ${CAT.value.color}` }}>{t("arch.rotate")}</button>
                   ) : (
                     <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
-                      className="shrink-0 px-3 rounded-lg py-2 text-sm font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
+                      className="shrink-0 px-3 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
                   ))}
-                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-sm font-bold" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}</button>
+                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}</button>
                 </div>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
@@ -1183,7 +1183,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 if (!efam) return null;
                 return (
                   // #UI: Effekt-Readout mit typ-farbigem Rahmen (Kategorie-Farbe = die Typ-Farbe, die vorher der Gebäude-Hintergrund trug).
-                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug"
+                  <div className="mt-2 rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug"
                     style={{ border: `1px solid ${CAT[efam.category].color}`, background: `${CAT[efam.category].color}12` }}>
                     <span className="inline-flex items-center gap-1.5 align-middle">
                       <span className="w-[9px] h-[9px] rounded-full inline-block" style={{ background: CAT[efam.category].color }} />
@@ -1200,15 +1200,15 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 Antippen (Liste ODER Brett) lässt Gebäude + Beschreibung gemeinsam cyan leuchten. Steht direkt unter „Nichts bauen". */}
             {!removeFor && phase === "choose" && committed.length > 0 && (
               <div className="order-1 rounded-xl p-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-                <div className="text-[11px] uppercase tracking-wide opacity-60 mb-0.5">{t("arch.yourBuildings", { n: committed.length })}</div>
-                <div className="text-[10px] opacity-45 mb-2">{t("archpanels.tapHint")}</div>
+                <div className="text-meta-3 uppercase tracking-wide opacity-60 mb-0.5">{t("arch.yourBuildings", { n: committed.length })}</div>
+                <div className="text-meta-1 opacity-45 mb-2">{t("archpanels.tapHint")}</div>
                 <div className="flex flex-col gap-1">
                   {committed.map((b) => {
                     const f = familyDef(b.familyId); if (!f) return null;
                     const on = inspectId === b.id;
                     return (
                       <button key={b.id} id={`arch-inspect-${b.id}`} onClick={() => setInspectId(on ? null : b.id)}
-                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
                         style={{ background: on ? "#12313f" : "#16232f", border: `1px solid ${on ? "#5ec8f0" : "#24333f"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                         <span className="inline-flex items-center gap-1.5 flex-wrap">
                           <span className="w-[8px] h-[8px] rounded-full inline-block" style={{ background: f.legendary ? GOLD : CAT[f.category].color }} />
@@ -1225,11 +1225,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
             {/* Vorschau & Brett-Status — Mobil UNTER dem Brett (order-3), Desktop unter dem Phase-Panel in der rechten Spalte. */}
             <div className="rounded-xl p-3 order-3" style={{ background: "#0e1822", border: "1px solid #20303d" }}>
-              <div className="text-[11px] uppercase tracking-wide opacity-60 mb-2">{t("arch.preview.head")}</div>
+              <div className="text-meta-3 uppercase tracking-wide opacity-60 mb-2">{t("arch.preview.head")}</div>
               {dragPrev && (() => {
                 const ok = dragPrev.valid && dragPrev.footprint.length > 0;
                 return (
-                  <div className="mb-2 rounded-lg px-2.5 py-1.5 text-[11px] flex items-center gap-3 flex-wrap"
+                  <div className="mb-2 rounded-lg px-2.5 py-1.5 text-meta-3 flex items-center gap-3 flex-wrap"
                     style={{ background: ok ? "#15351f" : "#3a1518", border: `1px solid ${ok ? "#2f9d55" : "#d1462f"}` }}>
                     <span className="font-bold" style={{ color: ok ? "#5fce86" : "#e0705a" }}>{t(ok ? "arch.preview.ok" : "arch.preview.bad")}</span>
                     {ok && dragDelta && <>
@@ -1245,7 +1245,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 <Stat k={t("arch.stat.plotUsed")} v={`${Math.round(coverCount / maxCover * 100)}%`} />
                 <Stat k={t("arch.stat.rows")} v={houseRows} />
               </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[12px] opacity-80">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-body-1 opacity-80">
                 <span>{t("arch.buildingCount", { n: committed.length })}</span>
                 {Object.entries(CAT).map(([k, v]) => (
                   <span key={k} className="inline-flex items-center gap-1.5"><span className="w-[9px] h-[9px] rounded-full" style={{ background: v.color }} />{v.label} <b>{catCount[k]}</b></span>
@@ -1266,8 +1266,8 @@ function pendingFamName(o) { const f = familyDef(o.familyId); return f ? f.name 
 function Stat({ k, v, hero = false }) {
   return (
     <div className="rounded-lg p-2.5" style={{ background: hero ? `${CAT.value.color}12` : "#16232f", border: `1px solid ${hero ? CAT.value.color + "4d" : "#20303d"}` }}>
-      <div className="text-[10px] uppercase tracking-wide opacity-55">{k}</div>
-      <div className="text-xl ty-num mt-0.5">{v}</div>
+      <div className="text-meta-1 uppercase tracking-wide opacity-55">{k}</div>
+      <div className="text-title-6 ty-num mt-0.5">{v}</div>
     </div>
   );
 }
@@ -1293,7 +1293,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
   const tval = (t) => (t === "legendary" ? 99 : t);
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-[11px] opacity-55">{t("arch.dev.catalog")}</div>
+      <div className="text-meta-3 opacity-55">{t("arch.dev.catalog")}</div>
       {ARCH_CAT_ORDER.filter((c) => byCat[c]).map((c) => {
         const meta = CAT[c] || { label: c, color: "#8a97a5" };
         const fids = Object.keys(byCat[c]);
@@ -1301,7 +1301,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
         return (
           <div key={c} className="flex flex-col gap-1.5">
             <button onClick={() => setOpenCat(open ? null : c)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-bold"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-body-lg-5 font-bold"
               style={{ background: open ? `${meta.color}1f` : "#13202b", border: `1px solid ${open ? meta.color : "#26323d"}`, color: open ? meta.color : "#c8d2da" }}>
               <span>{meta.label} <span className="opacity-55 font-normal">· {fids.length}</span></span>
               <span className="opacity-70">{open ? "▲" : "▼"}</span>
@@ -1318,10 +1318,10 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
                     <div key={fid} className="rounded-lg" style={{ background: "#13202b", border: "1px solid #26323d" }}>
                       <button onClick={() => setOpenFam(fo ? null : fid)} className="w-full flex items-start justify-between gap-2 px-3 py-2 text-left">
                         <span className="flex flex-col gap-0.5 min-w-0">
-                          <span className="font-semibold text-sm" style={{ color: meta.color }}>{fam.name}</span>
-                          {repDesc && <span className="text-[11px] opacity-60 leading-snug">{repDesc}</span>}
+                          <span className="font-semibold text-body-lg-5" style={{ color: meta.color }}>{fam.name}</span>
+                          {repDesc && <span className="text-meta-3 opacity-60 leading-snug">{repDesc}</span>}
                         </span>
-                        <span className="text-[11px] opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲" : "▼"} {t("arch.tierWord")}</span>
+                        <span className="text-meta-3 opacity-50 shrink-0 mt-0.5 whitespace-nowrap">{fo ? "▲" : "▼"} {t("arch.tierWord")}</span>
                       </button>
                       {fo && (
                         <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
@@ -1330,7 +1330,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
                             return (
                               <button key={String(o.tier)} onClick={() => onChoose(o)} disabled={o.used}
                                 title={famEff(fam, { tier: o.tier })}
-                                className="px-2.5 py-1 rounded text-xs font-bold transition-all hover:-translate-y-0.5"
+                                className="px-2.5 py-1 rounded text-body-5 font-bold transition-all hover:-translate-y-0.5"
                                 style={{ background: `${col}1f`, color: col, border: `1px solid ${col}88`, opacity: o.used ? 0.4 : 1 }}>
                                 {tierLabel(o.tier)}
                               </button>
@@ -1347,7 +1347,7 @@ function DevArchCatalog({ offers, onChoose, canUpgradeAny, onUpgrade }) {
         );
       })}
       <button onClick={onUpgrade} disabled={!canUpgradeAny}
-        className="self-start mt-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+        className="self-start mt-1 px-3 py-1.5 rounded-lg text-body-5 font-bold transition-all"
         style={{ background: "#13202b", border: `1px dashed ${CAT.value.color}66`, color: CAT.value.color, opacity: canUpgradeAny ? 1 : 0.4 }}>
         {t("arch.upgrade.big")}{canUpgradeAny ? "" : t("arch.upgrade.none")}
       </button>

@@ -88,15 +88,15 @@ export function PrivacyModal({ onClose }) {
         <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
           <div className="flex items-start gap-3">
             <div className="min-w-0">
-              <div className="text-xs uppercase tracking-widest" style={{ color: ACC }}>{t("privacy.eyebrow")}</div>
-              <h2 className="text-xl font-bold mt-1">{t("privacy.title")}</h2>
+              <div className="text-body-5 uppercase tracking-widest" style={{ color: ACC }}>{t("privacy.eyebrow")}</div>
+              <h2 className="text-title-6 font-bold mt-1">{t("privacy.title")}</h2>
             </div>
             <ActionButton kind="secondary" className="ml-auto shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6" style={{ overscrollBehavior: "contain" }}>
-          <p className="text-sm leading-relaxed opacity-80">{t("privacy.intro")}</p>
+          <p className="text-body-lg-5 leading-relaxed opacity-80">{t("privacy.intro")}</p>
 
           {/* #kante: die Abschnitte waren gefüllte Kästen (#20202a) — die Fassung von vor „Kante statt Fläche"
               und ohne jede Rangordnung: „Was bleibt auf dem Gerät" sah aus wie „Was wird gesendet". Jetzt
@@ -114,9 +114,9 @@ export function PrivacyModal({ onClose }) {
                   <div className="flex items-center gap-2 mb-1">
                     <span aria-hidden="true" className="h-0.5 w-3.5 rounded-full shrink-0"
                       style={{ background: c, boxShadow: `0 0 8px ${c}` }} />
-                    <h3 className="font-bold text-sm" style={{ color: secTitleColor(c) }}>{t(`privacy.sec.${sec}.title`)}</h3>
+                    <h3 className="font-bold text-body-lg-5" style={{ color: secTitleColor(c) }}>{t(`privacy.sec.${sec}.title`)}</h3>
                   </div>
-                  <p className="text-sm opacity-70 leading-snug">
+                  <p className="text-body-lg-5 opacity-70 leading-snug">
                     {t(`privacy.sec.${sec}.body`, { ua: UA_MAX })}
                   </p>
                 </section>
@@ -128,14 +128,14 @@ export function PrivacyModal({ onClose }) {
                 Sie steht IN der Abschnitts-Spalte, aber über beide Spalten: sie ist Werkzeug, kein Abschnitt. */}
             {telemetryConfigured && id && (
               <div className="rounded-lg p-3 dt:col-span-2" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
-                <div className="text-[10px] uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>
+                <div className="text-meta-1 uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 min-w-0 truncate text-[12px] font-mono select-text" style={{ color: "#a8ecf7" }}>{id}</code>
+                  <code className="flex-1 min-w-0 truncate text-body-1 font-mono select-text" style={{ color: "#a8ecf7" }}>{id}</code>
                   <ActionButton kind="secondary" onClick={copyId}>
                     {t(copied ? "privacy.installId.copied" : "privacy.installId.copy")}
                   </ActionButton>
                 </div>
-                <div className="text-[11px] opacity-55 leading-snug mt-2">{t("privacy.installId.hint")}</div>
+                <div className="text-meta-3 opacity-55 leading-snug mt-2">{t("privacy.installId.hint")}</div>
               </div>
             )}
           </div>
@@ -144,11 +144,11 @@ export function PrivacyModal({ onClose }) {
               daneben statt darunter: zwei kurze Zeilen untereinander lassen den Fuß länger wirken als er ist. */}
           <div className="mt-3 flex flex-col dt:flex-row dt:items-center gap-2 dt:gap-3">
             <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
-              className="as-edge as-edge-thin block flex-1 text-center text-sm font-bold rounded-lg py-2.5 transition-all"
+              className="as-edge as-edge-thin block flex-1 text-center text-body-lg-5 font-bold rounded-lg py-2.5 transition-all"
               style={{ "--c": ACC }}>
               {t("privacy.contact.discord")}
             </a>
-            <div className="text-[11px] opacity-40 leading-snug dt:whitespace-nowrap">{t("privacy.updated")}</div>
+            <div className="text-meta-3 opacity-40 leading-snug dt:whitespace-nowrap">{t("privacy.updated")}</div>
           </div>
         </div>
       </div>

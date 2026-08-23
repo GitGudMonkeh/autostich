@@ -36,8 +36,8 @@ const num = (v) => {
 function StatCard({ label, value, title, color }) {
   return (
     <div title={title} className="rs-cell rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-      <div className="opacity-50 text-[11px] uppercase tracking-wide truncate">{label}</div>
-      <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-[15px] mt-0.5" style={color ? { color } : undefined}>{value == null ? "–" : value}</div>
+      <div className="opacity-50 text-meta-3 uppercase tracking-wide truncate">{label}</div>
+      <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-body-lg-3 mt-0.5" style={color ? { color } : undefined}>{value == null ? "–" : value}</div>
     </div>
   );
 }
@@ -180,13 +180,13 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
       {(archCounts.length > 0 || showPerks) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {archCounts.map((a) => (
-            <span key={a.key} className="inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-0.5 rounded-full"
+            <span key={a.key} className="inline-flex items-center gap-1.5 text-body-1 font-bold px-2.5 py-0.5 rounded-full"
               style={{ background: `${a.color}1f`, color: a.color, border: `1px solid ${a.color}55` }}>
               <ArchIcon meta={a} size={13} /> {a.label} ×{a.n}
             </span>
           ))}
           {showPerks && (
-            <span className="text-[10px] uppercase tracking-wider opacity-45 ml-auto">{t("runstats.perks", { n: perkTotal })}</span>
+            <span className="text-meta-1 uppercase tracking-wider opacity-45 ml-auto">{t("runstats.perks", { n: perkTotal })}</span>
           )}
         </div>
       )}
@@ -206,7 +206,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                   <div key={g.cat} className="rs-row">
                     {/* Die Kategorie steht als Wort vor ihren Chips — in ihrer Farbe, damit Beschriftung und
                         Chipfarbe dasselbe sagen und die Farbe nicht mehr allein tragen muss. */}
-                    <span className="rs-lbl text-[10px] uppercase tracking-wider font-bold" style={{ color: cc, opacity: 0.85 }}>
+                    <span className="rs-lbl text-meta-1 uppercase tracking-wider font-bold" style={{ color: cc, opacity: 0.85 }}>
                       {cm?.name || g.cat}
                     </span>
                     <span className="rs-chips flex flex-wrap items-center gap-1.5">
@@ -217,7 +217,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                         const on = sel && sel.kind === "perk" && sel.id === it.id;
                         return (
                           <button key={it.id} onClick={() => toggle("perk", it.id)} title={t("runstats.showDesc")}
-                            className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                            className="text-meta-3 px-2 py-0.5 rounded transition-all hover:brightness-125"
                             style={{ background: `${cc}22`, color: cc, border: `1px solid ${on ? cc : rar !== "common" ? rm.color : "transparent"}` }}>
                             {rm.mark ? `${rm.mark} ` : ""}{it.def.label}
                           </button>
@@ -232,7 +232,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                       const on = sel && sel.kind === "family" && sel.id === it.id;
                       return (
                         <button key={`fam:${it.id}`} onClick={() => toggle("family", it.id)} title={t("runstats.showDesc")}
-                          className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                          className="text-meta-3 px-2 py-0.5 rounded transition-all hover:brightness-125"
                           style={{ background: `${col}22`, color: col, border: `1px solid ${on ? col : `${col}66`}` }}>
                           {it.fd.name} {romanOf(it.tier)}
                         </button>
@@ -249,7 +249,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
               Zeile des Blocks, die aus der Reihe fiel. */}
           {showSkills && (
             <div className="rs-row rs-row-sep">
-              <span className="rs-lbl text-[10px] uppercase tracking-wider font-bold opacity-45">{t("runstats.skills")}</span>
+              <span className="rs-lbl text-meta-1 uppercase tracking-wider font-bold opacity-45">{t("runstats.skills")}</span>
               <span className="rs-chips flex flex-wrap items-center gap-1.5">
               {skills.map((id) => {
                 const d = skillDef(id);
@@ -258,7 +258,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                 const on = sel && sel.kind === "skill" && sel.id === id;
                 return (
                   <button key={id} onClick={() => toggle("skill", id)} title={t("runstats.showDesc")}
-                    className="text-[11px] px-2 py-0.5 rounded transition-all hover:brightness-125"
+                    className="text-meta-3 px-2 py-0.5 rounded transition-all hover:brightness-125"
                     style={{ background: `${am.color}22`, color: am.color, border: `1px solid ${on ? am.color : d.legendary ? "#d4a63a" : "transparent"}` }}>
                     <ArchIcon meta={am} size={13} /> {d.legendary ? "★ " : ""}{d.name}
                   </button>
@@ -268,13 +268,13 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
             </div>
           )}
           {selDetail && (
-            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
+            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-body-5 leading-snug" style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
               <span className="font-bold" style={{ color: selDetail.color }}>{selDetail.title}</span>
               <span className="opacity-80"> — {selDetail.desc}</span>
             </div>
           )}
           {showHidden && (
-            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-[11px] leading-snug opacity-60" style={{ background: "#131318", border: "1px dashed #2f2f3b" }}>
+            <div className="rs-note mt-2 rounded-lg px-3 py-2 text-meta-3 leading-snug opacity-60" style={{ background: "#131318", border: "1px dashed #2f2f3b" }}>
               {t("runstats.hidden")}
             </div>
           )}
@@ -300,16 +300,16 @@ export function RunTreeBlock({ treeNodes }) {
     // Der Abstand nach unten gehört zum Block selbst: der Aufrufer kann ihn nicht setzen, ohne bei fehlendem
     // Wert eine leere Lücke zu hinterlassen (die Komponente rendert dann null).
     <div className="rs-tree rounded-xl px-3 py-2.5 mb-4" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-      <div className="text-[10px] uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
+      <div className="text-meta-1 uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="ty-num text-[15px]">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>
-        <span className="ty-num-sm text-[11px]" style={{ color: "var(--deck-a1, #8a7de0)" }}>{fmtPct(frac)}</span>
+        <span className="ty-num text-body-lg-3">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>
+        <span className="ty-num-sm text-meta-3" style={{ color: "var(--deck-a1, #8a7de0)" }}>{fmtPct(frac)}</span>
       </div>
       {/* Der Balken ist die eigentliche Aussage — die Zahl daneben liest man erst, wenn der Balken auffällt. */}
       <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: "#1e1e26" }}>
         <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: "var(--deck-a1, #8a7de0)" }} />
       </div>
-      <div className="text-[10.5px] opacity-45 leading-snug mt-2">{t("runstats.tree.note")}</div>
+      <div className="text-meta-2 opacity-45 leading-snug mt-2">{t("runstats.tree.note")}</div>
     </div>
   );
 }

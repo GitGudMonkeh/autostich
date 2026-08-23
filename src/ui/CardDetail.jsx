@@ -22,7 +22,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
   if (!card) {
-    return <div className="text-xs opacity-40 py-1.5">{t("carddetail.empty")}</div>;
+    return <div className="text-body-5 opacity-40 py-1.5">{t("carddetail.empty")}</div>;
   }
   const col = suitColor(card.suit);
   const permBoost = card.baseRank != null ? card.value - card.baseRank : 0;
@@ -39,14 +39,14 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
     });
 
   const Chip = ({ children, c }) => (
-    <span className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: (c || "#8a8a92") + "22", color: c || "#c8c8ce" }}>{children}</span>
+    <span className="px-1.5 py-0.5 rounded text-meta-3" style={{ background: (c || "#8a8a92") + "22", color: c || "#c8c8ce" }}>{children}</span>
   );
 
   return (
-    <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "#1b1b22", border: `1.5px solid ${formationBorder(posForm).color || "#5a6672"}` }}>
+    <div className="rounded-lg px-3 py-2 text-body-5" style={{ background: "#1b1b22", border: `1.5px solid ${formationBorder(posForm).color || "#5a6672"}` }}>
       <div className="flex items-center gap-2 mb-1.5">
         {pos != null && <span className="opacity-40 tabular-nums">#{pos + 1}</span>}
-        <span className="font-bold text-sm" style={{ color: col }}>{suitLabel(card.suit)} {card.value}</span>
+        <span className="font-bold text-body-lg-5" style={{ color: col }}>{suitLabel(card.suit)} {card.value}</span>
         {permBoost > 0 && <span style={{ color: "#8a7de0" }}>{t("carddetail.origin", { base: card.baseRank, boost: permBoost })}</span>}
       </div>
       <div className="flex flex-wrap gap-1.5 items-center">
@@ -56,7 +56,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
               const open = openRole === r.pid;
               return (
                 <button key={r.pid} onClick={() => setOpenRole(open ? null : r.pid)} title={r.desc}
-                  className="px-1.5 py-0.5 rounded text-[11px] transition-all cursor-pointer"
+                  className="px-1.5 py-0.5 rounded text-meta-3 transition-all cursor-pointer"
                   style={{ background: open ? "#d4a63a44" : "#d4a63a22", color: "#d4a63a",
                            border: `1px solid ${open ? "#d4a63a99" : "transparent"}` }}>
                   {r.label} <span className="opacity-60">{open ? "▾" : "▸"}</span>
@@ -68,7 +68,7 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {openRole && (() => {
         const desc = roleEntries.find((r) => r.pid === openRole)?.desc;
         return desc ? (
-          <div className="text-[11px] mt-1 px-2 py-1 rounded leading-snug" style={{ background: "#d4a63a12", color: "#e8e0c8" }}>
+          <div className="text-meta-3 mt-1 px-2 py-1 rounded leading-snug" style={{ background: "#d4a63a12", color: "#e8e0c8" }}>
             {desc}
           </div>
         ) : null;

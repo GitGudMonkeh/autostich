@@ -72,8 +72,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
         <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-4 flex items-center justify-between relative" style={{ background: STICKY_HEAD_BG }}>
           <TopHairline />
           <div>
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("chronik.eyebrow")}</div>
-            <h2 className="text-xl font-bold">{t("chronik.title")}</h2>
+            <div className="text-body-5 uppercase tracking-widest" style={{ color: "#8a7de0" }}>{t("chronik.eyebrow")}</div>
+            <h2 className="text-title-6 font-bold">{t("chronik.title")}</h2>
           </div>
           <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
@@ -110,7 +110,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             )}
             <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
             {anchors.length > 0 && (
-              <div className="text-[11px] rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+              <div className="text-meta-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #26262e" }}>
                 <div className="uppercase tracking-wide opacity-50 mb-1">{t("chronik.anchors")}</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {anchors.map((a, i) => (
@@ -133,19 +133,19 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
           {/* Aktuelle Formationen — kompakt (aktive Typen + Höchst-Multiplikator), ohne zweites Karten-Grid. */}
           <div className="rounded-lg p-3" style={{ background: "#17171c", border: "1px solid #26262e" }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase tracking-wide opacity-50">{t("chronik.formations")}</span>
-              <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{t("formpanel.count", { n: formCount, max: fmtX(formMaxMult) })}</span>
+              <span className="text-meta-3 uppercase tracking-wide opacity-50">{t("chronik.formations")}</span>
+              <span className="text-meta-3 font-bold" style={{ color: "#5ab87a" }}>{t("formpanel.count", { n: formCount, max: fmtX(formMaxMult) })}</span>
             </div>
             {Object.keys(formByType).length ? (
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(formByType).sort((a, b) => b[1] - a[1]).map(([type, fac]) => (
-                  <span key={type} className="px-1.5 py-0.5 rounded text-[11px]" style={{ background: "#5ab87a22", color: "#8be0a8" }}>
+                  <span key={type} className="px-1.5 py-0.5 rounded text-meta-3" style={{ background: "#5ab87a22", color: "#8be0a8" }}>
                     {formationName(type)} ×{fmtX(fac)}
                   </span>
                 ))}
               </div>
             ) : (
-              <div className="text-[11px] opacity-40">{t("chronik.noFormations")}</div>
+              <div className="text-meta-3 opacity-40">{t("chronik.noFormations")}</div>
             )}
           </div>
 
@@ -153,8 +153,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
           {archBuildings.length > 0 && (
             <div className="rounded-lg p-3 sm:col-span-2" style={{ background: "#17171c", border: "1px solid #26262e" }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wide opacity-50">{t("chronik.archPhase")}</span>
-                <span className="text-[11px] font-bold" style={{ color: ARCH_CAT?.value?.color || "#8a7de0" }}>
+                <span className="text-meta-3 uppercase tracking-wide opacity-50">{t("chronik.archPhase")}</span>
+                <span className="text-meta-3 font-bold" style={{ color: ARCH_CAT?.value?.color || "#8a7de0" }}>
                   {t("chronik.archCount", { n: archBuildings.length, used: archOcc, max: archMax })}
                 </span>
               </div>
@@ -162,7 +162,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
                 {Object.entries(archByCat).map(([cat, n]) => {
                   const meta = archCatDef(cat) || {};
                   return (
-                    <span key={cat} className="px-1.5 py-0.5 rounded text-[11px]"
+                    <span key={cat} className="px-1.5 py-0.5 rounded text-meta-3"
                       style={{ background: (meta.color || "#8a8a92") + "22", color: meta.color || "#c8c8ce" }}>
                       {meta.icon ? meta.icon + " " : ""}{meta.label || cat} · {n}
                     </span>

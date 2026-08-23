@@ -88,7 +88,7 @@ describe("#global · im Nachschlage-Modus wird nicht gespielt", () => {
     for (const teil of [/board\.weekSeed/, /board\.play/, /<WeekModChips/, /lb-modlist/])
       expect(cockpit[1], `gehört ins Cockpit: ${teil}`).toMatch(teil);
     // …und stattdessen ein Satz, der sagt, wo es langgeht.
-    expect(screen).toMatch(/boardMode && \(\n\s*<div className="text-\[11px\] opacity-45 leading-snug mb-3">\{tr\("board\.week\.viewOnly"\)\}/);
+    expect(screen).toMatch(/boardMode && \(\n\s*<div className="text-meta-3 opacity-45 leading-snug mb-3">\{tr\("board\.week\.viewOnly"\)\}/);
   });
 
   it("der Global-Reiter fährt fetchGlobalTop (kein `board`-Prop) und schaltet die Baum-Pille an", () => {

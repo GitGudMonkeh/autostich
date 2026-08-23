@@ -252,13 +252,13 @@ export function TutorialOverlay({ tut, reducedFx = "aus" }) {
           (bedingte Phasen ohne Nummer, Reihenfolge ≠ Skript). */}
       <div className="mb-1.5">
         {/* #deckui: Sprechblasen-Akzent (Rubrik) zieht die aktive Deckfarbe statt fixem Violett. */}
-        <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: "var(--deck-a1, #9b82f0)" }}>
+        <span className="text-meta-1 font-bold tracking-[0.18em] uppercase" style={{ color: "var(--deck-a1, #9b82f0)" }}>
           {t("tutorial.eyebrow")}
         </span>
       </div>
 
-      {title && <h2 className="text-[17px] font-extrabold mb-1.5 leading-tight">{title}</h2>}
-      <p className="text-[13px] leading-snug whitespace-pre-line" style={{ color: "#c9c6dd" }}>{body}</p>
+      {title && <h2 className="text-title-1 font-extrabold mb-1.5 leading-tight">{title}</h2>}
+      <p className="text-body-3 leading-snug whitespace-pre-line" style={{ color: "#c9c6dd" }}>{body}</p>
 
       <div className="flex items-stretch gap-2 mt-4">
         <ActionButton kind="primary" flex onClick={next}>

@@ -61,7 +61,7 @@ function Segmented({ value, options, onChange }) {
         const on = value === o.v;
         return (
           <button key={o.v} role="radio" aria-checked={on} onClick={() => onChange(o.v)}
-            className="px-3 py-1.5 text-xs font-bold transition-all"
+            className="px-3 py-1.5 text-body-5 font-bold transition-all"
             style={{ background: on ? "#d4a63a" : "#25252e", color: on ? "#141419" : "#c8c8d0" }}>
             {o.label}
           </button>
@@ -85,8 +85,8 @@ function Row({ icon, title, desc, children, stack = false }) {
     <div className={`as-edge-card as-edge-thin as-opt-row rounded-lg p-3 ${stack ? "as-opt-stack flex flex-col gap-2.5" : "flex items-center gap-3"}`}>
       {icon && <span className="as-deskonly op-rowicon" aria-hidden="true">{icon}</span>}
       <div className="op-rowtext flex-1">
-        <div className="op-rowtitle font-bold text-sm">{title}</div>
-        {desc && <div className="op-rowdesc text-sm opacity-70 leading-snug">{desc}</div>}
+        <div className="op-rowtitle font-bold text-body-lg-5">{title}</div>
+        {desc && <div className="op-rowdesc text-body-lg-5 opacity-70 leading-snug">{desc}</div>}
       </div>
       {children}
     </div>
@@ -119,7 +119,7 @@ function Section({ id, title, innerRef, children }) {
           ohne dieses Kind fehlt der Rahmen. Unter 1280 px ist beides inert (`.as-ring-run` ist dort
           `display: none`, `.as-ring` selbst greift erst im Desktop-Block). */}
       <i className="as-ring-run" aria-hidden="true" />
-      <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-xs font-bold uppercase tracking-widest"
+      <h3 className="sticky top-0 z-10 -mx-6 px-6 py-2 text-body-5 font-bold uppercase tracking-widest"
         /* #deckui: Sektions-Überschrift zieht die Deckfarbe (Chrome-Akzent). */
         style={{ color: "var(--deck-a1, #8a7de0)", background: STICKY_HEAD_BG }}>{title}</h3>
       <div className="grid gap-2.5 pt-2.5">{children}</div>
@@ -132,7 +132,7 @@ function JumpChip({ label, active, onClick }) {
   return (
     <button type="button" onClick={onClick}
       /* #kante: eckig statt Pille — an einer runden Form würde die linke Kante zur Sichel. */
-      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
+      className={"as-chip flex-none whitespace-nowrap text-meta-3 tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
       {label}
     </button>
   );
@@ -187,8 +187,8 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           <div className="op-headrow flex items-start gap-3">
             <div className="op-title min-w-0">
               {/* #deckui: Eyebrow deck-getönt. */}
-              <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.eyebrow")}</div>
-              <h2 className="text-xl font-bold mt-1">{t("options.title")}</h2>
+              <div className="text-body-5 uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("options.eyebrow")}</div>
+              <h2 className="text-title-6 font-bold mt-1">{t("options.title")}</h2>
             </div>
             {/* #desktop: Auskunftszeile neben dem Titel — dieselbe Stelle wie das Guthaben im Upgrade-Baum
                 (Spalte 3, durch einen senkrechten Strich abgesetzt). Unter 1280 px gibt es sie nicht: dort ist

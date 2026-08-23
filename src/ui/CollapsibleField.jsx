@@ -17,9 +17,9 @@ export function CollapsibleField({ title, meta = null, defaultOpen = true, open:
     <div className={`rounded-xl overflow-hidden ${className}`} style={{ border: "1px solid #2a2a33" }}>
       <button type="button" onClick={um} aria-expanded={open}
         className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left" style={{ background: "#161620" }}>
-        <span className="text-[11px] uppercase tracking-wide font-bold opacity-60">{title}</span>
+        <span className="text-meta-3 uppercase tracking-wide font-bold opacity-60">{title}</span>
         <span className="flex items-center gap-2 shrink-0">{meta}
-          <span className="text-[10px] opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "none" : "rotate(-90deg)" }}>▾</span>
+          <span className="text-meta-1 opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "none" : "rotate(-90deg)" }}>▾</span>
         </span>
       </button>
       {open && <div className="px-3 py-3" style={{ borderTop: "1px solid #2a2a33" }}>{children}</div>}

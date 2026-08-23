@@ -30,13 +30,13 @@ export function TargetSelect({ state, onConfirm }) {
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.green)}>
         <PhaseHairline />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>{t("target.eyebrow", { perk: def.label })}</div>
-          <h2 className="text-xl font-bold mt-1">{t("target.pickCards", { count: need })}</h2>
-          <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.desc}</p>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: "#5ab87a" }}>{t("target.eyebrow", { perk: def.label })}</div>
+          <h2 className="text-title-6 font-bold mt-1">{t("target.pickCards", { count: need })}</h2>
+          <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.desc}</p>
         </div>
 
         <ActionBar pad={5}>
-          <span className="text-xs opacity-60 tabular-nums self-center">{t("common.chosen", { n: sel.length, need })}</span>
+          <span className="text-body-5 opacity-60 tabular-nums self-center">{t("common.chosen", { n: sel.length, need })}</span>
           <span className="flex-1" />
           <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>{t("common.confirm")}</ActionButton>
         </ActionBar>

@@ -51,7 +51,7 @@ function StreakChain({ streak }) {
           );
         })}
       </div>
-      <div className="flex justify-between text-xs mt-1.5">
+      <div className="flex justify-between text-body-5 mt-1.5">
         <span className="opacity-60">{t("bar.lightning.chain")}{streak > 0 && <span style={{ color: CASCADE_BRIGHT }}>{t("bar.lightning.chain.holds")}</span>}</span>
         <span className="font-bold tabular-nums" style={{ color: streak > 0 ? CASCADE_BRIGHT : "#6a6a72" }}>
           {streak > 0 ? `×${streak}` : t("bar.lightning.streak.broken")}
@@ -66,7 +66,7 @@ function SatRow({ label, cur, max, on, payoff }) {
   const pct = max > 0 ? Math.min(100, Math.round((cur / max) * 100)) : 0;
   return (
     <div>
-      <div className="flex justify-between text-[11px] mb-0.5">
+      <div className="flex justify-between text-meta-3 mb-0.5">
         <span className="opacity-55">{label} <span className="ty-num-sm opacity-80">{pct}%</span></span>
         {on
           ? <span className="font-semibold inline-flex items-center gap-0.5" style={{ color: CASCADE_BRIGHT }}><FactionIcon type="lightning" size={11} /> {payoff}</span>
@@ -134,7 +134,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks. */}
       {ionN > 0 && (
         <div className="grid gap-1.5">
-          <div className="text-xs opacity-60">{t("bar.lightning.saturation")}</div>
+          <div className="text-body-5 opacity-60">{t("bar.lightning.saturation")}</div>
           <SatRow label={t("bar.lightning.breadth")} cur={ionN} max={breadthThresh} on={breadthOn} payoff={t("bar.lightning.breadth.payoff", { n: ION_SATURATION_VALUE })} />
           <SatRow label={t("bar.lightning.depth")} cur={ionFull} max={depthThresh} on={depthOn} payoff={t("bar.lightning.depth.payoff", { n: UEBERSCHLAG_DEPTH_PP_PER_CHARGE })} />
         </div>
@@ -142,7 +142,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
       {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}
       <div>
-        <div className="flex justify-between text-xs mb-1.5">
+        <div className="flex justify-between text-body-5 mb-1.5">
           <span className="opacity-60">{t("bar.lightning.state.charge", { charge, max: maxCharge })}{full && <span style={{ color: LIGHTNING }}>{t("bar.lightning.fullBadge")}</span>}</span>
           <span className="font-bold tabular-nums" style={{ color: LIGHTNING }}>{charge} / {maxCharge}</span>
         </div>
@@ -162,7 +162,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
       {/* Entlade-Motor (v0.5): Entladungen/Runde (Kern-Metrik) + Crit-Momentum (Gewitterfront/Entladung). */}
       {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[11px]">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta-3">
           <span className="opacity-60" title={t("bar.lightning.consumes.title")}>{t("bar.lightning.consumes")} <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
           {stormPp > 0 && <span className="opacity-60" title={t("bar.lightning.storm.title", { cap: Math.round(STORM_CRIT_CAP * 100) })}>{t("bar.lightning.storm")} <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} %</b><span className="opacity-45"> / {Math.round(STORM_CRIT_CAP * 100)}</span></span>}
           {entMult > 0 && <span className="opacity-60" title={t("bar.lightning.discharge.title")}>{t("bar.lightning.discharge")} <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
@@ -171,7 +171,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
       {/* Blitzfrequenz — Balken = Crit-Chance; ab 100 % überlagert der Crit-Multiplikator (von vorne). Pulst je Entladung. */}
       <div>
-        <div className="flex justify-between text-xs mb-1">
+        <div className="flex justify-between text-body-5 mb-1">
           <span className="opacity-60">{t("bar.lightning.frequency")}</span>
           <span className="font-bold tabular-nums" style={{ color: overcharge ? CASCADE_BRIGHT : LIGHTNING }}
             title={t(overcharge ? "bar.lightning.frequency.over" : "bar.lightning.frequency.title")}>
@@ -198,7 +198,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
       {/* Serienschutz (v0.5): sichtbar, wenn ein Verlust die Serie gehalten hat (½ Ladung). */}
       {shieldCount > 0 && (
         <div className="flex">
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold" title={t("bar.lightning.streakGuard")}
+          <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold" title={t("bar.lightning.streakGuard")}
             style={{ background: `${CASCADE}22`, color: CASCADE_BRIGHT, border: `1px solid ${CASCADE}66` }}>
             🛡 {shieldCount}× Serie gehalten
           </span>
@@ -207,13 +207,13 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
 
       {consumer ? (
         <div className="flex flex-wrap gap-1.5">
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+          <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold"
             style={{ background: `${LIGHTNING}22`, color: LIGHTNING, border: `1px solid ${LIGHTNING}66` }}>
             Konsument: {consumer}
           </span>
         </div>
       ) : full ? (
-        <div className="text-[11px] leading-snug rounded px-2 py-1.5"
+        <div className="text-meta-3 leading-snug rounded px-2 py-1.5"
           style={{ background: `${LIGHTNING}14`, color: LIGHTNING, border: `1px solid ${LIGHTNING}44` }}>
           {t("bar.lightning.noConsumer", { skill: CONSUMER_LABEL.ionize })}
         </div>

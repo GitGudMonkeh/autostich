@@ -46,10 +46,10 @@ function OptionRow({ c, name, sub, onClick }) {
       className="rc-row as-edge-card w-full text-left rounded-xl px-3.5 py-3 flex items-center gap-3 transition-all hover:brightness-110"
       style={{ "--c": c }}>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14.5px] font-bold" style={{ color: c }}>{name}</span>
-        <span className="block text-[12.5px] leading-snug opacity-65 mt-0.5">{sub}</span>
+        <span className="block text-body-lg-2 font-bold" style={{ color: c }}>{name}</span>
+        <span className="block text-body-2 leading-snug opacity-65 mt-0.5">{sub}</span>
       </span>
-      <span aria-hidden="true" className="rc-chev shrink-0 text-[15px] opacity-35">›</span>
+      <span aria-hidden="true" className="rc-chev shrink-0 text-body-lg-3 opacity-35">›</span>
     </button>
   );
 }
@@ -65,7 +65,7 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         <ModalHairline />
         <div className={wide ? "p-6" : "p-5"}>
-          <div className={wide ? "text-lg font-bold" : "text-base font-bold"}>{t("app.abort.title")}</div>
+          <div className={wide ? "text-title-5 font-bold" : "text-body-lg-6 font-bold"}>{t("app.abort.title")}</div>
 
           {wide ? (
             /* Jede Option sagt ihre Folge — die Verwechslung ist damit strukturell weg, nicht nur erklärt. */
@@ -86,7 +86,7 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
                   </div>
                 </div>
               </ActionBar>
-              <div className="text-sm opacity-70">{t("app.abort.help")}</div>
+              <div className="text-body-lg-5 opacity-70">{t("app.abort.help")}</div>
             </>
           )}
         </div>
@@ -104,16 +104,16 @@ export function RestartConfirm({ onKeepPlaying, onRestart }) {
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         <ModalHairline />
         <div className={wide ? "p-6" : "p-5"}>
-          <div className={wide ? "text-lg font-bold" : "text-base font-bold"}>{t("app.restart.title")}</div>
+          <div className={wide ? "text-title-5 font-bold" : "text-body-lg-6 font-bold"}>{t("app.restart.title")}</div>
           {/* Auf dem Desktop steht die Warnung VOR den Knöpfen — es gibt kein Scrollen, also keinen Grund,
               die Bestätigung nach oben zu ziehen. */}
-          {wide && <div className="text-sm opacity-70 mt-2.5">{t("app.restart.help")}</div>}
+          {wide && <div className="text-body-lg-5 opacity-70 mt-2.5">{t("app.restart.help")}</div>}
           {/* #362 Aktionsleiste OBEN: Weiterspielen (sekundär) links, Neustarten (rot) rechts. */}
           <ActionBar pad={wide ? 6 : 5} bg={STICKY_HEAD_BG} className={wide ? "mt-5" : "mt-3"}>
             <ActionButton kind="secondary" flex onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
             <ActionButton kind="danger" flex className="rc-btn" onClick={onRestart}>{t("app.restart")}</ActionButton>
           </ActionBar>
-          {!wide && <div className="text-sm opacity-70">{t("app.restart.help")}</div>}
+          {!wide && <div className="text-body-lg-5 opacity-70">{t("app.restart.help")}</div>}
         </div>
       </div>
     </div>

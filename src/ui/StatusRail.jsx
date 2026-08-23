@@ -16,7 +16,7 @@ function Collapsible({ title, collapsed, onToggle, children }) {
   return (
     <div className="pt-1 border-t" style={{ borderColor: DECK_BORDER }}>
       <button type="button" onClick={onToggle} data-sfx="none"
-        className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80"
+        className="w-full flex items-center gap-1 text-meta-1 uppercase tracking-wide opacity-50 hover:opacity-80"
         style={{ background: "transparent" }} aria-expanded={!collapsed}>
         <span className="inline-block w-2 text-center" aria-hidden="true">{collapsed ? "▸" : "▾"}</span>
         <span>{title}</span>
@@ -30,9 +30,9 @@ function Collapsible({ title, collapsed, onToggle, children }) {
 function MCell({ label, value, tone, sub }) {
   return (
     <div className="rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
-      <div className="text-[9px] uppercase tracking-wide opacity-50 truncate">{label}</div>
-      <div className="font-bold text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: tone || "#e8e8ea" }}>
-        {value}{sub && <span className="text-[10px] opacity-45 ml-1">{sub}</span>}
+      <div className="text-micro-3 uppercase tracking-wide opacity-50 truncate">{label}</div>
+      <div className="font-bold text-body-lg-5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: tone || "#e8e8ea" }}>
+        {value}{sub && <span className="text-meta-1 opacity-45 ml-1">{sub}</span>}
       </div>
     </div>
   );
@@ -90,7 +90,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" data-tut="bf-rail" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>
-        <div className="text-[10px] uppercase tracking-wide opacity-50 mb-2">{t("rail.mults")}</div>
+        <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2">{t("rail.mults")}</div>
         <div className="grid grid-cols-2 gap-2">
           <MCell label={t("rail.formation")} tone="#5ab87a" value={formCount > 0 ? t("rail.formation.value", { n: formCount, pct: formBonusPct }) : "–"} />
           <MCell label={t("rail.buildings")} tone="#d4a63a" value={buildBonusPct > 0 ? t("rail.pct", { pct: buildBonusPct }) : "–"} />
@@ -100,7 +100,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       </div>
 
       {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier. */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs pt-2 border-t" style={{ borderColor: DECK_BORDER }}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-body-5 pt-2 border-t" style={{ borderColor: DECK_BORDER }}>
         <span><span className="opacity-50">{t("rail.wins")} </span><b style={{ color: "#5ab87a" }}>{wins}</b></span>
         <span><span className="opacity-50">{t("rail.losses")} </span><b style={{ color: "#e0605a" }}>{losses}</b></span>
         <span><span className="opacity-50">{t("rail.rate")} </span><b style={{ color: winPct == null ? "#e8e8ea" : winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct == null ? "–" : `${winPct}%`}</b></span>
@@ -111,8 +111,8 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}
       <div className="pt-2 border-t grid gap-1" style={{ borderColor: DECK_BORDER }}>
         <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-wide opacity-50">{t("rail.analysis")}</span>
-          <span className="text-xs" title={fmtScore(best)}><span className="opacity-50">{t("rail.best")} </span><b style={{ color: "#d4a63a" }}>{fmtScoreShort(best)}</b></span>
+          <span className="text-meta-1 uppercase tracking-wide opacity-50">{t("rail.analysis")}</span>
+          <span className="text-body-5" title={fmtScore(best)}><span className="opacity-50">{t("rail.best")} </span><b style={{ color: "#d4a63a" }}>{fmtScoreShort(best)}</b></span>
         </div>
         {sourceShares(state).score > 0 && (
           <Collapsible title={t("rail.scoreSource")}
@@ -124,7 +124,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         <Collapsible title={t("rail.scoreTrend")}
           collapsed={options.collapseScoreTrend ?? true}
           onToggle={() => onOption && onOption({ collapseScoreTrend: !(options.collapseScoreTrend ?? true) })}>
-          <div className="flex items-center justify-end text-[10px] normal-case tracking-normal opacity-60 mb-1">
+          <div className="flex items-center justify-end text-meta-1 normal-case tracking-normal opacity-60 mb-1">
             <span className="flex gap-2">
               <span style={{ color: "#d4a63a" }}>{t("rail.trend.run")}</span>
               {recordTraj.length >= 2 ? <span style={{ color: "#8a7de0" }}>{t("rail.trend.record")}</span> : <span className="opacity-40">{t("rail.trend.first")}</span>}

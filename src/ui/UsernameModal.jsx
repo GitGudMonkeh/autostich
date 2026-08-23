@@ -60,7 +60,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           </ActionButton>
         </ActionBar>
         <div className="un-head text-center mb-4">
-          <div className="un-eyebrow text-xs uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
+          <div className="un-eyebrow text-body-5 uppercase tracking-widest" style={{ color: `var(--deck-a1, ${CY})` }}>
             {t(firstTime ? "name.eyebrow.first" : "name.eyebrow.change")}
           </div>
           {/* #desktop: In der breiten Fassung trägt die linke Spalte die MARKE — derselbe Text-Schlüssel und
@@ -69,7 +69,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
               zwei Sekunden vorher schon auf dem Startbildschirm. */}
           <div className="un-wm as-wordmark select-none hidden">{t("start.logo.alt")}</div>
           {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett. */}
-          <h2 className="un-title text-xl font-bold mt-1 ty-display"
+          <h2 className="un-title text-title-6 font-bold mt-1 ty-display"
             style={{ backgroundImage: `linear-gradient(90deg, var(--deck-a1,${CY}), var(--deck-a2,${VI}), var(--deck-a1,${CY}))`,
                      WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
                      filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
@@ -84,7 +84,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             gehört zur Ansprache — das Feld rechts braucht deshalb eine eigene Beschriftung. Auf dem Handy
             steht der Titel direkt darüber, dort wäre sie doppelt (`display: none`). Kein neuer Textschlüssel:
             `name.title.change` IST „Dein Name". */}
-        <div className="as-deskonly un-flabel un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
+        <div className="as-deskonly un-flabel un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
         {/* Eingabefeld im pulsierenden Cyan-Glührahmen (wie der „Lauf fortsetzen"-Rahmen). */}
         <div className="as-guide-glow rounded-lg">
           <input autoFocus value={name} maxLength={MAX}
@@ -92,11 +92,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
             placeholder={t("name.placeholder")}
             aria-invalid={!!errKey}
-            className="w-full px-3 py-2.5 rounded-lg text-sm outline-none text-center font-semibold tracking-wide"
+            className="w-full px-3 py-2.5 rounded-lg text-body-lg-5 outline-none text-center font-semibold tracking-wide"
             style={{ background: errKey ? "#221114" : "#0e1b22", border: `1px solid ${errKey ? ER : `var(--deck-a1, ${CY})`}`,
                      color: errKey ? "#f0bdb8" : "#a8ecf7" }} />
         </div>
-        <div className="text-[11px] opacity-45 mt-2 leading-snug">
+        <div className="text-meta-3 opacity-45 mt-2 leading-snug">
           {t("name.hint", { max: MAX })}
           {/* #datenschutz: Genau HIER wird der Name gewählt, der später an den globalen Highscore-Einträgen
               hängt — für alle sichtbar. Der Hinweis gehört deshalb an diese Zeile und nicht nur ins Menü:
@@ -110,7 +110,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         {/* #174 Begründung zum toten Speichern-Knopf. role=alert, damit Screenreader sie
             beim Tippen ansagen — sonst bleibt der Knopf für sie grundlos unbenutzbar. */}
         {errKey && (
-          <div role="alert" className="text-[11px] mt-1.5 leading-snug font-semibold" style={{ color: ER }}>
+          <div role="alert" className="text-meta-3 mt-1.5 leading-snug font-semibold" style={{ color: ER }}>
             {t(errKey, { max: MAX })}
           </div>
         )}
@@ -120,7 +120,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             damit man das Ergebnis seiner Wahl sieht, bevor man weiterklickt. */}
         {firstTime && (
           <div className="un-block mt-4">
-            <div className="un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
+            <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
             <div className="un-lang grid grid-cols-2 gap-2">
               {LOCALES.map((l) => {
                 const on = locale === l.id;
@@ -128,7 +128,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
                   /* #kante: gewählte Sprache mit violetter Kante und Schein statt gefüllter Fläche. */
                   <button key={l.id} type="button" role="radio" aria-checked={on}
                     onClick={() => { setLocaleId(l.id); if (onLang) onLang(l.id); }}
-                    className={`${on ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin px-3 py-2 rounded-lg text-sm font-semibold transition-all`}
+                    className={`${on ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin px-3 py-2 rounded-lg text-body-lg-5 font-semibold transition-all`}
                     style={on ? { "--c": `var(--deck-a1, ${VI})` } : undefined}>
                     {l.label}
                   </button>
@@ -140,14 +140,14 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
 
         {/* Live-Vorschau: so steht der Name später in der Rangliste (eigene Zeile, grün hervorgehoben). */}
         <div className="un-block mt-3">
-          <div className="un-slabel text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("name.preview.label")}</div>
+          <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1">{t("name.preview.label")}</div>
           {/* #zeichensatz: ♔ statt 🥇 — dasselbe Zeichen, das im Glossar für Bestenliste und Ranglisten-Lauf
               steht, und einfarbig wie der Rest. In der breiten Fassung sitzt es in einem runden Chip. */}
-          <div className="un-prev flex items-center gap-2 text-sm px-2 py-1.5 rounded"
+          <div className="un-prev flex items-center gap-2 text-body-lg-5 px-2 py-1.5 rounded"
             style={{ background: "#5ab87a22", border: "1px solid #5ab87a66" }}>
             <span className="un-prevchip w-6 shrink-0 text-center" style={{ fontSize: "14px", color: "#d8b25e" }}>♔</span>
             <span className="un-prevname flex-1 truncate font-semibold" style={{ color: trimmed ? "#5ab87a" : "#5f6b62" }}>
-              {trimmed || t("name.placeholder")}<span className="opacity-60 text-xs"> · {t("name.preview.you")}</span>
+              {trimmed || t("name.placeholder")}<span className="opacity-60 text-body-5"> · {t("name.preview.you")}</span>
             </span>
             <span className="un-prevscore shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
           </div>
