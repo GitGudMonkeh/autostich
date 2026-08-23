@@ -16,7 +16,7 @@ import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
-import { useIsWide } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
+import { useIsWide, useIsPhone } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
@@ -81,6 +81,7 @@ function KeywordGlossary({ tokens }) {
 export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
+  const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
   // #lv-fluegel: ab 1280 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
   const held = skills.map((id) => skillDef(id)).filter(Boolean);
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
@@ -208,7 +209,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {/* #cornerart: die Ecken folgen dem AKTIVEN REITER (`curG.arch`), nicht dem Kartenakzent —
             der Kopf sagt damit dasselbe wie die Reiterzeile darunter. Gate wie beim Emblem im JSX,
             damit unterhalb 1280 px kein <img> im DOM steht und kein Handy die Bilder lädt. */}
-        {wide && curG && <CardCorners artKey={curG.arch} />}
+        {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1 pt-6">
           <div className="text-body-5 uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
@@ -450,10 +451,14 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                   const s = skillDef(id);
                   const sel = pending === id;
                   const col = curG.meta.color;
-                  /* #skillart: Kopfstreifen NUR ab 1280 px. Am Handy ist die Karte einspaltig und der Text
-                     trägt sie allein; eine 130-px-Bildzone nähme dort den halben Bildschirm. Weil das Gate im
-                     JSX sitzt (nicht in CSS), lädt der Browser die Bilder dort auch gar nicht erst. */
-                  const art = wide ? skillArt(id) : null;
+                  /* #skillart / #mobil-emblem: ZWEI Fassungen, ein Gate je Fassung, und dazwischen NICHTS.
+                     Ab 1280 px der Kopfstreifen, unter 640 px das Eck-Emblem, im Band 640–1279 px kein
+                     <img> — dort ist die Kachel zwei- oder dreispaltig und hat die freie Ecke nicht, die
+                     die mobile Fassung benutzt. Deshalb `phone` und nicht `!wide`: die Verneinung würde
+                     das mittlere Band mit anschalten, das der Umfang ausdrücklich ausnimmt.
+                     Das Gate sitzt im JSX und nicht in CSS, damit im ausgelassenen Band gar kein <img>
+                     im DOM steht und kein Gerät Bilder lädt, die es nicht zeigt. */
+                  const art = (wide || phone) ? skillArt(id) : null;
                   const badges = (
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
@@ -483,12 +488,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                        als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
                        Die Fraktion steht weiterhin im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
-                      className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? " sk-offer-art" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
+                      className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? (wide ? " sk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
                       style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
                       {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen darunter
                           stehen an derselben Stelle wie ohne Bild, nur tiefer (Polster in `.sk-offer-art`).
                           Ohne Bild bleibt der Baum exakt wie vorher: die Handy-Fassung ist unberührt. */}
-                      {art && <img src={art} alt="" aria-hidden="true" className="sk-strip" loading="lazy" decoding="async" />}
+                      {art && <img src={art} alt="" aria-hidden="true" className={wide ? "sk-strip" : "mc-emblem"} loading="lazy" decoding="async" />}
                       {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>

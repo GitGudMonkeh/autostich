@@ -1741,6 +1741,85 @@ b, strong { font-weight: 600; }
    erst drei Bildschirme später bemerkt. */
 .co-head { position: relative; z-index: 1; }
 
+/* #mobil-emblem — Kachel-Emblem und Kopf-Ornament UNTER 640 px (SkillSelect/PerkSelect/
+   LegendarySelect). Eigener Zweig, kein Umbau der Regeln darüber: `.sk-strip`, `.pk-strip` und
+   `.co-corner` bleiben Wort für Wort, wie das Sicht-Gate sie abgenommen hat.
+
+   AM GERÄT ENTSCHIEDEN (V3, 23.08.2026). Vier Fassungen standen nebeneinander auf echten Kacheln —
+   ohne Bild, Banner, Eck-Emblem, Eck-Emblem überstehend (docs/workstreams/mobile-icons/
+   mobile-tile-design/visual/variants-*.png). Der Spruch: „corner emblem it is. aber mit weniger
+   ausfaden zur Mitte." Der Banner fiel aus einem STRUKTURELLEN Grund durch, nicht aus einem
+   justierbaren: er darf hier keine Polsterung schieben (s. u.), also stünden Badge-Zeile und Name
+   zwangsläufig im hellsten Teil des Emblems.
+
+   ES DARF SICH NICHTS IN DER GRÖSSE ÄNDERN. Das ist die Vorgabe mit der längsten Reichweite und der
+   Grund, warum die Desktop-Bauart hier NICHT geht: `.sk-offer-art` schiebt mit `padding-top: 176px`
+   den Text nach unten. Das Emblem steht deshalb absolut und AUSSERHALB des Textflusses, in dem
+   Platz, den die Badge-Zeile ohnehin frei lässt. Nachgemessen statt geglaubt: der Bogen vergleicht
+   jede Variantenkachel gegen dieselbe Kachel ohne Bild, Boxmaße und berechnete Schriftgrößen.
+
+   KEIN `object-position`, und das ist keine Auslassung. Alle 112 Kachel-Embleme liegen als 384×384-
+   Quadrate aus (scripts/skill-art-build.py: die Skill-, `perkcats`- und `legendaries`-Lose sind
+   quadratisch). `object-fit: cover` von einem Quadrat in ein Quadrat schneidet NICHTS ab — es gibt
+   hier keinen Anker zu setzen. Genau das unterscheidet diese Fassung von der Desktop-Zone, wo ein
+   breiter Streifen aus dem Quadrat geschnitten wird und die Verankerung eine echte Frage ist.
+
+   KEIN ZWEITES GEBACKENES LOS, und ebenfalls gemessen. Der Bloom steckt in den Dateien und skaliert
+   mit dem Bild, fest bleibt also der ANTEIL: 5,78 % der Emblembreite im Skill-Los, 6,04 % im
+   Perk-Los — an der Desktop-Zone UND bei 88 px. Das Emblem ist kleiner, das Bild ist dasselbe. Die
+   Bloom-Drift, die ein Mobil-Los überhaupt denkbar machte, gehörte den FLIESSENDEN Breiten: die
+   Emblembox eines vollflächigen Streifens wandert im Telefon-Band um Faktor 2,3 (245→564 px,
+   gemessen in visual/M-tile-widths.json). Eine feste Box hat das nicht.
+
+   DIE 88 px sind gewählt, nicht gerechnet — am Gerät, gegen die schmalste gemessene Kachel
+   (233 px auf dem Perk-Bildschirm bei 320 px Fenster). Wer sie ändert, ändert nur die Größe des
+   Bildes, nicht seinen Ausschnitt: s. o., cover schneidet nichts.
+
+   DIE MASKE ist die Spalte „less fade" aus visual/fade-*.png. Ohne sie endet das Emblem auf seiner
+   eigenen Bildkante und das Motiv wird von einer geraden Linie quer durch die Kachel abgeschnitten —
+   die Kontrollspalte auf demselben Bogen zeigt genau das.
+
+   `mix-blend-mode: screen` und KEIN `filter`, aus denselben Gründen wie oben: schwarzer Grund statt
+   Alphakanal, und `phase:levelup` klemmt beim Mount ohnehin (271–417 ms).
+
+   Das Gate sitzt im JSX (`useIsPhone` in src/ui/useIsWide.js), nicht hier — ein CSS-Gate hätte das
+   <img> im DOM stehen lassen und das Telefon die Bilder laden lassen, um sie zu verstecken. */
+@media (max-width: 639.98px) {
+  /* Ohne Bild bekommt die Kachel WEDER dieses Element NOCH diese Klasse — `art` schaltet beides,
+     dieselbe Bauart wie `.sk-offer-art` am Desktop. Eine Kachel ohne Emblem behält damit exakt den
+     Baum, den sie vorher hatte. */
+  .mc-tile { position: relative; overflow: hidden; }
+  /* Text über das Bild heben. Gleiche Begründung wie bei `.sk-offer-art > *:not(img)` und `.co-head`:
+     absolut Positioniertes malt über nicht-positionierten Fluss-Inhalt. Die Badges tragen Schrift,
+     also gehören sie nach oben — das Emblem ist der Grund, nicht der Inhalt. */
+  .mc-tile > *:not(img) { position: relative; }
+  .mc-emblem {
+    position: absolute; top: 0; right: 0; z-index: 0;
+    width: 88px; height: 88px;
+    object-fit: cover;
+    mix-blend-mode: screen; pointer-events: none;
+    -webkit-mask-image: radial-gradient(120% 120% at 100% 0%, #000 58%, transparent 88%);
+    mask-image: radial-gradient(120% 120% at 100% 0%, #000 58%, transparent 88%);
+  }
+  /* EIN Ornament im Kartenkopf statt des gespiegelten Paars. Zwei 300-px-Kopien überlappen auf einem
+     356-px-Kopf um rund 244 px und ADDIEREN unter `screen` ihr Licht — ein heller Schmier hinter dem
+     Titel statt zweier Ornamente.
+
+     Ausgeblendet statt verkleinert, und das ist der Punkt: eine einzelne Kopie passt in ihrer
+     GEBACKENEN Breite von 300 px ab 334 px Fensterbreite in den Kopf (gemessen, M-tile-widths.json:
+     die Polsterbox der Karte ist Fenster − 34). Damit bleibt `strip_w` im Backskript die CSS-Breite,
+     und der Wächter in test/corner-art.test.js, der beide aneinandernagelt, hält weiter.
+
+     Unter 334 px steht das Ornament rechts über und wird an der Polsterkante der Karte beschnitten.
+     Das Licht der Master läuft bei ~213 px aus (docs/art/corners/README.md), abgeschnitten wird also
+     Dunkles. Auf der 320-px-Aufnahme nachsehen, nicht glauben.
+
+     Ausgeblendet in CSS und nicht als Prop: `CardCorners.jsx` behält damit genau zwei <img>, was
+     test/corner-art.test.js festhält, und beide Kopien teilen sich EINE `src` — es kostet keinen
+     zweiten Abruf. */
+  .co-corner-r { display: none; }
+}
+
 /* Optionen-Zeile: die Kante zeigt, was AN ist — grün bei eingeschaltetem Schalter, sonst neutral. So sieht
    man beim Scrollen, was vom Standard abweicht, ohne jeden Schalter einzeln zu lesen.
    Warum `:has()` statt eines Props an der Zeile: der Zustand steckt im Schalter, den die Zeile nur als

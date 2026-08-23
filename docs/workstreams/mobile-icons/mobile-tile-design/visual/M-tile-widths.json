@@ -1,0 +1,2135 @@
+{
+  "note": "Deliverable M. Measured in the running application; `predicted` is the planning report's derivation from the stylesheet, carried along so the two are compared and not conflated.",
+  "seed": "11",
+  "port": 5187,
+  "results": [
+    {
+      "viewport": {
+        "w": 320,
+        "h": 844
+      },
+      "scrollbars": "overlay",
+      "predicted": {
+        "perk": 235,
+        "skill": 251,
+        "legendary": 251
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 306,
+          "w": 250,
+          "h": 587.75,
+          "templateColumns": "250px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 72
+        },
+        "ornamentRoom": -14,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 306,
+            "w": 250,
+            "h": 254.75,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 568.75,
+            "w": 250,
+            "h": 177.75,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 176,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 754.5,
+            "w": 250,
+            "h": 139.25,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 288,
+          "h": 776.47,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 321.77,
+          "w": 238,
+          "h": 429.88,
+          "templateColumns": "238px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 238,
+          "h": 102
+        },
+        "ornamentRoom": -14,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 321.77,
+            "w": 238,
+            "h": 172.38,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 170,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 504.14,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 632.89,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 279,
+          "w": 254,
+          "h": 158.5,
+          "templateColumns": "254px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 126
+        },
+        "ornamentRoom": -14,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 279,
+            "w": 254,
+            "h": 158.5,
+            "paddingBoxWidth": 249,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 320,
+        "h": 844
+      },
+      "scrollbars": "classic",
+      "predicted": {
+        "perk": 235,
+        "skill": 251,
+        "legendary": 251
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 280,
+          "h": 760,
+          "paddingBoxWidth": 270,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 306,
+          "w": 234,
+          "h": 626.25,
+          "templateColumns": "234px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 238,
+          "h": 72
+        },
+        "ornamentRoom": -30,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 306,
+            "w": 234,
+            "h": 274,
+            "paddingBoxWidth": 229,
+            "paddingBoxHeight": 272,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 588,
+            "w": 234,
+            "h": 197,
+            "paddingBoxWidth": 229,
+            "paddingBoxHeight": 195,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 793,
+            "w": 234,
+            "h": 139.25,
+            "paddingBoxWidth": 229,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 280,
+          "h": 776.47,
+          "paddingBoxWidth": 270,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 321.77,
+          "w": 222,
+          "h": 429.88,
+          "templateColumns": "222px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 222,
+          "h": 102
+        },
+        "ornamentRoom": -30,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 321.77,
+            "w": 222,
+            "h": 172.38,
+            "paddingBoxWidth": 217,
+            "paddingBoxHeight": 170,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 504.14,
+            "w": 222,
+            "h": 118.75,
+            "paddingBoxWidth": 217,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 632.89,
+            "w": 222,
+            "h": 118.75,
+            "paddingBoxWidth": 217,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 280,
+          "h": 760,
+          "paddingBoxWidth": 278,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 279,
+          "w": 246,
+          "h": 158.5,
+          "templateColumns": "246px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 246,
+          "h": 126
+        },
+        "ornamentRoom": -22,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 279,
+            "w": 246,
+            "h": 158.5,
+            "paddingBoxWidth": 241,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "scrollbars": "overlay",
+      "predicted": {
+        "perk": 305,
+        "skill": 321,
+        "legendary": 321
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 320,
+          "h": 549.25,
+          "templateColumns": "320px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 72
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 320,
+            "h": 254.75,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 320,
+            "h": 158.5,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 693.25,
+            "w": 320,
+            "h": 120,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 358,
+          "h": 776.47,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 308,
+          "h": 412,
+          "templateColumns": "308px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 308,
+          "h": 86.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 308,
+            "h": 154.5,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 420.94,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 549.69,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 324,
+          "h": 139.25,
+          "templateColumns": "324px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 110.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 324,
+            "h": 139.25,
+            "paddingBoxWidth": 319,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "scrollbars": "classic",
+      "predicted": {
+        "perk": 305,
+        "skill": 321,
+        "legendary": 321
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 350,
+          "h": 760,
+          "paddingBoxWidth": 340,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 304,
+          "h": 549.25,
+          "templateColumns": "304px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 308,
+          "h": 72
+        },
+        "ornamentRoom": 40,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 304,
+            "h": 254.75,
+            "paddingBoxWidth": 299,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 304,
+            "h": 158.5,
+            "paddingBoxWidth": 299,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 693.25,
+            "w": 304,
+            "h": 120,
+            "paddingBoxWidth": 299,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 350,
+          "h": 776.47,
+          "paddingBoxWidth": 340,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 306.44,
+          "w": 292,
+          "h": 412,
+          "templateColumns": "292px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 292,
+          "h": 86.67
+        },
+        "ornamentRoom": 40,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 306.44,
+            "w": 292,
+            "h": 154.5,
+            "paddingBoxWidth": 287,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 470.94,
+            "w": 292,
+            "h": 118.75,
+            "paddingBoxWidth": 287,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 599.69,
+            "w": 292,
+            "h": 118.75,
+            "paddingBoxWidth": 287,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 350,
+          "h": 760,
+          "paddingBoxWidth": 348,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 316,
+          "h": 139.25,
+          "templateColumns": "316px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 316,
+          "h": 110.67
+        },
+        "ornamentRoom": 48,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 316,
+            "h": 139.25,
+            "paddingBoxWidth": 311,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 480,
+        "h": 844
+      },
+      "scrollbars": "overlay",
+      "predicted": {
+        "perk": 395,
+        "skill": 411,
+        "legendary": 411
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 448,
+          "h": 760,
+          "paddingBoxWidth": 446,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 410,
+          "h": 472.25,
+          "templateColumns": "410px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 414,
+          "h": 72
+        },
+        "ornamentRoom": 146,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 410,
+            "h": 197,
+            "paddingBoxWidth": 405,
+            "paddingBoxHeight": 195,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 469,
+            "w": 410,
+            "h": 139.25,
+            "paddingBoxWidth": 405,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 616.25,
+            "w": 410,
+            "h": 120,
+            "paddingBoxWidth": 405,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 448,
+          "h": 776.47,
+          "paddingBoxWidth": 446,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 398,
+          "h": 358.38,
+          "templateColumns": "398px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 398,
+          "h": 86.67
+        },
+        "ornamentRoom": 146,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 398,
+            "h": 136.63,
+            "paddingBoxWidth": 393,
+            "paddingBoxHeight": 135,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 403.06,
+            "w": 398,
+            "h": 100.88,
+            "paddingBoxWidth": 393,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 513.94,
+            "w": 398,
+            "h": 100.88,
+            "paddingBoxWidth": 393,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 448,
+          "h": 760,
+          "paddingBoxWidth": 446,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 414,
+          "h": 120,
+          "templateColumns": "414px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 414,
+          "h": 110.67
+        },
+        "ornamentRoom": 146,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 414,
+            "h": 120,
+            "paddingBoxWidth": 409,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 480,
+        "h": 844
+      },
+      "scrollbars": "classic",
+      "predicted": {
+        "perk": 395,
+        "skill": 411,
+        "legendary": 411
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 440,
+          "h": 760,
+          "paddingBoxWidth": 430,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 394,
+          "h": 472.25,
+          "templateColumns": "394px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 398,
+          "h": 72
+        },
+        "ornamentRoom": 130,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 394,
+            "h": 197,
+            "paddingBoxWidth": 389,
+            "paddingBoxHeight": 195,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 469,
+            "w": 394,
+            "h": 139.25,
+            "paddingBoxWidth": 389,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 616.25,
+            "w": 394,
+            "h": 120,
+            "paddingBoxWidth": 389,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 440,
+          "h": 776.47,
+          "paddingBoxWidth": 430,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 382,
+          "h": 358.38,
+          "templateColumns": "382px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 382,
+          "h": 86.67
+        },
+        "ornamentRoom": 130,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 382,
+            "h": 136.63,
+            "paddingBoxWidth": 377,
+            "paddingBoxHeight": 135,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 403.06,
+            "w": 382,
+            "h": 100.88,
+            "paddingBoxWidth": 377,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 513.94,
+            "w": 382,
+            "h": 100.88,
+            "paddingBoxWidth": 377,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 480,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 440,
+          "h": 760,
+          "paddingBoxWidth": 438,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 406,
+          "h": 120,
+          "templateColumns": "406px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 406,
+          "h": 110.67
+        },
+        "ornamentRoom": 138,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 406,
+            "h": 120,
+            "paddingBoxWidth": 401,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 639,
+        "h": 844
+      },
+      "scrollbars": "overlay",
+      "predicted": {
+        "perk": 554,
+        "skill": 570,
+        "legendary": 570
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 607,
+          "h": 760,
+          "paddingBoxWidth": 605,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 569,
+          "h": 414.5,
+          "templateColumns": "569px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 573,
+          "h": 72
+        },
+        "ornamentRoom": 305,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 569,
+            "h": 177.75,
+            "paddingBoxWidth": 564,
+            "paddingBoxHeight": 176,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 449.75,
+            "w": 569,
+            "h": 120,
+            "paddingBoxWidth": 564,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 577.75,
+            "w": 569,
+            "h": 100.75,
+            "paddingBoxWidth": 564,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 607,
+          "h": 776.47,
+          "paddingBoxWidth": 605,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 557,
+          "h": 340.5,
+          "templateColumns": "557px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 557,
+          "h": 86.67
+        },
+        "ornamentRoom": 305,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 557,
+            "h": 118.75,
+            "paddingBoxWidth": 552,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 385.19,
+            "w": 557,
+            "h": 100.88,
+            "paddingBoxWidth": 552,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 496.06,
+            "w": 557,
+            "h": 100.88,
+            "paddingBoxWidth": 552,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 607,
+          "h": 760,
+          "paddingBoxWidth": 605,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 573,
+          "h": 120,
+          "templateColumns": "573px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 573,
+          "h": 110.67
+        },
+        "ornamentRoom": 305,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 573,
+            "h": 120,
+            "paddingBoxWidth": 568,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "w": 639,
+        "h": 844
+      },
+      "scrollbars": "classic",
+      "predicted": {
+        "perk": 554,
+        "skill": 570,
+        "legendary": 570
+      },
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 599,
+          "h": 760,
+          "paddingBoxWidth": 597,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 561,
+          "h": 414.5,
+          "templateColumns": "561px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 565,
+          "h": 72
+        },
+        "ornamentRoom": 297,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 561,
+            "h": 177.75,
+            "paddingBoxWidth": 556,
+            "paddingBoxHeight": 176,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 449.75,
+            "w": 561,
+            "h": 120,
+            "paddingBoxWidth": 556,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 577.75,
+            "w": 561,
+            "h": 100.75,
+            "paddingBoxWidth": 556,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 599,
+          "h": 776.47,
+          "paddingBoxWidth": 589,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 541,
+          "h": 340.5,
+          "templateColumns": "541px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 541,
+          "h": 86.67
+        },
+        "ornamentRoom": 289,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 541,
+            "h": 118.75,
+            "paddingBoxWidth": 536,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 385.19,
+            "w": 541,
+            "h": 100.88,
+            "paddingBoxWidth": 536,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 496.06,
+            "w": 541,
+            "h": 100.88,
+            "paddingBoxWidth": 536,
+            "paddingBoxHeight": 99,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ]
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 639,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 599,
+          "h": 760,
+          "paddingBoxWidth": 597,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 565,
+          "h": 120,
+          "templateColumns": "565px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 565,
+          "h": 110.67
+        },
+        "ornamentRoom": 297,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 565,
+            "h": 120,
+            "paddingBoxWidth": 560,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ]
+      }
+    }
+  ]
+}

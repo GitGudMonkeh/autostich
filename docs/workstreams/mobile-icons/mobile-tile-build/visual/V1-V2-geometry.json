@@ -1,0 +1,329 @@
+{
+  "note": "D4 — every tile box and every type size, V1 against V2 at the widths both captured (390 px). A non-empty differences list means the emblem changed a size, which the design forbids.",
+  "compared": 14,
+  "differences": [],
+  "rows": [
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "skill",
+      "tile": 0,
+      "V1": {
+        "w": 320,
+        "h": 254.75,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 254.75,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "skill",
+      "tile": 1,
+      "V1": {
+        "w": 320,
+        "h": 158.5,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 158.5,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "skill",
+      "tile": 2,
+      "V1": {
+        "w": 320,
+        "h": 120,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 120,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "perk",
+      "tile": 0,
+      "V1": {
+        "w": 308,
+        "h": 154.5,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 154.5,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "perk",
+      "tile": 1,
+      "V1": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "perk",
+      "tile": 2,
+      "V1": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "de",
+      "screen": "legendary",
+      "tile": 0,
+      "V1": {
+        "w": 324,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 324,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "skill",
+      "tile": 0,
+      "V1": {
+        "w": 320,
+        "h": 254.75,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 254.75,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "skill",
+      "tile": 1,
+      "V1": {
+        "w": 320,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "skill",
+      "tile": 2,
+      "V1": {
+        "w": 320,
+        "h": 120,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 320,
+        "h": 120,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "perk",
+      "tile": 0,
+      "V1": {
+        "w": 308,
+        "h": 136.63,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 136.63,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "perk",
+      "tile": 1,
+      "V1": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "perk",
+      "tile": 2,
+      "V1": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 308,
+        "h": 118.75,
+        "type": {
+          "name": "16px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    },
+    {
+      "vp": 390,
+      "lang": "en",
+      "screen": "legendary",
+      "tile": 0,
+      "V1": {
+        "w": 324,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "V2": {
+        "w": 324,
+        "h": 139.25,
+        "type": {
+          "name": "15px",
+          "badge": "10px"
+        }
+      },
+      "same": true
+    }
+  ]
+}

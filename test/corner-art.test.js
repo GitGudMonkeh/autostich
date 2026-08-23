@@ -342,12 +342,33 @@ describe("#cornerart — wiring", () => {
     expect(isFiligree("legendary"), "the dropped gold key must not come back silently").toBe(false);
   });
 
-  it("the desktop gate is in JSX on ALL THREE screens, not in CSS", () => {
-    expect(skillJsx).toMatch(/\{wide && curG && <CardCorners/);
-    expect(perkJsx).toMatch(/\{inWings && <CardCorners/);
-    expect(legJsx).toMatch(/\{wide && curG && <CardCorners/);
-    // No media query may render or hide the ornaments — a CSS gate still puts the <img> in the DOM.
+  /* REWRITTEN, 2026-08-23 (mobile-tile-build). The ornaments now render on a phone as well, so the
+     gate is two queries rather than one — and it stays in JSX for the reason it always did: a CSS-only
+     gate leaves the <img> in the DOM and the device fetches an image it never shows.
+
+     The CSS clause below CHANGED MEANING and is worth reading twice. `.co-corner` itself must still
+     carry no media query — its zone is one zone at every width, and a conditional there would mean two
+     zones pretending to be one. What IS conditional is how MANY copies are shown: the phone shows one
+     instead of the mirrored pair, and that is a rule on `.co-corner-r`, not on `.co-corner`. */
+  it("the gate is in JSX on ALL THREE screens, and covers desktop AND phone", () => {
+    expect(skillJsx).toMatch(/\{\(wide \|\| phone\) && curG && <CardCorners/);
+    expect(perkJsx).toMatch(/\{\(inWings \|\| onPhone\) && <CardCorners/);
+    expect(legJsx).toMatch(/\{\(wide \|\| phone\) && curG && <CardCorners/);
+    // No media query may render or hide the ornament ITSELF — a CSS gate still puts the <img> in the DOM.
     expect(coCorner).not.toMatch(/@media/);
+  });
+
+  it("the phone shows ONE ornament, and it keeps the baked width", () => {
+    /* Two 300 px copies overlap by ~244 px on a 356 px card head and ADD light through screen
+       blending. Hiding the mirrored copy — rather than narrowing the zone — is what lets the ornament
+       keep the width the bloom radius was divided by, so the guard above that pins the CSS width to
+       `strip_w` keeps holding. Measured: a single copy fits from a 334 px viewport upward. */
+    const at = css.indexOf("@media (max-width: 639.98px)");
+    expect(at, "no phone media query in index.css").toBeGreaterThan(-1);
+    const phoneBlock = css.slice(at, css.indexOf("\n}", at));
+    expect(phoneBlock).toMatch(/\.co-corner-r \{ display: none; \}/);
+    // …and the width is NOT re-declared there: that would be a second zone, and a second bloom radius.
+    expect(phoneBlock).not.toMatch(/\.co-corner\s*\{/);
   });
 
   it("the head is lifted above the ornaments on every screen", () => {

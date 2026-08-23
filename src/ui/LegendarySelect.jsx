@@ -9,7 +9,7 @@ import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Ken
 import { HeldSkills } from "./HeldSkills.jsx";   // gehaltene Skills — geteilt mit Skill- und Perk-Auswahl
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
-import { useIsWide } from "./useIsWide.js";
+import { useIsWide, useIsPhone } from "./useIsWide.js";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
@@ -36,6 +36,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
   const legs = offer.map((id) => skillDef(id)).filter(Boolean);
   const rerollsLeg = state.rerollsLeg || 0; // M1: dedizierter R29-Reroll-Token
   const wide = useIsWide();
+  const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
 
   /* Swipe-Pager je Archetyp — dieselbe Bedienung wie die Skill-Auswahl (SkillSelect §Pager).
      Ohne ihn stand hier eine lange Liste, in der die Fraktionen nur am Chip zu unterscheiden waren.
@@ -80,7 +81,7 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
               dasselbe Ornament. Am Sicht-Gate wurde eine eigene goldene Phasen-Ecke ausprobiert und
               verworfen (Q9, 22.08.2026) — das Legendäre steht im Titel und im Gold-Rahmen der Karte,
               es braucht keine zweite Stimme im Kopf. */}
-          {wide && curG && <CardCorners artKey={curG.arch} />}
+          {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
           <GlossaryPanel className="absolute top-3 right-3 z-10" />
 
           <div className="co-head text-center mb-1 pt-6">
@@ -173,17 +174,17 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
                      Die vier legendären Blitz-Embleme liegen bereits vor (SK_LIGHTNING_L01…L04); die übrigen
                      Fraktionen bekommen ihre, sobald sie gezeichnet sind — bis dahin gibt `skillArt` `null`
                      zurück und die Karte sieht aus wie ohne Bild. */
-                  const art = wide ? skillArt(s.id) : null;
+                  const art = (wide || phone) ? skillArt(s.id) : null;
                   return (
                     /* #kante: Legendäre Wahl — Kanten-Karte MIT dem animierten Goldrahmen (`as-legendary`).
                        Der einzige Ort außer den Freischaltungen im Endscreen, wo beides zusammenkommt:
                        hier wählt man nur einmal pro Lauf, und das darf man sehen. */
                     <button key={s.id} onClick={() => onPick(s.id)}
-                      className={`lv-offercard as-edge-card is-sel as-legendary${art ? " sk-offer-art" : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5`}
+                      className={`lv-offercard as-edge-card is-sel as-legendary${art ? (wide ? " sk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5`}
                       style={{ "--c": GOLD }}>
                       {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen
                           darunter stehen an derselben Stelle wie ohne Bild, nur tiefer (`.sk-offer-art`). */}
-                      {art && <img src={art} alt="" aria-hidden="true" className="sk-strip" loading="lazy" decoding="async" />}
+                      {art && <img src={art} alt="" aria-hidden="true" className={wide ? "sk-strip" : "mc-emblem"} loading="lazy" decoding="async" />}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}88` }}>

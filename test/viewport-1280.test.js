@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DESKTOP_MIN, DT_NAME, DT } from "./desktopBreakpoint.js";
+import { DESKTOP_MIN, PHONE_MAX, DT_NAME, DT } from "./desktopBreakpoint.js";
 
 /* #viewport-1280 — the completeness guard for the threshold move (22.08.2026).
    ============================================================================
@@ -145,14 +145,34 @@ describe("#viewport-1280 — the threshold moved completely", () => {
       `a min-width above 1000 px is neither --breakpoint-${DT_NAME} (${DESKTOP_MIN}px) nor a named band`).toBe("");
   });
 
-  it("3. exactly one counter-edge exists, and it is the token minus 0.02", () => {
-    /* The counter-edge is identified by SHAPE, not by value: a fractional max-width is the "just
-       below the breakpoint" idiom and nothing else in this stylesheet uses one. Deriving the expected
-       number from the token is the whole point — a hand-typed 1279.98 beside a token that says
-       something else is precisely the drift this guards against. */
+  it("3. every counter-edge is derived from a threshold, never hand-typed", () => {
+    /* A counter-edge is identified by SHAPE: a fractional max-width is the "just below the
+       breakpoint" idiom, and this stylesheet uses one per threshold it has to sit under. Deriving the
+       expected number is the whole point — a hand-typed 1279.98 beside a token that says something
+       else is precisely the drift this guards against.
+
+       There were two thresholds from `mobile-tile-build` (2026-08-23) onward, and the assertion moved
+       from "exactly one edge" to "every edge is derived" rather than being relaxed: the count was
+       never the invariant, the derivation was. The set is closed — an edge that matches neither
+       threshold still fails, which is what keeps a stray media query from hiding here.
+
+         · DESKTOP_MIN − 0.02  — just below the desktop block. Required: without it the desktop
+           counter-edge is gone and this assertion would pass on an empty list.
+         · PHONE_MAX           — the phone branch, just below Tailwind's built-in `sm:` (640px).
+           Tailwind ships that breakpoint, so it has no `--breakpoint-*` token to read; the number
+           lives in src/ui/useIsWide.js and this is where the CSS copy is checked against it. */
     const edges = [...css.matchAll(/max-width:\s*(\d+\.\d+)px/g)].map((m) => Number(m[1]));
-    expect(edges.length, `expected exactly one fractional max-width, found ${edges.length}: ${edges.join(", ")}`).toBe(1);
-    expect(edges[0], `the counter-edge must be --breakpoint-${DT_NAME} minus 0.02`).toBeCloseTo(DESKTOP_MIN - 0.02, 5);
+    const near = (a, b) => b != null && Math.abs(a - b) < 1e-5;
+
+    expect(edges.filter((e) => near(e, DESKTOP_MIN - 0.02)).length,
+      `no fractional max-width equals --breakpoint-${DT_NAME} minus 0.02 — the desktop counter-edge `
+      + "is gone, and without this check the assertion below would pass on an empty list").toBeGreaterThan(0);
+
+    const strays = edges.filter((e) => !near(e, DESKTOP_MIN - 0.02) && !near(e, PHONE_MAX));
+    expect([...new Set(strays)].join(", "),
+      `a fractional max-width is neither --breakpoint-${DT_NAME} minus 0.02 (${DESKTOP_MIN - 0.02}) nor `
+      + `PHONE_MAX (${PHONE_MAX}) from src/ui/useIsWide.js. Counter-edges are derived from a threshold, `
+      + "never typed by hand.").toBe("");
   });
 
   it("4. the named variant is the only route — no arbitrary min-[Npx]: survives in src/", () => {
