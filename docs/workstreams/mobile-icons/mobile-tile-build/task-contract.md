@@ -17,9 +17,9 @@ aber das ist ja Feintuning", and on the fade comparison sheet: **„less fade"**
 | | |
 | --- | --- |
 | **Branch** | `task/mobile-tile-build`, under `feature/mobile-icons` |
-| **Base** | `dev` @ TODO — resolve at creation. **Branch fresh off `dev`, not off part 1's branch:** part 1 is documentation and tooling, part 2 edits application source, and stacking the second on the first would make part 1's evidence unmergeable on its own |
+| **Base** | `feature/mobile-icons` @ `899089ccb7724be37201a81547db5fef32c2d8e9` — read back at creation. **Not `dev`, and the draft's reasoning is superseded:** part 1 was integrated into the feature branch first, and the feature branch was then brought up to current `dev`, so branching from it is `git-workflow.md` §4's rule rather than a stack on an unmerged sibling. That base carries part 1's measurement and sheets, which part 2 reads |
 | **Owner** | repository owner |
-| **Integrator** | TODO |
+| **Integrator** | repository owner, through this session |
 | **Reviewer** | none requested; review is optional and risk-based (`AGENTS.md` — *Independent review*) |
 | **Concurrency** | one writer; sequential sessions may continue the task in the same worktree |
 
@@ -27,7 +27,7 @@ aber das ist ja Feintuning", and on the fade comparison sheet: **„less fade"**
 
 | | |
 | --- | --- |
-| **Worktree** | `<repo-parent>/Autostich-worktrees/mobile-tile-build` |
+| **Worktree** | `C:/Code/Autostich-worktrees/mobile-tile-build` — read back from `git rev-parse --show-toplevel` |
 | **Preview port** | `5188` — 5186 is held by `icon-position-review` (invisible to a cockpit grep, it lives on that branch), 5187 by part 1 |
 | **Server invocation** | `npm run dev -- --port 5188 --strictPort` |
 
