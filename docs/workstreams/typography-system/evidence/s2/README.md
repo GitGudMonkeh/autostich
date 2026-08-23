@@ -169,3 +169,19 @@ reports that result as approved.
 
 The 168 utilities on screens the survey cannot reach (S0 §5) carry no machine check in either
 direction. `DeckDetail` and `BuildSummary` are the largest; they should be opened deliberately at V3.
+
+---
+
+## 9. V3 — the material for the human gate
+
+`evidence/v3/compare.html` — **150 before/after pairs**, every screen at every viewport in both
+languages, V1 left and V2 right, same state and same DPR. Open it from this directory; the paths are
+relative to `evidence/`.
+
+`evidence/v3/pairs/` — six pre-rendered pairs for the screens where the change is easiest to read:
+guide, glossary, upgrades, hub, victory (all at 1280×720) and stats at 1920×1080.
+
+**This is material, not a verdict.** V3 is a person comparing them (`task-lifecycle.md` §8), and no
+agent reports the result as approved. The classification table (V4) is written after that, and every
+finding gets an ID — including the ones that turn out to be *expected*: the lighter headings from the
+weight ladder, and the ~42 % of text that moved by design.
