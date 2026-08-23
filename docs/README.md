@@ -56,6 +56,7 @@ document can be perfectly current while its branch references are stale.
 | `stein-fraktion.md` | **draft** / living | 2026-08-18 | Stone faction. Declares *"Status: KONZEPT. Nur Vision, Fundament und Abgrenzung. Noch keine Skills, noch keine Zahlen."* |
 | `eis-rework.md` | **draft** | 2026-08-15 | Ice redesign. *"Design steht auf Mechanik-Ebene"*; numbers deliberately last. Names target branch `balancing` — **gone** |
 | `gameplay-redesign.md` | **live** | 2026-08-07 | Gameplay screen rebuild. Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending |
+| `optionen-redesign.md` | **live** | 2026-08-23 | Options overlay rebuild (≥ 1280 px). Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending. Design side only; links a clickable mockup |
 | `progression-decisions.md` | **live** | 2026-08-08 | Binding, versioned decision state for the progression system. Declares it *"ergänzt/überschreibt"* the long-form design doc |
 | `progression-tree.md` | **draft** | 2026-08-04 | Progression tree + start screen, *"Entwurf zur gemeinsamen Abstimmung"* (v0). Superseded in part by `progression-decisions.md`, which says so itself |
 | `rarity-system.md` | **draft** | 2026-07-26 | Rarity families for perks and shop items. *"Design-Spezifikation, Stand 26.07.2026"*; describes a target state |
