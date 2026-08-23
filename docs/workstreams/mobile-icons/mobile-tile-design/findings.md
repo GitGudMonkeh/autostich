@@ -258,3 +258,60 @@ written against, and it is on the sheet so „less fade" has a floor as well as 
 
 D4 still holds across all four — the mask changes no box and no type size, verified numerically in the
 sidecar.
+
+### The fade verdict, 2026-08-23
+
+> **„less fade"**
+
+Authored value for part 2: `radial-gradient(120% 120% at 100% 0%, #000 58%, transparent 88%)`.
+
+### What the verdict removed from part 2
+
+Two pieces of expected work disappeared with it, and both are consequences of choosing a **fixed,
+square** emblem rather than a cropped one.
+
+**The emblem alignment is gone.** All 112 tile emblems ship as 384 × 384 squares. `object-fit: cover`
+of a square source into a square box crops nothing, so `object-position` has no effect and there is no
+framing to decide. Part 2 was scoped as „implement and align"; it is now „implement". The alignment
+was real for the banner, which cuts a wide slice out of a square — the verdict removed the crop and
+the question with it.
+
+**The second baked lot is off the table for a measured reason, not a judgement.** The baked bloom
+scales with the image, so what stays fixed is the proportion: 5.78 % of the emblem's width on the skill
+lot and 6.04 % on the perk lot, at the desktop zone **and** at 88 px. The emblem is smaller; the
+picture is identical. The bloom drift that made a mobile lot thinkable was a property of *fluid*
+widths, where that share moves across the band by a factor of 2.3. A fixed box does not have it.
+
+This is the workstream's one irreversible decision, and it closed in the strongest direction: no new
+files, no second `strip_w`, no second set to re-align when artwork changes.
+
+---
+
+## Part 1 — closing state
+
+| Gate | Result |
+| --- | --- |
+| `npm test` | 138 files, 2149 tests, exit 0 — identical to the recorded baseline |
+| `npm run lint -- --max-warnings=0` | clean |
+| `npm run build` | exit 0 (the >500 kB chunk warning is pre-existing and not this task's) |
+| `npm run gen:db` | exit 0, 219 entries |
+
+**Scope compliance, verified by blob hash rather than asserted.** Every must-not-touch path is
+byte-identical to the base commit:
+
+```bash
+for f in src/index.css src/ui/SkillSelect.jsx src/ui/PerkSelect.jsx src/ui/LegendarySelect.jsx \
+         src/ui/CardCorners.jsx src/ui/useIsWide.js scripts/skill-art-build.py \
+         test/perk-art.test.js scripts/cdp.mjs; do
+  a=$(git rev-parse "2eddf9d3eceb2168851481a38cd228dd3c602045:$f"); b=$(git hash-object "$f")
+  [ "$a" = "$b" ] && echo "unchanged $f" || echo "CHANGED   $f"
+done
+```
+
+All nine unchanged; `git diff --stat <base> -- src/assets/` is empty.
+
+**V1–V4 do not apply to part 1.** It moved no pixel in the application: it added a measurement script,
+a sheet harness and documents. The V1 baseline belongs to part 2 and its capture set is already fixed
+by D3, so it is not a round of its own.
+
+Part 2's contract: [`../mobile-tile-build/task-contract.md`](../mobile-tile-build/task-contract.md).

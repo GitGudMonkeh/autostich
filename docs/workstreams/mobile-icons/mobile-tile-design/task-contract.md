@@ -187,15 +187,15 @@ Each is marked **measured**, **not measured and why**, or **not applicable** bef
 
 | | Hazard | Resolution required |
 | --- | --- | --- |
-| H1 | `task/icon-position-review` part 2 will edit `src/index.css` and the same three screens | D2: not waited for, not touched. Part 1 touches none of those files. For part 2 the overlap is textual, not semantic — record it in part 2's contract |
-| H1b | `test/perk-art.test.js` is also on that collision surface (:223, :300, :302) | Added to the must-not-touch list; not touched by part 1 |
-| H2 | Below 1280 px no `<img>` exists at all — first placement, not adjustment | Already measured; carry into part 2's contract |
+| H1 | `task/icon-position-review` part 2 will edit `src/index.css` and the same three screens | **Not applicable to part 1, measured.** D2: not waited for, not touched. Blob hash proves all four files byte-identical to the base. Carried into part 2's contract as a live hazard, where the overlap is textual and not semantic |
+| H1b | `test/perk-art.test.js` is also on that collision surface (:223, :300, :302) | **Not applicable to part 1, measured** — blob hash unchanged. On part 2's hazard list |
+| H2 | Below 1280 px no `<img>` exists at all — first placement, not adjustment | **Measured live, 2026-08-23** — `ornaments: 0` and `hasImg: false` on every tile at every width in `M-tile-widths.json`. Carried into part 2's contract |
 | H3 | The phone band is fluid, and the baked bloom divides by the render width | **Measured, 2026-08-23** — `visual/M-tile-widths.json`. Phone case: skill 245/315/405/564 px, perk 233/303/393/552 px, legendary 249/319/409/568 px at 320/390/480/639 px. +14 % over the baked zone at 390 px, +105 % at 639 px, spread 2.3×. The Banner's `max-width` cap is load-bearing, not a refinement |
-| H4 | Source-text ratchets: `test/skill-art.test.js:122`, `test/perk-art.test.js:198–199`, `test/leg-gleich.test.js:59`, `test/corner-art.test.js:231`, `CardCorners.jsx` two-`<img>` guard | Not applicable to part 1 (no `src/` or `test/` change); named so part 2 plans their rewrite and counter-check rather than discovering them |
-| H5 | `scripts/icon-contact-sheet.*` is on `task/icon-position-review`, not on `dev` | Template, not dependency — part 1 writes its own sheet |
+| H4 | **Not applicable to part 1** — no `src/` or `test/` change, blob hash verified. Named for part 2, which reverses their invariant and must rewrite and counter-check each. Original entry: Source-text ratchets: `test/skill-art.test.js:122`, `test/perk-art.test.js:198–199`, `test/leg-gleich.test.js:59`, `test/corner-art.test.js:231`, `CardCorners.jsx` two-`<img>` guard | Not applicable to part 1 (no `src/` or `test/` change); named so part 2 plans their rewrite and counter-check rather than discovering them |
+| H5 | `scripts/icon-contact-sheet.*` is on `task/icon-position-review`, not on `dev` | **Measured — it was a template, not a dependency.** Part 1 wrote its own sheet from its shape and needed nothing from that branch. One consequence surfaced instead: `launch()` in `scripts/cdp.mjs` takes no render flags on this base, so the determinism flags could not be passed. Recorded in `findings.md` under the limits of the evidence |
 | H6 | `npm test` baseline unknown | **Measured, 2026-08-23, in this worktree: green.** `npm test` (`vitest run`) — 138 files, 2149 tests, all passed, exit 0, 45.83 s. The load-dependent `test/i18n-guards.test.js` timeouts the `icon-position-review` contract reported did **not** reproduce, and no `--testTimeout` override was needed. Any red run from here on is this task's own |
 | H7 | The three screens are not reachable from a hub click path | **Measured, 2026-08-23 — all three reachable.** Not via a dev run: round 1 and 2 are played from a seeded run, the legendary phase is resumed into from a real run state, and the application needs its „Lauf fortsetzen" click because it does not auto-resume |
-| H8 | D3 leaves the 640–1279 band with no emblems and no ornaments | Recorded as a decision, not a gap. Part 2 proves it by rule applicability: every added rule sits below 640 px and the JSX gate is a phone query, not `!wide` |
+| H8 | D3 leaves the 640–1279 band with no emblems and no ornaments | **Not applicable to part 1** — it changes no rule at any width. Carried into part 2's contract, which proves it by rule applicability: every added rule sits below 640 px and the JSX gate is a phone query, not `!wide` |
 
 ## Definition of done
 
@@ -205,17 +205,17 @@ Ticked only when true.
       command — see H6: green, 138 files / 2149 tests, exit 0
 - [x] Deliverable M: measured tile and emblem-box widths for three screens at 320 / 390 / 480 / 639 px,
       DPR recorded — `visual/M-tile-widths.json`, both scrollbar modes, written up in `findings.md`
-- [ ] Deliverable S: one PNG per screen per variant, whole card, row of real tiles including that
+- [x] Deliverable S: one PNG per screen per variant, whole card, row of real tiles including that
       variant's decisive case, plus the sidecar with read-back geometry and SHA-256
-- [ ] D4 proven: tile bounding boxes and computed font sizes are identical with and without the emblem,
+- [x] D4 proven: tile bounding boxes and computed font sizes are identical with and without the emblem,
       for every tile on the sheet, and the two sets are in the sidecar
-- [ ] The sheet hard-codes no number that also lives in `src/index.css`
-- [ ] `git status --porcelain -- src/ test/` is empty, and the must-not-touch list is verified by blob hash
-- [ ] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db` — reported under
+- [x] The sheet hard-codes no number that also lives in `src/index.css`
+- [x] `git status --porcelain -- src/ test/` is empty, and the must-not-touch list is verified by blob hash
+- [x] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db` — reported under
       `AGENTS.md` House rules, against the recorded baseline
-- [ ] The V3 verdict is transcribed verbatim with its date into `findings.md`
-- [ ] Every hazard above is marked measured / not measured with reason / not applicable
-- [ ] Part 2's contract is drafted from the verdict, carries D2's rebase note, and names the V1 baseline
+- [x] The V3 verdict is transcribed verbatim with its date into `findings.md`
+- [x] Every hazard above is marked measured / not measured with reason / not applicable
+- [x] Part 2's contract is drafted from the verdict, carries D2's rebase note, and names the V1 baseline
       set: 390 × 844, both languages, all three screens, DPR 1
 
 ## Open questions
