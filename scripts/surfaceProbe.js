@@ -93,7 +93,9 @@ export function surfaceProbeSource() {
      Tailwind theme block prunes it, a typo, the wrong block — every consumer falls back, and the
      cell says so in one line instead of as a hundred scattered deltas. */
   const TOKENS = ["--sf-sunken", "--sf-base", "--sf-head", "--sf-deep", "--sf-raised", "--sf-glass",
-    "--sf-ground", "--sf-head-fade", "--sf-scrim", "--sf-cone-modal",
+    "--sf-ground", "--sf-head-fade", "--sf-scrim", "--sf-scrim-desk", "--sf-deck", "--sf-cone-modal",
+    "--ed-deck-panel", "--ctl-off", "--ctl-off-alt", "--ctl-edge", "--ctl-knob", "--ctl-face",
+    "--ctl-face-on", "--ctl-chip", "--ctl-danger", "--ctl-danger-wash",
     "--sf-cone-w", "--sf-cone-w-phase", "--sf-cone-h", "--sf-cone-stop", "--sf-cone-a", "--sf-cone-a-quiet",
     "--ed-quiet", "--ed-base", "--ed-strong", "--ed-deck", "--ed-accent-a", "--ed-accent-a-quiet",
     "--el-flat", "--el-rest", "--el-float", "--el-modal", "--el-glow", "--el-halo-blur", "--el-halo-a",

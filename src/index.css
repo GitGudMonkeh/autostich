@@ -309,6 +309,18 @@
   --sf-deep:   #141019;   /* internal: --sf-raised's closing stop. Not a step, */
                           /* and no call site names it                        */
   --sf-glass:  linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  /* THE DECK-TINTED PANEL. Same gradient, with the active deck colour mixed into both stops — the
+     recipe `.as-hub-tile` has carried since the hub was built, at 9/5 % instead of its 13/7 %.
+     Deliberately weaker: tint buys deck feeling and spends text contrast, linearly. The honest test
+     is a BRIGHT deck (Gottgleich, #e6b93a), where this step is what separates "tinted panel" from
+     "brownish panel"; if it is still too much there, the next move is mixing the deck colour toward
+     white first, not turning the percentage down again — the same handle `.as-hub-glyph` uses.
+     Rows inside a tinted panel stay NEUTRAL, so the tint reads as a surface and the text keeps a
+     quiet ground. */
+  --sf-deck: linear-gradient(180deg,
+    color-mix(in srgb, var(--deck-a1, #8a8a95) 9%, rgba(27, 26, 36, .93)) 0%,
+    color-mix(in srgb, var(--deck-a1, #8a8a95) 5%, rgba(22, 22, 32, .95)) 100%);
+  --ed-deck-panel: color-mix(in srgb, var(--deck-a1, #8a8a95) 26%, rgba(150, 150, 170, .16));
   --sf-head-fade: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0));
                           /* THE TWO DESKTOP TRANSLUCENCIES, and they are a    */
                           /* pair: --sf-glass is what --sf-base looks like on  */
@@ -321,7 +333,14 @@
                           /* (up/cz/gd/gl/op/st/lb heads), each with its own   */
                           /* !important. They are the desktop's real surface   */
                           /* vocabulary, written out thirteen and seven times. */
-  --sf-scrim:  rgba(12, 12, 16, .94);   /* the full-screen overlay wash       */
+  --sf-scrim:      rgba(12, 12, 16, .8);    /* the overlay wash, phone   */
+  --sf-scrim-desk: rgba(12, 12, 16, .94);   /* ...and desktop (#ueberzug) */
+                          /* TWO VALUES, ONE ROLE, and the split is the phone  */
+                          /* freeze rather than indecision: the inline style   */
+                          /* the overlay sets is read at EVERY width, so the   */
+                          /* token a phone-visible call site reads carries the */
+                          /* PHONE's value and the desktop block re-points it  */
+                          /* to the other named one. Never to a fresh literal. */
   /* THE LIGHT CONE AT THE HEAD OF A CARD, and why it is scalars rather than one token.
 
      MEASURED (finding MENU-15): a custom property that references another custom property is
@@ -420,6 +439,27 @@
   --btn-off-bg: #2a2a33;   /* disabled: flat grey. No signal, nothing to take */
   --btn-off-fg: #8a8a92;
 
+  /* ---- Controls. A switch, a segment, a dropdown and a slider are not panels.
+     The five axes rank PANEL depth, and a control's face has no rung on that
+     ladder — it sits on a panel rather than being one. Every value below is one
+     the options screen already carried before the vocabulary existed.
+
+     TWO "off" FILLS, and that is the phone freeze again rather than sloppiness:
+     a switch that is off and a segment that is off carry different values below
+     1280 px, and collapsing them there would move a signed-off surface. Same
+     shape as the `-N` size variants in 2b of conventions.md, and it collapses
+     the same way — from the mobile side, later, in one edit. */
+  --ctl-off:      #30303a;             /* a switch that is off                 */
+  --ctl-off-alt:  #25252e;             /* a segment that is off. Phone carrier */
+  --ctl-edge:     #3a3a44;             /* a control's own border, brighter     */
+                                       /* than a panel edge on purpose         */
+  --ctl-knob:     #f2f2f4;             /* the moving part of a switch          */
+  --ctl-face:     rgba(19, 19, 26, .9);    /* a control at rest                */
+  --ctl-face-on:  rgba(32, 32, 44, .95);   /* the chosen half of one           */
+  --ctl-chip:     rgba(255, 255, 255, .03);/* the tile a row mark sits in      */
+  --ctl-danger:   rgba(224, 96, 90, .38);  /* the edge of a destructive action */
+  --ctl-danger-wash: rgba(224, 96, 90, .12);
+
   /* ---- Hairlines. Composites, one per family. ----------------------------- */
   /* #deckui: the modal hairline pulls the ACTIVE DECK colour throughout; the   */
   /* fallback is the old logo sweep, for a menu with no deck.                   */
@@ -465,6 +505,42 @@ button { font-family: inherit; }
    unlayered rules beat Tailwind's utilities, and because any later rule of equal specificity beats
    this one, the #eckig handle in the 1280 block (.as-actbtn -> 6px) still lands unchanged.
    Value-preserving: --rd-md is rounded-lg, --btn-pad-* is px-4/py-2.5, all three in rem as before. */
+/* ============================================================================
+   #menu-rework M1 — DIE ROLLEN-KLASSEN. Panel-Vokabular, als Klasse statt als Aufzaehlung.
+   ----------------------------------------------------------------------------
+   Vier Rollen, und jede ist eine Zeile aus der Tabelle in conventions.md 2c. Wer eine davon traegt,
+   hat Flaeche, Kante, Radius und Hoehe zugleich richtig — und aendert sie mit, wenn sich der Schritt
+   aendert. Das ist der Unterschied zwischen einem Vokabular und einer Liste von Zahlen.
+
+   `.as-panel` steht NICHT hier: seine Deklarationen liegen unter [data-skin="crt"] (dauerhaft an) und
+   sind oben auf --sf-base umgestellt, wertgleich. Es bekommt hier nichts dazu — 30 Fundstellen ueber
+   Screens, die diese Aufgabe nicht anfassen darf.
+
+   `.as-shell` heisst so und nicht `.as-card`, obwohl der Planungsbericht das vorschlug: `.as-card`
+   ist VERGEBEN — an die SPIELKARTE in src/ui/Card.jsx und an eine CRT-Regel, die ihr einen Neon-Schein
+   gibt. Ein blosser Klassenselektor kann an beiden nicht vorbei. `--rd-shell` heisst ohnehin schon so.
+
+   NEUE SELEKTOREN aendern nichts, bis etwas sie traegt. Deshalb stehen sie hier vollstaendig, obwohl
+   in dieser Runde erst der Optionen-Screen sie benutzt: M2a bis M11 finden sie fertig vor, statt sie
+   einzeln nachzubauen.
+   ============================================================================ */
+.as-panel-sunken {
+  background: var(--sf-sunken);
+  border: 1px solid var(--ed-quiet);
+  border-radius: var(--rd-sm);
+  box-shadow: var(--el-flat);
+}
+.as-shell {
+  background: var(--sf-raised);
+  border: 1px solid var(--ed-base);
+  border-radius: var(--rd-shell);
+  box-shadow: var(--el-modal);
+}
+.as-head {
+  background: var(--sf-head);
+  border-bottom: 1px solid var(--ed-quiet);
+}
+
 .as-actbtn { border-radius: var(--rd-md); }
 /* PADDING RIDES ON ITS OWN HOOK, and that is a measured correction rather than taste. `as-actbtn` is
    the #eckig RADIUS hook, and GameOver.jsx hangs it on three buttons it builds BY HAND — two of which
@@ -1337,8 +1413,11 @@ b, strong { font-weight: 600; }
    die Animation bleibt und der Rahmen nicht statisch wird. */
 [data-skin="crt"] .as-panel {
   border: 1px solid transparent !important;
+  /* #menu-rework M1: die Fuellung liest --sf-base. WERTGLEICH — #17171c IST der Schritt, und zwar
+     weil er aus DIESEN 30 Fundstellen abgeleitet wurde. Der laufende Rahmen-Verlauf bleibt Literal:
+     er ist eine Animation aus fuenf Stopps, keine Flaeche auf der Tiefenleiter. */
   background-image:
-    linear-gradient(#17171c, #17171c),
+    linear-gradient(var(--sf-base), var(--sf-base)),
     linear-gradient(90deg, #3a3a48 0%, #8a7de0 25%, #b3a8ff 50%, #8a7de0 75%, #3a3a48 100%) !important;
   background-origin: padding-box, border-box !important;
   background-clip: padding-box, border-box !important;
@@ -1739,7 +1818,10 @@ b, strong { font-weight: 600; }
     color-mix(in srgb, var(--c, #8a8a95) 30%, var(--edge-btn-bg, #0e0e14)) 0%, var(--edge-btn-bg, #0e0e14) 30%);
   border-left-color: var(--c, #8a8a95);
   color: color-mix(in srgb, var(--c, #8a8a95) 40%, #ffffff);
-  box-shadow: 0 0 16px -8px var(--c, #8a8a95);
+  /* #ruhe, als Token statt als Zahl: NUR der primaere Knopf leuchtet. --el-glow ist fuer genau diese
+     Regel benannt, und ein Token mit einem Namen laesst sich schwerer verteilen als ein kopierter
+     Schattenwert. Wertgleich — der Schritt wurde aus DIESER Zeile abgeleitet. */
+  box-shadow: var(--el-glow);
 }
 .as-edge-neutral {
   background: rgba(12, 12, 18, .5);
@@ -2077,15 +2159,17 @@ b, strong { font-weight: 600; }
 
    COMMIT 2a: Struktur mit den heutigen Flächenwerten. Die Tokens kommen in 2b. */
 
-.op-switch { width: 46px; height: 26px; background: #30303a; border: 1px solid #3a3a44; }
-.op-switch[aria-checked="true"] { background: #5ab87a; border-color: #5ab87a; }
-.op-switch-knob { width: 20px; height: 20px; left: 2px; background: #f2f2f4; transform: translateY(-50%); }
+.op-switch { width: 46px; height: 26px; background: var(--ctl-off); border: 1px solid var(--ctl-edge); }
+.op-switch[aria-checked="true"] { background: var(--ac-green); border-color: var(--ac-green); }
+.op-switch-knob { width: 20px; height: 20px; left: 2px; background: var(--ctl-knob); transform: translateY(-50%); }
 .op-switch[aria-checked="true"] .op-switch-knob { left: 22px; }
 .op-switch:disabled { cursor: not-allowed; }
 
-.op-seg { border: 1px solid #3a3a44; }
-.op-seg-btn { background: #25252e; color: #c8c8d0; }
-.op-seg-btn[aria-checked="true"] { background: #d4a63a; color: #141419; }
+.op-seg { border: 1px solid var(--ctl-edge); }
+.op-seg-btn { background: var(--ctl-off-alt); color: #c8c8d0; }
+/* Gold heisst Waehrung und Ziel; hier ist es die gewaehlte Haelfte einer Auswahl, und die Tinte
+   darauf ist der Grund, auf dem das Spiel steht — eine gefuellte Taste liest sich als Loch darin. */
+.op-seg-btn[aria-checked="true"] { background: var(--ac-gold); color: var(--sf-ground); }
 
 /* Das Zeilen-Zeichen ist gezeichnet statt getippt (s. optionsBits.jsx). Die Box, in der es sitzt,
    ist unverändert — nur ihr Inhalt ist jetzt ein <svg> statt einer Glyphe. */
@@ -2105,17 +2189,19 @@ b, strong { font-weight: 600; }
    liegt absolut über dem Inhalt und wird nicht mitgescrollt — sie schließt bei Klick daneben. */
 .op-dd { position: relative; }
 .op-dd-btn { min-width: 172px; min-height: 44px; padding: 0 12px;
-  border: 1px solid #3a3a44; background: rgba(19, 19, 26, .9); color: #f0eefc;
+  border: 1px solid var(--ctl-edge); background: var(--ctl-face); color: #f0eefc;
   font-size: var(--text-body-5); font-weight: 600; }
 .op-dd-chev { width: 12px; height: 12px; color: #8a8a95; transition: transform 140ms ease; }
 .op-dd-chev[data-open="1"] { transform: rotate(180deg); }
+/* Die Liste ist das einzige Bauteil dieses Screens, das ueber allem anderen schwebt — also traegt
+   sie die Modal-Stufe der Hoehenleiter und den Grund einer Karte, nicht den eines Panels. */
 .op-dd-list { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; min-width: 172px;
   margin: 0; padding: 4px; list-style: none;
-  border: 1px solid #3a3a44; border-radius: 10px; background: #1b1a24;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
-.op-dd-item { min-height: 36px; padding: 0 10px; border-radius: 6px; color: #c9c9d2;
+  border: 1px solid var(--ctl-edge); border-radius: var(--rd-lg); background: var(--sf-head);
+  box-shadow: var(--el-modal); }
+.op-dd-item { min-height: 36px; padding: 0 10px; border-radius: var(--rd-sm); color: #c9c9d2;
   font-size: var(--text-body-5); }
-.op-dd-item:hover { background: rgba(255, 255, 255, .05); }
+.op-dd-item:hover { background: var(--ctl-chip); }
 /* Gewählt heißt HELLER **und** Haken — eine fettere Schrift allein ist auf einer Liste aus zwei
    Einträgen kein Unterschied, den man ohne Vergleich sieht. */
 .op-dd-item[data-sel="1"] { color: #f0eefc; }
@@ -2125,6 +2211,8 @@ b, strong { font-weight: 600; }
    `.op-col2`, damit Reihenfolge und Abstände der abgenommenen schmalen Fassung exakt bleiben. Erst
    ab 1280 px wird sie der umschlossene Block, den der Entwurf zeichnet. */
 .op-floatsubs { border-left: 2px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 27%, transparent); }
+/* Die Kante bleibt in der Basis auf 27 %: unter 1280 px bewegt sich nichts. Der Desktop-Block zieht
+   sie auf die 40 % des Entwurfs. */
 .op-floatsubs.is-off { opacity: .42; }
 /* Die Untergruppe nimmt keine Eingabe an, wenn der Master aus ist. Die Schalter darin tragen
    zusätzlich `disabled` — das hier ist die Maus, das Attribut ist die Tastatur. */
@@ -2560,7 +2648,11 @@ b, strong { font-weight: 600; }
     animation: as-ring-slide 7s linear infinite;
     will-change: transform;
   }
-  .as-ring { box-shadow: 0 0 14px color-mix(in srgb, var(--deck-a1, #8a7de0) 22%, transparent); }
+  /* #menu-rework M1: der ruhende Schein eines Panels, als Schritt statt als Zahl. Wertgleich — die
+     89 `.as-ring`-Fundstellen sind, woraus --el-rest abgeleitet wurde. `as-ring-quiet` setzt weiter
+     unten `none`, und DAS ist --el-flat: die #ruhe-Entscheidung ist damit ein Schritt, den man waehlt,
+     statt einer Abwesenheit, an die man sich erinnern muss. */
+  .as-ring { box-shadow: var(--el-rest); }
 
   /* ==========================================================================
      #desktop — Upgrade-Baum ab 1280 px
@@ -3948,7 +4040,10 @@ b, strong { font-weight: 600; }
        genau die Zeile, die `.st-root`/`.lb-root` dafür schon tragen. Der Deckel bleibt `max-height`
        an der Karte: auf flachen Fenstern scrollt weiter der Rumpf. */
     align-items: start !important;
-    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
+    /* Der Ueberzug ist am Desktop dichter als am Handy. Beide Werte sind BENANNT — die Regel
+       re-pointet den Schritt auf das andere Token, nie auf ein frisches Literal. */
+    --sf-scrim: var(--sf-scrim-desk);
+    background: var(--sf-scrim) !important;
     /* #perf-blur: KEIN backdrop-filter, gleiche Begründung und gleiche Messung wie an `.up-root` —
        er war der teuerste Posten des Desktop-Passes und optisch bei 82 % Überzug nicht auffindbar.
        `none !important` statt Löschen, weil das Overlay seinen Blur INLINE setzt. */
@@ -3979,8 +4074,11 @@ b, strong { font-weight: 600; }
   .op-hair { order: 2; margin-top: 10px; }
   .op-body { order: 3; }
 
+  /* Der Kopf laeuft am Desktop aus, statt als Balken zu stehen — dieselbe Fassung, die sieben
+     Screens tragen, und deshalb ein Token statt siebenmal derselben Zeile. */
   .op-head {
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    --sf-head: var(--sf-head-fade);
+    background: var(--sf-head) !important;
     border-bottom: 0 !important;
     padding: 10px 0 8px !important;
   }
@@ -3999,7 +4097,10 @@ b, strong { font-weight: 600; }
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
   /* Gleiche Knopfgröße wie im Baum und in der Werkstatt (44-px-Klickziel des Desktop-Passes). */
-  .op-close { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* MENU-01: hier stand `border-radius: 8px`, und die Zeile war tot — die #eckig-Sammelregel setzt
+     .as-actbtn 1600 Zeilen weiter unten bei gleicher Spezifitaet auf 6 px und gewinnt als spaetere.
+     Die 8 px haben nie gerendert. Ersatzlos raus; der Radius kommt aus der Sammelregel. */
+  .op-close { font-size: var(--text-body-lg-3) !important; padding: var(--in-tight) var(--in-base) !important; }
   .op-chips { display: none; }
 
   .op-body { padding: 0 !important; }
@@ -4021,10 +4122,12 @@ b, strong { font-weight: 600; }
 
   /* Die Sektion IST das Panel — Glas + Ring wie `.up-page` / `.cz-main`. Den Ring trägt sie über die
      geteilte `.as-ring`-Konstruktion samt `.as-ring-run`-Kind (NICHT als kopiertes ::before, s. #perf-ring). */
+  /* Die Sektion IST das Panel: Deck-getoente Flaeche, Panel-Radius, Panel-Innenabstand. Die Zeilen
+     darin bleiben neutral (s. .as-opt-row weiter unten) — so liest sich die Toenung als Flaeche. */
   .op-sec {
-    border-radius: 14px;
-    padding: 15px 17px 17px;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    border-radius: var(--rd-lg);
+    padding: var(--in-base);
+    background: var(--sf-deck);
   }
   /* Die Überschrift klebt nicht mehr (nichts scrollt an ihr vorbei) und verliert damit auch ihren
      deckenden Streifen — der lag sonst als Balken im Panel. `background` mit `!important`, weil er
@@ -4054,15 +4157,18 @@ b, strong { font-weight: 600; }
      den runden Chip vorn (grün = an), gesetzt von derselben `:has()`-Regel wie bisher. */
   .op-sec > h3 { font-size: var(--text-body-2); letter-spacing: .18em; padding-bottom: 13px; }
   .op-sec .grid { gap: 11px !important; }
-  .op-sec { padding: 16px 18px 18px; }
+  .op-sec { padding: var(--in-base); }
 
   /* Die Zeile wird zur ruhigen Fläche: keine linke Kante, nur eine feine Kontur auf dunklerem Grund. */
+  /* Die Zeile ist der eingelassene Kasten im Panel: `.as-panel-sunken` in Werten. Sie bleibt
+     NEUTRAL, auch wenn das Panel getoent ist. */
   .op-sec .as-opt-row {
-    background: rgba(15, 15, 21, .72) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
+    background: var(--sf-sunken) !important;
+    border: 1px solid var(--ed-quiet) !important;
     border-left-width: 1px !important;
-    box-shadow: none !important;
-    padding: 11px 13px;
+    box-shadow: var(--el-flat) !important;
+    border-radius: var(--rd-sm);
+    padding: var(--in-tight) var(--in-snug);
     gap: 13px;
   }
   .op-sec .as-opt-row::before, .op-sec .as-opt-row::after { display: none !important; }
@@ -4070,10 +4176,10 @@ b, strong { font-weight: 600; }
     display: grid; place-items: center;
     flex: none;
     width: 28px; height: 28px;
-    border-radius: 8px;
+    border-radius: var(--rd-md);
     font-size: var(--text-body-lg-1);
     color: var(--c, #6c6c7e);
-    background: rgba(255, 255, 255, .03);
+    background: var(--ctl-chip);
     border: 1px solid color-mix(in srgb, var(--c, #3a3a48) 42%, transparent);
   }
   /* Titel und Beschreibung endlich zwei Stufen statt einer: der Titel führt, die Erklärung ordnet sich unter. */
@@ -4095,17 +4201,18 @@ b, strong { font-weight: 600; }
   /* Auswahl (Sprache · Effekte) wie die Reiter der Werkstatt: flach, geteilte Kontur, die aktive
      Hälfte hell mit Unterkante in der Deckfarbe — statt gefülltem Gold, das lauter war als der Inhalt. */
   .op-sec [role="radio"] {
-    background: rgba(19, 19, 26, .9) !important;
+    background: var(--ctl-face) !important;
     color: #8a8a95 !important;
     font-weight: 600 !important;
     padding: 7px 14px !important;
   }
+  /* Die aktive Haelfte braucht BEIDE Signale — die Unterkante allein war zu leise. */
   .op-sec [role="radio"][aria-checked="true"] {
-    background: rgba(32, 32, 44, .95) !important;
+    background: var(--ctl-face-on) !important;
     color: #f0eefc !important;
     box-shadow: inset 0 -2px 0 var(--deck-a1, #8a7de0);
   }
-  .op-sec [role="radio"] + [role="radio"] { border-left: 1px solid rgba(150, 150, 170, .14); }
+  .op-sec [role="radio"] + [role="radio"] { border-left: 1px solid var(--ed-quiet); }
 
   /* Regler: schmalere Spur, kleinerer Griff, mehr Länge — die Feineinstellung soll sich fein anfühlen. */
   .op-sec input[type="range"] { width: 148px !important; height: 4px; }
@@ -4129,12 +4236,12 @@ b, strong { font-weight: 600; }
   .op-floatgroup {
     display: grid;
     gap: 10px;
-    padding: 10px;
-    border: 1px solid rgba(150, 150, 170, .12);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, .012);
+    padding: var(--in-tight);
+    border: 1px solid var(--ed-quiet);
+    border-radius: var(--rd-md);
+    background: var(--ctl-chip);
   }
-  .op-floatgroup > .as-opt-row { border-bottom: 1px solid rgba(150, 150, 170, .12) !important; }
+  .op-floatgroup > .as-opt-row { border-bottom: 1px solid var(--ed-quiet) !important; }
   .op-floatsubs { border-left-color: color-mix(in srgb, var(--deck-a1, #8a7de0) 40%, transparent); }
 
   /* Die Dev-Sektion läuft über alle drei Spalten und steht unter ihnen — sie ist Werkzeug, nicht
@@ -4157,9 +4264,9 @@ b, strong { font-weight: 600; }
   .op-reset:hover { color: #d5d5df; }
   .op-reset-icon { width: 14px; height: 14px; }
   .op-reset-ask { color: #d5d5df; font-size: var(--text-body-3); }
-  .op-reset-yes { color: #e0605a; font-size: var(--text-body-3); font-weight: 600;
-    padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(224, 96, 90, .38); }
-  .op-reset-yes:hover { background: rgba(224, 96, 90, .12); }
+  .op-reset-yes { color: var(--ac-danger); font-size: var(--text-body-3); font-weight: 600;
+    padding: 6px 12px; border-radius: var(--rd-sm); border: 1px solid var(--ctl-danger); }
+  .op-reset-yes:hover { background: var(--ctl-danger-wash); }
   .op-reset-no { color: #8a8a95; font-size: var(--text-body-3); padding: 6px 10px; }
   .op-reset-no:hover { color: #d5d5df; }
 
@@ -6112,7 +6219,9 @@ b, strong { font-weight: 600; }
 @media (min-width: 1280px) and (max-height: 950px) {
   .op-root { padding: 10px 36px 12px !important; }
   .op-cols { gap: 16px; margin-top: 10px; }
-  .op-sec { padding: 12px 15px 14px; }
+  /* #menu-rework M1: drei Zahlen werden ein Schritt. Auf flachen Fenstern rueckt das Panel enger
+     zusammen — das ist der INNERE Schritt der Leiter, nicht ein vierter Wert daneben. */
+  .op-sec { padding: var(--in-snug); }
 }
 
 @media (min-width: 1280px) and (max-height: 950px) {
