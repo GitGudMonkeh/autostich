@@ -215,3 +215,46 @@ starts from the same place:
   the mechanism, not every picture.
 - `.as-legendary` (the animated gold frame) and `.as-edge-card.is-sel` are deliberately absent, for
   the reasons `icon-contact-sheet.page.js` gives.
+
+---
+
+## V3 — the design verdict, 2026-08-23
+
+Transcribed verbatim, per `task-lifecycle.md` — *A finding is not a finding until it has an ID*.
+
+> „corner emblem it is. aber mit weniger ausfaden zur Mitte. aber das ist ja Feintuning"
+
+**The corner emblem wins.** The banner is out — its cost was structural rather than tunable: D4 forbids
+the desktop's push-down padding, so the badge row and the name are rendered over the brightest part of
+the emblem, and no amount of tuning moves text that is meant to sit there.
+
+Read as the **flush** sub-variant (`corner emblem`), not the bleeding one — the verdict names the
+column by its label and the bleeding column carries the word „bleeding". Correctable in one line if
+that reading is wrong; recorded so the reading is visible rather than silent.
+
+**The mask fades too far toward the tile's centre.** The owner calls this fine-tuning and it is, but
+„less" is a word and the mask needs a number, so one comparison sheet was rendered rather than a value
+picked at the desk — see below. The stop the owner points at becomes part 2's authored value.
+
+Everything else about the variant stands as shown: fixed size, top right, outside the text flow,
+painted under the badges, no pixel added to any tile (D4 verified numerically).
+
+### The fade comparison
+
+`visual/fade-<screen>.png`, three screens, German, four columns. The mask is a radial gradient
+anchored at the tile's top-right corner; the two stops are how far it stays solid and where it reaches
+full transparency.
+
+| Column | solid until | transparent from | |
+| --- | --- | --- | --- |
+| as shown at V3 | 42 % | 80 % | what the verdict called too faded |
+| less fade | 58 % | 88 % | |
+| least fade | 72 % | 95 % | |
+| no fade — control | 100 % | 100 % | not a candidate — it is what shows why the mask exists |
+
+The last column is a control rather than an option: without a fade the emblem ends on its own square
+edge, and the motif is cut by a straight line across the tile. That is the failure the mask was
+written against, and it is on the sheet so „less fade" has a floor as well as a direction.
+
+D4 still holds across all four — the mask changes no box and no type size, verified numerically in the
+sidecar.

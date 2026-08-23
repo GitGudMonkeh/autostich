@@ -87,8 +87,13 @@ const VARIANT_CSS = `
   width: var(--mt-corner-size, 88px); height: var(--mt-corner-size, 88px);
   object-fit: cover; object-position: center 25%;
   mix-blend-mode: screen; pointer-events: none;
-  -webkit-mask-image: radial-gradient(120% 120% at 100% 0%, #000 42%, transparent 80%);
-  mask-image: radial-gradient(120% 120% at 100% 0%, #000 42%, transparent 80%);
+  /* The fade toward the tile's centre. Two stops, both settable from the column, because V3 asked for
+     „weniger ausfaden zur Mitte" and „less" is a word, not a value — the sheet shows several and the
+     owner points at one. The default pair is what was shown at the gate. */
+  -webkit-mask-image: radial-gradient(120% 120% at 100% 0%,
+    #000 var(--mt-fade-solid, 42%), transparent var(--mt-fade-end, 80%));
+  mask-image: radial-gradient(120% 120% at 100% 0%,
+    #000 var(--mt-fade-solid, 42%), transparent var(--mt-fade-end, 80%));
 }
 /* The bleeding sub-variant — the harder case for the tile's overflow, so it is on the sheet too.
    It shares the block above rather than extending it through a second class on the column: the first
@@ -284,10 +289,11 @@ const SCREENS = {
   }),
 };
 
-function column({ screen, variant, tileWidth, cardWidth, label, sub }) {
+function column({ screen, variant, tileWidth, cardWidth, label, sub, vars }) {
   const s = SCREENS[screen]();
   const withArt = variant !== "none";
   const col = el("div", `mt-col${withArt ? ` mt-v-${variant}` : ""}`);
+  for (const [k, v] of Object.entries(vars || {})) col.style.setProperty(k, v);
   col.dataset.variant = variant;
   col.dataset.screen = screen;
   const lab = el("div", "mt-label"); lab.textContent = label;

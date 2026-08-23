@@ -145,6 +145,17 @@ async function render(c, columns, lang) {
    stay German: their question is the emblem's WIDTH across the band, which no translation moves. */
 const LANGS = ["de", "en"];
 
+/* V3 asked for less fade toward the tile's centre. These are the candidates, from the value shown at
+   the gate to almost no fade at all — one sheet so the owner points at a stop instead of describing
+   one. The pair is (solid until, transparent from) on the radial mask anchored at the top-right
+   corner. */
+const FADES = [
+  { key: "gate",   label: "as shown at V3",   vars: { "--mt-fade-solid": "42%", "--mt-fade-end": "80%" } },
+  { key: "less",   label: "less fade",        vars: { "--mt-fade-solid": "58%", "--mt-fade-end": "88%" } },
+  { key: "least",  label: "least fade",       vars: { "--mt-fade-solid": "72%", "--mt-fade-end": "95%" } },
+  { key: "hard",   label: "no fade — control", vars: { "--mt-fade-solid": "100%", "--mt-fade-end": "100%" } },
+];
+
 const main = async () => {
   mkdirSync(OUT, { recursive: true });
   const widths = measuredWidths();
@@ -174,6 +185,21 @@ const main = async () => {
         const img = await shoot(c, `variants-${screen}-${lang}`, probe.sheet);
         sidecar.sheets.push({ kind: "variants", screen, lang, viewport: CANONICAL, ...img, probe });
         process.stdout.write(`variants-${screen}-${lang}.png  ${probe.tiles.length} tiles  ${img.bytes} B\n`);
+      }
+    }
+
+    for (const lang of ["de"]) {
+      for (const screen of SCREENS) {
+        const m = widths[CANONICAL][screen];
+        const cols = FADES.map((f) => ({ screen, variant: "corner", label: f.label, vars: f.vars,
+                                         tileWidth: m.tile, cardWidth: m.card,
+                                         sub: `solid ${f.vars["--mt-fade-solid"]} · end ${f.vars["--mt-fade-end"]}` }));
+        const probe = await render(c, cols, lang);
+        await sleep(250);
+        const img = await shoot(c, `fade-${screen}`, probe.sheet);
+        sidecar.sheets.push({ kind: "fade", screen, lang, viewport: CANONICAL, fades: FADES, ...img, probe });
+        process.stdout.write(`fade-${screen}.png  ${probe.tiles.length} tiles  ${img.bytes} B
+`);
       }
     }
 
