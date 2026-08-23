@@ -227,7 +227,7 @@ A fresh worktree does not inherit dependencies from another checkout.
 
 Do not trust test/lint results before `npm ci` has completed in the current worktree.
 
-The `/create-task` command (`.claude/commands/create-task.md`) performs this setup for us — branch,
+The `/create-task` command (`.claude/skills/create-task/SKILL.md`) performs this setup for us — branch,
 worktree, dependencies and a contract scaffold — from the cockpit checkout. The same ownership and
 lifecycle rules still apply to a worktree it created.
 

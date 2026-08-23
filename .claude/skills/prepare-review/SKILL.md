@@ -1,9 +1,13 @@
 ---
+name: prepare-review
 description: Assemble the handoff for a deliberately requested independent review, from a task contract and its diff
 argument-hint: <contract-path> [--base <sha>] [--head <sha>] [--run-gates] [--closure <finding-ids>]
 allowed-tools: Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git log:*), Bash(git diff:*), Bash(git cat-file:*), Bash(git status:*), Bash(git branch:*), Bash(git -C:*), Bash(MSYS_NO_PATHCONV=1 git:*), Bash(npm test:*), Bash(npm run:*), Bash(npx vitest run:*), Read, Grep, Glob, Write
-disable-model-invocation: true
 ---
+
+**Owner-invoked only.** A session does not run this on its own initiative; it names the
+skill and lets the owner run it.
+
 Assemble the evidence package and the reviewer handoff for one task, from its contract and its diff,
 and write `review-handoff.md` beside the contract.
 
