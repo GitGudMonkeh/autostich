@@ -26,7 +26,7 @@ export function ZinsReadout({ zins, color = "#5ab87a" }) {
   if (!zins) return null;
   const genommen = zins.wins >= zins.hurdle;
   return (
-    <div className="mt-2 pt-2 text-xs grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
+    <div className="mt-2 pt-2 text-body-5 grid gap-1" style={{ borderTop: `1px solid ${color}33` }}>
       <div className="flex items-center gap-1.5">
         <span className="opacity-55">{t("zins.capital")}</span>
         <b className="ty-num-sm" style={{ color }}>{fmtNum(Math.round(zins.capital))}</b>
@@ -64,7 +64,7 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
   for (const id of perks) (byCat[perkDef(id).cat] ||= []).push({ kind: "perk", id });
   for (const [fid, tier] of heldFams) { const f = familyDef(fid); if (f) (byCat[f.cat] ||= []).push({ kind: "family", id: fid, tier }); }
   const total = perks.length + heldFams.length;
-  if (total === 0) return <div className="text-sm opacity-40">{empty}</div>;
+  if (total === 0) return <div className="text-body-lg-5 opacity-40">{empty}</div>;
 
   // Detail-Panel des aufgeklappten Eintrags (Perk oder Familien-Stufe).
   let detail = null;
@@ -82,7 +82,7 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
       <div className="grid gap-2">
         {Object.keys(CATEGORIES).filter((c) => byCat[c]).map((c) => (
           <div key={c} className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+            <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold"
               style={{ background: `${perkCat(c).color}22`, color: perkCat(c).color }}>{perkCat(c).name}</span>
             {byCat[c].map((it) => {
               const active = isOpen(it.kind, it.id);
@@ -91,7 +91,7 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
                 const f = familyDef(it.id); const col = (tierMeta(it.tier) || {}).color || perkCat(c).color;
                 return (
                   <button key={`fam:${it.id}`} type="button" onClick={() => toggle("family", it.id)}
-                    className="text-xs px-2 py-0.5 rounded transition-all"
+                    className="text-body-5 px-2 py-0.5 rounded transition-all"
                     style={{ background: active ? `${col}33` : "#22222b", color: col,
                              outline: active ? `1px solid ${col}` : `1px solid ${col}88` }}>
                     {f.name} {romanOf(it.tier)}
@@ -103,7 +103,7 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
               const special = rar !== "common"; // selten/legendär: Raritäts-Farbe + Marke
               return (
                 <button key={`perk:${it.id}`} type="button" onClick={() => toggle("perk", it.id)}
-                  className="text-xs px-2 py-0.5 rounded transition-all"
+                  className="text-body-5 px-2 py-0.5 rounded transition-all"
                   style={{ background: active ? `${perkCat(c).color}33` : "#22222b",
                            color: special ? rm.color : undefined,
                            outline: active ? `1px solid ${perkCat(c).color}` : (special ? `1px solid ${rm.color}88` : "none") }}>
@@ -115,9 +115,9 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
         ))}
       </div>
       {detail && (
-        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${detail.c}55` }}>
+        <div className="mt-2 rounded-lg p-3 text-body-lg-5" style={{ background: "#1e1e26", border: `1px solid ${detail.c}55` }}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+            <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold"
               style={{ background: `${detail.c}22`, color: detail.c }}>{detail.cat}</span>
             <span className="font-bold" style={{ color: detail.c }}>{detail.name}</span>
           </div>
@@ -148,7 +148,7 @@ function skillYieldLine(skillId, heat) {
 export function SkillList({ skills = [], empty = t("build.skills.empty"), heat = null }) {
   const [openSkill, setOpenSkill] = useState(null);
   const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill) : null;
-  if (skills.length === 0) return <div className="text-sm opacity-40">{empty}</div>;
+  if (skills.length === 0) return <div className="text-body-lg-5 opacity-40">{empty}</div>;
   const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
   const yieldLine = open ? skillYieldLine(open.id, heat) : null;
   return (
@@ -161,7 +161,7 @@ export function SkillList({ skills = [], empty = t("build.skills.empty"), heat =
           const c = ac(id).color;
           return (
             <button key={id} type="button" onClick={() => setOpenSkill(active ? null : id)}
-              className="text-xs px-2 py-0.5 rounded transition-all"
+              className="text-body-5 px-2 py-0.5 rounded transition-all"
               style={{ background: active ? `${c}33` : "#22222b", color: c,
                        outline: active ? `1px solid ${c}` : `1px solid ${c}66` }}>
               <ArchIcon meta={ac(id)} size={13} /> {s.name}
@@ -170,16 +170,16 @@ export function SkillList({ skills = [], empty = t("build.skills.empty"), heat =
         })}
       </div>
       {open && (
-        <div className="mt-2 rounded-lg p-3 text-sm" style={{ background: "#1e1e26", border: `1px solid ${om.color}55` }}>
+        <div className="mt-2 rounded-lg p-3 text-body-lg-5" style={{ background: "#1e1e26", border: `1px solid ${om.color}55` }}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${om.color}22`, color: om.color }}><ArchIcon meta={om} size={11} /> {om.label.toUpperCase()}</span>
+            <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold" style={{ background: `${om.color}22`, color: om.color }}><ArchIcon meta={om} size={11} /> {om.label.toUpperCase()}</span>
             <span className="font-bold" style={{ color: om.color }}>{open.name}</span>
           </div>
           <div className="opacity-80 leading-snug">{open.desc}</div>
           {/* #384 Ertrag des Skills in DIESEM Lauf — steht vor den Begriffserklärungen, weil er den Skill bewertet,
               nicht erklärt. Farben wie im Feuer-Panel (Marke = heißes Ende, Zahlen = Weißglut-Weiß). */}
           {yieldLine && (
-            <div className="text-xs leading-snug mt-1.5">
+            <div className="text-body-5 leading-snug mt-1.5">
               <span className="font-bold" style={{ color: FIRE_HOT }}>⚔ {t("build.skill.yield.term")}</span>
               <span className="opacity-75"> — </span>
               {/* **fett** im Satz = die Zahlen (dieselbe Markup-Konvention wie die Leitfaden-Texte). Die Deckkraft
@@ -191,7 +191,7 @@ export function SkillList({ skills = [], empty = t("build.skills.empty"), heat =
           )}
           {/* #201 P1: Schlüsselbegriffe des Skills gleich mit erklärt — im Build jederzeit abrufbar. */}
           {glossaryKeywords([open.id], SKILL_DEFS).map((k) => (
-            <div key={k} className="text-xs leading-snug mt-1.5">
+            <div key={k} className="text-body-5 leading-snug mt-1.5">
               <span className="font-bold inline-flex items-center gap-1" style={{ color: glossaryEntry(k).color }}><GlossaryIcon e={glossaryEntry(k)} size={12} /> {glossaryEntry(k).label}</span>
               <span className="opacity-70"> — {glossaryEntry(k).text}</span>
             </div>
@@ -220,7 +220,7 @@ export function DeckHistogram({ deck }) {
       <div className="grid gap-1">
         {SUIT_ORDER.map((su) => (
           <div key={su} className="flex items-end gap-1">
-            <div className="w-8 shrink-0 text-[10px] font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitLabel(su)}</div>
+            <div className="w-8 shrink-0 text-meta-1 font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitLabel(su)}</div>
             <div className="flex-1 flex items-end gap-[2px]" style={{ height: ROW_H }}>
               {values.map((v) => {
                 const n = (counts[v] && counts[v][su]) || 0;
@@ -235,13 +235,13 @@ export function DeckHistogram({ deck }) {
           <div className="w-8 shrink-0" />
           <div className="flex-1 flex gap-[2px]">
             {values.map((v) => (
-              <div key={v} className="flex-1 text-center text-[7px] leading-none tabular-nums"
+              <div key={v} className="flex-1 text-center text-micro-1 leading-none tabular-nums"
                 style={{ color: v > 10 ? "#8a7de0" : undefined, opacity: v > 10 ? 1 : 0.4 }}>{v}</div>
             ))}
           </div>
         </div>
       </div>
-      <div className="text-[10px] opacity-35 mt-1.5">Werte über 10 (violett) überbieten jede Gegnerkarte.</div>
+      <div className="text-meta-1 opacity-35 mt-1.5">Werte über 10 (violett) überbieten jede Gegnerkarte.</div>
     </div>
   );
 }
@@ -268,7 +268,7 @@ export function DeckStrength({ deck = [] }) {
           const fillPct = Math.min(100, (avg / 11) * 100);       // Ø-Wert auf 1..11-Skala
           const overPct = n ? Math.min(100 - fillPct, (unbeat / n) * 100) : 0; // Anteil unschlagbarer Karten als violettes Ende
           return (
-            <div key={su} className="flex items-center gap-2 text-xs">
+            <div key={su} className="flex items-center gap-2 text-body-5">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col }} />
               <span className="w-8 shrink-0 font-bold leading-none" style={{ color: col }}>{suitLabel(su)}</span>
               <span className="flex-1 rounded-full overflow-hidden flex" style={{ height: 9, background: "#111119" }}>
@@ -276,14 +276,14 @@ export function DeckStrength({ deck = [] }) {
                 {overPct > 0 && <span style={{ width: `${overPct}%`, background: UNBEAT }} />}
               </span>
               <span className="shrink-0 w-9 text-right ty-num-sm opacity-70">⌀{avg.toFixed(1).replace(".", ",")}</span>
-              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded leading-none"
+              <span className="shrink-0 text-meta-1 font-bold px-1.5 py-0.5 rounded leading-none"
                 style={unbeat > 0 ? { background: `${UNBEAT}22`, color: UNBEAT, border: `1px solid ${UNBEAT}55` }
                                   : { background: "#1a1a22", color: "#55555f", border: "1px solid #2a2a33" }}>◆{unbeat}</span>
             </div>
           );
         })}
       </div>
-      <div className="text-[10px] opacity-40 mt-2">{t("build.deck.legend", { over: UNBEAT_OVER })}</div>
+      <div className="text-meta-1 opacity-40 mt-2">{t("build.deck.legend", { over: UNBEAT_OVER })}</div>
     </div>
   );
 }

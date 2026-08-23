@@ -54,7 +54,7 @@ function TreePill({ value }) {
         <span aria-hidden="true" className="absolute left-0 top-0 bottom-0"
           style={{ width: `${frac * 100}%`, background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 30%, transparent)" }} />
       )}
-      <b className="relative ty-num-sm text-[9.5px] font-semibold py-[1px]" style={{ color: ok ? "#cfcbe4" : "#4e4e5a" }}>
+      <b className="relative ty-num-sm text-micro-4 font-semibold py-[1px]" style={{ color: ok ? "#cfcbe4" : "#4e4e5a" }}>
         {ok ? `${n}/${TOTAL_NODES}` : `–/${TOTAL_NODES}`}
       </b>
     </span>
@@ -114,16 +114,16 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
           Top 20 WOVON. Vorher stand hier ein fest verdrahtetes „Global — Top N". */}
       {!hideHeader && (
         <div className="lb-listhead flex items-baseline justify-between gap-2 mb-2">
-          <span className="lb-listtitle text-[11px] uppercase tracking-wide opacity-50">{t("board.global.head", { n: limit })}</span>
-          <span className="lb-listsub text-[10px] opacity-35">{t("board.global.sub")}</span>
+          <span className="lb-listtitle text-meta-3 uppercase tracking-wide opacity-50">{t("board.global.head", { n: limit })}</span>
+          <span className="lb-listsub text-meta-1 opacity-35">{t("board.global.sub")}</span>
         </div>
       )}
       {error ? (
-        <div className="text-xs opacity-40 text-center py-3">{t("board.unavailable")}</div>
+        <div className="text-body-5 opacity-40 text-center py-3">{t("board.unavailable")}</div>
       ) : rows === null ? (
-        <div className="text-xs opacity-40 text-center py-3">{t("board.loading")}</div>
+        <div className="text-body-5 opacity-40 text-center py-3">{t("board.loading")}</div>
       ) : rows.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-3">{t(board ? "board.empty" : "board.global.empty")}</div>
+        <div className="text-body-5 opacity-40 text-center py-3">{t(board ? "board.empty" : "board.global.empty")}</div>
       ) : (
         /* `grid-cols-1` statt nur `grid`: Die implizite Spalte eines nackten `grid` ist `auto` und damit
            MAX-CONTENT-breit — ein langer Nickname zieht die ganze Liste über das Panel hinaus (gemessen bei
@@ -172,10 +172,10 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 <span className="lb-rank w-6 shrink-0 text-center ty-num-sm" style={{ opacity: 0.5 }}>{`#${i + 1}`}</span>
                 <span className="flex-1 min-w-0">
                   <span className="flex items-baseline gap-2 min-w-0">
-                    <span className="flex-1 truncate text-sm" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
-                      {r.name || "—"}{mineRow && <span className="opacity-60 text-xs"> · du</span>}
+                    <span className="flex-1 truncate text-body-lg-5" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
+                      {r.name || "—"}{mineRow && <span className="opacity-60 text-body-5"> · du</span>}
                     </span>
-                    <span className="ty-num font-bold shrink-0 text-[13px]" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
+                    <span className="ty-num font-bold shrink-0 text-body-3" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
                   </span>
                   <span className="flex items-center gap-1.5 mt-0.5 min-w-0">
                     {icons.length > 0 && (
@@ -184,7 +184,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                       </span>
                     )}
                     {showTree && <TreePill value={r.tree_nodes} />}
-                    <span className="ty-num-sm text-[10px] opacity-40 truncate">{t("board.row.cycle", { n: r.cycles ?? 0 })}</span>
+                    <span className="ty-num-sm text-meta-1 opacity-40 truncate">{t("board.row.cycle", { n: r.cycles ?? 0 })}</span>
                   </span>
                 </span>
               </button>

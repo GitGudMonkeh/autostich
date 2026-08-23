@@ -124,7 +124,7 @@ describe("#go-ruhe — die Kennzahlenreihe im Kopf ist Desktop-only", () => {
        statt eines Ternärs. */
     expect(goBare).toMatch(/\{wide && \(\s*<div className="go-kpi">/);
     expect(goBare, "die kompakte Handy-Zeile ist verschwunden")
-      .toMatch(/\{!wide && \(\s*<div className="text-xs opacity-55 mt-2 flex items-center justify-center/);
+      .toMatch(/\{!wide && \(\s*<div className="text-body-5 opacity-55 mt-2 flex items-center justify-center/);
   });
 
   it("die Reihe steht nur im Desktop-Block", () => {
@@ -398,7 +398,7 @@ describe("#go-kopf — die Score-Zahl steht unter der Haarlinie", () => {
        auf linksbündig). Die Ring-Klassen dazwischen tragen unter 1280 px keine Darstellung. */
     expect(goBare).toMatch(/go-heroblock[^`"]*text-center/);
     const block = goBare.slice(goBare.indexOf("go-heroblock"));
-    const score = block.indexOf("go-score"), rec = block.indexOf("go-rec"), klein = block.indexOf("text-xs opacity-55");
+    const score = block.indexOf("go-score"), rec = block.indexOf("go-rec"), klein = block.indexOf("text-body-5 opacity-55");
     expect(score).toBeLessThan(rec);
     expect(rec, "die Kleinschrift-Zeile steht nicht mehr unter dem Chip").toBeLessThan(klein);
   });

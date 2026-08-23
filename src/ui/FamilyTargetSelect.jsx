@@ -52,20 +52,20 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-3" style={{ background: "#0c0c10ee", backdropFilter: "blur(2px)" }}>
       <div className="w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={{ background: PANEL_BG, border: `1px solid ${tm.color}55` }}>
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: tm.color }}>{cat.name} · {rarityLabel(ft.tier)}</div>
-          <h2 className="text-xl font-bold mt-1">{fam.name} {romanOf(ft.tier)}</h2>
-          <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">{tierDef.desc}</p>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: tm.color }}>{cat.name} · {rarityLabel(ft.tier)}</div>
+          <h2 className="text-title-6 font-bold mt-1">{fam.name} {romanOf(ft.tier)}</h2>
+          <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{tierDef.desc}</p>
         </div>
 
         <ActionBar pad={5}>
-          <span className="text-xs opacity-60 tabular-nums self-center">{tr("common.chosen", { n: sel.length, need })}</span>
+          <span className="text-body-5 opacity-60 tabular-nums self-center">{tr("common.chosen", { n: sel.length, need })}</span>
           <span className="flex-1" />
           <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm()}>{tr("common.confirm")}</ActionButton>
         </ActionBar>
 
         {isCards ? (
           <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+            <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
               {tr("target.pickCards", { count: need })}{heldIds.size > 0 ? tr("famtarget.alreadyBound", { n: heldIds.size }) : ""}
             </div>
             <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
@@ -74,13 +74,13 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           </div>
         ) : isType ? (
           <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{tr("famtarget.pickType")}</div>
+            <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr("famtarget.pickType")}</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {FORMATION_TYPES.map((t) => {
                 const on = ft.formationType === t;
                 return (
                   <button key={t} onClick={() => onFormationType(t)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    className="px-4 py-2 rounded-lg text-body-lg-5 font-bold transition-all"
                     style={{ background: on ? tm.color : "#20202a", color: on ? "#141419" : "#c8c8d0", border: `2px solid ${on ? tm.color : "#3a3a44"}` }}>
                     {formationName(t)}
                   </button>
@@ -89,7 +89,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             </div>
             {/* #UI: Deck mit aktuellen Formationen + Gebäuden — damit man sieht, welche Formationstypen man hat. */}
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{tr(architectCover ? "famtarget.deck.arch" : "famtarget.deck")}</div>
+              <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr(architectCover ? "famtarget.deck.arch" : "famtarget.deck")}</div>
               <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={architectCover} onTilePick={() => {}} quietTiles />
@@ -97,7 +97,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           </div>
         ) : (
           <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+            <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
               {ordered ? tr("famtarget.ordered") : tr("famtarget.pickSuits", { count: need })}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -106,7 +106,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
                 const on = idx >= 0;
                 return (
                   <button key={su} onClick={() => onSuit(su)}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    className="px-4 py-2 rounded-lg text-body-lg-5 font-bold transition-all"
                     style={{ background: on ? suitColor(su) : `${suitColor(su)}22`, color: on ? "#141419" : suitColor(su), border: `2px solid ${suitColor(su)}` }}>
                     {ordered && on && <span className="mr-1 opacity-80">{idx + 1}.</span>}
                     {suitLabel(su)}
@@ -116,7 +116,7 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             </div>
             {/* #UI: Deck mit aktuellen Formationen + Gebäuden — für eine informierte Farbwahl. */}
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{tr(architectCover ? "famtarget.deck.arch" : "famtarget.deck")}</div>
+              <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr(architectCover ? "famtarget.deck.arch" : "famtarget.deck")}</div>
               <CardGrid cards={cards} formations={state.formations} roles={state.roles} {...glacierGridProps(state)}
                 anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
                 architectCover={architectCover} onTilePick={() => {}} quietTiles />
@@ -124,14 +124,14 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
             {/* #391 Deck-Kontext (nur Farb-Modus) UNTER dem Aufstellbrett: kompakte Deck-Stärke je Farbe (DeckStrength) —
                 hilft, die stärkste bzw. schwächste Farbe zu wählen. */}
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{tr("famtarget.deckValues")}</div>
+              <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr("famtarget.deckValues")}</div>
               <DeckStrength deck={state.deck} />
             </div>
           </div>
         )}
 
         {previewOn && (
-          <div className="text-center text-[11px] mt-4 opacity-85">
+          <div className="text-center text-meta-3 mt-4 opacity-85">
             <span className="opacity-60">{tr("famtarget.strength")}</span>{" "}
             <span className="tabular-nums ty-num">×{fmtStr(1 + curStrength)}</span>
             {projStrength != null && (() => {

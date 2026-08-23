@@ -31,15 +31,15 @@ export function GlacierPick({ state, onConfirm }) {
       <div className="relative w-full max-w-4xl rounded-2xl p-5 max-h-[95dvh] overflow-y-auto overlay-card" style={phaseCard(PHASE_ACCENTS.ice)}>
         <PhaseHairline />
         <div className="text-center mb-1">
-          <div className="text-xs uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> {t("glacierpick.eyebrow")}</div>
-          <h2 className="text-xl font-bold mt-1">{t("glacierpick.title")}</h2>
-          <p className="text-xs opacity-60 mt-1 max-w-xl mx-auto leading-snug">
+          <div className="text-body-5 uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> {t("glacierpick.eyebrow")}</div>
+          <h2 className="text-title-6 font-bold mt-1">{t("glacierpick.title")}</h2>
+          <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">
             {t("glacierpick.intro.a")} <b>{t("glacierpick.intro.rigid")}</b> {t("glacierpick.intro.b")}
           </p>
         </div>
 
         <ActionBar pad={5}>
-          <span className="text-xs opacity-60 tabular-nums self-center">{t("glacierpick.chosen", { n: sel != null ? 1 : 0 })}</span>
+          <span className="text-body-5 opacity-60 tabular-nums self-center">{t("glacierpick.chosen", { n: sel != null ? 1 : 0 })}</span>
           <span className="flex-1" />
           <ActionButton kind="primary" disabled={!ready} onClick={() => ready && onConfirm(sel)}>{t("common.confirm")}</ActionButton>
         </ActionBar>

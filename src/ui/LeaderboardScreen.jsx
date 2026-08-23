@@ -66,8 +66,8 @@ function ModBox({ m }) {
     <div className="lb-mod rounded-lg px-3 py-2" style={{ background: "#17161f", border: `1px solid ${c}44`, "--c": c }}>
       <span className="lb-modicon as-deskonly" aria-hidden="true">{m.sign === "pos" ? "✚" : "⊘"}</span>
       <div className="lb-modtext">
-        <div className="text-[12.5px] font-bold" style={{ color: c }}>{m.name}</div>
-        <div className="text-[11.5px] opacity-80 leading-snug mt-0.5">{text}</div>
+        <div className="text-body-2 font-bold" style={{ color: c }}>{m.name}</div>
+        <div className="text-meta-4 opacity-80 leading-snug mt-0.5">{text}</div>
       </div>
       {spanne && <span className="lb-modspan as-deskonly ty-num-sm">{spanne[1]}</span>}
     </div>
@@ -77,19 +77,19 @@ function RegelnPanel() {
   const catalog = catalogDisplayMods();
   const pos = catalog.filter((m) => m.sign === "pos");
   const neg = catalog.filter((m) => m.sign === "neg");
-  const head = "text-[10px] font-bold uppercase tracking-wider";
+  const head = "text-meta-1 font-bold uppercase tracking-wider";
   /* #desktop: Ab 1280 px stehen positive und negative Modifikatoren NEBENEINANDER (links/rechts) statt
      untereinander — die Liste ist 19 Kästen lang und war sonst eine Rolle. Die Klassen sind unter 1280 px
      tote Haken; die Reihenfolge im DOM bleibt die der Handy-Fassung. */
   return (
-    <div className="rg-root text-[12px] leading-relaxed">
+    <div className="rg-root text-body-1 leading-relaxed">
       <p className="rg-intro opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
       <div className={`rg-h rg-h-pos ${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
       <div className="rg-pos grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
       <div className={`rg-h rg-h-neg ${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>
       <div className="rg-neg grid gap-1.5">{neg.map((m) => <ModBox key={m.id} m={m} />)}</div>
       <div className={`rg-h rg-h-pairs ${head} mt-3 mb-1.5 opacity-60`}>{tr("board.rules.pairs")}</div>
-      <div className="rg-pairs grid gap-1 text-[11.5px] opacity-75">
+      <div className="rg-pairs grid gap-1 text-meta-4 opacity-75">
         {WEEK_MOD_PAIRS.map((p) => (
           <div key={p.key}><b style={{ color: MOD_POS }}>{WEEK_MOD_BY_ID[p.pos].name}</b> ↔ <b style={{ color: MOD_NEG }}>{WEEK_MOD_BY_ID[p.neg].name}</b></div>
         ))}
@@ -139,24 +139,24 @@ function ChampionsList({ reloadToken, username, onChampionWeeks }) {
     return () => { alive = false; };
   }, [reloadToken, username, onChampionWeeks]);
 
-  if (!leaderboardConfigured) return <div className="text-sm opacity-40 text-center py-6">{tr("board.champions.unavailable")}</div>;
+  if (!leaderboardConfigured) return <div className="text-body-lg-5 opacity-40 text-center py-6">{tr("board.champions.unavailable")}</div>;
   return (
     <>
-      <div className="text-[11px] opacity-55 leading-relaxed mb-3">
+      <div className="text-meta-3 opacity-55 leading-relaxed mb-3">
         {tr("board.champions.intro")}
       </div>
       {champs === null ? (
-        <div className="text-xs opacity-40 text-center py-3">{tr("board.champions.loading")}</div>
+        <div className="text-body-5 opacity-40 text-center py-3">{tr("board.champions.loading")}</div>
       ) : champs.length === 0 ? (
-        <div className="text-xs opacity-40 text-center py-6">{tr("board.champions.empty")}</div>
+        <div className="text-body-5 opacity-40 text-center py-6">{tr("board.champions.empty")}</div>
       ) : (
         <div className="grid gap-1">
           {champs.map((c) => (
-            <div key={`${c.year}-${c.week}`} className="flex items-center gap-2.5 text-sm px-2.5 py-1.5 rounded-lg"
+            <div key={`${c.year}-${c.week}`} className="flex items-center gap-2.5 text-body-lg-5 px-2.5 py-1.5 rounded-lg"
               style={{ background: "#20202a", border: `1px solid ${deckMix(20)}` }}>
-              <RankIcon className="as-rank-icon text-[15px]" />
+              <RankIcon className="as-rank-icon text-body-lg-3" />
               <span className="flex-1 min-w-0 truncate font-semibold">
-                {c.name || "—"}<span className="text-[10px] opacity-45 ml-1.5">{c.labelShort}</span>
+                {c.name || "—"}<span className="text-meta-1 opacity-45 ml-1.5">{c.labelShort}</span>
               </span>
               <span className="font-bold shrink-0 tabular-nums" style={{ color: GOLD }}>{fmtScore(c.score)}</span>
             </div>
@@ -202,7 +202,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 Ranglisten-Knopf (RankIcon.jsx): ein Emoji bringt seine eigene Farbe mit und steht quer zu
                 einem Panel, das seine Töne aus dem aktiven Deck zieht. Nebeneffekt am Reiter unten: das
                 Emoji zwang dort einen Umbruch und machte den Challenger-Reiter höher als seine Nachbarn. */}
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><RankIcon />{tr("board.title")}</h2>
+            <h2 className="text-title-5 font-extrabold flex items-center gap-2"><RankIcon />{tr("board.title")}</h2>
             <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{tr("common.close")}</ActionButton>
           </div>
 
@@ -217,7 +217,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 /* #kante: Signal an der Unterkante wie in Werkstatt und Upgrades — bei waagerechten
                    Reiterzeilen die passende Kante. Inaktive sind reiner Text, ohne Kasten. */
                 <button key={id} role="tab" aria-selected={on} onClick={() => setTab(id)}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-all"
+                  className="flex-1 text-body-3 font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-all"
                   style={on
                     ? { color: "#fff", borderBottom: `2px solid ${accent}`,
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${accent} 14%, transparent))` }
@@ -244,7 +244,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
             {tab === "global" && (
               leaderboardConfigured
                 ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} onPlaySeed={onPlaySeed} showTree />
-                : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
+                : <div className="text-body-lg-5 opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
             {tab === "meister" && (
@@ -252,8 +252,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 <>
                   {/* Kopf: aktuelle Woche + Live-Countdown bis Reset (So 23:59 UTC). */}
                   <div className="lb-weekhead flex items-baseline justify-between gap-2 mb-2.5">
-                    <span className="lb-weektitle text-[14px] font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
-                    <span className="lb-weekcount text-[11px] opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
+                    <span className="lb-weektitle text-body-lg-1 font-extrabold" style={{ color: UI1 }}>{tr("board.weekLabel", { week: week.week, year: week.year })}</span>
+                    <span className="lb-weekcount text-meta-3 opacity-60 tabular-nums">{tr("board.resetIn", { time: fmtCountdown(msUntilWeekEnd(new Date(now))) })}</span>
                   </div>
                   {/* #lb-premium: Drei Kontext-Kacheln — was diesen Lauf ausmacht, in einem Blick. Sie stehen NUR
                       im Wochen-Reiter (dort fällt die Entscheidung mitzuspielen) und nur ab 1280 px; darunter
@@ -271,7 +271,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {/* #global Nachschlage-Modus: nur die Platzierung. Seed, Modifikatoren und der Spielen-Knopf
                       stehen beim Ranglisten-Knopf im Menü — ein Weg zum Spielen, nicht zwei. */}
                   {boardMode && (
-                    <div className="text-[11px] opacity-45 leading-snug mb-3">{tr("board.week.viewOnly")}</div>
+                    <div className="text-meta-3 opacity-45 leading-snug mb-3">{tr("board.week.viewOnly")}</div>
                   )}
                   {/* #desktop — Klammer um das „Cockpit" (Seed · Spielen · Modifikatoren). Ab 1280 px steht es als
                       eigene Spalte NEBEN der Liste; unter 1280 px ist die Klammer `display: contents` und ändert nichts. */}
@@ -279,8 +279,8 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   {/* Seed der Woche + Spielen (bzw. gesperrt bis 13/13). #deckui: Box/Chip/Button in Deckfarbe. */}
                   <div className="rounded-xl px-3.5 py-3 mb-3" style={{ background: "linear-gradient(180deg,#17161f,#131218)", border: `1px solid ${deckMix(30)}` }}>
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="lb-seedlabel text-[9.5px] font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
-                      <span className="lb-seed font-mono font-bold text-[15px] px-2.5 py-0.5 rounded tracking-wider" style={{ color: UI1, background: "#1c1b24", border: `1px solid ${deckMix(45)}` }}>{prettySeed(week.seed)}</span>
+                      <span className="lb-seedlabel text-micro-4 font-bold uppercase tracking-wider opacity-55">{tr("board.weekSeed")}</span>
+                      <span className="lb-seed font-mono font-bold text-body-lg-3 px-2.5 py-0.5 rounded tracking-wider" style={{ color: UI1, background: "#1c1b24", border: `1px solid ${deckMix(45)}` }}>{prettySeed(week.seed)}</span>
                     </div>
                     {/* #kante: war als einziger Knopf hier noch die volle Deckfarbe mit dunkler Schrift — die
                         Fassung von vor „Kante statt Fläche". Er ist das Ziel dieses Screens, also trägt er
@@ -289,10 +289,10 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                         `:root` spiegelt — sie greift also auch hier im Body-Portal. */}
                     {canPlayRanked && (
                       <button onClick={onPlayRanked || undefined}
-                        className="as-cta-primary w-full mt-3 rounded-lg font-extrabold text-[13px] px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5">{tr("board.play")}</button>
+                        className="as-cta-primary w-full mt-3 rounded-lg font-extrabold text-body-3 px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5">{tr("board.play")}</button>
                     )}
                     {!canPlayRanked && (
-                      <div className="text-[11px] font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
+                      <div className="text-meta-3 font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
                         {tr("board.locked")}
                       </div>
                     )}
@@ -302,7 +302,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                       ab 1280 px dieselben Modifikatoren AUSGESCHRIEBEN in den Kästen des Regeln-Reiters. Auf
                       420 px Spaltenbreite passt der volle Text — dann ist die Kurzform überflüssig, und man
                       muss für „was heißt Knapper Bau?" nicht mehr in den Regeln nachsehen. */}
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
+                  <div className="text-meta-1 font-bold uppercase tracking-wider opacity-50 mb-1.5">{tr("board.weekMods")}</div>
                   <div className="mb-3 dt:hidden"><WeekModChips mods={pickedDisplayMods(weekMods)} /></div>
                   <div className="lb-modlist mb-3 hidden dt:grid gap-1.5">
                     {pickedDisplayMods(weekMods).map((m) => <ModBox key={m.id} m={m} />)}
@@ -310,7 +310,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                   </div>)}
                   <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} board="meister" seed={week.seed} onPlaySeed={onPlaySeed} hideHeader />
                 </>
-              ) : <div className="text-sm opacity-40 text-center py-8">{tr("board.unavailable")}</div>
+              ) : <div className="text-body-lg-5 opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
             {tab === "champions" && <ChampionsList reloadToken={reloadToken} username={username} onChampionWeeks={onChampionWeeks} />}

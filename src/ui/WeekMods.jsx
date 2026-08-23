@@ -36,7 +36,7 @@ export function WeekModChips({ mods, size = "md" }) {
   const pos = mods.filter((m) => m.sign === "pos");
   const neg = mods.filter((m) => m.sign === "neg");
   const openMod = mods.find((m) => m.id === open) || null;
-  const pad = size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-[12px]";
+  const pad = size === "sm" ? "px-2 py-0.5 text-meta-3" : "px-2.5 py-1 text-body-1";
   const chip = (m) => {
     const c = m.sign === "pos" ? MOD_POS : MOD_NEG;
     const active = open === m.id;
@@ -54,7 +54,7 @@ export function WeekModChips({ mods, size = "md" }) {
       {pos.length > 0 && neg.length > 0 && <div className="h-px my-1.5" style={{ background: "#2a2833" }} />}
       {neg.length > 0 && <div className="flex flex-wrap gap-1.5">{neg.map(chip)}</div>}
       {openMod && (
-        <div className="mt-2 rounded-lg p-2.5 text-[12px] leading-snug"
+        <div className="mt-2 rounded-lg p-2.5 text-body-1 leading-snug"
           style={{ background: "#17161f", border: `1px solid ${(openMod.sign === "pos" ? MOD_POS : MOD_NEG)}44` }}>
           <b style={{ color: openMod.sign === "pos" ? MOD_POS : MOD_NEG }}>{openMod.name}</b>
           <span className="opacity-80"> — {openMod.text}</span>
@@ -70,7 +70,7 @@ export function WeekModPanel({ mods, className = "" }) {
   return (
     <div className={`rounded-xl p-4 as-panel as-panel-deck ${className}`}
       style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
-      <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{t("weekmods.title")}</div>
+      <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("weekmods.title")}</div>
       <WeekModChips mods={mods} />
     </div>
   );

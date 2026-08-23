@@ -30,8 +30,8 @@ function FormCollapse({ label, chipWord, color = "#8a7de0", open, onToggle, chil
     <div>
       <button type="button" onClick={onToggle} aria-expanded={open}
         className="w-full flex items-center gap-2 text-left" title={t(open ? "form.collapse.close" : "form.collapse.open", { label })}>
-        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
-        <span className="text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
+        <span className="text-meta-3 font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
+        <span className="text-meta-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full transition-all hover:brightness-125"
           style={{ color, background: `${color}14`, border: `1px solid ${color}3a` }}>
           <span className="transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>
           {open ? t("form.collapse.less") : (chipWord || t("form.collapse.more"))}
@@ -193,8 +193,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         {/* Kopf (#UI Aufstellung-Redesign): Titel + Glossar, Durchlauf-Score direkt darunter. */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-widest" style={{ color: "#5ab87a" }}>{t("form.eyebrow", { cycle: (state.cycle || 0) + 1 })}</div>
-            <h2 className="text-xl font-bold">{t("form.title")}</h2>
+            <div className="text-body-5 uppercase tracking-widest" style={{ color: "#5ab87a" }}>{t("form.eyebrow", { cycle: (state.cycle || 0) + 1 })}</div>
+            <h2 className="text-title-6 font-bold">{t("form.title")}</h2>
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
@@ -204,11 +204,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}
         <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.green)}>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5">
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.bonus")}</span>
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.bonus")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 26, color: "#d4a63a" }}>{t("form.bonus.value", { pct: pctOf(curStrength) })}</span>
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
-            <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
           </div>
         </div>
@@ -220,9 +220,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
             {/* #kante: Beides sind Auswege — neutral, ohne Farbsignal. */}
-            <button onClick={onUndo} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap"
+            <button onClick={onUndo} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 font-bold whitespace-nowrap"
               style={{ opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.undo")}</button>
-            <button onClick={onReset} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+            <button onClick={onReset} disabled={!hasSwaps} className="as-edge-neutral as-edge-thin flex-1 px-3 py-2 rounded-lg text-body-lg-5 whitespace-nowrap"
               style={{ opacity: hasSwaps ? 1 : 0.4, cursor: hasSwaps ? "pointer" : "default" }}>{t("form.reset")}</button>
           </div>
           {/* Fortfahren voll-breit — trägt das Live-Feedback (Differenz seit Durchlaufbeginn + Restenergie), damit man es
@@ -230,14 +230,14 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           {/* #kante: „Fortfahren" ist das Ziel dieser Phase — starker Kanten-Knopf, einziger mit Glow. */}
           <button onClick={onConfirm} className="as-edge-strong w-full px-4 py-2 rounded-lg font-bold transition-all hover:brightness-110 flex flex-col items-center leading-tight"
             style={{ "--c": GOLD }}>
-            <span className="text-sm">{t("form.confirm")}</span>
-            <span className="text-[11px] mt-0.5" title={t("form.confirm.title")}>
+            <span className="text-body-lg-5">{t("form.confirm")}</span>
+            <span className="text-meta-3 mt-0.5" title={t("form.confirm.title")}>
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
               <span style={{ opacity: 0.55 }}>{t("form.energyLeft", { n: formationEnergy })}</span>
             </span>
           </button>
         </div>
-        <p className="text-xs opacity-55 mb-2">
+        <p className="text-body-5 opacity-55 mb-2">
           {t("form.hint.pre")} <b>{t("form.hint.within")}</b> {t("form.hint.post", { size: SEGMENT_SIZE })}
           {segInfo.active && (segInfo.all
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
@@ -284,7 +284,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
                 <LayoutPerks perks={state.perks} familyTiers={state.familyTiers} />
                 {/* Gehaltene Eis-Effekte auf die Formationserkennung — nur wenn welche gehalten werden (desc aus SKILL_DEFS). */}
                 {iceFormSkills.length > 0 && (
-                  <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+                  <div className="grid gap-0.5 text-body-5 sm:text-body-3 leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
                     <div className="font-bold inline-flex items-center gap-1" style={{ color: "#7fd4f0" }}><FactionIcon type="ice" size={13} /> {t("form.iceEffects")}</div>
                     {iceFormSkills.map((id) => (
                       <div key={id}>

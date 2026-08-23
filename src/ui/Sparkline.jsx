@@ -64,7 +64,7 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
   const y = (v) => H - padB - (v / maxVal) * (H - padT - padB);
   const path = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   if (current.length < 2 && record.length < 2) {
-    return <div className="text-[10px] opacity-35 py-2 text-center">{t("sparkline.empty")}</div>;
+    return <div className="text-meta-1 opacity-35 py-2 text-center">{t("sparkline.empty")}</div>;
   }
   /* Waagerechte Marken auf RUNDEN Werten (1 · 2 · 5 × 10^k), nicht auf Dritteln des Maximums: „754.978"
      als Achsenwert liest niemand, „500.000" schon. Der Schritt ist die nächstgrößere runde Zahl unter
@@ -141,7 +141,7 @@ export function Sparkline({ current = [], record = [], height = 40, axes = false
   return (
     <div className="relative" style={{ height: H }}>
       {yTicks.map((v, i) => (
-        <span key={`k${i}`} className="absolute text-[9px] tabular-nums pointer-events-none"
+        <span key={`k${i}`} className="absolute text-micro-3 tabular-nums pointer-events-none"
           style={{ left: 0, width: KNAPP_LAB - 6, textAlign: "right",
             top: Math.max(0, Math.min(H - 11, y(v) - 5.5)), color: "#65656f" }}>{fmtScoreShort(v)}</span>
       ))}

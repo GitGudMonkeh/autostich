@@ -117,13 +117,13 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           { label: t("bar.fire.yield.over"), value: fireWhite, color: WHITE_HEAT, hint: t("bar.fire.yield.over.hint") },
         ]} />
         {ashBurned > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">{t("bar.fire.ashBurned")} <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">{t("bar.fire.overRun")}</span></div>
+          <div className="text-meta-1 opacity-55 mt-1">{t("bar.fire.ashBurned")} <b className="tabular-nums" style={{ color: ASH }}>{grp(ashBurned)}</b> <span className="opacity-70">{t("bar.fire.overRun")}</span></div>
         )}
       </div>
       <div className="flex items-stretch gap-3">
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between text-xs mb-1.5">
+          <div className="flex justify-between text-body-5 mb-1.5">
             <span className="opacity-60">{t("bar.fire.heat")}
               {conflagReady && <span style={{ color: HOT }}>{t("bar.fire.conflagReady")}</span>}
               {whiteGlow && <span style={{ color: WHITE_HEAT }}>{t("bar.fire.whiteGlow")}</span>}
@@ -155,7 +155,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {badges.map((b) => (
-                <span key={b.k} className="text-[10px] px-1.5 py-0.5 rounded font-semibold" title={b.title}
+                <span key={b.k} className="text-meta-1 px-1.5 py-0.5 rounded font-semibold" title={b.title}
                   style={{ background: `${b.c}${b.dim ? "14" : "22"}`, color: b.c,
                            border: `1px solid ${b.c}${b.dim ? "3a" : "66"}`, opacity: b.dim ? 0.55 : 1 }}>{b.t}</span>
               ))}
@@ -182,7 +182,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
       {/* #270.2 Brand — gebrandmarkte Gegnerkarten über den Lauf (Feuers Gegner-Debuff, analog Eis-Frostbiss). Eigene rote
           Zeile. #UI: nur wenige 🔥 als Akzent (nicht je Brand eins → sonst umbricht die Leiste); die echte Zahl steht daneben. */}
       {brandTotal > 0 && (
-        <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
+        <div className="flex items-center gap-2 text-body-5 mt-2 pt-2 border-t" style={{ borderColor: `${BRAND}22` }}>
           <span className="opacity-55 shrink-0">{t("bar.fire.brand")}</span>
           <span className="ty-num shrink-0" style={{ color: BRAND }}>{grp(brandTotal)}</span>
           <span className="inline-flex gap-0.5 shrink-0 overflow-hidden">

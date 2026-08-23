@@ -18,9 +18,9 @@ export function RoundScoreBadge({ state = {}, className = "" }) {
   const diffSign = pct === 0 ? "±" : (pct > 0 ? "+" : "−");
   const diffStr = t("roundscore.diff", { sign: diffSign, pct: Math.abs(pct) });
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${className}`}
+    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5 ${className}`}
       style={{ background: "#20202a", border: "1px solid #33333e" }}>
-      <span className="opacity-55 uppercase tracking-wide text-[10px]">{t("roundscore.label")}</span>
+      <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("roundscore.label")}</span>
       <span className="font-bold ty-num" style={{ color: "#d4a63a" }}>{scoreStr}</span>
       {hasDiff
         ? <span className="font-bold" title={t("roundscore.diff.title")} style={{ color: diffColor }}>{diffStr}</span>

@@ -156,20 +156,20 @@ export function GlossaryOverlay({ onClose }) {
               <span className="gl-title flex items-center gap-2.5">
                 <span className="gloss-i-mark">i</span>
                 {/* #deckui: Titel-Akzent in Deckfarbe (Fallback = bisheriges Pastellviolett). */}
-                <h2 className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: "var(--deck-a1, #d8d2f2)" }}>{t("glossary.title")}</h2>
+                <h2 className="text-body-5 font-bold tracking-[0.28em] uppercase" style={{ color: "var(--deck-a1, #d8d2f2)" }}>{t("glossary.title")}</h2>
               </span>
               <ActionButton kind="secondary" className="gl-close ml-auto" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
-            <div className="gl-hint text-[10px] mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("glossary.subtitle")}</div>
+            <div className="gl-hint text-meta-1 mt-0.5 ml-8 tracking-wide" style={{ color: "#71717c" }}>{t("glossary.subtitle")}</div>
             <div className="gl-search relative mt-2.5">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#5c5c68" }}>⌕</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-body-lg-5" style={{ color: "#5c5c68" }}>⌕</span>
               <input value={q} onChange={(e) => search(e.target.value)} autoComplete="off" spellCheck={false}
                 placeholder={t("glossary.search")}
-                className="w-full py-2 pl-8 pr-8 rounded-lg text-sm gloss-search"
+                className="w-full py-2 pl-8 pr-8 rounded-lg text-body-lg-5 gloss-search"
                 style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea" }} />
               {q && (
                 <button type="button" onClick={() => setQ("")} aria-label={t("glossary.clear")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1" style={{ color: "#71717c" }}>✕</button>
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-body-lg-5 px-1" style={{ color: "#71717c" }}>✕</button>
               )}
             </div>
             {/* Die Haarlinie der Karte sitzt an deren Ecke; ohne Kartenfläche braucht der Kopf eine eigene. */}
@@ -219,7 +219,7 @@ export function GlossaryOverlay({ onClose }) {
                 )}
                 <div ref={deskBodyRef} className="gl-body">
                   {shown.length === 0 && (
-                    <div className="px-5 py-9 text-center text-sm" style={{ color: "#71717c" }}>
+                    <div className="px-5 py-9 text-center text-body-lg-5" style={{ color: "#71717c" }}>
                       {/* #deckui: hervorgehobener Suchbegriff als reiner Chrome-Akzent → Deckfarbe (Fallback bisher). */}
                       {t("glossary.noHit.pre")} <b style={{ color: "var(--deck-a1, #c9c2ea)" }}>„{q.trim()}“</b>.<br />{t("glossary.noHit.post")}
                     </div>
@@ -233,15 +233,15 @@ export function GlossaryOverlay({ onClose }) {
                       <div className="gl-sechead flex items-center gap-2 mb-0.5">
                         <span className="gl-sq w-2.5 h-2.5 rounded-sm" style={{ background: cat.color }} />
                         {/* #deckui: Sektions-Titel-Akzent → Deckfarbe. Die Bedeutung trägt der Kategorie-Punkt (cat.color) daneben, der bleibt. */}
-                        <h3 className="text-[10px] tracking-[0.24em] uppercase font-bold" style={{ color: "var(--deck-a1, #b9b3cf)" }}>{cat.label}</h3>
+                        <h3 className="text-meta-1 tracking-[0.24em] uppercase font-bold" style={{ color: "var(--deck-a1, #b9b3cf)" }}>{cat.label}</h3>
                         <span className="gl-secrule flex-1 h-px max-w-[54px]" style={{ background: "linear-gradient(90deg,#33333e,transparent)" }} />
-                        <span className="text-[10px] tabular-nums" style={{ color: "#71717c" }}>{items.length}</span>
+                        <span className="text-meta-1 tabular-nums" style={{ color: "#71717c" }}>{items.length}</span>
                       </div>
                       {groups
                         ? groups.map(({ g, meta, items: gi }) => (
                             <div key={g}>
-                              <div className="gl-grouphead mt-2 mb-0.5 text-[10px] tracking-[0.14em] uppercase flex items-center gap-1.5" style={{ color: "#7d7790" }}>
-                                {FACTION_ICON_SRC[g] ? <FactionIcon type={g} size={13} /> : <span className="text-xs">{meta.icon}</span>}{meta.label}
+                              <div className="gl-grouphead mt-2 mb-0.5 text-meta-1 tracking-[0.14em] uppercase flex items-center gap-1.5" style={{ color: "#7d7790" }}>
+                                {FACTION_ICON_SRC[g] ? <FactionIcon type={g} size={13} /> : <span className="text-body-5">{meta.icon}</span>}{meta.label}
                               </div>
                               <div className="gl-cols">{gi.map((e) => <TermRow key={e.id} e={e} />)}</div>
                             </div>
@@ -278,7 +278,7 @@ function Chip({ label, dot, active, onClick }) {
   return (
     <button type="button" onClick={onClick}
       /* #kante: eckig statt Pille — an einer runden Form würde die linke Kante zur Sichel. */
-      className={"as-chip flex-none whitespace-nowrap text-[11px] tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
+      className={"as-chip flex-none whitespace-nowrap text-meta-3 tracking-wide px-2.5 py-1 rounded-md" + (active ? " as-chip-on" : "")}>
       {dot && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: dot }} />}
       {label}
     </button>
@@ -292,10 +292,10 @@ function TermRow({ e }) {
   return (
     <div className="as-edge-card as-edge-thin flex gap-2.5 px-2 py-2 rounded-lg gloss-term-row mb-1"
       style={{ "--c": e.color }}>
-      <span className="gl-ticon flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}><GlossaryIcon e={e} size={14} textClass="text-[15px]" /></span>
+      <span className="gl-ticon flex-none text-center w-4 leading-6 inline-flex items-center justify-center" style={{ color: e.color }}><GlossaryIcon e={e} size={14} textClass="text-body-lg-3" /></span>
       <div className="min-w-0">
-        <div className="gl-tname font-bold text-[13px] leading-tight" style={{ color: e.color }}>{e.label}</div>
-        <div className="gl-ttext text-[11.5px] leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{e.text}</div>
+        <div className="gl-tname font-bold text-body-3 leading-tight" style={{ color: e.color }}>{e.label}</div>
+        <div className="gl-ttext text-meta-4 leading-relaxed mt-0.5" style={{ color: "#a9a9b6" }}>{e.text}</div>
       </div>
     </div>
   );

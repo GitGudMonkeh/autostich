@@ -103,29 +103,29 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           { label: t("bar.plant.harvest"), value: harvestScore, color: PLANT_RIPE },
         ]} />
         {growthTotal > 0 && (
-          <div className="text-[10px] opacity-55 mt-1">{t("bar.plant.grown")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">{t("bar.plant.grown.unit")}</span></div>
+          <div className="text-meta-1 opacity-55 mt-1">{t("bar.plant.grown")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{grp(growthTotal)}</b> <span className="opacity-70">{t("bar.plant.grown.unit")}</span></div>
         )}
         {/* #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator. */}
         {trimCount > 0 && (
-          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.trimmed.title", { skills: trimmableNames(" / ") })}>
+          <div className="text-meta-1 opacity-70 mt-1" title={t("bar.plant.trimmed.title", { skills: trimmableNames(" / ") })}>
             {t("bar.plant.trimmed")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{trimCount}×</b> <span className="opacity-70">{t("bar.plant.trimmed.unit")}</span> <b className="tabular-nums" style={{ color: BLOOM }}>×{fmtNum(trimMult.toFixed(2))}</b>
           </div>
         )}
         {/* Mutterbaum (Legendär): der höchste Baum + was er je grünem Sieg an Direkt-Score zahlt (Überlauf-Wachstum × DIRECT). */}
         {hasMb && mbCard && (
-          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.tallest.title")}>
+          <div className="text-meta-1 opacity-70 mt-1" title={t("bar.plant.tallest.title")}>
             {t("bar.plant.tallest")} <b style={{ color: PLANT_FULL }}>{t("bar.plant.tallest.value", { value: mbCard.value })}</b> <span className="opacity-70">{t("bar.plant.overflow")}</span> <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(maxOv)}</b> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(mbScore)}</b> <span className="opacity-70">{t("bar.plant.perWin")}</span>
           </div>
         )}
         {/* Weltenbaum (Legendär): das gesamte Überlauf-Wachstum des Waldes + der Direkt-Score je grünem Sieg. */}
         {hasWb && (
-          <div className="text-[10px] opacity-70 mt-1" title={t("bar.plant.forest.title")}>
+          <div className="text-meta-1 opacity-70 mt-1" title={t("bar.plant.forest.title")}>
             {t("bar.plant.forest")} <b className="tabular-nums" style={{ color: PLANT_RIPE }}>{fmtG(sumOv)}</b> <span className="opacity-70">{t("bar.plant.forest.unit")}</span> → <b className="tabular-nums" style={{ color: PLANT_RIPE }}>+{grp(wbScore)}</b> <span className="opacity-70">{t("bar.plant.perWin")}</span>
           </div>
         )}
       </div>
       {/* Grün-Anteil (Hauptelement): Balken bis 100 %, zwei Schwellenmarken. */}
-      <div className="flex justify-between text-xs mb-1.5">
+      <div className="flex justify-between text-body-5 mb-1.5">
         <span className="opacity-60">{t("bar.plant.share")}
           {overgrown && <span style={{ color: PLANT_FULL }}>{t("bar.plant.share.badge")}</span>}
         </span>
@@ -140,7 +140,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
         {hasUeb && <Mark atPct={uebPct} label={t("bar.plant.mark.overgrowth.title", { pct: Math.round(uebPct) })} />}
       </div>
       {(hasEfr || hasUeb) && (
-        <div className="relative h-3 text-[10px] opacity-45 mt-1">
+        <div className="relative h-3 text-meta-1 opacity-45 mt-1">
           {hasEfr && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${efrPct}%` }}>{t("bar.plant.mark.spring")}</span>}
           {hasUeb && <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${uebPct}%` }}>{t("bar.plant.mark.overgrowth")}</span>}
         </div>
@@ -150,7 +150,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           Ersetzt die alte flache Zählerzeile — gleiche drei Zahlen, jetzt mit Durchschnitts-Fortschritt je Stufe. */}
       <div className="mt-2.5">
         {nextRipe != null && (
-          <div className="flex items-baseline justify-between text-xs mb-1.5">
+          <div className="flex items-baseline justify-between text-body-5 mb-1.5">
             <span className="opacity-60">{t("bar.plant.nextRipe")}</span>
             <span className="font-bold tabular-nums" style={{ color: PLANT_RIPE }} title={t("bar.plant.nextRipe.title")}>{t("bar.plant.nextRipe.wins", { count: nextRipe })}</span>
           </div>
@@ -163,8 +163,8 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
           ].map((s) => (
             <div key={s.k} className="rounded-lg px-2 py-1.5 text-center" title={s.title}
               style={{ background: `${s.col}12`, border: `1px solid ${s.col}${s.n ? "44" : "22"}`, opacity: s.n ? 1 : 0.5 }}>
-              <div className="text-base ty-num leading-none" style={{ color: s.col }}>{s.n}</div>
-              <div className="text-[9px] uppercase tracking-wide opacity-55 mt-0.5">{s.lab}</div>
+              <div className="text-body-lg-6 ty-num leading-none" style={{ color: s.col }}>{s.n}</div>
+              <div className="text-micro-3 uppercase tracking-wide opacity-55 mt-0.5">{s.lab}</div>
               <div className="rounded-full overflow-hidden mt-1" style={{ height: 4, background: "#26262e" }}>
                 <div className="h-full rounded-full" style={{ width: `${Math.round(s.bar * 100)}%`, background: s.col }} />
               </div>
@@ -177,7 +177,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
       {maturing.length > 0 && (
         <div className="mt-2 pt-2 border-t" style={{ borderColor: "#26262e" }}>
           <button type="button" onClick={() => onOption && onOption({ collapsePlantMaturing: !stripCollapsed })} data-sfx="none"
-            className="w-full flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-50 hover:opacity-80" style={{ background: "transparent" }} aria-expanded={!stripCollapsed}>
+            className="w-full flex items-center gap-1 text-meta-1 uppercase tracking-wide opacity-50 hover:opacity-80" style={{ background: "transparent" }} aria-expanded={!stripCollapsed}>
             <span className="inline-block w-2 text-center" aria-hidden="true">{stripCollapsed ? "▸" : "▾"}</span>
             <span>{t("bar.plant.maturing", { n: maturing.length })}</span>
           </button>
@@ -188,15 +188,15 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
                 return (
                   <div key={m.id} className="grid items-center gap-2" style={{ gridTemplateColumns: "16px 84px 1fr auto" }}>
                     <span className="text-center inline-flex justify-center"><FactionIcon type="plant" size={11} /></span>
-                    <span className="text-[10px] opacity-60 tabular-nums whitespace-nowrap">{m.label}</span>
+                    <span className="text-meta-1 opacity-60 tabular-nums whitespace-nowrap">{m.label}</span>
                     <div className="rounded-full overflow-hidden" style={{ height: 6, background: "#26262e" }}>
                       <div className="h-full rounded-full" style={{ width: `${Math.round(m.pct * 100)}%`, background: m.stage === "seed" ? SEED : `linear-gradient(90deg, ${PLANT_RIPE}, ${PLANT_FULL})` }} />
                     </div>
-                    <span className="text-[10px] tabular-nums" style={{ color: col }}>{Math.round(m.pct * 100)}%</span>
+                    <span className="text-meta-1 tabular-nums" style={{ color: col }}>{Math.round(m.pct * 100)}%</span>
                   </div>
                 );
               })}
-              {maturing.length > 8 && <div className="text-[9px] opacity-40 mt-0.5">{t("bar.plant.maturing.more", { n: maturing.length - 8 })}</div>}
+              {maturing.length > 8 && <div className="text-micro-3 opacity-40 mt-0.5">{t("bar.plant.maturing.more", { n: maturing.length - 8 })}</div>}
             </div>
           )}
         </div>
@@ -204,7 +204,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
 
       {/* Ausläufer (kolonisierte Gegnerkarten) — eigene, getrennte Zeile: der Griff ins Gegnerdeck (Ernte/Dornenkönig). */}
       {colonizedN > 0 && (
-        <div className="flex items-center gap-2 text-xs mt-2 pt-2 border-t" style={{ borderColor: `${PLANT}22` }}>
+        <div className="flex items-center gap-2 text-body-5 mt-2 pt-2 border-t" style={{ borderColor: `${PLANT}22` }}>
           <span className="opacity-55 shrink-0">{t("bar.plant.runners")}</span>
           <span className="ty-num shrink-0" style={{ color: PLANT_RIPE }}>{colonizedN}</span>
           <span className="inline-flex flex-wrap gap-0.5 min-w-0">

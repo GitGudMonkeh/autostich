@@ -86,8 +86,8 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: "#17171c" }}>
           <div>
-            <h2 className="text-lg font-bold ty-display" style={{ color: "#d4a63a" }}>{t("dev.run.title")}</h2>
-            <p className="text-xs opacity-55">{t("dev.run.sub")}</p>
+            <h2 className="text-title-5 font-bold ty-display" style={{ color: "#d4a63a" }}>{t("dev.run.title")}</h2>
+            <p className="text-body-5 opacity-55">{t("dev.run.sub")}</p>
           </div>
           <ActionButton kind="secondary" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
@@ -95,35 +95,35 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* Rundenzahl */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">{t("dev.run.cycles")}</span>
+            <span className="text-body-lg-5 font-semibold">{t("dev.run.cycles")}</span>
             <input type="number" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds}
               onChange={(e) => changeRounds(e.target.value)}
-              className="w-16 text-right px-2 py-1 rounded text-sm ty-num"
+              className="w-16 text-right px-2 py-1 rounded text-body-lg-5 ty-num"
               style={{ background: "#0f0f13", border: "1px solid #30303a", color: "#e8e8ea" }} />
           </div>
           <input type="range" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds} onChange={(e) => changeRounds(e.target.value)} className="w-full" />
-          <div className="text-[11px] opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} {t("dev.run.cycles")}</div>
+          <div className="text-meta-3 opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} {t("dev.run.cycles")}</div>
         </div>
 
         {/* Master-Auswahl der Typen */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
-          <span className="text-sm font-semibold">{t("dev.run.offerTypes")}</span>
+          <span className="text-body-lg-5 font-semibold">{t("dev.run.offerTypes")}</span>
           <div className="flex flex-wrap gap-2">
             {TYPES.map((t) => (
               <button key={t.token} onClick={() => toggleType(t.token)}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                className="px-3 py-1.5 rounded-full text-body-lg-5 font-medium transition-all"
                 style={chip(enabled.includes(t.token), t.color)}>
                 {enabled.includes(t.token) ? "✓ " : ""}{t.label}
               </button>
             ))}
           </div>
           <button onClick={evenDistribute}
-            className="mt-1 self-start px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-0.5"
+            className="mt-1 self-start px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5"
             style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
             {t("dev.run.distribute")}
           </button>
           {/* Verteilungs-Zusammenfassung */}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] mt-0.5">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-meta-3 mt-0.5">
             {counts.map((c) => (
               <span key={c.token} style={{ color: c.color }}>{c.label}: <b>{c.n}</b></span>
             ))}
@@ -132,7 +132,7 @@ export function DevRunSetup({ onStart, onClose }) {
 
         {/* Pro-Runde-Plan (aufklappbar) */}
         <div className="rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
-          <button onClick={() => setShowPlan((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold">
+          <button onClick={() => setShowPlan((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-body-lg-5 font-semibold">
             <span>{t("dev.run.plan")}</span>
             <span className="opacity-60">{showPlan ? "▲ einklappen" : "▼ aufklappen"}</span>
           </button>
@@ -140,11 +140,11 @@ export function DevRunSetup({ onStart, onClose }) {
             <div className="max-h-72 overflow-y-auto px-3 pb-3 flex flex-col gap-1.5">
               {schedule.map((tk, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="w-9 shrink-0 text-[11px] opacity-45 text-right ty-num">R{i + 1}</span>
+                  <span className="w-9 shrink-0 text-meta-3 opacity-45 text-right ty-num">R{i + 1}</span>
                   <div className="flex flex-wrap gap-1">
                     {enabledOrdered.map((token) => (
                       <button key={token} onClick={() => setRound(i, token)}
-                        className="px-2 py-0.5 rounded text-[11px] font-medium transition-all"
+                        className="px-2 py-0.5 rounded text-meta-3 font-medium transition-all"
                         style={chip(tk === token, COLOR[token])}>
                         {LABEL[token]}
                       </button>
@@ -159,14 +159,14 @@ export function DevRunSetup({ onStart, onClose }) {
         {/* Startressourcen */}
         <div className="rounded-xl p-3 flex flex-col gap-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-body-lg-5">
               <span className="font-semibold">Baupunkte (Baufeld)</span>
               <span className="ty-num" style={{ color: "#e0605a" }}>{cover} / {N_POS}</span>
             </div>
             <input type="range" min={0} max={N_POS} value={cover} onChange={(e) => setCover(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-body-lg-5">
               <span className="font-semibold">{t("dev.run.energy")}</span>
               <span className="ty-num" style={{ color: "#5a8ade" }}>{energy}</span>
             </div>
@@ -175,7 +175,7 @@ export function DevRunSetup({ onStart, onClose }) {
         </div>
 
         <button onClick={start}
-          className="w-full px-5 py-3 rounded-lg text-base font-bold transition-all hover:-translate-y-0.5"
+          className="w-full px-5 py-3 rounded-lg text-body-lg-6 font-bold transition-all hover:-translate-y-0.5"
           style={{ background: "#d4a63a", color: "#141419" }}>
           Dev Run starten ({rounds} Runden)
         </button>

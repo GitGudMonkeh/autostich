@@ -86,7 +86,7 @@ export function TrickBreakdown({ trick = null }) {
     // nicht (viele wirkende Faktoren, schmales Gerät), bricht die Kette per flex-wrap sauber auf die nächste Zeile
     // um, statt am Rand abgeschnitten zu werden (#ui). Jedes Glied trägt seinen Operator, das `= Summe`-Glied bleibt
     // durch das zusammengefasste Span geschlossen — so orphant nie ein „=" allein am Zeilenanfang.
-    <div className="flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-0.5 leading-none text-[10px] sm:text-[11px]"
+    <div className="flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-0.5 leading-none text-meta-1 sm:text-meta-3"
       aria-label={t("bf.bd.aria")}>
       {links.map((l, i) => (
         <span key={l.key} className="inline-flex items-baseline gap-1.5">

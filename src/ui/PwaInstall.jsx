@@ -52,13 +52,13 @@ export function PwaInstall() {
   };
 
   return (
-    <div className="text-xs text-center">
+    <div className="text-body-5 text-center">
       <button onClick={onClick} className="opacity-70 hover:opacity-100 transition-opacity px-1 inline-flex items-center gap-1 font-medium"
         style={{ color: AM }} title={t("pwa.title")}>
         <span aria-hidden>📲</span> {t("pwa.install")}
       </button>
       {iosHint && (
-        <div className="mt-1 text-[11px] opacity-60 leading-snug max-w-xs mx-auto">
+        <div className="mt-1 text-meta-3 opacity-60 leading-snug max-w-xs mx-auto">
           {t("pwa.ios")}
         </div>
       )}

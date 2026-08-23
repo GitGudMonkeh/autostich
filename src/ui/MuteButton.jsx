@@ -11,7 +11,7 @@ export function MuteButton({ muted, onToggle, className = "" }) {
       aria-pressed={muted}
       aria-label={label}
       title={label}
-      className={`rounded-lg px-3 py-1.5 text-sm font-semibold leading-none transition-all ${className}`}
+      className={`rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-none transition-all ${className}`}
       // Stumm = deutlich abgesetzt (gedämpftes Rot), damit der Zustand auf einen Blick erkennbar ist.
       style={{
         background: muted ? "#e0605a22" : "#20202a",

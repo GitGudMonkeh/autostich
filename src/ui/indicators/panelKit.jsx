@@ -38,14 +38,14 @@ export function FactionShell({ icon, name, color, stateText, stateOn = false, co
       <button type="button" onClick={onToggle} data-sfx="none" aria-expanded={!collapsed}
         className="w-full flex items-center gap-2 text-left">
         <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden="true">{icon}</span>
-        <span className="font-bold text-sm" style={{ color }}>{name}</span>
+        <span className="font-bold text-body-lg-5" style={{ color }}>{name}</span>
         {stateText && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold whitespace-nowrap"
+          <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap"
             style={{ background: stateOn ? `${color}22` : "#20202a", color: stateOn ? color : "#8a8a92",
                      border: `1px solid ${stateOn ? `${color}66` : "#33333e"}` }}>{stateText}</span>
         )}
         <span className="flex-1 h-px" style={{ background: `${color}22`, minWidth: 6 }} />
-        <span className="text-[11px] shrink-0" aria-hidden="true"
+        <span className="text-meta-3 shrink-0" aria-hidden="true"
           style={{ color: "#6d7288", display: "inline-block", transition: "transform .15s", transform: collapsed ? "none" : "rotate(90deg)" }}>▸</span>
       </button>
       {!collapsed && <div className="fac-body grid gap-3 mt-2.5">{children}</div>}
@@ -67,7 +67,7 @@ export function PanelSkills({ skills = [], arch, color = "#e8e8ea" }) {
     <div className="mt-auto pt-2.5">
       <div className="flex flex-wrap gap-1.5 border-t pt-2" style={{ borderColor: `${color}22` }}>
         {mine.map((id) => (
-          <span key={id} className="text-[10px] font-semibold rounded px-1.5 py-1 whitespace-nowrap"
+          <span key={id} className="text-meta-1 font-semibold rounded px-1.5 py-1 whitespace-nowrap"
             style={{ background: `${color}14`, color, border: `1px solid ${color}3a` }}>
             {skillDef(id).name}
           </span>
@@ -89,7 +89,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
   const single = active.length === 1;
   return (
     <div>
-      <div className="flex items-baseline justify-between text-xs mb-1.5">
+      <div className="flex items-baseline justify-between text-body-5 mb-1.5">
         <span className="opacity-60">{title}</span>
         <span className="font-bold tabular-nums" style={{ color: accent }}>~{nfmt(total)}</span>
       </div>
@@ -110,7 +110,7 @@ export function YieldMeter({ title, channels = [], accent = "#e8e8ea" }) {
         );
       })()}
       {/* Legende: nur aktive Kanäle, Punkt + Name + Zahl. */}
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-meta-1">
         {active.map((c) => (
           <span key={c.label} className="inline-flex items-center gap-1" title={c.hint || undefined}>
             <span className="w-[8px] h-[8px] rounded-[2px] shrink-0" style={{ background: c.color }} />
@@ -139,8 +139,8 @@ export function CounterCell({ icon, value, label, color, glow = false, dim = fal
         {icon}
       </span>
       <span className="flex flex-col leading-none">
-        <span className="font-bold text-sm tabular-nums" style={{ color }}>{value}</span>
-        {label && <span className="text-[9px] opacity-55 mt-0.5 whitespace-nowrap">{label}</span>}
+        <span className="font-bold text-body-lg-5 tabular-nums" style={{ color }}>{value}</span>
+        {label && <span className="text-micro-3 opacity-55 mt-0.5 whitespace-nowrap">{label}</span>}
       </span>
     </div>
   );

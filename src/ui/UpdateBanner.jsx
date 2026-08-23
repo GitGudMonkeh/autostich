@@ -53,15 +53,15 @@ export function UpdateBanner() {
       style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
       <div className="up-banner pointer-events-auto flex items-center gap-3 rounded-xl px-3.5 py-2.5"
         style={{ background: "#1b1b24", border: "1px solid #3a3a48", boxShadow: "0 6px 24px -8px #000" }}>
-        <span className="text-sm font-bold" style={{ color: "#c9c0f0" }}>{t("update.available")}</span>
+        <span className="text-body-lg-5 font-bold" style={{ color: "#c9c0f0" }}>{t("update.available")}</span>
         {/* #kante: „Neu laden" ist das Ziel des Banners — starker Kanten-Knopf statt gefüllter Goldtaste. */}
         <button type="button" onClick={() => window.location.reload()}
-          className="as-edge-strong as-edge-thin text-sm font-bold rounded-lg px-3 py-1.5 transition-all"
+          className="as-edge-strong as-edge-thin text-body-lg-5 font-bold rounded-lg px-3 py-1.5 transition-all"
           style={{ "--c": "#d4a63a" }}>
           {t("update.reload")}
         </button>
         <button type="button" onClick={() => setDismissed(true)} aria-label={t("update.dismiss")}
-          className="text-lg leading-none opacity-55 hover:opacity-90 transition-opacity px-1">×</button>
+          className="text-title-5 leading-none opacity-55 hover:opacity-90 transition-opacity px-1">×</button>
       </div>
     </div>
   );
