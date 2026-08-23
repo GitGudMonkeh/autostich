@@ -1,0 +1,1 @@
+import{n as l,aD as o,t as r}from"./index-C_auMbIV.js";function f(t){if(!t||!t.kind)return"";const{kind:i,vars:n={}}=t,a=`unlock.${i}`,e={...n};n.n!=null&&(e.n=l(n.n)),n.archetype&&(e.archetype=o(n.archetype));const c=r(a,e);return c===a?"":c}export{f as u};
