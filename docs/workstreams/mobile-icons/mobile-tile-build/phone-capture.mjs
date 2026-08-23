@@ -52,11 +52,18 @@ const SEED_INPUT = "11";           // parseSeed("11") === 33 — the seed the si
    334 px and that is the only claim a narrower capture can settle. */
 const ALL_VIEWPORTS = [[390, 844]];
 const EXTRA_VIEWPORTS = [[320, 844]];
+/* `--h8`: one width INSIDE the band this task leaves alone. 700 px is above Tailwind's `sm:` and far
+   below the desktop threshold, so it is the point where a mistake would show — a gate written as the
+   negation of `useIsWide` would light the emblem up here. The expectation is the opposite of every
+   other row in this file: no emblem, no ornament, exactly as before the change. */
+const H8_VIEWPORTS = [[700, 844]];
 const LANGS = ["de", "en"];
 const label = (() => { const i = process.argv.indexOf("--label"); return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : "V"; })();
 const only = (() => { const i = process.argv.indexOf("--only"); return i >= 0 ? process.argv[i + 1] : null; })();
 const VIEWPORTS = (() => {
-  const all = process.argv.includes("--wide") ? [...ALL_VIEWPORTS, ...EXTRA_VIEWPORTS] : ALL_VIEWPORTS;
+  const all = [...ALL_VIEWPORTS,
+               ...(process.argv.includes("--wide") ? EXTRA_VIEWPORTS : []),
+               ...(process.argv.includes("--h8") ? H8_VIEWPORTS : [])];
   return only ? all.filter(([w, h]) => `${w}x${h}` === only) : all;
 })();
 
@@ -107,7 +114,14 @@ const PROBE = (screen) => `(() => {
         const f = (sel) => { const n = el.querySelector(sel); return n ? getComputedStyle(n).fontSize : null; };
         return { name: f(".lv-cardname"), badge: f("span[class*='text-[10px]']") };
       })(),
+      /* \`hasImg\` counts ANY <img> in the tile — the faction badge renders one — so it is not an
+         emblem indicator. \`emblem\` is the one that answers „does the mobile fassung render". */
       hasImg: !!el.querySelector("img"),
+      emblem: (() => { const e = el.querySelector(".mc-emblem"); if (!e) return null;
+        const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+        return { w: round(r.width), h: round(r.height), blend: cs.mixBlendMode, filter: cs.filter,
+                 objectFit: cs.objectFit, mask: (cs.maskImage || cs.webkitMaskImage || "").slice(0, 90),
+                 src: (e.getAttribute("src") || "").split("/").pop() }; })(),
     };
   });
 
@@ -144,6 +158,8 @@ const PROBE = (screen) => `(() => {
        300 px copy overhangs the head and D5 does not hold at this width. */
     ornamentRoom: head ? round(card.clientWidth - 300) : null,
     ornaments,
+    ornamentsVisible: [...card.querySelectorAll(".co-corner")]
+      .filter((o) => getComputedStyle(o).display !== "none").length,
     tileCount: tiles.length, tiles,
   };
 })()`;
@@ -228,7 +244,11 @@ async function runLegendary(c, lang) {
   /* Before the app boots, never while it runs: the application writes its live state back over the
      edit within a tick. Measured the hard way by icons-corners. */
   await c.send("Page.addScriptToEvaluateOnNewDocument", {
-    source: `${BOOT}\ntry { localStorage.setItem("as_activerun", ${JSON.stringify(JSON.stringify(b))}); } catch {}`,
+    /* `BOOT(lang)`, not `BOOT`. Interpolating the function itself writes its SOURCE into the page and
+       seeds nothing — it worked only because the earlier `addScriptToEvaluateOnNewDocument` is still
+       registered and re-runs on this navigation. Found by the lint rule for the unused `lang`
+       parameter, which is the whole reason that rule is not waived here. */
+    source: `${BOOT(lang)}\ntry { localStorage.setItem("as_activerun", ${JSON.stringify(JSON.stringify(b))}); } catch {}`,
   });
   await goto(c, `${ORIGIN}/`, { settleMs: 2500 });
   /* The application does NOT auto-resume: it comes up on the hub with a „Lauf fortsetzen" button and

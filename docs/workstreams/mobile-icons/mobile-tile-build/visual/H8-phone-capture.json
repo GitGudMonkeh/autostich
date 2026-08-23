@@ -1,0 +1,557 @@
+{
+  "note": "H8 of the mobile-tile-build visual gate. Same script, seed, viewport and route for both halves. Scrollbars are hidden, so the widths are the phone case. Images beside this file.",
+  "label": "H8",
+  "seed": "11",
+  "port": 5188,
+  "dpr": 1,
+  "results": [
+    {
+      "viewport": {
+        "w": 700,
+        "h": 844
+      },
+      "lang": "de",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 668,
+          "h": 760,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 630,
+          "h": 382.75,
+          "templateColumns": "311px 311px",
+          "columnCount": 2,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 634,
+          "h": 72
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 311,
+            "h": 254.75,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          },
+          {
+            "x": 354,
+            "y": 264,
+            "w": 311,
+            "h": 158.5,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 311,
+            "h": 120,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          }
+        ],
+        "image": "H8-skill-de-700x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 668,
+          "h": 776.47,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 618,
+          "h": 190.25,
+          "templateColumns": "199.328px 199.328px 199.328px",
+          "columnCount": 3,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 618,
+          "h": 86.67
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 190.25,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 188,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          },
+          {
+            "x": 250.33,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 190.25,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 188,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          },
+          {
+            "x": 459.66,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 190.25,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 188,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          }
+        ],
+        "image": "H8-perk-de-700x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 668,
+          "h": 760,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 634,
+          "h": 139.25,
+          "templateColumns": "313px 313px",
+          "columnCount": 2,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 634,
+          "h": 110.67
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 313,
+            "h": 139.25,
+            "paddingBoxWidth": 308,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          }
+        ],
+        "image": "H8-legendary-de-700x844.png"
+      }
+    },
+    {
+      "viewport": {
+        "w": 700,
+        "h": 844
+      },
+      "lang": "en",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 668,
+          "h": 760,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 630,
+          "h": 382.75,
+          "templateColumns": "311px 311px",
+          "columnCount": 2,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 634,
+          "h": 72
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 311,
+            "h": 254.75,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          },
+          {
+            "x": 354,
+            "y": 264,
+            "w": 311,
+            "h": 139.25,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 311,
+            "h": 120,
+            "paddingBoxWidth": 306,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          }
+        ],
+        "image": "H8-skill-en-700x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 668,
+          "h": 776.47,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 618,
+          "h": 154.5,
+          "templateColumns": "199.328px 199.328px 199.328px",
+          "columnCount": 3,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 618,
+          "h": 86.67
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 154.5,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          },
+          {
+            "x": 250.33,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 154.5,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          },
+          {
+            "x": 459.66,
+            "y": 256.44,
+            "w": 199.33,
+            "h": 154.5,
+            "paddingBoxWidth": 194,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false,
+            "emblem": null
+          }
+        ],
+        "image": "H8-perk-en-700x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 700,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": true
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 668,
+          "h": 760,
+          "paddingBoxWidth": 666,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 634,
+          "h": 139.25,
+          "templateColumns": "313px 313px",
+          "columnCount": 2,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 634,
+          "h": 110.67
+        },
+        "ornamentRoom": 366,
+        "ornaments": [],
+        "ornamentsVisible": 0,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 313,
+            "h": 139.25,
+            "paddingBoxWidth": 308,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": null
+          }
+        ],
+        "image": "H8-legendary-en-700x844.png"
+      }
+    }
+  ]
+}

@@ -194,15 +194,23 @@ describe("#perkart — die beiden Bevölkerungen fallen NICHT aufeinander zurüc
 });
 
 describe("#perkart — Verdrahtung", () => {
-  it("das Emblem hängt am Breiten-Gate, nicht an CSS", () => {
-    // Ohne diese Zeile rendert das <img> auch am Handy — der Browser lädt dann Bilder für eine
-    // Ansicht, die sie gar nicht zeigt.
-    expect(jsx).toContain("const art = inWings ? perkArt(v) : null;");
+  /* UMGESCHRIEBEN, 23.08.2026 (mobile-tile-build) — dieselbe Umkehrung wie in skill-art.test.js, mit
+     derselben Begründung: „am Handy wird nichts geladen" war richtig, solange es dort keine Fassung
+     gab. Jetzt gibt es zwei Fassungen mit je einem Gate und ein bewusst leeres Band dazwischen. */
+  it("das Emblem hängt an ZWEI Gates — Flügel und Telefon —, nicht an CSS", () => {
+    expect(jsx).toContain("const art = (inWings || onPhone) ? perkArt(v) : null;");
     expect(jsx).toContain("const inWings = useIsWide();");
+    expect(jsx).toContain("const onPhone = useIsPhone();");
   });
 
-  it("die Kachel ohne Bild behält ihren Baum (Handy bleibt unberührt)", () => {
-    expect(jsx).toContain('${art ? " pk-offer-art" : ""}');
+  it("das Telefon-Gate ist eine EIGENE Abfrage, nicht die Verneinung des Flügel-Gates", () => {
+    // `!inWings` wäre alles unter 1280 px und schaltete das dreispaltige Band 640–1279 px mit an,
+    // das die freie Ecke gar nicht hat, die die mobile Fassung benutzt.
+    expect(jsx).not.toMatch(/const art = .*!inWings/);
+  });
+
+  it("die Kachel ohne Bild behält ihren Baum", () => {
+    expect(jsx).toContain('${art ? (inWings ? " pk-offer-art" : " mc-tile") : ""}');
     expect(jsx).toContain("{art && <img");
   });
 
@@ -224,7 +232,7 @@ describe("#perkart — Verdrahtung", () => {
   });
 
   it("der Streifen trägt die Klasse, die den schwarzen Grund verschwinden lässt", () => {
-    expect(jsx).toContain("className={`pk-strip${");
+    expect(jsx).toContain("className={inWings ? `pk-strip${");
     const regel = css.slice(css.indexOf(".pk-strip {"), css.indexOf(".pk-strip {") + 420);
     expect(regel).toContain("mix-blend-mode: screen");
     expect(regel).toContain("height: 201px");          // 76 % der gemessenen 265-px-Bildbreite

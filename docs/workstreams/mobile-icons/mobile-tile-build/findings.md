@@ -45,3 +45,115 @@ One thing was changed rather than inherited from part 1's probe: the resume butt
 **class** (`button.as-cta-primary`, `StartScreen.jsx:455`) instead of by matching „fortsetzen". The
 text match works in German and fails silently in English, and this capture runs in both — the same
 trap `perkArt.js` calls out for emblems bound to translated names.
+
+---
+
+## S3–S5 — the implementation, 2026-08-23
+
+### What changed
+
+| File | Change |
+| --- | --- |
+| `src/ui/useIsWide.js` | `PHONE_MAX = 639.98` and `useIsPhone()` beside `DESKTOP_MIN`/`useIsWide()` — the threshold in one place, not spelled in three screens |
+| `src/index.css` | one `@media (max-width: 639.98px)` block: `.mc-tile`, `.mc-emblem`, and `.co-corner-r { display: none; }`. Nothing above it was edited |
+| `SkillSelect.jsx` · `PerkSelect.jsx` · `LegendarySelect.jsx` | the emblem and the ornament gate become two queries — `(wide \|\| phone)`, never `!wide` — and the class switches per fassung |
+| four guard files | rewritten and counter-checked, below |
+
+**639.98, not 639.** A media query has to be unambiguous at a fractional window width. `max-width:
+639px` would leave 639.5 px in neither branch — not the phone, not `sm:` — and the tile would stand
+there single-column with no emblem.
+
+**`(wide || phone)`, never `!wide`.** The negation is all of below-1280 and would light the emblem up
+in the 640–1279 band, which D3 excludes. This is asserted by a guard of its own, because it is the
+kind of thing that reads correct and is only visible on a tablet.
+
+### The measured result
+
+At 390 × 844, both languages, all three screens, scrollbars hidden:
+
+- **28 emblems rendered**, every one **88 × 88**, `mix-blend-mode: screen`, `filter: none`,
+  `object-fit: cover`.
+- **Exactly 1 of 2 ornaments visible** per card head — D5, on every screen at both widths.
+- **Tile boxes and type sizes identical to V1**: 14 tiles compared, **0 differences**
+  (`visual/V1-V2-geometry.json`). D4 is a diff of numbers, not a look at two pictures.
+
+### H8 — the 640–1279 band is untouched, and it is proven, not argued
+
+`phone-capture.mjs --label H8 --h8` renders at **700 px**, inside the band this task leaves alone:
+
+| 700 px | emblems | ornaments visible | columns |
+| --- | --- | --- | --- |
+| skill, de and en | 0 | 0 | 2 |
+| perk, de and en | 0 | 0 | 3 |
+| legendary, de and en | 0 | 0 | 2 |
+
+That is the point at which a gate written as `!useIsWide()` would betray itself. It does not.
+
+### The guards: rewritten, and each one counter-checked
+
+Eight of the nine red tests were H4's — the ratchets that assert „no phone loads these images".
+That invariant is exactly what this task reverses, so they were **rewritten to the new invariant**,
+never weakened: two fassungen, one gate each, and a deliberately empty band between them.
+
+The ninth was **not predicted** and is the more interesting one.
+`test/viewport-1280.test.js` §3 asserted that **exactly one** fractional `max-width` exists in the
+stylesheet — the „just below the breakpoint" idiom, derived from the token rather than typed. A second
+threshold makes the *count* wrong while leaving the *intent* right, so the assertion moved from
+„exactly one edge" to „**every** edge is derived from a threshold", with the desktop edge still
+required to be present so the check cannot pass on an empty list. `PHONE_MAX` is read out of
+`useIsWide.js` by the shared helper, the same way `DESKTOP_MIN` already was — Tailwind ships `sm:`, so
+there is no `--breakpoint-*` token to compare against.
+
+**Every rewritten guard was counter-checked** by breaking the seam it protects and proving it fails —
+`visual/counter-checks.json`, reproduced by
+`node <scratch>/counter-check.mjs`. **11 seams broken, 11 caught, 0 missed:**
+
+| Seam broken | Guard that caught it |
+| --- | --- |
+| `PHONE_MAX` moved to 599.98 | viewport-1280 §3 |
+| the phone media query moved to 611.98 | viewport-1280 §3 |
+| phone gate removed from the skill emblem | skill-art |
+| phone gate replaced by `!wide` | skill-art |
+| `art` stops switching the class as well as the element | skill-art |
+| phone gate removed from the perk emblem | perk-art |
+| desktop strip class swapped for the phone one | perk-art |
+| legendary screen falls behind the skill screen | leg-gleich |
+| `.co-corner-r { display: none; }` removed | corner-art |
+| the phone re-declares `.co-corner`'s width | corner-art |
+| one screen keeps the single-query ornament gate | corner-art |
+
+### A gate rule I broke, and what it cost
+
+The first run of the four gates was reported to myself as green and was not. The commands were piped
+into `tail`, so the shell reported `tail`'s exit code — the exact failure `AGENTS.md` names under
+*Important shell rule*. Lint had one warning and the chain carried on regardless.
+
+Re-run without pipes, exit codes read individually: **`npm test` 0, `npm run lint --max-warnings=0` 0,
+`npm run build` 0, `npm run gen:db` 0.**
+
+The warning was worth having. `'lang' is defined but never used` in `phone-capture.mjs` pointed at a
+real defect: the legendary resume interpolated `${BOOT}` — the *function* — instead of `${BOOT(lang)}`,
+writing the arrow function's source into the page and seeding nothing. It only appeared to work because
+the earlier `addScriptToEvaluateOnNewDocument` is still registered and re-runs on that navigation. Fixed,
+and **V2 and H8 were captured again with the corrected script**, so the committed evidence comes from the
+committed tool.
+
+## Gates
+
+| Gate | Result |
+| --- | --- |
+| `npm test` | 139 files, 2156 tests, exit 0 — three more than the S1 baseline, all added here |
+| `npm run lint -- --max-warnings=0` | exit 0 |
+| `npm run build` | exit 0 (the >500 kB chunk warning is pre-existing) |
+| `npm run gen:db` | exit 0, 219 entries |
+
+## Limits of this evidence
+
+- **Chrome on Windows via CDP, DPR 1, one seed.** Not a real phone: `Emulation.setScrollbarsHidden`
+  reproduces an overlay scrollbar's *layout*, not iOS Safari's rendering.
+- **Two widths captured** (390 and 320) plus one control width (700). The band between 320 and 639 is
+  covered by part 1's measurement, not by images.
+- **One faction** stands in on the skill and legendary screens. The ornament binds to the active tab,
+  so the sheet shows the mechanism rather than all four pictures.
+- **The emblem's size is a judgement, not a measurement.** 88 px was chosen at the device against the
+  narrowest measured tile (233 px). Nothing proves it is the best size — that is what V3 is for.

@@ -49,6 +49,19 @@ if (!hookHit) {
 }
 export const DESKTOP_MIN = Number(hookHit[1]);
 
+/* The PHONE side of the same file, read the same way and for the same reasons.
+
+   `PHONE_MAX` is a fractional literal, not an integer: it is the „just below" counter-edge of
+   Tailwind's built-in `sm:` (640px), which — unlike the desktop threshold — has no `--breakpoint-*`
+   token in `@theme`, because Tailwind ships it. There is therefore nothing in the CSS to compare it
+   against except the media query that spells it, which is exactly what
+   `viewport-1280.test.js` test 3 does.
+
+   Absence is NOT an error here. The phone branch was added by `mobile-tile-build`; a checkout without
+   it is a valid checkout, and a guard that threw on its absence would fail on every commit before it. */
+const phoneHit = read(HOOK).match(/^export const PHONE_MAX = (\d+\.\d+);$/m);
+export const PHONE_MAX = phoneHit ? Number(phoneHit[1]) : null;
+
 /* ---------------------------------------------------------------- the CSS side
 
    The Tailwind variant prefix is NOT derived from the number — it is read out of the `@theme` block,

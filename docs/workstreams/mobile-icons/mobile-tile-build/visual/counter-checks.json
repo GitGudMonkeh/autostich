@@ -1,0 +1,71 @@
+{
+  "note": "Each rewritten guard, with the seam that was broken to prove it fails. A guard that is merely green is not evidence (testing.md §5).",
+  "results": [
+    {
+      "guard": "viewport-1280 §3 — the phone counter-edge is derived, not typed",
+      "seam": "src/ui/useIsWide.js: export const PHONE_MAX = 639.98;",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "viewport-1280 §3 — a stray fractional max-width is caught",
+      "seam": "src/index.css: @media (max-width: 639.98px) {",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "skill-art — the phone gate exists",
+      "seam": "src/ui/SkillSelect.jsx: const art = (wide || phone) ? skillArt(id) : null;",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "skill-art — the phone gate is not a negation",
+      "seam": "src/ui/SkillSelect.jsx: const art = (wide || phone) ? skillArt(id) : null;",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "skill-art — art switches element AND class",
+      "seam": "src/ui/SkillSelect.jsx: ${art ? (wide ? \" sk-offer-art\" : \" mc-tile\") : \"\"}",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "perk-art — the phone gate exists",
+      "seam": "src/ui/PerkSelect.jsx: const art = (inWings || onPhone) ? perkArt(v) : null;",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "perk-art — the desktop strip class survives beside the phone one",
+      "seam": "src/ui/PerkSelect.jsx: className={inWings ? `pk-strip${",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "leg-gleich — the legendary screen does not fall behind the skill screen",
+      "seam": "src/ui/LegendarySelect.jsx: const art = (wide || phone) ? skillArt(s.id) : null;",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "corner-art — the phone shows ONE ornament",
+      "seam": "src/index.css:   .co-corner-r { display: none; }",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "corner-art — the phone must not re-declare the ornament zone",
+      "seam": "src/index.css:   .co-corner-r { display: none; }",
+      "verdict": "caught",
+      "note": ""
+    },
+    {
+      "guard": "corner-art — all three screens carry the two-query gate",
+      "seam": "src/ui/PerkSelect.jsx: {(inWings || onPhone) && <CardCorners artKey={CORNER_PERK} /",
+      "verdict": "caught",
+      "note": ""
+    }
+  ]
+}

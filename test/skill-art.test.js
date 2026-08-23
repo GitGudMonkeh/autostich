@@ -116,20 +116,40 @@ describe("#skillart — Vollständigkeit", () => {
 });
 
 describe("#skillart — Verdrahtung", () => {
-  it("das Emblem hängt am `wide`-Gate, nicht an CSS", () => {
-    // Ohne diese Zeile rendert das <img> auch am Handy — der Browser lädt dann 21 Bilder für eine
-    // Ansicht, die sie gar nicht zeigt.
-    expect(jsx).toContain("const art = wide ? skillArt(id) : null;");
+  /* UMGESCHRIEBEN, 23.08.2026 (mobile-tile-build). Diese Gruppe hielt bis dahin fest: „am Handy wird
+     KEIN Bild geladen". Das war richtig, solange es unter 1280 px keine Fassung gab — jetzt gibt es
+     eine, und der Wächter hätte den Zustand geschützt, den die Arbeit ausdrücklich beendet.
+
+     Die neue Invariante ist NICHT schwächer, sie ist genauer: es gibt ZWEI Fassungen mit je einem
+     Gate, und dazwischen — im Band 640–1279 px — steht KEIN <img> im DOM. Genau dieses Loch ist die
+     Aussage, die leise verschwinden könnte, und deshalb prüft der erste Test unten ausdrücklich, dass
+     das Gate keine Verneinung ist: `!wide` wäre alles unter 1280 px und würde das mittlere Band
+     mit anschalten. */
+  it("das Emblem hängt an ZWEI Gates — Desktop und Telefon —, nicht an CSS", () => {
+    // Ohne diese Zeile rendert das <img> in jeder Breite; das Gate im JSX ist, was den Browser die
+    // Bilder im ausgelassenen Band gar nicht erst laden lässt.
+    expect(jsx).toContain("const art = (wide || phone) ? skillArt(id) : null;");
+    expect(jsx).toContain("const phone = useIsPhone();");
+    expect(jsx).toMatch(/import \{ useIsWide, useIsPhone \} from "\.\/useIsWide\.js"/);
   });
 
-  it("die Karte ohne Bild behält ihren Baum (Handy bleibt unberührt)", () => {
-    // Ohne Bild wird weder ein Element noch eine Klasse hinzugefügt: `art` schaltet BEIDES.
-    expect(jsx).toContain('${art ? " sk-offer-art" : ""}');
+  it("das Telefon-Gate ist eine EIGENE Abfrage, nicht die Verneinung des Desktop-Gates", () => {
+    /* `!wide` wäre alles unter 1280 px. Das Band 640–1279 px zeigt zwei bzw. drei Kacheln je Zeile,
+       hat die freie Ecke nicht, die die mobile Fassung benutzt, und ist aus dem Umfang ausdrücklich
+       ausgenommen. Die Verneinung würde es lautlos anschalten — sichtbar erst auf einem Tablet. */
+    expect(jsx).not.toMatch(/const art = .*!wide/);
+    expect(jsx).not.toMatch(/\{!wide && curG && <CardCorners/);
+  });
+
+  it("die Karte ohne Bild behält ihren Baum", () => {
+    // Ohne Bild wird weder ein Element noch eine Klasse hinzugefügt: `art` schaltet BEIDES — und je
+    // Fassung eine ANDERE Klasse, weil die beiden Zonen nichts gemeinsam haben.
+    expect(jsx).toContain('${art ? (wide ? " sk-offer-art" : " mc-tile") : ""}');
     expect(jsx).toContain("{art && <img");
   });
 
   it("der Streifen trägt die Klasse, die den schwarzen Grund verschwinden lässt", () => {
-    expect(jsx).toContain('className="sk-strip"');
+    expect(jsx).toContain('className={wide ? "sk-strip" : "mc-emblem"}');
     const regel = css.slice(css.indexOf(".sk-strip {"), css.indexOf(".sk-strip {") + 420);
     expect(regel).toContain("mix-blend-mode: screen");
     expect(regel).toContain("height: 210px");          // am Regler gewählte Zonenhöhe
