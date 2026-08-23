@@ -1,0 +1,537 @@
+{
+  "note": "V1 of the mobile-tile-build visual gate. Same script, seed, viewport and route for both halves. Scrollbars are hidden, so the widths are the phone case. Images beside this file.",
+  "label": "V1",
+  "seed": "11",
+  "port": 5188,
+  "dpr": 1,
+  "results": [
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "lang": "de",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 320,
+          "h": 549.25,
+          "templateColumns": "320px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 72
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 320,
+            "h": 254.75,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 320,
+            "h": 158.5,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 693.25,
+            "w": 320,
+            "h": 120,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ],
+        "image": "V1-skill-de-390x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 358,
+          "h": 776.47,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 308,
+          "h": 412,
+          "templateColumns": "308px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 308,
+          "h": 86.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 308,
+            "h": 154.5,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 420.94,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 549.69,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ],
+        "image": "V1-perk-de-390x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 324,
+          "h": 139.25,
+          "templateColumns": "324px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 110.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 324,
+            "h": 139.25,
+            "paddingBoxWidth": 319,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ],
+        "image": "V1-legendary-de-390x844.png"
+      }
+    },
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "lang": "en",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 320,
+          "h": 530,
+          "templateColumns": "320px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 72
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 320,
+            "h": 254.75,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 320,
+            "h": 139.25,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          },
+          {
+            "x": 35,
+            "y": 674,
+            "w": 320,
+            "h": 120,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ],
+        "image": "V1-skill-en-390x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 358,
+          "h": 776.47,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 308,
+          "h": 394.13,
+          "templateColumns": "308px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 308,
+          "h": 86.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 308,
+            "h": 136.63,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 135,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 403.06,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          },
+          {
+            "x": 41,
+            "y": 531.81,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": false
+          }
+        ],
+        "image": "V1-perk-en-390x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 324,
+          "h": 139.25,
+          "templateColumns": "324px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 110.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [],
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 324,
+            "h": 139.25,
+            "paddingBoxWidth": 319,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true
+          }
+        ],
+        "image": "V1-legendary-en-390x844.png"
+      }
+    }
+  ]
+}

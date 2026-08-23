@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- mobile-tile-design, part 1 — the shell for the variant sheets.
+
+     Served by the ORDINARY dev server, not opened from disk, and that is the point: the page imports
+     `src/index.css` and the app's own art modules, so Vite processes Tailwind, resolves the fonts and
+     hands out the same emblem URLs the game uses. A file:// page would have had to restate every one
+     of those, and a restated sheet is what the task contract rules out.
+
+     Driven by scripts/mobile-tile-sheet.mjs, which calls `window.__mtSheet.build(...)`. Opening it by
+     hand renders the default sheet, which is useful while iterating and is not how the committed
+     images are made. -->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>mobile-tile-design — Variantenbogen</title>
+    <script type="module" src="./mobile-tile-sheet.page.js"></script>
+  </head>
+  <body>
+    <main id="mt-root"></main>
+  </body>
+</html>

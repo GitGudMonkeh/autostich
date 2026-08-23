@@ -13,7 +13,7 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes klappbares Feld (auch in der Chronik)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — dieselbe Liste wie in der Skill-Auswahl
-import { useIsWide } from "./useIsWide.js";
+import { useIsWide, useIsPhone } from "./useIsWide.js";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
@@ -60,6 +60,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
      „lebt nur noch im Reiter" heißt, dass die Karte sie auch bei zugeklapptem Flügel nicht zurückholt —
      sonst wäre der Griff kein Schalter, sondern nur eine zweite Anordnung derselben Inhalte. */
   const inWings = useIsWide();
+  const onPhone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `inWings`
   const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
   const canReroll = !!onReroll && rerollTokens > 0;
@@ -83,7 +84,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {/* #cornerart: EINE Ecke, weil die Perk-Wahl EINE Identitätsfarbe hat — hier wechselt nichts
             mit einem Reiter, es gibt keinen. Sie ist dieselbe Familie wie drüben, nur mit dem
             Perk-Schlüssel; das Nach-innen-Versetzen und die frühere Maske hängen an ihm. */}
-        {inWings && <CardCorners artKey={CORNER_PERK} />}
+        {(inWings || onPhone) && <CardCorners artKey={CORNER_PERK} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1">
           <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
@@ -118,7 +119,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                <img> in the DOM, so a phone would fetch three images to hide them. `inWings` already
                holds `useIsWide()`; a second hook for the same query would be a second thing to keep
                in step with index.css. */
-            const art = inWings ? perkArt(v) : null;
+            const art = (inWings || onPhone) ? perkArt(v) : null;
             return (
               <button
                 key={v.key}
@@ -129,7 +130,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                    Perk = Raritätsfarbe aus RARITY_META). Die Kategorie bleibt im Badge oben — sie sagt, WAS der
                    Perk anfasst, die Kante sagt, WIE GUT er ist, und das ist die Achse, nach der man sortiert.
                    Hohe Stufen bekommen zusätzlich einen dezenten Halo in derselben Farbe. */
-                className={`lv-offercard as-edge-card${art ? " pk-offer-art" : ""} text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
+                className={`lv-offercard as-edge-card${art ? (inWings ? " pk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 h-full flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${(!v.isFamily && v.leg) ? " as-legendary" : ""}`}
                 style={{ "--c": v.accent,
                          // Legendär (flach): animierter Gold-Rahmen über .as-legendary (#201.3) → dort KEIN eigener Schein.
                          boxShadow: (!v.isFamily && v.leg) ? undefined
@@ -144,7 +145,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                     index.css. Same condition as the gold frame above, so that „legendary" is not
                     defined a second time here. */}
                 {art && <img src={art} alt="" aria-hidden="true" loading="lazy" decoding="async"
-                             className={`pk-strip${(!v.isFamily && v.leg) ? " pk-strip-mid" : ""}`} />}
+                             className={inWings ? `pk-strip${(!v.isFamily && v.leg) ? " pk-strip-mid" : ""}` : "mc-emblem"} />}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                     style={{ background: `${cat.color}22`, color: cat.color }}>

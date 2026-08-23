@@ -1,0 +1,3097 @@
+{
+  "note": "Deliverable S. Widths come from M-tile-widths.json (overlay-scrollbar rows) and are read back out of the DOM here; `control` vs each variant is D4's proof.",
+  "canonical": 390,
+  "band": [
+    320,
+    390,
+    480,
+    639
+  ],
+  "sheets": [
+    {
+      "kind": "variants",
+      "screen": "skill",
+      "lang": "de",
+      "viewport": 390,
+      "file": "variants-skill-de.png",
+      "bytes": 322020,
+      "sha256": "e8b235ad42b9a8f70396f40668dcc8c9d844e361c12843c12066ba621994a205",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "skill",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "skill",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "variants",
+      "screen": "perk",
+      "lang": "de",
+      "viewport": 390,
+      "file": "variants-perk-de.png",
+      "bytes": 252067,
+      "sha256": "b9ba93ac84e13037176f69b7a339818364fc20d42c4bc4eaf4f10d704edf82bc",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 586.55
+        },
+        "tiles": [
+          {
+            "screen": "perk",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "perk",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "variants",
+      "screen": "legendary",
+      "lang": "de",
+      "viewport": 390,
+      "file": "variants-legendary-de.png",
+      "bytes": 321650,
+      "sha256": "57902b4211713ccfcea931bb5cf3bc1d99b48bc2c8a1e976d4a17c8c45f54007",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "legendary",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "legendary",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "variants",
+      "screen": "skill",
+      "lang": "en",
+      "viewport": 390,
+      "file": "variants-skill-en.png",
+      "bytes": 320656,
+      "sha256": "d164e4933b50a422def20d80f9326d11b2e99b0a1c9e88d965b58537c5e6dfe1",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "skill",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "skill",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "variants",
+      "screen": "perk",
+      "lang": "en",
+      "viewport": 390,
+      "file": "variants-perk-en.png",
+      "bytes": 247365,
+      "sha256": "b40bcc1c75705607bd02cae1d0d970798aa711e19041e6abe6acb4ed73ee2770",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 569
+        },
+        "tiles": [
+          {
+            "screen": "perk",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "perk",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "variants",
+      "screen": "legendary",
+      "lang": "en",
+      "viewport": 390,
+      "file": "variants-legendary-en.png",
+      "bytes": 321282,
+      "sha256": "6460e277adf02eb5c09196e292ffcb68ca5cfc7eefae92d884378efdc2e8e2b6",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "legendary",
+            "variant": "none",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "legendary",
+            "variant": "none",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": null
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner-bleed",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner-bleed",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 112,
+              "h": 112,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "fade",
+      "screen": "skill",
+      "lang": "de",
+      "viewport": 390,
+      "fades": [
+        {
+          "key": "gate",
+          "label": "as shown at V3",
+          "vars": {
+            "--mt-fade-solid": "42%",
+            "--mt-fade-end": "80%"
+          }
+        },
+        {
+          "key": "less",
+          "label": "less fade",
+          "vars": {
+            "--mt-fade-solid": "58%",
+            "--mt-fade-end": "88%"
+          }
+        },
+        {
+          "key": "least",
+          "label": "least fade",
+          "vars": {
+            "--mt-fade-solid": "72%",
+            "--mt-fade-end": "95%"
+          }
+        },
+        {
+          "key": "hard",
+          "label": "no fade — control",
+          "vars": {
+            "--mt-fade-solid": "100%",
+            "--mt-fade-end": "100%"
+          }
+        }
+      ],
+      "file": "fade-skill.png",
+      "bytes": 235776,
+      "sha256": "6407a6fe4e5ea279a54349440616d0d73119aebf6c562058adf2b1e7f8012218",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "fade",
+      "screen": "perk",
+      "lang": "de",
+      "viewport": 390,
+      "fades": [
+        {
+          "key": "gate",
+          "label": "as shown at V3",
+          "vars": {
+            "--mt-fade-solid": "42%",
+            "--mt-fade-end": "80%"
+          }
+        },
+        {
+          "key": "less",
+          "label": "less fade",
+          "vars": {
+            "--mt-fade-solid": "58%",
+            "--mt-fade-end": "88%"
+          }
+        },
+        {
+          "key": "least",
+          "label": "least fade",
+          "vars": {
+            "--mt-fade-solid": "72%",
+            "--mt-fade-end": "95%"
+          }
+        },
+        {
+          "key": "hard",
+          "label": "no fade — control",
+          "vars": {
+            "--mt-fade-solid": "100%",
+            "--mt-fade-end": "100%"
+          }
+        }
+      ],
+      "file": "fade-perk.png",
+      "bytes": 187460,
+      "sha256": "9e511482276472d35a893f0cc5863a1132384b45e94456e322145d57628aa4da",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 586.55
+        },
+        "tiles": [
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "fade",
+      "screen": "legendary",
+      "lang": "de",
+      "viewport": 390,
+      "fades": [
+        {
+          "key": "gate",
+          "label": "as shown at V3",
+          "vars": {
+            "--mt-fade-solid": "42%",
+            "--mt-fade-end": "80%"
+          }
+        },
+        {
+          "key": "less",
+          "label": "less fade",
+          "vars": {
+            "--mt-fade-solid": "58%",
+            "--mt-fade-end": "88%"
+          }
+        },
+        {
+          "key": "least",
+          "label": "least fade",
+          "vars": {
+            "--mt-fade-solid": "72%",
+            "--mt-fade-end": "95%"
+          }
+        },
+        {
+          "key": "hard",
+          "label": "no fade — control",
+          "vars": {
+            "--mt-fade-solid": "100%",
+            "--mt-fade-end": "100%"
+          }
+        }
+      ],
+      "file": "fade-legendary.png",
+      "bytes": 234546,
+      "sha256": "851e8845e8261440fb7cf076ebc3be90a3997f288a511e58d344022cba024b4d",
+      "probe": {
+        "sheet": {
+          "w": 1524,
+          "h": 594.09
+        },
+        "tiles": [
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "corner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "band",
+      "screen": "skill",
+      "lang": "de",
+      "viewport": [
+        320,
+        390,
+        480,
+        639
+      ],
+      "file": "band-skill.png",
+      "bytes": 766220,
+      "sha256": "53ee9ceedb1ffe825472f2de3a4620286b01219e85beaf89e03c8aeb3983292a",
+      "probe": {
+        "sheet": {
+          "w": 1793,
+          "h": 664.28
+        },
+        "tiles": [
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 250,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 245,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 245,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 250,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 245,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 245,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 320,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 320,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 315,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 315,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 410,
+              "h": 173.23
+            },
+            "paddingBoxWidth": 405,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 410,
+              "h": 173.23
+            },
+            "paddingBoxWidth": 405,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 569,
+              "h": 155.69
+            },
+            "paddingBoxWidth": 564,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "skill",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 569,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 564,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 252,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "band",
+      "screen": "perk",
+      "lang": "de",
+      "viewport": [
+        320,
+        390,
+        480,
+        639
+      ],
+      "file": "band-perk.png",
+      "bytes": 615695,
+      "sha256": "8c908b4f07d0584ffda460a996796b5eed3fcd7e88f3abffc1a5bc70a2a1d04f",
+      "probe": {
+        "sheet": {
+          "w": 1793,
+          "h": 682.73
+        },
+        "tiles": [
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 238,
+              "h": 181.69
+            },
+            "paddingBoxWidth": 233,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 233,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 238,
+              "h": 296.06
+            },
+            "paddingBoxWidth": 233,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 233,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 308,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 308,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 303,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 303,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 398,
+              "h": 120.59
+            },
+            "paddingBoxWidth": 393,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 398,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 393,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "E_COLOR_ALLIANCE:3",
+            "box": {
+              "w": 557,
+              "h": 120.59
+            },
+            "paddingBoxWidth": 552,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "perkcat_E_form.webp"
+            }
+          },
+          {
+            "screen": "perk",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "L_ZINS",
+            "box": {
+              "w": 557,
+              "h": 173.23
+            },
+            "paddingBoxWidth": 552,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "L_ZINS_zinseszins.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 236,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    },
+    {
+      "kind": "band",
+      "screen": "legendary",
+      "lang": "de",
+      "viewport": [
+        320,
+        390,
+        480,
+        639
+      ],
+      "file": "band-legendary.png",
+      "bytes": 765396,
+      "sha256": "591e389c35cb0f6255b0a59d827c10ad32d5a70e844ab6d31da44170e2fcc4eb",
+      "probe": {
+        "sheet": {
+          "w": 1793,
+          "h": 664.28
+        },
+        "tiles": [
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 254,
+              "h": 243.42
+            },
+            "paddingBoxWidth": 249,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 249,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 254,
+              "h": 225.88
+            },
+            "paddingBoxWidth": 249,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 249,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 324,
+              "h": 208.33
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 324,
+              "h": 190.78
+            },
+            "paddingBoxWidth": 319,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 319,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 414,
+              "h": 173.23
+            },
+            "paddingBoxWidth": 409,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 414,
+              "h": 173.23
+            },
+            "paddingBoxWidth": 409,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "maxBadges",
+            "id": "SK_LIGHTNING_L03",
+            "box": {
+              "w": 573,
+              "h": 155.69
+            },
+            "paddingBoxWidth": 568,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L03_flaechenionisation.webp"
+            }
+          },
+          {
+            "screen": "legendary",
+            "variant": "banner",
+            "kind": "longestDesc",
+            "id": "SK_LIGHTNING_L02",
+            "box": {
+              "w": 573,
+              "h": 138.14
+            },
+            "paddingBoxWidth": 568,
+            "type": {
+              "badge": "10px",
+              "name": "15px",
+              "desc": "13px"
+            },
+            "art": {
+              "w": 320,
+              "h": 92,
+              "blend": "screen",
+              "objectPosition": "50% 25%",
+              "filter": "none",
+              "src": "SK_LIGHTNING_L02_doppelentladung.webp"
+            }
+          }
+        ],
+        "ornaments": [
+          {
+            "side": "left",
+            "visible": true,
+            "w": 252,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "side": "left",
+            "visible": true,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "visible": false,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "dpr": 1
+      }
+    }
+  ],
+  "d4": {
+    "violations": [],
+    "verdict": "no variant changed a tile box or a type size"
+  }
+}

@@ -38,3 +38,24 @@ export function useMediaQuery(q) {
 export function useIsWide() {
   return useMediaQuery(`(min-width: ${DESKTOP_MIN}px)`);
 }
+
+/* #mobil-emblem — die Telefon-Schwelle, EINMAL, aus demselben Grund wie `DESKTOP_MIN` darüber.
+
+   640 px ist KEINE neue Zahl: es ist Tailwinds eingebautes `sm:`, und auf allen drei Auswahl-
+   Bildschirmen ist es bereits der Punkt, an dem aus einer Kachel je Zeile zwei bzw. drei werden
+   (`grid sm:grid-cols-2` / `sm:grid-cols-3`). Die Kachel-Embleme hängen an genau diesem Wechsel,
+   weil eine einspaltige Kachel Platz in ihrer oberen rechten Ecke hat und eine zwei- oder
+   dreispaltige nicht.
+
+   ES IST BEWUSST KEINE NEGATION VON `useIsWide`. `!wide` wäre alles unter 1280 px und würde damit
+   auch das Band 640–1279 anschalten, das der Umfang dieser Arbeit ausdrücklich ausnimmt: dort
+   ändert sich nichts, und das ist eine Entscheidung, keine Lücke.
+
+   639.98 statt 639: die Media Query muss bei einer fraktionalen Fensterbreite zwischen 639 und 640
+   px eindeutig sein. `max-width: 639px` ließe 639.5 px in KEINEN der beiden Zweige fallen — weder
+   Telefon noch `sm:` —, und die Kachel stünde dort einspaltig ohne Emblem da. */
+export const PHONE_MAX = 639.98;
+
+export function useIsPhone() {
+  return useMediaQuery(`(max-width: ${PHONE_MAX}px)`);
+}

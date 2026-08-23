@@ -56,10 +56,15 @@ describe("#leg-gleich — dieselben Bausteine wie die Skill-Wahl", () => {
     expect(leg, "der Handy-Pager ist verschwunden").toMatch(/\{!wide && nPages > 1 && curG &&/);
   });
 
-  it("die Embleme hängen am selben Gate wie drüben — am Handy wird nichts geladen", () => {
-    expect(leg).toContain("const art = wide ? skillArt(s.id) : null;");
-    expect(leg).toContain('${art ? " sk-offer-art" : ""}');
-    expect(leg).toContain('className="sk-strip"');
+  /* UMGESCHRIEBEN, 23.08.2026 (mobile-tile-build). Die Aussage ist dieselbe geblieben — „die Legendär-
+     Wahl macht es wie die Skill-Wahl" —, nur dass „es" jetzt zwei Fassungen sind. Der Wert dieses
+     Tests liegt genau in dieser Gleichheit: die beiden Bildschirme teilen sich Reiterzeile, Emblem-Los
+     und Kartenbau, und sie dürfen nicht auseinanderlaufen, weil einer von beiden vergessen wurde. */
+  it("die Embleme hängen an denselben zwei Gates wie drüben", () => {
+    expect(leg).toContain("const art = (wide || phone) ? skillArt(s.id) : null;");
+    expect(leg).toContain("const phone = useIsPhone();");
+    expect(leg).toContain('${art ? (wide ? " sk-offer-art" : " mc-tile") : ""}');
+    expect(leg).toContain('className={wide ? "sk-strip" : "mc-emblem"}');
     expect(leg).toContain('alt="" aria-hidden="true"');
   });
 
