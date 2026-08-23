@@ -9,7 +9,7 @@ function Btn({ onClick, disabled, children, tone = null }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${tone ? "as-edge" : "as-edge-neutral"} as-edge-thin px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed`}
+      className={`${tone ? "as-edge" : "as-edge-neutral"} as-edge-thin px-3 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed`}
       style={tone ? { "--c": tone } : undefined}
     >
       {children}

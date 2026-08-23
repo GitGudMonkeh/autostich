@@ -78,8 +78,8 @@ function PillBody({ label, mark, titleColor, markColor }) {
     <>
       {/* #desktop: eine Stufe größer ab 1280 px — 11 px stammen aus dem Handy-Entwurf und sind auf 1080p
           zu klein. Größer geht nicht: 27 Knoten müssen gleichzeitig ins Bild passen. */}
-      <span className="text-[11px] dt:text-[14px] font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
-      <span className="text-[9.5px] dt:text-[12px] ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
+      <span className="text-meta-3 dt:text-body-lg-1 font-semibold leading-tight" style={{ color: titleColor }}>{label}</span>
+      <span className="text-micro-4 dt:text-body-1 ty-num leading-tight mt-1" style={{ color: markColor }}>{mark}</span>
     </>
   );
 }
@@ -140,13 +140,13 @@ function NodeDetail({ node, st, accent, onBuy }) {
   return (
     <div className="as-edge-card is-sel mt-2 rounded-lg px-3 py-2.5 flex items-center gap-3" style={{ "--c": stateColor }}>
       <div className="min-w-0 flex-1">
-        <div className="text-[12.5px] font-extrabold" style={{ color: accent }}>{node.label}</div>
-        <div className="text-[11.5px] leading-snug opacity-75 mt-0.5">{node.detail}</div>
-        <div className="text-[10.5px] font-semibold mt-1" style={{ color: stateColor }}>{nodeStatusText(node, st)}</div>
+        <div className="text-body-2 font-extrabold" style={{ color: accent }}>{node.label}</div>
+        <div className="text-meta-4 leading-snug opacity-75 mt-0.5">{node.detail}</div>
+        <div className="text-meta-2 font-semibold mt-1" style={{ color: stateColor }}>{nodeStatusText(node, st)}</div>
       </div>
       {st === "buy" && (
         <button onClick={() => onBuy(node.id)}
-          className="as-edge-strong shrink-0 px-3 py-2 rounded-lg text-[12px] font-extrabold transition-transform hover:-translate-y-0.5"
+          className="as-edge-strong shrink-0 px-3 py-2 rounded-lg text-body-1 font-extrabold transition-transform hover:-translate-y-0.5"
           style={{ "--c": GOLD }}>{t("upgrades.buy", { cost: node.cost })}</button>
       )}
     </div>
@@ -162,7 +162,7 @@ function Lane({ nodes, p, laneAccent, onBuy, lead = null, selected, onSelect }) 
     <PillBody label={lead.label} mark={`✓ ${t("upgrades.free")}`} titleColor="#e8e8ea" markColor={lead.color} />
   </span>);
   nodes.forEach((n) => {
-    if (items.length) items.push(<span key={`sep${n.id}`} className="flex-none self-center text-[12px]" style={{ color: "#4a4a55" }}>›</span>);
+    if (items.length) items.push(<span key={`sep${n.id}`} className="flex-none self-center text-body-1" style={{ color: "#4a4a55" }}>›</span>);
     items.push(<NodePill key={n.id} node={n} st={nodeState(p, n.id)} accent={nodeAccent(n, laneAccent)} selected={selected === n.id} onSelect={onSelect} />);
   });
   const selNode = nodes.find((n) => n.id === selected);
@@ -364,7 +364,7 @@ function ImpactBox({ p }) {
    `where` schaltet, welche Instanz die jeweilige Breite zeigt (Regeln in index.css). */
 function Legend({ where }) {
   return (
-    <div className={`flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-[11px] up-legend up-legend-${where}`}
+    <div className={`flex flex-wrap gap-x-4 gap-y-2 justify-center mt-5 text-meta-3 up-legend up-legend-${where}`}
       style={{ color: "#a6a6b0" }}>
       <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: UI1 }} /> {t("upgrades.owned")}</span>
       <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "transparent", border: `1px solid ${GOLD}`, boxShadow: `0 0 6px ${GOLD}88` }} /> {t("upgrades.buyable")}</span>
@@ -430,17 +430,17 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
           <TopHairline />
           {/* Zweizeilig: Titel voll ausgeschrieben oben, darunter SP-Guthaben links · Respec + Schließen rechts.
               (Einzeilig lief „Schließen" auf schmalen Screens aus dem Rahmen; Titel kürzen war keine Option.) */}
-          <h2 className="text-lg dt:text-2xl font-bold">{t("upgrades.title")}</h2>
+          <h2 className="text-title-5 dt:text-head-3 font-bold">{t("upgrades.title")}</h2>
           <div className="up-headrow flex items-center justify-between gap-2.5 mt-2.5">
             <span className="flex items-baseline gap-1 shrink-0">
-              <span className="text-xl dt:text-3xl font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
-              <span className="text-[10px] dt:text-[13px] font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
+              <span className="text-title-6 dt:text-display-1 font-extrabold tabular-nums" style={{ color: AM, textShadow: "0 0 12px rgba(242,168,58,.4)" }}>{sp}</span>
+              <span className="text-meta-1 dt:text-body-3 font-bold tracking-wider" style={{ color: AM, opacity: .8 }}>{t("common.cur.sp")}</span>
             </span>
             <div className="up-actions flex items-center gap-2.5 shrink-0">
               {/* #kante: neutraler Kanten-Knopf mit schmaler Kante (kleines Element) — Respec ist ein Ausweg,
                   kein Angebot, und trägt darum kein Farbsignal. */}
               <button onClick={doRespec} disabled={owned === 0}
-                className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40">{t("upgrades.respec")}</button>
+                className="as-edge-neutral as-edge-thin shrink-0 px-2.5 py-1.5 rounded-lg text-body-5 font-semibold transition-opacity disabled:opacity-40">{t("upgrades.respec")}</button>
               <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
             </div>
           </div>
@@ -453,7 +453,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                 /* #kante: Signal an der Unterkante — wie in der Werkstatt. Bei einer waagerechten Reiterzeile
                    wären senkrechte Striche ein Kampf gegen die Leserichtung. */
                 <button key={tb.key} onClick={() => selectTab(tb.key)} role="tab" aria-selected={on}
-                  className="flex-1 text-[13px] font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
+                  className="flex-1 text-body-3 font-semibold tracking-wide px-3 pt-2 pb-1.5 rounded-t-md transition-colors"
                   style={on
                     ? { color: "#fff", borderBottom: `2px solid ${col}`,
                         background: `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${col} 14%, transparent))` }
@@ -469,10 +469,10 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               Bänder unter der Haarlinie zu belegen. Unterhalb von 1280 px ist er eine reine Klammer ohne
               eigene Darstellung — die Abstände sitzen wie bisher an den beiden Zeilen selbst. */}
           <div className="up-readout">
-            <div className="text-[11px] mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
+            <div className="text-meta-3 mt-1.5 tabular-nums" style={{ color: "#a6a6b0" }}>
               <b className="text-[#e8e8ea]">{owned}</b>{t("upgrades.nodes", { total: TOTAL_NODES })} {treeComplete(p) ? <b style={{ color: AM }}>{t("upgrades.ranked.free")}</b> : t("upgrades.ranked.at", { total: TOTAL_NODES })}
             </div>
-            <div className="text-[10.5px] mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
+            <div className="text-meta-2 mt-0.5" style={{ color: "#71717c" }}>{t("upgrades.tapHint")}</div>
           </div>
         </div>
 
@@ -599,8 +599,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
                   <button onClick={() => setDetailArch(arch)}
                     className="flex items-center gap-2 w-full text-left mb-2.5 group" title={`${meta?.label}: Details`}>
                     <FactionIcon type={arch} size={20} />
-                    <span className="text-[14px] dt:text-[17px] font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
-                    <span className="ml-auto text-[10.5px] dt:text-[13px] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
+                    <span className="text-body-lg-1 dt:text-title-1 font-extrabold" style={{ color: accent }}>{meta?.label || arch}</span>
+                    <span className="ml-auto text-meta-2 dt:text-body-3 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform" style={{ color: "#a6a6b0" }}>{t("upgrades.details")}</span>
                   </button>
                   <Lane nodes={chain} p={p} laneAccent={accent} onBuy={buy} lead={lead} selected={selNode} onSelect={toggleNode} />
                 </div>
@@ -608,7 +608,7 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
             })}
             {/* Extras: Deck-Reroll + Platzhalter. */}
             <div className="rounded-2xl p-3" style={panelStyle(GOLD)}>
-              <div className="text-[10px] tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>{t("upgrades.legPhase")}</div>
+              <div className="text-meta-1 tracking-[0.22em] uppercase font-bold mb-2.5" style={{ color: "#b9b3cf" }}>{t("upgrades.legPhase")}</div>
               <Lane nodes={[nodeDef("deckReroll"), nodeDef("synLeg")]} p={p} laneAccent={UI1} onBuy={buy} selected={selNode} onSelect={toggleNode} />
             </div>
           </div>
@@ -623,8 +623,8 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
               return (
               <div key={lane.nameKey} className="rounded-2xl p-3" style={panelStyle(acc)}>
                 <div className="flex items-baseline gap-2 mb-2.5">
-                  <span className="text-[13px] dt:text-[16px] font-extrabold" style={{ color: acc }}>{t(lane.nameKey)}</span>
-                  {lane.noteKey && <span className="text-[9.5px] dt:text-[12px] italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
+                  <span className="text-body-3 dt:text-body-lg-4 font-extrabold" style={{ color: acc }}>{t(lane.nameKey)}</span>
+                  {lane.noteKey && <span className="text-micro-4 dt:text-body-1 italic" style={{ color: "#71717c" }}>{t(lane.noteKey)}</span>}
                 </div>
                 <Lane nodes={lane.ids.map((id) => nodeDef(id))} p={p} laneAccent={acc} onBuy={buy} selected={selNode} onSelect={toggleNode} />
               </div>

@@ -16,7 +16,7 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutrale
 function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
   return (
     <button type="button" onClick={onClick} title={title}
-      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap`}
+      className={`${active ? "as-edge" : "as-edge-neutral"} as-edge-thin text-body-5 font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap`}
       style={active ? { "--c": tone } : undefined}>
       {children}
     </button>
@@ -27,7 +27,7 @@ function Pill({ active, onClick, tone = "#8a7de0", title, children }) {
 function MiniCell({ label, children, className = "" }) {
   return (
     <div className={`flex flex-col justify-center px-2 leading-none ${className}`} style={{ textAlign: "right" }}>
-      <span className="text-[9px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
+      <span className="text-micro-3 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="ty-num mt-0.5 whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 15 }}>{children}</span>
     </div>
   );
@@ -37,7 +37,7 @@ function MiniCell({ label, children, className = "" }) {
 function Cell({ label, children, className = "" }) {
   return (
     <div className={`flex flex-col justify-center gap-1 px-2.5 py-2 ${className}`} style={{ textAlign: "right" }}>
-      <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
+      <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="ty-num leading-none whitespace-nowrap"
         style={{ fontVariantNumeric: "tabular-nums", fontSize: 18 }}>{children}</span>
     </div>
@@ -68,7 +68,7 @@ export function StatusBar({
           <div className="sb-ctl flex items-center gap-1.5">
             {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
             <button type="button" onClick={onTogglePause} title={t(paused ? "hud.resume" : "hud.pause")}
-              className="text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
+              className="text-body-5 font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
               style={paused
                 ? { background: "#8a7de0", color: "#141419", border: "1px solid #8a7de0" }
                 : { background: "#8a7de022", color: "#8a7de0", border: "1px solid #8a7de066" }}>
@@ -81,7 +81,7 @@ export function StatusBar({
           {music}
           {onChronik && (
             <button type="button" onClick={onChronik} title={t("hud.cards.title")}
-              className="sb-chronik as-edge-neutral as-edge-thin flex items-center gap-1 text-xs font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
+              className="sb-chronik as-edge-neutral as-edge-thin flex items-center gap-1 text-body-5 font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
               {deckBack
                 ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
                 : <span>🎴</span>}
@@ -90,7 +90,7 @@ export function StatusBar({
           )}
           {/* Runde (nur der Durchlauf, keine Karten-Angabe mehr) + Zeit — rechts neben dem Karten-Icon. */}
           <div className="sb-mini ml-auto flex items-stretch">
-            <MiniCell label={t("hud.cycle")}><span>{cyc}<span className="text-[10px] opacity-45">/{totalCycles}</span></span></MiniCell>
+            <MiniCell label={t("hud.cycle")}><span>{cyc}<span className="text-meta-1 opacity-45">/{totalCycles}</span></span></MiniCell>
             <MiniCell label={t("hud.time")} className="border-l border-[color:var(--deck-border)]">
               {/* #perf A1: selbst-tickender Timer-Leaf statt App-weitem 250-ms-Tick; Fallback = statischer timeStr. */}
               {getElapsed
@@ -105,11 +105,11 @@ export function StatusBar({
         <div className="sb-row2 flex items-stretch">
           <div className="sb-score flex-1 flex flex-col justify-center gap-1 px-3.5 py-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-[10px] uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("hud.score")}</span>
+              <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("hud.score")}</span>
               {ghost.hasGhost && (ghost.passed
-                ? <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>{t("hud.record")}</span>
+                ? <span className="text-meta-1 font-bold whitespace-nowrap" style={{ color: "#8a7de0" }}>{t("hud.record")}</span>
                 : ghost.delta != null
-                  ? <span className="text-[10px] font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
+                  ? <span className="text-meta-1 font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
                   : null)}
             </div>
             {/* #: Bei sehr großen Zahlen (>100 Mio · 9+ Stellen) die Score-Schrift etwas verkleinern, damit die Zeile
@@ -119,7 +119,7 @@ export function StatusBar({
           {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
           <Cell label={t("hud.streak")} className="sb-streak border-l border-[color:var(--deck-border)]">
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-            <span className="text-[9px] opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
+            <span className="text-micro-3 opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
           </Cell>
           {/* Mult — ganz rechts. */}
           <Cell label={t("hud.mult")} className="sb-mult border-l border-[color:var(--deck-border)]">

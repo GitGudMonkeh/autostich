@@ -13,16 +13,16 @@ export function LayoutPerks({ perks, familyTiers = {} }) {
   return (
     <div className="rounded-lg px-3 py-2" style={{ background: "#1b1b22", border: "1px solid #5ab87a55" }}>
       {/* #104: Panel als aktiv/informativ kennzeichnen — grüner Akzent (Aufstellungs-Kontext) statt grau-in-grau. */}
-      <div className="text-[10px] uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>Positions- &amp; Formations-Perks</div>
+      <div className="text-meta-1 uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>Positions- &amp; Formations-Perks</div>
       <div className="grid gap-0.5">
         {fams.map((f) => (
-          <div key={f.id} className="text-[11px] leading-snug">
+          <div key={f.id} className="text-meta-3 leading-snug">
             <span className="font-bold" style={{ color: tierColor(f.tier) }}>{f.name} {romanOf(f.tier)}</span>
             <span className="opacity-55"> — {f.desc}</span>
           </div>
         ))}
         {ids.map((id) => (
-          <div key={id} className="text-[11px] leading-snug">
+          <div key={id} className="text-meta-3 leading-snug">
             <span className="font-bold" style={{ color: rarityMeta(id).color }}>{perkDef(id).label}</span>
             <span className="opacity-55"> — {perkDef(id).desc}</span>
           </div>

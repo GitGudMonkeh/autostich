@@ -20,7 +20,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {}, zins, heat = 
     <div className="rounded-xl p-4 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+          <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
             {t("build.perks.head", { count: perks.length + famCount })}
           </div>
           <PerkList perks={perks} familyTiers={familyTiers} zins={zins} empty={t("build.perks.emptyRun")} />
@@ -30,7 +30,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {}, zins, heat = 
             Solange auch nur einer heimatlos ist (sein Panel steht gerade nicht), bleibt die Spalte. */}
         {!(hideSkillArchs && hideSkillArchs.length && shownSkills.length === 0) && (
           <div className="sm:border-l sm:pl-4" style={{ borderColor: DECK_BORDER }}>
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">
+            <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
               {t("build.skills.head", { count: shownSkills.length })}
             </div>
             <SkillList skills={shownSkills} heat={heat} empty={t("build.skills.emptyRun", { cycle: FIRST_SKILL_CYCLE })} />

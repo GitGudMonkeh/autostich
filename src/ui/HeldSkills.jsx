@@ -33,12 +33,12 @@ export function HeldSkills({ skills = [], state = {}, className = "mt-5", open =
       open={open} onToggle={onToggle}>
       <div className="flex flex-col gap-2">
         {held.map((s) => (
-          <div key={s.id} className="text-xs px-2.5 py-2 rounded leading-snug"
+          <div key={s.id} className="text-body-5 px-2.5 py-2 rounded leading-snug"
             style={{ background: "#1c1c22", border: "1px solid #33333e" }}>
             <div className="flex items-center gap-1.5 mb-1">
               <ArchIcon meta={ac(s.id)} size={13} />
               <b style={{ color: "#c8c8d0" }}>{s.name}</b>
-              <span className="opacity-40 text-[11px]">{t("skill.heldBadge")}</span>
+              <span className="opacity-40 text-meta-3">{t("skill.heldBadge")}</span>
             </div>
             <div className="opacity-70 leading-snug whitespace-pre-line" style={{ color: "#cfcad8" }}><GlossaryText text={s.desc} /></div>
           </div>

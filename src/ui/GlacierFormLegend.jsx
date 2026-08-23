@@ -24,7 +24,7 @@ export function GlacierFormLegend({ state = {}, compact = false }) {
   if (compact) {
     // Chronik-Stil: eine kompakte Zeile mit Chips.
     return (
-      <div className="text-[11px] flex flex-wrap gap-x-3 gap-y-0.5 font-medium pt-1.5 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+      <div className="text-meta-3 flex flex-wrap gap-x-3 gap-y-0.5 font-medium pt-1.5 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
         <span className="font-bold inline-flex items-center gap-1" style={{ color: FROST }}><FactionIcon type="ice" size={13} /> {t("glacierlegend.head.compact")}</span>
         {rows.map(([k, f]) => (
           <span key={k} style={{ color: FROST_TXT }}><b style={{ color: FROST }}>{glacierFormName(k)}</b> ×{dfmt(f)}</span>
@@ -35,7 +35,7 @@ export function GlacierFormLegend({ state = {}, compact = false }) {
   }
   // Aufstellungs-Stil: eine Zeile je Formation mit Beschreibung (wie die grüne W/F/T/Z/A-Liste).
   return (
-    <div className="grid gap-0.5 text-xs sm:text-[13px] leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
+    <div className="grid gap-0.5 text-body-5 sm:text-body-3 leading-snug font-medium pt-2 mt-1 border-t" style={{ borderColor: "#5ec8f022" }}>
       <div className="font-bold inline-flex items-center gap-1" style={{ color: FROST }}><FactionIcon type="ice" size={13} /> {t("glacierlegend.head")}</div>
       {rows.map(([k, f, desc]) => (
         <div key={k}><b style={{ color: FROST }}>{glacierFormName(k)}</b> <span style={{ color: FROST_TXT }}>×{dfmt(f)}</span> — {desc}</div>

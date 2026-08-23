@@ -221,7 +221,7 @@ describe("#kpi-passt — der Wert bleibt in seiner Kachel", () => {
 
   it("der Deckel ist der bisherige Grad — kurze Werte ändern sich nicht", () => {
     expect(css).toMatch(/\.as-kpi-v \{[\s\S]*?min\(27px,/);
-    expect(ui("StartScreen.jsx"), "der Grad steht nicht mehr am Element").toMatch(/as-kpi-v text-\[27px\]/);
+    expect(ui("StartScreen.jsx"), "der Grad steht nicht mehr am Element").toMatch(/as-kpi-v text-figure-1/);
   });
 
   it("die Zeichenzahl kommt aus dem JSX, nicht aus einer Schwelle", () => {

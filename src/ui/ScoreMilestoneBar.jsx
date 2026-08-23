@@ -29,11 +29,11 @@ export function ScoreMilestoneBar({ score = 0 }) {
     <div className="rounded-xl px-3 py-1.5 as-panel as-panel-deck" style={frame}
       title={atMax ? t("milestone.title.max") : t("milestone.title.next", { at: mio(next.at), sp: next.sp })}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-semibold tracking-wide" style={{ color: accHi }}>
+        <span className="text-meta-3 font-semibold tracking-wide" style={{ color: accHi }}>
           {spSoFar > 0 ? t("milestone.label.sp", { n: reached, total, sp: spSoFar })
                        : t("milestone.label", { n: reached, total })}
         </span>
-        <span className="text-[10px] font-semibold" style={{ color: atMax ? accHi : "#9a9aa6" }}>
+        <span className="text-meta-1 font-semibold" style={{ color: atMax ? accHi : "#9a9aa6" }}>
           {/* Am Maximum stand hier fest verdrahtet „+5 SP" — die Meilensteintabelle summiert sich
               aber auf spSoFar (heute 6). Jetzt die echte Summe: eine Balancing-Änderung an
               SP_MILESTONES kann die Anzeige nicht mehr überholen. */}

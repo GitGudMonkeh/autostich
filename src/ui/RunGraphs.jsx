@@ -62,8 +62,8 @@ export function ScoreHerkunft({ state }) {
     return (
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
-          <span className="text-[11px] font-mono opacity-40">Σ {fmtScoreShort(0)}</span>
+          <span className="text-meta-3 uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
+          <span className="text-meta-3 font-mono opacity-40">Σ {fmtScoreShort(0)}</span>
         </div>
         <div className="w-full h-[13px] rounded" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }} />
       </div>
@@ -72,8 +72,8 @@ export function ScoreHerkunft({ state }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
-        <span className="text-[11px] font-mono opacity-40" title={fmtScore(score)}>Σ {fmtScoreShort(score)}</span>
+        <span className="text-meta-3 uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
+        <span className="text-meta-3 font-mono opacity-40" title={fmtScore(score)}>Σ {fmtScoreShort(score)}</span>
       </div>
       <div className="flex w-full h-[13px] rounded overflow-hidden" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }}>
         {rows.map((r) => (
@@ -84,10 +84,10 @@ export function ScoreHerkunft({ state }) {
         {rows.map((r) => (
           <div key={r.key} className="grid items-center gap-2.5 px-2 py-1.5 rounded-lg" style={{ gridTemplateColumns: "11px 1fr auto" }}>
             <span className="w-[9px] h-[9px] rounded-[3px]" style={{ background: r.color }} />
-            <span className="text-[13px] font-medium truncate">{r.label}</span>
+            <span className="text-body-3 font-medium truncate">{r.label}</span>
             <span className="text-right whitespace-nowrap" title={fmtScore(r.value)}>
-              <b className="font-mono tabular-nums text-[13px]" style={{ color: r.color }}>{fmtScoreShort(r.value)}</b>
-              <span className="font-mono text-[11px] opacity-40 ml-1.5">{fmtPct(r.value / score)}</span>
+              <b className="font-mono tabular-nums text-body-3" style={{ color: r.color }}>{fmtScoreShort(r.value)}</b>
+              <span className="font-mono text-meta-3 opacity-40 ml-1.5">{fmtPct(r.value / score)}</span>
             </span>
           </div>
         ))}
@@ -118,12 +118,12 @@ export function ScoreSourceBar({ state, showTitle = true }) {
   const total = sh.score || 1;
   return (
     <div>
-      {showTitle && <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2">{tr("rail.scoreSource")}</div>}
+      {showTitle && <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr("rail.scoreSource")}</div>}
       <div className="flex w-full h-4 rounded overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
         {SRC.map((s) => { const v = sh[s.key]; if (!v) return null;
           return <div key={s.key} title={`${tr(s.labelKey)}: ${fmtScore(v)} (${fmtPct(v / total)})`} style={{ width: `${(v / total) * 100}%`, background: s.color }} />; })}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] font-mono">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-meta-1 font-mono">
         {SRC.map((s) => { const v = sh[s.key]; if (!v) return null;
           return (
             <span key={s.key} className="inline-flex items-center gap-1">
@@ -165,9 +165,9 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
       {/* (2) Durchlauf-Graph: Score je Stich, je Durchlauf getrennt (eigene Skala = „Reset je Durchlauf"). */}
       {hasGraph && (
         <details className="rg-perTrick mt-4 rounded-xl overflow-hidden" open={open} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-          <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{tr("graphs.perTrick.open")}</summary>
+          <summary className="cursor-pointer select-none px-3 py-2 text-meta-3 uppercase tracking-wide opacity-70">{tr("graphs.perTrick.open")}</summary>
           <div className="p-3 pt-1 flex flex-col gap-1.5">
-            <div className="flex items-center gap-3 text-[10px] font-mono opacity-55 mb-1 flex-wrap">
+            <div className="flex items-center gap-3 text-meta-1 font-mono opacity-55 mb-1 flex-wrap">
               <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-[2px]" style={{ background: WIN }} />{tr("graphs.win")}</span>
               <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-[2px]" style={{ background: LOSS }} />{tr("graphs.noWin")}</span>
               <span className="opacity-70">{tr("graphs.scaleHint")}</span>
@@ -178,7 +178,7 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
               const cycleScore = tricks.reduce((a, t) => a + (t.gained || 0), 0);
               return (
                 <div key={ci} className="rg-row flex items-center gap-2">
-                  <span className="rg-cyc text-[9px] font-mono opacity-45 w-7 shrink-0 text-right">{tr("graphs.cycleAbbr", { n: ci + 1 })}</span>
+                  <span className="rg-cyc text-micro-3 font-mono opacity-45 w-7 shrink-0 text-right">{tr("graphs.cycleAbbr", { n: ci + 1 })}</span>
                   <div className="rg-bars flex items-end gap-[1px] h-7 flex-1 min-w-0" style={{ "--rg-max": maxTricks }} title={tr("graphs.cycle.title", { n: ci + 1, score: fmtScore(cycleScore) })}>
                     {tricks.map((t, i) => {
                       const h = Math.max(6, Math.round(((t.gained || 0) / cmax) * 100));
@@ -188,7 +188,7 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
                       );
                     })}
                   </div>
-                  <span className="rg-cycsum text-[9px] font-mono opacity-45 w-14 shrink-0 text-right tabular-nums truncate" title={fmtScore(cycleScore)}>
+                  <span className="rg-cycsum text-micro-3 font-mono opacity-45 w-14 shrink-0 text-right tabular-nums truncate" title={fmtScore(cycleScore)}>
                     {/* #graph-gold: Anteil dieses Durchlaufs am Gesamtscore als Flaeche HINTER der Zahl.
                         Jede Zeile hat ihre eigene Skala (cmax je Durchlauf) — ein Balken in D1 und ein gleich
                         hoher in D9 bedeuten damit voellig verschiedene Punktzahlen (gemessen an einem echten

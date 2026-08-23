@@ -27,8 +27,8 @@ import { t, fmtNum } from "../i18n/index.js";
 function HeadStat({ label, value, title }) {
   return (
     <div className="rd-kpi-i min-w-0" title={title}>
-      <div className="ty-num text-[15px] leading-none whitespace-nowrap">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider opacity-45 mt-1 truncate">{label}</div>
+      <div className="ty-num text-body-lg-3 leading-none whitespace-nowrap">{value}</div>
+      <div className="text-meta-1 uppercase tracking-wider opacity-45 mt-1 truncate">{label}</div>
     </div>
   );
 }
@@ -87,14 +87,14 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
           <TopHairline />
           <div className="rd-title min-w-0">
             {/* #deckui: generisches Sektions-Label zieht die Deckfarbe (Fallback = bisheriges Violett) */}
-            <div className="text-xs uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
-            {name && <div className="text-lg font-bold mt-0.5 truncate">{name}</div>}
+            <div className="text-body-5 uppercase tracking-widest" style={{ color: "var(--deck-a1, #8a7de0)" }}>Lauf-Details{rank != null ? ` · #${rank}` : ""}</div>
+            {name && <div className="text-title-5 font-bold mt-0.5 truncate">{name}</div>}
           </div>
           <ActionButton kind="secondary" className="rd-close shrink-0" onClick={onClose}>{t("common.close")}</ActionButton>
         </div>
         <div className="rd-score text-center my-3">
-          <div className="rd-num text-4xl font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
-          <div className="text-xs opacity-50 mt-0.5">{t("hud.score")}</div>
+          <div className="rd-num text-display-2 font-bold" style={{ color: "#d4a63a" }}>{fmtScore(score)}</div>
+          <div className="text-body-5 opacity-50 mt-0.5">{t("hud.score")}</div>
           {/* #205: Seed dieses Laufs — kopieren & (optional) nachspielen. Alt-Läufe ohne Seed zeigen nichts. */}
           {entry.seedCode && (
             <div className="flex justify-center mt-2">
@@ -142,7 +142,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             <div className="rd-ph hidden dt:block">{t("gameover.chart.title")}</div>
             {hasTraj && (
               <div className="rd-spark mt-4">
-                <div className="flex items-center justify-between text-[11px] uppercase tracking-wide opacity-50 mb-2">
+                <div className="flex items-center justify-between text-meta-3 uppercase tracking-wide opacity-50 mb-2">
                   <span className="dt:hidden">{t("gameover.chart.title")}</span>
                   <span className="hidden dt:inline" />
                   <span className="flex gap-3 normal-case tracking-normal">
@@ -165,7 +165,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
             alte Einträge & globale Fremd-Läufe haben keinen → Abschnitt wird ausgeblendet). #205: bei anonymized aus. */}
         {!anonymized && entry.deckSnapshot?.cards?.length > 0 && (
           <details className="rd-c3 as-ring as-ring-quiet mt-4 rounded-xl overflow-hidden" open={wide} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
-            <summary className="cursor-pointer select-none px-3 py-2 text-[11px] uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
+            <summary className="cursor-pointer select-none px-3 py-2 text-meta-3 uppercase tracking-wide opacity-70">{t("gameover.layout.open")}</summary>
             {/* Das Ringband steht NACH dem Griff: `summary` muss das erste Kind bleiben, sonst ist es keiner. */}
             <i className="as-ring-run" aria-hidden="true" />
             <div className="p-3 pt-0">
@@ -178,8 +178,8 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
                 <div className="rd-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-                  <div className="text-[11px] uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.buildingsN", { n: archBuildings.length })}</div>
-                  <div className="text-[10px] opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
+                  <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.buildingsN", { n: archBuildings.length })}</div>
+                  <div className="text-meta-1 opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
                     {archBuildings.map((b) => {
                       const fam = archFamily(b.familyId); if (!fam) return null;
@@ -189,7 +189,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                       const on = inspectBid === b.id;
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
-                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-[11px] leading-snug flex flex-col gap-0.5 transition-all"
+                          className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
                           style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />

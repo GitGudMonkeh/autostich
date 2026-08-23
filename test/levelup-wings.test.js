@@ -333,7 +333,16 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
        dem Knopf. Mit dieser Regel: 133/151. Sie darf deshalb nur Größen setzen, keine Farben/Gewichte. */
     const m = css.match(/@media \(max-width: 1279.98px\) \{\s*\.sk-actbtn\s*\{([^}]*)\}/);
     expect(m, ".sk-actbtn-Regel nicht mehr gefunden").toBeTruthy();
-    expect(m[1]).toMatch(/font-size:\s*12px/);
+    /* #typo-system S1: die Größe steht seit der Token-Migration nicht mehr als Zahl in der Regel,
+       sondern als `var(--text-…)`. Der Wächter RECHNET sie deshalb aus dem @theme-Block nach, statt
+       eine Schreibweise zu vergleichen — das ist die gemessene 12 px von oben, nur an ihrer neuen
+       Quelle abgelesen, und es überlebt den nächsten Umbau der Schreibweise. */
+    const tok = m[1].match(/font-size:\s*var\((--text-[a-z0-9-]+)\)/);
+    expect(tok, "die Regel setzt keine Schriftgröße mehr").toBeTruthy();
+    const theme = css.slice(css.indexOf("@theme"), css.indexOf("\n}", css.indexOf("@theme")));
+    const val = theme.match(new RegExp(`${tok[1]}:\\s*([^;]+);`));
+    expect(val, `${tok[1]} ist im @theme nicht definiert`).toBeTruthy();
+    expect(val[1].trim(), "die 158→133 px Messung hängt an genau dieser Größe").toBe("12px");
     expect(m[1]).toMatch(/padding:/);
     expect(m[1], "Farbe/Gewicht gehören in die Sorte, nicht hierher").not.toMatch(/color|font-weight|background|border/);
   });

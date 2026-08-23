@@ -10,15 +10,15 @@ import { t } from "../i18n/index.js"; // #sprache
 export function MusicBar({ title, onNext, className = "" }) {
   return (
     <div className={`rounded-xl p-3 flex items-center gap-2 as-panel as-panel-deck ${className}`} style={{ background: "#17171c", border: `1px solid ${DECK_BORDER}` }}>
-      <span className="text-base" aria-hidden>🎵</span>
+      <span className="text-body-lg-6" aria-hidden>🎵</span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-wide opacity-50">{t("music.title")}</div>
-        <MarqueeText text={title || "—"} className="text-sm font-bold" />
+        <div className="text-meta-1 uppercase tracking-wide opacity-50">{t("music.title")}</div>
+        <MarqueeText text={title || "—"} className="text-body-lg-5 font-bold" />
       </div>
       {onNext && (
         <button onClick={onNext} aria-label={t("music.next")}
           title={title ? t("music.playing", { title }) : t("music.next")}
-          className="as-edge-neutral as-edge-thin shrink-0 rounded px-2.5 py-1 text-base leading-none transition-all hover:brightness-110">
+          className="as-edge-neutral as-edge-thin shrink-0 rounded px-2.5 py-1 text-body-lg-6 leading-none transition-all hover:brightness-110">
           ⏭
         </button>
       )}

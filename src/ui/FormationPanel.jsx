@@ -44,14 +44,14 @@ export function FormationPanel({ state = {}, title = null, pickedIds = [], picke
         <button type="button" onClick={collapsible ? () => setOpen((o) => !o) : undefined}
           aria-expanded={collapsible ? open : undefined}
           className="flex items-center gap-1.5 min-w-0" style={{ cursor: collapsible ? "pointer" : "default" }}>
-          {collapsible && <span className="text-[10px] opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>}
-          <span className="text-[11px] uppercase tracking-wide opacity-50 truncate">{title ?? t("formpanel.title")}</span>
+          {collapsible && <span className="text-meta-1 opacity-50 transition-transform" style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "none" }}>▸</span>}
+          <span className="text-meta-3 uppercase tracking-wide opacity-50 truncate">{title ?? t("formpanel.title")}</span>
         </button>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] font-bold" style={{ color: "#5ab87a" }}>{t("formpanel.count", { n: count, max: fmt(maxMult) })}</span>
+          <span className="text-meta-3 font-bold" style={{ color: "#5ab87a" }}>{t("formpanel.count", { n: count, max: fmt(maxMult) })}</span>
           {hasArch && (
             <button type="button" onClick={(e) => { e.stopPropagation(); setShowArch((v) => !v); }}
-              className="text-[10px] font-bold px-2 py-0.5 rounded-md transition-all hover:brightness-110"
+              className="text-meta-1 font-bold px-2 py-0.5 rounded-md transition-all hover:brightness-110"
               style={showArch ? { background: "#16283a", color: "#7db4e6", border: "1px solid #3b7dbe" } : { background: "#16232f", color: "#7d8a97", border: "1px solid #2b3e4d" }}
               title={t("formpanel.archToggle.title")}>{t("formpanel.archToggle")}</button>
           )}

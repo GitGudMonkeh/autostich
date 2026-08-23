@@ -86,10 +86,10 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         {inWings && <CardCorners artKey={CORNER_PERK} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1">
-          <div className="text-xs uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: PHASE_ACCENTS.red.c }}>
             {(state.perks || []).length === 0 ? tr("perk.start") : tr("perk.cycle", { cycle: (state.cycle || 0) + 1 })}
           </div>
-          <h2 className="text-xl font-bold mt-1">{tr("perk.title")}</h2>
+          <h2 className="text-title-6 font-bold mt-1">{tr("perk.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} className="lv-score" /></div>}
         </div>
 
@@ -101,7 +101,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         )}
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-3">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-body-5 mt-3">
           {showCrit && <span><span className="opacity-50">{tr("perk.stat.crit")} </span><span style={{ color: "#e879f9" }}>{critPct}%</span></span>}
           <span><span className="opacity-50">{tr("perk.stat.scoreMult")} </span><span style={{ color: "#d4a63a" }}>×{fmtMult(scoreMult)}</span></span>
         </div>
@@ -146,19 +146,19 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                 {art && <img src={art} alt="" aria-hidden="true" loading="lazy" decoding="async"
                              className={`pk-strip${(!v.isFamily && v.leg) ? " pk-strip-mid" : ""}`} />}
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+                  <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold"
                     style={{ background: `${cat.color}22`, color: cat.color }}>
                     {cat.name}
                   </span>
                   {v.isFamily ? (
                     <>
                       {/* Stufen-Badge (Seltenheit der Zielstufe) in der Stufenfarbe. */}
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                      <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${v.accent}1f`, color: v.accent, border: `1px solid ${v.accent}88` }}>
                         {v.tierLabel}
                       </span>
                       {v.upgrade && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: `${v.accent}14`, color: v.accent, border: `1px dashed ${v.accent}88` }}>
                           {tr("perk.upgrade", { from: romanOf(v.held), to: romanOf(v.tier) })}
                         </span>
@@ -166,7 +166,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                     </>
                   ) : (
                     v.rm.badge && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                      <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${v.rm.color}1f`, color: v.rm.color, border: `1px solid ${v.rm.color}88` }}>
                         {v.rm.badge}
                       </span>
@@ -174,7 +174,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
                   )}
                 </div>
                 <div className="lv-cardname font-bold" style={{ color: (!v.isFamily && v.leg) ? LEG_GOLD : v.isFamily ? v.accent : cat.color }}>{v.name}</div>
-                <div className="text-[13px] opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
+                <div className="text-body-3 opacity-75 leading-snug"><GlossaryText text={v.desc} /></div>
               </button>
             );
           })}
@@ -182,7 +182,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
         )}
 
         {!state.devMode && (
-        <div className="text-center text-xs opacity-40 mt-3">
+        <div className="text-center text-body-5 opacity-40 mt-3">
           {tr("perk.onceHint")}
         </div>
         )}
