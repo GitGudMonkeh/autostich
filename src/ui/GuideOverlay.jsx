@@ -29,7 +29,11 @@ function RT({ t }) {
   const parts = String(t || "").split(/\*\*/);
   return (
     <>
-      {parts.map((s, i) => (i % 2 ? <strong key={i} style={{ color: "#f2f0f8", fontWeight: 650 }}>{s}</strong> : <span key={i}>{s}</span>))}
+      {/* #typo-system S2: 650 war die letzte Sprosse ausserhalb der Leiter 400/500/600 — sie stand
+          hier inline und ging deshalb an der `@theme`-Umbiegung vorbei. Das Gewicht ist jetzt
+          ueberfluessig: `<strong>` traegt seit S2 projektweit 600 (index.css, direkt unter
+          `button`). Nur die Farbe bleibt, und die ist die eigentliche Absicht dieser Stelle. */}
+      {parts.map((s, i) => (i % 2 ? <strong key={i} style={{ color: "#f2f0f8" }}>{s}</strong> : <span key={i}>{s}</span>))}
     </>
   );
 }
