@@ -1,0 +1,1509 @@
+{
+  "note": "V2 of the mobile-tile-build visual gate. Same script, seed, viewport and route for both halves. Scrollbars are hidden, so the widths are the phone case. Images beside this file.",
+  "label": "V2",
+  "seed": "11",
+  "port": 5188,
+  "dpr": 1,
+  "results": [
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "lang": "de",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 320,
+          "h": 549.25,
+          "templateColumns": "320px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 72
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 320,
+            "h": 254.75,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_02_ionisierung.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 320,
+            "h": 158.5,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_17_serienschutz.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 693.25,
+            "w": 320,
+            "h": 120,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_05_reststrom.webp"
+            }
+          }
+        ],
+        "image": "V2-skill-de-390x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 358,
+          "h": 776.47,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 308,
+          "h": 412,
+          "templateColumns": "308px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 308,
+          "h": 86.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 23,
+            "y": 40.77,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 308,
+            "h": 154.5,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "L_VAB_vabanque.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 420.94,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_B_stich.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 549.69,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_C_rolle.webp"
+            }
+          }
+        ],
+        "image": "V2-perk-de-390x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 324,
+          "h": 139.25,
+          "templateColumns": "324px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 110.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 324,
+            "h": 139.25,
+            "paddingBoxWidth": 319,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_L01_donnergott.webp"
+            }
+          }
+        ],
+        "image": "V2-legendary-de-390x844.png"
+      }
+    },
+    {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "lang": "en",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 320,
+          "h": 530,
+          "templateColumns": "320px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 72
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 320,
+            "h": 254.75,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_02_ionisierung.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 526.75,
+            "w": 320,
+            "h": 139.25,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_17_serienschutz.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 674,
+            "w": 320,
+            "h": 120,
+            "paddingBoxWidth": 315,
+            "paddingBoxHeight": 118,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_05_reststrom.webp"
+            }
+          }
+        ],
+        "image": "V2-skill-en-390x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 358,
+          "h": 776.47,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 308,
+          "h": 394.13,
+          "templateColumns": "308px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 308,
+          "h": 86.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 23,
+            "y": 40.77,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 308,
+            "h": 136.63,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 135,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "L_VAB_vabanque.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 403.06,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_B_stich.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 531.81,
+            "w": 308,
+            "h": 118.75,
+            "paddingBoxWidth": 303,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_C_rolle.webp"
+            }
+          }
+        ],
+        "image": "V2-perk-en-390x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 390,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 358,
+          "h": 760,
+          "paddingBoxWidth": 356,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 324,
+          "h": 139.25,
+          "templateColumns": "324px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 324,
+          "h": 110.67
+        },
+        "ornamentRoom": 56,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 300,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 324,
+            "h": 139.25,
+            "paddingBoxWidth": 319,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_L01_donnergott.webp"
+            }
+          }
+        ],
+        "image": "V2-legendary-en-390x844.png"
+      }
+    },
+    {
+      "viewport": {
+        "w": 320,
+        "h": 844
+      },
+      "lang": "de",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 306,
+          "w": 250,
+          "h": 587.75,
+          "templateColumns": "250px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 72
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 306,
+            "w": 250,
+            "h": 254.75,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 253,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_02_ionisierung.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 568.75,
+            "w": 250,
+            "h": 177.75,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 176,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_17_serienschutz.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 754.5,
+            "w": 250,
+            "h": 139.25,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_05_reststrom.webp"
+            }
+          }
+        ],
+        "image": "V2-skill-de-320x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 288,
+          "h": 776.47,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 321.77,
+          "w": 238,
+          "h": 429.88,
+          "templateColumns": "238px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 238,
+          "h": 102
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 23,
+            "y": 40.77,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 321.77,
+            "w": 238,
+            "h": 172.38,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 170,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "L_VAB_vabanque.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 504.14,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_B_stich.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 632.89,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_C_rolle.webp"
+            }
+          }
+        ],
+        "image": "V2-perk-de-320x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 279,
+          "w": 254,
+          "h": 158.5,
+          "templateColumns": "254px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 126
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 279,
+            "w": 254,
+            "h": 158.5,
+            "paddingBoxWidth": 249,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_L01_donnergott.webp"
+            }
+          }
+        ],
+        "image": "V2-legendary-de-320x844.png"
+      }
+    },
+    {
+      "viewport": {
+        "w": 320,
+        "h": 844
+      },
+      "lang": "en",
+      "skill": {
+        "reached": true,
+        "screen": "skill",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 35,
+          "y": 264,
+          "w": 250,
+          "h": 587.75,
+          "templateColumns": "250px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 72
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 35,
+            "y": 264,
+            "w": 250,
+            "h": 274,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 272,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_02_ionisierung.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 546,
+            "w": 250,
+            "h": 158.5,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_17_serienschutz.webp"
+            }
+          },
+          {
+            "x": 35,
+            "y": 712.5,
+            "w": 250,
+            "h": 139.25,
+            "paddingBoxWidth": 245,
+            "paddingBoxHeight": 137,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_05_reststrom.webp"
+            }
+          }
+        ],
+        "image": "V2-skill-en-320x844.png"
+      },
+      "perk": {
+        "reached": true,
+        "screen": "perk",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 33.77,
+          "w": 288,
+          "h": 776.47,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "24px",
+          "paddingRight": "24px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 41,
+          "y": 256.44,
+          "w": 238,
+          "h": 412,
+          "templateColumns": "238px",
+          "columnCount": 1,
+          "gap": "10px"
+        },
+        "head": {
+          "x": 41,
+          "y": 58.77,
+          "w": 238,
+          "h": 86.67
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 23,
+            "y": 40.77,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 3,
+        "tiles": [
+          {
+            "x": 41,
+            "y": 256.44,
+            "w": 238,
+            "h": 154.5,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 153,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "L_VAB_vabanque.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 420.94,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_B_stich.webp"
+            }
+          },
+          {
+            "x": 41,
+            "y": 549.69,
+            "w": 238,
+            "h": 118.75,
+            "paddingBoxWidth": 233,
+            "paddingBoxHeight": 117,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "16px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "perkcat_C_rolle.webp"
+            }
+          }
+        ],
+        "image": "V2-perk-en-320x844.png"
+      },
+      "legendary": {
+        "reached": true,
+        "screen": "legendary",
+        "viewport": {
+          "innerWidth": 320,
+          "innerHeight": 844,
+          "dpr": 1
+        },
+        "media": {
+          "desktop1280": false,
+          "sm640": false
+        },
+        "card": {
+          "x": 16,
+          "y": 42,
+          "w": 288,
+          "h": 760,
+          "paddingBoxWidth": 286,
+          "paddingLeft": "16px",
+          "paddingRight": "16px",
+          "borderLeftWidth": "1px",
+          "overflowX": "auto",
+          "overflowY": "auto"
+        },
+        "grid": {
+          "x": 33,
+          "y": 263.67,
+          "w": 254,
+          "h": 158.5,
+          "templateColumns": "254px",
+          "columnCount": 1,
+          "gap": "8px"
+        },
+        "head": {
+          "x": 33,
+          "y": 43,
+          "w": 254,
+          "h": 110.67
+        },
+        "ornamentRoom": -14,
+        "ornaments": [
+          {
+            "side": "left",
+            "x": 17,
+            "y": 43,
+            "w": 286,
+            "h": 115
+          },
+          {
+            "side": "right",
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ],
+        "ornamentsVisible": 1,
+        "tileCount": 1,
+        "tiles": [
+          {
+            "x": 33,
+            "y": 263.67,
+            "w": 254,
+            "h": 158.5,
+            "paddingBoxWidth": 249,
+            "paddingBoxHeight": 157,
+            "borderLeft": "4px",
+            "borderRight": "1px",
+            "paddingLeft": "12px",
+            "paddingTop": "12px",
+            "type": {
+              "name": "15px",
+              "badge": "10px"
+            },
+            "hasImg": true,
+            "emblem": {
+              "w": 88,
+              "h": 88,
+              "blend": "screen",
+              "filter": "none",
+              "objectFit": "cover",
+              "mask": "radial-gradient(120% 120% at 100% 0%, rgb(0, 0, 0) 58%, rgba(0, 0, 0, 0) 88%)",
+              "src": "SK_LIGHTNING_L01_donnergott.webp"
+            }
+          }
+        ],
+        "image": "V2-legendary-en-320x844.png"
+      }
+    }
+  ]
+}
