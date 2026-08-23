@@ -234,7 +234,7 @@ async function bootRun(c, w, h, hideScrollbars) {
   await sleep(2200);
 }
 
-async function runLegendary(c, w, h) {
+async function runLegendary(c) {
   const raw = await evaluate(c, `localStorage.getItem("as_activerun")`);
   if (!raw) return { reached: false, why: "no active run to lift" };
   const b = JSON.parse(raw);
@@ -287,7 +287,7 @@ async function runOne(w, h, port, hideScrollbars) {
     }
     if (!perk || !perk.reached) perk = { reached: false, why: "perk offer never opened" };
 
-    const legendary = await runLegendary(c, w, h);
+    const legendary = await runLegendary(c);
     return { skill, perk, legendary };
   } finally {
     await c.close();

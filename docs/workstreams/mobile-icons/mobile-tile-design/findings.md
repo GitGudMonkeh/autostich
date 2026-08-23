@@ -153,3 +153,65 @@ German only; DPR 1; one seed; Chrome via CDP on Windows. Heights are not measure
 answers *how wide*, and the zone heights are a visual-gate question. The tile counts are what seed
 `11` produced (3 skill offers, 3 perk offers, 1 legendary tile per faction page), not a claim about
 every possible offer.
+
+---
+
+## S — the variant sheets (deliverable), 2026-08-23
+
+`scripts/mobile-tile-sheet.{mjs,html,page.js}`, output `visual/variants-<screen>-<lang>.png`,
+`visual/band-<screen>.png` and `visual/S-sheet-measurements.json`. Nine images, 3.9 MB with the two
+sidecars.
+
+**Six variant sheets** — three screens × German and English, four columns each: the tile as it renders
+today (control), banner, corner emblem, corner emblem bleeding. **Three band sheets** — the banner at
+320 / 390 / 480 / 639 px, because "is the banner the right design" and "does the banner hold across a
+2.3× band" are two questions and one image cannot answer both.
+
+The tile widths are **not** derived by the sheet. They are read out of `M-tile-widths.json`
+(overlay-scrollbar rows) and set explicitly, then read back out of the DOM into the sidecar. A sheet
+that produced its own width would be showing a design at a width the application never renders.
+
+### D4 is proven, not asserted
+
+Every variant tile is compared against the control tile of the same sample — bounding box and the
+computed font size of the badge, name and description rows. Verdict in the sidecar:
+**`no variant changed a tile box or a type size`.**
+
+That check earned its keep on the first run. The bleeding sub-variant set only its two custom
+properties while the positioning rule matched a different class, so its emblem fell back into the text
+flow and grew every tile by **297 px** — and the sheet still looked plausible at a glance, because a
+taller tile on its own column reads as a taller tile. A numeric check caught it immediately; an eye
+would have had to notice that one column's cards were not the same height as another's.
+
+### What the sheets show — observations, not the verdict
+
+The verdict is the owner's at V3. These are what the pictures make visible, recorded so the gate
+starts from the same place:
+
+- **The banner sits on the text, not above it.** D4 forbids the desktop's push-down padding, so the
+  badge row and the skill name are rendered over the brightest part of the emblem. On
+  `variants-skill-de.png` „Flächenionisation" and the LEGENDÄR badge are inside the lit area. This is
+  the banner's central cost and it follows directly from D4 — it is not a tuning problem.
+- **The corner emblem does not fight the text** at the widths measured, and it shows the whole motif.
+  Its decisive case is on `variants-perk-*.png`, where the perk tile carries three badges and the
+  emblem shares the top-right corner with them.
+- **The capped banner stops being a banner at the top of the band.** `band-*.png`: the cap holds the
+  emblem at 320 px while the tile grows to 552 px, so at 639 px it reads as a centred patch rather
+  than a header strip. Uncapped it would instead double the bloom. Both are visible on that sheet;
+  neither is a bug.
+
+### Limits of this evidence
+
+- **The four determinism render flags could not be applied.** `launch()` in `scripts/cdp.mjs` takes no
+  flags on this base; the option that adds them is in flight on `task/icon-position-review`, and D2
+  says that task is not touched. Consequence: these sheets are reproducible in content but **not
+  guaranteed byte-identical between runs**, because every tile goes through a `mix-blend-mode`
+  compositing path. The SHA-256 per PNG in the sidecar records what was shown at the gate; it is not a
+  reproducibility claim. When that change lands on `dev`, pass the flags and the claim becomes real.
+- The sheet builds the tile markup rather than mounting the React screens, so the Tailwind utilities
+  are restated as plain CSS. Geometry is not: the widths come from the measurement and the card wash,
+  the rarity edge, the ornament zone and the blend come from `src/index.css` and `modalStyle.jsx`.
+- One faction (Lightning) stands in for four. The ornament binds to the active tab, so the sheet shows
+  the mechanism, not every picture.
+- `.as-legendary` (the animated gold frame) and `.as-edge-card.is-sel` are deliberately absent, for
+  the reasons `icon-contact-sheet.page.js` gives.
