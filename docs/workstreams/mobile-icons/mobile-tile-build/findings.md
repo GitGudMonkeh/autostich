@@ -157,3 +157,39 @@ committed tool.
   so the sheet shows the mechanism rather than all four pictures.
 - **The emblem's size is a judgement, not a measurement.** 88 px was chosen at the device against the
   narrowest measured tile (233 px). Nothing proves it is the best size — that is what V3 is for.
+
+---
+
+## V3 — the visual gate, 2026-08-23
+
+Transcribed verbatim, per `task-lifecycle.md` — *A finding is not a finding until it has an ID*.
+
+> „Sichtgate ist fein. passt"
+
+**Passed.** The gate is the owner's; this session captured, measured and presented, and does not
+record a visual result as approved on its own.
+
+## V4 — classification
+
+The owner returned no findings. Everything below is what **this session** observed and is classified
+anyway, because an observation that exists only in a chat message is lost.
+
+| ID | Finding | Classification | Disposition |
+| --- | --- | --- | --- |
+| MTB-1 | Below a 334 px viewport the single card-head ornament overhangs the head and is clipped at the card's padding edge — visible in `V2-*-320x844.png` | **Expected platform behaviour** | Documented, no fix. What is clipped is dark: the masters' luminous area runs out at ~213 px (`docs/art/corners/README.md`), well inside the 286 px head at that width. Confirmed on the 320 px capture rather than argued from the README alone |
+| MTB-2 | The emblem's 88 px is a judgement taken at the device, not a derived value | **New design question** | Backlog. Nothing proves it is the best size; it was chosen against the narrowest measured tile (233 px). A future round can move one number and nothing else — `object-fit: cover` on a square source crops nothing, so size is the only free variable |
+| MTB-3 | The captures are not guaranteed byte-identical between runs: `launch()` in `scripts/cdp.mjs` takes no render flags on this base, and the option that adds them is in flight on `task/icon-position-review` | **Pre-existing, out of scope** | Backlog. When that change reaches `dev`, pass the four flags and the reproducibility claim becomes real |
+
+Only the first row could have returned as work in this task, and it did not: it is behaviour, not a
+defect.
+
+## Known hazards — final state
+
+| | Status |
+| --- | --- |
+| H1 | **Measured, not applicable.** `icon-position-review` was neither waited for nor touched (D2). Its part 2 will edit `src/index.css` and the three screens; the overlap is textual and not semantic — its rules are desktop-only `object-position`, this task's sit inside a phone-only media block. Whichever lands second rebases |
+| H1b | **Not applicable.** `test/perk-art.test.js` was edited here, but only in its wiring group; the `object-position` assertions that task will move (`:223`, `:300`, `:302`) are untouched |
+| H4 | **Measured.** Eight predicted ratchets plus one unpredicted, all rewritten to the new invariant and counter-checked. 11 seams broken, 11 caught |
+| H4b | **Measured, held.** `test/corner-art.test.js` stayed green throughout: `.co-corner`'s CSS width still equals the bake's `strip_w`, and `CardCorners.jsx` still renders exactly two `<img>` |
+| H8 | **Measured.** At 700 px: zero emblems, zero visible ornaments, column counts unchanged |
+| H9 | **Measured, controlled.** Both halves were captured with scrollbars hidden, so V1 and V2 are comparable and both describe the phone case |
