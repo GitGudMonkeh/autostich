@@ -44,11 +44,9 @@ that apply, drop the ones that do not, and never pad.
 4. **What the owner does not want to decide**, named as delegated to the session.
 5. **Non-goals**, and where one exists, the tripwire: the concrete signal that a rejected approach
    has crept back in.
-6. **Do pixels move?** If yes, say which screen and at which sizes, and that the V1 baseline state
-   is settled at the start stop — not asked for separately later.
-7. **Known hazards** the owner already knows about — a fragile file, a past regression, a deadline.
-8. **The acceptance criterion**: the single thing that decides success or failure.
-9. **Where the work happens** — branch and worktree, because a session that is not told chooses
+6. **Known hazards** the owner already knows about — a fragile file, a past regression, a deadline.
+7. **The acceptance criterion**: the single thing that decides success or failure.
+8. **Where the work happens** — branch and worktree, because a session that is not told chooses
    nothing and asks (`AGENTS.md` — *Session placement*). If the task does not exist yet, the order
    opens with the exact `/create-task <slug> <tier>` line for the owner to run first.
 

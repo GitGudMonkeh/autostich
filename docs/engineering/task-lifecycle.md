@@ -32,7 +32,6 @@ That rule is the only thing preventing this file from becoming a second copy of 
 | Task contract | short note | full | full, one per task |
 | Workstream directory | no | yes | yes |
 | Measurement / proof task | no | when the central claim needs proof | yes, as a first-class deliverable |
-| Visual review (§8, V1–V4) | when pixels move — reduced scope | when pixels move — full scope | **always**, and repeated per design iteration |
 | Independent review | optional, risk-based | optional, risk-based | optional, risk-based |
 | Branch shape | one branch off `dev` | one branch off `dev` | `feature/*` with `task/*` below it |
 
@@ -52,8 +51,8 @@ Across every tier the owner is stopped **twice**. The rest of the lifecycle runs
 
 | Stop | When | Settled in one pass |
 | --- | --- | --- |
-| **Start** | Before implementation | Scope and tier; the decision block's questions (§4); whatever the House rules reserve — a new glyph, a new dependency; and, where pixels will move, which state the V1 baseline captures |
-| **End** | Before integration | The V3 visual gate (§8) and the integration authorization (§10), answered together |
+| **Start** | Before implementation | Scope and tier; the decision block's questions (§4); whatever the House rules reserve — a new glyph, a new dependency |
+| **End** | Before integration | The integration authorization (§9) |
 
 A question that could have waited for one of those two stops and was raised on its own instead is a
 defect in the process, not diligence.
@@ -67,9 +66,8 @@ non-blocking.
 ## 3. Tier A — standard task
 
 ```text
-task note -> branch -> [V1 baseline, if pixels will move] -> implement -> gates
+task note -> branch -> implement -> gates
   -> self-review
-  -> [V2 capture -> V3 human visual gate -> V4 classification, if pixels moved]
   -> integrate -> cleanup
 ```
 
@@ -80,19 +78,6 @@ was I supposed to change" has an answer that is not the diff.
 **Self-review** means reading the whole diff against the note before integrating — not re-reading the
 code you just wrote.
 
-**Conditional visual gate.** If the change moves pixels, Tier A runs the **whole** §8 lifecycle —
-V1 baseline, V2 capture, V3 human review gate, **and V4 classification.** What shrinks is the
-*scope*, never the set of steps: the affected screen at the sizes that matter, rather than a full
-capture set. A Tier A change that skips V1 is the one that makes "was it always like that"
-unanswerable a week later, and one that skips V4 turns a real finding back into a chat message.
-
-**Where Tier A records V4.** In the **task note or the handoff** — Tier A has no workstream
-directory, and it does not get one for this. The classification table from §8 is written inline
-there; findings that leave the task still get a backlog ID, exactly as in the higher tiers. The
-recording surface is smaller; the requirement is identical.
-
-If the change moves no pixels, V1–V4 do not apply.
-
 No planning report, no workstream directory, no evidence beyond the gate output.
 
 ---
@@ -101,9 +86,7 @@ No planning report, no workstream directory, no evidence beyond the gate output.
 
 ```text
 planning session -> planning report -> task contract -> branch + worktree
-  -> [V1 baseline, if pixels will move]
   -> implementation -> gates
-  -> [V2 capture -> V3 human visual gate -> V4 classification, if pixels moved]
   -> evidence package
   -> [independent review -> review fixes, if one was requested]
   -> integration -> cleanup
@@ -132,11 +115,6 @@ authority*.
 length is not capped and the owner is not expected to read it. A report that buries two owner
 questions inside five thousand words has not asked them; it has hidden them.
 
-**The visual gate sits before integration**, and its findings are classified there (§8) — and before
-any independent review, where one was requested. The baseline (V1) is taken **after the worktree
-exists and before implementation begins** — that is the only point at which the "before" state is
-still real.
-
 ---
 
 ## 5. Tier C — large UI / architecture workstream
@@ -146,12 +124,7 @@ Everything in Tier B, plus:
 - A **feature integration branch** with `task/*` branches below it (`git-workflow.md` §3, §8).
 - A **measurement task as a named deliverable**, not a bullet inside the implementation task. If
   proving the work correct is a sub-bullet, it is the thing that gets cut under time pressure.
-- **V1 and V2 as full capture sets** — every affected screen, at every canonical viewport size, DPR
-  recorded. Tier C is where the baseline is least optional: a multi-screen redesign has no other way
-  to tell a regression from a pre-existing quirk.
-- **V3 run again after every design iteration**, each round producing its own V2 and its own
-  classification. One review at the end of a Tier C workstream reviews the last change, not the work.
-- A **downgrade record** for any acceptance criterion reduced during the work (§11).
+- A **downgrade record** for any acceptance criterion reduced during the work (§10).
 
 Before splitting a Tier C workstream into parallel tasks, check the decision guide in
 `git-workflow.md` §22 — it governs when tasks may run in parallel and when they must be serialized.
@@ -176,7 +149,7 @@ may add or drop a section, and a numeric citation from another document goes sta
 | Task-specific inputs | Sizes, screens, data — whatever the work is measured against |
 | Acceptance gate | The single criterion that decides success or failure |
 | Expected file surface | Indicative. Anything outside it is recorded and reported before it is changed — not blocked on an owner answer unless the departure is itself a scope change |
-| Known hazards | See §11 — each must be resolved before handoff |
+| Known hazards | See §10 — each must be resolved before handoff |
 | Definition of done | Checkboxes, ticked only when true |
 
 Two properties make a contract work, and both are cheap:
@@ -211,8 +184,8 @@ that reads as uniformly confident is less useful than one that marks its own sof
 
 ### Committing evidence
 
-Always commit the **metadata and the classification table** — small, diffable, and carrying the actual
-claims.
+Always commit the **metadata and the tables that carry the claims** — small and
+diffable.
 
 Commit **captured images only when they are the evidence**, that is when the finding is visual and a
 reader must see it to judge it. Otherwise keep them regenerable, which is only honest if the
@@ -226,71 +199,7 @@ than by habit.
 
 ---
 
-## 8. Visual review
-
-Autostich is a visual product. The test suite does not render the UI and cannot see a visual
-regression (`testing.md` §10). Visual review is therefore a **gate, not a courtesy** — it has caught a
-defect that passed every automated layer.
-
-**This is the canonical flow. Every tier that moves pixels follows it**, differing only in how much
-is captured, never in which steps happen.
-
-```text
-V1  pre-change baseline capture      <- BEFORE the first pixel moves
-      |
-    implementation + gates
-      |
-V2  post-change capture              <- same sizes, same DPR, same state as V1
-      |
-V3  human visual review gate         <- a person compares V1 and V2
-      |
-V4  classification                   <- every finding gets a row and an ID
-      |
-    fix tasks, for defects only
-```
-
-### V1 — pre-change baseline capture
-
-**Taken before implementation starts, not reconstructed afterwards.** A review that sees only the
-"after" cannot separate "this change did it" from "it was always like that", and reconstructing a
-baseline from a reverted working tree is exactly when the wrong state gets captured.
-
-Record the sizes, the DPR and the application state, because V2 has to match them. **Which state to
-capture is asked at the *Start* stop** (§2), together with everything else the owner settles there —
-not as a round of its own once the worktree exists.
-
-### V3 — human visual review gate
-
-**A person looks at the screens. Judgement stays human.** Tooling captures, diffs and attributes
-differences; it does not decide whether a layout is good, and **an agent must not report a visual
-result as approved.**
-
-This is a gate: **the work does not proceed to integration until it has been passed**, and its
-findings are classified first. Where an independent review was requested, classification also spares
-the reviewer re-litigating something already known to be out of scope.
-
-### Classification is a required output
-
-Every finding lands in exactly one row:
-
-| Classification | Disposition |
-| --- | --- |
-| Defect in this task | Fix task to the owning worker; regression guard added and counter-checked |
-| Expected platform behaviour | Documented, no fix |
-| Pre-existing, out of scope | Backlog entry with an ID |
-| New design question | Backlog entry with an ID, named as input to a future workstream |
-
-Only the first returns as work in this task.
-
-### A finding is not a finding until it has an ID
-
-A visual observation that exists only in a chat message is lost. Transcribe it — **verbatim, with a
-date** — into the classification table, a backlog entry, or a fix task. That transcription is what
-makes the decision durable; without it the workstream's most important review round leaves no trace.
-
----
-
-## 9. Handoff to independent review
+## 8. Handoff to independent review
 
 **Only when an independent review was requested.** Review is optional and risk-based
 (`AGENTS.md` — *Independent review*); a task that was not sent for review produces no handoff, and
@@ -359,14 +268,13 @@ blocker. What the budget forbids is re-opening settled scope to look for more.
 
 ---
 
-## 10. Integration and cleanup
+## 9. Integration and cleanup
 
 Integration mechanics, promotion and ancestry diagnosis are `git-workflow.md` §11–§13. At lifecycle
 level only two things matter.
 
 **Integration is authorized, not assumed.** Readiness is a precondition, not the decision — the
-authorization is separate and explicit. It is asked **together with the visual gate**, as the single
-*End* stop in §2, not as a further round after it.
+authorization is separate and explicit. It is the single *End* stop in §2.
 
 **What readiness means** is `AGENTS.md` — *Independent review*: scope and contract met, required
 validation and evidence present with the relevant gates passed, branch clean and committed, known
@@ -381,7 +289,7 @@ their integration base, and clear them. Deletion rules and their safety checks a
 
 ---
 
-## 11. Two standing rules
+## 10. Two standing rules
 
 ### Every hazard named in the contract must be resolved before integration
 
@@ -405,12 +313,11 @@ mode this rule exists to prevent.
 
 ---
 
-## 12. Provenance
+## 11. Provenance
 
 The tiers and rules above are generalized from the first two workstreams that ran end to end: the
 agent instruction refactor (`docs/workstreams/setup/`) and the Desktop Viewport Harness
-(`docs/workstreams/viewport-harness/`). The contract shape in §6 is that workstream's contract; the
-classification table in §8 is the one its validation actually used.
+(`docs/workstreams/viewport-harness/`). The contract shape in §6 is that workstream's contract.
 
 Those are historical records of particular tasks, not standing instruction. This document states the
 current rules.

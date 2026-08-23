@@ -111,10 +111,6 @@ release-critical change; or simply because the planner, worker, integrator or ow
 technical opinion. Asking is cheap and is never wrong — the point is that *not* asking is also
 correct, and needs no justification.
 
-**The human visual gate is unaffected.** Where pixels move, V1–V4 apply exactly as before
-(`docs/engineering/task-lifecycle.md` §8). A technical gate does not replace a person looking at
-the screen, and nothing in this section removes that requirement.
-
 ### When a review is requested, it converges
 
 Review reduces relevant risk. It does not enforce perfection. **Good, correct and integration-ready
@@ -138,7 +134,7 @@ permitted only where a known blocking finding is still unfixed, or its fix cause
 There is no second full review.
 
 How a requested review is run, and what a handoff must state: `docs/engineering/task-lifecycle.md`
-§9.
+§8.
 
 ---
 
@@ -510,7 +506,7 @@ Cross-task collisions must be surfaced rather than silently resolved.
 Branch and worktree mechanics:
 `docs/engineering/git-workflow.md`
 
-Task lifecycle — tiers, contract, evidence, visual review, handoff:
+Task lifecycle — tiers, contract, evidence, handoff:
 `docs/engineering/task-lifecycle.md`
 
 ---
@@ -554,7 +550,7 @@ Read deeper documentation only when the current task needs it.
 | Code layout, build structure, bundling, media strategy | `docs/engineering/architecture.md` |
 | UI/design engineering conventions, i18n, naming | `docs/engineering/conventions.md` |
 | Worker / integrator / reviewer responsibilities | `docs/engineering/git-workflow.md` §7–§9 |
-| Task tiers, task contract, evidence, visual review, integration readiness, cleanup timing | `docs/engineering/task-lifecycle.md` |
+| Task tiers, task contract, evidence, integration readiness, cleanup timing | `docs/engineering/task-lifecycle.md` |
 | Setting up a development machine | `docs/engineering/NEW_MACHINE_SETUP.md` |
 | Player-visible text and translation | `docs/localization/i18n.md`, `docs/text-style-guide.md` |
 | Why an existing system was built a certain way | `docs/decisions/` — start at `docs/decisions/README.md` |
