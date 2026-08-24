@@ -856,6 +856,44 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.14 What MH2 retired — three rules leave the contracts
+
+*2026-08-25. This is the first time this round has been able to delete a rule rather than add one,
+and it is worth as much as the fix that allowed it.*
+
+| Rule | Carried since | Why it goes |
+| --- | --- | --- |
+| *"Both halves of a comparison on the same side of a week boundary — re-take rather than explain"* | **MENU-30, every contract since M2a** | `freezeClockSource()` pins `Date.now()` and `new Date()` in every run. The hazard cannot occur |
+| **TYPO-08's row-count pre-registration** | inherited from `#typo` | the leaderboard answers from a fixed twenty-row table. The count cannot move |
+| **H-c — `leaderboard` and `victory` as not-comparable** | M1's contract | both now return **0 unmatched nodes** between two runs |
+
+**What replaced them is smaller than what they were.** The clock, the network and the row count were
+three separate instructions a worker had to hold while reading a delta. They are now one line in the
+harness, and a delta on those surfaces means what it says.
+
+**Not retired, and stated so it is not assumed away:** the accumulated run count (§8.12) still varies
+between cells and is now *recorded* per cell rather than reasoned about. And the gate still captures
+surfaces, not control states — that label stays.
+
+**One surface did move, and MH2 named it correctly.** `leaderboard`, 710 deltas, exactly 71 in each
+of ten cells: the fixed table replacing the live one. Structure, not noise. That surface was already
+*not comparable*; it is now reproducible for the first time. **A gain, not a price** — and the
+distinction matters, because a worker reading the delta list without it would file 710 findings.
+
+### 8.15 The declared deviation, ratified
+
+MH2's bundle check lives in `scripts/survey-bundle.mjs` rather than inside `viewport-survey.mjs`,
+because **the survey starts a browser on import** — a guard cannot load the file it wants to guard.
+
+**Ratified, and the underlying fact is the more useful half:** a module that performs work at import
+time cannot be tested, and this one does. That is not MH2's to fix and it is not a defect this round
+created, but the next task that has reason to touch the survey's shape should know why the check sits
+beside it rather than inside it.
+
+MH2 learned this mid-task, at cost, and wrote it down instead of moving the file quietly. **A
+deviation that is declared with its reason is a decision; the same deviation undeclared is a thing
+the next reader has to re-derive.**
+
 ### 8.12 The survey's cells are not independent — and it is fine, once written down
 
 *M7-F01, corrected by recounting rather than left as first written.*
