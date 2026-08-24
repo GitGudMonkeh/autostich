@@ -910,6 +910,14 @@ export default {
 
   /* ---- Bestenliste (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "Bestenliste",
+  /* #menu-rework M8 — Kopf-Kanon (design-sprache.md §2): EIN Screen, ZWEI Einstiege. Der Titel bleibt
+     in beiden Fassungen „Bestenliste" (es ist dieselbe Liste); Eyebrow und Unterzeile sagen, welche
+     der beiden Aufgaben gerade laeuft. „Rangliste" ist kein neues Wort — so heisst der Hub-Knopf,
+     ueber den man in diese Fassung hereinkommt (`start.ranked`). */
+  "board.eyebrow.board": "Vergleich",
+  "board.eyebrow.ranked": "Rangliste",
+  "board.sub.board": "Die besten Läufe aller Spieler.",
+  "board.sub.ranked": "Woche {week} — alle spielen denselben Seed.",
   "board.tab.global": "Global",
   "board.tab.week": "Diese Woche",
   "board.tab.weekShort": "Woche",

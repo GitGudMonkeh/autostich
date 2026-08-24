@@ -879,6 +879,14 @@ export default {
 
   /* ---- Leaderboard (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "Leaderboard",
+  /* #menu-rework M8 — head canon (design-sprache.md §2): ONE screen, TWO entries. The title stays
+     "Leaderboard" in both (it is the same list); the eyebrow and the subline say which of the two
+     jobs is running. "Ranked" is not a new word — it is what the hub button that opens this variant
+     is called (`start.ranked`). */
+  "board.eyebrow.board": "Comparison",
+  "board.eyebrow.ranked": "Ranked",
+  "board.sub.board": "The best runs from every player.",
+  "board.sub.ranked": "Week {week} — everyone plays the same seed.",
   "board.tab.global": "Global",
   "board.tab.week": "This week",
   "board.tab.weekShort": "Week",

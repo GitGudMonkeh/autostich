@@ -28,6 +28,53 @@ const GOLD = "#d4a63a";  // Champion-Score (Wert-Signal, bleibt)
    Rang-Medaillen — die tragen Bedeutung. Vars kaskadieren von .app-root (auch außerhalb eines Laufs gesetzt). */
 const UI1 = "var(--deck-a1, #9b82f0)";
 const deckMix = (pct) => `color-mix(in srgb, var(--deck-a1, #9b82f0) ${pct}%, transparent)`;
+
+/* #menu-rework M8 — DIE FÜNF ZEICHEN DES SCREENS, GEZEICHNET STATT GETIPPT.
+   ============================================================================
+   design-sprache.md §4: „Gezeichnete SVG, 16-px-Raster, eine Strichstärke, `currentColor`. Keine
+   Emoji, keine Textglyphen." Bis hierher standen hier fünf Unicode-Glyphen — `⌗ ⚖ ♔` in den drei
+   Kontext-Kacheln und `✚ ⊘` an jedem Modifikator-Kasten. Eine Textglyphe hängt am Schriftschnitt:
+   dieselbe Reparatur, die der Optionen-Screen an seinen Zeilen-Zeichen gemacht hat (`OptIcon`,
+   MENU-14), und dieselbe, die #pokal-eins am 🏆 dieses Screens schon gemacht hat.
+
+   ALLE FÜNF SIND AB 1280 px SICHTBAR UND SONST NIRGENDS: `.lb-modicon` und `.lb-ctx` tragen
+   `as-deskonly` (`display: none` in der Basis). Die schmale Fassung bewegt sich dadurch nicht — sie
+   hat diese Zeichen nie gezeigt.
+
+   WARUM EIN EIGENER SATZ UND NICHT `OptIcon`. Die zwei Sätze teilen kein einziges Zeichen; geteilt
+   wäre nur die sechs Zeilen SVG-Hülle, und `optionsBits.jsx` gehört einem migrierten Screen. Ein
+   gemeinsames Zeichen-Register ist der richtige nächste Schritt — bei der DRITTEN Fundstelle, nach
+   derselben Schwellenregel, mit der conventions.md §2c ihre eigenen Schritte prägt. Gemeldet als
+   Befund, nicht hier nebenbei gebaut.
+
+   Die Pfade sind DATEN, kein JSX — dieselbe Falle wie bei `RANK_PATHS` und `GLYPHS`: eine Tabelle
+   aus `<path>`-Elementen ließe die i18n-Ratsche anschlagen, deren `>…<`-Greifer den nächsten
+   Bezeichner als „fest verdrahteten Anzeigetext" fischt. */
+const LB_PATHS = {
+  // Seed: das Raute-Zeichen als vier Striche — „dieselbe Kartenfolge für alle".
+  seed: "M6.2 2.6 4.8 13.4M11.2 2.6 9.8 13.4M2.6 6.1h10.8M2.4 9.9h10.8",
+  // Baseline: die Waage — Balken, Ständer, Fuß, zwei Schalen. Der Fuß ist der Teil, den man nicht
+  // weglassen darf: ohne ihn liest sich der Ständer bei 16 px als Ausrufezeichen.
+  base: "M8 2.8v10.4M4.6 13.2h6.8M2.8 4.8h10.4M2.8 4.8 1.4 8.4h2.8zM13.2 4.8 11.8 8.4h2.8z",
+  // Platz 1 wandert: die Krone. Drei Zacken plus Sockelstrich; ohne den Strich zerfällt sie bei
+  // 16 px in drei einzelne Spitzen.
+  arch: "M2.6 5.2 4.5 11.8h7L13.4 5.2 10.4 7.6 8 3.4 5.6 7.6zM4.7 13.6h6.6",
+  // Positiver Modifikator.
+  pos: "M8 3.4v9.2M3.4 8h9.2",
+  // Negativer Modifikator: der durchgestrichene Kreis. Der Strich läuft von unten links nach oben
+  // rechts wie im Original ⊘, nicht umgekehrt — andersherum liest er sich als „nicht erlaubt"-Schild.
+  neg: "M8 2.2a5.8 5.8 0 1 0 0 11.6 5.8 5.8 0 0 0 0-11.6M4.1 11.9 11.9 4.1",
+};
+function LbIcon({ name, className = "lb-icon" }) {
+  const d = LB_PATHS[name];
+  if (!d) return null;
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
 /* Reiter-Akzent (aktiver Zustand) → alle auf Deckfarbe (nur der aktive Reiter zeigt ihn, einer zur Zeit).
 
    #global ZWEI REITERSÄTZE, ein Bildschirm. Die beiden Hub-Einstiege wollten dasselbe Fenster für zwei
@@ -64,7 +111,7 @@ function ModBox({ m }) {
   const text = spanne ? m.text.slice(0, spanne.index) : m.text;
   return (
     <div className="lb-mod rounded-lg px-3 py-2" style={{ background: "#17161f", border: `1px solid ${c}44`, "--c": c }}>
-      <span className="lb-modicon as-deskonly" aria-hidden="true">{m.sign === "pos" ? "✚" : "⊘"}</span>
+      <span className="lb-modicon as-deskonly" aria-hidden="true"><LbIcon name={m.sign === "pos" ? "pos" : "neg"} /></span>
       <div className="lb-modtext">
         <div className="text-body-2 font-bold" style={{ color: c }}>{m.name}</div>
         <div className="text-meta-4 opacity-80 leading-snug mt-0.5">{text}</div>
@@ -202,7 +249,18 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 Ranglisten-Knopf (RankIcon.jsx): ein Emoji bringt seine eigene Farbe mit und steht quer zu
                 einem Panel, das seine Töne aus dem aktiven Deck zieht. Nebeneffekt am Reiter unten: das
                 Emoji zwang dort einen Umbruch und machte den Challenger-Reiter höher als seine Nachbarn. */}
+            {/* #menu-rework M8 — KOPF-KANON (design-sprache.md §2), und hier trägt er die Aussage, die
+                dieser Screen bis hierher gar nicht machte: welcher der ZWEI Einstiege gerade offen ist.
+                Der Titel bleibt in beiden „Bestenliste" — es ist dieselbe Liste, und ein zweiter Titel
+                wäre ein zweiter Screen. Was sich unterscheidet, ist die Aufgabe, und die sagen Eyebrow
+                und Unterzeile: nachsehen (Hub-Kachel) gegen spielen (Ranglisten-Knopf).
+                Beide stehen im DOM und sind bis 1279 px aus dem Layout (`display: none`, s. index.css) —
+                die schmale Fassung bleibt Titel plus Schließen, Zeichen für Zeichen wie vorher. */}
+            <span className="lb-eyebrow">{tr(boardMode ? "board.eyebrow.board" : "board.eyebrow.ranked")}</span>
             <h2 className="text-title-5 font-extrabold flex items-center gap-2"><RankIcon />{tr("board.title")}</h2>
+            <span className="lb-sub">
+              {boardMode ? tr("board.sub.board") : tr("board.sub.ranked", { week: week.week })}
+            </span>
             <ActionButton kind="secondary" className="shrink-0" onClick={onClose}>{tr("common.close")}</ActionButton>
           </div>
 
@@ -236,7 +294,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
               mit `inset: 0` im Inhaltsfluss). Der Wächter zählt die Klassennamen im Quelltext — deshalb steht
               hier keiner ausgeschrieben. Unterhalb 1280 px ist der Scroll-Wrapper `display: contents`, dort
               scrollt weiter das Panel selbst — die Handy-Fassung bleibt unverändert. */}
-          <div className="lb-page as-ring as-ring-quiet rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+          {/* #menu-rework M8 — der Inline-Wert trägt die SCHMALE Fassung (ab 1280 px überschreibt ihn
+              `.lb-page` mit Tönung und Rahmen). `#141419` IST `--sf-ground`, Zeichen für Zeichen: die
+              Fläche, auf der ein Panel sitzt, und genau das ist dieses Panel unter 1280 px — ein Loch
+              in der Karte. Wertgleich, die Handy-Fassung bewegt sich nicht.
+              `#26262e` bleibt Literal und wird gezählt (M8-G5): die Kanten-Leiter beginnt bei
+              `--ed-quiet` (#2a2a34) und liegt 4/4/6 daneben. Unter 1280 px ist das sichtbar, und
+              „nichts unter 1280 px" ist eine Regel, kein Richtwert (s. M3s benannte Ausnahme). */}
+          <div className="lb-page as-ring as-ring-quiet rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "var(--sf-ground)", border: "1px solid #26262e" }}>
             <i className="as-ring-run" aria-hidden="true" />
             <div className="lb-pagescroll">
             {/* #global Allzeit-Board: alle CASUAL-Läufe (die Abfrage filtert Ranglisten-Zeilen weg), Baum-Pille an.
@@ -260,9 +325,9 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                       trägt der Regeln-Reiter dieselbe Auskunft im Fließtext. */}
                   {!boardMode && (
                     <div className="lb-ctx as-deskonly">
-                      {[["⌗", "seed"], ["⚖", "base"], ["♔", "arch"]].map(([g, k]) => (
+                      {["seed", "base", "arch"].map((k) => (
                         <div key={k} className="lb-ctxtile">
-                          <span className="lb-ctxicon" aria-hidden="true">{g}</span>
+                          <span className="lb-ctxicon" aria-hidden="true"><LbIcon name={k} /></span>
                           <span><b>{tr(`board.ctx.${k}.t`)}</b><i>{tr(`board.ctx.${k}.s`)}</i></span>
                         </div>
                       ))}

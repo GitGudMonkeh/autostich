@@ -2359,8 +2359,11 @@ b, strong { font-weight: 600; }
 /* #menu-rework M7 — dieselbe Technik fuer den Kopf der Statistik. Eyebrow und Unterzeile stehen im
    DOM, damit der Desktop-Pass ohne zweiten Renderpfad auskommt, sind aber bis 1279 px aus dem
    Layout. Der Kopf der Handy-Fassung bleibt damit Titel plus Schliessen, Zeichen fuer Zeichen wie
-   vorher. */
-.st-eyebrow, .st-sub { display: none; }
+   vorher.
+   #menu-rework M8 — die Bestenliste steht in DERSELBEN Regel und nicht in einer zweiten daneben:
+   es ist eine Aussage („der Kopf-Kanon ist ab 1280 px"), und zwei Regeln fuer eine Aussage driften
+   auseinander (conventions.md §1 Regel 2). */
+.st-eyebrow, .st-sub, .lb-eyebrow, .lb-sub { display: none; }
 
 /* Der Eyebrow des Lauf-Fensters ist NICHT in dieser Familie: an seiner Stelle stand schon immer eine
    Kennungszeile in der Deckfarbe, und die bleibt in jeder Breite stehen. Was sich aendert, ist ihr
@@ -4944,16 +4947,7 @@ b, strong { font-weight: 600; }
     background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
     opacity: .85;
   }
-  /* Kopf-Raster (Werte von `.up-head`): Titel · Auskunft · Aktionen. */
-  .st-head, .lb-head {
-    grid-column: 1 / -1; grid-row: 1;
-    margin: 0 !important;
-    padding: 10px 0 8px !important;
-    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
-    display: grid;
-    column-gap: 22px;
-  }
-  .lb-head { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  /* Kopf-Raster (Werte von `.up-head`): Titelblock · Aktionen. */
   /* #menu-rework M7 — KOPF-KANON (design-sprache.md §2) fuer die Statistik. ZWEI Zonen statt drei:
      der Titelblock (Eyebrow · Titel · Unterzeile) und die Aktionszone. Der Auskunftssatz, der bis
      hierher in der Aktionszone stand, ist die Unterzeile geworden — §2 laesst dort nur Aktionen zu,
@@ -4962,12 +4956,26 @@ b, strong { font-weight: 600; }
      `align-items: start` statt `center` ist der Kern und nicht Geschmack: dadurch sitzt Schliessen
      immer am selben Punkt unter der Oberkante, egal wie hoch der Titelblock daneben ist. Zentriert
      gegen einen unterschiedlich hohen Block landet der Knopf in jedem Screen woanders — genau daher
-     kam der Versatz, den M3 am Baum gemessen hat. */
-  .st-head {
+     kam der Versatz, den M3 am Baum gemessen hat.
+
+     #menu-rework M8 — DIE BESTENLISTE ZIEHT IN DIESELBEN REGELN EIN, statt sich zweite daneben zu
+     stellen (conventions.md §1 Regel 2). Sie hatte bis hierher ein eigenes Kopf-Raster
+     (`auto minmax(0, 1fr) auto`, `align-items: center`) mit einem festen Platz 3 fuer Schliessen —
+     eine zweite Bauart fuer denselben Kanon, entstanden aus „der Kopf hat nur zwei Kinder". Er hat
+     jetzt vier, es sind dieselben vier wie in der Statistik, und damit ist es dieselbe Regel.
+     Der Kanon ist ab hier EIN Satz Regeln fuer zwei Screens: Raster, Eyebrow, Titel, Unterzeile,
+     Schliessen. */
+  .st-head, .lb-head {
+    grid-column: 1 / -1; grid-row: 1;
+    margin: 0 !important;
+    padding: 10px 0 8px !important;
+    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
+    display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 22px;
     align-items: start;
   }
-  .st-eyebrow {
+  .st-eyebrow, .lb-eyebrow {
     display: block; grid-column: 1; grid-row: 1;
     font-size: var(--text-body-1); font-weight: 500;
     text-transform: uppercase; letter-spacing: .1em;
@@ -4978,27 +4986,35 @@ b, strong { font-weight: 600; }
        Schwellenregel (conventions.md 2c) wird gezaehlt statt gepraegt — zweite Sichtung. */
     color: color-mix(in srgb, var(--deck-a1, #8a7de0) 62%, #ffffff);
   }
-  .st-head > h2 { grid-column: 1; grid-row: 2; }
-  .st-sub {
+  .st-sub, .lb-sub {
     display: block; grid-column: 1; grid-row: 3;
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
   /* Schliessen ist das LETZTE Element, und nichts steht je rechts davon (§2). Es spannt alle drei
      Zeilen des Titelblocks und richtet sich an dessen Oberkante aus — das ist, was `align-items:
      start` oben ueberhaupt herstellt. */
-  .st-close { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
-  .st-head > h2, .lb-head > h2 { font-size: var(--text-figure-1); font-weight: 600; }
+  .st-close, .lb-head > button { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
+  .st-head > h2, .lb-head > h2 { grid-column: 1; grid-row: 2; font-size: var(--text-figure-1); font-weight: 600; }
   .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
-  /* Der Ranglisten-Kopf hat nur zwei Kinder (Titel · Schließen) — ohne festen Platz landete der Knopf in der
-     1fr-Spalte und zog sich über die halbe Breite. */
-  .lb-head > button { grid-column: 3; justify-self: end; }
   /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
   /* #menu-rework M7 — `.st-sec` ist HIER RAUS und hat seine eigene Regel: die fünf Sektionen der
      Statistik werden Panels (Tönung + Rahmen), die übrigen bleiben, wie sie sind. Bestenliste und
      Siegesbildschirm gehören nicht zu diesem Auftrag. */
-  .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
+  /* #menu-rework M8 — die zwei Panels der Bestenliste sind HIER RAUS und haben ihre eigene Regel,
+     genau wie `.st-sec` unter M7 und aus demselben Grund: der Siegesbildschirm gehört dieser Runde
+     nicht, und ein Schritt, den man in eine geteilte Regel schreibt, bewegt ihn mit.
+     `--sf-glass` IST dieser Verlauf — er ist einer der 13, aus denen der Schritt abgeleitet wurde.
+     EIN Unterschied, benannt: `--sf-glass` schreibt die Richtung aus (`180deg`), das Literal ließ sie
+     weg. `to bottom` ist der Vorgabewert, also malt es dasselbe — die berechnete Zeichenkette lautet
+     aber anders, und in einem Null-Delta-Lauf ist das ein Eintrag. Auf `leaderboard` ist er erwartet;
+     außerhalb kann er nicht auftauchen, weil `.go-*` sein Literal behält. */
+  .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
     border-radius: 14px;
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+  }
+  .lb-tabs, .lb-page {
+    border-radius: var(--rd-lg);
+    background: var(--sf-glass);
   }
 
   /* ---- Statistik: Kopf fest, Inhalt scrollt, darunter drei Spalten -------
@@ -5234,26 +5250,64 @@ b, strong { font-weight: 600; }
     flex-direction: column;
     gap: 8px !important;
     margin-bottom: 0 !important;
-    padding: 13px 12px;
+    /* #menu-rework M8 — `--in-snug` ist der Innenabstand eines inneren Kastens, und die Spalte ist
+       einer. 13/12 wird 13/13 — dieselbe Sprosse und dieselbe Rundung, die M3 an `.up-nav` gemessen
+       hat (dort 14/12 → 13). Die Leiter hat drei Sprossen und keine davon ist 13/12. */
+    padding: var(--in-snug);
     align-self: start;   /* die Spalte endet an ihrem letzten Reiter, wie `.up-nav` */
   }
   /* Aus dem Reiter wird die Navigationszeile des Baums (`.up-navrow`) — dieselbe Form, damit die Screens
-     dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
+     dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX.
+
+     #menu-rework M8 — DIE SPALTE ZIEHT DEM BAUM NACH, ZWEI ENTSCHEIDUNGEN SPÄT.
+     ------------------------------------------------------------------------
+     Der Kommentar darüber sagt seit jeher, die Form sei von `.up-navrow` übernommen, „damit die
+     Screens dieselbe Bedienung haben". Danach hat der Baum diese Form zweimal geändert und die
+     Kopie ist stehen geblieben — genau der Fall, für den design-sprache.md ihren Satz „ändert sich
+     das Original, ziehen die Kopien nach" geschrieben hat (Anlass: diese Spalte).
+
+     Drei Griffe, alle drei aus `#up-form`/`#up-ruhe`, keiner davon neu:
+       1. FLÄCHE STATT FARBANLAUF. „Fünf Zeilen mit je eigenem Farbverlauf sind fünf Flächen; die
+          Farbe gehört an die Kante, nicht in die Zeile." Der 90-Grad-Anlauf (12 %, aktiv 26 %) ist
+          weg, es bleibt der weiße Hauch in drei Stufen — dieselben drei Werte wie am Baum.
+       2. KEIN SCHEIN NACH AUSSEN, und NUR der nach außen. „Eine leuchtende Spalte neben einem
+          ruhigen Panel zieht den Blick heraus." Der `0 0 18px -10px` ist weg; der Anlauf nach INNEN
+          (`inset 0 0 24px -14px`) bleibt.
+          Das war zwischendurch anders entschieden, und die Korrektur gehört hierher: der Innenschein
+          sah aus wie ein vierter Farbverlauf in der Zeile und war zuerst mit weg. Nachgemessen am
+          Original sagt `#up-ruhe` an `.up-navrow.is-on` aber wörtlich das Gegenteil — „behält ihren
+          Anlauf nach innen, verliert aber den Halo nach außen" —, und die Zeile steht dort mit
+          genau diesem Schatten. Die Spalte zieht dem Baum nach; sie zieht ihm nicht davon. (M8-F05)
+       3. RADIUS 6. Der Baum steht seit `#up-form` darauf; 11 lief daneben.
+     Die 4-px-Kante in der Deckfarbe BLEIBT und trägt weiterhin den aktiven Zustand — sie ist das
+     eine Signal der Zeile (§1 Regel 8), und der Entwurf nimmt sie ausdrücklich aus. */
+  /* #menu-rework M8, Vokabular: Innenabstand `--in-tight` (eine Zeile: 12/14 wird 11/11, wie
+     `.up-navrow`), Radius `--rd-sm` (die 6 aus dem Griff darüber IST der Schritt, wertgleich), Kante
+     `--ed-quiet` (die durchsichtige neutrale Kante ist MENU-38 — der Baum hat vierzehn davon auf
+     diesen Schritt gezogen, und die Ratsche verlangt in einer migrierten Einheit die Null).
+     Die weiße Fläche in drei Stufen bleibt Literal und wird GEZÄHLT: sie ist M3-G2, der weiße Hauch
+     ÜBER dem Glas, und `--sf-sunken` ist deckend und nähme ihr genau das, was sie ist. */
   .lb-tabs [role="tab"] {
     flex: none !important;
     text-align: left;
-    padding: 12px 14px !important;
-    border-radius: 11px !important;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, #12121a) 0%, #12121a 46%) !important;
-    border: 1px solid rgba(150, 150, 170, .14) !important;
+    padding: var(--in-tight) !important;
+    border-radius: var(--rd-sm) !important;
+    background: rgba(255, 255, 255, .018) !important;
+    border: 1px solid var(--ed-quiet) !important;
     border-left: 4px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 70%, transparent) !important;
     color: #c3c1d0 !important;
   }
+  /* Der Hover fehlte hier ganz — am Baum trägt ihn `.up-navrow:hover` seit `#up-form`. Eine Spalte,
+     die auf das Zeigen nicht antwortet, sieht aus wie eine Liste, nicht wie eine Bedienung. */
+  .lb-tabs [role="tab"]:hover { background: rgba(255, 255, 255, .045) !important; }
   .lb-tabs [role="tab"][aria-selected="true"] {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #12121a) 0%, #12121a 52%) !important;
+    background: rgba(255, 255, 255, .07) !important;
     border-left-color: var(--deck-a1, #8a7de0) !important;
     color: #ffffff !important;
-    box-shadow: inset 0 0 24px -14px var(--deck-a1, #8a7de0), 0 0 18px -10px var(--deck-a1, #8a7de0);
+    /* Derselbe Schatten und dieselben Zahlen wie `.up-navrow.is-on`. Er faellt nicht unter die
+       Hoehen-Achse und soll es nicht: ein Innenschatten hebt nichts, er zeichnet eine Mulde — 2c
+       nimmt `inset` deshalb ausdruecklich aus. */
+    box-shadow: inset 0 0 24px -14px var(--deck-a1, #8a7de0);
   }
   /* `span` statt `b`/`i`: die beiden Elemente existieren in JEDER Breite (der Reiter braucht seinen Text),
      und ein `b` hätte die Handy-Reiter still auf Gewicht 700 gezogen — nachgemessen, drei Zeilen wurden breiter.
@@ -5262,11 +5316,30 @@ b, strong { font-weight: 600; }
      (`justify-center` im JSX) — in der linksbündigen Navigationsspalte gehört es an den Anfang. */
   .lb-tab-l { display: flex; justify-content: flex-start; font-size: var(--text-body-lg-4); font-weight: 600; }
   .lb-tab-s { display: block; font-size: var(--text-body-2); color: #8a8a95; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  /* #menu-rework M8 — DAS PANEL IST EIN PANEL (design-sprache.md §1).
+
+     GEMESSEN war es keins: `border: 0 !important` und der reine Glasverlauf — also das alte Rezept
+     OHNE Deck-Tönung und OHNE Rahmen. Die Fläche sagte damit gar nicht, dass sie zum aktiven Deck
+     gehört; das wandernde Ringband (`as-ring`) sagt es, aber es ist eine Verzierung an der Kante und
+     kein Rahmen, und `as-ring-quiet` stellt es ohnehin still.
+
+     Ziel und Umsetzung sind dieselben wie an `.st-sec` unter M7: `--sf-deck` IST das Tönungs-Rezept,
+     `--ed-deck-panel` IST der 26-%-Rahmen. Beide stehen im Vokabular, beide haben Fundstellen.
+
+     ABWEICHUNG, geerbt und nicht neu: das Vokabular tönt 9 / 5 %, `design-sprache.md` §1 und der
+     Bestenlisten-Entwurf sagen 5 / 1 %. Den Wert eines ausgelieferten Tokens zu ändern ist
+     ausdrücklich nicht Sache dieses Auftrags; Optionen und Statistik stehen seit M1 bzw. M7 auf
+     9 / 5. Das ist M7-F09 und wird hier nicht ein zweites Mal entschieden, nur mitgetragen.
+
+     `!important` bleibt und ist nicht neu: das Panel setzt Fläche und Rahmen INLINE aus dem JSX (der
+     Inline-Wert trägt die schmale Fassung), und die Zeile stand schon vorher so da. */
   .lb-page {
     grid-column: 2; grid-row: 3;
-    border: 0 !important;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
-    padding: 16px 18px !important;
+    border: 1px solid var(--ed-deck-panel) !important;
+    background: var(--sf-deck) !important;
+    /* `--in-base` ist der Panel-Innenabstand; 16/18 wird 18 — dieselbe bewusste Abweichung, die M3
+       am Baum (16/20/14 → 18) und M7 an den Statistik-Sektionen (15/17/17 → 18) gemessen hat. */
+    padding: var(--in-base) !important;
     min-height: 0;
     align-self: stretch;
     /* Rahmen an die Box, Scrollen nach INNEN — sonst wandert die Ringkante (`inset: 0`) beim Scrollen mitten
@@ -5319,10 +5392,23 @@ b, strong { font-weight: 600; }
   /* Der Countdown ist die einzige Zahl des Kopfes, die sich BEWEGT — er darf heller stehen als die übrige
      Chrome: heller Rahmen statt Haarlinie, eine Stufe größer. Er beantwortet die Frage, mit der man diesen
      Bildschirm öffnet: wie lange läuft die Woche noch? */
+  /* #menu-rework M8, Vokabular: Radius `--rd-sm` (10 → 6; „tiles, buttons, rows, chips" ist der
+     eigene Satz dieses Schritts, und der Countdown ist ein Chip). Rahmen und Fläche BLEIBEN Literale
+     und werden gezählt — beide sind echte Lücken, keine Bequemlichkeit:
+       M8-G1  der HELLE Rahmen, `rgba(255, 255, 255, .62)`. Die Kanten-Leiter ist dreistufig und
+              durchweg dunkel (#2a2a34 · #2c2a3a · #302d40); eine helle Kante ist keine Stufe davon,
+              sondern die Gegenrichtung. Sie ist außerdem Absicht: der Countdown ist die einzige Zahl
+              des Kopfes, die sich bewegt.
+       M8-G2  der Zeilengrund `rgba(15, 15, 21, .72)`. Er steht in design-sprache.md §1 als DIE Fläche
+              einer Zeile und hat keinen Schritt: `--sf-sunken` (#141320) ist deckend, und was hier
+              zählt, ist gerade das Durchscheinen des Panels darunter. Vier Fundstellen auf diesem
+              Screen, alle dieselbe Familie.
+     Der Innenabstand 7/13 polstert gegen die ZAHL, nicht gegen eine Panelkante — dieselbe Sorte, für
+     die 2c `--btn-pad-*` außerhalb der Leiter führt; als Steuerelement in der Ausnahmeliste. */
   .lb-weekcount {
     font-size: var(--text-body-4) !important; opacity: 1 !important; color: #eceaf4;
     border: 1px solid rgba(255, 255, 255, .62); background: rgba(15, 15, 21, .72);
-    border-radius: 10px; padding: 7px 13px;
+    border-radius: var(--rd-sm); padding: 7px 13px;
   }
   .lb-weekhead { align-items: center !important; margin-bottom: 14px !important; }
 
@@ -5333,20 +5419,37 @@ b, strong { font-weight: 600; }
   .lb-ctx { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
   .lb-pagescroll:has(.lb-cockpit) > .lb-ctx { grid-column: 1 / -1; }
   .lb-ctxtile b { line-height: 1.3; }
+  /* Vokabular: Kante `--ed-quiet` (MENU-38), Radius `--rd-sm` (11 → 6, der Griff aus `#up-form`:
+     „nebeneinander gestellt lesen sich verschiedene Radien als verschiedene BAUTEILE"), Innenabstand
+     `var(--in-tight) var(--in-snug)` — das ist 11/13 und damit WERTGLEICH, zwei Sprossen für zwei
+     Achsen. Die Fläche bleibt M8-G2. */
   .lb-ctxtile {
     display: flex; align-items: flex-start; gap: 11px;
     background: rgba(15, 15, 21, .72);
-    border: 1px solid rgba(150, 150, 170, .12);
-    border-radius: 11px; padding: 11px 13px;
+    border: 1px solid var(--ed-quiet);
+    border-radius: var(--rd-sm); padding: var(--in-tight) var(--in-snug);
   }
+  /* Die Zeichenkachel des Kanons (design-sprache.md §4: „28 × 28, Radius 8, Zeichen 16 px"). `--rd-md`
+     IST diese 8, wertgleich — und die Sprosse heißt „a control that is not a tile", während die Kachel
+     eine ist. Der Wert des Kanons gewinnt gegen die Beschriftung der Sprosse, die Abweichung steht als
+     Beobachtung im Nachweis. Fläche und Kante bleiben Literale: der weiße Hauch ist M3-G2, und die
+     deck-getönte 40-%-Kante ist M8-G3 — sie ist Struktur in Deckfarbe, und dafür führt die Leiter nur
+     `--ed-deck` (die Haarlinie) und `--ed-deck-panel` (26 % über einer neutralen Kante). */
   .lb-ctxicon {
     width: 28px; height: 28px; flex: none;
     display: grid; place-items: center;
-    border-radius: 8px; font-size: var(--text-body-lg-1);
+    border-radius: var(--rd-md); font-size: var(--text-body-lg-1);
     color: var(--deck-a1, #26c6e6);
     background: rgba(255, 255, 255, .03);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 40%, transparent);
   }
+  /* #menu-rework M8 — die fünf gezeichneten Zeichen (design-sprache.md §4: 16-px-Raster). Dieselbe
+     Regel wie `.op-icon-svg` am Optionen-Screen, nur hier im Desktop-Block: die Zeichen dieses
+     Screens tragen `as-deskonly` und existieren unter 1280 px gar nicht.
+     Die `font-size` an den zwei Zeichenkacheln bleibt stehen, obwohl sie seit dem Wechsel auf SVG
+     nichts mehr malt: Größen sind ein ausdrückliches Nicht-Ziel dieses Auftrags. Als Befund
+     gemeldet (M8-F07), nicht im Vorbeigehen entfernt. */
+  .lb-icon { width: 16px; height: 16px; display: block; }
   .lb-ctxtile b { display: block; font-size: var(--text-body-3); font-weight: 600; color: #e4e4ee; }
   .lb-ctxtile i { display: block; font-style: normal; font-size: var(--text-meta-4); color: #8a8a95; margin-top: 2px; }
 
@@ -5356,36 +5459,50 @@ b, strong { font-weight: 600; }
     background: none !important; border: 0 !important; padding: 0 !important;
     font-size: var(--text-figure-2) !important; letter-spacing: .13em; line-height: 1.25; display: block; margin-top: 4px;
   }
-  .lb-cockpit > div:first-child { padding: 14px 16px !important; }
+  /* Der Seed-Kasten ist ein INNERER Kasten im Panel: `--in-snug`, 14/16 wird 13/13. */
+  .lb-cockpit > div:first-child { padding: var(--in-snug) !important; }
 
-  /* Modifikator-Zeile: Zeichen · Text · Spanne, in derselben Bauform wie die Optionen-Zeilen. */
+  /* Modifikator-Zeile: Zeichen · Text · Spanne, in derselben Bauform wie die Optionen-Zeilen.
+     Vokabular wie an `.lb-ctxtile`, und aus denselben Gründen: Kante `--ed-quiet`, Radius `--rd-sm`
+     (11 → 6), Innenabstand `var(--in-tight) var(--in-snug)` (10/13 → 11/13, die Zeile des Kanons).
+     Damit trägt die Zeile im Cockpit dieselben Maße wie die im Regeln-Reiter — die Sonderregel, die
+     dort 11/14 erzwang, ist ersatzlos entfallen (conventions.md §1 Regel 2: eine Bauform, eine Regel). */
   .lb-mod {
     display: flex !important; align-items: center; gap: 11px;
     background: rgba(15, 15, 21, .72) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
-    border-radius: 11px !important;
-    padding: 10px 13px !important;
+    border: 1px solid var(--ed-quiet) !important;
+    border-radius: var(--rd-sm) !important;
+    padding: var(--in-tight) var(--in-snug) !important;
   }
   .lb-modtext { flex: 1; min-width: 0; }
   .lb-modicon {
     display: grid; place-items: center; flex: none;
-    width: 27px; height: 27px; border-radius: 8px; font-size: var(--text-body-3);
+    width: 27px; height: 27px; border-radius: var(--rd-md); font-size: var(--text-body-3);
     color: var(--c, #8a8a95);
     background: rgba(255, 255, 255, .03);
     border: 1px solid color-mix(in srgb, var(--c, #8a8a95) 38%, transparent);
   }
+  /* Der Spannenwert: Kante `--ed-quiet`, Radius `--rd-md` (wertgleiche 8). Der Innenabstand 3/8
+     polstert gegen ZWEI ZIFFERN, nicht gegen eine Panelkante — dieselbe Sorte und derselbe Fall wie
+     MENU-51 (`py-[3px]` an der Stufen-Pille): `--btn-pad-y` ist das Fünffache, Tailwinds Nachbarn
+     sind 2 px und 4 px. Als Steuerelement in der Ausnahmeliste, nicht umgeschrieben. */
   .lb-modspan {
     display: block; flex: none;
     font-size: var(--text-body-1); color: #8a8a95;
-    border: 1px solid rgba(150, 150, 170, .14); border-radius: 8px; padding: 3px 8px;
+    border: 1px solid var(--ed-quiet); border-radius: var(--rd-md); padding: 3px 8px;
   }
 
   /* Kopf der Liste: Umfang als Auszeichnung, die Auswahlregel als Chip daneben. */
   .lb-page .lb-listhead { align-items: center !important; margin-bottom: 12px !important; }
   .lb-page .lb-listtitle { font-size: var(--text-body-3) !important; letter-spacing: .16em; font-weight: 600; opacity: 1 !important; color: var(--deck-a1, #9b82f0); }
+  /* Kante `--ed-quiet`. Der RADIUS bleibt 999 px und wird gezählt, M8-G4: eine Pille ist keine Stufe
+     einer Radien-Leiter, sondern eine FORM — „so rund wie die Box hoch ist". Sie auf `--rd-sm` zu
+     ziehen machte aus der Pille einen Kasten, also aus einer Form eine andere; und einen Schritt
+     „vollrund" zu prägen ist der Annex, und der ist beim Freeze geschlossen worden.
+     Der Innenabstand 3/10 polstert gegen die Beschriftung — Steuerelement, wie `.lb-modspan`. */
   .lb-page .lb-listsub {
     font-size: var(--text-meta-4) !important; opacity: 1 !important; color: #8a8a95;
-    border: 1px solid rgba(150, 150, 170, .14); border-radius: 999px; padding: 3px 10px;
+    border: 1px solid var(--ed-quiet); border-radius: 999px; padding: 3px 10px;
   }
   /* Spaltenköpfe: dieselbe Aufteilung wie die Zeile darunter (Rang · Pilot · Punkte). Die Zeile ist
      zweizeilig aufgebaut (Name+Score oben, Fraktionen+Durchlauf unten) — die Köpfe beschriften deshalb
@@ -5401,10 +5518,18 @@ b, strong { font-weight: 600; }
 
   /* Die Liste: Zeilen mit Haarlinie statt Karten, das Podest an der Rangzahl. */
   .lb-page .lb-rows { gap: 0 !important; }
+  /* Vokabular: die Haarlinie zwischen zwei Zeilen ist `--ed-quiet` — genau die Sprosse, die 2c
+     „a divider inside a panel" nennt, und der letzte der sechs durchsichtigen neutralen Ränder
+     dieses Screens (MENU-38).
+     Der Innenabstand 10/6 bleibt und steht als LAYOUT in der Ausnahmeliste: die Zeile hat keine Box
+     (Fläche keine, Rahmen keiner, Radius 0) — sie ist eine Textzeile mit Trennlinie, und die
+     seitlichen 6 px sind die Spur, in der auch `.lb-page .lb-cols` seine Spaltenköpfe hält. Auf
+     `--in-tight` gezogen stünden Kopf und Zeile nicht mehr übereinander, und die Leiter misst den
+     Abstand einer PANEL-ARTIGEN Box zu ihrem Inhalt, nicht die Fluchtlinie zweier Geschwister. */
   .lb-page .lb-rows > button {
     background: none !important;
     border: 0 !important;
-    border-top: 1px solid rgba(150, 150, 170, .10) !important;
+    border-top: 1px solid var(--ed-quiet) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 10px 6px !important;
@@ -5414,10 +5539,13 @@ b, strong { font-weight: 600; }
   .lb-page .lb-rows > button:hover { background: rgba(255, 255, 255, .028) !important; filter: none !important; }
   /* Das Podest: die Rangzahl in einer Kante aus Gold, Silber, Bronze (`--c` trägt den Ton bereits) —
      der eigene Eintrag überschreibt sie mit Grün, wie bisher auch. */
+  /* Radius `--rd-sm` (7 → 6). Kante und Tinte BLEIBEN: `--c` trägt Gold, Silber, Bronze und das Grün
+     des eigenen Eintrags — das ist Bedeutung, keine Chrome, und 2c nennt „meaning-coded borders"
+     ausdrücklich als dauerhafte Ausnahme. Der Entwurf zieht dieselbe Grenze. */
   .lb-page .lb-rank {
     width: 34px !important; height: 25px;
     display: grid !important; place-items: center;
-    border-radius: 7px;
+    border-radius: var(--rd-sm);
     font-size: var(--text-body-1); opacity: 1 !important;
     color: color-mix(in srgb, var(--c, #8a8a95) 78%, #e8e8ea);
     border: 1px solid color-mix(in srgb, var(--c, #8a8a95) 55%, transparent);
@@ -5450,7 +5578,10 @@ b, strong { font-weight: 600; }
   .lb-page .rg-neg > div > div:first-child { font-size: var(--text-body-lg-3) !important; }
   .lb-page .rg-pos > div > div:last-child,
   .lb-page .rg-neg > div > div:last-child { font-size: var(--text-body-4) !important; opacity: .9; }
-  .lb-page .rg-pos > div, .lb-page .rg-neg > div { padding: 11px 14px !important; }
+  /* #menu-rework M8 — die Sonderpolsterung der Regeln-Kästen ist ERSATZLOS ENTFALLEN. Sie stand auf
+     11/14, während dieselbe Bauform im Cockpit auf 10/13 stand: zwei Zahlen für eine Zeile, entstanden
+     aus zwei Gelegenheiten. `.lb-mod` trägt jetzt `var(--in-tight) var(--in-snug)` = 11/13, und die
+     Kästen hier SIND `.lb-mod` — die Regel hätte nur noch eine dritte Zahl behauptet. */
 
   /* ---- Lauf-Details: derselbe Screen wie nach einem Lauf ------------------
      Eine gespeicherte Zeile aus Statistik oder Bestenliste öffnete bis hierher ein 448-px-Fenster, während der

@@ -144,10 +144,61 @@ describe("#desktop-screens — Bestenliste und Ranked", () => {
     expect(deskBlock).toMatch(/\.lb-pagescroll:has\(\.lb-cockpit\) \.lb-rows\s*\{[^}]*grid-auto-flow:\s*row/);
   });
 
-  it("die Reiter werden zur Navigationsspalte und der Schließen-Knopf behält seinen Platz", () => {
+  it("die Reiter werden zur Navigationsspalte", () => {
     expect(deskBlock).toMatch(/\.lb-tabs\s*\{[^}]*flex-direction:\s*column/);
-    // Der Kopf hat nur zwei Kinder; ohne festen Platz landet der Knopf in der 1fr-Spalte und zieht sich breit.
-    expect(deskBlock).toMatch(/\.lb-head > button\s*\{[^}]*grid-column:\s*3/);
+  });
+
+  /* #menu-rework M8 — UMGESCHRIEBEN AUF DIE INVARIANTE, und der alte Wortlaut sagt, warum das nötig
+     war: „Der Kopf hat nur zwei Kinder; ohne festen Platz landet der Knopf in der 1fr-Spalte" —
+     geprüft wurde `grid-column: 3`. Das ist eine SCHREIBWEISE, kein Verhalten. Der Kopf hat jetzt
+     vier Kinder und zwei Spuren, der Knopf steht in Spur 2, und die Zusicherung des Kanons ist
+     dieselbe geblieben: SCHLIESSEN IST DAS LETZTE ELEMENT, UND NICHTS STEHT JE RECHTS DAVON
+     (design-sprache.md §2). Die 3 hätte den Kanon gebrochen und wäre grün geblieben.
+
+     Deshalb RECHNET dieser Wächter jetzt: er zählt die Spuren des Kopf-Rasters und verlangt, dass
+     Schließen in der LETZTEN steht — und dass keine andere Kopf-Regel eine Spur nennt, die weiter
+     rechts liegt. Ohne die zweite Hälfte hieße „letzte Spur" nur „irgendeine Spur mit der höchsten
+     Nummer, die jemand hingeschrieben hat".
+
+     Und er verlangt, dass es EINE Regel für beide Screens ist. Der Kanon gilt laut §2 für alle
+     Overlays; zwei Regelsätze für dieselbe Zusicherung sind die Doppelpflege, vor der conventions.md
+     §1 Regel 2 warnt — und genau daraus war die alte 3 entstanden. */
+  it("Schließen ist das letzte Element des Kopfes — in EINER Regel für beide Screens", () => {
+    /* Spuren zählen, nicht Leerzeichen zählen: `minmax(0, 1fr)` trägt selbst ein Komma und ein
+       Leerzeichen. Zeichenweise mit Klammertiefe, wie der Wertleser in panel-tokens. */
+    const trackCount = (value) => {
+      let depth = 0, n = 0, inTrack = false;
+      for (const ch of value.trim()) {
+        if (ch === "(") depth++;
+        else if (ch === ")") depth--;
+        if (depth === 0 && /\s/.test(ch)) { inTrack = false; continue; }
+        if (!inTrack) { n++; inTrack = true; }
+      }
+      return n;
+    };
+    const head = deskBlock.match(/^\s*\.st-head, \.lb-head \{([^}]*)\}/m);
+    expect(head, "das Kopf-Raster steht nicht mehr als EINE Regel für beide Screens").toBeTruthy();
+    expect(head[1], "der Kern des Kanons fehlt: die Aktionszone hängt an der Oberkante").toMatch(/align-items:\s*start/);
+    const cols = /grid-template-columns:\s*([^;]+);/.exec(head[1]);
+    expect(cols, "das Kopf-Raster nennt keine Spuren mehr").toBeTruthy();
+    const spuren = trackCount(cols[1]);
+    expect(spuren).toBeGreaterThan(1);
+
+    const close = deskBlock.match(/^\s*\.st-close, \.lb-head > button \{([^}]*grid-column[^}]*)\}/m);
+    expect(close, "Schließen steht nicht mehr als EINE Regel für beide Screens").toBeTruthy();
+    const at = /grid-column:\s*(\d+)/.exec(close[1]);
+    expect(at, "Schließen hat keinen festen Platz mehr — es landet in der 1fr-Spalte").toBeTruthy();
+    expect(Number(at[1]), `Schließen steht in Spur ${at && at[1]} von ${spuren} — es ist nicht das letzte Element`).toBe(spuren);
+    expect(close[1], "Schließen spannt den Titelblock nicht mehr").toMatch(/grid-row:\s*1 \/ span/);
+
+    /* Nichts rechts von Schließen: jede andere Regel des Kopfes muss weiter links liegen. */
+    const rechtsDavon = [];
+    for (const m of deskBlock.matchAll(/^\s*([^{}\n]*(?:st-head|lb-head|st-eyebrow|lb-eyebrow|st-sub|lb-sub)[^{}\n]*)\{([^}]*)\}/gm)) {
+      if (/st-close/.test(m[1])) continue;
+      const c = /grid-column:\s*(\d+)/.exec(m[2]);
+      if (c && Number(c[1]) >= spuren) rechtsDavon.push(`${m[1].trim()} -> grid-column: ${c[1]}`);
+    }
+    expect(rechtsDavon, `steht in Schließens Spur oder rechts davon:\n  ${rechtsDavon.join("\n  ")}`).toEqual([]);
   });
 });
 
