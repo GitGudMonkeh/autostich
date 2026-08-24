@@ -24,33 +24,39 @@ than at the end of the round.
 
 ---
 
-## 1. The survey posts real rows to the live leaderboard — stop it
+## 1. Promote M8's stub into the survey — it already solves three things
 
-*M8's finding, and it is the reason this task is not deferred.*
+**Do not invent this. M8 built it, and it works.** `evidence/M8/seed.mjs` holds `fetchStubSource()`
+and `freezeClockSource()`, installed as **init scripts** before the module graph runs. They are
+task-local, so only M8's own harness ever used them. **Move them into `scripts/` and have
+`viewport-survey.mjs` install them.**
 
-`publishRun` is gated by `VITE_PREVIEW` **alone** (`src/game/leaderboard.js:107`). The survey measures
-the **production** build and seeds `as_username = "SURVEY"`, and its `victory` cell ends a run — so
-**every full survey run posts up to ten real rows into `autostich_scores`.** They have never appeared
-in a gate because a four-round run's score does not reach the top twenty.
+*Verified before this contract was written:* `fetchStubSource()` intercepts **every** URL containing
+`autostich_scores` and answers from a fixed table — it never reaches the network for those, **writes
+included**.
 
-**Three workers and the planner have run that survey.** The rows are already there.
+**What promoting it fixes, all three at once:**
 
-**The remedy M8 identified:** seed an **empty** username. `App.jsx:753` requires a non-empty, allowed
-name before publishing, so an empty seed skips publication entirely.
+| Problem | Standing since | How the stub ends it |
+| --- | --- | --- |
+| **The survey posts real rows to the live board.** `publishRun` is gated by `VITE_PREVIEW` alone (`leaderboard.js:106`); the survey measures the **production** build, seeds `as_username = "SURVEY"`, and its `victory` cell ends a run — up to **ten real rows per full run**, invisible in every gate because the score never reaches the top twenty | three workers and the planner have run it | the insert is answered locally and never leaves the browser |
+| **The wall clock.** The hub reads the ISO week behind every overlay; one `<span>` crossing midnight produced 72 box deltas across 37 cells and 10 surfaces | MENU-30, in **every contract since M2a** | `freezeClockSource()` pins `Date.now()` and `new Date()` — **not** `performance.now()`, which React's scheduler reads and which a frozen monotonic clock would hang |
+| **The leaderboard's row count follows the network** | TYPO-08, pre-registered as not-comparable | the count is the same by construction. M8 measured 20 and 20 in all 60 cells |
 
-**It is one line and it is not free.** `as_username` may render — the hub, the leaderboard and the
-end screen all know the player's name. Changing it changes what those surfaces draw, which moves the
-baseline for every remaining task.
+**Why this beats the one-line fix I first proposed.** Seeding an empty username would also stop the
+write — and `as_username` renders, so it would move the baseline for every remaining task. The stub
+changes nothing the application sees: `leaderboardConfigured` stays true and every code path is the
+real one.
 
-**So measure before and after:**
-
-- If the empty seed changes no captured surface, take it and say so.
-- If it does, find the variant that does not — a seeded name that is allowed but never published, or
-  a publication gate the survey can set. **Do not trade a moved baseline for a clean table without
-  saying which you chose and why.**
+**Prove it, do not assume it:** a full survey run posts **zero** rows, and the noise floor is still
+zero on the new arrangement.
 
 **Also report, do not fix:** how many `SURVEY` rows are in the table. That is the owner's data and the
-owner's decision what happens to them. **Delete nothing.**
+owner's decision. **Delete nothing.**
+
+**And say what it retires.** If the clock is pinned for every run, the *"both halves on the same side
+of a week boundary"* instruction leaves the contracts. Name that in your record so the next contract
+drops it rather than carrying a rule against a hazard that no longer exists.
 
 ## 2. The survey must prove it measured the bundle it built
 
@@ -117,7 +123,8 @@ baseline that keeps writing rows.
 
 ## Expected file surface
 
-`scripts/viewport-survey.mjs` · `test/harness-honesty.test.js` (extend) · a guard per item ·
+`scripts/viewport-survey.mjs` · a new `scripts/survey-stub.mjs` (promoted from `evidence/M8/seed.mjs`) ·
+`test/harness-honesty.test.js` (extend) · a guard per item ·
 `docs/workstreams/desktop-menus/measurements/MH2.md`
 
 **Must not change:** any `src/ui/**`, the `@theme` block, `test/typo-tokens.test.js`, anything inside
@@ -128,9 +135,11 @@ baseline that keeps writing rows.
 ## Definition of done
 
 - [ ] Branch confirmed, `git status --short` empty, before the first edit
+- [ ] M8's `fetchStubSource` and `freezeClockSource` promoted into `scripts/` and installed by the
+      survey
 - [ ] **A full survey run posts zero rows** — demonstrated, not asserted
-- [ ] The captured surfaces before and after the seed change compared; **if anything moved, the
-      variant chosen is named with its reason**
+- [ ] The captured surfaces compared before and after the change; **anything that moved is named**
+- [ ] **What the pinned clock retires is stated**, so the next contract drops the week-boundary rule
 - [ ] The count of existing `SURVEY` rows **reported to the owner. Nothing deleted**
 - [ ] The survey proves it is serving the bundle it built; a stale server is refused, not reused
 - [ ] Accumulated run count written per cell into `matrix.json`
