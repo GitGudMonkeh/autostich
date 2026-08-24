@@ -14,7 +14,7 @@ and the shape has to be unarguable before they do. It is the only task the other
    that shell becomes.
 2. **Three levels** — Themenliste → Lektionsliste → Lektion. Navigation is state inside the overlay,
    not routes.
-3. **The four beat components.** `Satz` · `Bild` · `Probierfeld` · `Merksatz`. A fifth kind requires
+3. **The four beat components.** `Satz` · `Bild` · `Probierfeld` · `Tipp`. A fifth kind requires
    an entry in `docs/design-sprache.md` §11 first.
 4. **The catalogue** at `src/ui/tutorial-sections/catalog.js` — pure data, **no display text, no
    React, no `t()`**. Same discipline as today's `src/ui/tutorial/tutorialScript.js`, whose header
@@ -30,7 +30,7 @@ and the shape has to be unarguable before they do. It is the only task the other
 | Card | 366 × 524.2 — **62 % of the screen** |
 | Head · foot | 70 · 66 |
 | Content | 386 px · **0 overhang · nothing clipped · no sideways scroll** |
-| Beat costs | Satz 77 px (110 chars) · Bild 121–123 · Probierfeld 204–215 · Merksatz 90 |
+| Beat costs | Satz 77 px (110 chars) · Bild 121–123 · Probierfeld 204–215 · Tipp 90 |
 | Tap targets | **0 under 44 px** |
 
 Reproduce with [`../evidence/measure.mjs`](../evidence/measure.mjs) and compare against
@@ -45,7 +45,7 @@ production build.
   307.8 px of black below it;
 - **44 px** for anything carrying a decision. Note `ActionButton`'s `py-2.5` yields **42 px**, so
   honouring this is a change to a *shared* component — see Hazards;
-- the Merksatz sits on a **hairline**, never in its own box (`design-sprache.md` §1 — *Kein Panel im
+- the Tipp sits on a **hairline**, never in its own box (`design-sprache.md` §1 — *Kein Panel im
   Panel*). The Probierfeld uses the §1 **Zeile** recipe exactly: `rgba(15,15,21,.72)`,
   `1px solid rgba(150,150,170,.12)`, radius **8**.
 
@@ -100,7 +100,7 @@ spelling.
 
 ```
 src/ui/tutorial-sections/TutorialSections.jsx      the overlay, three levels
-src/ui/tutorial-sections/beats.jsx                 Satz · Bild · Probierfeld · Merksatz
+src/ui/tutorial-sections/beats.jsx                 Satz · Bild · Probierfeld · Tipp
 src/ui/tutorial-sections/catalog.js                pure data
 src/i18n/de.js, src/i18n/en.js                     section headers + two placeholder lessons
 test/tutorial-sections.test.js                     height guard, catalogue purity, key parity

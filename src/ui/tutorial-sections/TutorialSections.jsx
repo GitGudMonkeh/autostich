@@ -4,7 +4,7 @@ import { useT } from "../../i18n/useLocale.js";
 import { useEscape } from "../useEscape.js";
 import { MODAL_CARD, STICKY_HEAD_BG, ActionButton } from "../modalStyle.jsx";
 import { SECTIONS, sectionTitleKey, sectionSubKey, lessonTitleKey, beatKey } from "./catalog.js";
-import { Satz, Merksatz, PROBES } from "./beats.jsx";
+import { Satz, Tip, PROBES } from "./beats.jsx";
 
 /* TUTORIAL-SEKTIONEN — die dritte Lehr-Ebene (Glossar = nachschlagen · Leitfaden = Strategie ·
    Tutorial = einmal machen, docs/tutorial-guided-run-plan.md §1).
@@ -117,7 +117,7 @@ export function TutorialSections({ onClose, onOpenGlossary = null, seen = [], la
     const body = lesson.beats.map((b, i) => {
       const key = beatKey(section, lesson, i);
       if (b.kind === "satz") return <Satz key={i} text={t(key)} />;
-      if (b.kind === "merksatz") return <Merksatz key={i} label={t("tut.merksatz")} text={t(key)} />;
+      if (b.kind === "tip") return <Tip key={i} label={t("tut.tip")} text={t(key)} />;
       const Probe = PROBES[b.probe];
       if (!Probe) return null;   // ein unbekannter Baustein rendert nichts — der Wächter fängt ihn vorher
       if (b.kind === "bild") return <Probe key={i} caption={t(key)} />;

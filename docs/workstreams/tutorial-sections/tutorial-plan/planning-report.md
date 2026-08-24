@@ -14,6 +14,7 @@ Every number below carries its provenance: **measured** (read out of the running
 | 1 | Is the lesson the right form? | **Yes — and shorter.** "Kurz und knackig." The form is re-cut to three beats and re-measured; §1.2 and §1.4 carry the new numbers, §1.4a the new budget. |
 | 2 | Do the nine gaps go in? | **All nine.** §4 marks them **L**. |
 | 3 | Does finishing the tutorial pay anything? | **No.** No reward, no gate, no wiring to the onboarding counter (§6, H1). |
+| 5 | What is the closing beat called? | **"Tipp" / "Tip"**, owner, 25.08.2026 — it was "Merksatz" / "Remember". Renamed through the code as well (`kind: "tip"`, `<Tip>`, `.tut-tip`, `tut.tip`), because a label and an identifier that disagree drift. Identifiers are English per `AGENTS.md` — *Code identifiers*. **`evidence/lesson.js` and its measurements keep the old word**: they record what was measured on the day, and evidence is not retro-fitted to a later decision. |
 | 4 | Tap target on the phone — 44 px, stricter than the house? | **No objection raised → the recommendation stands:** 44 px for anything carrying a decision, chips unchanged. Recorded in `design-sprache.md` §11 (§5). |
 
 Rejected alternatives are recorded in §1.6 rather than re-offered.
@@ -75,7 +76,7 @@ a countable shape:
 1. **one Satz** — the setup, one to two sentences, which is what `text-style-guide.md` §3 asks for
    anyway. My first draft said "two to four sentences" and was looser than the project's own rule.
 2. **one Probierfeld or one Bild** — the beat that does the teaching.
-3. **one Merksatz** — what you keep.
+3. **one Tipp** — what you keep.
 
 There are exactly four beat *kinds*, and a fifth may not be invented by a worker without an entry in
 the design document:
@@ -85,9 +86,9 @@ the design document:
 | **Satz** | one to three sentences, per `text-style-guide.md` §3 | 56 px (58 chars) · 77 px (99–130) · 98 px (140) |
 | **Bild** | a strip of real UI at real size, plus a caption | 121–123 px |
 | **Probierfeld** | the interactive beat — see §1.3 | 204–215 px |
-| **Merksatz** | the takeaway, on a hairline, never in a box (`design-sprache.md` §1) | 90 px |
+| **Tipp** | the takeaway, on a hairline, never in a box (`design-sprache.md` §1) | 90 px |
 
-The Merksatz uses a **line above** rather than its own framed surface, because `design-sprache.md`
+The Tipp uses a **line above** rather than its own framed surface, because `design-sprache.md`
 §1 — *Kein Panel im Panel* — puts a closing section on a hairline at the foot of the panel. The
 Probierfeld uses the §1 **Zeile** recipe exactly (`rgba(15,15,21,.72)`, `1px solid
 rgba(150,150,170,.12)`, radius 8) — a neutral row inside a tinted panel, which §1 permits, not a
@@ -123,9 +124,9 @@ scroller can show at most **638 px** of beats. A lesson under that budget does n
 
 | Variant | Content | Overhang | Hidden by the foot |
 | --- | --- | --- | --- |
-| four beats (Satz · Probierfeld · Satz · Merksatz) | 484 px | **0** | nothing |
+| four beats (Satz · Probierfeld · Satz · Tipp) | 484 px | **0** | nothing |
 | five beats (+ Bild) | 586 px | **0** | nothing |
-| six beats (Satz · Bild · Satz · Probierfeld · Satz · Merksatz) | 694 px | 56 px | **the Merksatz** |
+| six beats (Satz · Bild · Satz · Probierfeld · Satz · Tipp) | 694 px | 56 px | **the Tipp** |
 
 The six-beat variant is the design defect this session was told to hunt for — *measure what a panel
 hides that does not itself scroll*. The word "MERKSATZ" is visible; its sentence is not; and the
@@ -140,7 +141,7 @@ The three-beat lesson, measured at 390 × 844 in German:
 
 | | |
 | --- | --- |
-| Beats | Satz 77 px (110 chars) · Probierfeld 204 px · Merksatz 90 px |
+| Beats | Satz 77 px (110 chars) · Probierfeld 204 px · Tipp 90 px |
 | Content | **386 px** |
 | Card | 366 × 524.2 — **62 % of the screen** |
 | Overhang · clipped · sideways scroll | **0 · nothing · none** |
@@ -190,7 +191,7 @@ that is precisely the hole H2 names. §5 proposes the fix.
 
 - **A scrolling long-read per section.** Measured above: it hides its own conclusion.
 - **A carousel of cards, one beat per swipe.** Would make the Probierfeld a full screen and the
-  Merksatz a screen you can swipe past without reading — the same defect with better manners.
+  Tipp a screen you can swipe past without reading — the same defect with better manners.
 - **Coach-marks over the live UI, outside a run.** Needs the run screen mounted with fake state;
   that is either a `game/` change or a mock of it. Both are worse than a Probierfeld that calls the
   real function.
@@ -586,7 +587,7 @@ node measure.mjs        # scratchpad/proto — CDP via scripts/cdp.mjs, 390 x 84
 
 Evidence staged alongside this report: `knackig-mitte-390x844.png` (**the approved form**),
 `knackig-top-390x844.png` (the same card top-aligned, for the centring decision),
-`list-390x844.png`, `long-390x844.png` (the Merksatz behind the foot — the rejected long form),
+`list-390x844.png`, `long-390x844.png` (the Tipp behind the foot — the rejected long form),
 `glossary-390x844.png` (the house shell for comparison), and `measurements.json` per variant.
 
 Not measured, and therefore not claimed: the English lesson (German is the longer language and the

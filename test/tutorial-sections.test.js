@@ -11,7 +11,7 @@ import {
    TUTORIAL-SEKTIONEN — die Wächter der Schale (#tutorial-sections T1).
 
    Der teuerste stille Fehler dieses Features wäre eine Lektion, die auf dem Telefon über ihren Kasten
-   läuft: der Merksatz — das Fazit — verschwindet dann hinter dem nicht scrollenden Fuß, während
+   läuft: der Tipp — das Fazit — verschwindet dann hinter dem nicht scrollenden Fuß, während
    „Weiter" daneben leuchtet. Genau das ist in der Planungsrunde gemessen worden
    (docs/workstreams/tutorial-sections/tutorial-plan/evidence/long-390x844.png), und genau davor
    schützt das Budget hier.
@@ -40,12 +40,12 @@ describe("Tutorial-Sektionen · Katalog", () => {
     for (const k of used) expect(BEAT_KINDS, `unbekannte Takt-Art „${k}"`).toContain(k);
   });
 
-  it("eine Lektion ist DREI Takte: ein Satz, ein Bild oder Probierfeld, ein Merksatz", () => {
+  it("eine Lektion ist DREI Takte: ein Satz, ein Bild oder Probierfeld, ein Tipp", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
       const kinds = l.beats.map((b) => b.kind);
       const where = `${s.id}/${l.id}: ${kinds.join(" · ")}`;
-      expect(kinds.filter((k) => k === "merksatz").length, `${where} — genau ein Merksatz`).toBe(1);
-      expect(kinds[kinds.length - 1], `${where} — der Merksatz steht am Ende`).toBe("merksatz");
+      expect(kinds.filter((k) => k === "tip").length, `${where} — genau ein Tipp`).toBe(1);
+      expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
       expect(kinds.filter((k) => k === "bild" || k === "probierfeld").length,
         `${where} — höchstens ein Bild ODER ein Probierfeld`).toBeLessThanOrEqual(1);
     }
@@ -121,7 +121,7 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
      ist, ist kein Beweis. Ein künstlich überlanger Satz MUSS das Budget reißen — sonst rechnet das
      Modell nicht, sondern nickt. */
   it("Gegenprobe: eine überlange Lektion reißt das Budget", () => {
-    const fake = { id: "x", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "merksatz" }] };
+    const fake = { id: "x", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1200), [beatKey(sec, fake, 1)]: "", [beatKey(sec, fake, 2)]: "kurz" };
     const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");

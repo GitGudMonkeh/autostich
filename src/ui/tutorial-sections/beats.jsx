@@ -27,11 +27,11 @@ export function Satz({ text }) {
   return <p className="tut-beat tut-satz text-body-lg-5" style={{ color: "#c8c8d0", lineHeight: 1.5, margin: "0 0 14px" }}>{text}</p>;
 }
 
-/* Der Merksatz hängt an einer LINIE, nie in einem eigenen Kasten — design-sprache.md §1,
+/* Der Tipp hängt an einer LINIE, nie in einem eigenen Kasten — design-sprache.md §1,
    „Kein Panel im Panel": eine Abschluss-Sektion trennt eine Linie nach oben ab. */
-export function Merksatz({ label, text }) {
+export function Tip({ label, text }) {
   return (
-    <div className="tut-beat tut-merk" style={{ borderTop: HAIR, marginTop: 16, paddingTop: 12 }}>
+    <div className="tut-beat tut-tip" style={{ borderTop: HAIR, marginTop: 16, paddingTop: 12 }}>
       <div className="text-meta-1" style={{ ...LABEL, letterSpacing: ".18em", color: "var(--deck-a1, #8a7de0)", marginBottom: 5 }}>{label}</div>
       <p className="text-body-lg-5" style={{ color: "#e8e8ea", margin: 0, lineHeight: 1.45, fontWeight: 600 }}>{text}</p>
     </div>

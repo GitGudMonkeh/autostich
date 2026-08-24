@@ -1048,7 +1048,7 @@ export default {
   /* ===================== TUTORIAL SECTIONS (#tutorial-sections) =====================
      The sections are the third teaching layer: glossary = look up · guide = strategy ·
      tutorial = do it once. A lesson is THREE beats — one Satz, one picture or Probierfeld, one
-     Merksatz — and at most 400 px at 390 × 844 in German (budget in catalog.js). German is the
+     Tip — and at most 400 px at 390 × 844 in German (budget in catalog.js). German is the
      budget language because it is the longer of the two.
      Never type a number: placeholders from constants.js (text-style-guide.md §4). */
   "tut.eyebrow": "Tutorial",
@@ -1057,7 +1057,7 @@ export default {
   "tut.seen": "read",
   "tut.resume": "Continue",
   "tut.allProgress": "All topics · {done} of {total}",
-  "tut.merksatz": "Remember",
+  "tut.tip": "Tip",
   "tut.back": "Back",
   "tut.next": "Next",
   "tut.progress": "{n} / {total}",

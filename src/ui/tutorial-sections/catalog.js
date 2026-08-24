@@ -13,14 +13,14 @@
    auseinanderlaufen.
 
    TAKT-SCHEMA
-     kind   "satz" · "bild" · "probierfeld" · "merksatz" — mehr gibt es nicht (Design-Entscheidung,
+     kind   "satz" · "bild" · "probierfeld" · "tip" — mehr gibt es nicht (Design-Entscheidung,
             planning-report.md §1.2). Ein fünfter Takt braucht erst einen Eintrag in
             docs/design-sprache.md §11.
      probe  nur bei kind "probierfeld"/"bild": der Name des Bausteins, den beats.jsx auflöst.
             Der Katalog kennt keine Komponenten — sonst wäre er nicht mehr React-frei. */
 
 /* Genau vier Takt-Arten. Der Wächter liest diese Liste, damit ein fünfter nicht still durchrutscht. */
-export const BEAT_KINDS = ["satz", "bild", "probierfeld", "merksatz"];
+export const BEAT_KINDS = ["satz", "bild", "probierfeld", "tip"];
 
 export const SECTIONS = [
   {
@@ -31,7 +31,7 @@ export const SECTIONS = [
         beats: [
           { kind: "satz" },
           { kind: "bild", probe: "deckstrip" },
-          { kind: "merksatz" },
+          { kind: "tip" },
         ],
       },
     ],
@@ -44,7 +44,7 @@ export const SECTIONS = [
         beats: [
           { kind: "satz" },
           { kind: "probierfeld", probe: "formation" },
-          { kind: "merksatz" },
+          { kind: "tip" },
         ],
       },
     ],
@@ -93,7 +93,7 @@ export const totalLessons = () => SECTIONS.reduce((n, s) => n + s.lessons.length
      Satz   58 Zeichen → 56 px · 99 → 77 · 110 → 77 · 130 → 77 · 140 → 98
      Bild                      → 121–123 px
      Probierfeld               → 204–215 px
-     Merksatz  69 Zeichen      → 90 px
+     Tipp  69 Zeichen      → 90 px
    44 Zeichen je Zeile ist der einzige Wert, der alle fünf Satz-Messungen trifft (58/44→2 Zeilen,
    99→3, 110→3, 130→3, 140→4). Bei 42 fiele der 130er auf 4 Zeilen und das Modell schätzte zu hoch. */
 export const LESSON_BUDGET_PX = 400;
@@ -102,8 +102,8 @@ export const SHELL_CEILING_PX = 638;   // gemessen; was die Schale überhaupt ze
 const CHARS_PER_LINE = 44;
 const SATZ_LINE = 21;      // 0.875rem × line-height 1.5
 const SATZ_MARGIN = 14;
-const MERK_LINE = 20;      // line-height 1.45
-const MERK_CHROME = 46;    // Trennlinie + Label + Abstände (gemessen 90 bei 2 Zeilen)
+const TIP_LINE = 20;      // line-height 1.45
+const TIP_CHROME = 46;    // Trennlinie + Label + Abstände (gemessen 90 bei 2 Zeilen)
 const BILD_PX = 123;       // obere Messung
 const PROBE_PX = 215;      // obere Messung
 
@@ -114,7 +114,7 @@ const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_
 export function beatHeight(beat, text) {
   switch (beat.kind) {
     case "satz":        return lines(text) * SATZ_LINE + SATZ_MARGIN;
-    case "merksatz":    return lines(text) * MERK_LINE + MERK_CHROME;
+    case "tip":    return lines(text) * TIP_LINE + TIP_CHROME;
     case "bild":        return BILD_PX;
     case "probierfeld": return PROBE_PX;
     default:            return 0;

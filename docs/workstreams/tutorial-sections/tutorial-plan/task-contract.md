@@ -75,7 +75,7 @@ Binding. Each is argued in the planning report at the cited section.
 1. **The overlay reuses the hub-modal shell verbatim** — `overlayPortal`, `MODAL_CARD`,
    `TopHairline`, `ActionButton`, `92dvh` card in a `p-3` frame. No new shell. *(§1.1)*
 2. **Three levels** — Themenliste → Lektionsliste → Lektion. *(§1.1)*
-3. **A lesson is three beats** — one Satz, one Probierfeld **or** one Bild, one Merksatz. Four beat
+3. **A lesson is three beats** — one Satz, one Probierfeld **or** one Bild, one Tipp. Four beat
    *kinds* exist; a fifth requires a design-document entry. *(§1.2)*
 4. **The budget is ≤ 400 px of beats at 390 × 844 in German**, or it is two lessons. *(§1.4a)*
 5. **The lesson card is centred**, not top-aligned — it never fills the cap. *(§1.4a)*
@@ -137,7 +137,7 @@ docs/workstreams/tutorial-sections/tutorial-plan/evidence/long-390x844.png
 `docs/` file outside this directory. Verifiable by blob hash, not by reading.
 
 Three screenshots are committed and not more. `task-lifecycle.md` §7 permits captured images
-**where the finding is visual** — the approved form, the rejected alignment, and the Merksatz behind
+**where the finding is visual** — the approved form, the rejected alignment, and the Tipp behind
 the foot each are. The remaining captures are regenerable from the committed, deterministic script.
 
 ## Known hazards

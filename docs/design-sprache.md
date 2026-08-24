@@ -754,7 +754,7 @@ Tutorial-Sektionen setzen sie über **eine** Regel, die nur ihre eigene Fläche 
 
 `§1 — Zeile` (`rgba(15,15,21,.72)`, `1px solid rgba(150,150,170,.12)`, Radius 8) ist die Fläche für
 alles, was **in** einer Karte steht, auch auf dem Telefon. Und `§1 — Kein Panel im Panel` gilt
-unverändert: ein Abschluss (im Tutorial der Merksatz) hängt an einer **Linie nach oben**, nicht in
+unverändert: ein Abschluss (im Tutorial der Tipp) hängt an einer **Linie nach oben**, nicht in
 einem eigenen Kasten.
 
 ### Messen: die Falle, die zweimal Geld gekostet hat

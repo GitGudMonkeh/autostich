@@ -23,7 +23,7 @@ other eight. What they share is stated here once and cited, not repeated.
 
 ## The lesson contract, on every content task
 
-- **Three beats:** one Satz · one Probierfeld **or** one Bild · one Merksatz.
+- **Three beats:** one Satz · one Probierfeld **or** one Bild · one Tipp.
 - **≤ 400 px of beats** at 390 × 844 **in German**, or it is two lessons. German is the budget
   language because it is the longer of the two.
 - **One to two sentences per Satz** — `docs/text-style-guide.md` §3.

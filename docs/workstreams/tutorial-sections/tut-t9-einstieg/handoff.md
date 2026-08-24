@@ -84,6 +84,21 @@ honest note that the house does not meet it today (Glossary Close 42 px, chips 2
 scoped rule (`.tut-card .as-actbtn`). **If the answer is app-wide, that rule must be deleted**, not
 left as a second home for the number.
 
+## Nachtrag — der Abschluss-Takt heißt jetzt „Tipp"
+
+Owner, 25.08.2026: aus **Merksatz** wurde **Tipp** (`Tip` im Englischen). Durchgezogen bis in die
+Bezeichner — `kind: "tip"`, `<Tip>`, `.tut-tip`, `tut.tip` —, weil ein Label und ein Bezeichner, die
+sich widersprechen, mit der Zeit auseinanderlaufen. Bezeichner englisch nach `AGENTS.md` — *Code
+identifiers remain English*; das alte `merksatz` war dort ohnehin ein deutscher Ausrutscher.
+
+**Nicht umbenannt, mit Absicht:** `../tutorial-plan/evidence/lesson.js` und seine Messwerte. Sie
+halten fest, was an dem Tag gemessen wurde; Belege werden nicht rückwirkend an eine spätere
+Entscheidung angeglichen. Ebenso unberührt bleiben die Stellen in `docs/decisions/` und
+`docs/sim-harness-plan.md`, die das Wort in ganz anderer Sache benutzen.
+
+Gates nach der Umbenennung erneut bare gefahren: test · lint · build, alle exit 0. Im Build
+gegengeprüft: die Lektion zeigt **TIPP** bzw. **TIP**.
+
 ## Open
 
 1. **T3–T8 are unwritten.** Two placeholder lessons stand in for ~34. That is deliberate: what a

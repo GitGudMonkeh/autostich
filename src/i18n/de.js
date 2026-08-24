@@ -1080,7 +1080,7 @@ export default {
   /* ===================== TUTORIAL-SEKTIONEN (#tutorial-sections) =====================
      Die Sektionen sind die dritte Lehr-Ebene: Glossar = nachschlagen · Leitfaden = Strategie ·
      Tutorial = einmal machen. Eine Lektion sind DREI Takte — ein Satz, ein Bild oder Probierfeld,
-     ein Merksatz — und höchstens 400 px bei 390 × 844 auf Deutsch (Budget in catalog.js).
+     ein Tipp — und höchstens 400 px bei 390 × 844 auf Deutsch (Budget in catalog.js).
      Deutsch ist die Budget-Sprache, weil sie die längere von beiden ist.
      Zahlen NIE abtippen: Platzhalter aus constants.js (text-style-guide.md §4). */
   "tut.eyebrow": "Tutorial",
@@ -1089,7 +1089,7 @@ export default {
   "tut.seen": "gelesen",
   "tut.resume": "Weitermachen",
   "tut.allProgress": "Alle Themen · {done} von {total}",
-  "tut.merksatz": "Merksatz",
+  "tut.tip": "Tipp",
   "tut.back": "Zurück",
   "tut.next": "Weiter",
   "tut.progress": "{n} / {total}",
