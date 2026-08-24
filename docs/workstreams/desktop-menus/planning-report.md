@@ -122,6 +122,18 @@ one of the four axes this round touches**. *Measured*:
 **19 of the 32.** Against four for the typography pass — the brief's order-of-magnitude claim is
 right, and 19 is the number a worker plans against.
 
+> **CORRECTED after the pilot, 2026-08-24 — this section named six guards and the number is two.**
+> M1 measured the membership instead of inferring it: only `go-ruhe` and `st-ruhe` assert `!important`
+> *because a `modalStyle` constant is inline*. The other four (`up`, `rd`, `lv`, `cz`) guard a Tailwind
+> utility or a game-data inline colour and are untouched by the conversion — M1 left them alone rather
+> than rewriting correct guards, which was right. **And one the list never named did need rewriting:
+> `fx-panel.test.js`.** The hazard was right in shape and wrong in membership. Below, only `go-ruhe`
+> and `st-ruhe` are the family this paragraph describes; the count of 19 surface-asserting guards
+> stands, it is the `!important` subset that was over-claimed.
+>
+> The error was mine and it is worth naming: I read the assertions in `go-ruhe` and `st-ruhe` and
+> **inferred** the other four from the shared filename suffix. A suffix is not a measurement.
+
 **The `*-ruhe` family is the sharp part, and it is sharp in a specific way.** Those guards do not
 merely mention the properties; they assert that `!important` is *present*, and they say why:
 
@@ -555,6 +567,7 @@ rather than fighting one:
 | **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — one, for all eleven tasks. Created once, kept for the round |
 | **Checked out on** | `feature/desktop-menus`, **not** a task branch. Each task creates its own inside the worktree |
 | **Preview port** | **5189**, fixed. `http://localhost:5189/autostich/` from M1 to M11 |
+| **Survey port** | **5181**, and it is *not* 5189. `scripts/viewport-survey.mjs:54` hardcodes it with `--strictPort`. The two coexist; a third process on 5181 breaks the survey loudly, which is the designed behaviour |
 | **Branches** | Unchanged — `task/menu-mN-*` under `feature/desktop-menus`, one per task, created and checked out **inside that one worktree** |
 | **Worker handover** | The owner reports when a worker is done and starts the next one. Workers never overlap |
 | **Integration** | **The planner integrates, once, when all eleven are through** — not per task |
@@ -765,6 +778,35 @@ From `docs/workstreams/typography-system/v4-classification.md`, handed to this r
 it starts, or it will spend its round chasing a condition it did not cause — both contracts carry the
 figure.
 
+
+### 8.3 State dependencies — the list H-c should have carried
+
+*Measured by M1, 2026-08-24.* The pilot's contract named two surfaces whose node set moves without any
+code changing: `leaderboard` (network data) and `victory` (run outcome). **The real list is five, and
+the fifth is the one that bites every worker.**
+
+| Surface | What moves it |
+| --- | --- |
+| `leaderboard` | network data — row count varies between runs (TYPO-08) |
+| `victory` | run outcome — `"★ Neuer Rekord"` appears or does not (TYPO-11) |
+| `stats` | accumulated run history |
+| `feedback` | accumulated run history |
+| **every surface** | **the wall clock** — see below |
+
+**The clock, and why it is the dangerous one.** The hub's ranked-board label reads the ISO week. M1's
+session crossed midnight into Monday; the label went `"Week 34"` → `"Week 35"`, and `"5"` is 1.09 px
+wider than `"4"` in Orbitron. Because **the hub renders behind every overlay**, that single `<span>`
+produced **72 box deltas across 37 cells and 10 surfaces** — in one run, 180 in another. Zero code
+changed.
+
+A worker who sees ten surfaces light up at once will read it as a regression it caused, and will spend
+a session proving otherwise. **Every contract from M2a on carries this table**, and the rule that goes
+with it:
+
+> Take both halves of a comparison on the same side of a week boundary. If a run straddles one, the
+> box deltas on `0/0/2/0/5/0/4/0/1/0:SPAN` are the clock, not the diff — re-take rather than explain.
+
+*This is a correction to H-c as the pilot's contract stated it, not a new defect. MENU-30.*
 
 ### 8.2 Why the round does not take `dev` mid-flight
 

@@ -366,6 +366,37 @@ Both are real gaps, named rather than hidden, and both belong to the planner:
   never meant to. A control pads against its **label** (which is why `--btn-pad-*` sits outside the
   ladder), screen margins are layout, heading spacing belongs to the type system.
 
+### The planner's ruling at the freeze, 2026-08-24
+
+The vocabulary above is **frozen**. Three decisions close it.
+
+**1. The annex is closed, not open.** *Outside the ladder* is a complete list as of this freeze, not a
+category anyone may add to. A screen that needs an entry which is not on it **stops and reports** —
+the same rule as for a missing step, and for the same reason. An open annex beside a capped ladder is
+the ladder's escape valve, and it would undo the cap within three screens.
+
+**2. The two extensions the pilot proposed are ratified.** Both were raised rather than taken, which
+is what the escape hatch is for:
+
+| Extension | Ruling |
+| --- | --- |
+| `--sf-deck` · `--ed-deck-panel` | **Approved.** The deck-colour system predates this round and panels have to participate in it. Bounded by its own clause: rows inside a tinted panel stay neutral |
+| `--ctl-*` (nine) | **Approved as a closed set of nine.** A control genuinely is not a panel — it pads against its label and carries state colour. `--ctl-*` is not an open prefix: those nine are the set |
+
+**3. The two named gaps stay gaps — but ink gets a ratchet, not an axis.**
+
+*Padding that is not a box inset* is correctly outside. Screen margins are layout and heading spacing
+belongs to §2b. No action.
+
+*Text colour* is the nearest extension and is **not taken in this round.** Opening a sixth axis after
+the freeze is what the freeze exists to prevent. But seven literals on one screen become seventy
+across eleven if nothing watches them — that is precisely how the 43 shadows happened. So:
+
+> **`panel-tokens.test.js` counts ink literals per migrated file and fails on growth.**
+
+A ratchet, not a vocabulary. It stops the spread without opening an axis mid-round, and it hands the
+successor workstream a measured number instead of an impression. Implemented by M2a.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
