@@ -856,6 +856,43 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.12 The survey's cells are not independent — and it is fine, once written down
+
+*M7-F01, corrected by recounting rather than left as first written.*
+
+**Run history accumulates across the survey's cells**: 0 runs in the first, 9 in the last, because
+every `victory` cell writes one and nothing clears it. Four surfaces read that history —
+`stats`, `feedback`, `leaderboard`, `victory`.
+
+**It is comparable, for a measured reason.** M7 ran two independent full surveys and got congruent
+results, so the accumulation is deterministic and cancels between the halves of a comparison.
+
+**It must still be written down, because it presents exactly as a regression.** Same class as the wall
+clock and the stale bundle: a real effect that looks like a defect. Required of the next harness task —
+**record the accumulated run count per cell in `matrix.json`**, so a comparison can subtract a known
+state difference instead of guessing at one.
+
+**Every contract from here:** a task with a state-dependent surface seeds the profile, **says what it
+seeded**, and treats a delta there as not-comparable until the seed is shown to match.
+
+### 8.13 The fourth instance of one shape, and it is worth naming as a class
+
+| # | Where | The check asked | It should have asked |
+| --- | --- | --- | --- |
+| 1 | `typo-tokens` (TYPO-12) | is there a `text-[Npx]`? | is there any size other than a role? |
+| 2 | `--el-glow` (MENU-15, MENU-29) | is a `var()` present? | is the value resolvable *here*? |
+| 3 | `viewport-survey` (M3-F09) | does something answer on 5181? | does it serve the bundle I just built? |
+| 4 | handover captures (M7) | is there a `.png`? | is it a PNG? |
+
+**Twelve of M7's handover images were base64 text wearing `.png` names**, found by a person opening
+one. Four instances, four different layers — a guard, a token, a harness, an artifact — and one shape:
+
+> **A check that asks whether something is present will eventually pass on the wrong thing. Ask
+> whether it is the right thing.**
+
+This is §5.3's guard rule generalised past guards. It belongs in every contract's hazard list, and it
+is the cheapest sentence in this report.
+
 ### 8.11 §3.1 was an import graph, not a render graph — the fourth correction
 
 *Measured 2026-08-24, preparing M7.*
