@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #up-ruhe (19.08.2026) — Baum, Leitfaden und Glossar im Desktop-Ton.
@@ -187,7 +188,13 @@ describe("#eckig + #up-untertitel — ein Radius für alle Knöpfe, kein abgesch
     expect(read("src/ui/modalStyle.jsx"), "der Haken fehlt an der Sorte").toMatch(/ACTIONBTN_BASE = "as-actbtn /);
     const r = deskBlock.match(/\.as-actbtn,[\s\S]{0,180}?\{([^}]*)\}/);
     expect(r, "die Sammelregel des Radius fehlt").toBeTruthy();
-    expect(r[1]).toMatch(/border-radius:\s*6px/);
+    /* #menu-rework M2a — die 6 wird weiter geprüft, ihre Schreibweise nicht mehr vorgeschrieben.
+       Die Aussage dieses Wächters ist „ein Radius für alle, über EINE Regel", nicht „dort stehen die
+       Zeichen 6px": seit der Vokabular-Umstellung nennt die Regel den Schritt `--rd-sm` beim Namen.
+       Aufgelöst durch den @theme-Block muss trotzdem 6 px herauskommen — fehlt das Token oder steht
+       es auf einem anderen Wert, endet die Ersetzung woanders und der Wächter fällt. */
+    const radius = resolve((r[1].match(/border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(radius, `der Sammelradius ist nicht mehr 6 px: ${radius}`).toMatch(/\b6px\b/);
     for (const k of ["up-close", "gd-close", "gl-close", "cz-close", "st-close"])
       expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
     /* Der Endscreen baut seine drei Knöpfe von Hand (Menü, Neuer Lauf, „Bestätigen" der Freischalt-Karte)

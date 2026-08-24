@@ -1226,10 +1226,16 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
   /* #vorschau-deck: EIN Provider am Wurzelknoten. Der Look hängt allein an der ausgerüsteten deckId — er
      wird deshalb hier gemerkt statt in jeder Szene neu abgeleitet (dreizehn Lesestellen, s. DeckLookCtx). */
   const deckLook = useMemo(() => activeLook(deckId), [deckId]);
+  /* #menu-rework M2a: der Überzug am `cz-root` unten emittiert ein Token statt eines Literals — nur
+     deshalb kann die Regel ihn auf dem Element umhängen, statt ihn mit `!important` zu überschreien.
+     Welchen Wert `--sf-scrim` an diesem Screen trägt, steht an `.cz-root` in index.css.
+     Der Kommentar steht HIER und nicht an der Zeile selbst: `overlay-nesting.test.js` sucht das
+     `overlayPortal(` in den 260 Zeichen VOR dem Klassen-Literal, und drei Zeilen Prosa dazwischen
+     schieben es aus dem Fenster. */
   return overlayPortal((
     <DeckLookCtx.Provider value={deckLook}>
     <div className="fixed inset-0 overlay-root cz-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-hidden"
-      style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <style>{FX_CSS}</style>
       {/* #394 FESTE Kartenhöhe (wie Bestenliste #385) → das Fenster bleibt über ALLE Reiter (Packs/Challenges/Effekte)
           UND alle Filter gleich groß; auch eine leere Ansicht („Nichts in dieser Ansicht") lässt es nicht schrumpfen.
@@ -1237,7 +1243,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
       {/* #deckui: äußerer Modal-Rahmen zieht die aktive Deckfarbe (as-panel-deck) — wie die übrigen Werkstatt-/
           Options-Panels. NUR die Haupt-Shop-Karte; die Effekt-Vorschau-Bühnen (FxStage/Scenes) bleiben unberührt. */}
-      <div className="w-full max-w-xl dt:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
+      {/* #menu-rework M2a: `rounded-2xl` ist weg — der Radius der Schale steht als `--rd-shell` an
+          `.cz-card` (index.css). Gemessen identisch (beides 1rem); es ist das Token, gegen das die
+          Haarlinie oben ohnehin schon klippt. */}
+      <div className="w-full max-w-xl dt:max-w-none my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
         <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>
@@ -1827,7 +1836,10 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
       {/* #shopB STICKY: Kategorie-Tabs + Bühne + Aktion floaten oben — beim Scrollen der Liste bleibt die Vorschau sichtbar.
           #fx-panel: Ab 1280 px ist das hier das LINKE PANEL (Glas + Ring, endet an seinem Inhalt) und die
           Reiter sind nach rechts gezogen — s. .cz-stage im 1280er Block. */}
-      <div className="cz-stage as-ring as-ring-quiet sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG, borderBottom: "1px solid #23222e" }}>
+      {/* #menu-rework M2a: die Haarlinie unter der Bühne steht jetzt in index.css an `.cz-stage` und
+          zieht `--ed-quiet` — den Trenner innerhalb eines Panels. Inline blieb nur, was von React
+          kommt (`stickyTop`) und die Fläche, die ohnehin schon ein Token ist. */}
+      <div className="cz-stage as-ring as-ring-quiet sticky z-[15] -mx-5 sm:-mx-6 px-5 sm:px-6 pt-2 pb-2.5" style={{ top: stickyTop, background: STICKY_HEAD_BG }}>
         {/* Rahmenklasse und Laufband sind ein PAAR (#perf-ring) — die Klasse ohne dieses Kind ergäbe
             keinen Rahmen. Beide sind unterhalb 1280 px wirkungslos (das Band steht global auf
             `display: none`), die Handy-Fassung bleibt davon also unberührt.

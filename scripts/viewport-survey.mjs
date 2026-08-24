@@ -75,6 +75,17 @@ const SURFACES = [
   { id: "hub", steps: [], marker: ".as-hub-tile" },
   { id: "upgrades", steps: [{ tile: 0 }], marker: ".up-root, .up-vgrid, .up-head" },
   { id: "shop-packs", steps: [{ tile: 1 }], marker: ".cz-card, .cz-main" },
+  /* #menu-rework M2a (2026-08-24) — the workshop's EFFECTS tab, which no survey had ever opened.
+     `shop-packs` lands on the default tab, so `.cz-stage` and `.cz-fxside` — the two panels of the
+     effects tab, and the whole of M2b's scope — were outside every capture this workstream has taken.
+     A gate that cannot see half a screen is not a gate for that screen. Additive: an older matrix
+     simply has no such cell, and the comparator matches by cell key.
+     The tab is reached by its role, not by its label: `shop.tab.fx` is "Effekte" in de and "Effects"
+     in en, and clicking by text would need both spellings for a control that already has a stable
+     handle. `.cz-stage` is the marker rather than `.cz-fxside` because the stage is the one node
+     that exists ONLY here. */
+  { id: "shop-fx", steps: [{ tile: 1 }, { sel: '.cz-tabs [role="tab"]', nth: 2, settle: 1200 }],
+    marker: ".cz-stage" },
   { id: "leaderboard", steps: [{ tile: 2 }], marker: ".lb-page, .lb-body" },
   { id: "stats", steps: [{ tile: 3 }], marker: ".st-sec, .st-readout" },
   /* The guide button lives inside a FACTION page, not in the default "general" branch — measured:

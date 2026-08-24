@@ -2290,6 +2290,28 @@ b, strong { font-weight: 600; }
    Handy-Fassung ist damit DOM- und pixelgleich (dieselbe Technik wie `.gd-cols` / `.gl-body`). */
 .cz-fxfoot { display: contents; }
 
+/* #menu-rework M2a — the workshop card's outer corner, at every width.
+   `rounded-2xl` is 1rem and `--rd-shell` is 1rem, measured in a browser rather than assumed. It is
+   the token that exists for this exact corner: `TopHairline` already clips against it, so the shell's
+   radius is now written once instead of twice. */
+.cz-card { border-radius: var(--rd-shell); }
+
+/* #menu-rework M2a — two values that stood INLINE in the JSX and are therefore read at EVERY width.
+   That is exactly why the 1280 block had to shout `!important` at them: an inline LITERAL beats any
+   stylesheet rule. Written here, both `!important`s go.
+
+   THE WASH. The workshop carried `#0c0c10ee`, the desktop `rgba(12, 12, 16, .94)` — 2/255 apart
+   against the brightest ground the hub can put behind it, measured. One value written twice, not
+   two values. So the step is re-pointed on the screen's own root to the other NAMED token, which is
+   the sanctioned form (conventions.md 2c), and it holds at every width because the workshop does not
+   wash thinner on a phone than on a desktop.
+
+   THE HAIRLINE under the effects stage is gone above 1280 px (see `.cz-stage` in the desktop block);
+   below it, it separates stage from list — which is what `--ed-quiet` is: a divider inside a panel.
+   It was `#23222e`, 8/255 from the step. Owner-approved, both of them, at the first stop. */
+.cz-root { --sf-scrim: var(--sf-scrim-desk); }
+.cz-stage { border-bottom: 1px solid var(--ed-quiet); }
+
 /* #lb-rahmen: derselbe Griff wie überall — der Scroll-Wrapper der Bestenliste ist unter 1280 px keine Box,
    dort scrollt weiter das Panel selbst. */
 .lb-pagescroll { display: contents; }
@@ -3188,7 +3210,10 @@ b, strong { font-weight: 600; }
   .cz-root {
     padding: 16px 48px 18px !important;
     align-items: stretch !important;
-    background: rgba(12, 12, 16, .94) !important;
+    /* #menu-rework M2a: die Fläche stand hier mit `!important`, weil der Überzug inline als Literal
+       gesetzt war. Er ist jetzt `var(--sf-scrim)`, und der Screen hängt den Schritt an seiner eigenen
+       Wurzel um (s. `.cz-root` in der Basis) — auf jeder Breite derselbe Wert, also braucht dieser
+       Block dafür gar keine Zeile mehr. */
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -3208,7 +3233,10 @@ b, strong { font-weight: 600; }
     height: 100% !important;
     background: none !important;
     border-color: transparent !important;
-    box-shadow: none !important;
+    /* #menu-rework M2a: `none` here is not an absence but the bottom rung of the elevation ladder —
+       a panel at rest. Written as a step it is a choice a reader can see, which is the whole reason
+       `--el-flat` is a step and not a missing declaration (conventions.md 2c, `#ruhe`). */
+    box-shadow: var(--el-flat) !important;
   }
   /* #rahmen (18.08.2026) — DIE DREI KLASSEN, NICHT ZWEI. Die Regel darüber wollte den animierten
      Verlaufs-Rahmen des CRT-Skins abräumen und hat es nie getan: `[data-skin="crt"] .as-panel.as-panel-deck`
@@ -3234,7 +3262,15 @@ b, strong { font-weight: 600; }
     grid-template-columns: auto auto 1fr auto;
     align-items: center;
     column-gap: 22px;
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    /* #menu-rework M2a — the head that runs out is `--sf-head-fade`, and the `!important` is gone
+       with it. The head sets its fill INLINE (`STICKY_HEAD_BG`), but since M1 that constant emits
+       `var(--sf-head)` rather than a literal: this rule re-points the step ON THE ELEMENT, the
+       inline declaration reads the variable there and picks up the new value, cascade intact.
+       It is the same fade seven screens carry, so it is one token rather than the same line written
+       seven times. Measured: the gradient serialises identically in computed style — 0/255, and
+       Chrome normalises `180deg` away, which is why the token form is not a difference (M2a.md §2). */
+    --sf-head: var(--sf-head-fade);
+    background: var(--sf-head);
     margin-left: 0 !important; margin-right: 0 !important;
     padding-left: 0 !important; padding-right: 0 !important;
     padding-top: 10px !important;
@@ -3253,8 +3289,19 @@ b, strong { font-weight: 600; }
   .cz-topline, .cz-headrow { display: contents; }
   .cz-head h2 { grid-column: 1; grid-row: 1; }
   .cz-bal { grid-column: 2; grid-row: 1; }
-  .cz-readout { grid-column: 3; grid-row: 1; padding-left: 22px; border-left: 1px solid rgba(150, 150, 170, .18); }
-  .cz-close { grid-column: 4; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* #menu-rework M2a: der senkrechte Strich ist `--ed-quiet` — „ein Trenner innerhalb eines Panels",
+     genau seine Rolle. Er stand als Durchsichtigkeit da, weil der Kopf 1:1 von `.up-head` übernommen
+     wurde; über dem Kopf malt sie [49,48,61], der Schritt malt [42,42,52]. 9/255 auf einer 1-px-Linie,
+     gemessen und vom Owner am ersten Stopp abgenommen. Das `padding-left` bleibt Zahl: es setzt die
+     Auskunftsspalte vom Strich ab, ist also Anordnung im Kopfraster und keine Panel-Polsterung. */
+  .cz-readout { grid-column: 3; grid-row: 1; padding-left: 22px; border-left: 1px solid var(--ed-quiet); }
+  /* #menu-rework M2a: a dead `border-radius: 8px` stood here and never rendered — the `#eckig` rule
+     1600 lines further down sets 6px on `.cz-close` at equal specificity and wins as the later one.
+     Measured on the built screen before removing it (baseline capture: `rd 6px`), not inferred.
+     Same defect and same removal as `.op-close` in M1 (MENU-01). The radius now comes from
+     `--rd-sm` through that rule; the padding is a CONTROL's — it sizes against its label, which is
+     why the inset ladder does not reach it (conventions.md 2c, `--btn-pad-*`). */
+  .cz-close { grid-column: 4; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; }
   .cz-hair { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
   .cz-tabs { grid-column: 1 / -1; grid-row: 3; }
 
@@ -3323,9 +3370,13 @@ b, strong { font-weight: 600; }
      bis 18.08.2026 als wortgleiche Kopie der `.as-ring`-Regel in einem eigenen `::before` — seit dem
      Umbau auf die kompositierte Fassung (#perf-ring) tragen sie stattdessen die Klasse selbst und das
      Kind `.as-ring-run`. Zwei Fassungen desselben Rahmens hätten den Umbau sonst zur Hälfte verpasst. */
+  /* #menu-rework M2a: the two values are the vocabulary's, and now they say so. `--sf-glass` is what
+     `--sf-base` looks like above 1280 px, and 13 rules in this file carried the gradient verbatim —
+     this is the first call site to read it, which also brings the token back into the built
+     stylesheet (Tailwind prunes what nothing references; conventions.md 2c). */
   .cz-main, .cz-side {
-    border-radius: 14px;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    border-radius: var(--rd-lg);
+    background: var(--sf-glass);
   }
   /* Der Rahmen gehört an die Box, das Scrollen nach INNEN. Lag beides am selben Element, lief die
      untere Ringkante beim Scrollen mitten durch die Kacheln — ein Pseudo-Element mit `inset: 0` sitzt
@@ -3338,11 +3389,15 @@ b, strong { font-weight: 600; }
     overflow: hidden;
     padding: 0;
   }
+  /* #menu-rework M2a: 14/16/12 -> `--in-base`. Die Leiter hat für „ein Panel" eine Sprosse, und der
+     Katalog-Scroller ist die Polsterung des Katalog-Panels. Gemessen bei 1280x720: die sechs Kacheln
+     verlieren je 0,7 px Breite. Owner-abgenommen am ersten Stopp — dieselbe Bewegung wie an den
+     Optionen-Panels in M1 (16 -> 18). */
   .cz-mainscroll {
     display: block;
     height: 100%;
     overflow-y: auto;
-    padding: 14px 16px 12px;
+    padding: var(--in-base);
   }
   /* Die Vorschau ist so hoch wie ihr Inhalt, nicht so hoch wie die Spalte — wie `.up-nav` im
      Upgrade-Baum, die nach ihrem letzten Eintrag endet statt bis zum Fuß durchzulaufen. Vorher stand
@@ -3432,7 +3487,7 @@ b, strong { font-weight: 600; }
      leeres Panel (69 % der Spalte, gemessen auf 1920 · 279 px / 52 % auf 1536). Und das Loch konnte nie
      zuwachsen: die vier Reiter haben 5 · 5 · 5 · 6 Zeilen, der `overflow-y: auto` der Liste hatte noch
      nie etwas zu scrollen. */
-  .cz-main:has(.cz-stage) { background: none; box-shadow: none; }
+  .cz-main:has(.cz-stage) { background: none; box-shadow: var(--el-flat); }
   /* Der Ring gehört an die zwei Panels; der des Wrappers zöge sonst einen dritten Rahmen um beide.
      `as-ring` und `as-ring-run` sind ein PAAR (#perf-ring) — hier wird das KIND stumm geschaltet und
      nicht die Klasse entfernt, weil `.cz-main` unter 1280 px und in den anderen Reitern derselbe
@@ -3455,19 +3510,24 @@ b, strong { font-weight: 600; }
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-radius: 14px;
-    padding: 14px 16px 12px;
+    border-radius: var(--rd-lg);
+    /* #menu-rework M2a: dieselbe Sprosse wie am Katalog-Scroller — die Bühne IST ein Panel. Kostet
+       10 px Höhe, die die Vorschau über ihr `aspect-ratio` und `flex: 0 1 auto` auffängt. */
+    padding: var(--in-base);
     /* #menu-rework M1 — an `!important` stood here, and it does not any more. `.cz-stage` still sets
        its sticky-head fill INLINE, but since the vocabulary conversion the constant emits
        `var(--sf-head)` rather than a literal. This rule redefines --sf-head ON THE ELEMENT; the
        inline declaration reads the variable there and picks up the new value, with the cascade
        intact. `.cz-fxside` has no inline fill at all and takes the same variable through the line
        below — one source for both sides of the grid.
-       The gradient deliberately stays a literal rather than --sf-glass: the token form carries
-       `180deg` and therefore serialises differently, which the zero-delta run would report as a
-       difference although no pixel falls elsewhere. The workshop belongs to M2a, and so does this
-       line. */
-    --sf-head: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+
+       #menu-rework M2a — AND THE GRADIENT IS NOW THE TOKEN. M1 left it a literal on the ground that
+       `--sf-glass` carries `180deg` and would therefore serialise differently in a zero-delta run.
+       Measured rather than reasoned about, and it is not so: Chrome NORMALISES the default direction
+       away, so `linear-gradient(180deg, A, B)` and `linear-gradient(A, B)` have the same computed
+       string and the same painted pixels (0/255 over 116x38 px). The re-point is the sanctioned form
+       — a step re-pointed on its own root, to another NAMED token (conventions.md 2c). */
+    --sf-head: var(--sf-glass);
     background: var(--sf-head);
   }
   .cz-stage {
@@ -3481,7 +3541,10 @@ b, strong { font-weight: 600; }
     position: relative !important;
     top: auto !important;
     margin: 0 !important;
-    border-bottom: 0 !important;
+    /* #menu-rework M2a: ohne `!important`. Die Haarlinie stand inline im JSX und schlug damit jede
+       Regel; sie steht jetzt in der Basis an `.cz-stage`, und dieser Block gewinnt bei gleicher
+       Spezifität als die spätere Regel. Neben der Liste trennt sie nichts, also fällt sie hier. */
+    border-bottom: 0;
   }
   .cz-fxside { grid-column: 1; }
   /* Die Vorschau trägt das BRETT-Verhältnis (`--bf-ratio`, gesetzt in CustomizeScreen.jsx — dort stehen
@@ -5802,8 +5865,13 @@ b, strong { font-weight: 600; }
      Radien lesen sich als verschiedene Bauteile.
      `as-actbtn` ist der neue, stabile Haken der Sorte (modalStyle.jsx) — er trifft JEDEN ActionButton im
      Spiel auf einmal, statt die Klasse an dreißig Fundstellen einzeln zu setzen. */
+  /* #menu-rework M2a: the 6 IS `--rd-sm` — "#eckig: tiles, buttons, rows, chips" is this rule's own
+     sentence, written once in the vocabulary instead. Value-identical, so nothing moves on the five
+     screens that share the selector; they simply read the step now. Recorded as a departure from the
+     contract's *Expected file surface*: `.cz-close` sits inside a rule five other screens share, so
+     the shell's radius cannot be taken from the vocabulary without touching it. */
   .as-actbtn,
-  .up-close, .gd-close, .gl-close, .cz-close, .st-close, .lb-head > button { border-radius: 6px; }
+  .up-close, .gd-close, .gl-close, .cz-close, .st-close, .lb-head > button { border-radius: var(--rd-sm); }
 
   /* #up-untertitel — der Archetyp-Untertitel im Baum bricht UM statt abzuschneiden.
      Er stand auf `white-space: nowrap` + Ellipse, weil der „Leitfaden ›"-Knopf die rechte Ecke braucht.
