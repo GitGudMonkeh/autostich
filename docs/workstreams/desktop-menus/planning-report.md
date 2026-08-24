@@ -666,6 +666,16 @@ findings table useful rather than a list:
 
 **Only the first returns as work in the task.**
 
+**Part 3 re-measures the decision block.** Every number a task put to the owner is re-stated in the
+measurement record as *measured*, with the delta named where it moved.
+
+*Added after M2a, 2026-08-24, and it is the cheapest process fix of the round.* MENU-43: a
+recommendation was wrong **in its sign** — a panel was said to lose 10 px of height, and being
+content-sized it grew by 7.92 px. The mechanism the recommendation named held, nothing overflowed,
+and the owner's decision stands on the same facts. But the error sat in the half nobody re-measures
+after a yes. A decision block is only worth its accuracy, and accuracy that is never checked decays
+silently.
+
 **A finding that exists only in a chat message is lost.** Transcribe it into the table verbatim, with
 a date. That transcription is the whole point of part 4.
 

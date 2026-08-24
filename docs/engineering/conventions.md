@@ -397,6 +397,30 @@ across eleven if nothing watches them — that is precisely how the 43 shadows h
 A ratchet, not a vocabulary. It stops the spread without opening an axis mid-round, and it hands the
 successor workstream a measured number instead of an impression. Implemented by M2a.
 
+### The window is closed — the planner's second ruling, 2026-08-24
+
+**M2a did not spend the extension window, and the planner accepts that reading.** The vocabulary is
+closed for the rest of the round.
+
+The workshop was chosen as the stress test precisely so this answer would mean something: 2128 lines,
+a sticky head and 60 inline backgrounds against a ladder derived from a 362-line modal. It made the
+case **role by role in its measurement record**, not as an assurance, and it named the request it
+would have filed had the reading gone the other way. That is what makes "nothing was missing"
+evidence rather than a claim.
+
+**Two real gaps were named rather than taken. Both stay gaps, and one gains a ratchet.**
+
+| ID | Gap | Ruling |
+| --- | --- | --- |
+| **MENU-38** | The neutral **translucent** edge — `rgba(150, 150, 170, …)` at **seven alphas** across 15+ rules, carried by the `.as-edge-*` role classes. Every edge in the ladder is opaque | **Not an axis. Ratcheted**, exactly as ink was. Taking one step of a seven-member family from inside one screen is a half-migration decided by a screen that can only see one member — and a half-migrated family is how the 43 shadows happened. `panel-tokens.test.js` counts translucent-edge literals per migrated file and fails on growth |
+| **MENU-39** | The deck hairline written twice, with its two fallbacks mirrored | **Backlog.** A duplication, not a missing token. Nothing to add to the ladder; it collapses whenever someone touches both sites |
+
+**Why not simply grant MENU-38.** It is the more tempting call, and it is wrong for the same reason
+the cap exists. `.as-edge-*` has 143 call sites and is not migrated in this round. A token minted for
+one of its seven alphas would sit in a frozen vocabulary carrying a value the workshop had no standing
+to choose, and the eventual migration would have to either honour it or break it. The ratchet costs
+nothing and hands the successor a measured number instead of an impression.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
