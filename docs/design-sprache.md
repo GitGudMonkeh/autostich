@@ -21,6 +21,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Mainscreen & Marke | `docs/mainscreen-marke.md` |
 | Upgrade-Baum | `docs/upgrade-baum-redesign.md` |
 | Erststart | `docs/erststart-redesign.md` |
+| Statistik | `docs/statistik-redesign.md` |
 | Bestenliste | `docs/bestenliste-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
@@ -122,6 +123,29 @@ Kante ihrer Fraktion, auf einer Seite, die nur diese Fraktion zeigt (`index.css:
 die 17 neutral, und die vier legendären behalten ihre goldene Kante — damit sagt Gold auf der Seite
 wieder etwas.
 
+### Wenn die Anzahl schwankt
+
+Listen, deren Länge vom Spielstand abhängt, dürfen ihre Nachbarn nicht verschieben. Welche Regel
+gilt, entscheidet **eine** Frage: ist die Zahl ein **Ziel** oder ein **Ergebnis**?
+
+| Fall | Regel | Beispiel |
+| --- | --- | --- |
+| **Ziel** — ein Rahmen, den man füllen kann | Platz nach dem **Höchstfall** reservieren, freie Plätze **gedämpft** stehen lassen und sagen, was fehlt | „Meistgewählte Skills", 5 Plätze: wer zwei gespielt hat, sieht drei freie, nicht drei fehlende |
+| **Ergebnis** — was tatsächlich passiert ist | in **fester Spaltenzahl** umbrechen, damit die Höhe in bekannten Stufen springt statt beliebig | die Skills *eines* Laufs: 1–7 Stück, vier je Reihe → eine oder zwei Reihen, nicht sieben Höhen |
+| **Offen** — wartender Inhalt vorhanden | mit **vorhandenem** Inhalt füllen, nie mit erfundenem | die Lauf-Liste: 30 gespeichert, 10 gezeigt — künftig so viele, wie die Spalte trägt |
+
+Die erste Zeile ist §5 *Leere Werte* auf eine Liste angewandt. Die zweite verhindert, dass ein
+Ergebnis leere Plätze behauptet, die es nie gab.
+
+**Dazu die Layout-Hälfte, ohne die keine der drei Regeln hilft:**
+
+- **Panels sitzen in einem Raster mit festen Zeilen, nicht in einem Fluss.** Ein Block, der doch
+  länger wird, **scrollt in sich** — er schiebt nie seinen Nachbarn. Dieselbe Naht wie im Baum seit
+  `#flach` (`grid-template-rows: minmax(0, 1fr)` plus innerer Scroller).
+- **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels.** Luft am Ende liest sich
+  als „die Spalte ist zu Ende", Luft in der Mitte als „hier fehlt etwas". Eine Spalte ist deshalb ein
+  eigener Stapel und keine Rasterzeile, die sich am längsten Nachbarn streckt.
+
 ### Haarlinie
 
 Unter dem Kopf, über die volle Breite: `linear-gradient(90deg, a1, a2, a1)`, Deckkraft `.85`,
@@ -214,7 +238,7 @@ und „Upgrades", obwohl sie fast wie ihre Titel klingen.
 | --- | --- | --- |
 | Upgrades | Upgrade-Baum | Dauerhafte Verbesserungen für jeden Lauf. |
 | Kosmetik | Deck-Werkstatt | Decks, Spielfelder, Effekte. |
-| Rückblick | Statistiken | *neu* — „Was du bisher gespielt hast." |
+| Rückblick | Statistiken | *neu* — „Was du bisher gespielt hast. Eine Zeile anklicken öffnet den vollständigen Lauf." |
 | Vergleich | Bestenliste | *neu* — „Die besten Läufe aller Spieler." |
 | Rangliste | Bestenliste | *neu* — „Woche {n} — alle spielen denselben Seed." |
 | Nachschlagen | Glossar | Begriffe & Sonderregeln — keine einzelnen Perks/Skills |
@@ -496,6 +520,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Statistik entworfen**, Auftrag unter `docs/statistik-redesign.md`. Entscheidung: der **Inhalt** scrollt, nicht das Fenster — die Karte ist an jeder Größe 983 px hoch, bei 720 px Fenster liegen 263 px unter der Falz, und der `sticky`-Kopf war die Notlösung dafür. Dazu Sektionen ohne Tönung und ohne Rahmen, 33-px-Klickziele und eine Auskunftszeile in der Aktionszone. |
+| 24.08.2026 | Drei Regeln daraus, alle in §1: **wenn die Anzahl schwankt** (Ziel reservieren · Ergebnis umbrechen · Offenes mit vorhandenem Inhalt füllen), **Panels schieben nie ihren Nachbarn**, und **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels**. |
 | 24.08.2026 | **Bestenliste entworfen**, Auftrag unter `docs/bestenliste-redesign.md`. Der Screen hat die Maße des Baums, den richtigen Überzug und die richtige Titelgröße — er ist nur bei zwei Entscheidungen nicht mitgekommen: dem Farbanlauf der Navigationsspalte (`#up-form`) und dem Schein nach außen (`#up-ruhe`). Dazu ein Panel ohne Tönung und ohne Rahmen, ein Kopf ohne Eyebrow und Unterzeile und 22 Textglyphen. |
 | 24.08.2026 | Zwei Regeln daraus: **geteilte Bauteile ziehen nach** (Intro) und **ein Screen mit zwei Einstiegen bekommt zwei Kopf-Fassungen, nicht zwei Screens** (§2). |
 | 24.08.2026 | **Erststart-Bildschirm entworfen**, Auftrag unter `docs/erststart-redesign.md`. Härtester Befund: die gewählte Sprache ist nur auf der linken Seite markiert — rechts überschreibt die Trennlinie des Segmented die Zustandskante, und der Standard ist Englisch, also ist der unmarkierte Zustand der, den jeder zuerst sieht. Dazu drei Cyans im Eingabefeld, ein Titel unter Maß mit violettem Schein, eine Karte ohne Rahmen und zwei Textglyphen. |
