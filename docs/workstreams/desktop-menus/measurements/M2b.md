@@ -327,10 +327,17 @@ entries only. That is stronger evidence than re-capturing the base tree would ha
 identical files there is no re-render drift to argue about, and Part 1 already showed that no `src/`
 byte differs between M2a's capture and this task's base.
 
-> **An agent does not report a visual result as approved.** The pairs go to the owner at the End stop,
-> with the ten style transitions named, the corrected `#34324a` (MENU-49) stated rather than left in
-> the images, and the two things the images **cannot** show called out: the segmented controls that no
-> cell renders (MENU-56) and the phone cost Q1 did not quote (MENU-57).
+> **An agent does not report a visual result as approved.** The pairs went to the owner at the End
+> stop, with the ten style transitions named, the corrected `#34324a` (MENU-49) stated rather than
+> left in the images, and the two things the images **cannot** show called out: the segmented controls
+> that no cell renders (MENU-56) and the phone cost Q1 did not quote (MENU-57).
+
+**APPROVED — owner, 2026-08-24: "Freigegeben wie gezeigt."** The comparison is accepted as shown, and
+both corrections with it: MENU-49 stands as taken (`--ed-strong`, Δ10, role over fit) and MENU-57 is
+accepted rather than reverted — the phone moves by the same numbers, and holding it still would have
+required a second per-value spelling below 1280 px, which is the duplication this round exists to
+remove. The 1280×720 `de` pair for both surfaces was reviewed directly, the remaining 24 alongside it
+in `evidence/M2b/compare/`. That closes the second of this task's two owner stops.
 
 ### Every number the decision block put to the owner, re-measured
 
