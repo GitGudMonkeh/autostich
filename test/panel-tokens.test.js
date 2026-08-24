@@ -604,6 +604,19 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        Gezaehlt statt gepraegt — der Nachfolger erbt damit eine gemessene Zahl statt eines Eindrucks. */
     ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/UpgradeScreen.jsx"), 9],
     ["index.css — .up-* (M3)", () => inkOfCss([/\.up-(?!banner)/]), 35],
+    /* #menu-rework M3 — DeckDetail.jsx wird GEZAEHLT, NICHT MIGRIERT, und das ist ein Befund (M3-F03),
+       keine Bequemlichkeit.
+       GEMESSEN im Produktionsbuild: der Screen ist ueber 1280 px GAR NICHT ERREICHBAR. Sein einziger
+       Einstieg ist der „Details"-Knopf im Zweig-Pfad, und der rendert dort nicht — bei 1280x720 und
+       1536x791 null Einstiege, bei 1100x800 vier. `GuideOverlay` mountet ihn NICHT; die geteilte
+       Komponente ist `GuideBody`, und die flieszt in die andere Richtung (DeckDetail importiert sie
+       aus GuideOverlay, nicht umgekehrt).
+       Damit liegt jeder Wert dieser Datei unter 1280 px — und das ist in 2c „What is permanently
+       exempt" und in diesem Auftrag ein ausdrueckliches Nicht-Ziel. Ihn auf die Achsen zu ziehen
+       hiesse, die Handy-Fassung zu bewegen, um einen Waechter gruen zu bekommen.
+       Die Ratsche kostet dagegen nichts und uebergibt M5 eine GEMESSENE Zahl statt eines Eindrucks —
+       dieselbe Antwort, die MENU-38 und die Tinte schon bekommen haben: zaehlen, nicht praegen. */
+    ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => inkOfJsx("src/ui/DeckDetail.jsx"), 12],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -698,6 +711,8 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        als gemessene Eins da statt als stillschweigende Null. */
     ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/UpgradeScreen.jsx"), 1],
     ["index.css — .up-* (M3)", () => edgeOfCss([/\.up-(?!banner)/]), 0],
+    /* Dieselbe Lage wie bei der Tinte: gezaehlt, nicht migriert — Begruendung dort. */
+    ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => edgeOfJsx("src/ui/DeckDetail.jsx"), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
