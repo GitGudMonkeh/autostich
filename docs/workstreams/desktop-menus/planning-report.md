@@ -856,6 +856,41 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.11 §3.1 was an import graph, not a render graph — the fourth correction
+
+*Measured 2026-08-24, preparing M7.*
+
+`StatsScreen.jsx` does **not** render `RunStats`. The only occurrence of that name in the file is
+**a comment** (`StatsScreen.jsx:23`). §3.1's claim that "M4 owns `RunStats`, `RunGraphs`, which
+`StatsScreen` (M7) and `GlobalLeaderboard` (M8) also render" was built on that comment.
+
+`AGENTS.md` — *Hazard: source-text ratchet tests* warns that guards "have historically matched their
+own explanatory comments". **I did it to my own inventory**, and it is the fourth of the same class:
+
+| # | Claim | Measured |
+| --- | --- | --- |
+| 1 | Six `*-ruhe` guards assert `!important` | Two — inferred from a shared filename suffix |
+| 2 | `GuideOverlay` mounts `DeckDetail` | It does not; `GuideBody` flows the other way |
+| 3 | The guide is a free-standing screen | It is a page inside the upgrade tree |
+| 4 | `StatsScreen` renders `RunStats` | A comment |
+
+**The rule, stated once and applied from here on:**
+
+> **A task's file surface is derived from the render graph, by grep for `<Component`, and never from
+> the import graph or from prose.** An import is not a render; a comment is not a render; a filename
+> is not an assertion.
+
+**What it changes for M7.** Its real surface is `StatsScreen` · `RunDetail` · `RunStats` ·
+`RunGraphs` · `Sparkline` — **≈1216 lines, not the 475 §3.1 promised** — because
+`StatsScreen.jsx:319` renders `RunDetail`, and the design document says `RunDetail` is part of its
+commission. M7 therefore becomes the owner of that shared subtree and **M4 inherits it**, inverting
+what §4.2 assumed.
+
+**And it puts M7 in contact with the battle session**, which no menu task has been before:
+`Sparkline` is rendered by `StatusRail.jsx:133` — the run stage — and `CardGrid`, a battle component,
+is mounted *inside* `RunDetail`. M7 converts the first value-preservingly, does not touch the second,
+and proves it with `run-stage` at zero deltas.
+
 ### 8.10 The guide is not a screen — it is a page inside the upgrade tree
 
 *Measured 2026-08-24, from the machine half M3 could not produce.*
