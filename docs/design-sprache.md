@@ -24,6 +24,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Statistik | `docs/statistik-redesign.md` |
 | Bestenliste | `docs/bestenliste-redesign.md` |
 | Deck-Werkstatt | `docs/werkstatt-redesign.md` |
+| Lauf-Bildschirm (kein Overlay, s. §8) | `docs/battlefield-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -159,6 +160,10 @@ Ergebnis leere Plätze behauptet, die es nie gab.
   wenn das Verhältnis extrem ist: das Kartenbrett (rund 1 : 2,2) in eine Reihe aus Querformaten zu
   setzen zwingt entweder das Brett auf Briefmarkengröße oder dem Nachbarn 130 px Luft auf. Dann
   bekommt es eine **Spur über mehrere Reihen** statt einer Zelle in einer.
+  In einem **flachen, breiten** Kasten heißt derselbe Satz: das Hochformat steht **neben** dem
+  übrigen Inhalt, nicht darüber oder darunter. *Gemessen am Eis-Panel des Laufs* — dasselbe
+  5 × 8-Brett kostet das Panel **259 px, wenn es unter der Ablesungszeile sitzt, und 190 px, wenn es
+  links daneben steht.* Gleiche Fassung, gleiche Daten, nur die Achse ist richtig.
 - **Mehrhöhe geht in die Kacheln, nicht in die Fugen.** Wo ein Panel höher ist als sein Inhalt,
   wachsen seine Elemente. Die Luft auf die Abstände zwischen Gruppen zu verteilen macht aus einem
   Panel drei lose Blöcke — und die Zahlen bleiben klein, obwohl Platz da wäre.
@@ -168,6 +173,12 @@ Ergebnis leere Plätze behauptet, die es nie gab.
 - **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels.** Luft am Ende liest sich
   als „die Spalte ist zu Ende", Luft in der Mitte als „hier fehlt etwas". Eine Spalte ist deshalb ein
   eigener Stapel und keine Rasterzeile, die sich am längsten Nachbarn streckt.
+- **Und dasselbe gilt INNERHALB einer Zeile.** Ein Raster, das sich in der Höhe strecken darf, legt
+  die Mehrhöhe in seine Zeilen statt an seinen Fuß — jede Zeile wird dann etwas zu hoch, und die Luft
+  steht mitten im Panel. Der Fall ist schwerer zu sehen als der obere, weil nichts überläuft und
+  nichts abgeschnitten wird; man sieht nur ein Panel, das lose wirkt. *Gemessen am Lauf-Bildschirm:*
+  eine 42-px-Zeile für 17 px Inhalt und eine 38er für 17, zusammen 70 px Luft in vier Panels. Ein
+  Raster, das nicht ausdrücklich am Anfang ausgerichtet ist, ist der Regelfall dieses Fehlers.
 
 ### Zählen statt aufzählen
 
@@ -226,6 +237,21 @@ Zwei Befunde, die daran hängen und über den Screen hinausgehen:
   eine Kante muss etwas *unterscheiden*; der zweite Fall ist die Kante, die etwas **doppelt**. Die
   Pack-Kachel trug die Akzentfarbe ihres Decks als 4-px-Kante — über einem Coverbild, das dieselbe
   Farbe großflächig zeigt. Die vier Pixel sind am Text besser aufgehoben.
+- **Ein Feld mit zwei Werten braucht die Breite für beide.** Wo eine Ablesung außer ihrem Wert noch
+  einen Zusatz trägt („21 · +2695 %", „31 % +18 Ion."), ist nicht der Wert zu breit, sondern das Feld
+  zu schmal — und es gehört über die volle Spurbreite, während die einwertigen Nachbarn sich eine
+  Zeile teilen. *Gemessen an den Multiplikatoren des Laufs:* in einer 214-px-Spur fehlten dem
+  Formationswert 35 px. **Umbrechen ist dafür kein Ersatz:** es senkte die abgeschnittenen Stellen
+  von vier auf zwei und ließ die Spur von 340 auf 375 px wachsen — die Seite lief dann 37 px über.
+  Ein zu schmales Feld kostet Breite; ein umbrechendes kostet Höhe, und Höhe ist meist teurer.
+
+**Und eine Warnung zum Messen selbst, weil sie stille Fehlmessungen erzeugt:** *was ein Panel nicht
+abschneidet, meldet keinen Überlauf.* Ein gestrecktes Flex-Kind mit `overflow: visible` gibt über
+`scrollHeight` immer seine eigene Boxhöhe zurück — es „passt" also scheinbar immer, während sein
+Inhalt längst darunter hinausläuft. Der Bedarf wird deshalb am **Klon im freien Messrahmen**
+genommen, auf die tatsächlich gerenderte Breite gesetzt und in der Höhe frei. Dasselbe gilt für
+Kontrast: wer jedes Textblatt gegen die Panelfläche misst, meldet dunkle Schrift auf einem hellen
+Chip als 1,07 : 1 — der Grund muss der sein, der wirklich dahinterliegt.
 
 ### Haarlinie
 
@@ -613,6 +639,24 @@ gedämpft und sagt das — sie ist nicht bei null.
   nachlesen und die Quelle nennen. (Anlass: eine Gruppierung der Baum-Lanes wurde aus der
   Farbverteilung erschlossen statt aus den `prereq`-Ketten — und war falsch.)
 
+### Der Lauf-Bildschirm ist kein Overlay — und was hier trotzdem für ihn gilt
+
+Dieses Dokument heißt *Overlays und Menüs*. Der Lauf ist keins von beidem: kein Überzug, keine Karte,
+kein Schließen-Knopf, und er wird nicht gelesen, sondern **beobachtet, während er sich bewegt**.
+Beim Umbau seiner Instrumente (`docs/battlefield-redesign.md`) war die Abgrenzung deshalb die erste
+Frage, und sie ist hier entschieden, damit der nächste Screen sie nicht neu erfinden muss:
+
+| | gilt | warum |
+| --- | --- | --- |
+| **§1 Fundament** | **ja** | Spaltenbreiten nach Inhalt, Restluft an den Fuß, Zählen statt aufzählen, Hochformat, umschaltendes Panel — reine Layout-Logik, und die Befunde des Laufs waren genau ihre Verletzungen (Spurbreite schwankte um Faktor 9,7, 35 % des Inhalts sichtbar) |
+| §2 Kopf-Kanon | nein | der Lauf hat keinen Overlay-Kopf und keine Aktionszone |
+| §3 Farbrollen | teilweise | die vier Fraktionsfarben sind dort **Inhalt**, nicht Chrome — sie bleiben unangetastet |
+| §4 „alles Bedienbare misst 44 px" | nein | *gemessen* sind 19 von 22 Bedienelementen der Instrumentenbank kleiner, und jeder Pixel Höhe kostet dort 2,5 px Bühnenbreite |
+
+Die allgemeine Form: **§1 ist Layout und gilt überall, wo Flächen und Inhalte gegeneinander stehen.
+§2 und §4 sind Overlay-Konventionen und gelten nur dort.** Wer einen weiteren Nicht-Overlay-Screen
+anfasst, entscheidet nach demselben Schnitt und trägt das Ergebnis hier nach.
+
 ---
 
 ## 9. Offene Punkte
@@ -653,6 +697,10 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 
 | Datum | Was |
 | --- | --- |
+| 24.08.2026 | **Lauf-Bildschirm entworfen**, Auftrag unter `docs/battlefield-redesign.md`. Härtester Befund: die Instrumentenbank war um Faktor 2,2 überbucht (2460 px Bedarf auf 1140 px), und die Breite hing an der ANZAHL der Fraktionen statt am Inhalt — dieselbe Spur maß je nach Lauf 584 oder 60 px. Sichtbar waren 35 % des Inhalts. Neu: Perks und Multiplikatoren stehen als umschaltende Spalten neben der Bühne, unten ein Element im Fokus und die übrigen als Kopfzeilen. Ergebnis über vier Lauf-Formen und drei Größen: 0 Scrollbereiche, 0 abgeschnittene Stellen, Seite exakt Fensterhöhe. |
+| 24.08.2026 | **Die Abgrenzung „was gilt für einen Nicht-Overlay-Screen" ist entschieden** (§8): §1 ist Layout und gilt überall, §2 und §4 sind Overlay-Konventionen und gelten dort nicht. Anlass war der Lauf; die Frage stellt sich beim Hub genauso und war bis dahin offen. |
+| 24.08.2026 | Drei Ergänzungen in §1: **Restluft gehört auch INNERHALB einer Zeile an den Fuß** (ein streckbares Raster legt die Mehrhöhe in seine Zeilen — gemessen 70 px Luft in vier Panels, ohne dass etwas überläuft), **ein Hochformat steht in einem flachen Kasten NEBEN dem Inhalt** (dasselbe Brett kostet unten 259 px, daneben 190), und **ein Feld mit zwei Werten braucht die Breite für beide** (Umbrechen ist kein Ersatz: es kostete 35 px Breite gegen 35 px Höhe, und Höhe war teurer). |
+| 24.08.2026 | Dazu eine Mess-Warnung in §1: **was ein Panel nicht abschneidet, meldet keinen Überlauf** — ein gestrecktes Flex-Kind mit `overflow: visible` meldet über `scrollHeight` immer seine eigene Boxhöhe. Bedarf wird am Klon im freien Rahmen genommen. Ebenso beim Kontrast: gegen den Grund messen, der wirklich dahinterliegt, nicht gegen die Panelfläche. Beide Fehler sind in dieser Session einmal gemacht und korrigiert worden. |
 | 24.08.2026 | **Das weiche Trennzeichen ist erlaubt** (§7, benannte Ausnahme) — Entscheidung des Owners. Nur dort, wo ein einzelnes Wort breiter ist als sein Feld und die Alternative ein abgeschnittener Name wäre. `hyphens: auto` ist dafür geprüft und wirkungslos. Damit ist der zweite offene Punkt der Werkstatt erledigt. |
 | 24.08.2026 | Zum ersten offenen Punkt (**Farbe eines DP-Preises**) nachgeschlagen statt erschlossen: DP trägt heute **drei** Farben, und auf dem Hub ist es bereits das Währungsgold `#d6ab6b`. Damit gibt es keine DP-Identität, die eine Umstellung bräche. Empfehlung Gold, mit den Kosten am Endscreen notiert. Entscheidung steht noch aus. |
 | 24.08.2026 | **Deck-Werkstatt entworfen**, Auftrag unter `docs/werkstatt-redesign.md`. Der am weitesten gebaute der sieben Screens — Überzug, Panel-Aufteilung, schmale Spalte links, kein Blur, Haarlinie 2 px sind bereits richtig. Drei Löcher: acht von dreißig Pack-Namen abgeschnitten, elf von zwölf Freischalt-Bedingungen abgeschnitten, und der Effekte-Reiter endet 153 px vor dem Bildschirmende (226 px bei 1536 × 791). |
