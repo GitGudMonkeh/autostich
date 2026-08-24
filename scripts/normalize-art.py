@@ -86,11 +86,23 @@ WEBP_Q = 88            # grain at this strength costs only ~2% file size
 STRENGTH_LUM = 0.60
 STRENGTH_SAT = 0.55
 
-# Deliberate darkening bias on the brightness target. The set median alone only
-# unifies, it does not darken - a revision without this bias came out brighter
-# than the sources, and brightened neon reads as hazy.
-# Hard rule: never brighter than the original on average. `--check` measures it.
-LUM_BIAS = 0.88
+# The three dials that decide how far the artwork treatment goes. They are tuned
+# TOGETHER, because LUM_BIAS on its own barely moves the result: at 0.95 against
+# 0.88 the mean brightness differs by ~1.5%, since the gamma clamp binds first.
+# Most of the darkening actually comes from the vignette and the white-point damp.
+#
+# These values are the "gentle" step, chosen against real screenshots of the
+# workshop grid rather than against numbers: nearly all of the convergence gain
+# sits in the first step away from untreated, and anything stronger costs neon
+# brightness that is part of what the game is selling. For the record, measured
+# over the grid as the app renders it - untreated 0.1459, gentle 0.1349,
+# medium 0.1327, strong 0.1302.
+#
+# Hard rule regardless of tuning: never brighter than the original on average.
+# `--check` asserts it.
+LUM_BIAS = 0.98        # darkening bias on the luminous-mass target
+VIGNETTE = 0.10        # corner falloff on the artwork
+WHITE_POINT = 0.92     # white point the artwork is damped down to (never up)
 
 # Frames chosen for the contact sheet: a spread of hue, subject and density.
 # Missing entries are skipped, so renaming a deck cannot break the tool.
@@ -182,7 +194,7 @@ def treat_art(a, tgt_lum, tgt_sat, rng):
     # 1. Set the black point; only ever damp the white point. Dividing by the
     #    99.8th percentile would otherwise brighten neon-on-black about twofold.
     lin = np.clip(lin - np.percentile(luma(lin), 0.5), 0, 1)
-    lin *= min(1.0, 0.80 / max(float(np.percentile(luma(lin), 99.8)), 1e-4))
+    lin *= min(1.0, WHITE_POINT / max(float(np.percentile(luma(lin), 99.8)), 1e-4))
 
     # 2. Align luminous mass, asymmetrically: free to darken, barely able to
     #    brighten. Measured and solved in sRGB because `tgt_lum` comes from
@@ -204,7 +216,7 @@ def treat_art(a, tgt_lum, tgt_sat, rng):
     h, w = a.shape[:2]
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     r = np.sqrt(((xx / w - .5) / .5) ** 2 + ((yy / h - .5) / .5) ** 2) / 1.414
-    a = a * (1.0 - 0.22 * np.clip(r, 0, 1) ** 2.2)[..., None]
+    a = a * (1.0 - VIGNETTE * np.clip(r, 0, 1) ** 2.2)[..., None]
 
     # 5. Grain in the MIDTONES, zero at black and white. Symmetric noise on
     #    black gets clipped at 0, leaving only the positive half - which raises
