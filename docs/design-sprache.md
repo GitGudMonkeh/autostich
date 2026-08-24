@@ -14,7 +14,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Optionen | `docs/optionen-redesign.md` |
 | Feedback-Melder | `docs/feedback-redesign.md` |
 | Mainscreen & Marke | `docs/mainscreen-marke.md` |
-| Upgrade-Baum | alle vier Schritte entschieden: Kopf & Legende, Allgemein-Seite, Fraktionsseite, Legendär-Phase |
+| Upgrade-Baum | `docs/upgrade-baum-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
