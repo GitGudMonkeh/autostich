@@ -565,6 +565,95 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
   });
 });
 
+/* ============================================================================
+   DIE KANTEN-RATSCHE (MENU-38) — beim Freeze beschlossen, von MH1 gebaut.
+
+   DIE DURCHSICHTIGE NEUTRALE KANTE IST KEIN TOKEN, und sie wird in dieser Runde auch keins. Der
+   Beschluss steht in conventions.md 2c: `.as-edge-*` hat 143 Fundstellen und ist in dieser Runde
+   nicht migriert. Ein Token, das fuer EINEN Alpha der Familie gepraegt wird, saesse in einem
+   eingefrorenen Vokabular auf einem Wert, den kein Screen waehlen durfte — und die spaetere
+   Migration muesste ihn entweder ehren oder brechen. Also dieselbe Form wie bei der Tinte: ZAEHLEN,
+   NICHT PRAEGEN.
+
+   DIE FAMILIE, FRISCH GEMESSEN (MH1, Stand 631a0b4e). Das Urteil sprach von sieben Alphas, M2b fand
+   einen achten (MENU-44). Gemessen sind es ZWOELF, ueber 64 Literale in vier Dateien:
+
+     .07 .08 .10 .12 .13 .14 .16 .18 .22 .25 .30 .35
+
+   Vier davon kannte weder das Urteil noch MENU-44: `.08` (index.css), `.30` (index.css), `.22` und
+   `.25` (beide StartScreen.jsx, inline). Die Zahl im Urteil war eine Schaetzung ueber `.as-edge-*`;
+   die Familie ist breiter als die Klasse, die sie traegt. Der Startwert unten kommt deshalb aus der
+   Messung und nicht aus dem Urteil — genau das ist der Auftrag.
+
+   WARUM JEDE OBERGRENZE UNTEN NULL IST, und warum das kein leerer Waechter ist. Die Kante IST eine
+   der fuenf Achsen, anders als die Tinte. In einer migrierten Regel faellt ein Kanten-Literal also
+   schon an der Achsen-Pruefung. Diese Ratsche deckt genau das ab, wo jene NICHT hinsieht:
+
+     * `exemptFns` — die Buehnen von CustomizeScreen.jsx sind von der Achsen-Pruefung ausgenommen;
+     * `stateLiterals` — namentlich erlaubte Werte;
+     * die GANZE Datei statt der Haken-Region, aus demselben Grund wie bei der Tinte.
+
+   Deshalb zaehlt sie, wie die Tinte zaehlt: ueber die ganze migrierte Einheit, ohne Ausnahmen. Die
+   Werkstatt stand hier auf EINS — die Haarlinie von `.cz-fxrow` — und M2b hat sie auf `--ed-quiet`
+   gezogen (MENU-44, gemessen 3/255 ueber der Panelflaeche). Die Null ist also ein ERREICHTER Zustand
+   und keine Annahme, und ab hier ist sie eine Ratsche: wer eine Kante als Literal zurueckbringt,
+   faellt.
+
+   EINE RATSCHE, DEREN OBERGRENZEN ALLE NULL SIND, KANN AUS ZWEI GRUENDEN GRUEN SEIN — weil nichts da
+   ist, oder weil sie nichts mehr findet. Das ist die stillste Art, diesen Waechter wertlos zu machen,
+   und sie ist hier akuter als bei der Tinte, wo die Summe 40 uebersteigt. Die Lebendprobe unten
+   zaehlt die Familie deshalb im BAUM und verlangt, dass der Sucher sie dort noch findet. Sie steht
+   bewusst als Untergrenze und nicht als `toBe`: was ausserhalb der migrierten Einheiten liegt,
+   gehoert dieser Runde nicht, und eine Zahl, die bei jeder fremden Aenderung faellt, blockiert Arbeit,
+   die noch nicht passiert ist.
+   ============================================================================ */
+const EDGE_NEUTRAL = /rgba\(\s*150\s*,\s*150\s*,\s*170\s*,\s*[0-9.]+\s*\)/g;
+const edgeIn = (text) => [...withoutFallbacks(text).matchAll(new RegExp(EDGE_NEUTRAL.source, "g"))].length;
+/* UEBER DIE GANZE DATEI, wie bei der Tinte und aus demselben Grund: `exemptFns` sagt „das ist kein
+   Panel", nicht „hier schaut niemand hin". Eine Kante in einer Vorschau-Szene ist dieselbe Familie. */
+const edgeOfJsx = (path) => edgeIn(strip(read(path)));
+
+describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale Kanten wachsen nicht", () => {
+  const css = read("src/index.css");
+  const all = rules(css);
+  const edgeOfCss = (res, ausser = []) => all
+    .filter(([sel]) => res.some((r) => r.test(sel)) && !ausser.some((r) => r.test(sel)))
+    .reduce((n, [, body]) => n + edgeIn(body), 0);
+
+  /* Dieselbe Aufteilung wie bei der Tinte — Schale und Inhalte getrennt, damit M2as gemessene Zahl
+     nicht ploetzlich auf der Summe beider Haelften steht. */
+  const CAP = [
+    ["src/ui/modalStyle.jsx", () => edgeOfJsx("src/ui/modalStyle.jsx"), 0],
+    ["src/ui/OptionsModal.jsx", () => edgeOfJsx("src/ui/OptionsModal.jsx"), 0],
+    ["src/ui/optionsBits.jsx", () => edgeOfJsx("src/ui/optionsBits.jsx"), 0],
+    ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/CustomizeScreen.jsx"), 0],
+    ["index.css — .op-* (M1)", () => edgeOfCss([/\.op-/, /\.as-opt-/]), 0],
+    ["index.css — .cz-* Schale (M2a)", () => edgeOfCss(M2A_SHELL_SELECTORS), 0],
+    ["index.css — .cz-* Inhalte (M2b)", () => edgeOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 0],
+  ];
+
+  for (const [name, count, cap] of CAP) {
+    it(`${name}: ${cap} Kanten-Literale, nicht mehr`, () => {
+      expect(count(), `durchsichtige neutrale Kante in ${name} — die Ratsche dreht nur nach unten`).toBe(cap);
+    });
+  }
+
+  it("der Sucher findet die Familie im Baum — sonst waere die Ratsche still gruen", () => {
+    /* Die Lebendprobe. Ohne sie wuerde ein zerbrochener Ausdruck — ein Leerzeichen mehr in der
+       Schreibweise, ein vergessenes `\s*` — jede Obergrenze oben mit „0 gefunden" erfuellen und die
+       Ratsche fuer immer gruen melden, ohne je etwas zu pruefen. Gemessen 58 in index.css; die
+       Untergrenze steht tief genug, dass ein nicht-migrierter Screen sie im Vorbeigehen nicht
+       reisst, und hoch genug, dass ein kaputter Ausdruck sie nicht mehr erreicht. */
+    expect(edgeIn(strip(css)), "der Ausdruck der Kanten-Familie findet nichts mehr").toBeGreaterThan(30);
+  });
+
+  it("die migrierten Einheiten sind zusammen auf null — der Startwert, den M3 erbt", () => {
+    /* Ausdruecklich als eigene Zeile und nicht nur als sieben Einzelzeilen: DAS ist die Zahl, die
+       MENU-38 dem Nachfolge-Workstream uebergeben soll. Sie ist erreicht, nicht angenommen. */
+    expect(CAP.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
+  });
+});
+
 describe("#menu-rework — das Vokabular selbst bleibt vollstaendig", () => {
   const theme = (() => {
     const css = strip(read("src/index.css"));

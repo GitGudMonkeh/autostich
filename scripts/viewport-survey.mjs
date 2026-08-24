@@ -24,6 +24,18 @@
    was earned: an unpinned as-panel-sweep made the shop differ from itself by 0.66 % of its pixels
    (evidence-T1.md §7.6.1).
 
+   SURFACES ONLY. CONTROL STATES ARE NOT CAPTURED AND ARE VERIFIED BY HAND.
+
+   Every cell below is a surface in its RESTING state. The navigation reaches the screen and the probe
+   reads it as it lands; nothing clicks, hovers, focuses or disables anything afterwards. So the
+   segment controls are never captured selected, hovered, focused or disabled, and no gate built on
+   this matrix can see a change to those states (MENU-56).
+
+   This is a deliberate boundary, not an omission to be fixed in passing — owner decision, 2026-08-24:
+   a state axis pays off in the design rework, which will know which states carry a decision. Guessing
+   them now means touching it twice. Until then the states are verified BY HAND, and this paragraph is
+   what stops a green run from being read as coverage it does not have.
+
    REACHABILITY IS REPORTED, NEVER ASSUMED. Each surface names a marker that must exist once its
    navigation has run. If the marker is missing the cell is recorded as `reached: false` with the
    step that failed, and the run continues. A survey that silently measured the hub five times while
