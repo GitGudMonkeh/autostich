@@ -71,11 +71,17 @@ describe("#rd-ruhe — dieselbe Kachelform wie in Statistik und Victory", () => 
 });
 
 describe("#rd-ruhe — was der Ton NICHT anfassen darf", () => {
-  it("jede Regel ist auf .rd-card eingegrenzt — RunStats teilen sich drei Screens", () => {
-    /* Ohne die Eingrenzung nähme dieser Screen Victory und Chronik mit, die ihre eigene Fassung haben. */
+  it("jede Regel ist auf DIESEN Screen eingegrenzt — RunStats teilen sich drei Screens", () => {
+    /* Ohne die Eingrenzung nähme dieser Screen Victory und Chronik mit, die ihre eigene Fassung haben.
+
+       #menu-rework M7 — die Zusicherung ist „auf DIESEN Screen eingegrenzt", und die alte Fassung
+       nannte dafür EINEN Träger: `.rd-card`. Das ist derselbe Fehler wie bei MENU-38, nur kleiner —
+       eine Grenze, die nach ihrem sichtbarsten Träger gezogen wird, trifft irgendwann etwas, das
+       genauso dazugehört. `.rd-c1 .rs-cell` grenzt exakt so scharf ein wie `.rd-card .rs-cell`: die
+       vier Panel-Haken gibt es nur in diesem Screen. Geprüft wird deshalb der PRÄFIX. */
     for (const klasse of ["rs-cell", "rs-tree", "rs-note", "rd-blist"])
       for (const m of css.matchAll(new RegExp(`([^{}\\n]*\\.${klasse}[^{}]*)\\{`, "g")))
-        expect(m[1], `\\.${klasse} ohne .rd-card-Eingrenzung: ${m[1].trim().slice(0, 70)}`).toMatch(/\.rd-card|\.go-/);
+        expect(m[1], `\\.${klasse} ohne Screen-Eingrenzung: ${m[1].trim().slice(0, 70)}`).toMatch(/\.rd-|\.go-/);
   });
 
   it("die Gebäudeliste behält ihren blauen Rahmen (Architekt-Signal)", () => {

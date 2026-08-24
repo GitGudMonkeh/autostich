@@ -104,6 +104,15 @@ const KEPT = [
     why: "observed overlap on a laptop of that width" },
   { rel: "index.css", needle: "1400 x 950 ohne Scrollen",
     why: "window sizes verified to fit without scrolling" },
+  /* #menu-rework M7 — two more of the same kind: the statistics card's measured height, recorded at
+     the three window sizes the design document names as its own measurement basis. The number is
+     982,56 px AT those sizes; rewriting 1400 to 1280 would not carry the prose forward, it would
+     falsify a measurement. Same entry twice because the record is stated in both the stylesheet
+     (where the layout decision lives) and the component (where the DOM decision lives). */
+  { rel: "index.css", needle: "1280 x 720, 1400 x 700 und 1536 x 791 dieselben 982,56 px",
+    why: "measured card height at the three named window sizes" },
+  { rel: "ui/StatsScreen.jsx", needle: "1280 × 720, 1400 × 700 und 1536 × 791 gemessen dieselben 982,6 px",
+    why: "the same measurement, at the component that carries the decision" },
 ];
 
 describe("#viewport-1280 — the threshold moved completely", () => {

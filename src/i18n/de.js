@@ -784,8 +784,19 @@ export default {
 
   /* ---- Statistiken (StatsScreen) ---- */
   "stats.title": "Statistiken",
+  /* #menu-rework M7 — Kopf-Kanon (design-sprache.md §2). Der Eyebrow nennt den BEREICH, der Titel
+     den Screen, die Unterzeile beantwortet die Frage, die der Screen sonst offen lässt. Beide Wörter
+     sind dort schon entschieden und nicht hier erfunden; „Verlauf" ist geprüft und verworfen (zu nah
+     am Titel und für die Lauf-Historie belegt).
+     Die Unterzeile ERSETZT `stats.desk.readout`: der Auskunftssatz stand in der Aktionszone, wo §2
+     nur Aktionen zulässt, und er war Material für genau diese Zeile. */
+  "stats.eyebrow": "Rückblick",
+  "stats.sub": "Was du bisher gespielt hast. Eine Zeile anklicken öffnet den vollständigen Lauf.",
+  /* Ein reservierter, noch nicht belegter Platz (design-sprache.md §1, „Wenn die Anzahl schwankt":
+     ein ZIEL reserviert nach dem Höchstfall und sagt, was fehlt). Er ist nicht bei null — er ist
+     leer, und das ist eine andere Aussage. */
+  "stats.slot.empty": "noch nicht gespielt",
   /* #desktop: Auskunftszeile im Kopf der Statistik (erst ab 1280 px, neben dem Titel). */
-  "stats.desk.readout": "Alle Zahlen liegen lokal auf diesem Gerät. Eine Zeile anklicken öffnet den vollständigen Lauf.",
   "stats.empty": "Noch keine Läufe — spiel einen Run, dann erscheinen hier deine Statistiken.",
   "stats.overview": "Übersicht",
   "stats.bestScore": "Bestscore",
@@ -805,7 +816,6 @@ export default {
   "stats.mostPicked": "Am häufigsten",
   "stats.mostPicked.hint": "über deine Historie",
   "stats.topSkills": "Meistgewählte Skills",
-  "stats.noSkills": "Noch keine Skills gespielt.",
   "stats.topPerks": "Meistgewählte Perks",
   "stats.archUse": "Archetyp-Nutzung",
   "stats.archUse.right": "{n}× · Ø {avg}",
@@ -894,7 +904,8 @@ export default {
   /* ---- Seed-Chip (SeedChip) ---- */
   "seed.copy": "Seed kopieren",
   "seed.copied": "kopiert",
-  "seed.replay": "↻ Nachspielen",
+  "seed.replay": "Nachspielen",
+  "rundetail.eyebrow": "Rückblick · Lauf",
   "seed.replay.title": "Diesen Seed nachspielen",
 
   /* ---- Bestenliste (LeaderboardScreen · GlobalLeaderboard) ---- */

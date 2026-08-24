@@ -46,25 +46,77 @@ describe("#desktop-screens — die Klammer ist unterhalb von 1280 px keine Box",
   });
 
   it("die desktop-only Zeilen sind am Handy ausgeblendet", () => {
-    // Auskunftszeile der Statistik und die Zweitzeilen der Navigationsspalte gibt es nur ab 1280 px.
-    expect(read("ui/StatsScreen.jsx")).toMatch(new RegExp(`className="st-readout hidden ${DT_RX}block"`));
+    /* Die Zweitzeilen der Navigationsspalte gibt es nur ab 1280 px.
+
+       #menu-rework M7 — DIE STATISTIK HAT KEINE AUSKUNFTSZEILE MEHR. Sie stand in der Aktionszone,
+       wo der Kopf-Kanon nur Aktionen zulaesst, und ist die Unterzeile geworden. An ihre Stelle
+       treten Eyebrow und Unterzeile — dieselbe Zusicherung („was es nur ab 1280 px gibt, ist darunter
+       AUS DEM LAYOUT"), anderer Mechanismus: `display: none` in der Basis statt `hidden dt:block` im
+       Klassen-Literal. Das ist die Bauart, die M3 fuer denselben Fall am Baum gewaehlt hat, und
+       geprueft wird sie hier genauso: beide Teile stehen im JSX UND sind in der BASIS aus. */
+    const stats = read("ui/StatsScreen.jsx");
+    for (const hook of ["st-eyebrow", "st-sub"]) {
+      expect(stats, `${hook} steht nicht im JSX — der Kopf-Kanon fehlt`).toMatch(new RegExp(`className="${hook}"`));
+    }
+    const versteckt = base.match(/^\.st-eyebrow[^{]*\{([^}]*)\}/m);
+    expect(versteckt, "Basis-Regel fuer den Statistik-Kopf nicht gefunden").toBeTruthy();
+    expect(versteckt[0], "st-sub faehrt nicht mit — eine Haelfte des Kopfs stuende am Handy").toContain("st-sub");
+    expect(versteckt[1]).toMatch(/display:\s*none/);
     expect(read("ui/LeaderboardScreen.jsx")).toMatch(new RegExp(`className="lb-tab-s hidden ${DT_RX}block"`));
   });
 });
 
 describe("#desktop-screens — Statistik", () => {
-  it("die vier Blöcke haben feste Spaltenplätze (nicht auto-flow)", () => {
-    for (const [sec, col] of [["overview", "1 / -1"], ["best", "1"], ["works", "1"], ["runs", "2"], ["picked", "3"]]) {
+  it("jeder Block hat einen festen Platz (nicht auto-flow)", () => {
+    /* #menu-rework M7 — DREI Bloecke stehen selbst im Raster, ZWEI stehen in einem Stapel, der
+       selbst im Raster steht. Die Zusicherung ist unveraendert: kein Block findet seinen Platz ueber
+       die Reihenfolge im JSX, sonst entscheidet die naechste eingefuegte Sektion neu, was wo landet.
+       Was sich geaendert hat, ist wo der Platz von „Bestes Build" und „Was am besten laeuft" steht —
+       an ihrer Spalte, weil eine Spalte jetzt ein Stapel ist und keine zwei Rasterzeilen
+       (Restluft gehoert an den Fuss einer Spalte, nie zwischen zwei Panels). */
+    for (const [sec, col] of [["overview", "1 / -1"], ["runs", "2"], ["picked", "3"]]) {
       const rule = deskBlock.match(new RegExp(`\\.st-sec\\[data-sec="${sec}"\\][^{]*\\{([^}]*)\\}`));
       expect(rule, `Platz für data-sec="${sec}" fehlt`).toBeTruthy();
       expect(rule[1], `data-sec="${sec}" soll in Spalte ${col}`).toMatch(new RegExp(`grid-column:\\s*${col.replace(/[/]/g, "\\/")}`));
     }
+    const stapel = deskBlock.match(/\.st-col1\s*\{([^}]*)\}/);
+    expect(stapel, "der Stapel der ersten Spalte fehlt").toBeTruthy();
+    expect(stapel[1], ".st-col1 hat keinen festen Platz — dann entscheidet die JSX-Reihenfolge").toMatch(/grid-column:\s*1/);
+    /* Und die zwei Bloecke stehen wirklich DARIN: ein `.st-col1` mit festem Platz, das die zwei
+       Sektionen nicht enthaelt, ist eine leere Klammer und nagelt nichts fest. */
+    const jsx = read("ui/StatsScreen.jsx");
+    const stapelAt = jsx.indexOf('className="st-col1"');
+    expect(stapelAt, "st-col1 steht nicht im JSX").toBeGreaterThan(-1);
+    for (const sec of ["best", "works"]) {
+      expect(jsx.indexOf(`id="${sec}"`), `data-sec="${sec}" steht nicht mehr im Stapel der ersten Spalte`)
+        .toBeGreaterThan(stapelAt);
+    }
   });
 
-  it("die letzte Rasterzeile ist 1fr (sonst reißt es die linke Spalte auseinander)", () => {
-    const rule = deskBlock.match(/\.st-card\s*\{([^}]*)\}/);
-    expect(rule, ".st-card-Regel nicht gefunden").toBeTruthy();
-    expect(rule[1]).toMatch(/grid-template-rows:[^;]*1fr\s*;/);
+  it("die Restluft sammelt sich am FUSS der ersten Spalte, nicht zwischen ihren Panels", () => {
+    /* Der alte Wortlaut war „die letzte Rasterzeile ist 1fr", und die Begruendung dahinter war:
+       ohne sie verteilt das Raster die Mehrhoehe der spannenden Spalten auf BEIDE Zeilen der kurzen
+       Spalte und reisst dort eine Luecke auf.
+
+       #menu-rework M7 — DIESE FEHLERART GIBT ES NICHT MEHR, weil die kurze Spalte keine zwei
+       Rasterzeilen mehr hat: sie ist ein Flex-Stapel, und ein Stapel kann seine Kinder gar nicht
+       auseinanderziehen — die Restluft landet an seinem Fuss. Das ist die staerkere Zusicherung, und
+       sie wird hier gepruef statt der Rasterzeile, die sie ersetzt hat. Die `1fr`-Zeile bleibt
+       zusaetzlich verlangt: sie ist das, was dem Rumpf ueberhaupt eine bestimmte Hoehe gibt, ohne
+       die die Lauf-Liste ihre Spalte nicht messen kann. */
+    const stapel = deskBlock.match(/\.st-col1\s*\{([^}]*)\}/);
+    expect(stapel, ".st-col1-Regel nicht gefunden").toBeTruthy();
+    expect(stapel[1], "die erste Spalte ist wieder ein Raster — dann zieht es ihre Panels auseinander")
+      .toMatch(/display:\s*flex/);
+    expect(stapel[1]).toMatch(/flex-direction:\s*column/);
+    for (const [sel, name] of [[/\.st-card\s*\{([^}]*)\}/, ".st-card"], [/\.st-body\s*\{([^}]*)\}/, ".st-body"]]) {
+      const rule = deskBlock.match(sel);
+      expect(rule, `${name}-Regel nicht gefunden`).toBeTruthy();
+      const rows = rule[1].match(/grid-template-rows:([^;]*);/);
+      expect(rows, `${name} ohne feste Zeilen`).toBeTruthy();
+      expect(rows[1].trim().split(/\s+(?![^(]*\))/).pop(), `${name}: die letzte Zeile nimmt die Restluft nicht auf`)
+        .toMatch(/1fr/);
+    }
   });
 
   it("Skills und Perks stehen in der schmalen Spalte untereinander", () => {

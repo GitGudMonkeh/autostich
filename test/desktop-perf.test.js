@@ -175,18 +175,34 @@ describe("#breite — alle gerahmten Screens stehen gleich breit im Bild", () =>
 });
 
 describe("#rd-scroll — die Lauf-Details müssen scrollen können", () => {
-  it("der Wurzelknoten hat den Scroller und verankert die Karte oben", () => {
+  it("EIN Element trägt den Scroller, und die Karte klemmt nur, wenn es ein anderes tut", () => {
     /* Der Fehler, wie er ausgeliefert war: die Karte gab auf dem Desktop ihren eigenen Scroller ab
        (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte nie einen.
-       Inhalt über der Fensterhöhe war damit unerreichbar. `align-items: flex-start` gehört dazu:
-       ein zentriertes Flex-Kind, das höher ist als sein Container, ragt nach OBEN heraus, und dorthin
-       kommt kein Scrollbalken. Statistik und Bestenliste tragen ihren Scroller im JSX. */
+       Inhalt über der Fensterhöhe war damit unerreichbar.
+
+       #menu-rework M7 — DIE ZUSICHERUNG IST DIE ERREICHBARKEIT, NICHT DER MECHANISMUS, und die alte
+       Fassung nagelte den Mechanismus fest: „die Karte darf sich NICHT auf die Fensterhöhe klemmen".
+       Seit der Kopf den Scroller verlassen hat, KLEMMT sie — und genau deshalb ist der Inhalt
+       erreichbar: `.rd-body` scrollt darunter. Beide Bauarten sind richtig, und die falsche ist die
+       dritte: geklemmte Karte OHNE inneren Scroller. Genau die schließt dieser Test jetzt aus.
+
+       `align-items: flex-start` gehört weiter dazu: ein zentriertes Flex-Kind, das höher ist als sein
+       Container, ragt nach OBEN heraus, und dorthin kommt kein Scrollbalken. */
     const rdRoot = css.match(/\.rd-root \{([^}]*)\}/);
     expect(rdRoot, ".rd-root-Regel fehlt").toBeTruthy();
     expect(rdRoot[1]).toMatch(/overflow-y:\s*auto/);
     expect(rdRoot[1]).toMatch(/align-items:\s*flex-start/);
-    // Und die Karte darf sich NICHT wieder auf die Fensterhöhe klemmen — sonst scrollt gar nichts mehr.
-    expect(css).toMatch(/\.rd-card \{[^}]*max-height:\s*none/);
+    const cardRule = css.match(/\.rd-card \{([^}]*)\}/);
+    expect(cardRule, ".rd-card-Regel fehlt").toBeTruthy();
+    const geklemmt = /max-height:\s*(?!none)[^;]*;/.test(cardRule[1]);
+    if (geklemmt) {
+      const body = css.match(/\.rd-body \{([^}]*)\}/);
+      expect(body, "die Karte klemmt, aber es gibt keinen .rd-body — der Inhalt wäre unerreichbar").toBeTruthy();
+      expect(body[1], ".rd-body scrollt nicht — geklemmte Karte ohne inneren Scroller schneidet ab")
+        .toMatch(/overflow-y:\s*auto/);
+      expect(body[1], ".rd-body kann ohne `min-height: 0` nicht unter seine Inhaltshöhe schrumpfen")
+        .toMatch(/min-height:\s*0/);
+    }
   });
 
   it("die vier Panels tragen den Ring wie die Statistik-Sektionen", () => {
