@@ -74,11 +74,21 @@ for d in sorted(pathlib.Path(C["bfDir"]).iterdir()):
 print(json.dumps(out))
 `;
 
-let res;
-try {
-  res = JSON.parse(execFileSync("python3", ["-c", PY, JSON.stringify(CFG)], { encoding: "utf8" }));
-} catch (e) {
-  console.error("Messung fehlgeschlagen — ist python3 installiert?\n", e.message);
+/* `python3` existiert auf Windows üblicherweise NICHT — dort heißt der Interpreter `python`, und
+   der Store-Alias fängt `python3` ab und meldet „Python was not found", statt sauber zu scheitern.
+   Das Repo soll auf Windows und Linux laufen (AGENTS.md), also werden beide Namen probiert. Ein
+   Aufruf zählt nur dann als gefunden, wenn er JSON zurückgibt: der Alias liefert Text auf stdout
+   und einen Erfolgs-Exitcode, ein reines try/catch würde ihn also für einen Treffer halten. */
+let res, lastErr;
+for (const bin of ["python3", "python", "py"]) {
+  try {
+    res = JSON.parse(execFileSync(bin, ["-c", PY, JSON.stringify(CFG)], { encoding: "utf8" }));
+    break;
+  } catch (e) { lastErr = e; res = undefined; }
+}
+if (!res) {
+  console.error("Messung fehlgeschlagen — ist Python mit Pillow/numpy installiert?\n",
+    lastErr?.message ?? "kein Interpreter gefunden (python3/python/py)");
   process.exit(1);
 }
 if (res.error) { console.error(res.error); process.exit(1); }
