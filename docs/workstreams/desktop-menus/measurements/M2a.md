@@ -293,7 +293,13 @@ awaited, one session.
 
 `shop-fx` appears in a before/after pair **for the first time in this workstream** (MENU-36).
 
-> **An agent does not report a visual result as approved.** The pairs go to the owner at the End stop.
+> **An agent does not report a visual result as approved.** The pairs went to the owner at the End
+> stop, with the two style changes named and the corrected stage geometry (MENU-43) stated rather than
+> left in the images.
+
+**APPROVED — owner, 2026-08-24: "bilder schauen gut aus."** The comparison is accepted as shown; the
+1280×720 `de` pair for both surfaces was reviewed directly, the remaining 24 pairs alongside it in
+`evidence/M2a/compare/`. That closes the second of this task's two owner stops.
 
 ---
 

@@ -2,7 +2,9 @@
 
 1. **Done.** Four commits on `task/menu-m2a-workshop-shell` (base `308ab5ae`): value-preserving
    conversion `44303eea` · the four owner-approved adoptions `6bbdbd97` · guards and the ink ratchet
-   `91a2d5db` · the survey opens the effects tab `35e66fe5`. Nothing pushed, nothing merged, no PR.
+   `91a2d5db` · the survey opens the effects tab `35e66fe5` · record and evidence `1ef515dc`. Both
+   owner stops are closed: the decision block before implementation, the comparison approved at the
+   End stop ("bilder schauen gut aus", 2026-08-24). Nothing pushed, nothing merged, no PR.
 2. **Did the vocabulary hold? YES.** 2128 lines, a sticky head and 60 inline backgrounds, and every
    box in the shell had a step for its **role**. Four values sat 2–9/255 from their step and took it;
    nothing was short.
