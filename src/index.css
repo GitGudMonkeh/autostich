@@ -2930,7 +2930,7 @@ b, strong { font-weight: 600; }
   /* #menu-rework M3 — Farbschluessel links, Bedienhinweis rechts. Der Hinweis stand bis hierher im
      Kopf und kostete dort bei JEDEM Oeffnen Hoehe, obwohl er nach dem ersten Mal nichts mehr sagt. */
   .up-legend-page {
-    justify-content: space-between !important;
+    justify-content: space-between;
     align-items: center;
     gap: 16px;
   }
