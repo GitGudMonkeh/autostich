@@ -314,6 +314,22 @@ languages, both DPR — before C2's first edit.
 
 ## 7. Inherited findings
 
+**MENU-38 / MH1, measured 2026-08-24 — two translucent edge alphas live in this workstream's file.**
+`rgba(150, 150, 170, .22)` and `… .25` are set **inline in `src/ui/StartScreen.jsx`**. They belong to
+a family of **twelve** alphas across 64 literals, carried mostly by the `.as-edge-*` role classes,
+which `#menu-rework` deliberately does not migrate.
+
+Two things follow. This workstream is the only one that will touch those two sites, so if they are
+ever to join the family's eventual collapse, it happens here or not at all. And an inline literal is
+unreachable by any stylesheet rule that is not `!important` — the same trap `#menu-rework` §2.1
+resolves by emitting `var()` instead of a value. **If C2 or C3 touches either line, convert it rather
+than copy it.**
+
+*Not a defect, and not this workstream's to collapse. An input, so the collapse is not later found to
+have missed two sites nobody owned.*
+
+
+
 From `typography-system/v4-classification.md`: **TYPO-04** — overflow at 1280×720 grew by ~28 nodes
 tree-wide (de 402→430, en 401→426) and was accepted by the owner. The hub is not among the heavy
 screens (**TYPO-05** names the end screen at 147 nodes and the glossary at 157–170), but C1 records the

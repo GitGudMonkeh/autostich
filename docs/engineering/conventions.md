@@ -458,6 +458,38 @@ with destructive actions and no affirmative-state control. Closing a set on one 
 what produced this asymmetry, and that was the planner's call, not a worker's. The threshold is the
 correction: sets close on counting, and reopen on counting.
 
+### MENU-38 re-measured — the family is twelve, and the ruling scoped it wrongly
+
+*MH1, 2026-08-24, measuring before building the ratchet as its contract required.*
+
+The freeze ruling said **seven** alphas. M2b found an eighth. The measurement says **twelve**, across
+**64 literals**:
+
+```
+.07  .08  .10  .12  .13  .14  .16  .18  .22  .25  .30  .35
+```
+
+Four were unknown to both the ruling and to MENU-44: `.08` and `.30` in `index.css`, `.22` and `.25`
+**inline in `StartScreen.jsx`**.
+
+**Why the ruling was short, and it is not an arithmetic slip.** It scoped the family by
+`.as-edge-*` — *the class that carries it*. The family is wider than the class. A value does not stop
+being part of a family because it is written somewhere the family's usual class is not, and a ruling
+that defines a set by its most visible carrier will always undercount it.
+
+Two consequences:
+
+- **The ratchet starts at 0 in all seven migrated units** — and that zero is an **achieved state**,
+  not an absence. M2b pulled the workshop onto `--ed-quiet`. A later reader must not mistake the
+  ratchet's floor for "there was never anything here".
+- **`.22` and `.25` live in `StartScreen.jsx`**, which belongs to the mainscreen workstream, not to
+  this round. Named there as an input rather than migrated from here.
+
+**The threshold is unaffected.** Twelve sightings of a *family* is not twelve sightings of one gap;
+the rule counts screens that miss the same step, and the translucent edge still belongs to whoever
+migrates `.as-edge-*`. What changes is the number the successor inherits: **twelve, measured**, rather
+than seven, inferred from a class name.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to

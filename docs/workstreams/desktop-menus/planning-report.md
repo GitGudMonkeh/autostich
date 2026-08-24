@@ -814,6 +814,18 @@ up.
 into M3: a screen task that also rebuilds the instrument it is measured by has two variables, and the
 one that fails is not identifiable.
 
+### 8.6 Handed to the mobile strand — `phone-proof.mjs` truncates silently
+
+MH1-06. `scripts/phone-proof.mjs:481` has the defect MH1 fixed in `surface-delta.mjs`: it caps its
+output without saying so. **One line, and it belongs to another strand** — MH1 read it, did not touch
+it, and reported it rather than repairing it quietly outside its file surface. That was the right
+call, and it is why this entry exists instead of an unexplained diff.
+
+The reason it is worth carrying rather than dropping: MH1-02 showed that a silent cut over a **sorted**
+set does not blur a finding, it manufactures a specific one. `phone-proof.mjs` sorts too.
+
+*Backlog, with an ID. Not this round's to fix.*
+
 ### 8.5 The noise floor is measured, and it is zero
 
 MENU-58, and it is quietly the most useful measurement of the round: **the same tree captured twice,
