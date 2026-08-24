@@ -2359,8 +2359,11 @@ b, strong { font-weight: 600; }
 /* #menu-rework M7 — dieselbe Technik fuer den Kopf der Statistik. Eyebrow und Unterzeile stehen im
    DOM, damit der Desktop-Pass ohne zweiten Renderpfad auskommt, sind aber bis 1279 px aus dem
    Layout. Der Kopf der Handy-Fassung bleibt damit Titel plus Schliessen, Zeichen fuer Zeichen wie
-   vorher. */
-.st-eyebrow, .st-sub { display: none; }
+   vorher.
+   #menu-rework M8 — die Bestenliste steht in DERSELBEN Regel und nicht in einer zweiten daneben:
+   es ist eine Aussage („der Kopf-Kanon ist ab 1280 px"), und zwei Regeln fuer eine Aussage driften
+   auseinander (conventions.md §1 Regel 2). */
+.st-eyebrow, .st-sub, .lb-eyebrow, .lb-sub { display: none; }
 
 /* Der Eyebrow des Lauf-Fensters ist NICHT in dieser Familie: an seiner Stelle stand schon immer eine
    Kennungszeile in der Deckfarbe, und die bleibt in jeder Breite stehen. Was sich aendert, ist ihr
@@ -4944,16 +4947,7 @@ b, strong { font-weight: 600; }
     background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
     opacity: .85;
   }
-  /* Kopf-Raster (Werte von `.up-head`): Titel · Auskunft · Aktionen. */
-  .st-head, .lb-head {
-    grid-column: 1 / -1; grid-row: 1;
-    margin: 0 !important;
-    padding: 10px 0 8px !important;
-    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
-    display: grid;
-    column-gap: 22px;
-  }
-  .lb-head { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  /* Kopf-Raster (Werte von `.up-head`): Titelblock · Aktionen. */
   /* #menu-rework M7 — KOPF-KANON (design-sprache.md §2) fuer die Statistik. ZWEI Zonen statt drei:
      der Titelblock (Eyebrow · Titel · Unterzeile) und die Aktionszone. Der Auskunftssatz, der bis
      hierher in der Aktionszone stand, ist die Unterzeile geworden — §2 laesst dort nur Aktionen zu,
@@ -4962,12 +4956,26 @@ b, strong { font-weight: 600; }
      `align-items: start` statt `center` ist der Kern und nicht Geschmack: dadurch sitzt Schliessen
      immer am selben Punkt unter der Oberkante, egal wie hoch der Titelblock daneben ist. Zentriert
      gegen einen unterschiedlich hohen Block landet der Knopf in jedem Screen woanders — genau daher
-     kam der Versatz, den M3 am Baum gemessen hat. */
-  .st-head {
+     kam der Versatz, den M3 am Baum gemessen hat.
+
+     #menu-rework M8 — DIE BESTENLISTE ZIEHT IN DIESELBEN REGELN EIN, statt sich zweite daneben zu
+     stellen (conventions.md §1 Regel 2). Sie hatte bis hierher ein eigenes Kopf-Raster
+     (`auto minmax(0, 1fr) auto`, `align-items: center`) mit einem festen Platz 3 fuer Schliessen —
+     eine zweite Bauart fuer denselben Kanon, entstanden aus „der Kopf hat nur zwei Kinder". Er hat
+     jetzt vier, es sind dieselben vier wie in der Statistik, und damit ist es dieselbe Regel.
+     Der Kanon ist ab hier EIN Satz Regeln fuer zwei Screens: Raster, Eyebrow, Titel, Unterzeile,
+     Schliessen. */
+  .st-head, .lb-head {
+    grid-column: 1 / -1; grid-row: 1;
+    margin: 0 !important;
+    padding: 10px 0 8px !important;
+    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
+    display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 22px;
     align-items: start;
   }
-  .st-eyebrow {
+  .st-eyebrow, .lb-eyebrow {
     display: block; grid-column: 1; grid-row: 1;
     font-size: var(--text-body-1); font-weight: 500;
     text-transform: uppercase; letter-spacing: .1em;
@@ -4978,20 +4986,16 @@ b, strong { font-weight: 600; }
        Schwellenregel (conventions.md 2c) wird gezaehlt statt gepraegt — zweite Sichtung. */
     color: color-mix(in srgb, var(--deck-a1, #8a7de0) 62%, #ffffff);
   }
-  .st-head > h2 { grid-column: 1; grid-row: 2; }
-  .st-sub {
+  .st-sub, .lb-sub {
     display: block; grid-column: 1; grid-row: 3;
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
   /* Schliessen ist das LETZTE Element, und nichts steht je rechts davon (§2). Es spannt alle drei
      Zeilen des Titelblocks und richtet sich an dessen Oberkante aus — das ist, was `align-items:
      start` oben ueberhaupt herstellt. */
-  .st-close { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
-  .st-head > h2, .lb-head > h2 { font-size: var(--text-figure-1); font-weight: 600; }
+  .st-close, .lb-head > button { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
+  .st-head > h2, .lb-head > h2 { grid-column: 1; grid-row: 2; font-size: var(--text-figure-1); font-weight: 600; }
   .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
-  /* Der Ranglisten-Kopf hat nur zwei Kinder (Titel · Schließen) — ohne festen Platz landete der Knopf in der
-     1fr-Spalte und zog sich über die halbe Breite. */
-  .lb-head > button { grid-column: 3; justify-self: end; }
   /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
   /* #menu-rework M7 — `.st-sec` ist HIER RAUS und hat seine eigene Regel: die fünf Sektionen der
      Statistik werden Panels (Tönung + Rahmen), die übrigen bleiben, wie sie sind. Bestenliste und
@@ -5238,22 +5242,46 @@ b, strong { font-weight: 600; }
     align-self: start;   /* die Spalte endet an ihrem letzten Reiter, wie `.up-nav` */
   }
   /* Aus dem Reiter wird die Navigationszeile des Baums (`.up-navrow`) — dieselbe Form, damit die Screens
-     dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX. */
+     dieselbe Bedienung haben. `!important` durchgehend: die Reiter tragen ihre Optik inline aus dem JSX.
+
+     #menu-rework M8 — DIE SPALTE ZIEHT DEM BAUM NACH, ZWEI ENTSCHEIDUNGEN SPÄT.
+     ------------------------------------------------------------------------
+     Der Kommentar darüber sagt seit jeher, die Form sei von `.up-navrow` übernommen, „damit die
+     Screens dieselbe Bedienung haben". Danach hat der Baum diese Form zweimal geändert und die
+     Kopie ist stehen geblieben — genau der Fall, für den design-sprache.md ihren Satz „ändert sich
+     das Original, ziehen die Kopien nach" geschrieben hat (Anlass: diese Spalte).
+
+     Drei Griffe, alle drei aus `#up-form`/`#up-ruhe`, keiner davon neu:
+       1. FLÄCHE STATT FARBANLAUF. „Fünf Zeilen mit je eigenem Farbverlauf sind fünf Flächen; die
+          Farbe gehört an die Kante, nicht in die Zeile." Der 90-Grad-Anlauf (12 %, aktiv 26 %) ist
+          weg, es bleibt der weiße Hauch in drei Stufen — dieselben drei Werte wie am Baum.
+       2. KEIN SCHEIN NACH AUSSEN. „Eine leuchtende Spalte neben einem ruhigen Panel zieht den Blick
+          heraus." Der `0 0 18px -10px` ist weg.
+          UND DER INNENSCHEIN MIT IHM, und das ist eine Auslegung, die benannt gehört: der Entwurf
+          nennt nur den äußeren. `inset 0 0 24px -14px` in der Deckfarbe IST aber ein Farbverlauf in
+          der Zeile, also genau das, was Griff 1 entfernt — ihn stehen zu lassen hieße, die aktive
+          Zeile behielte als einzige ihren Anlauf. Der Baum hat an `.up-navrow` gar keinen Schatten.
+          Als Befund gemeldet (M8-F04), nicht still entschieden.
+       3. RADIUS 6. Der Baum steht seit `#up-form` darauf; 11 lief daneben.
+     Die 4-px-Kante in der Deckfarbe BLEIBT und trägt weiterhin den aktiven Zustand — sie ist das
+     eine Signal der Zeile (§1 Regel 8), und der Entwurf nimmt sie ausdrücklich aus. */
   .lb-tabs [role="tab"] {
     flex: none !important;
     text-align: left;
     padding: 12px 14px !important;
-    border-radius: 11px !important;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 12%, #12121a) 0%, #12121a 46%) !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, .018) !important;
     border: 1px solid rgba(150, 150, 170, .14) !important;
     border-left: 4px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 70%, transparent) !important;
     color: #c3c1d0 !important;
   }
+  /* Der Hover fehlte hier ganz — am Baum trägt ihn `.up-navrow:hover` seit `#up-form`. Eine Spalte,
+     die auf das Zeigen nicht antwortet, sieht aus wie eine Liste, nicht wie eine Bedienung. */
+  .lb-tabs [role="tab"]:hover { background: rgba(255, 255, 255, .045) !important; }
   .lb-tabs [role="tab"][aria-selected="true"] {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a1, #8a7de0) 26%, #12121a) 0%, #12121a 52%) !important;
+    background: rgba(255, 255, 255, .07) !important;
     border-left-color: var(--deck-a1, #8a7de0) !important;
     color: #ffffff !important;
-    box-shadow: inset 0 0 24px -14px var(--deck-a1, #8a7de0), 0 0 18px -10px var(--deck-a1, #8a7de0);
   }
   /* `span` statt `b`/`i`: die beiden Elemente existieren in JEDER Breite (der Reiter braucht seinen Text),
      und ein `b` hätte die Handy-Reiter still auf Gewicht 700 gezogen — nachgemessen, drei Zeilen wurden breiter.
@@ -5262,10 +5290,27 @@ b, strong { font-weight: 600; }
      (`justify-center` im JSX) — in der linksbündigen Navigationsspalte gehört es an den Anfang. */
   .lb-tab-l { display: flex; justify-content: flex-start; font-size: var(--text-body-lg-4); font-weight: 600; }
   .lb-tab-s { display: block; font-size: var(--text-body-2); color: #8a8a95; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  /* #menu-rework M8 — DAS PANEL IST EIN PANEL (design-sprache.md §1).
+
+     GEMESSEN war es keins: `border: 0 !important` und der reine Glasverlauf — also das alte Rezept
+     OHNE Deck-Tönung und OHNE Rahmen. Die Fläche sagte damit gar nicht, dass sie zum aktiven Deck
+     gehört; das wandernde Ringband (`as-ring`) sagt es, aber es ist eine Verzierung an der Kante und
+     kein Rahmen, und `as-ring-quiet` stellt es ohnehin still.
+
+     Ziel und Umsetzung sind dieselben wie an `.st-sec` unter M7: `--sf-deck` IST das Tönungs-Rezept,
+     `--ed-deck-panel` IST der 26-%-Rahmen. Beide stehen im Vokabular, beide haben Fundstellen.
+
+     ABWEICHUNG, geerbt und nicht neu: das Vokabular tönt 9 / 5 %, `design-sprache.md` §1 und der
+     Bestenlisten-Entwurf sagen 5 / 1 %. Den Wert eines ausgelieferten Tokens zu ändern ist
+     ausdrücklich nicht Sache dieses Auftrags; Optionen und Statistik stehen seit M1 bzw. M7 auf
+     9 / 5. Das ist M7-F09 und wird hier nicht ein zweites Mal entschieden, nur mitgetragen.
+
+     `!important` bleibt und ist nicht neu: das Panel setzt Fläche und Rahmen INLINE aus dem JSX (der
+     Inline-Wert trägt die schmale Fassung), und die Zeile stand schon vorher so da. */
   .lb-page {
     grid-column: 2; grid-row: 3;
-    border: 0 !important;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
+    border: 1px solid var(--ed-deck-panel) !important;
+    background: var(--sf-deck) !important;
     padding: 16px 18px !important;
     min-height: 0;
     align-self: stretch;
@@ -5347,6 +5392,13 @@ b, strong { font-weight: 600; }
     background: rgba(255, 255, 255, .03);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 40%, transparent);
   }
+  /* #menu-rework M8 — die fünf gezeichneten Zeichen (design-sprache.md §4: 16-px-Raster). Dieselbe
+     Regel wie `.op-icon-svg` am Optionen-Screen, nur hier im Desktop-Block: die Zeichen dieses
+     Screens tragen `as-deskonly` und existieren unter 1280 px gar nicht.
+     Die `font-size` an den zwei Zeichenkacheln bleibt stehen, obwohl sie seit dem Wechsel auf SVG
+     nichts mehr malt: Größen sind ein ausdrückliches Nicht-Ziel dieses Auftrags. Als Befund
+     gemeldet (M8-F07), nicht im Vorbeigehen entfernt. */
+  .lb-icon { width: 16px; height: 16px; display: block; }
   .lb-ctxtile b { display: block; font-size: var(--text-body-3); font-weight: 600; color: #e4e4ee; }
   .lb-ctxtile i { display: block; font-style: normal; font-size: var(--text-meta-4); color: #8a8a95; margin-top: 2px; }
 
