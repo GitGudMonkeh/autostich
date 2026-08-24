@@ -1237,7 +1237,10 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
           damit die Effekt-Bühne (FxView, `stickyTop`) weiterhin exakt unter dem Kopf klebt. */}
       {/* #deckui: äußerer Modal-Rahmen zieht die aktive Deckfarbe (as-panel-deck) — wie die übrigen Werkstatt-/
           Options-Panels. NUR die Haupt-Shop-Karte; die Effekt-Vorschau-Bühnen (FxStage/Scenes) bleiben unberührt. */}
-      <div className="w-full max-w-xl dt:max-w-none rounded-2xl my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
+      {/* #menu-rework M2a: `rounded-2xl` ist weg — der Radius der Schale steht als `--rd-shell` an
+          `.cz-card` (index.css). Gemessen identisch (beides 1rem); es ist das Token, gegen das die
+          Haarlinie oben ohnehin schon klippt. */}
+      <div className="w-full max-w-xl dt:max-w-none my-auto as-panel as-panel-deck cz-card flex flex-col overflow-hidden"
         style={{ ...MODAL_CARD, height: "min(88vh, 760px)" }} onClick={(e) => e.stopPropagation()}>
         {/* `overlay-card` (iOS-Momentum + overscroll-contain) wandert mit ans jetzt scrollende Element. */}
         <div className={`overlay-card cz-scroll flex-1 min-h-0 px-5 pb-5 sm:px-6 sm:pb-6 ${anyOverlay ? "overflow-hidden" : "overflow-y-auto"}`} {...tabSwipe}>

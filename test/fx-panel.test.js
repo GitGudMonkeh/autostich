@@ -12,7 +12,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { BOARD_W, BOARD_H, CARD_H, BOARD_RATIO_CSS, sceneScale, kartenAnteil } from "../src/ui/fx/previewScale.js";
 import { DESKTOP_AT } from "./desktopBreakpoint.js";
-import { resolve } from "./cssTokens.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const jsx = src("ui/CustomizeScreen.jsx");
@@ -22,6 +22,9 @@ const desktop = css.slice(css.indexOf(DESKTOP_AT));
 // Kommentarfrei, wo eine Regel ZERLEGT wird: eine Begründung, die eine Eigenschaft beim Namen nennt,
 // darf einen Wächter nicht erfüllen (Hausgefahr: Ratschen haben schon ihre eigenen Kommentare getroffen).
 const desktopBare = desktop.replace(/\/\*[\s\S]*?\*\//g, "");
+// Das Panel-Vokabular (conventions.md 2c) — damit ein Wächter auf ZAHLEN prüfen kann, auch wenn die
+// Regel einen Schritt beim Namen nennt.
+const theme = themeTokens(css);
 
 describe("#vorschau-brett — der Maßstab, nachgerechnet", () => {
   it("die Karte hat in der Vorschau denselben Anteil wie auf dem Brett (jede Desktop-Breite)", () => {
@@ -84,16 +87,32 @@ describe("#fx-panel — zwei Panels, beide enden am Inhalt", () => {
     const regel = desktopBare.match(/\.cz-stage,\s*\.cz-fxside\s*\{([^}]*)\}/);
     expect(regel, ".cz-stage/.cz-fxside-Regel fehlt").toBeTruthy();
     expect(regel[1]).toMatch(/align-self:\s*start/);
-    expect(regel[1]).toMatch(/border-radius:\s*14px/);
+    /* #menu-rework M2a — der RADIUS wird weiter geprüft, die Schreibweise nicht mehr vorgeschrieben.
+       Die Regel darüber sagt, was hier gilt: „Glas, Radius und Schein sind an `.cz-main`/`.cz-side`
+       ABGEMESSEN, nicht neu erfunden." Genau das ist die Aussage — nicht die Zahl 14. Geprüft wird
+       deshalb die GLEICHHEIT der beiden Regeln, aufgelöst durch das Vokabular: driften sie
+       auseinander, fällt der Wächter. Gegen den Fall, dass beide GEMEINSAM auf einen falschen Wert
+       wandern, wäre die Gleichheit allein blind — deshalb steht die 14 zusätzlich als Anker. */
+    const panelRegel = desktopBare.match(/\.cz-main,\s*\.cz-side\s*\{([^}]*)\}/);
+    expect(panelRegel, ".cz-main/.cz-side-Regel fehlt — der Bezugspunkt des Radius").toBeTruthy();
+    const radius = (r) => resolve((r.match(/border-radius:\s*([^;]+);/) || [])[1] || "", theme).trim();
+    expect(radius(regel[1]), "die Bühne hat ihren Panel-Radius verloren").toMatch(/\b14px\b/);
+    expect(radius(regel[1]), "Bühne und Katalog-Panel tragen nicht mehr denselben Radius")
+      .toBe(radius(panelRegel[1]));
     /* #menu-rework M1 — die FÜLLUNG wird weiter geprüft, der Weg dahin nicht mehr vorgeschrieben.
        `.cz-stage` setzt seine Fläche INLINE (STICKY_HEAD_BG); die Regel gewann dagegen früher mit
        `!important` und gewinnt jetzt, indem sie die Variable umdefiniert, die der Inline-Wert liest.
        Beides erfüllt dieselbe Aussage — beide Panels stehen auf dem Glas-Verlauf —, und die wird hier
        AUSGERECHNET statt abgeschrieben: die lokalen Custom Properties der Regel werden in den
        `background`-Wert eingesetzt, und das Ergebnis muss ein Verlauf sein. Fällt die Füllung ganz
-       weg, bleibt nichts zum Einsetzen und der Wächter fällt. */
-    const lokal = Object.fromEntries(
-      [...regel[1].matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+       weg, bleibt nichts zum Einsetzen und der Wächter fällt.
+       #menu-rework M2a: das Vokabular liegt jetzt UNTER den lokalen Deklarationen im selben Map —
+       seit die Regel `--sf-head` auf `var(--sf-glass)` umhängt, endet die Ersetzung sonst auf einem
+       Token-Namen statt auf einem Verlauf. Lokal schlägt @theme, wie in der Kaskade auch. */
+    const lokal = Object.fromEntries([
+      ...Object.entries(theme),
+      ...[...regel[1].matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]),
+    ]);
     const bg = (regel[1].match(/(?:^|[;\s])background:\s*([^;]+);/) || [])[1];
     expect(bg, "beide Panels haben ihre Füllung verloren").toBeTruthy();
     expect(resolve(bg, lokal), `die Füllung ist kein Verlauf mehr: ${bg}`).toMatch(/linear-gradient/);
