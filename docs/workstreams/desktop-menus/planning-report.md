@@ -830,6 +830,87 @@ Three things carry it, and each has an address in this report:
 | **R9** | **`dev` moves under the round.** It already has: `aa80bd58` merged `feature/playtest-fixes` after this branch was cut, touching nine `src/` files — including `de.js` and `en.js`. Wording changes alter text length, and text length is layout | The round deliberately **stays on `4f72ba68`** and does not take `dev` mid-flight — see §8.2. The merge happens once, at integration, and the baseline is re-verified then rather than eleven times |
 | **R8** | **TYPO-03 returns.** 7 px text migrated into `--text-micro` at 28.6 % displacement is an open design question handed to this round | Not this round's to fix — it is a **type** question, and decision 8 forbids reopening typography. Carried as a backlog input; if a menu's comparison surfaces it, it is classified *New design question*, not *Defect* |
 
+### 8.7 `DeckDetail` leaves the round — and two of my premises were wrong
+
+*Measured by M3, 2026-08-24.*
+
+| | |
+| --- | --- |
+| **M3-F03** | `DeckDetail` is **unreachable above 1280 px** — 0 entry points at 1280×720 and 1536×791, 4 at 1100×800 |
+| **M3-F04** | **H-d in M3's contract was wrong.** `GuideOverlay` does **not** mount `DeckDetail`. The shared component is `GuideBody`, and it flows the other way |
+| **M3-F05** | **TYPO-09's premise does not hold** for the same reason — the survey's `guide` cell lands on `GuideOverlay`, so `DeckDetail`'s 20 size utilities were never "reachable only through the guide" |
+
+**Ruling: `DeckDetail` is out of this round.** It is not a desktop menu — above 1280 px a player
+cannot get to it. Migrating it would mean **moving the phone to make a guard green**, which is owner
+decision 9's non-goal stated exactly backwards. M3 counted and ratcheted it instead of migrating it,
+which was right.
+
+**Two corrections to §3.1**, and both are mine:
+
+- M3 is **not** a shared-component owner. I wrote that into its contract from an import graph I read
+  too quickly — `GuideOverlay` importing `DeckDetail` is not `GuideOverlay` mounting it.
+- **M5's inheritance is `GuideBody`, not `DeckDetail`**, and it flows the other way. M5's contract
+  must say so.
+
+**The general lesson, because I have now made the same class of error twice** — once naming six guards
+where two applied, once naming a mount point that does not mount: *an import is not a render, and a
+filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
+
+### 8.10 The guide is not a screen — it is a page inside the upgrade tree
+
+*Measured 2026-08-24, from the machine half M3 could not produce.*
+
+`viewport-survey.mjs:105` reaches the guide as `{ tile: 0 } → { .up-navrow, nth: 1 } →
+{ .up-page-guide }`. It wears the upgrade screen's head, root and navigation column, so M3's changes
+reached it by construction: **2410 deltas, and 160 unmatched nodes before against 160 after — exactly
+balanced**, which is reordering rather than loss.
+
+**§3.1 listed "Guide · `GuideOverlay.jsx` · 346 lines" as a free-standing screen. It is not.** M5's
+scope shrinks to the guide's *content* — `GuideOverlay`, marker `.gd-desk` — because its *frame* is
+`.up-*` and is already done.
+
+This is the third premise of mine a worker has corrected by measuring, after the guard membership and
+the `DeckDetail` mount point. All three were inventory read from imports and filenames. **The pattern
+is stable enough to state as a rule: a planner's screen list is a hypothesis about what renders, and
+only the survey knows what renders.**
+
+### 8.8 A design document's observations hold; its predictions do not
+
+Two design documents have now been handed to a worker, and both failed the same way and only that way.
+
+| Document | Observations | Predictions |
+| --- | --- | --- |
+| `optionen-redesign.md` | sound | the dead space was ~91 px, not ~350 — measured in a preview build where two `VITE_PREVIEW` rows were visible that players never see |
+| `upgrade-baum-redesign.md` | **confirmed, several to the decimal** | height arithmetic stale in all three terms; `.up-branch` does not render at ≥1280 px at all; "the head costs no height" is wrong by **+24.2 px** |
+
+**M3's verdict is the precise one and worth quoting: *nothing it recommended was wrong in sign.*** The
+designs are right about what is wrong and right about what to do. They are optimistic about what it
+will cost.
+
+**Therefore, in every contract from here:**
+
+> **Re-measure a design document's numbers in a `main` build before building against them. Its
+> observations may be taken; its predictions may not.**
+
+A worker that finds a stale figure files it as a finding and an owner question — never a silent
+adjustment, and never a reason to doubt the design's direction.
+
+### 8.9 A third way for the harness to be silently wrong
+
+M3-F09. `viewport-survey.mjs` checks whether *something* answers on 5181 and **reuses it**. A stale
+preview server therefore serves an abandoned bundle, and the survey measures it without a word.
+
+That is the same shape MH1 fixed for truncation and the same shape MENU-52 had inside a guard: **the
+check asks whether something is there, never whether it is the right thing.** Third instance, and the
+rule from §5.3 covers it exactly.
+
+**Required of the next task that touches the harness:** the survey proves it is talking to the bundle
+it just built — compare the served asset hash against `dist/`, or start its own server and refuse an
+inherited one. Reusing a server is a convenience; reusing it unverified is a silent wrong answer.
+
+*The stale servers themselves were cleared by the planner after handoff (PID 23076 on 5181), and the
+survey re-run to produce the proof M3 could not.*
+
 ### 8.4 Harness debt — three items, and the one that matters
 
 *Raised by M2b, 2026-08-24. None is a screen's to fix; all three belong to the planner.*

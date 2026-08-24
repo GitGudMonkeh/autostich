@@ -490,6 +490,25 @@ the rule counts screens that miss the same step, and the translucent edge still 
 migrates `.as-edge-*`. What changes is the number the successor inherits: **twelve, measured**, rather
 than seven, inferred from a class name.
 
+### One sub-1280 exception, granted and named — 2026-08-24
+
+Owner decision 9 holds: this round changes nothing below 1280 px. **M3 has one exception, and it is
+granted because it was declared rather than buried.**
+
+`.up-root`'s sub-1280 scrim was the literal `#0c0c10ee`. M3 pointed it at `--sf-scrim`, which the
+vocabulary already carries. **Measured delta: ≤ 1.8/255 — below perception on an overlay wash.**
+
+**Why granted rather than reverted.** Reverting would leave the tree carrying a literal where every
+sibling carries a token, which is the exact condition this round removes; and the change is smaller
+than the noise floor of the eye, on a surface whose whole job is to be unnoticed. The mobile strand
+inherits one fewer literal and no visible difference.
+
+**Why it needed a ruling at all.** Because the rule is *nothing below 1280*, not *nothing visible
+below 1280*. A worker who decides for itself which sub-threshold changes are small enough has
+replaced the rule with its own judgement. M3 did not — it named the value, the delta and the reason,
+and left the decision here. That is the shape any further exception must take, and there is no
+standing permission: **the next one is asked for too.**
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
