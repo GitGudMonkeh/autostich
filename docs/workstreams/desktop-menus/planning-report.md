@@ -702,6 +702,18 @@ covered half of them:
 - **and the named Tailwind scale** — `rounded-xl`, `shadow-lg`, `p-4`. This is the half TYPO-12 was
   missed by.
 
+**The rule that has now cost five findings — TYPO-12, MENU-15, MENU-29, MENU-52, and one before
+them.** Every one is the same mistake wearing a different coat:
+
+> **A guard asks whether *only* the sanctioned form is present. Never whether it is present.**
+
+MENU-52 is the purest instance, because it happened *inside the guard itself*: the inline reader asked
+whether a `var()` occurs, not whether a raw value sits beside it. Three sites in the very file it was
+guarding were invisible to it. `text-[Npx]` without the named scale (TYPO-12) and a `:root` composite
+reading a per-element variable (MENU-15, MENU-29) are the same shape.
+
+Write the assertion as *"this file contains no X other than Y"*, never as *"this file contains Y"*.
+
 **Counter-checked**, per `AGENTS.md` — *Hazard: source-text ratchet tests*: each of the four axes is
 deliberately broken in a migrated file and the guard proved to fail. Four counter-checks, recorded.
 
@@ -770,6 +782,34 @@ Three things carry it, and each has an address in this report:
 | **R7** | **A retune is requested mid-round** (decision block Q1 answered (b) later) | A retune after the freeze is one token-table edit plus one re-capture and one owner comparison across the migrated screens — which is the whole point of the system. It is cheap *because* of the freeze, and expensive only if requested before it |
 | **R9** | **`dev` moves under the round.** It already has: `aa80bd58` merged `feature/playtest-fixes` after this branch was cut, touching nine `src/` files — including `de.js` and `en.js`. Wording changes alter text length, and text length is layout | The round deliberately **stays on `4f72ba68`** and does not take `dev` mid-flight — see §8.2. The merge happens once, at integration, and the baseline is re-verified then rather than eleven times |
 | **R8** | **TYPO-03 returns.** 7 px text migrated into `--text-micro` at 28.6 % displacement is an open design question handed to this round | Not this round's to fix — it is a **type** question, and decision 8 forbids reopening typography. Carried as a backlog input; if a menu's comparison surfaces it, it is classified *New design question*, not *Defect* |
+
+### 8.4 Harness debt — three items, and the one that matters
+
+*Raised by M2b, 2026-08-24. None is a screen's to fix; all three belong to the planner.*
+
+| # | What | Consequence if left |
+| --- | --- | --- |
+| **1** | **The survey has a surface axis and no state axis** (MENU-56). No cell state renders the segment controls, so the gate **cannot see the largest change the owner approved on that screen**. M2b measured it in a browser and said so, rather than letting the gate feign coverage | Nine screens remain, and every one of them has controls with states. A green gate that never rendered the thing it is guarding is worse than no gate — it reports coverage it does not have |
+| **2** | **`surface-delta.mjs` truncates** (MENU-55). It prints 200 of 410. Read as complete, the output looked like *"deltas only in German, a hole at 1920×1080"* — a finding that was not there. M2b caught it by re-aggregating | The next worker writes that finding down. A tool that silently truncates a comparison manufactures false findings, and they are expensive precisely because they look measured |
+| **3** | **MENU-38's ratchet was ruled at the freeze and never built** — and the family has an **eighth** alpha the ruling did not know about (MENU-44) | The planner's own ruling, unexecuted. M2b's region needed it zero times, so nothing broke; the next region may not be so lucky |
+
+**Item 3 is mine and I state it plainly:** I wrote the ruling into §2c and did not put it into a
+contract's *Definition of done*. A ruling that lands only in a conventions file is a ruling nobody is
+tasked with. That is the same failure mode as a finding that lives only in a chat message, one level
+up.
+
+**All three are handled by a harness task before M3** — `task-contract-MH1-harness.md`. Not folded
+into M3: a screen task that also rebuilds the instrument it is measured by has two variables, and the
+one that fails is not identifiable.
+
+### 8.5 The noise floor is measured, and it is zero
+
+MENU-58, and it is quietly the most useful measurement of the round: **the same tree captured twice,
+0 deltas across 160 cells.** The harness has no scatter.
+
+That converts every comparison in this round from *"these deltas are probably the change"* to *"these
+deltas are the change"*. Without it, a worker facing 410 deltas has no way to say how many are noise,
+and the honest answer would have been "unknown". Re-take it if the harness or the machine changes.
 
 ### 8.1 Inherited findings — inputs, not new defects
 

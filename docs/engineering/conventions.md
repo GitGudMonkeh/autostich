@@ -421,6 +421,43 @@ one of its seven alphas would sit in a frozen vocabulary carrying a value the wo
 to choose, and the eventual migration would have to either honour it or break it. The ratchet costs
 nothing and hands the successor a measured number instead of an impression.
 
+### The first *no*, and the threshold that answers it — 2026-08-24
+
+M2b is the first screen to report that the vocabulary did **not** fully hold: **29 of 35 menu literals
+had a step for their role, six did not.** Three state-colour pairs, a selection ring, a chip's label
+padding.
+
+**All six are ratcheted, none coined.** M2b had already applied the right shape without asking —
+each is enumerated in `panel-tokens.test.js` (`stateLiterals`, `ELEV_EXEMPT`, `utilExempt`) with
+counter-checks, so none can grow without someone editing a list. *Count it, do not coin it.*
+
+| ID | Gap | Why not a token, now |
+| --- | --- | --- |
+| **MENU-46** | accent-tinted state pair | `--sf-deck` is 22/255 away **and in the wrong hue** — the row hard-codes violet while `--deck-a1` varies. The finding is that this screen does not participate in the deck system; a token would paper over it |
+| **MENU-47** | unlock pair on the tier pills | 108/255 from `--ctl-edge`. It is a **signal, not chrome** — already covered by *meaning-coded borders* below |
+| **MENU-48** | affirmative state pair | The strongest of the six. See the threshold |
+| **MENU-50** | selection ring written as a shadow | `--el-glow-*` is reserved for the primary CTA by `#ruhe`. Spending it here would break the rule it exists to express. **Correctly refused** |
+| **MENU-51** | chip label padding, `py-[3px]` | `--btn-pad-y` is five times over; Tailwind's neighbours are 2 px and 4 px. A genuine micro-gap with one sighting |
+
+**The threshold, and it is the general rule from here on:**
+
+> **A gap becomes a token on the third independent sighting, not the first.**
+
+This is not caution for its own sake — it is §2c's own derivation principle applied to its own growth.
+The steps in the ladder were **derived by counting call sites**; a token minted from one screen's need
+is chosen, not derived, and the screen that chose it had no way to see the other ten. MENU-48 is the
+case that makes this concrete: `--ctl-danger` + `--ctl-danger-wash` are the destructive pair and there
+is no affirmative one, but transposing the recipe onto `--ac-green` lands **15/15/7 away** — so the
+affirmative pair is not the same recipe in another hue, and nobody yet knows what it *is*. Two more
+sightings would say.
+
+**MENU-48 stands at one.** The ratchet bounds the cost until it reaches three or the round ends.
+
+**What this admits.** `--ctl-*` was ratified as a closed set of nine, derived from Options — a screen
+with destructive actions and no affirmative-state control. Closing a set on one screen's evidence is
+what produced this asymmetry, and that was the planner's call, not a worker's. The threshold is the
+correction: sets close on counting, and reopen on counting.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
