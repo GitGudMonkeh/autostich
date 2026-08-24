@@ -509,6 +509,46 @@ replaced the rule with its own judgement. M3 did not — it named the value, the
 and left the decision here. That is the shape any further exception must take, and there is no
 standing permission: **the next one is asked for too.**
 
+### The threshold meets the ink exclusion — and the threshold was counting the wrong thing
+
+*M8's first planner question, 2026-08-24. The first case where two rules of this section point in
+opposite directions, and a worker correctly refused to settle it.*
+
+`color-mix(in srgb, var(--deck-a1) 62%, #ffffff)` — deck colour at reading brightness, as **text** —
+was M3's first sighting, M7's second, M8's third.
+
+| Rule | Says |
+| --- | --- |
+| *The first no* — the threshold | a gap becomes a token **on the third independent sighting** |
+| *The planner's ruling at the freeze* | text colour is **not taken in this round** |
+
+**Ruling: do not mint. And the reason is a correction to the threshold, not a win for the exclusion.**
+
+M8 supplied the measurement that decides it: after its work, **the three screens read that value
+through one shared rule** — `.st-eyebrow, .lb-eyebrow`. The cost of it remaining a literal is
+**one call site, not three.**
+
+**The threshold exists to stop a value spreading across call sites.** That is its whole purpose:
+§2c's steps were *derived by counting call sites*, and a token minted from one screen's need is
+chosen rather than derived. But here the spread was already collapsed — by a shared CSS rule, which
+is the same collapse a token performs, reached by a different road. Minting would add a name for
+something that occurs once.
+
+**So the threshold is restated, and this is what it should have said from the start:**
+
+> **A gap becomes a token on the third independent *call site*, not the third screen.**
+
+Three screens behind one rule are one site. One screen writing a value in four places is four.
+Counting screens was a proxy for counting spread, and a proxy is wrong exactly when someone does the
+right thing for other reasons — which is what happened here.
+
+**The ink exclusion is untouched by this** and keeps its own reason: opening a sixth axis mid-round is
+what the freeze prevents. Had the count been three real sites, the two rules would genuinely have
+collided and the answer would have been the owner's.
+
+**Carried to the successor with its number:** the target-brightness mix is the ink axis's **first
+named entry**, at one call site and three consumers. The ratchet keeps counting.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
